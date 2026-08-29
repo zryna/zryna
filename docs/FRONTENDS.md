@@ -57,6 +57,43 @@ Selecting v2 requires an exact v2 handshake. No compiler path silently upgrades 
 Provider error diagnostics stop compilation before semantic lowering, so an omitted unsupported
 subtree cannot be interpreted as a smaller valid program.
 
+## Worker discovery and lifecycle
+
+The host resolves the worker executable, argument list, and working directory before constructing
+`WorkerSpec`; executable and directory paths must be absolute. `WorkerFrontend` passes every
+argument directly to `Command` and never invokes a shell or parses a command-line string. Windows
+batch wrappers are rejected. The inherited environment is cleared before launch; on Windows only
+`SystemRoot` and `WINDIR` are copied when present so the operating system can start the executable.
+No caller `PATH`, Node preload/search setting, credential, proxy, or adapter test override reaches
+the provider implicitly.
+
+The worker is the leader of a fresh Unix process group or the root of a Windows Job Object. The
+configured executable is trusted to leave its descendants in that containment boundary. The
+post-spawn session reserves part of its single deadline for explicit cleanup and drains all three
+pipes on every return path. Unix cleanup signals the group and polls until it is empty. Windows
+cleanup uses suspended creation with Job assignment before resume, requires a successful Job-wide
+termination request, then confirms leader exit and pipe/task completion. `ZRYNA-F1108` reports any
+cleanup-protocol failure. The non-blocking drop guard is only an emergency fallback; it never
+performs an unbounded wait.
+
+Each analysis uses one fresh child process and one authenticated NDJSON session:
+
+1. send request id 1 for `handshake`;
+2. require the configured provider id, exact runtime version, protocol, and complete capabilities;
+3. only after that succeeds, send request id 2 with the authoritative source set;
+4. require exactly one correlated analysis response, clean EOF, and successful process exit;
+5. decode and verify the snapshot against the same `SourceMap` before returning it to the driver.
+
+After the operating system returns a successful spawn, a single monotonic 30-second maximum
+deadline covers the authenticated session and its cleanup. Synchronous operating-system spawn time
+is outside that timer; a spawn error fails as `ZRYNA-F1101`. The handshake frame is limited to
+64 KiB, an analysis response to 16 MiB, aggregate stdout to their combined fixed bound, stderr to
+64 KiB, and each serialized request to 72 MiB. Callers may tighten these budgets but cannot expand
+them. Timeout, overflow, malformed or extra frames, wrong ids, provider rejection, pipe failure,
+and unsuccessful exit all fail closed with stable `ZRYNA-F11xx` categories. Every post-spawn
+failure closes stdin, requests containment-wide termination, and confirms the platform-specific
+bounded cleanup protocol before returning.
+
 ## Migration to a native Zryna frontend
 
 The permanent path is:

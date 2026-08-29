@@ -36,7 +36,7 @@
       "root": "crates/zryna-frontend",
       "kind": "frontend",
       "dependencies": ["zryna-diagnostics", "zryna-source", "zryna-syntax"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-ir",
@@ -85,7 +85,8 @@
         "zryna-frontend",
         "zryna-ir",
         "zryna-native-mir",
-        "zryna-semantics"
+        "zryna-semantics",
+        "zryna-source"
       ],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },

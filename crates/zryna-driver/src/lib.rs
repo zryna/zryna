@@ -9,6 +9,7 @@ use zryna_backend_javascript::JavaScriptArtifact;
 use zryna_backend_native::LlvmIrArtifact;
 use zryna_diagnostics::Diagnostic;
 use zryna_ir::VerifiedProgram;
+use zryna_source::SourceMap;
 
 /// Artifacts emitted by the first verified dual-target slice.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -23,6 +24,18 @@ pub struct DualTargetArtifacts {
 #[must_use]
 pub fn check_workspace(root: &Path) -> ValidationReport {
     zryna_architecture::validate_workspace(root)
+}
+
+/// Runs one authenticated frontend worker and returns only source-map-verified syntax.
+///
+/// # Errors
+///
+/// Returns a deterministic worker failure before untrusted syntax can enter later phases.
+pub fn analyze_sources<Provider: zryna_frontend::VerifiedFrontendProvider + ?Sized>(
+    frontend: &Provider,
+    sources: &SourceMap,
+) -> Result<zryna_frontend::syntax_v2::ProjectSyntaxSnapshot, zryna_frontend::WorkerError> {
+    frontend.analyze_verified(sources)
 }
 
 /// Emits both current backend artifacts from one verified program.

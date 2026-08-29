@@ -11,6 +11,14 @@ use zryna_source::{
     FileId, MAX_SOURCE_FILES, NormalizedSourcePath, SourceMap, Span, UntrustedSpan,
 };
 
+mod worker;
+
+pub use worker::{
+    MAX_HANDSHAKE_RESPONSE_BYTES, MAX_WORKER_REQUEST_BYTES, MAX_WORKER_STDERR_BYTES,
+    MAX_WORKER_STDOUT_BYTES, MAX_WORKER_TIMEOUT, MIN_WORKER_TIMEOUT, ProviderExpectation,
+    VerifiedFrontendProvider, WorkerError, WorkerFailure, WorkerFrontend, WorkerLimits, WorkerSpec,
+};
+
 /// Provider-neutral executable syntax contract spoken by protocol-v2 providers.
 pub use zryna_syntax::v2 as syntax_v2;
 

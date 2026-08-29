@@ -14,5 +14,17 @@ zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-source = { path = "../zryna-source" }
 zryna-syntax = { path = "../zryna-syntax" }
 
+[target.'cfg(unix)'.dependencies]
+nix.workspace = true
+process-wrap.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-spawn.workspace = true
+
 [lints]
 workspace = true
+
+[[test]]
+name = "worker_process"
+path = "tests/worker_process.rs"
+harness = false
