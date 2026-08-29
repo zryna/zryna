@@ -50,9 +50,11 @@ The repository currently establishes and tests:
 - a fail-closed executable syntax protocol v2 with a shared JSON Schema, bounded flat
   expression arenas, and source-map-backed verified Rust types;
 - an isolated TypeScript 6 syntax adapter with its compiler implementation locked to `6.0.3`;
-- a verified target-neutral IR for `i32` parameters, literals, and wrapping addition;
-- direct JavaScript emission from verified IR;
-- native MIR lowering and textual LLVM IR emission as a backend-boundary proof.
+- a bounded, sealed `I32V1` Universal IR trust boundary for `i32` parameters, literals, and
+  wrapping addition;
+- iterative direct JavaScript emission from verified IR;
+- native MIR lowering from sealed verified views and textual LLVM IR emission as a
+  backend-boundary proof.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. Zryna-owned semantic lowering is the next separate gate. No

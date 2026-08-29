@@ -94,6 +94,34 @@ is emitted; a forged or mismatched span fails rendering rather than producing a 
 IR verification also resolves every expression span with the compilation source map before it can
 construct `VerifiedProgram`.
 
+## Verified Universal IR trust contract
+
+`Program`, `Function`, and `Expr` are untrusted compiler claims. `zryna_ir::verify` is the only
+constructor of `VerifiedProgram`; backends iterate opaque `VerifiedFunction` views and cannot
+recover the raw program. The current `I32V1` profile admits only `i32` parameters, results,
+literals, and signed wrapping addition. `bool` and `unit` remain profile-gated until every active
+universal backend implements their specified representation and behavior.
+
+A verified function proves all of the following:
+
+- its logical export is bounded ASCII matching `[A-Za-z_][A-Za-z0-9_]*`, is safe for the current
+  ECMAScript binding and LLVM bare-identifier surfaces, and is unique exactly and under ASCII
+  case folding;
+- its body is in the same arena and has the declared result type;
+- every operand is a distinct earlier entry, every entry has exactly one owner, and the complete
+  tree is stored in exact left-to-right postorder without shared or orphan entries;
+- its maximum expression depth is 128 and every expression span resolves in the exact compilation
+  `SourceMap`; and
+- program, parameter, expression, export-byte, and diagnostic budgets remain within the public
+  constants in `zryna-ir`.
+
+Verification and current JavaScript emission are iterative and bounded. A logical export remains a
+language-level identity; later backend ABI contracts must define any concrete symbol encoding
+without weakening collision checks. Current native lowering is the only constructor of an opaque,
+read-only `MirModule`, so the LLVM proof path cannot bypass `VerifiedProgram`. A separate MIR
+verifier is still required before transformations or other MIR producers are introduced; calling
+conventions, object emission, and linking remain later mandatory gates.
+
 ## Initial numeric contract
 
 The first vertical slice defines signed 32-bit wrapping addition:
@@ -109,6 +137,6 @@ Future integer operations must specify width, signedness, overflow, conversion, 
 
 ## WebAssembly profiles
 
-The first WebAssembly backend will emit a core module directly from `VerifiedProgram`; it will not translate JavaScript or native output. Its initial scalar ABI will export pure functions over `i32` and `bool`, validate every emitted binary, and execute conformance fixtures in a pinned runtime.
+The first WebAssembly backend will emit a core module directly from `VerifiedProgram`; it will not translate JavaScript or native output. Its first slice will consume the `I32V1` profile and export pure functions over `i32`, validate every emitted binary, and execute conformance fixtures in a pinned runtime. `bool` will be enabled only by a later universal profile implemented by every active backend.
 
 Browser integration adds a generated JavaScript loader without giving the loader authority over language semantics. WASI and the Component Model are a later capability-bearing profile with separately pinned interface and ABI versions. Filesystem, network, clock, randomness, and environment access are unavailable unless a declared host profile imports them.
