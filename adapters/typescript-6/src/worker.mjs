@@ -11,6 +11,23 @@ function namedType(node, sourceFile) {
   return { named: node.getText(sourceFile) };
 }
 
+function utf8ByteOffset(text, utf16Offset) {
+  if (!Number.isInteger(utf16Offset) || utf16Offset < 0 || utf16Offset > text.length) {
+    throw new Error('TypeScript returned an out-of-range UTF-16 source offset');
+  }
+  if (
+    utf16Offset > 0 &&
+    utf16Offset < text.length &&
+    text.charCodeAt(utf16Offset - 1) >= 0xd800 &&
+    text.charCodeAt(utf16Offset - 1) <= 0xdbff &&
+    text.charCodeAt(utf16Offset) >= 0xdc00 &&
+    text.charCodeAt(utf16Offset) <= 0xdfff
+  ) {
+    throw new Error('TypeScript returned a UTF-16 offset inside a surrogate pair');
+  }
+  return Buffer.byteLength(text.slice(0, utf16Offset), 'utf8');
+}
+
 function normalizeFunction(node, sourceFile, fileId) {
   if (!node.name || !ts.isIdentifier(node.name)) return null;
   const parameters = node.parameters.map((parameter) => {
@@ -23,13 +40,16 @@ function normalizeFunction(node, sourceFile, fileId) {
     return_type: namedType(node.type, sourceFile),
     span: {
       file: fileId,
-      start: node.getStart(sourceFile),
-      end: node.getEnd(),
+      start: utf8ByteOffset(sourceFile.text, node.getStart(sourceFile)),
+      end: utf8ByteOffset(sourceFile.text, node.getEnd()),
     },
   };
 }
 
 function normalizeSource(input, fileId) {
+  if (!input.text.isWellFormed()) {
+    throw new Error(`source '${String(input.path)}' contains an unpaired UTF-16 surrogate`);
+  }
   const sourceFile = ts.createSourceFile(
     input.path,
     input.text,
@@ -69,11 +89,18 @@ function handle(request) {
     if (!params || params.schema_version !== protocolVersion || !Array.isArray(params.files)) {
       throw new Error('analyze requires a protocol-v1 file list');
     }
+    const files = [...params.files].sort((left, right) => {
+      const leftPath = String(left.path);
+      const rightPath = String(right.path);
+      if (leftPath < rightPath) return -1;
+      if (leftPath > rightPath) return 1;
+      return 0;
+    });
     return {
       id: request.id,
       result: {
         schema_version: protocolVersion,
-        files: params.files.map((file, index) => normalizeSource(file, index)),
+        files: files.map((file, index) => normalizeSource(file, index)),
         diagnostics: [],
       },
     };

@@ -7,14 +7,14 @@
       "id": "zryna-diagnostics",
       "root": "crates/zryna-diagnostics",
       "kind": "foundation",
-      "dependencies": [],
+      "dependencies": ["zryna-source"],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
       "id": "zryna-source",
       "root": "crates/zryna-source",
       "kind": "foundation",
-      "dependencies": ["zryna-diagnostics"],
+      "dependencies": [],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
