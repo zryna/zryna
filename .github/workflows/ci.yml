@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   rust:
+    timeout-minutes: 20
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]

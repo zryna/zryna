@@ -15,6 +15,7 @@ zryna-frontend = { path = "../zryna-frontend" }
 zryna-ir = { path = "../zryna-ir" }
 zryna-native-mir = { path = "../zryna-native-mir" }
 zryna-semantics = { path = "../zryna-semantics" }
+zryna-source = { path = "../zryna-source" }
 
 [lints]
 workspace = true
