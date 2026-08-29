@@ -25,10 +25,17 @@
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
+      "id": "zryna-syntax",
+      "root": "crates/zryna-syntax",
+      "kind": "foundation",
+      "dependencies": ["zryna-diagnostics", "zryna-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
       "id": "zryna-frontend",
       "root": "crates/zryna-frontend",
       "kind": "frontend",
-      "dependencies": ["zryna-diagnostics", "zryna-source"],
+      "dependencies": ["zryna-diagnostics", "zryna-source", "zryna-syntax"],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
@@ -36,6 +43,13 @@
       "root": "crates/zryna-ir",
       "kind": "compiler",
       "dependencies": ["zryna-diagnostics", "zryna-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-semantics",
+      "root": "crates/zryna-semantics",
+      "kind": "compiler",
+      "dependencies": ["zryna-diagnostics", "zryna-ir", "zryna-source", "zryna-syntax"],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
@@ -70,7 +84,8 @@
         "zryna-diagnostics",
         "zryna-frontend",
         "zryna-ir",
-        "zryna-native-mir"
+        "zryna-native-mir",
+        "zryna-semantics"
       ],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },

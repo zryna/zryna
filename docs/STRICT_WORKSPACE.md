@@ -96,6 +96,26 @@ target predicate, workspace inheritance, or source patch. Exact kind-specific au
 require a future structured-edge contract version and is not claimed by v1. Layer-direction and
 cycle checks run over the observed Cargo union graph, not only the claimed JSON graph.
 
+The executable-syntax phase graph is registered explicitly:
+
+```text
+zryna-source ───────────────┐
+zryna-diagnostics ──────────┼→ zryna-syntax (foundation)
+
+zryna-source ───────────────┐
+zryna-diagnostics ──────────┼→ zryna-frontend (frontend)
+zryna-syntax ───────────────┘
+
+zryna-source ───────────────┐
+zryna-diagnostics ──────────┼→ zryna-semantics (compiler)
+zryna-syntax ───────────────┤
+zryna-ir ───────────────────┘
+```
+
+This graph lets providers construct untrusted DTOs while preventing semantic lowering from
+depending on provider code. Compiler-to-frontend and backend-to-frontend edges are rejected by
+the architecture validator.
+
 ## Stable architecture diagnostics
 
 ```text

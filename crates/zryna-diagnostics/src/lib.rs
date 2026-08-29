@@ -88,6 +88,17 @@ impl Diagnostic {
         Self::new(code, Severity::Warning, primary, message, guidance)
     }
 
+    /// Creates a warning whose primary location is an authoritative source span.
+    #[must_use]
+    pub fn warning_at(
+        code: impl Into<String>,
+        span: Span,
+        message: impl Into<String>,
+        guidance: impl Into<String>,
+    ) -> Self {
+        Self::new(code, Severity::Warning, PrimaryLocation::Source { span }, message, guidance)
+    }
+
     /// Converts a source-boundary failure into a stable diagnostic.
     #[must_use]
     pub fn from_source_error(error: &SourceError) -> Self {

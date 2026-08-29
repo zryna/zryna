@@ -12,9 +12,9 @@ FrontendProvider
     ├── TypeScript 7 IPC adapter (planned after a stable upstream API)
     └── native Zryna frontend (planned)
     ↓
-RawProjectSyntaxSnapshot v1
-    ↓ exact file-set, path, bound, and span verification
-ProjectSyntaxSnapshot v1
+RawProjectSyntaxSnapshot v1 (declarations) or v2 (executable syntax)
+    ↓ exact file-set, path, budget, graph, and span verification
+ProjectSyntaxSnapshot v1 or zryna_syntax::v2::ProjectSyntaxSnapshot
     ↓
 Zryna name resolution and strict semantic checking
     ↓
@@ -28,13 +28,17 @@ VerifiedProgram
     └── native MIR, codegen, object emission, and linking
 ```
 
-No provider-specific syntax-kind number, node identity, symbol identity, or type identity may cross `zryna-frontend`. Providers normalize supported syntax into ZRYNA-owned enums and records.
+No provider-specific syntax-kind number, node identity, symbol identity, or type identity may cross
+`zryna-frontend`. Protocol-v2 syntax is owned by the lower `zryna-syntax` foundation crate so
+semantic lowering never depends on a replaceable provider.
 
 ## Authority of each phase
 
 1. `zryna-architecture` proves that the repository can be inspected completely and matches its declared graph.
-2. A frontend provider reads compatible syntax and produces an immutable snapshot.
-3. Zryna lowering maps the snapshot into provider-independent syntax.
+2. A frontend provider reads compatible syntax and produces an untrusted, provider-neutral raw
+   snapshot.
+3. `zryna-syntax` verifies protocol-v2 file identity, budgets, source spans, lexical order, and the
+   canonical flat expression graph before constructing opaque executable syntax.
 4. Zryna semantics rejects unsupported dynamic constructs and assigns exact types.
 5. `zryna-ir` represents exact operations such as `I32Add`; generic target-dependent arithmetic is forbidden.
 6. The IR verifier is the only constructor of a backend-accepted verified program.
@@ -46,11 +50,14 @@ No provider-specific syntax-kind number, node identity, symbol identity, or type
 
 ```text
 source ───────────────→ diagnostics
-  └───────────────────────┐
-diagnostics ──────────────┤
-frontend contracts ───────┤
-                           ↓
-                     Zryna semantics
+  ├──────────────────────→ syntax
+  └──────────────────────→ frontend contracts ──→ syntax
+diagnostics ─────────────→ syntax
+  └──────────────────────────────────────────────┐
+source ──────────────────────────────────────────┤
+syntax ──────────────────────────────────────────┤
+                                                  ↓
+                                            Zryna semantics
                            ↓
                      verified Zryna IR
                   ┌────────────┼────────────┐
@@ -63,6 +70,10 @@ frontend contracts ───────┤
 ```
 
 `zryna-driver` is the only library allowed to orchestrate all phases. The CLI calls the driver and architecture engine; individual backends do not call one another.
+
+The permanent direction is `frontend -> syntax -> semantics -> IR`. `zryna-semantics` is a compiler
+component and cannot depend on `zryna-frontend`; backends cannot depend on either provider layer.
+The architecture engine has a negative graph fixture for both forbidden edges.
 
 ## Source and diagnostic authority
 

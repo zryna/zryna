@@ -124,7 +124,7 @@ impl Span {
 }
 
 /// Untrusted half-open UTF-8 byte range received from a wire provider.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct UntrustedSpan {
     /// Untrusted raw file identifier.

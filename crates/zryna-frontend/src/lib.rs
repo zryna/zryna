@@ -11,6 +11,9 @@ use zryna_source::{
     FileId, MAX_SOURCE_FILES, NormalizedSourcePath, SourceMap, Span, UntrustedSpan,
 };
 
+/// Provider-neutral executable syntax contract spoken by protocol-v2 providers.
+pub use zryna_syntax::v2 as syntax_v2;
+
 /// Current wire contract understood by the compiler.
 pub const FRONTEND_PROTOCOL_VERSION: u32 = 1;
 /// Maximum provider diagnostics accepted in one snapshot.
@@ -277,6 +280,23 @@ pub trait FrontendProvider: Send + Sync {
     fn analyze(&self, request: &AnalyzeRequest) -> Result<RawProjectSyntaxSnapshot, FrontendError>;
 }
 
+/// Replaceable provider that implements the executable protocol-v2 syntax contract.
+pub trait FrontendProviderV2: Send + Sync {
+    /// Negotiates provider identity and capabilities.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the provider cannot complete its handshake.
+    fn handshake(&self) -> Result<ProviderInfo, FrontendError>;
+
+    /// Produces serialized untrusted executable syntax under the protocol-v2 transport boundary.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when transport, provider execution, or snapshot production fails.
+    fn analyze_v2(&self, request: &AnalyzeRequest) -> Result<Vec<u8>, FrontendError>;
+}
+
 /// Verifies that a provider can be used by this compiler.
 ///
 /// # Errors
@@ -286,6 +306,21 @@ pub fn verify_provider(info: &ProviderInfo) -> Result<(), FrontendError> {
     if info.protocol_version != FRONTEND_PROTOCOL_VERSION {
         return Err(FrontendError::ProtocolMismatch {
             expected: FRONTEND_PROTOCOL_VERSION,
+            actual: info.protocol_version,
+        });
+    }
+    Ok(())
+}
+
+/// Verifies that a provider speaks the executable protocol-v2 contract.
+///
+/// # Errors
+///
+/// Returns a protocol mismatch when the provider does not advertise version 2 exactly.
+pub fn verify_provider_v2(info: &ProviderInfo) -> Result<(), FrontendError> {
+    if info.protocol_version != syntax_v2::PROTOCOL_VERSION {
+        return Err(FrontendError::ProtocolMismatch {
+            expected: syntax_v2::PROTOCOL_VERSION,
             actual: info.protocol_version,
         });
     }
@@ -771,5 +806,24 @@ mod tests {
                 .is_err()
         );
         assert!(decode_snapshot(br#"{"schema_version":1,"files":[{"id":-1,"path":"a.zry","functions":[]}],"diagnostics":[]}"#).is_err());
+    }
+
+    #[test]
+    fn protocol_v2_requires_an_exact_explicit_handshake() {
+        let mut info = ProviderInfo {
+            provider: "fixture".to_owned(),
+            provider_version: "1.0.0".to_owned(),
+            protocol_version: syntax_v2::PROTOCOL_VERSION,
+            capabilities: FrontendCapabilities {
+                module_resolution: false,
+                semantic_diagnostics: false,
+            },
+        };
+        assert!(verify_provider_v2(&info).is_ok());
+        assert!(verify_provider(&info).is_err());
+
+        info.protocol_version = FRONTEND_PROTOCOL_VERSION;
+        assert!(verify_provider(&info).is_ok());
+        assert!(verify_provider_v2(&info).is_err());
     }
 }

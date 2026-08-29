@@ -10,7 +10,9 @@ members = [
   "crates/zryna-frontend",
   "crates/zryna-ir",
   "crates/zryna-native-mir",
+  "crates/zryna-semantics",
   "crates/zryna-source",
+  "crates/zryna-syntax",
 ]
 
 [workspace.package]
