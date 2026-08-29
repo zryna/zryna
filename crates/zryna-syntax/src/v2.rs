@@ -1756,6 +1756,33 @@ mod tests {
     }
 
     #[test]
+    fn typescript_adapter_fixture_passes_the_authoritative_verifier() {
+        let sources = SourceMap::build(vec![
+            SourceFileInput {
+                path: "src/z-unsupported.zry".to_owned(),
+                text: "// 😀\nexport class Unsupported {}".to_owned(),
+            },
+            SourceFileInput {
+                path: "src/a-add.zry".to_owned(),
+                text: "// 😀\nexport function add(a: i32, b: any) { return a + b; }".to_owned(),
+            },
+        ])
+        .expect("adapter fixture sources must build");
+        let raw = decode_snapshot(include_bytes!(
+            "../../../tests/fixtures/typescript-adapter-v2-result.json"
+        ))
+        .expect("adapter fixture must decode");
+        let project = verify_snapshot(raw, &sources).expect("adapter fixture must verify");
+
+        assert_eq!(project.files().len(), 2);
+        assert_eq!(project.files()[0].functions()[0].name().text(), "add");
+        assert_eq!(project.files()[0].functions()[0].body().expressions().len(), 3);
+        assert_eq!(project.diagnostics().len(), 1);
+        assert_eq!(project.diagnostics()[0].code(), "ZRYNA-F2002");
+        assert!(project.is_bound_to(&sources));
+    }
+
+    #[test]
     fn decoder_rejects_unknown_missing_duplicate_trailing_and_oversized_input() {
         for bytes in [
             br#"{"schema_version":2,"files":[],"diagnostics":[],"unknown":true}"#.as_slice(),

@@ -8,7 +8,7 @@
   },
   "zryna": {
     "adapterId": "typescript-6",
-    "protocolVersion": 1,
+    "protocolVersion": 2,
     "worker": "src/worker.mjs"
   },
   "scripts": {
