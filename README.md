@@ -2,13 +2,13 @@
 
 **Zryna** (pronounced *ZREE-na*) is developed at [zryna.com](https://zryna.com).
 
-Zryna is an experimental, strict, dual-target programming language project. Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its semantics, typed intermediate representation, JavaScript output, and native output belong to Zryna.
+Zryna is an experimental, strict, three-target programming language project. Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its semantics, typed intermediate representation, JavaScript output, WebAssembly output, and native output belong to Zryna.
 
 The project is at the foundation stage. It is not yet a production compiler.
 
 ## Goal
 
-One checked source program should produce two artifacts with specified matching behavior:
+One checked source program should produce three artifacts with specified matching behavior:
 
 ```text
 .zry source
@@ -21,6 +21,7 @@ Zryna strict semantics
     ↓
 verified Universal IR
     ├── direct JavaScript backend → .js
+    ├── direct WebAssembly backend → .wasm
     └── native lowering → MIR → codegen → executable
 ```
 
@@ -30,10 +31,10 @@ The TypeScript 6 adapter is a bootstrap reader, not the language authority. It d
 
 - `any` and implicit `any` are not part of the Zryna universal profile.
 - Exact numeric types have target-independent specified behavior.
-- JavaScript and native backends consume only verified Zryna IR.
+- JavaScript, WebAssembly, and native backends consume only verified Zryna IR.
 - Backend crates never depend on a TypeScript adapter.
 - The TypeScript adapter never constructs Zryna IR.
-- Architecture validation is fail-closed; an incomplete scan never passes.
+- Architecture validation is required to fail closed; M0 remains open until adversarial scan, manifest, and dependency-graph fixtures prove that contract.
 - Build, test, package, and release flows may not provide a skip-architecture switch.
 - Generated output stays inside declared output roots.
 - Symlinks are forbidden inside controlled source components.
@@ -51,7 +52,7 @@ The repository currently establishes and tests:
 - direct JavaScript emission from verified IR;
 - native MIR lowering and textual LLVM IR emission as a backend-boundary proof.
 
-Textual LLVM IR is not yet object or executable emission. The first real native milestone will add a code-generation implementation and linker integration after MIR invariants are frozen.
+No WebAssembly backend exists yet. Textual LLVM IR is not yet object or executable emission. The first executable milestone will connect source lowering to direct JavaScript and WebAssembly emission, then add native code generation and linking, with all three targets checked for matching behavior.
 
 ## Run the foundation checks
 
