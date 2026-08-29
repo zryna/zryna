@@ -42,7 +42,7 @@
       "id": "zryna-backend-javascript",
       "root": "crates/zryna-backend-javascript",
       "kind": "backend",
-      "dependencies": ["zryna-diagnostics", "zryna-ir"],
+      "dependencies": ["zryna-diagnostics", "zryna-ir", "zryna-source"],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {

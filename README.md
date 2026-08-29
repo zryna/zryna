@@ -64,6 +64,7 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
+cargo fetch --locked
 cargo run -p zryna -- architecture check
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
