@@ -25,8 +25,9 @@ Every issue defines its problem, architecture boundary, scope, exclusions, depen
 ## M0 — Architecture Foundation
 
 Status: active audit. The implemented foundation passes its documented local checks. The
-provider-neutral executable syntax protocol is now specified and verified in core; TypeScript
-adapter emission and semantic lowering remain dependency-ordered follow-up issues. M0 remains open
+provider-neutral executable syntax protocol is now specified and verified in core, and the
+TypeScript bootstrap adapter emits it through a fail-closed boundary. Semantic lowering remains a
+dependency-ordered follow-up issue. M0 remains open
 until all security and completeness claims are independently verified.
 
 - strict repository contract and fail-closed architecture engine;
@@ -55,7 +56,7 @@ Goal: compile one `.zry` entrypoint to executable JavaScript, direct WebAssembly
 Dependency order:
 
 1. extend the lower-layer provider-neutral syntax contract with normalized function bodies, parameters, literals, returns, `bool`, and `i32`;
-2. make the TypeScript 6 adapter produce that snapshot without owning Zryna semantics;
+2. make the TypeScript 6 adapter produce that snapshot without owning Zryna semantics (implemented);
 3. add Zryna-owned name resolution, strict semantic checking, and lowering to unverified IR;
 4. reject `any`, implicit `any`, malformed provider data, and unsupported syntax with stable source diagnostics;
 5. verify exact IR operations before any backend accepts the program;

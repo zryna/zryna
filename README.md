@@ -46,16 +46,16 @@ The repository currently establishes and tests:
 
 - an authoritative `zryna.workspace.json` contract;
 - a Rust architecture validator and `zryna architecture check` command;
-- provider-neutral frontend handshake plus declaration-only protocol v1;
+- an exact provider-neutral frontend handshake and fail-closed protocol-v2 executable syntax;
 - a fail-closed executable syntax protocol v2 with a shared JSON Schema, bounded flat
   expression arenas, and source-map-backed verified Rust types;
-- an isolated TypeScript 6 syntax adapter pinned to `@typescript/typescript6@6.0.2`;
+- an isolated TypeScript 6 syntax adapter with its compiler implementation locked to `6.0.3`;
 - a verified target-neutral IR for `i32` parameters, literals, and wrapping addition;
 - direct JavaScript emission from verified IR;
 - native MIR lowering and textual LLVM IR emission as a backend-boundary proof.
 
-The TypeScript adapter still emits protocol v1: protocol v2 defines the permanent executable
-syntax boundary, but adapter emission and semantic lowering are separate follow-up issues. No
+The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
+silently producing a smaller program. Zryna-owned semantic lowering is the next separate gate. No
 WebAssembly backend exists yet. Textual LLVM IR is not yet object or executable emission. The
 first executable milestone will connect source lowering to direct JavaScript and WebAssembly
 emission, then add native code generation and linking, with all three targets checked for matching

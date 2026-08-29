@@ -101,7 +101,7 @@
     {
       "id": "typescript-6",
       "root": "adapters/typescript-6",
-      "protocolVersion": 1,
+      "protocolVersion": 2,
       "toolchain": "@typescript/typescript6@6.0.2",
       "allowedEntries": ["README.md", "package.json", "src", "test"]
     }

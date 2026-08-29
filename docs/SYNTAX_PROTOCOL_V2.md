@@ -9,8 +9,8 @@ properties that JSON Schema cannot prove.
 
 Protocol v2 is a new exact version, not a reinterpretation of protocol v1. A provider must
 advertise version `2`, return a v2-shaped response, and pass verification before its output can
-enter semantic analysis. The TypeScript 6 adapter continues to speak v1 until its dedicated
-conformance issue is complete. Existing v1 providers are never upgraded implicitly.
+enter semantic analysis. The TypeScript 6 bootstrap adapter emits this exact contract. Existing
+v1 providers are never upgraded implicitly.
 
 The initial executable subset represents:
 
@@ -54,7 +54,9 @@ The verifier additionally proves properties the schema cannot express:
 - validation diagnostics are deterministic and retain a terminal budget error.
 
 Only the opaque verified `ProjectSyntaxSnapshot` exposes compiler-consumable nodes. Raw DTOs never
-carry source authority.
+carry source authority. A snapshot containing a verified provider error is reportable but cannot
+construct `SemanticInput`; this is the compiler-owned stop gate for omitted parse or unsupported
+syntax.
 
 ## Fixed limits
 
@@ -82,11 +84,13 @@ limits are enforced during verification.
 2020-12 suite. Negative fixtures cover unknown and missing fields. Rust tests additionally cover
 duplicate fields, trailing JSON, oversized transport, exact file identity, UTF-8 boundaries,
 expression ownership and depth, deterministic diagnostic selection, and bounded sequences.
+The neutral `typescript-adapter-v2-{request,result}.json` pair is emitted byte-for-byte by the
+bootstrap adapter and accepted by the authoritative Rust decoder and source-map verifier.
 
 The schema is an interoperability aid, not a trust boundary. It mirrors field shapes, per-container
 limits, canonical decimal spellings, and the portable path rules expressible in ECMAScript regular
 expressions. The runtime additionally rejects Windows device stems, path components over 255
 bytes, case-folded path collisions, wrong file identities, and all graph/source invariants. A
 provider must therefore pass the Rust decoder and source-map-backed verifier even after schema
-validation. Adapter emission, semantic lowering, and target execution are intentionally outside
-this contract change and receive their own conformance gates.
+validation. Adapter emission has its own schema, adversarial, Unicode, determinism, and platform
+conformance suite. Semantic lowering and target execution remain separate gates.
