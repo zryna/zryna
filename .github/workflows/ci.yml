@@ -25,7 +25,8 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
 
-  adapter:
+  adapter-platform:
+    name: adapter (${{ matrix.os }})
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -42,3 +43,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm adapter:check
       - run: pnpm adapter:test
+
+  adapter:
+    name: adapter
+    if: always()
+    needs: adapter-platform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify adapter platforms
+        env:
+          PLATFORM_RESULT: ${{ needs.adapter-platform.result }}
+        run: test "$PLATFORM_RESULT" = success
