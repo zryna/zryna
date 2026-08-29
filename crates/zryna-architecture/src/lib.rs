@@ -382,7 +382,11 @@ pub fn validate_workspace(root: &Path) -> ValidationReport {
 fn validation_report(diagnostics: ValidationDiagnostics) -> ValidationReport {
     let mut values = diagnostics.into_vec();
     values.sort_by(|left, right| {
-        (&left.code, &left.path, &left.message).cmp(&(&right.code, &right.path, &right.message))
+        (left.code(), left.path(), left.message()).cmp(&(
+            right.code(),
+            right.path(),
+            right.message(),
+        ))
     });
     ValidationReport { diagnostics: values }
 }
@@ -3404,10 +3408,10 @@ windows_alias = { package = "base-windows", path = "../base-windows" }
 
         let diagnostics = diagnostics.into_vec();
         assert!(diagnostics.iter().any(|diagnostic| {
-            diagnostic.code == "ZRYNA-A1005" && diagnostic.path.as_deref() == Some("Cargo.lock")
+            diagnostic.code == "ZRYNA-A1005" && diagnostic.path() == Some("Cargo.lock")
         }));
         assert!(diagnostics.iter().any(|diagnostic| {
-            diagnostic.code == "ZRYNA-A1005" && diagnostic.path.as_deref() == Some("crates/rogue")
+            diagnostic.code == "ZRYNA-A1005" && diagnostic.path() == Some("crates/rogue")
         }));
         Ok(())
     }
@@ -3430,7 +3434,7 @@ windows_alias = { package = "base-windows", path = "../base-windows" }
         validate_paths(&canonical_root, &contract, &mut diagnostics);
 
         assert!(diagnostics.into_vec().iter().any(|diagnostic| {
-            diagnostic.code == "ZRYNA-A1003" && diagnostic.path.as_deref() == Some("crates/sample")
+            diagnostic.code == "ZRYNA-A1003" && diagnostic.path() == Some("crates/sample")
         }));
         Ok(())
     }

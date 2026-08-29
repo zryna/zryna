@@ -95,11 +95,18 @@ pub const fn javascript_type(ty: Type) -> &'static str {
 #[cfg(test)]
 mod tests {
     use zryna_ir::{Expr, ExprId, ExprKind, Function, Program, Type, verify};
-    use zryna_source::{FileId, Span};
+    use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 
     #[test]
     fn emits_wrapping_i32_addition() {
-        let span = Span { file: FileId(0), start: 0, end: 1 };
+        let sources = SourceMap::build(vec![SourceFileInput {
+            path: "src/add.zry".to_owned(),
+            text: "x".to_owned(),
+        }])
+        .expect("fixture source map must be valid");
+        let path = NormalizedSourcePath::new("src/add.zry").expect("fixture path must be valid");
+        let file = sources.file_id(&path).expect("fixture file must exist");
+        let span = sources.span(file, 0, 1).expect("fixture span must be valid");
         let program = Program {
             functions: vec![Function {
                 name: "add".to_owned(),
@@ -117,7 +124,7 @@ mod tests {
                 body: ExprId(2),
             }],
         };
-        let Ok(verified) = verify(program) else {
+        let Ok(verified) = verify(program, &sources) else {
             panic!("test IR must be valid");
         };
         let Ok(artifact) = super::emit(&verified) else {

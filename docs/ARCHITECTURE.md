@@ -12,6 +12,8 @@ FrontendProvider
     ├── TypeScript 7 IPC adapter (planned after a stable upstream API)
     └── native Zryna frontend (planned)
     ↓
+RawProjectSyntaxSnapshot v1
+    ↓ exact file-set, path, bound, and span verification
 ProjectSyntaxSnapshot v1
     ↓
 Zryna name resolution and strict semantic checking
@@ -43,9 +45,10 @@ No provider-specific syntax-kind number, node identity, symbol identity, or type
 ## Dependency direction
 
 ```text
-diagnostics ───────────────┐
-source ────────────────────┤
-frontend contracts ────────┤
+source ───────────────→ diagnostics
+  └───────────────────────┐
+diagnostics ──────────────┤
+frontend contracts ───────┤
                            ↓
                      Zryna semantics
                            ↓
@@ -60,6 +63,25 @@ frontend contracts ────────┤
 ```
 
 `zryna-driver` is the only library allowed to orchestrate all phases. The CLI calls the driver and architecture engine; individual backends do not call one another.
+
+## Source and diagnostic authority
+
+`zryna-source` is below diagnostics and every provider. One immutable bounded `SourceMap` owns
+the exact UTF-8 text and assigns dense snapshot-local `FileId` values after normalized path
+sorting. Source paths are portable workspace-relative ASCII with `/` separators and an
+ASCII-case-folded uniqueness identity. Host filesystem path behavior is never used to interpret
+provider paths.
+
+All internal spans are zero-based half-open UTF-8 byte ranges. Opaque `FileId` and `Span` values
+retain the issuing source-map identity. A span is authoritative only when constructed or resolved
+through that exact `SourceMap`, which proves the file exists and both endpoints are ordered, in
+bounds, and UTF-8 character boundaries. Source content is never normalized.
+
+Diagnostics use one primary-location variant: source span, workspace path, or global. Source
+diagnostics are resolved and sorted through the source map before stable text or versioned JSON
+is emitted; a forged or mismatched span fails rendering rather than producing a misleading path.
+IR verification also resolves every expression span with the compilation source map before it can
+construct `VerifiedProgram`.
 
 ## Initial numeric contract
 

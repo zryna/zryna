@@ -48,3 +48,63 @@ test('handshake and normalized function snapshot stay provider-neutral', async (
   assert.deepEqual(responses[1].result.files[0].functions[0].return_type, { named: 'i32' });
   assert.equal('kind' in responses[1].result.files[0].functions[0], false);
 });
+
+test('converts TypeScript UTF-16 positions into authoritative UTF-8 byte offsets', async () => {
+  const text = '// 😀 café\nexport function add(a: i32, b: i32): i32 { return a + b; }';
+  const [response] = await exchange([
+    {
+      id: 1,
+      method: 'analyze',
+      params: { schema_version: 1, files: [{ path: 'src/unicode.zry', text }] },
+    },
+  ]);
+
+  const span = response.result.files[0].functions[0].span;
+  assert.deepEqual(span, {
+    file: 0,
+    start: 14,
+    end: Buffer.byteLength(text, 'utf8'),
+  });
+  assert.equal(text.slice(0, 11), '// 😀 café\n');
+});
+
+test('assigns file identifiers by stable path order', async () => {
+  const source = 'export function value(): i32 { return 1; }';
+  const [response] = await exchange([
+    {
+      id: 1,
+      method: 'analyze',
+      params: {
+        schema_version: 1,
+        files: [
+          { path: 'src/z.zry', text: source },
+          { path: 'src/a.zry', text: source },
+        ],
+      },
+    },
+  ]);
+
+  assert.deepEqual(
+    response.result.files.map((file) => [file.id, file.path]),
+    [
+      [0, 'src/a.zry'],
+      [1, 'src/z.zry'],
+    ],
+  );
+});
+
+test('rejects source text containing an unpaired surrogate', async () => {
+  const [response] = await exchange([
+    {
+      id: 1,
+      method: 'analyze',
+      params: {
+        schema_version: 1,
+        files: [{ path: 'src/bad.zry', text: '\ud800' }],
+      },
+    },
+  ]);
+
+  assert.equal(response.error.code, 'ZRYNA-F1001');
+  assert.match(response.error.message, /unpaired UTF-16 surrogate/);
+});

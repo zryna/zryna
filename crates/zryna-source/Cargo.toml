@@ -8,7 +8,9 @@ repository.workspace = true
 
 [dependencies]
 serde.workspace = true
-zryna-diagnostics = { path = "../zryna-diagnostics" }
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true

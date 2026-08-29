@@ -8,6 +8,8 @@ repository.workspace = true
 
 [dependencies]
 serde.workspace = true
+serde_json.workspace = true
+zryna-source = { path = "../zryna-source" }
 
 [lints]
 workspace = true

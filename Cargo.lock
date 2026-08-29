@@ -417,6 +417,8 @@ name = "zryna-diagnostics"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
+ "zryna-source",
 ]
 
 [[package]]
@@ -437,6 +439,7 @@ name = "zryna-frontend"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "thiserror",
  "zryna-diagnostics",
  "zryna-source",
@@ -464,5 +467,5 @@ name = "zryna-source"
 version = "0.1.0"
 dependencies = [
  "serde",
- "zryna-diagnostics",
+ "serde_json",
 ]
