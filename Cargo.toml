@@ -1,16 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-  "apps/uts-cli",
-  "crates/uts-architecture",
-  "crates/uts-backend-javascript",
-  "crates/uts-backend-native",
-  "crates/uts-diagnostics",
-  "crates/uts-driver",
-  "crates/uts-frontend",
-  "crates/uts-ir",
-  "crates/uts-native-mir",
-  "crates/uts-source",
+  "apps/zryna",
+  "crates/zryna-architecture",
+  "crates/zryna-backend-javascript",
+  "crates/zryna-backend-native",
+  "crates/zryna-diagnostics",
+  "crates/zryna-driver",
+  "crates/zryna-frontend",
+  "crates/zryna-ir",
+  "crates/zryna-native-mir",
+  "crates/zryna-source",
 ]
 
 [workspace.package]
@@ -18,8 +18,8 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
-repository = "https://github.com/bestmaa/uts-lang"
-homepage = "https://github.com/bestmaa/uts-lang"
+repository = "https://github.com/bestmaa/zryna"
+homepage = "https://zryna.com"
 authors = ["Aditya Nandlal"]
 
 [workspace.dependencies]

@@ -96,7 +96,7 @@ for await (const line of lines) {
     writeResponse({
       id: Number.isInteger(request?.id) ? request.id : null,
       error: {
-        code: 'UTS-F1001',
+        code: 'ZRYNA-F1001',
         message: error instanceof Error ? error.message : String(error),
       },
     });

@@ -4,7 +4,7 @@
 
 The bootstrap adapter uses the public TypeScript 6 API to avoid reimplementing parsing, source locations, basic declarations, and module semantics before the first backend slice exists. It is selected for available API access, not runtime speed.
 
-The adapter is pinned exactly and isolated behind protocol version 1. It may return only UTS-owned normalized data. UTS semantics remain authoritative.
+The adapter is pinned exactly and isolated behind protocol version 1. It may return only ZRYNA-owned normalized data. Zryna semantics remain authoritative.
 
 ## TypeScript 7 readiness
 
@@ -15,19 +15,19 @@ Provider selection is capability-based:
 ```text
 handshake
 ├── provider identity and exact version
-├── UTS protocol version
+├── Zryna protocol version
 ├── module-resolution capability
 └── semantic-diagnostics capability
 ```
 
 A provider version mismatch, crash, malformed message, incomplete snapshot, or unsupported syntax fails closed.
 
-## Migration to a native UTS frontend
+## Migration to a native Zryna frontend
 
 The permanent path is:
 
 ```text
-native UTS lexer → parser → resolver → ProjectSyntaxSnapshot v1
+native Zryna lexer → parser → resolver → ProjectSyntaxSnapshot v1
 ```
 
-Because all later phases depend on the UTS-owned snapshot and IR, replacing the bootstrap provider must not modify either backend.
+Because all later phases depend on the ZRYNA-owned snapshot and IR, replacing the bootstrap provider must not modify either backend.

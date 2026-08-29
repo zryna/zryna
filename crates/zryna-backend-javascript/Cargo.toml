@@ -1,0 +1,17 @@
+[package]
+name = "zryna-backend-javascript"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+zryna-diagnostics = { path = "../zryna-diagnostics" }
+zryna-ir = { path = "../zryna-ir" }
+
+[dev-dependencies]
+zryna-source = { path = "../zryna-source" }
+
+[lints]
+workspace = true

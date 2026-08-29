@@ -315,100 +315,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
-name = "uts-architecture"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "toml",
- "uts-diagnostics",
-]
-
-[[package]]
-name = "uts-backend-javascript"
-version = "0.1.0"
-dependencies = [
- "uts-diagnostics",
- "uts-ir",
- "uts-source",
-]
-
-[[package]]
-name = "uts-backend-native"
-version = "0.1.0"
-dependencies = [
- "uts-diagnostics",
- "uts-native-mir",
-]
-
-[[package]]
-name = "uts-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "serde_json",
- "uts-architecture",
- "uts-diagnostics",
- "uts-driver",
-]
-
-[[package]]
-name = "uts-diagnostics"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "uts-driver"
-version = "0.1.0"
-dependencies = [
- "uts-architecture",
- "uts-backend-javascript",
- "uts-backend-native",
- "uts-diagnostics",
- "uts-frontend",
- "uts-ir",
- "uts-native-mir",
-]
-
-[[package]]
-name = "uts-frontend"
-version = "0.1.0"
-dependencies = [
- "serde",
- "thiserror",
- "uts-diagnostics",
- "uts-source",
-]
-
-[[package]]
-name = "uts-ir"
-version = "0.1.0"
-dependencies = [
- "serde",
- "uts-diagnostics",
- "uts-source",
-]
-
-[[package]]
-name = "uts-native-mir"
-version = "0.1.0"
-dependencies = [
- "uts-diagnostics",
- "uts-ir",
-]
-
-[[package]]
-name = "uts-source"
-version = "0.1.0"
-dependencies = [
- "serde",
- "uts-diagnostics",
-]
-
-[[package]]
 name = "windows-link"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -440,3 +346,97 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[package]]
+name = "zryna"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "serde_json",
+ "zryna-architecture",
+ "zryna-diagnostics",
+ "zryna-driver",
+]
+
+[[package]]
+name = "zryna-architecture"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "toml",
+ "zryna-diagnostics",
+]
+
+[[package]]
+name = "zryna-backend-javascript"
+version = "0.1.0"
+dependencies = [
+ "zryna-diagnostics",
+ "zryna-ir",
+ "zryna-source",
+]
+
+[[package]]
+name = "zryna-backend-native"
+version = "0.1.0"
+dependencies = [
+ "zryna-diagnostics",
+ "zryna-native-mir",
+]
+
+[[package]]
+name = "zryna-diagnostics"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "zryna-driver"
+version = "0.1.0"
+dependencies = [
+ "zryna-architecture",
+ "zryna-backend-javascript",
+ "zryna-backend-native",
+ "zryna-diagnostics",
+ "zryna-frontend",
+ "zryna-ir",
+ "zryna-native-mir",
+]
+
+[[package]]
+name = "zryna-frontend"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror",
+ "zryna-diagnostics",
+ "zryna-source",
+]
+
+[[package]]
+name = "zryna-ir"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "zryna-diagnostics",
+ "zryna-source",
+]
+
+[[package]]
+name = "zryna-native-mir"
+version = "0.1.0"
+dependencies = [
+ "zryna-diagnostics",
+ "zryna-ir",
+]
+
+[[package]]
+name = "zryna-source"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "zryna-diagnostics",
+]

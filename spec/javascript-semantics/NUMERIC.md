@@ -1,6 +1,6 @@
 # JavaScript numeric lowering
 
-The JavaScript backend preserves exact UTS operations rather than erasing every numeric type to unconstrained JavaScript `number` behavior.
+The JavaScript backend preserves exact Zryna operations rather than erasing every numeric type to unconstrained JavaScript `number` behavior.
 
 Initial mapping:
 

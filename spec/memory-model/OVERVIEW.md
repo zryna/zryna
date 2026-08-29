@@ -14,6 +14,6 @@ The planned no-GC profile uses:
 
 No-GC does not mean no heap. It means that native lifetime management does not require a tracing collector.
 
-JavaScript output runs inside a JavaScript engine and therefore uses that engine's memory management. UTS source-level move and ownership rules may still be enforced to keep cross-target behavior predictable.
+JavaScript output runs inside a JavaScript engine and therefore uses that engine's memory management. Zryna source-level move and ownership rules may still be enforced to keep cross-target behavior predictable.
 
 String encoding and indexing semantics must be specified before an owned string runtime is implemented.

@@ -1,12 +1,12 @@
 {
-  "name": "@uts/adapter-typescript-6",
+  "name": "@zryna/adapter-typescript-6",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22.13.0"
   },
-  "uts": {
+  "zryna": {
     "adapterId": "typescript-6",
     "protocolVersion": 1,
     "worker": "src/worker.mjs"

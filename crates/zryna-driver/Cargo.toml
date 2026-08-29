@@ -1,0 +1,19 @@
+[package]
+name = "zryna-driver"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+zryna-architecture = { path = "../zryna-architecture" }
+zryna-backend-javascript = { path = "../zryna-backend-javascript" }
+zryna-backend-native = { path = "../zryna-backend-native" }
+zryna-diagnostics = { path = "../zryna-diagnostics" }
+zryna-frontend = { path = "../zryna-frontend" }
+zryna-ir = { path = "../zryna-ir" }
+zryna-native-mir = { path = "../zryna-native-mir" }
+
+[lints]
+workspace = true

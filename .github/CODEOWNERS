@@ -1,6 +1,6 @@
-/uts.workspace.json @bestmaa
+/zryna.workspace.json @bestmaa
 /Cargo.toml @bestmaa
 /schemas/ @bestmaa
-/crates/uts-architecture/ @bestmaa
+/crates/zryna-architecture/ @bestmaa
 /.github/ @bestmaa
 /adapters/ @bestmaa
