@@ -94,7 +94,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Strict workspace contract](docs/STRIC
 Zryna is an independent project and is not affiliated with, endorsed by, or sponsored by Microsoft. TypeScript is a trademark of the Microsoft group of companies. Compatibility references describe technical interoperability only.
 
 - Website: [zryna.com](https://zryna.com)
-- Source: [github.com/bestmaa/zryna](https://github.com/bestmaa/zryna)
+- Source: [github.com/zryna/zryna](https://github.com/zryna/zryna)
 
 ## License
 
