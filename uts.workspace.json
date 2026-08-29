@@ -1,0 +1,95 @@
+{
+  "$schema": "./schemas/uts-workspace-v1.schema.json",
+  "version": 1,
+  "profile": "uts-compiler-workspace-v1",
+  "members": [
+    {
+      "id": "uts-diagnostics",
+      "root": "crates/uts-diagnostics",
+      "kind": "foundation",
+      "dependencies": [],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-source",
+      "root": "crates/uts-source",
+      "kind": "foundation",
+      "dependencies": ["uts-diagnostics"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-architecture",
+      "root": "crates/uts-architecture",
+      "kind": "foundation",
+      "dependencies": ["uts-diagnostics"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-frontend",
+      "root": "crates/uts-frontend",
+      "kind": "frontend",
+      "dependencies": ["uts-diagnostics", "uts-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-ir",
+      "root": "crates/uts-ir",
+      "kind": "compiler",
+      "dependencies": ["uts-diagnostics", "uts-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-backend-javascript",
+      "root": "crates/uts-backend-javascript",
+      "kind": "backend",
+      "dependencies": ["uts-diagnostics", "uts-ir"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-native-mir",
+      "root": "crates/uts-native-mir",
+      "kind": "compiler",
+      "dependencies": ["uts-diagnostics", "uts-ir"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-backend-native",
+      "root": "crates/uts-backend-native",
+      "kind": "backend",
+      "dependencies": ["uts-diagnostics", "uts-native-mir"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-driver",
+      "root": "crates/uts-driver",
+      "kind": "orchestrator",
+      "dependencies": [
+        "uts-architecture",
+        "uts-backend-javascript",
+        "uts-backend-native",
+        "uts-diagnostics",
+        "uts-frontend",
+        "uts-ir",
+        "uts-native-mir"
+      ],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "uts-cli",
+      "root": "apps/uts-cli",
+      "kind": "application",
+      "dependencies": ["uts-architecture", "uts-diagnostics", "uts-driver"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    }
+  ],
+  "adapters": [
+    {
+      "id": "typescript-6",
+      "root": "adapters/typescript-6",
+      "protocolVersion": 1,
+      "toolchain": "@typescript/typescript6@6.0.2",
+      "allowedEntries": ["README.md", "package.json", "src", "test"]
+    }
+  ],
+  "outputs": ["target", ".uts/cache", ".uts/out"]
+}

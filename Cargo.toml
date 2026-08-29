@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+members = [
+  "apps/uts-cli",
+  "crates/uts-architecture",
+  "crates/uts-backend-javascript",
+  "crates/uts-backend-native",
+  "crates/uts-diagnostics",
+  "crates/uts-driver",
+  "crates/uts-frontend",
+  "crates/uts-ir",
+  "crates/uts-native-mir",
+  "crates/uts-source",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/bestmaa/uts-lang"
+homepage = "https://github.com/bestmaa/uts-lang"
+authors = ["Aditya Nandlal"]
+
+[workspace.dependencies]
+anyhow = "1.0.99"
+clap = { version = "4.5.47", features = ["derive"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
+thiserror = "2.0.16"
+toml = "0.9.5"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+rust_2018_idioms = { level = "deny", priority = -1 }
+unused_lifetimes = "deny"
+unused_qualifications = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"

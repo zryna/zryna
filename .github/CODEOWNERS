@@ -1,0 +1,6 @@
+/uts.workspace.json @bestmaa
+/Cargo.toml @bestmaa
+/schemas/ @bestmaa
+/crates/uts-architecture/ @bestmaa
+/.github/ @bestmaa
+/adapters/ @bestmaa

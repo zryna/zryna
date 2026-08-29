@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "bootstrap": {
+    "package": "@typescript/typescript6",
+    "version": "6.0.2",
+    "role": "frontend-adapter"
+  },
+  "shadow": {
+    "package": "typescript",
+    "version": "7.0.2",
+    "role": "cli-compatibility"
+  }
+}

@@ -1,0 +1,19 @@
+[package]
+name = "uts-driver"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+uts-architecture = { path = "../uts-architecture" }
+uts-backend-javascript = { path = "../uts-backend-javascript" }
+uts-backend-native = { path = "../uts-backend-native" }
+uts-diagnostics = { path = "../uts-diagnostics" }
+uts-frontend = { path = "../uts-frontend" }
+uts-ir = { path = "../uts-ir" }
+uts-native-mir = { path = "../uts-native-mir" }
+
+[lints]
+workspace = true

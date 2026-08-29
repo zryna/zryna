@@ -1,0 +1,17 @@
+[package]
+name = "uts-backend-javascript"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+uts-diagnostics = { path = "../uts-diagnostics" }
+uts-ir = { path = "../uts-ir" }
+
+[dev-dependencies]
+uts-source = { path = "../uts-source" }
+
+[lints]
+workspace = true
