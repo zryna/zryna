@@ -19,7 +19,35 @@ The check fails when it cannot prove correctness. It rejects:
 
 There is no skip flag. Official build and release automation must run the same engine before any compiler phase.
 
-Each member and adapter declares its allowed immediate files and directories. Generated `.git`, `.zry`, `dist`, `node_modules`, and `target` directories are excluded from source inspection; every other inspected repository entry is bounded, readable, regular, and non-symlinked. A structural addition therefore requires a deliberate contract edit instead of becoming architecture by accident.
+Each member and adapter declares its allowed immediate files and directories. The scanner inspects an entry's metadata before excluding generated content. It excludes only these exact paths:
+
+- root `.git`, which may be the regular file used by a Git worktree or a real directory;
+- root `target` and root `node_modules`;
+- each registered adapter's immediate `node_modules` directory;
+- the declared `.zryna/cache` and `.zryna/out` directories.
+
+An excluded directory must still be a real directory. A symlink, Windows reparse point, socket, FIFO, device, or other special file at an excluded path fails validation. Names such as nested `target`, `dist`, and nested unregistered `node_modules` remain controlled content; for example, `crates/example/src/target` is inspected normally. Unexpected content such as `.zryna/other` is also inspected instead of inheriting an output exemption.
+
+## Bounded stable inspection
+
+Every controlled regular file, including the workspace contract and component manifests, is read as UTF-8 through the same stable reader. The reader opens final file components without following links, compares safe file handles before reading, bounds the read, and compares the open handle and current path again after reading. Unix uses no-follow, non-blocking file opens. Windows opens reparse points themselves, rejects every reparse attribute, denies new write/delete sharing while the handle is held, and compares volume/file identifiers through safe file handles.
+
+The production budgets are:
+
+| Budget | Limit |
+| --- | ---: |
+| Workspace contract | 1 MiB |
+| Cargo or adapter manifest | 1 MiB |
+| Other controlled file | 2 MiB |
+| Aggregate controlled bytes | 64 MiB |
+| Filesystem entries | 50,000 |
+| Directory depth | 32 |
+| Registered members plus adapters | 256 |
+| Validation diagnostics | 256, including the terminal budget diagnostic |
+
+Entry traversal and later structural directory checks are sorted before diagnostics are selected. Exhausting any validation budget emits `ZRYNA-A1204`, halts all remaining traversal, and prevents later architecture validators from reading the incomplete workspace. A structural addition therefore requires a deliberate contract edit instead of becoming architecture by accident.
+
+The implementation detects persistent links/reparse points, final-component replacement, and ordinary modification/replacement races. It is not an operating-system sandbox against a hostile process concurrently replacing an ancestor directory: Rust's standard filesystem API does not provide one portable atomic directory-handle walker. That stronger property requires a future capability-based, handle-relative walker on each supported operating system. Builds must therefore validate a workspace not being concurrently mutated by an untrusted process.
 
 ## Stable architecture diagnostics
 
