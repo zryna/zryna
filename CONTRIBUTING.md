@@ -13,6 +13,7 @@ Before changing a component:
 Run every required check before submitting a change:
 
 ```bash
+cargo fetch --locked
 cargo run -p zryna -- architecture check
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings

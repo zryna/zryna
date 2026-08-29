@@ -19,6 +19,7 @@ jobs:
         with:
           toolchain: 1.97.1
           components: rustfmt, clippy
+      - run: cargo fetch --locked
       - run: cargo run -p zryna -- architecture check
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
