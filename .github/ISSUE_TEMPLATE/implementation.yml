@@ -1,0 +1,69 @@
+name: Implementation task
+description: Propose one dependency-ready compiler, runtime, tooling, or documentation change.
+title: ""
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the observable gap without prescribing an unrelated redesign.
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Architecture boundary
+      description: Name the component that owns the behavior and the dependency directions that must remain intact.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List the behavior this issue will implement.
+    validations:
+      required: true
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Out of scope
+      description: List adjacent behavior that this issue deliberately will not implement.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Link prerequisite issues or state that none exist.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Provide observable, testable completion conditions.
+      value: "- [ ] "
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Required verification
+      description: List positive, negative, cross-target, and portability checks required for this change.
+    validations:
+      required: true
+  - type: textarea
+    id: documentation
+    attributes:
+      label: Documentation impact
+      description: State which compiler or website documentation must change, or explain why none changes.
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and runtime impact
+      description: Describe input, filesystem, process, linker, ABI, capability, or unsafe-code implications.
+    validations:
+      required: true
