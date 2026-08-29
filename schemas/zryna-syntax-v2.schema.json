@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zryna.com/schemas/zryna-syntax-v2.schema.json",
+  "title": "Zryna provider-neutral executable syntax protocol v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "files", "diagnostics"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "files": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": { "$ref": "#/$defs/sourceUnit" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "u32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "start", "end"],
+      "properties": {
+        "file": { "$ref": "#/$defs/u32" },
+        "start": { "$ref": "#/$defs/u32" },
+        "end": { "$ref": "#/$defs/u32" }
+      }
+    },
+    "identifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "span"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "typeKind": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "missing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": { "const": "named" },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024,
+              "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+            }
+          }
+        }
+      ]
+    },
+    "typeSyntax": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span", "kind"],
+      "properties": {
+        "span": { "$ref": "#/$defs/span" },
+        "kind": { "$ref": "#/$defs/typeKind" }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span", "name", "type_syntax"],
+      "properties": {
+        "span": { "$ref": "#/$defs/span" },
+        "name": { "$ref": "#/$defs/identifier" },
+        "type_syntax": { "$ref": "#/$defs/typeSyntax" }
+      }
+    },
+    "expressionKind": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": { "const": "reference" },
+            "name": { "$ref": "#/$defs/identifier" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "bool-literal" },
+            "value": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "spelling"],
+          "properties": {
+            "kind": { "const": "i32-literal" },
+            "spelling": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^(0|-?[1-9][0-9]*)$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "operator_span", "lhs", "rhs"],
+          "properties": {
+            "kind": { "const": "addition" },
+            "operator_span": { "$ref": "#/$defs/span" },
+            "lhs": { "$ref": "#/$defs/u32" },
+            "rhs": { "$ref": "#/$defs/u32" }
+          }
+        }
+      ]
+    },
+    "expression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span", "kind"],
+      "properties": {
+        "span": { "$ref": "#/$defs/span" },
+        "kind": { "$ref": "#/$defs/expressionKind" }
+      }
+    },
+    "statementKind": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "keyword_span", "value"],
+          "properties": {
+            "kind": { "const": "return" },
+            "keyword_span": { "$ref": "#/$defs/span" },
+            "value": { "$ref": "#/$defs/u32" }
+          }
+        }
+      ]
+    },
+    "statement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span", "kind"],
+      "properties": {
+        "span": { "$ref": "#/$defs/span" },
+        "kind": { "$ref": "#/$defs/statementKind" }
+      }
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span", "statements", "expressions"],
+      "properties": {
+        "span": { "$ref": "#/$defs/span" },
+        "statements": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": { "$ref": "#/$defs/statement" }
+        },
+        "expressions": {
+          "type": "array",
+          "maxItems": 16384,
+          "items": { "$ref": "#/$defs/expression" }
+        }
+      }
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span", "export_span", "function_span", "name", "parameters", "result_type", "body"],
+      "properties": {
+        "span": { "$ref": "#/$defs/span" },
+        "export_span": { "$ref": "#/$defs/span" },
+        "function_span": { "$ref": "#/$defs/span" },
+        "name": { "$ref": "#/$defs/identifier" },
+        "parameters": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/parameter" }
+        },
+        "result_type": { "$ref": "#/$defs/typeSyntax" },
+        "body": { "$ref": "#/$defs/body" }
+      }
+    },
+    "sourceUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "functions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/u32" },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "allOf": [
+            {
+              "pattern": "^(?!/)(?!(?:[^/]*/){32})(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[. ](?:/|$))(?!.*[\\\\<>:\"|?*])[\\x20-\\x7E]+$"
+            },
+            { "pattern": "^(?![^/]{256})(?!.*\\/[^/]{256}).*$" },
+            {
+              "pattern": "^(?!.*(?:^|/)(?:[cC][oO][nN]|[pP][rR][nN]|[aA][uU][xX]|[nN][uU][lL]|[cC][oO][mM][1-9]|[lL][pP][tT][1-9])(?:\\.[^/]*)?(?:/|$)).*$"
+            }
+          ]
+        },
+        "functions": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": { "$ref": "#/$defs/function" }
+        }
+      }
+    },
+    "diagnosticLocation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "global" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "span"],
+          "properties": {
+            "kind": { "const": "source" },
+            "span": { "$ref": "#/$defs/span" }
+          }
+        }
+      ]
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "location", "message", "guidance"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "severity": { "enum": ["error", "warning"] },
+        "location": { "$ref": "#/$defs/diagnosticLocation" },
+        "message": { "type": "string", "maxLength": 4096 },
+        "guidance": { "type": "string", "maxLength": 4096 }
+      }
+    }
+  }
+}

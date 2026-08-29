@@ -432,6 +432,7 @@ dependencies = [
  "zryna-frontend",
  "zryna-ir",
  "zryna-native-mir",
+ "zryna-semantics",
 ]
 
 [[package]]
@@ -443,6 +444,7 @@ dependencies = [
  "thiserror",
  "zryna-diagnostics",
  "zryna-source",
+ "zryna-syntax",
 ]
 
 [[package]]
@@ -463,9 +465,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "zryna-semantics"
+version = "0.1.0"
+dependencies = [
+ "zryna-diagnostics",
+ "zryna-ir",
+ "zryna-source",
+ "zryna-syntax",
+]
+
+[[package]]
 name = "zryna-source"
 version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "zryna-syntax"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "zryna-diagnostics",
+ "zryna-source",
 ]

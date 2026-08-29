@@ -24,7 +24,10 @@ Every issue defines its problem, architecture boundary, scope, exclusions, depen
 
 ## M0 — Architecture Foundation
 
-Status: active audit. The implemented foundation passes its documented local checks, but M0 remains open until its security and completeness claims are independently verified.
+Status: active audit. The implemented foundation passes its documented local checks. The
+provider-neutral executable syntax protocol is now specified and verified in core; TypeScript
+adapter emission and semantic lowering remain dependency-ordered follow-up issues. M0 remains open
+until all security and completeness claims are independently verified.
 
 - strict repository contract and fail-closed architecture engine;
 - stable diagnostics and source spans;

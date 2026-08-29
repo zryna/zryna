@@ -46,13 +46,20 @@ The repository currently establishes and tests:
 
 - an authoritative `zryna.workspace.json` contract;
 - a Rust architecture validator and `zryna architecture check` command;
-- provider-neutral frontend handshake and snapshot types;
+- provider-neutral frontend handshake plus declaration-only protocol v1;
+- a fail-closed executable syntax protocol v2 with a shared JSON Schema, bounded flat
+  expression arenas, and source-map-backed verified Rust types;
 - an isolated TypeScript 6 syntax adapter pinned to `@typescript/typescript6@6.0.2`;
 - a verified target-neutral IR for `i32` parameters, literals, and wrapping addition;
 - direct JavaScript emission from verified IR;
 - native MIR lowering and textual LLVM IR emission as a backend-boundary proof.
 
-No WebAssembly backend exists yet. Textual LLVM IR is not yet object or executable emission. The first executable milestone will connect source lowering to direct JavaScript and WebAssembly emission, then add native code generation and linking, with all three targets checked for matching behavior.
+The TypeScript adapter still emits protocol v1: protocol v2 defines the permanent executable
+syntax boundary, but adapter emission and semantic lowering are separate follow-up issues. No
+WebAssembly backend exists yet. Textual LLVM IR is not yet object or executable emission. The
+first executable milestone will connect source lowering to direct JavaScript and WebAssembly
+emission, then add native code generation and linking, with all three targets checked for matching
+behavior.
 
 ## Run the foundation checks
 
@@ -71,6 +78,8 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 pnpm adapter:check
 pnpm adapter:test
+pnpm protocol:check
+pnpm protocol:test
 ```
 
 ## Repository map
@@ -89,7 +98,9 @@ toolchains/  pinned upstream toolchain metadata, never patched source
 editors/     future thin editor integrations
 ```
 
-See [Architecture](docs/ARCHITECTURE.md), [Strict workspace contract](docs/STRICT_WORKSPACE.md), [Frontend providers](docs/FRONTENDS.md), and [Roadmap](docs/ROADMAP.md).
+See [Architecture](docs/ARCHITECTURE.md), [Syntax protocol v2](docs/SYNTAX_PROTOCOL_V2.md),
+[Strict workspace contract](docs/STRICT_WORKSPACE.md), [Frontend providers](docs/FRONTENDS.md), and
+[Roadmap](docs/ROADMAP.md).
 
 ## Project identity
 

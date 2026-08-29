@@ -8,6 +8,11 @@
   },
   "scripts": {
     "adapter:check": "pnpm --filter @zryna/adapter-typescript-6 check",
-    "adapter:test": "pnpm --filter @zryna/adapter-typescript-6 test"
+    "adapter:test": "pnpm --filter @zryna/adapter-typescript-6 test",
+    "protocol:check": "node --check tests/syntax-protocol-v2.test.mjs",
+    "protocol:test": "node --test tests/syntax-protocol-v2.test.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1"
   }
 }
