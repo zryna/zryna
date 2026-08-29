@@ -1,11 +1,11 @@
 # Contributing
 
-UTS accepts focused changes that preserve the architecture contract and accurately describe implemented behavior.
+Zryna accepts focused changes that preserve the architecture contract and accurately describe implemented behavior.
 
 Before changing a component:
 
 1. read `README.md`, `docs/ARCHITECTURE.md`, and `docs/STRICT_WORKSPACE.md`;
-2. confirm that the component is registered in `uts.workspace.json`;
+2. confirm that the component is registered in `zryna.workspace.json`;
 3. preserve the declared dependency direction;
 4. add stable diagnostics and tests for rejected input;
 5. avoid claims for unsupported compiler or platform behavior.
@@ -13,7 +13,7 @@ Before changing a component:
 Run every required check before submitting a change:
 
 ```bash
-cargo run -p uts-cli -- architecture check
+cargo run -p zryna -- architecture check
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace

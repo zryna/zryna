@@ -1,6 +1,8 @@
-# UTS
+# Zryna
 
-UTS is an experimental, strict, dual-target programming language project. Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its semantics, typed intermediate representation, JavaScript output, and native output belong to UTS.
+**Zryna** (pronounced *ZREE-na*) is developed at [zryna.com](https://zryna.com).
+
+Zryna is an experimental, strict, dual-target programming language project. Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its semantics, typed intermediate representation, JavaScript output, and native output belong to Zryna.
 
 The project is at the foundation stage. It is not yet a production compiler.
 
@@ -9,28 +11,28 @@ The project is at the foundation stage. It is not yet a production compiler.
 One checked source program should produce two artifacts with specified matching behavior:
 
 ```text
-.uts source
+.zry source
     ↓
 replaceable frontend reader
     ↓
-UTS syntax snapshot
+Zryna syntax snapshot
     ↓
-UTS strict semantics
+Zryna strict semantics
     ↓
 verified Universal IR
     ├── direct JavaScript backend → .js
     └── native lowering → MIR → codegen → executable
 ```
 
-The TypeScript 6 adapter is a bootstrap reader, not the language authority. It does not define UTS types, build UTS IR, or emit JavaScript. A future TypeScript 7 provider and a native UTS frontend must implement the same versioned frontend contract.
+The TypeScript 6 adapter is a bootstrap reader, not the language authority. It does not define Zryna types, build Zryna IR, or emit JavaScript. A future TypeScript 7 provider and a native Zryna frontend must implement the same versioned frontend contract.
 
 ## Non-negotiable rules
 
-- `any` and implicit `any` are not part of the UTS universal profile.
+- `any` and implicit `any` are not part of the Zryna universal profile.
 - Exact numeric types have target-independent specified behavior.
-- JavaScript and native backends consume only verified UTS IR.
+- JavaScript and native backends consume only verified Zryna IR.
 - Backend crates never depend on a TypeScript adapter.
-- The TypeScript adapter never constructs UTS IR.
+- The TypeScript adapter never constructs Zryna IR.
 - Architecture validation is fail-closed; an incomplete scan never passes.
 - Build, test, package, and release flows may not provide a skip-architecture switch.
 - Generated output stays inside declared output roots.
@@ -41,8 +43,8 @@ The TypeScript 6 adapter is a bootstrap reader, not the language authority. It d
 
 The repository currently establishes and tests:
 
-- an authoritative `uts.workspace.json` contract;
-- a Rust architecture validator and `uts architecture check` command;
+- an authoritative `zryna.workspace.json` contract;
+- a Rust architecture validator and `zryna architecture check` command;
 - provider-neutral frontend handshake and snapshot types;
 - an isolated TypeScript 6 syntax adapter pinned to `@typescript/typescript6@6.0.2`;
 - a verified target-neutral IR for `i32` parameters, literals, and wrapping addition;
@@ -61,7 +63,7 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
-cargo run -p uts-cli -- architecture check
+cargo run -p zryna -- architecture check
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
@@ -89,7 +91,10 @@ See [Architecture](docs/ARCHITECTURE.md), [Strict workspace contract](docs/STRIC
 
 ## Project identity
 
-UTS is an independent project and is not affiliated with, endorsed by, or sponsored by Microsoft. TypeScript is a trademark of the Microsoft group of companies. Compatibility references describe technical interoperability only.
+Zryna is an independent project and is not affiliated with, endorsed by, or sponsored by Microsoft. TypeScript is a trademark of the Microsoft group of companies. Compatibility references describe technical interoperability only.
+
+- Website: [zryna.com](https://zryna.com)
+- Source: [github.com/bestmaa/zryna](https://github.com/bestmaa/zryna)
 
 ## License
 

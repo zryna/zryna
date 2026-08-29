@@ -31,7 +31,7 @@ test('handshake and normalized function snapshot stay provider-neutral', async (
         schema_version: 1,
         files: [
           {
-            path: 'src/add.uts',
+            path: 'src/add.zry',
             text: 'export function add(a: i32, b: i32): i32 { return a + b; }',
           },
         ],

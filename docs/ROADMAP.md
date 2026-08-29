@@ -12,7 +12,7 @@
 
 ## First executable vertical slice
 
-- parse one `.uts` entrypoint through the TypeScript 6 adapter;
+- parse one `.zry` entrypoint through the TypeScript 6 adapter;
 - lower functions, parameters, literals, returns, `bool`, and `i32`;
 - reject `any` and unsupported syntax with stable source diagnostics;
 - emit and execute an ECMAScript module;
@@ -41,7 +41,7 @@
 - generics and monomorphization;
 - `Option` and `Result`;
 - native-only FFI profile;
-- native UTS frontend;
+- native Zryna frontend;
 - language server and thin editor extension;
 - additional native platforms after conformance gates exist.
 

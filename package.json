@@ -1,5 +1,5 @@
 {
-  "name": "uts-workspace",
+  "name": "zryna-workspace",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.18.0",
@@ -7,7 +7,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "adapter:check": "pnpm --filter @uts/adapter-typescript-6 check",
-    "adapter:test": "pnpm --filter @uts/adapter-typescript-6 test"
+    "adapter:check": "pnpm --filter @zryna/adapter-typescript-6 check",
+    "adapter:test": "pnpm --filter @zryna/adapter-typescript-6 test"
   }
 }

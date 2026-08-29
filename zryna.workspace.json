@@ -1,0 +1,95 @@
+{
+  "$schema": "./schemas/zryna-workspace-v1.schema.json",
+  "version": 1,
+  "profile": "zryna-compiler-workspace-v1",
+  "members": [
+    {
+      "id": "zryna-diagnostics",
+      "root": "crates/zryna-diagnostics",
+      "kind": "foundation",
+      "dependencies": [],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-source",
+      "root": "crates/zryna-source",
+      "kind": "foundation",
+      "dependencies": ["zryna-diagnostics"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-architecture",
+      "root": "crates/zryna-architecture",
+      "kind": "foundation",
+      "dependencies": ["zryna-diagnostics"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-frontend",
+      "root": "crates/zryna-frontend",
+      "kind": "frontend",
+      "dependencies": ["zryna-diagnostics", "zryna-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-ir",
+      "root": "crates/zryna-ir",
+      "kind": "compiler",
+      "dependencies": ["zryna-diagnostics", "zryna-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-backend-javascript",
+      "root": "crates/zryna-backend-javascript",
+      "kind": "backend",
+      "dependencies": ["zryna-diagnostics", "zryna-ir"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-native-mir",
+      "root": "crates/zryna-native-mir",
+      "kind": "compiler",
+      "dependencies": ["zryna-diagnostics", "zryna-ir"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-backend-native",
+      "root": "crates/zryna-backend-native",
+      "kind": "backend",
+      "dependencies": ["zryna-diagnostics", "zryna-native-mir"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna-driver",
+      "root": "crates/zryna-driver",
+      "kind": "orchestrator",
+      "dependencies": [
+        "zryna-architecture",
+        "zryna-backend-javascript",
+        "zryna-backend-native",
+        "zryna-diagnostics",
+        "zryna-frontend",
+        "zryna-ir",
+        "zryna-native-mir"
+      ],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
+      "id": "zryna",
+      "root": "apps/zryna",
+      "kind": "application",
+      "dependencies": ["zryna-architecture", "zryna-diagnostics", "zryna-driver"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    }
+  ],
+  "adapters": [
+    {
+      "id": "typescript-6",
+      "root": "adapters/typescript-6",
+      "protocolVersion": 1,
+      "toolchain": "@typescript/typescript6@6.0.2",
+      "allowedEntries": ["README.md", "package.json", "src", "test"]
+    }
+  ],
+  "outputs": ["target", ".zryna/cache", ".zryna/out"]
+}
