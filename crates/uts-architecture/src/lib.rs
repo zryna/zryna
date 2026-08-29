@@ -21,6 +21,7 @@ const ALLOWED_ROOT_ENTRIES: &[&str] = &[
     ".cargo",
     ".git",
     ".github",
+    ".gitattributes",
     ".gitignore",
     ".uts",
     "CODE_OF_CONDUCT.md",
