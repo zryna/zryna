@@ -1999,6 +1999,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(unix)]
     #[test]
     fn bounded_reader_detects_same_size_replacement() -> Result<(), Box<dyn Error>> {
         let fixture = TempFixture::new()?;
@@ -2021,6 +2022,31 @@ mod tests {
         );
 
         assert!(matches!(result, Err(diagnostic) if diagnostic.code == "ZRYNA-A1203"));
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn bounded_reader_denies_same_size_replacement_on_windows() -> Result<(), Box<dyn Error>> {
+        let fixture = TempFixture::new()?;
+        let controlled = fixture.write("controlled.zry", b"first")?;
+        let result = read_bounded_utf8_with_hooks(
+            &controlled,
+            ControlledReadPolicy {
+                diagnostic_path: Some(Path::new("controlled.zry")),
+                max_bytes: 32,
+                unavailable_code: "ZRYNA-A1203",
+                unavailable_guidance: "restore the file",
+                expected_size: None,
+            },
+            || {
+                assert!(fs::remove_file(&controlled).is_err());
+            },
+            || {},
+        )
+        .unwrap_or_else(|diagnostic| panic!("unexpected diagnostic: {diagnostic:?}"));
+
+        assert_eq!(result, ("first".to_string(), 5));
         Ok(())
     }
 
