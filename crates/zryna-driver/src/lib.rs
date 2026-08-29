@@ -49,3 +49,50 @@ pub fn emit_verified(program: &VerifiedProgram) -> Result<DualTargetArtifacts, D
     let llvm_ir = zryna_backend_native::emit_llvm_ir(&mir)?;
     Ok(DualTargetArtifacts { javascript, llvm_ir })
 }
+
+#[cfg(test)]
+mod tests {
+    use zryna_ir::{Expr, ExprId, ExprKind, Function, Program, Type, verify};
+    use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
+
+    #[test]
+    fn one_verified_program_drives_both_backend_boundaries() {
+        let sources = SourceMap::build(vec![SourceFileInput {
+            path: "src/add.zry".to_owned(),
+            text: "x".to_owned(),
+        }])
+        .expect("fixture source map must be valid");
+        let path = NormalizedSourcePath::new("src/add.zry").expect("fixture path must be valid");
+        let file = sources.file_id(&path).expect("fixture file must exist");
+        let span = sources.span(file, 0, 1).expect("fixture span must be valid");
+        let program = Program {
+            functions: vec![Function {
+                name: "add".to_owned(),
+                parameters: vec![Type::I32, Type::I32],
+                return_type: Type::I32,
+                expressions: vec![
+                    Expr { ty: Type::I32, span, kind: ExprKind::Parameter(0) },
+                    Expr { ty: Type::I32, span, kind: ExprKind::Parameter(1) },
+                    Expr {
+                        ty: Type::I32,
+                        span,
+                        kind: ExprKind::I32Add { lhs: ExprId(0), rhs: ExprId(1) },
+                    },
+                ],
+                body: ExprId(2),
+            }],
+        };
+        let verified = verify(program, &sources).expect("fixture IR must verify");
+
+        let artifacts = super::emit_verified(&verified).expect("both backends must emit");
+
+        assert_eq!(
+            artifacts.javascript.source,
+            "export function add(p0, p1) {\n  const v0 = p0;\n  const v1 = p1;\n  const v2 = (v0 + v1) | 0;\n  return v2;\n}\n"
+        );
+        assert_eq!(
+            artifacts.llvm_ir.source,
+            "define i32 @add(i32 %p0, i32 %p1) {\nentry:\n  %v2 = add i32 %p0, %p1\n  ret i32 %v2\n}\n"
+        );
+    }
+}
