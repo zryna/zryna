@@ -25,7 +25,8 @@ mandatory IR verifier
 VerifiedProgram
     ├── JavaScript IR and printer
     ├── WebAssembly lowering and binary emission
-    └── native MIR, codegen, object emission, and linking
+    └── raw native MIR → mandatory MIR verifier → VerifiedMirModule
+                                         └── codegen, object emission, and linking
 ```
 
 No provider-specific syntax-kind number, node identity, symbol identity, or type identity may cross
@@ -44,7 +45,10 @@ semantic lowering never depends on a replaceable provider.
 6. The IR verifier is the only constructor of a backend-accepted verified program.
 7. The JavaScript backend preserves Zryna behavior using direct syntax or explicit helpers.
 8. The WebAssembly backend maps exact Zryna operations directly to validated core WebAssembly. Browser bindings and WASI capabilities remain explicit host profiles.
-9. Native lowering adds control flow, layout, moves, drops, and calling conventions before code generation.
+9. Native lowering creates explicit typed native claims; the native MIR verifier is the only
+   constructor of the codegen-accepted `VerifiedMirModule`.
+10. Later native profiles add control flow, layout, moves, drops, and public calling conventions
+    before object generation and linking.
 
 ## Dependency direction
 
@@ -117,10 +121,17 @@ A verified function proves all of the following:
 
 Verification and current JavaScript emission are iterative and bounded. A logical export remains a
 language-level identity; later backend ABI contracts must define any concrete symbol encoding
-without weakening collision checks. Current native lowering is the only constructor of an opaque,
-read-only `MirModule`, so the LLVM proof path cannot bypass `VerifiedProgram`. A separate MIR
-verifier is still required before transformations or other MIR producers are introduced; calling
-conventions, object emission, and linking remain later mandatory gates.
+without weakening collision checks.
+
+Native MIR has its own consumed raw-to-verified boundary. Raw functions explicitly claim a symbol,
+provisional internal convention, typed signature, dense typed value definitions, operations, and a
+result. The iterative bounded verifier proves `i32` types, unique safe symbols, the admitted
+convention, exact definitions, strict-predecessor operands, acyclicity, a typed result, and resource
+limits before constructing `VerifiedMirModule`. Native codegen accepts only that wrapper. Repeated
+SSA uses and bounded dead values are valid; Universal IR's tree-ownership rule is not copied into
+MIR. The provisional convention and raw symbol spelling are proof inputs, not scalar ABI v1.
+Control-flow dominance, public calling conventions, object emission, and linking remain later
+mandatory gates.
 
 ## Initial numeric contract
 
