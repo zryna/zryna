@@ -110,7 +110,10 @@ fn node_executable() -> PathBuf {
         .output()
         .expect("Node.js version probe must start");
     assert!(output.status.success(), "Node.js version probe must succeed");
-    assert_eq!(output.stdout, b"v22.22.1\n");
+    assert!(
+        matches!(output.stdout.as_slice(), b"v22.22.1\n" | b"v22.22.1\r\n"),
+        "Node.js version probe must report exactly v22.22.1"
+    );
     assert!(output.stderr.is_empty());
     configured
 }

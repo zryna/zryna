@@ -64,7 +64,7 @@ impl NodeRuntimeCapability {
         )?;
         if !output.status.success()
             || !output.stderr.is_empty()
-            || output.stdout != format!("{NODE_VERSION}\n").as_bytes()
+            || !is_pinned_node_version(&output.stdout)
         {
             return Err(runtime_error(
                 "ZRYNA-R3002",
@@ -124,6 +124,11 @@ impl NodeRuntimeCapability {
             )
         })
     }
+}
+
+fn is_pinned_node_version(stdout: &[u8]) -> bool {
+    stdout == format!("{NODE_VERSION}\n").as_bytes()
+        || stdout == format!("{NODE_VERSION}\r\n").as_bytes()
 }
 
 fn open_runtime_identity(path: &Path) -> Result<(Handle, std::fs::Metadata), Diagnostic> {
@@ -558,7 +563,7 @@ mod tests {
         time::{Duration, Instant},
     };
 
-    use super::NodeRuntimeCapability;
+    use super::{NodeRuntimeCapability, is_pinned_node_version};
 
     static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
 
@@ -615,7 +620,7 @@ mod tests {
             .output()
             .expect("Node.js version probe must start");
         assert!(version.status.success());
-        assert_eq!(version.stdout, b"v22.22.1\n");
+        assert!(is_pinned_node_version(&version.stdout));
         assert!(version.stderr.is_empty());
         candidate
     }
@@ -627,6 +632,15 @@ mod tests {
 
     fn assert_code(error: &zryna_diagnostics::Diagnostic, expected: &str) {
         assert_eq!(error.code(), expected);
+    }
+
+    #[test]
+    fn pinned_node_version_accepts_native_line_endings_only() {
+        assert!(is_pinned_node_version(b"v22.22.1\n"));
+        assert!(is_pinned_node_version(b"v22.22.1\r\n"));
+        assert!(!is_pinned_node_version(b"v22.22.1"));
+        assert!(!is_pinned_node_version(b"v22.22.1\nextra\n"));
+        assert!(!is_pinned_node_version(b"v22.22.0\r\n"));
     }
 
     #[test]
