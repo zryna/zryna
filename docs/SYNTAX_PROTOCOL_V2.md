@@ -55,8 +55,11 @@ The verifier additionally proves properties the schema cannot express:
 
 Only the opaque verified `ProjectSyntaxSnapshot` exposes compiler-consumable nodes. Raw DTOs never
 carry source authority. A snapshot containing a verified provider error is reportable but cannot
-construct `SemanticInput`; this is the compiler-owned stop gate for omitted parse or unsupported
-syntax.
+construct `SemanticInput`; this is the compiler-owned stop gate for errors the provider reports.
+The verifier proves the exact project file set and structural fidelity of returned nodes, but it
+does not independently parse source text to prove that a provider returned every subtree. M0
+therefore treats intra-file completeness as a pinned-provider conformance assumption and does not
+claim that a silently omitting hostile provider is structurally impossible.
 
 ## Fixed limits
 

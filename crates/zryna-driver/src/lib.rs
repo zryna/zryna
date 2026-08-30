@@ -1,4 +1,15 @@
 //! Zryna compiler-phase orchestration.
+//!
+//! Legacy protocol-v1 syntax cannot enter the protocol-v2 semantic boundary:
+//!
+//! ```compile_fail
+//! fn bypass(
+//!     legacy: &zryna_frontend::ProjectSyntaxSnapshot,
+//!     sources: &zryna_source::SourceMap,
+//! ) {
+//!     let _ = zryna_semantics::SemanticInput::try_new(legacy, sources);
+//! }
+//! ```
 
 #![forbid(unsafe_code)]
 
@@ -39,6 +50,13 @@ pub fn analyze_sources<Provider: zryna_frontend::VerifiedFrontendProvider + ?Siz
 }
 
 /// Emits both current backend artifacts from one verified program.
+///
+/// Raw Universal IR cannot enter driver emission:
+///
+/// ```compile_fail
+/// let raw = zryna_ir::Program::default();
+/// let _ = zryna_driver::emit_verified(&raw);
+/// ```
 ///
 /// # Errors
 ///

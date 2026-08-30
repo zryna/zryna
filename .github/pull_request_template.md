@@ -18,6 +18,8 @@ Closes #
 - [ ] Unit and integration tests
 - [ ] Adapter syntax checks
 - [ ] Adapter tests
+- [ ] Protocol schema checks and tests
+- [ ] M0 conformance gate
 - [ ] Required portability or cross-target checks
 
 ## Documentation and compatibility

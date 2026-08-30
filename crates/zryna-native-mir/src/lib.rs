@@ -226,6 +226,13 @@ pub enum OperationView {
 }
 
 /// Native MIR module proven safe for the current native backend proof.
+///
+/// Construction is reserved to [`verify`]:
+///
+/// ```compile_fail
+/// let raw = zryna_native_mir::raw::Module::new(Vec::new());
+/// let _ = zryna_native_mir::VerifiedMirModule { raw };
+/// ```
 #[derive(Clone, Debug)]
 pub struct VerifiedMirModule {
     raw: raw::Module,
@@ -350,6 +357,13 @@ pub fn verify(module: raw::Module) -> Result<VerifiedMirModule, Vec<Diagnostic>>
 }
 
 /// Lowers verified target-neutral IR through the mandatory native MIR verifier.
+///
+/// Raw Universal IR cannot enter native lowering:
+///
+/// ```compile_fail
+/// let raw = zryna_ir::Program::default();
+/// let _ = zryna_native_mir::lower(&raw);
+/// ```
 ///
 /// # Errors
 ///

@@ -34,7 +34,9 @@ The TypeScript 6 adapter is a bootstrap reader, not the language authority. It d
 - JavaScript, WebAssembly, and native backends consume only verified Zryna IR.
 - Backend crates never depend on a TypeScript adapter.
 - The TypeScript adapter never constructs Zryna IR.
-- Architecture validation is required to fail closed; M0 remains open until adversarial scan, manifest, and dependency-graph fixtures prove that contract.
+- Architecture validation is required to fail closed; the M0 conformance registry and required
+  Linux and Windows checks prove the scanner, manifest, dependency graph, and compiler trust
+  boundaries before later compiler work can merge.
 - Build, test, package, and release flows may not provide a skip-architecture switch.
 - Generated output stays inside declared output roots.
 - Symlinks are forbidden inside controlled source components.
@@ -63,7 +65,7 @@ first executable milestone will connect source lowering to direct JavaScript and
 emission, then add native code generation and linking, with all three targets checked for matching
 behavior.
 
-## Run the foundation checks
+## Run the foundation gate
 
 Requirements:
 
@@ -73,16 +75,12 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
-cargo fetch --locked
-cargo run -p zryna -- architecture check
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-pnpm adapter:check
-pnpm adapter:test
-pnpm protocol:check
-pnpm protocol:test
+pnpm m0:check
 ```
+
+The canonical command validates and executes every registered Rust, protocol, and adapter proof
+suite without a skip-architecture mode. See [M0 conformance](docs/M0_CONFORMANCE.md) for the exact
+coverage and unsupported status.
 
 ## Repository map
 
@@ -102,7 +100,7 @@ editors/     future thin editor integrations
 
 See [Architecture](docs/ARCHITECTURE.md), [Syntax protocol v2](docs/SYNTAX_PROTOCOL_V2.md),
 [Strict workspace contract](docs/STRICT_WORKSPACE.md), [Frontend providers](docs/FRONTENDS.md), and
-[Roadmap](docs/ROADMAP.md).
+[Roadmap](docs/ROADMAP.md), and [M0 conformance](docs/M0_CONFORMANCE.md).
 
 ## Project identity
 

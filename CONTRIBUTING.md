@@ -13,13 +13,12 @@ Before changing a component:
 Run every required check before submitting a change:
 
 ```bash
-cargo fetch --locked
-cargo run -p zryna -- architecture check
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-pnpm adapter:check
-pnpm adapter:test
+pnpm install --frozen-lockfile
+pnpm m0:check
 ```
+
+The canonical M0 gate includes locked Rust dependency fetching, architecture validation,
+formatting, strict Clippy, workspace tests and doc-tests, warning-free rustdoc, adapter and protocol
+checks, and the conformance-registry self-tests on both supported CI operating systems.
 
 New components must be created through the planned canonical creation command once it is available. Until then, component additions require a focused architecture proposal and simultaneous updates to both workspace manifests, documentation, tests, and CI.

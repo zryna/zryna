@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "milestone": "M0",
+  "commands": [
+    {
+      "id": "cargo-fetch",
+      "executable": "cargo",
+      "args": ["fetch", "--locked"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "architecture-check",
+      "executable": "cargo",
+      "args": ["run", "--locked", "-p", "zryna", "--", "architecture", "check"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "rust-format",
+      "executable": "cargo",
+      "args": ["fmt", "--all", "--", "--check"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "rust-clippy",
+      "executable": "cargo",
+      "args": ["clippy", "--locked", "--workspace", "--all-targets", "--", "-D", "warnings"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "rust-tests",
+      "executable": "cargo",
+      "args": ["test", "--locked", "--workspace"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "rustdoc",
+      "executable": "cargo",
+      "args": ["doc", "--locked", "--workspace", "--no-deps"],
+      "platforms": ["linux", "windows"],
+      "environment": {
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "id": "adapter-check",
+      "executable": "node",
+      "args": ["--check", "adapters/typescript-6/src/worker.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "adapter-test-check",
+      "executable": "node",
+      "args": ["--check", "adapters/typescript-6/test/worker.test.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "adapter-tests",
+      "executable": "node",
+      "args": ["--test", "adapters/typescript-6/test/worker.test.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "protocol-check",
+      "executable": "node",
+      "args": ["--check", "tests/syntax-protocol-v2.test.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "protocol-tests",
+      "executable": "node",
+      "args": ["--test", "tests/syntax-protocol-v2.test.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "closure-registry-tests",
+      "executable": "node",
+      "args": ["--test", "tests/m0-conformance.test.mjs"],
+      "platforms": ["linux", "windows"]
+    }
+  ],
+  "coverage": [
+    {
+      "id": "architecture-scanner-manifest-and-graph",
+      "owner": "crates/zryna-architecture",
+      "commandId": "rust-tests",
+      "proofs": [
+        "portable and complete repository scan",
+        "manifest and resolved Cargo graph agreement",
+        "forbidden dependency direction and cycle rejection",
+        "bounded diagnostics, reads, metadata, and traversal"
+      ]
+    },
+    {
+      "id": "source-authority",
+      "owner": "crates/zryna-source",
+      "commandId": "rust-tests",
+      "proofs": [
+        "portable path identity and collision rejection",
+        "source-map-bound spans and UTF-8 boundaries",
+        "exact and first-extra resource limits"
+      ]
+    },
+    {
+      "id": "diagnostic-authority",
+      "owner": "crates/zryna-diagnostics",
+      "commandId": "rust-tests",
+      "proofs": [
+        "foreign spans fail closed",
+        "stable ordering and escaped untrusted text"
+      ]
+    },
+    {
+      "id": "frontend-handshake-and-worker",
+      "owner": "crates/zryna-frontend",
+      "commandId": "rust-tests",
+      "proofs": [
+        "exact handshake and request identity",
+        "malformed response and provider-error rejection",
+        "bounded subprocess, timeout, and descendant cleanup"
+      ]
+    },
+    {
+      "id": "syntax-protocol-verifier",
+      "owner": "crates/zryna-syntax",
+      "commandId": "rust-tests",
+      "proofs": [
+        "strict wire decoding and authoritative source spelling",
+        "arena ownership, ordering, depth, and budget rejection",
+        "only opaque verified syntax reaches semantics"
+      ]
+    },
+    {
+      "id": "semantic-stop-gate",
+      "owner": "crates/zryna-semantics",
+      "commandId": "rust-tests",
+      "proofs": [
+        "provider errors and mismatched source maps stop semantic entry"
+      ]
+    },
+    {
+      "id": "universal-ir-verifier",
+      "owner": "crates/zryna-ir",
+      "commandId": "rust-tests",
+      "proofs": [
+        "raw IR cannot forge verified program views",
+        "invalid symbols, types, graphs, spans, and limits fail closed",
+        "iterative maximum-depth verification"
+      ]
+    },
+    {
+      "id": "javascript-backend-boundary",
+      "owner": "crates/zryna-backend-javascript",
+      "commandId": "rust-tests",
+      "proofs": [
+        "verified-only iterative emission and exact wrapping i32 output"
+      ]
+    },
+    {
+      "id": "native-mir-verifier",
+      "owner": "crates/zryna-native-mir",
+      "commandId": "rust-tests",
+      "proofs": [
+        "raw MIR cannot forge verified module views",
+        "invalid symbols, signatures, definitions, operands, cycles, results, and limits fail closed",
+        "iterative maximum-value verification"
+      ]
+    },
+    {
+      "id": "native-backend-boundary",
+      "owner": "crates/zryna-backend-native",
+      "commandId": "rust-tests",
+      "proofs": [
+        "raw MIR input is a compile-fail fixture",
+        "verified MIR is the only native code-generation input"
+      ]
+    },
+    {
+      "id": "driver-boundary",
+      "owner": "crates/zryna-driver",
+      "commandId": "rust-tests",
+      "proofs": [
+        "one verified program drives independent JavaScript and native boundaries"
+      ]
+    },
+    {
+      "id": "typescript-adapter",
+      "owner": "adapters/typescript-6",
+      "commandId": "adapter-tests",
+      "proofs": [
+        "unsupported syntax, malformed transport, resource limits, and recovery",
+        "byte-stable protocol-v2 output with authoritative UTF-8 spans"
+      ]
+    },
+    {
+      "id": "protocol-wire-schema",
+      "owner": "tests/fixtures",
+      "commandId": "protocol-tests",
+      "proofs": [
+        "shared pass and fail fixtures",
+        "closed tagged variants, paths, literals, and nested objects"
+      ]
+    }
+  ],
+  "fixtures": [
+    {
+      "id": "syntax-v2-valid",
+      "path": "tests/fixtures/syntax-v2-valid.json",
+      "phase": "protocol",
+      "mode": "pass",
+      "expected": "schema-accepted"
+    },
+    {
+      "id": "syntax-v2-missing-field",
+      "path": "tests/fixtures/syntax-v2-missing-field.json",
+      "phase": "protocol",
+      "mode": "fail",
+      "expected": "schema-rejected"
+    },
+    {
+      "id": "syntax-v2-unknown-field",
+      "path": "tests/fixtures/syntax-v2-unknown-field.json",
+      "phase": "protocol",
+      "mode": "fail",
+      "expected": "schema-rejected"
+    },
+    {
+      "id": "typescript-adapter-v2-request",
+      "path": "tests/fixtures/typescript-adapter-v2-request.json",
+      "phase": "adapter",
+      "mode": "pass",
+      "expected": "byte-stable-response"
+    },
+    {
+      "id": "typescript-adapter-v2-result",
+      "path": "tests/fixtures/typescript-adapter-v2-result.json",
+      "phase": "syntax",
+      "mode": "pass",
+      "expected": "authoritative-verifier-accepted"
+    },
+    {
+      "id": "typescript-adapter-v2-error-result",
+      "path": "tests/fixtures/typescript-adapter-v2-error-result.json",
+      "phase": "semantics",
+      "mode": "fail",
+      "expected": "semantic-input-rejected"
+    },
+    {
+      "id": "typescript-adapter-v2-warning-result",
+      "path": "tests/fixtures/typescript-adapter-v2-warning-result.json",
+      "phase": "semantics",
+      "mode": "pass",
+      "expected": "semantic-input-accepted"
+    }
+  ]
+}

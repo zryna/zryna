@@ -9,8 +9,9 @@ permissions:
 
 jobs:
   rust:
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
@@ -20,15 +21,21 @@ jobs:
         with:
           toolchain: 1.97.1
           components: rustfmt, clippy
-      - run: cargo fetch --locked
-      - run: cargo run -p zryna -- architecture check
-      - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/run-m0-conformance.mjs
 
   adapter-platform:
     name: adapter (${{ matrix.os }})
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
@@ -57,3 +64,15 @@ jobs:
         env:
           PLATFORM_RESULT: ${{ needs.adapter-platform.result }}
         run: test "$PLATFORM_RESULT" = success
+
+  m0:
+    name: m0
+    if: always()
+    needs: [rust, adapter]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify complete M0 gate
+        env:
+          RUST_RESULT: ${{ needs.rust.result }}
+          ADAPTER_RESULT: ${{ needs.adapter.result }}
+        run: test "$RUST_RESULT" = success && test "$ADAPTER_RESULT" = success

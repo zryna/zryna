@@ -4,9 +4,10 @@
   "private": true,
   "packageManager": "pnpm@11.18.0",
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.22.1"
   },
   "scripts": {
+    "m0:check": "node scripts/run-m0-conformance.mjs",
     "adapter:check": "pnpm --filter @zryna/adapter-typescript-6 check",
     "adapter:test": "pnpm --filter @zryna/adapter-typescript-6 test",
     "protocol:check": "node --check tests/syntax-protocol-v2.test.mjs",
