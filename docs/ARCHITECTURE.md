@@ -60,6 +60,9 @@ semantic lowering never depends on a replaceable provider.
     independently audits it, and exposes only sealed bytes.
 12. The driver may combine that sealed object with one generated, ABI-validated invocation using
     a previously proved Linux toolchain capability; the backend never owns linking or execution.
+13. The CLI runs architecture validation first, then asks the driver to analyze one entrypoint
+    exactly once and dispatch the same verified authority to an explicit target selection. The
+    driver stages and commits one complete build or run bundle; the CLI only renders its report.
 
 ## Dependency direction
 
@@ -193,9 +196,9 @@ after validation is outside this process-local publication proof, and directory-
 durability is not claimed. Temporary-name cleanup failure after successful publication is returned
 as a warning without hiding the successfully published artifact.
 
-The integration suite imports and executes generated modules with Node.js 22.22.1. This is a
-compiler conformance harness, not yet a public runtime command. The user-facing build/run CLI is a
-later M1 gate.
+The public run command imports and executes generated modules with an explicitly validated, exact
+Node.js 22.22.1 runtime. The same engine remains the pinned integration-test harness. Generated
+modules are self-contained; the Node process is a host, not a bundled Zryna runtime.
 
 ## Current WebAssembly artifact path
 
@@ -214,9 +217,10 @@ validated `.zryna/out` capability and create-only atomic writer as JavaScript, s
 and `.wasm` artifacts can coexist and existing destinations remain untouched.
 
 Node.js 22.22.1 validates, instantiates, inspects, and executes the real artifact through the
-standard WebAssembly API in conformance tests. That API is browser-compatible, but this is not a
-browser or DOM test and runtime execution is not a production build phase. Raw JavaScript calls
-to WebAssembly perform host coercion; no strict public host wrapper is claimed by this slice.
+standard WebAssembly API in conformance tests and the public run command. That API is browser-
+compatible, but this is not a browser or DOM execution claim. Raw JavaScript calls to WebAssembly
+perform host coercion; the CLI validates the typed `I32V1` invocation before execution, while a
+general strict public host wrapper remains outside this slice.
 
 Native MIR has its own consumed raw-to-verified boundary. Raw functions claim logical names, a
 convention, typed signatures, dense typed values, operations, and results. The iterative bounded
@@ -240,8 +244,33 @@ arguments, and audits the resulting ELF executable before create-only `.elf` pub
 Execution accepts only that published capability, uses a bounded process group, and returns a
 typed outcome from an exact four-byte channel. The capability retains the audited bytes and runs a
 fresh private staged copy, so replacing the public distribution path cannot change executed code.
-It is not arbitrary startup, a general runner, or a public CLI. Control flow, calls, Windows
-output, FFI, and Boolean source/IR remain later gates.
+The CLI composes this boundary only for a previously verified, invocation-specific `I32V1`
+request. It is not arbitrary startup or a general native runner. Control flow, calls, Windows
+native output, FFI, and Boolean source/IR remain later gates.
+
+## Public CLI orchestration and transaction
+
+`zryna build` and `zryna run` accept one validated workspace-relative `.zry` entrypoint and one
+explicit `javascript`, `webassembly`, `native`, or `all` target. Architecture validation is always
+first. The driver authenticates the frontend once, lowers and verifies once, and dispatches the
+same `VerifiedProgram` in fixed JavaScript, WebAssembly, native order. Run requests also validate
+one exact export and typed `i32` argument vector once before any target executes.
+
+Individual library publishers retain their create-only artifact contracts. The public CLI adds a
+coarser transaction boundary: selected target artifacts and `zryna-manifest-v1.json` are written
+and synchronized in one directory adjacent to the final bundle. Unix sets transaction directories
+to mode `0700`; Windows inherits ACLs from the validated compiler-owned output root and therefore
+requires that root to be private to the invoking principal. After containment is revalidated, one
+create-only same-filesystem directory rename commits either
+`.zryna/out/<stem>.build` or `.zryna/out/<stem>.run`. Only selected target subdirectories exist.
+Any preparation, execution, audit, publication, or cleanup failure before commit leaves no final
+bundle, and an existing bundle is never replaced.
+
+Build bundles contain `.mjs`, `.wasm`, and/or the native `.o`. Run bundles contain `.mjs`, `.wasm`,
+and/or the invocation-specific native `.elf`, plus stable ordered typed observations in the
+manifest. Selecting `all` does not compare those observations; Issue #20 owns equivalence
+enforcement. See the [CLI reference](CLI.md) for the exact command, layout, manifest, exit-status,
+runtime, and platform contracts.
 
 ## Initial numeric contract
 

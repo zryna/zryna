@@ -21,8 +21,9 @@ The implemented `I32V1` scalar subset maps directly to core WebAssembly without 
 JavaScript, native MIR, or LLVM. It exports capability-minimal pure `i32` functions and has no
 imports or implicit filesystem, network, clock, randomness, environment, heap, or
 garbage-collection facility, and it carries no bundled Zryna runtime. The Node conformance harness
-uses the standard browser-compatible WebAssembly API, but browser execution and a generated loader
-remain untested future work, as does a strict typed host wrapper.
+and public `run` command use the standard browser-compatible WebAssembly API, but browser execution
+and a generated loader remain untested future work, as does a general strict typed host wrapper.
+The CLI validates its `I32V1` invocation before making the raw host call.
 
 WASI and Component Model support is a separately versioned host profile. WIT and Canonical ABI types describe component boundaries; they do not redefine Zryna's internal ownership or memory model.
 
@@ -30,7 +31,8 @@ WASI and Component Model support is a separately versioned host profile. WIT and
 
 The universal `I32V1` slice emits audited Linux x86-64 ELF relocatable objects using the System V
 ABI. The driver can link one ABI-validated invocation into an audited executable and observe its
-full-width typed `i32` result; this library boundary is not yet a public CLI or general native
-runtime. Boolean source/IR remains gated. A later native profile may extend the language with
+full-width typed `i32` result. The public CLI composes that boundary only for an explicit verified
+invocation; it is not a general native runtime. Boolean source/IR remains gated. A later native
+profile may extend the language with
 features that have no JavaScript representation, such as raw FFI; such modules must be separated
 by an explicit target boundary.

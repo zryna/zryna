@@ -1,7 +1,8 @@
 # Linux x86-64 native executable v1
 
-Status: implemented as a driver library boundary for one typed `I32V1` invocation. A public CLI is
-not part of this contract.
+Status: implemented as a driver library boundary for one typed `I32V1` invocation. The public
+`zryna run --target native` command composes this boundary; its request, bundle, manifest, and exit
+contracts are specified separately in [`docs/CLI.md`](../../docs/CLI.md).
 
 ## Inputs and authority
 
@@ -91,5 +92,6 @@ becomes a stable diagnostic message.
 
 This profile is not a static executable, cross-toolchain byte-reproducibility promise, general C
 ABI/FFI, arbitrary native program runner, bundled native runtime, Windows/macOS output, Boolean
-source execution, public CLI, sandbox, or freestanding systems profile. Those require separate
-contracts and gates.
+source execution, sandbox, or freestanding systems profile. The public CLI does not broaden these
+capabilities: it admits only one verified `I32V1` invocation and commits its `.elf` inside the
+complete run bundle. Broader profiles require separate contracts and gates.

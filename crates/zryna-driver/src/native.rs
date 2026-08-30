@@ -4,6 +4,7 @@ use std::{
     error::Error,
     fmt, fs, io,
     path::{Path, PathBuf},
+    sync::Arc,
     time::Duration,
 };
 
@@ -15,10 +16,7 @@ use std::{
     ffi::OsString,
     io::{Read, Write},
     process::{ExitStatus, Stdio},
-    sync::{
-        Arc,
-        mpsc::{self, Receiver, RecvTimeoutError, SyncSender, TryRecvError},
-    },
+    sync::mpsc::{self, Receiver, RecvTimeoutError, SyncSender, TryRecvError},
     thread,
     time::{Instant, SystemTime},
 };
@@ -39,6 +37,7 @@ use zryna_backend_native::{
 };
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::VerifiedFrontendProvider;
+use zryna_ir::VerifiedProgram;
 use zryna_source::SourceMap;
 
 use crate::{
@@ -383,24 +382,46 @@ impl LinuxX8664LinkToolchain {
 #[derive(Clone, Debug)]
 pub struct PublishedNativeExecutableArtifact {
     path: PathBuf,
-    result_type: zryna_abi::ScalarType,
     diagnostics: Vec<Diagnostic>,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     output_root: ArtifactOutputRoot,
-    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    sealed_executable: SealedNativeExecutable,
+    prepared: PreparedNativeExecutable,
 }
 
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[derive(Clone)]
-struct SealedNativeExecutable {
+pub(crate) struct PreparedNativeExecutable {
     bytes: Arc<[u8]>,
+    result_type: zryna_abi::ScalarType,
+    expected_symbol: Box<str>,
+    diagnostics: Vec<Diagnostic>,
 }
 
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-impl fmt::Debug for SealedNativeExecutable {
+impl PreparedNativeExecutable {
+    #[must_use]
+    pub(crate) fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    #[must_use]
+    pub(crate) const fn result_type(&self) -> zryna_abi::ScalarType {
+        self.result_type
+    }
+
+    #[must_use]
+    pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
+        &self.diagnostics
+    }
+}
+
+impl fmt::Debug for PreparedNativeExecutable {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.debug_struct("SealedNativeExecutable").field("bytes", &self.bytes.len()).finish()
+        formatter
+            .debug_struct("PreparedNativeExecutable")
+            .field("bytes", &self.bytes.len())
+            .field("result_type", &self.result_type)
+            .field("expected_symbol", &self.expected_symbol)
+            .field("diagnostics", &self.diagnostics)
+            .finish()
     }
 }
 
@@ -414,7 +435,7 @@ impl PublishedNativeExecutableArtifact {
     /// Returns the verified result type carried by the four-byte output channel.
     #[must_use]
     pub const fn result_type(&self) -> zryna_abi::ScalarType {
-        self.result_type
+        self.prepared.result_type()
     }
 
     /// Returns non-fatal publication or cleanup diagnostics.
@@ -558,28 +579,26 @@ pub fn compile_native_invocation<Provider: VerifiedFrontendProvider + ?Sized>(
 
     let compiled =
         compile_to_verified_ir(frontend, sources).map_err(NativeExecutableBuildError::Source)?;
-    let prepared = compiled
+    let invocation = compiled
         .program()
         .prepare_invocation(invocation)
         .map_err(|error| native_build_error(invocation_error(error)))?;
-    let result_type = prepared.export().result();
-    let harness = render_invocation_harness(&prepared).map_err(native_build_error)?;
     let mir =
         zryna_native_mir::lower(compiled.program()).map_err(NativeExecutableBuildError::Native)?;
     let object = zryna_backend_native::emit_object(&mir, target)
         .map_err(|diagnostic| NativeExecutableBuildError::Native(vec![diagnostic]))?;
 
-    let mut published = link_publish_invocation(
-        object.bytes(),
-        &harness,
-        prepared.export().native_linux_x86_64_symbol().as_str(),
-        result_type,
+    let prepared = prepare_native_invocation_from_verified(
+        compiled.program(),
+        &object,
+        &invocation,
         output_root,
-        artifact_stem,
         toolchain,
         limits,
     )
     .map_err(NativeExecutableBuildError::Native)?;
+    let mut published = publish_prepared_native_invocation(&prepared, output_root, artifact_stem)
+        .map_err(NativeExecutableBuildError::Native)?;
     let mut diagnostics = compiled.diagnostics().to_vec();
     diagnostics.extend_from_slice(published.diagnostics());
     published.diagnostics = diagnostics.clone();
@@ -600,10 +619,19 @@ pub fn run_native_invocation(
     executable: &PublishedNativeExecutableArtifact,
     limits: NativeProcessLimits,
 ) -> Result<zryna_abi::ScalarOutcome, NativeRunError> {
+    run_prepared_native_invocation(&executable.prepared, &executable.output_root, limits)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) fn run_prepared_native_invocation(
+    executable: &PreparedNativeExecutable,
+    output_root: &ArtifactOutputRoot,
+    limits: NativeProcessLimits,
+) -> Result<zryna_abi::ScalarOutcome, NativeRunError> {
     ensure_linux_x86_64_host().map_err(native_run_error)?;
-    let stage = NativeStage::create(&executable.output_root, "run").map_err(native_run_error)?;
+    let stage = NativeStage::create(output_root, "run").map_err(native_run_error)?;
     let operation = (|| {
-        NativeStage::write_input(&stage.executable, &executable.sealed_executable.bytes)?;
+        NativeStage::write_input(&stage.executable, executable.bytes())?;
         prepare_executable_mode(&stage.executable)?;
         run_bounded_process(
             &stage.executable,
@@ -621,7 +649,7 @@ pub fn run_native_invocation(
         return Err(native_run_error(diagnostic));
     }
     let output = operation.map_err(native_run_error)?;
-    interpret_native_invocation_output(&output, executable.result_type)
+    interpret_native_invocation_output(&output, executable.result_type())
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -670,6 +698,19 @@ fn interpret_native_invocation_output(
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 pub fn run_native_invocation(
     _executable: &PublishedNativeExecutableArtifact,
+    _limits: NativeProcessLimits,
+) -> Result<zryna_abi::ScalarOutcome, NativeRunError> {
+    Err(native_run_error(native_error(
+        "ZRYNA-N4002",
+        "native linking and invocation require a Linux x86-64 host",
+        "run this operation on Linux x86-64; other native hosts are not implemented",
+    )))
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+pub(crate) fn run_prepared_native_invocation(
+    _executable: &PreparedNativeExecutable,
+    _output_root: &ArtifactOutputRoot,
     _limits: NativeProcessLimits,
 ) -> Result<zryna_abi::ScalarOutcome, NativeRunError> {
     Err(native_run_error(native_error(
@@ -728,8 +769,10 @@ fn ensure_destination_absent(destination: &Path, artifact_stem: &str) -> Result<
     }
 }
 
+#[cfg(any(all(target_os = "linux", target_arch = "x86_64"), test))]
 const MAX_NATIVE_HARNESS_BYTES: usize = 128 * 1_024;
 
+#[cfg(any(all(target_os = "linux", target_arch = "x86_64"), test))]
 fn render_invocation_harness(
     invocation: &zryna_abi::VerifiedInvocation<'_>,
 ) -> Result<Vec<u8>, Diagnostic> {
@@ -780,6 +823,7 @@ fn render_invocation_harness(
     Ok(source.into_bytes())
 }
 
+#[cfg(any(all(target_os = "linux", target_arch = "x86_64"), test))]
 fn harness_error() -> Diagnostic {
     native_error(
         "ZRYNA-N4010",
@@ -1148,18 +1192,63 @@ fn staging_write_error() -> Diagnostic {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-#[allow(clippy::too_many_arguments)]
-fn link_publish_invocation(
+pub(crate) fn prepare_native_invocation_from_verified(
+    program: &VerifiedProgram,
+    object: &ValidatedNativeObjectArtifact,
+    invocation: &zryna_abi::VerifiedInvocation<'_>,
+    output_root: &ArtifactOutputRoot,
+    toolchain: &LinuxX8664LinkToolchain,
+    limits: NativeProcessLimits,
+) -> Result<PreparedNativeExecutable, Vec<Diagnostic>> {
+    ensure_linux_x86_64_host().map_err(|error| vec![error])?;
+    let invocation_export = invocation.export();
+    let Some(program_export) = program.scalar_abi().exports().nth(invocation_export.index()) else {
+        return Err(vec![harness_error()]);
+    };
+    if program_export.logical_name() != invocation_export.logical_name()
+        || program_export.javascript_name() != invocation_export.javascript_name()
+        || program_export.webassembly_name() != invocation_export.webassembly_name()
+        || program_export.native_linux_x86_64_symbol()
+            != invocation_export.native_linux_x86_64_symbol()
+        || program_export.parameters() != invocation_export.parameters()
+        || program_export.result() != invocation_export.result()
+    {
+        return Err(vec![harness_error()]);
+    }
+    let harness = render_invocation_harness(invocation).map_err(|error| vec![error])?;
+    let expected_symbol = invocation_export.native_linux_x86_64_symbol().as_str();
+    let (sealed_bytes, diagnostics) = link_and_audit_native_invocation(
+        object.bytes(),
+        &harness,
+        expected_symbol,
+        output_root,
+        toolchain,
+        limits,
+    )?;
+    if diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-N4016") {
+        return Err(diagnostics);
+    }
+    Ok(PreparedNativeExecutable {
+        bytes: Arc::from(sealed_bytes),
+        result_type: invocation_export.result(),
+        expected_symbol: Box::from(expected_symbol),
+        diagnostics,
+    })
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+type PreparedNativeBytes = Result<(Box<[u8]>, Vec<Diagnostic>), Vec<Diagnostic>>;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn link_and_audit_native_invocation(
     object_bytes: &[u8],
     harness_bytes: &[u8],
     expected_symbol: &str,
-    result_type: zryna_abi::ScalarType,
     output_root: &ArtifactOutputRoot,
-    artifact_stem: &str,
     toolchain: &LinuxX8664LinkToolchain,
     limits: NativeProcessLimits,
-) -> Result<PublishedNativeExecutableArtifact, Vec<Diagnostic>> {
-    let stage = NativeStage::create(output_root, artifact_stem).map_err(|error| vec![error])?;
+) -> PreparedNativeBytes {
+    let stage = NativeStage::create(output_root, "invocation").map_err(|error| vec![error])?;
     let operation = (|| {
         NativeStage::write_input(&stage.object, object_bytes)?;
         NativeStage::write_input(&stage.harness, harness_bytes)?;
@@ -1206,14 +1295,56 @@ fn link_publish_invocation(
                 "verify the documented system toolchain and report the smallest reproducible source",
             ));
         }
-        let (executable_identity, sealed_bytes) =
-            audit_staged_executable(&stage.executable, expected_symbol)?;
+        let (_, sealed_bytes) = audit_staged_executable(&stage.executable, expected_symbol)?;
+        Ok(sealed_bytes)
+    })();
+    let cleanup = stage.cleanup();
+    match operation {
+        Ok(sealed_bytes) => Ok((sealed_bytes, cleanup)),
+        Err(error) => {
+            let mut diagnostics = vec![error];
+            diagnostics.extend(cleanup);
+            Err(diagnostics)
+        }
+    }
+}
 
-        output_root.revalidate()?;
-        let destination = output_root
-            .path()
-            .join(format!("{artifact_stem}.{NATIVE_EXECUTABLE_ARTIFACT_EXTENSION}"));
-        ensure_destination_absent(&destination, artifact_stem)?;
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+pub(crate) fn prepare_native_invocation_from_verified(
+    _program: &VerifiedProgram,
+    _object: &ValidatedNativeObjectArtifact,
+    _invocation: &zryna_abi::VerifiedInvocation<'_>,
+    _output_root: &ArtifactOutputRoot,
+    _toolchain: &LinuxX8664LinkToolchain,
+    _limits: NativeProcessLimits,
+) -> Result<PreparedNativeExecutable, Vec<Diagnostic>> {
+    Err(vec![native_error(
+        "ZRYNA-N4002",
+        "native linking and invocation require a Linux x86-64 host",
+        "run this operation on Linux x86-64; other native hosts are not implemented",
+    )])
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn publish_prepared_native_invocation(
+    prepared: &PreparedNativeExecutable,
+    output_root: &ArtifactOutputRoot,
+    artifact_stem: &str,
+) -> Result<PublishedNativeExecutableArtifact, Vec<Diagnostic>> {
+    validate_artifact_stem(artifact_stem).map_err(|error| vec![error])?;
+    output_root.revalidate().map_err(|error| vec![error])?;
+    let destination =
+        output_root.path().join(format!("{artifact_stem}.{NATIVE_EXECUTABLE_ARTIFACT_EXTENSION}"));
+    ensure_destination_absent(&destination, artifact_stem).map_err(|error| vec![error])?;
+
+    let stage = NativeStage::create(output_root, artifact_stem).map_err(|error| vec![error])?;
+    let operation = (|| {
+        NativeStage::write_input(&stage.executable, prepared.bytes())?;
+        let (executable_identity, copied_bytes) =
+            audit_staged_executable(&stage.executable, &prepared.expected_symbol)?;
+        if copied_bytes.as_ref() != prepared.bytes() {
+            return Err(executable_audit_error());
+        }
         prepare_executable_mode(&stage.executable)?;
         let current_identity = regular_file_identity(&stage.executable).map_err(|()| {
             native_error(
@@ -1229,8 +1360,10 @@ fn link_publish_invocation(
                 "retry with the documented system toolchain and a private output root",
             ));
         }
+        output_root.revalidate()?;
+        ensure_destination_absent(&destination, artifact_stem)?;
         match fs::hard_link(&stage.executable, &destination) {
-            Ok(()) => Ok((destination, sealed_bytes)),
+            Ok(()) => Ok(destination),
             Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
                 Err(destination_exists_error(
                     artifact_stem,
@@ -1247,15 +1380,19 @@ fn link_publish_invocation(
     })();
     let cleanup = stage.cleanup();
     match operation {
-        Ok((path, sealed_bytes)) => Ok(PublishedNativeExecutableArtifact {
-            path,
-            result_type,
-            diagnostics: cleanup,
-            output_root: output_root.clone(),
-            sealed_executable: SealedNativeExecutable { bytes: Arc::from(sealed_bytes) },
-        }),
+        Ok(path) => {
+            let mut diagnostics = prepared.diagnostics().to_vec();
+            diagnostics.extend(cleanup);
+            Ok(PublishedNativeExecutableArtifact {
+                path,
+                diagnostics,
+                output_root: output_root.clone(),
+                prepared: prepared.clone(),
+            })
+        }
         Err(error) => {
             let mut diagnostics = vec![error];
+            diagnostics.extend_from_slice(prepared.diagnostics());
             diagnostics.extend(cleanup);
             Err(diagnostics)
         }
@@ -1263,16 +1400,10 @@ fn link_publish_invocation(
 }
 
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
-#[allow(clippy::too_many_arguments)]
-fn link_publish_invocation(
-    _object_bytes: &[u8],
-    _harness_bytes: &[u8],
-    _expected_symbol: &str,
-    _result_type: zryna_abi::ScalarType,
+fn publish_prepared_native_invocation(
+    _prepared: &PreparedNativeExecutable,
     _output_root: &ArtifactOutputRoot,
     _artifact_stem: &str,
-    _toolchain: &LinuxX8664LinkToolchain,
-    _limits: NativeProcessLimits,
 ) -> Result<PublishedNativeExecutableArtifact, Vec<Diagnostic>> {
     Err(vec![native_error(
         "ZRYNA-N4002",
@@ -1752,13 +1883,11 @@ mod link_run_tests {
         fs::create_dir_all(workspace.join(".zryna/out")).expect("link failure output root");
         let output_root =
             ArtifactOutputRoot::for_workspace(&workspace).expect("validated link output root");
-        let error = link_publish_invocation(
+        let error = link_and_audit_native_invocation(
             b"not reached by false",
             b"not reached by false",
             "zryna_v1_e_probe",
-            zryna_abi::ScalarType::I32,
             &output_root,
-            "failed",
             &toolchain,
             NativeProcessLimits::default(),
         )
@@ -1940,8 +2069,13 @@ mod link_run_tests {
         fs::create_dir_all(workspace.join(".zryna/out")).expect("unsupported run output root");
         let artifact = PublishedNativeExecutableArtifact {
             path: workspace.join(".zryna/out/probe.elf"),
-            result_type: zryna_abi::ScalarType::I32,
             diagnostics: Vec::new(),
+            prepared: PreparedNativeExecutable {
+                bytes: Arc::from([]),
+                result_type: zryna_abi::ScalarType::I32,
+                expected_symbol: Box::from("zryna_v1_e_probe"),
+                diagnostics: Vec::new(),
+            },
         };
         assert_eq!(
             run_native_invocation(&artifact, NativeProcessLimits::default())

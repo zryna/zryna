@@ -138,6 +138,26 @@ ZRYNA-A1204  deterministic scan budget exceeded
 ZRYNA-A1205  incomplete scan
 ```
 
+## Compiler output transactions
+
+The architecture scanner excludes only the declared real `.zryna/out` directory; that exclusion
+does not authorize arbitrary output paths. Public `build` and `run` derive an output capability
+for that exact directory and accept no caller-selected output root. They validate the portable
+entrypoint and artifact stem, reject persistent links and Windows reparse points, and place all
+selected output below one new sibling transaction directory. Unix sets the transaction and target
+directories to mode `0700`. Windows inherits ACLs from the validated compiler-owned output root;
+the workspace and `.zryna/out` must therefore already be private to the invoking principal.
+
+The transaction synchronizes every artifact and `zryna-manifest-v1.json`, revalidates containment,
+and performs one create-only same-filesystem directory rename to exactly
+`.zryna/out/<stem>.build` or `.zryna/out/<stem>.run`. Only selected target subdirectories are
+created. A final bundle exists only when it is complete; failure removes the known staged entries,
+does not advertise a partial build, and never modifies a pre-existing destination. Build and run
+bundles may share a stem because their final names are distinct. Cleanup that cannot be confirmed
+is a separate fail-closed exit category. The create-only rename is the commit point; directory-
+entry crash durability afterward is not claimed. The exact layout is specified in the
+[CLI reference](CLI.md).
+
 ## Controlled mutation
 
 Future create and move commands will use a transactional planner:

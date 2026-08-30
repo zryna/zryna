@@ -15,6 +15,8 @@
 
 mod javascript;
 mod native;
+mod pipeline;
+mod runtime;
 mod webassembly;
 
 use std::{error::Error, fmt, path::Path};
@@ -41,6 +43,11 @@ pub use native::{
     NativeRunError, PublishedNativeExecutableArtifact, PublishedNativeObjectArtifact,
     compile_native_invocation, compile_native_object, discover_linux_native_toolchain,
     publish_native_object, run_native_invocation, select_native_object_target,
+};
+pub use pipeline::{
+    BuildRequest, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,
+    PublishedTargetArtifact, RunRequest, TargetResult, TargetSelection, build_workspace,
+    run_workspace,
 };
 pub use webassembly::{
     MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,
