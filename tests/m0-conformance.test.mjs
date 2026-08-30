@@ -136,13 +136,37 @@ test('documented package alias is bound to the canonical runner', async () => {
 test('required CI consumes the same canonical gate on Linux and Windows', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const rust = workflowJob(workflow, 'rust');
+  assert.match(rust, /name: rust \(\$\{\{ matrix\.os \}\}\)/);
   assert.match(rust, /os: \[ubuntu-latest, windows-latest\]/);
   assert.match(rust, /run: node scripts\/run-m0-conformance\.mjs/);
 });
 
+test('CI avoids duplicate feature runs and cancels superseded revisions', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /push:\n    branches: \[main\]\n  pull_request:/);
+  assert.match(
+    workflow,
+    /group: ci-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/,
+  );
+  assert.match(workflow, /cancel-in-progress: true/);
+});
+
+test('Windows CLI smoke precedes the complete M0 gate', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const rust = workflowJob(workflow, 'rust');
+  const smoke = 'cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact';
+  const completeGate = 'node scripts/run-m0-conformance.mjs';
+  assert.match(rust, /if: runner\.os == 'Windows'/);
+  assert.ok(rust.indexOf(smoke) > -1, 'missing Windows CLI smoke command');
+  assert.ok(rust.indexOf(smoke) < rust.indexOf(completeGate), 'Windows CLI smoke must run before M0');
+});
+
 test('required CI exposes a stable aggregate over Rust and adapter gates', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const adapter = workflowJob(workflow, 'adapter');
   const aggregate = workflowJob(workflow, 'm0');
+  assert.match(adapter, /name: adapter/);
+  assert.match(aggregate, /name: m0/);
   assert.match(aggregate, /if: always\(\)/);
   assert.match(aggregate, /needs: \[rust, adapter\]/);
   assert.match(aggregate, /RUST_RESULT: \$\{\{ needs\.rust\.result \}\}/);

@@ -18,6 +18,17 @@ pnpm install --frozen-lockfile
 pnpm m0:check
 ```
 
+For fast triage of JavaScript build/run behavior, run the focused CLI test:
+
+```bash
+cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact
+```
+
+Run it in native Windows when investigating Windows process or path behavior; WSL cannot reproduce
+those operating-system boundaries. CI runs this smoke test early on Windows so a regression is
+reported before the complete conformance command. The smoke test is diagnostic only and does not
+replace `pnpm m0:check`.
+
 ## Registered proof suites
 
 The registry maps each foundation boundary to its component-owned tests. It does not move language
