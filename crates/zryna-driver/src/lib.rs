@@ -13,6 +13,8 @@
 
 #![forbid(unsafe_code)]
 
+mod javascript;
+
 use std::{error::Error, fmt, path::Path};
 
 use zryna_architecture::ValidationReport;
@@ -21,6 +23,12 @@ use zryna_backend_native::LlvmIrArtifact;
 use zryna_diagnostics::{Diagnostic, Severity};
 use zryna_ir::VerifiedProgram;
 use zryna_source::SourceMap;
+
+pub use javascript::{
+    JAVASCRIPT_ARTIFACT_EXTENSION, JavaScriptBuildError, JavaScriptBuildSuccess,
+    JavaScriptOutputRoot, MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES, PublishedJavaScriptArtifact,
+    compile_javascript, publish_javascript,
+};
 
 /// Artifacts emitted by the first verified dual-target slice.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -195,9 +203,19 @@ pub fn emit_verified(program: &VerifiedProgram) -> Result<DualTargetArtifacts, V
 
 #[cfg(test)]
 mod tests {
-    use std::{env, ffi::OsString, path::PathBuf};
+    use std::{
+        env,
+        ffi::OsString,
+        fs,
+        path::{Path, PathBuf},
+        process::{Command, Output},
+        sync::atomic::{AtomicU64, Ordering},
+    };
 
-    use super::{SourceToIrError, compile_to_verified_ir, lower_verified_syntax};
+    use super::{
+        JavaScriptBuildError, JavaScriptOutputRoot, SourceToIrError, compile_javascript,
+        compile_to_verified_ir, lower_verified_syntax,
+    };
     use zryna_diagnostics::{Diagnostic, Severity, render_structured};
     use zryna_frontend::{
         FrontendCapabilities, ProviderExpectation, WorkerFrontend, WorkerLimits, WorkerSpec,
@@ -205,6 +223,40 @@ mod tests {
     };
     use zryna_ir::{Expr, ExprId, ExprKind, Function, Program, Type, verify};
     use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
+
+    static NEXT_JAVASCRIPT_ROOT: AtomicU64 = AtomicU64::new(0);
+
+    struct JavaScriptRoot {
+        workspace: PathBuf,
+        output: JavaScriptOutputRoot,
+    }
+
+    impl JavaScriptRoot {
+        fn new(label: &str) -> Self {
+            let sequence = NEXT_JAVASCRIPT_ROOT.fetch_add(1, Ordering::Relaxed);
+            let workspace = env::temp_dir()
+                .join(format!("zryna-driver-javascript-{}-{label}-{sequence}", std::process::id()));
+            fs::create_dir_all(workspace.join(".zryna/out"))
+                .expect("declared JavaScript fixture root must be created");
+            let output = JavaScriptOutputRoot::for_workspace(&workspace)
+                .expect("JavaScript fixture output must validate");
+            Self { workspace, output }
+        }
+
+        fn path(&self) -> &Path {
+            self.output.path()
+        }
+
+        const fn output(&self) -> &JavaScriptOutputRoot {
+            &self.output
+        }
+    }
+
+    impl Drop for JavaScriptRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.workspace);
+        }
+    }
 
     fn node_executable() -> PathBuf {
         for variable in ["ZRYNA_TEST_NODE", "NODE"] {
@@ -222,6 +274,13 @@ mod tests {
             .map(|directory| directory.join(executable))
             .find(|candidate| candidate.is_file())
             .expect("Node.js must be installed for the source-to-IR integration suite")
+    }
+
+    fn run_node_module(module: &Path, script: &str, extra_arguments: &[&Path]) -> Output {
+        let mut command = Command::new(node_executable());
+        command.arg("--input-type=module").arg("--eval").arg(script).arg(module);
+        command.args(extra_arguments);
+        command.output().expect("Node.js integration harness must start")
     }
 
     fn typescript_frontend() -> WorkerFrontend {
@@ -570,6 +629,167 @@ mod tests {
     }
 
     #[test]
+    fn real_source_publishes_imports_and_executes_deterministic_esm() {
+        let text = include_str!("../../../examples/universal/add.zry");
+        let sources = source_map("examples/universal/add.zry", text);
+        let output_root = JavaScriptRoot::new("execute");
+
+        let result =
+            compile_javascript(&typescript_frontend(), &sources, output_root.output(), "main")
+                .expect("real source must publish JavaScript");
+
+        assert!(result.diagnostics().is_empty());
+        assert_eq!(result.artifact().path(), output_root.path().join("main.mjs"));
+        let bytes = fs::read(result.artifact().path()).expect("published module must be readable");
+        assert!(bytes.ends_with(b"\n"));
+        assert!(!bytes.starts_with(&[0xef, 0xbb, 0xbf]));
+        let source = std::str::from_utf8(&bytes).expect("JavaScript artifact must be UTF-8");
+        assert!(source.contains("export function add(p0, p1)"));
+        assert!(!source.to_ascii_lowercase().contains("typescript"));
+        assert!(!source.contains("import "));
+
+        let script = r#"
+import { pathToFileURL } from "node:url";
+const target = await import(pathToFileURL(process.argv[1]).href);
+const values = [
+  target.add(2147483647, 1),
+  target.add(-2147483648, -1),
+  target.add(-1, -1),
+  target.add(0, 0),
+  target.add(20, 22),
+];
+const invalid = [
+  () => target.add(1),
+  () => target.add(1, 2, 3),
+  () => target.add("1", 2),
+  () => target.add(1n, 2),
+  () => target.add(true, 2),
+  () => target.add(undefined, 2),
+  () => target.add(null, 2),
+  () => target.add(new Number(1), 2),
+  () => target.add({ valueOf: () => 1 }, 2),
+  () => target.add(1.5, 2),
+  () => target.add(Number.NaN, 2),
+  () => target.add(Number.POSITIVE_INFINITY, 2),
+  () => target.add(-0, 2),
+  () => target.add(2147483648, 2),
+];
+const errors = invalid.map((invoke) => {
+  try {
+    invoke();
+    return "missing-error";
+  } catch (error) {
+    return String(error.message).split(":", 1)[0];
+  }
+});
+process.stdout.write(JSON.stringify({
+  exports: Object.keys(target),
+  values,
+  negativeZero: values.some((value) => Object.is(value, -0)),
+  errors,
+}));
+"#;
+        let output = run_node_module(result.artifact().path(), script, &[]);
+
+        assert!(output.status.success(), "stderr: {}", String::from_utf8_lossy(&output.stderr));
+        assert!(output.stderr.is_empty());
+        assert_eq!(
+            String::from_utf8(output.stdout).expect("Node output must be UTF-8"),
+            concat!(
+                "{\"exports\":[\"add\"],",
+                "\"values\":[-2147483648,2147483647,-2,0,42],",
+                "\"negativeZero\":false,",
+                "\"errors\":[\"ZRYNA-B2102\",\"ZRYNA-B2102\",",
+                "\"ZRYNA-B2001\",\"ZRYNA-B2001\",\"ZRYNA-B2001\",",
+                "\"ZRYNA-B2001\",\"ZRYNA-B2001\",\"ZRYNA-B2001\",",
+                "\"ZRYNA-B2001\",\"ZRYNA-B2002\",\"ZRYNA-B2002\",",
+                "\"ZRYNA-B2002\",\"ZRYNA-B2002\",\"ZRYNA-B2002\"]}"
+            )
+        );
+    }
+
+    #[test]
+    fn javascript_carriers_consume_the_shared_scalar_abi_fixture() {
+        let sources =
+            source_map("src/probe.zry", "export function probe(value: i32): i32 { return value; }");
+        let output_root = JavaScriptRoot::new("bool-carriers");
+        let result =
+            compile_javascript(&typescript_frontend(), &sources, output_root.output(), "probe")
+                .expect("i32 probe must publish");
+        let mut probe_source =
+            fs::read_to_string(result.artifact().path()).expect("probe module must be readable");
+        probe_source.push_str("export { $zryna$bool as boolProbe, $zryna$i32 as i32Probe };\n");
+        let probe_path = output_root.path().join("scalar-probe.mjs");
+        fs::write(&probe_path, probe_source).expect("test-only scalar probe must be written");
+        let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../spec/abi/scalar-v1-fixtures.json");
+        let script = r#"
+import { readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
+const target = await import(pathToFileURL(process.argv[1]).href);
+const fixture = JSON.parse(await readFile(process.argv[2], "utf8"));
+const cases = fixture.carrierCases.filter((entry) => entry.target === "javascript");
+for (const entry of cases) {
+    let raw;
+    if (entry.raw.kind === "javascript-bool") raw = entry.raw.value;
+    else if (entry.raw.number.kind === "finite") raw = entry.raw.number.value;
+    else if (entry.raw.number.kind === "nan") raw = Number.NaN;
+    else if (entry.raw.number.kind === "positive-infinity") raw = Number.POSITIVE_INFINITY;
+    else if (entry.raw.number.kind === "negative-infinity") raw = Number.NEGATIVE_INFINITY;
+    else throw new Error("unexpected JavaScript carrier fixture");
+    const validate = entry.scalarType === "bool" ? target.boolProbe : target.i32Probe;
+    try {
+      const value = validate(raw);
+      if (entry.errorCode !== null || entry.value === null || !Object.is(value, entry.value.value)) {
+        throw new Error(`fixture expected rejection for ${entry.scalarType}/${entry.direction}`);
+      }
+    } catch (error) {
+      const code = String(error.message).split(":", 1)[0];
+      if (code !== entry.errorCode) {
+        throw new Error(`fixture mismatch for ${entry.scalarType}/${entry.direction}: ${code}`);
+      }
+    }
+}
+process.stdout.write(JSON.stringify({
+  count: cases.length,
+  bool: cases.filter((entry) => entry.scalarType === "bool").length,
+  i32: cases.filter((entry) => entry.scalarType === "i32").length,
+}));
+"#;
+        let output = run_node_module(&probe_path, script, &[&fixture]);
+
+        assert!(output.status.success(), "stderr: {}", String::from_utf8_lossy(&output.stderr));
+        assert!(output.stderr.is_empty());
+        assert_eq!(
+            String::from_utf8(output.stdout).expect("Node output must be UTF-8"),
+            "{\"count\":20,\"bool\":5,\"i32\":15}"
+        );
+    }
+
+    #[test]
+    fn rejected_boolean_source_and_existing_outputs_never_report_a_new_artifact() {
+        let output_root = JavaScriptRoot::new("fail-closed");
+        let bool_sources =
+            source_map("src/main.zry", "export function yes(): bool { return true; }");
+        let error =
+            compile_javascript(&typescript_frontend(), &bool_sources, output_root.output(), "main")
+                .expect_err("Boolean source must remain outside I32V1");
+        assert!(matches!(error, JavaScriptBuildError::Source(_)));
+        assert!(error.diagnostics().iter().any(|item| item.code() == "ZRYNA-I1006"));
+        assert!(fs::read_dir(output_root.path()).expect("fixture listing").next().is_none());
+
+        let destination = output_root.path().join("main.mjs");
+        fs::write(&destination, b"sentinel").expect("sentinel must be written");
+        let i32_sources = source_map("src/main.zry", "export function value(): i32 { return 1; }");
+        let error =
+            compile_javascript(&typescript_frontend(), &i32_sources, output_root.output(), "main")
+                .expect_err("create-only publication must preserve the destination");
+        assert!(matches!(error, JavaScriptBuildError::Publication(_)));
+        assert_eq!(error.diagnostics()[0].code(), "ZRYNA-D2007");
+        assert_eq!(fs::read(destination).expect("sentinel must remain"), b"sentinel");
+    }
+
+    #[test]
     fn one_verified_program_drives_both_backend_boundaries() {
         let sources = SourceMap::build(vec![SourceFileInput {
             path: "src/add.zry".to_owned(),
@@ -609,10 +829,10 @@ mod tests {
 
         let artifacts = super::emit_verified(&verified).expect("both backends must emit");
 
-        assert_eq!(
-            artifacts.javascript.source,
-            "export function add(p0, p1) {\n  const v0 = p0;\n  const v1 = p1;\n  const v2 = (v0 + v1) | 0;\n  return v2;\n}\nexport function answer() {\n  const v0 = 42;\n  return v0;\n}\n"
-        );
+        assert!(artifacts.javascript.source.contains("export function add(p0, p1)"));
+        assert!(artifacts.javascript.source.contains("export function answer()"));
+        assert!(artifacts.javascript.source.contains("(v0 + v1) | 0"));
+        assert!(artifacts.javascript.source.contains("$zryna$i32"));
         assert_eq!(
             artifacts.llvm_ir.source,
             "define i32 @add(i32 %p0, i32 %p1) {\nentry:\n  %v2 = add i32 %p0, %p1\n  ret i32 %v2\n}\ndefine i32 @answer() {\nentry:\n  %v0 = add i32 0, 42\n  ret i32 %v0\n}\n"
