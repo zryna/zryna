@@ -24,7 +24,10 @@ handshake
 └── semantic-diagnostics capability
 ```
 
-A provider version mismatch, crash, malformed message, incomplete snapshot, or unsupported syntax fails closed.
+A provider version mismatch, crash, malformed message, incomplete project file set, or reported
+unsupported syntax fails closed. Until the independent native frontend exists, completeness inside
+each source file is a conformance property of the exact pinned provider rather than something the
+provider-neutral DTO verifier can independently reconstruct from source text.
 
 ## Source-coordinate contract
 
@@ -54,8 +57,11 @@ live in `zryna-syntax`, below all provider implementations. See
 | Native Zryna provider | unavailable | eventual provider target |
 
 Selecting v2 requires an exact v2 handshake. No compiler path silently upgrades a v1 response.
-Provider error diagnostics stop compilation before semantic lowering, so an omitted unsupported
-subtree cannot be interpreted as a smaller valid program.
+Provider error diagnostics stop compilation before semantic lowering. The pinned TypeScript 6
+suite proves that its recognized unsupported constructs produce such an error and that expression
+rollback leaves no smaller accepted arena. A structurally valid provider that silently omits an
+arbitrary source subtree is outside what the DTO verifier alone can prove; differential provider
+conformance and the future native parser close that remaining trust assumption.
 
 ## Worker discovery and lifecycle
 

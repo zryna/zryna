@@ -24,11 +24,11 @@ Every issue defines its problem, architecture boundary, scope, exclusions, depen
 
 ## M0 — Architecture Foundation
 
-Status: active audit. The implemented foundation passes its documented local checks. The
-provider-neutral executable syntax protocol is now specified and verified in core, and the
-TypeScript bootstrap adapter emits it through a fail-closed boundary. Semantic lowering remains a
-dependency-ordered follow-up issue. M0 remains open
-until all security and completeness claims are independently verified.
+Status: closure candidate. The provider-neutral executable syntax protocol, bounded bootstrap
+adapter, sealed Universal IR, and independently verified native MIR boundary are enforced by the
+canonical [M0 conformance gate](M0_CONFORMANCE.md). M0 becomes complete only after that same gate
+and independent closure review pass on Linux and Windows. Zryna-owned semantic lowering remains
+the first compiler step in M1.
 
 - strict repository contract and fail-closed architecture engine;
 - stable diagnostics and source spans;
@@ -36,18 +36,23 @@ until all security and completeness claims are independently verified.
 - exact TypeScript 6 adapter pin;
 - provider-neutral syntax DTOs owned below replaceable frontend providers;
 - verified Universal IR;
-- independent JavaScript, WebAssembly, and native backend boundaries;
+- independent verified-only JavaScript and native backend boundaries; direct WebAssembly emission
+  begins in M1;
 - Linux and Windows CI;
 - governed milestones, issue templates, and protected `main` gates.
 
 Completion gates:
 
 - every documented foundation check passes locally and in CI;
-- scanner, manifest, dependency-graph, adapter, and IR boundaries fail closed under negative tests;
+- scanner, manifest, dependency-graph, source, diagnostic, protocol, adapter, IR, MIR, and backend
+  boundaries fail closed under registered negative tests;
 - the component graph gives semantic lowering access to syntax DTOs without a compiler-to-frontend dependency;
 - the public architecture and current-status claims match implemented behavior;
 - the three-target roadmap and dependency order are published;
 - `main` requires pull requests and successful CI without force pushes.
+
+Closure evidence and the deliberately unsupported post-M0 surface are recorded in
+[M0 conformance](M0_CONFORMANCE.md).
 
 ## M1 — First Three-Target Executable Slice
 

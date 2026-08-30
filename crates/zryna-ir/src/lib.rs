@@ -117,6 +117,13 @@ impl LogicalExportName {
 }
 
 /// Program proven to satisfy every invariant in the current universal backend profile.
+///
+/// Construction is reserved to [`verify`]:
+///
+/// ```compile_fail
+/// let raw = zryna_ir::Program::default();
+/// let _ = zryna_ir::VerifiedProgram { program: raw, exports: Vec::new() };
+/// ```
 #[derive(Clone, Debug)]
 pub struct VerifiedProgram {
     program: Program,

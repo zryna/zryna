@@ -16,6 +16,13 @@ pub struct JavaScriptArtifact {
 
 /// Emits modern ECMAScript from verified Zryna IR.
 ///
+/// Raw Universal IR is not accepted by this boundary:
+///
+/// ```compile_fail
+/// let raw = zryna_ir::Program::default();
+/// let _ = zryna_backend_javascript::emit(&raw);
+/// ```
+///
 /// # Errors
 ///
 /// Returns a compiler diagnostic when a verified expression cannot be emitted.

@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "files": [
+    {
+      "id": 0,
+      "path": "src/main.zry",
+      "functions": [
+        {
+          "span": { "file": 0, "start": 0, "end": 44 },
+          "export_span": { "file": 0, "start": 0, "end": 6 },
+          "function_span": { "file": 0, "start": 7, "end": 15 },
+          "name": { "text": "yes", "span": { "file": 0, "start": 16, "end": 19 } },
+          "parameters": [],
+          "result_type": {
+            "span": { "file": 0, "start": 23, "end": 27 },
+            "kind": { "kind": "named", "name": "bool" }
+          },
+          "body": {
+            "span": { "file": 0, "start": 28, "end": 44 },
+            "statements": [
+              {
+                "span": { "file": 0, "start": 30, "end": 42 },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": { "file": 0, "start": 30, "end": 36 },
+                  "value": 0
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": { "file": 0, "start": 37, "end": 41 },
+                "kind": { "kind": "bool-literal", "value": true }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "TS9000",
+      "severity": "warning",
+      "location": { "kind": "global" },
+      "message": "provider note",
+      "guidance": "review the declaration"
+    }
+  ]
+}

@@ -8,6 +8,28 @@ use zryna_source::SourceMap;
 use zryna_syntax::v2::ProjectSyntaxSnapshot;
 
 /// Inputs that a future semantic implementation must consume without frontend authority.
+///
+/// Raw protocol-v2 claims cannot enter this boundary:
+///
+/// ```compile_fail
+/// fn bypass<'a>(
+///     raw: &'a zryna_syntax::v2::RawProjectSyntaxSnapshot,
+///     sources: &'a zryna_source::SourceMap,
+/// ) -> Option<zryna_semantics::SemanticInput<'a>> {
+///     zryna_semantics::SemanticInput::try_new(raw, sources)
+/// }
+/// ```
+///
+/// The wrapper cannot be forged without [`SemanticInput::try_new`]:
+///
+/// ```compile_fail
+/// fn forge<'a>(
+///     syntax: &'a zryna_syntax::v2::ProjectSyntaxSnapshot,
+///     sources: &'a zryna_source::SourceMap,
+/// ) -> zryna_semantics::SemanticInput<'a> {
+///     zryna_semantics::SemanticInput { syntax, sources }
+/// }
+/// ```
 #[derive(Clone, Copy, Debug)]
 pub struct SemanticInput<'a> {
     syntax: &'a ProjectSyntaxSnapshot,
@@ -73,14 +95,24 @@ mod tests {
     #[test]
     fn semantic_input_rejects_provider_errors() {
         let sources = sources();
-        let fixture = include_str!("../../../tests/fixtures/syntax-v2-valid.json");
-        let with_error = fixture.replace(
-            "\"diagnostics\": []",
-            r#""diagnostics": [{"code":"ZRYNA-F2002","severity":"error","location":{"kind":"global"},"message":"unsupported syntax","guidance":"use supported syntax"}]"#,
-        );
-        let raw = decode_snapshot(with_error.as_bytes()).expect("error fixture must decode");
+        let raw = decode_snapshot(include_bytes!(
+            "../../../tests/fixtures/typescript-adapter-v2-error-result.json"
+        ))
+        .expect("error fixture must decode");
         let syntax = verify_snapshot(raw, &sources).expect("provider error must remain verifiable");
 
         assert!(SemanticInput::try_new(&syntax, &sources).is_none());
+    }
+
+    #[test]
+    fn semantic_input_accepts_provider_warnings() {
+        let sources = sources();
+        let raw = decode_snapshot(include_bytes!(
+            "../../../tests/fixtures/typescript-adapter-v2-warning-result.json"
+        ))
+        .expect("warning fixture must decode");
+        let syntax = verify_snapshot(raw, &sources).expect("provider warning fixture must verify");
+
+        assert!(SemanticInput::try_new(&syntax, &sources).is_some());
     }
 }

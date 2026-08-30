@@ -14,6 +14,39 @@ const schema = JSON.parse(
   await readFile(new URL('../../../schemas/zryna-syntax-v2.schema.json', import.meta.url)),
 );
 const validateSnapshot = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
+const CHILD_TIMEOUT_MS = 30_000;
+const CHILD_CLEANUP_TIMEOUT_MS = 5_000;
+
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function waitForExit(child) {
+  const exit = once(child, 'exit');
+  let timeout;
+  try {
+    return await Promise.race([
+      exit,
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => {
+          child.kill();
+          reject(new Error(`adapter worker exceeded ${CHILD_TIMEOUT_MS}ms`));
+        }, CHILD_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (error) {
+    child.kill();
+    await Promise.race([
+      exit,
+      delay(CHILD_CLEANUP_TIMEOUT_MS).then(() => {
+        throw new Error(`adapter worker did not exit within ${CHILD_CLEANUP_TIMEOUT_MS}ms after termination`);
+      }),
+    ]);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function exchangeRaw(input, options = {}) {
   const child = spawn(process.execPath, ['src/worker.mjs'], {
@@ -27,7 +60,7 @@ async function exchangeRaw(input, options = {}) {
   child.stdout.on('data', (chunk) => stdout.push(chunk));
   child.stderr.on('data', (chunk) => stderr.push(chunk));
   child.stdin.end(input);
-  const [code] = await once(child, 'exit');
+  const [code] = await waitForExit(child);
   assert.equal(code, 0, Buffer.concat(stderr).toString('utf8'));
   assert.equal(Buffer.concat(stderr).length, 0);
   return Buffer.concat(stdout)
