@@ -1,11 +1,10 @@
 # Scalar ABI v1
 
 Status: normative for the first three-target executable slice. For the current executable
-`I32V1` profile, the JavaScript backend implements the sealed export mapping and strict JavaScript
-carrier wrappers, while the direct core WebAssembly backend implements the sealed `i32` export
-mapping. JavaScript and WebAssembly carrier tests consume the shared fixture, but Boolean source
-and IR remain profile-gated. A strict typed WebAssembly host wrapper and native public wrapper do
-not implement the complete boundary yet.
+`I32V1` profile, JavaScript and direct core WebAssembly implement sealed export mappings and the
+native backend implements the Linux x86-64 `i32` symbol/calling mapping in an audited object.
+Boolean source and IR remain profile-gated. Strict typed WebAssembly and native Boolean host
+wrappers do not implement the complete boundary yet.
 
 ## Authority and version
 
@@ -51,8 +50,8 @@ Normative references:
 
 | Zryna type | JavaScript boundary | Core WebAssembly boundary | Linux x86-64 native public boundary |
 | --- | --- | --- | --- |
-| `i32` | primitive Number, finite integral signed 32-bit, excluding negative zero | `i32`, every bit pattern | LLVM `i32`, every bit pattern |
-| `bool` | primitive Boolean only | `i32`, exactly `0` or `1` | public LLVM `i32`, exactly `0` or `1` |
+| `i32` | primitive Number, finite integral signed 32-bit, excluding negative zero | `i32`, every bit pattern | System V 32-bit integer carrier, every bit pattern |
+| `bool` | primitive Boolean only | `i32`, exactly `0` or `1` | future public 32-bit integer carrier, exactly `0` or `1` |
 
 JavaScript strings, BigInts, truthy values, fractions, NaN, infinities, out-of-range numbers, and
 negative zero are invalid arguments rather than coercion inputs. A WebAssembly or native Boolean
@@ -60,8 +59,9 @@ argument other than `0` or `1` is invalid before the function body. Boolean resu
 canonical; another raw result is a target ABI failure and must not be normalized by truthiness.
 After boundary validation, every target represents a Zryna Boolean internally as the typed values
 `false` or `true`; JavaScript must not retain a truthy non-Boolean and WebAssembly must not retain an
-arbitrary nonzero `i32` as a Boolean. A native implementation may lower that internal value to
-LLVM `i1`, but its public wrapper carries Boolean values as `i32` and zero-extends valid results.
+arbitrary nonzero `i32` as a Boolean. A future native Boolean implementation may use another
+internal representation, but its public wrapper must carry Boolean values as 32-bit integers and
+zero-extend valid results.
 
 The generic WebAssembly JavaScript API applies `ToInt32` to raw calls. A Zryna host wrapper must
 validate first and must not use that coercion as validation:
@@ -85,5 +85,6 @@ fixture. `zryna-abi` validates it. The executable JavaScript integration consume
 both `i32` and Boolean carrier validation; the current `i32` source execution matrix also checks
 its public wrapper directly. The WebAssembly conformance integration consumes all current
 `core-webassembly` carrier cases, including canonical and invalid Boolean lanes, without enabling
-Boolean source or claiming a public host wrapper. Native target tests must consume this same file
-when their executable implementation lands; copied target-local cases are not normative.
+Boolean source or claiming a public host wrapper. Native tests account for all 11 native cases:
+the three `i32` lanes belong to the current object/execution proof, while the eight Boolean lanes
+remain explicitly gated. Copied target-local cases are not normative.

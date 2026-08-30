@@ -67,8 +67,9 @@ The repository currently establishes and tests:
 - deterministic direct core WebAssembly 1.0 emission from verified `I32V1` IR, with sealed export
   names, an import-free capability audit, pinned binary validation, and create-only `.wasm`
   publication through the same validated output capability;
-- native MIR lowering through an independent `VerifiedMirModule` gate and textual LLVM IR emission
-  as a backend-boundary proof.
+- native MIR lowering through an independent `VerifiedMirModule` gate that retains scalar ABI v1
+  authority, plus deterministic Linux x86-64 ELF relocatable-object emission and create-only
+  `.o` publication.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. The first strict semantic subset requires one source file,
@@ -84,9 +85,11 @@ The JavaScript and WebAssembly backends consume the sealed scalar ABI mapping fo
 only type, function, export, and code sections; it has no imports or ambient capabilities. Every
 module passes an explicitly pinned WebAssembly 1.0 validator and narrower structural/operator
 audit before publication. Both targets preserve wrapping `i32` addition and run the shared source
-fixture under Node.js conformance tests. This does not yet expose a public build/run CLI, and
-source-level `bool` remains verifier-gated. Textual LLVM IR is not object or executable emission;
-native object generation and linking are the next M1 gates.
+fixture under conformance tests. The native object path uses pinned pure-Rust Cranelift, selects
+only `x86_64-unknown-linux-gnu`, audits the encoded ELF, and invokes no production compiler,
+assembler, linker, or executable. Linux test code links an object only to verify the System V ABI.
+This does not yet expose a public build/run CLI; source-level `bool` remains verifier-gated and
+product linking/running is the next M1 gate.
 
 ## Run the foundation gate
 
@@ -95,6 +98,8 @@ Requirements:
 - Rust 1.97.1
 - Node.js 22.22.1 or newer
 - pnpm 11.18.0
+- a Linux C toolchain providing `cc` for the native ABI conformance tests (Linux only; not used by
+  production object generation)
 
 ```bash
 pnpm install --frozen-lockfile

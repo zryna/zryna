@@ -7,6 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+zryna-abi.workspace = true
 zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-ir = { path = "../zryna-ir" }
 

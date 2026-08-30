@@ -53,10 +53,11 @@ semantic lowering never depends on a replaceable provider.
    WebAssembly, validates and profile-audits complete bytes, and exposes only a sealed artifact.
    The driver publishes `.wasm` create-only. Browser bindings and WASI capabilities remain
    explicit host profiles.
-10. Native lowering creates explicit typed native claims; the native MIR verifier is the only
-   constructor of the codegen-accepted `VerifiedMirModule`.
-11. Later native profiles add control flow, layout, moves, drops, and public calling conventions
-    before object generation and linking.
+10. Native lowering creates explicit typed native claims; the native MIR verifier retains the
+    sealed scalar ABI module and is the only constructor of the codegen-accepted
+    `VerifiedMirModule`.
+11. The native backend consumes that authority, emits one fixed-target ELF relocatable object,
+    independently audits it, and exposes only sealed bytes. Product linking remains a later gate.
 
 ## Dependency direction
 
@@ -82,7 +83,7 @@ scalar ABI ───────────────────────
                               ↓              ↓
                          validation       codegen
                                              ↓
-                                           linker
+                                      audited `.o`
 ```
 
 `zryna-driver` is the only library allowed to orchestrate all phases. The CLI calls the driver and architecture engine; individual backends do not call one another.
@@ -209,15 +210,20 @@ standard WebAssembly API in conformance tests. That API is browser-compatible, b
 browser or DOM test and runtime execution is not a production build phase. Raw JavaScript calls
 to WebAssembly perform host coercion; no strict public host wrapper is claimed by this slice.
 
-Native MIR has its own consumed raw-to-verified boundary. Raw functions explicitly claim a symbol,
-provisional internal convention, typed signature, dense typed value definitions, operations, and a
-result. The iterative bounded verifier proves `i32` types, unique safe symbols, the admitted
-convention, exact definitions, strict-predecessor operands, acyclicity, a typed result, and resource
-limits before constructing `VerifiedMirModule`. Native codegen accepts only that wrapper. Repeated
-SSA uses and bounded dead values are valid; Universal IR's tree-ownership rule is not copied into
-MIR. The provisional convention and raw symbol spelling are proof inputs, not scalar ABI v1.
-Control-flow dominance, public calling conventions, object emission, and linking remain later
-mandatory gates.
+Native MIR has its own consumed raw-to-verified boundary. Raw functions claim logical names, a
+convention, typed signatures, dense typed values, operations, and results. The iterative bounded
+verifier proves the MIR invariants and independently seals scalar ABI v1 before constructing
+`VerifiedMirModule`. Each function view therefore carries the authoritative
+`zryna_v1_e_<logical>` symbol and Linux x86-64 System V convention; codegen does not invent names.
+
+`compile_native_object` selects exactly `x86_64-unknown-linux-gnu`, lowers verified source through
+native MIR, emits with pinned pure-Rust Cranelift, parses and fail-closed audits the ELF64
+little-endian relocatable object, then publishes `<stem>.o` through the shared create-only output
+capability. The audit requires the exact sealed global text symbols, no undefined symbols, and no
+relocations for the current leaf-function profile. It exposes bytes only as
+`ValidatedNativeObjectArtifact`. Production does not invoke a compiler, assembler, linker,
+loader, or generated executable. Control flow, calls, product linking/running, Windows output,
+FFI, and Boolean source/IR remain later gates.
 
 ## Initial numeric contract
 

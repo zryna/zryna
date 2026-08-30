@@ -18,5 +18,8 @@ zryna-native-mir = { path = "../zryna-native-mir" }
 zryna-semantics = { path = "../zryna-semantics" }
 zryna-source = { path = "../zryna-source" }
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true

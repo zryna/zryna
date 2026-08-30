@@ -40,6 +40,11 @@ byte writer used by JavaScript. The public publisher accepts only the sealed val
 it cannot publish arbitrary WebAssembly bytes. Same-stem `.mjs` and `.wasm` files may coexist.
 
 Node.js 22.22.1 exercises the published module with the standard WebAssembly API as a conformance
-harness, not a production build phase or browser claim. `emit_verified` continues to prove the
-textual native-backend boundary. Native object generation, linking, three-target execution, and
-the user-facing CLI remain later M1 gates.
+harness, not a production build phase or browser claim.
+
+`compile_native_object` independently runs source → verified IR → verified native MIR → exact
+target selection → audited ELF object → create-only `<stem>.o` publication. It reuses
+`ArtifactOutputRoot`, portable stems, and the atomic byte publisher, so `.mjs`, `.wasm`, and `.o`
+may coexist without replacement. Unsupported targets and every earlier failure create no object.
+Product linking/running, the atomic three-target CLI, and differential execution remain later M1
+gates.
