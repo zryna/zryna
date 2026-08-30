@@ -29,8 +29,9 @@ flushed, and synchronized through a new sibling temporary file before the absent
 committed with a hard link. Existing destinations are never replaced, and a failed build never
 reports a new artifact. Non-fatal provider and publication warnings remain observable on success.
 
-Generated modules are imported and executed by the integration suite with Node.js 22.22.1. The
-driver does not yet expose a public Node runner or build/run CLI.
+Generated modules are imported and executed by the integration suite and public CLI with a
+validated exact Node.js 22.22.1 runtime. The driver owns the bounded, no-shell execution boundary;
+the CLI owns only request parsing and rendering.
 
 `compile_webassembly` independently connects the same authenticated source-to-verified-IR path to
 the direct core WebAssembly backend. The backend returns private bytes only after explicit
@@ -40,7 +41,8 @@ byte writer used by JavaScript. The public publisher accepts only the sealed val
 it cannot publish arbitrary WebAssembly bytes. Same-stem `.mjs` and `.wasm` files may coexist.
 
 Node.js 22.22.1 exercises the published module with the standard WebAssembly API as a conformance
-harness, not a production build phase or browser claim.
+harness and as the public CLI host. This remains core, import-free WebAssembly execution, not a
+browser or DOM claim.
 
 `compile_native_object` independently runs source → verified IR → verified native MIR → exact
 target selection → audited ELF object → create-only `<stem>.o` publication. It reuses
@@ -58,7 +60,14 @@ stage so public-path replacement cannot substitute code, bounds and isolates the
 group, decodes its exact four-byte result channel, and returns the ABI authority's typed
 `ScalarOutcome`.
 
-This is a library integration boundary, not the public CLI. Atomic three-target CLI orchestration
-and differential execution remain later M1 gates. See
+The public CLI composes these library boundaries through driver-owned build and run requests. Each
+request performs the mandatory architecture gate first, authenticates and verifies one entrypoint
+once, and dispatches the same `VerifiedProgram` in JavaScript, WebAssembly, native order. Run
+validates one typed `i32` invocation before execution. Selected artifacts, ordered results, and a
+deterministic manifest are synchronized in one compiler-owned transaction directory and exposed
+only by one create-only directory rename to `<stem>.build` or `<stem>.run`. Unix applies mode
+`0700`; Windows relies on private ACLs inherited from the validated output root. There is no
+partially advertised bundle. The driver reports ordered target observations but does not compare
+them; differential enforcement remains Issue #20. See the [CLI reference](../../docs/CLI.md) and
 [`EXECUTABLE.md`](../../spec/native-semantics/EXECUTABLE.md) for the normative security and behavior
 contract.

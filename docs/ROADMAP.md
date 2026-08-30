@@ -60,6 +60,10 @@ Closure evidence and the deliberately unsupported post-M0 surface are recorded i
 
 Goal: compile one `.zry` entrypoint to executable JavaScript, direct WebAssembly, and a Linux x86-64 native executable with matching specified behavior.
 
+Current status: Issue #19 implements the explicit build/run CLI and atomic target bundles for the
+`I32V1` slice. M1 remains open: Issue #20 must enforce cross-target result equivalence, and Issue
+#21 must publish the versioned website-facing status and reference data.
+
 Dependency order:
 
 1. extend the lower-layer provider-neutral syntax contract with normalized function bodies,
@@ -73,13 +77,14 @@ Dependency order:
 6. freeze scalar ABI v1: logical export names, target symbol mapping, `i32` and `bool`
    representation, invocation, and host-result normalization (implemented by Issue #13);
 7. emit and execute an ECMAScript module (implemented by Issue #15 for the current `I32V1`
-   source slice; public CLI integration remains step 10);
+   source slice; public CLI integration implemented by Issue #19);
 8. emit, validate, publish, and execute a direct import-free core WebAssembly module for the
    current `I32V1` scalar slice (implemented by Issue #16; a strict typed WebAssembly host wrapper
    and Boolean source/IR remain later gates);
 9. lower native MIR to a real audited Linux x86-64 object (object emission implemented by Issue
    #17; driver-owned sealed linking and typed execution implemented by Issue #18);
-10. expose explicit CLI build and run targets (Issue #19);
+10. expose explicit CLI build and run targets (implemented by Issue #19 for the `I32V1` slice,
+    including atomic multi-target bundles and ordered observations without comparison);
 11. compare JavaScript, WebAssembly, and native results, including `i32` boundaries (Issue #20);
 12. publish versioned status and reference documentation for website consumption (Issue #21).
 

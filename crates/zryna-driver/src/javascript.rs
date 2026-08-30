@@ -6,9 +6,11 @@ use std::{
     io::{self, Write},
     path::{Path, PathBuf},
     process,
+    sync::Arc,
     sync::atomic::{AtomicU64, Ordering},
 };
 
+use same_file::Handle;
 use zryna_backend_javascript::JavaScriptArtifact;
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::VerifiedFrontendProvider;
@@ -31,9 +33,35 @@ static NEXT_TEMPORARY_NAME: AtomicU64 = AtomicU64::new(0);
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ArtifactOutputRoot {
     path: PathBuf,
+    identity: Arc<Handle>,
 }
 
 impl ArtifactOutputRoot {
+    /// Creates missing compiler-owned output directories and validates the resulting capability.
+    ///
+    /// The absolute workspace and every existing ancestor must already be real directories. Only
+    /// the exact `.zryna` and `.zryna/out` components may be created; links and reparse points are
+    /// rejected before the capability is returned.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable diagnostic when creation, synchronization, or containment validation
+    /// fails.
+    pub fn prepare_for_workspace(workspace_root: &Path) -> Result<Self, Diagnostic> {
+        if !workspace_root.is_absolute() {
+            return Err(invalid_output_root_error(
+                "workspace root must be absolute before preparing the artifact output root",
+            ));
+        }
+        validate_real_directory_chain(workspace_root)?;
+        let state_root = workspace_root.join(".zryna");
+        create_real_directory(&state_root)?;
+        let output_root = state_root.join("out");
+        create_real_directory(&output_root)?;
+        validate_real_directory_chain(&output_root)?;
+        Self::capture(output_root)
+    }
+
     /// Derives and validates the exact `.zryna/out` root of one absolute workspace path.
     ///
     /// The output root and every persistent ancestor must already be real directories rather
@@ -51,7 +79,7 @@ impl ArtifactOutputRoot {
         }
         let path = workspace_root.join(ARTIFACT_OUTPUT_RELATIVE_ROOT);
         validate_real_directory_chain(&path)?;
-        Ok(Self { path })
+        Self::capture(path)
     }
 
     /// Returns the exact validated `.zryna/out` path.
@@ -61,7 +89,82 @@ impl ArtifactOutputRoot {
     }
 
     pub(crate) fn revalidate(&self) -> Result<(), Diagnostic> {
+        validate_real_directory_chain(&self.path)?;
+        let current = Handle::from_path(&self.path).map_err(|error| {
+            invalid_output_root_error(format!(
+                "compiler-owned output directory identity could not be read: {error}"
+            ))
+        })?;
+        if current != *self.identity {
+            return Err(invalid_output_root_error(
+                "compiler-owned output directory identity changed after validation",
+            ));
+        }
         validate_real_directory_chain(&self.path)
+    }
+
+    fn capture(path: PathBuf) -> Result<Self, Diagnostic> {
+        let identity = Handle::from_path(&path).map_err(|error| {
+            invalid_output_root_error(format!(
+                "compiler-owned output directory identity could not be established: {error}"
+            ))
+        })?;
+        validate_real_directory_chain(&path)?;
+        Ok(Self { path, identity: Arc::new(identity) })
+    }
+}
+
+fn create_real_directory(path: &Path) -> Result<(), Diagnostic> {
+    match fs::create_dir(path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+        Err(error) => {
+            return Err(invalid_output_root_error(format!(
+                "could not create compiler-owned output directory '{}': {error}",
+                path.display()
+            )));
+        }
+    }
+    let metadata = fs::symlink_metadata(path).map_err(|error| {
+        invalid_output_root_error(format!(
+            "could not inspect compiler-owned output directory '{}': {error}",
+            path.display()
+        ))
+    })?;
+    if !metadata.is_dir() || metadata_is_link_or_reparse(&metadata) {
+        return Err(invalid_output_root_error(format!(
+            "compiler-owned output path '{}' is not a real directory",
+            path.display()
+        )));
+    }
+    sync_directory(path)
+}
+
+#[cfg(unix)]
+fn sync_directory(path: &Path) -> Result<(), Diagnostic> {
+    fs::File::open(path).and_then(|directory| directory.sync_all()).map_err(|error| {
+        invalid_output_root_error(format!(
+            "compiler-owned output directory '{}' could not be synchronized: {error}",
+            path.display()
+        ))
+    })
+}
+
+#[cfg(not(unix))]
+fn sync_directory(path: &Path) -> Result<(), Diagnostic> {
+    let metadata = fs::symlink_metadata(path).map_err(|error| {
+        invalid_output_root_error(format!(
+            "compiler-owned output directory '{}' could not be revalidated: {error}",
+            path.display()
+        ))
+    })?;
+    if metadata.is_dir() && !metadata_is_link_or_reparse(&metadata) {
+        Ok(())
+    } else {
+        Err(invalid_output_root_error(format!(
+            "compiler-owned output path '{}' is not a real directory",
+            path.display()
+        )))
     }
 }
 

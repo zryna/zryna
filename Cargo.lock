@@ -811,9 +811,9 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 name = "zryna"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "clap",
  "serde_json",
+ "zryna-abi",
  "zryna-architecture",
  "zryna-diagnostics",
  "zryna-driver",
@@ -891,7 +891,11 @@ dependencies = [
  "nix",
  "object",
  "process-wrap",
+ "same-file",
+ "serde",
  "serde_json",
+ "sha2",
+ "windows-spawn",
  "zryna-abi",
  "zryna-architecture",
  "zryna-backend-javascript",

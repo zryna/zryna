@@ -110,8 +110,8 @@
       "id": "zryna",
       "root": "apps/zryna",
       "kind": "application",
-      "dependencies": ["zryna-architecture", "zryna-diagnostics", "zryna-driver"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "dependencies": ["zryna-abi", "zryna-architecture", "zryna-diagnostics", "zryna-driver"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     }
   ],
   "adapters": [

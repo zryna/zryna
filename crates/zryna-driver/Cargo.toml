@@ -11,6 +11,11 @@ libc.workspace = true
 nix.workspace = true
 object.workspace = true
 process-wrap.workspace = true
+same-file.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+windows-spawn.workspace = true
 zryna-abi.workspace = true
 zryna-architecture = { path = "../zryna-architecture" }
 zryna-backend-javascript = { path = "../zryna-backend-javascript" }
@@ -22,9 +27,6 @@ zryna-ir = { path = "../zryna-ir" }
 zryna-native-mir = { path = "../zryna-native-mir" }
 zryna-semantics = { path = "../zryna-semantics" }
 zryna-source = { path = "../zryna-source" }
-
-[dev-dependencies]
-serde_json.workspace = true
 
 [lints]
 workspace = true

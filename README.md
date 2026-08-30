@@ -72,7 +72,10 @@ The repository currently establishes and tests:
   `.o` publication;
 - driver-owned discovery of one canonical Linux GNU link toolchain, sealed one-invocation harness
   generation, audited create-only `.elf` publication, bounded execution, and full-width typed
-  `i32` result observation.
+  `i32` result observation;
+- public `zryna build` and `zryna run` commands for explicit `javascript`, `webassembly`, `native`,
+  and `all` selections, with mandatory architecture validation, one shared verified program,
+  typed `i32` invocations, and create-only atomic output bundles.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. The first strict semantic subset requires one source file,
@@ -92,15 +95,33 @@ fixture under conformance tests. The native backend uses pinned pure-Rust Cranel
 `x86_64-unknown-linux-gnu`, and audits the encoded ELF object without invoking an installed tool.
 Separately, the driver can prove canonical `/usr/bin/gcc` and GNU ld capabilities, link one sealed
 typed invocation through a generated C11 harness, audit and create-only publish an executable, and
-observe its exact four-byte result under bounded process controls. This does not yet expose a
-public build/run CLI; source-level `bool` remains verifier-gated.
+observe its exact four-byte result under bounded process controls. The public CLI composes these
+library boundaries for the current `I32V1` slice. It reports ordered target observations without
+performing the cross-target comparison owned by Issue #20; source-level `bool` remains
+verifier-gated.
+
+## Build and run
+
+The public CLI accepts exactly one workspace-relative `.zry` entrypoint and requires an explicit
+target. These examples use an exact Node.js 22.22.1 executable:
+
+```bash
+cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all --node /absolute/path/to/node
+cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-all --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
+```
+
+Build publishes `.mjs`, `.wasm`, and `.o`; run publishes `.mjs`, `.wasm`, and an invocation-
+specific `.elf`. The selected artifacts and deterministic manifest appear together only after one
+create-only atomic bundle commit below `.zryna/out`. See the [CLI reference](docs/CLI.md) for exact
+syntax, single-target commands, typed argument grammar, output layout, JSON, exit statuses,
+security properties, and platform limits.
 
 ## Run the foundation gate
 
 Requirements:
 
 - Rust 1.97.1
-- Node.js 22.22.1 or newer
+- exact Node.js 22.22.1 for the authenticated frontend and CLI JavaScript/WebAssembly host
 - pnpm 11.18.0
 - Linux `/usr/bin/gcc` targeting `x86_64-linux-gnu` (GCC 12–15) with GNU ld 2.38–2.46 for native
   executable conformance; pure object generation does not require it
@@ -130,7 +151,7 @@ toolchains/  pinned upstream toolchain metadata, never patched source
 editors/     future thin editor integrations
 ```
 
-See [Architecture](docs/ARCHITECTURE.md), [Syntax protocol v2](docs/SYNTAX_PROTOCOL_V2.md),
+See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax protocol v2](docs/SYNTAX_PROTOCOL_V2.md),
 [Strict workspace contract](docs/STRICT_WORKSPACE.md), [Frontend providers](docs/FRONTENDS.md), and
 [Roadmap](docs/ROADMAP.md), and [M0 conformance](docs/M0_CONFORMANCE.md).
 
