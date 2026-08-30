@@ -66,7 +66,8 @@ Dependency order:
 3. add Zryna-owned name resolution, strict semantic checking, and lowering to unverified IR;
 4. reject `any`, implicit `any`, malformed provider data, and unsupported syntax with stable source diagnostics;
 5. verify exact IR operations before any backend accepts the program;
-6. freeze scalar ABI v1: logical export names, target symbol mapping, `i32` and `bool` representation, invocation, and host-result normalization;
+6. freeze scalar ABI v1: logical export names, target symbol mapping, `i32` and `bool`
+   representation, invocation, and host-result normalization (implemented by Issue #13);
 7. emit and execute an ECMAScript module;
 8. emit, validate, and execute a direct core WebAssembly module with the scalar export ABI;
 9. lower native MIR to a real object, link, and run a Linux x86-64 executable;

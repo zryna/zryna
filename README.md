@@ -54,16 +54,19 @@ The repository currently establishes and tests:
 - an isolated TypeScript 6 syntax adapter with its compiler implementation locked to `6.0.3`;
 - a bounded, sealed `I32V1` Universal IR trust boundary for `i32` parameters, literals, and
   wrapping addition;
+- a verified scalar ABI v1 authority for `i32` and `bool` signatures, deterministic JavaScript,
+  core WebAssembly, and Linux x86-64 export mappings, and typed host observations;
 - iterative direct JavaScript emission from verified IR;
 - native MIR lowering through an independent `VerifiedMirModule` gate and textual LLVM IR emission
   as a backend-boundary proof.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
-silently producing a smaller program. Zryna-owned semantic lowering is the next separate gate. No
-WebAssembly backend exists yet. Textual LLVM IR is not yet object or executable emission. The
-first executable milestone will connect source lowering to direct JavaScript and WebAssembly
-emission, then add native code generation and linking, with all three targets checked for matching
-behavior.
+silently producing a smaller program. The scalar ABI is specified but current emitters are not yet
+public ABI v1 implementations, and `bool` remains disabled in Universal IR. Zryna-owned semantic
+lowering is the next separate gate. No WebAssembly backend exists yet. Textual LLVM IR is not yet
+object or executable emission. The first executable milestone will connect source lowering to
+direct JavaScript and WebAssembly emission, then add native code generation and linking, with all
+three targets checked for matching behavior.
 
 ## Run the foundation gate
 

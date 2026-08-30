@@ -433,6 +433,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "zryna-abi"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "zryna-architecture"
 version = "0.1.0"
 dependencies = [
@@ -505,6 +513,7 @@ name = "zryna-ir"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "zryna-abi",
  "zryna-diagnostics",
  "zryna-source",
 ]

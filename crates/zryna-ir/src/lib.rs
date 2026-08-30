@@ -2,11 +2,12 @@
 
 #![forbid(unsafe_code)]
 
-use std::collections::BTreeMap;
-
 use serde::{Deserialize, Serialize};
+use zryna_abi::{AbiViolationKind, raw as raw_abi, verify_v1};
 use zryna_diagnostics::Diagnostic;
 use zryna_source::{SourceMap, Span};
+
+pub use zryna_abi::{LogicalExportName, VerifiedScalarExport};
 
 /// Maximum functions accepted in one Universal IR program.
 pub const MAX_IR_FUNCTIONS: usize = 16_384;
@@ -21,7 +22,7 @@ pub const MAX_IR_EXPRESSIONS_PER_PROGRAM: usize = 262_144;
 /// Maximum expression-tree depth accepted by the current universal profile.
 pub const MAX_IR_EXPRESSION_DEPTH: u32 = 128;
 /// Maximum bytes accepted in one logical export name.
-pub const MAX_IR_EXPORT_NAME_BYTES: usize = 128;
+pub const MAX_IR_EXPORT_NAME_BYTES: usize = zryna_abi::MAX_LOGICAL_EXPORT_NAME_BYTES;
 /// Maximum retained verifier diagnostics, including the terminal budget diagnostic.
 pub const MAX_IR_DIAGNOSTICS: usize = 256;
 
@@ -101,33 +102,18 @@ pub enum UniversalProfile {
     I32V1,
 }
 
-/// Canonical backend-safe logical export name.
-///
-/// Values are constructed only while building a [`VerifiedProgram`]. Their spelling is bounded
-/// ASCII, safe as an ECMAScript binding and an LLVM bare identifier, and never sanitized.
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct LogicalExportName(String);
-
-impl LogicalExportName {
-    /// Returns the exact logical export spelling.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 /// Program proven to satisfy every invariant in the current universal backend profile.
 ///
 /// Construction is reserved to [`verify`]:
 ///
 /// ```compile_fail
 /// let raw = zryna_ir::Program::default();
-/// let _ = zryna_ir::VerifiedProgram { program: raw, exports: Vec::new() };
+/// let _ = zryna_ir::VerifiedProgram { program: raw, abi: todo!() };
 /// ```
 #[derive(Clone, Debug)]
 pub struct VerifiedProgram {
     program: Program,
-    exports: Vec<LogicalExportName>,
+    abi: zryna_abi::VerifiedScalarAbiModule,
 }
 
 impl VerifiedProgram {
@@ -143,8 +129,8 @@ impl VerifiedProgram {
         self.program
             .functions
             .iter()
-            .zip(&self.exports)
-            .map(|(function, export)| VerifiedFunction { function, export })
+            .zip(self.abi.exports())
+            .map(|(function, abi_export)| VerifiedFunction { function, abi_export })
     }
 }
 
@@ -152,14 +138,20 @@ impl VerifiedProgram {
 #[derive(Clone, Copy, Debug)]
 pub struct VerifiedFunction<'program> {
     function: &'program Function,
-    export: &'program LogicalExportName,
+    abi_export: VerifiedScalarExport<'program>,
 }
 
 impl<'program> VerifiedFunction<'program> {
     /// Returns the validated logical export name.
     #[must_use]
     pub const fn export_name(self) -> &'program LogicalExportName {
-        self.export
+        self.abi_export.logical_name()
+    }
+
+    /// Returns the complete verified scalar ABI mapping for this export.
+    #[must_use]
+    pub const fn abi_export(self) -> VerifiedScalarExport<'program> {
+        self.abi_export
     }
 
     /// Returns the current-profile parameter types.
@@ -202,7 +194,7 @@ pub fn verify(program: Program, sources: &SourceMap) -> Result<VerifiedProgram, 
         return Err(errors.finish());
     }
 
-    let exports = verify_exports(&program, &mut errors);
+    let abi = verify_abi(&program, &mut errors);
     for (function_index, function) in program.functions.iter().enumerate() {
         if errors.exhausted() {
             break;
@@ -213,15 +205,15 @@ pub fn verify(program: Program, sources: &SourceMap) -> Result<VerifiedProgram, 
         return Err(errors.finish());
     }
 
-    let Some(exports) = exports.into_iter().collect::<Option<Vec<_>>>() else {
+    let Some(abi) = abi else {
         return Err(vec![Diagnostic::error(
             "ZRYNA-I1202",
             None,
-            "IR verifier could not construct its bounded export table",
+            "IR verifier could not construct its bounded scalar ABI table",
             "report this compiler invariant failure with the smallest reproducible source",
         )]);
     };
-    Ok(VerifiedProgram { program, exports })
+    Ok(VerifiedProgram { program, abi })
 }
 
 fn verify_resource_limits(program: &Program, errors: &mut VerificationErrors) {
@@ -286,138 +278,83 @@ fn function_limit_error(function_index: usize, label: &str, limit: usize) -> Dia
     )
 }
 
-fn verify_exports(
+fn verify_abi(
     program: &Program,
     errors: &mut VerificationErrors,
-) -> Vec<Option<LogicalExportName>> {
-    let mut exact = BTreeMap::<String, usize>::new();
-    let mut portable_symbols = BTreeMap::<String, usize>::new();
-    let mut exports = Vec::with_capacity(program.functions.len());
-    for (function_index, function) in program.functions.iter().enumerate() {
-        let Some(export) = verify_export_name(function_index, &function.name, errors) else {
-            exports.push(None);
-            continue;
-        };
-        if let Some(previous) = exact.get(&export.0).copied() {
-            errors.push(Diagnostic::error(
-                "ZRYNA-I1010",
-                None,
-                format!(
-                    "function #{function_index} duplicates the logical export of function #{previous}"
+) -> Option<zryna_abi::VerifiedScalarAbiModule> {
+    let exports = program
+        .functions
+        .iter()
+        .map(|function| {
+            raw_abi::Export::new(
+                function.name.clone(),
+                raw_abi::Signature::new(
+                    function.parameters.iter().copied().map(raw_abi_type).collect(),
+                    raw_abi_type(function.return_type),
                 ),
-                "give every exported function one exact unique logical name",
-            ));
-            exports.push(Some(export));
-            continue;
+            )
+        })
+        .collect();
+    match verify_v1(raw_abi::Module::new(exports)) {
+        Ok(abi) => Some(abi),
+        Err(violations) => {
+            for violation in violations {
+                let function_index = violation.export_index().unwrap_or(0);
+                match violation.kind() {
+                    AbiViolationKind::InvalidLogicalName => errors.push(Diagnostic::error(
+                        "ZRYNA-I1009",
+                        None,
+                        format!("function #{function_index} has an invalid logical export name"),
+                        "use 1 to 128 ASCII bytes matching [A-Za-z_][A-Za-z0-9_]* and avoid reserved bindings",
+                    )),
+                    AbiViolationKind::DuplicateLogicalName { first_index } => {
+                        errors.push(Diagnostic::error(
+                            "ZRYNA-I1010",
+                            None,
+                            format!(
+                                "function #{function_index} duplicates the logical export of function #{first_index}"
+                            ),
+                            "give every exported function one exact unique logical name",
+                        ));
+                    }
+                    AbiViolationKind::PortableNameCollision { first_index } => {
+                        errors.push(Diagnostic::error(
+                            "ZRYNA-I1011",
+                            None,
+                            format!(
+                                "function #{function_index} collides with function #{first_index} under the portable target-symbol identity"
+                            ),
+                            "use export names that remain unique when ASCII case is ignored",
+                        ));
+                    }
+                    AbiViolationKind::UnsupportedScalarType => {}
+                    AbiViolationKind::TooManyExports
+                    | AbiViolationKind::TooManyParameters
+                    | AbiViolationKind::TooManyParametersInModule => errors.push(Diagnostic::error(
+                        "ZRYNA-I1201",
+                        None,
+                        "Universal IR scalar ABI claims exceed their resource limits",
+                        "reduce the program before Universal IR verification",
+                    )),
+                    AbiViolationKind::ViolationBudgetExceeded => errors.push(Diagnostic::error(
+                        "ZRYNA-I1202",
+                        None,
+                        "Universal IR scalar ABI diagnostics exceeded their limit",
+                        "fix earlier scalar ABI diagnostics before compiling again",
+                    )),
+                }
+            }
+            None
         }
-        exact.insert(export.0.clone(), function_index);
-        let portable = export.0.to_ascii_lowercase();
-        if let Some(previous) = portable_symbols.get(&portable).copied() {
-            errors.push(Diagnostic::error(
-                "ZRYNA-I1011",
-                None,
-                format!(
-                    "function #{function_index} collides with function #{previous} under the portable target-symbol identity"
-                ),
-                "use export names that remain unique when ASCII case is ignored",
-            ));
-        } else {
-            portable_symbols.insert(portable, function_index);
-        }
-        exports.push(Some(export));
     }
-    exports
 }
 
-fn verify_export_name(
-    function_index: usize,
-    name: &str,
-    errors: &mut VerificationErrors,
-) -> Option<LogicalExportName> {
-    if name.is_empty() || name.len() > MAX_IR_EXPORT_NAME_BYTES {
-        errors.push(invalid_export_error(function_index));
-        return None;
+const fn raw_abi_type(ty: Type) -> raw_abi::Type {
+    match ty {
+        Type::Unit => raw_abi::Type::Unit,
+        Type::Bool => raw_abi::Type::Bool,
+        Type::I32 => raw_abi::Type::I32,
     }
-    let mut bytes = name.bytes();
-    let Some(first) = bytes.next() else {
-        errors.push(invalid_export_error(function_index));
-        return None;
-    };
-    if !(first.is_ascii_alphabetic() || first == b'_')
-        || bytes.any(|byte| !(byte.is_ascii_alphanumeric() || byte == b'_'))
-        || reserved_export(name)
-    {
-        errors.push(invalid_export_error(function_index));
-        return None;
-    }
-    Some(LogicalExportName(name.to_owned()))
-}
-
-fn invalid_export_error(function_index: usize) -> Diagnostic {
-    Diagnostic::error(
-        "ZRYNA-I1009",
-        None,
-        format!("function #{function_index} has an invalid logical export name"),
-        "use 1 to 128 ASCII bytes matching [A-Za-z_][A-Za-z0-9_]* and avoid reserved bindings",
-    )
-}
-
-fn reserved_export(name: &str) -> bool {
-    matches!(
-        name,
-        "arguments"
-            | "await"
-            | "break"
-            | "case"
-            | "catch"
-            | "class"
-            | "const"
-            | "constructor"
-            | "continue"
-            | "debugger"
-            | "default"
-            | "delete"
-            | "do"
-            | "else"
-            | "enum"
-            | "eval"
-            | "export"
-            | "extends"
-            | "false"
-            | "finally"
-            | "for"
-            | "function"
-            | "if"
-            | "implements"
-            | "import"
-            | "in"
-            | "instanceof"
-            | "interface"
-            | "let"
-            | "new"
-            | "null"
-            | "package"
-            | "private"
-            | "protected"
-            | "prototype"
-            | "public"
-            | "return"
-            | "static"
-            | "super"
-            | "switch"
-            | "then"
-            | "this"
-            | "throw"
-            | "true"
-            | "try"
-            | "typeof"
-            | "var"
-            | "void"
-            | "while"
-            | "with"
-            | "yield"
-            | "__proto__"
-    )
 }
 
 fn verify_function(
@@ -805,6 +742,12 @@ mod tests {
         let functions = verified.functions().collect::<Vec<_>>();
         assert_eq!(functions.len(), 1);
         assert_eq!(functions[0].export_name().as_str(), "value");
+        assert_eq!(functions[0].abi_export().javascript_name().as_str(), "value");
+        assert_eq!(functions[0].abi_export().webassembly_name().as_str(), "value");
+        assert_eq!(
+            functions[0].abi_export().native_linux_x86_64_symbol().as_str(),
+            "zryna_v1_e_value"
+        );
         assert_eq!(functions[0].return_type(), Type::I32);
         assert_eq!(functions[0].body(), ExprId(0));
     }

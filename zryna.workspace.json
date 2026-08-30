@@ -4,6 +4,13 @@
   "profile": "zryna-compiler-workspace-v1",
   "members": [
     {
+      "id": "zryna-abi",
+      "root": "crates/zryna-abi",
+      "kind": "foundation",
+      "dependencies": [],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
       "id": "zryna-diagnostics",
       "root": "crates/zryna-diagnostics",
       "kind": "foundation",
@@ -42,7 +49,7 @@
       "id": "zryna-ir",
       "root": "crates/zryna-ir",
       "kind": "compiler",
-      "dependencies": ["zryna-diagnostics", "zryna-source"],
+      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-source"],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
