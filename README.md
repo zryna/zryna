@@ -64,6 +64,9 @@ The repository currently establishes and tests:
   argument and result validation for the current `i32` execution profile;
 - driver-owned, create-only publication of complete `.mjs` artifacts through a validated
   capability for the workspace's declared `.zryna/out` directory;
+- deterministic direct core WebAssembly 1.0 emission from verified `I32V1` IR, with sealed export
+  names, an import-free capability audit, pinned binary validation, and create-only `.wasm`
+  publication through the same validated output capability;
 - native MIR lowering through an independent `VerifiedMirModule` gate and textual LLVM IR emission
   as a backend-boundary proof.
 
@@ -76,13 +79,14 @@ stable diagnostics. Source-level `bool` is checked and lowered, but the current 
 intentionally rejects it until every backend implements the same profile; only the documented
 `i32` subset currently reaches `VerifiedProgram`.
 
-The JavaScript backend now consumes the sealed scalar ABI mapping for the current `I32V1` profile.
-Its generated module rejects non-canonical JavaScript carriers, checks exact arity, preserves
-wrapping `i32` addition, and has been executed with Node.js in the integration suite. This does not
-yet expose a public build/run CLI, and source-level `bool` remains verifier-gated. No WebAssembly
-backend exists yet, and textual LLVM IR is not object or executable emission. The next M1 gates
-add direct WebAssembly emission and then native object generation and linking, with all three
-targets checked for matching behavior.
+The JavaScript and WebAssembly backends consume the sealed scalar ABI mapping for the current
+`I32V1` profile. JavaScript enforces canonical host carriers and exact arity. WebAssembly emits
+only type, function, export, and code sections; it has no imports or ambient capabilities. Every
+module passes an explicitly pinned WebAssembly 1.0 validator and narrower structural/operator
+audit before publication. Both targets preserve wrapping `i32` addition and run the shared source
+fixture under Node.js conformance tests. This does not yet expose a public build/run CLI, and
+source-level `bool` remains verifier-gated. Textual LLVM IR is not object or executable emission;
+native object generation and linking are the next M1 gates.
 
 ## Run the foundation gate
 

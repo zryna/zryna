@@ -17,7 +17,12 @@ The first intrinsic types are `unit`, `bool`, and `i32`. Additional types enter 
 
 ## WebAssembly profiles
 
-The universal scalar subset maps directly to core WebAssembly without passing through JavaScript, native MIR, or LLVM. The initial browser profile exports capability-minimal pure functions and has no implicit filesystem, network, clock, randomness, environment, heap, or garbage-collection facility.
+The implemented `I32V1` scalar subset maps directly to core WebAssembly without passing through
+JavaScript, native MIR, or LLVM. It exports capability-minimal pure `i32` functions and has no
+imports or implicit filesystem, network, clock, randomness, environment, heap, or
+garbage-collection facility, and it carries no bundled Zryna runtime. The Node conformance harness
+uses the standard browser-compatible WebAssembly API, but browser execution and a generated loader
+remain untested future work, as does a strict typed host wrapper.
 
 WASI and Component Model support is a separately versioned host profile. WIT and Canonical ABI types describe component boundaries; they do not redefine Zryna's internal ownership or memory model.
 

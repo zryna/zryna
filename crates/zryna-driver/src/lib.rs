@@ -14,6 +14,7 @@
 #![forbid(unsafe_code)]
 
 mod javascript;
+mod webassembly;
 
 use std::{error::Error, fmt, path::Path};
 
@@ -25,9 +26,15 @@ use zryna_ir::VerifiedProgram;
 use zryna_source::SourceMap;
 
 pub use javascript::{
-    JAVASCRIPT_ARTIFACT_EXTENSION, JavaScriptBuildError, JavaScriptBuildSuccess,
-    JavaScriptOutputRoot, MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES, PublishedJavaScriptArtifact,
-    compile_javascript, publish_javascript,
+    ArtifactOutputRoot, JAVASCRIPT_ARTIFACT_EXTENSION, JavaScriptBuildError,
+    JavaScriptBuildSuccess, JavaScriptOutputRoot, MAX_ARTIFACT_STEM_BYTES,
+    MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES, PublishedJavaScriptArtifact, compile_javascript,
+    publish_javascript,
+};
+pub use webassembly::{
+    MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,
+    WEBASSEMBLY_ARTIFACT_EXTENSION, WebAssemblyBuildError, WebAssemblyBuildSuccess,
+    WebAssemblyOutputRoot, compile_webassembly, publish_webassembly,
 };
 
 /// Artifacts emitted by the first verified dual-target slice.
@@ -213,8 +220,8 @@ mod tests {
     };
 
     use super::{
-        JavaScriptBuildError, JavaScriptOutputRoot, SourceToIrError, compile_javascript,
-        compile_to_verified_ir, lower_verified_syntax,
+        JavaScriptBuildError, JavaScriptOutputRoot, SourceToIrError, WebAssemblyBuildError,
+        compile_javascript, compile_to_verified_ir, compile_webassembly, lower_verified_syntax,
     };
     use zryna_diagnostics::{Diagnostic, Severity, render_structured};
     use zryna_frontend::{
@@ -709,6 +716,68 @@ process.stdout.write(JSON.stringify({
     }
 
     #[test]
+    fn real_source_publishes_and_executes_validated_core_webassembly() {
+        let text = include_str!("../../../examples/universal/add.zry");
+        let sources = source_map("examples/universal/add.zry", text);
+        let output_root = JavaScriptRoot::new("webassembly-execute");
+
+        let result =
+            compile_webassembly(&typescript_frontend(), &sources, output_root.output(), "main")
+                .expect("real source must publish validated WebAssembly");
+
+        assert!(result.diagnostics().is_empty());
+        assert_eq!(result.artifact().path(), output_root.path().join("main.wasm"));
+        let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../spec/abi/scalar-v1-fixtures.json");
+        let script = r#"
+import { readFile } from "node:fs/promises";
+const bytes = await readFile(process.argv[1]);
+if (!WebAssembly.validate(bytes)) throw new Error("module did not validate");
+const module = new WebAssembly.Module(bytes);
+const imports = WebAssembly.Module.imports(module);
+const exports = WebAssembly.Module.exports(module);
+const { instance } = await WebAssembly.instantiate(bytes, {});
+const values = [
+  instance.exports.add(2147483647, 1),
+  instance.exports.add(-2147483648, -1),
+  instance.exports.add(2147483647, 2147483647),
+  instance.exports.add(-2147483648, -2147483648),
+  instance.exports.add(-1, -1),
+  instance.exports.add(20, 22),
+];
+const fixture = JSON.parse(await readFile(process.argv[2], "utf8"));
+const carriers = fixture.carrierCases.filter((entry) => entry.target === "core-webassembly");
+if (carriers.length !== 11) throw new Error(`expected 11 core WebAssembly carriers, got ${carriers.length}`);
+for (const entry of carriers) {
+  const raw = entry.raw.value;
+  let actual = raw;
+  let errorCode = null;
+  if (entry.scalarType === "bool") {
+    if (raw === 0) actual = false;
+    else if (raw === 1) actual = true;
+    else { actual = null; errorCode = "ZRYNA-B2003"; }
+  }
+  if (errorCode !== entry.errorCode) throw new Error(`carrier error mismatch for ${entry.direction}`);
+  if (entry.value === null ? actual !== null : !Object.is(actual, entry.value.value)) {
+    throw new Error(`carrier value mismatch for ${entry.scalarType}/${entry.direction}`);
+  }
+}
+process.stdout.write(JSON.stringify({ imports, exports, values, carrierCount: carriers.length }));
+"#;
+        let output = run_node_module(result.artifact().path(), script, &[&fixture]);
+
+        assert!(output.status.success(), "stderr: {}", String::from_utf8_lossy(&output.stderr));
+        assert!(output.stderr.is_empty());
+        assert_eq!(
+            String::from_utf8(output.stdout).expect("Node output must be UTF-8"),
+            concat!(
+                "{\"imports\":[],\"exports\":[{\"name\":\"add\",\"kind\":\"function\"}],",
+                "\"values\":[-2147483648,2147483647,-2,0,-2,42],\"carrierCount\":11}"
+            )
+        );
+    }
+
+    #[test]
     fn javascript_carriers_consume_the_shared_scalar_abi_fixture() {
         let sources =
             source_map("src/probe.zry", "export function probe(value: i32): i32 { return value; }");
@@ -771,6 +840,17 @@ process.stdout.write(JSON.stringify({
         let output_root = JavaScriptRoot::new("fail-closed");
         let bool_sources =
             source_map("src/main.zry", "export function yes(): bool { return true; }");
+        let wasm_error = compile_webassembly(
+            &typescript_frontend(),
+            &bool_sources,
+            output_root.output(),
+            "main",
+        )
+        .expect_err("Boolean source must not produce WebAssembly under I32V1");
+        assert!(matches!(wasm_error, WebAssemblyBuildError::Source(_)));
+        assert!(wasm_error.diagnostics().iter().any(|item| item.code() == "ZRYNA-I1006"));
+        assert!(fs::read_dir(output_root.path()).expect("fixture listing").next().is_none());
+
         let error =
             compile_javascript(&typescript_frontend(), &bool_sources, output_root.output(), "main")
                 .expect_err("Boolean source must remain outside I32V1");
