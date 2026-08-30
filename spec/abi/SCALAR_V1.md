@@ -2,9 +2,10 @@
 
 Status: normative for the first three-target executable slice. For the current executable
 `I32V1` profile, the JavaScript backend implements the sealed export mapping and strict JavaScript
-carrier wrappers. Boolean JavaScript carrier validation is covered by the shared fixture, but
-Boolean source and IR remain profile-gated. Typed host invocation and observation, WebAssembly,
-and native public wrappers do not implement the complete boundary yet.
+carrier wrappers, while the direct core WebAssembly backend implements the sealed `i32` export
+mapping. JavaScript and WebAssembly carrier tests consume the shared fixture, but Boolean source
+and IR remain profile-gated. A strict typed WebAssembly host wrapper and native public wrapper do
+not implement the complete boundary yet.
 
 ## Authority and version
 
@@ -82,5 +83,7 @@ return the full typed value through a structured channel.
 [`scalar-v1-fixtures.json`](scalar-v1-fixtures.json) is the byte-shared mapping and observation
 fixture. `zryna-abi` validates it. The executable JavaScript integration consumes the same file for
 both `i32` and Boolean carrier validation; the current `i32` source execution matrix also checks
-its public wrapper directly. WebAssembly and native target tests must consume this same file when
-their executable implementations land; copied target-local cases are not normative.
+its public wrapper directly. The WebAssembly conformance integration consumes all current
+`core-webassembly` carrier cases, including canonical and invalid Boolean lanes, without enabling
+Boolean source or claiming a public host wrapper. Native target tests must consume this same file
+when their executable implementation lands; copied target-local cases are not normative.

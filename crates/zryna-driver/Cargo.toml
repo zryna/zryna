@@ -10,6 +10,7 @@ repository.workspace = true
 zryna-architecture = { path = "../zryna-architecture" }
 zryna-backend-javascript = { path = "../zryna-backend-javascript" }
 zryna-backend-native = { path = "../zryna-backend-native" }
+zryna-backend-webassembly = { path = "../zryna-backend-webassembly" }
 zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-frontend = { path = "../zryna-frontend" }
 zryna-ir = { path = "../zryna-ir" }

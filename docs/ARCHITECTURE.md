@@ -49,7 +49,10 @@ semantic lowering never depends on a replaceable provider.
 8. The JavaScript backend consumes sealed ABI export names and emits deterministic ESM with
    explicit scalar-boundary checks. The driver publishes complete `.mjs` files create-only through
    a validated capability for the workspace's declared `.zryna/out` directory.
-9. The WebAssembly backend maps exact Zryna operations directly to validated core WebAssembly. Browser bindings and WASI capabilities remain explicit host profiles.
+9. The WebAssembly backend maps exact Zryna operations directly to deterministic core
+   WebAssembly, validates and profile-audits complete bytes, and exposes only a sealed artifact.
+   The driver publishes `.wasm` create-only. Browser bindings and WASI capabilities remain
+   explicit host profiles.
 10. Native lowering creates explicit typed native claims; the native MIR verifier is the only
    constructor of the codegen-accepted `VerifiedMirModule`.
 11. Later native profiles add control flow, layout, moves, drops, and public calling conventions
@@ -154,19 +157,20 @@ A verified function proves all of the following:
 - program, parameter, expression, export-byte, and diagnostic budgets remain within the public
   constants in `zryna-ir`.
 
-Verification and current JavaScript emission are iterative and bounded. The normative
+Verification and current JavaScript and WebAssembly emission are iterative and bounded. The normative
 [scalar ABI v1](../spec/abi/SCALAR_V1.md) defines target names, carriers, invocation, and typed
-observation. The JavaScript emitter implements the sealed export mapping and boundary checks for
-the executable `I32V1` profile. Its Boolean carrier helper is exercised against the shared ABI
-fixture, but does not admit Boolean source or Boolean IR. WebAssembly and native public wrappers
-remain boundary proofs until their later issues adopt the same mappings.
+observation. Both emitters implement the sealed export mapping for the executable `I32V1` profile.
+The JavaScript emitter also implements its strict public carrier checks. JavaScript and core
+WebAssembly carrier tests consume the shared ABI fixture, but do not admit Boolean source or
+Boolean IR. A strict WebAssembly host wrapper and native public wrapper remain later gates.
 
 ## Current JavaScript artifact path
 
 `zryna-driver::compile_javascript` is the source-connected JavaScript build boundary. It compiles
 an authenticated source map through semantics and verified IR, emits one deterministic ECMAScript
 module, and publishes `<stem>.mjs` only when the destination does not already exist. The caller
-must first derive a `JavaScriptOutputRoot` capability from an absolute workspace path. That
+must first derive an `ArtifactOutputRoot` capability (also exposed by its JavaScript compatibility
+name) from an absolute workspace path. That
 capability resolves only the declared `.zryna/out` location and rejects any persistent path
 component that is missing, non-directory, a symbolic link, or a Windows reparse point. The full
 chain is revalidated immediately before publication. The artifact stem is one portable ASCII
@@ -183,6 +187,27 @@ as a warning without hiding the successfully published artifact.
 The integration suite imports and executes generated modules with Node.js 22.22.1. This is a
 compiler conformance harness, not yet a public runtime command. The user-facing build/run CLI is a
 later M1 gate.
+
+## Current WebAssembly artifact path
+
+`zryna-driver::compile_webassembly` independently connects authenticated source to verified IR,
+the direct WebAssembly backend, and `<stem>.wasm` publication. It does not call the JavaScript or
+native backends. The backend emits deterministic core modules in type, function, export, and code
+section order, using only `local.get`, `i32.const`, `i32.add`, and `end`; empty programs are the
+eight-byte core-module header. Exports use only the sealed WebAssembly ABI name.
+
+Completed bytes must pass `wasmparser` with explicit `WasmFeatures::WASM1` and then a fail-closed
+profile audit. The audit permits no imports, tables, memory, globals, start function, elements,
+data, tags, custom sections, non-function exports, locals, or instructions outside `I32V1`.
+Only after both checks does the backend construct `ValidatedWebAssemblyArtifact`; the public
+publisher accepts that sealed type rather than arbitrary bytes. Publication reuses the same
+validated `.zryna/out` capability and create-only atomic writer as JavaScript, so same-stem `.mjs`
+and `.wasm` artifacts can coexist and existing destinations remain untouched.
+
+Node.js 22.22.1 validates, instantiates, inspects, and executes the real artifact through the
+standard WebAssembly API in conformance tests. That API is browser-compatible, but this is not a
+browser or DOM test and runtime execution is not a production build phase. Raw JavaScript calls
+to WebAssembly perform host coercion; no strict public host wrapper is claimed by this slice.
 
 Native MIR has its own consumed raw-to-verified boundary. Raw functions explicitly claim a symbol,
 provisional internal convention, typed signature, dense typed value definitions, operations, and a
@@ -209,6 +234,13 @@ Future integer operations must specify width, signedness, overflow, conversion, 
 
 ## WebAssembly profiles
 
-The first WebAssembly backend will emit a core module directly from `VerifiedProgram`; it will not translate JavaScript or native output. Its first slice will consume the `I32V1` profile and export pure functions over `i32`, validate every emitted binary, and execute conformance fixtures in a pinned runtime. `bool` will be enabled only by a later universal profile implemented by every active backend.
+The current WebAssembly backend emits a core module directly from `VerifiedProgram`; it does not
+translate JavaScript or native output. The implemented slice consumes `I32V1`, exports pure
+functions over `i32`, validates and profile-audits every complete binary, and executes conformance
+fixtures in a pinned runtime. `bool` will be enabled only by a later universal profile implemented
+by every active backend.
 
-Browser integration adds a generated JavaScript loader without giving the loader authority over language semantics. WASI and the Component Model are a later capability-bearing profile with separately pinned interface and ABI versions. Filesystem, network, clock, randomness, and environment access are unavailable unless a declared host profile imports them.
+A later browser integration will add a generated JavaScript loader without giving the loader
+authority over language semantics. WASI and the Component Model are a later capability-bearing
+profile with separately pinned interface and ABI versions. Filesystem, network, clock, randomness,
+and environment access are unavailable unless a declared host profile imports them.

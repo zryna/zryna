@@ -20,7 +20,8 @@ The current success profile is the one-file, explicitly typed `i32` subset docum
 module resolution is specified.
 
 `compile_javascript` connects real source to the deterministic JavaScript backend and publishes one
-new `.mjs` artifact through `JavaScriptOutputRoot`. The capability is derived only from an absolute
+new `.mjs` artifact through the target-neutral `ArtifactOutputRoot` capability (with a compatible
+`JavaScriptOutputRoot` alias). The capability is derived only from an absolute
 workspace path's exact `.zryna/out` location and rejects missing, non-directory, symbolic-link, and
 Windows reparse-point components throughout the persistent path chain. The artifact stem is one
 portable ASCII filename component. Publication is create-only: complete bytes are written,
@@ -29,6 +30,16 @@ committed with a hard link. Existing destinations are never replaced, and a fail
 reports a new artifact. Non-fatal provider and publication warnings remain observable on success.
 
 Generated modules are imported and executed by the integration suite with Node.js 22.22.1. The
-driver does not yet expose a public Node runner or build/run CLI. `emit_verified` continues to
-prove the textual native-backend boundary. Direct WebAssembly emission, native object generation,
-linking, three-target execution, and the user-facing CLI remain later M1 gates.
+driver does not yet expose a public Node runner or build/run CLI.
+
+`compile_webassembly` independently connects the same authenticated source-to-verified-IR path to
+the direct core WebAssembly backend. The backend returns private bytes only after explicit
+WebAssembly 1.0 validation and the narrower import-free `I32V1` structural audit. The driver then
+publishes `<stem>.wasm` create-only through the same revalidated `.zryna/out` capability and atomic
+byte writer used by JavaScript. The public publisher accepts only the sealed validated artifact;
+it cannot publish arbitrary WebAssembly bytes. Same-stem `.mjs` and `.wasm` files may coexist.
+
+Node.js 22.22.1 exercises the published module with the standard WebAssembly API as a conformance
+harness, not a production build phase or browser claim. `emit_verified` continues to prove the
+textual native-backend boundary. Native object generation, linking, three-target execution, and
+the user-facing CLI remain later M1 gates.

@@ -74,7 +74,9 @@ Dependency order:
    representation, invocation, and host-result normalization (implemented by Issue #13);
 7. emit and execute an ECMAScript module (implemented by Issue #15 for the current `I32V1`
    source slice; public CLI integration remains step 10);
-8. emit, validate, and execute a direct core WebAssembly module with the scalar export ABI;
+8. emit, validate, publish, and execute a direct import-free core WebAssembly module for the
+   current `I32V1` scalar slice (implemented by Issue #16; a strict typed WebAssembly host wrapper
+   and Boolean source/IR remain later gates);
 9. lower native MIR to a real object, link, and run a Linux x86-64 executable;
 10. expose explicit CLI build and run targets;
 11. compare JavaScript, WebAssembly, and native results, including `i32` boundaries;

@@ -18,20 +18,22 @@ use crate::{SourceToIrError, compile_to_verified_ir};
 
 /// File extension used for directly importable ECMAScript modules.
 pub const JAVASCRIPT_ARTIFACT_EXTENSION: &str = "mjs";
-/// Maximum portable artifact stem bytes accepted by the JavaScript publisher.
-pub const MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES: usize = 128;
+/// Maximum portable artifact stem bytes accepted by every artifact publisher.
+pub const MAX_ARTIFACT_STEM_BYTES: usize = 128;
+/// JavaScript compatibility name for the target-neutral artifact stem limit.
+pub const MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES: usize = MAX_ARTIFACT_STEM_BYTES;
 
 const MAX_TEMPORARY_NAME_ATTEMPTS: u64 = 64;
-const JAVASCRIPT_OUTPUT_RELATIVE_ROOT: &str = ".zryna/out";
+const ARTIFACT_OUTPUT_RELATIVE_ROOT: &str = ".zryna/out";
 static NEXT_TEMPORARY_NAME: AtomicU64 = AtomicU64::new(0);
 
-/// Validated capability for the workspace's declared JavaScript output root.
+/// Validated capability for the workspace's declared artifact output root.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct JavaScriptOutputRoot {
+pub struct ArtifactOutputRoot {
     path: PathBuf,
 }
 
-impl JavaScriptOutputRoot {
+impl ArtifactOutputRoot {
     /// Derives and validates the exact `.zryna/out` root of one absolute workspace path.
     ///
     /// The output root and every persistent ancestor must already be real directories rather
@@ -44,10 +46,10 @@ impl JavaScriptOutputRoot {
     pub fn for_workspace(workspace_root: &Path) -> Result<Self, Diagnostic> {
         if !workspace_root.is_absolute() {
             return Err(invalid_output_root_error(
-                "workspace root must be absolute before deriving the JavaScript output root",
+                "workspace root must be absolute before deriving the artifact output root",
             ));
         }
-        let path = workspace_root.join(JAVASCRIPT_OUTPUT_RELATIVE_ROOT);
+        let path = workspace_root.join(ARTIFACT_OUTPUT_RELATIVE_ROOT);
         validate_real_directory_chain(&path)?;
         Ok(Self { path })
     }
@@ -61,6 +63,14 @@ impl JavaScriptOutputRoot {
     fn revalidate(&self) -> Result<(), Diagnostic> {
         validate_real_directory_chain(&self.path)
     }
+}
+
+/// Backward-compatible JavaScript name for the target-neutral output capability.
+pub type JavaScriptOutputRoot = ArtifactOutputRoot;
+
+pub(crate) struct PublishedArtifactParts {
+    pub(crate) path: PathBuf,
+    pub(crate) diagnostics: Vec<Diagnostic>,
 }
 
 /// One JavaScript module that has been atomically published at a new destination.
@@ -165,7 +175,7 @@ impl Error for JavaScriptBuildError {
 pub fn compile_javascript<Provider: VerifiedFrontendProvider + ?Sized>(
     frontend: &Provider,
     sources: &SourceMap,
-    output_root: &JavaScriptOutputRoot,
+    output_root: &ArtifactOutputRoot,
     artifact_stem: &str,
 ) -> Result<JavaScriptBuildSuccess, JavaScriptBuildError> {
     let compiled =
@@ -191,38 +201,77 @@ pub fn compile_javascript<Provider: VerifiedFrontendProvider + ?Sized>(
 /// filesystem failure. A failed publication never creates or modifies the destination.
 pub fn publish_javascript(
     artifact: &JavaScriptArtifact,
-    output_root: &JavaScriptOutputRoot,
+    output_root: &ArtifactOutputRoot,
     artifact_stem: &str,
 ) -> Result<PublishedJavaScriptArtifact, Diagnostic> {
+    let published = publish_complete_artifact(
+        artifact.source.as_bytes(),
+        output_root,
+        artifact_stem,
+        JAVASCRIPT_ARTIFACT_EXTENSION,
+        "JavaScript",
+    )?;
+    Ok(PublishedJavaScriptArtifact { path: published.path, diagnostics: published.diagnostics })
+}
+
+pub(crate) fn publish_complete_artifact(
+    bytes: &[u8],
+    output_root: &ArtifactOutputRoot,
+    artifact_stem: &str,
+    extension: &str,
+    target_label: &str,
+) -> Result<PublishedArtifactParts, Diagnostic> {
     validate_artifact_stem(artifact_stem)?;
     output_root.revalidate()?;
     let output_path = output_root.path();
-    let destination = output_path.join(format!("{artifact_stem}.{JAVASCRIPT_ARTIFACT_EXTENSION}"));
+    let destination = output_path.join(format!("{artifact_stem}.{extension}"));
     match fs::symlink_metadata(&destination) {
-        Ok(_) => return Err(destination_exists_error(artifact_stem)),
+        Ok(_) => return Err(destination_exists_error(artifact_stem, extension, target_label)),
         Err(error) if error.kind() == io::ErrorKind::NotFound => {}
         Err(error) => {
-            return Err(publication_error("ZRYNA-D2003", artifact_stem, "inspect", &error));
+            return Err(publication_error(
+                "ZRYNA-D2003",
+                artifact_stem,
+                extension,
+                target_label,
+                "inspect",
+                &error,
+            ));
         }
     }
 
-    let (temporary_path, mut temporary) = create_temporary(output_path, artifact_stem)?;
-    if let Err(error) = temporary.write_all(artifact.source.as_bytes()).and_then(|()| {
+    let (temporary_path, mut temporary) =
+        create_temporary(output_path, artifact_stem, extension, target_label)?;
+    if let Err(error) = temporary.write_all(bytes).and_then(|()| {
         temporary.flush()?;
         temporary.sync_all()
     }) {
         drop(temporary);
         let _ = fs::remove_file(&temporary_path);
-        return Err(publication_error("ZRYNA-D2004", artifact_stem, "write", &error));
+        return Err(publication_error(
+            "ZRYNA-D2004",
+            artifact_stem,
+            extension,
+            target_label,
+            "write",
+            &error,
+        ));
     }
     drop(temporary);
 
     if let Err(error) = fs::hard_link(&temporary_path, &destination) {
         let _ = fs::remove_file(&temporary_path);
         if error.kind() == io::ErrorKind::AlreadyExists {
-            return Err(destination_exists_error(artifact_stem));
+            return Err(destination_exists_error(artifact_stem, extension, target_label));
         }
-        return Err(publication_error("ZRYNA-D2005", artifact_stem, "commit", &error));
+        return Err(publication_error(
+            "ZRYNA-D2005",
+            artifact_stem,
+            extension,
+            target_label,
+            "commit",
+            &error,
+        ));
     }
 
     let diagnostics = fs::remove_file(&temporary_path).err().map_or_else(Vec::new, |error| {
@@ -230,18 +279,18 @@ pub fn publish_javascript(
             "ZRYNA-D2006",
             None,
             format!(
-                "published JavaScript artifact '{artifact_stem}.{JAVASCRIPT_ARTIFACT_EXTENSION}' but could not remove its temporary name: {error}"
+                "published {target_label} artifact '{artifact_stem}.{extension}' but could not remove its temporary name: {error}"
             ),
             "remove the sibling .zryna temporary file after confirming the published module",
         )]
     });
-    Ok(PublishedJavaScriptArtifact { path: destination, diagnostics })
+    Ok(PublishedArtifactParts { path: destination, diagnostics })
 }
 
 fn validate_artifact_stem(stem: &str) -> Result<(), Diagnostic> {
     let bytes = stem.as_bytes();
     let valid = !bytes.is_empty()
-        && bytes.len() <= MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES
+        && bytes.len() <= MAX_ARTIFACT_STEM_BYTES
         && matches!(bytes[0], b'A'..=b'Z' | b'a'..=b'z' | b'_')
         && bytes[1..]
             .iter()
@@ -253,7 +302,7 @@ fn validate_artifact_stem(stem: &str) -> Result<(), Diagnostic> {
         Err(Diagnostic::error(
             "ZRYNA-D2001",
             None,
-            "JavaScript artifact stem is not one portable filename component",
+            "artifact stem is not one portable filename component",
             "use 1 to 128 ASCII letters, digits, underscores, or hyphens, begin with a letter or underscore, and avoid reserved device names",
         ))
     }
@@ -274,13 +323,13 @@ fn validate_real_directory_chain(path: &Path) -> Result<(), Diagnostic> {
     for component in path.ancestors() {
         let metadata = fs::symlink_metadata(component).map_err(|error| {
             invalid_output_root_error(format!(
-                "could not inspect JavaScript output path component '{}': {error}",
+                "could not inspect artifact output path component '{}': {error}",
                 component.display()
             ))
         })?;
         if !metadata.is_dir() || metadata_is_link_or_reparse(&metadata) {
             return Err(invalid_output_root_error(format!(
-                "JavaScript output path component '{}' is not a real directory",
+                "artifact output path component '{}' is not a real directory",
                 component.display()
             )));
         }
@@ -314,6 +363,8 @@ fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
 fn create_temporary(
     output_root: &Path,
     artifact_stem: &str,
+    extension: &str,
+    target_label: &str,
 ) -> Result<(PathBuf, fs::File), Diagnostic> {
     for _ in 0..MAX_TEMPORARY_NAME_ATTEMPTS {
         let sequence = NEXT_TEMPORARY_NAME.fetch_add(1, Ordering::Relaxed);
@@ -326,6 +377,8 @@ fn create_temporary(
                 return Err(publication_error(
                     "ZRYNA-D2003",
                     artifact_stem,
+                    extension,
+                    target_label,
                     "create a temporary file for",
                     &error,
                 ));
@@ -335,20 +388,20 @@ fn create_temporary(
     Err(Diagnostic::error(
         "ZRYNA-D2003",
         None,
-        format!(
-            "could not reserve a temporary name for '{artifact_stem}.{JAVASCRIPT_ARTIFACT_EXTENSION}'"
-        ),
+        format!("could not reserve a temporary name for '{artifact_stem}.{extension}'"),
         "remove stale sibling .zryna temporary files and retry",
     ))
 }
 
-fn destination_exists_error(artifact_stem: &str) -> Diagnostic {
+fn destination_exists_error(
+    artifact_stem: &str,
+    extension: &str,
+    target_label: &str,
+) -> Diagnostic {
     Diagnostic::error(
         "ZRYNA-D2007",
         None,
-        format!(
-            "JavaScript artifact '{artifact_stem}.{JAVASCRIPT_ARTIFACT_EXTENSION}' already exists"
-        ),
+        format!("{target_label} artifact '{artifact_stem}.{extension}' already exists"),
         "choose a fresh output stage; create-only publication never replaces an existing artifact",
     )
 }
@@ -356,6 +409,8 @@ fn destination_exists_error(artifact_stem: &str) -> Diagnostic {
 fn publication_error(
     code: &str,
     artifact_stem: &str,
+    extension: &str,
+    target_label: &str,
     operation: &str,
     error: &io::Error,
 ) -> Diagnostic {
@@ -363,7 +418,7 @@ fn publication_error(
         code,
         None,
         format!(
-            "could not {operation} JavaScript artifact '{artifact_stem}.{JAVASCRIPT_ARTIFACT_EXTENSION}': {error}"
+            "could not {operation} {target_label} artifact '{artifact_stem}.{extension}': {error}"
         ),
         "verify output-directory permissions and retry in a fresh declared output stage",
     )
@@ -392,11 +447,11 @@ mod tests {
             let sequence = NEXT_ROOT.fetch_add(1, Ordering::Relaxed);
             let workspace = std::env::temp_dir()
                 .join(format!("zryna-javascript-{}-{label}-{sequence}", std::process::id()));
-            let output_path = workspace.join(super::JAVASCRIPT_OUTPUT_RELATIVE_ROOT);
+            let output_path = workspace.join(super::ARTIFACT_OUTPUT_RELATIVE_ROOT);
             fs::create_dir_all(&output_path).expect("declared fixture output must be created");
             let output = JavaScriptOutputRoot::for_workspace(&workspace)
                 .expect("fixture output capability must validate");
-            assert_eq!(output.path(), workspace.join(super::JAVASCRIPT_OUTPUT_RELATIVE_ROOT));
+            assert_eq!(output.path(), workspace.join(super::ARTIFACT_OUTPUT_RELATIVE_ROOT));
             Self { workspace, output }
         }
 
@@ -524,7 +579,7 @@ mod tests {
 
         let real_parent = root.workspace_path().join("real-parent");
         let nested_workspace = real_parent.join("workspace");
-        fs::create_dir_all(nested_workspace.join(super::JAVASCRIPT_OUTPUT_RELATIVE_ROOT))
+        fs::create_dir_all(nested_workspace.join(super::ARTIFACT_OUTPUT_RELATIVE_ROOT))
             .expect("nested declared output must be created");
         let linked_parent = root.workspace_path().join("linked-parent");
         symlink(&real_parent, &linked_parent).expect("ancestor link must be created");

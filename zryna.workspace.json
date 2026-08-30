@@ -81,6 +81,13 @@
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
+      "id": "zryna-backend-webassembly",
+      "root": "crates/zryna-backend-webassembly",
+      "kind": "backend",
+      "dependencies": ["zryna-diagnostics", "zryna-ir", "zryna-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
       "id": "zryna-driver",
       "root": "crates/zryna-driver",
       "kind": "orchestrator",
@@ -88,6 +95,7 @@
         "zryna-architecture",
         "zryna-backend-javascript",
         "zryna-backend-native",
+        "zryna-backend-webassembly",
         "zryna-diagnostics",
         "zryna-frontend",
         "zryna-ir",
