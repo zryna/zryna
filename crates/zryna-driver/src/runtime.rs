@@ -824,10 +824,8 @@ mod tests {
             }
             Err(error) if cfg!(windows) => {
                 assert!(
-                    matches!(
-                        error.kind(),
-                        std::io::ErrorKind::PermissionDenied | std::io::ErrorKind::Other
-                    ),
+                    error.kind() == std::io::ErrorKind::PermissionDenied
+                        || matches!(error.raw_os_error(), Some(5 | 32)),
                     "unexpected replacement failure: {error}"
                 );
                 runtime.revalidate().expect("denied replacement must preserve identity");

@@ -1672,7 +1672,7 @@ mod tests {
     }
 
     #[test]
-    fn real_output_root_replacement_does_not_advertise_a_bundle() {
+    fn real_output_root_replacement_is_detected_or_prevented() {
         let root = TemporaryRoot::new("real-output-replacement");
         let output = root.output();
         let mut transaction = Transaction::create(&output).expect("transaction must be created");
@@ -1687,7 +1687,19 @@ mod tests {
             )
             .expect("staged artifact must be written");
         let displaced = root.path().join("displaced-real-output");
-        fs::rename(output.path(), &displaced).expect("output root must be displaced");
+        if let Err(error) = fs::rename(output.path(), &displaced) {
+            assert!(
+                cfg!(windows)
+                    && (error.kind() == std::io::ErrorKind::PermissionDenied
+                        || matches!(error.raw_os_error(), Some(5 | 32))),
+                "unexpected output replacement failure: {error}"
+            );
+            let final_bundle = output.path().join("artifact.build");
+            assert!(!final_bundle.exists());
+            transaction.cleanup(&output).expect("protected stage must be cleanable");
+            assert!(!stage.exists());
+            return;
+        }
         fs::create_dir(output.path()).expect("real replacement output must be installed");
         let final_bundle = output.path().join("artifact.build");
 
