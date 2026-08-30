@@ -29,7 +29,8 @@ sealed Universal IR, and independently verified native MIR boundary are enforced
 [M0 conformance gate](M0_CONFORMANCE.md). The same fail-closed gate passed locally and in required
 Linux and Windows checks, independent closure review found no unresolved P0 or P1 issue, and the
 [public compiler status](https://zryna.com/reference/compiler-status/) matches the implemented
-surface. Zryna-owned semantic lowering remains the first compiler step in M1.
+surface. At M0 closure, Zryna-owned semantic lowering was the first compiler step scheduled for
+M1.
 
 - strict repository contract and fail-closed architecture engine;
 - stable diagnostics and source spans;
@@ -61,11 +62,14 @@ Goal: compile one `.zry` entrypoint to executable JavaScript, direct WebAssembly
 
 Dependency order:
 
-1. extend the lower-layer provider-neutral syntax contract with normalized function bodies, parameters, literals, returns, `bool`, and `i32`;
+1. extend the lower-layer provider-neutral syntax contract with normalized function bodies,
+   parameters, literals, returns, `bool`, and `i32` (implemented);
 2. make the TypeScript 6 adapter produce that snapshot without owning Zryna semantics (implemented);
-3. add Zryna-owned name resolution, strict semantic checking, and lowering to unverified IR;
-4. reject `any`, implicit `any`, malformed provider data, and unsupported syntax with stable source diagnostics;
-5. verify exact IR operations before any backend accepts the program;
+3. add Zryna-owned name resolution, strict semantic checking, and lowering to unverified IR
+   (implemented by Issue #14);
+4. reject `any`, implicit `any`, malformed provider data, and unsupported syntax with stable source
+   diagnostics (implemented by Issue #14);
+5. verify exact IR operations before any backend accepts the program (implemented by Issue #14);
 6. freeze scalar ABI v1: logical export names, target symbol mapping, `i32` and `bool`
    representation, invocation, and host-result normalization (implemented by Issue #13);
 7. emit and execute an ECMAScript module;

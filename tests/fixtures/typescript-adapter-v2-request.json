@@ -5,12 +5,8 @@
     "schema_version": 2,
     "files": [
       {
-        "path": "src/z-unsupported.zry",
-        "text": "// 😀\nexport class Unsupported {}"
-      },
-      {
-        "path": "src/a-add.zry",
-        "text": "// 😀\nexport function add(a: i32, b: any) { return a + b; }"
+        "path": "examples/universal/add.zry",
+        "text": "export function add(a: i32, b: i32): i32 {\n  return a + b;\n}\n"
       }
     ]
   }

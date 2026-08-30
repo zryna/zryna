@@ -40,7 +40,8 @@ semantic lowering never depends on a replaceable provider.
    snapshot.
 3. `zryna-syntax` verifies protocol-v2 file identity, budgets, source spans, lexical order, and the
    canonical flat expression graph before constructing opaque executable syntax.
-4. Zryna semantics rejects unsupported dynamic constructs and assigns exact types.
+4. Zryna semantics resolves parameter names, rejects unsupported or dynamic constructs, assigns
+   exact types, and lowers the accepted source subset to raw Universal IR.
 5. `zryna-abi` verifies scalar signatures, logical exports, target mappings, and typed host values.
 6. `zryna-ir` represents exact operations such as `I32Add`; generic target-dependent arithmetic is forbidden.
 7. The IR verifier is the only constructor of a backend-accepted verified program and embeds the
@@ -62,6 +63,7 @@ diagnostics ─────────────→ syntax
   └──────────────────────────────────────────────┐
 source ──────────────────────────────────────────┤
 syntax ──────────────────────────────────────────┤
+scalar ABI ─────────────→ export-name preflight ─┤
                                                   ↓
                                             Zryna semantics
                                                   ↓
@@ -102,6 +104,30 @@ diagnostics are resolved and sorted through the source map before stable text or
 is emitted; a forged or mismatched span fails rendering rather than producing a misleading path.
 IR verification also resolves every expression span with the compilation source map before it can
 construct `VerifiedProgram`.
+
+Verified protocol-v2 snapshots also retain the opaque identity of the issuing `SourceMap`, even
+when the map contains no files. The semantic boundary requires that exact identity and rejects a
+snapshot verified against any independently constructed map.
+
+## Current strict semantic subset
+
+The first source-to-IR gate accepts exactly one designated source file, conventionally ending in
+`.zry`, with at least one exported function. Parameters and results require explicit `i32` or
+`bool` annotations. Parameter names are
+function-local and unique; bodies contain exactly one value return; expressions are parameter
+references, in-range decimal `i32` literals, Boolean literals, and `i32 + i32`. Export names are
+preflighted by the scalar ABI authority before IR verification.
+
+The semantic phase owns rejection of missing annotations, `any`, unknown types, duplicate or
+unresolved names, invalid export identities, out-of-range integers, invalid addition, mismatched
+returns, and unsupported entrypoint shape. Diagnostics are source-located where a source token
+exists, deterministic, and capped at 256 entries. Protocol-v2 resource limits are compile-time
+constrained to the corresponding IR limits.
+
+Semantic validity is not backend availability. Raw IR can represent `BoolLiteral`, but the current
+`I32V1` verifier rejects every `bool` signature or expression before constructing
+`VerifiedProgram`. A future universal Boolean profile must be implemented by every active backend
+before that gate can be enabled.
 
 ## Verified Universal IR trust contract
 

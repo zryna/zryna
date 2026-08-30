@@ -22,7 +22,7 @@ The initial executable subset represents:
 - one source span for every declaration, type, statement, expression, keyword, name, and operator.
 
 The wire contract preserves a named spelling such as `any` and a missing annotation. The semantic
-phase, not a provider, will reject unsupported or dynamic types with Zryna diagnostics.
+phase, not a provider, rejects unsupported or dynamic types with Zryna diagnostics.
 
 ## Wire shape
 
@@ -96,4 +96,5 @@ expressions. The runtime additionally rejects Windows device stems, path compone
 bytes, case-folded path collisions, wrong file identities, and all graph/source invariants. A
 provider must therefore pass the Rust decoder and source-map-backed verifier even after schema
 validation. Adapter emission has its own schema, adversarial, Unicode, determinism, and platform
-conformance suite. Semantic lowering and target execution remain separate gates.
+conformance suite. Semantic lowering is an implemented compiler-owned gate for the first strict
+one-file subset; target execution remains separate.

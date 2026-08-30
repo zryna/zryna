@@ -530,6 +530,7 @@ dependencies = [
 name = "zryna-semantics"
 version = "0.1.0"
 dependencies = [
+ "zryna-abi",
  "zryna-diagnostics",
  "zryna-ir",
  "zryna-source",
