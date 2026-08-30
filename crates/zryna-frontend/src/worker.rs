@@ -322,6 +322,7 @@ impl WorkerFrontend {
                 &mut stream_state,
                 operation_deadline,
                 MAX_HANDSHAKE_RESPONSE_BYTES,
+                "handshake",
             )?;
             let handshake: ProviderInfo = parse_response(&handshake_line, HANDSHAKE_ID)?;
             verify_handshake(&handshake, &self.spec.expected)?;
@@ -332,6 +333,7 @@ impl WorkerFrontend {
                 &mut stream_state,
                 operation_deadline,
                 syntax_v2::MAX_RESPONSE_BYTES,
+                "analysis",
             )?;
             let decoded: syntax_v2::RawProjectSyntaxSnapshot =
                 parse_response(&snapshot_line, ANALYZE_ID)?;
@@ -967,17 +969,20 @@ fn receive_response_line(
     state: &mut StreamState,
     deadline: Instant,
     frame_limit: usize,
+    stage: &'static str,
 ) -> Result<Vec<u8>, WorkerError> {
     loop {
         let event = receive_event(receiver, deadline)?;
         match event {
             ProcessEvent::StdoutLine(line) if line.len() <= frame_limit => return Ok(line),
-            ProcessEvent::StdoutLine(_)
+            invalid @ (ProcessEvent::StdoutLine(_)
             | ProcessEvent::StdoutFrameLimit
-            | ProcessEvent::StdoutTrailing => {
+            | ProcessEvent::StdoutTrailing) => {
+                eprintln!("{stage} response framing failed: {invalid:?}");
                 return Err(WorkerError::new(WorkerFailure::InvalidResponse));
             }
             ProcessEvent::StdoutEof => {
+                eprintln!("{stage} response framing failed: stdout ended before a response");
                 state.io.stdout_eof = true;
                 return Err(WorkerError::new(WorkerFailure::InvalidResponse));
             }
