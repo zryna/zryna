@@ -23,7 +23,7 @@ use crate::{
     discover_linux_native_toolchain,
     javascript::validate_artifact_stem,
     native::{prepare_native_invocation_from_verified, run_prepared_native_invocation},
-    runtime::NodeRuntimeCapability,
+    runtime::{NodeRuntimeCapability, node_compatible_path},
 };
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
@@ -781,34 +781,6 @@ fn configured_frontend(
     Ok(WorkerFrontend::new(spec))
 }
 
-#[cfg(windows)]
-fn node_compatible_path(path: &Path) -> PathBuf {
-    use std::ffi::OsString;
-    use std::os::windows::ffi::{OsStrExt, OsStringExt};
-
-    const VERBATIM_PREFIX: &[u16] = &[b'\\' as u16, b'\\' as u16, b'?' as u16, b'\\' as u16];
-    const UNC_PREFIX: &[u16] = &[b'U' as u16, b'N' as u16, b'C' as u16, b'\\' as u16];
-
-    let encoded = path.as_os_str().encode_wide().collect::<Vec<_>>();
-    let Some(remainder) = encoded.strip_prefix(VERBATIM_PREFIX) else {
-        return path.to_path_buf();
-    };
-    let normalized = if remainder.starts_with(UNC_PREFIX) {
-        [u16::from(b'\\'), u16::from(b'\\')]
-            .into_iter()
-            .chain(remainder[UNC_PREFIX.len()..].iter().copied())
-            .collect()
-    } else {
-        remainder.to_vec()
-    };
-    PathBuf::from(OsString::from_wide(&normalized))
-}
-
-#[cfg(not(windows))]
-fn node_compatible_path(path: &Path) -> PathBuf {
-    path.to_path_buf()
-}
-
 #[allow(clippy::too_many_arguments)]
 fn commit_prepared(
     request: &BuildRequest,
@@ -1456,8 +1428,6 @@ mod tests {
     use zryna_frontend::{VerifiedFrontendProvider, WorkerError, syntax_v2};
     use zryna_source::{SourceFileInput, SourceMap};
 
-    #[cfg(windows)]
-    use super::node_compatible_path;
     #[cfg(unix)]
     use super::read_entrypoint_with_after_read;
     use super::{
@@ -1468,23 +1438,6 @@ mod tests {
     use crate::ArtifactOutputRoot;
 
     static NEXT_ROOT: AtomicUsize = AtomicUsize::new(0);
-
-    #[cfg(windows)]
-    #[test]
-    fn node_paths_remove_only_windows_verbatim_prefixes() {
-        assert_eq!(
-            node_compatible_path(Path::new(r"\\?\C:\workspace\adapter\src\worker.mjs")),
-            PathBuf::from(r"C:\workspace\adapter\src\worker.mjs")
-        );
-        assert_eq!(
-            node_compatible_path(Path::new(r"\\?\UNC\server\share\adapter\src\worker.mjs")),
-            PathBuf::from(r"\\server\share\adapter\src\worker.mjs")
-        );
-        assert_eq!(
-            node_compatible_path(Path::new(r"C:\workspace\adapter")),
-            PathBuf::from(r"C:\workspace\adapter")
-        );
-    }
 
     struct TemporaryRoot {
         path: PathBuf,

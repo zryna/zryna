@@ -55,10 +55,11 @@ impl NodeRuntimeCapability {
         }
         let (identity, state) = open_runtime_identity(executable)?;
         let invocation_path = stable_invocation_path(executable, &identity)?;
+        let node_working_directory = node_compatible_path(working_directory);
         let output = run_bounded(
             &invocation_path,
             &[OsString::from("--version")],
-            working_directory,
+            &node_working_directory,
             MAX_VERSION_STDOUT,
             MAX_STDERR,
         )?;
@@ -101,10 +102,12 @@ impl NodeRuntimeCapability {
         working_directory: &Path,
     ) -> Result<[u8; 4], Diagnostic> {
         self.revalidate()?;
+        let node_harness = node_compatible_path(harness);
+        let node_working_directory = node_compatible_path(working_directory);
         let output = run_bounded(
             &self.invocation_path,
-            &[harness.as_os_str().to_owned()],
-            working_directory,
+            &[node_harness.into_os_string()],
+            &node_working_directory,
             MAX_RESULT_STDOUT,
             MAX_STDERR,
         )?;
@@ -129,6 +132,33 @@ impl NodeRuntimeCapability {
 fn is_pinned_node_version(stdout: &[u8]) -> bool {
     stdout == format!("{NODE_VERSION}\n").as_bytes()
         || stdout == format!("{NODE_VERSION}\r\n").as_bytes()
+}
+
+#[cfg(windows)]
+pub(crate) fn node_compatible_path(path: &Path) -> PathBuf {
+    use std::os::windows::ffi::{OsStrExt, OsStringExt};
+
+    const VERBATIM_PREFIX: &[u16] = &[b'\\' as u16, b'\\' as u16, b'?' as u16, b'\\' as u16];
+    const UNC_PREFIX: &[u16] = &[b'U' as u16, b'N' as u16, b'C' as u16, b'\\' as u16];
+
+    let encoded = path.as_os_str().encode_wide().collect::<Vec<_>>();
+    let Some(remainder) = encoded.strip_prefix(VERBATIM_PREFIX) else {
+        return path.to_path_buf();
+    };
+    let normalized = if remainder.starts_with(UNC_PREFIX) {
+        [u16::from(b'\\'), u16::from(b'\\')]
+            .into_iter()
+            .chain(remainder[UNC_PREFIX.len()..].iter().copied())
+            .collect()
+    } else {
+        remainder.to_vec()
+    };
+    PathBuf::from(OsString::from_wide(&normalized))
+}
+
+#[cfg(not(windows))]
+pub(crate) fn node_compatible_path(path: &Path) -> PathBuf {
+    path.to_path_buf()
 }
 
 fn open_runtime_identity(path: &Path) -> Result<(Handle, std::fs::Metadata), Diagnostic> {
@@ -563,9 +593,28 @@ mod tests {
         time::{Duration, Instant},
     };
 
+    #[cfg(windows)]
+    use super::node_compatible_path;
     use super::{NodeRuntimeCapability, is_pinned_node_version};
 
     static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
+
+    #[cfg(windows)]
+    #[test]
+    fn node_paths_remove_only_windows_verbatim_prefixes() {
+        assert_eq!(
+            node_compatible_path(Path::new(r"\\?\C:\workspace\adapter\src\worker.mjs")),
+            PathBuf::from(r"C:\workspace\adapter\src\worker.mjs")
+        );
+        assert_eq!(
+            node_compatible_path(Path::new(r"\\?\UNC\server\share\adapter\src\worker.mjs")),
+            PathBuf::from(r"\\server\share\adapter\src\worker.mjs")
+        );
+        assert_eq!(
+            node_compatible_path(Path::new(r"C:\workspace\adapter")),
+            PathBuf::from(r"C:\workspace\adapter")
+        );
+    }
 
     struct RuntimeRoot {
         path: PathBuf,
