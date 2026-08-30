@@ -337,8 +337,10 @@ impl WorkerFrontend {
                 parse_response(&snapshot_line, ANALYZE_ID)?;
             let canonical = serde_json::to_vec(&decoded)
                 .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
-            let raw = syntax_v2::decode_snapshot(&canonical)
-                .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
+            let raw = syntax_v2::decode_snapshot(&canonical).map_err(|error| {
+                eprintln!("canonical snapshot decode failed: {error}");
+                WorkerError::new(WorkerFailure::InvalidResponse)
+            })?;
             let status =
                 finish_process(&mut process, &receiver, &mut stream_state, operation_deadline)?;
             if !status.success() {
@@ -585,8 +587,10 @@ fn build_analyze_request(sources: &SourceMap) -> Result<AnalyzeRequest, WorkerEr
 }
 
 fn parse_response<T: DeserializeOwned>(bytes: &[u8], expected_id: u32) -> Result<T, WorkerError> {
-    let response: RpcResponse<T> = serde_json::from_slice(bytes)
-        .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
+    let response: RpcResponse<T> = serde_json::from_slice(bytes).map_err(|error| {
+        eprintln!("protocol response decode failed at {error}; frame bytes={}", bytes.len());
+        WorkerError::new(WorkerFailure::InvalidResponse)
+    })?;
     match response {
         RpcResponse::Success(success) if success.id == expected_id => Ok(success.result),
         RpcResponse::Success(_) => Err(WorkerError::new(WorkerFailure::InvalidResponse)),
