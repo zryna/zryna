@@ -19,6 +19,16 @@ The current success profile is the one-file, explicitly typed `i32` subset docum
 `I32V1` IR profile until every active backend supports it. Multiple files remain disabled until
 module resolution is specified.
 
-`emit_verified` still proves only the existing direct JavaScript and textual native-backend
-boundaries. Direct WebAssembly emission, object generation, linking, target execution, and a
-user-facing build/run CLI remain later M1 gates.
+`compile_javascript` connects real source to the deterministic JavaScript backend and publishes one
+new `.mjs` artifact through `JavaScriptOutputRoot`. The capability is derived only from an absolute
+workspace path's exact `.zryna/out` location and rejects missing, non-directory, symbolic-link, and
+Windows reparse-point components throughout the persistent path chain. The artifact stem is one
+portable ASCII filename component. Publication is create-only: complete bytes are written,
+flushed, and synchronized through a new sibling temporary file before the absent final name is
+committed with a hard link. Existing destinations are never replaced, and a failed build never
+reports a new artifact. Non-fatal provider and publication warnings remain observable on success.
+
+Generated modules are imported and executed by the integration suite with Node.js 22.22.1. The
+driver does not yet expose a public Node runner or build/run CLI. `emit_verified` continues to
+prove the textual native-backend boundary. Direct WebAssembly emission, native object generation,
+linking, three-target execution, and the user-facing CLI remain later M1 gates.

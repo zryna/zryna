@@ -20,7 +20,7 @@ Zryna syntax snapshot
 Zryna strict semantics
     ↓
 verified Universal IR
-    ├── direct JavaScript backend → .js
+    ├── direct JavaScript backend → .mjs
     ├── direct WebAssembly backend → .wasm
     └── native lowering → MIR → codegen → executable
 ```
@@ -60,7 +60,10 @@ The repository currently establishes and tests:
   wrapping addition;
 - a verified scalar ABI v1 authority for `i32` and `bool` signatures, deterministic JavaScript,
   core WebAssembly, and Linux x86-64 export mappings, and typed host observations;
-- iterative direct JavaScript emission from verified IR;
+- deterministic direct ECMAScript-module emission from verified IR, with strict scalar ABI
+  argument and result validation for the current `i32` execution profile;
+- driver-owned, create-only publication of complete `.mjs` artifacts through a validated
+  capability for the workspace's declared `.zryna/out` directory;
 - native MIR lowering through an independent `VerifiedMirModule` gate and textual LLVM IR emission
   as a backend-boundary proof.
 
@@ -73,11 +76,13 @@ stable diagnostics. Source-level `bool` is checked and lowered, but the current 
 intentionally rejects it until every backend implements the same profile; only the documented
 `i32` subset currently reaches `VerifiedProgram`.
 
-The scalar ABI is specified but current emitters are not yet public ABI v1 implementations. No
-WebAssembly backend exists yet, and textual LLVM IR is not object or executable emission. The next
-M1 gates connect verified source to executable JavaScript, add direct WebAssembly emission, and
-then add native object generation and linking, with all three targets checked for matching
-behavior.
+The JavaScript backend now consumes the sealed scalar ABI mapping for the current `I32V1` profile.
+Its generated module rejects non-canonical JavaScript carriers, checks exact arity, preserves
+wrapping `i32` addition, and has been executed with Node.js in the integration suite. This does not
+yet expose a public build/run CLI, and source-level `bool` remains verifier-gated. No WebAssembly
+backend exists yet, and textual LLVM IR is not object or executable emission. The next M1 gates
+add direct WebAssembly emission and then native object generation and linking, with all three
+targets checked for matching behavior.
 
 ## Run the foundation gate
 

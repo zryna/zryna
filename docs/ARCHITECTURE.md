@@ -46,7 +46,9 @@ semantic lowering never depends on a replaceable provider.
 6. `zryna-ir` represents exact operations such as `I32Add`; generic target-dependent arithmetic is forbidden.
 7. The IR verifier is the only constructor of a backend-accepted verified program and embeds the
    matching sealed scalar ABI module by declaration index.
-8. The JavaScript backend preserves Zryna behavior using direct syntax or explicit helpers.
+8. The JavaScript backend consumes sealed ABI export names and emits deterministic ESM with
+   explicit scalar-boundary checks. The driver publishes complete `.mjs` files create-only through
+   a validated capability for the workspace's declared `.zryna/out` directory.
 9. The WebAssembly backend maps exact Zryna operations directly to validated core WebAssembly. Browser bindings and WASI capabilities remain explicit host profiles.
 10. Native lowering creates explicit typed native claims; the native MIR verifier is the only
    constructor of the codegen-accepted `VerifiedMirModule`.
@@ -154,8 +156,33 @@ A verified function proves all of the following:
 
 Verification and current JavaScript emission are iterative and bounded. The normative
 [scalar ABI v1](../spec/abi/SCALAR_V1.md) defines target names, carriers, invocation, and typed
-observation. Current emitters remain boundary proofs until their later issues adopt those public
-wrappers and target mappings; they may not claim ABI v1 conformance early.
+observation. The JavaScript emitter implements the sealed export mapping and boundary checks for
+the executable `I32V1` profile. Its Boolean carrier helper is exercised against the shared ABI
+fixture, but does not admit Boolean source or Boolean IR. WebAssembly and native public wrappers
+remain boundary proofs until their later issues adopt the same mappings.
+
+## Current JavaScript artifact path
+
+`zryna-driver::compile_javascript` is the source-connected JavaScript build boundary. It compiles
+an authenticated source map through semantics and verified IR, emits one deterministic ECMAScript
+module, and publishes `<stem>.mjs` only when the destination does not already exist. The caller
+must first derive a `JavaScriptOutputRoot` capability from an absolute workspace path. That
+capability resolves only the declared `.zryna/out` location and rejects any persistent path
+component that is missing, non-directory, a symbolic link, or a Windows reparse point. The full
+chain is revalidated immediately before publication. The artifact stem is one portable ASCII
+filename component.
+
+Publication writes, flushes, and synchronizes a create-new sibling temporary file before using a
+create-only hard link for the final name. It never replaces an existing file, directory, or link.
+A failed source, backend, or publication phase does not report a new artifact; an existing
+destination is preserved byte-for-byte. Concurrent hostile replacement of filesystem ancestors
+after validation is outside this process-local publication proof, and directory-entry crash
+durability is not claimed. Temporary-name cleanup failure after successful publication is returned
+as a warning without hiding the successfully published artifact.
+
+The integration suite imports and executes generated modules with Node.js 22.22.1. This is a
+compiler conformance harness, not yet a public runtime command. The user-facing build/run CLI is a
+later M1 gate.
 
 Native MIR has its own consumed raw-to-verified boundary. Raw functions explicitly claim a symbol,
 provisional internal convention, typed signature, dense typed value definitions, operations, and a
