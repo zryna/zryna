@@ -55,7 +55,7 @@ and bounded: `ZRYNA-I1001`–`I1008` cover body, type, operation, and graph fail
 cover logical exports; `I1201` reports a resource limit; and terminal `I1202` reports diagnostic
 budget exhaustion or an internal bounded-construction failure.
 
-Successful verification proves only this documented profile. Native lowering still converts it to
-the provisional raw internal MIR convention and passes those claims through the native MIR verifier
-before codegen. Adopting the verified public target symbol and calling convention, object emission,
-and linking are later trust boundaries and are not implied by `VerifiedProgram`.
+Successful verification proves only this documented profile. Native lowering passes explicit raw
+claims through the native MIR verifier, which retains the sealed ABI mapping before fixed-target
+object codegen. Linux x86-64 object emission is implemented; product linking and execution remain
+separate trust boundaries and are not implied by `VerifiedProgram`.

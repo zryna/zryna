@@ -14,6 +14,7 @@
 #![forbid(unsafe_code)]
 
 mod javascript;
+mod native;
 mod webassembly;
 
 use std::{error::Error, fmt, path::Path};
@@ -30,6 +31,12 @@ pub use javascript::{
     JavaScriptBuildSuccess, JavaScriptOutputRoot, MAX_ARTIFACT_STEM_BYTES,
     MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES, PublishedJavaScriptArtifact, compile_javascript,
     publish_javascript,
+};
+pub use native::{
+    MAX_NATIVE_OBJECT_ARTIFACT_STEM_BYTES, NATIVE_OBJECT_ARTIFACT_EXTENSION,
+    NativeObjectBuildError, NativeObjectBuildSuccess, NativeObjectOutputRoot,
+    PublishedNativeObjectArtifact, compile_native_object, publish_native_object,
+    select_native_object_target,
 };
 pub use webassembly::{
     MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,
@@ -220,8 +227,9 @@ mod tests {
     };
 
     use super::{
-        JavaScriptBuildError, JavaScriptOutputRoot, SourceToIrError, WebAssemblyBuildError,
-        compile_javascript, compile_to_verified_ir, compile_webassembly, lower_verified_syntax,
+        JavaScriptBuildError, JavaScriptOutputRoot, NativeObjectBuildError, SourceToIrError,
+        WebAssemblyBuildError, compile_javascript, compile_native_object, compile_to_verified_ir,
+        compile_webassembly, lower_verified_syntax,
     };
     use zryna_diagnostics::{Diagnostic, Severity, render_structured};
     use zryna_frontend::{
@@ -778,6 +786,197 @@ process.stdout.write(JSON.stringify({ imports, exports, values, carrierCount: ca
     }
 
     #[test]
+    fn real_source_publishes_audited_native_object_create_only() {
+        let text = include_str!("../../../examples/universal/add.zry");
+        let sources = source_map("examples/universal/add.zry", text);
+        let output_root = JavaScriptRoot::new("native-object");
+        fs::write(output_root.path().join("main.mjs"), b"javascript")
+            .expect("JavaScript sibling fixture");
+        fs::write(output_root.path().join("main.wasm"), b"webassembly")
+            .expect("WebAssembly sibling fixture");
+
+        let result = compile_native_object(
+            &typescript_frontend(),
+            &sources,
+            output_root.output(),
+            "main",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+        )
+        .expect("real source must publish audited native object");
+
+        assert!(result.diagnostics().is_empty());
+        assert_eq!(result.artifact().path(), output_root.path().join("main.o"));
+        assert_eq!(&fs::read(result.artifact().path()).expect("object bytes")[..4], b"\x7fELF");
+        fs::write(result.artifact().path(), b"native-sentinel")
+            .expect("distinct existing native destination");
+        let error = compile_native_object(
+            &typescript_frontend(),
+            &sources,
+            output_root.output(),
+            "main",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+        )
+        .expect_err("create-only publication must preserve native destination");
+        assert!(matches!(error, NativeObjectBuildError::Publication(_)));
+        assert_eq!(error.diagnostics()[0].code(), "ZRYNA-D2007");
+        assert_eq!(
+            fs::read(output_root.path().join("main.o")).expect("preserved native sentinel"),
+            b"native-sentinel"
+        );
+        assert_eq!(fs::read_dir(output_root.path()).expect("output listing").count(), 3);
+    }
+
+    #[test]
+    fn native_fixture_partition_matches_i32v1_gate() {
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../spec/abi/scalar-v1-fixtures.json"))
+                .expect("normative scalar fixture must parse");
+        let carriers = fixture["carrierCases"]
+            .as_array()
+            .expect("carrierCases must be an array")
+            .iter()
+            .filter(|entry| entry["target"] == "native-linux-x86-64")
+            .collect::<Vec<_>>();
+        let bool_count = carriers.iter().filter(|entry| entry["scalarType"] == "bool").count();
+        let i32_count = carriers.iter().filter(|entry| entry["scalarType"] == "i32").count();
+        assert_eq!(carriers.len(), 11);
+        assert_eq!(i32_count, 3);
+        assert_eq!(bool_count, 8);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_test_harness_observes_native_i32_values() {
+        let text = concat!(
+            "export function add(a: i32, b: i32): i32 { return a + b; } ",
+            "export function min(): i32 { return -2147483648; } ",
+            "export function max(): i32 { return 2147483647; } ",
+            "export function sum7(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32, g: i32): i32 { return a + b + c + d + e + f + g; }",
+        );
+        let sources = source_map("src/native.zry", text);
+        let output_root = JavaScriptRoot::new("native-execute");
+        let result = compile_native_object(
+            &typescript_frontend(),
+            &sources,
+            output_root.output(),
+            "native",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+        )
+        .expect("native fixture must compile");
+        let harness = output_root.path().join("harness.c");
+        fs::write(
+            &harness,
+            concat!(
+                "#include <stdint.h>\n#include <stdio.h>\n",
+                "extern int32_t zryna_v1_e_add(int32_t, int32_t);\n",
+                "extern int32_t zryna_v1_e_min(void);\n",
+                "extern int32_t zryna_v1_e_max(void);\n",
+                "extern int32_t zryna_v1_e_sum7(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);\n",
+                "int main(void) {\n",
+                "  printf(\"%d,%d,%d,%d,%d,%d,%d,%d,%d\\n\",\n",
+                "    zryna_v1_e_add(INT32_MAX, 1),\n",
+                "    zryna_v1_e_add(INT32_MIN, -1),\n",
+                "    zryna_v1_e_add(INT32_MAX, INT32_MAX),\n",
+                "    zryna_v1_e_add(INT32_MIN, INT32_MIN),\n",
+                "    zryna_v1_e_add(-1, -1), zryna_v1_e_add(20, 22),\n",
+                "    zryna_v1_e_min(), zryna_v1_e_max(),\n",
+                "    zryna_v1_e_sum7(1, 2, 3, 4, 5, 6, 7));\n",
+                "  return 0;\n}\n",
+            ),
+        )
+        .expect("test-only C harness");
+        let executable = output_root.path().join("harness");
+        let linked = Command::new("cc")
+            .arg("-std=c11")
+            .arg("-o")
+            .arg(&executable)
+            .arg(&harness)
+            .arg(result.artifact().path())
+            .output()
+            .expect("test-only C linker must start");
+        assert!(
+            linked.status.success(),
+            "link stderr: {}",
+            String::from_utf8_lossy(&linked.stderr)
+        );
+        let executed = Command::new(&executable).output().expect("test harness must start");
+        assert!(executed.status.success());
+        assert_eq!(
+            String::from_utf8(executed.stdout).expect("harness UTF-8"),
+            "-2147483648,2147483647,-2,0,-2,42,-2147483648,2147483647,28\n"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_native_i32_fixture_drives_object_observation() {
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../spec/abi/scalar-v1-fixtures.json"))
+                .expect("normative scalar fixture must parse");
+        let values = fixture["carrierCases"]
+            .as_array()
+            .expect("carrierCases must be an array")
+            .iter()
+            .filter(|entry| {
+                entry["target"] == "native-linux-x86-64" && entry["scalarType"] == "i32"
+            })
+            .map(|entry| {
+                i32::try_from(entry["raw"]["value"].as_i64().expect("native i32 raw value"))
+                    .expect("native fixture i32 range")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(values.len(), 3);
+
+        let sources =
+            source_map("src/probe.zry", "export function probe(value: i32): i32 { return value; }");
+        let output_root = JavaScriptRoot::new("native-fixture");
+        let result = compile_native_object(
+            &typescript_frontend(),
+            &sources,
+            output_root.output(),
+            "fixture",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+        )
+        .expect("native fixture probe must compile");
+        let calls = values
+            .iter()
+            .map(|value| format!("zryna_v1_e_probe(INT32_C({value}))"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let expected = values.iter().map(i32::to_string).collect::<Vec<_>>().join(",");
+        let harness_source = format!(
+            concat!(
+                "#include <stdint.h>\n#include <stdio.h>\n",
+                "extern int32_t zryna_v1_e_probe(int32_t);\n",
+                "int main(void) {{ printf(\"%d,%d,%d\\n\", {calls}); return 0; }}\n",
+            ),
+            calls = calls
+        );
+        let harness = output_root.path().join("fixture.c");
+        fs::write(&harness, harness_source).expect("test-only fixture harness");
+        let executable = output_root.path().join("fixture-harness");
+        let linked = Command::new("cc")
+            .arg("-std=c11")
+            .arg("-o")
+            .arg(&executable)
+            .arg(&harness)
+            .arg(result.artifact().path())
+            .output()
+            .expect("test-only C linker must start");
+        assert!(
+            linked.status.success(),
+            "link stderr: {}",
+            String::from_utf8_lossy(&linked.stderr)
+        );
+        let executed = Command::new(&executable).output().expect("fixture harness must start");
+        assert!(executed.status.success());
+        assert_eq!(
+            String::from_utf8(executed.stdout).expect("fixture harness UTF-8"),
+            format!("{expected}\n")
+        );
+    }
+
+    #[test]
     fn javascript_carriers_consume_the_shared_scalar_abi_fixture() {
         let sources =
             source_map("src/probe.zry", "export function probe(value: i32): i32 { return value; }");
@@ -851,6 +1050,30 @@ process.stdout.write(JSON.stringify({
         assert!(wasm_error.diagnostics().iter().any(|item| item.code() == "ZRYNA-I1006"));
         assert!(fs::read_dir(output_root.path()).expect("fixture listing").next().is_none());
 
+        let native_error = compile_native_object(
+            &typescript_frontend(),
+            &bool_sources,
+            output_root.output(),
+            "main",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+        )
+        .expect_err("Boolean source must not produce a native object under I32V1");
+        assert!(matches!(native_error, NativeObjectBuildError::Source(_)));
+        assert!(native_error.diagnostics().iter().any(|item| item.code() == "ZRYNA-I1006"));
+        assert!(fs::read_dir(output_root.path()).expect("fixture listing").next().is_none());
+
+        let unsupported_error = compile_native_object(
+            &typescript_frontend(),
+            &bool_sources,
+            output_root.output(),
+            "main",
+            "x86_64-pc-windows-msvc",
+        )
+        .expect_err("unsupported target must fail before source compilation");
+        assert!(matches!(unsupported_error, NativeObjectBuildError::Backend(_)));
+        assert_eq!(unsupported_error.diagnostics()[0].code(), "ZRYNA-N3001");
+        assert!(fs::read_dir(output_root.path()).expect("fixture listing").next().is_none());
+
         let error =
             compile_javascript(&typescript_frontend(), &bool_sources, output_root.output(), "main")
                 .expect_err("Boolean source must remain outside I32V1");
@@ -915,7 +1138,7 @@ process.stdout.write(JSON.stringify({
         assert!(artifacts.javascript.source.contains("$zryna$i32"));
         assert_eq!(
             artifacts.llvm_ir.source,
-            "define i32 @add(i32 %p0, i32 %p1) {\nentry:\n  %v2 = add i32 %p0, %p1\n  ret i32 %v2\n}\ndefine i32 @answer() {\nentry:\n  %v0 = add i32 0, 42\n  ret i32 %v0\n}\n"
+            "define i32 @zryna_v1_e_add(i32 %p0, i32 %p1) {\nentry:\n  %v2 = add i32 %p0, %p1\n  ret i32 %v2\n}\ndefine i32 @zryna_v1_e_answer() {\nentry:\n  %v0 = add i32 0, 42\n  ret i32 %v0\n}\n"
         );
     }
 }

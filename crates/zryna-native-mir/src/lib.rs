@@ -4,6 +4,7 @@
 
 use std::collections::BTreeMap;
 
+use zryna_abi::{VerifiedScalarAbiModule, VerifiedScalarExport};
 use zryna_diagnostics::Diagnostic;
 use zryna_ir::{ExprKind, Type, UniversalProfile, VerifiedFunction, VerifiedProgram};
 
@@ -199,8 +200,8 @@ impl ValueId {
 /// Sealed calling convention admitted by the current native MIR proof profile.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VerifiedCallingConvention {
-    /// Provisional fixed, non-variadic internal `i32` convention.
-    ZrynaInternalI32V1,
+    /// Scalar ABI v1 on Linux x86-64 using the System V AMD64 calling convention.
+    ScalarAbiV1LinuxX8664SystemV,
 }
 
 /// Read-only view of one verified native MIR operation.
@@ -236,13 +237,18 @@ pub enum OperationView {
 #[derive(Clone, Debug)]
 pub struct VerifiedMirModule {
     raw: raw::Module,
+    abi: VerifiedScalarAbiModule,
 }
 
 impl VerifiedMirModule {
     /// Iterates immutable verified function views in module order.
     #[must_use]
     pub fn functions(&self) -> impl ExactSizeIterator<Item = VerifiedMirFunction<'_>> {
-        self.raw.functions.iter().map(|function| VerifiedMirFunction { raw: function })
+        self.raw
+            .functions
+            .iter()
+            .zip(self.abi.exports())
+            .map(|(function, abi_export)| VerifiedMirFunction { raw: function, abi_export })
     }
 }
 
@@ -250,19 +256,26 @@ impl VerifiedMirModule {
 #[derive(Clone, Copy, Debug)]
 pub struct VerifiedMirFunction<'module> {
     raw: &'module raw::Function,
+    abi_export: VerifiedScalarExport<'module>,
 }
 
 impl<'module> VerifiedMirFunction<'module> {
-    /// Returns the verified provisional native symbol input.
+    /// Returns the exact verified Linux x86-64 scalar ABI v1 symbol.
     #[must_use]
     pub fn symbol(self) -> &'module str {
-        &self.raw.symbol
+        self.abi_export.native_linux_x86_64_symbol().as_str()
     }
 
-    /// Returns the verified provisional calling convention.
+    /// Returns the scalar ABI authority retained by native MIR verification.
+    #[must_use]
+    pub const fn abi_export(self) -> VerifiedScalarExport<'module> {
+        self.abi_export
+    }
+
+    /// Returns the verified public calling convention.
     #[must_use]
     pub const fn calling_convention(self) -> VerifiedCallingConvention {
-        VerifiedCallingConvention::ZrynaInternalI32V1
+        VerifiedCallingConvention::ScalarAbiV1LinuxX8664SystemV
     }
 
     /// Returns the verified parameter types.
@@ -353,7 +366,34 @@ pub fn verify(module: raw::Module) -> Result<VerifiedMirModule, Vec<Diagnostic>>
         }
         verify_function(function_index, function, &mut errors);
     }
-    if errors.is_empty() { Ok(VerifiedMirModule { raw: module }) } else { Err(errors.finish()) }
+    if !errors.is_empty() {
+        return Err(errors.finish());
+    }
+    let abi = verify_scalar_abi(&module)?;
+    Ok(VerifiedMirModule { raw: module, abi })
+}
+
+fn verify_scalar_abi(module: &raw::Module) -> Result<VerifiedScalarAbiModule, Vec<Diagnostic>> {
+    let exports = module
+        .functions
+        .iter()
+        .map(|function| {
+            let parameters =
+                function.signature.parameters.iter().map(|_| zryna_abi::raw::Type::I32).collect();
+            zryna_abi::raw::Export::new(
+                function.symbol.clone(),
+                zryna_abi::raw::Signature::new(parameters, zryna_abi::raw::Type::I32),
+            )
+        })
+        .collect();
+    zryna_abi::verify_v1(zryna_abi::raw::Module::new(exports)).map_err(|_| {
+        vec![Diagnostic::error(
+            "ZRYNA-N1013",
+            None,
+            "verified native MIR could not seal scalar ABI v1",
+            "report this compiler invariant failure with the smallest reproducible source",
+        )]
+    })
 }
 
 /// Lowers verified target-neutral IR through the mandatory native MIR verifier.
@@ -410,7 +450,7 @@ fn lower_function(function: VerifiedFunction<'_>) -> Result<raw::Function, Diagn
         values.push(raw::ValueDefinition::new(raw::ValueId::new(id), ty, operation));
     }
     Ok(raw::Function::new(
-        function.export_name().as_str().to_owned(),
+        function.abi_export().logical_name().as_str().to_owned(),
         raw::CallingConvention::ZRYNA_INTERNAL_I32_V1,
         raw::Signature::new(parameters, result_type),
         values,
@@ -942,8 +982,11 @@ mod tests {
         let functions = verified.functions().collect::<Vec<_>>();
         assert_eq!(functions.len(), 1);
         let function = functions[0];
-        assert_eq!(function.symbol(), "add");
-        assert_eq!(function.calling_convention(), VerifiedCallingConvention::ZrynaInternalI32V1);
+        assert_eq!(function.symbol(), "zryna_v1_e_add");
+        assert_eq!(
+            function.calling_convention(),
+            VerifiedCallingConvention::ScalarAbiV1LinuxX8664SystemV
+        );
         assert_eq!(function.parameter_types(), &[MirType::I32, MirType::I32]);
         assert_eq!(function.result_type(), MirType::I32);
         assert_eq!(function.result().index(), 2);
@@ -953,6 +996,15 @@ mod tests {
             Some(OperationView::I32Add { lhs: ValueId(0), rhs: ValueId(1) })
         );
         assert!(verify(raw::Module::new(Vec::new())).is_ok());
+    }
+
+    #[test]
+    fn scalar_abi_seal_invariant_has_a_distinct_code() {
+        let raw = raw::Module::new(vec![function("default")]);
+        assert_eq!(
+            codes(&verify_scalar_abi(&raw).expect_err("reserved ABI name must fail")),
+            ["ZRYNA-N1013"]
+        );
     }
 
     #[test]

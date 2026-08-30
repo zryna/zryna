@@ -7,8 +7,17 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+cranelift-codegen.workspace = true
+cranelift-frontend.workspace = true
+cranelift-module.workspace = true
+cranelift-object.workspace = true
+object.workspace = true
+target-lexicon.workspace = true
 zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-native-mir = { path = "../zryna-native-mir" }
+
+[dev-dependencies]
+sha2.workspace = true
 
 [lints]
 workspace = true

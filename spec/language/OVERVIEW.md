@@ -28,4 +28,7 @@ WASI and Component Model support is a separately versioned host profile. WIT and
 
 ## Native profile
 
-The native profile will extend the universal profile with features that have no JavaScript representation, such as raw FFI. Such modules cannot be emitted as JavaScript and must be separated by an explicit target boundary.
+The universal `I32V1` slice currently emits audited Linux x86-64 ELF relocatable objects using the
+System V ABI. They are not product executables, and Boolean source/IR remains gated. A later native
+profile may extend the language with features that have no JavaScript representation, such as raw
+FFI; such modules must be separated by an explicit target boundary.
