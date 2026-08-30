@@ -49,7 +49,7 @@ and bounded: `ZRYNA-I1001`–`I1008` cover body, type, operation, and graph fail
 cover logical exports; `I1201` reports a resource limit; and terminal `I1202` reports diagnostic
 budget exhaustion or an internal bounded-construction failure.
 
-Successful verification proves only this documented profile. Current native lowering preserves it
-inside an opaque read-only module, but future MIR transformations need their own verifier. Concrete
-calling-convention mapping, object emission, and linking are later trust boundaries and are not
-implied by `VerifiedProgram`.
+Successful verification proves only this documented profile. Native lowering converts it to raw
+typed value definitions and passes those claims through the native MIR verifier before codegen.
+Concrete public calling-convention mapping, object emission, and linking are later trust boundaries
+and are not implied by `VerifiedProgram`.

@@ -53,8 +53,8 @@ The repository currently establishes and tests:
 - a bounded, sealed `I32V1` Universal IR trust boundary for `i32` parameters, literals, and
   wrapping addition;
 - iterative direct JavaScript emission from verified IR;
-- native MIR lowering from sealed verified views and textual LLVM IR emission as a
-  backend-boundary proof.
+- native MIR lowering through an independent `VerifiedMirModule` gate and textual LLVM IR emission
+  as a backend-boundary proof.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. Zryna-owned semantic lowering is the next separate gate. No
