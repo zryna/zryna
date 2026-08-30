@@ -57,5 +57,5 @@ budget exhaustion or an internal bounded-construction failure.
 
 Successful verification proves only this documented profile. Native lowering passes explicit raw
 claims through the native MIR verifier, which retains the sealed ABI mapping before fixed-target
-object codegen. Linux x86-64 object emission is implemented; product linking and execution remain
-separate trust boundaries and are not implied by `VerifiedProgram`.
+object codegen. Linux x86-64 object emission is implemented. Driver-owned linking and execution are
+separate, capability-checked trust boundaries; neither is implied by `VerifiedProgram`.

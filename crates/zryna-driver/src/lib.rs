@@ -33,10 +33,14 @@ pub use javascript::{
     publish_javascript,
 };
 pub use native::{
-    MAX_NATIVE_OBJECT_ARTIFACT_STEM_BYTES, NATIVE_OBJECT_ARTIFACT_EXTENSION,
-    NativeObjectBuildError, NativeObjectBuildSuccess, NativeObjectOutputRoot,
-    PublishedNativeObjectArtifact, compile_native_object, publish_native_object,
-    select_native_object_target,
+    LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES, MAX_NATIVE_LINK_TIMEOUT,
+    MAX_NATIVE_OBJECT_ARTIFACT_STEM_BYTES, MAX_NATIVE_PROBE_TIMEOUT, MAX_NATIVE_RUN_STDERR_BYTES,
+    MAX_NATIVE_RUN_TIMEOUT, MAX_NATIVE_TOOL_OUTPUT_BYTES, NATIVE_EXECUTABLE_ARTIFACT_EXTENSION,
+    NATIVE_OBJECT_ARTIFACT_EXTENSION, NativeExecutableBuildError, NativeExecutableBuildSuccess,
+    NativeObjectBuildError, NativeObjectBuildSuccess, NativeObjectOutputRoot, NativeProcessLimits,
+    NativeRunError, PublishedNativeExecutableArtifact, PublishedNativeObjectArtifact,
+    compile_native_invocation, compile_native_object, discover_linux_native_toolchain,
+    publish_native_object, run_native_invocation, select_native_object_target,
 };
 pub use webassembly::{
     MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,
@@ -230,6 +234,10 @@ mod tests {
         JavaScriptBuildError, JavaScriptOutputRoot, NativeObjectBuildError, SourceToIrError,
         WebAssemblyBuildError, compile_javascript, compile_native_object, compile_to_verified_ir,
         compile_webassembly, lower_verified_syntax,
+    };
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    use super::{
+        compile_native_invocation, discover_linux_native_toolchain, run_native_invocation,
     };
     use zryna_diagnostics::{Diagnostic, Severity, render_structured};
     use zryna_frontend::{
@@ -974,6 +982,245 @@ process.stdout.write(JSON.stringify({ imports, exports, values, carrierCount: ca
             String::from_utf8(executed.stdout).expect("fixture harness UTF-8"),
             format!("{expected}\n")
         );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn assert_native_i32_invocation(
+        sources: &SourceMap,
+        output_root: &JavaScriptRoot,
+        toolchain: &super::LinuxX8664LinkToolchain,
+        stem: &str,
+        export: &str,
+        arguments: Vec<zryna_abi::ScalarValue>,
+        expected: i32,
+    ) {
+        use std::os::unix::fs::PermissionsExt;
+
+        let build = compile_native_invocation(
+            &typescript_frontend(),
+            sources,
+            output_root.output(),
+            stem,
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            toolchain,
+            zryna_abi::Invocation::new(export.to_owned(), arguments),
+            super::NativeProcessLimits::default(),
+        )
+        .expect("real source invocation must link");
+        assert_eq!(build.artifact().path(), output_root.path().join(format!("{stem}.elf")));
+        assert_eq!(
+            fs::metadata(build.artifact().path())
+                .expect("published executable metadata")
+                .permissions()
+                .mode()
+                & 0o777,
+            0o755
+        );
+        assert_eq!(
+            run_native_invocation(build.artifact(), super::NativeProcessLimits::default())
+                .expect("typed native invocation"),
+            zryna_abi::ScalarOutcome::Returned { value: zryna_abi::ScalarValue::I32(expected) }
+        );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn production_native_invocations_link_publish_and_preserve_typed_i32() {
+        let text = include_str!("../../../examples/universal/add.zry");
+        let sources = source_map("examples/universal/add.zry", text);
+        let output_root =
+            JavaScriptRoot::new("native path ; touch-zryna-marker ; $(false) ' quoted");
+        for (name, bytes) in [
+            ("same.mjs", b"javascript".as_slice()),
+            ("same.wasm", b"webassembly".as_slice()),
+            ("same.o", b"native-object".as_slice()),
+        ] {
+            fs::write(output_root.path().join(name), bytes).expect("sibling fixture");
+        }
+        let toolchain = discover_linux_native_toolchain(super::NativeProcessLimits::default())
+            .expect("documented Linux native toolchain");
+        let cases = [
+            ("wrap_max", i32::MAX, 1, i32::MIN),
+            ("wrap_min", i32::MIN, -1, i32::MAX),
+            ("double_max", i32::MAX, i32::MAX, -2),
+            ("double_min", i32::MIN, i32::MIN, 0),
+            ("negative", -1, -1, -2),
+            ("answer", 20, 22, 42),
+        ];
+        for (stem, left, right, expected) in cases {
+            assert_native_i32_invocation(
+                &sources,
+                &output_root,
+                &toolchain,
+                stem,
+                "add",
+                vec![zryna_abi::ScalarValue::I32(left), zryna_abi::ScalarValue::I32(right)],
+                expected,
+            );
+        }
+
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../spec/abi/scalar-v1-fixtures.json"))
+                .expect("normative scalar fixture must parse");
+        let native_i32 = fixture["carrierCases"]
+            .as_array()
+            .expect("carrierCases must be an array")
+            .iter()
+            .filter(|entry| {
+                entry["target"] == "native-linux-x86-64" && entry["scalarType"] == "i32"
+            })
+            .map(|entry| {
+                i32::try_from(entry["raw"]["value"].as_i64().expect("native i32 fixture value"))
+                    .expect("native i32 fixture range")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(native_i32.len(), 3);
+        let identity_sources = source_map(
+            "src/identity.zry",
+            "export function identity(value: i32): i32 { return value; }",
+        );
+        for (index, value) in native_i32.into_iter().enumerate() {
+            assert_native_i32_invocation(
+                &identity_sources,
+                &output_root,
+                &toolchain,
+                &format!("fixture_{index}"),
+                "identity",
+                vec![zryna_abi::ScalarValue::I32(value)],
+                value,
+            );
+        }
+        assert_eq!(fs::read(output_root.path().join("same.mjs")).expect("mjs"), b"javascript");
+        assert_eq!(fs::read(output_root.path().join("same.wasm")).expect("wasm"), b"webassembly");
+        assert_eq!(fs::read(output_root.path().join("same.o")).expect("object"), b"native-object");
+        assert!(fs::read_dir(output_root.path()).expect("output listing").all(|entry| {
+            !entry.expect("output entry").file_name().to_string_lossy().starts_with(".zryna-link-")
+        }));
+
+        let collision = compile_native_invocation(
+            &typescript_frontend(),
+            &sources,
+            output_root.output(),
+            "answer",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            &toolchain,
+            zryna_abi::Invocation::new(
+                "add".to_owned(),
+                vec![zryna_abi::ScalarValue::I32(1), zryna_abi::ScalarValue::I32(2)],
+            ),
+            super::NativeProcessLimits::default(),
+        )
+        .expect_err("create-only executable must reject a collision");
+        assert_eq!(collision.diagnostics()[0].code(), "ZRYNA-D2007");
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn native_run_uses_the_retained_audited_snapshot() {
+        let sources = source_map(
+            "src/main.zry",
+            "export function add(a: i32, b: i32): i32 { return a + b; }",
+        );
+        let output_root = JavaScriptRoot::new("native-sealed-snapshot");
+        let toolchain = discover_linux_native_toolchain(super::NativeProcessLimits::default())
+            .expect("documented Linux native toolchain");
+        let sealed = compile_native_invocation(
+            &typescript_frontend(),
+            &sources,
+            output_root.output(),
+            "sealed_snapshot",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            &toolchain,
+            zryna_abi::Invocation::new(
+                "add".to_owned(),
+                vec![zryna_abi::ScalarValue::I32(19), zryna_abi::ScalarValue::I32(23)],
+            ),
+            super::NativeProcessLimits::default(),
+        )
+        .expect("sealed executable snapshot must build");
+        fs::write(sealed.artifact().path(), b"replaced public path")
+            .expect("public path replacement fixture");
+        assert_eq!(
+            run_native_invocation(sealed.artifact(), super::NativeProcessLimits::default())
+                .expect("run must use retained audited bytes"),
+            zryna_abi::ScalarOutcome::Returned { value: zryna_abi::ScalarValue::I32(42) }
+        );
+        assert_eq!(
+            fs::read(sealed.artifact().path()).expect("replacement remains public"),
+            b"replaced public path"
+        );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn native_invocation_rejects_bad_abi_and_boolean_source_before_staging() {
+        let output_root = JavaScriptRoot::new("native-invocation-rejections");
+        let toolchain = discover_linux_native_toolchain(super::NativeProcessLimits::default())
+            .expect("documented Linux native toolchain");
+        let i32_sources =
+            source_map("src/main.zry", "export function value(input: i32): i32 { return input; }");
+        let invalid = compile_native_invocation(
+            &typescript_frontend(),
+            &i32_sources,
+            output_root.output(),
+            "invalid",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            &toolchain,
+            zryna_abi::Invocation::new("missing".to_owned(), Vec::new()),
+            super::NativeProcessLimits::default(),
+        )
+        .expect_err("unknown export must fail before staging");
+        assert_eq!(invalid.diagnostics()[0].code(), "ZRYNA-B2101");
+
+        let wrong_arity = compile_native_invocation(
+            &typescript_frontend(),
+            &i32_sources,
+            output_root.output(),
+            "wrong_arity",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            &toolchain,
+            zryna_abi::Invocation::new("value".to_owned(), Vec::new()),
+            super::NativeProcessLimits::default(),
+        )
+        .expect_err("wrong arity must fail before staging");
+        assert_eq!(wrong_arity.diagnostics()[0].code(), "ZRYNA-B2102");
+
+        let wrong_type = compile_native_invocation(
+            &typescript_frontend(),
+            &i32_sources,
+            output_root.output(),
+            "wrong_type",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            &toolchain,
+            zryna_abi::Invocation::new(
+                "value".to_owned(),
+                vec![zryna_abi::ScalarValue::Bool(true)],
+            ),
+            super::NativeProcessLimits::default(),
+        )
+        .expect_err("wrong scalar type must fail before staging");
+        assert_eq!(wrong_type.diagnostics()[0].code(), "ZRYNA-B2103");
+
+        let bool_sources = source_map(
+            "src/bool.zry",
+            "export function identity(value: bool): bool { return value; }",
+        );
+        let rejected = compile_native_invocation(
+            &typescript_frontend(),
+            &bool_sources,
+            output_root.output(),
+            "boolean",
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            &toolchain,
+            zryna_abi::Invocation::new(
+                "identity".to_owned(),
+                vec![zryna_abi::ScalarValue::Bool(true)],
+            ),
+            super::NativeProcessLimits::default(),
+        )
+        .expect_err("Boolean source remains gated by I32V1");
+        assert!(rejected.diagnostics().iter().any(|item| item.code() == "ZRYNA-I1006"));
+        assert_eq!(fs::read_dir(output_root.path()).expect("empty output").count(), 0);
     }
 
     #[test]

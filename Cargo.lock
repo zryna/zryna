@@ -887,7 +887,12 @@ dependencies = [
 name = "zryna-driver"
 version = "0.1.0"
 dependencies = [
+ "libc",
+ "nix",
+ "object",
+ "process-wrap",
  "serde_json",
+ "zryna-abi",
  "zryna-architecture",
  "zryna-backend-javascript",
  "zryna-backend-native",

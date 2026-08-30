@@ -46,5 +46,19 @@ harness, not a production build phase or browser claim.
 target selection → audited ELF object → create-only `<stem>.o` publication. It reuses
 `ArtifactOutputRoot`, portable stems, and the atomic byte publisher, so `.mjs`, `.wasm`, and `.o`
 may coexist without replacement. Unsupported targets and every earlier failure create no object.
-Product linking/running, the atomic three-target CLI, and differential execution remain later M1
-gates.
+
+`discover_linux_native_toolchain` creates a fail-closed capability for canonical `/usr/bin/gcc`,
+its exact GNU x86-64 target, a supported GCC version, and its canonical supported GNU linker.
+`compile_native_invocation` validates one typed invocation through Universal IR's embedded scalar
+ABI authority, emits the same sealed object in memory, builds one private generated C harness, and
+links it without a shell under bounded process and staging rules. The resulting ELF executable is
+independently audited and create-only published as `<stem>.elf`. `run_native_invocation` accepts
+only that opaque publication capability, writes its retained audited bytes into a fresh private
+stage so public-path replacement cannot substitute code, bounds and isolates the child process
+group, decodes its exact four-byte result channel, and returns the ABI authority's typed
+`ScalarOutcome`.
+
+This is a library integration boundary, not the public CLI. Atomic three-target CLI orchestration
+and differential execution remain later M1 gates. See
+[`EXECUTABLE.md`](../../spec/native-semantics/EXECUTABLE.md) for the normative security and behavior
+contract.

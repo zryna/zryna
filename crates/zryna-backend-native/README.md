@@ -4,7 +4,7 @@ The object emitter accepts only `VerifiedMirModule` and the capability returned 
 selection. It uses `cranelift-codegen`, `cranelift-frontend`, `cranelift-module`, and
 `cranelift-object` 0.135.1 with `target-lexicon` 0.13.5. Independent inspection uses `object`
 0.39.0. All versions are exact workspace pins; no installed LLVM, compiler, assembler, or linker
-is a production dependency.
+is a dependency of this backend or object emission.
 
 The only target is `x86_64-unknown-linux-gnu`: ELF64, little-endian, relocatable, baseline x86-64,
 non-PIC, no optimization, no unwind output, and no per-function sections. Exported `i32`
@@ -17,6 +17,7 @@ current pure leaf profile permits neither undefined symbols nor relocations. Onl
 `ValidatedNativeObjectArtifact` constructed. Stable codes distinguish unsupported target
 (`ZRYNA-N3001`), code generation (`ZRYNA-N3002`), and object audit (`ZRYNA-N3003`).
 
-Textual LLVM output remains a compatibility proof, not the object implementation. Linking,
-executables, startup, calls, runtime helpers, FFI, Windows/macOS output, and Boolean source/IR are
-outside this slice.
+Textual LLVM output remains a compatibility proof, not the object implementation. Driver-owned
+linking and execution consume only the sealed object under a separate contract and do not expand
+this backend boundary. Startup, calls, runtime helpers, FFI, Windows/macOS output, and Boolean
+source/IR are outside this slice.

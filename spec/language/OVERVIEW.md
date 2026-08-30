@@ -28,7 +28,9 @@ WASI and Component Model support is a separately versioned host profile. WIT and
 
 ## Native profile
 
-The universal `I32V1` slice currently emits audited Linux x86-64 ELF relocatable objects using the
-System V ABI. They are not product executables, and Boolean source/IR remains gated. A later native
-profile may extend the language with features that have no JavaScript representation, such as raw
-FFI; such modules must be separated by an explicit target boundary.
+The universal `I32V1` slice emits audited Linux x86-64 ELF relocatable objects using the System V
+ABI. The driver can link one ABI-validated invocation into an audited executable and observe its
+full-width typed `i32` result; this library boundary is not yet a public CLI or general native
+runtime. Boolean source/IR remains gated. A later native profile may extend the language with
+features that have no JavaScript representation, such as raw FFI; such modules must be separated
+by an explicit target boundary.
