@@ -60,6 +60,8 @@ pub struct Expr {
 pub enum ExprKind {
     /// Function parameter by zero-based index.
     Parameter(u32),
+    /// Boolean literal reserved for semantic lowering before a bool-capable universal profile.
+    BoolLiteral(bool),
     /// Signed wrapping 32-bit integer addition.
     I32Add {
         /// Left operand.
@@ -532,6 +534,21 @@ fn verify_expression(
             }
             (1, true)
         }
+        ExprKind::BoolLiteral(_) => {
+            if expression.ty != Type::Bool {
+                push_expression_error(
+                    errors,
+                    valid_span,
+                    expression.span,
+                    "ZRYNA-I1005",
+                    format!(
+                        "function #{function_index} expression #{expression_index} is a mistyped bool literal"
+                    ),
+                    "assign Type::Bool to every bool literal",
+                );
+            }
+            (1, true)
+        }
         ExprKind::I32Literal(_) => {
             if expression.ty != Type::I32 {
                 push_expression_error(
@@ -951,6 +968,31 @@ mod tests {
                 .expect_err("reserved profile types must fail");
             assert!(codes(&diagnostics).contains(&"ZRYNA-I1006"));
         }
+        let bool_literal = Function {
+            name: "boolLiteral".to_owned(),
+            parameters: Vec::new(),
+            return_type: Type::Bool,
+            expressions: vec![Expr { ty: Type::Bool, span, kind: ExprKind::BoolLiteral(true) }],
+            body: ExprId(0),
+        };
+        let diagnostics = verify(Program { functions: vec![bool_literal] }, &sources)
+            .expect_err("bool literal must remain outside I32V1");
+        assert!(codes(&diagnostics).contains(&"ZRYNA-I1006"));
+
+        let mistyped_bool_literal = Function {
+            name: "mistypedBoolLiteral".to_owned(),
+            parameters: Vec::new(),
+            return_type: Type::I32,
+            expressions: vec![Expr { ty: Type::I32, span, kind: ExprKind::BoolLiteral(false) }],
+            body: ExprId(0),
+        };
+        assert!(
+            codes(
+                &verify(Program { functions: vec![mistyped_bool_literal] }, &sources)
+                    .expect_err("mistyped bool literal must fail")
+            )
+            .contains(&"ZRYNA-I1005")
+        );
         let function = Function {
             name: "badParameter".to_owned(),
             parameters: vec![Type::I32],

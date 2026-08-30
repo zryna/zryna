@@ -8,7 +8,8 @@ use serde::{
 };
 use zryna_diagnostics::{Diagnostic, PrimaryLocation, Severity};
 use zryna_source::{
-    FileId, MAX_SOURCE_FILES, NormalizedSourcePath, SourceMap, Span, UntrustedSpan,
+    FileId, MAX_SOURCE_FILES, NormalizedSourcePath, SourceMap, SourceMapIdentity, Span,
+    UntrustedSpan,
 };
 
 /// Exact protocol version represented by this module.
@@ -247,6 +248,8 @@ pub enum RawDiagnosticLocation {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProjectSyntaxSnapshot {
+    #[serde(skip)]
+    source_map_identity: SourceMapIdentity,
     schema_version: u32,
     files: Vec<SourceUnit>,
     diagnostics: Vec<Diagnostic>,
@@ -274,7 +277,8 @@ impl ProjectSyntaxSnapshot {
     /// Returns whether every file identity and diagnostic span belongs to this exact source map.
     #[must_use]
     pub fn is_bound_to(&self, sources: &SourceMap) -> bool {
-        self.files.len() == sources.len()
+        self.source_map_identity == sources.identity()
+            && self.files.len() == sources.len()
             && self.files.iter().all(|file| {
                 sources.source(file.id).is_some_and(|source| source.path() == &file.path)
             })
@@ -791,7 +795,12 @@ pub fn verify_snapshot(
         .collect();
     let diagnostics = verify_provider_diagnostics(raw.diagnostics, sources, &mut errors);
     if errors.is_empty() {
-        Ok(ProjectSyntaxSnapshot { schema_version: PROTOCOL_VERSION, files, diagnostics })
+        Ok(ProjectSyntaxSnapshot {
+            source_map_identity: sources.identity(),
+            schema_version: PROTOCOL_VERSION,
+            files,
+            diagnostics,
+        })
     } else {
         Err(errors.finish())
     }
@@ -1757,16 +1766,10 @@ mod tests {
 
     #[test]
     fn typescript_adapter_fixture_passes_the_authoritative_verifier() {
-        let sources = SourceMap::build(vec![
-            SourceFileInput {
-                path: "src/z-unsupported.zry".to_owned(),
-                text: "// 😀\nexport class Unsupported {}".to_owned(),
-            },
-            SourceFileInput {
-                path: "src/a-add.zry".to_owned(),
-                text: "// 😀\nexport function add(a: i32, b: any) { return a + b; }".to_owned(),
-            },
-        ])
+        let sources = SourceMap::build(vec![SourceFileInput {
+            path: "examples/universal/add.zry".to_owned(),
+            text: include_str!("../../../examples/universal/add.zry").to_owned(),
+        }])
         .expect("adapter fixture sources must build");
         let raw = decode_snapshot(include_bytes!(
             "../../../tests/fixtures/typescript-adapter-v2-result.json"
@@ -1774,11 +1777,11 @@ mod tests {
         .expect("adapter fixture must decode");
         let project = verify_snapshot(raw, &sources).expect("adapter fixture must verify");
 
-        assert_eq!(project.files().len(), 2);
+        assert_eq!(project.files().len(), 1);
         assert_eq!(project.files()[0].functions()[0].name().text(), "add");
+        assert_eq!(project.files()[0].functions()[0].parameters().len(), 2);
         assert_eq!(project.files()[0].functions()[0].body().expressions().len(), 3);
-        assert_eq!(project.diagnostics().len(), 1);
-        assert_eq!(project.diagnostics()[0].code(), "ZRYNA-F2002");
+        assert!(project.diagnostics().is_empty());
         assert!(project.is_bound_to(&sources));
     }
 
@@ -1806,7 +1809,11 @@ mod tests {
     fn bounded_sequence_deserialization_rejects_the_first_extra_item() {
         let mut raw = valid_raw(SOURCE);
         let parameter = raw.files[0].functions[0].parameters[0].clone();
-        raw.files[0].functions[0].parameters = vec![parameter; MAX_PARAMETERS_PER_FUNCTION + 1];
+        raw.files[0].functions[0].parameters = vec![parameter.clone(); MAX_PARAMETERS_PER_FUNCTION];
+        let bytes = serde_json::to_vec(&raw).expect("exact-limit value must serialize");
+        assert!(decode_snapshot(&bytes).is_ok());
+
+        raw.files[0].functions[0].parameters.push(parameter);
         let bytes = serde_json::to_vec(&raw).expect("programmatic hostile value must serialize");
         assert!(decode_snapshot(&bytes).is_err());
     }
@@ -1825,6 +1832,26 @@ mod tests {
         raw.files[0].path = "SRC/MAIN.ZRY".to_owned();
         let diagnostics = verify_snapshot(raw, &sources).expect_err("case-variant path must fail");
         assert!(has_code(&diagnostics, "ZRYNA-Y1001"));
+    }
+
+    #[test]
+    fn empty_snapshot_is_bound_to_only_its_issuing_source_map() {
+        let first = SourceMap::build(Vec::new()).expect("empty source map must build");
+        let second = SourceMap::build(Vec::new()).expect("second empty source map must build");
+        let raw = RawProjectSyntaxSnapshot {
+            schema_version: PROTOCOL_VERSION,
+            files: Vec::new(),
+            diagnostics: Vec::new(),
+        };
+
+        let snapshot =
+            verify_snapshot(raw, &first).expect("empty snapshot must verify structurally");
+
+        assert!(snapshot.is_bound_to(&first));
+        assert!(snapshot.is_bound_to(&first.clone()));
+        assert!(!snapshot.is_bound_to(&second));
+        let serialized = serde_json::to_string(&snapshot).expect("snapshot must serialize");
+        assert!(!serialized.contains("source_map_identity"));
     }
 
     #[test]

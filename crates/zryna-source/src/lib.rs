@@ -21,6 +21,13 @@ pub const MAX_SOURCE_PATH_COMPONENTS: usize = 32;
 
 static NEXT_SOURCE_MAP_ID: AtomicU64 = AtomicU64::new(1);
 
+/// Opaque identity of one immutable [`SourceMap`] authority.
+///
+/// Clones of a source map retain this identity. Independently built maps never compare equal,
+/// including empty maps whose file sets otherwise provide no identity witness.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SourceMapIdentity(u64);
+
 /// Stable source-file identifier within one [`SourceMap`].
 ///
 /// Identifiers are assigned by normalized path order and are not globally persistent.
@@ -183,6 +190,12 @@ pub struct SourceMap {
 }
 
 impl SourceMap {
+    /// Returns the opaque identity used to bind sealed compiler snapshots to this source map.
+    #[must_use]
+    pub const fn identity(&self) -> SourceMapIdentity {
+        SourceMapIdentity(self.id)
+    }
+
     /// Builds a source map atomically and assigns stable dense identifiers by path order.
     ///
     /// # Errors

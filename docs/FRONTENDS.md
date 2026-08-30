@@ -53,12 +53,13 @@ live in `zryna-syntax`, below all provider implementations. See
 | Declaration signatures | retained as a legacy core contract | implemented |
 | Executable function bodies | unavailable | contract and verifier implemented |
 | TypeScript 6 emission | legacy declaration path | implemented and fail closed |
-| Semantic lowering | unavailable | planned after adapter conformance |
+| Semantic lowering | unavailable | implemented for the first strict one-file subset |
 | Native Zryna provider | unavailable | eventual provider target |
 
 Selecting v2 requires an exact v2 handshake. No compiler path silently upgrades a v1 response.
-Provider error diagnostics stop compilation before semantic lowering. The pinned TypeScript 6
-suite proves that its recognized unsupported constructs produce such an error and that expression
+Provider error diagnostics stop compilation before semantic lowering. Provider warnings remain
+observable on successful source-to-verified-IR results. The pinned TypeScript 6 suite proves that
+its recognized unsupported constructs produce such an error and that expression
 rollback leaves no smaller accepted arena. A structurally valid provider that silently omits an
 arbitrary source subtree is outside what the DTO verifier alone can prove; differential provider
 conformance and the future native parser close that remaining trust assumption.

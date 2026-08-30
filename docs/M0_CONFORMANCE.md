@@ -65,10 +65,11 @@ administrators are subject to the rules, and conversations must be resolved.
 - The deployed [compiler status](https://zryna.com/reference/compiler-status/) describes the same
   implemented proof boundaries and deliberately unsupported surface.
 
-## Deliberately unsupported after M0
+## Deliberately unsupported at M0 closure
 
-M0 is an architecture foundation, not an executable compiler release. Zryna-owned source semantic
-lowering is not implemented. There is no WebAssembly backend. Native output is textual LLVM IR,
-not an object or linked executable. The current verified Universal IR and native MIR profiles admit
-only the documented `i32` proof slice; scalar ABI v1, `bool`, host invocation, and concrete target
-symbol mapping begin in M1. No website, package, or release status may claim otherwise.
+M0 was an architecture foundation, not an executable compiler release. At its closure,
+Zryna-owned source semantic lowering and scalar ABI v1 were not implemented. There was no
+WebAssembly backend, native output was textual LLVM IR rather than an object or linked executable,
+and the verified Universal IR and native MIR profiles admitted only the documented `i32` proof
+slice. Subsequent M1 issues may extend those boundaries without changing this historical M0 gate;
+the root README, roadmap, and public compiler status are authoritative for the current surface.

@@ -11,6 +11,11 @@ program.
 addition. `bool` and `unit` exist as reserved type vocabulary but fail verification until every
 backend in a future profile implements their specified representation and behavior.
 
+Raw IR includes `BoolLiteral` so Zryna semantics can represent a valid source-level Boolean before
+profile selection. The verifier checks that the literal claims `Type::Bool`, then the `I32V1`
+profile rejects that type. This keeps semantic legality separate from universal backend support and
+does not allow a Boolean operation to reach a current backend.
+
 Each function is paired by declaration index with a sealed scalar ABI v1 export from `zryna-abi`.
 That lower authority owns the bounded logical-name grammar, reserved names, exact and portable
 collision checks, typed signature, and deterministic JavaScript, core WebAssembly, and Linux

@@ -109,7 +109,8 @@ zryna-syntax ───────────────┘
 zryna-source ───────────────┐
 zryna-diagnostics ──────────┼→ zryna-semantics (compiler)
 zryna-syntax ───────────────┤
-zryna-ir ───────────────────┘
+zryna-ir ───────────────────┤
+zryna-abi ──────────────────┘
 ```
 
 This graph lets providers construct untrusted DTOs while preventing semantic lowering from

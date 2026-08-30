@@ -51,6 +51,9 @@ fn emit_function(function: VerifiedFunction<'_>, output: &mut String) -> Result<
                 write!(output, "p{parameter}")
                     .map_err(|error| formatting_error(function, error))?;
             }
+            ExprKind::BoolLiteral(_) => {
+                return Err(profile_invariant_error(function));
+            }
             ExprKind::I32Add { lhs, rhs } => {
                 write!(output, "(v{} + v{}) | 0", lhs.0, rhs.0)
                     .map_err(|error| formatting_error(function, error))?;
@@ -64,6 +67,18 @@ fn emit_function(function: VerifiedFunction<'_>, output: &mut String) -> Result<
     write!(output, "  return v{};\n}}\n", function.body().0)
         .map_err(|error| formatting_error(function, error))?;
     Ok(())
+}
+
+fn profile_invariant_error(function: VerifiedFunction<'_>) -> Diagnostic {
+    Diagnostic::error(
+        "ZRYNA-J1001",
+        None,
+        format!(
+            "verified function '{}' contains an operation outside the JavaScript proof profile",
+            function.export_name().as_str()
+        ),
+        "report this compiler invariant failure with the smallest reproducible Zryna source",
+    )
 }
 
 fn formatting_error(function: VerifiedFunction<'_>, error: std::fmt::Error) -> Diagnostic {

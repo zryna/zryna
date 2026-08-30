@@ -393,6 +393,14 @@ fn lower_function(function: VerifiedFunction<'_>) -> Result<raw::Function, Diagn
         let ty = lower_type(expression.ty)?;
         let operation = match &expression.kind {
             ExprKind::Parameter(index) => raw::Operation::Parameter { index: *index },
+            ExprKind::BoolLiteral(_) => {
+                return Err(Diagnostic::error(
+                    "ZRYNA-N1001",
+                    None,
+                    "verified Universal IR contains an operation outside the native proof profile",
+                    "report this compiler invariant failure with the smallest reproducible source",
+                ));
+            }
             ExprKind::I32Literal(value) => raw::Operation::I32Literal { value: *value },
             ExprKind::I32Add { lhs, rhs } => raw::Operation::I32Add {
                 lhs: raw::ValueId::new(lhs.0),

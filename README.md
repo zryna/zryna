@@ -52,6 +52,10 @@ The repository currently establishes and tests:
 - a fail-closed executable syntax protocol v2 with a shared JSON Schema, bounded flat
   expression arenas, and source-map-backed verified Rust types;
 - an isolated TypeScript 6 syntax adapter with its compiler implementation locked to `6.0.3`;
+- Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
+  protocol-v2 snapshot to unverified Universal IR;
+- a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and
+  stops provider, semantic, or IR errors before any backend;
 - a bounded, sealed `I32V1` Universal IR trust boundary for `i32` parameters, literals, and
   wrapping addition;
 - a verified scalar ABI v1 authority for `i32` and `bool` signatures, deterministic JavaScript,
@@ -61,12 +65,19 @@ The repository currently establishes and tests:
   as a backend-boundary proof.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
-silently producing a smaller program. The scalar ABI is specified but current emitters are not yet
-public ABI v1 implementations, and `bool` remains disabled in Universal IR. Zryna-owned semantic
-lowering is the next separate gate. No WebAssembly backend exists yet. Textual LLVM IR is not yet
-object or executable emission. The first executable milestone will connect source lowering to
-direct JavaScript and WebAssembly emission, then add native code generation and linking, with all
-three targets checked for matching behavior.
+silently producing a smaller program. The first strict semantic subset requires one source file,
+one or more exported functions, explicit `i32` or `bool` annotations, parameter references,
+literals, one return, and `i32` addition. `any`, missing annotations, invalid names, unresolved
+references, unsupported types, invalid arithmetic, and unsupported entrypoint shapes produce
+stable diagnostics. Source-level `bool` is checked and lowered, but the current `I32V1` verifier
+intentionally rejects it until every backend implements the same profile; only the documented
+`i32` subset currently reaches `VerifiedProgram`.
+
+The scalar ABI is specified but current emitters are not yet public ABI v1 implementations. No
+WebAssembly backend exists yet, and textual LLVM IR is not object or executable emission. The next
+M1 gates connect verified source to executable JavaScript, add direct WebAssembly emission, and
+then add native object generation and linking, with all three targets checked for matching
+behavior.
 
 ## Run the foundation gate
 
