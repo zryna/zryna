@@ -948,6 +948,8 @@ fn spawn_stderr_reader(
             match stderr.read(&mut buffer) {
                 Ok(0) => break,
                 Ok(count) => {
+                    #[cfg(windows)]
+                    eprintln!("frontend worker stderr bytes: {:?}", &buffer[..count]);
                     total = total.saturating_add(count);
                     if total > limit && !exceeded {
                         exceeded = true;
