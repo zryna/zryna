@@ -322,7 +322,6 @@ impl WorkerFrontend {
                 &mut stream_state,
                 operation_deadline,
                 MAX_HANDSHAKE_RESPONSE_BYTES,
-                "handshake",
             )?;
             let handshake: ProviderInfo = parse_response(&handshake_line, HANDSHAKE_ID)?;
             verify_handshake(&handshake, &self.spec.expected)?;
@@ -333,16 +332,13 @@ impl WorkerFrontend {
                 &mut stream_state,
                 operation_deadline,
                 syntax_v2::MAX_RESPONSE_BYTES,
-                "analysis",
             )?;
             let decoded: syntax_v2::RawProjectSyntaxSnapshot =
                 parse_response(&snapshot_line, ANALYZE_ID)?;
             let canonical = serde_json::to_vec(&decoded)
                 .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
-            let raw = syntax_v2::decode_snapshot(&canonical).map_err(|error| {
-                eprintln!("canonical snapshot decode failed: {error}");
-                WorkerError::new(WorkerFailure::InvalidResponse)
-            })?;
+            let raw = syntax_v2::decode_snapshot(&canonical)
+                .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
             let status =
                 finish_process(&mut process, &receiver, &mut stream_state, operation_deadline)?;
             if !status.success() {
@@ -589,10 +585,8 @@ fn build_analyze_request(sources: &SourceMap) -> Result<AnalyzeRequest, WorkerEr
 }
 
 fn parse_response<T: DeserializeOwned>(bytes: &[u8], expected_id: u32) -> Result<T, WorkerError> {
-    let response: RpcResponse<T> = serde_json::from_slice(bytes).map_err(|error| {
-        eprintln!("protocol response decode failed at {error}; frame bytes={}", bytes.len());
-        WorkerError::new(WorkerFailure::InvalidResponse)
-    })?;
+    let response: RpcResponse<T> = serde_json::from_slice(bytes)
+        .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
     match response {
         RpcResponse::Success(success) if success.id == expected_id => Ok(success.result),
         RpcResponse::Success(_) => Err(WorkerError::new(WorkerFailure::InvalidResponse)),
@@ -948,8 +942,6 @@ fn spawn_stderr_reader(
             match stderr.read(&mut buffer) {
                 Ok(0) => break,
                 Ok(count) => {
-                    #[cfg(windows)]
-                    eprintln!("frontend worker stderr bytes: {:?}", &buffer[..count]);
                     total = total.saturating_add(count);
                     if total > limit && !exceeded {
                         exceeded = true;
@@ -971,20 +963,17 @@ fn receive_response_line(
     state: &mut StreamState,
     deadline: Instant,
     frame_limit: usize,
-    phase: &'static str,
 ) -> Result<Vec<u8>, WorkerError> {
     loop {
         let event = receive_event(receiver, deadline)?;
         match event {
             ProcessEvent::StdoutLine(line) if line.len() <= frame_limit => return Ok(line),
-            invalid @ (ProcessEvent::StdoutLine(_)
+            ProcessEvent::StdoutLine(_)
             | ProcessEvent::StdoutFrameLimit
-            | ProcessEvent::StdoutTrailing) => {
-                eprintln!("{phase} response framing failed: {invalid:?}");
+            | ProcessEvent::StdoutTrailing => {
                 return Err(WorkerError::new(WorkerFailure::InvalidResponse));
             }
             ProcessEvent::StdoutEof => {
-                eprintln!("{phase} response framing failed: stdout ended before a response");
                 state.io.stdout_eof = true;
                 return Err(WorkerError::new(WorkerFailure::InvalidResponse));
             }

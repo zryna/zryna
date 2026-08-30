@@ -1,7 +1,6 @@
 //! Atomic one-entrypoint build and run orchestration.
 
 use std::{
-    ffi::OsString,
     fmt, fs,
     io::{self, Read, Write},
     path::{Component, Path, PathBuf},
@@ -745,6 +744,17 @@ fn configured_frontend(
     let adapter_root = request.workspace_root.join("adapters/typescript-6");
     validate_real_directory(&adapter_root)
         .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
+    let worker_entrypoint = adapter_root.join("src/worker.mjs");
+    let worker_metadata = fs::symlink_metadata(&worker_entrypoint).map_err(|_| {
+        entrypoint_error("TypeScript frontend worker entrypoint is unavailable")
+            .with_kind(CommandFailureKind::Preparation)
+    })?;
+    if !worker_metadata.is_file() || metadata_is_link_or_reparse(&worker_metadata) {
+        return Err(entrypoint_error(
+            "TypeScript frontend worker entrypoint is not a real regular file",
+        )
+        .with_kind(CommandFailureKind::Preparation));
+    }
     let expected = ProviderExpectation::new(
         "typescript-6",
         "6.0.3",
@@ -757,7 +767,7 @@ fn configured_frontend(
     })?;
     let spec = WorkerSpec::new(
         node.executable().map_err(preparation_failure)?,
-        vec![OsString::from("src/worker.mjs")],
+        vec![worker_entrypoint.into_os_string()],
         adapter_root,
         expected,
         WorkerLimits::default(),
