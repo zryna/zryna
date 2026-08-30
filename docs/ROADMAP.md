@@ -24,11 +24,12 @@ Every issue defines its problem, architecture boundary, scope, exclusions, depen
 
 ## M0 — Architecture Foundation
 
-Status: closure candidate. The provider-neutral executable syntax protocol, bounded bootstrap
-adapter, sealed Universal IR, and independently verified native MIR boundary are enforced by the
-canonical [M0 conformance gate](M0_CONFORMANCE.md). M0 becomes complete only after that same gate
-and independent closure review pass on Linux and Windows. Zryna-owned semantic lowering remains
-the first compiler step in M1.
+Status: complete. The provider-neutral executable syntax protocol, bounded bootstrap adapter,
+sealed Universal IR, and independently verified native MIR boundary are enforced by the canonical
+[M0 conformance gate](M0_CONFORMANCE.md). The same fail-closed gate passed locally and in required
+Linux and Windows checks, independent closure review found no unresolved P0 or P1 issue, and the
+[public compiler status](https://zryna.com/reference/compiler-status/) matches the implemented
+surface. Zryna-owned semantic lowering remains the first compiler step in M1.
 
 - strict repository contract and fail-closed architecture engine;
 - stable diagnostics and source spans;

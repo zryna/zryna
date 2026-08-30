@@ -42,9 +42,9 @@ semantics or validation decisions into the runner.
 The gate also requires locked dependency fetching, formatting, strict Clippy, warning-free rustdoc,
 and registry self-tests. GitHub runs the same complete gate in the required
 `rust (ubuntu-latest)` and `rust (windows-latest)` checks. The existing adapter matrix remains an
-additional platform proof. Pull requests must be current with `main`; force pushes and branch
-deletion are disabled, administrators are subject to the rules, and conversations must be
-resolved.
+additional platform proof, and the stable `m0` aggregate is itself a required `main` check. Pull
+requests must be current with `main`; force pushes and branch deletion are disabled,
+administrators are subject to the rules, and conversations must be resolved.
 
 ## Closure checklist
 
@@ -55,6 +55,15 @@ resolved.
 - Raw protocol, IR, and MIR claims cannot enter their downstream trusted consumers.
 - The checked-in status text distinguishes implemented proof boundaries from planned execution.
 - Independent closure review has no unresolved P0 or P1 M0 finding.
+
+## Closure evidence
+
+- [M0 closure pull request](https://github.com/zryna/zryna/pull/31) records the reviewed change and
+  required Linux, Windows, adapter, and aggregate results.
+- `main` requires `rust (ubuntu-latest)`, `rust (windows-latest)`, `adapter`, and `m0` with strict
+  branch currency.
+- The deployed [compiler status](https://zryna.com/reference/compiler-status/) describes the same
+  implemented proof boundaries and deliberately unsupported surface.
 
 ## Deliberately unsupported after M0
 
