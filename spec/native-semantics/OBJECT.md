@@ -35,7 +35,8 @@ Publication accepts only the sealed audited artifact and atomically creates
 
 ## Exclusions
 
-This contract does not provide product linking, startup, `main`, loading, execution, a bundled
-runtime, calls, memory, FFI, optimization, debug/unwind information, Windows/macOS objects, or
-Boolean source/IR. Linux test code may link the object solely to verify full-width results and the
-System V boundary. Product link/run behavior belongs to the next contract.
+This contract does not itself provide product linking, startup, `main`, loading, execution, a
+bundled runtime, calls, memory, FFI, optimization, debug/unwind information, Windows/macOS objects,
+or Boolean source/IR. The driver may consume the sealed object under the separate
+[Linux executable contract](EXECUTABLE.md); the native backend remains unaware of toolchains,
+harnesses, processes, and publication.

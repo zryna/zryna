@@ -92,6 +92,7 @@
       "root": "crates/zryna-driver",
       "kind": "orchestrator",
       "dependencies": [
+        "zryna-abi",
         "zryna-architecture",
         "zryna-backend-javascript",
         "zryna-backend-native",

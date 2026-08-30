@@ -78,10 +78,10 @@ Dependency order:
    current `I32V1` scalar slice (implemented by Issue #16; a strict typed WebAssembly host wrapper
    and Boolean source/IR remain later gates);
 9. lower native MIR to a real audited Linux x86-64 object (object emission implemented by Issue
-   #17; product linking and execution remain Issue #18);
-10. expose explicit CLI build and run targets;
-11. compare JavaScript, WebAssembly, and native results, including `i32` boundaries;
-12. publish versioned status and reference documentation for website consumption.
+   #17; driver-owned sealed linking and typed execution implemented by Issue #18);
+10. expose explicit CLI build and run targets (Issue #19);
+11. compare JavaScript, WebAssembly, and native results, including `i32` boundaries (Issue #20);
+12. publish versioned status and reference documentation for website consumption (Issue #21).
 
 Completion gates:
 

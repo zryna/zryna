@@ -69,7 +69,10 @@ The repository currently establishes and tests:
   publication through the same validated output capability;
 - native MIR lowering through an independent `VerifiedMirModule` gate that retains scalar ABI v1
   authority, plus deterministic Linux x86-64 ELF relocatable-object emission and create-only
-  `.o` publication.
+  `.o` publication;
+- driver-owned discovery of one canonical Linux GNU link toolchain, sealed one-invocation harness
+  generation, audited create-only `.elf` publication, bounded execution, and full-width typed
+  `i32` result observation.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. The first strict semantic subset requires one source file,
@@ -85,11 +88,12 @@ The JavaScript and WebAssembly backends consume the sealed scalar ABI mapping fo
 only type, function, export, and code sections; it has no imports or ambient capabilities. Every
 module passes an explicitly pinned WebAssembly 1.0 validator and narrower structural/operator
 audit before publication. Both targets preserve wrapping `i32` addition and run the shared source
-fixture under conformance tests. The native object path uses pinned pure-Rust Cranelift, selects
-only `x86_64-unknown-linux-gnu`, audits the encoded ELF, and invokes no production compiler,
-assembler, linker, or executable. Linux test code links an object only to verify the System V ABI.
-This does not yet expose a public build/run CLI; source-level `bool` remains verifier-gated and
-product linking/running is the next M1 gate.
+fixture under conformance tests. The native backend uses pinned pure-Rust Cranelift, selects only
+`x86_64-unknown-linux-gnu`, and audits the encoded ELF object without invoking an installed tool.
+Separately, the driver can prove canonical `/usr/bin/gcc` and GNU ld capabilities, link one sealed
+typed invocation through a generated C11 harness, audit and create-only publish an executable, and
+observe its exact four-byte result under bounded process controls. This does not yet expose a
+public build/run CLI; source-level `bool` remains verifier-gated.
 
 ## Run the foundation gate
 
@@ -98,8 +102,8 @@ Requirements:
 - Rust 1.97.1
 - Node.js 22.22.1 or newer
 - pnpm 11.18.0
-- a Linux C toolchain providing `cc` for the native ABI conformance tests (Linux only; not used by
-  production object generation)
+- Linux `/usr/bin/gcc` targeting `x86_64-linux-gnu` (GCC 12–15) with GNU ld 2.38–2.46 for native
+  executable conformance; pure object generation does not require it
 
 ```bash
 pnpm install --frozen-lockfile

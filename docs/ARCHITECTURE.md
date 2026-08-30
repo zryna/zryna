@@ -57,7 +57,9 @@ semantic lowering never depends on a replaceable provider.
     sealed scalar ABI module and is the only constructor of the codegen-accepted
     `VerifiedMirModule`.
 11. The native backend consumes that authority, emits one fixed-target ELF relocatable object,
-    independently audits it, and exposes only sealed bytes. Product linking remains a later gate.
+    independently audits it, and exposes only sealed bytes.
+12. The driver may combine that sealed object with one generated, ABI-validated invocation using
+    a previously proved Linux toolchain capability; the backend never owns linking or execution.
 
 ## Dependency direction
 
@@ -84,6 +86,12 @@ scalar ABI ───────────────────────
                          validation       codegen
                                              ↓
                                       audited `.o`
+                                             ↓
+                          driver-owned sealed harness + GNU link
+                                             ↓
+                              audited/published `.elf` capability
+                                             ↓
+                              private sealed snapshot execution
 ```
 
 `zryna-driver` is the only library allowed to orchestrate all phases. The CLI calls the driver and architecture engine; individual backends do not call one another.
@@ -221,9 +229,19 @@ native MIR, emits with pinned pure-Rust Cranelift, parses and fail-closed audits
 little-endian relocatable object, then publishes `<stem>.o` through the shared create-only output
 capability. The audit requires the exact sealed global text symbols, no undefined symbols, and no
 relocations for the current leaf-function profile. It exposes bytes only as
-`ValidatedNativeObjectArtifact`. Production does not invoke a compiler, assembler, linker,
-loader, or generated executable. Control flow, calls, product linking/running, Windows output,
-FFI, and Boolean source/IR remain later gates.
+`ValidatedNativeObjectArtifact`.
+
+The driver owns the distinct native executable path. It discovers and pins canonical
+`/usr/bin/gcc`, its exact GNU x86-64 target, supported version, and canonical GNU linker into an
+opaque capability. A typed invocation must first pass Universal IR's embedded scalar ABI authority.
+The driver then writes the sealed object and one generated C11 harness into a private staging
+directory, launches the compiler driver directly with a cleared environment and fixed hardening
+arguments, and audits the resulting ELF executable before create-only `.elf` publication.
+Execution accepts only that published capability, uses a bounded process group, and returns a
+typed outcome from an exact four-byte channel. The capability retains the audited bytes and runs a
+fresh private staged copy, so replacing the public distribution path cannot change executed code.
+It is not arbitrary startup, a general runner, or a public CLI. Control flow, calls, Windows
+output, FFI, and Boolean source/IR remain later gates.
 
 ## Initial numeric contract
 

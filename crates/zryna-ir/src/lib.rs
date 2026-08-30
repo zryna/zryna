@@ -134,6 +134,24 @@ impl VerifiedProgram {
             .zip(self.abi.exports())
             .map(|(function, abi_export)| VerifiedFunction { function, abi_export })
     }
+
+    /// Returns the sealed scalar ABI authority embedded by verification.
+    #[must_use]
+    pub const fn scalar_abi(&self) -> &zryna_abi::VerifiedScalarAbiModule {
+        &self.abi
+    }
+
+    /// Validates one typed invocation against the embedded scalar ABI authority.
+    ///
+    /// # Errors
+    ///
+    /// Rejects an unknown export, wrong arity, or mismatched typed argument.
+    pub fn prepare_invocation(
+        &self,
+        invocation: zryna_abi::Invocation,
+    ) -> Result<zryna_abi::VerifiedInvocation<'_>, zryna_abi::InvocationError> {
+        self.abi.prepare_invocation(invocation)
+    }
 }
 
 /// Immutable view of one function inside a [`VerifiedProgram`].

@@ -7,6 +7,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+libc.workspace = true
+nix.workspace = true
+object.workspace = true
+process-wrap.workspace = true
+zryna-abi.workspace = true
 zryna-architecture = { path = "../zryna-architecture" }
 zryna-backend-javascript = { path = "../zryna-backend-javascript" }
 zryna-backend-native = { path = "../zryna-backend-native" }

@@ -2,9 +2,11 @@
 
 Status: normative for the first three-target executable slice. For the current executable
 `I32V1` profile, JavaScript and direct core WebAssembly implement sealed export mappings and the
-native backend implements the Linux x86-64 `i32` symbol/calling mapping in an audited object.
-Boolean source and IR remain profile-gated. Strict typed WebAssembly and native Boolean host
-wrappers do not implement the complete boundary yet.
+native backend implements the Linux x86-64 `i32` symbol/calling mapping in an audited object. The
+driver's sealed native invocation harness validates arguments through this authority and returns a
+full-width typed `i32` through an exact four-byte channel. Boolean source and IR remain
+profile-gated. Strict typed WebAssembly and native Boolean host wrappers do not implement the
+complete boundary yet.
 
 ## Authority and version
 

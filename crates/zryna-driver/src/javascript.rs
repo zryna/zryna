@@ -60,7 +60,7 @@ impl ArtifactOutputRoot {
         &self.path
     }
 
-    fn revalidate(&self) -> Result<(), Diagnostic> {
+    pub(crate) fn revalidate(&self) -> Result<(), Diagnostic> {
         validate_real_directory_chain(&self.path)
     }
 }
@@ -287,7 +287,7 @@ pub(crate) fn publish_complete_artifact(
     Ok(PublishedArtifactParts { path: destination, diagnostics })
 }
 
-fn validate_artifact_stem(stem: &str) -> Result<(), Diagnostic> {
+pub(crate) fn validate_artifact_stem(stem: &str) -> Result<(), Diagnostic> {
     let bytes = stem.as_bytes();
     let valid = !bytes.is_empty()
         && bytes.len() <= MAX_ARTIFACT_STEM_BYTES
@@ -393,7 +393,7 @@ fn create_temporary(
     ))
 }
 
-fn destination_exists_error(
+pub(crate) fn destination_exists_error(
     artifact_stem: &str,
     extension: &str,
     target_label: &str,
