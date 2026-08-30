@@ -969,7 +969,7 @@ fn receive_response_line(
     state: &mut StreamState,
     deadline: Instant,
     frame_limit: usize,
-    stage: &'static str,
+    phase: &'static str,
 ) -> Result<Vec<u8>, WorkerError> {
     loop {
         let event = receive_event(receiver, deadline)?;
@@ -978,11 +978,11 @@ fn receive_response_line(
             invalid @ (ProcessEvent::StdoutLine(_)
             | ProcessEvent::StdoutFrameLimit
             | ProcessEvent::StdoutTrailing) => {
-                eprintln!("{stage} response framing failed: {invalid:?}");
+                eprintln!("{phase} response framing failed: {invalid:?}");
                 return Err(WorkerError::new(WorkerFailure::InvalidResponse));
             }
             ProcessEvent::StdoutEof => {
-                eprintln!("{stage} response framing failed: stdout ended before a response");
+                eprintln!("{phase} response framing failed: stdout ended before a response");
                 state.io.stdout_eof = true;
                 return Err(WorkerError::new(WorkerFailure::InvalidResponse));
             }
