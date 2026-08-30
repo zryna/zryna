@@ -2,13 +2,19 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   rust:
+    name: rust (${{ matrix.os }})
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -29,6 +35,9 @@ jobs:
           node-version: 22.22.1
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Run Windows CLI smoke
+        if: runner.os == 'Windows'
+        run: cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact
       - run: node scripts/run-m0-conformance.mjs
 
   adapter-platform:
