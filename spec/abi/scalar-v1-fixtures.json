@@ -1,0 +1,457 @@
+{
+  "schemaVersion": 1,
+  "abi": "zryna-scalar-v1",
+  "validExports": [
+    {
+      "logical": "add",
+      "parameters": ["i32", "i32"],
+      "result": "i32",
+      "javascript": "add",
+      "webAssembly": "add",
+      "nativeLinuxX8664": "zryna_v1_e_add"
+    },
+    {
+      "logical": "negate",
+      "parameters": ["bool"],
+      "result": "bool",
+      "javascript": "negate",
+      "webAssembly": "negate",
+      "nativeLinuxX8664": "zryna_v1_e_negate"
+    },
+    {
+      "logical": "_x",
+      "parameters": [],
+      "result": "i32",
+      "javascript": "_x",
+      "webAssembly": "_x",
+      "nativeLinuxX8664": "zryna_v1_e__x"
+    }
+  ],
+  "invalidExportSets": [
+    {
+      "names": ["default"],
+      "expectedCode": "ZRYNA-B1001"
+    },
+    {
+      "names": ["same", "same"],
+      "expectedCode": "ZRYNA-B1002"
+    },
+    {
+      "names": ["valueName", "valuename"],
+      "expectedCode": "ZRYNA-B1003"
+    }
+  ],
+  "carrierCases": [
+    {
+      "target": "javascript",
+      "direction": "encode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "javascript-bool", "value": true },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "encode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": -2147483648 }
+      },
+      "value": { "type": "i32", "value": -2147483648 },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "encode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 2147483647 }
+      },
+      "value": { "type": "i32", "value": 2147483647 },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "javascript-bool", "value": false },
+      "value": { "type": "bool", "value": false },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 1 }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2001"
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": -2147483648 }
+      },
+      "value": { "type": "i32", "value": -2147483648 },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 0 }
+      },
+      "value": { "type": "i32", "value": 0 },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 2147483647 }
+      },
+      "value": { "type": "i32", "value": 2147483647 },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": -0.0 }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 1.5 }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 2147483648 }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": -2147483649 }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "nan" }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "positive-infinity" }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "negative-infinity" }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": { "kind": "javascript-bool", "value": true },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "normalize-result",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 2147483647 }
+      },
+      "value": { "type": "i32", "value": 2147483647 },
+      "errorCode": null
+    },
+    {
+      "target": "javascript",
+      "direction": "normalize-result",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": -0.0 }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "normalize-result",
+      "scalarType": "i32",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "nan" }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2002"
+    },
+    {
+      "target": "javascript",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": {
+        "kind": "javascript-number",
+        "number": { "kind": "finite", "value": 1 }
+      },
+      "value": null,
+      "errorCode": "ZRYNA-B2001"
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "encode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 0 },
+      "value": { "type": "bool", "value": false },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "encode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 1 },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "encode-argument",
+      "scalarType": "i32",
+      "raw": { "kind": "i32", "value": -2147483648 },
+      "value": { "type": "i32", "value": -2147483648 },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 0 },
+      "value": { "type": "bool", "value": false },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 1 },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": -1 },
+      "value": null,
+      "errorCode": "ZRYNA-B2003"
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": { "kind": "i32", "value": 2147483647 },
+      "value": { "type": "i32", "value": 2147483647 },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 0 },
+      "value": { "type": "bool", "value": false },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 1 },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 2 },
+      "value": null,
+      "errorCode": "ZRYNA-B2003"
+    },
+    {
+      "target": "core-webassembly",
+      "direction": "normalize-result",
+      "scalarType": "i32",
+      "raw": { "kind": "i32", "value": -2147483648 },
+      "value": { "type": "i32", "value": -2147483648 },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "encode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 0 },
+      "value": { "type": "bool", "value": false },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "encode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 1 },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "encode-argument",
+      "scalarType": "i32",
+      "raw": { "kind": "i32", "value": 2147483647 },
+      "value": { "type": "i32", "value": 2147483647 },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 0 },
+      "value": { "type": "bool", "value": false },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 1 },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "decode-argument",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": -1 },
+      "value": null,
+      "errorCode": "ZRYNA-B2003"
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "decode-argument",
+      "scalarType": "i32",
+      "raw": { "kind": "i32", "value": -2147483648 },
+      "value": { "type": "i32", "value": -2147483648 },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 0 },
+      "value": { "type": "bool", "value": false },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 1 },
+      "value": { "type": "bool", "value": true },
+      "errorCode": null
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "normalize-result",
+      "scalarType": "bool",
+      "raw": { "kind": "i32", "value": 2 },
+      "value": null,
+      "errorCode": "ZRYNA-B2003"
+    },
+    {
+      "target": "native-linux-x86-64",
+      "direction": "normalize-result",
+      "scalarType": "i32",
+      "raw": { "kind": "i32", "value": 2147483647 },
+      "value": { "type": "i32", "value": 2147483647 },
+      "errorCode": null
+    }
+  ],
+  "typedOutcomes": [
+    {
+      "kind": "returned",
+      "value": {
+        "type": "i32",
+        "value": 1
+      }
+    },
+    {
+      "kind": "returned",
+      "value": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "kind": "trapped",
+      "code": "target-trap"
+    },
+    {
+      "kind": "host-error",
+      "code": "invalid-target-result"
+    }
+  ]
+}

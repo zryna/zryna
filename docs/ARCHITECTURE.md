@@ -22,7 +22,7 @@ unverified Universal IR
     ↓
 mandatory IR verifier
     ↓
-VerifiedProgram
+VerifiedProgram + sealed scalar ABI module
     ├── JavaScript IR and printer
     ├── WebAssembly lowering and binary emission
     └── raw native MIR → mandatory MIR verifier → VerifiedMirModule
@@ -41,13 +41,15 @@ semantic lowering never depends on a replaceable provider.
 3. `zryna-syntax` verifies protocol-v2 file identity, budgets, source spans, lexical order, and the
    canonical flat expression graph before constructing opaque executable syntax.
 4. Zryna semantics rejects unsupported dynamic constructs and assigns exact types.
-5. `zryna-ir` represents exact operations such as `I32Add`; generic target-dependent arithmetic is forbidden.
-6. The IR verifier is the only constructor of a backend-accepted verified program.
-7. The JavaScript backend preserves Zryna behavior using direct syntax or explicit helpers.
-8. The WebAssembly backend maps exact Zryna operations directly to validated core WebAssembly. Browser bindings and WASI capabilities remain explicit host profiles.
-9. Native lowering creates explicit typed native claims; the native MIR verifier is the only
+5. `zryna-abi` verifies scalar signatures, logical exports, target mappings, and typed host values.
+6. `zryna-ir` represents exact operations such as `I32Add`; generic target-dependent arithmetic is forbidden.
+7. The IR verifier is the only constructor of a backend-accepted verified program and embeds the
+   matching sealed scalar ABI module by declaration index.
+8. The JavaScript backend preserves Zryna behavior using direct syntax or explicit helpers.
+9. The WebAssembly backend maps exact Zryna operations directly to validated core WebAssembly. Browser bindings and WASI capabilities remain explicit host profiles.
+10. Native lowering creates explicit typed native claims; the native MIR verifier is the only
    constructor of the codegen-accepted `VerifiedMirModule`.
-10. Later native profiles add control flow, layout, moves, drops, and public calling conventions
+11. Later native profiles add control flow, layout, moves, drops, and public calling conventions
     before object generation and linking.
 
 ## Dependency direction
@@ -62,8 +64,11 @@ source ────────────────────────�
 syntax ──────────────────────────────────────────┤
                                                   ↓
                                             Zryna semantics
-                           ↓
-                     verified Zryna IR
+                                                  ↓
+                                          unverified Zryna IR
+scalar ABI ──────────────────────────────────────┤
+                                                  ↓
+                                   verified IR + sealed ABI
                   ┌────────────┼────────────┐
                   ↓            ↓            ↓
             JavaScript   WebAssembly    native MIR
@@ -102,15 +107,17 @@ construct `VerifiedProgram`.
 
 `Program`, `Function`, and `Expr` are untrusted compiler claims. `zryna_ir::verify` is the only
 constructor of `VerifiedProgram`; backends iterate opaque `VerifiedFunction` views and cannot
-recover the raw program. The current `I32V1` profile admits only `i32` parameters, results,
-literals, and signed wrapping addition. `bool` and `unit` remain profile-gated until every active
-universal backend implements their specified representation and behavior.
+recover the raw program. The verifier delegates logical-name, collision, scalar-signature, and
+target-mapping authority to `zryna-abi`, then embeds the sealed module beside the private program.
+The current `I32V1` profile admits only `i32` parameters, results, literals, and signed wrapping
+addition. Scalar ABI v1 specifies `bool`, but `bool` and `unit` remain profile-gated until every
+active universal backend implements their specified representation and behavior.
 
 A verified function proves all of the following:
 
-- its logical export is bounded ASCII matching `[A-Za-z_][A-Za-z0-9_]*`, is safe for the current
-  ECMAScript binding and LLVM bare-identifier surfaces, and is unique exactly and under ASCII
-  case folding;
+- its scalar ABI export has a bounded logical name matching `[A-Za-z_][A-Za-z0-9_]*`, is unique
+  exactly and under ASCII case folding, and carries deterministic JavaScript, WebAssembly, and
+  Linux x86-64 target names;
 - its body is in the same arena and has the declared result type;
 - every operand is a distinct earlier entry, every entry has exactly one owner, and the complete
   tree is stored in exact left-to-right postorder without shared or orphan entries;
@@ -119,9 +126,10 @@ A verified function proves all of the following:
 - program, parameter, expression, export-byte, and diagnostic budgets remain within the public
   constants in `zryna-ir`.
 
-Verification and current JavaScript emission are iterative and bounded. A logical export remains a
-language-level identity; later backend ABI contracts must define any concrete symbol encoding
-without weakening collision checks.
+Verification and current JavaScript emission are iterative and bounded. The normative
+[scalar ABI v1](../spec/abi/SCALAR_V1.md) defines target names, carriers, invocation, and typed
+observation. Current emitters remain boundary proofs until their later issues adopt those public
+wrappers and target mappings; they may not claim ABI v1 conformance early.
 
 Native MIR has its own consumed raw-to-verified boundary. Raw functions explicitly claim a symbol,
 provisional internal convention, typed signature, dense typed value definitions, operations, and a

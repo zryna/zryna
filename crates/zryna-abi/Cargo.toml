@@ -1,16 +1,18 @@
 [package]
-name = "zryna-ir"
+name = "zryna-abi"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 
 [dependencies]
 serde.workspace = true
-zryna-abi.workspace = true
-zryna-diagnostics = { path = "../zryna-diagnostics" }
-zryna-source = { path = "../zryna-source" }
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true
