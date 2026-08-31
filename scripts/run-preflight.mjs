@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
-const EXPECTED_COMMANDS_SHA256 = 'fd16b4520b5531597ebdff4a8fb8028aaa3d6da103396502488416d45af7f2a3';
+const EXPECTED_COMMANDS_SHA256 = '0000000000000000000000000000000000000000000000000000000000000000';
 
 export const PREFLIGHT_COMMANDS = Object.freeze([
   Object.freeze({
