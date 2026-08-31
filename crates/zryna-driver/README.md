@@ -24,6 +24,13 @@ edges, source hashes, and a canonical graph digest. It is documented in
 straight-line and control-flow semantics, but multiple files remain disabled in the public compiler
 until the complete M2 backend and profile path is verified.
 
+Internal M2 tests pass the same verifier-sealed `ControlFlowV1` program to the independent
+JavaScript and direct core WebAssembly emitters. WebAssembly execution sends the exact validated
+artifact bytes over bounded standard input to an inline pinned Node module, so no staged script or
+module pathname is reopened. Typed `i32` and canonical `bool` lanes are normalized through the
+shared scalar ABI. This internal path does not activate protocol v3, manifest v2, or a public M2
+command.
+
 `compile_javascript` connects real source to the deterministic JavaScript backend and publishes one
 new `.mjs` artifact through the target-neutral `ArtifactOutputRoot` capability (with a compatible
 `JavaScriptOutputRoot` alias). The capability is derived only from an absolute

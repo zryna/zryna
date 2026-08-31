@@ -51,6 +51,12 @@
       "title": "M2 straight-line semantics"
     },
     {
+      "id": "reference/m2-webassembly-backend",
+      "source": "docs/M2_WEBASSEMBLY_BACKEND.md",
+      "path": "documents/reference/m2-webassembly-backend.md",
+      "title": "M2 direct core WebAssembly backend"
+    },
+    {
       "id": "reference/scalar-abi-v1",
       "source": "spec/abi/SCALAR_V1.md",
       "path": "documents/reference/scalar-abi-v1.md",

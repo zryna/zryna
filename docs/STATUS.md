@@ -49,9 +49,14 @@ profile is intentionally narrow.
   returns, parallel jump edges, strict Boolean branches, and loops into bounded byte-deterministic
   ESM with typed `i32`/`bool` entry wrappers and sealed export aliases. Internal execution imports
   those public aliases through the existing pinned, deadline- and output-bounded Node capability.
+- The internal [M2 direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md) consumes the same
+  opaque verified views. It exhaustively lowers the exact scalar and CFG inventory into bounded,
+  byte-deterministic WebAssembly 1.0 containing only type, function, export, and code sections,
+  then validates and audits the complete bytes. Internal typed execution passes those same sealed
+  bytes over standard input to an inline pinned Node host, with no staged-path reopen race.
 - These are internal compiler boundaries only. The public driver still selects protocol v2; no
-  CLI command or manifest exposes M2, and the M2 WebAssembly and native backends remain
-  unavailable. The executable cross-target M2
+  CLI command or manifest exposes M2, and the M2 native backend remains unavailable. The
+  executable three-target M2
   profile and every dependent M2 issue therefore remain unsupported.
 
 ## Runtime and toolchain boundary
@@ -81,6 +86,7 @@ feature.
 - [M2 straight-line semantics](M2_STRAIGHT_LINE_SEMANTICS.md)
 - [M2 control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md)
 - [M2 deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md)
+- [M2 direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md)
 - [Roadmap](ROADMAP.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)

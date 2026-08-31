@@ -2,7 +2,7 @@
 
 use std::{
     ffi::OsString,
-    io::{self, Read},
+    io::{self, Read, Write},
     path::{Path, PathBuf},
     process::ExitStatus,
     sync::mpsc::{self, Receiver, RecvTimeoutError, SyncSender, TryRecvError},
@@ -32,6 +32,8 @@ const PROCESS_TIMEOUT: Duration = Duration::from_secs(5);
 const CLEANUP_RESERVE: Duration = Duration::from_secs(5);
 const MAX_VERSION_STDOUT: usize = 64;
 const MAX_STDERR: usize = 16 * 1_024;
+const MAX_INLINE_MODULE_BYTES: usize = 16 * 1_024;
+const MAX_WEBASSEMBLY_INPUT_BYTES: usize = 32 * 1_024 * 1_024;
 
 #[derive(Debug)]
 pub(crate) struct NodeRuntimeCapability {
@@ -60,6 +62,7 @@ impl NodeRuntimeCapability {
             &invocation_path,
             &[OsString::from("--version")],
             &node_working_directory,
+            None,
             MAX_VERSION_STDOUT,
             MAX_STDERR,
         )?;
@@ -96,6 +99,7 @@ impl NodeRuntimeCapability {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(crate) fn run_module(
         &self,
         harness: &Path,
@@ -130,6 +134,47 @@ impl NodeRuntimeCapability {
         }
     }
 
+    pub(crate) fn run_webassembly_module(
+        &self,
+        script: &[u8],
+        module: &[u8],
+        working_directory: &Path,
+    ) -> Result<[u8; 4], Diagnostic> {
+        if script.len() > MAX_INLINE_MODULE_BYTES || module.len() > MAX_WEBASSEMBLY_INPUT_BYTES {
+            return Err(runtime_error(
+                "ZRYNA-R3004",
+                "target runtime input exceeded its hard byte budget",
+                "reduce the sealed artifact and report a reproducible boundary failure",
+            ));
+        }
+        let script = std::str::from_utf8(script).map_err(|_| {
+            runtime_error(
+                "ZRYNA-R3006",
+                "target runtime received an invalid inline module",
+                "report the smallest reproducible source and verified invocation",
+            )
+        })?;
+        self.revalidate()?;
+        let node_working_directory = node_compatible_path(working_directory);
+        let output = run_bounded(
+            &self.invocation_path,
+            &[
+                OsString::from("--input-type=module"),
+                OsString::from("--eval"),
+                OsString::from(script),
+            ],
+            &node_working_directory,
+            Some(module),
+            4,
+            MAX_STDERR,
+        )?;
+        self.revalidate()?;
+        if !output.status.success() || !output.stderr.is_empty() || output.stdout.len() != 4 {
+            return Err(invalid_result_frame());
+        }
+        output.stdout.try_into().map_err(|_| invalid_result_frame())
+    }
+
     fn run_module_frame(
         &self,
         harness: &Path,
@@ -143,6 +188,7 @@ impl NodeRuntimeCapability {
             &self.invocation_path,
             &[node_harness.into_os_string()],
             &node_working_directory,
+            None,
             expected_bytes,
             MAX_STDERR,
         )?;
@@ -346,6 +392,7 @@ struct Captured {
 }
 
 struct Pending {
+    input: Option<Receiver<io::Result<()>>>,
     stdout: Receiver<io::Result<Captured>>,
     stderr: Receiver<io::Result<Captured>>,
     timed_out: bool,
@@ -381,6 +428,7 @@ fn run_bounded(
     program: &Path,
     arguments: &[OsString],
     working_directory: &Path,
+    input: Option<&[u8]>,
     stdout_limit: usize,
     stderr_limit: usize,
 ) -> Result<BoundedOutput, Diagnostic> {
@@ -392,7 +440,7 @@ fn run_bounded(
         .env("LANG", "C")
         .env("LC_ALL", "C")
         .env("TZ", "UTC")
-        .stdin(Stdio::null())
+        .stdin(if input.is_some() { Stdio::piped() } else { Stdio::null() })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     let mut command = CommandWrap::from(native);
@@ -400,9 +448,16 @@ fn run_bounded(
     let mut child = command.spawn().map_err(|_| process_error("could not start"))?;
     let group_id = child.id().cast_signed();
     let operation = (|| {
+        let input = match input {
+            Some(bytes) => {
+                let stdin = child.stdin().take().ok_or_else(|| process_error("lost stdin"))?;
+                Some(spawn_input_writer(stdin, bytes.to_vec()))
+            }
+            None => None,
+        };
         let stdout = child.stdout().take().ok_or_else(|| process_error("lost stdout"))?;
         let stderr = child.stderr().take().ok_or_else(|| process_error("lost stderr"))?;
-        monitor_process(child.as_mut(), stdout, stderr, stdout_limit, stderr_limit)
+        monitor_process(child.as_mut(), input, stdout, stderr, stdout_limit, stderr_limit)
     })();
     let cleanup_deadline = Instant::now() + CLEANUP_RESERVE;
     let cleanup = cleanup_unix(child.as_mut(), group_id, cleanup_deadline);
@@ -416,6 +471,7 @@ fn run_bounded(
     program: &Path,
     arguments: &[OsString],
     working_directory: &Path,
+    input: Option<&[u8]>,
     stdout_limit: usize,
     stderr_limit: usize,
 ) -> Result<BoundedOutput, Diagnostic> {
@@ -428,7 +484,7 @@ fn run_bounded(
         .args(arguments)
         .current_dir(working_directory)
         .env_clear()
-        .stdin(WindowsStdio::null())
+        .stdin(if input.is_some() { WindowsStdio::piped() } else { WindowsStdio::null() })
         .stdout(WindowsStdio::piped())
         .stderr(WindowsStdio::piped());
     for name in ["SystemRoot", "WINDIR"] {
@@ -440,9 +496,16 @@ fn run_bounded(
         .spawn_with(SpawnOptions::new().job(&job))
         .map_err(|_| process_error("could not start"))?;
     let operation = (|| {
+        let input = match input {
+            Some(bytes) => {
+                let stdin = child.stdin.take().ok_or_else(|| process_error("lost stdin"))?;
+                Some(spawn_input_writer(stdin, bytes.to_vec()))
+            }
+            None => None,
+        };
         let stdout = child.stdout.take().ok_or_else(|| process_error("lost stdout"))?;
         let stderr = child.stderr.take().ok_or_else(|| process_error("lost stderr"))?;
-        monitor_process(&mut child, stdout, stderr, stdout_limit, stderr_limit)
+        monitor_process(&mut child, input, stdout, stderr, stdout_limit, stderr_limit)
     })();
     let cleanup_deadline = Instant::now() + CLEANUP_RESERVE;
     let cleanup = cleanup_windows(&mut child, &job, cleanup_deadline);
@@ -471,6 +534,7 @@ fn cleanup_windows(
 
 fn monitor_process<Child: RuntimeChild + ?Sized>(
     child: &mut Child,
+    input: Option<Receiver<io::Result<()>>>,
     stdout: impl Read + Send + 'static,
     stderr: impl Read + Send + 'static,
     stdout_limit: usize,
@@ -508,7 +572,26 @@ fn monitor_process<Child: RuntimeChild + ?Sized>(
             }
         }
     }
-    Ok(Pending { stdout: stdout_receiver, stderr: stderr_receiver, timed_out, output_exceeded })
+    Ok(Pending {
+        input,
+        stdout: stdout_receiver,
+        stderr: stderr_receiver,
+        timed_out,
+        output_exceeded,
+    })
+}
+
+fn spawn_input_writer(
+    mut stdin: impl Write + Send + 'static,
+    input: Vec<u8>,
+) -> Receiver<io::Result<()>> {
+    let (sender, receiver) = mpsc::sync_channel(1);
+    thread::spawn(move || {
+        let result = stdin.write_all(&input).and_then(|()| stdin.flush());
+        drop(stdin);
+        let _ = sender.send(result);
+    });
+    receiver
 }
 
 trait RuntimeChild {
@@ -567,6 +650,18 @@ fn finish_capture(
     status: ExitStatus,
     deadline: Instant,
 ) -> Result<BoundedOutput, Diagnostic> {
+    let input_result = if let Some(input) = &pending.input {
+        let remaining =
+            deadline.checked_duration_since(Instant::now()).ok_or_else(cleanup_error)?;
+        match input.recv_timeout(remaining) {
+            Ok(result) => Some(result),
+            Err(RecvTimeoutError::Timeout | RecvTimeoutError::Disconnected) => {
+                return Err(cleanup_error());
+            }
+        }
+    } else {
+        None
+    };
     let stdout = receive_capture(&pending.stdout, deadline)?;
     let stderr = receive_capture(&pending.stderr, deadline)?;
     if pending.timed_out {
@@ -582,6 +677,9 @@ fn finish_capture(
             "target runtime exceeded its output budget",
             "report the smallest reproducible source and invocation",
         ));
+    }
+    if matches!(input_result, Some(Err(_))) {
+        return Err(process_error("could not provide bounded input"));
     }
     Ok(BoundedOutput { status, stdout: stdout.bytes, stderr: stderr.bytes })
 }
@@ -631,7 +729,10 @@ mod tests {
 
     #[cfg(windows)]
     use super::node_compatible_path;
-    use super::{NodeRuntimeCapability, is_pinned_node_version};
+    use super::{
+        MAX_INLINE_MODULE_BYTES, MAX_WEBASSEMBLY_INPUT_BYTES, NodeRuntimeCapability,
+        is_pinned_node_version,
+    };
     use zryna_abi::{RawHostScalar, ScalarType};
 
     static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
@@ -727,6 +828,53 @@ mod tests {
         assert!(!is_pinned_node_version(b"v22.22.1"));
         assert!(!is_pinned_node_version(b"v22.22.1\nextra\n"));
         assert!(!is_pinned_node_version(b"v22.22.0\r\n"));
+    }
+
+    #[test]
+    fn webassembly_inline_inputs_fail_at_the_first_extra_byte() {
+        let root = RuntimeRoot::new("webassembly-input-bounds");
+        let runtime = capability(&root);
+        let oversized_script = vec![b'a'; MAX_INLINE_MODULE_BYTES + 1];
+        assert_code(
+            &runtime
+                .run_webassembly_module(&oversized_script, &[], root.path())
+                .expect_err("oversized inline script must fail"),
+            "ZRYNA-R3004",
+        );
+
+        let oversized_module = vec![0_u8; MAX_WEBASSEMBLY_INPUT_BYTES + 1];
+        assert_code(
+            &runtime
+                .run_webassembly_module(b"", &oversized_module, root.path())
+                .expect_err("oversized module input must fail"),
+            "ZRYNA-R3004",
+        );
+        assert_code(
+            &runtime
+                .run_webassembly_module(&[0xff], &[], root.path())
+                .expect_err("non-UTF-8 inline script must fail"),
+            "ZRYNA-R3006",
+        );
+    }
+
+    #[test]
+    fn blocked_webassembly_input_preserves_timeout_and_output_diagnostics() {
+        let root = RuntimeRoot::new("blocked-webassembly-input");
+        let runtime = capability(&root);
+        let input = vec![0_u8; 1024 * 1024];
+        let timeout = runtime
+            .run_webassembly_module(b"setInterval(() => {}, 60_000);", &input, root.path())
+            .expect_err("blocked input must preserve the timeout diagnostic");
+        assert_code(&timeout, "ZRYNA-R3003");
+
+        let overflow = runtime
+            .run_webassembly_module(
+                b"for (;;) process.stdout.write(Buffer.alloc(8192, 65));",
+                &input,
+                root.path(),
+            )
+            .expect_err("blocked input must preserve the output diagnostic");
+        assert_code(&overflow, "ZRYNA-R3004");
     }
 
     #[test]

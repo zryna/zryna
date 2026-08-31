@@ -1,8 +1,8 @@
 # M2 control-flow semantics
 
-Status: implemented as an internal compiler boundary. The sealed internal JavaScript backend can
-consume its verified result, but this does not enable the public `control-flow-v1` profile,
-manifest v2, a CLI command, or cross-target M2 support.
+Status: implemented as an internal compiler boundary. The sealed internal JavaScript and direct
+core WebAssembly backends can consume its verified result, but this does not enable the public
+`control-flow-v1` profile, manifest v2, a CLI command, or three-target M2 support.
 
 ## Authority and result boundary
 
@@ -23,7 +23,9 @@ visit to its header. An omitted `else` is the exact empty false path.
 Evaluation remains left to right and once-only. `break`, `continue`, labeled statements, `for`,
 `switch`, exceptions, async control flow, recursion, and implicit truthiness remain outside this
 profile. The internal [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) executes these exact
-conditions without truthiness; public and cross-target execution remain gated.
+conditions without truthiness, and the [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md)
+executes the same verified branches with canonical Boolean lanes; public and three-target
+execution remain gated.
 
 ## Canonical CFG and definite state
 
@@ -43,7 +45,8 @@ storage claims.
 Every reachable function path must return the declared exact type. Statements after a guaranteed
 return are rejected as unreachable. For return completeness, `while (true)` is still treated as
 potentially falling through: divergence is language behavior, not an implicit trap or proof of a
-return. Runtime deadline containment remains a later executable-backend responsibility.
+return. Internal JavaScript and WebAssembly execution impose a bounded process deadline; public
+native and three-target containment remain later executable-profile responsibilities.
 
 ## Diagnostics and limits
 
@@ -64,6 +67,7 @@ Focused semantic and IR tests cover true and false branches, omitted `else`, nes
 zero- and multiple-iteration loops, assignment carried through merges and backedges, early returns,
 shadow restoration, stable diagnostics, deterministic repeated lowering, exact Boolean conditions,
 missing returns, unreachable statements, and resource boundaries. These tests authenticate the
-internal compiler component only. The sealed JavaScript evidence is documented separately.
-Cross-target execution, divergence containment, manifest v2, the explicit public profile, and
-website support remain gated by Issues #52 through #57.
+internal compiler component only. The sealed JavaScript and WebAssembly evidence is documented
+separately. Native execution, public three-target divergence containment, manifest v2, the explicit
+public profile, and website support remain gated by Issues #53 through #57; the implemented
+internal JavaScript and WebAssembly hosts already retain their bounded deadlines.

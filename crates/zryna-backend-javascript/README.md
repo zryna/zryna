@@ -34,5 +34,5 @@ reserved string, returning `ZRYNA-J2003` instead of an artifact beyond 32 MiB. D
 the public aliases and execute exact `i32` and primitive `bool` wrappers through the pinned,
 bounded Node capability; backend tests cover control flow, calls, collisions, repeated bytes, and
 exact rendered budget boundaries. This
-internal API does not activate M2 in the public driver or CLI; M2 WebAssembly, native, manifest v2,
-and three-target conformance remain unavailable.
+internal API does not activate M2 in the public driver or CLI; M2 WebAssembly is a separate sealed
+internal backend, while native, manifest v2, and three-target conformance remain unavailable.

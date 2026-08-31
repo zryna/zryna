@@ -134,5 +134,6 @@ Exact path, graph, fixed-point, race, cycle, identity, and resource rules are do
 and CLI do not select protocol v3 or an M2 profile. The final authenticated closure can enter the
 separately gated [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and
 [control-flow extension](M2_CONTROL_FLOW_SEMANTICS.md), then the sealed internal
-[M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md). The public M2 profile and its WebAssembly and
-native backends are not enabled.
+[M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) or
+[M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md). The public M2 profile and its native
+backend are not enabled.
