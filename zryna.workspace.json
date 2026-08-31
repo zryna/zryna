@@ -70,7 +70,7 @@
       "id": "zryna-native-mir",
       "root": "crates/zryna-native-mir",
       "kind": "compiler",
-      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir"],
+      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir", "zryna-source"],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {

@@ -54,8 +54,13 @@ profile is intentionally narrow.
   byte-deterministic WebAssembly 1.0 containing only type, function, export, and code sections,
   then validates and audits the complete bytes. Internal typed execution passes those same sealed
   bytes over standard input to an inline pinned Node host, with no staged-path reopen race.
+- The internal [M2 verified native MIR profile](M2_NATIVE_MIR.md) lowers sealed `ControlFlowV1`
+  one-for-one into deterministic target-specific modules, symbols, typed values, direct calls,
+  blocks, parallel edges, and terminators, then independently verifies every raw claim before
+  exposing opaque views and a rebuilt scalar ABI. This is verified-MIR evidence only; no M2 native
+  object, public Boolean wrapper, link, or run path exists yet.
 - These are internal compiler boundaries only. The public driver still selects protocol v2; no
-  CLI command or manifest exposes M2, and the M2 native backend remains unavailable. The
+  CLI command or manifest exposes M2, and M2 native object emission remains unavailable. The
   executable three-target M2
   profile and every dependent M2 issue therefore remain unsupported.
 
@@ -87,6 +92,7 @@ feature.
 - [M2 control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md)
 - [M2 deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md)
 - [M2 direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md)
+- [M2 verified native MIR](M2_NATIVE_MIR.md)
 - [Roadmap](ROADMAP.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)

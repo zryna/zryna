@@ -67,8 +67,9 @@ This straight-line foundation is extended by the internal
 [M2 control-flow semantic boundary](M2_CONTROL_FLOW_SEMANTICS.md), which owns canonical `if` and
 `while` lowering and definite state. The sealed internal
 [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) now accepts the verified program, and the
-[M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md) accepts the same authority. Public profile
-and native gates remain unavailable.
+[M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md) accepts the same authority. The
+[M2 native MIR profile](M2_NATIVE_MIR.md) now independently reseals it into target-specific verified
+views. Public profile and native object/execution gates remain unavailable.
 
 ## Stable diagnostics
 

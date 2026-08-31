@@ -135,5 +135,6 @@ and CLI do not select protocol v3 or an M2 profile. The final authenticated clos
 separately gated [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and
 [control-flow extension](M2_CONTROL_FLOW_SEMANTICS.md), then the sealed internal
 [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) or
-[M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md). The public M2 profile and its native
-backend are not enabled.
+[M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md), or the independently resealed
+[M2 native MIR profile](M2_NATIVE_MIR.md). The public M2 profile and native object backend are not
+enabled.
