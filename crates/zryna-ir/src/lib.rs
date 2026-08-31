@@ -7,6 +7,9 @@ use zryna_abi::{AbiViolationKind, raw as raw_abi, verify_v1};
 use zryna_diagnostics::Diagnostic;
 use zryna_source::{SourceMap, Span};
 
+/// Versioned structured control-flow IR for the planned M2 profile.
+pub mod control_flow_v1;
+
 pub use zryna_abi::{LogicalExportName, VerifiedScalarExport};
 
 /// Maximum functions accepted in one Universal IR program.

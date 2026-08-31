@@ -48,6 +48,16 @@ pub struct JavaScriptArtifact {
 /// let _ = zryna_backend_javascript::emit(&raw);
 /// ```
 ///
+/// The separate raw `ControlFlowV1` profile cannot satisfy this M1 backend boundary either:
+///
+/// ```compile_fail
+/// let raw = zryna_ir::control_flow_v1::raw::Program {
+///     entry_module: zryna_ir::control_flow_v1::raw::ModuleId(0),
+///     modules: Vec::new(),
+/// };
+/// let _ = zryna_backend_javascript::emit(&raw);
+/// ```
+///
 /// # Errors
 ///
 /// Returns a compiler diagnostic when a verified expression cannot be emitted.

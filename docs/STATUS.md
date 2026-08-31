@@ -23,6 +23,15 @@ profile is intentionally narrow.
   rejection, Boolean scalar-carrier normalization, and repository portability. Windows native and
   `all` execution fail closed with `ZRYNA-N4002` and publish no bundle.
 
+## Implemented M2 compiler component
+
+- The isolated `zryna-ir::control_flow_v1` component verifies the frozen raw `ControlFlowV1`
+  program model into opaque, source-map-bound views with bounded scalar operations, direct calls,
+  explicit control-flow edges, dominance, reducibility, call-graph, ABI, and resource checks.
+- This is an internal compiler boundary only. No syntax provider or semantic lowering produces it,
+  no backend accepts it, and no CLI command or manifest exposes it. The executable M2 profile and
+  every dependent M2 issue therefore remain unsupported.
+
 ## Runtime and toolchain boundary
 
 - JavaScript and WebAssembly execution require an absolute direct Node.js `22.22.1` executable.
@@ -35,9 +44,10 @@ profile is intentionally narrow.
 ## Deliberately unsupported
 
 Source-level Boolean execution remains verifier-gated even though scalar ABI v1 specifies strict
-Boolean host carriers. The current slice does not claim control flow, modules, heap values,
-browser execution, WASI, Windows or macOS native execution, static native executables, package
-resolution, watch mode, incremental builds, production readiness, or any M2 feature.
+Boolean host carriers. The current executable slice does not claim source control flow, modules,
+heap values, browser execution, WASI, Windows or macOS native execution, static native executables,
+package resolution, watch mode, incremental builds, production readiness, or an executable M2
+feature.
 
 ## Evidence and reference
 

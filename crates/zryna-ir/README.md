@@ -59,3 +59,42 @@ Successful verification proves only this documented profile. Native lowering pas
 claims through the native MIR verifier, which retains the sealed ABI mapping before fixed-target
 object codegen. Linux x86-64 object emission is implemented. Driver-owned linking and execution are
 separate, capability-checked trust boundaries; neither is implied by `VerifiedProgram`.
+
+## Isolated `ControlFlowV1` verifier component
+
+The `control_flow_v1` module implements the separately versioned M2 Universal IR trust boundary.
+This is an internal compiler component, not an executable M2 language profile or public command.
+The driver and all current backends still accept only the unchanged M1 `VerifiedProgram` above.
+
+`control_flow_v1::raw` can express sealed-module claims, entry exports, internal functions, dense
+blocks and values, exact scalar operations, direct calls, block arguments, and explicit
+return/jump/branch terminators. Its verifier independently binds the complete module inventory and
+entry file to one exact final `SourceMap`; validates every span against its containing module; and
+proves dense identity allocation, exact types, definition-before-use, dominance, reachability,
+reducible loop shape, return completeness, acyclic calls, and all frozen graph budgets. Successor
+and predecessor views are both derived from the exactly-one explicit terminator on each block, so
+they cannot disagree through a separately trusted claim. Verification is iterative and diagnostics
+are bounded.
+
+Successful verification exposes only immutable module, function, block, instruction, terminator,
+and sealed-identity views. It never exposes the retained raw program. Only entry-module functions
+with explicit export claims enter scalar ABI v1; dependency and unexported functions remain
+target-internal. Module discovery, semantic lowering, backend lowering, CLI activation, and an M2
+manifest remain owned by later milestones.
+
+| `ControlFlowV1` IR resource | Limit |
+| --- | ---: |
+| Modules | 4,096 |
+| Functions per module / program | 4,096 / 16,384 |
+| Parameters per function / program | 256 / 262,144 |
+| Blocks per function / program | 4,096 / 65,536 |
+| Block parameters | 256 |
+| Values per function / program | 16,384 / 262,144 |
+| CFG edges per function / program | 8,192 / 131,072 |
+| Direct-call edges | 65,536 |
+| Static call depth / loop nesting | 128 / 128 |
+| Retained diagnostics including terminal diagnostic | 256 |
+
+`ZRYNA-I2xxx` identifies structured-IR failures. `ZRYNA-I2201` is deterministic resource
+exhaustion and `ZRYNA-I2202` is terminal diagnostic-budget exhaustion or an impossible bounded
+construction failure.

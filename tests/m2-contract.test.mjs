@@ -158,15 +158,21 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
       ? 'M1 closure'
       : issue.dependsOn.map((number) => `#${number}`).join(', ');
     assert.equal(row.dependsOnText, expectedDependencyText);
-    assert.equal(row.state, row.number === 45 ? 'complete' : 'planned');
+    assert.equal(row.state, [45, 48].includes(row.number) ? 'complete' : 'planned');
   }
-  assert.match(roadmap, /Current status: specified, not implemented\./);
+  assert.match(
+    roadmap,
+    /Current status: contract specified and isolated IR verifier implemented, but the M2 profile is not\s+executable\./,
+  );
   assert.match(roadmap, /digest-pinned planning inventory/);
-  assert.match(architecture, /## Planned `ControlFlowV1` boundary/);
+  assert.match(architecture, /## Isolated `ControlFlowV1` boundary/);
+  assert.match(architecture, /not yet reachable from source semantics, the driver, any backend, or a public[\s\S]*command/);
   assert.match(frontends, /versioned raw syntax snapshot/);
   assert.match(frontends, /protocol v3 module discovery/);
   assert.match(status, /## Implemented M1 slice/);
-  assert.match(status, /does not claim control flow, modules,[\s\S]*or any M2 feature/);
+  assert.match(status, /## Implemented M2 compiler component/);
+  assert.match(status, /No syntax provider or semantic lowering produces it,[\s\S]*no backend accepts it,[\s\S]*no CLI command or manifest exposes it/);
+  assert.match(status, /does not claim source control flow, modules,[\s\S]*or an executable M2[\s\S]*feature/);
   assert.doesNotMatch(status, /M2 executable slice is implemented/);
 });
 
