@@ -26,12 +26,13 @@ pnpm preflight
 pnpm m0:check
 ```
 
-Use `pnpm m2:quick` after an M2 JavaScript, WebAssembly, native MIR, semantics, closure, or
-workspace-source edit. It runs the deterministic M2 JavaScript and WebAssembly backends, the native
-MIR M1 and M2 verifier suites, control-flow semantic, closure, and retained-filesystem security
-suites. The native MIR command proves lowering and independent verification, not M2 object emission
-or execution. The focused command avoids unrelated runtime/toolchain integration failures while
-preserving native operating-system behavior.
+Use `pnpm m2:quick` after an M2 JavaScript, WebAssembly, native MIR/backend, semantics, closure, or
+workspace-source edit. It runs deterministic M2 JavaScript, WebAssembly, and native object
+backends; the native MIR M1 and M2 verifier suites; control-flow semantics; closure; and retained
+filesystem/native-stage security. On Linux x86-64 it links and runs the typed native call, branch,
+and loop fixture; unsupported hosts prove `ZRYNA-N4002` before staging or process work. The focused
+command avoids the unrelated broad runtime suite while preserving native operating-system
+behavior.
 
 During a native-MIR edit, use the component gate first; on a warm checkout it avoids rebuilding or
 waiting for unrelated targets:

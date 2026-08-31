@@ -35,5 +35,6 @@ the public aliases and execute exact `i32` and primitive `bool` wrappers through
 bounded Node capability; backend tests cover control flow, calls, collisions, repeated bytes, and
 exact rendered budget boundaries. This
 internal API does not activate M2 in the public driver or CLI; M2 WebAssembly is a separate sealed
-internal backend and M2 native MIR is independently verified, while native object emission,
-manifest v2, and three-target conformance remain unavailable.
+internal backend and the independently verified native MIR feeds the sealed internal M2 Linux
+x86-64 native object/link-run backend. Public profile activation, manifest v2, and three-target
+conformance remain unavailable.

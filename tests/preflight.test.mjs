@@ -115,6 +115,6 @@ test('package exposes the exact documented preflight entrypoint', async () => {
   assert.equal(packageDocument.scripts.preflight, 'node scripts/run-preflight.mjs');
   assert.equal(
     packageDocument.scripts['m2:quick'],
-    'cargo test --locked -p zryna-backend-javascript && cargo test --locked -p zryna-backend-webassembly && cargo test --locked -p zryna-native-mir && cargo test --locked -p zryna-semantics --lib control_flow_v1 && cargo test --locked -p zryna-driver --lib module_closure && cargo test --locked -p zryna-driver --lib workspace_source::',
+    'cargo test --locked -p zryna-backend-javascript && cargo test --locked -p zryna-backend-webassembly && cargo test --locked -p zryna-backend-native && cargo test --locked -p zryna-native-mir && cargo test --locked -p zryna-semantics --lib control_flow_v1 && cargo test --locked -p zryna-driver --lib control_flow_native && cargo test --locked -p zryna-driver --lib retained_stage_identity && cargo test --locked -p zryna-driver --lib module_closure && cargo test --locked -p zryna-driver --lib workspace_source::',
   );
 });

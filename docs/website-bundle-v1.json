@@ -45,6 +45,12 @@
       "title": "M2 deterministic module closure"
     },
     {
+      "id": "reference/m2-native-backend",
+      "source": "docs/M2_NATIVE_BACKEND.md",
+      "path": "documents/reference/m2-native-backend.md",
+      "title": "M2 Linux x86-64 native backend"
+    },
+    {
       "id": "reference/m2-native-mir",
       "source": "docs/M2_NATIVE_MIR.md",
       "path": "documents/reference/m2-native-mir.md",

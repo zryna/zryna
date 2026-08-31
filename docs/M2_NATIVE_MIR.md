@@ -1,7 +1,8 @@
 # M2 verified native MIR
 
 Status: implemented as a separate internal lowering and mandatory raw-to-verified trust boundary.
-This implementation does not claim M2 native object emission, linking, execution, a public
+The downstream [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now consumes this authority
+for audited object emission and internal typed link/run. This does not claim a public
 `control-flow-v1` profile, manifest v2, or three-target conformance. The existing M1 native MIR,
 object, and executable paths remain unchanged.
 
@@ -14,7 +15,7 @@ code generation, construct the opaque verified wrapper, or be recovered from ver
 
 The M2 profile remains separate from the root straight-line M1 `raw::Module`, `verify`,
 `lower`, and `VerifiedMirModule` APIs. M2 does not reinterpret their types, symbols,
-diagnostics, fixtures, or behavior. Issue #54 may add a native object emitter only for the new
+diagnostics, fixtures, or behavior. The separate M2 object emitter accepts only the
 verifier-created M2 wrapper.
 
 ## Canonical program and lowering
@@ -58,9 +59,9 @@ namespaces are disjoint.
 
 M2 native MIR represents `bool` and `i32` as distinct exact types. A Boolean can originate only
 from a Boolean literal, equality/inequality, or signed comparison and can be consumed as a Boolean
-operand or branch condition. It is not an arbitrary nonzero integer. The future public native
-wrapper in Issue #54 must independently validate the scalar ABI 32-bit Boolean carrier as exactly
-`0` or `1` and zero-extend a canonical result; this MIR contract does not claim that wrapper.
+operand or branch condition. It is not an arbitrary nonzero integer. The internal native backend
+independently validates the scalar ABI 32-bit Boolean carrier as exactly `0` or `1`, narrows it for
+the typed body, and zero-extends a canonical result. Public profile activation remains a later gate.
 
 ## Independent verification
 
@@ -143,7 +144,7 @@ maximum-depth stack-safety, symbol collision, deterministic repeated lowering, a
 raw/verified/backend boundaries keep every M1 native MIR fixture unchanged. The focused crate gate
 currently contains 31 unit tests and 5 compile-fail doctests.
 
-This internal verified-MIR evidence is not executable M2 evidence. Audited Linux x86-64 object
-emission, public Boolean wrappers, internal calls, linking, and execution remain Issue #54;
-profile/CLI and manifest v2 remain Issue #55; three-target conformance and live website closure
-remain Issues #56 and #57.
+The separate [M2 native backend](M2_NATIVE_BACKEND.md) now provides audited Linux x86-64 object
+emission, Boolean wrappers, internal calls, and internal typed link/run evidence. Profile/CLI and
+manifest v2 remain Issue #55; three-target conformance and live website closure remain Issues #56
+and #57.

@@ -136,5 +136,6 @@ separately gated [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS
 [control-flow extension](M2_CONTROL_FLOW_SEMANTICS.md), then the sealed internal
 [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) or
 [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md), or the independently resealed
-[M2 native MIR profile](M2_NATIVE_MIR.md). The public M2 profile and native object backend are not
-enabled.
+[M2 native MIR profile](M2_NATIVE_MIR.md) and its audited internal
+[Linux x86-64 native backend](M2_NATIVE_BACKEND.md). The public M2 profile remains disabled until
+the explicit-profile gate lands.

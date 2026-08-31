@@ -82,6 +82,9 @@ The repository currently establishes and tests:
 - an internal direct M2 core WebAssembly backend that consumes the same sealed views, emits only
   capability-minimal audited core bytes, and executes typed `i32`/`bool` exports from those exact
   validated bytes without activating a public M2 profile.
+- an internal M2 Linux x86-64 native backend that consumes independently verified native MIR,
+  emits local typed bodies plus scalar-ABI wrappers, audits exact call-graph-bound ELF relocations,
+  and links/runs typed `i32`/`bool` invocations without activating a public M2 profile.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. The first strict semantic subset requires one source file,
@@ -140,11 +143,12 @@ pnpm preflight
 pnpm m0:check
 ```
 
-`pnpm m2:quick` is the narrowest edit-loop check for deterministic M2 JavaScript and WebAssembly,
-the native MIR crate, module closure, retained workspace security, and internal M2 semantics. The
-native MIR command runs both the unchanged M1 proof and the separate implemented M2 verifier. This
-command avoids the broad driver/runtime integration suite and is suitable on
-both Linux and Windows before running the broader gate.
+`pnpm m2:quick` is the narrowest edit-loop check for deterministic M2 JavaScript, WebAssembly, and
+native objects; native MIR; module closure; retained workspace and native-stage security; and
+internal M2 semantics. On Linux x86-64 it also links and runs the typed M2 call/branch/loop fixture;
+other hosts prove the closed unsupported-host boundary. The native MIR command runs both the
+unchanged M1 proof and the separate M2 verifier. This command avoids the broad driver/runtime
+integration suite and is suitable on both Linux and Windows before running the broader gate.
 
 `pnpm preflight` is the fast edit-loop gate. It stops on the first portable contract, formatting,
 M2 driver-security, workspace-check, frontend, or syntax failure. Driver tests run before the

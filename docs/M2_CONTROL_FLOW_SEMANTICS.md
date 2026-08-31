@@ -45,8 +45,8 @@ storage claims.
 Every reachable function path must return the declared exact type. Statements after a guaranteed
 return are rejected as unreachable. For return completeness, `while (true)` is still treated as
 potentially falling through: divergence is language behavior, not an implicit trap or proof of a
-return. Internal JavaScript and WebAssembly execution impose a bounded process deadline; public
-native and three-target containment remain later executable-profile responsibilities.
+return. Internal JavaScript, WebAssembly, and native execution impose bounded process deadlines;
+public three-target containment remains a later executable-profile responsibility.
 
 ## Diagnostics and limits
 
@@ -68,8 +68,9 @@ zero- and multiple-iteration loops, assignment carried through merges and backed
 shadow restoration, stable diagnostics, deterministic repeated lowering, exact Boolean conditions,
 missing returns, unreachable statements, and resource boundaries. These tests authenticate the
 internal compiler component only. The sealed JavaScript and WebAssembly evidence is documented
-separately. The [M2 native MIR profile](M2_NATIVE_MIR.md) now implements independent lowering and
-target-specific verification internally. Native object emission and execution,
-public three-target divergence containment, manifest v2, explicit public profile, and website
-support remain gated by Issues #54 through #57. The implemented internal JavaScript and WebAssembly
-hosts already retain their bounded deadlines.
+separately. The [M2 native MIR profile](M2_NATIVE_MIR.md) and
+[M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now implement independent lowering,
+target-specific verification, audited object emission, and bounded typed execution internally.
+Public three-target divergence containment, manifest v2, explicit public profile, and website
+support remain gated by Issues #55 through #57. All three implemented internal hosts retain bounded
+deadlines.
