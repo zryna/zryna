@@ -31,6 +31,8 @@ jobs:
           node-version: 22.22.1
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked
       - run: pnpm preflight
 
   rust:
