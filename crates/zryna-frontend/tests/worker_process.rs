@@ -14,8 +14,8 @@ use std::{
 
 use serde_json::{Value, json};
 use zryna_frontend::{
-    FrontendCapabilities, ProviderExpectation, WorkerFailure, WorkerFrontend, WorkerLimits,
-    WorkerSpec,
+    FrontendCapabilities, ProviderExpectation, ProviderExpectationV3, WorkerFailure,
+    WorkerFrontend, WorkerFrontendV3, WorkerLimits, WorkerLimitsV3, WorkerSpec, WorkerSpecV3,
 };
 use zryna_source::{SourceFileInput, SourceMap};
 
@@ -86,8 +86,64 @@ fn run_process_contract_tests() {
         .expect("worker must not inherit the caller environment");
     expect_failure("invalid-utf8", &[], WorkerFailure::InvalidResponse);
     assert_large_unread_request_times_out_and_cleans_up();
+    assert_protocol_v3_process_contract();
 
     println!("frontend worker process contract passed");
+}
+
+fn assert_protocol_v3_process_contract() {
+    let snapshot = run_v3("valid-v3").expect("exact v3 worker must succeed");
+    assert_eq!(snapshot.schema_version(), 3);
+    assert_eq!(snapshot.files().len(), 1);
+    assert_eq!(snapshot.files()[0].path().as_str(), "src/main.zry");
+
+    for (mode, expected) in [
+        ("v3-wrong-protocol", WorkerFailure::ProviderProtocol),
+        ("v3-wrong-control-capability", WorkerFailure::ProviderCapabilities),
+        ("v3-extra-capability", WorkerFailure::InvalidResponse),
+        ("v3-missing-capability", WorkerFailure::InvalidResponse),
+        ("v3-invalid-snapshot", WorkerFailure::SnapshotVerification),
+    ] {
+        let error = run_v3(mode).expect_err("malformed v3 worker must fail closed");
+        assert_eq!(error.failure(), expected, "unexpected v3 failure for {mode}");
+    }
+
+    assert!(
+        WorkerLimitsV3::new(
+            Duration::from_secs(2),
+            zryna_frontend::MAX_WORKER_STDOUT_BYTES_V3 + 1,
+            zryna_frontend::MAX_WORKER_STDERR_BYTES,
+        )
+        .is_err()
+    );
+}
+
+fn run_v3(
+    mode: &str,
+) -> Result<zryna_frontend::syntax_v3::ProjectSyntaxSnapshot, zryna_frontend::WorkerError> {
+    let executable = env::current_exe().expect("test executable path");
+    let current_dir = env::current_dir().expect("test working directory");
+    let expected =
+        ProviderExpectationV3::new("typescript-6", "6.0.3").expect("trusted v3 expectation");
+    let spec = WorkerSpecV3::new(
+        executable,
+        vec![OsString::from("--fake-worker"), OsString::from(mode)],
+        current_dir,
+        expected,
+        WorkerLimitsV3::new(
+            Duration::from_secs(2),
+            zryna_frontend::MAX_WORKER_STDOUT_BYTES_V3,
+            zryna_frontend::MAX_WORKER_STDERR_BYTES,
+        )
+        .expect("bounded v3 limits"),
+    )
+    .expect("absolute direct v3 command");
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "src/main.zry".to_owned(),
+        text: String::new(),
+    }])
+    .expect("bounded source map");
+    WorkerFrontendV3::new(spec).analyze_verified_v3(&sources)
 }
 
 fn expect_failure(mode: &str, arguments: &[&str], expected: WorkerFailure) {
@@ -289,6 +345,14 @@ fn fake_worker(arguments: &[OsString]) {
 
 fn write_handshake_for_mode(output: &mut impl Write, mode: &str) {
     match mode {
+        "valid-v3" | "v3-invalid-snapshot" => write_handshake_v3(output, 3, true, None),
+        "v3-wrong-protocol" => write_handshake_v3(output, 2, true, None),
+        "v3-wrong-control-capability" => write_handshake_v3(output, 3, false, None),
+        "v3-extra-capability" => write_handshake_v3(output, 3, true, Some(("extra", true))),
+        "v3-missing-capability" => write_line(
+            output,
+            r#"{"id":1,"result":{"provider":"typescript-6","provider_version":"6.0.3","protocol_version":3,"capabilities":{"module_resolution":false,"semantic_diagnostics":false}}}"#,
+        ),
         "malformed-handshake" => write_line(output, "{"),
         "duplicate-handshake" => write_line(
             output,
@@ -332,6 +396,10 @@ fn is_rejected_handshake_mode(mode: &str) -> bool {
             | "wrong-protocol"
             | "wrong-module-capability"
             | "wrong-semantic-capability"
+            | "v3-wrong-protocol"
+            | "v3-wrong-control-capability"
+            | "v3-extra-capability"
+            | "v3-missing-capability"
     )
 }
 
@@ -395,8 +463,30 @@ fn write_analysis_for_mode(
             })
         })
         .collect();
+    let is_v3 = mode.starts_with("v3-") || mode == "valid-v3";
+    if is_v3 {
+        assert_eq!(request["params"]["schema_version"], 3);
+    }
     let snapshot = if mode == "invalid-snapshot" {
         json!({"schema_version": 2, "files": [{"id": 0, "path": "wrong.zry", "functions": []}], "diagnostics": []})
+    } else if mode == "v3-invalid-snapshot" {
+        json!({"schema_version": 3, "files": [{"id": 0, "path": "wrong.zry", "imports": [], "functions": []}], "diagnostics": []})
+    } else if is_v3 {
+        let files = request["params"]["files"]
+            .as_array()
+            .expect("files array")
+            .iter()
+            .enumerate()
+            .map(|(index, file)| {
+                json!({
+                    "id": index,
+                    "path": file["path"],
+                    "imports": [],
+                    "functions": []
+                })
+            })
+            .collect::<Vec<_>>();
+        json!({"schema_version": 3, "files": files, "diagnostics": []})
     } else {
         json!({"schema_version": 2, "files": files, "diagnostics": []})
     };
@@ -472,6 +562,38 @@ fn write_handshake(
                     "module_resolution": module_resolution,
                     "semantic_diagnostics": semantic_diagnostics
                 }
+            }
+        })
+        .to_string(),
+    );
+}
+
+fn write_handshake_v3(
+    output: &mut impl Write,
+    protocol: u32,
+    control_flow_v1: bool,
+    extra: Option<(&str, bool)>,
+) {
+    let mut capabilities = json!({
+        "module_resolution": false,
+        "semantic_diagnostics": false,
+        "control_flow_v1": control_flow_v1
+    });
+    if let Some((name, value)) = extra {
+        capabilities
+            .as_object_mut()
+            .expect("capabilities object")
+            .insert(name.to_owned(), Value::Bool(value));
+    }
+    write_line(
+        output,
+        &json!({
+            "id": 1,
+            "result": {
+                "provider": "typescript-6",
+                "provider_version": "6.0.3",
+                "protocol_version": protocol,
+                "capabilities": capabilities
             }
         })
         .to_string(),

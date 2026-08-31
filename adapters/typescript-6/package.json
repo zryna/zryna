@@ -12,8 +12,10 @@
     "worker": "src/worker.mjs"
   },
   "scripts": {
-    "check": "node --check src/worker.mjs && node --check test/worker.test.mjs",
-    "test": "node --test test/worker.test.mjs"
+    "check": "node --check src/worker.mjs && node --check src/worker-v3.mjs && node --check test/worker.test.mjs && node --check test/worker-v3.test.mjs",
+    "test": "node --test test/worker.test.mjs test/worker-v3.test.mjs",
+    "test:v2": "node --test test/worker.test.mjs",
+    "test:v3": "node --test test/worker-v3.test.mjs"
   },
   "dependencies": {
     "@typescript/typescript6": "6.0.2"

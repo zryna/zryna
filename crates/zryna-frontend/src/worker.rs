@@ -18,7 +18,9 @@ use std::process::{Command, Stdio};
 use zryna_diagnostics::Diagnostic;
 use zryna_source::SourceMap;
 
-use crate::{AnalyzeRequest, FrontendCapabilities, ProviderInfo, SourceInput, syntax_v2};
+use crate::{
+    AnalyzeRequest, FrontendCapabilities, ProviderInfo, SourceInput, syntax_v2, syntax_v3,
+};
 
 const HANDSHAKE_ID: u32 = 1;
 const ANALYZE_ID: u32 = 2;
@@ -36,6 +38,9 @@ pub const MAX_WORKER_REQUEST_BYTES: usize = 72 * 1_024 * 1_024;
 /// Maximum aggregate bytes accepted on worker stdout.
 pub const MAX_WORKER_STDOUT_BYTES: usize =
     MAX_HANDSHAKE_RESPONSE_BYTES + syntax_v2::MAX_RESPONSE_BYTES + MAX_RESPONSE_LINES;
+/// Maximum aggregate bytes accepted on protocol-v3 worker stdout.
+pub const MAX_WORKER_STDOUT_BYTES_V3: usize =
+    MAX_HANDSHAKE_RESPONSE_BYTES + syntax_v3::MAX_RESPONSE_BYTES + MAX_RESPONSE_LINES;
 /// Maximum aggregate bytes accepted on worker stderr.
 pub const MAX_WORKER_STDERR_BYTES: usize = 64 * 1_024;
 /// Maximum wall-clock duration of one authenticated worker session.
@@ -102,6 +107,89 @@ impl ProviderExpectation {
     }
 }
 
+/// Exact protocol-v3 capabilities advertised by the syntax-only provider.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct FrontendCapabilitiesV3 {
+    /// Whether the provider resolves module specifiers; this must remain false.
+    pub module_resolution: bool,
+    /// Whether the provider supplies semantic diagnostics; this must remain false.
+    pub semantic_diagnostics: bool,
+    /// Whether the provider emits the frozen `ControlFlowV1` syntax inventory.
+    pub control_flow_v1: bool,
+}
+
+/// Version-witnessed protocol-v3 provider identity returned during handshake.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProviderInfoV3 {
+    /// Stable provider name.
+    pub provider: String,
+    /// Exact upstream provider version.
+    pub provider_version: String,
+    /// Zryna-owned protocol version, required to be exactly three.
+    pub protocol_version: u32,
+    /// Exact protocol-v3 capability set.
+    pub capabilities: FrontendCapabilitiesV3,
+}
+
+/// Exact trusted identity and capabilities required from a protocol-v3 frontend worker.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProviderExpectationV3 {
+    provider: String,
+    provider_version: String,
+    capabilities: FrontendCapabilitiesV3,
+}
+
+impl ProviderExpectationV3 {
+    /// Creates a bounded exact protocol-v3 provider expectation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration failure when an identity is empty or exceeds its fixed byte bound.
+    pub fn new(
+        provider: impl Into<String>,
+        provider_version: impl Into<String>,
+    ) -> Result<Self, WorkerError> {
+        let provider = provider.into();
+        let provider_version = provider_version.into();
+        if provider.is_empty()
+            || provider.len() > MAX_PROVIDER_ID_BYTES
+            || provider_version.is_empty()
+            || provider_version.len() > MAX_PROVIDER_VERSION_BYTES
+        {
+            return Err(WorkerError::new(WorkerFailure::Configuration));
+        }
+        Ok(Self {
+            provider,
+            provider_version,
+            capabilities: FrontendCapabilitiesV3 {
+                module_resolution: false,
+                semantic_diagnostics: false,
+                control_flow_v1: true,
+            },
+        })
+    }
+
+    /// Returns the required provider identifier.
+    #[must_use]
+    pub fn provider(&self) -> &str {
+        &self.provider
+    }
+
+    /// Returns the required provider runtime version.
+    #[must_use]
+    pub fn provider_version(&self) -> &str {
+        &self.provider_version
+    }
+
+    /// Returns the exact required capability set.
+    #[must_use]
+    pub const fn capabilities(&self) -> &FrontendCapabilitiesV3 {
+        &self.capabilities
+    }
+}
+
 /// Hard-bounded execution limits for one frontend worker session.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WorkerLimits {
@@ -157,6 +245,66 @@ impl Default for WorkerLimits {
         Self {
             timeout: MAX_WORKER_TIMEOUT,
             stdout_bytes: MAX_WORKER_STDOUT_BYTES,
+            stderr_bytes: MAX_WORKER_STDERR_BYTES,
+        }
+    }
+}
+
+/// Hard-bounded execution limits for one protocol-v3 frontend worker session.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct WorkerLimitsV3 {
+    timeout: Duration,
+    stdout_bytes: usize,
+    stderr_bytes: usize,
+}
+
+impl WorkerLimitsV3 {
+    /// Creates v3 limits that may tighten, but never exceed, compiler hard caps.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration failure for a zero value or a value above a hard cap.
+    pub fn new(
+        timeout: Duration,
+        stdout_bytes: usize,
+        stderr_bytes: usize,
+    ) -> Result<Self, WorkerError> {
+        if timeout < MIN_WORKER_TIMEOUT
+            || timeout > MAX_WORKER_TIMEOUT
+            || stdout_bytes == 0
+            || stdout_bytes > MAX_WORKER_STDOUT_BYTES_V3
+            || stderr_bytes == 0
+            || stderr_bytes > MAX_WORKER_STDERR_BYTES
+        {
+            return Err(WorkerError::new(WorkerFailure::Configuration));
+        }
+        Ok(Self { timeout, stdout_bytes, stderr_bytes })
+    }
+
+    /// Returns the whole-session deadline duration.
+    #[must_use]
+    pub const fn timeout(self) -> Duration {
+        self.timeout
+    }
+
+    /// Returns the aggregate stdout byte limit.
+    #[must_use]
+    pub const fn stdout_bytes(self) -> usize {
+        self.stdout_bytes
+    }
+
+    /// Returns the aggregate stderr byte limit.
+    #[must_use]
+    pub const fn stderr_bytes(self) -> usize {
+        self.stderr_bytes
+    }
+}
+
+impl Default for WorkerLimitsV3 {
+    fn default() -> Self {
+        Self {
+            timeout: MAX_WORKER_TIMEOUT,
+            stdout_bytes: MAX_WORKER_STDOUT_BYTES_V3,
             stderr_bytes: MAX_WORKER_STDERR_BYTES,
         }
     }
@@ -232,6 +380,81 @@ impl WorkerSpec {
     /// Returns the hard-bounded execution limits.
     #[must_use]
     pub const fn limits(&self) -> WorkerLimits {
+        self.limits
+    }
+}
+
+/// Direct, no-shell command specification for a protocol-v3 frontend worker.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct WorkerSpecV3 {
+    executable: PathBuf,
+    arguments: Vec<OsString>,
+    current_dir: PathBuf,
+    expected: ProviderExpectationV3,
+    limits: WorkerLimitsV3,
+}
+
+impl WorkerSpecV3 {
+    /// Creates an absolute direct-execution protocol-v3 worker specification.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration failure unless both executable and working directory are absolute,
+    /// or when the argument inventory exceeds a fixed hard bound.
+    pub fn new(
+        executable: impl Into<PathBuf>,
+        arguments: Vec<OsString>,
+        current_dir: impl Into<PathBuf>,
+        expected: ProviderExpectationV3,
+        limits: WorkerLimitsV3,
+    ) -> Result<Self, WorkerError> {
+        let executable = executable.into();
+        let current_dir = current_dir.into();
+        let argument_bytes = arguments.iter().try_fold(0_usize, |total, argument| {
+            total.checked_add(argument.as_encoded_bytes().len())
+        });
+        let is_script_wrapper =
+            executable.extension().and_then(OsStr::to_str).is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("cmd") || extension.eq_ignore_ascii_case("bat")
+            });
+        if !executable.is_absolute()
+            || !current_dir.is_absolute()
+            || is_script_wrapper
+            || arguments.len() > MAX_WORKER_ARGUMENTS
+            || argument_bytes.is_none_or(|bytes| bytes > MAX_WORKER_ARGUMENT_BYTES)
+        {
+            return Err(WorkerError::new(WorkerFailure::Configuration));
+        }
+        Ok(Self { executable, arguments, current_dir, expected, limits })
+    }
+
+    /// Returns the executable passed directly to the operating system.
+    #[must_use]
+    pub fn executable(&self) -> &Path {
+        &self.executable
+    }
+
+    /// Returns literal worker arguments without shell parsing.
+    #[must_use]
+    pub fn arguments(&self) -> &[OsString] {
+        &self.arguments
+    }
+
+    /// Returns the absolute worker directory.
+    #[must_use]
+    pub fn current_dir(&self) -> &Path {
+        &self.current_dir
+    }
+
+    /// Returns the exact trusted protocol-v3 provider expectation.
+    #[must_use]
+    pub const fn expected(&self) -> &ProviderExpectationV3 {
+        &self.expected
+    }
+
+    /// Returns the hard-bounded execution limits.
+    #[must_use]
+    pub const fn limits(&self) -> WorkerLimitsV3 {
         self.limits
     }
 }
@@ -357,6 +580,126 @@ impl VerifiedFrontendProvider for WorkerFrontend {
         sources: &SourceMap,
     ) -> Result<syntax_v2::ProjectSyntaxSnapshot, WorkerError> {
         Self::analyze_verified(self, sources)
+    }
+}
+
+/// A configured protocol-v3 worker that returns source-map-verified syntax only.
+#[derive(Clone, Debug)]
+pub struct WorkerFrontendV3 {
+    spec: WorkerSpecV3,
+}
+
+/// Provider abstraction whose only output is source-map-verified protocol-v3 syntax.
+pub trait VerifiedFrontendProviderV3: Send + Sync {
+    /// Authenticates the exact v3 provider and analyzes the authoritative source map.
+    ///
+    /// # Errors
+    ///
+    /// Returns a fail-closed worker error before untrusted syntax reaches a compiler consumer.
+    fn analyze_verified_v3(
+        &self,
+        sources: &SourceMap,
+    ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError>;
+}
+
+impl WorkerFrontendV3 {
+    /// Creates a protocol-v3 worker frontend from a validated command specification.
+    #[must_use]
+    pub const fn new(spec: WorkerSpecV3) -> Self {
+        Self { spec }
+    }
+
+    /// Returns the protocol-v3 worker command specification.
+    #[must_use]
+    pub const fn spec(&self) -> &WorkerSpecV3 {
+        &self.spec
+    }
+
+    /// Authenticates one fresh exact-v3 worker, analyzes the source map, and verifies its reply.
+    ///
+    /// The schema-three analysis request is not written until provider identity, runtime version,
+    /// protocol version, and all three capabilities match the trusted expectation exactly.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable fail-closed worker failure for configuration, process, framing, identity,
+    /// budget, provider, decoding, or protocol-v3 syntax-verification errors.
+    pub fn analyze_verified_v3(
+        &self,
+        sources: &SourceMap,
+    ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
+        let analyze_request = build_analyze_request_v3(sources)?;
+        let handshake_bytes =
+            serialize_request(&HandshakeRequest { id: HANDSHAKE_ID, method: "handshake" })?;
+        let analyze_bytes = serialize_request(&AnalyzeWireRequest {
+            id: ANALYZE_ID,
+            method: "analyze",
+            params: &analyze_request,
+        })?;
+
+        let spawned = spawn_worker(&self.spec)?;
+        let deadline = Instant::now()
+            .checked_add(self.spec.limits.timeout)
+            .ok_or_else(|| WorkerError::new(WorkerFailure::Configuration))?;
+        let operation_deadline = deadline
+            .checked_sub(cleanup_reserve(self.spec.limits.timeout))
+            .ok_or_else(|| WorkerError::new(WorkerFailure::Configuration))?;
+        let mut process = ChildGuard::new(spawned.process, spawned.stdin);
+        let (sender, receiver) = mpsc::sync_channel(8);
+        process.tasks.push(spawn_stdout_reader(
+            spawned.stdout,
+            sender.clone(),
+            self.spec.limits.stdout_bytes,
+        ));
+        process.tasks.push(spawn_stderr_reader(
+            spawned.stderr,
+            sender.clone(),
+            self.spec.limits.stderr_bytes,
+        ));
+        let mut stream_state = StreamState::default();
+
+        let operation = (|| {
+            process.write_request(&handshake_bytes)?;
+            let handshake_line = receive_response_line(
+                &receiver,
+                &mut stream_state,
+                operation_deadline,
+                MAX_HANDSHAKE_RESPONSE_BYTES,
+            )?;
+            let handshake: ProviderInfoV3 = parse_response(&handshake_line, HANDSHAKE_ID)?;
+            verify_handshake_v3(&handshake, &self.spec.expected)?;
+
+            process.write_request_async(analyze_bytes, sender.clone())?;
+            let snapshot_line = receive_response_line(
+                &receiver,
+                &mut stream_state,
+                operation_deadline,
+                syntax_v3::MAX_RESPONSE_BYTES,
+            )?;
+            let decoded: syntax_v3::RawProjectSyntaxSnapshot =
+                parse_response(&snapshot_line, ANALYZE_ID)?;
+            let canonical = serde_json::to_vec(&decoded)
+                .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
+            let raw = syntax_v3::decode_snapshot(&canonical)
+                .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
+            let status =
+                finish_process(&mut process, &receiver, &mut stream_state, operation_deadline)?;
+            if !status.success() {
+                return Err(WorkerError::new(WorkerFailure::ProcessExit));
+            }
+            syntax_v3::verify_snapshot(raw, sources).map_err(WorkerError::snapshot_verification)
+        })();
+
+        finalize_process(&mut process, &receiver, &mut stream_state, sender, deadline, operation)
+    }
+}
+
+impl VerifiedFrontendProviderV3 for WorkerFrontendV3 {
+    fn analyze_verified_v3(
+        &self,
+        sources: &SourceMap,
+    ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
+        Self::analyze_verified_v3(self, sources)
     }
 }
 
@@ -584,6 +927,12 @@ fn build_analyze_request(sources: &SourceMap) -> Result<AnalyzeRequest, WorkerEr
     Ok(AnalyzeRequest { schema_version: syntax_v2::PROTOCOL_VERSION, files })
 }
 
+fn build_analyze_request_v3(sources: &SourceMap) -> Result<AnalyzeRequest, WorkerError> {
+    let mut request = build_analyze_request(sources)?;
+    request.schema_version = syntax_v3::PROTOCOL_VERSION;
+    Ok(request)
+}
+
 fn parse_response<T: DeserializeOwned>(bytes: &[u8], expected_id: u32) -> Result<T, WorkerError> {
     let response: RpcResponse<T> = serde_json::from_slice(bytes)
         .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
@@ -620,6 +969,25 @@ fn verify_handshake(
     Ok(())
 }
 
+fn verify_handshake_v3(
+    actual: &ProviderInfoV3,
+    expected: &ProviderExpectationV3,
+) -> Result<(), WorkerError> {
+    if actual.provider != expected.provider {
+        return Err(WorkerError::new(WorkerFailure::ProviderIdentity));
+    }
+    if actual.provider_version != expected.provider_version {
+        return Err(WorkerError::new(WorkerFailure::ProviderVersion));
+    }
+    if actual.protocol_version != syntax_v3::PROTOCOL_VERSION {
+        return Err(WorkerError::new(WorkerFailure::ProviderProtocol));
+    }
+    if actual.capabilities != expected.capabilities {
+        return Err(WorkerError::new(WorkerFailure::ProviderCapabilities));
+    }
+    Ok(())
+}
+
 fn cleanup_reserve(timeout: Duration) -> Duration {
     (timeout / 2).min(MAX_CLEANUP_RESERVE)
 }
@@ -638,6 +1006,40 @@ trait ManagedProcess: Send {
     fn start_kill(&mut self) -> std::io::Result<()>;
     fn try_wait(&mut self) -> std::io::Result<Option<ExitStatus>>;
     fn cleanup_confirmed(&self) -> std::io::Result<bool>;
+}
+
+trait SpawnSpec {
+    fn executable(&self) -> &Path;
+    fn arguments(&self) -> &[OsString];
+    fn current_dir(&self) -> &Path;
+}
+
+impl SpawnSpec for WorkerSpec {
+    fn executable(&self) -> &Path {
+        &self.executable
+    }
+
+    fn arguments(&self) -> &[OsString] {
+        &self.arguments
+    }
+
+    fn current_dir(&self) -> &Path {
+        &self.current_dir
+    }
+}
+
+impl SpawnSpec for WorkerSpecV3 {
+    fn executable(&self) -> &Path {
+        &self.executable
+    }
+
+    fn arguments(&self) -> &[OsString] {
+        &self.arguments
+    }
+
+    fn current_dir(&self) -> &Path {
+        &self.current_dir
+    }
 }
 
 #[cfg(unix)]
@@ -669,11 +1071,11 @@ impl ManagedProcess for UnixProcess {
 }
 
 #[cfg(unix)]
-fn spawn_worker(spec: &WorkerSpec) -> Result<SpawnedWorker, WorkerError> {
-    let mut native_command = Command::new(&spec.executable);
+fn spawn_worker(spec: &impl SpawnSpec) -> Result<SpawnedWorker, WorkerError> {
+    let mut native_command = Command::new(spec.executable());
     native_command
-        .args(&spec.arguments)
-        .current_dir(&spec.current_dir)
+        .args(spec.arguments())
+        .current_dir(spec.current_dir())
         .env_clear()
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -725,16 +1127,16 @@ impl ManagedProcess for WindowsProcess {
 }
 
 #[cfg(windows)]
-fn spawn_worker(spec: &WorkerSpec) -> Result<SpawnedWorker, WorkerError> {
+fn spawn_worker(spec: &impl SpawnSpec) -> Result<SpawnedWorker, WorkerError> {
     use windows_spawn::{Command, Job, SpawnOptions, Stdio};
 
     let job = Job::create().map_err(|_| WorkerError::new(WorkerFailure::Spawn))?;
     job.set_kill_on_close(true).map_err(|_| WorkerError::new(WorkerFailure::Spawn))?;
 
-    let mut command = Command::new(&spec.executable);
+    let mut command = Command::new(spec.executable());
     command
-        .args(&spec.arguments)
-        .current_dir(&spec.current_dir)
+        .args(spec.arguments())
+        .current_dir(spec.current_dir())
         .env_clear()
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

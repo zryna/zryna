@@ -14,13 +14,18 @@ use zryna_source::{
 mod worker;
 
 pub use worker::{
-    MAX_HANDSHAKE_RESPONSE_BYTES, MAX_WORKER_REQUEST_BYTES, MAX_WORKER_STDERR_BYTES,
-    MAX_WORKER_STDOUT_BYTES, MAX_WORKER_TIMEOUT, MIN_WORKER_TIMEOUT, ProviderExpectation,
-    VerifiedFrontendProvider, WorkerError, WorkerFailure, WorkerFrontend, WorkerLimits, WorkerSpec,
+    FrontendCapabilitiesV3, MAX_HANDSHAKE_RESPONSE_BYTES, MAX_WORKER_REQUEST_BYTES,
+    MAX_WORKER_STDERR_BYTES, MAX_WORKER_STDOUT_BYTES, MAX_WORKER_STDOUT_BYTES_V3,
+    MAX_WORKER_TIMEOUT, MIN_WORKER_TIMEOUT, ProviderExpectation, ProviderExpectationV3,
+    ProviderInfoV3, VerifiedFrontendProvider, VerifiedFrontendProviderV3, WorkerError,
+    WorkerFailure, WorkerFrontend, WorkerFrontendV3, WorkerLimits, WorkerLimitsV3, WorkerSpec,
+    WorkerSpecV3,
 };
 
 /// Provider-neutral executable syntax contract spoken by protocol-v2 providers.
 pub use zryna_syntax::v2 as syntax_v2;
+/// Provider-neutral M2 syntax contract spoken only by exact protocol-v3 providers.
+pub use zryna_syntax::v3 as syntax_v3;
 
 /// Current wire contract understood by the compiler.
 pub const FRONTEND_PROTOCOL_VERSION: u32 = 1;

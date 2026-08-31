@@ -54,3 +54,29 @@ Stable adapter errors use `ZRYNA-F1001` for malformed requests, `ZRYNA-F1002` fo
 budgets, `ZRYNA-F1003` for provider invariants, `ZRYNA-F2002` for unsupported syntax, and
 `ZRYNA-F2003` for diagnostic truncation. TypeScript syntactic diagnostics retain their pinned
 `TS` number and a source location.
+
+## Protocol v3 worker
+
+Protocol v2 remains frozen at `src/worker.mjs`. The separate `src/worker-v3.mjs` entrypoint
+implements the provider-neutral protocol-v3 syntax boundary for the specified `ControlFlowV1`
+profile. Its exact handshake adds `control_flow_v1: true` while retaining
+`module_resolution: false` and `semantic_diagnostics: false`.
+The package's `zryna` registration intentionally remains the immutable protocol-v2 registration;
+Issue #46 exposes v3 only as this explicit, not-yet-driver-registered worker path.
+
+The v3 worker reports source-faithful named imports, exported or internal functions, explicitly
+typed `const` and `let` declarations, assignment, return, lexical blocks, `if`/`else`, `while`,
+direct identifier calls, scalar literals, references, negation, and the profile's exact binary
+operators. It preserves keyword, punctuation, operator, identifier, type, and module-specifier
+spans as half-open UTF-8 byte ranges. Blocks and statements use canonical preorder/source order;
+expressions use evaluation-order postorder.
+
+The provider does not resolve imports, names, calls, or types. Module specifiers remain normalized
+source values with their token/value spans and contain no resolved path or compiler symbol
+identity. Recognized syntax outside the v3 contract, including a TypeScript parse-recovery tree,
+fails the complete analysis request with `ZRYNA-F2002`; the worker never returns a reduced
+snapshot containing only the supported siblings.
+
+Run `pnpm test:v2` to verify the immutable v2 adapter, `pnpm test:v3` for the new boundary, or
+`pnpm test` for both. The v3 request/response limits are 72 MiB/64 MiB and its aggregate source
+limit is 8 MiB; finer syntax limits match the `ControlFlowV1` contract.

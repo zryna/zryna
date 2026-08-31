@@ -4,3 +4,4 @@
 
 /// Executable provider-neutral syntax protocol version 2.
 pub mod v2;
+pub mod v3;
