@@ -175,7 +175,8 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
   assert.match(status, /does not yet claim independently checked[\s\S]*three-target equivalence/);
   assert.match(moduleClosure, /exactly one final full-map protocol-v3 snapshot/);
   assert.match(moduleClosure, /ZRYNA-M2-GRAPH\\0/);
-  assert.match(moduleClosure, /UNC, verbatim, device, and drive-relative roots/);
+  assert.match(moduleClosure, /canonical verbatim form of that same local disk root is also accepted/);
+  assert.match(moduleClosure, /UNC, device, drive-relative, and all other verbatim namespaces/);
   assert.match(moduleClosure, /selected only by explicit[\s\S]*`--profile control-flow-v1`/);
   assert.match(moduleClosure, /M2 Linux x86-64 native backend/);
   assert.doesNotMatch(moduleClosure, /Native, manifest v2,[\s\S]*remain gated/);

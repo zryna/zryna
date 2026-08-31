@@ -61,9 +61,10 @@ There is no implicit extension, implicit `index.zry`, package or bare resolution
 import.
 
 On Unix, root capture starts at a retained `/` capability. On Windows, it starts at a retained
-local drive root such as `C:\`. Every named component is opened handle-relative without following
-links; every Windows reparse attribute is rejected. UNC, verbatim, device, and drive-relative roots
-are unsupported and fail closed. Directory names are enumerated with a fixed bound to enforce
+local drive root; the canonical verbatim form of that same local disk root is also accepted. Every
+named component is opened handle-relative without following links, and every Windows reparse
+attribute is rejected. UNC, device, drive-relative, and all other verbatim namespaces are
+unsupported and fail closed. Directory names are enumerated with a fixed bound to enforce
 exact ASCII spelling and portable case-collision rejection. Non-ASCII directory entries still
 consume that bound but cannot satisfy a requested portable source component.
 
