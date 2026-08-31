@@ -1,7 +1,7 @@
 # M1 three-target conformance
 
-Status: implemented for the checked `I32V1` slice. M1 remains open until the compiler-owned status
-bundle and zryna.com synchronization in Issue #21 are verified.
+Status: implemented for the checked `I32V1` slice. M1 closure evidence includes the authenticated
+compiler-owned status bundle and verified zryna.com synchronization tracked in Issue #21.
 
 The versioned [`m1-conformance-v1.json`](../tests/m1-conformance-v1.json) registry freezes one
 source entrypoint, one logical export, canonical target order, exact typed arguments, and exact
