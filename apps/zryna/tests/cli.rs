@@ -11,7 +11,7 @@ use std::{
 };
 
 #[cfg(unix)]
-use std::process::Stdio;
+use std::process::{Child, Stdio};
 
 use serde_json::{Value, json};
 use zryna_abi::{RawHostScalar, ScalarTarget, ScalarType, ScalarValue, normalize_result};
@@ -179,6 +179,129 @@ fn compile_test_node(case: &WorkspaceCase, label: &str, target_body: &str) -> Pa
         .expect("runtime wrapper compiler must start");
     assert_success(&compile);
     wrapper
+}
+
+#[cfg(unix)]
+struct TestChildGuard {
+    child: Option<Child>,
+    release: PathBuf,
+    owned_paths: Vec<PathBuf>,
+}
+
+#[cfg(unix)]
+impl TestChildGuard {
+    fn new(child: Child, release: PathBuf) -> Self {
+        Self { child: Some(child), release, owned_paths: Vec::new() }
+    }
+
+    fn id(&self) -> u32 {
+        self.child.as_ref().expect("test child must still be owned").id()
+    }
+
+    fn own_path(&mut self, path: PathBuf) {
+        self.owned_paths.push(path);
+    }
+
+    fn has_exited(&mut self) -> bool {
+        self.child
+            .as_mut()
+            .expect("test child must still be owned")
+            .try_wait()
+            .expect("cleanup-failure child status must be readable")
+            .is_some()
+    }
+
+    fn release(&self) {
+        match fs::create_dir(&self.release) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                assert!(
+                    self.release.is_dir(),
+                    "existing release marker must be a test-owned directory"
+                );
+            }
+            Err(error) => panic!("release marker must be created: {error}"),
+        }
+    }
+
+    fn release_best_effort(&self) {
+        let _ = fs::create_dir(&self.release);
+    }
+
+    fn wait_with_output(&mut self) -> Output {
+        self.release();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(12);
+        loop {
+            match self.child.as_mut().expect("test child must still be owned").try_wait() {
+                Ok(Some(_)) => break,
+                Ok(None) if std::time::Instant::now() < deadline => {
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                }
+                Ok(None) => panic!("cleanup-failure command exceeded the test deadline"),
+                Err(error) => panic!("cleanup-failure child status must be readable: {error}"),
+            }
+        }
+        self.child
+            .take()
+            .expect("test child must still be owned")
+            .wait_with_output()
+            .expect("cleanup-failure command must finish")
+    }
+}
+
+#[cfg(unix)]
+impl Drop for TestChildGuard {
+    fn drop(&mut self) {
+        self.release_best_effort();
+        if let Some(mut child) = self.child.take() {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+            loop {
+                match child.try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) if std::time::Instant::now() < deadline => {
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                    }
+                    Ok(None) | Err(_) => {
+                        let _ = child.kill();
+                        let _ = child.wait();
+                        break;
+                    }
+                }
+            }
+        }
+        for path in self.owned_paths.iter().rev() {
+            let _ = fs::remove_dir_all(path);
+        }
+        let _ = fs::remove_dir(&self.release);
+    }
+}
+
+#[cfg(unix)]
+fn wait_for_test_marker(path: &Path, child: &mut TestChildGuard) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    loop {
+        match fs::metadata(path) {
+            Ok(metadata) => {
+                assert!(metadata.is_dir(), "runtime marker must be a test-owned directory");
+                return;
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => panic!("runtime marker must be readable: {error}"),
+        }
+        if child.has_exited() {
+            let output = child.wait_with_output();
+            panic!(
+                "cleanup-failure command exited before runtime readiness\nstdout: {}\nstderr: {}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "runtime marker did not appear before the test deadline"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
 }
 
 fn assert_success(output: &Output) {
@@ -1047,12 +1170,33 @@ fn target_execution_failure_removes_the_private_transaction() {
 fn unconfirmed_transaction_cleanup_uses_exit_six_and_no_bundle() {
     let mut case = WorkspaceCase::new();
     let stem = case.stem("cleanup_failure", "run");
-    let wrapper = compile_test_node(
-        &case,
-        "timeout",
-        "std::thread::sleep(std::time::Duration::from_secs(30));",
+    let marker_root = case.root.join(".zryna/cache").join(&case.unique);
+    let token = format!("{}-cleanup-handshake", case.unique);
+    let ready = marker_root.join(format!("{token}-ready"));
+    let release = marker_root.join(format!("{token}-release"));
+    let ready_literal = serde_json::to_string(ready.to_string_lossy().as_ref())
+        .expect("ready path must serialize as a source literal");
+    let release_literal = serde_json::to_string(release.to_string_lossy().as_ref())
+        .expect("release path must serialize as a source literal");
+    let wrapper_body = format!(
+        r#"std::fs::create_dir({ready_literal}).expect("ready marker must be atomically published once");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    loop {{
+        match std::fs::metadata({release_literal}) {{
+            Ok(metadata) if metadata.is_dir() => break,
+            Ok(_) => std::process::exit(73),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {{}},
+            Err(_) => std::process::exit(74),
+        }}
+        if std::time::Instant::now() >= deadline {{
+            std::process::exit(75);
+        }}
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }}
+    print!("bad");"#,
     );
-    let mut child = zryna()
+    let wrapper = compile_test_node(&case, "cleanup-handshake", &wrapper_body);
+    let child = zryna()
         .args([
             "run",
             &case.source_relative,
@@ -1073,31 +1217,28 @@ fn unconfirmed_transaction_cleanup_uses_exit_six_and_no_bundle() {
         .stderr(Stdio::piped())
         .spawn()
         .expect("cleanup-failure command must start");
+    let mut child = TestChildGuard::new(child, release);
     let transaction_prefix = format!(".zryna-transaction-{}-", child.id());
     let output_root = case.root.join(".zryna/out");
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    let stage = loop {
-        let found = fs::read_dir(&output_root)
-            .ok()
-            .into_iter()
-            .flatten()
-            .filter_map(Result::ok)
-            .find(|entry| entry.file_name().to_string_lossy().starts_with(&transaction_prefix))
-            .map(|entry| entry.path());
-        if let Some(stage) = found {
-            break stage;
-        }
-        if std::time::Instant::now() >= deadline {
-            let _ = child.kill();
-            panic!("private transaction did not appear before the test deadline");
-        }
-        std::thread::sleep(std::time::Duration::from_millis(10));
-    };
+    wait_for_test_marker(&ready, &mut child);
+    let entries = fs::read_dir(&output_root)
+        .expect("output root must be readable after runtime readiness")
+        .collect::<Result<Vec<_>, _>>()
+        .expect("every output-root entry must be readable");
+    let stages = entries
+        .into_iter()
+        .filter(|entry| entry.file_name().to_string_lossy().starts_with(&transaction_prefix))
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    assert_eq!(stages.len(), 1, "runtime readiness must expose one private transaction");
+    let stage = stages.into_iter().next().expect("one transaction was counted");
     let displaced = output_root.join(format!("{}.displaced", case.unique));
+    child.own_path(stage.clone());
+    child.own_path(displaced.clone());
     fs::rename(&stage, &displaced).expect("transaction stage must be displaced");
     fs::create_dir(&stage).expect("replacement transaction directory must be installed");
 
-    let output = child.wait_with_output().expect("cleanup-failure command must finish");
+    let output = child.wait_with_output();
     assert_eq!(
         output.status.code(),
         Some(6),
@@ -1107,9 +1248,19 @@ fn unconfirmed_transaction_cleanup_uses_exit_six_and_no_bundle() {
     );
     assert!(output.stdout.is_empty());
     assert!(!case.bundle(&stem, "run").exists());
+    assert!(stage.is_dir(), "replacement transaction must remain for test-owned cleanup");
+    assert!(displaced.is_dir(), "displaced transaction must remain for test-owned cleanup");
 
     fs::remove_dir(&stage).expect("replacement transaction directory must be removed");
     fs::remove_dir_all(&displaced).expect("displaced transaction must be removed");
+    let final_entries = fs::read_dir(&output_root)
+        .expect("output root must remain readable")
+        .collect::<Result<Vec<_>, _>>()
+        .expect("every final output-root entry must be readable");
+    let leaked = final_entries
+        .into_iter()
+        .any(|entry| entry.file_name().to_string_lossy().starts_with(&transaction_prefix));
+    assert!(!leaked, "cleanup-failure test must leave no private transaction");
 }
 
 #[cfg(windows)]
