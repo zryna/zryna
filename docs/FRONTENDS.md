@@ -103,10 +103,29 @@ bounded cleanup protocol before returning.
 
 ## Migration to a native Zryna frontend
 
-The permanent path is:
+The permanent provider-neutral path is:
 
 ```text
-native Zryna lexer → parser → raw protocol-v2 snapshot → Zryna verifier
+native Zryna lexer → parser → versioned raw syntax snapshot → matching Zryna verifier
 ```
 
-Because all later phases depend on the ZRYNA-owned verified syntax and IR, replacing the bootstrap provider must not modify semantic behavior or either backend.
+Protocol v2 is the implemented M1 instance of this path; planned protocol v3 is the separate M2
+instance. Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the
+bootstrap provider must not modify semantic behavior or any backend.
+
+## Planned protocol v3 module discovery
+
+M2 protocol v3 will add source-faithful DTOs for named imports, locals, assignment, direct calls,
+exact operators, blocks, `if`, and `while`. It is a new exact protocol; protocol v2 is not modified
+or implicitly upgraded. The TypeScript 6 provider will continue to advertise
+`module_resolution: false`: it reports import specifiers and spans but never reads a dependency,
+chooses a resolved path, or supplies a compiler symbol identity.
+
+The driver owns protocol v3 module discovery. Starting from one validated entrypoint, it analyzes
+only each newly discovered bounded batch, resolves verified explicit relative `.zry` imports, and
+safely reads unresolved files through a retained workspace-root capability. After closure it builds
+the immutable source map once and requests one final complete snapshot; only that final-map-bound
+snapshot may enter semantics. Exact path, graph, fixed-point, race, cycle, and resource rules are
+specified in
+[scalar control flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md). This behavior is
+planned under Issues #46 and #47 and is not available in the current provider or CLI.
