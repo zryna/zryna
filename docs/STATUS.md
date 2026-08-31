@@ -23,14 +23,20 @@ profile is intentionally narrow.
   rejection, Boolean scalar-carrier normalization, and repository portability. Windows native and
   `all` execution fail closed with `ZRYNA-N4002` and publish no bundle.
 
-## Implemented M2 compiler component
+## Implemented M2 compiler components
 
+- The separate `zryna-syntax::v3` boundary defines exact provider-neutral DTOs for M2 syntax,
+  verifies every graph, budget, spelling, and nested span against one authoritative source map,
+  and exposes only opaque verified views. The pinned TypeScript 6 protocol-v3 worker and typed
+  frontend transport provide the matching syntax-only implementation while retaining immutable
+  protocol-v2 behavior.
 - The isolated `zryna-ir::control_flow_v1` component verifies the frozen raw `ControlFlowV1`
   program model into opaque, source-map-bound views with bounded scalar operations, direct calls,
   explicit control-flow edges, dominance, reducibility, call-graph, ABI, and resource checks.
-- This is an internal compiler boundary only. No syntax provider or semantic lowering produces it,
-  no backend accepts it, and no CLI command or manifest exposes it. The executable M2 profile and
-  every dependent M2 issue therefore remain unsupported.
+- These are internal compiler boundaries only. The driver still selects protocol v2, no
+  compiler-owned module closure or semantic lowering produces `ControlFlowV1`, no backend accepts
+  that profile, and no CLI command or manifest exposes it. The executable M2 profile and every
+  dependent M2 issue therefore remain unsupported.
 
 ## Runtime and toolchain boundary
 
