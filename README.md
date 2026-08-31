@@ -129,8 +129,13 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm preflight
 pnpm m0:check
 ```
+
+`pnpm preflight` is the fast edit-loop gate. It stops on the first portable contract, formatting,
+workspace-check, frontend, or syntax failure. The complete `pnpm m0:check` command remains the
+cross-platform merge authority.
 
 The canonical command validates and executes every registered Rust, protocol, and adapter proof
 suite without a skip-architecture mode. See [M0 conformance](docs/M0_CONFORMANCE.md) for the exact
