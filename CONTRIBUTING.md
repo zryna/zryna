@@ -14,8 +14,14 @@ Run every required check before submitting a change:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm preflight
 pnpm m0:check
 ```
+
+Run `pnpm preflight` during the edit loop. It stops at the first portable contract, formatting,
+workspace-check, frontend, or syntax failure and normally reuses warm local build state. It is a
+fast diagnostic gate, not a substitute for the complete Linux and Windows `pnpm m0:check` proof
+required before merge.
 
 The canonical M0 gate includes locked Rust dependency fetching, architecture validation,
 formatting, strict Clippy, workspace tests and doc-tests, warning-free rustdoc, adapter and protocol

@@ -19,8 +19,17 @@ Run it from a dependency-installed checkout with Rust 1.97.1, Node.js 22.22.1, a
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm preflight
 pnpm m0:check
 ```
+
+Use `pnpm preflight` during the edit loop. Its fixed order runs portable documentation, protocol,
+adapter, formatting, workspace-check, frontend, and syntax checks and stops immediately at the
+first failure. GitHub runs the same command before starting either full platform matrix, so a
+preflight failure skips the expensive Linux and Windows jobs. This short gate does not claim full
+conformance: `pnpm m0:check` on both supported operating systems and the final `m0` aggregate are
+still mandatory before merge. Warm-run timings are observational only and are never pass/fail
+criteria.
 
 For fast triage of JavaScript build/run behavior, run the focused CLI test:
 
@@ -55,7 +64,7 @@ semantics or validation decisions into the runner.
 | Shared protocol-v2 and protocol-v3 schemas and fixtures | root `tests/fixtures` | version-specific protocol checks and tests |
 
 The gate also requires locked dependency fetching, formatting, strict Clippy, warning-free rustdoc,
-and registry self-tests. GitHub runs the same complete gate in the required
+and registry self-tests. GitHub first requires the portable preflight, then runs the same complete gate in the required
 `rust (ubuntu-latest)` and `rust (windows-latest)` checks. The existing adapter matrix remains an
 additional platform proof, and the stable `m0` aggregate is itself a required `main` check. Pull
 requests must be current with `main`; force pushes and branch deletion are disabled,

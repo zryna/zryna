@@ -14,6 +14,9 @@ importers:
       ajv:
         specifier: 8.17.1
         version: 8.17.1
+      yaml:
+        specifier: 2.8.1
+        version: 2.8.1
 
   adapters/typescript-6:
     dependencies:
@@ -48,6 +51,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  yaml@2.8.1:
+    resolution: {integrity: sha512-lcYcMxX2PO9XMGvAJkJ3OsNMw+/7FKes7/hgerGUYWIoWu5j/+YQqcZr5JnPZWzOsEBgMbSbiSTn/dv/69Mkpw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
 snapshots:
 
   '@typescript/typescript6@6.0.2':
@@ -70,3 +78,5 @@ snapshots:
   require-from-string@2.0.2: {}
 
   typescript@6.0.3: {}
+
+  yaml@2.8.1: {}

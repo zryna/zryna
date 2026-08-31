@@ -9,6 +9,7 @@ const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = resolve(WORKSPACE_ROOT, 'tests', 'm0-conformance-v1.json');
 const PACKAGE_PATH = resolve(WORKSPACE_ROOT, 'package.json');
 const MAX_MANIFEST_BYTES = 64 * 1024;
+const CANONICAL_PREFLIGHT_ALIAS = 'node scripts/run-preflight.mjs';
 const CANONICAL_PACKAGE_ALIAS = 'node scripts/run-m0-conformance.mjs';
 const CANONICAL_PROTOCOL_CHECK =
   'node --check tests/syntax-protocol-v2.test.mjs && node --check tests/syntax-protocol-v3.test.mjs';
@@ -251,6 +252,9 @@ export function validateManifestDocument(manifest, fixturePaths = actualFixtureP
 export function validatePackageDocument(packageDocument) {
   if (!packageDocument || typeof packageDocument !== 'object' || Array.isArray(packageDocument)) {
     fail('package.json root must be an object');
+  }
+  if (packageDocument.scripts?.preflight !== CANONICAL_PREFLIGHT_ALIAS) {
+    fail(`package.json preflight must be exactly ${CANONICAL_PREFLIGHT_ALIAS}`);
   }
   if (packageDocument.scripts?.['m0:check'] !== CANONICAL_PACKAGE_ALIAS) {
     fail(`package.json m0:check must be exactly ${CANONICAL_PACKAGE_ALIAS}`);

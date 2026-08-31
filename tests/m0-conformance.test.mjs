@@ -132,6 +132,9 @@ test('M0 registry rejects unknown root fields', () => {
 test('documented package alias is bound to the canonical runner', async () => {
   const packageDocument = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   assert.doesNotThrow(() => validatePackageDocument(packageDocument));
+  const changedPreflight = structuredClone(packageDocument);
+  changedPreflight.scripts.preflight = 'node --version';
+  assert.throws(() => validatePackageDocument(changedPreflight), /preflight must be exactly/);
   packageDocument.scripts['m0:check'] = 'node --version';
   assert.throws(() => validatePackageDocument(packageDocument), /m0:check must be exactly/);
 });
@@ -150,10 +153,12 @@ test('required CI consumes the same canonical gate on Linux and Windows', async 
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const rust = workflowJob(workflow, 'rust');
   const adapterPlatform = workflowJob(workflow, 'adapter-platform');
+  assert.match(rust, /needs: preflight/);
   assert.match(rust, /name: rust \(\$\{\{ matrix\.os \}\}\)/);
   assert.match(rust, /os: \[ubuntu-latest, windows-latest\]/);
   assert.match(rust, /run: node scripts\/run-m0-conformance\.mjs/);
   assert.match(adapterPlatform, /os: \[ubuntu-latest, windows-latest\]/);
+  assert.match(adapterPlatform, /needs: preflight/);
   assert.match(adapterPlatform, /run: pnpm protocol:check/);
   assert.match(adapterPlatform, /run: pnpm protocol:test/);
 });
@@ -198,7 +203,8 @@ test('required CI exposes a stable aggregate over Rust and adapter gates', async
   assert.match(adapter, /name: adapter/);
   assert.match(aggregate, /name: m0/);
   assert.match(aggregate, /if: always\(\)/);
-  assert.match(aggregate, /needs: \[rust, adapter\]/);
+  assert.match(aggregate, /needs: \[preflight, rust, adapter\]/);
+  assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /RUST_RESULT: \$\{\{ needs\.rust\.result \}\}/);
   assert.match(aggregate, /ADAPTER_RESULT: \$\{\{ needs\.adapter\.result \}\}/);
 });
