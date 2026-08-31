@@ -148,5 +148,5 @@ currently contains 31 unit tests and 5 compile-fail doctests.
 The separate [M2 native backend](M2_NATIVE_BACKEND.md) now provides audited Linux x86-64 object
 emission, Boolean wrappers, internal calls, and typed link/run evidence. The explicit profile and
 [manifest v2](M2_MANIFEST_V2.md) and the independent
-[three-target conformance gate](M2_CONFORMANCE.md) are implemented; authenticated public
-documentation, website, and live-deployment closure remain Issue #57.
+[three-target conformance gate](M2_CONFORMANCE.md) are implemented. Issue #57 records authenticated
+website import, deployment, and live provenance separately from this MIR contract.

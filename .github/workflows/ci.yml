@@ -73,28 +73,6 @@ jobs:
         run: pnpm docs:check
       - run: node scripts/run-m0-conformance.mjs
 
-      - name: Export authenticated next documentation bundle
-        id: docs-bundle
-        if: runner.os == 'Linux' && github.event_name == 'push'
-        run: |
-          digest="$(node scripts/docs/export.mjs \
-            --channel next \
-            --source-commit "${{ github.sha }}" \
-            --source-ref "${{ github.ref }}" \
-            --output .zryna/out/docs/next)"
-          test "${#digest}" -eq 64
-          echo "manifest-sha256=$digest" >> "$GITHUB_OUTPUT"
-          printf 'Documentation manifest SHA-256: `%s`\n' "$digest" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload authenticated next documentation bundle
-        if: runner.os == 'Linux' && github.event_name == 'push'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: zryna-docs-next-${{ github.sha }}
-          path: .zryna/out/docs/next
-          if-no-files-found: error
-          compression-level: 0
-
   adapter-platform:
     name: adapter (${{ matrix.os }})
     needs: preflight
@@ -167,6 +145,45 @@ jobs:
           M0_RESULT: ${{ needs.m0.result }}
           PLATFORM_RESULT: ${{ needs.m2-platform.result }}
         run: test "$M0_RESULT" = success && test "$PLATFORM_RESULT" = success
+
+  docs-publish:
+    name: documentation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: m2
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify documentation bundle contract
+        run: pnpm docs:check
+      - name: Export authenticated next documentation bundle
+        id: docs-bundle
+        run: |
+          digest="$(node scripts/docs/export.mjs \
+            --channel next \
+            --source-commit "${{ github.sha }}" \
+            --source-ref "${{ github.ref }}" \
+            --output .zryna/out/docs/next)"
+          printf '%s' "$digest" | grep -Eq '^[0-9a-f]{64}$'
+          echo "manifest-sha256=$digest" >> "$GITHUB_OUTPUT"
+          printf 'Compiler commit: `%s`\nDocumentation manifest SHA-256: `%s`\n' \
+            "${{ github.sha }}" "$digest" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload authenticated next documentation bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zryna-docs-next-${{ github.sha }}-${{ steps.docs-bundle.outputs.manifest-sha256 }}
+          path: .zryna/out/docs/next
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: true
 
   m0:
     name: m0

@@ -63,9 +63,10 @@ separate, capability-checked trust boundaries; neither is implied by `VerifiedPr
 ## Isolated `ControlFlowV1` verifier component
 
 The `control_flow_v1` module implements the separately versioned M2 Universal IR trust boundary.
-This is an internal compiler component, not an executable M2 language profile or public command.
-The public driver and cross-target pipeline still accept only the unchanged M1 `VerifiedProgram`
-above. The internal JavaScript M2 entrypoint consumes the opaque verified views described here.
+This remains an internal compiler component rather than a directly callable public IR API. The
+public driver reaches it only through exact `--profile control-flow-v1`, after authenticated module
+closure and M2 semantics; omission preserves the unchanged M1 `VerifiedProgram` path. All three M2
+backends consume only the opaque verified views described here.
 
 `control_flow_v1::raw` can express sealed-module claims, entry exports, internal functions, dense
 blocks and values, exact scalar operations, direct calls, block arguments, and explicit
@@ -84,7 +85,9 @@ target-internal. Internal straight-line and control-flow semantics now lower int
 Deterministic internal JavaScript and direct core WebAssembly lowering are implemented. The
 separate [M2 native MIR profile](../../docs/M2_NATIVE_MIR.md) now lowers these same sealed identities,
 operations, calls, blocks, and edges and independently verifies the resulting target-specific
-claims. Native object emission, CLI activation, and an M2 manifest remain owned by later milestones.
+claims. Audited Linux x86-64 native object emission and typed link/run, explicit CLI activation,
+deterministic manifest v2 publication, and fixed-oracle three-target conformance are implemented
+through later verified boundaries; none weaken this IR constructor boundary.
 
 | `ControlFlowV1` IR resource | Limit |
 | --- | ---: |

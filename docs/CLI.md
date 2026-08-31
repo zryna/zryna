@@ -64,8 +64,8 @@ observations with fixed expected values and the committed manifest without creat
 runtime semantics authority. This composition rule applies independently to M1 and
 `control-flow-v1`; it never converts one profile's verified authority into the other. The
 [M2 conformance gate](M2_CONFORMANCE.md) independently compares the explicit profile against a
-fixed oracle on every supported platform. Issue #57 still owns authenticated public
-documentation, website, and live-deployment closure.
+fixed oracle on every supported platform. Issue #57 records authenticated website import,
+deployment, and live commit/digest evidence separately from the CLI contract.
 
 ## Output bundles
 
@@ -215,6 +215,7 @@ non-relative/package imports, watch mode, incremental or remote builds, browser 
 Windows or macOS native execution, static native executables, overwrite behavior, and
 runtime-enforced comparison inside an ordinary end-user command remain outside the current slice.
 The repository-owned [M2 conformance gate](M2_CONFORMANCE.md) performs fixed-oracle three-target
-comparison; documentation, website, and live-deployment release closure remain Issue #57.
+comparison. M2 closure evidence includes authenticated compiler documentation plus website and live
+provenance recorded by Issue #57; those publication checks do not change command semantics.
 M1 closure evidence includes website publication of versioned status and reference data from the
 authenticated compiler documentation bundle tracked in Issue #21.

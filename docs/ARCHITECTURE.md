@@ -334,8 +334,9 @@ terminator claims, then independently verifies them into opaque views. The separ
 public scalar wrappers, audits exact call-graph-bound ELF relocations, and retains artifact-bound
 invocation authority. The driver composes these components through one explicit multi-file request
 and one [manifest-v2 transaction](M2_MANIFEST_V2.md). Individual M2 target requests and the
-independent [fixed-oracle three-target conformance gate](M2_CONFORMANCE.md) are implemented;
-Issue #57 still owns authenticated public documentation, website, and live-deployment closure.
+independent [fixed-oracle three-target conformance gate](M2_CONFORMANCE.md) are implemented. Issue
+#57 records authenticated website import, deployment, and live provenance externally; the compiler
+architecture does not infer deployment state or broaden its capability set from that evidence.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
 functions receive sealed target-internal identities. JavaScript and core WebAssembly now consume

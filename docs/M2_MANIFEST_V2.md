@@ -109,5 +109,6 @@ fallback and no partial portable-target bundle.
 
 Issue #55 proves explicit selection, single graph/semantic authority, per-target dispatch, typed
 outcomes, deterministic manifest v2, and atomic publication. Issue #56 provides the separate
-executable fixed-oracle registry and required aggregate cross-target gate. Issue #57 owns
-authenticated documentation publication, website synchronization, deployment, and live closure.
+executable fixed-oracle registry and required aggregate cross-target gate. Issue #57 records
+authenticated documentation publication, website synchronization, deployment, and live provenance
+without changing this manifest contract.

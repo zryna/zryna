@@ -24,8 +24,9 @@ Evaluation remains left to right and once-only. `break`, `continue`, labeled sta
 `switch`, exceptions, async control flow, recursion, and implicit truthiness remain outside this
 profile. The internal [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) executes these exact
 conditions without truthiness, and the [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md)
-executes the same verified branches with canonical Boolean lanes; public and three-target
-execution remain gated.
+executes the same verified branches with canonical Boolean lanes. The public
+`--profile control-flow-v1` build and run paths dispatch this same verified program to the
+JavaScript, WebAssembly, and Linux x86-64 native targets under the fixed M2 conformance gate.
 
 ## Canonical CFG and definite state
 
@@ -72,6 +73,6 @@ separately. The [M2 native MIR profile](M2_NATIVE_MIR.md) and
 [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now implement independent lowering,
 target-specific verification, audited object emission, and bounded typed execution. The explicit
 profile and [manifest-v2 transaction](M2_MANIFEST_V2.md) are implemented by Issue #55. The
-independent [fixed-oracle three-target gate](M2_CONFORMANCE.md) is implemented by Issue #56;
-authenticated public documentation, website, and live-deployment closure remain Issue #57. All
-three hosts retain bounded deadlines.
+independent [fixed-oracle three-target gate](M2_CONFORMANCE.md) is implemented by Issue #56. Issue
+#57 records authenticated website import, deployment, and live provenance separately. All three
+hosts retain bounded deadlines.

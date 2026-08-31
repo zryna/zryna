@@ -70,6 +70,6 @@ pnpm m2:check     # full public corpus followed by all internal evidence
 same gate on `ubuntu-latest` and `windows-latest` after preflight. The stable aggregate `m2` context
 passes only when both platform jobs and the retained `m0` aggregate pass.
 
-This closes Issue #56's executable conformance gate. M2 milestone closure remains separate: Issue
-#57 must export authenticated compiler documentation, synchronize the website, deploy the exact
-bundle, and verify the live commit and digest.
+This closes Issue #56's executable conformance gate. Issue #57 separately records the authenticated
+compiler bundle, website import, deployment, and live commit/digest evidence. Those external
+publication observations do not extend this fixed executable profile.

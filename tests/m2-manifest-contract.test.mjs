@@ -55,7 +55,8 @@ test('documents one explicit profile without weakening default M1', async () => 
   }
   assert.match(roadmap, /^\| #55 \| .* \| #47, #51, #52, #54 \| complete \|$/m);
   assert.match(roadmap, /^\| #56 \| .* \| #55 \| complete \|$/m);
-  assert.match(roadmap, /Authenticated[\s\S]*website\/live closure remains #57/);
+  assert.match(roadmap, /^\| #57 \| .* \| #56 \| external closure \|$/m);
+  assert.match(roadmap, /Website synchronization and live provenance are external evidence tracked by #57/);
 });
 
 test('website documentation registry exports the profile and manifest authority', async () => {

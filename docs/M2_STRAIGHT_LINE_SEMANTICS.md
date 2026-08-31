@@ -72,8 +72,8 @@ This straight-line foundation is extended by the internal
 views, and the internal [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) emits, links, and
 executes the audited object. The explicit public profile and manifest v2 are available through the
 atomic M2 driver path. The independent [three-target conformance gate](M2_CONFORMANCE.md) is
-implemented, while authenticated public documentation, website, and live release activation
-remain Issue #57.
+implemented. Issue #57 records authenticated website import, deployment, and live provenance
+separately from this semantic boundary.
 
 ## Stable diagnostics
 
