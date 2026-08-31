@@ -11,6 +11,7 @@ members = [
   "crates/zryna-driver",
   "crates/zryna-frontend",
   "crates/zryna-ir",
+  "crates/zryna-layout",
   "crates/zryna-native-mir",
   "crates/zryna-semantics",
   "crates/zryna-source",

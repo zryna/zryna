@@ -188,11 +188,14 @@ reordering variants changes the nominal type's fingerprint; it is not a cross-ve
 
 ## 7. Recursive types and canonical computation
 
-The authority computes layouts in dense TypeId order with a deterministic three-state traversal:
-`unseen`, `visiting`, and `complete`. Encountering a `visiting` TypeId through a by-value edge is an
-illegal recursive layout. Diagnostic selection reports the lexicographically smallest complete
-cycle by canonical TypeId sequence, rotated to its smallest TypeId; no host stack trace or hash-map
-order participates.
+The authority builds the by-value graph in dense TypeId order and visits every outgoing edge in
+ascending TypeId order with explicit bounded stacks. It computes strongly connected components,
+sorts each component and the component inventory by TypeId sequence, and selects the first cyclic
+component. A one-node self-edge reports that TypeId. Otherwise the diagnostic starts at the
+component's smallest TypeId, selects its smallest in-component outgoing edge, and uses the first
+ascending-edge depth-first path back to the start; the repeated closing node is omitted. This is
+the exact bounded definition of the reported cycle. No exhaustive simple-cycle enumeration, host
+stack trace, recursion, allocation address, or hash-map order participates.
 
 Struct fields, enum payloads, and fixed-array elements are by-value edges. String has no exposed
 element edge. Vec, Shared, and Weak are indirections: their handle layout is complete independently
@@ -226,7 +229,8 @@ capacity or allocation trap, not layout reinterpretation.
 
 Every table row requires exact-limit and first-extra fixtures. Checked-add, checked-multiply, and
 align-up overflow fixtures must use small synthetic target limits in tests rather than attempting
-host-sized allocations.
+host-sized allocations. A synthetic counter fixture may exercise an independent defensive ceiling
+when stricter graph-shape ceilings make that ceiling unreachable in one concrete graph.
 
 ## 9. Sealed layout record and fingerprint
 

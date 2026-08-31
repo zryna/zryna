@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "contractId": "zryna-aggregate-layout-v1",
+  "fiveTypeUniverse": {
+    "types": ["bool", "i32", "String", "Pair", "[Pair;2]"],
+    "typeIds": [0, 1, 2, 3, 4],
+    "recordCount": 5,
+    "documentBytes": 278,
+    "targets": [
+      { "target": "Linear32V1", "fingerprintSha256": "45ba4e170d4a06460e5331ec2083aee3246be81ff39ee941bf5b3b0e44f24642" },
+      { "target": "LinuxX8664V1", "fingerprintSha256": "42385ecf59efe78cc30661d5c70289fb5976f2429ec30b8a0c7afc4fd23d3f5f" }
+    ]
+  },
+  "normativeLayouts": [
+    { "name": "Pair", "linear32": { "size": 8, "alignment": 4, "offsets": [0, 4] }, "linuxX8664": { "size": 8, "alignment": 4, "offsets": [0, 4] } },
+    { "name": "Mixed", "linear32": { "size": 12, "alignment": 4, "offsets": [0, 4, 8] }, "linuxX8664": { "size": 12, "alignment": 4, "offsets": [0, 4, 8] } },
+    { "name": "Nested", "linear32": { "size": 12, "alignment": 4, "offsets": [0, 8] }, "linuxX8664": { "size": 12, "alignment": 4, "offsets": [0, 8] } },
+    { "name": "bool[3]", "linear32": { "size": 3, "alignment": 1, "stride": 1 }, "linuxX8664": { "size": 3, "alignment": 1, "stride": 1 } },
+    { "name": "Pair[2]", "linear32": { "size": 16, "alignment": 4, "stride": 8 }, "linuxX8664": { "size": 16, "alignment": 4, "stride": 8 } },
+    { "name": "MaybeI32", "linear32": { "size": 8, "alignment": 4, "payloadOffset": 4 }, "linuxX8664": { "size": 8, "alignment": 4, "payloadOffset": 4 } },
+    { "name": "Choice", "linear32": { "size": 12, "alignment": 4, "payloadOffset": 4 }, "linuxX8664": { "size": 12, "alignment": 4, "payloadOffset": 4 } },
+    { "name": "TextFlag", "linear32": { "size": 16, "alignment": 4, "offsets": [0, 12] }, "linuxX8664": { "size": 32, "alignment": 8, "offsets": [0, 24] } },
+    { "name": "Links", "linear32": { "size": 8, "alignment": 4, "offsets": [0, 4] }, "linuxX8664": { "size": 16, "alignment": 8, "offsets": [0, 8] } }
+  ]
+}

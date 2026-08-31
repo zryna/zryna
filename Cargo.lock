@@ -1235,6 +1235,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "zryna-layout"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "zryna-diagnostics",
+ "zryna-source",
+]
+
+[[package]]
 name = "zryna-native-mir"
 version = "0.1.0"
 dependencies = [

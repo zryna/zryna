@@ -75,18 +75,25 @@ profile is intentionally narrow.
 - Issue #57 records the separate authenticated website import, deployment, and live commit/digest
   evidence. This compiler status does not assert that an external website deployment has occurred.
 
-## Specified M3 profile, not implemented
+## Specified M3 profile with an internal layout authority
 
 Issue #75 specifies the separate future `DataOwnershipV1` profile and exact CLI spelling
 `data-ownership-v1`. The normative data/ownership, aggregate-layout, and ownership-runtime-ABI
 documents plus the digest-pinned `tests/m3-contract-v1.json` registry freeze Issues #75–#90 and
 their dependency graph.
 
-This is planning evidence only. The compiler does not currently accept M3 declarations or values,
-does not expose syntax protocol v4 or DataOwnershipV1 IR, has no allocator or ownership runtime,
-does not emit memory-bearing M3 JavaScript/WebAssembly/native artifacts, and does not accept
-`--profile data-ownership-v1`. Default M1 and explicit `control-flow-v1` M2 remain the only public
-profiles.
+The compiler-owned `zryna-layout` component now verifies complete source-map-bound raw type graphs,
+assigns canonical dense TypeIds independent of discovery order, rejects by-value recursion and
+unstorable borrows, computes checked `Linear32V1` and `LinuxX8664V1` structs, enums, fixed arrays,
+and handle layouts, and seals exact SHA-256 layout documents behind opaque immutable views. Shared
+machine-readable fixtures pin every normative layout row and the exact five-type Pair fingerprints.
+The authority is not reachable from the M1/M2 driver or CLI, allocates no runtime memory, and emits
+no target artifact.
+
+The compiler still does not accept M3 declarations or values, expose syntax protocol v4 or
+DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
+JavaScript/WebAssembly/native artifacts, or accept `--profile data-ownership-v1`. Default M1 and
+explicit `control-flow-v1` M2 remain the only public profiles.
 
 The first planned executable slice is an internal scalarizable `Pair` struct observed through a
 scalar ABI v1 result. Later dependency-ready issues add checked aggregates, owned String and Vec,
@@ -130,5 +137,6 @@ data profiles.
 - [M2 direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md)
 - [M2 verified native MIR](M2_NATIVE_MIR.md)
 - [Roadmap](ROADMAP.md)
+- [Aggregate layout v1](../spec/memory-model/AGGREGATE_LAYOUT_V1.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)
