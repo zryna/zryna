@@ -35,6 +35,16 @@ impl ValidatedWebAssemblyArtifact {
 /// let _ = zryna_backend_webassembly::emit(&raw);
 /// ```
 ///
+/// The separate raw `ControlFlowV1` profile cannot satisfy this M1 backend boundary either:
+///
+/// ```compile_fail
+/// let raw = zryna_ir::control_flow_v1::raw::Program {
+///     entry_module: zryna_ir::control_flow_v1::raw::ModuleId(0),
+///     modules: Vec::new(),
+/// };
+/// let _ = zryna_backend_webassembly::emit(&raw);
+/// ```
+///
 /// # Errors
 ///
 /// Returns a stable compiler diagnostic if a verified-program invariant cannot be encoded or if

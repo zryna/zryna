@@ -405,6 +405,16 @@ fn verify_scalar_abi(module: &raw::Module) -> Result<VerifiedScalarAbiModule, Ve
 /// let _ = zryna_native_mir::lower(&raw);
 /// ```
 ///
+/// Raw `ControlFlowV1` claims cannot satisfy the existing native lowering boundary:
+///
+/// ```compile_fail
+/// let raw = zryna_ir::control_flow_v1::raw::Program {
+///     entry_module: zryna_ir::control_flow_v1::raw::ModuleId(0),
+///     modules: Vec::new(),
+/// };
+/// let _ = zryna_native_mir::lower(&raw);
+/// ```
+///
 /// # Errors
 ///
 /// Returns diagnostics if a future Universal IR profile cannot map to the current native proof or
