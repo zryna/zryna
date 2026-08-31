@@ -1,7 +1,8 @@
 # M2 control-flow semantics
 
-Status: implemented as an internal compiler boundary. This does not enable the public
-`control-flow-v1` profile, any backend, manifest v2, or a CLI command.
+Status: implemented as an internal compiler boundary. The sealed internal JavaScript backend can
+consume its verified result, but this does not enable the public `control-flow-v1` profile,
+manifest v2, a CLI command, or cross-target M2 support.
 
 ## Authority and result boundary
 
@@ -21,7 +22,8 @@ visit to its header. An omitted `else` is the exact empty false path.
 
 Evaluation remains left to right and once-only. `break`, `continue`, labeled statements, `for`,
 `switch`, exceptions, async control flow, recursion, and implicit truthiness remain outside this
-profile.
+profile. The internal [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) executes these exact
+conditions without truthiness; public and cross-target execution remain gated.
 
 ## Canonical CFG and definite state
 
@@ -62,5 +64,6 @@ Focused semantic and IR tests cover true and false branches, omitted `else`, nes
 zero- and multiple-iteration loops, assignment carried through merges and backedges, early returns,
 shadow restoration, stable diagnostics, deterministic repeated lowering, exact Boolean conditions,
 missing returns, unreachable statements, and resource boundaries. These tests authenticate the
-internal compiler component only. Cross-target execution, divergence containment, manifest v2,
-the explicit public profile, and website support remain gated by Issues #51 through #57.
+internal compiler component only. The sealed JavaScript evidence is documented separately.
+Cross-target execution, divergence containment, manifest v2, the explicit public profile, and
+website support remain gated by Issues #52 through #57.

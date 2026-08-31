@@ -24,13 +24,13 @@ use nix::{
 #[cfg(unix)]
 use process_wrap::std::{ChildWrapper, CommandWrap, ProcessGroup};
 
+use zryna_abi::{RawHostScalar, ScalarType};
 use zryna_diagnostics::Diagnostic;
 
 pub(crate) const NODE_VERSION: &str = "v22.22.1";
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(5);
 const CLEANUP_RESERVE: Duration = Duration::from_secs(5);
 const MAX_VERSION_STDOUT: usize = 64;
-const MAX_RESULT_STDOUT: usize = 4;
 const MAX_STDERR: usize = 16 * 1_024;
 
 #[derive(Debug)]
@@ -101,6 +101,41 @@ impl NodeRuntimeCapability {
         harness: &Path,
         working_directory: &Path,
     ) -> Result<[u8; 4], Diagnostic> {
+        self.run_module_frame(harness, working_directory, 4)?
+            .try_into()
+            .map_err(|_| invalid_result_frame())
+    }
+
+    pub(crate) fn run_javascript_module(
+        &self,
+        harness: &Path,
+        working_directory: &Path,
+        result_type: ScalarType,
+    ) -> Result<RawHostScalar, Diagnostic> {
+        let expected_bytes = match result_type {
+            ScalarType::Bool => 1,
+            ScalarType::I32 => 4,
+        };
+        let frame = self.run_module_frame(harness, working_directory, expected_bytes)?;
+        match result_type {
+            ScalarType::Bool => match frame.as_slice() {
+                [0] => Ok(RawHostScalar::JavaScriptBool(false)),
+                [1] => Ok(RawHostScalar::JavaScriptBool(true)),
+                _ => Err(invalid_result_frame()),
+            },
+            ScalarType::I32 => {
+                let bytes: [u8; 4] = frame.try_into().map_err(|_| invalid_result_frame())?;
+                Ok(RawHostScalar::JavaScriptNumber(f64::from(i32::from_le_bytes(bytes))))
+            }
+        }
+    }
+
+    fn run_module_frame(
+        &self,
+        harness: &Path,
+        working_directory: &Path,
+        expected_bytes: usize,
+    ) -> Result<Vec<u8>, Diagnostic> {
         self.revalidate()?;
         let node_harness = node_compatible_path(harness);
         let node_working_directory = node_compatible_path(working_directory);
@@ -108,25 +143,26 @@ impl NodeRuntimeCapability {
             &self.invocation_path,
             &[node_harness.into_os_string()],
             &node_working_directory,
-            MAX_RESULT_STDOUT,
+            expected_bytes,
             MAX_STDERR,
         )?;
         self.revalidate()?;
-        if !output.status.success() || !output.stderr.is_empty() || output.stdout.len() != 4 {
-            return Err(runtime_error(
-                "ZRYNA-R3006",
-                "target runtime returned an invalid scalar result frame",
-                "report the smallest reproducible source and verified invocation",
-            ));
+        if !output.status.success()
+            || !output.stderr.is_empty()
+            || output.stdout.len() != expected_bytes
+        {
+            return Err(invalid_result_frame());
         }
-        output.stdout.try_into().map_err(|_| {
-            runtime_error(
-                "ZRYNA-R3006",
-                "target runtime returned an invalid scalar result frame",
-                "report the smallest reproducible source and verified invocation",
-            )
-        })
+        Ok(output.stdout)
     }
+}
+
+fn invalid_result_frame() -> Diagnostic {
+    runtime_error(
+        "ZRYNA-R3006",
+        "target runtime returned an invalid scalar result frame",
+        "report the smallest reproducible source and verified invocation",
+    )
 }
 
 fn is_pinned_node_version(stdout: &[u8]) -> bool {
@@ -596,6 +632,7 @@ mod tests {
     #[cfg(windows)]
     use super::node_compatible_path;
     use super::{NodeRuntimeCapability, is_pinned_node_version};
+    use zryna_abi::{RawHostScalar, ScalarType};
 
     static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
 
@@ -724,6 +761,63 @@ mod tests {
         );
         assert_code(
             &runtime.run_module(&abnormal, root.path()).expect_err("abnormal exit must fail"),
+            "ZRYNA-R3006",
+        );
+    }
+
+    #[test]
+    fn typed_javascript_frames_use_public_exports_and_reject_noncanonical_bool() {
+        let root = RuntimeRoot::new("typed-javascript");
+        let runtime = capability(&root);
+        let module = root.path().join("public-module.mjs");
+        fs::write(
+            &module,
+            concat!(
+                "export function Number(value) {\n",
+                "  if (typeof value !== 'boolean') throw new TypeError('bool');\n",
+                "  return value;\n",
+                "}\n",
+                "export function Object() { return -2147483648; }\n",
+            ),
+        )
+        .expect("public module must be written");
+        let module_name = serde_json::to_string(&format!(
+            "./{}",
+            module.file_name().expect("module file name").to_string_lossy()
+        ))
+        .expect("module name JSON");
+        let bool_harness = root.harness(
+            "bool-public-import",
+            &format!(
+                "import {{ Number as invoke }} from {module_name};\nconst value = invoke(true);\nif (typeof value !== 'boolean') process.exit(70);\nprocess.stdout.write(Uint8Array.of(value ? 1 : 0));\n"
+            ),
+        );
+        assert_eq!(
+            runtime
+                .run_javascript_module(&bool_harness, root.path(), ScalarType::Bool)
+                .expect("primitive bool frame"),
+            RawHostScalar::JavaScriptBool(true)
+        );
+
+        let i32_harness = root.harness(
+            "i32-public-import",
+            &format!(
+                "import {{ Object as invoke }} from {module_name};\nconst frame = Buffer.allocUnsafe(4);\nframe.writeInt32LE(invoke(), 0);\nprocess.stdout.write(frame);\n"
+            ),
+        );
+        assert_eq!(
+            runtime
+                .run_javascript_module(&i32_harness, root.path(), ScalarType::I32)
+                .expect("canonical i32 frame"),
+            RawHostScalar::JavaScriptNumber(f64::from(i32::MIN))
+        );
+
+        let invalid_bool =
+            root.harness("invalid-bool-frame", "process.stdout.write(Uint8Array.of(2));\n");
+        assert_code(
+            &runtime
+                .run_javascript_module(&invalid_bool, root.path(), ScalarType::Bool)
+                .expect_err("noncanonical Boolean byte must fail"),
             "ZRYNA-R3006",
         );
     }

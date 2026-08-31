@@ -65,7 +65,9 @@ budget, and the complete call graph before exposing opaque views.
 
 This straight-line foundation is extended by the internal
 [M2 control-flow semantic boundary](M2_CONTROL_FLOW_SEMANTICS.md), which owns canonical `if` and
-`while` lowering and definite state. No M2 backend accepts either internal program yet.
+`while` lowering and definite state. The sealed internal
+[M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) now accepts the verified program; public profile,
+WebAssembly, and native gates remain unavailable.
 
 ## Stable diagnostics
 

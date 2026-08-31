@@ -296,7 +296,7 @@ Future integer operations must specify width, signedness, overflow, conversion, 
 
 M2 is governed by the normative
 [scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) specification.
-It is a separate verified profile and is not currently executable. Protocol v2, the `I32V1`
+It is a separate verified profile and is not publicly executable. Protocol v2, the `I32V1`
 expression-tree verifier, the default M1 CLI, and manifest v1 remain unchanged until the complete
 M2 profile passes all target gates.
 
@@ -309,16 +309,20 @@ final source map, and seals its canonical graph identity. The internal
 lowers exact types, locals, lexical scopes, arithmetic, comparisons, assignment, and acyclic direct
 calls. The internal [control-flow semantic boundary](M2_CONTROL_FLOW_SEMANTICS.md) extends that
 authority with canonical branches, loops, merge/header parameters, definite state, reachability,
-and return analysis. The isolated `zryna-ir::control_flow_v1`
+and return analysis. The internal [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) consumes only
+the resulting opaque views and sealed ABI mappings. It emits canonical private-ID functions,
+explicit parallel CFG-edge transfers, exact scalar operations, and typed entry wrappers without
+source names, paths, dynamic loading, or ambient capabilities. The isolated `zryna-ir::control_flow_v1`
 component now implements the mandatory verifier for types, dominance, edges, reachability,
 reducibility, return completeness, acyclic calls, source authority, and budgets before constructing
-opaque M2 views. The closure connects only to these internal semantic gates; every M2 backend,
-manifest v2, and the public command remain unavailable, so the complete M2 profile is
-non-executable.
+opaque M2 views. The closure connects only to these internal semantic gates and the internal
+JavaScript emitter. M2 WebAssembly, native MIR, manifest v2, and the public command remain
+unavailable, so the complete M2 profile and cross-target execution are still unsupported.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
-functions receive sealed target-internal identities. JavaScript, core WebAssembly, and native MIR
-will consume the same verified whole-program authority; none may activate M2 independently. The
+functions receive sealed target-internal identities. JavaScript now consumes that authority
+internally; core WebAssembly and native MIR will consume the same verified whole-program authority.
+No backend may activate M2 independently. The
 future public command requires `--profile control-flow-v1` and publishes a distinct canonical
 `zryna-manifest-v2.json` so no M1 artifact contract is reinterpreted.
 

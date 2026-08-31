@@ -64,7 +64,8 @@ separate, capability-checked trust boundaries; neither is implied by `VerifiedPr
 
 The `control_flow_v1` module implements the separately versioned M2 Universal IR trust boundary.
 This is an internal compiler component, not an executable M2 language profile or public command.
-The driver and all current backends still accept only the unchanged M1 `VerifiedProgram` above.
+The public driver and cross-target pipeline still accept only the unchanged M1 `VerifiedProgram`
+above. The internal JavaScript M2 entrypoint consumes the opaque verified views described here.
 
 `control_flow_v1::raw` can express sealed-module claims, entry exports, internal functions, dense
 blocks and values, exact scalar operations, direct calls, block arguments, and explicit
@@ -80,7 +81,8 @@ Successful verification exposes only immutable module, function, block, instruct
 and sealed-identity views. It never exposes the retained raw program. Only entry-module functions
 with explicit export claims enter scalar ABI v1; dependency and unexported functions remain
 target-internal. Internal straight-line and control-flow semantics now lower into this boundary.
-Backend lowering, CLI activation, and an M2 manifest remain owned by later milestones.
+Deterministic internal JavaScript lowering is implemented. M2 WebAssembly, native lowering, CLI
+activation, and an M2 manifest remain owned by later milestones.
 
 | `ControlFlowV1` IR resource | Limit |
 | --- | ---: |

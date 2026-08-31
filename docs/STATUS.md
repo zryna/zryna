@@ -44,9 +44,14 @@ profile is intentionally narrow.
   `ControlFlowV1`. The internal [M2 control-flow boundary](M2_CONTROL_FLOW_SEMANTICS.md) adds
   canonical `if`/`while`, definite merge and loop state, reachability, and all-path return analysis.
   Independent callers must supply a complete source-map-bound verified snapshot.
-- These are internal compiler boundaries only. The public driver still selects protocol v2; the
-  final module closure can enter internal control-flow semantics, but no backend accepts that
-  profile, and no CLI command or manifest exposes it. The executable M2
+- The internal [M2 deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md) consumes only those
+  opaque verified views. It exhaustively lowers exact scalar operations, private direct calls,
+  returns, parallel jump edges, strict Boolean branches, and loops into bounded byte-deterministic
+  ESM with typed `i32`/`bool` entry wrappers and sealed export aliases. Internal execution imports
+  those public aliases through the existing pinned, deadline- and output-bounded Node capability.
+- These are internal compiler boundaries only. The public driver still selects protocol v2; no
+  CLI command or manifest exposes M2, and the M2 WebAssembly and native backends remain
+  unavailable. The executable cross-target M2
   profile and every dependent M2 issue therefore remain unsupported.
 
 ## Runtime and toolchain boundary
@@ -60,8 +65,9 @@ profile is intentionally narrow.
 
 ## Deliberately unsupported
 
-Source-level Boolean execution remains verifier-gated even though scalar ABI v1 specifies strict
-Boolean host carriers. The current executable slice does not claim source control flow, modules,
+Public source-level Boolean execution remains driver/profile-gated even though sealed internal M2
+JavaScript tests execute strict Boolean carriers. The current public executable slice does not
+claim source control flow, modules,
 heap values, browser execution, WASI, Windows or macOS native execution, static native executables,
 package resolution, watch mode, incremental builds, production readiness, or an executable M2
 feature.
@@ -74,6 +80,7 @@ feature.
 - [M2 deterministic module closure](M2_MODULE_CLOSURE.md)
 - [M2 straight-line semantics](M2_STRAIGHT_LINE_SEMANTICS.md)
 - [M2 control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md)
+- [M2 deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md)
 - [Roadmap](ROADMAP.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)
