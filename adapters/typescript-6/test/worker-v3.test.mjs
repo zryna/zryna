@@ -123,7 +123,12 @@ test('complete ControlFlowV1 syntax uses canonical source-order arenas and exact
 });
 
 test('checked-in M2 semantic fixtures are exact real adapter responses', async () => {
-  for (const stem of ['m2-straight-line', 'm2-semantic-negative']) {
+  for (const stem of [
+    'm2-straight-line',
+    'm2-semantic-negative',
+    'm2-control-flow-positive',
+    'm2-control-flow-negative',
+  ]) {
     const request = JSON.parse(
       await readFile(new URL(`../../../tests/fixtures/${stem}-request.json`, import.meta.url)),
     );

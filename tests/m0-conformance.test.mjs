@@ -23,6 +23,10 @@ const fixturePaths = [
   'tests/fixtures/m2-straight-line-result.json',
   'tests/fixtures/m2-semantic-negative-request.json',
   'tests/fixtures/m2-semantic-negative-result.json',
+  'tests/fixtures/m2-control-flow-positive-request.json',
+  'tests/fixtures/m2-control-flow-positive-result.json',
+  'tests/fixtures/m2-control-flow-negative-request.json',
+  'tests/fixtures/m2-control-flow-negative-result.json',
 ];
 
 function clonedManifest() {

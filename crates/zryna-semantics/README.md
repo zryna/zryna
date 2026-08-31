@@ -40,16 +40,18 @@ future universal profile implemented consistently by every active backend.
 
 This crate owns language meaning and must never depend on a replaceable frontend provider.
 
-## Internal M2 straight-line boundary
+## Internal M2 semantics boundary
 
 The separate `control_flow_v1` module consumes only an exact source-map-bound verified
 protocol-v3 snapshot and an entry present in that snapshot,
 revalidates the complete deterministic module graph, owns module/callable/lexical names and exact
-types, and lowers the frozen straight-line M2 subset. It implements `i32` arithmetic and signed
+types, and lowers the frozen M2 semantic subset. It implements `i32` arithmetic and signed
 comparisons, Boolean equality, initialized locals, assignment, lexical shadowing, and statically
 resolved acyclic direct calls while preserving left-to-right once-only evaluation.
 
 M2 semantic success returns only mandatory-verifier-approved
-`zryna_ir::control_flow_v1::VerifiedProgram`; raw M2 IR never leaves the boundary. `if` and `while`
-remain rejected until the next control-flow gate, and no backend or public CLI selects this
-profile. See [M2 straight-line semantics](../../docs/M2_STRAIGHT_LINE_SEMANTICS.md).
+`zryna_ir::control_flow_v1::VerifiedProgram`; raw M2 IR never leaves the boundary. Canonical `if`
+and `while` lowering carries definite mutable state through typed merge and loop-header parameters,
+with reachability and all-path return checks. No backend or public CLI selects this profile. See
+[M2 straight-line semantics](../../docs/M2_STRAIGHT_LINE_SEMANTICS.md) and
+[M2 control-flow semantics](../../docs/M2_CONTROL_FLOW_SEMANTICS.md).

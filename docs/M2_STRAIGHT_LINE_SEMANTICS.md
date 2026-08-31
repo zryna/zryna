@@ -63,8 +63,9 @@ parameter values use parameter-name spans, function spans use declarations, and 
 use return-statement spans. The IR verifier rechecks every identity, type, call, span, ABI claim,
 budget, and the complete call graph before exposing opaque views.
 
-`if` and `while` syntax is intentionally rejected with `ZRYNA-M2014`; canonical control-flow and
-definite-state lowering belongs to Issue #50. No M2 backend accepts this program yet.
+This straight-line foundation is extended by the internal
+[M2 control-flow semantic boundary](M2_CONTROL_FLOW_SEMANTICS.md), which owns canonical `if` and
+`while` lowering and definite state. No M2 backend accepts either internal program yet.
 
 ## Stable diagnostics
 
@@ -87,7 +88,7 @@ adds one terminal `ZRYNA-M2201` and prevents later semantic action.
 | `ZRYNA-M2011` | callable namespace collision |
 | `ZRYNA-M2012` | unknown callable, arity, or argument-type mismatch |
 | `ZRYNA-M2013` | cyclic direct-call graph |
-| `ZRYNA-M2014` | control flow reserved for Issue #50 |
+| `ZRYNA-M2014` | non-`bool` control-flow condition |
 | `ZRYNA-M2022` | invalid entry scalar ABI export |
 | `ZRYNA-M2201` | deterministic semantic resource exhaustion |
 

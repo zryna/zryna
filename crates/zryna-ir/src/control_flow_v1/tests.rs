@@ -1247,6 +1247,40 @@ fn diagnostic_budget_is_bounded_and_terminal() {
 }
 
 #[test]
+fn resource_limit_is_one_shot_terminal_and_blocks_state_commits() {
+    let sources = sources(&["src/main.zry"]);
+    let span = span(&sources, "src/main.zry");
+    let mut errors = Errors::default();
+    errors.push(error("ZRYNA-I2001", "sentinel before limit", "fixture"));
+    errors.limit("sentinel resource", 1);
+    errors.limit("later resource", 2);
+    errors.push(error("ZRYNA-I2002", "sentinel after limit", "fixture"));
+
+    let mut values = Vec::new();
+    define_value(
+        &value(0, Type::I32, span),
+        DefinitionLocation::Parameter,
+        &mut values,
+        &mut errors,
+    );
+
+    assert!(errors.exhausted());
+    assert!(values.is_empty(), "terminal exhaustion must reject later state commits");
+    assert_eq!(codes(&errors.diagnostics), vec!["ZRYNA-I2001", "ZRYNA-I2201"]);
+}
+
+#[test]
+fn resource_limit_stops_later_verifier_phases() {
+    let sources = sources(&["src/main.zry"]);
+    let entry = file(&sources, "src/main.zry");
+    let mut program = nested_loop_program(&sources, MAX_LOOP_NESTING + 1);
+    program.modules[0].functions[0].entry_export = Some("1invalid".to_owned());
+
+    let diagnostics = verify(program, &sources, entry).expect_err("loop limit must be terminal");
+    assert_eq!(codes(&diagnostics), vec!["ZRYNA-I2201"]);
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn rejects_every_remaining_identity_type_edge_and_abi_invariant() {
     let sources = sources(&["src/dep.zry", "src/main.zry"]);

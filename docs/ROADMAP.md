@@ -107,16 +107,17 @@ and one multi-file program whose behavior matches on JavaScript, direct core Web
 Linux x86-64 native output.
 
 Current status: contract specified, exact syntax protocol v3 implemented, deterministic module
-closure implemented, straight-line modules/scopes/types/calls lower to verified M2 IR, and the
-isolated IR verifier implemented, but the M2 profile is not executable. Issue #45 freezes the normative
+closure implemented, modules/scopes/types/calls and canonical `if`/`while` control flow lower to
+verified M2 IR, and the isolated IR verifier implemented, but the M2 profile is not executable. Issue #45 freezes the normative
 [scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) contract and a
 digest-pinned planning inventory. Issue #46 implements the separate exact protocol-v3 schema,
 pinned TypeScript 6 syntax-only worker, opaque source-map-bound syntax verifier, and typed worker
 transport without selecting it in the driver. Issue #48 implements the separate, source-map-bound
 `ControlFlowV1` raw-to-verified boundary. Issue #47 implements retained-capability fixed-point
 module discovery and final source-map authentication without selecting it in the public driver.
-Issue #49 implements the internal [straight-line M2 semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md)
-without enabling control flow or a backend. None of these boundaries enables a compiler profile,
+Issue #49 implements the internal [straight-line M2 semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md).
+Issue #50 extends it with [canonical control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md), definite
+state, reachability, and return analysis. None of these boundaries enables a backend, compiler profile,
 a CLI command, or a public M2 support claim. `I32V1`, protocol v2, manifest v1, and all M0/M1 executable
 evidence remain unchanged while the remaining M2 gates are built on those verified boundaries.
 
@@ -129,7 +130,7 @@ Dependency ledger:
 | #47 | compiler-owned bounded deterministic module closure | #45, #46 | complete |
 | #48 | independently verified `ControlFlowV1` Universal IR | #45 | complete |
 | #49 | Zryna-owned modules, scopes, types, arithmetic, comparisons, locals, assignment, and direct calls | #46, #47, #48 | complete |
-| #50 | canonical `if`/`while`, definite state, reachability, and return lowering | #49 | planned |
+| #50 | canonical `if`/`while`, definite state, reachability, and return lowering | #49 | complete |
 | #51 | deterministic M2 ECMAScript emission and execution | #50 | planned |
 | #52 | direct capability-minimal M2 core WebAssembly emission and execution | #50 | planned |
 | #53 | independently verified native MIR control flow and calls | #50 | planned |

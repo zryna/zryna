@@ -323,6 +323,34 @@
       "phase": "semantics",
       "mode": "fail",
       "expected": "deterministic-diagnostics"
+    },
+    {
+      "id": "m2-control-flow-positive-request",
+      "path": "tests/fixtures/m2-control-flow-positive-request.json",
+      "phase": "adapter",
+      "mode": "pass",
+      "expected": "byte-stable-response"
+    },
+    {
+      "id": "m2-control-flow-positive-result",
+      "path": "tests/fixtures/m2-control-flow-positive-result.json",
+      "phase": "semantics",
+      "mode": "pass",
+      "expected": "verifier-sealed-ir"
+    },
+    {
+      "id": "m2-control-flow-negative-request",
+      "path": "tests/fixtures/m2-control-flow-negative-request.json",
+      "phase": "adapter",
+      "mode": "pass",
+      "expected": "byte-stable-response"
+    },
+    {
+      "id": "m2-control-flow-negative-result",
+      "path": "tests/fixtures/m2-control-flow-negative-result.json",
+      "phase": "semantics",
+      "mode": "fail",
+      "expected": "deterministic-diagnostics"
     }
   ]
 }

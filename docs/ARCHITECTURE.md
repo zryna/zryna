@@ -305,14 +305,16 @@ provider name, type, module, filesystem, or IR authority. The driver now exposes
 [bounded deterministic module closure](M2_MODULE_CLOSURE.md) that safely resolves an explicit
 relative `.zry` graph to fixed point through retained no-follow capabilities, authenticates one
 final source map, and seals its canonical graph identity. The internal
-[straight-line M2 semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) now revalidates the final graph
-and lowers exact types, locals, lexical scopes, arithmetic, comparisons, assignment, and acyclic
-direct calls to one SSA-like entry block per function. The isolated `zryna-ir::control_flow_v1`
+[straight-line M2 semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) revalidates the final graph and
+lowers exact types, locals, lexical scopes, arithmetic, comparisons, assignment, and acyclic direct
+calls. The internal [control-flow semantic boundary](M2_CONTROL_FLOW_SEMANTICS.md) extends that
+authority with canonical branches, loops, merge/header parameters, definite state, reachability,
+and return analysis. The isolated `zryna-ir::control_flow_v1`
 component now implements the mandatory verifier for types, dominance, edges, reachability,
 reducibility, return completeness, acyclic calls, source authority, and budgets before constructing
-opaque M2 views. The closure connects only to this internal straight-line semantic gate; `if` and
-`while`, every M2 backend, and the public command remain unavailable, so the complete M2 profile
-is non-executable.
+opaque M2 views. The closure connects only to these internal semantic gates; every M2 backend,
+manifest v2, and the public command remain unavailable, so the complete M2 profile is
+non-executable.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
 functions receive sealed target-internal identities. JavaScript, core WebAssembly, and native MIR

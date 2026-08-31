@@ -20,8 +20,9 @@ The current public success profile is the one-file, explicitly typed `i32` subse
 `discover_module_closure` boundary resolves bounded protocol-v3 module graphs through a retained
 `WorkspaceSourceRoot`, authenticates one final source map, and seals ordered modules, named-binding
 edges, source hashes, and a canonical graph digest. It is documented in
-[M2 deterministic module closure](../../docs/M2_MODULE_CLOSURE.md). Multiple files remain disabled
-in the public compiler until the complete M2 semantic and backend path is verified.
+[M2 deterministic module closure](../../docs/M2_MODULE_CLOSURE.md). That closure can enter internal
+straight-line and control-flow semantics, but multiple files remain disabled in the public compiler
+until the complete M2 backend and profile path is verified.
 
 `compile_javascript` connects real source to the deterministic JavaScript backend and publishes one
 new `.mjs` artifact through the target-neutral `ArtifactOutputRoot` capability (with a compatible
