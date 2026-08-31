@@ -1,0 +1,415 @@
+{
+  "schemaVersion": 1,
+  "profile": "zryna-data-ownership-v1",
+  "status": "specified-not-implemented",
+  "specifications": [
+    "spec/language/DATA_OWNERSHIP_V1.md",
+    "spec/memory-model/AGGREGATE_LAYOUT_V1.md",
+    "spec/abi/OWNERSHIP_RUNTIME_V1.md"
+  ],
+  "governanceIssue": 75,
+  "regressionAuthorities": [
+    "m0",
+    "m1-i32-v1",
+    "m2-control-flow-v1"
+  ],
+  "issues": [
+    {
+      "number": 75,
+      "dependsOn": [],
+      "gate": "normative-profile"
+    },
+    {
+      "number": 76,
+      "dependsOn": [
+        75
+      ],
+      "gate": "syntax-protocol-v4"
+    },
+    {
+      "number": 77,
+      "dependsOn": [
+        75
+      ],
+      "gate": "verified-layout-authority"
+    },
+    {
+      "number": 78,
+      "dependsOn": [
+        75,
+        77
+      ],
+      "gate": "verified-data-ir"
+    },
+    {
+      "number": 79,
+      "dependsOn": [
+        76,
+        77,
+        78
+      ],
+      "gate": "aggregate-semantic-lowering"
+    },
+    {
+      "number": 80,
+      "dependsOn": [
+        75,
+        77
+      ],
+      "gate": "ownership-runtime-abi"
+    },
+    {
+      "number": 81,
+      "dependsOn": [
+        78,
+        79,
+        80
+      ],
+      "gate": "owned-data-move-drop"
+    },
+    {
+      "number": 82,
+      "dependsOn": [
+        81
+      ],
+      "gate": "bounded-borrowing"
+    },
+    {
+      "number": 83,
+      "dependsOn": [
+        80,
+        81,
+        82
+      ],
+      "gate": "shared-weak-semantics"
+    },
+    {
+      "number": 84,
+      "dependsOn": [
+        79,
+        80,
+        81,
+        82,
+        83
+      ],
+      "gate": "javascript"
+    },
+    {
+      "number": 85,
+      "dependsOn": [
+        79,
+        80,
+        81,
+        82,
+        83
+      ],
+      "gate": "webassembly"
+    },
+    {
+      "number": 86,
+      "dependsOn": [
+        78,
+        80,
+        81,
+        82,
+        83
+      ],
+      "gate": "verified-native-mir"
+    },
+    {
+      "number": 87,
+      "dependsOn": [
+        77,
+        80,
+        86
+      ],
+      "gate": "native-object-link-run"
+    },
+    {
+      "number": 88,
+      "dependsOn": [
+        76,
+        84,
+        85,
+        87
+      ],
+      "gate": "atomic-candidate-manifest-v3"
+    },
+    {
+      "number": 89,
+      "dependsOn": [
+        88
+      ],
+      "gate": "fixed-oracle-conformance"
+    },
+    {
+      "number": 90,
+      "dependsOn": [
+        89
+      ],
+      "gate": "public-activation-authenticated-documentation"
+    }
+  ],
+  "types": [
+    "bool",
+    "i32",
+    "struct",
+    "enum",
+    "fixed-array",
+    "String",
+    "Vec",
+    "Shared",
+    "Weak",
+    "shared-borrow",
+    "exclusive-borrow"
+  ],
+  "layoutRules": [
+    "canonical-structural-type-ids",
+    "checked-u64-arithmetic",
+    "source-field-order",
+    "align-up-without-wrap",
+    "fixed-array-stride",
+    "fixed-u32-enum-tag",
+    "no-niche-optimization",
+    "reject-by-value-recursion",
+    "little-endian-storage"
+  ],
+  "ownershipStates": [
+    "uninitialized",
+    "initialized",
+    "shared-borrowed(k)",
+    "exclusive-borrowed",
+    "moved",
+    "dropped"
+  ],
+  "ownershipTransitions": [
+    "initialize",
+    "move",
+    "borrow-shared",
+    "borrow-exclusive",
+    "end-borrow",
+    "drop",
+    "shared-clone",
+    "shared-release",
+    "weak-downgrade",
+    "weak-upgrade",
+    "weak-release"
+  ],
+  "runtimeAbi": {
+    "id": "zryna-ownership-runtime-v1",
+    "operations": [
+      "allocate",
+      "grow",
+      "release",
+      "stringFromUtf8Copy",
+      "stringClone",
+      "stringConcat",
+      "stringRelease",
+      "vecAllocate",
+      "vecReserve",
+      "vecReleaseStorage",
+      "strongClone",
+      "weakDowngrade",
+      "weakClone",
+      "weakUpgrade",
+      "strongReleaseBegin",
+      "strongReleaseFinish",
+      "weakRelease"
+    ],
+    "exposesRustLayout": false
+  },
+  "languageTraps": [
+    "zryna.trap.bounds-v1",
+    "zryna.trap.allocation-v1",
+    "zryna.trap.capacity-v1",
+    "zryna.trap.refcount-v1",
+    "zryna.trap.utf8-v1"
+  ],
+  "runtimeStatuses": [
+    "OK",
+    "ALLOCATION",
+    "CAPACITY",
+    "REFCOUNT",
+    "UTF8",
+    "EXPIRED",
+    "ABI_VIOLATION"
+  ],
+  "targetRepresentations": [
+    "javascript-private-dense",
+    "webassembly-linear32-v1",
+    "native-linux-x86-64-v1"
+  ],
+  "limits": {
+    "nominalDeclarationsPerProgram": 4096,
+    "fullyInstantiatedTypesPerProgram": 65536,
+    "layoutTypeNodesPerProgram": 65536,
+    "fieldsAndVariantsPerProgram": 65536,
+    "fieldsOrVariantsPerDeclaration": 1024,
+    "aggregateConstructionOperands": 262144,
+    "layoutDependencyEdges": 262144,
+    "fixedArrayElements": 1048576,
+    "layoutDepth": 256,
+    "storedAlignmentBytes": 8,
+    "staticLayoutBytesPerValue": 4294967295,
+    "dynamicAllocationBytes": 2147483647,
+    "stringBytes": 2147483647,
+    "vecElements": 1048576,
+    "allocationAlignmentBytes": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "strongHandleCount": 4294967295,
+    "weakCount": 4294967295,
+    "liveAllocationsPerInvocation": 1048576,
+    "allocationGrowthOperationsPerInvocation": 1048576,
+    "runtimeStatusTransitionsPerInvocation": 4194304,
+    "wasmMemoryMinimumPages": 1,
+    "wasmMemoryMaximumPages": 32768,
+    "wasmHeapAlignmentBytes": 8,
+    "ownershipPlacesPerFunction": 65536,
+    "ownershipTransitionsPerFunction": 262144,
+    "activeBorrowsPerFunction": 16384,
+    "dropActionsPerFunction": 262144,
+    "runtimeOperations": 256,
+    "runtimeSymbols": 4096,
+    "runtimeLayoutReferences": 65536,
+    "runtimeEdges": 65536,
+    "runtimeObjectBytes": 16777216,
+    "diagnostics": 256
+  },
+  "contractFixtures": {
+    "checkedArithmetic": [
+      {
+        "id": "align-up-u64-overflow",
+        "operation": "alignUp",
+        "value": "18446744073709551615",
+        "alignment": "8",
+        "expected": "overflow"
+      }
+    ],
+    "recursiveLayouts": [
+      {
+        "id": "indirect-two-node-cycle",
+        "edges": [
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            1
+          ]
+        ],
+        "expected": "reject",
+        "family": "ZRYNA-L3xxx"
+      }
+    ],
+    "ownershipTransitions": [
+      {
+        "id": "read-after-move",
+        "from": "moved",
+        "operation": "read",
+        "expected": "reject",
+        "family": "ZRYNA-M3xxx"
+      },
+      {
+        "id": "drop-initialized",
+        "from": "initialized",
+        "operation": "drop",
+        "expected": "dropped"
+      }
+    ],
+    "resourceBoundaries": [
+      {
+        "id": "fields-per-declaration-limit",
+        "limitName": "fieldsOrVariantsPerDeclaration",
+        "exact": 1024,
+        "firstExtra": 1025,
+        "exactExpected": "accept",
+        "firstExtraExpected": "reject",
+        "family": "ZRYNA-L3xxx",
+        "ownerIssue": 77
+      }
+    ]
+  },
+  "plannedCases": [
+    {
+      "id": "pair-score",
+      "feature": "internal-struct",
+      "inputs": [
+        1,
+        2
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 33
+      }
+    },
+    {
+      "id": "pair-score-wrapping",
+      "feature": "internal-struct",
+      "inputs": [
+        2147483647,
+        1
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 2147483618
+      }
+    }
+  ],
+  "plannedInvalidCases": [
+    {
+      "id": "recursive-layout",
+      "phase": "layout",
+      "expectedFamily": "ZRYNA-L3xxx",
+      "ownerIssue": 77
+    },
+    {
+      "id": "layout-overflow",
+      "phase": "layout",
+      "expectedFamily": "ZRYNA-L3xxx",
+      "ownerIssue": 77
+    },
+    {
+      "id": "use-after-move",
+      "phase": "semantics",
+      "expectedFamily": "ZRYNA-M3xxx",
+      "ownerIssue": 81
+    },
+    {
+      "id": "borrow-conflict",
+      "phase": "semantics",
+      "expectedFamily": "ZRYNA-M3xxx",
+      "ownerIssue": 82
+    },
+    {
+      "id": "reference-count-overflow",
+      "phase": "runtime-abi",
+      "expectedFamily": "ZRYNA-R3xxx",
+      "ownerIssue": 80
+    },
+    {
+      "id": "fields-per-declaration-limit-plus-one",
+      "phase": "layout",
+      "expectedFamily": "ZRYNA-L3xxx",
+      "ownerIssue": 77
+    }
+  ],
+  "unsupported": [
+    "public-aggregate-abi",
+    "tracing-gc",
+    "raw-pointers",
+    "unsafe",
+    "ffi",
+    "threads",
+    "custom-allocators",
+    "wasi",
+    "component-model",
+    "freestanding-targets"
+  ]
+}

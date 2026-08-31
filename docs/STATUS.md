@@ -75,6 +75,26 @@ profile is intentionally narrow.
 - Issue #57 records the separate authenticated website import, deployment, and live commit/digest
   evidence. This compiler status does not assert that an external website deployment has occurred.
 
+## Specified M3 profile, not implemented
+
+Issue #75 specifies the separate future `DataOwnershipV1` profile and exact CLI spelling
+`data-ownership-v1`. The normative data/ownership, aggregate-layout, and ownership-runtime-ABI
+documents plus the digest-pinned `tests/m3-contract-v1.json` registry freeze Issues #75–#90 and
+their dependency graph.
+
+This is planning evidence only. The compiler does not currently accept M3 declarations or values,
+does not expose syntax protocol v4 or DataOwnershipV1 IR, has no allocator or ownership runtime,
+does not emit memory-bearing M3 JavaScript/WebAssembly/native artifacts, and does not accept
+`--profile data-ownership-v1`. Default M1 and explicit `control-flow-v1` M2 remain the only public
+profiles.
+
+The first planned executable slice is an internal scalarizable `Pair` struct observed through a
+scalar ABI v1 result. Later dependency-ready issues add checked aggregates, owned String and Vec,
+moves and deterministic drops, bounded lexical borrows, explicit shared/weak references, three
+target implementations, an atomic manifest v3 CLI, fixed-oracle conformance, and authenticated
+website publication. Tracing GC, public aggregate ABI, raw pointers, unsafe, FFI, threads, WASI,
+Components, custom allocators, and freestanding targets remain outside M3.
+
 ## Runtime and toolchain boundary
 
 - JavaScript and WebAssembly execution require an absolute direct Node.js `22.22.1` executable.

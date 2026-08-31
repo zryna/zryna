@@ -346,6 +346,40 @@ No backend may activate M2 independently. The public command requires
 `--profile control-flow-v1` and publishes a distinct canonical `zryna-manifest-v2.json` so no M1
 artifact contract is reinterpreted.
 
+## Planned isolated `DataOwnershipV1` boundary
+
+M3 is specified as another separately selected and separately verified profile. It may not widen
+`I32V1`, mutate `ControlFlowV1`, or expose a partial public command. Its authority chain is planned
+as:
+
+```text
+verified protocol-v4 syntax
+    ↓
+compiler-owned nominal/type/ownership semantics
+    ├── verified aggregate-layout authority
+    └── sealed ownership-runtime ABI authority
+    ↓
+raw DataOwnershipV1 IR
+    ↓ independent exhaustive verifier
+opaque verified DataOwnershipV1 views
+    ├── deterministic JavaScript + private helpers
+    ├── audited memory-bearing core WebAssembly
+    └── independently verified native MIR → audited Linux x86-64 artifact
+```
+
+The normative planning authorities are
+[`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md),
+[`AGGREGATE_LAYOUT_V1.md`](../spec/memory-model/AGGREGATE_LAYOUT_V1.md), and
+[`OWNERSHIP_RUNTIME_V1.md`](../spec/abi/OWNERSHIP_RUNTIME_V1.md). The digest-pinned
+`tests/m3-contract-v1.json` registry binds the real Issues #75–#90 and requires M0, M1, and M2 as
+unchanged regression authorities.
+
+Issue #75 adds no executable capability. Later components must keep syntax providers free of
+semantics, make every backend consume opaque verified views, share one layout authority instead of
+recomputing host layouts, and depend on ABI declarations rather than runtime implementations. The
+driver alone may compose audited target runtimes and publish the future explicit
+`data-ownership-v1` manifest-v3 transaction after all target gates exist.
+
 ## WebAssembly profiles
 
 The current WebAssembly backend emits a core module directly from `VerifiedProgram`; it does not
