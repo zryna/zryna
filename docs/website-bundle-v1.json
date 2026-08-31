@@ -15,10 +15,22 @@
       "title": "CLI reference"
     },
     {
+      "id": "reference/control-flow-modules-v1",
+      "source": "spec/language/CONTROL_FLOW_MODULES_V1.md",
+      "path": "documents/reference/control-flow-modules-v1.md",
+      "title": "Scalar control flow and modules v1"
+    },
+    {
       "id": "reference/documentation-bundles",
       "source": "docs/DOCUMENTATION_BUNDLES.md",
       "path": "documents/reference/documentation-bundles.md",
       "title": "Compiler documentation bundles"
+    },
+    {
+      "id": "reference/frontends",
+      "source": "docs/FRONTENDS.md",
+      "path": "documents/reference/frontends.md",
+      "title": "Frontend providers"
     },
     {
       "id": "reference/language-overview",
@@ -91,6 +103,12 @@
       "source": "docs/STATUS.md",
       "path": "documents/status/current.md",
       "title": "Compiler status"
+    },
+    {
+      "id": "status/m0-conformance",
+      "source": "docs/M0_CONFORMANCE.md",
+      "path": "documents/status/m0-conformance.md",
+      "title": "M0 architecture conformance"
     },
     {
       "id": "status/m1-conformance",

@@ -113,8 +113,9 @@ core WebAssembly emission with typed Node execution implemented, independently v
 MIR lowering implemented, and M2 native object and typed execution implemented. Issue #55 composes
 those authorities into the explicit public `control-flow-v1` path and deterministic atomic manifest
 v2 bundles. Issue #56 adds fixed-oracle aggregate three-target M2 conformance, exact invalid and
-resource-boundary evidence, and a stable Linux/Windows aggregate gate. Authenticated website and
-live deployment closure remain Issue #57.
+resource-boundary evidence, and a stable Linux/Windows aggregate gate. The compiler capability and
+conformance surface is complete; Issue #57 records authenticated website import, deployment, and
+live commit/digest evidence as a separate external closure gate.
 Issue #45 freezes the normative
 [scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) contract and a
 digest-pinned planning inventory. Issue #46 implements the separate exact protocol-v3 schema,
@@ -154,12 +155,13 @@ Dependency ledger:
 | #54 | audited Linux x86-64 native object, internal calls, link, and run | #53 | complete |
 | #55 | explicit-profile atomic multi-file CLI and manifest v2 | #47, #51, #52, #54 | complete |
 | #56 | fixed-oracle three-target conformance and required aggregate gate | #55 | complete |
-| #57 | authenticated compiler documentation, website synchronization, deployment, and live closure | #56 | planned |
+| #57 | authenticated compiler documentation, website synchronization, deployment, and live closure | #56 | external closure |
 
 The backend issues #51, #52, and #53 proceeded only after #50. The public CLI activated only after
 every backend and the native execution path were available to Issue #55. Aggregate M2 conformance
 is defined by the authenticated [M2 conformance gate](M2_CONFORMANCE.md) and required `m2` CI
-context. Authenticated website/live closure remains #57.
+context. Website synchronization and live provenance are external evidence tracked by #57; they do
+not add compiler capabilities or certify later milestones.
 
 Completion gates:
 

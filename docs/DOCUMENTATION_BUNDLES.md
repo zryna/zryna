@@ -20,6 +20,11 @@ The command verifies that the commit, ref, clean tracked worktree, and GitHub wo
 agree. A semantic-version channel must equal the compiler package version and use the matching
 immutable `refs/tags/v<version>` ref.
 
+The official `next` artifact is published only by the dedicated `main`-push documentation job after
+the aggregate required `m2` job succeeds. Its artifact name and job summary bind the exact compiler
+commit and manifest SHA-256 as `zryna-docs-next-<commit>-<manifest-sha256>`; consumers authenticate
+both values from that immutable workflow run before importing any bytes.
+
 `docs/website-bundle-v1.json` is the explicit, ASCII-sorted source whitelist. Export never discovers
 new documentation implicitly. Each source must be a bounded regular non-symlink UTF-8 Markdown
 file. Output is staged privately, independently validated, and renamed into a previously absent

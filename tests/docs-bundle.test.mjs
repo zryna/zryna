@@ -54,6 +54,35 @@ async function isolatedWorkspace() {
   return root;
 }
 
+test('registry exports the exact M0 through M2 publication inventory', async () => {
+  const registry = await loadRegistry(compilerWorkspaceRoot);
+  assert.deepEqual(
+    registry.documents,
+    [
+      { id: 'reference/architecture', source: 'docs/ARCHITECTURE.md', path: 'documents/reference/architecture.md', title: 'Compiler architecture' },
+      { id: 'reference/cli', source: 'docs/CLI.md', path: 'documents/reference/cli.md', title: 'CLI reference' },
+      { id: 'reference/control-flow-modules-v1', source: 'spec/language/CONTROL_FLOW_MODULES_V1.md', path: 'documents/reference/control-flow-modules-v1.md', title: 'Scalar control flow and modules v1' },
+      { id: 'reference/documentation-bundles', source: 'docs/DOCUMENTATION_BUNDLES.md', path: 'documents/reference/documentation-bundles.md', title: 'Compiler documentation bundles' },
+      { id: 'reference/frontends', source: 'docs/FRONTENDS.md', path: 'documents/reference/frontends.md', title: 'Frontend providers' },
+      { id: 'reference/language-overview', source: 'spec/language/OVERVIEW.md', path: 'documents/reference/language-overview.md', title: 'Language overview' },
+      { id: 'reference/m2-conformance', source: 'docs/M2_CONFORMANCE.md', path: 'documents/reference/m2-conformance.md', title: 'M2 three-target conformance' },
+      { id: 'reference/m2-control-flow-semantics', source: 'docs/M2_CONTROL_FLOW_SEMANTICS.md', path: 'documents/reference/m2-control-flow-semantics.md', title: 'M2 control-flow semantics' },
+      { id: 'reference/m2-javascript-backend', source: 'docs/M2_JAVASCRIPT_BACKEND.md', path: 'documents/reference/m2-javascript-backend.md', title: 'M2 deterministic JavaScript backend' },
+      { id: 'reference/m2-manifest-v2', source: 'docs/M2_MANIFEST_V2.md', path: 'documents/reference/m2-manifest-v2.md', title: 'M2 manifest and atomic bundles' },
+      { id: 'reference/m2-module-closure', source: 'docs/M2_MODULE_CLOSURE.md', path: 'documents/reference/m2-module-closure.md', title: 'M2 deterministic module closure' },
+      { id: 'reference/m2-native-backend', source: 'docs/M2_NATIVE_BACKEND.md', path: 'documents/reference/m2-native-backend.md', title: 'M2 Linux x86-64 native backend' },
+      { id: 'reference/m2-native-mir', source: 'docs/M2_NATIVE_MIR.md', path: 'documents/reference/m2-native-mir.md', title: 'M2 verified native MIR' },
+      { id: 'reference/m2-straight-line-semantics', source: 'docs/M2_STRAIGHT_LINE_SEMANTICS.md', path: 'documents/reference/m2-straight-line-semantics.md', title: 'M2 straight-line semantics' },
+      { id: 'reference/m2-webassembly-backend', source: 'docs/M2_WEBASSEMBLY_BACKEND.md', path: 'documents/reference/m2-webassembly-backend.md', title: 'M2 direct core WebAssembly backend' },
+      { id: 'reference/scalar-abi-v1', source: 'spec/abi/SCALAR_V1.md', path: 'documents/reference/scalar-abi-v1.md', title: 'Scalar ABI v1' },
+      { id: 'status/current', source: 'docs/STATUS.md', path: 'documents/status/current.md', title: 'Compiler status' },
+      { id: 'status/m0-conformance', source: 'docs/M0_CONFORMANCE.md', path: 'documents/status/m0-conformance.md', title: 'M0 architecture conformance' },
+      { id: 'status/m1-conformance', source: 'docs/M1_CONFORMANCE.md', path: 'documents/status/m1-conformance.md', title: 'M1 three-target conformance' },
+      { id: 'status/roadmap', source: 'docs/ROADMAP.md', path: 'documents/status/roadmap.md', title: 'Roadmap' },
+    ],
+  );
+});
+
 test('exports identical canonical bytes for identical compiler input', async (context) => {
   const first = await temporaryOutput();
   const second = await temporaryOutput();

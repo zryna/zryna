@@ -23,7 +23,7 @@ profile is intentionally narrow.
   rejection, Boolean scalar-carrier normalization, and repository portability. Windows native and
   `all` execution fail closed with `ZRYNA-N4002` and publish no bundle.
 
-## Implemented M2 compiler components
+## Implemented M2 explicit profile
 
 - The separate `zryna-syntax::v3` boundary defines exact provider-neutral DTOs for M2 syntax,
   verifies every graph, budget, spelling, and nested span against one authoritative source map,
@@ -69,9 +69,11 @@ profile is intentionally narrow.
   protocol v2, `I32V1`, manifest v1, and every M1 command and bundle contract.
 - Issue #55 makes individual explicit-profile M2 build/run requests available. Issue #56 adds the
   independent fixed-oracle three-target M2 conformance registry and aggregate required gate.
-- Compiler-owned [M2 conformance evidence](M2_CONFORMANCE.md) is ready for authenticated
-  documentation and website closure by Issue #57. The `next` public status remains M1 until that
-  separate closure verifies the exported bundle, deployment, and live provenance.
+- The explicit `control-flow-v1` profile is implemented and covered by the required fixed-oracle
+  Linux and Windows `m2` gate. Omitting `--profile` preserves the M1 syntax, semantics, CLI, and
+  manifest-v1 contracts.
+- Issue #57 records the separate authenticated website import, deployment, and live commit/digest
+  evidence. This compiler status does not assert that an external website deployment has occurred.
 
 ## Runtime and toolchain boundary
 
@@ -86,12 +88,13 @@ profile is intentionally narrow.
 ## Deliberately unsupported
 
 Public source-level Boolean execution requires explicit `control-flow-v1`; it remains rejected by
-the default M1 path. The compiler-owned M2 gate checks three-target equivalence for the fixed
-source control-flow and module oracle, but the public status remains M1 until Issue #57
-authenticates the exported documentation, website, deployment, and live provenance. The current
-public executable slice does not claim
-heap values, browser execution, WASI, Windows or macOS native execution, static native executables,
-package resolution, watch mode, incremental builds, or production readiness.
+the default M1 path. The compiler-owned M2 gate checks three-target equivalence for one fixed
+source control-flow and module oracle; it is not a claim of general language completeness. The
+current public executable profiles do not claim heap values, an allocator, a tracing-GC profile,
+browser execution, WASI, Windows or macOS native execution, static native executables, package
+resolution, watch mode, incremental builds, or production readiness. The absence of heap or GC
+capabilities in these scalar profiles is not a general zero-runtime or GC-free guarantee for future
+data profiles.
 
 ## Evidence and reference
 

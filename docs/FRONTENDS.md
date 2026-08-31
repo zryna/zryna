@@ -111,7 +111,8 @@ native Zryna lexer → parser → versioned raw syntax snapshot → matching Zry
 
 Protocol v2 is the implemented M1 instance of this path. Protocol v3 now has a separate exact
 schema, pinned TypeScript 6 syntax-only worker, opaque source-map-bound verifier, and typed worker
-transport. It is not selected by the driver and does not activate an M2 compiler or CLI profile.
+transport. The driver selects it only for exact `--profile control-flow-v1`; omission preserves the
+protocol-v2 M1 compiler and CLI path.
 Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the bootstrap
 provider must not modify semantic behavior or any backend.
 

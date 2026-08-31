@@ -90,7 +90,9 @@ The repository currently establishes and tests:
   commits one deterministic `zryna-manifest-v2.json` atomic bundle. Omitting `--profile` preserves
   every M1 CLI and manifest-v1 contract.
 
-The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
+### Default M1 profile
+
+When `--profile` is omitted, the TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. The first strict semantic subset requires one source file,
 one or more exported functions, explicit `i32` or `bool` annotations, parameter references,
 literals, one return, and `i32` addition. `any`, missing annotations, invalid names, unresolved
@@ -114,6 +116,11 @@ library boundaries for the current `I32V1` slice. The repository-owned
 values and each other on JavaScript, core WebAssembly, and Linux x86-64 native. Source-level `bool`
 remains verifier-gated; Boolean evidence is limited to the typed scalar-ABI carrier contract.
 
+The explicit M2 `--profile control-flow-v1` path is separate from that preserved default. It
+accepts the documented multi-file scalar control-flow subset, including typed `bool`, and reaches
+the sealed M2 verified program consumed by all three backends. See
+[M2 conformance](docs/M2_CONFORMANCE.md) for the exact supported and rejected boundaries.
+
 ## Build and run
 
 The public CLI accepts exactly one workspace-relative `.zry` entrypoint and requires an explicit
@@ -134,8 +141,10 @@ writes [manifest v2](docs/M2_MANIFEST_V2.md). See the [CLI reference](docs/CLI.m
 syntax, single-target commands, typed argument grammar, output layout, JSON, exit statuses,
 security properties, and platform limits. The repository-owned
 [M2 conformance gate](docs/M2_CONFORMANCE.md) now authenticates the fixed-oracle aggregate
-three-target evidence. Issue #57 still owns public documentation, website, and live-deployment
-closure, so the published status remains M1 until that separate release boundary closes.
+three-target evidence. The `next` compiler status therefore includes the explicit
+`control-flow-v1` profile while omission of `--profile` preserves M1. Issue #57 records the
+separate authenticated website import, deployment, and live-provenance evidence; that external
+publication boundary does not broaden the compiler's implemented surface.
 
 ## Run the foundation gate
 

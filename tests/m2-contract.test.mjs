@@ -144,7 +144,7 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
     ),
   );
   const contract = loadAndValidateM2Contract();
-  const rows = [...roadmap.matchAll(/^\| #(\d+) \| ([^|]+) \| ([^|]+) \| (complete|planned) \|$/gm)]
+  const rows = [...roadmap.matchAll(/^\| #(\d+) \| ([^|]+) \| ([^|]+) \| (complete|planned|external closure) \|$/gm)]
     .map((match) => ({
       number: Number(match[1]),
       dependsOnText: match[3].trim(),
@@ -158,7 +158,12 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
       ? 'M1 closure'
       : issue.dependsOn.map((number) => `#${number}`).join(', ');
     assert.equal(row.dependsOnText, expectedDependencyText);
-    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56].includes(row.number) ? 'complete' : 'planned');
+    assert.equal(
+      row.state,
+      [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56].includes(row.number)
+        ? 'complete'
+        : 'external closure',
+    );
   }
   assert.match(
     roadmap,
@@ -170,11 +175,13 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
   assert.match(frontends, /versioned raw syntax snapshot/);
   assert.match(frontends, /internal module discovery/);
   assert.match(status, /## Implemented M1 slice/);
-  assert.match(status, /## Implemented M2 compiler components/);
+  assert.match(status, /## Implemented M2 explicit profile/);
   assert.match(status, /M2 deterministic JavaScript backend[\s\S]*M2 direct core WebAssembly backend[\s\S]*byte-deterministic WebAssembly 1\.0[\s\S]*public driver now composes those boundaries[\s\S]*`zryna-manifest-v2\.json`/);
-  assert.match(status, /compiler-owned M2 gate checks three-target equivalence[\s\S]*public status remains M1/);
+  assert.match(status, /explicit `control-flow-v1` profile is implemented[\s\S]*required fixed-oracle[\s\S]*Linux and Windows `m2` gate/);
   assert.match(status, /Issue #56 adds the[\s\S]*fixed-oracle three-target M2 conformance registry and aggregate required gate/);
-  assert.match(status, /Issue #57[\s\S]*public status remains M1/);
+  assert.match(status, /Issue #57 records the separate authenticated website import[\s\S]*does not assert that an external website deployment has occurred/);
+  assert.match(status, /do not claim heap values[\s\S]*tracing-GC profile[\s\S]*not a general zero-runtime or GC-free guarantee/);
+  assert.doesNotMatch(status, /public status remains M1/);
   assert.match(moduleClosure, /exactly one final full-map protocol-v3 snapshot/);
   assert.match(moduleClosure, /ZRYNA-M2-GRAPH\\0/);
   assert.match(moduleClosure, /canonical verbatim form of that same local disk root is also accepted/);

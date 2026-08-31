@@ -191,17 +191,32 @@ test('Windows CLI smoke precedes the complete M0 gate', async () => {
   assert.ok(rust.indexOf(smoke) < rust.indexOf(completeGate), 'Windows CLI smoke must run before M0');
 });
 
-test('documentation validation precedes the complete gate and main publishes one pinned artifact', async () => {
+test('documentation publication waits for the complete M2 gate and binds exact provenance', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const rust = workflowJob(workflow, 'rust');
+  const publisher = workflowJob(workflow, 'docs-publish');
   const docsCheck = 'run: pnpm docs:check';
   const completeGate = 'run: node scripts/run-m0-conformance.mjs';
   assert.ok(rust.indexOf(docsCheck) > -1, 'missing documentation bundle validation');
   assert.ok(rust.indexOf(docsCheck) < rust.indexOf(completeGate), 'documentation validation must precede M0');
-  assert.match(rust, /runner\.os == 'Linux' && github\.event_name == 'push'/);
-  assert.match(rust, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/);
-  assert.match(rust, /name: zryna-docs-next-\$\{\{ github\.sha \}\}/);
-  assert.match(rust, /compression-level: 0/);
+  assert.doesNotMatch(rust, /Export authenticated next documentation bundle/);
+  assert.match(publisher, /if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
+  assert.match(publisher, /needs: m2/);
+  assert.ok(publisher.indexOf(docsCheck) > -1, 'publisher must revalidate documentation');
+  assert.ok(
+    publisher.indexOf(docsCheck) < publisher.indexOf('node scripts/docs/export.mjs'),
+    'publisher must validate before export',
+  );
+  assert.match(publisher, /--source-commit "\$\{\{ github\.sha \}\}"/);
+  assert.match(publisher, /--source-ref "\$\{\{ github\.ref \}\}"/);
+  assert.match(publisher, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/);
+  assert.match(
+    publisher,
+    /name: zryna-docs-next-\$\{\{ github\.sha \}\}-\$\{\{ steps\.docs-bundle\.outputs\.manifest-sha256 \}\}/,
+  );
+  assert.match(publisher, /Compiler commit:[\s\S]*Documentation manifest SHA-256:/);
+  assert.match(publisher, /compression-level: 0/);
+  assert.match(publisher, /include-hidden-files: true/);
 });
 
 test('required CI exposes a stable aggregate over Rust and adapter gates', async () => {
