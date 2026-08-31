@@ -396,6 +396,21 @@ fn discovers_one_canonical_linear_batched_diamond() {
 }
 
 #[test]
+fn final_closure_enters_verifier_sealed_straight_line_semantics() {
+    let workspace = TemporaryWorkspace::new("semantic-boundary");
+    workspace.write("main.zry", "");
+    let closure = discover_module_closure(&workspace.root(), entry(), &FixtureProvider::new())
+        .expect("complete fixture closure must verify");
+
+    let program = closure
+        .lower_control_flow_v1()
+        .expect("empty-function closure is a valid internal M2 program");
+
+    assert_eq!(program.modules().len(), 1);
+    assert_eq!(program.scalar_abi().exports().len(), 0);
+}
+
+#[test]
 fn rejects_missing_wrong_case_duplicate_cycle_escape_and_final_drift() {
     let missing = TemporaryWorkspace::new("missing");
     missing.write("main.zry", "import { value as local } from \"./missing.zry\";\n");

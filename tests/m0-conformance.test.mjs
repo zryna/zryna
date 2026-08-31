@@ -19,6 +19,10 @@ const fixturePaths = [
   'tests/fixtures/syntax-v3-valid.json',
   'tests/fixtures/typescript-adapter-v3-request.json',
   'tests/fixtures/typescript-adapter-v3-result.json',
+  'tests/fixtures/m2-straight-line-request.json',
+  'tests/fixtures/m2-straight-line-result.json',
+  'tests/fixtures/m2-semantic-negative-request.json',
+  'tests/fixtures/m2-semantic-negative-result.json',
 ];
 
 function clonedManifest() {

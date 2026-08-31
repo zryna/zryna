@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+pub mod control_flow_v1;
+
 use std::{cmp::Ordering, collections::BTreeMap};
 
 use zryna_abi::{AbiViolationKind, raw as raw_abi, verify_v1};

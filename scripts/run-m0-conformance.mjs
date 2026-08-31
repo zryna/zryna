@@ -120,6 +120,34 @@ const EXPECTED_FIXTURES = [
     mode: 'pass',
     expected: 'authoritative-verifier-accepted',
   },
+  {
+    id: 'm2-straight-line-request',
+    path: 'tests/fixtures/m2-straight-line-request.json',
+    phase: 'adapter',
+    mode: 'pass',
+    expected: 'byte-stable-response',
+  },
+  {
+    id: 'm2-straight-line-result',
+    path: 'tests/fixtures/m2-straight-line-result.json',
+    phase: 'semantics',
+    mode: 'pass',
+    expected: 'verifier-sealed-ir',
+  },
+  {
+    id: 'm2-semantic-negative-request',
+    path: 'tests/fixtures/m2-semantic-negative-request.json',
+    phase: 'adapter',
+    mode: 'pass',
+    expected: 'byte-stable-response',
+  },
+  {
+    id: 'm2-semantic-negative-result',
+    path: 'tests/fixtures/m2-semantic-negative-result.json',
+    phase: 'semantics',
+    mode: 'fail',
+    expected: 'deterministic-diagnostics',
+  },
 ];
 const EXPECTED_COMMANDS_SHA256 = '4f36542fb59336658cf5d8f3d1ba04ee5d55a1b301bae5d2bbc5aabf6d0960d1';
 const EXPECTED_COVERAGE_SHA256 = 'c9e34908053bbd162e73a880ece6c2c8f05b22ab1f87e69a19c7d9d45ea1724a';

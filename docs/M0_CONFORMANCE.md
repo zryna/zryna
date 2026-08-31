@@ -11,9 +11,11 @@ addition, listed deletion, duplicate entry, changed expectation, unknown phase, 
 fails the gate. Component-owned inline adversarial cases remain in their Rust or adapter suites;
 the registry maps those authoritative suites without reimplementing their validators.
 
-Protocol-v3 schema and adapter fixtures are appended to that exact inventory; they do not replace
-or relax any frozen protocol-v2 record. The root `protocol:check` and `protocol:test` commands run
-the exact v2 and v3 suites, and the existing Linux/Windows adapter CI matrix invokes both commands.
+Protocol-v3 schema, adapter, and M2 semantic request/result fixtures are appended to that exact
+inventory; they do not replace or relax any frozen protocol-v2 record. The real v3 adapter test
+replays each M2 request and requires its exact checked-in result. The root `protocol:check` and
+`protocol:test` commands run the exact v2 and v3 suites, and the existing Linux/Windows adapter CI
+matrix invokes both commands.
 
 Run it from a dependency-installed checkout with Rust 1.97.1, Node.js 22.22.1, and pnpm 11.18.0:
 
@@ -24,13 +26,13 @@ pnpm preflight
 pnpm m0:check
 ```
 
-Use `pnpm m2:quick` after an M2 closure or workspace-source edit. It runs only the closure and
-retained-filesystem security suites and therefore avoids unrelated runtime/toolchain integration
-failures while preserving native operating-system behavior.
+Use `pnpm m2:quick` after an M2 semantics, closure, or workspace-source edit. It runs only the
+straight-line semantic, closure, and retained-filesystem security suites and therefore avoids
+unrelated runtime/toolchain integration failures while preserving native operating-system behavior.
 
 Use `pnpm preflight` during the edit loop. Its fixed order runs portable documentation, protocol,
-adapter and formatting checks, then the complete M2 driver library before the broader workspace,
-frontend, and syntax checks. It stops immediately at the first failure. GitHub runs the same
+adapter and formatting checks, then the complete M2 semantics and driver libraries before the
+broader workspace, frontend, and syntax checks. It stops immediately at the first failure. GitHub runs the same
 command before starting either full platform matrix, so a
 preflight failure skips the expensive Linux and Windows jobs. This short gate does not claim full
 conformance: `pnpm m0:check` on both supported operating systems and the final `m0` aggregate are
@@ -60,13 +62,13 @@ semantics or validation decisions into the runner.
 | Stable, source-bound diagnostics | `zryna-diagnostics` | Rust workspace tests |
 | Frontend handshake and bounded worker process | `zryna-frontend` | Rust workspace tests |
 | Executable syntax wire and graph verifier | `zryna-syntax` | Rust workspace tests |
-| Provider-error semantic stop gate | `zryna-semantics` | Rust workspace tests |
+| Provider-error stop gate and straight-line M2 semantics | `zryna-semantics` | Rust workspace tests |
 | Sealed Universal IR verification | `zryna-ir` | Rust workspace tests |
 | Verified-only JavaScript emission | `zryna-backend-javascript` | Rust workspace tests |
 | Sealed native MIR verification | `zryna-native-mir` | Rust workspace tests |
 | Verified-only native emission and raw-input compile failure | `zryna-backend-native` | Rust workspace tests and doc-tests |
 | Independent backend orchestration | `zryna-driver` | Rust workspace tests |
-| TypeScript bootstrap adapter | `typescript-6` | adapter check and tests |
+| TypeScript bootstrap adapter and exact M2 fixture replay | `typescript-6` | adapter check and tests |
 | Shared protocol-v2 and protocol-v3 schemas and fixtures | root `tests/fixtures` | version-specific protocol checks and tests |
 
 The gate also requires locked dependency fetching, formatting, strict Clippy, warning-free rustdoc,

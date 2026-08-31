@@ -122,6 +122,22 @@ test('complete ControlFlowV1 syntax uses canonical source-order arenas and exact
   }
 });
 
+test('checked-in M2 semantic fixtures are exact real adapter responses', async () => {
+  for (const stem of ['m2-straight-line', 'm2-semantic-negative']) {
+    const request = JSON.parse(
+      await readFile(new URL(`../../../tests/fixtures/${stem}-request.json`, import.meta.url)),
+    );
+    const expected = (
+      await readFile(new URL(`../../../tests/fixtures/${stem}-result.json`, import.meta.url), 'utf8')
+    ).trim();
+    const [response] = await exchange([request]);
+
+    assert.equal(response.error, undefined, JSON.stringify(response.error));
+    assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+    assert.equal(JSON.stringify(response.result), expected);
+  }
+});
+
 test('file IDs and UTF-8 spans remain deterministic for shuffled batches', async () => {
   const prefix = '// 😀\r\n';
   const source = `${prefix}export function value(): i32 { return 1; }`;

@@ -7,7 +7,9 @@ use std::{
 use sha2::{Digest, Sha256};
 use zryna_diagnostics::{Diagnostic, Severity};
 use zryna_frontend::{VerifiedFrontendProviderV3, WorkerError, syntax_v3};
-use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap, Span};
+use zryna_source::{
+    NormalizedSourcePath, SourceFileInput, SourceMap, Span, resolve_explicit_zry_import,
+};
 
 use crate::workspace_source::{MAX_DIRECTORY_ENTRIES, StableSource, WorkspaceSourceRoot};
 
@@ -175,6 +177,41 @@ impl VerifiedModuleClosure {
     #[must_use]
     pub const fn graph_sha256(&self) -> &[u8; 32] {
         &self.graph_sha256
+    }
+
+    /// Runs the isolated straight-line M2 semantic boundary over this exact final closure.
+    ///
+    /// This does not enable a public compiler profile or backend. Success returns only mandatory
+    /// `ControlFlowV1` verifier authority; raw semantic IR is never exposed.
+    ///
+    /// # Errors
+    ///
+    /// Returns deterministic semantic or IR diagnostics. A closure/input mismatch is reported as
+    /// a driver invariant failure rather than falling back to a discovery snapshot.
+    pub fn lower_control_flow_v1(
+        &self,
+    ) -> Result<zryna_ir::control_flow_v1::VerifiedProgram, Vec<Diagnostic>> {
+        let Some(entry) = self.sources.file_id(&self.entrypoint) else {
+            return Err(vec![module_diagnostic(
+                "ZRYNA-D3202",
+                Some(&self.entrypoint),
+                "authenticated module closure lost its selected entry authority",
+                "report this compiler invariant failure with the smallest reproducible workspace",
+            )]);
+        };
+        let Some(input) = zryna_semantics::control_flow_v1::SemanticInput::try_new(
+            &self.syntax,
+            &self.sources,
+            entry,
+        ) else {
+            return Err(vec![module_diagnostic(
+                "ZRYNA-D3202",
+                Some(&self.entrypoint),
+                "authenticated module closure cannot enter the exact M2 semantic boundary",
+                "report this compiler invariant failure with the smallest reproducible workspace",
+            )]);
+        };
+        zryna_semantics::control_flow_v1::lower(input)
     }
 }
 
@@ -357,7 +394,8 @@ pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
                         "module discovery exceeded the aggregate import-declaration budget",
                     ));
                 }
-                let target = resolve_module_specifier(&path, &import.specifier)?;
+                let target = resolve_explicit_zry_import(&path, &import.specifier)
+                    .map_err(|_| invalid_specifier(&path))?;
                 register_portable_path(&mut portable_paths, &target)?;
                 for binding in &import.bindings {
                     let identity = EdgeIdentity {
@@ -488,7 +526,8 @@ fn final_edges(
     let mut edges = Vec::new();
     for file in snapshot.files() {
         for import in file.imports() {
-            let target = resolve_module_specifier(file.path(), import.specifier().text())?;
+            let target = resolve_explicit_zry_import(file.path(), import.specifier().text())
+                .map_err(|_| invalid_specifier(file.path()))?;
             for binding in import.bindings() {
                 edges.push(ModuleEdge {
                     importer: file.path().clone(),
@@ -517,44 +556,6 @@ fn edge_key(edge: &ModuleEdge) -> (&[u8], &[u8], &[u8], &[u8]) {
     )
 }
 
-fn resolve_module_specifier(
-    importer: &NormalizedSourcePath,
-    specifier: &str,
-) -> Result<NormalizedSourcePath, ModuleClosureError> {
-    if !(specifier.starts_with("./") || specifier.starts_with("../"))
-        || !has_exact_zry_extension(specifier)
-        || !specifier.is_ascii()
-        || specifier.contains(['\\', '?', '#', '\0'])
-        || specifier.contains("://")
-    {
-        return Err(invalid_specifier(importer));
-    }
-    let mut components = importer.as_str().split('/').collect::<Vec<_>>();
-    let _ = components.pop();
-    for component in specifier.split('/') {
-        match component {
-            "." => {}
-            ".." => {
-                if components.pop().is_none() {
-                    return Err(invalid_specifier(importer));
-                }
-            }
-            "" => return Err(invalid_specifier(importer)),
-            value => components.push(value),
-        }
-    }
-    let resolved = components.join("/");
-    if !has_exact_zry_extension(&resolved) {
-        return Err(invalid_specifier(importer));
-    }
-    NormalizedSourcePath::new(resolved).map_err(|_| invalid_specifier(importer))
-}
-
-#[allow(clippy::case_sensitive_file_extension_comparisons)]
-fn has_exact_zry_extension(value: &str) -> bool {
-    value.ends_with(".zry")
-}
-
 fn register_portable_path(
     paths: &mut BTreeMap<String, NormalizedSourcePath>,
     path: &NormalizedSourcePath,
@@ -576,6 +577,11 @@ fn register_portable_path(
         paths.insert(identity, path.clone());
     }
     Ok(())
+}
+
+#[allow(clippy::case_sensitive_file_extension_comparisons)]
+fn has_exact_zry_extension(value: &str) -> bool {
+    value.ends_with(".zry")
 }
 
 fn reject_provider_errors(
@@ -789,12 +795,12 @@ fn module_diagnostic(
 mod tests {
     use std::collections::HashSet;
 
-    use zryna_source::NormalizedSourcePath;
+    use zryna_source::{NormalizedSourcePath, resolve_explicit_zry_import};
 
     use super::{
         EdgeIdentity, MAX_MODULE_IMPORT_EDGES, MAX_MODULE_PROVIDER_CALLS,
         MAX_MODULE_PROVIDER_SOURCE_BYTES, ProviderCallPhase, ResolvedEdge, account_provider_bytes,
-        account_provider_call, register_edge, resolve_module_specifier,
+        account_provider_call, register_edge,
     };
 
     fn path(value: &str) -> NormalizedSourcePath {
@@ -811,7 +817,7 @@ mod tests {
             ("../../root.zry", "root.zry"),
         ] {
             assert_eq!(
-                resolve_module_specifier(&importer, specifier)
+                resolve_explicit_zry_import(&importer, specifier)
                     .expect("specifier must resolve")
                     .as_str(),
                 expected
@@ -833,7 +839,7 @@ mod tests {
             "../../../escape.zry",
         ] {
             assert!(
-                resolve_module_specifier(&importer, rejected).is_err(),
+                resolve_explicit_zry_import(&importer, rejected).is_err(),
                 "specifier must be rejected: {rejected}"
             );
         }

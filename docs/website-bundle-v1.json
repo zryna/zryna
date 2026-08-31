@@ -33,6 +33,12 @@
       "title": "M2 deterministic module closure"
     },
     {
+      "id": "reference/m2-straight-line-semantics",
+      "source": "docs/M2_STRAIGHT_LINE_SEMANTICS.md",
+      "path": "documents/reference/m2-straight-line-semantics.md",
+      "title": "M2 straight-line semantics"
+    },
+    {
       "id": "reference/scalar-abi-v1",
       "source": "spec/abi/SCALAR_V1.md",
       "path": "documents/reference/scalar-abi-v1.md",

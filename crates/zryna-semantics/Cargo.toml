@@ -13,5 +13,8 @@ zryna-ir = { path = "../zryna-ir" }
 zryna-source = { path = "../zryna-source" }
 zryna-syntax = { path = "../zryna-syntax" }
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true
