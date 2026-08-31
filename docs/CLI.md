@@ -169,4 +169,5 @@ M1 differential suite requires those observations and the manifest to agree. Pac
 multiple source files, watch mode, incremental or remote builds, Boolean execution, browser
 execution, WASI, Windows or macOS native execution, static native executables, overwrite behavior,
 and runtime-enforced cross-target comparison remain outside the current slice.
-Website publication of versioned status and reference data remains Issue #21.
+M1 closure evidence includes website publication of versioned status and reference data from the
+authenticated compiler documentation bundle tracked in Issue #21.
