@@ -63,7 +63,8 @@ Goal: compile one `.zry` entrypoint to executable JavaScript, direct WebAssembly
 Current status: Issue #19 implements the explicit build/run CLI and atomic target bundles for the
 `I32V1` slice. Issue #20 implements the checked three-target differential corpus, portable
 JavaScript/WebAssembly matrix, invalid-source matrix, and scalar-ABI Boolean normalization proof.
-M1 remains open until Issue #21 publishes the versioned website-facing status and reference data.
+M1 closure evidence includes versioned website-facing status and reference data published from the
+authenticated compiler documentation bundle tracked in Issue #21.
 
 Dependency order:
 
