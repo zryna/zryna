@@ -56,7 +56,19 @@
     {
       "id": "adapter-tests",
       "executable": "node",
-      "args": ["--test", "adapters/typescript-6/test/worker.test.mjs"],
+      "args": ["--test", "adapters/typescript-6/test/worker.test.mjs", "adapters/typescript-6/test/worker-v3.test.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "adapter-v3-check",
+      "executable": "node",
+      "args": ["--check", "adapters/typescript-6/src/worker-v3.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "adapter-v3-test-check",
+      "executable": "node",
+      "args": ["--check", "adapters/typescript-6/test/worker-v3.test.mjs"],
       "platforms": ["linux", "windows"]
     },
     {
@@ -69,6 +81,18 @@
       "id": "protocol-tests",
       "executable": "node",
       "args": ["--test", "tests/syntax-protocol-v2.test.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "protocol-v3-check",
+      "executable": "node",
+      "args": ["--check", "tests/syntax-protocol-v3.test.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "protocol-v3-tests",
+      "executable": "node",
+      "args": ["--test", "tests/syntax-protocol-v3.test.mjs"],
       "platforms": ["linux", "windows"]
     },
     {
@@ -250,6 +274,27 @@
       "phase": "semantics",
       "mode": "pass",
       "expected": "semantic-input-accepted"
+    },
+    {
+      "id": "syntax-v3-valid",
+      "path": "tests/fixtures/syntax-v3-valid.json",
+      "phase": "protocol",
+      "mode": "pass",
+      "expected": "schema-accepted"
+    },
+    {
+      "id": "typescript-adapter-v3-request",
+      "path": "tests/fixtures/typescript-adapter-v3-request.json",
+      "phase": "adapter",
+      "mode": "pass",
+      "expected": "byte-stable-response"
+    },
+    {
+      "id": "typescript-adapter-v3-result",
+      "path": "tests/fixtures/typescript-adapter-v3-result.json",
+      "phase": "syntax",
+      "mode": "pass",
+      "expected": "authoritative-verifier-accepted"
     }
   ]
 }

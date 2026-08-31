@@ -16,6 +16,9 @@ const fixturePaths = [
   'tests/fixtures/typescript-adapter-v2-result.json',
   'tests/fixtures/typescript-adapter-v2-error-result.json',
   'tests/fixtures/typescript-adapter-v2-warning-result.json',
+  'tests/fixtures/syntax-v3-valid.json',
+  'tests/fixtures/typescript-adapter-v3-request.json',
+  'tests/fixtures/typescript-adapter-v3-result.json',
 ];
 
 function clonedManifest() {
@@ -133,12 +136,26 @@ test('documented package alias is bound to the canonical runner', async () => {
   assert.throws(() => validatePackageDocument(packageDocument), /m0:check must be exactly/);
 });
 
+test('package protocol gates retain exact v2 and v3 coverage', async () => {
+  const packageDocument = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.doesNotThrow(() => validatePackageDocument(packageDocument));
+  for (const script of ['protocol:check', 'protocol:test']) {
+    const changed = structuredClone(packageDocument);
+    changed.scripts[script] = changed.scripts[script].replace('v2', 'v4');
+    assert.throws(() => validatePackageDocument(changed), /must cover exact protocol v2 and v3/);
+  }
+});
+
 test('required CI consumes the same canonical gate on Linux and Windows', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const rust = workflowJob(workflow, 'rust');
+  const adapterPlatform = workflowJob(workflow, 'adapter-platform');
   assert.match(rust, /name: rust \(\$\{\{ matrix\.os \}\}\)/);
   assert.match(rust, /os: \[ubuntu-latest, windows-latest\]/);
   assert.match(rust, /run: node scripts\/run-m0-conformance\.mjs/);
+  assert.match(adapterPlatform, /os: \[ubuntu-latest, windows-latest\]/);
+  assert.match(adapterPlatform, /run: pnpm protocol:check/);
+  assert.match(adapterPlatform, /run: pnpm protocol:test/);
 });
 
 test('CI avoids duplicate feature runs and cancels superseded revisions', async () => {

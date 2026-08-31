@@ -109,13 +109,15 @@ The permanent provider-neutral path is:
 native Zryna lexer → parser → versioned raw syntax snapshot → matching Zryna verifier
 ```
 
-Protocol v2 is the implemented M1 instance of this path; planned protocol v3 is the separate M2
-instance. Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the
-bootstrap provider must not modify semantic behavior or any backend.
+Protocol v2 is the implemented M1 instance of this path. Protocol v3 now has a separate exact
+schema, pinned TypeScript 6 syntax-only worker, opaque source-map-bound verifier, and typed worker
+transport. It is not selected by the driver and does not activate an M2 compiler or CLI profile.
+Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the bootstrap
+provider must not modify semantic behavior or any backend.
 
-## Planned protocol v3 module discovery
+## Protocol v3 and planned module discovery
 
-M2 protocol v3 will add source-faithful DTOs for named imports, locals, assignment, direct calls,
+M2 protocol v3 adds source-faithful DTOs for named imports, locals, assignment, direct calls,
 exact operators, blocks, `if`, and `while`. It is a new exact protocol; protocol v2 is not modified
 or implicitly upgraded. The TypeScript 6 provider will continue to advertise
 `module_resolution: false`: it reports import specifiers and spans but never reads a dependency,
@@ -127,5 +129,6 @@ safely reads unresolved files through a retained workspace-root capability. Afte
 the immutable source map once and requests one final complete snapshot; only that final-map-bound
 snapshot may enter semantics. Exact path, graph, fixed-point, race, cycle, and resource rules are
 specified in
-[scalar control flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md). This behavior is
-planned under Issues #46 and #47 and is not available in the current provider or CLI.
+[scalar control flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md). Protocol-v3
+syntax and transport belong to Issue #46. Compiler-owned discovery and closure remain planned
+under Issue #47 and are not available in the current driver or CLI.

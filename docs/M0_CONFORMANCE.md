@@ -11,6 +11,10 @@ addition, listed deletion, duplicate entry, changed expectation, unknown phase, 
 fails the gate. Component-owned inline adversarial cases remain in their Rust or adapter suites;
 the registry maps those authoritative suites without reimplementing their validators.
 
+Protocol-v3 schema and adapter fixtures are appended to that exact inventory; they do not replace
+or relax any frozen protocol-v2 record. The root `protocol:check` and `protocol:test` commands run
+the exact v2 and v3 suites, and the existing Linux/Windows adapter CI matrix invokes both commands.
+
 Run it from a dependency-installed checkout with Rust 1.97.1, Node.js 22.22.1, and pnpm 11.18.0:
 
 ```bash
@@ -48,7 +52,7 @@ semantics or validation decisions into the runner.
 | Verified-only native emission and raw-input compile failure | `zryna-backend-native` | Rust workspace tests and doc-tests |
 | Independent backend orchestration | `zryna-driver` | Rust workspace tests |
 | TypeScript bootstrap adapter | `typescript-6` | adapter check and tests |
-| Shared protocol-v2 schema and fixtures | root `tests/fixtures` | protocol check and tests |
+| Shared protocol-v2 and protocol-v3 schemas and fixtures | root `tests/fixtures` | version-specific protocol checks and tests |
 
 The gate also requires locked dependency fetching, formatting, strict Clippy, warning-free rustdoc,
 and registry self-tests. GitHub runs the same complete gate in the required

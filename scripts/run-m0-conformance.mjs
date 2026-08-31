@@ -10,6 +10,10 @@ const MANIFEST_PATH = resolve(WORKSPACE_ROOT, 'tests', 'm0-conformance-v1.json')
 const PACKAGE_PATH = resolve(WORKSPACE_ROOT, 'package.json');
 const MAX_MANIFEST_BYTES = 64 * 1024;
 const CANONICAL_PACKAGE_ALIAS = 'node scripts/run-m0-conformance.mjs';
+const CANONICAL_PROTOCOL_CHECK =
+  'node --check tests/syntax-protocol-v2.test.mjs && node --check tests/syntax-protocol-v3.test.mjs';
+const CANONICAL_PROTOCOL_TEST =
+  'node --test tests/syntax-protocol-v2.test.mjs tests/syntax-protocol-v3.test.mjs';
 const SUPPORTED_PLATFORMS = ['linux', 'windows'];
 const EXPECTED_COMMAND_IDS = [
   'cargo-fetch',
@@ -21,8 +25,12 @@ const EXPECTED_COMMAND_IDS = [
   'adapter-check',
   'adapter-test-check',
   'adapter-tests',
+  'adapter-v3-check',
+  'adapter-v3-test-check',
   'protocol-check',
   'protocol-tests',
+  'protocol-v3-check',
+  'protocol-v3-tests',
   'closure-registry-tests',
 ];
 const EXPECTED_COVERAGE_IDS = [
@@ -90,8 +98,29 @@ const EXPECTED_FIXTURES = [
     mode: 'pass',
     expected: 'semantic-input-accepted',
   },
+  {
+    id: 'syntax-v3-valid',
+    path: 'tests/fixtures/syntax-v3-valid.json',
+    phase: 'protocol',
+    mode: 'pass',
+    expected: 'schema-accepted',
+  },
+  {
+    id: 'typescript-adapter-v3-request',
+    path: 'tests/fixtures/typescript-adapter-v3-request.json',
+    phase: 'adapter',
+    mode: 'pass',
+    expected: 'byte-stable-response',
+  },
+  {
+    id: 'typescript-adapter-v3-result',
+    path: 'tests/fixtures/typescript-adapter-v3-result.json',
+    phase: 'syntax',
+    mode: 'pass',
+    expected: 'authoritative-verifier-accepted',
+  },
 ];
-const EXPECTED_COMMANDS_SHA256 = '1af3e3c83627475879bf91cb5071e904120bd1a853b27c842eb0f8b05d6e449d';
+const EXPECTED_COMMANDS_SHA256 = '4f36542fb59336658cf5d8f3d1ba04ee5d55a1b301bae5d2bbc5aabf6d0960d1';
 const EXPECTED_COVERAGE_SHA256 = 'c9e34908053bbd162e73a880ece6c2c8f05b22ab1f87e69a19c7d9d45ea1724a';
 const ALLOWED_EXECUTABLES = new Set(['cargo', 'node']);
 const SAFE_TOKEN = /^[\x20-\x7e]+$/;
@@ -225,6 +254,12 @@ export function validatePackageDocument(packageDocument) {
   }
   if (packageDocument.scripts?.['m0:check'] !== CANONICAL_PACKAGE_ALIAS) {
     fail(`package.json m0:check must be exactly ${CANONICAL_PACKAGE_ALIAS}`);
+  }
+  if (packageDocument.scripts?.['protocol:check'] !== CANONICAL_PROTOCOL_CHECK) {
+    fail(`package.json protocol:check must cover exact protocol v2 and v3 syntax checks`);
+  }
+  if (packageDocument.scripts?.['protocol:test'] !== CANONICAL_PROTOCOL_TEST) {
+    fail(`package.json protocol:test must cover exact protocol v2 and v3 schema tests`);
   }
   return packageDocument;
 }

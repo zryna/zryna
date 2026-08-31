@@ -1,0 +1,24 @@
+{
+  "schema_version": 3,
+  "files": [{
+    "id": 0,
+    "path": "src/main.zry",
+    "imports": [],
+    "functions": [{
+      "span": { "file": 0, "start": 0, "end": 44 },
+      "export_span": { "file": 0, "start": 0, "end": 6 },
+      "function_span": { "file": 0, "start": 7, "end": 15 },
+      "name": { "text": "yes", "span": { "file": 0, "start": 16, "end": 19 } },
+      "parameters": [],
+      "result_type": { "span": { "file": 0, "start": 23, "end": 27 }, "kind": { "kind": "named", "name": "bool" } },
+      "body": {
+        "span": { "file": 0, "start": 28, "end": 44 },
+        "root_block": 0,
+        "blocks": [{ "span": { "file": 0, "start": 28, "end": 44 }, "open_brace_span": { "file": 0, "start": 28, "end": 29 }, "statements": [0], "close_brace_span": { "file": 0, "start": 43, "end": 44 } }],
+        "statements": [{ "span": { "file": 0, "start": 30, "end": 42 }, "kind": { "kind": "return", "keyword_span": { "file": 0, "start": 30, "end": 36 }, "value": 0, "semicolon_span": { "file": 0, "start": 41, "end": 42 } } }],
+        "expressions": [{ "span": { "file": 0, "start": 37, "end": 41 }, "kind": { "kind": "bool-literal", "value": true } }]
+      }
+    }]
+  }],
+  "diagnostics": []
+}
