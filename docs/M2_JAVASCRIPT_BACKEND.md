@@ -1,8 +1,8 @@
 # M2 deterministic JavaScript backend
 
 Status: implemented as an internal sealed backend. This does not select protocol v3 in the public
-driver, enable `--profile control-flow-v1`, create manifest v2, or claim M2 WebAssembly, native, or
-three-target execution.
+driver, enable `--profile control-flow-v1`, create manifest v2, or claim native or three-target M2
+execution.
 
 ## Authority boundary
 
@@ -68,7 +68,8 @@ runtime capabilities.
 
 ## Remaining M2 gates
 
-Direct M2 core WebAssembly, verified native MIR and execution, explicit-profile driver/CLI and
-manifest v2, three-target conformance, and live website status remain gated by Issues #52 through
-#57. Until those gates pass, the website and public CLI continue to describe M1 as the executable
-profile.
+Direct M2 core WebAssembly is documented by
+[the separate sealed backend contract](M2_WEBASSEMBLY_BACKEND.md). Verified native MIR and
+execution, explicit-profile driver/CLI and manifest v2, three-target conformance, and live website
+status remain gated by Issues #53 through #57. Until those gates pass, the website and public CLI
+continue to describe M1 as the executable profile.

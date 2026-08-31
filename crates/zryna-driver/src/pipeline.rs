@@ -935,8 +935,16 @@ fn execute_targets(
     }
     if request.targets.webassembly() {
         let harness = render_webassembly_harness(&request.artifact_stem, invocation)?;
-        let harness_path = transaction.write_runtime_harness("webassembly", &harness)?;
-        let frame = node.run_module(&harness_path, transaction.path()).map_err(runtime_failure)?;
+        let artifact = prepared.webassembly.as_ref().ok_or_else(|| {
+            request_error(
+                "ZRYNA-C1010",
+                "WebAssembly preparation was not completed",
+                "report this compiler invariant failure",
+            )
+        })?;
+        let frame = node
+            .run_webassembly_module(&harness, artifact.bytes(), transaction.path())
+            .map_err(runtime_failure)?;
         results.push(TargetResult {
             target: ManifestTarget::WebAssembly,
             outcome: normalize_frame(
@@ -1001,37 +1009,28 @@ fn render_javascript_arguments(invocation: &zryna_abi::VerifiedInvocation<'_>) -
 }
 
 fn render_webassembly_harness(
-    stem: &str,
+    _stem: &str,
     invocation: &zryna_abi::VerifiedInvocation<'_>,
 ) -> Result<Vec<u8>, CommandFailure> {
-    let arguments = render_i32_arguments(invocation)?;
-    let module_path =
-        serde_json::to_string(&format!("./webassembly/{stem}.wasm")).map_err(invariant_failure)?;
+    let arguments = render_webassembly_arguments(invocation);
     let export = serde_json::to_string(invocation.export().webassembly_name().as_str())
         .map_err(invariant_failure)?;
     Ok(format!(
-        "import {{ readFileSync }} from 'node:fs';\nconst bytes = readFileSync({module_path});\nconst {{ instance }} = await WebAssembly.instantiate(bytes, {{}});\nconst invoke = instance.exports[{export}];\nif (typeof invoke !== 'function') process.exit(70);\nconst value = invoke({arguments});\nconst frame = Buffer.allocUnsafe(4);\nframe.writeInt32LE(value, 0);\nprocess.stdout.write(frame);\n"
+        "const chunks = [];\nfor await (const chunk of process.stdin) chunks.push(chunk);\nconst bytes = Buffer.concat(chunks);\nconst {{ instance }} = await WebAssembly.instantiate(bytes, {{}});\nconst invoke = instance.exports[{export}];\nif (typeof invoke !== 'function') process.exit(70);\nconst value = invoke({arguments});\nif (typeof value !== 'number' || value !== (value | 0)) process.exit(70);\nconst frame = Buffer.allocUnsafe(4);\nframe.writeInt32LE(value, 0);\nprocess.stdout.write(frame);\n"
     )
     .into_bytes())
 }
 
-fn render_i32_arguments(
-    invocation: &zryna_abi::VerifiedInvocation<'_>,
-) -> Result<String, CommandFailure> {
-    let mut rendered = Vec::with_capacity(invocation.arguments().len());
-    for argument in invocation.arguments() {
-        match argument {
-            ScalarValue::I32(value) => rendered.push(value.to_string()),
-            ScalarValue::Bool(_) => {
-                return Err(request_error(
-                    "ZRYNA-C1008",
-                    "Boolean execution is outside the current I32V1 profile",
-                    "use signed 32-bit arguments until the Boolean executable profile lands",
-                ));
-            }
-        }
-    }
-    Ok(rendered.join(", "))
+fn render_webassembly_arguments(invocation: &zryna_abi::VerifiedInvocation<'_>) -> String {
+    invocation
+        .arguments()
+        .iter()
+        .map(|argument| match argument {
+            ScalarValue::I32(value) => value.to_string(),
+            ScalarValue::Bool(value) => i32::from(*value).to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn normalize_frame(
@@ -1459,7 +1458,9 @@ mod tests {
         sync::atomic::{AtomicUsize, Ordering},
     };
 
-    use zryna_abi::{Invocation, RawHostScalar, ScalarType, ScalarValue};
+    use zryna_abi::{
+        Invocation, RawHostScalar, ScalarOutcome, ScalarTarget, ScalarType, ScalarValue,
+    };
     use zryna_diagnostics::Diagnostic;
     use zryna_frontend::{VerifiedFrontendProvider, WorkerError, syntax_v2};
     use zryna_ir::{Type, control_flow_v1};
@@ -1470,7 +1471,8 @@ mod tests {
     use super::{
         BuildRequest, CommandFailure, CommandFailureKind, CommandKind, ManifestTarget,
         TargetSelection, Transaction, compile_selected, native_preparation_failure,
-        native_runtime_failure, render_javascript_harness, runtime_failure, validate_request,
+        native_runtime_failure, normalize_carrier, render_javascript_harness,
+        render_webassembly_harness, runtime_failure, validate_request,
     };
     use crate::{ArtifactOutputRoot, runtime::NodeRuntimeCapability};
 
@@ -1534,7 +1536,8 @@ mod tests {
     }
 
     #[test]
-    fn sealed_runtime_executes_public_m2_i32_and_bool_exports() {
+    #[allow(clippy::too_many_lines)]
+    fn sealed_runtime_executes_public_m2_javascript_and_webassembly_exports() {
         use control_flow_v1::raw::{
             Block, BlockId, Function, FunctionId, Instruction, InstructionKind, Module, ModuleId,
             Program, SpannedTerminator, Terminator, ValueDefinition, ValueId,
@@ -1595,13 +1598,15 @@ mod tests {
         .expect("M2 runtime fixture must verify");
         let artifact = zryna_backend_javascript::emit_control_flow(&program)
             .expect("M2 runtime artifact must emit");
+        let webassembly = zryna_backend_webassembly::emit_control_flow(&program)
+            .expect("M2 WebAssembly artifact must emit");
         let javascript = root.path().join("javascript");
         fs::create_dir(&javascript).expect("M2 runtime artifact directory");
         fs::write(javascript.join("m2.mjs"), artifact.source).expect("M2 runtime artifact write");
         let runtime = NodeRuntimeCapability::discover(&node_executable(), root.path())
             .expect("pinned Node capability");
 
-        for (invocation, expected_type, expected_carrier) in [
+        for (invocation, expected_type, expected_javascript, expected_webassembly) in [
             (
                 Invocation::new(
                     "Math".to_owned(),
@@ -1609,11 +1614,13 @@ mod tests {
                 ),
                 ScalarType::I32,
                 RawHostScalar::JavaScriptNumber(131_073.0),
+                RawHostScalar::I32(131_073),
             ),
             (
                 Invocation::new("Number".to_owned(), vec![ScalarValue::Bool(true)]),
                 ScalarType::Bool,
                 RawHostScalar::JavaScriptBool(true),
+                RawHostScalar::I32(1),
             ),
         ] {
             let prepared = program.prepare_invocation(invocation).expect("typed M2 invocation");
@@ -1628,8 +1635,36 @@ mod tests {
                 runtime
                     .run_javascript_module(&harness_path, root.path(), expected_type)
                     .expect("sealed typed M2 execution"),
-                expected_carrier
+                expected_javascript
             );
+            let webassembly_harness =
+                render_webassembly_harness("m2", &prepared).expect("typed M2 Wasm harness");
+            let frame = runtime
+                .run_webassembly_module(&webassembly_harness, webassembly.bytes(), root.path())
+                .expect("sealed typed M2 WebAssembly execution");
+            let raw = RawHostScalar::I32(i32::from_le_bytes(frame));
+            assert_eq!(raw, expected_webassembly);
+            assert!(matches!(
+                normalize_carrier(ScalarTarget::CoreWebAssembly, expected_type, raw),
+                ScalarOutcome::Returned { .. }
+            ));
+
+            if expected_type == ScalarType::Bool {
+                let invalid = String::from_utf8(webassembly_harness)
+                    .expect("UTF-8 harness")
+                    .replace("invoke(1)", "invoke(2)");
+                assert_eq!(
+                    runtime
+                        .run_webassembly_module(
+                            invalid.as_bytes(),
+                            webassembly.bytes(),
+                            root.path(),
+                        )
+                        .expect_err("noncanonical public bool lane must trap")
+                        .code(),
+                    "ZRYNA-R3006"
+                );
+            }
         }
     }
 

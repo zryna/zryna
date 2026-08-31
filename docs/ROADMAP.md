@@ -108,9 +108,9 @@ Linux x86-64 native output.
 
 Current status: contract specified, exact syntax protocol v3 implemented, deterministic module
 closure implemented, modules/scopes/types/calls and canonical `if`/`while` control flow lower to
-verified M2 IR, the isolated IR verifier implemented, and deterministic sealed M2 ECMAScript
-emission and typed Node execution implemented internally, but the public M2 profile and
-cross-target execution remain unavailable. Issue #45 freezes the normative
+verified M2 IR, the isolated IR verifier implemented, and deterministic sealed M2 ECMAScript and
+direct core WebAssembly emission with typed Node execution implemented internally, but the public
+M2 profile and three-target execution remain unavailable. Issue #45 freezes the normative
 [scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) contract and a
 digest-pinned planning inventory. Issue #46 implements the separate exact protocol-v3 schema,
 pinned TypeScript 6 syntax-only worker, opaque source-map-bound syntax verifier, and typed worker
@@ -120,8 +120,10 @@ module discovery and final source-map authentication without selecting it in the
 Issue #49 implements the internal [straight-line M2 semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md).
 Issue #50 extends it with [canonical control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md), definite
 state, reachability, and return analysis. Issue #51 implements the internal
-[deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md) over opaque verified views. This does
-not enable a compiler profile, a CLI command, or a public M2 support claim. `I32V1`, protocol v2,
+[deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md) over opaque verified views. Issue #52
+implements the internal [direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md) over the same
+authority, including typed execution of the exact validated bytes. These gates do not enable a
+compiler profile, a CLI command, or a public M2 support claim. `I32V1`, protocol v2,
 manifest v1, and all M0/M1 executable
 evidence remain unchanged while the remaining M2 gates are built on those verified boundaries.
 
@@ -136,7 +138,7 @@ Dependency ledger:
 | #49 | Zryna-owned modules, scopes, types, arithmetic, comparisons, locals, assignment, and direct calls | #46, #47, #48 | complete |
 | #50 | canonical `if`/`while`, definite state, reachability, and return lowering | #49 | complete |
 | #51 | deterministic M2 ECMAScript emission and execution | #50 | complete |
-| #52 | direct capability-minimal M2 core WebAssembly emission and execution | #50 | planned |
+| #52 | direct capability-minimal M2 core WebAssembly emission and execution | #50 | complete |
 | #53 | independently verified native MIR control flow and calls | #50 | planned |
 | #54 | audited Linux x86-64 native object, internal calls, link, and run | #53 | planned |
 | #55 | explicit-profile atomic multi-file CLI and manifest v2 | #47, #51, #52, #54 | planned |

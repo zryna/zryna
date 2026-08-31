@@ -26,10 +26,11 @@ pnpm preflight
 pnpm m0:check
 ```
 
-Use `pnpm m2:quick` after an M2 JavaScript, semantics, closure, or workspace-source edit. It runs
-only the deterministic M2 JavaScript backend, control-flow semantic, closure, and retained-
-filesystem security suites and therefore avoids unrelated runtime/toolchain integration failures
-while preserving native operating-system behavior.
+Use `pnpm m2:quick` after an M2 JavaScript, WebAssembly, semantics, closure, or workspace-source
+edit. It runs
+only the deterministic M2 JavaScript and WebAssembly backends, control-flow semantic, closure, and
+retained-filesystem security suites and therefore avoids unrelated runtime/toolchain integration
+failures while preserving native operating-system behavior.
 
 Use `pnpm preflight` during the edit loop. Its fixed order runs portable documentation, protocol,
 adapter and formatting checks, then the complete M2 semantics and driver libraries before the

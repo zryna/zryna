@@ -12,8 +12,9 @@ dependency.
 This boundary does not enable the `control-flow-v1` profile. Its final authenticated snapshot can
 enter the internal [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and its
 [control-flow extension](M2_CONTROL_FLOW_SEMANTICS.md), then the internal
-[M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md). M2 WebAssembly, native, manifest v2, and the
-public multi-file command remain gated by later M2 issues.
+[M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) or
+[M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md). Native, manifest v2, and the public
+multi-file command remain gated by later M2 issues.
 
 ## Fixed-point algorithm
 
