@@ -76,6 +76,7 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
 
   assert.match(preflight, /name: preflight/);
   assert.match(preflight, /run: pnpm preflight/);
+  assert.match(rust, /name: Fetch locked Rust dependencies\s+run: cargo fetch --locked/);
   assert.match(rust, /run: cargo test --locked -p zryna-driver --lib/);
   assert.doesNotMatch(rust, /module_closure_tests::/);
   assert.match(rust, /needs: preflight/);
