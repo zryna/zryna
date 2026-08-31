@@ -14,10 +14,14 @@
 #![forbid(unsafe_code)]
 
 mod javascript;
+mod module_closure;
+#[cfg(test)]
+mod module_closure_tests;
 mod native;
 mod pipeline;
 mod runtime;
 mod webassembly;
+mod workspace_source;
 
 use std::{error::Error, fmt, path::Path};
 
@@ -33,6 +37,12 @@ pub use javascript::{
     JavaScriptBuildSuccess, JavaScriptOutputRoot, MAX_ARTIFACT_STEM_BYTES,
     MAX_JAVASCRIPT_ARTIFACT_STEM_BYTES, PublishedJavaScriptArtifact, compile_javascript,
     publish_javascript,
+};
+pub use module_closure::{
+    MAX_MODULE_DIRECTORY_ENTRIES, MAX_MODULE_DISCOVERY_ROUNDS, MAX_MODULE_FILES,
+    MAX_MODULE_IMPORT_DECLARATIONS, MAX_MODULE_IMPORT_EDGES, MAX_MODULE_PROVIDER_CALLS,
+    MAX_MODULE_PROVIDER_SOURCE_BYTES, MAX_MODULE_SOURCE_BYTES, ModuleClosureError, ModuleEdge,
+    ModuleRecord, VerifiedModuleClosure, discover_module_closure,
 };
 pub use native::{
     LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES, MAX_NATIVE_LINK_TIMEOUT,
@@ -54,6 +64,7 @@ pub use webassembly::{
     WEBASSEMBLY_ARTIFACT_EXTENSION, WebAssemblyBuildError, WebAssemblyBuildSuccess,
     WebAssemblyOutputRoot, compile_webassembly, publish_webassembly,
 };
+pub use workspace_source::WorkspaceSourceRoot;
 
 /// Artifacts emitted by the first verified dual-target slice.
 #[derive(Clone, Debug, Eq, PartialEq)]

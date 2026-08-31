@@ -14,10 +14,14 @@ It returns `SourceToIrSuccess` only when backends may safely consume the program
 warnings remain observable on that success value; frontend failures and compiler rejections remain
 distinct error categories.
 
-The current success profile is the one-file, explicitly typed `i32` subset documented by
+The current public success profile is the one-file, explicitly typed `i32` subset documented by
 `zryna-semantics`. Source-level `bool` is checked and lowered but remains rejected by the current
-`I32V1` IR profile until every active backend supports it. Multiple files remain disabled until
-module resolution is specified.
+`I32V1` IR profile until every active backend supports it. The separate internal
+`discover_module_closure` boundary resolves bounded protocol-v3 module graphs through a retained
+`WorkspaceSourceRoot`, authenticates one final source map, and seals ordered modules, named-binding
+edges, source hashes, and a canonical graph digest. It is documented in
+[M2 deterministic module closure](../../docs/M2_MODULE_CLOSURE.md). Multiple files remain disabled
+in the public compiler until the complete M2 semantic and backend path is verified.
 
 `compile_javascript` connects real source to the deterministic JavaScript backend and publishes one
 new `.mjs` artifact through the target-neutral `ArtifactOutputRoot` capability (with a compatible

@@ -27,6 +27,12 @@
       "title": "Language overview"
     },
     {
+      "id": "reference/m2-module-closure",
+      "source": "docs/M2_MODULE_CLOSURE.md",
+      "path": "documents/reference/m2-module-closure.md",
+      "title": "M2 deterministic module closure"
+    },
+    {
       "id": "reference/scalar-abi-v1",
       "source": "spec/abi/SCALAR_V1.md",
       "path": "documents/reference/scalar-abi-v1.md",

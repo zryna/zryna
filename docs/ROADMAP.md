@@ -106,16 +106,18 @@ comparisons, lexical locals, direct calls, structured branches and loops, determ
 and one multi-file program whose behavior matches on JavaScript, direct core WebAssembly, and
 Linux x86-64 native output.
 
-Current status: contract specified, exact syntax protocol v3 implemented, and the isolated IR
-verifier implemented, but the M2 profile is not executable. Issue #45 freezes the normative
+Current status: contract specified, exact syntax protocol v3 implemented, deterministic module
+closure implemented as an internal driver boundary, and the isolated IR verifier implemented, but
+the M2 profile is not executable. Issue #45 freezes the normative
 [scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) contract and a
 digest-pinned planning inventory. Issue #46 implements the separate exact protocol-v3 schema,
 pinned TypeScript 6 syntax-only worker, opaque source-map-bound syntax verifier, and typed worker
 transport without selecting it in the driver. Issue #48 implements the separate, source-map-bound
-`ControlFlowV1` raw-to-verified boundary. Neither component enables module discovery, semantic
-lowering, a backend path, a compiler profile, a CLI command, or a public M2 support claim. `I32V1`,
-protocol v2, manifest v1, and all M0/M1 executable evidence remain unchanged while the remaining
-M2 gates are built on those verified boundaries.
+`ControlFlowV1` raw-to-verified boundary. Issue #47 implements retained-capability fixed-point
+module discovery and final source-map authentication without selecting it in the public driver.
+None of these boundaries enables semantic lowering, a backend path, a compiler profile, a CLI
+command, or a public M2 support claim. `I32V1`, protocol v2, manifest v1, and all M0/M1 executable
+evidence remain unchanged while the remaining M2 gates are built on those verified boundaries.
 
 Dependency ledger:
 
@@ -123,7 +125,7 @@ Dependency ledger:
 | --- | --- | --- | --- |
 | #45 | normative scalar, control-flow, module, IR, budget, and planned-conformance contract | M1 closure | complete |
 | #46 | exact protocol v3 and pinned TypeScript 6 syntax adapter | #45 | complete |
-| #47 | compiler-owned bounded deterministic module closure | #45, #46 | planned |
+| #47 | compiler-owned bounded deterministic module closure | #45, #46 | complete |
 | #48 | independently verified `ControlFlowV1` Universal IR | #45 | complete |
 | #49 | Zryna-owned modules, scopes, types, arithmetic, comparisons, locals, assignment, and direct calls | #46, #47, #48 | planned |
 | #50 | canonical `if`/`while`, definite state, reachability, and return lowering | #49 | planned |

@@ -297,15 +297,17 @@ It is a separate verified profile and is not currently executable. Protocol v2, 
 expression-tree verifier, the default M1 CLI, and manifest v1 remain unchanged until the complete
 M2 profile passes all target gates.
 
-Protocol v3 will carry source-faithful import, local, call, branch, and loop syntax without giving
-the provider name, type, module, filesystem, or IR authority. The driver will resolve and safely
-read an explicit relative `.zry` graph to fixed point. Zryna semantics will lower the final
-source-map-bound snapshot to SSA-like raw blocks with typed values, direct calls, block arguments,
-and explicit return/jump/conditional terminators. The isolated `zryna-ir::control_flow_v1`
+Protocol v3 carries source-faithful import, local, call, branch, and loop syntax without giving the
+provider name, type, module, filesystem, or IR authority. The driver now exposes an internal
+[bounded deterministic module closure](M2_MODULE_CLOSURE.md) that safely resolves an explicit
+relative `.zry` graph to fixed point through retained no-follow capabilities, authenticates one
+final source map, and seals its canonical graph identity. Zryna semantics will later lower that
+final source-map-bound snapshot to SSA-like raw blocks with typed values, direct calls, block
+arguments, and explicit return/jump/conditional terminators. The isolated `zryna-ir::control_flow_v1`
 component now implements the mandatory verifier for types, dominance, edges, reachability,
 reducibility, return completeness, acyclic calls, source authority, and budgets before constructing
-opaque M2 views. It is not yet reachable from source semantics, the driver, any backend, or a public
-command, so the complete M2 profile remains non-executable.
+opaque M2 views. Neither internal boundary is connected to source semantics, any backend, or a
+public command, so the complete M2 profile remains non-executable.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
 functions receive sealed target-internal identities. JavaScript, core WebAssembly, and native MIR

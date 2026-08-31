@@ -77,7 +77,11 @@ impl NormalizedSourcePath {
         &self.0
     }
 
-    fn portable_identity(&self) -> String {
+    /// Returns the frozen ASCII case-insensitive identity used for portable collision checks.
+    ///
+    /// The returned value is not a host path and must never be used for filesystem lookup.
+    #[must_use]
+    pub fn portable_identity(&self) -> String {
         self.0.to_ascii_lowercase()
     }
 }
