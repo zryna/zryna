@@ -1,4 +1,4 @@
-//! Straight-line semantic analysis for the isolated `ControlFlowV1` profile.
+//! Control-flow semantic analysis for the isolated `ControlFlowV1` profile.
 //!
 //! This module is intentionally separate from the stable protocol-v2/M1 surface. It accepts only
 //! an exact source-map-bound protocol-v3 snapshot, reconstructs and validates the complete module
@@ -39,7 +39,7 @@ const _: () = {
     assert!(MAX_STATIC_CALL_DEPTH == ir::MAX_STATIC_CALL_DEPTH);
 };
 
-/// Exact authenticated inputs for straight-line M2 semantics.
+/// Exact authenticated inputs for control-flow M2 semantics.
 ///
 /// Raw protocol-v3 claims cannot enter this boundary:
 ///
@@ -144,6 +144,7 @@ struct Binding {
     ty: Type,
     mutable: bool,
     value: raw::ValueId,
+    span: Span,
     depth: usize,
     parameter: bool,
 }
@@ -544,7 +545,7 @@ fn lower_function(
     errors: &mut Errors<'_>,
     entry_module: bool,
 ) -> Option<raw::Function> {
-    let parameters = syntax
+    let mut parameters = syntax
         .parameters()
         .iter()
         .zip(symbol.signature.parameters.iter().copied())
@@ -568,14 +569,11 @@ fn lower_function(
         errors,
         call_edges,
         bindings: Vec::new(),
-        depth: 0,
-        expression_cursor: 0,
         expression_values: vec![None; syntax.body().expressions().len()],
-        instructions: Vec::new(),
+        blocks: vec![empty_block(0)],
+        current_block: 0,
+        cfg_edges: 0,
         next_value: u32::try_from(parameters.len()).unwrap_or(u32::MAX),
-        terminator: None,
-        returned: false,
-        expression_blocked: false,
     };
     for (parameter, definition) in syntax.parameters().iter().zip(&parameters) {
         lowerer.bindings.push(Binding {
@@ -583,35 +581,56 @@ fn lower_function(
             ty: definition.ty,
             mutable: false,
             value: definition.id,
+            span: parameter.name().span(),
             depth: 0,
             parameter: true,
         });
     }
-    lowerer.lower_body(result);
+    let open = lowerer.lower_syntax_block(syntax.body().root_block(), 0, result);
     if lowerer.errors.is_exhausted() {
         return None;
     }
-    let terminator = lowerer.terminator?;
+    if open {
+        lowerer.errors.at(
+            "ZRYNA-M2009",
+            syntax.body().span(),
+            "function can fall through without returning its declared result",
+            "end every reachable function path with one typed return",
+        );
+    }
+    if !lowerer.errors.is_empty() {
+        return None;
+    }
+    prune_dead_block_parameters(&mut lowerer.blocks);
+    if lowerer.blocks.iter().any(|block| block.parameters.len() > ir::MAX_BLOCK_PARAMETERS) {
+        lowerer.errors.limit_at(
+            "ZRYNA-M2201",
+            syntax.body().span(),
+            "live mutable bindings exceed the deterministic merge/header limit",
+            "reduce simultaneously live mutable bindings across control-flow edges",
+        );
+        return None;
+    }
+    if !canonicalize_values(&mut parameters, &mut lowerer.blocks, lowerer.errors) {
+        return None;
+    }
     Some(raw::Function {
         id: symbol.id,
         entry_export: (entry_module && symbol.exported).then(|| symbol.name.clone()),
         span: symbol.declaration_span,
         parameters,
         result,
-        blocks: vec![raw::Block {
-            id: raw::BlockId(0),
-            parameters: Vec::new(),
-            instructions: lowerer.instructions,
-            terminators: vec![terminator],
-        }],
+        blocks: lowerer.blocks,
     })
 }
 
-struct BlockFrame {
-    block: BlockId,
-    statement: usize,
-    binding_marker: usize,
-    depth: usize,
+fn empty_block(index: usize) -> raw::Block {
+    raw::Block {
+        id: raw::BlockId(u32::try_from(index).unwrap_or(u32::MAX)),
+        parameters: Vec::new(),
+        instructions: Vec::new(),
+        terminators: Vec::new(),
+    }
 }
 
 struct FunctionLowerer<'body, 'symbols, 'state, 'source> {
@@ -623,66 +642,49 @@ struct FunctionLowerer<'body, 'symbols, 'state, 'source> {
     errors: &'state mut Errors<'source>,
     call_edges: &'state mut Vec<CallEdge>,
     bindings: Vec<Binding>,
-    depth: usize,
-    expression_cursor: usize,
     expression_values: Vec<Option<TypedValue>>,
-    instructions: Vec<raw::Instruction>,
+    blocks: Vec<raw::Block>,
+    current_block: usize,
+    cfg_edges: usize,
     next_value: u32,
-    terminator: Option<raw::SpannedTerminator>,
-    returned: bool,
-    expression_blocked: bool,
 }
 
 impl FunctionLowerer<'_, '_, '_, '_> {
     #[allow(clippy::too_many_lines)]
-    fn lower_body(&mut self, result: Type) {
-        let mut frames = vec![BlockFrame {
-            block: self.body.root_block(),
-            statement: 0,
-            binding_marker: self.bindings.len(),
-            depth: 0,
-        }];
-        while let Some(frame) = frames.last_mut() {
+    fn lower_syntax_block(&mut self, block_id: BlockId, depth: usize, result: Type) -> bool {
+        let marker = self.bindings.len();
+        let block = &self.body.blocks()[block_id.index() as usize];
+        let statements = block.statements().to_vec();
+        let mut open = true;
+        for statement_id in statements {
             if self.errors.is_exhausted() {
-                return;
+                return false;
             }
-            let block = &self.body.blocks()[frame.block.index() as usize];
-            if frame.statement == block.statements().len() {
-                let marker = frame.binding_marker;
-                frames.pop();
-                self.bindings.truncate(marker);
-                self.depth = frames.last().map_or(0, |parent| parent.depth);
-                continue;
-            }
-            let statement_id = block.statements()[frame.statement];
-            frame.statement += 1;
-            let statement = &self.body.statements()[statement_id.index() as usize];
-            if self.returned {
+            let statement = self.body.statements()[statement_id.index() as usize].clone();
+            if !open {
                 self.errors.at(
                     "ZRYNA-M2009",
                     statement.span(),
-                    "statement is unreachable after an unconditional return",
+                    "statement is unreachable after control flow returns on every path",
                     "remove the unreachable statement",
                 );
                 continue;
             }
-            self.depth = frame.depth;
             match statement.kind() {
                 StatementKind::LocalDeclaration {
                     name, mutable, type_syntax, initializer, ..
                 } => {
-                    let value = self.lower_through(*initializer);
+                    let value = self.lower_root(*initializer);
                     if self.errors.is_exhausted() {
-                        return;
+                        return false;
                     }
                     let ty = lower_type(type_syntax, "local", self.errors);
                     if self.errors.is_exhausted() {
-                        return;
+                        return false;
                     }
                     let duplicate = self.bindings.iter().any(|binding| {
                         binding.name == name.text()
-                            && (binding.depth == self.depth
-                                || (self.depth == 0 && binding.parameter))
+                            && (binding.depth == depth || (depth == 0 && binding.parameter))
                     });
                     if duplicate {
                         self.errors.at(
@@ -693,7 +695,7 @@ impl FunctionLowerer<'_, '_, '_, '_> {
                         );
                     }
                     if self.errors.is_exhausted() {
-                        return;
+                        return false;
                     }
                     if let (Some(value), Some(ty)) = (value, ty) {
                         if value.ty != ty {
@@ -709,16 +711,17 @@ impl FunctionLowerer<'_, '_, '_, '_> {
                                 ty,
                                 mutable: *mutable,
                                 value: value.value,
-                                depth: self.depth,
+                                span: name.span(),
+                                depth,
                                 parameter: false,
                             });
                         }
                     }
                 }
                 StatementKind::Assignment { target, value, .. } => {
-                    let value = self.lower_through(*value);
+                    let value = self.lower_root(*value);
                     if self.errors.is_exhausted() {
-                        return;
+                        return false;
                     }
                     let binding =
                         self.bindings.iter().rposition(|binding| binding.name == target.text());
@@ -754,17 +757,19 @@ impl FunctionLowerer<'_, '_, '_, '_> {
                     }
                 }
                 StatementKind::Return { value, .. } => {
-                    let value = self.lower_through(*value);
+                    let value = self.lower_root(*value);
                     if self.errors.is_exhausted() {
-                        return;
+                        return false;
                     }
-                    self.returned = true;
                     if let Some(value) = value {
                         if value.ty == result {
-                            self.terminator = Some(raw::SpannedTerminator {
+                            if !self.terminate(raw::SpannedTerminator {
                                 span: statement.span(),
                                 kind: raw::Terminator::Return(value.value),
-                            });
+                            }) {
+                                return false;
+                            }
+                            open = false;
                         } else {
                             self.errors.at(
                                 "ZRYNA-M2009",
@@ -776,74 +781,357 @@ impl FunctionLowerer<'_, '_, '_, '_> {
                     }
                 }
                 StatementKind::Block { block } => {
-                    let depth = self.depth.saturating_add(1);
-                    frames.push(BlockFrame {
-                        block: *block,
-                        statement: 0,
-                        binding_marker: self.bindings.len(),
-                        depth,
-                    });
+                    open = self.lower_syntax_block(*block, depth.saturating_add(1), result);
                 }
-                StatementKind::If { keyword_span, .. }
-                | StatementKind::While { keyword_span, .. } => {
-                    self.errors.at(
-                        "ZRYNA-M2014",
+                StatementKind::If { condition, then_block, else_clause, keyword_span, .. } => {
+                    open = self.lower_if(
+                        *condition,
+                        *then_block,
+                        else_clause.as_ref().map(syntax::ElseSyntax::block),
                         *keyword_span,
-                        "control flow is not available in the straight-line M2 semantic slice",
-                        "wait for the separately verified if/while lowering gate",
+                        depth,
+                        result,
                     );
-                    if self.errors.is_exhausted() {
-                        return;
-                    }
-                    self.expression_blocked = true;
+                }
+                StatementKind::While { condition, body_block, keyword_span, .. } => {
+                    open = self.lower_while(*condition, *body_block, *keyword_span, depth, result);
                 }
             }
         }
-        if self.errors.is_exhausted() {
-            return;
+        if open {
+            self.bindings.truncate(marker);
         }
-        if !self.returned {
-            self.errors.at(
-                "ZRYNA-M2009",
-                self.body.span(),
-                "function can fall through without returning its declared result",
-                "end every straight-line function path with one typed return",
-            );
-        }
+        open
     }
 
-    fn lower_through(&mut self, root: ExpressionId) -> Option<TypedValue> {
-        if self.expression_blocked || self.errors.is_exhausted() {
+    fn lower_root(&mut self, root: ExpressionId) -> Option<TypedValue> {
+        if self.errors.is_exhausted() {
             return None;
         }
-        let root = root.index() as usize;
-        if root < self.expression_cursor || root >= self.body.expressions().len() {
+        let root_index = root.index() as usize;
+        if root_index >= self.body.expressions().len() {
             self.errors.limit_at(
                 "ZRYNA-M2201",
                 self.body.span(),
-                "verified expression order could not be consumed monotonically",
+                "verified expression root is outside its sealed arena",
                 "report this compiler invariant failure with the smallest source",
             );
             return None;
         }
-        while self.expression_cursor <= root {
+        let mut order = Vec::new();
+        let mut stack = vec![(root, false)];
+        while let Some((id, exit)) = stack.pop() {
+            let index = id.index() as usize;
+            if exit {
+                order.push(index);
+                continue;
+            }
+            stack.push((id, true));
+            let mut children = expression_children(self.body.expressions()[index].kind());
+            children.reverse();
+            stack.extend(children.into_iter().map(|child| (child, false)));
+        }
+        for index in order {
             if self.errors.is_exhausted() {
                 return None;
             }
-            let index = self.expression_cursor;
-            let expression = &self.body.expressions()[index];
+            let expression = self.body.expressions()[index].clone();
             let value = self.lower_expression(expression.kind(), expression.span());
-            if !store_expression_result(
-                self.errors,
-                &mut self.expression_values,
-                &mut self.expression_cursor,
-                index,
-                value,
-            ) {
+            if !store_expression_result(self.errors, &mut self.expression_values, index, value) {
                 return None;
             }
         }
-        self.expression_values[root]
+        let result = self.expression_values[root_index];
+        for value in &mut self.expression_values {
+            *value = None;
+        }
+        result
+    }
+
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+    fn lower_if(
+        &mut self,
+        condition: ExpressionId,
+        then_block: BlockId,
+        else_block: Option<BlockId>,
+        span: Span,
+        depth: usize,
+        result: Type,
+    ) -> bool {
+        let condition_span = self.body.expressions()[condition.index() as usize].span();
+        let Some(condition) = self.lower_root(condition) else { return false };
+        if condition.ty != Type::Bool {
+            self.errors.at(
+                "ZRYNA-M2014",
+                condition_span,
+                "if condition does not have exact bool type",
+                "use one bool expression without truthiness or numeric coercion",
+            );
+        }
+        if self.errors.is_exhausted() {
+            return false;
+        }
+        let incoming = self.bindings.clone();
+        let Some(true_target) = self.new_block() else { return false };
+        let Some(false_target) = self.new_block() else { return false };
+        if !self.terminate(raw::SpannedTerminator {
+            span,
+            kind: raw::Terminator::Branch {
+                condition: condition.value,
+                true_target: raw::BlockId(u32::try_from(true_target).unwrap_or(u32::MAX)),
+                true_arguments: Vec::new(),
+                false_target: raw::BlockId(u32::try_from(false_target).unwrap_or(u32::MAX)),
+                false_arguments: Vec::new(),
+            },
+        }) {
+            return false;
+        }
+
+        self.current_block = true_target;
+        self.bindings = incoming.clone();
+        let true_open = self.lower_syntax_block(then_block, depth.saturating_add(1), result);
+        let true_state = true_open.then(|| (self.current_block, self.bindings.clone()));
+
+        self.current_block = false_target;
+        self.bindings = incoming.clone();
+        let false_open = else_block
+            .is_none_or(|block| self.lower_syntax_block(block, depth.saturating_add(1), result));
+        let false_state = false_open.then(|| (self.current_block, self.bindings.clone()));
+
+        match (true_state, false_state) {
+            (None, None) => false,
+            (Some((block, bindings)), None) | (None, Some((block, bindings))) => {
+                self.current_block = block;
+                self.bindings = bindings;
+                true
+            }
+            (Some((true_block, true_bindings)), Some((false_block, false_bindings))) => {
+                let carried = incoming
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, binding)| {
+                        binding.mutable
+                            && true_bindings[*index].value != false_bindings[*index].value
+                    })
+                    .count();
+                if !draft_merge_within_limit(carried, span, self.errors) {
+                    return false;
+                }
+                let Some(join) = self.new_block() else { return false };
+                let mut merged = incoming;
+                let mut true_arguments = Vec::new();
+                let mut false_arguments = Vec::new();
+                for index in 0..merged.len() {
+                    if !merged[index].mutable
+                        || true_bindings[index].value == false_bindings[index].value
+                    {
+                        merged[index].value = true_bindings[index].value;
+                        continue;
+                    }
+                    let Some(parameter) = self.new_value(merged[index].ty, merged[index].span)
+                    else {
+                        return false;
+                    };
+                    self.blocks[join].parameters.push(raw::ValueDefinition {
+                        id: parameter.value,
+                        ty: parameter.ty,
+                        span: merged[index].span,
+                    });
+                    true_arguments.push(true_bindings[index].value);
+                    false_arguments.push(false_bindings[index].value);
+                    merged[index].value = parameter.value;
+                }
+                self.current_block = true_block;
+                if !self.terminate(raw::SpannedTerminator {
+                    span,
+                    kind: raw::Terminator::Jump {
+                        target: raw::BlockId(u32::try_from(join).unwrap_or(u32::MAX)),
+                        arguments: true_arguments,
+                    },
+                }) {
+                    return false;
+                }
+                self.current_block = false_block;
+                if !self.terminate(raw::SpannedTerminator {
+                    span,
+                    kind: raw::Terminator::Jump {
+                        target: raw::BlockId(u32::try_from(join).unwrap_or(u32::MAX)),
+                        arguments: false_arguments,
+                    },
+                }) {
+                    return false;
+                }
+                self.current_block = join;
+                self.bindings = merged;
+                true
+            }
+        }
+    }
+
+    fn lower_while(
+        &mut self,
+        condition: ExpressionId,
+        body_block: BlockId,
+        span: Span,
+        depth: usize,
+        result: Type,
+    ) -> bool {
+        let condition_span = self.body.expressions()[condition.index() as usize].span();
+        let incoming = self.bindings.clone();
+        let preheader = self.current_block;
+        let carried = incoming.iter().filter(|binding| binding.mutable).count();
+        if !draft_merge_within_limit(carried, span, self.errors) {
+            return false;
+        }
+        let Some(header) = self.new_block() else { return false };
+        let mut header_bindings = incoming.clone();
+        let mut entry_arguments = Vec::new();
+        let mut carried_indices = Vec::new();
+        for (index, binding) in incoming.iter().enumerate() {
+            if !binding.mutable {
+                continue;
+            }
+            let Some(parameter) = self.new_value(binding.ty, binding.span) else { return false };
+            self.blocks[header].parameters.push(raw::ValueDefinition {
+                id: parameter.value,
+                ty: parameter.ty,
+                span: binding.span,
+            });
+            entry_arguments.push(binding.value);
+            carried_indices.push(index);
+            header_bindings[index].value = parameter.value;
+        }
+        self.current_block = preheader;
+        if !self.terminate(raw::SpannedTerminator {
+            span,
+            kind: raw::Terminator::Jump {
+                target: raw::BlockId(u32::try_from(header).unwrap_or(u32::MAX)),
+                arguments: entry_arguments,
+            },
+        }) {
+            return false;
+        }
+        self.current_block = header;
+        self.bindings = header_bindings.clone();
+        let Some(condition) = self.lower_root(condition) else { return false };
+        if condition.ty != Type::Bool {
+            self.errors.at(
+                "ZRYNA-M2014",
+                condition_span,
+                "while condition does not have exact bool type",
+                "use one bool expression without truthiness or numeric coercion",
+            );
+        }
+        if self.errors.is_exhausted() {
+            return false;
+        }
+        let Some(body) = self.new_block() else { return false };
+        let Some(exit) = self.new_block() else { return false };
+        self.current_block = header;
+        if !self.terminate(raw::SpannedTerminator {
+            span,
+            kind: raw::Terminator::Branch {
+                condition: condition.value,
+                true_target: raw::BlockId(u32::try_from(body).unwrap_or(u32::MAX)),
+                true_arguments: Vec::new(),
+                false_target: raw::BlockId(u32::try_from(exit).unwrap_or(u32::MAX)),
+                false_arguments: Vec::new(),
+            },
+        }) {
+            return false;
+        }
+        self.current_block = body;
+        self.bindings = header_bindings.clone();
+        if self.lower_syntax_block(body_block, depth.saturating_add(1), result) {
+            let backedge =
+                carried_indices.iter().map(|index| self.bindings[*index].value).collect();
+            if !self.terminate(raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::Jump {
+                    target: raw::BlockId(u32::try_from(header).unwrap_or(u32::MAX)),
+                    arguments: backedge,
+                },
+            }) {
+                return false;
+            }
+        }
+        self.current_block = exit;
+        self.bindings = header_bindings;
+        true
+    }
+
+    fn new_block(&mut self) -> Option<usize> {
+        if self.errors.is_exhausted() {
+            return None;
+        }
+        if self.blocks.len() >= ir::MAX_BLOCKS_PER_FUNCTION {
+            self.errors.limit_at(
+                "ZRYNA-M2201",
+                self.body.span(),
+                "control-flow lowering exceeds the deterministic IR block limit",
+                "reduce nested branches and loops before semantic analysis",
+            );
+            return None;
+        }
+        let index = self.blocks.len();
+        self.blocks.push(empty_block(index));
+        Some(index)
+    }
+
+    fn new_value(&mut self, ty: Type, span: Span) -> Option<TypedValue> {
+        if self.errors.is_exhausted() {
+            return None;
+        }
+        if !draft_value_within_limit(self.next_value, span, self.errors) {
+            return None;
+        }
+        let value = raw::ValueId(self.next_value);
+        let Some(next) = self.next_value.checked_add(1) else {
+            self.errors.limit_at(
+                "ZRYNA-M2201",
+                span,
+                "function value identity space is exhausted",
+                "reduce expressions and live mutable state before semantic analysis",
+            );
+            return None;
+        };
+        self.next_value = next;
+        Some(TypedValue { ty, value })
+    }
+
+    fn terminate(&mut self, terminator: raw::SpannedTerminator) -> bool {
+        if self.errors.is_exhausted() {
+            return false;
+        }
+        let edges = match &terminator.kind {
+            raw::Terminator::Return(_) => 0,
+            raw::Terminator::Jump { .. } => 1,
+            raw::Terminator::Branch { .. } => 2,
+        };
+        let Some(total) = self.cfg_edges.checked_add(edges) else {
+            self.errors.limit_at(
+                "ZRYNA-M2201",
+                terminator.span,
+                "control-flow edge count cannot be represented",
+                "reduce nested branches and loops before semantic analysis",
+            );
+            return false;
+        };
+        if total > ir::MAX_CFG_EDGES_PER_FUNCTION {
+            self.errors.limit_at(
+                "ZRYNA-M2201",
+                terminator.span,
+                "control-flow lowering exceeds the deterministic CFG edge limit",
+                "reduce nested branches and loops before semantic analysis",
+            );
+            return false;
+        }
+        if !self.blocks[self.current_block].terminators.is_empty() {
+            return false;
+        }
+        self.cfg_edges = total;
+        self.blocks[self.current_block].terminators.push(terminator);
+        true
     }
 
     #[allow(clippy::too_many_lines)]
@@ -1068,7 +1356,10 @@ impl FunctionLowerer<'_, '_, '_, '_> {
     }
 
     fn emit(&mut self, ty: Type, span: Span, kind: raw::InstructionKind) -> Option<TypedValue> {
-        if self.instructions.len() >= ir::MAX_VALUES_PER_FUNCTION {
+        if self.errors.is_exhausted() {
+            return None;
+        }
+        if self.blocks[self.current_block].instructions.len() >= ir::MAX_VALUES_PER_FUNCTION {
             self.errors.limit_at(
                 "ZRYNA-M2201",
                 span,
@@ -1077,27 +1368,50 @@ impl FunctionLowerer<'_, '_, '_, '_> {
             );
             return None;
         }
-        let value = raw::ValueId(self.next_value);
-        let Some(next_value) = self.next_value.checked_add(1) else {
-            self.errors.limit_at(
-                "ZRYNA-M2201",
-                span,
-                "function value identity space is exhausted",
-                "reduce expressions before semantic analysis",
-            );
-            return None;
-        };
-        self.next_value = next_value;
-        self.instructions
-            .push(raw::Instruction { result: raw::ValueDefinition { id: value, ty, span }, kind });
-        Some(TypedValue { ty, value })
+        let value = self.new_value(ty, span)?;
+        self.blocks[self.current_block].instructions.push(raw::Instruction {
+            result: raw::ValueDefinition { id: value.value, ty, span },
+            kind,
+        });
+        Some(value)
     }
+}
+
+fn draft_merge_within_limit(count: usize, span: Span, errors: &mut Errors<'_>) -> bool {
+    if errors.is_exhausted() {
+        return false;
+    }
+    if count > ir::MAX_BLOCK_PARAMETERS {
+        errors.limit_at(
+            "ZRYNA-M2201",
+            span,
+            "live mutable bindings exceed the deterministic merge/header limit",
+            "reduce simultaneously live mutable bindings across control-flow edges",
+        );
+        return false;
+    }
+    true
+}
+
+fn draft_value_within_limit(next: u32, span: Span, errors: &mut Errors<'_>) -> bool {
+    if errors.is_exhausted() {
+        return false;
+    }
+    if usize::try_from(next).map_or(true, |count| count >= ir::MAX_VALUES_PER_FUNCTION) {
+        errors.limit_at(
+            "ZRYNA-M2201",
+            span,
+            "control-flow draft exceeds the deterministic IR value limit",
+            "reduce expressions and live mutable state before semantic analysis",
+        );
+        return false;
+    }
+    true
 }
 
 fn store_expression_result(
     errors: &Errors<'_>,
     expression_values: &mut [Option<TypedValue>],
-    expression_cursor: &mut usize,
     index: usize,
     value: Option<TypedValue>,
 ) -> bool {
@@ -1105,11 +1419,280 @@ fn store_expression_result(
         return false;
     }
     expression_values[index] = value;
-    *expression_cursor += 1;
     true
 }
 
+fn expression_children(kind: &ExpressionKind) -> Vec<ExpressionId> {
+    match kind {
+        ExpressionKind::Reference { .. }
+        | ExpressionKind::BoolLiteral { .. }
+        | ExpressionKind::I32Literal { .. } => Vec::new(),
+        ExpressionKind::Negation { operand, .. } => vec![*operand],
+        ExpressionKind::Addition { lhs, rhs, .. }
+        | ExpressionKind::Subtraction { lhs, rhs, .. }
+        | ExpressionKind::Multiplication { lhs, rhs, .. }
+        | ExpressionKind::Equal { lhs, rhs, .. }
+        | ExpressionKind::NotEqual { lhs, rhs, .. }
+        | ExpressionKind::LessThan { lhs, rhs, .. }
+        | ExpressionKind::LessEqual { lhs, rhs, .. }
+        | ExpressionKind::GreaterThan { lhs, rhs, .. }
+        | ExpressionKind::GreaterEqual { lhs, rhs, .. } => vec![*lhs, *rhs],
+        ExpressionKind::Call { arguments, .. } => arguments.clone(),
+    }
+}
+
+fn instruction_operands(kind: &raw::InstructionKind) -> Vec<raw::ValueId> {
+    match kind {
+        raw::InstructionKind::BoolLiteral(_) | raw::InstructionKind::I32Literal(_) => Vec::new(),
+        raw::InstructionKind::I32Neg { operand } => vec![*operand],
+        raw::InstructionKind::I32Add { lhs, rhs }
+        | raw::InstructionKind::I32Sub { lhs, rhs }
+        | raw::InstructionKind::I32Mul { lhs, rhs }
+        | raw::InstructionKind::Eq { lhs, rhs }
+        | raw::InstructionKind::Ne { lhs, rhs }
+        | raw::InstructionKind::I32LtS { lhs, rhs }
+        | raw::InstructionKind::I32LeS { lhs, rhs }
+        | raw::InstructionKind::I32GtS { lhs, rhs }
+        | raw::InstructionKind::I32GeS { lhs, rhs } => vec![*lhs, *rhs],
+        raw::InstructionKind::DirectCall { arguments, .. } => arguments.clone(),
+    }
+}
+
+fn mark_live(live: &mut [bool], value: raw::ValueId) -> bool {
+    let Some(slot) = live.get_mut(value.0 as usize) else { return false };
+    let changed = !*slot;
+    *slot = true;
+    changed
+}
+
+#[allow(clippy::too_many_lines)]
+fn prune_dead_block_parameters(blocks: &mut [raw::Block]) {
+    let count = blocks
+        .iter()
+        .flat_map(|block| {
+            block
+                .parameters
+                .iter()
+                .map(|value| value.id.0)
+                .chain(block.instructions.iter().map(|instruction| instruction.result.id.0))
+        })
+        .max()
+        .map_or(0, |value| value as usize + 1);
+    let mut live = vec![false; count];
+    for block in blocks.iter() {
+        for instruction in &block.instructions {
+            for operand in instruction_operands(&instruction.kind) {
+                mark_live(&mut live, operand);
+            }
+        }
+        if let Some(terminator) = block.terminators.first() {
+            match &terminator.kind {
+                raw::Terminator::Return(value) => {
+                    mark_live(&mut live, *value);
+                }
+                raw::Terminator::Jump { .. } => {}
+                raw::Terminator::Branch { condition, .. } => {
+                    mark_live(&mut live, *condition);
+                }
+            }
+        }
+    }
+    loop {
+        let mut changed = false;
+        for block in blocks.iter() {
+            let Some(terminator) = block.terminators.first() else { continue };
+            let mut propagate = |target: raw::BlockId, arguments: &[raw::ValueId]| {
+                let Some(target) = blocks.get(target.0 as usize) else { return };
+                for (parameter, argument) in target.parameters.iter().zip(arguments) {
+                    if live.get(parameter.id.0 as usize).copied().unwrap_or(false) {
+                        changed |= mark_live(&mut live, *argument);
+                    }
+                }
+            };
+            match &terminator.kind {
+                raw::Terminator::Return(_) => {}
+                raw::Terminator::Jump { target, arguments } => propagate(*target, arguments),
+                raw::Terminator::Branch {
+                    true_target,
+                    true_arguments,
+                    false_target,
+                    false_arguments,
+                    ..
+                } => {
+                    propagate(*true_target, true_arguments);
+                    propagate(*false_target, false_arguments);
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    let keep = blocks
+        .iter()
+        .map(|block| {
+            block
+                .parameters
+                .iter()
+                .map(|parameter| live.get(parameter.id.0 as usize).copied().unwrap_or(false))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    for (block, mask) in blocks.iter_mut().zip(&keep) {
+        let mut index = 0;
+        block.parameters.retain(|_| {
+            let retain = mask[index];
+            index += 1;
+            retain
+        });
+    }
+    for block in blocks {
+        let Some(terminator) = block.terminators.first_mut() else { continue };
+        let filter = |target: raw::BlockId, arguments: &mut Vec<raw::ValueId>| {
+            let mask = &keep[target.0 as usize];
+            let mut index = 0;
+            arguments.retain(|_| {
+                let retain = mask[index];
+                index += 1;
+                retain
+            });
+        };
+        match &mut terminator.kind {
+            raw::Terminator::Return(_) => {}
+            raw::Terminator::Jump { target, arguments } => filter(*target, arguments),
+            raw::Terminator::Branch {
+                true_target,
+                true_arguments,
+                false_target,
+                false_arguments,
+                ..
+            } => {
+                filter(*true_target, true_arguments);
+                filter(*false_target, false_arguments);
+            }
+        }
+    }
+}
+
+fn canonicalize_values(
+    parameters: &mut [raw::ValueDefinition],
+    blocks: &mut [raw::Block],
+    errors: &mut Errors<'_>,
+) -> bool {
+    let count = parameters.len()
+        + blocks
+            .iter()
+            .map(|block| block.parameters.len() + block.instructions.len())
+            .sum::<usize>();
+    if count > ir::MAX_VALUES_PER_FUNCTION {
+        errors.limit(
+            "ZRYNA-M2201",
+            "control-flow lowering exceeds the deterministic IR value limit",
+            "reduce expressions and live mutable state before semantic analysis",
+        );
+        return false;
+    }
+    let maximum = parameters
+        .iter()
+        .map(|value| value.id.0)
+        .chain(blocks.iter().flat_map(|block| {
+            block
+                .parameters
+                .iter()
+                .map(|value| value.id.0)
+                .chain(block.instructions.iter().map(|instruction| instruction.result.id.0))
+        }))
+        .max()
+        .map_or(0, |value| value as usize + 1);
+    let mut mapping = vec![None; maximum];
+    let mut next = 0_u32;
+    let mut define = |definition: &mut raw::ValueDefinition| {
+        mapping[definition.id.0 as usize] = Some(raw::ValueId(next));
+        definition.id = raw::ValueId(next);
+        next = next.saturating_add(1);
+    };
+    for parameter in parameters.iter_mut() {
+        define(parameter);
+    }
+    for block in blocks.iter_mut() {
+        for parameter in &mut block.parameters {
+            define(parameter);
+        }
+        for instruction in &mut block.instructions {
+            define(&mut instruction.result);
+        }
+    }
+    let map = |value: &mut raw::ValueId| -> bool {
+        let Some(mapped) = mapping.get(value.0 as usize).copied().flatten() else { return false };
+        *value = mapped;
+        true
+    };
+    for block in blocks {
+        for instruction in &mut block.instructions {
+            if !rewrite_instruction_operands(&mut instruction.kind, &map) {
+                errors.limit_at(
+                    "ZRYNA-M2201",
+                    instruction.result.span,
+                    "control-flow lowering retained a value without one canonical definition",
+                    "report this compiler invariant failure with the smallest source",
+                );
+                return false;
+            }
+        }
+        if let Some(terminator) = block.terminators.first_mut()
+            && !rewrite_terminator_operands(&mut terminator.kind, &map)
+        {
+            errors.limit_at(
+                "ZRYNA-M2201",
+                terminator.span,
+                "control-flow lowering retained a terminator value without one canonical definition",
+                "report this compiler invariant failure with the smallest source",
+            );
+            return false;
+        }
+    }
+    true
+}
+
+fn rewrite_instruction_operands(
+    kind: &mut raw::InstructionKind,
+    map: &impl Fn(&mut raw::ValueId) -> bool,
+) -> bool {
+    match kind {
+        raw::InstructionKind::BoolLiteral(_) | raw::InstructionKind::I32Literal(_) => true,
+        raw::InstructionKind::I32Neg { operand } => map(operand),
+        raw::InstructionKind::I32Add { lhs, rhs }
+        | raw::InstructionKind::I32Sub { lhs, rhs }
+        | raw::InstructionKind::I32Mul { lhs, rhs }
+        | raw::InstructionKind::Eq { lhs, rhs }
+        | raw::InstructionKind::Ne { lhs, rhs }
+        | raw::InstructionKind::I32LtS { lhs, rhs }
+        | raw::InstructionKind::I32LeS { lhs, rhs }
+        | raw::InstructionKind::I32GtS { lhs, rhs }
+        | raw::InstructionKind::I32GeS { lhs, rhs } => map(lhs) && map(rhs),
+        raw::InstructionKind::DirectCall { arguments, .. } => arguments.iter_mut().all(map),
+    }
+}
+
+fn rewrite_terminator_operands(
+    kind: &mut raw::Terminator,
+    map: &impl Fn(&mut raw::ValueId) -> bool,
+) -> bool {
+    match kind {
+        raw::Terminator::Return(value) => map(value),
+        raw::Terminator::Jump { arguments, .. } => arguments.iter_mut().all(map),
+        raw::Terminator::Branch { condition, true_arguments, false_arguments, .. } => {
+            map(condition)
+                && true_arguments.iter_mut().all(map)
+                && false_arguments.iter_mut().all(map)
+        }
+    }
+}
+
 fn record_call_edge(edges: &mut Vec<CallEdge>, edge: CallEdge, errors: &mut Errors<'_>) -> bool {
+    if errors.is_exhausted() {
+        return false;
+    }
     if edges.len() >= MAX_CALL_EDGES {
         errors.limit(
             "ZRYNA-M2201",
@@ -1369,17 +1952,20 @@ fn compare_diagnostics(left: &Diagnostic, right: &Diagnostic, sources: &SourceMa
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::{
-        CallEdge, Errors, FunctionSymbol, MAX_CALL_EDGES, MAX_SEMANTIC_DIAGNOSTICS,
-        MAX_STATIC_CALL_DEPTH, ModuleSymbols, SemanticInput, Signature, TypedValue, lower,
-        record_call_edge, run_phase, store_expression_result, verify_call_graph,
+        CallEdge, Errors, FunctionLowerer, FunctionSymbol, MAX_CALL_EDGES,
+        MAX_SEMANTIC_DIAGNOSTICS, MAX_STATIC_CALL_DEPTH, ModuleSymbols, SemanticInput, Signature,
+        TypedValue, draft_merge_within_limit, draft_value_within_limit, empty_block, lower,
+        lower_function, record_call_edge, run_phase, store_expression_result, verify_call_graph,
     };
     use serde_json::Value;
     use zryna_diagnostics::Diagnostic;
     use zryna_diagnostics::render_structured;
     use zryna_ir::{
         Type,
-        control_flow_v1::{VerifiedInstructionKind, VerifiedTerminatorKind, raw},
+        control_flow_v1::{self as ir, VerifiedInstructionKind, VerifiedTerminatorKind, raw},
     };
     use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
     use zryna_syntax::v3::{decode_snapshot, verify_snapshot};
@@ -1409,6 +1995,396 @@ mod tests {
             decode_snapshot(include_bytes!("../../../tests/fixtures/m2-straight-line-result.json"))
                 .expect("checked-in v3 result must decode");
         verify_snapshot(raw, sources).expect("checked-in v3 result must verify")
+    }
+
+    fn dummy_function(
+        id: raw::FunctionId,
+        span: zryna_source::Span,
+        parameters: &[Type],
+        result: Type,
+    ) -> raw::Function {
+        let definitions = parameters
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(index, ty)| raw::ValueDefinition {
+                id: raw::ValueId(u32::try_from(index).expect("bounded test parameter")),
+                ty,
+                span,
+            })
+            .collect::<Vec<_>>();
+        let value = raw::ValueId(u32::try_from(definitions.len()).expect("bounded test value"));
+        let kind = match result {
+            Type::Bool => raw::InstructionKind::BoolLiteral(true),
+            Type::I32 => {
+                if definitions.len() == 2 {
+                    raw::InstructionKind::I32Add { lhs: raw::ValueId(0), rhs: raw::ValueId(1) }
+                } else {
+                    raw::InstructionKind::I32Literal(0)
+                }
+            }
+            Type::Unit => unreachable!("ControlFlowV1 test helper does not admit unit"),
+        };
+        raw::Function {
+            id,
+            entry_export: None,
+            span,
+            parameters: definitions,
+            result,
+            blocks: vec![raw::Block {
+                id: raw::BlockId(0),
+                parameters: Vec::new(),
+                instructions: vec![raw::Instruction {
+                    result: raw::ValueDefinition { id: value, ty: result, span },
+                    kind,
+                }],
+                terminators: vec![raw::SpannedTerminator {
+                    span,
+                    kind: raw::Terminator::Return(value),
+                }],
+            }],
+        }
+    }
+
+    fn control_flow_fixture(
+        request: &[u8],
+        result: &[u8],
+    ) -> (SourceMap, zryna_syntax::v3::ProjectSyntaxSnapshot) {
+        let sources = sources_from_request(request);
+        let raw = decode_snapshot(result).expect("checked-in control-flow result must decode");
+        let snapshot =
+            verify_snapshot(raw, &sources).expect("checked-in control-flow result must verify");
+        (sources, snapshot)
+    }
+
+    fn source_text(sources: &SourceMap, span: zryna_source::Span) -> &str {
+        let source = sources.source(span.file()).expect("diagnostic file must exist");
+        &source.text()[span.start() as usize..span.end() as usize]
+    }
+
+    #[test]
+    fn real_v3_control_flow_covers_omitted_else_returns_loops_and_nesting() {
+        let (sources, snapshot) = control_flow_fixture(
+            include_bytes!("../../../tests/fixtures/m2-control-flow-positive-request.json"),
+            include_bytes!("../../../tests/fixtures/m2-control-flow-positive-result.json"),
+        );
+        let entry_path =
+            NormalizedSourcePath::new("src/main.zry").expect("entry path must normalize");
+        let entry = sources.file_id(&entry_path).expect("entry source must exist");
+        let input = SemanticInput::try_new(&snapshot, &sources, entry)
+            .expect("verified control-flow snapshot must enter M2 semantics");
+        let program = lower(input).expect("positive control-flow source must lower and seal");
+        let functions = program
+            .modules()
+            .next()
+            .expect("entry module must exist")
+            .functions()
+            .collect::<Vec<_>>();
+        assert_eq!(functions.len(), 6);
+
+        for function in &functions[..2] {
+            let blocks = function.blocks().collect::<Vec<_>>();
+            assert_eq!(blocks.len(), 4, "omitted and empty else use one explicit false path");
+            assert!(matches!(blocks[0].terminator().kind(), VerifiedTerminatorKind::Branch { .. }));
+            assert!(matches!(blocks[1].terminator().kind(), VerifiedTerminatorKind::Jump { .. }));
+            assert!(matches!(blocks[2].terminator().kind(), VerifiedTerminatorKind::Jump { .. }));
+            assert_eq!(blocks[3].parameters().len(), 1, "mutable value merges once");
+            assert!(matches!(blocks[3].terminator().kind(), VerifiedTerminatorKind::Return(_)));
+        }
+
+        let one_arm = functions[2].blocks().collect::<Vec<_>>();
+        assert_eq!(one_arm.len(), 3);
+        assert!(matches!(one_arm[0].terminator().kind(), VerifiedTerminatorKind::Branch { .. }));
+        assert!(matches!(one_arm[1].terminator().kind(), VerifiedTerminatorKind::Return(_)));
+        assert!(matches!(one_arm[2].terminator().kind(), VerifiedTerminatorKind::Return(_)));
+
+        let both_arms = functions[3].blocks().collect::<Vec<_>>();
+        assert_eq!(both_arms.len(), 3, "two terminal arms need no synthetic join");
+        assert!(matches!(both_arms[1].terminator().kind(), VerifiedTerminatorKind::Return(_)));
+        assert!(matches!(both_arms[2].terminator().kind(), VerifiedTerminatorKind::Return(_)));
+
+        let loop_blocks = functions[4].blocks().collect::<Vec<_>>();
+        assert_eq!(loop_blocks.len(), 4);
+        assert!(matches!(
+            loop_blocks[0].terminator().kind(),
+            VerifiedTerminatorKind::Jump { target, arguments }
+                if target.index() == 1 && arguments.len() == 1
+        ));
+        assert_eq!(loop_blocks[1].parameters().len(), 1);
+        assert!(matches!(
+            loop_blocks[1].terminator().kind(),
+            VerifiedTerminatorKind::Branch { .. }
+        ));
+        assert!(matches!(
+            loop_blocks[2].terminator().kind(),
+            VerifiedTerminatorKind::Jump { target, arguments }
+                if target.index() == 1 && arguments.len() == 1
+        ));
+        assert!(matches!(loop_blocks[3].terminator().kind(), VerifiedTerminatorKind::Return(_)));
+
+        let nested = functions[5].blocks().collect::<Vec<_>>();
+        assert_eq!(nested.len(), 7);
+        assert_eq!(
+            nested
+                .iter()
+                .filter(|block| matches!(
+                    block.terminator().kind(),
+                    VerifiedTerminatorKind::Branch { .. }
+                ))
+                .count(),
+            2
+        );
+        assert!(nested.iter().any(|block| matches!(
+            block.terminator().kind(),
+            VerifiedTerminatorKind::Jump { target, arguments }
+                if target.index() == 1 && arguments.len() == 1
+        )));
+        assert!(
+            nested.iter().any(|block| matches!(
+                block.terminator().kind(),
+                VerifiedTerminatorKind::Return(_)
+            ))
+        );
+    }
+
+    #[test]
+    fn real_v3_control_flow_rejections_are_precise_and_deterministic() {
+        let (sources, snapshot) = control_flow_fixture(
+            include_bytes!("../../../tests/fixtures/m2-control-flow-negative-request.json"),
+            include_bytes!("../../../tests/fixtures/m2-control-flow-negative-result.json"),
+        );
+        let entry_path =
+            NormalizedSourcePath::new("src/main.zry").expect("entry path must normalize");
+        let entry = sources.file_id(&entry_path).expect("entry source must exist");
+        let input = SemanticInput::try_new(&snapshot, &sources, entry)
+            .expect("provider-valid negative snapshot must enter M2 semantics");
+        let first = lower(input).expect_err("invalid control flow must not produce IR");
+        let second = lower(input).expect_err("repeated invalid control flow must still fail");
+
+        let conditions = first
+            .iter()
+            .filter(|diagnostic| diagnostic.code() == "ZRYNA-M2014")
+            .collect::<Vec<_>>();
+        assert_eq!(conditions.len(), 2);
+        assert!(conditions.iter().all(|diagnostic| {
+            source_text(&sources, diagnostic.primary_span().expect("condition span")) == "1"
+        }));
+        assert!(first.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-M2009"
+                && diagnostic.message().contains("fall through")
+                && source_text(&sources, diagnostic.primary_span().expect("function body span"))
+                    .contains("while (true)")
+        }));
+        assert!(first.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-M2009"
+                && diagnostic.message().contains("unreachable")
+                && source_text(&sources, diagnostic.primary_span().expect("statement span"))
+                    == "return 3;"
+        }));
+        assert_eq!(
+            render_structured(&first, &sources).expect("first diagnostics must render"),
+            render_structured(&second, &sources).expect("second diagnostics must render")
+        );
+    }
+
+    #[test]
+    fn live_mutable_draft_boundary_accepts_256_and_rejects_257() {
+        let sources = SourceMap::build(vec![SourceFileInput {
+            path: "src/main.zry".to_owned(),
+            text: "x".to_owned(),
+        }])
+        .expect("draft-boundary source map must build");
+        let path = NormalizedSourcePath::new("src/main.zry").expect("path must normalize");
+        let file = sources.file_id(&path).expect("fixture file must exist");
+        let span = sources.span(file, 0, 1).expect("fixture span must resolve");
+
+        let mut exact = Errors::new(&sources);
+        assert!(draft_merge_within_limit(ir::MAX_BLOCK_PARAMETERS, span, &mut exact));
+        assert!(exact.is_empty());
+
+        let mut extra = Errors::new(&sources);
+        assert!(!draft_merge_within_limit(ir::MAX_BLOCK_PARAMETERS + 1, span, &mut extra));
+        let diagnostics = extra.finish();
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M2201");
+    }
+
+    #[test]
+    fn provisional_value_boundary_accepts_last_identity_and_rejects_first_extra() {
+        let sources = SourceMap::build(vec![SourceFileInput {
+            path: "src/main.zry".to_owned(),
+            text: "x".to_owned(),
+        }])
+        .expect("draft-value source map must build");
+        let path = NormalizedSourcePath::new("src/main.zry").expect("path must normalize");
+        let file = sources.file_id(&path).expect("fixture file must exist");
+        let span = sources.span(file, 0, 1).expect("fixture span must resolve");
+
+        let mut exact = Errors::new(&sources);
+        assert!(draft_value_within_limit(
+            u32::try_from(ir::MAX_VALUES_PER_FUNCTION - 1).expect("IR limit fits u32"),
+            span,
+            &mut exact,
+        ));
+        assert!(exact.is_empty());
+
+        let mut extra = Errors::new(&sources);
+        assert!(!draft_value_within_limit(
+            u32::try_from(ir::MAX_VALUES_PER_FUNCTION).expect("IR limit fits u32"),
+            span,
+            &mut extra,
+        ));
+        let diagnostics = extra.finish();
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M2201");
+    }
+
+    #[test]
+    fn terminal_exhaustion_prevents_every_cfg_draft_mutation() {
+        let (sources, snapshot) = control_flow_fixture(
+            include_bytes!("../../../tests/fixtures/m2-control-flow-positive-request.json"),
+            include_bytes!("../../../tests/fixtures/m2-control-flow-positive-result.json"),
+        );
+        let body = snapshot.files()[0].functions()[0].body();
+        let mut errors = Errors::new(&sources);
+        errors.limit(
+            "ZRYNA-M2201",
+            "fixture has already exhausted its deterministic resource",
+            "reduce the fixture resource use",
+        );
+        let callables = BTreeMap::new();
+        let modules = Vec::new();
+        let offsets = Vec::new();
+        let mut call_edges = Vec::new();
+        let span = body.span();
+        let mut lowerer = FunctionLowerer {
+            body,
+            callables: &callables,
+            modules: &modules,
+            offsets: &offsets,
+            caller: 0,
+            errors: &mut errors,
+            call_edges: &mut call_edges,
+            bindings: Vec::new(),
+            expression_values: vec![None; body.expressions().len()],
+            blocks: vec![empty_block(0)],
+            current_block: 0,
+            cfg_edges: 0,
+            next_value: 0,
+        };
+
+        assert!(lowerer.new_block().is_none());
+        assert!(lowerer.new_value(Type::I32, span).is_none());
+        assert!(lowerer.emit(Type::I32, span, raw::InstructionKind::I32Literal(1)).is_none());
+        assert!(!lowerer.terminate(raw::SpannedTerminator {
+            span,
+            kind: raw::Terminator::Return(raw::ValueId(0)),
+        }));
+        assert_eq!(lowerer.blocks.len(), 1);
+        assert!(lowerer.blocks[0].instructions.is_empty());
+        assert!(lowerer.blocks[0].terminators.is_empty());
+        assert_eq!(lowerer.cfg_edges, 0);
+        assert_eq!(lowerer.next_value, 0);
+    }
+
+    #[test]
+    fn real_v3_if_else_and_while_lower_to_one_verified_canonical_cfg() {
+        let request = include_bytes!("../../../tests/fixtures/typescript-adapter-v3-request.json");
+        let sources = sources_from_request(request);
+        let raw_snapshot = decode_snapshot(include_bytes!(
+            "../../../tests/fixtures/typescript-adapter-v3-result.json"
+        ))
+        .expect("checked-in control-flow snapshot must decode");
+        let snapshot = verify_snapshot(raw_snapshot, &sources)
+            .expect("checked-in control-flow snapshot must verify");
+        let syntax = &snapshot.files()[0].functions()[1];
+        let main_span = syntax.span();
+        let dependency_span = snapshot.files()[1].functions()[0].span();
+        let main_id = raw::FunctionId { module: raw::ModuleId(0), declaration: 0 };
+        let add_id = raw::FunctionId { module: raw::ModuleId(1), declaration: 0 };
+        let truth_id = raw::FunctionId { module: raw::ModuleId(1), declaration: 1 };
+        let main_symbol = FunctionSymbol {
+            id: main_id,
+            name: "main".to_owned(),
+            name_span: syntax.name().span(),
+            declaration_span: main_span,
+            exported: true,
+            signature: Signature { parameters: vec![Some(Type::I32)], result: Some(Type::I32) },
+        };
+        let add_symbol = FunctionSymbol {
+            id: add_id,
+            name: "add".to_owned(),
+            name_span: dependency_span,
+            declaration_span: dependency_span,
+            exported: false,
+            signature: Signature {
+                parameters: vec![Some(Type::I32), Some(Type::I32)],
+                result: Some(Type::I32),
+            },
+        };
+        let truth_symbol = FunctionSymbol {
+            id: truth_id,
+            name: "truth".to_owned(),
+            name_span: dependency_span,
+            declaration_span: dependency_span,
+            exported: false,
+            signature: Signature { parameters: Vec::new(), result: Some(Type::Bool) },
+        };
+        let mut callables = BTreeMap::new();
+        callables.insert("add".to_owned(), add_id);
+        callables.insert("truth".to_owned(), truth_id);
+        let modules = vec![
+            ModuleSymbols { functions: vec![main_symbol.clone()], ..ModuleSymbols::default() },
+            ModuleSymbols { functions: vec![add_symbol, truth_symbol], ..ModuleSymbols::default() },
+        ];
+        let mut errors = Errors::new(&sources);
+        let mut call_edges = Vec::new();
+        let main = lower_function(
+            syntax,
+            &main_symbol,
+            &callables,
+            &modules,
+            &[0, 1],
+            &mut call_edges,
+            &mut errors,
+            true,
+        )
+        .expect("real v3 control flow must lower");
+        assert!(errors.is_empty());
+        assert_eq!(main.blocks.len(), 7);
+        assert!(matches!(main.blocks[0].terminators[0].kind, raw::Terminator::Branch { .. }));
+        assert!(matches!(main.blocks[1].terminators[0].kind, raw::Terminator::Jump { .. }));
+        assert!(matches!(main.blocks[2].terminators[0].kind, raw::Terminator::Jump { .. }));
+        assert_eq!(main.blocks[3].parameters.len(), 1, "if merge carries mutable y");
+        assert!(matches!(main.blocks[3].terminators[0].kind, raw::Terminator::Jump { .. }));
+        assert_eq!(main.blocks[4].parameters.len(), 1, "loop header carries mutable y");
+        assert!(matches!(main.blocks[4].terminators[0].kind, raw::Terminator::Branch { .. }));
+        assert!(matches!(
+            main.blocks[5].terminators[0].kind,
+            raw::Terminator::Jump { target: raw::BlockId(4), .. }
+        ));
+        assert!(matches!(main.blocks[6].terminators[0].kind, raw::Terminator::Return(_)));
+
+        let add = dummy_function(add_id, dependency_span, &[Type::I32, Type::I32], Type::I32);
+        let truth = dummy_function(truth_id, dependency_span, &[], Type::Bool);
+        let entry = sources.file_id(snapshot.files()[0].path()).expect("entry file");
+        let program = ir::verify(
+            raw::Program {
+                entry_module: raw::ModuleId(0),
+                modules: vec![
+                    raw::Module { id: raw::ModuleId(0), source_file: entry, functions: vec![main] },
+                    raw::Module {
+                        id: raw::ModuleId(1),
+                        source_file: snapshot.files()[1].id(),
+                        functions: vec![add, truth],
+                    },
+                ],
+            },
+            &sources,
+            entry,
+        )
+        .expect("lowered real-v3 CFG must pass the sealed verifier");
+        assert_eq!(program.modules().next().expect("entry module").functions().count(), 1);
     }
 
     #[test]
@@ -1578,7 +2554,6 @@ mod tests {
             "ZRYNA-M2011",
             "ZRYNA-M2012",
             "ZRYNA-M2013",
-            "ZRYNA-M2014",
             "ZRYNA-M2022",
         ] {
             assert!(codes.contains(&expected), "missing semantic rejection {expected}: {codes:?}");
@@ -1655,7 +2630,7 @@ mod tests {
     }
 
     #[test]
-    fn terminal_exhaustion_cannot_commit_the_current_expression_result() {
+    fn terminal_exhaustion_cannot_commit_a_per_root_expression_result() {
         let sources = SourceMap::build(vec![SourceFileInput {
             path: "src/main.zry".to_owned(),
             text: "x".to_owned(),
@@ -1668,17 +2643,14 @@ mod tests {
             "reduce the fixture resource use",
         );
         let mut values = [None];
-        let mut cursor = 0;
 
         assert!(!store_expression_result(
             &errors,
             &mut values,
-            &mut cursor,
             0,
             Some(TypedValue { ty: Type::I32, value: raw::ValueId(0) }),
         ));
-        assert_eq!(cursor, 0, "the expression cursor must not advance after exhaustion");
-        assert!(values[0].is_none(), "no expression value may be retained after exhaustion");
+        assert!(values[0].is_none(), "no per-root expression value may survive exhaustion");
     }
 
     #[test]
@@ -1711,6 +2683,16 @@ mod tests {
         let file = sources.file_id(&path).expect("fixture file must exist");
         let span = sources.span(file, 0, 1).expect("fixture span must resolve");
         let edge = CallEdge { caller: 0, callee: 1, span };
+        let mut blocked_edges = Vec::new();
+        let mut blocked_errors = Errors::new(&sources);
+        blocked_errors.limit(
+            "ZRYNA-M2201",
+            "fixture exhausted before call-edge recording",
+            "reduce the fixture resource use",
+        );
+        assert!(!record_call_edge(&mut blocked_edges, edge, &mut blocked_errors));
+        assert!(blocked_edges.is_empty(), "terminal exhaustion must prevent call-edge commits");
+
         let mut edges = Vec::with_capacity(MAX_CALL_EDGES);
         let mut errors = Errors::new(&sources);
 

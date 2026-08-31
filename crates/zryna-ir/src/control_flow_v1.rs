@@ -668,12 +668,15 @@ pub fn verify(
     }
 
     verify_modules(&program, sources, expected_entry, &mut errors);
+    if errors.exhausted() {
+        return Err(errors.finish());
+    }
     let signatures = collect_signatures(&program);
     let mut calls = Vec::<(FunctionKey, FunctionKey)>::new();
-    for (module_index, module) in program.modules.iter().enumerate() {
+    'modules: for (module_index, module) in program.modules.iter().enumerate() {
         for (function_index, function) in module.functions.iter().enumerate() {
             if errors.exhausted() {
-                break;
+                break 'modules;
             }
             verify_function(
                 FunctionKey { module: module_index, function: function_index },
@@ -686,7 +689,13 @@ pub fn verify(
             );
         }
     }
+    if errors.exhausted() {
+        return Err(errors.finish());
+    }
     verify_call_graph(&program, &calls, &mut errors);
+    if errors.exhausted() {
+        return Err(errors.finish());
+    }
     let (abi, abi_indices) = verify_public_abi(&program, &mut errors);
     if !errors.is_empty() {
         return Err(errors.finish());
@@ -918,12 +927,18 @@ fn verify_modules(
     expected_entry: FileId,
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     if program.modules.len() != sources.len() {
         errors.push(error(
             "ZRYNA-I2001",
             "module inventory does not exactly match the final source map",
             "provide every final source module exactly once in normalized path order",
         ));
+        if errors.exhausted() {
+            return;
+        }
     }
     let entry =
         usize::try_from(program.entry_module.0).ok().and_then(|index| program.modules.get(index));
@@ -935,6 +950,9 @@ fn verify_modules(
             "entry module is not bound to the independently supplied entry source",
             "use the exact entry FileId issued by the final SourceMap",
         ));
+        if errors.exhausted() {
+            return;
+        }
     }
     for (module_index, module) in program.modules.iter().enumerate() {
         let expected_id = u32::try_from(module_index).expect("preflight module bound fits u32");
@@ -945,6 +963,9 @@ fn verify_modules(
                 format!("module #{module_index} has a noncanonical identity or source authority"),
                 "order dense modules by final normalized source path",
             ));
+            if errors.exhausted() {
+                return;
+            }
         }
         for (function_index, function) in module.functions.iter().enumerate() {
             let expected_function =
@@ -957,9 +978,15 @@ fn verify_modules(
                     ),
                     "use its containing module and dense source declaration index",
                 ));
+                if errors.exhausted() {
+                    return;
+                }
             }
             if module.id != program.entry_module && function.entry_export.is_some() {
                 errors.push(error("ZRYNA-I2004", format!("dependency function #{module_index}:{function_index} claims a public entry export"), "only entry-module exports may enter scalar ABI v1"));
+                if errors.exhausted() {
+                    return;
+                }
             }
         }
     }
@@ -981,6 +1008,7 @@ fn collect_signatures(program: &raw::Program) -> Vec<Vec<(Vec<Type>, Type)>> {
         .collect()
 }
 
+#[allow(clippy::too_many_lines)]
 fn verify_function(
     key: FunctionKey,
     function: &raw::Function,
@@ -990,28 +1018,52 @@ fn verify_function(
     calls: &mut Vec<(FunctionKey, FunctionKey)>,
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     let mut spans_valid = validate_span(function.span, module_file, sources, errors);
+    if errors.exhausted() {
+        return;
+    }
     for parameter in &function.parameters {
         spans_valid &= validate_span(parameter.span, module_file, sources, errors);
+        if errors.exhausted() {
+            return;
+        }
     }
     for block in &function.blocks {
         for parameter in &block.parameters {
             spans_valid &= validate_span(parameter.span, module_file, sources, errors);
+            if errors.exhausted() {
+                return;
+            }
         }
         for instruction in &block.instructions {
             spans_valid &= validate_span(instruction.result.span, module_file, sources, errors);
+            if errors.exhausted() {
+                return;
+            }
         }
         if block.terminators.len() == 1 {
             spans_valid &= validate_span(block.terminators[0].span, module_file, sources, errors);
+            if errors.exhausted() {
+                return;
+            }
         }
     }
     if !spans_valid {
         return;
     }
     validate_type(function.result, None, "function result", errors);
+    if errors.exhausted() {
+        return;
+    }
     let mut values = Vec::<ValueInfo>::new();
     for parameter in &function.parameters {
         define_value(parameter, DefinitionLocation::Parameter, &mut values, errors);
+        if errors.exhausted() {
+            return;
+        }
     }
     for (block_index, block) in function.blocks.iter().enumerate() {
         let expected = u32::try_from(block_index).expect("preflight block bound fits u32");
@@ -1024,6 +1076,9 @@ fn verify_function(
                 ),
                 "use dense block identifiers in arena order",
             ));
+            if errors.exhausted() {
+                return;
+            }
         }
         if block_index == 0 && !block.parameters.is_empty() {
             errors.push(error(
@@ -1031,6 +1086,9 @@ fn verify_function(
                 "entry block declares block parameters",
                 "function parameters are the only entry-block parameters",
             ));
+            if errors.exhausted() {
+                return;
+            }
         }
         for parameter in &block.parameters {
             define_value(
@@ -1039,6 +1097,9 @@ fn verify_function(
                 &mut values,
                 errors,
             );
+            if errors.exhausted() {
+                return;
+            }
         }
         for (instruction_index, instruction) in block.instructions.iter().enumerate() {
             define_value(
@@ -1047,6 +1108,9 @@ fn verify_function(
                 &mut values,
                 errors,
             );
+            if errors.exhausted() {
+                return;
+            }
         }
     }
 
@@ -1063,6 +1127,9 @@ fn verify_function(
                 calls,
                 errors,
             );
+            if errors.exhausted() {
+                return;
+            }
         }
         if block.terminators.len() != 1 {
             errors.push(error(
@@ -1075,10 +1142,16 @@ fn verify_function(
                 ),
                 "emit exactly one return, jump, or branch terminator",
             ));
+            if errors.exhausted() {
+                return;
+            }
             continue;
         }
         let terminator = &block.terminators[0];
         verify_terminator(key, block_index, function, terminator, &values, &mut edges, errors);
+        if errors.exhausted() {
+            return;
+        }
     }
     verify_cfg(key, function, &values, &edges, errors);
 }
@@ -1089,15 +1162,27 @@ fn define_value(
     values: &mut Vec<ValueInfo>,
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     let expected = u32::try_from(values.len()).expect("preflight value bound fits u32");
     if definition.id != raw::ValueId(expected) {
         errors.push(error("ZRYNA-I2008", format!("value definition claims #{}, expected dense value #{expected}", definition.id.0), "allocate function parameters, then block parameters and instruction results in canonical order"));
+        if errors.exhausted() {
+            return;
+        }
     }
     validate_type(definition.ty, Some(definition.span), "value", errors);
+    if errors.exhausted() {
+        return;
+    }
     values.push(ValueInfo { ty: definition.ty, location });
 }
 
 fn validate_type(ty: Type, span: Option<Span>, label: &str, errors: &mut Errors) {
+    if errors.exhausted() {
+        return;
+    }
     if ty == Type::Unit {
         errors.push(error_at(
             "ZRYNA-I2009",
@@ -1114,6 +1199,9 @@ fn validate_span(
     sources: &SourceMap,
     errors: &mut Errors,
 ) -> bool {
+    if errors.exhausted() {
+        return false;
+    }
     match sources.resolve(span) {
         Ok(resolved) if resolved.source().id() == module_file => true,
         Ok(_) => {
@@ -1149,6 +1237,10 @@ fn verify_instruction(
     errors: &mut Errors,
 ) {
     use raw::InstructionKind as I;
+
+    if errors.exhausted() {
+        return;
+    }
     let result = instruction.result.ty;
     match &instruction.kind {
         I::BoolLiteral(_) => {
@@ -1201,7 +1293,13 @@ fn verify_instruction(
         }
         I::Eq { lhs, rhs } | I::Ne { lhs, rhs } => {
             let left = checked_use(*lhs, block, position, values, instruction.result.span, errors);
+            if errors.exhausted() {
+                return;
+            }
             let right = checked_use(*rhs, block, position, values, instruction.result.span, errors);
+            if errors.exhausted() {
+                return;
+            }
             if result != Type::Bool
                 || left.map(|(_, value)| value.ty) != right.map(|(_, value)| value.ty)
             {
@@ -1234,6 +1332,9 @@ fn verify_instruction(
                 ));
                 return;
             };
+            if errors.exhausted() {
+                return;
+            }
             calls.push((key, target));
             if arguments.len() != parameters.len() || result != *target_result {
                 errors.push(error_at(
@@ -1242,6 +1343,9 @@ fn verify_instruction(
                     "direct call signature does not match its target",
                     "use exact arity, argument types, and result type",
                 ));
+                if errors.exhausted() {
+                    return;
+                }
             }
             for (argument_index, argument) in arguments.iter().enumerate() {
                 let actual = checked_use(
@@ -1252,6 +1356,9 @@ fn verify_instruction(
                     instruction.result.span,
                     errors,
                 );
+                if errors.exhausted() {
+                    return;
+                }
                 if actual.map(|(_, value)| value.ty) != parameters.get(argument_index).copied() {
                     errors.push(error_at(
                         "ZRYNA-I2011",
@@ -1259,6 +1366,9 @@ fn verify_instruction(
                         format!("direct call argument #{argument_index} has the wrong type"),
                         "preserve source argument order and exact parameter types",
                     ));
+                    if errors.exhausted() {
+                        return;
+                    }
                 }
             }
         }
@@ -1277,10 +1387,16 @@ fn expect_values(
     span: Span,
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     let valid = operands.iter().zip(expected).all(|(operand, expected)| {
         checked_use(*operand, block, position, values, span, errors)
             .is_some_and(|(_, value)| value.ty == *expected)
     });
+    if errors.exhausted() {
+        return;
+    }
     if !valid || result != expected_result {
         errors.push(error_at(
             "ZRYNA-I2010",
@@ -1292,6 +1408,9 @@ fn expect_values(
 }
 
 fn expect_result(actual: Type, expected: Type, span: Span, label: &str, errors: &mut Errors) {
+    if errors.exhausted() {
+        return;
+    }
     if actual != expected {
         errors.push(error_at(
             "ZRYNA-I2010",
@@ -1310,6 +1429,9 @@ fn checked_use(
     span: Span,
     errors: &mut Errors,
 ) -> Option<(usize, ValueInfo)> {
+    if errors.exhausted() {
+        return None;
+    }
     let Some((index, value)) = value_info(id, values) else {
         errors.push(error_at(
             "ZRYNA-I2012",
@@ -1342,13 +1464,18 @@ fn verify_terminator(
     edges: &mut Vec<Edge>,
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     let position = function.blocks[block].instructions.len();
     match &terminator.kind {
         raw::Terminator::Return(value) => {
-            if checked_use(*value, block, position, values, terminator.span, errors)
-                .map(|(_, value)| value.ty)
-                != Some(function.result)
-            {
+            let actual = checked_use(*value, block, position, values, terminator.span, errors)
+                .map(|(_, value)| value.ty);
+            if errors.exhausted() {
+                return;
+            }
+            if actual != Some(function.result) {
                 errors.push(error_at(
                     "ZRYNA-I2014",
                     Some(terminator.span),
@@ -1388,6 +1515,9 @@ fn verify_terminator(
                     "branch only on an exact bool value",
                 ));
             }
+            if errors.exhausted() {
+                return;
+            }
             verify_edge(
                 key,
                 block,
@@ -1399,6 +1529,9 @@ fn verify_terminator(
                 edges,
                 errors,
             );
+            if errors.exhausted() {
+                return;
+            }
             verify_edge(
                 key,
                 block,
@@ -1426,6 +1559,9 @@ fn verify_edge(
     edges: &mut Vec<Edge>,
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     let Some(target_index) =
         usize::try_from(target.0).ok().filter(|index| *index < function.blocks.len())
     else {
@@ -1447,6 +1583,9 @@ fn verify_edge(
             "control-flow edge targets the entry block",
             "entry block zero must have no predecessor",
         ));
+        if errors.exhausted() {
+            return;
+        }
     }
     let parameters = &function.blocks[target_index].parameters;
     if arguments.len() != parameters.len() {
@@ -1456,11 +1595,17 @@ fn verify_edge(
             "block argument arity does not match target parameters",
             "pass one exact argument for each target block parameter",
         ));
+        if errors.exhausted() {
+            return;
+        }
     }
     let position = function.blocks[source].instructions.len();
     for (index, argument) in arguments.iter().enumerate() {
         let actual = checked_use(*argument, source, position, values, span, errors)
             .map(|(_, value)| value.ty);
+        if errors.exhausted() {
+            return;
+        }
         if actual != parameters.get(index).map(|parameter| parameter.ty) {
             errors.push(error_at(
                 "ZRYNA-I2017",
@@ -1468,7 +1613,13 @@ fn verify_edge(
                 format!("block argument #{index} has the wrong type"),
                 "match target block parameter types exactly",
             ));
+            if errors.exhausted() {
+                return;
+            }
         }
+    }
+    if errors.exhausted() {
+        return;
     }
     edges.push(Edge { source, target: target_index, arguments: arguments.to_vec() });
 }
@@ -1481,7 +1632,7 @@ fn verify_cfg(
     edges: &[Edge],
     errors: &mut Errors,
 ) {
-    if function.blocks.is_empty() {
+    if errors.exhausted() || function.blocks.is_empty() {
         return;
     }
     let count = function.blocks.len();
@@ -1509,6 +1660,9 @@ fn verify_cfg(
                 ),
                 "emit only blocks reachable from entry",
             ));
+            if errors.exhausted() {
+                return;
+            }
         }
     }
     if reachable.iter().any(|reachable| !reachable) {
@@ -1542,6 +1696,9 @@ fn verify_cfg(
                     instruction.result.span,
                     errors,
                 );
+                if errors.exhausted() {
+                    return;
+                }
             }
         }
         if block.terminators.len() == 1 {
@@ -1556,6 +1713,9 @@ fn verify_cfg(
                     block.terminators[0].span,
                     errors,
                 );
+                if errors.exhausted() {
+                    return;
+                }
             }
         }
     }
@@ -1606,6 +1766,9 @@ fn verify_cfg(
             format!("function #{}:{} contains irreducible control flow", key.module, key.function),
             "every cycle must have one dominating nonentry header",
         ));
+        if errors.exhausted() {
+            return;
+        }
     }
     let maximum_nesting = (0..count)
         .map(|block| loops.values().filter(|members| members[block]).count())
@@ -1734,6 +1897,9 @@ fn verify_dominance(
     span: Span,
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     let Some((_, value)) = value_info(operand, values) else {
         return;
     };
@@ -1795,6 +1961,9 @@ fn verify_call_graph(
     calls: &[(FunctionKey, FunctionKey)],
     errors: &mut Errors,
 ) {
+    if errors.exhausted() {
+        return;
+    }
     let offsets = function_offsets(program);
     let function_count = offsets.last().copied().unwrap_or(0);
     let mut successors = vec![Vec::<usize>::new(); function_count];
@@ -1849,6 +2018,9 @@ fn verify_public_abi(
     program: &raw::Program,
     errors: &mut Errors,
 ) -> (Option<zryna_abi::VerifiedScalarAbiModule>, Vec<Vec<Option<usize>>>) {
+    if errors.exhausted() {
+        return (None, Vec::new());
+    }
     let mut exports = Vec::new();
     let mut indices =
         program.modules.iter().map(|module| vec![None; module.functions.len()]).collect::<Vec<_>>();
@@ -1906,6 +2078,9 @@ fn verify_public_abi(
                     ),
                 };
                 errors.push(error("ZRYNA-I2022", message, guidance));
+                if errors.exhausted() {
+                    break;
+                }
             }
             (None, indices)
         }
@@ -1963,11 +2138,15 @@ impl Errors {
     }
     #[allow(clippy::needless_pass_by_value)]
     fn limit_at(&mut self, label: String, maximum: usize) {
-        self.push(error(
+        if self.exhausted {
+            return;
+        }
+        self.diagnostics.push(error(
             "ZRYNA-I2201",
             format!("ControlFlowV1 {label} exceeds its limit of {maximum}"),
             "reduce the program before IR verification",
         ));
+        self.exhausted = true;
     }
     fn is_empty(&self) -> bool {
         self.diagnostics.is_empty()

@@ -10,9 +10,9 @@ receives a host path, directory handle, workspace capability, or authority to ch
 dependency.
 
 This boundary does not enable the `control-flow-v1` profile. Its final authenticated snapshot can
-enter the internal [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md), while
-control-flow lowering, all three M2 backends, manifest v2, and the public multi-file command remain
-gated by later M2 issues.
+enter the internal [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and its
+[control-flow extension](M2_CONTROL_FLOW_SEMANTICS.md), while all three M2 backends, manifest v2,
+and the public multi-file command remain gated by later M2 issues.
 
 ## Fixed-point algorithm
 

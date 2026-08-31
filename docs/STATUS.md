@@ -41,10 +41,12 @@ profile is intentionally narrow.
   [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) revalidates that exact final
   graph, owns modules, exports, scopes, exact scalar types, locals, assignment, and acyclic direct
   calls, preserves once-only left-to-right evaluation, and returns only mandatory-verifier-sealed
-  `ControlFlowV1`. Independent callers must supply a complete source-map-bound verified snapshot.
+  `ControlFlowV1`. The internal [M2 control-flow boundary](M2_CONTROL_FLOW_SEMANTICS.md) adds
+  canonical `if`/`while`, definite merge and loop state, reachability, and all-path return analysis.
+  Independent callers must supply a complete source-map-bound verified snapshot.
 - These are internal compiler boundaries only. The public driver still selects protocol v2; the
-  final module closure can enter internal straight-line semantics, but `if` and `while` are not
-  lowered, no backend accepts that profile, and no CLI command or manifest exposes it. The executable M2
+  final module closure can enter internal control-flow semantics, but no backend accepts that
+  profile, and no CLI command or manifest exposes it. The executable M2
   profile and every dependent M2 issue therefore remain unsupported.
 
 ## Runtime and toolchain boundary
@@ -71,6 +73,7 @@ feature.
 - [M1 conformance evidence](M1_CONFORMANCE.md)
 - [M2 deterministic module closure](M2_MODULE_CLOSURE.md)
 - [M2 straight-line semantics](M2_STRAIGHT_LINE_SEMANTICS.md)
+- [M2 control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md)
 - [Roadmap](ROADMAP.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)

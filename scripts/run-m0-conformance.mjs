@@ -148,6 +148,34 @@ const EXPECTED_FIXTURES = [
     mode: 'fail',
     expected: 'deterministic-diagnostics',
   },
+  {
+    id: 'm2-control-flow-positive-request',
+    path: 'tests/fixtures/m2-control-flow-positive-request.json',
+    phase: 'adapter',
+    mode: 'pass',
+    expected: 'byte-stable-response',
+  },
+  {
+    id: 'm2-control-flow-positive-result',
+    path: 'tests/fixtures/m2-control-flow-positive-result.json',
+    phase: 'semantics',
+    mode: 'pass',
+    expected: 'verifier-sealed-ir',
+  },
+  {
+    id: 'm2-control-flow-negative-request',
+    path: 'tests/fixtures/m2-control-flow-negative-request.json',
+    phase: 'adapter',
+    mode: 'pass',
+    expected: 'byte-stable-response',
+  },
+  {
+    id: 'm2-control-flow-negative-result',
+    path: 'tests/fixtures/m2-control-flow-negative-result.json',
+    phase: 'semantics',
+    mode: 'fail',
+    expected: 'deterministic-diagnostics',
+  },
 ];
 const EXPECTED_COMMANDS_SHA256 = '4f36542fb59336658cf5d8f3d1ba04ee5d55a1b301bae5d2bbc5aabf6d0960d1';
 const EXPECTED_COVERAGE_SHA256 = 'c9e34908053bbd162e73a880ece6c2c8f05b22ab1f87e69a19c7d9d45ea1724a';

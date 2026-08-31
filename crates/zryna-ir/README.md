@@ -79,8 +79,8 @@ are bounded.
 Successful verification exposes only immutable module, function, block, instruction, terminator,
 and sealed-identity views. It never exposes the retained raw program. Only entry-module functions
 with explicit export claims enter scalar ABI v1; dependency and unexported functions remain
-target-internal. Module discovery, semantic lowering, backend lowering, CLI activation, and an M2
-manifest remain owned by later milestones.
+target-internal. Internal straight-line and control-flow semantics now lower into this boundary.
+Backend lowering, CLI activation, and an M2 manifest remain owned by later milestones.
 
 | `ControlFlowV1` IR resource | Limit |
 | --- | ---: |
