@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "bundleSchema": "zryna.docs.bundle.v1",
+  "documents": [
+    {
+      "id": "reference/architecture",
+      "source": "docs/ARCHITECTURE.md",
+      "path": "documents/reference/architecture.md",
+      "title": "Compiler architecture"
+    },
+    {
+      "id": "reference/cli",
+      "source": "docs/CLI.md",
+      "path": "documents/reference/cli.md",
+      "title": "CLI reference"
+    },
+    {
+      "id": "reference/documentation-bundles",
+      "source": "docs/DOCUMENTATION_BUNDLES.md",
+      "path": "documents/reference/documentation-bundles.md",
+      "title": "Compiler documentation bundles"
+    },
+    {
+      "id": "reference/language-overview",
+      "source": "spec/language/OVERVIEW.md",
+      "path": "documents/reference/language-overview.md",
+      "title": "Language overview"
+    },
+    {
+      "id": "reference/scalar-abi-v1",
+      "source": "spec/abi/SCALAR_V1.md",
+      "path": "documents/reference/scalar-abi-v1.md",
+      "title": "Scalar ABI v1"
+    },
+    {
+      "id": "status/current",
+      "source": "docs/STATUS.md",
+      "path": "documents/status/current.md",
+      "title": "Compiler status"
+    },
+    {
+      "id": "status/m1-conformance",
+      "source": "docs/M1_CONFORMANCE.md",
+      "path": "documents/status/m1-conformance.md",
+      "title": "M1 three-target conformance"
+    },
+    {
+      "id": "status/roadmap",
+      "source": "docs/ROADMAP.md",
+      "path": "documents/status/roadmap.md",
+      "title": "Roadmap"
+    }
+  ]
+}

@@ -38,7 +38,31 @@ jobs:
       - name: Run Windows CLI smoke
         if: runner.os == 'Windows'
         run: cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact
+      - name: Verify documentation bundle contract
+        run: pnpm docs:check
       - run: node scripts/run-m0-conformance.mjs
+
+      - name: Export authenticated next documentation bundle
+        id: docs-bundle
+        if: runner.os == 'Linux' && github.event_name == 'push'
+        run: |
+          digest="$(node scripts/docs/export.mjs \
+            --channel next \
+            --source-commit "${{ github.sha }}" \
+            --source-ref "${{ github.ref }}" \
+            --output .zryna/out/docs/next)"
+          test "${#digest}" -eq 64
+          echo "manifest-sha256=$digest" >> "$GITHUB_OUTPUT"
+          printf 'Documentation manifest SHA-256: `%s`\n' "$digest" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload authenticated next documentation bundle
+        if: runner.os == 'Linux' && github.event_name == 'push'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zryna-docs-next-${{ github.sha }}
+          path: .zryna/out/docs/next
+          if-no-files-found: error
+          compression-level: 0
 
   adapter-platform:
     name: adapter (${{ matrix.os }})
