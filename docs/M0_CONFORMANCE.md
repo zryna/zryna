@@ -26,9 +26,10 @@ pnpm preflight
 pnpm m0:check
 ```
 
-Use `pnpm m2:quick` after an M2 semantics, closure, or workspace-source edit. It runs only the
-straight-line semantic, closure, and retained-filesystem security suites and therefore avoids
-unrelated runtime/toolchain integration failures while preserving native operating-system behavior.
+Use `pnpm m2:quick` after an M2 JavaScript, semantics, closure, or workspace-source edit. It runs
+only the deterministic M2 JavaScript backend, control-flow semantic, closure, and retained-
+filesystem security suites and therefore avoids unrelated runtime/toolchain integration failures
+while preserving native operating-system behavior.
 
 Use `pnpm preflight` during the edit loop. Its fixed order runs portable documentation, protocol,
 adapter and formatting checks, then the complete M2 semantics and driver libraries before the
@@ -62,9 +63,9 @@ semantics or validation decisions into the runner.
 | Stable, source-bound diagnostics | `zryna-diagnostics` | Rust workspace tests |
 | Frontend handshake and bounded worker process | `zryna-frontend` | Rust workspace tests |
 | Executable syntax wire and graph verifier | `zryna-syntax` | Rust workspace tests |
-| Provider-error stop gate and straight-line M2 semantics | `zryna-semantics` | Rust workspace tests |
+| Provider-error stop gate and control-flow M2 semantics | `zryna-semantics` | Rust workspace tests |
 | Sealed Universal IR verification | `zryna-ir` | Rust workspace tests |
-| Verified-only JavaScript emission | `zryna-backend-javascript` | Rust workspace tests |
+| Verified-only M1 and deterministic sealed M2 JavaScript emission | `zryna-backend-javascript` | focused Rust and Node tests |
 | Sealed native MIR verification | `zryna-native-mir` | Rust workspace tests |
 | Verified-only native emission and raw-input compile failure | `zryna-backend-native` | Rust workspace tests and doc-tests |
 | Independent backend orchestration | `zryna-driver` | Rust workspace tests |

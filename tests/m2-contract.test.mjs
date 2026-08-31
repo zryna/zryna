@@ -138,8 +138,8 @@ test('normative specification freezes profile boundaries without claiming implem
 });
 
 test('roadmap ledger exactly matches the digest-pinned issue graph and honest status', async () => {
-  const [roadmap, architecture, frontends, status, moduleClosure, semantics, controlFlow] = await Promise.all(
-    ['ROADMAP.md', 'ARCHITECTURE.md', 'FRONTENDS.md', 'STATUS.md', 'M2_MODULE_CLOSURE.md', 'M2_STRAIGHT_LINE_SEMANTICS.md', 'M2_CONTROL_FLOW_SEMANTICS.md'].map((name) =>
+  const [roadmap, architecture, frontends, status, moduleClosure, semantics, controlFlow, javascript] = await Promise.all(
+    ['ROADMAP.md', 'ARCHITECTURE.md', 'FRONTENDS.md', 'STATUS.md', 'M2_MODULE_CLOSURE.md', 'M2_STRAIGHT_LINE_SEMANTICS.md', 'M2_CONTROL_FLOW_SEMANTICS.md', 'M2_JAVASCRIPT_BACKEND.md'].map((name) =>
       readFile(new URL(`../docs/${name}`, import.meta.url), 'utf8'),
     ),
   );
@@ -158,21 +158,21 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
       ? 'M1 closure'
       : issue.dependsOn.map((number) => `#${number}`).join(', ');
     assert.equal(row.dependsOnText, expectedDependencyText);
-    assert.equal(row.state, [45, 46, 47, 48, 49, 50].includes(row.number) ? 'complete' : 'planned');
+    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51].includes(row.number) ? 'complete' : 'planned');
   }
   assert.match(
     roadmap,
-    /Current status: contract specified, exact syntax protocol v3 implemented, deterministic module\s+closure implemented, modules\/scopes\/types\/calls and canonical `if`\/`while` control flow lower to\s+verified M2 IR, and the isolated IR verifier implemented, but the M2 profile is not executable\./,
+    /Current status: contract specified,[\s\S]*deterministic sealed M2 ECMAScript[\s\S]*implemented internally,[\s\S]*cross-target execution remain unavailable/,
   );
   assert.match(roadmap, /digest-pinned planning inventory/);
   assert.match(architecture, /## Isolated `ControlFlowV1` boundary/);
-  assert.match(architecture, /The closure connects only to these internal semantic gates;[\s\S]*public command remain unavailable/);
+  assert.match(architecture, /internal\s+JavaScript emitter[\s\S]*M2 WebAssembly, native MIR, manifest v2, and the public command remain[\s\S]*unavailable/);
   assert.match(frontends, /versioned raw syntax snapshot/);
   assert.match(frontends, /internal module discovery/);
   assert.match(status, /## Implemented M1 slice/);
   assert.match(status, /## Implemented M2 compiler components/);
-  assert.match(status, /The public driver still selects protocol v2;[\s\S]*internal control-flow semantics,[\s\S]*no backend accepts[\s\S]*no CLI command or manifest exposes it/);
-  assert.match(status, /does not claim source control flow, modules,[\s\S]*or an executable M2[\s\S]*feature/);
+  assert.match(status, /M2 deterministic JavaScript backend[\s\S]*bounded byte-deterministic[\s\S]*The public driver still selects protocol v2;[\s\S]*no\s+CLI command or manifest exposes M2/);
+  assert.match(status, /does not\s+claim source control flow, modules,[\s\S]*or an executable M2[\s\S]*feature/);
   assert.match(moduleClosure, /exactly one final full-map protocol-v3 snapshot/);
   assert.match(moduleClosure, /ZRYNA-M2-GRAPH\\0/);
   assert.match(moduleClosure, /UNC, verbatim, device, and drive-relative roots/);
@@ -183,7 +183,25 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
   assert.match(controlFlow, /omitted `else` is the exact empty false path/);
   assert.match(controlFlow, /condition of a `while` is evaluated once on every[\s\S]*visit to its header/);
   assert.match(controlFlow, /`while \(true\)` is still treated as[\s\S]*potentially falling through/);
-  assert.match(controlFlow, /does not enable the public[\s\S]*any backend, manifest v2, or a CLI command/);
+  assert.match(controlFlow, /does not enable the public[\s\S]*manifest v2, a CLI command, or cross-target M2 support/);
+  for (const required of [
+    '`zryna_backend_javascript::emit_control_flow`',
+    '`Math`',
+    '`Number`',
+    '`Object`',
+    '`I32Mul`',
+    '`DirectCall`',
+    '`Return`',
+    '`Jump`',
+    '`Branch`',
+    '`condition === true`',
+    'parallel SSA edge semantics',
+    '32 MiB',
+    '`ZRYNA-J2003`',
+    'does not select protocol v3 in the public',
+  ]) {
+    assert.ok(javascript.includes(required), `missing M2 JavaScript contract phrase: ${required}`);
+  }
   assert.doesNotMatch(status, /M2 executable slice is implemented/);
 });
 

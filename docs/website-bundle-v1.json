@@ -33,6 +33,12 @@
       "title": "M2 control-flow semantics"
     },
     {
+      "id": "reference/m2-javascript-backend",
+      "source": "docs/M2_JAVASCRIPT_BACKEND.md",
+      "path": "documents/reference/m2-javascript-backend.md",
+      "title": "M2 deterministic JavaScript backend"
+    },
+    {
       "id": "reference/m2-module-closure",
       "source": "docs/M2_MODULE_CLOSURE.md",
       "path": "documents/reference/m2-module-closure.md",

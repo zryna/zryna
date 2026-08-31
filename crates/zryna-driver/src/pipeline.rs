@@ -924,10 +924,13 @@ fn execute_targets(
     if request.targets.javascript() {
         let harness = render_javascript_harness(&request.artifact_stem, invocation)?;
         let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
-        let frame = node.run_module(&harness_path, transaction.path()).map_err(runtime_failure)?;
+        let result_type = invocation.export().result();
+        let carrier = node
+            .run_javascript_module(&harness_path, transaction.path(), result_type)
+            .map_err(runtime_failure)?;
         results.push(TargetResult {
             target: ManifestTarget::JavaScript,
-            outcome: normalize_frame(ScalarTarget::JavaScript, invocation.export().result(), frame),
+            outcome: normalize_carrier(ScalarTarget::JavaScript, result_type, carrier),
         });
     }
     if request.targets.webassembly() {
@@ -963,14 +966,38 @@ fn render_javascript_harness(
     stem: &str,
     invocation: &zryna_abi::VerifiedInvocation<'_>,
 ) -> Result<Vec<u8>, CommandFailure> {
-    let arguments = render_i32_arguments(invocation)?;
+    let arguments = render_javascript_arguments(invocation);
     let module_path =
         serde_json::to_string(&format!("./javascript/{stem}.mjs")).map_err(invariant_failure)?;
     let export = invocation.export().javascript_name().as_str();
+    let result = match invocation.export().result() {
+        zryna_abi::ScalarType::I32 => concat!(
+            "if (typeof value !== 'number' || value !== (value | 0) || (value === 0 && 1 / value < 0)) process.exit(70);\n",
+            "const frame = Buffer.allocUnsafe(4);\n",
+            "frame.writeInt32LE(value, 0);\n",
+            "process.stdout.write(frame);\n",
+        ),
+        zryna_abi::ScalarType::Bool => concat!(
+            "if (typeof value !== 'boolean') process.exit(70);\n",
+            "process.stdout.write(Uint8Array.of(value ? 1 : 0));\n",
+        ),
+    };
     Ok(format!(
-        "import {{ {export} as invoke }} from {module_path};\nconst value = invoke({arguments});\nif (!Number.isInteger(value) || value < -2147483648 || value > 2147483647 || Object.is(value, -0)) process.exit(70);\nconst frame = Buffer.allocUnsafe(4);\nframe.writeInt32LE(value, 0);\nprocess.stdout.write(frame);\n"
+        "import {{ {export} as invoke }} from {module_path};\nconst value = invoke({arguments});\n{result}"
     )
     .into_bytes())
+}
+
+fn render_javascript_arguments(invocation: &zryna_abi::VerifiedInvocation<'_>) -> String {
+    invocation
+        .arguments()
+        .iter()
+        .map(|argument| match argument {
+            ScalarValue::I32(value) => value.to_string(),
+            ScalarValue::Bool(value) => value.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn render_webassembly_harness(
@@ -1017,6 +1044,14 @@ fn normalize_frame(
         ScalarTarget::JavaScript => RawHostScalar::JavaScriptNumber(f64::from(raw)),
         ScalarTarget::CoreWebAssembly | ScalarTarget::NativeLinuxX8664 => RawHostScalar::I32(raw),
     };
+    normalize_carrier(target, result_type, carrier)
+}
+
+fn normalize_carrier(
+    target: ScalarTarget,
+    result_type: zryna_abi::ScalarType,
+    carrier: RawHostScalar,
+) -> ScalarOutcome {
     match zryna_abi::normalize_result(target, result_type, carrier) {
         Ok(value) => ScalarOutcome::Returned { value },
         Err(_) => ScalarOutcome::HostError { code: ScalarHostErrorCode::InvalidTargetResult },
@@ -1424,20 +1459,40 @@ mod tests {
         sync::atomic::{AtomicUsize, Ordering},
     };
 
+    use zryna_abi::{Invocation, RawHostScalar, ScalarType, ScalarValue};
     use zryna_diagnostics::Diagnostic;
     use zryna_frontend::{VerifiedFrontendProvider, WorkerError, syntax_v2};
-    use zryna_source::{SourceFileInput, SourceMap};
+    use zryna_ir::{Type, control_flow_v1};
+    use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 
     #[cfg(unix)]
     use super::read_entrypoint_with_after_read;
     use super::{
         BuildRequest, CommandFailure, CommandFailureKind, CommandKind, ManifestTarget,
         TargetSelection, Transaction, compile_selected, native_preparation_failure,
-        native_runtime_failure, runtime_failure, validate_request,
+        native_runtime_failure, render_javascript_harness, runtime_failure, validate_request,
     };
-    use crate::ArtifactOutputRoot;
+    use crate::{ArtifactOutputRoot, runtime::NodeRuntimeCapability};
 
     static NEXT_ROOT: AtomicUsize = AtomicUsize::new(0);
+
+    fn node_executable() -> PathBuf {
+        let executable = if cfg!(windows) { "node.exe" } else { "node" };
+        ["ZRYNA_TEST_NODE", "NODE"]
+            .into_iter()
+            .filter_map(env::var_os)
+            .map(PathBuf::from)
+            .chain(
+                env::var_os("PATH")
+                    .into_iter()
+                    .flat_map(|path| env::split_paths(&path).collect::<Vec<_>>())
+                    .map(move |directory| directory.join(executable)),
+            )
+            .find(|path| path.is_file())
+            .expect("Node.js must be installed")
+            .canonicalize()
+            .expect("Node.js executable must canonicalize")
+    }
 
     struct TemporaryRoot {
         path: PathBuf,
@@ -1475,6 +1530,106 @@ mod tests {
     impl Drop for TemporaryRoot {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.path);
+        }
+    }
+
+    #[test]
+    fn sealed_runtime_executes_public_m2_i32_and_bool_exports() {
+        use control_flow_v1::raw::{
+            Block, BlockId, Function, FunctionId, Instruction, InstructionKind, Module, ModuleId,
+            Program, SpannedTerminator, Terminator, ValueDefinition, ValueId,
+        };
+
+        let root = TemporaryRoot::new("m2-sealed-javascript");
+        let sources = SourceMap::build(vec![SourceFileInput {
+            path: "main.zry".to_owned(),
+            text: "x".to_owned(),
+        }])
+        .expect("M2 runtime source map");
+        let path = NormalizedSourcePath::new("main.zry").expect("M2 runtime path");
+        let file = sources.file_id(&path).expect("M2 runtime file");
+        let span = sources.span(file, 0, 1).expect("M2 runtime span");
+        let value = |id, ty| ValueDefinition { id: ValueId(id), ty, span };
+        let ret = |id| vec![SpannedTerminator { span, kind: Terminator::Return(ValueId(id)) }];
+        let multiply = Function {
+            id: FunctionId { module: ModuleId(0), declaration: 0 },
+            entry_export: Some("Math".to_owned()),
+            span,
+            parameters: vec![value(0, Type::I32), value(1, Type::I32)],
+            result: Type::I32,
+            blocks: vec![Block {
+                id: BlockId(0),
+                parameters: Vec::new(),
+                instructions: vec![Instruction {
+                    result: value(2, Type::I32),
+                    kind: InstructionKind::I32Mul { lhs: ValueId(0), rhs: ValueId(1) },
+                }],
+                terminators: ret(2),
+            }],
+        };
+        let boolean = Function {
+            id: FunctionId { module: ModuleId(0), declaration: 1 },
+            entry_export: Some("Number".to_owned()),
+            span,
+            parameters: vec![value(0, Type::Bool)],
+            result: Type::Bool,
+            blocks: vec![Block {
+                id: BlockId(0),
+                parameters: Vec::new(),
+                instructions: Vec::new(),
+                terminators: ret(0),
+            }],
+        };
+        let program = control_flow_v1::verify(
+            Program {
+                entry_module: ModuleId(0),
+                modules: vec![Module {
+                    id: ModuleId(0),
+                    source_file: file,
+                    functions: vec![multiply, boolean],
+                }],
+            },
+            &sources,
+            file,
+        )
+        .expect("M2 runtime fixture must verify");
+        let artifact = zryna_backend_javascript::emit_control_flow(&program)
+            .expect("M2 runtime artifact must emit");
+        let javascript = root.path().join("javascript");
+        fs::create_dir(&javascript).expect("M2 runtime artifact directory");
+        fs::write(javascript.join("m2.mjs"), artifact.source).expect("M2 runtime artifact write");
+        let runtime = NodeRuntimeCapability::discover(&node_executable(), root.path())
+            .expect("pinned Node capability");
+
+        for (invocation, expected_type, expected_carrier) in [
+            (
+                Invocation::new(
+                    "Math".to_owned(),
+                    vec![ScalarValue::I32(65_537), ScalarValue::I32(65_537)],
+                ),
+                ScalarType::I32,
+                RawHostScalar::JavaScriptNumber(131_073.0),
+            ),
+            (
+                Invocation::new("Number".to_owned(), vec![ScalarValue::Bool(true)]),
+                ScalarType::Bool,
+                RawHostScalar::JavaScriptBool(true),
+            ),
+        ] {
+            let prepared = program.prepare_invocation(invocation).expect("typed M2 invocation");
+            let harness = render_javascript_harness("m2", &prepared).expect("typed M2 harness");
+            let label = match expected_type {
+                ScalarType::Bool => "bool",
+                ScalarType::I32 => "i32",
+            };
+            let harness_path = root.path().join(format!("harness-{label}.mjs"));
+            fs::write(&harness_path, harness).expect("typed M2 harness write");
+            assert_eq!(
+                runtime
+                    .run_javascript_module(&harness_path, root.path(), expected_type)
+                    .expect("sealed typed M2 execution"),
+                expected_carrier
+            );
         }
     }
 

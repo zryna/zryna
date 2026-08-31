@@ -76,6 +76,9 @@ The repository currently establishes and tests:
 - public `zryna build` and `zryna run` commands for explicit `javascript`, `webassembly`, `native`,
   and `all` selections, with mandatory architecture validation, one shared verified program,
   typed `i32` invocations, and create-only atomic output bundles.
+- an internal deterministic M2 ECMAScript backend that consumes only sealed `ControlFlowV1`
+  views, lowers exact scalar operations, direct calls, branches, loops, and parallel block edges,
+  and enforces typed `i32`/`bool` entry wrappers without activating a public M2 profile.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. The first strict semantic subset requires one source file,
@@ -134,9 +137,10 @@ pnpm preflight
 pnpm m0:check
 ```
 
-`pnpm m2:quick` is the narrowest edit-loop check for deterministic module closure, retained
-workspace security, and internal M2 semantics. It runs without the JavaScript runtime integration
-suite and is suitable on both Linux and Windows before running the broader gate.
+`pnpm m2:quick` is the narrowest edit-loop check for deterministic M2 JavaScript, module closure,
+retained workspace security, and internal M2 semantics. It includes focused emission and backend
+fixtures, but avoids the broad driver/runtime integration suite and is suitable on both Linux and
+Windows before running the broader gate.
 
 `pnpm preflight` is the fast edit-loop gate. It stops on the first portable contract, formatting,
 M2 driver-security, workspace-check, frontend, or syntax failure. Driver tests run before the
@@ -166,7 +170,8 @@ editors/     future thin editor integrations
 See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax protocol v2](docs/SYNTAX_PROTOCOL_V2.md),
 [Strict workspace contract](docs/STRICT_WORKSPACE.md), [Frontend providers](docs/FRONTENDS.md), and
 [M2 deterministic module closure](docs/M2_MODULE_CLOSURE.md),
-[M2 control-flow semantics](docs/M2_CONTROL_FLOW_SEMANTICS.md), [Roadmap](docs/ROADMAP.md),
+[M2 control-flow semantics](docs/M2_CONTROL_FLOW_SEMANTICS.md),
+[M2 deterministic JavaScript backend](docs/M2_JAVASCRIPT_BACKEND.md), [Roadmap](docs/ROADMAP.md),
 [M0 conformance](docs/M0_CONFORMANCE.md), and
 [compiler documentation bundles](docs/DOCUMENTATION_BUNDLES.md).
 
