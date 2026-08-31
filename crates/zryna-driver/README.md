@@ -67,7 +67,9 @@ validates one typed `i32` invocation before execution. Selected artifacts, order
 deterministic manifest are synchronized in one compiler-owned transaction directory and exposed
 only by one create-only directory rename to `<stem>.build` or `<stem>.run`. Unix applies mode
 `0700`; Windows relies on private ACLs inherited from the validated output root. There is no
-partially advertised bundle. The driver reports ordered target observations but does not compare
-them; differential enforcement remains Issue #20. See the [CLI reference](../../docs/CLI.md) and
+partially advertised bundle. The driver reports ordered target observations without defining a
+second runtime comparison semantics. The repository-owned
+[M1 conformance suite](../../docs/M1_CONFORMANCE.md) compares the public observations, fixed
+expected values, and committed manifest. See the [CLI reference](../../docs/CLI.md) and
 [`EXECUTABLE.md`](../../spec/native-semantics/EXECUTABLE.md) for the normative security and behavior
 contract.

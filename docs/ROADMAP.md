@@ -61,8 +61,9 @@ Closure evidence and the deliberately unsupported post-M0 surface are recorded i
 Goal: compile one `.zry` entrypoint to executable JavaScript, direct WebAssembly, and a Linux x86-64 native executable with matching specified behavior.
 
 Current status: Issue #19 implements the explicit build/run CLI and atomic target bundles for the
-`I32V1` slice. M1 remains open: Issue #20 must enforce cross-target result equivalence, and Issue
-#21 must publish the versioned website-facing status and reference data.
+`I32V1` slice. Issue #20 implements the checked three-target differential corpus, portable
+JavaScript/WebAssembly matrix, invalid-source matrix, and scalar-ABI Boolean normalization proof.
+M1 remains open until Issue #21 publishes the versioned website-facing status and reference data.
 
 Dependency order:
 
@@ -84,8 +85,9 @@ Dependency order:
 9. lower native MIR to a real audited Linux x86-64 object (object emission implemented by Issue
    #17; driver-owned sealed linking and typed execution implemented by Issue #18);
 10. expose explicit CLI build and run targets (implemented by Issue #19 for the `I32V1` slice,
-    including atomic multi-target bundles and ordered observations without comparison);
-11. compare JavaScript, WebAssembly, and native results, including `i32` boundaries (Issue #20);
+    including atomic multi-target bundles and ordered observations);
+11. compare JavaScript, WebAssembly, and native results, including `i32` boundaries (implemented
+    by Issue #20 through the repository-owned M1 conformance suite);
 12. publish versioned status and reference documentation for website consumption (Issue #21).
 
 Completion gates:

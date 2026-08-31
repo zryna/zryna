@@ -268,9 +268,10 @@ bundle, and an existing bundle is never replaced.
 
 Build bundles contain `.mjs`, `.wasm`, and/or the native `.o`. Run bundles contain `.mjs`, `.wasm`,
 and/or the invocation-specific native `.elf`, plus stable ordered typed observations in the
-manifest. Selecting `all` does not compare those observations; Issue #20 owns equivalence
-enforcement. See the [CLI reference](CLI.md) for the exact command, layout, manifest, exit-status,
-runtime, and platform contracts.
+manifest. The [M1 conformance suite](M1_CONFORMANCE.md) compares the public `all` observations with
+fixed expected values and the committed manifest; the runtime command does not define a second
+comparison semantics. See the [CLI reference](CLI.md) for the exact command, layout, manifest,
+exit-status, runtime, and platform contracts.
 
 ## Initial numeric contract
 

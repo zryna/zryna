@@ -50,8 +50,9 @@ Boolean source and invocation remain rejected by the current `I32V1` profile.
 sealed scalar-ABI harness for the requested invocation. `all` analyzes source exactly once,
 constructs one `VerifiedProgram`, and dispatches that authority in the fixed order JavaScript,
 WebAssembly, native. All run targets receive the same verified invocation and report ordered typed
-observations. The CLI does not compare those observations; cross-target equivalence enforcement is
-Issue #20.
+observations. The repository's [M1 conformance suite](M1_CONFORMANCE.md) compares those public
+observations with fixed expected values and the committed manifest without creating a second
+runtime semantics authority.
 
 ## Output bundles
 
@@ -163,8 +164,9 @@ cargo run --locked -p zryna -- run examples/universal/add.zry --target all --nam
 On Windows, pass the absolute direct executable path, for example
 `--node C:\Tools\node-v22.22.1\node.exe`; a PATH shim, symbolic link, or reparse point is rejected.
 
-The last invocation reports three ordered `i32` observations with value `-2147483648` but does not
-assert their equality. Package resolution, multiple source files, watch mode, incremental or remote
-builds, Boolean execution, browser execution, WASI, Windows or macOS native execution, static
-native executables, overwrite behavior, and cross-target result comparison are outside Issue #19.
+The last invocation reports three ordered `i32` observations with value `-2147483648`; the checked
+M1 differential suite requires those observations and the manifest to agree. Package resolution,
+multiple source files, watch mode, incremental or remote builds, Boolean execution, browser
+execution, WASI, Windows or macOS native execution, static native executables, overwrite behavior,
+and runtime-enforced cross-target comparison remain outside the current slice.
 Website publication of versioned status and reference data remains Issue #21.

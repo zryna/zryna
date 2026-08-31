@@ -96,9 +96,10 @@ fixture under conformance tests. The native backend uses pinned pure-Rust Cranel
 Separately, the driver can prove canonical `/usr/bin/gcc` and GNU ld capabilities, link one sealed
 typed invocation through a generated C11 harness, audit and create-only publish an executable, and
 observe its exact four-byte result under bounded process controls. The public CLI composes these
-library boundaries for the current `I32V1` slice. It reports ordered target observations without
-performing the cross-target comparison owned by Issue #20; source-level `bool` remains
-verifier-gated.
+library boundaries for the current `I32V1` slice. The repository-owned
+[M1 conformance suite](docs/M1_CONFORMANCE.md) runs its ordered observations against fixed expected
+values and each other on JavaScript, core WebAssembly, and Linux x86-64 native. Source-level `bool`
+remains verifier-gated; Boolean evidence is limited to the typed scalar-ABI carrier contract.
 
 ## Build and run
 

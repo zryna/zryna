@@ -14,6 +14,7 @@ use std::{
 use std::process::Stdio;
 
 use serde_json::{Value, json};
+use zryna_abi::{RawHostScalar, ScalarTarget, ScalarType, ScalarValue, normalize_result};
 
 static NEXT_CASE: AtomicU64 = AtomicU64::new(0);
 
@@ -187,6 +188,344 @@ fn assert_success(output: &Output) {
 fn read_json(path: &Path) -> Value {
     serde_json::from_slice(&fs::read(path).expect("JSON file must be readable"))
         .expect("JSON file must decode")
+}
+
+fn m1_registry() -> Value {
+    serde_json::from_str(include_str!("../../../tests/m1-conformance-v1.json"))
+        .expect("M1 conformance registry must be strict JSON")
+}
+
+fn object_keys(value: &Value) -> BTreeSet<&str> {
+    value
+        .as_object()
+        .expect("registry value must be an object")
+        .keys()
+        .map(String::as_str)
+        .collect()
+}
+
+fn m1_cases(registry: &Value) -> &[Value] {
+    registry["cases"].as_array().expect("M1 cases must be an array")
+}
+
+fn m1_case_arguments(case: &Value) -> Vec<String> {
+    case["arguments"]
+        .as_array()
+        .expect("M1 case arguments must be an array")
+        .iter()
+        .map(|argument| {
+            assert_eq!(object_keys(argument), BTreeSet::from(["type", "value"]));
+            assert_eq!(argument["type"], "i32");
+            format!("--arg=i32:{}", argument["value"].as_i64().expect("i32 fixture value"))
+        })
+        .collect()
+}
+
+fn run_m1_case(case: &mut WorkspaceCase, fixture: &Value, target: &str, label: &str) -> Value {
+    let stem = case.stem(label, "run");
+    let registry = m1_registry();
+    let mut arguments = vec![
+        "run".to_owned(),
+        case.source_relative.clone(),
+        "--target".to_owned(),
+        target.to_owned(),
+        "--name".to_owned(),
+        stem.clone(),
+        "--export".to_owned(),
+        registry["export"].as_str().expect("M1 export").to_owned(),
+    ];
+    arguments.extend(m1_case_arguments(fixture));
+    arguments.push("--json".to_owned());
+    let borrowed = arguments.iter().map(String::as_str).collect::<Vec<_>>();
+    let output = command_output(case, &borrowed);
+    assert_success(&output);
+    let response: Value = serde_json::from_slice(&output.stdout).expect("M1 JSON response");
+    assert_eq!(
+        object_keys(&response),
+        BTreeSet::from(["command", "diagnostics", "manifest", "ok", "results", "version"])
+    );
+    assert_eq!(response["version"], 1);
+    assert_eq!(response["ok"], true);
+    assert_eq!(response["command"], "run");
+    assert_eq!(response["diagnostics"], json!([]));
+    assert_eq!(response["manifest"], format!(".zryna/out/{stem}.run/zryna-manifest-v1.json"));
+    response
+}
+
+fn assert_m1_typed_results(response: &Value, targets: &[&str], expected: i64) {
+    let expected_results = targets
+        .iter()
+        .map(|target| {
+            json!({
+                "target": target,
+                "outcome": {
+                    "kind": "returned",
+                    "value": {"type": "i32", "value": expected}
+                }
+            })
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(response["results"], json!(expected_results));
+    let outcomes = response["results"]
+        .as_array()
+        .expect("M1 results")
+        .iter()
+        .map(|result| result["outcome"].clone())
+        .collect::<Vec<_>>();
+    assert!(outcomes.windows(2).all(|pair| pair[0] == pair[1]));
+}
+
+#[test]
+fn m1_registry_freezes_the_supported_slice() {
+    let registry = m1_registry();
+    assert_eq!(
+        object_keys(&registry),
+        BTreeSet::from([
+            "cases",
+            "entrypoint",
+            "export",
+            "gatedBooleanSource",
+            "invalidSource",
+            "profile",
+            "schemaVersion",
+            "targets",
+        ])
+    );
+    assert_eq!(registry["schemaVersion"], 1);
+    assert_eq!(registry["profile"], "zryna-m1-i32-differential-v1");
+    assert_eq!(registry["entrypoint"], "examples/universal/add.zry");
+    assert_eq!(registry["export"], "add");
+    assert_eq!(registry["targets"], json!(["javascript", "webassembly", "native"]));
+    let cases = m1_cases(&registry);
+    assert_eq!(
+        cases.iter().map(|case| case["id"].as_str().expect("M1 case id")).collect::<Vec<_>>(),
+        ["one-plus-two", "maximum-plus-one-wraps", "minimum-minus-one-wraps"]
+    );
+    assert_eq!(
+        cases
+            .iter()
+            .map(|case| {
+                let arguments = case["arguments"]
+                    .as_array()
+                    .expect("M1 arguments")
+                    .iter()
+                    .map(|argument| argument["value"].as_i64().expect("M1 argument value"))
+                    .collect::<Vec<_>>();
+                (arguments, case["expected"]["value"].as_i64().expect("M1 expected value"))
+            })
+            .collect::<Vec<_>>(),
+        [
+            (vec![1, 2], 3),
+            (vec![i64::from(i32::MAX), 1], i64::from(i32::MIN)),
+            (vec![i64::from(i32::MIN), -1], i64::from(i32::MAX)),
+        ]
+    );
+    for case in cases {
+        assert_eq!(object_keys(case), BTreeSet::from(["arguments", "expected", "id"]));
+        assert_eq!(object_keys(&case["expected"]), BTreeSet::from(["type", "value"]));
+        assert_eq!(case["expected"]["type"], "i32");
+        assert_eq!(case["arguments"].as_array().map(Vec::len), Some(2));
+    }
+    assert_eq!(
+        registry["invalidSource"],
+        json!({"path": "tests/m1-fixtures/invalid-any.zry", "expectedCode": "ZRYNA-M1004"})
+    );
+    assert_eq!(
+        registry["gatedBooleanSource"],
+        json!({"path": "tests/m1-fixtures/bool-gated.zry", "expectedCode": "ZRYNA-I1006"})
+    );
+}
+
+#[test]
+fn m1_javascript_and_webassembly_match_every_portable_fixture() {
+    let registry = m1_registry();
+    let mut workspace = WorkspaceCase::new();
+    for fixture in m1_cases(&registry) {
+        let id = fixture["id"].as_str().expect("M1 case id");
+        let expected = fixture["expected"]["value"].as_i64().expect("M1 expected i32");
+        for target in ["javascript", "webassembly"] {
+            let response =
+                run_m1_case(&mut workspace, fixture, target, &format!("m1_{id}_{target}"));
+            assert_m1_typed_results(&response, &[target], expected);
+        }
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
+#[test]
+fn m1_linux_three_target_results_and_artifacts_match_every_fixture() {
+    let registry = m1_registry();
+    let targets = ["javascript", "webassembly", "native"];
+    let mut workspace = WorkspaceCase::new();
+    for fixture in m1_cases(&registry) {
+        let id = fixture["id"].as_str().expect("M1 case id");
+        let expected = fixture["expected"]["value"].as_i64().expect("M1 expected i32");
+        let label = format!("m1_{id}_all");
+        let response = run_m1_case(&mut workspace, fixture, "all", &label);
+        assert_m1_typed_results(&response, &targets, expected);
+
+        let stem = format!("{}_{}", workspace.unique, label);
+        let bundle = workspace.bundle(&stem, "run");
+        let manifest = read_json(&bundle.join("zryna-manifest-v1.json"));
+        assert_eq!(manifest["targets"], registry["targets"]);
+        assert_eq!(
+            manifest["results"],
+            json!(targets.map(|target| json!({
+                "target": target,
+                "outcome": {"kind": "returned", "type": "i32", "value": expected}
+            })))
+        );
+        assert_eq!(
+            fs::read_dir(&bundle)
+                .expect("M1 bundle")
+                .map(|entry| entry
+                    .expect("bundle entry")
+                    .file_name()
+                    .to_string_lossy()
+                    .into_owned())
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from([
+                "javascript".to_owned(),
+                "native".to_owned(),
+                "webassembly".to_owned(),
+                "zryna-manifest-v1.json".to_owned(),
+            ])
+        );
+        for (target, extension) in
+            [("javascript", "mjs"), ("webassembly", "wasm"), ("native", "elf")]
+        {
+            let files = fs::read_dir(bundle.join(target))
+                .expect("target directory")
+                .map(|entry| {
+                    entry.expect("target artifact").file_name().to_string_lossy().into_owned()
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(files, [format!("{stem}.{extension}")]);
+        }
+    }
+}
+
+#[test]
+fn m1_invalid_source_is_target_independent_and_publishes_nothing() {
+    let registry = m1_registry();
+    let invalid = &registry["invalidSource"];
+    assert_eq!(object_keys(invalid), BTreeSet::from(["expectedCode", "path"]));
+    let mut workspace = WorkspaceCase::new();
+    let invalid_source = fs::read_to_string(
+        workspace.root.join(invalid["path"].as_str().expect("invalid fixture path")),
+    )
+    .expect("invalid M1 fixture");
+    fs::write(workspace.root.join(&workspace.source_relative), invalid_source)
+        .expect("invalid fixture must replace the temporary source");
+    let mut expected_diagnostics = None;
+
+    for target in ["javascript", "webassembly", "native", "all"] {
+        let stem = workspace.stem(&format!("m1_invalid_{target}"), "build");
+        let output = command_output(
+            &workspace,
+            &["build", &workspace.source_relative, "--target", target, "--name", &stem, "--json"],
+        );
+        assert_eq!(output.status.code(), Some(3));
+        assert!(output.stderr.is_empty());
+        let response: Value = serde_json::from_slice(&output.stdout).expect("invalid M1 JSON");
+        assert_eq!(response["ok"], false);
+        assert!(response["manifest"].is_null());
+        assert_eq!(response["results"], json!([]));
+        assert!(
+            response["diagnostics"]
+                .as_array()
+                .expect("invalid diagnostics")
+                .iter()
+                .any(|diagnostic| diagnostic["code"] == invalid["expectedCode"])
+        );
+        let diagnostic_bytes = serde_json::to_vec(&response["diagnostics"])
+            .expect("invalid diagnostics must serialize deterministically");
+        if let Some(expected) = &expected_diagnostics {
+            assert_eq!(&diagnostic_bytes, expected);
+        } else {
+            expected_diagnostics = Some(diagnostic_bytes);
+        }
+        assert!(!workspace.bundle(&stem, "build").exists());
+    }
+}
+
+#[test]
+fn m1_bool_host_normalization_matches_without_enabling_bool_source() {
+    for value in [false, true] {
+        let lane = i32::from(value);
+        let normalized = [
+            normalize_result(
+                ScalarTarget::JavaScript,
+                ScalarType::Bool,
+                RawHostScalar::JavaScriptBool(value),
+            ),
+            normalize_result(
+                ScalarTarget::CoreWebAssembly,
+                ScalarType::Bool,
+                RawHostScalar::I32(lane),
+            ),
+            normalize_result(
+                ScalarTarget::NativeLinuxX8664,
+                ScalarType::Bool,
+                RawHostScalar::I32(lane),
+            ),
+        ];
+        assert!(normalized.iter().all(|result| *result == Ok(ScalarValue::Bool(value))));
+    }
+    assert!(
+        normalize_result(
+            ScalarTarget::JavaScript,
+            ScalarType::Bool,
+            RawHostScalar::JavaScriptNumber(1.0),
+        )
+        .is_err()
+    );
+    for target in [ScalarTarget::CoreWebAssembly, ScalarTarget::NativeLinuxX8664] {
+        for invalid in [-1, 2] {
+            assert!(
+                normalize_result(target, ScalarType::Bool, RawHostScalar::I32(invalid)).is_err()
+            );
+        }
+    }
+
+    let registry = m1_registry();
+    let gated = &registry["gatedBooleanSource"];
+    assert_eq!(object_keys(gated), BTreeSet::from(["expectedCode", "path"]));
+    let mut workspace = WorkspaceCase::new();
+    let bool_source = fs::read_to_string(
+        workspace.root.join(gated["path"].as_str().expect("Boolean fixture path")),
+    )
+    .expect("gated Boolean fixture");
+    fs::write(workspace.root.join(&workspace.source_relative), bool_source)
+        .expect("Boolean fixture must replace the temporary source");
+    let mut expected_diagnostics = None;
+    for target in ["javascript", "webassembly", "native", "all"] {
+        let stem = workspace.stem(&format!("m1_bool_gated_{target}"), "build");
+        let output = command_output(
+            &workspace,
+            &["build", &workspace.source_relative, "--target", target, "--name", &stem, "--json"],
+        );
+        assert_eq!(output.status.code(), Some(3));
+        assert!(output.stderr.is_empty());
+        let response: Value = serde_json::from_slice(&output.stdout).expect("Boolean gate JSON");
+        assert!(
+            response["diagnostics"]
+                .as_array()
+                .expect("Boolean diagnostics")
+                .iter()
+                .any(|diagnostic| diagnostic["code"] == gated["expectedCode"])
+        );
+        let diagnostic_bytes = serde_json::to_vec(&response["diagnostics"])
+            .expect("Boolean diagnostics must serialize deterministically");
+        if let Some(expected) = &expected_diagnostics {
+            assert_eq!(&diagnostic_bytes, expected);
+        } else {
+            expected_diagnostics = Some(diagnostic_bytes);
+        }
+        assert!(response["manifest"].is_null());
+        assert_eq!(response["results"], json!([]));
+        assert!(!workspace.bundle(&stem, "build").exists());
+    }
 }
 
 #[test]
@@ -510,7 +849,7 @@ fn unconfirmed_transaction_cleanup_uses_exit_six_and_no_bundle() {
 
 #[cfg(windows)]
 #[test]
-fn windows_native_and_all_runs_are_rejected_without_a_bundle() {
+fn m1_windows_native_and_all_runs_are_rejected_without_a_bundle() {
     let mut case = WorkspaceCase::new();
     for target in ["native", "all"] {
         let stem = case.stem(&format!("{target}_unsupported_run"), "run");
@@ -531,6 +870,7 @@ fn windows_native_and_all_runs_are_rejected_without_a_bundle() {
         );
         assert_eq!(output.status.code(), Some(4));
         assert!(output.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("ZRYNA-N4002"));
         assert!(!case.bundle(&stem, "run").exists());
     }
 }

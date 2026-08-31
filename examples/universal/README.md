@@ -29,6 +29,8 @@ cargo run --locked -p zryna -- run examples/universal/add.zry --target native --
 cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-wrap --export add --arg=i32:2147483647 --arg=i32:1 --node /absolute/path/to/node --json
 ```
 
-The last command reports ordered results from all three targets; result equivalence is not enforced
-until Issue #20. Each successful command commits one complete create-only bundle below
-`.zryna/out`; see the [CLI reference](../../docs/CLI.md) for exact paths and limits.
+The last command reports ordered results from all three targets. The checked
+[M1 conformance suite](../../docs/M1_CONFORMANCE.md) requires the three structured outcomes, fixed
+expected result, and committed manifest to agree. Each successful command commits one complete
+create-only bundle below `.zryna/out`; see the [CLI reference](../../docs/CLI.md) for exact paths
+and limits.

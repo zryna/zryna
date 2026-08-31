@@ -1,0 +1,1 @@
+export function rejected(value: any): i32 { return 1; }

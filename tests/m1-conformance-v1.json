@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "profile": "zryna-m1-i32-differential-v1",
+  "entrypoint": "examples/universal/add.zry",
+  "export": "add",
+  "targets": ["javascript", "webassembly", "native"],
+  "cases": [
+    {
+      "id": "one-plus-two",
+      "arguments": [
+        { "type": "i32", "value": 1 },
+        { "type": "i32", "value": 2 }
+      ],
+      "expected": { "type": "i32", "value": 3 }
+    },
+    {
+      "id": "maximum-plus-one-wraps",
+      "arguments": [
+        { "type": "i32", "value": 2147483647 },
+        { "type": "i32", "value": 1 }
+      ],
+      "expected": { "type": "i32", "value": -2147483648 }
+    },
+    {
+      "id": "minimum-minus-one-wraps",
+      "arguments": [
+        { "type": "i32", "value": -2147483648 },
+        { "type": "i32", "value": -1 }
+      ],
+      "expected": { "type": "i32", "value": 2147483647 }
+    }
+  ],
+  "invalidSource": {
+    "path": "tests/m1-fixtures/invalid-any.zry",
+    "expectedCode": "ZRYNA-M1004"
+  },
+  "gatedBooleanSource": {
+    "path": "tests/m1-fixtures/bool-gated.zry",
+    "expectedCode": "ZRYNA-I1006"
+  }
+}
