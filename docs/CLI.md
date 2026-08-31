@@ -1,15 +1,16 @@
 # Zryna CLI reference
 
-Status: implemented for the M1 `I32V1` build and run slice. The CLI is a thin request parser and
-renderer over `zryna-driver`; it does not own compiler semantics or backend behavior.
+Status: implemented for the default M1 `I32V1` slice and the explicit M2 `ControlFlowV1` slice.
+The CLI is a thin request parser and renderer over `zryna-driver`; it does not own compiler
+semantics, module resolution, backend behavior, or bundle publication.
 
 ## Commands
 
 ```text
 zryna architecture check [--root <PATH>] [--json]
 zryna doctor             [--root <PATH>] [--json]
-zryna build <ENTRYPOINT> --target <javascript|webassembly|native|all> --node <PATH> [--root <PATH>] [--name <STEM>] [--json]
-zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--arg=i32:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
+zryna build <ENTRYPOINT> --target <javascript|webassembly|native|all> --node <PATH> [--profile control-flow-v1] [--root <PATH>] [--name <STEM>] [--json]
+zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
 ```
 
 `architecture check` and `doctor` run the same mandatory fail-closed workspace gate. Every
@@ -19,9 +20,16 @@ Architecture and doctor `--json` output retains the existing deterministic `Vali
 shape containing its `diagnostics` array.
 
 `ENTRYPOINT` is exactly one workspace-relative `.zry` path. Absolute paths, traversal,
-normalized-away components, backslashes, links or Windows reparse points, paths outside `--root`,
-and multiple source files are rejected. `--target` is mandatory, exact, lowercase, and has no
-alias or default. `--root` defaults to the current directory; the driver requires its resolved
+normalized-away components, backslashes, links or Windows reparse points, and paths outside
+`--root` are rejected. Without `--profile`, only that one file enters the unchanged M1 path.
+`--profile control-flow-v1` instead selects the M2 path and makes `ENTRYPOINT` the root of one
+bounded, deterministic graph of explicit relative `.zry` imports. The driver discovers that graph,
+authenticates one final source map, and performs semantic lowering exactly once before target
+dispatch. The frontend never resolves imports or reads the workspace.
+
+`--profile` has no hidden default: omission means M1, and the only accepted explicit value is exact
+lowercase `control-flow-v1`. `--target` is mandatory, exact, lowercase, and has no alias or default.
+`--root` defaults to the current directory; the driver requires its resolved
 workspace root to be an absolute real directory. `--name` defaults to the entrypoint stem and must
 be 1 to 128 ASCII letters, digits, underscores, or hyphens, begin with a letter or underscore, and
 avoid Windows-reserved device names. `--node` is mandatory and supplies an absolute path to a real
@@ -30,12 +38,13 @@ Node.js 22.22.1 runtime used by the authenticated TypeScript frontend and JavaSc
 execution. A native-only build still needs Node for the frontend; it does not use Node as its
 target runtime.
 
-`run` requires one exact logical export. Each repeated `--arg` is a typed scalar written as
-`i32:<VALUE>`. Negative shell arguments are most robust as `--arg=i32:-1`. The decimal spelling is
+`run` requires one exact logical export. Each repeated `--arg` is a typed scalar. M1 accepts only
+`i32:<VALUE>`. `control-flow-v1` accepts that grammar plus exact lowercase `bool:true` and
+`bool:false`. Negative shell arguments are most robust as `--arg=i32:-1`. The decimal spelling is
 canonical: whitespace, a plus sign, leading zeroes other than `0`, numeric prefixes, fractions,
 exponents, negative zero, and values outside `-2147483648` through `2147483647` are rejected.
 Arity and types are checked through the program's sealed scalar ABI before target execution.
-Boolean source and invocation remain rejected by the current `I32V1` profile.
+Boolean source and invocation remain rejected when `--profile` is omitted.
 
 ## Targets
 
@@ -52,7 +61,10 @@ constructs one `VerifiedProgram`, and dispatches that authority in the fixed ord
 WebAssembly, native. All run targets receive the same verified invocation and report ordered typed
 observations. The repository's [M1 conformance suite](M1_CONFORMANCE.md) compares those public
 observations with fixed expected values and the committed manifest without creating a second
-runtime semantics authority.
+runtime semantics authority. This composition rule applies independently to M1 and
+`control-flow-v1`; it never converts one profile's verified authority into the other. Issue #56
+owns equivalent fixed-oracle aggregate M2 conformance, so the explicit M2 command is not yet a
+three-target equivalence claim.
 
 ## Output bundles
 
@@ -71,6 +83,11 @@ The public output root is `<root>/.zryna/out`:
   webassembly/<stem>.wasm
   native/<stem>.elf
 ```
+
+An explicit `--profile control-flow-v1` request uses the same bundle names and selected target
+subdirectories, but contains `zryna-manifest-v2.json` instead. A bundle contains exactly one
+manifest version. Consequently an existing `<stem>.build` or `<stem>.run` bundle collides
+create-only regardless of profile; selecting M2 never replaces an M1 bundle.
 
 Only selected target paths exist. Build and run bundles with the same stem may coexist. A second
 command of the same kind is create-only and fails without changing the existing bundle. The Linux
@@ -99,6 +116,24 @@ it records `export` plus ordered arguments as `{ "type": "i32", "value": n }`. `
 for build and records each run target and its typed `outcome` in target order. The manifest contains
 no absolute or temporary path, timestamp, process id, inherited environment value, credential, or
 raw external-tool output.
+
+`zryna-manifest-v2.json` is a separate deterministic UTF-8 JSON contract. Its `version` is `2` and
+its `profile` is `zryna-control-flow-v1`. It records the canonical entrypoint; the module graph
+digest; path-ordered source records with dense module IDs, portable paths, and lowercase SHA-256
+hashes; canonical named-binding module edges; the stem; ordered targets and artifact records; the
+optional typed invocation; ordered typed outcomes; and stable diagnostics. The graph digest is the
+driver-owned `ZRYNA-M2-GRAPH\0` version-1 identity authenticated during module closure discovery;
+the manifest does not ask a backend or renderer to recompute graph authority. Boolean arguments
+and returned values use explicit typed records, never truthiness or an untyped numeric lane.
+
+Manifest v2 uses only portable `/`-separated bundle and source paths and inherits the manifest-v1
+ban on host-specific paths, temporary names, timestamps, process IDs, environment values,
+credentials, and raw tool output. Sources, edges, targets, artifacts, results, and diagnostics have
+one specified stable order. Selected artifact bytes and the manifest are create-new, synchronized,
+and checked as one exact staged inventory before the single directory-rename commit point. Any
+discovery, semantic, backend, execution, staging, manifest, cleanup, or commit failure reports no
+final manifest path and exposes no partial final bundle. Ordinary failure cleanup is bounded;
+process termination or machine failure may leave an unadvertised private transaction directory.
 
 ## Output and exit status
 
@@ -145,6 +180,11 @@ the [native executable contract](../spec/native-semantics/EXECUTABLE.md). Genera
 not a security sandbox, and the dynamically linked native executable requires the validated host's
 CRT, libc, and loader.
 
+M2 JavaScript and core WebAssembly build and run remain portable across the required Linux and
+Windows checks. Native object emission targets Linux x86-64. Native run, and therefore `all` run,
+requires a Linux x86-64 host; Windows rejects it before native staging or bundle publication with
+`ZRYNA-N4002`. There is no fallback to another target and no partial JavaScript/WebAssembly bundle.
+
 ## Examples
 
 From the workspace root, using an exact Node.js 22.22.1 executable:
@@ -159,15 +199,21 @@ cargo run --locked -p zryna -- run examples/universal/add.zry --target javascrip
 cargo run --locked -p zryna -- run examples/universal/add.zry --target webassembly --name add-wasm --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
 cargo run --locked -p zryna -- run examples/universal/add.zry --target native --name add-native --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
 cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-all --export add --arg=i32:2147483647 --arg=i32:1 --node /absolute/path/to/node --json
+
+# For a workspace module graph rooted at src/main.zry:
+cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2 --node /absolute/path/to/node
+cargo run --locked -p zryna -- run src/main.zry --profile control-flow-v1 --target javascript --name app-m2-js --export choose --arg=bool:true --arg=i32:42 --node /absolute/path/to/node
 ```
 
 On Windows, pass the absolute direct executable path, for example
 `--node C:\Tools\node-v22.22.1\node.exe`; a PATH shim, symbolic link, or reparse point is rejected.
 
-The last invocation reports three ordered `i32` observations with value `-2147483648`; the checked
+The M1 `all` invocation reports three ordered `i32` observations with value `-2147483648`; the checked
 M1 differential suite requires those observations and the manifest to agree. Package resolution,
-multiple source files, watch mode, incremental or remote builds, Boolean execution, browser
-execution, WASI, Windows or macOS native execution, static native executables, overwrite behavior,
-and runtime-enforced cross-target comparison remain outside the current slice.
+non-relative/package imports, watch mode, incremental or remote builds, browser execution, WASI,
+Windows or macOS native execution, static native executables, overwrite behavior, and
+runtime-enforced cross-target comparison remain outside the current slice. M2 fixed-oracle
+three-target conformance remains Issue #56; documentation/website release closure remains Issue
+#57.
 M1 closure evidence includes website publication of versioned status and reference data from the
 authenticated compiler documentation bundle tracked in Issue #21.

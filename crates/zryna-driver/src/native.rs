@@ -1361,6 +1361,56 @@ pub(crate) fn prepare_control_flow_native_invocation(
     })
 }
 
+/// Links one M2 object using the invocation already verified by the universal M2 program.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) fn prepare_control_flow_native_invocation_from_verified(
+    program: &zryna_ir::control_flow_v1::VerifiedProgram,
+    object: &ValidatedControlFlowNativeObjectArtifact,
+    invocation: &zryna_abi::VerifiedInvocation<'_>,
+    output_root: &ArtifactOutputRoot,
+    toolchain: &LinuxX8664LinkToolchain,
+    limits: NativeProcessLimits,
+) -> Result<PreparedNativeExecutable, Vec<Diagnostic>> {
+    ensure_linux_x86_64_host().map_err(|error| vec![error])?;
+    let export = invocation.export();
+    let Some(program_export) = program.scalar_abi().exports().nth(export.index()) else {
+        return Err(vec![harness_error()]);
+    };
+    let Some(object_export) = object.scalar_abi().exports().nth(export.index()) else {
+        return Err(vec![harness_error()]);
+    };
+    for candidate in [program_export, object_export] {
+        if candidate.logical_name() != export.logical_name()
+            || candidate.javascript_name() != export.javascript_name()
+            || candidate.webassembly_name() != export.webassembly_name()
+            || candidate.native_linux_x86_64_symbol() != export.native_linux_x86_64_symbol()
+            || candidate.parameters() != export.parameters()
+            || candidate.result() != export.result()
+        {
+            return Err(vec![harness_error()]);
+        }
+    }
+    let harness = render_invocation_harness(invocation).map_err(|error| vec![error])?;
+    let expected_symbol = export.native_linux_x86_64_symbol().as_str();
+    let (sealed_bytes, diagnostics) = link_and_audit_native_invocation(
+        object.bytes(),
+        &harness,
+        expected_symbol,
+        output_root,
+        toolchain,
+        limits,
+    )?;
+    if diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-N4016") {
+        return Err(diagnostics);
+    }
+    Ok(PreparedNativeExecutable {
+        bytes: Arc::from(sealed_bytes),
+        result_type: export.result(),
+        expected_symbol: Box::from(expected_symbol),
+        diagnostics,
+    })
+}
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 type PreparedNativeBytes = Result<(Box<[u8]>, Vec<Diagnostic>), Vec<Diagnostic>>;
 
@@ -1461,6 +1511,22 @@ pub(crate) fn prepare_native_invocation_from_verified(
 pub(crate) fn prepare_control_flow_native_invocation(
     _object: &ValidatedControlFlowNativeObjectArtifact,
     _invocation: zryna_abi::Invocation,
+    _output_root: &ArtifactOutputRoot,
+    _toolchain: &LinuxX8664LinkToolchain,
+    _limits: NativeProcessLimits,
+) -> Result<PreparedNativeExecutable, Vec<Diagnostic>> {
+    Err(vec![native_error(
+        "ZRYNA-N4002",
+        "native linking and invocation require a Linux x86-64 host",
+        "run this operation on Linux x86-64; other native hosts are not implemented",
+    )])
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+pub(crate) fn prepare_control_flow_native_invocation_from_verified(
+    _program: &zryna_ir::control_flow_v1::VerifiedProgram,
+    _object: &ValidatedControlFlowNativeObjectArtifact,
+    _invocation: &zryna_abi::VerifiedInvocation<'_>,
     _output_root: &ArtifactOutputRoot,
     _toolchain: &LinuxX8664LinkToolchain,
     _limits: NativeProcessLimits,

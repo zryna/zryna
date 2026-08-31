@@ -63,9 +63,11 @@ semantic lowering never depends on a replaceable provider.
     independently audits it, and exposes only sealed bytes.
 12. The driver may combine that sealed object with one generated, ABI-validated invocation using
     a previously proved Linux toolchain capability; the backend never owns linking or execution.
-13. The CLI runs architecture validation first, then asks the driver to analyze one entrypoint
-    exactly once and dispatch the same verified authority to an explicit target selection. The
-    driver stages and commits one complete build or run bundle; the CLI only renders its report.
+13. The CLI runs architecture validation first, then asks the driver to select either the
+    unchanged default M1 path or explicit `control-flow-v1`. M1 analyzes one entrypoint once; M2
+    discovers one authenticated module graph and lowers it once. Each path dispatches its same
+    verified authority to an explicit target selection. The driver stages and commits one complete
+    versioned build or run bundle; the CLI only parses and renders.
 14. The repository-owned documentation producer exports an explicit whitelist of reviewed
     Markdown with exact compiler provenance. The website validates and presents that bundle but
     never becomes a language, ABI, diagnostic, or support-status authority.
@@ -258,12 +260,14 @@ native output, FFI, and Boolean source/IR remain later gates.
 
 `zryna build` and `zryna run` accept one validated workspace-relative `.zry` entrypoint and one
 explicit `javascript`, `webassembly`, `native`, or `all` target. Architecture validation is always
-first. The driver authenticates the frontend once, lowers and verifies once, and dispatches the
-same `VerifiedProgram` in fixed JavaScript, WebAssembly, native order. Run requests also validate
-one exact export and typed `i32` argument vector once before any target executes.
+first. Omitting `--profile` preserves the exact M1 protocol-v2/`I32V1` path. Exact
+`--profile control-flow-v1` selects protocol v3, driver-owned deterministic module discovery, and
+the separate M2 semantic/IR path. The driver constructs one verified authority per request and
+dispatches it in fixed JavaScript, WebAssembly, native order. Run requests also validate one exact
+export and typed argument vector once before any target executes.
 
 Individual library publishers retain their create-only artifact contracts. The public CLI adds a
-coarser transaction boundary: selected target artifacts and `zryna-manifest-v1.json` are written
+coarser transaction boundary: selected target artifacts and the profile-specific manifest are written
 and synchronized in one directory adjacent to the final bundle. Unix sets transaction directories
 to mode `0700`; Windows inherits ACLs from the validated compiler-owned output root and therefore
 requires that root to be private to the invoking principal. After containment is revalidated, one
@@ -272,11 +276,15 @@ create-only same-filesystem directory rename commits either
 Any preparation, execution, audit, publication, or cleanup failure before commit leaves no final
 bundle, and an existing bundle is never replaced.
 
-Build bundles contain `.mjs`, `.wasm`, and/or the native `.o`. Run bundles contain `.mjs`, `.wasm`,
+M1 writes only `zryna-manifest-v1.json`; M2 writes only `zryna-manifest-v2.json`. Build bundles
+contain `.mjs`, `.wasm`, and/or the native `.o`. Run bundles contain `.mjs`, `.wasm`,
 and/or the invocation-specific native `.elf`, plus stable ordered typed observations in the
-manifest. The [M1 conformance suite](M1_CONFORMANCE.md) compares the public `all` observations with
+manifest. Manifest v2 additionally authenticates the canonical entrypoint, path-ordered source
+hashes, named-binding module edges, and module-graph digest sealed by discovery. The
+[M1 conformance suite](M1_CONFORMANCE.md) compares the public M1 `all` observations with
 fixed expected values and the committed manifest; the runtime command does not define a second
-comparison semantics. See the [CLI reference](CLI.md) for the exact command, layout, manifest,
+comparison semantics. Issue #56 still owns the independent fixed-oracle aggregate M2 comparison.
+See the [CLI reference](CLI.md) and [manifest-v2 contract](M2_MANIFEST_V2.md) for the exact command, layout, manifest,
 exit-status, runtime, and platform contracts.
 
 ## Initial numeric contract
@@ -296,9 +304,8 @@ Future integer operations must specify width, signedness, overflow, conversion, 
 
 M2 is governed by the normative
 [scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) specification.
-It is a separate verified profile and is not publicly executable. Protocol v2, the `I32V1`
-expression-tree verifier, the default M1 CLI, and manifest v1 remain unchanged until the complete
-M2 profile passes all target gates.
+It is a separate verified profile selected only by exact `--profile control-flow-v1`. Protocol v2,
+the `I32V1` expression-tree verifier, the default M1 CLI, and manifest v1 remain unchanged.
 
 Protocol v3 carries source-faithful import, local, call, branch, and loop syntax without giving the
 provider name, type, module, filesystem, or IR authority. The driver now exposes an internal
@@ -324,16 +331,18 @@ sealed whole-program authority into explicit target-specific block, call, symbol
 terminator claims, then independently verifies them into opaque views. The separate
 [M2 native object and typed link/run boundary](M2_NATIVE_BACKEND.md) emits local typed bodies and
 public scalar wrappers, audits exact call-graph-bound ELF relocations, and retains artifact-bound
-invocation authority. Manifest v2 and the public command remain
-unavailable, so the complete M2 profile and three-target execution are still unsupported.
+invocation authority. The driver composes these components through one explicit multi-file request
+and one [manifest-v2 transaction](M2_MANIFEST_V2.md). This makes individual public M2 target
+requests available without claiming the independent fixed-oracle three-target conformance owned by
+Issue #56.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
 functions receive sealed target-internal identities. JavaScript and core WebAssembly now consume
 that authority internally; the M2 native MIR lowering now consumes and independently reseals the
 same verified whole-program authority without trusting source-selected symbols.
-No backend may activate M2 independently. The
-future public command requires `--profile control-flow-v1` and publishes a distinct canonical
-`zryna-manifest-v2.json` so no M1 artifact contract is reinterpreted.
+No backend may activate M2 independently. The public command requires
+`--profile control-flow-v1` and publishes a distinct canonical `zryna-manifest-v2.json` so no M1
+artifact contract is reinterpreted.
 
 ## WebAssembly profiles
 

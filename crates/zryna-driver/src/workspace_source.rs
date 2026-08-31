@@ -427,7 +427,7 @@ fn capture_absolute_root(path: &Path) -> io::Result<(Vec<Dir>, Dir)> {
     let mut components = path.components();
     let drive = match components.next() {
         Some(Component::Prefix(prefix)) => match prefix.kind() {
-            Prefix::Disk(drive) => drive,
+            Prefix::Disk(drive) | Prefix::VerbatimDisk(drive) => drive,
             _ => return Err(invalid_root()),
         },
         _ => return Err(invalid_root()),
@@ -897,13 +897,15 @@ mod windows_tests {
     }
 
     #[test]
-    fn captures_local_drive_root_and_rejects_unsupported_windows_root_forms() {
+    fn captures_plain_and_canonical_local_drive_roots_and_rejects_unsupported_forms() {
         let local = TemporaryRoot::new("local-root");
         WorkspaceSourceRoot::capture(&local.path).expect("local drive workspace must be supported");
+        let canonical = local.path.canonicalize().expect("local drive root must canonicalize");
+        WorkspaceSourceRoot::capture(&canonical)
+            .expect("canonical verbatim local drive workspace must be supported");
         for unsupported in [
             Path::new(r"C:relative"),
             Path::new(r"\\localhost\C$\workspace"),
-            Path::new(r"\\?\C:\workspace"),
             Path::new(r"\\.\C:\workspace"),
         ] {
             let diagnostic = WorkspaceSourceRoot::capture(unsupported)

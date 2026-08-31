@@ -1,7 +1,7 @@
 # M2 straight-line semantics
 
-Status: implemented as an internal compiler boundary. This does not enable the public
-`control-flow-v1` profile, a backend, manifest v2, or a CLI command.
+Status: implemented as a compiler boundary composed by the driver only for explicit
+`--profile control-flow-v1`. Semantics itself does not select a backend or publish a bundle.
 
 ## Authority boundary
 
@@ -70,8 +70,9 @@ This straight-line foundation is extended by the internal
 [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md) accepts the same authority. The
 [M2 native MIR profile](M2_NATIVE_MIR.md) independently reseals it into target-specific verified
 views, and the internal [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) emits, links, and
-executes the audited object. Public profile, manifest v2, three-target conformance, and website
-activation remain unavailable.
+executes the audited object. The explicit public profile and manifest v2 are available through the
+atomic M2 driver path. Independent three-target conformance remains Issue #56, and final website
+release activation remains Issue #57.
 
 ## Stable diagnostics
 
@@ -111,3 +112,7 @@ site, 128/129 static depth, and 256-diagnostic limits. The driver integration te
 final authenticated closure can enter this boundary; independent callers must supply an equally
 complete source-map-bound verified snapshot, which semantics revalidates. Existing protocol-v2/M1
 tests remain unchanged.
+
+The public driver now composes this verified result through the
+[manifest-v2 atomic transaction](M2_MANIFEST_V2.md). Fixed-oracle aggregate M2 equivalence remains
+Issue #56 rather than a semantic-phase claim.

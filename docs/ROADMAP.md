@@ -109,9 +109,11 @@ Linux x86-64 native output.
 Current status: contract specified, exact syntax protocol v3 implemented, deterministic module
 closure implemented, modules/scopes/types/calls and canonical `if`/`while` control flow lower to
 verified M2 IR, the isolated IR verifier implemented, deterministic sealed M2 ECMAScript and direct
-core WebAssembly emission with typed Node execution implemented internally, independently verified
-M2 native MIR lowering implemented, and M2 native object and internal typed execution implemented,
-but the public M2 profile and three-target execution remain unavailable. Issue #45 freezes the normative
+core WebAssembly emission with typed Node execution implemented, independently verified M2 native
+MIR lowering implemented, and M2 native object and typed execution implemented. Issue #55 composes
+those authorities into the explicit public `control-flow-v1` path and deterministic atomic manifest
+v2 bundles. Fixed-oracle aggregate three-target M2 conformance remains unavailable until Issue #56.
+Issue #45 freezes the normative
 [scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) contract and a
 digest-pinned planning inventory. Issue #46 implements the separate exact protocol-v3 schema,
 pinned TypeScript 6 syntax-only worker, opaque source-map-bound syntax verifier, and typed worker
@@ -123,15 +125,16 @@ Issue #50 extends it with [canonical control-flow semantics](M2_CONTROL_FLOW_SEM
 state, reachability, and return analysis. Issue #51 implements the internal
 [deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md) over opaque verified views. Issue #52
 implements the internal [direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md) over the same
-authority, including typed execution of the exact validated bytes. These gates do not enable a
-compiler profile, a CLI command, or a public M2 support claim. Issue #53 implements the internal
+authority, including typed execution of the exact validated bytes. Those component gates did not
+independently enable a compiler profile or CLI command. Issue #53 implements the internal
 [verified native MIR profile](M2_NATIVE_MIR.md), including deterministic lowering and an independent
 raw-to-verified CFG, call, symbol, Boolean, ABI, dominance, and resource boundary. Issue #54 adds
 the internal [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md): deterministic Cranelift object
 emission, exact call-graph-bound relocation and symbol audits, artifact-bound typed link/run, and
-retained staging identity. `I32V1`, protocol v2,
-manifest v1, and all M0/M1 executable
-evidence remain unchanged while the remaining M2 gates are built on those verified boundaries.
+retained staging identity. Issue #55 adds exact public profile selection, single-analysis module
+graph orchestration, typed multi-target dispatch, deterministic
+[`zryna-manifest-v2.json`](M2_MANIFEST_V2.md), and one create-only atomic transaction. `I32V1`,
+protocol v2, manifest v1, and all M0/M1 executable evidence remain unchanged.
 
 Dependency ledger:
 
@@ -147,13 +150,13 @@ Dependency ledger:
 | #52 | direct capability-minimal M2 core WebAssembly emission and execution | #50 | complete |
 | #53 | independently verified native MIR control flow and calls | #50 | complete |
 | #54 | audited Linux x86-64 native object, internal calls, link, and run | #53 | complete |
-| #55 | explicit-profile atomic multi-file CLI and manifest v2 | #47, #51, #52, #54 | planned |
+| #55 | explicit-profile atomic multi-file CLI and manifest v2 | #47, #51, #52, #54 | complete |
 | #56 | fixed-oracle three-target conformance and required aggregate gate | #55 | planned |
 | #57 | authenticated compiler documentation, website synchronization, deployment, and live closure | #56 | planned |
 
-The backend issues #51, #52, and #53 may proceed in parallel only after #50. Public CLI activation
-waits for every backend and the native execution path. Public website status remains M1 until #56
-passes required CI and #57 verifies the exact compiler documentation bundle live.
+The backend issues #51, #52, and #53 proceeded only after #50. The public CLI activated only after
+every backend and the native execution path were available to Issue #55. Aggregate M2 conformance
+remains unclaimed until #56 passes required CI; authenticated website/live closure remains #57.
 
 Completion gates:
 

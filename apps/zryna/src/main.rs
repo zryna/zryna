@@ -2,15 +2,16 @@
 
 #![forbid(unsafe_code)]
 
-use std::{path::PathBuf, process::ExitCode};
+use std::{ffi::OsString, path::PathBuf, process::ExitCode};
 
 use clap::error::ErrorKind;
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
 use serde_json::json;
 use zryna_abi::{ScalarOutcome, ScalarValue};
 use zryna_diagnostics::Diagnostic;
 use zryna_driver::{
-    BuildRequest, CommandFailure, CommandKind, CommandSuccess, RunRequest, TargetSelection,
+    BuildRequest, CommandFailure, CommandKind, CommandSuccess, ControlFlowBuildRequest,
+    ControlFlowRunRequest, RunRequest, TargetSelection,
 };
 
 #[derive(Debug, Parser)]
@@ -58,6 +59,9 @@ struct CompileOptions {
     /// Explicit target selection.
     #[arg(long, value_enum)]
     target: CliTarget,
+    /// Opt into the exact multi-file `ControlFlowV1` profile; omission preserves M1.
+    #[arg(long, value_enum)]
+    profile: Option<CliProfile>,
     /// Workspace root.
     #[arg(long, default_value = ".")]
     root: PathBuf,
@@ -85,6 +89,12 @@ struct RunOptions {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+enum CliProfile {
+    #[value(name = "control-flow-v1")]
+    ControlFlowV1,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 #[value(rename_all = "lower")]
 enum CliTarget {
     JavaScript,
@@ -105,7 +115,7 @@ impl From<CliTarget> for TargetSelection {
 }
 
 fn main() -> ExitCode {
-    let cli = match Cli::try_parse() {
+    let cli = match parse_cli_from(std::env::args_os()) {
         Ok(cli) => cli,
         Err(error) => {
             let successful_display =
@@ -120,6 +130,26 @@ fn main() -> ExitCode {
         Command::Build(options) => run_build(options),
         Command::Run(options) => run_command(options),
     }
+}
+
+fn parse_cli_from<I, T>(arguments: I) -> Result<Cli, clap::Error>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone,
+{
+    let arguments = arguments.into_iter().map(Into::into).collect::<Vec<_>>();
+    let control_flow =
+        arguments.windows(2).any(|pair| pair[0] == "--profile" && pair[1] == "control-flow-v1")
+            || arguments.iter().any(|argument| argument == "--profile=control-flow-v1");
+    if !control_flow {
+        return Cli::try_parse_from(arguments);
+    }
+    let mut command = Cli::command();
+    command = command.mut_subcommand("run", |run| {
+        run.mut_arg("arguments", |argument| argument.value_parser(parse_control_flow_argument))
+    });
+    let matches = command.try_get_matches_from(arguments)?;
+    Cli::from_arg_matches(&matches)
 }
 
 fn run_architecture_check(options: &ArchitectureOptions) -> ExitCode {
@@ -153,7 +183,13 @@ fn run_build(options: CompileOptions) -> ExitCode {
             return render_cli_failure(CommandKind::Build, json_mode, 2, &[diagnostic]);
         }
     };
-    match zryna_driver::build_workspace(&request) {
+    let result = match request {
+        ProfileBuildRequest::M1(request) => zryna_driver::build_workspace(&request),
+        ProfileBuildRequest::ControlFlowV1(request) => {
+            zryna_driver::build_control_flow_workspace(&request)
+        }
+    };
+    match result {
         Ok(success) => render_success(&success, json_mode),
         Err(failure) => render_failure(CommandKind::Build, json_mode, &failure),
     }
@@ -169,25 +205,54 @@ fn run_command(options: RunOptions) -> ExitCode {
             return render_cli_failure(CommandKind::Run, json_mode, 2, &[diagnostic]);
         }
     };
-    match zryna_driver::run_workspace(RunRequest { build, logical_export: export, arguments }) {
+    let result = match build {
+        ProfileBuildRequest::M1(build) => {
+            zryna_driver::run_workspace(RunRequest { build, logical_export: export, arguments })
+        }
+        ProfileBuildRequest::ControlFlowV1(build) => {
+            zryna_driver::run_control_flow_workspace(ControlFlowRunRequest {
+                build,
+                logical_export: export,
+                arguments,
+            })
+        }
+    };
+    match result {
         Ok(success) => render_success(&success, json_mode),
         Err(failure) => render_failure(CommandKind::Run, json_mode, &failure),
     }
 }
 
-fn build_request(options: CompileOptions) -> Result<BuildRequest, Diagnostic> {
+enum ProfileBuildRequest {
+    M1(BuildRequest),
+    ControlFlowV1(ControlFlowBuildRequest),
+}
+
+fn build_request(options: CompileOptions) -> Result<ProfileBuildRequest, Diagnostic> {
     let root = absolute_workspace_path(&options.root)?;
     if !options.node.is_absolute() {
         return Err(cli_path_error());
     }
     let node = options.node;
     let stem = options.name.unwrap_or_else(|| default_stem(&options.entrypoint));
-    Ok(BuildRequest {
-        workspace_root: root,
-        entrypoint: options.entrypoint,
-        artifact_stem: stem,
-        targets: options.target.into(),
-        node_runtime: node,
+    let targets = options.target.into();
+    Ok(match options.profile {
+        None => ProfileBuildRequest::M1(BuildRequest {
+            workspace_root: root,
+            entrypoint: options.entrypoint,
+            artifact_stem: stem,
+            targets,
+            node_runtime: node,
+        }),
+        Some(CliProfile::ControlFlowV1) => {
+            ProfileBuildRequest::ControlFlowV1(ControlFlowBuildRequest {
+                workspace_root: root,
+                entrypoint: options.entrypoint,
+                artifact_stem: stem,
+                targets,
+                node_runtime: node,
+            })
+        }
     })
 }
 
@@ -230,6 +295,17 @@ fn parse_scalar_argument(value: &str) -> Result<ScalarValue, String> {
         .parse::<i32>()
         .map(ScalarValue::I32)
         .map_err(|_| "i32 argument is outside the signed 32-bit range".to_owned())
+}
+
+fn parse_control_flow_argument(value: &str) -> Result<ScalarValue, String> {
+    if let Some(boolean) = value.strip_prefix("bool:") {
+        return match boolean {
+            "true" => Ok(ScalarValue::Bool(true)),
+            "false" => Ok(ScalarValue::Bool(false)),
+            _ => Err("expected canonical bool:true or bool:false argument".to_owned()),
+        };
+    }
+    parse_scalar_argument(value)
 }
 
 fn render_success(success: &CommandSuccess, json_mode: bool) -> ExitCode {
@@ -338,13 +414,14 @@ fn cli_path_error() -> Diagnostic {
 
 #[cfg(test)]
 mod tests {
-    use super::{Cli, parse_scalar_argument};
-    use clap::Parser;
+    use super::{
+        CliProfile, Command, parse_cli_from, parse_control_flow_argument, parse_scalar_argument,
+    };
     use zryna_abi::ScalarValue;
 
     #[test]
     fn target_and_node_are_required() {
-        let error = Cli::try_parse_from(["zryna", "build", "src/main.zry"])
+        let error = parse_cli_from(["zryna", "build", "src/main.zry"])
             .expect_err("target and node must be required");
         let rendered = error.to_string();
         assert!(rendered.contains("--target"));
@@ -358,5 +435,67 @@ mod tests {
         for rejected in ["i32:+1", "i32:01", "i32:-0", "i32: 1", "bool:true"] {
             assert!(parse_scalar_argument(rejected).is_err(), "{rejected}");
         }
+    }
+
+    #[test]
+    fn control_flow_profile_and_boolean_arguments_are_explicit() {
+        let cli = parse_cli_from([
+            "zryna",
+            "run",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--profile",
+            "control-flow-v1",
+            "--node",
+            "/node",
+            "--export",
+            "main",
+            "--arg=bool:true",
+        ])
+        .expect("exact control-flow profile must parse");
+        let Command::Run(options) = cli.command else {
+            panic!("run command must parse");
+        };
+        assert_eq!(options.compile.profile, Some(CliProfile::ControlFlowV1));
+        assert_eq!(options.arguments, [ScalarValue::Bool(true)]);
+        assert_eq!(parse_control_flow_argument("bool:true"), Ok(ScalarValue::Bool(true)));
+        assert_eq!(parse_control_flow_argument("bool:false"), Ok(ScalarValue::Bool(false)));
+        assert_eq!(parse_control_flow_argument("i32:-1"), Ok(ScalarValue::I32(-1)));
+        for rejected in ["bool:True", "bool:1", "bool:false ", "bool:"] {
+            assert!(parse_control_flow_argument(rejected).is_err(), "{rejected}");
+        }
+    }
+
+    #[test]
+    fn omitted_profile_remains_m1_and_unknown_profiles_fail() {
+        let cli = parse_cli_from([
+            "zryna",
+            "build",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--node",
+            "/node",
+        ])
+        .expect("legacy M1 command must still parse");
+        let Command::Build(options) = cli.command else {
+            panic!("build command must parse");
+        };
+        assert_eq!(options.profile, None);
+
+        let error = parse_cli_from([
+            "zryna",
+            "build",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--profile",
+            "m2",
+            "--node",
+            "/node",
+        ])
+        .expect_err("profile aliases must fail");
+        assert!(error.to_string().contains("control-flow-v1"));
     }
 }

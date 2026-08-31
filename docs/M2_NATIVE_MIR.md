@@ -2,9 +2,9 @@
 
 Status: implemented as a separate internal lowering and mandatory raw-to-verified trust boundary.
 The downstream [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now consumes this authority
-for audited object emission and internal typed link/run. This does not claim a public
-`control-flow-v1` profile, manifest v2, or three-target conformance. The existing M1 native MIR,
-object, and executable paths remain unchanged.
+for audited object emission and typed link/run. The public driver composes it only under explicit
+`control-flow-v1`; this MIR component does not publish or claim three-target conformance. The
+existing M1 native MIR, object, and executable paths remain unchanged.
 
 ## Authority boundary
 
@@ -145,6 +145,6 @@ raw/verified/backend boundaries keep every M1 native MIR fixture unchanged. The 
 currently contains 31 unit tests and 5 compile-fail doctests.
 
 The separate [M2 native backend](M2_NATIVE_BACKEND.md) now provides audited Linux x86-64 object
-emission, Boolean wrappers, internal calls, and internal typed link/run evidence. Profile/CLI and
-manifest v2 remain Issue #55; three-target conformance and live website closure remain Issues #56
-and #57.
+emission, Boolean wrappers, internal calls, and typed link/run evidence. The explicit profile and
+[manifest v2](M2_MANIFEST_V2.md) are implemented; three-target conformance and authenticated
+website/live closure remain Issues #56 and #57.

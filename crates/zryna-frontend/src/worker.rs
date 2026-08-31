@@ -591,6 +591,11 @@ pub struct WorkerFrontendV3 {
 
 /// Provider abstraction whose only output is source-map-verified protocol-v3 syntax.
 pub trait VerifiedFrontendProviderV3: Send + Sync {
+    /// Returns the minimum caller-supplied timeout required by this provider.
+    fn minimum_analysis_timeout(&self) -> Duration {
+        Duration::ZERO
+    }
+
     /// Authenticates the exact v3 provider and analyzes the authoritative source map.
     ///
     /// # Errors
@@ -600,6 +605,22 @@ pub trait VerifiedFrontendProviderV3: Send + Sync {
         &self,
         sources: &SourceMap,
     ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError>;
+
+    /// Analyzes with a caller-tightened whole-session timeout.
+    ///
+    /// Providers without an external process may use their normal bounded implementation. The
+    /// worker-backed provider overrides this method and cannot outlive the supplied timeout.
+    ///
+    /// # Errors
+    ///
+    /// Returns the provider's fail-closed analysis error.
+    fn analyze_verified_v3_with_timeout(
+        &self,
+        sources: &SourceMap,
+        _timeout: Duration,
+    ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
+        self.analyze_verified_v3(sources)
+    }
 }
 
 impl WorkerFrontendV3 {
@@ -692,14 +713,48 @@ impl WorkerFrontendV3 {
 
         finalize_process(&mut process, &receiver, &mut stream_state, sender, deadline, operation)
     }
+
+    /// Runs one exact-v3 analysis with a timeout no greater than this frontend's configured cap.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when the requested timeout is outside the hard worker range,
+    /// or the same fail-closed errors as [`Self::analyze_verified_v3`].
+    pub fn analyze_verified_v3_with_timeout(
+        &self,
+        sources: &SourceMap,
+        timeout: Duration,
+    ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
+        let timeout = timeout.min(self.spec.limits.timeout());
+        let limits = WorkerLimitsV3::new(
+            timeout,
+            self.spec.limits.stdout_bytes(),
+            self.spec.limits.stderr_bytes(),
+        )?;
+        let mut spec = self.spec.clone();
+        spec.limits = limits;
+        Self::new(spec).analyze_verified_v3(sources)
+    }
 }
 
 impl VerifiedFrontendProviderV3 for WorkerFrontendV3 {
+    fn minimum_analysis_timeout(&self) -> Duration {
+        MIN_WORKER_TIMEOUT
+    }
+
     fn analyze_verified_v3(
         &self,
         sources: &SourceMap,
     ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
         Self::analyze_verified_v3(self, sources)
+    }
+
+    fn analyze_verified_v3_with_timeout(
+        &self,
+        sources: &SourceMap,
+        timeout: Duration,
+    ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
+        Self::analyze_verified_v3_with_timeout(self, sources, timeout)
     }
 }
 

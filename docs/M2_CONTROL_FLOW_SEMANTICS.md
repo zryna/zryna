@@ -1,8 +1,8 @@
 # M2 control-flow semantics
 
-Status: implemented as an internal compiler boundary. The sealed internal JavaScript and direct
-core WebAssembly backends can consume its verified result, but this does not enable the public
-`control-flow-v1` profile, manifest v2, a CLI command, or three-target M2 support.
+Status: implemented as a compiler boundary. The driver composes its verified result with sealed
+JavaScript, direct core WebAssembly, and native backends only for explicit
+`--profile control-flow-v1`; semantics itself cannot publish or select a target.
 
 ## Authority and result boundary
 
@@ -70,7 +70,7 @@ missing returns, unreachable statements, and resource boundaries. These tests au
 internal compiler component only. The sealed JavaScript and WebAssembly evidence is documented
 separately. The [M2 native MIR profile](M2_NATIVE_MIR.md) and
 [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now implement independent lowering,
-target-specific verification, audited object emission, and bounded typed execution internally.
-Public three-target divergence containment, manifest v2, explicit public profile, and website
-support remain gated by Issues #55 through #57. All three implemented internal hosts retain bounded
-deadlines.
+target-specific verification, audited object emission, and bounded typed execution. The explicit
+profile and [manifest-v2 transaction](M2_MANIFEST_V2.md) are implemented by Issue #55. Public
+fixed-oracle three-target divergence/equivalence evidence and authenticated website/live closure
+remain Issues #56 and #57. All three hosts retain bounded deadlines.
