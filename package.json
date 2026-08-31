@@ -9,6 +9,8 @@
   "scripts": {
     "m0:check": "node scripts/run-m0-conformance.mjs",
     "m1:check": "cargo test --locked -p zryna --test cli m1_ -- --nocapture",
+    "docs:check": "node --test tests/docs-bundle.test.mjs",
+    "docs:export": "node scripts/docs/export.mjs",
     "adapter:check": "pnpm --filter @zryna/adapter-typescript-6 check",
     "adapter:test": "pnpm --filter @zryna/adapter-typescript-6 test",
     "protocol:check": "node --check tests/syntax-protocol-v2.test.mjs",

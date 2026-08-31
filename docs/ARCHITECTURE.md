@@ -63,6 +63,9 @@ semantic lowering never depends on a replaceable provider.
 13. The CLI runs architecture validation first, then asks the driver to analyze one entrypoint
     exactly once and dispatch the same verified authority to an explicit target selection. The
     driver stages and commits one complete build or run bundle; the CLI only renders its report.
+14. The repository-owned documentation producer exports an explicit whitelist of reviewed
+    Markdown with exact compiler provenance. The website validates and presents that bundle but
+    never becomes a language, ABI, diagnostic, or support-status authority.
 
 ## Dependency direction
 

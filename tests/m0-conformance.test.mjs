@@ -161,6 +161,19 @@ test('Windows CLI smoke precedes the complete M0 gate', async () => {
   assert.ok(rust.indexOf(smoke) < rust.indexOf(completeGate), 'Windows CLI smoke must run before M0');
 });
 
+test('documentation validation precedes the complete gate and main publishes one pinned artifact', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const rust = workflowJob(workflow, 'rust');
+  const docsCheck = 'run: pnpm docs:check';
+  const completeGate = 'run: node scripts/run-m0-conformance.mjs';
+  assert.ok(rust.indexOf(docsCheck) > -1, 'missing documentation bundle validation');
+  assert.ok(rust.indexOf(docsCheck) < rust.indexOf(completeGate), 'documentation validation must precede M0');
+  assert.match(rust, /runner\.os == 'Linux' && github\.event_name == 'push'/);
+  assert.match(rust, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/);
+  assert.match(rust, /name: zryna-docs-next-\$\{\{ github\.sha \}\}/);
+  assert.match(rust, /compression-level: 0/);
+});
+
 test('required CI exposes a stable aggregate over Rust and adapter gates', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const adapter = workflowJob(workflow, 'adapter');

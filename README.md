@@ -154,7 +154,8 @@ editors/     future thin editor integrations
 
 See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax protocol v2](docs/SYNTAX_PROTOCOL_V2.md),
 [Strict workspace contract](docs/STRICT_WORKSPACE.md), [Frontend providers](docs/FRONTENDS.md), and
-[Roadmap](docs/ROADMAP.md), and [M0 conformance](docs/M0_CONFORMANCE.md).
+[Roadmap](docs/ROADMAP.md), [M0 conformance](docs/M0_CONFORMANCE.md), and
+[compiler documentation bundles](docs/DOCUMENTATION_BUNDLES.md).
 
 ## Project identity
 
