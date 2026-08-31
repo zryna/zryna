@@ -1,0 +1,5 @@
+import { value } from "./dep.zry";
+
+export function invalid(): i32 {
+  return value();
+}

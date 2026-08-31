@@ -73,5 +73,6 @@ Direct M2 core WebAssembly is documented by
 [M2 native MIR profile](M2_NATIVE_MIR.md) and
 [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now independently reseal and execute the
 same verified authority. The explicit-profile driver and
-[manifest-v2 transaction](M2_MANIFEST_V2.md) are implemented. Fixed-oracle three-target
-conformance and authenticated website/live closure remain Issues #56 and #57.
+[manifest-v2 transaction](M2_MANIFEST_V2.md) and the independent
+[fixed-oracle three-target gate](M2_CONFORMANCE.md) are implemented. Authenticated public
+documentation, website, and live-deployment closure remain Issue #57.

@@ -1,0 +1,90 @@
+import { addPair } from "./math.zry";
+
+export function addWrapsMaximum(left: i32, right: i32): i32 {
+  return left + right;
+}
+
+export function subtractWrapsMinimum(left: i32, right: i32): i32 {
+  return left - right;
+}
+
+export function multiplyKeepsLowBits(left: i32, right: i32): i32 {
+  return left * right;
+}
+
+export function negateMinimumWraps(value: i32): i32 {
+  return -value;
+}
+
+export function signedLessThan(left: i32, right: i32): bool {
+  return left < right;
+}
+
+export function signedLessEqual(left: i32, right: i32): bool {
+  return left <= right;
+}
+
+export function signedGreaterThan(left: i32, right: i32): bool {
+  return left > right;
+}
+
+export function signedGreaterEqual(left: i32, right: i32): bool {
+  return left >= right;
+}
+
+export function i32ExactEquality(left: i32, right: i32): bool {
+  return left === right;
+}
+
+export function i32ExactInequality(left: i32, right: i32): bool {
+  return left !== right;
+}
+
+export function booleanExactEquality(left: bool, right: bool): bool {
+  return left === right;
+}
+
+export function booleanExactInequality(left: bool, right: bool): bool {
+  return left !== right;
+}
+
+export function mutableLocalAssignment(left: i32, right: i32): i32 {
+  let result: i32 = left;
+  result = result + right;
+  return result;
+}
+
+function sum(left: i32, right: i32): i32 {
+  return left + right;
+}
+
+function forwardSum(left: i32, right: i32): i32 {
+  return sum(left, right);
+}
+
+export function directCallChain(left: i32, right: i32): i32 {
+  return forwardSum(left, right);
+}
+
+export function argumentOrder(left: i32, right: i32): i32 {
+  return left - right;
+}
+
+export function selectEdge(condition: bool, whenTrue: i32, whenFalse: i32): i32 {
+  if (condition) {
+    return whenTrue;
+  }
+  return whenFalse;
+}
+
+export function loopCount(limit: i32): i32 {
+  let value: i32 = 0;
+  while (value < limit) {
+    value = value + 1;
+  }
+  return value;
+}
+
+export function namedCrossModuleCall(left: i32, right: i32): i32 {
+  return addPair(left, right);
+}

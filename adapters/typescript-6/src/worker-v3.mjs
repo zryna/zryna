@@ -4,6 +4,8 @@ import { TextDecoder } from 'node:util';
 
 import ts from '@typescript/typescript6';
 
+import { PROTOCOL_V3_LIMITS } from './limits-v3.mjs';
+
 function boundedTestLimit(name, productionLimit) {
   if (process.env.NODE_ENV !== 'test') return productionLimit;
   const configured = process.env[`ZRYNA_TEST_${name}`];
@@ -22,8 +24,8 @@ if (providerVersion !== expectedProviderVersion) {
   throw new Error(`the TypeScript provider must be exactly ${expectedProviderVersion}`);
 }
 
-const maxRequestBytes = boundedTestLimit('REQUEST_BYTES', 72 * 1024 * 1024);
-const maxResponseBytes = boundedTestLimit('RESPONSE_BYTES', 64 * 1024 * 1024);
+const maxRequestBytes = boundedTestLimit('REQUEST_BYTES', PROTOCOL_V3_LIMITS.requestBytes);
+const maxResponseBytes = boundedTestLimit('RESPONSE_BYTES', PROTOCOL_V3_LIMITS.responseBytes);
 const maxFiles = boundedTestLimit('FILES', 4096);
 const maxSourceFileBytes = boundedTestLimit('SOURCE_FILE_BYTES', 8 * 1024 * 1024);
 const maxSourceBytes = boundedTestLimit('SOURCE_BYTES', 8 * 1024 * 1024);

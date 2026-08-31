@@ -1,0 +1,5 @@
+import { invalid } from "./main.zry";
+
+export function dependency(): i32 {
+  return invalid();
+}

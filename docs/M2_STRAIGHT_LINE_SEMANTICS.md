@@ -71,8 +71,9 @@ This straight-line foundation is extended by the internal
 [M2 native MIR profile](M2_NATIVE_MIR.md) independently reseals it into target-specific verified
 views, and the internal [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) emits, links, and
 executes the audited object. The explicit public profile and manifest v2 are available through the
-atomic M2 driver path. Independent three-target conformance remains Issue #56, and final website
-release activation remains Issue #57.
+atomic M2 driver path. The independent [three-target conformance gate](M2_CONFORMANCE.md) is
+implemented, while authenticated public documentation, website, and live release activation
+remain Issue #57.
 
 ## Stable diagnostics
 
@@ -114,5 +115,6 @@ complete source-map-bound verified snapshot, which semantics revalidates. Existi
 tests remain unchanged.
 
 The public driver now composes this verified result through the
-[manifest-v2 atomic transaction](M2_MANIFEST_V2.md). Fixed-oracle aggregate M2 equivalence remains
-Issue #56 rather than a semantic-phase claim.
+[manifest-v2 atomic transaction](M2_MANIFEST_V2.md). The separate
+[fixed-oracle aggregate M2 gate](M2_CONFORMANCE.md) proves equivalence without turning it into a
+semantic-phase claim.

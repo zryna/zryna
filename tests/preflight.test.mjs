@@ -31,7 +31,7 @@ test('preflight has one frozen portable command order', () => {
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), '78a12d370431b23895ec74392d932ef282089b40fba86620f12eafaff28689af');
+  assert.equal(preflightCommandDigest(), '24386fa01b20ee108a73259caa7be291b39937adcfdcbb4a8036e773ea44dafd');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [
@@ -115,6 +115,6 @@ test('package exposes the exact documented preflight entrypoint', async () => {
   assert.equal(packageDocument.scripts.preflight, 'node scripts/run-preflight.mjs');
   assert.equal(
     packageDocument.scripts['m2:quick'],
-    'node --test tests/m2-manifest-contract.test.mjs && cargo test --locked -p zryna --test cli control_flow_ -- --nocapture && cargo test --locked -p zryna-driver --lib pipeline::tests:: && cargo test --locked -p zryna-backend-javascript && cargo test --locked -p zryna-backend-webassembly && cargo test --locked -p zryna-backend-native && cargo test --locked -p zryna-native-mir && cargo test --locked -p zryna-semantics --lib control_flow_v1 && cargo test --locked -p zryna-driver --lib control_flow_native && cargo test --locked -p zryna-driver --lib retained_stage_identity && cargo test --locked -p zryna-driver --lib module_closure && cargo test --locked -p zryna-driver --lib workspace_source::',
+    'node scripts/run-m2-quick.mjs',
   );
 });

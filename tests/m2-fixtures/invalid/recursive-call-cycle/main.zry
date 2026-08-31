@@ -1,0 +1,11 @@
+function first(): i32 {
+  return second();
+}
+
+function second(): i32 {
+  return first();
+}
+
+export function invalid(): i32 {
+  return first();
+}

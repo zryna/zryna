@@ -1,8 +1,8 @@
 # M2 manifest and atomic bundle contract
 
 Status: implemented for explicit `--profile control-flow-v1` build and run requests. This contract
-does not change default M1 behavior and does not by itself establish the fixed-oracle three-target
-conformance owned by Issue #56.
+does not change default M1 behavior. The separate [M2 conformance gate](M2_CONFORMANCE.md)
+authenticates its fixed-oracle three-target evidence.
 
 ## Profile and authority
 
@@ -108,6 +108,6 @@ x86-64; Windows returns `ZRYNA-N4002` before native staging or final-bundle publ
 fallback and no partial portable-target bundle.
 
 Issue #55 proves explicit selection, single graph/semantic authority, per-target dispatch, typed
-outcomes, deterministic manifest v2, and atomic publication. Issue #56 must still provide the
-separate executable fixed-oracle registry and required aggregate cross-target gate. Issue #57 owns
+outcomes, deterministic manifest v2, and atomic publication. Issue #56 provides the separate
+executable fixed-oracle registry and required aggregate cross-target gate. Issue #57 owns
 authenticated documentation publication, website synchronization, deployment, and live closure.

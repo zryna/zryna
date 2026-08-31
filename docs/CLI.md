@@ -62,9 +62,10 @@ WebAssembly, native. All run targets receive the same verified invocation and re
 observations. The repository's [M1 conformance suite](M1_CONFORMANCE.md) compares those public
 observations with fixed expected values and the committed manifest without creating a second
 runtime semantics authority. This composition rule applies independently to M1 and
-`control-flow-v1`; it never converts one profile's verified authority into the other. Issue #56
-owns equivalent fixed-oracle aggregate M2 conformance, so the explicit M2 command is not yet a
-three-target equivalence claim.
+`control-flow-v1`; it never converts one profile's verified authority into the other. The
+[M2 conformance gate](M2_CONFORMANCE.md) independently compares the explicit profile against a
+fixed oracle on every supported platform. Issue #57 still owns authenticated public
+documentation, website, and live-deployment closure.
 
 ## Output bundles
 
@@ -212,8 +213,8 @@ The M1 `all` invocation reports three ordered `i32` observations with value `-21
 M1 differential suite requires those observations and the manifest to agree. Package resolution,
 non-relative/package imports, watch mode, incremental or remote builds, browser execution, WASI,
 Windows or macOS native execution, static native executables, overwrite behavior, and
-runtime-enforced cross-target comparison remain outside the current slice. M2 fixed-oracle
-three-target conformance remains Issue #56; documentation/website release closure remains Issue
-#57.
+runtime-enforced comparison inside an ordinary end-user command remain outside the current slice.
+The repository-owned [M2 conformance gate](M2_CONFORMANCE.md) performs fixed-oracle three-target
+comparison; documentation, website, and live-deployment release closure remain Issue #57.
 M1 closure evidence includes website publication of versioned status and reference data from the
 authenticated compiler documentation bundle tracked in Issue #21.

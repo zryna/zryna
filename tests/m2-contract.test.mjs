@@ -158,11 +158,11 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
       ? 'M1 closure'
       : issue.dependsOn.map((number) => `#${number}`).join(', ');
     assert.equal(row.dependsOnText, expectedDependencyText);
-    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55].includes(row.number) ? 'complete' : 'planned');
+    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56].includes(row.number) ? 'complete' : 'planned');
   }
   assert.match(
     roadmap,
-    /Current status: contract specified,[\s\S]*M2 native object and typed execution implemented[\s\S]*explicit public `control-flow-v1` path[\s\S]*three-target M2 conformance remains unavailable/,
+    /Current status: contract specified,[\s\S]*M2 native object and typed execution implemented[\s\S]*explicit public `control-flow-v1` path[\s\S]*fixed-oracle aggregate three-target M2 conformance/,
   );
   assert.match(roadmap, /digest-pinned planning inventory/);
   assert.match(architecture, /## Isolated `ControlFlowV1` boundary/);
@@ -172,7 +172,9 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
   assert.match(status, /## Implemented M1 slice/);
   assert.match(status, /## Implemented M2 compiler components/);
   assert.match(status, /M2 deterministic JavaScript backend[\s\S]*M2 direct core WebAssembly backend[\s\S]*byte-deterministic WebAssembly 1\.0[\s\S]*public driver now composes those boundaries[\s\S]*`zryna-manifest-v2\.json`/);
-  assert.match(status, /does not yet claim independently checked[\s\S]*three-target equivalence/);
+  assert.match(status, /compiler-owned M2 gate checks three-target equivalence[\s\S]*public status remains M1/);
+  assert.match(status, /Issue #56 adds the[\s\S]*fixed-oracle three-target M2 conformance registry and aggregate required gate/);
+  assert.match(status, /Issue #57[\s\S]*public status remains M1/);
   assert.match(moduleClosure, /exactly one final full-map protocol-v3 snapshot/);
   assert.match(moduleClosure, /ZRYNA-M2-GRAPH\\0/);
   assert.match(moduleClosure, /canonical verbatim form of that same local disk root is also accepted/);

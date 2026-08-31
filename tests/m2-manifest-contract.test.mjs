@@ -2,18 +2,22 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import { M2_QUICK_COMMANDS } from '../scripts/run-m2-quick.mjs';
+
 async function text(relative) {
   return readFile(new URL(`../${relative}`, import.meta.url), 'utf8');
 }
 
 test('documents one explicit profile without weakening default M1', async () => {
-  const [cli, manifest, status, roadmap] = await Promise.all([
+  const [cli, manifest, conformance, status, roadmap] = await Promise.all([
     text('docs/CLI.md'),
     text('docs/M2_MANIFEST_V2.md'),
+    text('docs/M2_CONFORMANCE.md'),
     text('docs/STATUS.md'),
     text('docs/ROADMAP.md'),
   ]);
   const normalizedManifest = manifest.replace(/\s+/g, ' ');
+  const normalizedConformance = conformance.replace(/\s+/g, ' ');
 
   for (const required of [
     '`--profile control-flow-v1`',
@@ -34,14 +38,24 @@ test('documents one explicit profile without weakening default M1', async () => 
     'Sources, edges, targets, artifacts, results, and diagnostics',
     'The successful rename is the only commit point.',
     'no fallback and no partial portable-target bundle',
-    'Issue #56 must still provide',
+    'Issue #56 provides the separate executable fixed-oracle registry',
   ]) {
     assert.ok(normalizedManifest.includes(required), `manifest-v2 contract is missing: ${required}`);
   }
 
   assert.match(status, /exact `--profile control-flow-v1`[\s\S]*deterministic \[`zryna-manifest-v2\.json`\]/);
+  for (const required of [
+    'fixed external oracle',
+    'all 37 historical resource limits',
+    '`ZRYNA-F1103`',
+    '`m2:check` uses bounded output',
+    'Issue #57',
+  ]) {
+    assert.ok(normalizedConformance.includes(required), `M2 conformance is missing: ${required}`);
+  }
   assert.match(roadmap, /^\| #55 \| .* \| #47, #51, #52, #54 \| complete \|$/m);
-  assert.match(roadmap, /Aggregate M2 conformance[\s\S]*remains unclaimed until #56/);
+  assert.match(roadmap, /^\| #56 \| .* \| #55 \| complete \|$/m);
+  assert.match(roadmap, /Authenticated[\s\S]*website\/live closure remains #57/);
 });
 
 test('website documentation registry exports the profile and manifest authority', async () => {
@@ -54,13 +68,16 @@ test('website documentation registry exports the profile and manifest authority'
     title: 'M2 manifest and atomic bundles',
   });
   assert.ok(registry.documents.some(({ id }) => id === 'reference/cli'));
+  assert.ok(registry.documents.some(({ id }) => id === 'reference/m2-conformance'));
   assert.ok(registry.documents.some(({ id }) => id === 'status/current'));
   assert.ok(registry.documents.some(({ id }) => id === 'status/roadmap'));
 });
 
 test('the quick gate includes the focused public manifest/profile contract', async () => {
   const packageDocument = JSON.parse(await text('package.json'));
-  assert.match(packageDocument.scripts['m2:quick'], /tests\/m2-manifest-contract\.test\.mjs/);
+  assert.equal(packageDocument.scripts['m2:quick'], 'node scripts/run-m2-quick.mjs');
+  assert.ok(M2_QUICK_COMMANDS.some(({ args }) =>
+    args.includes('tests/m2-manifest-contract.test.mjs')));
   assert.equal(
     packageDocument.scripts['docs:check'],
     'node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs tests/m2-manifest-contract.test.mjs',

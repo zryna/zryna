@@ -84,7 +84,8 @@ only by one create-only directory rename to `<stem>.build` or `<stem>.run`. Unix
 partially advertised bundle. The driver reports ordered target observations without defining a
 second runtime comparison semantics. The repository-owned
 [M1 conformance suite](../../docs/M1_CONFORMANCE.md) compares the public observations, fixed
-expected values, and committed manifest. Issue #56 owns the equivalent aggregate M2 conformance
-gate. See the [CLI reference](../../docs/CLI.md), [manifest-v2 contract](../../docs/M2_MANIFEST_V2.md), and
+expected values, and committed manifest. The equivalent
+[aggregate M2 conformance gate](../../docs/M2_CONFORMANCE.md) is implemented by Issue #56. See the
+[CLI reference](../../docs/CLI.md), [manifest-v2 contract](../../docs/M2_MANIFEST_V2.md), and
 [`EXECUTABLE.md`](../../spec/native-semantics/EXECUTABLE.md) for the normative security and behavior
 contract.
