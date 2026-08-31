@@ -10,7 +10,8 @@ execution remains profile-gated.
 
 Every compiler command runs architecture validation first and uses one verified program for all
 selected backends. Complete create-only bundles are committed below `.zryna/out`; `all` reports
-ordered results but does not perform the Issue #20 equivalence comparison.
+ordered results. The repository-owned [M1 conformance suite](../../docs/M1_CONFORMANCE.md) compares
+those public observations with fixed expected values and each other.
 
 See the [complete CLI reference](../../docs/CLI.md) for syntax, target and platform limits, bundle
 and manifest layout, atomic publication, examples, JSON behavior, and stable exit statuses.

@@ -6,9 +6,10 @@ native backend implements the Linux x86-64 `i32` symbol/calling mapping in an au
 driver's sealed native invocation harness validates arguments through this authority and returns a
 full-width typed `i32` through an exact four-byte channel. The public CLI uses the same sealed
 authority to validate one logical export and repeated canonical `i32:<decimal>` arguments before
-executing any selected target, then reports ordered typed observations. It does not compare them;
-that remains Issue #20. Boolean source, IR, and CLI invocation remain profile-gated. Strict typed
-WebAssembly and native Boolean host wrappers do not implement the complete boundary yet.
+executing any selected target, then reports ordered typed observations. The repository-owned M1
+conformance suite performs the evidence comparison without becoming a runtime ABI authority.
+Boolean source, IR, and CLI invocation remain profile-gated. Strict typed WebAssembly and native
+Boolean host wrappers do not implement the complete boundary yet.
 
 ## Authority and version
 
