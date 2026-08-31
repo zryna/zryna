@@ -1,0 +1,2 @@
+interface Pair extends ZrynaStruct { left: i32; }
+function keep(left: i32): Pair { return Pair({ left }); }

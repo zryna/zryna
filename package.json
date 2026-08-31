@@ -18,6 +18,7 @@
     "m2:contract": "node scripts/check-m2-contract.mjs",
     "m3:contract": "node scripts/check-m3-contract.mjs",
     "m3:layout": "cargo test --locked -p zryna-layout",
+    "m3:syntax:quick": "node --test tests/syntax-protocol-v4.test.mjs adapters/typescript-6/test/worker-v4.test.mjs && cargo test --locked -p zryna-syntax v4:: && cargo test --locked -p zryna-frontend --test worker_process",
     "adapter:check": "pnpm --filter @zryna/adapter-typescript-6 check",
     "adapter:test": "pnpm --filter @zryna/adapter-typescript-6 test",
     "protocol:check": "node --check tests/syntax-protocol-v2.test.mjs && node --check tests/syntax-protocol-v3.test.mjs",

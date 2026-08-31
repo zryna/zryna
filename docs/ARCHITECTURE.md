@@ -348,8 +348,8 @@ artifact contract is reinterpreted.
 
 ## Isolated `DataOwnershipV1` boundary
 
-M3 is specified as another separately selected and separately verified profile. Its first internal
-compiler authority is implemented, but the profile is not publicly selectable. It may not widen
+M3 is specified as another separately selected and separately verified profile. Its first two
+internal compiler authorities are implemented, but the profile is not publicly selectable. It may not widen
 `I32V1`, mutate `ControlFlowV1`, or expose a partial public command. Its authority chain is planned
 as:
 
@@ -375,7 +375,16 @@ The normative planning authorities are
 `tests/m3-contract-v1.json` registry binds the real Issues #75–#90 and requires M0, M1, and M2 as
 unchanged regression authorities.
 
-`zryna-layout` is the only implemented M3 component. It accepts no syntax or backend types. It binds
+`zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
+DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve
+source-faithful declarations and operations in canonical arenas. The verifier authenticates every
+file, span, token, edge, owner, depth, and count against one exact final `SourceMap` before exposing
+an opaque bound snapshot. It assigns no nominal identity, type, field or variant ordinal, move,
+borrow, layout, ownership state, IR instruction, ABI, runtime operation, or backend capability.
+Protocol v4 is internal and does not change protocol v2 or v3. Its exact contract is documented in
+[`SYNTAX_PROTOCOL_V4.md`](SYNTAX_PROTOCOL_V4.md).
+
+`zryna-layout` accepts no syntax or backend types. It binds
 the complete module/type graph to one exact `SourceMap`, assigns canonical TypeIds from frozen
 binary keys, rejects malformed identities, orphan claims, borrows, by-value recursion, overflow,
 and resource excess, and exposes only immutable `Linear32V1` or `LinuxX8664V1` views plus a sealed
@@ -384,7 +393,7 @@ paths, addresses, allocation state, or compiler version text enters a layout doc
 machine-readable `crates/zryna-layout/src/fixtures/layout-v1.json` oracle is shared with later IR, backend,
 runtime, and conformance work.
 
-Issues #75 and #77 add no executable capability. Later components must keep syntax providers free
+Issues #75, #76, and #77 add no executable capability. Later components must keep syntax providers free
 of semantics, make every backend consume these opaque verified views, depend on ABI declarations
 rather than runtime implementations, and never recompute host layouts. The driver alone may
 compose audited target runtimes and publish the future explicit `data-ownership-v1` manifest-v3

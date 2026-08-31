@@ -14,8 +14,9 @@ use std::{
 
 use serde_json::{Value, json};
 use zryna_frontend::{
-    FrontendCapabilities, ProviderExpectation, ProviderExpectationV3, WorkerFailure,
-    WorkerFrontend, WorkerFrontendV3, WorkerLimits, WorkerLimitsV3, WorkerSpec, WorkerSpecV3,
+    FrontendCapabilities, ProviderExpectation, ProviderExpectationV3, ProviderExpectationV4,
+    WorkerFailure, WorkerFrontend, WorkerFrontendV3, WorkerFrontendV4, WorkerLimits,
+    WorkerLimitsV3, WorkerLimitsV4, WorkerSpec, WorkerSpecV3, WorkerSpecV4,
 };
 use zryna_source::{SourceFileInput, SourceMap};
 
@@ -87,8 +88,70 @@ fn run_process_contract_tests() {
     expect_failure("invalid-utf8", &[], WorkerFailure::InvalidResponse);
     assert_large_unread_request_times_out_and_cleans_up();
     assert_protocol_v3_process_contract();
+    assert_protocol_v4_process_contract();
 
     println!("frontend worker process contract passed");
+}
+
+fn assert_protocol_v4_process_contract() {
+    let snapshot = run_v4("valid-v4").expect("exact v4 worker must succeed");
+    assert_eq!(snapshot.schema_version(), 4);
+    assert_eq!(snapshot.files().len(), 1);
+    assert_eq!(snapshot.files()[0].path().as_str(), "src/main.zry");
+
+    for (mode, expected) in [
+        ("v4-wrong-protocol", WorkerFailure::ProviderProtocol),
+        ("v4-wrong-module-capability", WorkerFailure::ProviderCapabilities),
+        ("v4-wrong-semantic-capability", WorkerFailure::ProviderCapabilities),
+        ("v4-wrong-control-capability", WorkerFailure::ProviderCapabilities),
+        ("v4-wrong-ownership-capability", WorkerFailure::ProviderCapabilities),
+        ("v4-extra-capability", WorkerFailure::InvalidResponse),
+        ("v4-missing-capability", WorkerFailure::InvalidResponse),
+        ("v4-invalid-snapshot", WorkerFailure::SnapshotVerification),
+        ("v4-nonzero-after-result", WorkerFailure::ProcessExit),
+    ] {
+        let error = run_v4(mode).expect_err("malformed v4 worker must fail closed");
+        assert_eq!(error.failure(), expected, "unexpected v4 failure for {mode}");
+    }
+
+    run_v4("valid-v4").expect("a rejected session must not poison a fresh v4 worker");
+
+    assert!(
+        WorkerLimitsV4::new(
+            Duration::from_secs(2),
+            zryna_frontend::MAX_WORKER_STDOUT_BYTES_V4 + 1,
+            zryna_frontend::MAX_WORKER_STDERR_BYTES,
+        )
+        .is_err()
+    );
+}
+
+fn run_v4(
+    mode: &str,
+) -> Result<zryna_frontend::syntax_v4::ProjectSyntaxSnapshot, zryna_frontend::WorkerError> {
+    let executable = env::current_exe().expect("test executable path");
+    let current_dir = env::current_dir().expect("test working directory");
+    let expected =
+        ProviderExpectationV4::new("typescript-6", "6.0.3").expect("trusted v4 expectation");
+    let spec = WorkerSpecV4::new(
+        executable,
+        vec![OsString::from("--fake-worker"), OsString::from(mode)],
+        current_dir,
+        expected,
+        WorkerLimitsV4::new(
+            Duration::from_secs(2),
+            zryna_frontend::MAX_WORKER_STDOUT_BYTES_V4,
+            zryna_frontend::MAX_WORKER_STDERR_BYTES,
+        )
+        .expect("bounded v4 limits"),
+    )
+    .expect("absolute direct v4 command");
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "src/main.zry".to_owned(),
+        text: String::new(),
+    }])
+    .expect("bounded source map");
+    WorkerFrontendV4::new(spec).analyze_verified_v4(&sources)
 }
 
 fn assert_protocol_v3_process_contract() {
@@ -345,6 +408,29 @@ fn fake_worker(arguments: &[OsString]) {
 
 fn write_handshake_for_mode(output: &mut impl Write, mode: &str) {
     match mode {
+        "valid-v4" | "v4-invalid-snapshot" | "v4-nonzero-after-result" => {
+            write_handshake_v4(output, 4, false, false, true, true, None);
+        }
+        "v4-wrong-protocol" => write_handshake_v4(output, 3, false, false, true, true, None),
+        "v4-wrong-module-capability" => {
+            write_handshake_v4(output, 4, true, false, true, true, None);
+        }
+        "v4-wrong-semantic-capability" => {
+            write_handshake_v4(output, 4, false, true, true, true, None);
+        }
+        "v4-wrong-control-capability" => {
+            write_handshake_v4(output, 4, false, false, false, true, None);
+        }
+        "v4-wrong-ownership-capability" => {
+            write_handshake_v4(output, 4, false, false, true, false, None);
+        }
+        "v4-extra-capability" => {
+            write_handshake_v4(output, 4, false, false, true, true, Some(("extra", true)));
+        }
+        "v4-missing-capability" => write_line(
+            output,
+            r#"{"id":1,"result":{"provider":"typescript-6","provider_version":"6.0.3","protocol_version":4,"capabilities":{"module_resolution":false,"semantic_diagnostics":false,"control_flow_v1":true}}}"#,
+        ),
         "valid-v3" | "v3-invalid-snapshot" => write_handshake_v3(output, 3, true, None),
         "v3-wrong-protocol" => write_handshake_v3(output, 2, true, None),
         "v3-wrong-control-capability" => write_handshake_v3(output, 3, false, None),
@@ -400,9 +486,17 @@ fn is_rejected_handshake_mode(mode: &str) -> bool {
             | "v3-wrong-control-capability"
             | "v3-extra-capability"
             | "v3-missing-capability"
+            | "v4-wrong-protocol"
+            | "v4-wrong-module-capability"
+            | "v4-wrong-semantic-capability"
+            | "v4-wrong-control-capability"
+            | "v4-wrong-ownership-capability"
+            | "v4-extra-capability"
+            | "v4-missing-capability"
     )
 }
 
+#[allow(clippy::too_many_lines)]
 fn write_analysis_for_mode(
     output: &mut impl Write,
     arguments: &[OsString],
@@ -464,13 +558,36 @@ fn write_analysis_for_mode(
         })
         .collect();
     let is_v3 = mode.starts_with("v3-") || mode == "valid-v3";
+    let is_v4 = mode.starts_with("v4-") || mode == "valid-v4";
     if is_v3 {
         assert_eq!(request["params"]["schema_version"], 3);
+    } else if is_v4 {
+        assert_eq!(request["params"]["schema_version"], 4);
     }
     let snapshot = if mode == "invalid-snapshot" {
         json!({"schema_version": 2, "files": [{"id": 0, "path": "wrong.zry", "functions": []}], "diagnostics": []})
     } else if mode == "v3-invalid-snapshot" {
         json!({"schema_version": 3, "files": [{"id": 0, "path": "wrong.zry", "imports": [], "functions": []}], "diagnostics": []})
+    } else if mode == "v4-invalid-snapshot" {
+        json!({"schema_version": 4, "files": [{"id": 0, "path": "wrong.zry", "imports": [], "type_syntax": [], "data_declarations": [], "functions": []}], "diagnostics": []})
+    } else if is_v4 {
+        let files = request["params"]["files"]
+            .as_array()
+            .expect("files array")
+            .iter()
+            .enumerate()
+            .map(|(index, file)| {
+                json!({
+                    "id": index,
+                    "path": file["path"],
+                    "imports": [],
+                    "type_syntax": [],
+                    "data_declarations": [],
+                    "functions": []
+                })
+            })
+            .collect::<Vec<_>>();
+        json!({"schema_version": 4, "files": files, "diagnostics": []})
     } else if is_v3 {
         let files = request["params"]["files"]
             .as_array()
@@ -503,7 +620,7 @@ fn write_analysis_for_mode(
             output.write_all(b"trailing").expect("write trailing output");
             output.flush().expect("flush trailing output");
         }
-        "nonzero-after-result" => process::exit(14),
+        "nonzero-after-result" | "v4-nonzero-after-result" => process::exit(14),
         "hang-after-result" => thread::sleep(Duration::from_mins(1)),
         _ => {}
     }
@@ -578,6 +695,43 @@ fn write_handshake_v3(
         "module_resolution": false,
         "semantic_diagnostics": false,
         "control_flow_v1": control_flow_v1
+    });
+    if let Some((name, value)) = extra {
+        capabilities
+            .as_object_mut()
+            .expect("capabilities object")
+            .insert(name.to_owned(), Value::Bool(value));
+    }
+    write_line(
+        output,
+        &json!({
+            "id": 1,
+            "result": {
+                "provider": "typescript-6",
+                "provider_version": "6.0.3",
+                "protocol_version": protocol,
+                "capabilities": capabilities
+            }
+        })
+        .to_string(),
+    );
+}
+
+#[allow(clippy::fn_params_excessive_bools)] // Mirrors each exact wire capability in test cases.
+fn write_handshake_v4(
+    output: &mut impl Write,
+    protocol: u32,
+    module_resolution: bool,
+    semantic_diagnostics: bool,
+    control_flow_v1: bool,
+    data_ownership_syntax_v1: bool,
+    extra: Option<(&str, bool)>,
+) {
+    let mut capabilities = json!({
+        "module_resolution": module_resolution,
+        "semantic_diagnostics": semantic_diagnostics,
+        "control_flow_v1": control_flow_v1,
+        "data_ownership_syntax_v1": data_ownership_syntax_v1
     });
     if let Some((name, value)) = extra {
         capabilities

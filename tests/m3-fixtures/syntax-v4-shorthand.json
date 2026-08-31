@@ -1,0 +1,93 @@
+{
+  "schema_version": 4,
+  "files": [{
+    "id": 0,
+    "path": "src/main.zry",
+    "imports": [],
+    "type_syntax": [
+      { "span": { "file": 0, "start": 43, "end": 46 }, "kind": { "kind": "named", "name": { "text": "i32", "span": { "file": 0, "start": 43, "end": 46 } } } },
+      { "span": { "file": 0, "start": 70, "end": 73 }, "kind": { "kind": "named", "name": { "text": "i32", "span": { "file": 0, "start": 70, "end": 73 } } } },
+      { "span": { "file": 0, "start": 76, "end": 80 }, "kind": { "kind": "named", "name": { "text": "Pair", "span": { "file": 0, "start": 76, "end": 80 } } } }
+    ],
+    "data_declarations": [{
+      "span": { "file": 0, "start": 0, "end": 49 },
+      "export_span": null,
+      "kind": {
+        "kind": "struct",
+        "interface_span": { "file": 0, "start": 0, "end": 9 },
+        "name": { "text": "Pair", "span": { "file": 0, "start": 10, "end": 14 } },
+        "extends_span": { "file": 0, "start": 15, "end": 22 },
+        "marker_span": { "file": 0, "start": 23, "end": 34 },
+        "open_brace_span": { "file": 0, "start": 35, "end": 36 },
+        "fields": [{
+          "span": { "file": 0, "start": 37, "end": 47 },
+          "name": { "text": "left", "span": { "file": 0, "start": 37, "end": 41 } },
+          "colon_span": { "file": 0, "start": 41, "end": 42 },
+          "type_syntax": 0,
+          "semicolon_span": { "file": 0, "start": 46, "end": 47 }
+        }],
+        "close_brace_span": { "file": 0, "start": 48, "end": 49 }
+      }
+    }],
+    "functions": [{
+      "span": { "file": 0, "start": 50, "end": 107 },
+      "export_span": null,
+      "function_span": { "file": 0, "start": 50, "end": 58 },
+      "name": { "text": "keep", "span": { "file": 0, "start": 59, "end": 63 } },
+      "parameters": [{
+        "span": { "file": 0, "start": 64, "end": 73 },
+        "name": { "text": "left", "span": { "file": 0, "start": 64, "end": 68 } },
+        "type_syntax": 1
+      }],
+      "result_type": 2,
+      "body": {
+        "span": { "file": 0, "start": 81, "end": 107 },
+        "root_block": 0,
+        "blocks": [{
+          "span": { "file": 0, "start": 81, "end": 107 },
+          "open_brace_span": { "file": 0, "start": 81, "end": 82 },
+          "statements": [0],
+          "close_brace_span": { "file": 0, "start": 106, "end": 107 }
+        }],
+        "statements": [{
+          "span": { "file": 0, "start": 83, "end": 105 },
+          "kind": {
+            "kind": "return",
+            "keyword_span": { "file": 0, "start": 83, "end": 89 },
+            "value": 1,
+            "semicolon_span": { "file": 0, "start": 104, "end": 105 }
+          }
+        }],
+        "expressions": [
+          {
+            "span": { "file": 0, "start": 97, "end": 101 },
+            "kind": {
+              "kind": "reference",
+              "name": { "text": "left", "span": { "file": 0, "start": 97, "end": 101 } }
+            }
+          },
+          {
+            "span": { "file": 0, "start": 90, "end": 104 },
+            "kind": {
+              "kind": "struct-construction",
+              "type_name": { "text": "Pair", "span": { "file": 0, "start": 90, "end": 94 } },
+              "open_paren_span": { "file": 0, "start": 94, "end": 95 },
+              "open_brace_span": { "file": 0, "start": 95, "end": 96 },
+              "fields": [{
+                "span": { "file": 0, "start": 97, "end": 101 },
+                "kind": {
+                  "kind": "shorthand",
+                  "name": { "text": "left", "span": { "file": 0, "start": 97, "end": 101 } },
+                  "value": 0
+                }
+              }],
+              "close_brace_span": { "file": 0, "start": 102, "end": 103 },
+              "close_paren_span": { "file": 0, "start": 103, "end": 104 }
+            }
+          }
+        ]
+      }
+    }]
+  }],
+  "diagnostics": []
+}

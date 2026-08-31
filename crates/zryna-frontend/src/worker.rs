@@ -20,6 +20,7 @@ use zryna_source::SourceMap;
 
 use crate::{
     AnalyzeRequest, FrontendCapabilities, ProviderInfo, SourceInput, syntax_v2, syntax_v3,
+    syntax_v4,
 };
 
 const HANDSHAKE_ID: u32 = 1;
@@ -41,6 +42,9 @@ pub const MAX_WORKER_STDOUT_BYTES: usize =
 /// Maximum aggregate bytes accepted on protocol-v3 worker stdout.
 pub const MAX_WORKER_STDOUT_BYTES_V3: usize =
     MAX_HANDSHAKE_RESPONSE_BYTES + syntax_v3::MAX_RESPONSE_BYTES + MAX_RESPONSE_LINES;
+/// Maximum aggregate bytes accepted on protocol-v4 worker stdout.
+pub const MAX_WORKER_STDOUT_BYTES_V4: usize =
+    MAX_HANDSHAKE_RESPONSE_BYTES + syntax_v4::MAX_RESPONSE_BYTES + MAX_RESPONSE_LINES;
 /// Maximum aggregate bytes accepted on worker stderr.
 pub const MAX_WORKER_STDERR_BYTES: usize = 64 * 1_024;
 /// Maximum wall-clock duration of one authenticated worker session.
@@ -190,6 +194,93 @@ impl ProviderExpectationV3 {
     }
 }
 
+/// Exact protocol-v4 capabilities advertised by the ownership-syntax provider.
+#[allow(clippy::struct_excessive_bools)] // Mirrors the frozen four-Boolean wire contract exactly.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct FrontendCapabilitiesV4 {
+    /// Whether the provider resolves module specifiers; this must remain false.
+    pub module_resolution: bool,
+    /// Whether the provider supplies semantic diagnostics; this must remain false.
+    pub semantic_diagnostics: bool,
+    /// Whether the provider emits the frozen `ControlFlowV1` syntax inventory.
+    pub control_flow_v1: bool,
+    /// Whether the provider emits the frozen data-ownership syntax inventory.
+    pub data_ownership_syntax_v1: bool,
+}
+
+/// Version-witnessed protocol-v4 provider identity returned during handshake.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProviderInfoV4 {
+    /// Stable provider name.
+    pub provider: String,
+    /// Exact upstream provider version.
+    pub provider_version: String,
+    /// Zryna-owned protocol version, required to be exactly four.
+    pub protocol_version: u32,
+    /// Exact protocol-v4 capability set.
+    pub capabilities: FrontendCapabilitiesV4,
+}
+
+/// Exact trusted identity and capabilities required from a protocol-v4 frontend worker.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProviderExpectationV4 {
+    provider: String,
+    provider_version: String,
+    capabilities: FrontendCapabilitiesV4,
+}
+
+impl ProviderExpectationV4 {
+    /// Creates a bounded exact protocol-v4 provider expectation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration failure when an identity is empty or exceeds its fixed byte bound.
+    pub fn new(
+        provider: impl Into<String>,
+        provider_version: impl Into<String>,
+    ) -> Result<Self, WorkerError> {
+        let provider = provider.into();
+        let provider_version = provider_version.into();
+        if provider.is_empty()
+            || provider.len() > MAX_PROVIDER_ID_BYTES
+            || provider_version.is_empty()
+            || provider_version.len() > MAX_PROVIDER_VERSION_BYTES
+        {
+            return Err(WorkerError::new(WorkerFailure::Configuration));
+        }
+        Ok(Self {
+            provider,
+            provider_version,
+            capabilities: FrontendCapabilitiesV4 {
+                module_resolution: false,
+                semantic_diagnostics: false,
+                control_flow_v1: true,
+                data_ownership_syntax_v1: true,
+            },
+        })
+    }
+
+    /// Returns the required provider identifier.
+    #[must_use]
+    pub fn provider(&self) -> &str {
+        &self.provider
+    }
+
+    /// Returns the required provider runtime version.
+    #[must_use]
+    pub fn provider_version(&self) -> &str {
+        &self.provider_version
+    }
+
+    /// Returns the exact required capability set.
+    #[must_use]
+    pub const fn capabilities(&self) -> &FrontendCapabilitiesV4 {
+        &self.capabilities
+    }
+}
+
 /// Hard-bounded execution limits for one frontend worker session.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WorkerLimits {
@@ -305,6 +396,66 @@ impl Default for WorkerLimitsV3 {
         Self {
             timeout: MAX_WORKER_TIMEOUT,
             stdout_bytes: MAX_WORKER_STDOUT_BYTES_V3,
+            stderr_bytes: MAX_WORKER_STDERR_BYTES,
+        }
+    }
+}
+
+/// Hard-bounded execution limits for one protocol-v4 frontend worker session.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct WorkerLimitsV4 {
+    timeout: Duration,
+    stdout_bytes: usize,
+    stderr_bytes: usize,
+}
+
+impl WorkerLimitsV4 {
+    /// Creates v4 limits that may tighten, but never exceed, compiler hard caps.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration failure for a zero value or a value above a hard cap.
+    pub fn new(
+        timeout: Duration,
+        stdout_bytes: usize,
+        stderr_bytes: usize,
+    ) -> Result<Self, WorkerError> {
+        if timeout < MIN_WORKER_TIMEOUT
+            || timeout > MAX_WORKER_TIMEOUT
+            || stdout_bytes == 0
+            || stdout_bytes > MAX_WORKER_STDOUT_BYTES_V4
+            || stderr_bytes == 0
+            || stderr_bytes > MAX_WORKER_STDERR_BYTES
+        {
+            return Err(WorkerError::new(WorkerFailure::Configuration));
+        }
+        Ok(Self { timeout, stdout_bytes, stderr_bytes })
+    }
+
+    /// Returns the whole-session deadline duration.
+    #[must_use]
+    pub const fn timeout(self) -> Duration {
+        self.timeout
+    }
+
+    /// Returns the aggregate stdout byte limit.
+    #[must_use]
+    pub const fn stdout_bytes(self) -> usize {
+        self.stdout_bytes
+    }
+
+    /// Returns the aggregate stderr byte limit.
+    #[must_use]
+    pub const fn stderr_bytes(self) -> usize {
+        self.stderr_bytes
+    }
+}
+
+impl Default for WorkerLimitsV4 {
+    fn default() -> Self {
+        Self {
+            timeout: MAX_WORKER_TIMEOUT,
+            stdout_bytes: MAX_WORKER_STDOUT_BYTES_V4,
             stderr_bytes: MAX_WORKER_STDERR_BYTES,
         }
     }
@@ -455,6 +606,81 @@ impl WorkerSpecV3 {
     /// Returns the hard-bounded execution limits.
     #[must_use]
     pub const fn limits(&self) -> WorkerLimitsV3 {
+        self.limits
+    }
+}
+
+/// Direct, no-shell command specification for a protocol-v4 frontend worker.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct WorkerSpecV4 {
+    executable: PathBuf,
+    arguments: Vec<OsString>,
+    current_dir: PathBuf,
+    expected: ProviderExpectationV4,
+    limits: WorkerLimitsV4,
+}
+
+impl WorkerSpecV4 {
+    /// Creates an absolute direct-execution protocol-v4 worker specification.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration failure unless both executable and working directory are absolute,
+    /// or when the argument inventory exceeds a fixed hard bound.
+    pub fn new(
+        executable: impl Into<PathBuf>,
+        arguments: Vec<OsString>,
+        current_dir: impl Into<PathBuf>,
+        expected: ProviderExpectationV4,
+        limits: WorkerLimitsV4,
+    ) -> Result<Self, WorkerError> {
+        let executable = executable.into();
+        let current_dir = current_dir.into();
+        let argument_bytes = arguments.iter().try_fold(0_usize, |total, argument| {
+            total.checked_add(argument.as_encoded_bytes().len())
+        });
+        let is_script_wrapper =
+            executable.extension().and_then(OsStr::to_str).is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("cmd") || extension.eq_ignore_ascii_case("bat")
+            });
+        if !executable.is_absolute()
+            || !current_dir.is_absolute()
+            || is_script_wrapper
+            || arguments.len() > MAX_WORKER_ARGUMENTS
+            || argument_bytes.is_none_or(|bytes| bytes > MAX_WORKER_ARGUMENT_BYTES)
+        {
+            return Err(WorkerError::new(WorkerFailure::Configuration));
+        }
+        Ok(Self { executable, arguments, current_dir, expected, limits })
+    }
+
+    /// Returns the executable passed directly to the operating system.
+    #[must_use]
+    pub fn executable(&self) -> &Path {
+        &self.executable
+    }
+
+    /// Returns literal worker arguments without shell parsing.
+    #[must_use]
+    pub fn arguments(&self) -> &[OsString] {
+        &self.arguments
+    }
+
+    /// Returns the absolute worker directory.
+    #[must_use]
+    pub fn current_dir(&self) -> &Path {
+        &self.current_dir
+    }
+
+    /// Returns the exact trusted protocol-v4 provider expectation.
+    #[must_use]
+    pub const fn expected(&self) -> &ProviderExpectationV4 {
+        &self.expected
+    }
+
+    /// Returns the hard-bounded execution limits.
+    #[must_use]
+    pub const fn limits(&self) -> WorkerLimitsV4 {
         self.limits
     }
 }
@@ -758,6 +984,178 @@ impl VerifiedFrontendProviderV3 for WorkerFrontendV3 {
     }
 }
 
+/// A configured protocol-v4 worker that returns source-map-verified syntax only.
+#[derive(Clone, Debug)]
+pub struct WorkerFrontendV4 {
+    spec: WorkerSpecV4,
+}
+
+/// Provider abstraction whose only output is source-map-verified protocol-v4 syntax.
+pub trait VerifiedFrontendProviderV4: Send + Sync {
+    /// Returns the minimum caller-supplied timeout required by this provider.
+    fn minimum_analysis_timeout(&self) -> Duration {
+        Duration::ZERO
+    }
+
+    /// Authenticates the exact v4 provider and analyzes the authoritative source map.
+    ///
+    /// # Errors
+    ///
+    /// Returns a fail-closed worker error before untrusted syntax reaches a compiler consumer.
+    fn analyze_verified_v4(
+        &self,
+        sources: &SourceMap,
+    ) -> Result<syntax_v4::ProjectSyntaxSnapshot, WorkerError>;
+
+    /// Analyzes with a caller-tightened whole-session timeout.
+    ///
+    /// # Errors
+    ///
+    /// Returns the provider's fail-closed analysis error.
+    fn analyze_verified_v4_with_timeout(
+        &self,
+        sources: &SourceMap,
+        _timeout: Duration,
+    ) -> Result<syntax_v4::ProjectSyntaxSnapshot, WorkerError> {
+        self.analyze_verified_v4(sources)
+    }
+}
+
+impl WorkerFrontendV4 {
+    /// Creates a protocol-v4 worker frontend from a validated command specification.
+    #[must_use]
+    pub const fn new(spec: WorkerSpecV4) -> Self {
+        Self { spec }
+    }
+
+    /// Returns the protocol-v4 worker command specification.
+    #[must_use]
+    pub const fn spec(&self) -> &WorkerSpecV4 {
+        &self.spec
+    }
+
+    /// Authenticates one fresh exact-v4 worker, analyzes the source map, and verifies its reply.
+    ///
+    /// The schema-four analysis request is not written until provider identity, runtime version,
+    /// protocol version, and all four capabilities match the trusted expectation exactly.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable fail-closed worker failure for configuration, process, framing, identity,
+    /// budget, provider, decoding, or protocol-v4 syntax-verification errors.
+    pub fn analyze_verified_v4(
+        &self,
+        sources: &SourceMap,
+    ) -> Result<syntax_v4::ProjectSyntaxSnapshot, WorkerError> {
+        let analyze_request = build_analyze_request_v4(sources)?;
+        let handshake_bytes =
+            serialize_request(&HandshakeRequest { id: HANDSHAKE_ID, method: "handshake" })?;
+        let analyze_bytes = serialize_request(&AnalyzeWireRequest {
+            id: ANALYZE_ID,
+            method: "analyze",
+            params: &analyze_request,
+        })?;
+
+        let spawned = spawn_worker(&self.spec)?;
+        let deadline = Instant::now()
+            .checked_add(self.spec.limits.timeout)
+            .ok_or_else(|| WorkerError::new(WorkerFailure::Configuration))?;
+        let operation_deadline = deadline
+            .checked_sub(cleanup_reserve(self.spec.limits.timeout))
+            .ok_or_else(|| WorkerError::new(WorkerFailure::Configuration))?;
+        let mut process = ChildGuard::new(spawned.process, spawned.stdin);
+        let (sender, receiver) = mpsc::sync_channel(8);
+        process.tasks.push(spawn_stdout_reader(
+            spawned.stdout,
+            sender.clone(),
+            self.spec.limits.stdout_bytes,
+        ));
+        process.tasks.push(spawn_stderr_reader(
+            spawned.stderr,
+            sender.clone(),
+            self.spec.limits.stderr_bytes,
+        ));
+        let mut stream_state = StreamState::default();
+
+        let operation = (|| {
+            process.write_request(&handshake_bytes)?;
+            let handshake_line = receive_response_line(
+                &receiver,
+                &mut stream_state,
+                operation_deadline,
+                MAX_HANDSHAKE_RESPONSE_BYTES,
+            )?;
+            let handshake: ProviderInfoV4 = parse_response(&handshake_line, HANDSHAKE_ID)?;
+            verify_handshake_v4(&handshake, &self.spec.expected)?;
+
+            process.write_request_async(analyze_bytes, sender.clone())?;
+            let snapshot_line = receive_response_line(
+                &receiver,
+                &mut stream_state,
+                operation_deadline,
+                syntax_v4::MAX_RESPONSE_BYTES,
+            )?;
+            let decoded: syntax_v4::RawProjectSyntaxSnapshot =
+                parse_response(&snapshot_line, ANALYZE_ID)?;
+            let canonical = serde_json::to_vec(&decoded)
+                .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
+            let raw = syntax_v4::decode_snapshot(&canonical)
+                .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
+            let status =
+                finish_process(&mut process, &receiver, &mut stream_state, operation_deadline)?;
+            if !status.success() {
+                return Err(WorkerError::new(WorkerFailure::ProcessExit));
+            }
+            syntax_v4::verify_snapshot(raw, sources).map_err(WorkerError::snapshot_verification)
+        })();
+
+        finalize_process(&mut process, &receiver, &mut stream_state, sender, deadline, operation)
+    }
+
+    /// Runs one exact-v4 analysis with a timeout no greater than this frontend's configured cap.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when the requested timeout is outside the hard worker range,
+    /// or the same fail-closed errors as [`Self::analyze_verified_v4`].
+    pub fn analyze_verified_v4_with_timeout(
+        &self,
+        sources: &SourceMap,
+        timeout: Duration,
+    ) -> Result<syntax_v4::ProjectSyntaxSnapshot, WorkerError> {
+        let timeout = timeout.min(self.spec.limits.timeout());
+        let limits = WorkerLimitsV4::new(
+            timeout,
+            self.spec.limits.stdout_bytes(),
+            self.spec.limits.stderr_bytes(),
+        )?;
+        let mut spec = self.spec.clone();
+        spec.limits = limits;
+        Self::new(spec).analyze_verified_v4(sources)
+    }
+}
+
+impl VerifiedFrontendProviderV4 for WorkerFrontendV4 {
+    fn minimum_analysis_timeout(&self) -> Duration {
+        MIN_WORKER_TIMEOUT
+    }
+
+    fn analyze_verified_v4(
+        &self,
+        sources: &SourceMap,
+    ) -> Result<syntax_v4::ProjectSyntaxSnapshot, WorkerError> {
+        Self::analyze_verified_v4(self, sources)
+    }
+
+    fn analyze_verified_v4_with_timeout(
+        &self,
+        sources: &SourceMap,
+        timeout: Duration,
+    ) -> Result<syntax_v4::ProjectSyntaxSnapshot, WorkerError> {
+        Self::analyze_verified_v4_with_timeout(self, sources, timeout)
+    }
+}
+
 /// Stable frontend-worker failure category.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorkerFailure {
@@ -988,6 +1386,12 @@ fn build_analyze_request_v3(sources: &SourceMap) -> Result<AnalyzeRequest, Worke
     Ok(request)
 }
 
+fn build_analyze_request_v4(sources: &SourceMap) -> Result<AnalyzeRequest, WorkerError> {
+    let mut request = build_analyze_request(sources)?;
+    request.schema_version = syntax_v4::PROTOCOL_VERSION;
+    Ok(request)
+}
+
 fn parse_response<T: DeserializeOwned>(bytes: &[u8], expected_id: u32) -> Result<T, WorkerError> {
     let response: RpcResponse<T> = serde_json::from_slice(bytes)
         .map_err(|_| WorkerError::new(WorkerFailure::InvalidResponse))?;
@@ -1043,6 +1447,25 @@ fn verify_handshake_v3(
     Ok(())
 }
 
+fn verify_handshake_v4(
+    actual: &ProviderInfoV4,
+    expected: &ProviderExpectationV4,
+) -> Result<(), WorkerError> {
+    if actual.provider != expected.provider {
+        return Err(WorkerError::new(WorkerFailure::ProviderIdentity));
+    }
+    if actual.provider_version != expected.provider_version {
+        return Err(WorkerError::new(WorkerFailure::ProviderVersion));
+    }
+    if actual.protocol_version != syntax_v4::PROTOCOL_VERSION {
+        return Err(WorkerError::new(WorkerFailure::ProviderProtocol));
+    }
+    if actual.capabilities != expected.capabilities {
+        return Err(WorkerError::new(WorkerFailure::ProviderCapabilities));
+    }
+    Ok(())
+}
+
 fn cleanup_reserve(timeout: Duration) -> Duration {
     (timeout / 2).min(MAX_CLEANUP_RESERVE)
 }
@@ -1084,6 +1507,20 @@ impl SpawnSpec for WorkerSpec {
 }
 
 impl SpawnSpec for WorkerSpecV3 {
+    fn executable(&self) -> &Path {
+        &self.executable
+    }
+
+    fn arguments(&self) -> &[OsString] {
+        &self.arguments
+    }
+
+    fn current_dir(&self) -> &Path {
+        &self.current_dir
+    }
+}
+
+impl SpawnSpec for WorkerSpecV4 {
     fn executable(&self) -> &Path {
         &self.executable
     }

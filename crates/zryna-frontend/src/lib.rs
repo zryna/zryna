@@ -14,18 +14,22 @@ use zryna_source::{
 mod worker;
 
 pub use worker::{
-    FrontendCapabilitiesV3, MAX_HANDSHAKE_RESPONSE_BYTES, MAX_WORKER_REQUEST_BYTES,
-    MAX_WORKER_STDERR_BYTES, MAX_WORKER_STDOUT_BYTES, MAX_WORKER_STDOUT_BYTES_V3,
-    MAX_WORKER_TIMEOUT, MIN_WORKER_TIMEOUT, ProviderExpectation, ProviderExpectationV3,
-    ProviderInfoV3, VerifiedFrontendProvider, VerifiedFrontendProviderV3, WorkerError,
-    WorkerFailure, WorkerFrontend, WorkerFrontendV3, WorkerLimits, WorkerLimitsV3, WorkerSpec,
-    WorkerSpecV3,
+    FrontendCapabilitiesV3, FrontendCapabilitiesV4, MAX_HANDSHAKE_RESPONSE_BYTES,
+    MAX_WORKER_REQUEST_BYTES, MAX_WORKER_STDERR_BYTES, MAX_WORKER_STDOUT_BYTES,
+    MAX_WORKER_STDOUT_BYTES_V3, MAX_WORKER_STDOUT_BYTES_V4, MAX_WORKER_TIMEOUT, MIN_WORKER_TIMEOUT,
+    ProviderExpectation, ProviderExpectationV3, ProviderExpectationV4, ProviderInfoV3,
+    ProviderInfoV4, VerifiedFrontendProvider, VerifiedFrontendProviderV3,
+    VerifiedFrontendProviderV4, WorkerError, WorkerFailure, WorkerFrontend, WorkerFrontendV3,
+    WorkerFrontendV4, WorkerLimits, WorkerLimitsV3, WorkerLimitsV4, WorkerSpec, WorkerSpecV3,
+    WorkerSpecV4,
 };
 
 /// Provider-neutral executable syntax contract spoken by protocol-v2 providers.
 pub use zryna_syntax::v2 as syntax_v2;
 /// Provider-neutral M2 syntax contract spoken only by exact protocol-v3 providers.
 pub use zryna_syntax::v3 as syntax_v3;
+/// Provider-neutral M3 ownership syntax spoken only by exact protocol-v4 providers.
+pub use zryna_syntax::v4 as syntax_v4;
 
 /// Current wire contract understood by the compiler.
 pub const FRONTEND_PROTOCOL_VERSION: u32 = 1;

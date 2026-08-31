@@ -52,6 +52,10 @@ The repository currently establishes and tests:
 - a fail-closed executable syntax protocol v2 with a shared JSON Schema, bounded flat
   expression arenas, and source-map-backed verified Rust types;
 - an isolated TypeScript 6 syntax adapter with its compiler implementation locked to `6.0.3`;
+- a separate internal protocol-v4 M3 syntax contract with bounded nominal data declarations,
+  flat type and expression arenas, exact UTF-8 spans, a syntax-only TypeScript 6 worker, and an
+  opaque source-map-bound Rust verifier; this does not activate `data-ownership-v1` or change
+  protocol v2/v3;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and
@@ -158,6 +162,7 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm m3:syntax:quick
 pnpm m2:quick
 pnpm preflight
 pnpm m0:check

@@ -75,7 +75,7 @@ profile is intentionally narrow.
 - Issue #57 records the separate authenticated website import, deployment, and live commit/digest
   evidence. This compiler status does not assert that an external website deployment has occurred.
 
-## Specified M3 profile with an internal layout authority
+## Specified M3 profile with internal syntax and layout authorities
 
 Issue #75 specifies the separate future `DataOwnershipV1` profile and exact CLI spelling
 `data-ownership-v1`. The normative data/ownership, aggregate-layout, and ownership-runtime-ABI
@@ -90,8 +90,17 @@ machine-readable fixtures pin every normative layout row and the exact five-type
 The authority is not reachable from the M1/M2 driver or CLI, allocates no runtime memory, and emits
 no target artifact.
 
-The compiler still does not accept M3 declarations or values, expose syntax protocol v4 or
-DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
+The separate `zryna-syntax::v4` boundary now decodes a closed, bounded M3 syntax contract and
+authenticates it against one exact final `SourceMap`. Its module-flat type arena and function
+arenas preserve source order and exact UTF-8 spans for nominal struct/enum declarations,
+compiler-known containers and references, aggregate construction, projection, matching, and
+weak-upgrade syntax. The pinned TypeScript 6 protocol-v4 worker is syntax-only and advertises no
+module-resolution or semantic authority. A typed frontend process boundary requires the exact v4
+capability tuple and fails closed before exposing an opaque source-bound snapshot. Protocol v2 and
+v3 behavior remains unchanged.
+
+The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
+expose DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
 JavaScript/WebAssembly/native artifacts, or accept `--profile data-ownership-v1`. Default M1 and
 explicit `control-flow-v1` M2 remain the only public profiles.
 
@@ -138,5 +147,6 @@ data profiles.
 - [M2 verified native MIR](M2_NATIVE_MIR.md)
 - [Roadmap](ROADMAP.md)
 - [Aggregate layout v1](../spec/memory-model/AGGREGATE_LAYOUT_V1.md)
+- [Syntax protocol v4](SYNTAX_PROTOCOL_V4.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)
