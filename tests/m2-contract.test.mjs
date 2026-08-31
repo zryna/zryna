@@ -138,8 +138,8 @@ test('normative specification freezes profile boundaries without claiming implem
 });
 
 test('roadmap ledger exactly matches the digest-pinned issue graph and honest status', async () => {
-  const [roadmap, architecture, frontends, status, moduleClosure, semantics, controlFlow, javascript, webassembly] = await Promise.all(
-    ['ROADMAP.md', 'ARCHITECTURE.md', 'FRONTENDS.md', 'STATUS.md', 'M2_MODULE_CLOSURE.md', 'M2_STRAIGHT_LINE_SEMANTICS.md', 'M2_CONTROL_FLOW_SEMANTICS.md', 'M2_JAVASCRIPT_BACKEND.md', 'M2_WEBASSEMBLY_BACKEND.md'].map((name) =>
+  const [roadmap, architecture, frontends, status, moduleClosure, semantics, controlFlow, javascript, webassembly, nativeMir] = await Promise.all(
+    ['ROADMAP.md', 'ARCHITECTURE.md', 'FRONTENDS.md', 'STATUS.md', 'M2_MODULE_CLOSURE.md', 'M2_STRAIGHT_LINE_SEMANTICS.md', 'M2_CONTROL_FLOW_SEMANTICS.md', 'M2_JAVASCRIPT_BACKEND.md', 'M2_WEBASSEMBLY_BACKEND.md', 'M2_NATIVE_MIR.md'].map((name) =>
       readFile(new URL(`../docs/${name}`, import.meta.url), 'utf8'),
     ),
   );
@@ -158,15 +158,15 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
       ? 'M1 closure'
       : issue.dependsOn.map((number) => `#${number}`).join(', ');
     assert.equal(row.dependsOnText, expectedDependencyText);
-    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51, 52].includes(row.number) ? 'complete' : 'planned');
+    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51, 52, 53].includes(row.number) ? 'complete' : 'planned');
   }
   assert.match(
     roadmap,
-    /Current status: contract specified,[\s\S]*deterministic sealed M2 ECMAScript and[\s\S]*direct core WebAssembly emission[\s\S]*implemented internally,[\s\S]*three-target execution remain unavailable/,
+    /Current status: contract specified,[\s\S]*independently\s+verified M2 native MIR lowering implemented,[\s\S]*three-target execution remain unavailable/,
   );
   assert.match(roadmap, /digest-pinned planning inventory/);
   assert.match(architecture, /## Isolated `ControlFlowV1` boundary/);
-  assert.match(architecture, /M2 JavaScript backend[\s\S]*direct core WebAssembly backend[\s\S]*Native MIR, manifest v2, and the public command remain unavailable/);
+  assert.match(architecture, /M2 JavaScript backend[\s\S]*direct core WebAssembly backend[\s\S]*M2 native MIR profile[\s\S]*independently verifies them into opaque views/);
   assert.match(frontends, /versioned raw syntax snapshot/);
   assert.match(frontends, /internal module discovery/);
   assert.match(status, /## Implemented M1 slice/);
@@ -218,6 +218,31 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
   ]) {
     assert.ok(normalizedWebAssembly.includes(required), `missing M2 WebAssembly contract phrase: ${required}`);
   }
+  const normalizedNativeMir = nativeMir.replace(/\s+/g, ' ');
+  for (const required of [
+    'implemented as a separate internal lowering',
+    '`zryna_ir::control_flow_v1::VerifiedProgram`',
+    'zryna_m2_i_m<module-id-decimal>_f<declaration-index-decimal>',
+    '`zryna_v1_e_<logical-name>`',
+    'simultaneous SSA transfers',
+    '`DirectCall`',
+    '`Branch`',
+    '`ZRYNA-N2101`',
+    '`ZRYNA-N2113`',
+    '`ZRYNA-N2201`',
+    '`ZRYNA-N2202`',
+    'Raw terminator claims per function / program | 4,096 / 65,536',
+    'Aggregate direct-call arguments per program | 16,777,216',
+    'Aggregate edge arguments per program | 33,554,432',
+    'One provisional entry export name | 128 bytes',
+    'Aggregate provisional entry export-name bytes | 2,097,152 bytes',
+    '31 unit tests and 5 compile-fail doctests',
+    'does not claim M2 native object emission',
+  ]) {
+    assert.ok(normalizedNativeMir.includes(required), `missing M2 native MIR contract phrase: ${required}`);
+  }
+  assert.match(roadmap, /Issue #53 implements the internal[\s\S]*verified native MIR profile[\s\S]*independent[\s\S]*raw-to-verified CFG/);
+  assert.match(status, /M2 verified native MIR profile[\s\S]*independently verifies every raw claim[\s\S]*no M2 native[\s\S]*object/);
   assert.doesNotMatch(status, /M2 executable slice is implemented/);
 });
 

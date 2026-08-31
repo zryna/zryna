@@ -45,6 +45,12 @@
       "title": "M2 deterministic module closure"
     },
     {
+      "id": "reference/m2-native-mir",
+      "source": "docs/M2_NATIVE_MIR.md",
+      "path": "documents/reference/m2-native-mir.md",
+      "title": "M2 verified native MIR"
+    },
+    {
       "id": "reference/m2-straight-line-semantics",
       "source": "docs/M2_STRAIGHT_LINE_SEMANTICS.md",
       "path": "documents/reference/m2-straight-line-semantics.md",

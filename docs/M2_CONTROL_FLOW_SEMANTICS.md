@@ -68,6 +68,8 @@ zero- and multiple-iteration loops, assignment carried through merges and backed
 shadow restoration, stable diagnostics, deterministic repeated lowering, exact Boolean conditions,
 missing returns, unreachable statements, and resource boundaries. These tests authenticate the
 internal compiler component only. The sealed JavaScript and WebAssembly evidence is documented
-separately. Native execution, public three-target divergence containment, manifest v2, the explicit
-public profile, and website support remain gated by Issues #53 through #57; the implemented
-internal JavaScript and WebAssembly hosts already retain their bounded deadlines.
+separately. The [M2 native MIR profile](M2_NATIVE_MIR.md) now implements independent lowering and
+target-specific verification internally. Native object emission and execution,
+public three-target divergence containment, manifest v2, explicit public profile, and website
+support remain gated by Issues #54 through #57. The implemented internal JavaScript and WebAssembly
+hosts already retain their bounded deadlines.

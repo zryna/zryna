@@ -1,7 +1,7 @@
 # Zryna native MIR
 
 Typed straight-line native values lowered from `VerifiedProgram` or supplied as explicit raw
-compiler claims.
+compiler claims. This root API is the complete implemented M1 profile.
 
 `raw::Module` and its nested raw types are never backend-authoritative. `verify` consumes those
 claims and is the only constructor of `VerifiedMirModule`; the verified wrapper exposes only
@@ -23,6 +23,10 @@ values are valid. Raw diagnostics are global and identify only bounded function/
 
 The verifier also constructs and retains the authoritative scalar ABI v1 module. Verified function
 views expose only its exact Linux symbol and public convention, so object codegen cannot create a
-competing name mapping. The current straight-line MIR remains a foundation representation. A
-separate mandatory MIR profile must define blocks, dominance, calls, and transformed control flow
-when those operations are introduced; this is not yet an FFI or product-linking contract.
+competing name mapping. The current straight-line MIR remains a foundation representation.
+
+The separately versioned [M2 native MIR profile](../../docs/M2_NATIVE_MIR.md) implements an internal
+raw-to-verified block, call, symbol, Boolean, and terminator boundary without changing these root
+types. Its lowering accepts only sealed Universal `ControlFlowV1`, maps every identity and operation
+one-for-one, and independently reseals the complete program. M2 object emission, public Boolean
+wrappers, linking, execution, FFI, and product linking remain later gates.

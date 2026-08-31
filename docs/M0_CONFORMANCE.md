@@ -26,13 +26,22 @@ pnpm preflight
 pnpm m0:check
 ```
 
-Use `pnpm m2:quick` after an M2 JavaScript, WebAssembly, semantics, closure, or workspace-source
-edit. It runs
-only the deterministic M2 JavaScript and WebAssembly backends, control-flow semantic, closure, and
-retained-filesystem security suites and therefore avoids unrelated runtime/toolchain integration
-failures while preserving native operating-system behavior.
+Use `pnpm m2:quick` after an M2 JavaScript, WebAssembly, native MIR, semantics, closure, or
+workspace-source edit. It runs the deterministic M2 JavaScript and WebAssembly backends, the native
+MIR M1 and M2 verifier suites, control-flow semantic, closure, and retained-filesystem security
+suites. The native MIR command proves lowering and independent verification, not M2 object emission
+or execution. The focused command avoids unrelated runtime/toolchain integration failures while
+preserving native operating-system behavior.
 
-Use `pnpm preflight` during the edit loop. Its fixed order runs portable documentation, protocol,
+During a native-MIR edit, use the component gate first; on a warm checkout it avoids rebuilding or
+waiting for unrelated targets:
+
+```bash
+cargo test --locked -p zryna-native-mir --lib control_flow_v1
+```
+
+Use `pnpm preflight` once the focused feature gate is green and before publishing a pull request,
+not after each small edit. Its fixed order runs portable documentation, protocol,
 adapter and formatting checks, then the complete M2 semantics and driver libraries before the
 broader workspace, frontend, and syntax checks. It stops immediately at the first failure. GitHub runs the same
 command before starting either full platform matrix, so a

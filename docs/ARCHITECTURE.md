@@ -319,12 +319,16 @@ validates and exhaustively audits the exact completed core bytes. The isolated
 component now implements the mandatory verifier for types, dominance, edges, reachability,
 reducibility, return completeness, acyclic calls, source authority, and budgets before constructing
 opaque M2 views. The closure connects only to these internal semantic gates and sealed backend
-entrypoints. Native MIR, manifest v2, and the public command remain unavailable, so the complete
-M2 profile and three-target execution are still unsupported.
+entrypoints. The separately versioned [M2 native MIR profile](M2_NATIVE_MIR.md) lowers the same
+sealed whole-program authority into explicit target-specific block, call, symbol, Boolean, and
+terminator claims, then independently verifies them into opaque views. M2 native object emission,
+manifest v2, and the public command remain
+unavailable, so the complete M2 profile and three-target execution are still unsupported.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
 functions receive sealed target-internal identities. JavaScript and core WebAssembly now consume
-that authority internally; native MIR will consume the same verified whole-program authority.
+that authority internally; the M2 native MIR lowering now consumes and independently reseals the
+same verified whole-program authority without trusting source-selected symbols.
 No backend may activate M2 independently. The
 future public command requires `--profile control-flow-v1` and publishes a distinct canonical
 `zryna-manifest-v2.json` so no M1 artifact contract is reinterpreted.

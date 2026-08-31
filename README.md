@@ -141,9 +141,10 @@ pnpm m0:check
 ```
 
 `pnpm m2:quick` is the narrowest edit-loop check for deterministic M2 JavaScript and WebAssembly,
-module closure, retained workspace security, and internal M2 semantics. It includes focused
-emission and backend fixtures, but avoids the broad driver/runtime integration suite and is
-suitable on both Linux and Windows before running the broader gate.
+the native MIR crate, module closure, retained workspace security, and internal M2 semantics. The
+native MIR command runs both the unchanged M1 proof and the separate implemented M2 verifier. This
+command avoids the broad driver/runtime integration suite and is suitable on
+both Linux and Windows before running the broader gate.
 
 `pnpm preflight` is the fast edit-loop gate. It stops on the first portable contract, formatting,
 M2 driver-security, workspace-check, frontend, or syntax failure. Driver tests run before the

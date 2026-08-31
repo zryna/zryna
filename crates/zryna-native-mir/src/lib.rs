@@ -8,6 +8,9 @@ use zryna_abi::{VerifiedScalarAbiModule, VerifiedScalarExport};
 use zryna_diagnostics::Diagnostic;
 use zryna_ir::{ExprKind, Type, UniversalProfile, VerifiedFunction, VerifiedProgram};
 
+/// Separately versioned native MIR for the M2 structured control-flow profile.
+pub mod control_flow_v1;
+
 /// Maximum functions accepted in one native MIR module.
 pub const MAX_MIR_FUNCTIONS: usize = 16_384;
 /// Maximum parameters accepted in one native MIR function.
