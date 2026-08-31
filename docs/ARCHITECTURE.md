@@ -346,9 +346,10 @@ No backend may activate M2 independently. The public command requires
 `--profile control-flow-v1` and publishes a distinct canonical `zryna-manifest-v2.json` so no M1
 artifact contract is reinterpreted.
 
-## Planned isolated `DataOwnershipV1` boundary
+## Isolated `DataOwnershipV1` boundary
 
-M3 is specified as another separately selected and separately verified profile. It may not widen
+M3 is specified as another separately selected and separately verified profile. Its first internal
+compiler authority is implemented, but the profile is not publicly selectable. It may not widen
 `I32V1`, mutate `ControlFlowV1`, or expose a partial public command. Its authority chain is planned
 as:
 
@@ -374,11 +375,20 @@ The normative planning authorities are
 `tests/m3-contract-v1.json` registry binds the real Issues #75–#90 and requires M0, M1, and M2 as
 unchanged regression authorities.
 
-Issue #75 adds no executable capability. Later components must keep syntax providers free of
-semantics, make every backend consume opaque verified views, share one layout authority instead of
-recomputing host layouts, and depend on ABI declarations rather than runtime implementations. The
-driver alone may compose audited target runtimes and publish the future explicit
-`data-ownership-v1` manifest-v3 transaction after all target gates exist.
+`zryna-layout` is the only implemented M3 component. It accepts no syntax or backend types. It binds
+the complete module/type graph to one exact `SourceMap`, assigns canonical TypeIds from frozen
+binary keys, rejects malformed identities, orphan claims, borrows, by-value recursion, overflow,
+and resource excess, and exposes only immutable `Linear32V1` or `LinuxX8664V1` views plus a sealed
+fingerprint. Its raw graph IDs never become TypeIds, and neither host `usize` nor Rust/C layout,
+paths, addresses, allocation state, or compiler version text enters a layout document. The
+machine-readable `crates/zryna-layout/src/fixtures/layout-v1.json` oracle is shared with later IR, backend,
+runtime, and conformance work.
+
+Issues #75 and #77 add no executable capability. Later components must keep syntax providers free
+of semantics, make every backend consume these opaque verified views, depend on ABI declarations
+rather than runtime implementations, and never recompute host layouts. The driver alone may
+compose audited target runtimes and publish the future explicit `data-ownership-v1` manifest-v3
+transaction after all target gates exist.
 
 ## WebAssembly profiles
 

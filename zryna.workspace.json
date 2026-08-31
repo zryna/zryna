@@ -60,6 +60,13 @@
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
+      "id": "zryna-layout",
+      "root": "crates/zryna-layout",
+      "kind": "compiler",
+      "dependencies": ["zryna-diagnostics", "zryna-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+    },
+    {
       "id": "zryna-backend-javascript",
       "root": "crates/zryna-backend-javascript",
       "kind": "backend",
