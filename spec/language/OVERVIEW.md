@@ -15,6 +15,12 @@ The universal profile must compile to JavaScript, WebAssembly, and native output
 
 The first intrinsic types are `unit`, `bool`, and `i32`. Additional types enter only with complete source, IR, JavaScript, WebAssembly, native, conversion, boundary, and diagnostic specifications.
 
+The planned M2 [`ControlFlowV1`](CONTROL_FLOW_MODULES_V1.md) profile freezes exact wrapping scalar
+arithmetic without a language trap surface, Boolean comparisons, typed lexical locals and
+assignment, direct nonrecursive calls, `if`, `while`, compiler-owned relative modules, structured
+verified IR, and resource budgets. It is a specification, not an implemented profile. The current
+public compiler continues to expose only the M1 `I32V1` slice.
+
 ## WebAssembly profiles
 
 The implemented `I32V1` scalar subset maps directly to core WebAssembly without passing through

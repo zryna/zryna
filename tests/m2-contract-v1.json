@@ -1,0 +1,571 @@
+{
+  "schemaVersion": 1,
+  "profile": "zryna-control-flow-v1",
+  "status": "specified-not-implemented",
+  "specification": "spec/language/CONTROL_FLOW_MODULES_V1.md",
+  "governanceIssue": 45,
+  "issues": [
+    {
+      "number": 45,
+      "dependsOn": [],
+      "gate": "normative-profile"
+    },
+    {
+      "number": 46,
+      "dependsOn": [
+        45
+      ],
+      "gate": "syntax-protocol-v3"
+    },
+    {
+      "number": 47,
+      "dependsOn": [
+        45,
+        46
+      ],
+      "gate": "module-closure"
+    },
+    {
+      "number": 48,
+      "dependsOn": [
+        45
+      ],
+      "gate": "verified-universal-ir"
+    },
+    {
+      "number": 49,
+      "dependsOn": [
+        46,
+        47,
+        48
+      ],
+      "gate": "strict-semantic-lowering"
+    },
+    {
+      "number": 50,
+      "dependsOn": [
+        49
+      ],
+      "gate": "if-while-lowering"
+    },
+    {
+      "number": 51,
+      "dependsOn": [
+        50
+      ],
+      "gate": "javascript"
+    },
+    {
+      "number": 52,
+      "dependsOn": [
+        50
+      ],
+      "gate": "webassembly"
+    },
+    {
+      "number": 53,
+      "dependsOn": [
+        50
+      ],
+      "gate": "verified-native-mir"
+    },
+    {
+      "number": 54,
+      "dependsOn": [
+        53
+      ],
+      "gate": "native-object-link-run"
+    },
+    {
+      "number": 55,
+      "dependsOn": [
+        47,
+        51,
+        52,
+        54
+      ],
+      "gate": "atomic-multi-file-cli"
+    },
+    {
+      "number": 56,
+      "dependsOn": [
+        55
+      ],
+      "gate": "fixed-oracle-conformance"
+    },
+    {
+      "number": 57,
+      "dependsOn": [
+        56
+      ],
+      "gate": "authenticated-documentation"
+    }
+  ],
+  "operators": [
+    {
+      "id": "i32-add",
+      "syntax": "+",
+      "operands": [
+        "i32",
+        "i32"
+      ],
+      "result": "i32",
+      "behavior": "wrap-modulo-2^32",
+      "traps": []
+    },
+    {
+      "id": "i32-sub",
+      "syntax": "-",
+      "operands": [
+        "i32",
+        "i32"
+      ],
+      "result": "i32",
+      "behavior": "wrap-modulo-2^32",
+      "traps": []
+    },
+    {
+      "id": "i32-mul",
+      "syntax": "*",
+      "operands": [
+        "i32",
+        "i32"
+      ],
+      "result": "i32",
+      "behavior": "low-32-product-bits",
+      "traps": []
+    },
+    {
+      "id": "i32-neg",
+      "syntax": "unary -",
+      "operands": [
+        "i32"
+      ],
+      "result": "i32",
+      "behavior": "zero-minus-value-modulo-2^32",
+      "traps": []
+    },
+    {
+      "id": "equal",
+      "syntax": "===",
+      "operands": [
+        "same-scalar",
+        "same-scalar"
+      ],
+      "result": "bool",
+      "behavior": "exact-value-equality",
+      "traps": []
+    },
+    {
+      "id": "not-equal",
+      "syntax": "!==",
+      "operands": [
+        "same-scalar",
+        "same-scalar"
+      ],
+      "result": "bool",
+      "behavior": "exact-value-inequality",
+      "traps": []
+    },
+    {
+      "id": "i32-less-than-s",
+      "syntax": "<",
+      "operands": [
+        "i32",
+        "i32"
+      ],
+      "result": "bool",
+      "behavior": "signed-order",
+      "traps": []
+    },
+    {
+      "id": "i32-less-equal-s",
+      "syntax": "<=",
+      "operands": [
+        "i32",
+        "i32"
+      ],
+      "result": "bool",
+      "behavior": "signed-order",
+      "traps": []
+    },
+    {
+      "id": "i32-greater-than-s",
+      "syntax": ">",
+      "operands": [
+        "i32",
+        "i32"
+      ],
+      "result": "bool",
+      "behavior": "signed-order",
+      "traps": []
+    },
+    {
+      "id": "i32-greater-equal-s",
+      "syntax": ">=",
+      "operands": [
+        "i32",
+        "i32"
+      ],
+      "result": "bool",
+      "behavior": "signed-order",
+      "traps": []
+    }
+  ],
+  "trapCodes": [],
+  "limits": {
+    "sourceFiles": 4096,
+    "aggregateSourceBytes": 8388608,
+    "discoveryRounds": 4096,
+    "providerAnalysisCalls": 4097,
+    "cumulativeProviderInputBytes": 16777216,
+    "protocolRequestBytes": 75497472,
+    "protocolResponseBytes": 67108864,
+    "importEdges": 65536,
+    "importDeclarationsPerModule": 4096,
+    "importDeclarationsPerProgram": 65536,
+    "importedNamesPerDeclaration": 256,
+    "importedNamesPerProgram": 65536,
+    "functionsPerModule": 4096,
+    "functionsPerProgram": 16384,
+    "parametersPerFunction": 256,
+    "parametersPerProgram": 262144,
+    "lexicalBlocksPerFunction": 4096,
+    "lexicalBlocksPerProgram": 65536,
+    "statementsPerFunction": 4096,
+    "statementsPerProgram": 65536,
+    "expressionsPerFunction": 16384,
+    "expressionsPerProgram": 262144,
+    "localsPerFunction": 4096,
+    "localsPerProgram": 65536,
+    "liveMutableBindingsPerMerge": 256,
+    "irBlocksPerFunction": 4096,
+    "irBlocksPerProgram": 65536,
+    "blockParametersPerBlock": 256,
+    "irValuesPerFunction": 16384,
+    "irValuesPerProgram": 262144,
+    "cfgEdgesPerFunction": 8192,
+    "cfgEdgesPerProgram": 131072,
+    "callEdges": 65536,
+    "staticCallDepth": 128,
+    "nestingDepth": 128,
+    "moduleSpecifierBytes": 1024,
+    "diagnostics": 256
+  },
+  "plannedCases": [
+    {
+      "id": "add-wraps-maximum",
+      "feature": "arithmetic",
+      "inputs": [
+        2147483647,
+        1
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": -2147483648
+      }
+    },
+    {
+      "id": "subtract-wraps-minimum",
+      "feature": "arithmetic",
+      "inputs": [
+        -2147483648,
+        1
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 2147483647
+      }
+    },
+    {
+      "id": "multiply-keeps-low-bits",
+      "feature": "arithmetic",
+      "inputs": [
+        2147483647,
+        2
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": -2
+      }
+    },
+    {
+      "id": "negate-minimum-wraps",
+      "feature": "arithmetic",
+      "inputs": [
+        -2147483648
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": -2147483648
+      }
+    },
+    {
+      "id": "signed-less-than",
+      "feature": "comparison",
+      "inputs": [
+        -1,
+        0
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "signed-less-equal",
+      "feature": "comparison",
+      "inputs": [
+        -1,
+        -1
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "signed-greater-than",
+      "feature": "comparison",
+      "inputs": [
+        1,
+        0
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "signed-greater-equal",
+      "feature": "comparison",
+      "inputs": [
+        1,
+        1
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "i32-exact-equality",
+      "feature": "comparison",
+      "inputs": [
+        42,
+        42
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "i32-exact-inequality",
+      "feature": "comparison",
+      "inputs": [
+        42,
+        7
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "boolean-exact-equality",
+      "feature": "comparison",
+      "inputs": [
+        true,
+        false
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": false
+      }
+    },
+    {
+      "id": "boolean-exact-inequality",
+      "feature": "comparison",
+      "inputs": [
+        true,
+        false
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "mutable-local-assignment",
+      "feature": "locals",
+      "inputs": [
+        1,
+        2
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 3
+      }
+    },
+    {
+      "id": "direct-call-chain",
+      "feature": "calls",
+      "inputs": [
+        20,
+        22
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 42
+      }
+    },
+    {
+      "id": "if-selects-true-edge",
+      "feature": "if",
+      "inputs": [
+        true,
+        11,
+        22
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 11
+      }
+    },
+    {
+      "id": "if-selects-false-edge",
+      "feature": "if",
+      "inputs": [
+        false,
+        11,
+        22
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 22
+      }
+    },
+    {
+      "id": "while-zero-iterations",
+      "feature": "while",
+      "inputs": [
+        0
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 0
+      }
+    },
+    {
+      "id": "while-many-iterations",
+      "feature": "while",
+      "inputs": [
+        5
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 5
+      }
+    },
+    {
+      "id": "named-cross-module-call",
+      "feature": "modules",
+      "inputs": [
+        40,
+        2
+      ],
+      "expected": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 42
+      }
+    }
+  ],
+  "plannedInvalidCases": [
+    {
+      "id": "numeric-condition",
+      "phase": "semantics",
+      "expectedFamily": "ZRYNA-M2xxx",
+      "ownerIssue": 50
+    },
+    {
+      "id": "assign-to-const",
+      "phase": "semantics",
+      "expectedFamily": "ZRYNA-M2xxx",
+      "ownerIssue": 49
+    },
+    {
+      "id": "use-before-declaration",
+      "phase": "semantics",
+      "expectedFamily": "ZRYNA-M2xxx",
+      "ownerIssue": 49
+    },
+    {
+      "id": "recursive-call-cycle",
+      "phase": "semantics",
+      "expectedFamily": "ZRYNA-M2xxx",
+      "ownerIssue": 49
+    },
+    {
+      "id": "bare-import",
+      "phase": "module-discovery",
+      "expectedFamily": "ZRYNA-D3xxx",
+      "ownerIssue": 47
+    },
+    {
+      "id": "import-escapes-root",
+      "phase": "module-discovery",
+      "expectedFamily": "ZRYNA-D3xxx",
+      "ownerIssue": 47
+    },
+    {
+      "id": "missing-import",
+      "phase": "module-discovery",
+      "expectedFamily": "ZRYNA-D3xxx",
+      "ownerIssue": 47
+    },
+    {
+      "id": "case-colliding-module",
+      "phase": "module-discovery",
+      "expectedFamily": "ZRYNA-D3xxx",
+      "ownerIssue": 47
+    },
+    {
+      "id": "import-cycle",
+      "phase": "module-discovery",
+      "expectedFamily": "ZRYNA-D3xxx",
+      "ownerIssue": 47
+    },
+    {
+      "id": "irreducible-cfg",
+      "phase": "universal-ir",
+      "expectedFamily": "ZRYNA-I2xxx",
+      "ownerIssue": 48
+    },
+    {
+      "id": "resource-limit-plus-one",
+      "phase": "all-new-m2-boundaries",
+      "expectedFamily": "x2xx1",
+      "ownerIssue": 56
+    }
+  ]
+}

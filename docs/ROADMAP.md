@@ -101,13 +101,52 @@ Completion gates:
 
 ## M2 — Control Flow and Modules
 
-- exact arithmetic and comparisons with boundary tests;
-- local bindings and function calls;
-- `if` and `while`;
-- deterministic module resolution and multi-file builds;
-- JavaScript, WebAssembly, and native differential suites.
+Goal: add a separately verified `ControlFlowV1` profile with exact scalar arithmetic, Boolean
+comparisons, lexical locals, direct calls, structured branches and loops, deterministic modules,
+and one multi-file program whose behavior matches on JavaScript, direct core WebAssembly, and
+Linux x86-64 native output.
 
-Completion gate: the control-flow and module conformance corpus passes on every supported target.
+Current status: specified, not implemented. Issue #45 freezes the normative
+[scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) contract and a
+digest-pinned planning inventory without enabling protocol v3, a compiler profile, a CLI
+command, or a public M2 support claim. `I32V1`, protocol v2, manifest v1, and all M0/M1 evidence
+remain unchanged while the separate M2 profile is built behind its own verifier gates.
+
+Dependency ledger:
+
+| Issue | Gate | Depends on | Ledger state |
+| --- | --- | --- | --- |
+| #45 | normative scalar, control-flow, module, IR, budget, and planned-conformance contract | M1 closure | complete |
+| #46 | exact protocol v3 and pinned TypeScript 6 syntax adapter | #45 | planned |
+| #47 | compiler-owned bounded deterministic module closure | #45, #46 | planned |
+| #48 | independently verified `ControlFlowV1` Universal IR | #45 | planned |
+| #49 | Zryna-owned modules, scopes, types, arithmetic, comparisons, locals, assignment, and direct calls | #46, #47, #48 | planned |
+| #50 | canonical `if`/`while`, definite state, reachability, and return lowering | #49 | planned |
+| #51 | deterministic M2 ECMAScript emission and execution | #50 | planned |
+| #52 | direct capability-minimal M2 core WebAssembly emission and execution | #50 | planned |
+| #53 | independently verified native MIR control flow and calls | #50 | planned |
+| #54 | audited Linux x86-64 native object, internal calls, link, and run | #53 | planned |
+| #55 | explicit-profile atomic multi-file CLI and manifest v2 | #47, #51, #52, #54 | planned |
+| #56 | fixed-oracle three-target conformance and required aggregate gate | #55 | planned |
+| #57 | authenticated compiler documentation, website synchronization, deployment, and live closure | #56 | planned |
+
+The backend issues #51, #52, and #53 may proceed in parallel only after #50. Public CLI activation
+waits for every backend and the native execution path. Public website status remains M1 until #56
+passes required CI and #57 verifies the exact compiler documentation bundle live.
+
+Completion gates:
+
+- exact fixed-oracle arithmetic, comparison, Boolean, local, call, branch, loop, and module
+  cases pass on JavaScript, direct core WebAssembly, and Linux x86-64 native output;
+- invalid syntax, modules, names, types, CFG claims, paths, cycles, races, and `limit + 1` cases fail
+  before backend work and publish no bundle;
+- Windows runs the portable JavaScript/WebAssembly corpus and retains explicit native
+  unavailability;
+- one explicit `control-flow-v1` command analyzes one source graph once and atomically publishes a
+  deterministic manifest v2 plus selected artifacts;
+- required M0/M1 checks remain intact and a stable aggregate M2 check is protected;
+- compiler-owned authenticated documentation, website CI, deployment, and live inspection all
+  agree on the exact compiler commit and bundle digest.
 
 ## M3 — Data, Memory, and Ownership
 

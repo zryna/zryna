@@ -289,6 +289,28 @@ LLVM IR:     add i32 %a, %b
 
 Future integer operations must specify width, signedness, overflow, conversion, comparison, and JavaScript representation before implementation.
 
+## Planned `ControlFlowV1` boundary
+
+M2 is governed by the normative
+[scalar control-flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md) specification.
+It is a separate verified profile and is not currently executable. Protocol v2, the `I32V1`
+expression-tree verifier, the default M1 CLI, and manifest v1 remain unchanged until the complete
+M2 profile passes all target gates.
+
+Protocol v3 will carry source-faithful import, local, call, branch, and loop syntax without giving
+the provider name, type, module, filesystem, or IR authority. The driver will resolve and safely
+read an explicit relative `.zry` graph to fixed point. Zryna semantics will lower the final
+source-map-bound snapshot to SSA-like raw blocks with typed values, direct calls, block arguments,
+and explicit return/jump/conditional terminators. A new mandatory verifier will independently
+prove types, dominance, edges, reachability, reducibility, return completeness, acyclic calls,
+source authority, and budgets before constructing opaque M2 views.
+
+Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
+functions receive sealed target-internal identities. JavaScript, core WebAssembly, and native MIR
+will consume the same verified whole-program authority; none may activate M2 independently. The
+future public command requires `--profile control-flow-v1` and publishes a distinct canonical
+`zryna-manifest-v2.json` so no M1 artifact contract is reinterpreted.
+
 ## WebAssembly profiles
 
 The current WebAssembly backend emits a core module directly from `VerifiedProgram`; it does not
