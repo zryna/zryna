@@ -179,12 +179,43 @@ Completion gates:
 
 ## M3 — Data, Memory, and Ownership
 
-- structs, enums, fixed arrays, and verified layouts;
-- owned strings and vectors;
-- move checking and deterministic drop insertion;
-- borrowing;
-- explicit shared and weak references;
-- versioned native and WebAssembly runtime ABIs.
+Goal: add a separate explicit `DataOwnershipV1` profile without reinterpreting default M1 or
+explicit M2. Issue #75 freezes the specification, exact non-goals, real issue graph, first internal
+Pair slice, checked layout rules, ownership transitions, and non-Rust runtime ABI before any M3
+implementation is activated. The canonical planning inventory is digest-pinned in
+`tests/m3-contract-v1.json`.
+
+Current status: specified, not implemented. No M3 syntax, IR, runtime, backend, CLI, or host
+capability is public.
+
+| Issue | Gate                                                                 | Depends on              | State       |
+| ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |
+|   #75 | normative profile, layout, ownership, and runtime ABI contract       | M2 closure              | in progress |
+|   #76 | syntax protocol v4 and TypeScript 6 syntax-only adapter              | #75                     | planned     |
+|   #77 | verified aggregate layout authority                                  | #75                     | planned     |
+|   #78 | separately verified DataOwnershipV1 Universal IR                     | #75, #77                | planned     |
+|   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | planned     |
+|   #80 | versioned ownership runtime ABI authority                            | #75, #77                | planned     |
+|   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | planned     |
+|   #82 | bounded nonescaping lexical borrowing                                | #81                     | planned     |
+|   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | planned     |
+|   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | planned     |
+|   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | planned     |
+|   #86 | independently verified native MIR                                    | #78, #80, #81, #82, #83 | planned     |
+|   #87 | audited Linux x86-64 object, runtime, link, and execution            | #77, #80, #86           | planned     |
+|   #88 | candidate driver integration and atomic manifest v3 bundles          | #76, #84, #85, #87      | planned     |
+|   #89 | fixed-oracle three-target conformance and resource gates             | #88                     | planned     |
+|   #90 | public profile activation, authenticated docs, website, and provenance | #89                     | planned     |
+
+`Pair` is the smallest mandatory fixed-oracle case, remains internal, and preserves scalar ABI v1
+exports. It proves nominal identity, construction, source field order and access, sealed logical
+layout, verified IR, and matching scalar observations across all three targets without heap
+allocation. It becomes executable only inside the complete dependency-ordered backend, integration,
+and conformance work in #84 through #89; it is not an earlier partial-profile checkpoint.
+
+#88 produces an internally testable candidate route and manifest, not a supported public selector.
+Exact `--profile data-ownership-v1` activation and support claims wait for #89 conformance and the
+#90 authenticated publication gate.
 
 Completion gate: ownership and layout behavior is specified before implementation and remains equivalent across target-specific representations.
 

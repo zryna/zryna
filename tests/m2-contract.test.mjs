@@ -280,6 +280,6 @@ test('package exposes one focused digest-pinned contract check', async () => {
   assert.equal(packageDocument.scripts['m2:contract'], 'node scripts/check-m2-contract.mjs');
   assert.equal(
     packageDocument.scripts['docs:check'],
-    'node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs tests/m2-manifest-contract.test.mjs',
+    'node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs tests/m2-manifest-contract.test.mjs tests/m3-contract.test.mjs',
   );
 });

@@ -54,14 +54,16 @@ async function isolatedWorkspace() {
   return root;
 }
 
-test('registry exports the exact M0 through M2 publication inventory', async () => {
+test('registry exports the exact implemented and planned publication inventory', async () => {
   const registry = await loadRegistry(compilerWorkspaceRoot);
   assert.deepEqual(
     registry.documents,
     [
+      { id: 'reference/aggregate-layout-v1', source: 'spec/memory-model/AGGREGATE_LAYOUT_V1.md', path: 'documents/reference/aggregate-layout-v1.md', title: 'Aggregate layout v1' },
       { id: 'reference/architecture', source: 'docs/ARCHITECTURE.md', path: 'documents/reference/architecture.md', title: 'Compiler architecture' },
       { id: 'reference/cli', source: 'docs/CLI.md', path: 'documents/reference/cli.md', title: 'CLI reference' },
       { id: 'reference/control-flow-modules-v1', source: 'spec/language/CONTROL_FLOW_MODULES_V1.md', path: 'documents/reference/control-flow-modules-v1.md', title: 'Scalar control flow and modules v1' },
+      { id: 'reference/data-ownership-v1', source: 'spec/language/DATA_OWNERSHIP_V1.md', path: 'documents/reference/data-ownership-v1.md', title: 'Data and ownership v1' },
       { id: 'reference/documentation-bundles', source: 'docs/DOCUMENTATION_BUNDLES.md', path: 'documents/reference/documentation-bundles.md', title: 'Compiler documentation bundles' },
       { id: 'reference/frontends', source: 'docs/FRONTENDS.md', path: 'documents/reference/frontends.md', title: 'Frontend providers' },
       { id: 'reference/language-overview', source: 'spec/language/OVERVIEW.md', path: 'documents/reference/language-overview.md', title: 'Language overview' },
@@ -74,6 +76,8 @@ test('registry exports the exact M0 through M2 publication inventory', async () 
       { id: 'reference/m2-native-mir', source: 'docs/M2_NATIVE_MIR.md', path: 'documents/reference/m2-native-mir.md', title: 'M2 verified native MIR' },
       { id: 'reference/m2-straight-line-semantics', source: 'docs/M2_STRAIGHT_LINE_SEMANTICS.md', path: 'documents/reference/m2-straight-line-semantics.md', title: 'M2 straight-line semantics' },
       { id: 'reference/m2-webassembly-backend', source: 'docs/M2_WEBASSEMBLY_BACKEND.md', path: 'documents/reference/m2-webassembly-backend.md', title: 'M2 direct core WebAssembly backend' },
+      { id: 'reference/memory-model', source: 'spec/memory-model/OVERVIEW.md', path: 'documents/reference/memory-model.md', title: 'Memory model direction' },
+      { id: 'reference/ownership-runtime-v1', source: 'spec/abi/OWNERSHIP_RUNTIME_V1.md', path: 'documents/reference/ownership-runtime-v1.md', title: 'Ownership runtime ABI v1' },
       { id: 'reference/scalar-abi-v1', source: 'spec/abi/SCALAR_V1.md', path: 'documents/reference/scalar-abi-v1.md', title: 'Scalar ABI v1' },
       { id: 'status/current', source: 'docs/STATUS.md', path: 'documents/status/current.md', title: 'Compiler status' },
       { id: 'status/m0-conformance', source: 'docs/M0_CONFORMANCE.md', path: 'documents/status/m0-conformance.md', title: 'M0 architecture conformance' },
