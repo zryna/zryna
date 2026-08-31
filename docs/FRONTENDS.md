@@ -115,7 +115,7 @@ transport. It is not selected by the driver and does not activate an M2 compiler
 Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the bootstrap
 provider must not modify semantic behavior or any backend.
 
-## Protocol v3 and planned module discovery
+## Protocol v3 and internal module discovery
 
 M2 protocol v3 adds source-faithful DTOs for named imports, locals, assignment, direct calls,
 exact operators, blocks, `if`, and `while`. It is a new exact protocol; protocol v2 is not modified
@@ -123,12 +123,12 @@ or implicitly upgraded. The TypeScript 6 provider will continue to advertise
 `module_resolution: false`: it reports import specifiers and spans but never reads a dependency,
 chooses a resolved path, or supplies a compiler symbol identity.
 
-The driver owns protocol v3 module discovery. Starting from one validated entrypoint, it analyzes
-only each newly discovered bounded batch, resolves verified explicit relative `.zry` imports, and
-safely reads unresolved files through a retained workspace-root capability. After closure it builds
-the immutable source map once and requests one final complete snapshot; only that final-map-bound
-snapshot may enter semantics. Exact path, graph, fixed-point, race, cycle, and resource rules are
-specified in
-[scalar control flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md). Protocol-v3
-syntax and transport belong to Issue #46. Compiler-owned discovery and closure remain planned
-under Issue #47 and are not available in the current driver or CLI.
+The driver implements an isolated protocol-v3 module-discovery boundary. Starting from one
+validated entrypoint, it analyzes only each newly discovered bounded batch, resolves verified
+explicit relative `.zry` imports, and safely reads unresolved files through retained no-follow
+workspace capabilities. After closure it builds the immutable source map once and requests one
+final complete snapshot; only that final-map-bound snapshot can be returned by the closure API.
+Exact path, graph, fixed-point, race, cycle, identity, and resource rules are documented in
+[M2 deterministic module closure](M2_MODULE_CLOSURE.md) and specified normatively in
+[scalar control flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md). The public driver
+and CLI do not select this internal boundary, and it does not yet enter M2 semantics.

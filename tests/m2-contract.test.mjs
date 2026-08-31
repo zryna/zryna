@@ -138,8 +138,8 @@ test('normative specification freezes profile boundaries without claiming implem
 });
 
 test('roadmap ledger exactly matches the digest-pinned issue graph and honest status', async () => {
-  const [roadmap, architecture, frontends, status] = await Promise.all(
-    ['ROADMAP.md', 'ARCHITECTURE.md', 'FRONTENDS.md', 'STATUS.md'].map((name) =>
+  const [roadmap, architecture, frontends, status, moduleClosure] = await Promise.all(
+    ['ROADMAP.md', 'ARCHITECTURE.md', 'FRONTENDS.md', 'STATUS.md', 'M2_MODULE_CLOSURE.md'].map((name) =>
       readFile(new URL(`../docs/${name}`, import.meta.url), 'utf8'),
     ),
   );
@@ -158,21 +158,25 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
       ? 'M1 closure'
       : issue.dependsOn.map((number) => `#${number}`).join(', ');
     assert.equal(row.dependsOnText, expectedDependencyText);
-    assert.equal(row.state, [45, 46, 48].includes(row.number) ? 'complete' : 'planned');
+    assert.equal(row.state, [45, 46, 47, 48].includes(row.number) ? 'complete' : 'planned');
   }
   assert.match(
     roadmap,
-    /Current status: contract specified, exact syntax protocol v3 implemented, and the isolated IR\s+verifier implemented, but the M2 profile is not executable\./,
+    /Current status: contract specified, exact syntax protocol v3 implemented, deterministic module\s+closure implemented as an internal driver boundary, and the isolated IR verifier implemented, but\s+the M2 profile is not executable\./,
   );
   assert.match(roadmap, /digest-pinned planning inventory/);
   assert.match(architecture, /## Isolated `ControlFlowV1` boundary/);
-  assert.match(architecture, /not yet reachable from source semantics, the driver, any backend, or a public[\s\S]*command/);
+  assert.match(architecture, /Neither internal boundary is connected to source semantics, any backend, or a[\s\S]*public command/);
   assert.match(frontends, /versioned raw syntax snapshot/);
-  assert.match(frontends, /protocol v3 module discovery/);
+  assert.match(frontends, /internal module discovery/);
   assert.match(status, /## Implemented M1 slice/);
   assert.match(status, /## Implemented M2 compiler components/);
-  assert.match(status, /The driver still selects protocol v2,[\s\S]*no[\s\S]*semantic lowering produces `ControlFlowV1`,[\s\S]*no backend accepts[\s\S]*no CLI command or manifest exposes it/);
+  assert.match(status, /The public driver still selects protocol v2;[\s\S]*not connected to semantic lowering,[\s\S]*no backend accepts[\s\S]*no CLI command or manifest exposes it/);
   assert.match(status, /does not claim source control flow, modules,[\s\S]*or an executable M2[\s\S]*feature/);
+  assert.match(moduleClosure, /exactly one final full-map protocol-v3 snapshot/);
+  assert.match(moduleClosure, /ZRYNA-M2-GRAPH\\0/);
+  assert.match(moduleClosure, /UNC, verbatim, device, and drive-relative roots/);
+  assert.match(moduleClosure, /does not enable the `control-flow-v1` profile/);
   assert.doesNotMatch(status, /M2 executable slice is implemented/);
 });
 

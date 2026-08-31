@@ -129,13 +129,19 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm m2:quick
 pnpm preflight
 pnpm m0:check
 ```
 
+`pnpm m2:quick` is the narrowest edit-loop check for deterministic module closure and retained
+workspace security. It runs without the JavaScript runtime integration suite and is suitable on
+both Linux and Windows before running the broader gate.
+
 `pnpm preflight` is the fast edit-loop gate. It stops on the first portable contract, formatting,
-workspace-check, frontend, or syntax failure. The complete `pnpm m0:check` command remains the
-cross-platform merge authority.
+M2 driver-security, workspace-check, frontend, or syntax failure. Driver tests run before the
+broader workspace check so closure and retained-filesystem regressions fail early. The complete
+`pnpm m0:check` command remains the cross-platform merge authority.
 
 The canonical command validates and executes every registered Rust, protocol, and adapter proof
 suite without a skip-architecture mode. See [M0 conformance](docs/M0_CONFORMANCE.md) for the exact
@@ -159,7 +165,8 @@ editors/     future thin editor integrations
 
 See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax protocol v2](docs/SYNTAX_PROTOCOL_V2.md),
 [Strict workspace contract](docs/STRICT_WORKSPACE.md), [Frontend providers](docs/FRONTENDS.md), and
-[Roadmap](docs/ROADMAP.md), [M0 conformance](docs/M0_CONFORMANCE.md), and
+[M2 deterministic module closure](docs/M2_MODULE_CLOSURE.md), [Roadmap](docs/ROADMAP.md),
+[M0 conformance](docs/M0_CONFORMANCE.md), and
 [compiler documentation bundles](docs/DOCUMENTATION_BUNDLES.md).
 
 ## Project identity

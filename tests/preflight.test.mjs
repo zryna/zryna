@@ -24,13 +24,14 @@ test('preflight has one frozen portable command order', () => {
     [
       ['portable-contract-tests', 'node'],
       ['rust-format', 'cargo'],
+      ['m2-driver-security-tests', 'cargo'],
       ['rust-workspace-check', 'cargo'],
       ['frontend-syntax-tests', 'cargo'],
     ],
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), 'fd16b4520b5531597ebdff4a8fb8028aaa3d6da103396502488416d45af7f2a3');
+  assert.equal(preflightCommandDigest(), '5101caf7476ec002b09ae2310d0a843ea7ed8ad74501301df51a6d7dffc60ffd');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [
@@ -38,6 +39,7 @@ test('preflight has one frozen portable command order', () => {
     (commands) => { commands[1].args[0] = 'check'; },
     (commands) => commands[2].args.splice(commands[2].args.indexOf('--locked'), 1),
     (commands) => commands[3].args.pop(),
+    (commands) => commands[4].args.pop(),
   ]) {
     const changed = structuredClone(PREFLIGHT_COMMANDS);
     mutate(changed);
@@ -74,6 +76,8 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
 
   assert.match(preflight, /name: preflight/);
   assert.match(preflight, /run: pnpm preflight/);
+  assert.match(rust, /run: cargo test --locked -p zryna-driver --lib/);
+  assert.doesNotMatch(rust, /module_closure_tests::/);
   assert.match(rust, /needs: preflight/);
   assert.match(adapterPlatform, /needs: preflight/);
   assert.match(aggregate, /needs: \[preflight, rust, adapter\]/);
@@ -104,4 +108,8 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
 test('package exposes the exact documented preflight entrypoint', async () => {
   const packageDocument = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(packageDocument.scripts.preflight, 'node scripts/run-preflight.mjs');
+  assert.equal(
+    packageDocument.scripts['m2:quick'],
+    'cargo test --locked -p zryna-driver --lib module_closure && cargo test --locked -p zryna-driver --lib workspace_source::',
+  );
 });

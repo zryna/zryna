@@ -28,6 +28,9 @@ authors = ["Aditya Nandlal"]
 
 [workspace.dependencies]
 anyhow = "1.0.99"
+cap-fs-ext = { version = "=4.0.2", default-features = false, features = ["std"] }
+cap-primitives = "=4.0.2"
+cap-std = { version = "=4.0.2", default-features = false }
 clap = { version = "4.5.47", features = ["derive"] }
 cranelift-codegen = { version = "=0.135.1", default-features = false, features = ["std", "x86"] }
 cranelift-frontend = { version = "=0.135.1", default-features = false, features = ["std"] }

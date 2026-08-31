@@ -33,10 +33,14 @@ profile is intentionally narrow.
 - The isolated `zryna-ir::control_flow_v1` component verifies the frozen raw `ControlFlowV1`
   program model into opaque, source-map-bound views with bounded scalar operations, direct calls,
   explicit control-flow edges, dominance, reducibility, call-graph, ABI, and resource checks.
-- These are internal compiler boundaries only. The driver still selects protocol v2, no
-  compiler-owned module closure or semantic lowering produces `ControlFlowV1`, no backend accepts
-  that profile, and no CLI command or manifest exposes it. The executable M2 profile and every
-  dependent M2 issue therefore remain unsupported.
+- The driver-owned [M2 module closure](M2_MODULE_CLOSURE.md) resolves only verified explicit
+  relative `.zry` imports from retained no-follow workspace capabilities, authenticates exactly
+  one final complete protocol-v3 source map, and seals canonical ordered modules, edges, source
+  hashes, and a cross-platform graph identity under fixed resource limits.
+- These are internal compiler boundaries only. The public driver still selects protocol v2; the
+  module closure is not connected to semantic lowering, no source path produces `ControlFlowV1`,
+  no backend accepts that profile, and no CLI command or manifest exposes it. The executable M2
+  profile and every dependent M2 issue therefore remain unsupported.
 
 ## Runtime and toolchain boundary
 
@@ -60,6 +64,7 @@ feature.
 - [CLI contract](CLI.md)
 - [Compiler architecture](ARCHITECTURE.md)
 - [M1 conformance evidence](M1_CONFORMANCE.md)
+- [M2 deterministic module closure](M2_MODULE_CLOSURE.md)
 - [Roadmap](ROADMAP.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)

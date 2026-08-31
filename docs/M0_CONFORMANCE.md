@@ -19,13 +19,19 @@ Run it from a dependency-installed checkout with Rust 1.97.1, Node.js 22.22.1, a
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm m2:quick
 pnpm preflight
 pnpm m0:check
 ```
 
+Use `pnpm m2:quick` after an M2 closure or workspace-source edit. It runs only the closure and
+retained-filesystem security suites and therefore avoids unrelated runtime/toolchain integration
+failures while preserving native operating-system behavior.
+
 Use `pnpm preflight` during the edit loop. Its fixed order runs portable documentation, protocol,
-adapter, formatting, workspace-check, frontend, and syntax checks and stops immediately at the
-first failure. GitHub runs the same command before starting either full platform matrix, so a
+adapter and formatting checks, then the complete M2 driver library before the broader workspace,
+frontend, and syntax checks. It stops immediately at the first failure. GitHub runs the same
+command before starting either full platform matrix, so a
 preflight failure skips the expensive Linux and Windows jobs. This short gate does not claim full
 conformance: `pnpm m0:check` on both supported operating systems and the final `m0` aggregate are
 still mandatory before merge. Warm-run timings are observational only and are never pass/fail
