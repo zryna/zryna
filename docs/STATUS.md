@@ -57,11 +57,13 @@ profile is intentionally narrow.
 - The internal [M2 verified native MIR profile](M2_NATIVE_MIR.md) lowers sealed `ControlFlowV1`
   one-for-one into deterministic target-specific modules, symbols, typed values, direct calls,
   blocks, parallel edges, and terminators, then independently verifies every raw claim before
-  exposing opaque views and a rebuilt scalar ABI. This is verified-MIR evidence only; no M2 native
-  object, public Boolean wrapper, link, or run path exists yet.
+  exposing opaque views and a rebuilt scalar ABI.
+- The internal [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) consumes only that verified
+  MIR, emits local typed bodies plus scalar-ABI wrappers, and closes the exact ELF section, symbol,
+  and call-graph-bound relocation inventory before constructing an artifact. The driver prepares
+  link/run only through the artifact-bound scalar ABI and retains the private staging identity.
 - These are internal compiler boundaries only. The public driver still selects protocol v2; no
-  CLI command or manifest exposes M2, and M2 native object emission remains unavailable. The
-  executable three-target M2
+  CLI command or manifest exposes M2. The executable three-target M2
   profile and every dependent M2 issue therefore remain unsupported.
 
 ## Runtime and toolchain boundary

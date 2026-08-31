@@ -85,8 +85,9 @@ covered on Linux and Windows before merge.
 
 ## Remaining M2 gates
 
-The [M2 native MIR profile](M2_NATIVE_MIR.md) now independently reseals the same IR internally,
-while its object emission and execution remain gated by Issue #54. Explicit-profile driver/CLI and manifest
-v2, fixed-oracle three-target conformance, and live website status remain gated by Issues #55
+The [M2 native MIR profile](M2_NATIVE_MIR.md) and
+[M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now independently reseal and execute the
+same internal authority. Explicit-profile driver/CLI and manifest v2, fixed-oracle three-target
+conformance, and live website status remain gated by Issues #55
 through #57. Until those gates pass, the public CLI and website continue to describe M1 as the
 executable profile.

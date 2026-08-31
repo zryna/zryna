@@ -70,7 +70,8 @@ runtime capabilities.
 
 Direct M2 core WebAssembly is documented by
 [the separate sealed backend contract](M2_WEBASSEMBLY_BACKEND.md). The
-[M2 native MIR profile](M2_NATIVE_MIR.md) now independently reseals the same IR internally, while
-its object emission and execution remain gated by Issue #54. Explicit-profile driver/CLI and manifest v2,
-three-target conformance, and live website status remain gated by Issues #55 through #57. Until
+[M2 native MIR profile](M2_NATIVE_MIR.md) and
+[M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now independently reseal and execute the
+same internal authority. Explicit-profile driver/CLI and manifest v2, three-target conformance,
+and live website status remain gated by Issues #55 through #57. Until
 those gates pass, the website and public CLI continue to describe M1 as the executable profile.

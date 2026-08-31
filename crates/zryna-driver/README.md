@@ -25,11 +25,13 @@ straight-line and control-flow semantics, but multiple files remain disabled in 
 until the complete M2 backend and profile path is verified.
 
 Internal M2 tests pass the same verifier-sealed `ControlFlowV1` program to the independent
-JavaScript and direct core WebAssembly emitters. WebAssembly execution sends the exact validated
+JavaScript, direct core WebAssembly, and verified native-MIR/object emitters. WebAssembly execution sends the exact validated
 artifact bytes over bounded standard input to an inline pinned Node module, so no staged script or
 module pathname is reopened. Typed `i32` and canonical `bool` lanes are normalized through the
-shared scalar ABI. This internal path does not activate protocol v3, manifest v2, or a public M2
-command.
+shared scalar ABI. Native invocation is prepared only through the object artifact's retained ABI,
+then uses the existing bounded GNU link/run boundary. Staging retains and revalidates its open
+directory identity before writes, process launch, audit, and publication. This internal path does
+not activate protocol v3, manifest v2, or a public M2 command.
 
 `compile_javascript` connects real source to the deterministic JavaScript backend and publishes one
 new `.mjs` artifact through the target-neutral `ArtifactOutputRoot` capability (with a compatible

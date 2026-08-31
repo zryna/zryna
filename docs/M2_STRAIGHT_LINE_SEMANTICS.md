@@ -68,8 +68,10 @@ This straight-line foundation is extended by the internal
 `while` lowering and definite state. The sealed internal
 [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) now accepts the verified program, and the
 [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md) accepts the same authority. The
-[M2 native MIR profile](M2_NATIVE_MIR.md) now independently reseals it into target-specific verified
-views. Public profile and native object/execution gates remain unavailable.
+[M2 native MIR profile](M2_NATIVE_MIR.md) independently reseals it into target-specific verified
+views, and the internal [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) emits, links, and
+executes the audited object. Public profile, manifest v2, three-target conformance, and website
+activation remain unavailable.
 
 ## Stable diagnostics
 

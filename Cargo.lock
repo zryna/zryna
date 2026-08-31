@@ -1154,7 +1154,9 @@ dependencies = [
  "object",
  "sha2",
  "target-lexicon",
+ "zryna-abi",
  "zryna-diagnostics",
+ "zryna-ir",
  "zryna-native-mir",
 ]
 

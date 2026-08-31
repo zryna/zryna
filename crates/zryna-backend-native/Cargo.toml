@@ -13,7 +13,9 @@ cranelift-module.workspace = true
 cranelift-object.workspace = true
 object.workspace = true
 target-lexicon.workspace = true
+zryna-abi = { path = "../zryna-abi" }
 zryna-diagnostics = { path = "../zryna-diagnostics" }
+zryna-ir = { path = "../zryna-ir" }
 zryna-native-mir = { path = "../zryna-native-mir" }
 
 [dev-dependencies]

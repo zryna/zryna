@@ -23,6 +23,9 @@ use zryna_native_mir::{
     VerifiedMirModule,
 };
 
+/// Internal M2 scalar control-flow object emission.
+pub mod control_flow_v1;
+
 /// The only native object target implemented by the M1 scalar profile.
 pub const NATIVE_OBJECT_TARGET: &str = "x86_64-unknown-linux-gnu";
 /// Maximum encoded object bytes accepted by the native object audit.

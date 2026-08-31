@@ -321,8 +321,10 @@ reducibility, return completeness, acyclic calls, source authority, and budgets 
 opaque M2 views. The closure connects only to these internal semantic gates and sealed backend
 entrypoints. The separately versioned [M2 native MIR profile](M2_NATIVE_MIR.md) lowers the same
 sealed whole-program authority into explicit target-specific block, call, symbol, Boolean, and
-terminator claims, then independently verifies them into opaque views. M2 native object emission,
-manifest v2, and the public command remain
+terminator claims, then independently verifies them into opaque views. The separate
+[M2 native object and typed link/run boundary](M2_NATIVE_BACKEND.md) emits local typed bodies and
+public scalar wrappers, audits exact call-graph-bound ELF relocations, and retains artifact-bound
+invocation authority. Manifest v2 and the public command remain
 unavailable, so the complete M2 profile and three-target execution are still unsupported.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported

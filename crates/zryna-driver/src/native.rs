@@ -32,6 +32,7 @@ use object::{BinaryFormat, Endianness, Object, ObjectKind, ObjectSection, Object
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use process_wrap::std::{ChildWrapper, CommandWrap, ProcessGroup};
 
+use zryna_backend_native::control_flow_v1::ValidatedControlFlowNativeObjectArtifact;
 use zryna_backend_native::{
     LinuxX8664ObjectTarget, ValidatedNativeObjectArtifact, select_object_target,
 };
@@ -631,17 +632,20 @@ pub(crate) fn run_prepared_native_invocation(
     ensure_linux_x86_64_host().map_err(native_run_error)?;
     let stage = NativeStage::create(output_root, "run").map_err(native_run_error)?;
     let operation = (|| {
-        NativeStage::write_input(&stage.executable, executable.bytes())?;
-        prepare_executable_mode(&stage.executable)?;
+        stage.write_input(&stage.executable, executable.bytes())?;
+        let executable_path = stage.capability_file_path("invocation.elf")?;
+        let directory_path = stage.capability_directory_path();
+        prepare_executable_mode(&executable_path)?;
+        stage.revalidate()?;
         run_bounded_process(
-            &stage.executable,
+            &executable_path,
             &[],
-            &stage.directory,
+            &directory_path,
             limits.run_timeout(),
             5,
             limits.run_stderr_bytes(),
             ProcessPhase::Run,
-            Some(&stage.directory),
+            Some(&directory_path),
         )
     })();
     let cleanup = stage.cleanup();
@@ -1093,6 +1097,15 @@ struct NativeStage {
     object: PathBuf,
     harness: PathBuf,
     executable: PathBuf,
+    directory_handle: cap_std::fs::Dir,
+    directory_identity: NativeStageIdentity,
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[derive(Clone, Copy)]
+struct NativeStageIdentity {
+    device: u64,
+    inode: u64,
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1110,11 +1123,21 @@ impl NativeStage {
             builder.mode(0o700);
             match builder.create(&directory) {
                 Ok(()) => {
+                    let directory_handle = fs::File::open(&directory).map_err(|_| {
+                        let _ = fs::remove_dir(&directory);
+                        native_stage_error()
+                    })?;
+                    let directory_identity = native_stage_identity(
+                        &directory_handle.metadata().map_err(|_| native_stage_error())?,
+                    )?;
+                    let directory_handle = cap_std::fs::Dir::from_std_file(directory_handle);
                     return Ok(Self {
                         object: directory.join("program.o"),
                         harness: directory.join("invocation.c"),
                         executable: directory.join("invocation.elf"),
                         directory,
+                        directory_handle,
+                        directory_identity,
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
@@ -1134,33 +1157,78 @@ impl NativeStage {
         ))
     }
 
-    fn write_input(path: &Path, bytes: &[u8]) -> Result<(), Diagnostic> {
-        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+    fn revalidate(&self) -> Result<(), Diagnostic> {
+        use cap_std::fs::MetadataExt as _;
+        use std::os::unix::fs::{MetadataExt as _, PermissionsExt};
 
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(path)
-            .map_err(|_| staging_write_error())?;
+        let held = self.directory_handle.dir_metadata().map_err(|_| native_stage_error())?;
+        let current = fs::symlink_metadata(&self.directory).map_err(|_| native_stage_error())?;
+        if !held.is_dir()
+            || !current.is_dir()
+            || current.file_type().is_symlink()
+            || held.dev() != self.directory_identity.device
+            || held.ino() != self.directory_identity.inode
+            || current.dev() != self.directory_identity.device
+            || current.ino() != self.directory_identity.inode
+            || current.permissions().mode() & 0o777 != 0o700
+        {
+            return Err(native_stage_error());
+        }
+        Ok(())
+    }
+
+    fn capability_directory_path(&self) -> PathBuf {
+        use std::os::fd::AsRawFd as _;
+
+        PathBuf::from(format!(
+            "/proc/{}/fd/{}",
+            std::process::id(),
+            self.directory_handle.as_raw_fd()
+        ))
+    }
+
+    fn capability_file_path(&self, name: &str) -> Result<PathBuf, Diagnostic> {
+        if !matches!(name, "program.o" | "invocation.c" | "invocation.elf") {
+            return Err(native_stage_error());
+        }
+        Ok(self.capability_directory_path().join(name))
+    }
+
+    fn write_input(&self, path: &Path, bytes: &[u8]) -> Result<(), Diagnostic> {
+        use cap_std::fs::OpenOptionsExt as _;
+        use std::os::unix::fs::PermissionsExt;
+
+        self.revalidate()?;
+        if path.parent() != Some(self.directory.as_path()) {
+            return Err(staging_write_error());
+        }
+        let name = path.file_name().ok_or_else(staging_write_error)?;
+        let mut options = cap_std::fs::OpenOptions::new();
+        options.write(true).create_new(true).mode(0o600);
+        let mut file =
+            self.directory_handle.open_with(name, &options).map_err(|_| staging_write_error())?;
         file.write_all(bytes)
             .and_then(|()| file.flush())
             .and_then(|()| file.sync_all())
             .map_err(|_| staging_write_error())?;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o600))
-            .map_err(|_| staging_write_error())
+        file.set_permissions(cap_std::fs::Permissions::from_std(fs::Permissions::from_mode(0o600)))
+            .map_err(|_| staging_write_error())?;
+        self.revalidate()
     }
 
     fn cleanup(&self) -> Vec<Diagnostic> {
+        if self.revalidate().is_err() {
+            return vec![stage_cleanup_warning()];
+        }
         let mut failed = false;
-        for path in [&self.executable, &self.harness, &self.object] {
-            match fs::remove_file(path) {
+        for name in ["invocation.elf", "invocation.c", "program.o"] {
+            match self.directory_handle.remove_file(name) {
                 Ok(()) => {}
                 Err(error) if error.kind() == io::ErrorKind::NotFound => {}
                 Err(_) => failed = true,
             }
         }
-        match fs::read_dir(&self.directory) {
+        match self.directory_handle.entries() {
             Ok(mut entries) => {
                 if entries.next().is_some() || fs::remove_dir(&self.directory).is_err() {
                     failed = true;
@@ -1169,17 +1237,37 @@ impl NativeStage {
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(_) => failed = true,
         }
-        if failed {
-            vec![Diagnostic::warning(
-                "ZRYNA-N4016",
-                None,
-                "native operation finished but its private staging directory could not be fully removed",
-                "inspect and remove the exact sibling .zryna-link staging directory after confirming no operation is using it",
-            )]
-        } else {
-            Vec::new()
-        }
+        if failed { vec![stage_cleanup_warning()] } else { Vec::new() }
     }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn native_stage_identity(metadata: &fs::Metadata) -> Result<NativeStageIdentity, Diagnostic> {
+    use std::os::unix::fs::MetadataExt;
+
+    if !metadata.is_dir() {
+        return Err(native_stage_error());
+    }
+    Ok(NativeStageIdentity { device: metadata.dev(), inode: metadata.ino() })
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn native_stage_error() -> Diagnostic {
+    native_error(
+        "ZRYNA-N4015",
+        "native private staging directory identity changed during the operation",
+        "retry without another process modifying the compiler-owned staging directory",
+    )
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn stage_cleanup_warning() -> Diagnostic {
+    Diagnostic::warning(
+        "ZRYNA-N4016",
+        None,
+        "native operation finished but its private staging directory could not be fully removed",
+        "inspect and remove the exact sibling .zryna-link staging directory after confirming no operation is using it",
+    )
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1236,6 +1324,43 @@ pub(crate) fn prepare_native_invocation_from_verified(
     })
 }
 
+/// Links one already-audited internal M2 object for one artifact-bound typed invocation.
+///
+/// This remains an internal compiler boundary until the M2 profile and manifest are activated.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[allow(dead_code, reason = "internal M2 profile is exercised before its public activation")]
+pub(crate) fn prepare_control_flow_native_invocation(
+    object: &ValidatedControlFlowNativeObjectArtifact,
+    invocation: zryna_abi::Invocation,
+    output_root: &ArtifactOutputRoot,
+    toolchain: &LinuxX8664LinkToolchain,
+    limits: NativeProcessLimits,
+) -> Result<PreparedNativeExecutable, Vec<Diagnostic>> {
+    ensure_linux_x86_64_host().map_err(|error| vec![error])?;
+    let invocation =
+        object.prepare_invocation(invocation).map_err(|error| vec![invocation_error(error)])?;
+    let harness = render_invocation_harness(&invocation).map_err(|error| vec![error])?;
+    let export = invocation.export();
+    let expected_symbol = export.native_linux_x86_64_symbol().as_str();
+    let (sealed_bytes, diagnostics) = link_and_audit_native_invocation(
+        object.bytes(),
+        &harness,
+        expected_symbol,
+        output_root,
+        toolchain,
+        limits,
+    )?;
+    if diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-N4016") {
+        return Err(diagnostics);
+    }
+    Ok(PreparedNativeExecutable {
+        bytes: Arc::from(sealed_bytes),
+        result_type: export.result(),
+        expected_symbol: Box::from(expected_symbol),
+        diagnostics,
+    })
+}
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 type PreparedNativeBytes = Result<(Box<[u8]>, Vec<Diagnostic>), Vec<Diagnostic>>;
 
@@ -1250,11 +1375,15 @@ fn link_and_audit_native_invocation(
 ) -> PreparedNativeBytes {
     let stage = NativeStage::create(output_root, "invocation").map_err(|error| vec![error])?;
     let operation = (|| {
-        NativeStage::write_input(&stage.object, object_bytes)?;
-        NativeStage::write_input(&stage.harness, harness_bytes)?;
+        stage.write_input(&stage.object, object_bytes)?;
+        stage.write_input(&stage.harness, harness_bytes)?;
         revalidate_tool(&toolchain.driver, &toolchain.driver_identity)?;
         revalidate_tool(&toolchain.linker, &toolchain.linker_identity)?;
 
+        let capability_directory = stage.capability_directory_path();
+        let capability_executable = stage.capability_file_path("invocation.elf")?;
+        let capability_harness = stage.capability_file_path("invocation.c")?;
+        let capability_object = stage.capability_file_path("program.o")?;
         let arguments = vec![
             OsString::from("-std=c11"),
             OsString::from("-O0"),
@@ -1267,19 +1396,20 @@ fn link_and_audit_native_invocation(
             OsString::from("-Wl,--no-undefined"),
             OsString::from("-Wl,-z,noexecstack,-z,relro,-z,now"),
             OsString::from("-o"),
-            stage.executable.as_os_str().to_owned(),
-            stage.harness.as_os_str().to_owned(),
-            stage.object.as_os_str().to_owned(),
+            capability_executable.as_os_str().to_owned(),
+            capability_harness.as_os_str().to_owned(),
+            capability_object.as_os_str().to_owned(),
         ];
+        stage.revalidate()?;
         let output = run_bounded_process(
             &toolchain.driver,
             &arguments,
-            &stage.directory,
+            &capability_directory,
             limits.link_timeout(),
             limits.tool_output_bytes(),
             limits.tool_output_bytes(),
             ProcessPhase::Link,
-            Some(&stage.directory),
+            Some(&capability_directory),
         )?;
         if !output.status.success() {
             return Err(native_error(
@@ -1295,7 +1425,8 @@ fn link_and_audit_native_invocation(
                 "verify the documented system toolchain and report the smallest reproducible source",
             ));
         }
-        let (_, sealed_bytes) = audit_staged_executable(&stage.executable, expected_symbol)?;
+        stage.revalidate()?;
+        let (_, sealed_bytes) = audit_staged_executable(&capability_executable, expected_symbol)?;
         Ok(sealed_bytes)
     })();
     let cleanup = stage.cleanup();
@@ -1325,6 +1456,22 @@ pub(crate) fn prepare_native_invocation_from_verified(
     )])
 }
 
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+#[allow(dead_code, reason = "internal M2 profile is exercised before its public activation")]
+pub(crate) fn prepare_control_flow_native_invocation(
+    _object: &ValidatedControlFlowNativeObjectArtifact,
+    _invocation: zryna_abi::Invocation,
+    _output_root: &ArtifactOutputRoot,
+    _toolchain: &LinuxX8664LinkToolchain,
+    _limits: NativeProcessLimits,
+) -> Result<PreparedNativeExecutable, Vec<Diagnostic>> {
+    Err(vec![native_error(
+        "ZRYNA-N4002",
+        "native linking and invocation require a Linux x86-64 host",
+        "run this operation on Linux x86-64; other native hosts are not implemented",
+    )])
+}
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn publish_prepared_native_invocation(
     prepared: &PreparedNativeExecutable,
@@ -1339,14 +1486,17 @@ fn publish_prepared_native_invocation(
 
     let stage = NativeStage::create(output_root, artifact_stem).map_err(|error| vec![error])?;
     let operation = (|| {
-        NativeStage::write_input(&stage.executable, prepared.bytes())?;
+        stage.write_input(&stage.executable, prepared.bytes())?;
+        let capability_executable = stage.capability_file_path("invocation.elf")?;
+        stage.revalidate()?;
         let (executable_identity, copied_bytes) =
-            audit_staged_executable(&stage.executable, &prepared.expected_symbol)?;
+            audit_staged_executable(&capability_executable, &prepared.expected_symbol)?;
         if copied_bytes.as_ref() != prepared.bytes() {
             return Err(executable_audit_error());
         }
-        prepare_executable_mode(&stage.executable)?;
-        let current_identity = regular_file_identity(&stage.executable).map_err(|()| {
+        prepare_executable_mode(&capability_executable)?;
+        stage.revalidate()?;
+        let current_identity = regular_file_identity(&capability_executable).map_err(|()| {
             native_error(
                 "ZRYNA-N4018",
                 "the audited native executable changed before publication",
@@ -1362,7 +1512,7 @@ fn publish_prepared_native_invocation(
         }
         output_root.revalidate()?;
         ensure_destination_absent(&destination, artifact_stem)?;
-        match fs::hard_link(&stage.executable, &destination) {
+        match fs::hard_link(&capability_executable, &destination) {
             Ok(()) => Ok(destination),
             Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
                 Err(destination_exists_error(
@@ -1726,6 +1876,205 @@ fn process_cleanup_error() -> Diagnostic {
 mod link_run_tests {
     use super::*;
 
+    fn control_flow_value(
+        id: u32,
+        ty: zryna_ir::Type,
+    ) -> zryna_native_mir::control_flow_v1::raw::ValueDefinition {
+        zryna_native_mir::control_flow_v1::raw::ValueDefinition {
+            id: zryna_native_mir::control_flow_v1::raw::ValueId(id),
+            ty,
+        }
+    }
+
+    #[allow(
+        clippy::too_many_lines,
+        reason = "one link-run fixture covers calls, bool, branches, and loops"
+    )]
+    fn control_flow_call_program() -> zryna_native_mir::control_flow_v1::VerifiedProgram {
+        use zryna_ir::Type;
+        use zryna_native_mir::control_flow_v1::{self, raw};
+
+        let helper = raw::Function {
+            id: raw::FunctionId { module: raw::ModuleId(1), declaration: 0 },
+            internal_symbol: "zryna_m2_i_m1_f0".to_owned(),
+            entry_export: None,
+            convention: raw::CallingConvention::ZRYNA_INTERNAL_CONTROL_FLOW_V1,
+            parameters: vec![control_flow_value(0, Type::I32)],
+            result: Type::I32,
+            blocks: vec![raw::Block {
+                id: raw::BlockId(0),
+                parameters: Vec::new(),
+                instructions: vec![
+                    raw::Instruction {
+                        result: control_flow_value(1, Type::I32),
+                        kind: raw::InstructionKind::I32Literal(1),
+                    },
+                    raw::Instruction {
+                        result: control_flow_value(2, Type::I32),
+                        kind: raw::InstructionKind::I32Add {
+                            lhs: raw::ValueId(0),
+                            rhs: raw::ValueId(1),
+                        },
+                    },
+                ],
+                terminators: vec![raw::Terminator::Return(raw::ValueId(2))],
+            }],
+        };
+        let exported = raw::Function {
+            id: raw::FunctionId { module: raw::ModuleId(0), declaration: 0 },
+            internal_symbol: "zryna_m2_i_m0_f0".to_owned(),
+            entry_export: Some("run".to_owned()),
+            convention: raw::CallingConvention::ZRYNA_INTERNAL_CONTROL_FLOW_V1,
+            parameters: vec![control_flow_value(0, Type::I32)],
+            result: Type::I32,
+            blocks: vec![raw::Block {
+                id: raw::BlockId(0),
+                parameters: Vec::new(),
+                instructions: vec![raw::Instruction {
+                    result: control_flow_value(1, Type::I32),
+                    kind: raw::InstructionKind::DirectCall {
+                        callee: raw::FunctionId { module: raw::ModuleId(1), declaration: 0 },
+                        arguments: vec![raw::ValueId(0)],
+                    },
+                }],
+                terminators: vec![raw::Terminator::Return(raw::ValueId(1))],
+            }],
+        };
+        let truth = raw::Function {
+            id: raw::FunctionId { module: raw::ModuleId(0), declaration: 1 },
+            internal_symbol: "zryna_m2_i_m0_f1".to_owned(),
+            entry_export: Some("truth".to_owned()),
+            convention: raw::CallingConvention::ZRYNA_INTERNAL_CONTROL_FLOW_V1,
+            parameters: vec![control_flow_value(0, Type::Bool)],
+            result: Type::Bool,
+            blocks: vec![raw::Block {
+                id: raw::BlockId(0),
+                parameters: Vec::new(),
+                instructions: Vec::new(),
+                terminators: vec![raw::Terminator::Return(raw::ValueId(0))],
+            }],
+        };
+        let choose = raw::Function {
+            id: raw::FunctionId { module: raw::ModuleId(0), declaration: 2 },
+            internal_symbol: "zryna_m2_i_m0_f2".to_owned(),
+            entry_export: Some("choose".to_owned()),
+            convention: raw::CallingConvention::ZRYNA_INTERNAL_CONTROL_FLOW_V1,
+            parameters: vec![
+                control_flow_value(0, Type::Bool),
+                control_flow_value(1, Type::I32),
+                control_flow_value(2, Type::I32),
+            ],
+            result: Type::I32,
+            blocks: vec![
+                raw::Block {
+                    id: raw::BlockId(0),
+                    parameters: Vec::new(),
+                    instructions: Vec::new(),
+                    terminators: vec![raw::Terminator::Branch {
+                        condition: raw::ValueId(0),
+                        true_target: raw::BlockId(1),
+                        true_arguments: vec![raw::ValueId(1)],
+                        false_target: raw::BlockId(2),
+                        false_arguments: vec![raw::ValueId(2)],
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(1),
+                    parameters: vec![control_flow_value(3, Type::I32)],
+                    instructions: Vec::new(),
+                    terminators: vec![raw::Terminator::Return(raw::ValueId(3))],
+                },
+                raw::Block {
+                    id: raw::BlockId(2),
+                    parameters: vec![control_flow_value(4, Type::I32)],
+                    instructions: Vec::new(),
+                    terminators: vec![raw::Terminator::Return(raw::ValueId(4))],
+                },
+            ],
+        };
+        let countdown = raw::Function {
+            id: raw::FunctionId { module: raw::ModuleId(0), declaration: 3 },
+            internal_symbol: "zryna_m2_i_m0_f3".to_owned(),
+            entry_export: Some("countdown".to_owned()),
+            convention: raw::CallingConvention::ZRYNA_INTERNAL_CONTROL_FLOW_V1,
+            parameters: vec![control_flow_value(0, Type::I32)],
+            result: Type::I32,
+            blocks: vec![
+                raw::Block {
+                    id: raw::BlockId(0),
+                    parameters: Vec::new(),
+                    instructions: Vec::new(),
+                    terminators: vec![raw::Terminator::Jump {
+                        target: raw::BlockId(1),
+                        arguments: vec![raw::ValueId(0)],
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(1),
+                    parameters: vec![control_flow_value(1, Type::I32)],
+                    instructions: vec![
+                        raw::Instruction {
+                            result: control_flow_value(2, Type::I32),
+                            kind: raw::InstructionKind::I32Literal(0),
+                        },
+                        raw::Instruction {
+                            result: control_flow_value(3, Type::Bool),
+                            kind: raw::InstructionKind::I32GtS {
+                                lhs: raw::ValueId(1),
+                                rhs: raw::ValueId(2),
+                            },
+                        },
+                    ],
+                    terminators: vec![raw::Terminator::Branch {
+                        condition: raw::ValueId(3),
+                        true_target: raw::BlockId(2),
+                        true_arguments: vec![raw::ValueId(1)],
+                        false_target: raw::BlockId(3),
+                        false_arguments: vec![raw::ValueId(1)],
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(2),
+                    parameters: vec![control_flow_value(4, Type::I32)],
+                    instructions: vec![
+                        raw::Instruction {
+                            result: control_flow_value(5, Type::I32),
+                            kind: raw::InstructionKind::I32Literal(1),
+                        },
+                        raw::Instruction {
+                            result: control_flow_value(6, Type::I32),
+                            kind: raw::InstructionKind::I32Sub {
+                                lhs: raw::ValueId(4),
+                                rhs: raw::ValueId(5),
+                            },
+                        },
+                    ],
+                    terminators: vec![raw::Terminator::Jump {
+                        target: raw::BlockId(1),
+                        arguments: vec![raw::ValueId(6)],
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(3),
+                    parameters: vec![control_flow_value(7, Type::I32)],
+                    instructions: Vec::new(),
+                    terminators: vec![raw::Terminator::Return(raw::ValueId(7))],
+                },
+            ],
+        };
+        control_flow_v1::verify(raw::Program {
+            entry_module: raw::ModuleId(0),
+            modules: vec![
+                raw::Module {
+                    id: raw::ModuleId(0),
+                    functions: vec![exported, truth, choose, countdown],
+                },
+                raw::Module { id: raw::ModuleId(1), functions: vec![helper] },
+            ],
+        })
+        .expect("M2 driver fixture must verify")
+    }
+
     fn prepared_invocation(
         ty: zryna_abi::raw::Type,
         value: zryna_abi::ScalarValue,
@@ -1833,6 +2182,142 @@ mod link_run_tests {
                 &parse_major_version(first.gcc_version()).expect("validated GCC version")
             )
         );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn control_flow_native_object_links_and_runs_typed_calls_branches_and_loops() {
+        let program = control_flow_call_program();
+        let target =
+            select_object_target(zryna_backend_native::NATIVE_OBJECT_TARGET).expect("M2 target");
+        let object = zryna_backend_native::control_flow_v1::emit_object(&program, target)
+            .expect("audited M2 object");
+        let toolchain = discover_linux_native_toolchain(NativeProcessLimits::default())
+            .expect("documented toolchain");
+        let workspace = std::env::temp_dir().join(format!(
+            "zryna-m2-native-run-{}-{}",
+            std::process::id(),
+            NEXT_NATIVE_STAGE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(workspace.join(".zryna/out")).expect("M2 output root");
+        let output_root =
+            ArtifactOutputRoot::for_workspace(&workspace).expect("M2 output capability");
+        let deterministic_invocation =
+            || zryna_abi::Invocation::new("run".to_owned(), vec![zryna_abi::ScalarValue::I32(41)]);
+        let first_executable = prepare_control_flow_native_invocation(
+            &object,
+            deterministic_invocation(),
+            &output_root,
+            &toolchain,
+            NativeProcessLimits::default(),
+        )
+        .expect("first deterministic M2 executable");
+        let repeated_executable = prepare_control_flow_native_invocation(
+            &object,
+            deterministic_invocation(),
+            &output_root,
+            &toolchain,
+            NativeProcessLimits::default(),
+        )
+        .expect("repeated deterministic M2 executable");
+        assert_eq!(first_executable.bytes(), repeated_executable.bytes());
+        let cases = [
+            ("run", vec![zryna_abi::ScalarValue::I32(41)], zryna_abi::ScalarValue::I32(42)),
+            (
+                "run",
+                vec![zryna_abi::ScalarValue::I32(i32::MAX)],
+                zryna_abi::ScalarValue::I32(i32::MIN),
+            ),
+            ("truth", vec![zryna_abi::ScalarValue::Bool(true)], zryna_abi::ScalarValue::Bool(true)),
+            (
+                "truth",
+                vec![zryna_abi::ScalarValue::Bool(false)],
+                zryna_abi::ScalarValue::Bool(false),
+            ),
+            (
+                "choose",
+                vec![
+                    zryna_abi::ScalarValue::Bool(true),
+                    zryna_abi::ScalarValue::I32(7),
+                    zryna_abi::ScalarValue::I32(9),
+                ],
+                zryna_abi::ScalarValue::I32(7),
+            ),
+            (
+                "choose",
+                vec![
+                    zryna_abi::ScalarValue::Bool(false),
+                    zryna_abi::ScalarValue::I32(7),
+                    zryna_abi::ScalarValue::I32(9),
+                ],
+                zryna_abi::ScalarValue::I32(9),
+            ),
+            ("countdown", vec![zryna_abi::ScalarValue::I32(4)], zryna_abi::ScalarValue::I32(0)),
+        ];
+        for (export, arguments, expected) in cases {
+            let prepared = prepare_control_flow_native_invocation(
+                &object,
+                zryna_abi::Invocation::new(export.to_owned(), arguments),
+                &output_root,
+                &toolchain,
+                NativeProcessLimits::default(),
+            )
+            .expect("M2 invocation must link");
+            let outcome = run_prepared_native_invocation(
+                &prepared,
+                &output_root,
+                NativeProcessLimits::default(),
+            )
+            .expect("M2 invocation must run");
+            assert_eq!(outcome, zryna_abi::ScalarOutcome::Returned { value: expected });
+        }
+        let invalid = prepare_control_flow_native_invocation(
+            &object,
+            zryna_abi::Invocation::new("truth".to_owned(), vec![zryna_abi::ScalarValue::I32(2)]),
+            &output_root,
+            &toolchain,
+            NativeProcessLimits::default(),
+        )
+        .expect_err("wrong typed Boolean carrier must fail before linking");
+        assert_eq!(invalid[0].code(), "ZRYNA-B2103");
+        assert_eq!(fs::read_dir(output_root.path()).expect("clean output root").count(), 0);
+        fs::remove_dir_all(workspace).expect("M2 workspace cleanup");
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn retained_stage_identity_rejects_directory_replacement() {
+        use std::os::unix::fs::DirBuilderExt;
+
+        let workspace = std::env::temp_dir().join(format!(
+            "zryna-native-stage-identity-{}-{}",
+            std::process::id(),
+            NEXT_NATIVE_STAGE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(workspace.join(".zryna/out")).expect("stage output root");
+        let output_root =
+            ArtifactOutputRoot::for_workspace(&workspace).expect("stage output capability");
+        let stage = NativeStage::create(&output_root, "identity").expect("private stage");
+        stage.write_input(&stage.object, b"retained object").expect("handle-relative input");
+        let retained_object = stage.capability_file_path("program.o").expect("capability path");
+        let moved = output_root.path().join("retained-original");
+        fs::rename(&stage.directory, &moved).expect("move original stage");
+        let mut replacement = fs::DirBuilder::new();
+        replacement.mode(0o700);
+        replacement.create(&stage.directory).expect("replacement stage");
+
+        assert_eq!(stage.revalidate().expect_err("replacement must fail").code(), "ZRYNA-N4015");
+        let cleanup = stage.cleanup();
+        assert_eq!(cleanup.len(), 1);
+        assert_eq!(cleanup[0].code(), "ZRYNA-N4016");
+        assert!(stage.directory.is_dir(), "replacement must not be removed");
+        assert_eq!(fs::read(&retained_object).expect("retained object bytes"), b"retained object");
+        assert!(!stage.directory.join("program.o").exists());
+
+        fs::remove_dir(&stage.directory).expect("replacement cleanup");
+        fs::remove_file(moved.join("program.o")).expect("retained input cleanup");
+        fs::remove_dir(&moved).expect("original cleanup");
+        fs::remove_dir_all(workspace).expect("stage workspace cleanup");
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -2049,11 +2534,26 @@ mod link_run_tests {
             .code(),
             "ZRYNA-N4021"
         );
+
+        assert_eq!(
+            interpret_native_invocation_output(
+                &BoundedProcessOutput {
+                    status: ExitStatus::from_raw(libc::SIGKILL),
+                    stdout: Vec::new(),
+                    stderr: Vec::new(),
+                },
+                zryna_abi::ScalarType::I32,
+            )
+            .expect_err("signal termination must fail")
+            .diagnostic()
+            .code(),
+            "ZRYNA-N4021"
+        );
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
     #[test]
-    fn unsupported_host_rejects_before_tool_discovery() {
+    fn control_flow_native_unsupported_host_rejects_before_tool_discovery() {
         assert_eq!(
             discover_linux_native_toolchain(NativeProcessLimits::default())
                 .expect_err("non-Linux host must fail")
@@ -2067,6 +2567,28 @@ mod link_run_tests {
             NEXT_NATIVE_STAGE.fetch_add(1, Ordering::Relaxed)
         ));
         fs::create_dir_all(workspace.join(".zryna/out")).expect("unsupported run output root");
+        let output_root =
+            ArtifactOutputRoot::for_workspace(&workspace).expect("unsupported output capability");
+        let program = control_flow_call_program();
+        let target =
+            select_object_target(zryna_backend_native::NATIVE_OBJECT_TARGET).expect("M2 target");
+        let object = zryna_backend_native::control_flow_v1::emit_object(&program, target)
+            .expect("portable M2 object emission");
+        let unavailable_toolchain = LinuxX8664LinkToolchain {
+            driver: PathBuf::from("unused"),
+            gcc_version: Box::from("unused"),
+            linker_version: Box::from("unused"),
+        };
+        let unsupported = prepare_control_flow_native_invocation(
+            &object,
+            zryna_abi::Invocation::new("run".to_owned(), vec![zryna_abi::ScalarValue::I32(41)]),
+            &output_root,
+            &unavailable_toolchain,
+            NativeProcessLimits::default(),
+        )
+        .expect_err("M2 preparation must fail before staging on unsupported hosts");
+        assert_eq!(unsupported[0].code(), "ZRYNA-N4002");
+        assert_eq!(fs::read_dir(output_root.path()).expect("clean output root").count(), 0);
         let artifact = PublishedNativeExecutableArtifact {
             path: workspace.join(".zryna/out/probe.elf"),
             diagnostics: Vec::new(),

@@ -77,7 +77,7 @@
       "id": "zryna-backend-native",
       "root": "crates/zryna-backend-native",
       "kind": "backend",
-      "dependencies": ["zryna-diagnostics", "zryna-native-mir"],
+      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir", "zryna-native-mir"],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
