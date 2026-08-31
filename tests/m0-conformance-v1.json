@@ -295,6 +295,34 @@
       "phase": "syntax",
       "mode": "pass",
       "expected": "authoritative-verifier-accepted"
+    },
+    {
+      "id": "m2-straight-line-request",
+      "path": "tests/fixtures/m2-straight-line-request.json",
+      "phase": "adapter",
+      "mode": "pass",
+      "expected": "byte-stable-response"
+    },
+    {
+      "id": "m2-straight-line-result",
+      "path": "tests/fixtures/m2-straight-line-result.json",
+      "phase": "semantics",
+      "mode": "pass",
+      "expected": "verifier-sealed-ir"
+    },
+    {
+      "id": "m2-semantic-negative-request",
+      "path": "tests/fixtures/m2-semantic-negative-request.json",
+      "phase": "adapter",
+      "mode": "pass",
+      "expected": "byte-stable-response"
+    },
+    {
+      "id": "m2-semantic-negative-result",
+      "path": "tests/fixtures/m2-semantic-negative-result.json",
+      "phase": "semantics",
+      "mode": "fail",
+      "expected": "deterministic-diagnostics"
     }
   ]
 }

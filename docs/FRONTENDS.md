@@ -131,4 +131,6 @@ final complete snapshot; only that final-map-bound snapshot can be returned by t
 Exact path, graph, fixed-point, race, cycle, identity, and resource rules are documented in
 [M2 deterministic module closure](M2_MODULE_CLOSURE.md) and specified normatively in
 [scalar control flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md). The public driver
-and CLI do not select this internal boundary, and it does not yet enter M2 semantics.
+and CLI do not select protocol v3 or an M2 profile. The final authenticated closure can enter the
+separately gated [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md), but no M2
+backend is enabled.

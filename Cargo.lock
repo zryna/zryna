@@ -1245,6 +1245,7 @@ dependencies = [
 name = "zryna-semantics"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "zryna-abi",
  "zryna-diagnostics",
  "zryna-ir",

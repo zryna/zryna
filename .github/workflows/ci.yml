@@ -58,6 +58,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Fetch locked Rust dependencies
         run: cargo fetch --locked
+      - name: Verify M2 semantics
+        run: cargo test --locked -p zryna-semantics --lib control_flow_v1
       - name: Verify M2 driver security
         run: cargo test --locked -p zryna-driver --lib
       - name: Run Windows CLI smoke

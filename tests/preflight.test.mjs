@@ -24,14 +24,14 @@ test('preflight has one frozen portable command order', () => {
     [
       ['portable-contract-tests', 'node'],
       ['rust-format', 'cargo'],
-      ['m2-driver-security-tests', 'cargo'],
+      ['m2-semantic-driver-tests', 'cargo'],
       ['rust-workspace-check', 'cargo'],
       ['frontend-syntax-tests', 'cargo'],
     ],
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), '5101caf7476ec002b09ae2310d0a843ea7ed8ad74501301df51a6d7dffc60ffd');
+  assert.equal(preflightCommandDigest(), '78a12d370431b23895ec74392d932ef282089b40fba86620f12eafaff28689af');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [
@@ -77,6 +77,10 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
   assert.match(preflight, /name: preflight/);
   assert.match(preflight, /run: pnpm preflight/);
   assert.match(rust, /name: Fetch locked Rust dependencies\s+run: cargo fetch --locked/);
+  assert.match(
+    rust,
+    /name: Verify M2 semantics\s+run: cargo test --locked -p zryna-semantics --lib control_flow_v1/,
+  );
   assert.match(rust, /run: cargo test --locked -p zryna-driver --lib/);
   assert.doesNotMatch(rust, /module_closure_tests::/);
   assert.match(rust, /needs: preflight/);
@@ -111,6 +115,6 @@ test('package exposes the exact documented preflight entrypoint', async () => {
   assert.equal(packageDocument.scripts.preflight, 'node scripts/run-preflight.mjs');
   assert.equal(
     packageDocument.scripts['m2:quick'],
-    'cargo test --locked -p zryna-driver --lib module_closure && cargo test --locked -p zryna-driver --lib workspace_source::',
+    'cargo test --locked -p zryna-semantics --lib control_flow_v1 && cargo test --locked -p zryna-driver --lib module_closure && cargo test --locked -p zryna-driver --lib workspace_source::',
   );
 });

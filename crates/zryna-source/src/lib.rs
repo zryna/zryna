@@ -86,6 +86,66 @@ impl NormalizedSourcePath {
     }
 }
 
+/// Resolves one explicit relative lowercase `.zry` import without consulting a host filesystem.
+///
+/// This is the shared portable grammar used by module discovery and semantic revalidation. It
+/// deliberately performs only lexical path resolution; callers retain authority for filesystem
+/// access, graph closure, and source-map membership.
+///
+/// # Errors
+///
+/// Rejects non-relative, non-ASCII, host-specific, escaping, implicit-extension, URL-like, query,
+/// fragment, empty-component, and otherwise non-portable specifiers.
+pub fn resolve_explicit_zry_import(
+    importer: &NormalizedSourcePath,
+    specifier: &str,
+) -> Result<NormalizedSourcePath, InvalidModuleSpecifier> {
+    if !(specifier.starts_with("./") || specifier.starts_with("../"))
+        || !has_exact_zry_extension(specifier)
+        || !specifier.is_ascii()
+        || specifier.contains(['\\', '?', '#', '\0'])
+        || specifier.contains("://")
+    {
+        return Err(InvalidModuleSpecifier);
+    }
+    let mut components = importer.as_str().split('/').collect::<Vec<_>>();
+    let _ = components.pop();
+    for component in specifier.split('/') {
+        match component {
+            "." => {}
+            ".." => {
+                if components.pop().is_none() {
+                    return Err(InvalidModuleSpecifier);
+                }
+            }
+            "" => return Err(InvalidModuleSpecifier),
+            value => components.push(value),
+        }
+    }
+    let resolved = components.join("/");
+    if !has_exact_zry_extension(&resolved) {
+        return Err(InvalidModuleSpecifier);
+    }
+    NormalizedSourcePath::new(resolved).map_err(|_| InvalidModuleSpecifier)
+}
+
+#[allow(clippy::case_sensitive_file_extension_comparisons)]
+fn has_exact_zry_extension(value: &str) -> bool {
+    value.ends_with(".zry")
+}
+
+/// A module specifier failed the frozen portable explicit-relative grammar.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct InvalidModuleSpecifier;
+
+impl fmt::Display for InvalidModuleSpecifier {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("invalid explicit relative .zry module specifier")
+    }
+}
+
+impl std::error::Error for InvalidModuleSpecifier {}
+
 impl<'de> Deserialize<'de> for NormalizedSourcePath {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -862,5 +922,43 @@ mod tests {
             SourceMap::build(over_total).expect_err("aggregate overflow must fail").code(),
             "ZRYNA-S1005"
         );
+    }
+
+    #[test]
+    fn explicit_zry_import_resolution_is_portable_and_cannot_escape() {
+        let importer = NormalizedSourcePath::new("src/nested/main.zry")
+            .expect("fixture importer must normalize");
+        for (specifier, expected) in [
+            ("./dep.zry", "src/nested/dep.zry"),
+            ("./child/../dep.zry", "src/nested/dep.zry"),
+            ("../shared.zry", "src/shared.zry"),
+            ("../../root.zry", "root.zry"),
+        ] {
+            assert_eq!(
+                resolve_explicit_zry_import(&importer, specifier)
+                    .expect("portable specifier must resolve")
+                    .as_str(),
+                expected
+            );
+        }
+        for rejected in [
+            "",
+            "dep.zry",
+            "/dep.zry",
+            "C:/dep.zry",
+            "//server/dep.zry",
+            "https://example.invalid/dep.zry",
+            "./dep",
+            "./dep.ZRY",
+            "./dep.zry?query",
+            "./dep.zry#fragment",
+            ".\\dep.zry",
+            "../../../escape.zry",
+        ] {
+            assert!(
+                resolve_explicit_zry_import(&importer, rejected).is_err(),
+                "specifier must be rejected: {rejected}"
+            );
+        }
     }
 }

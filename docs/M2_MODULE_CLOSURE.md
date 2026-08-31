@@ -9,8 +9,10 @@ protocol-v3 provider receives only normalized portable paths and immutable sourc
 receives a host path, directory handle, workspace capability, or authority to choose a resolved
 dependency.
 
-This boundary does not enable the `control-flow-v1` profile. Semantic lowering, all three M2
-backends, manifest v2, and the public multi-file command remain gated by later M2 issues.
+This boundary does not enable the `control-flow-v1` profile. Its final authenticated snapshot can
+enter the internal [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md), while
+control-flow lowering, all three M2 backends, manifest v2, and the public multi-file command remain
+gated by later M2 issues.
 
 ## Fixed-point algorithm
 

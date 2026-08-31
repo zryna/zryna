@@ -12,9 +12,10 @@ FrontendProvider
     ├── TypeScript 7 IPC adapter (planned after a stable upstream API)
     └── native Zryna frontend (planned)
     ↓
-RawProjectSyntaxSnapshot v1 (declarations) or v2 (executable syntax)
+RawProjectSyntaxSnapshot v1 (declarations), v2 (M1), or v3 (M2 syntax)
     ↓ exact file-set, path, budget, graph, and span verification
-ProjectSyntaxSnapshot v1 or zryna_syntax::v2::ProjectSyntaxSnapshot
+ProjectSyntaxSnapshot v1, zryna_syntax::v2::ProjectSyntaxSnapshot,
+or zryna_syntax::v3::ProjectSyntaxSnapshot
     ↓
 Zryna name resolution and strict semantic checking
     ↓
@@ -38,10 +39,12 @@ semantic lowering never depends on a replaceable provider.
 1. `zryna-architecture` proves that the repository can be inspected completely and matches its declared graph.
 2. A frontend provider reads compatible syntax and produces an untrusted, provider-neutral raw
    snapshot.
-3. `zryna-syntax` verifies protocol-v2 file identity, budgets, source spans, lexical order, and the
-   canonical flat expression graph before constructing opaque executable syntax.
-4. Zryna semantics resolves parameter names, rejects unsupported or dynamic constructs, assigns
-   exact types, and lowers the accepted source subset to raw Universal IR.
+3. `zryna-syntax` verifies protocol-v2 or protocol-v3 file identity, budgets, source spans,
+   lexical order, and canonical expression/block graphs before constructing opaque executable
+   syntax.
+4. Zryna semantics resolves names, modules, scopes, and exact types. The protocol-v2/M1 path
+   returns raw legacy IR to its existing verifier call site; the isolated protocol-v3/M2 path keeps
+   raw `ControlFlowV1` internal and returns only mandatory-verifier-sealed IR.
 5. `zryna-abi` verifies scalar signatures, logical exports, target mappings, and typed host values.
 6. `zryna-ir` represents exact operations such as `I32Add`; generic target-dependent arithmetic is forbidden.
 7. The IR verifier is the only constructor of a backend-accepted verified program and embeds the
@@ -301,13 +304,15 @@ Protocol v3 carries source-faithful import, local, call, branch, and loop syntax
 provider name, type, module, filesystem, or IR authority. The driver now exposes an internal
 [bounded deterministic module closure](M2_MODULE_CLOSURE.md) that safely resolves an explicit
 relative `.zry` graph to fixed point through retained no-follow capabilities, authenticates one
-final source map, and seals its canonical graph identity. Zryna semantics will later lower that
-final source-map-bound snapshot to SSA-like raw blocks with typed values, direct calls, block
-arguments, and explicit return/jump/conditional terminators. The isolated `zryna-ir::control_flow_v1`
+final source map, and seals its canonical graph identity. The internal
+[straight-line M2 semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) now revalidates the final graph
+and lowers exact types, locals, lexical scopes, arithmetic, comparisons, assignment, and acyclic
+direct calls to one SSA-like entry block per function. The isolated `zryna-ir::control_flow_v1`
 component now implements the mandatory verifier for types, dominance, edges, reachability,
 reducibility, return completeness, acyclic calls, source authority, and budgets before constructing
-opaque M2 views. Neither internal boundary is connected to source semantics, any backend, or a
-public command, so the complete M2 profile remains non-executable.
+opaque M2 views. The closure connects only to this internal straight-line semantic gate; `if` and
+`while`, every M2 backend, and the public command remain unavailable, so the complete M2 profile
+is non-executable.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
 functions receive sealed target-internal identities. JavaScript, core WebAssembly, and native MIR
