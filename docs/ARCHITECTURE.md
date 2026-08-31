@@ -283,7 +283,8 @@ manifest. Manifest v2 additionally authenticates the canonical entrypoint, path-
 hashes, named-binding module edges, and module-graph digest sealed by discovery. The
 [M1 conformance suite](M1_CONFORMANCE.md) compares the public M1 `all` observations with
 fixed expected values and the committed manifest; the runtime command does not define a second
-comparison semantics. Issue #56 still owns the independent fixed-oracle aggregate M2 comparison.
+comparison semantics. The [M2 conformance gate](M2_CONFORMANCE.md) independently performs the
+fixed-oracle aggregate M2 comparison without adding a runtime semantics authority.
 See the [CLI reference](CLI.md) and [manifest-v2 contract](M2_MANIFEST_V2.md) for the exact command, layout, manifest,
 exit-status, runtime, and platform contracts.
 
@@ -332,9 +333,9 @@ terminator claims, then independently verifies them into opaque views. The separ
 [M2 native object and typed link/run boundary](M2_NATIVE_BACKEND.md) emits local typed bodies and
 public scalar wrappers, audits exact call-graph-bound ELF relocations, and retains artifact-bound
 invocation authority. The driver composes these components through one explicit multi-file request
-and one [manifest-v2 transaction](M2_MANIFEST_V2.md). This makes individual public M2 target
-requests available without claiming the independent fixed-oracle three-target conformance owned by
-Issue #56.
+and one [manifest-v2 transaction](M2_MANIFEST_V2.md). Individual M2 target requests and the
+independent [fixed-oracle three-target conformance gate](M2_CONFORMANCE.md) are implemented;
+Issue #57 still owns authenticated public documentation, website, and live-deployment closure.
 
 Entry-module exports alone retain scalar ABI v1 public mappings. Dependency exports and unexported
 functions receive sealed target-internal identities. JavaScript and core WebAssembly now consume

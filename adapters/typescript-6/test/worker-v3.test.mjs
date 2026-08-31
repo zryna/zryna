@@ -9,12 +9,24 @@ import { fileURLToPath } from 'node:url';
 import ts from '@typescript/typescript6';
 import Ajv2020 from 'ajv/dist/2020.js';
 
+import { PROTOCOL_V3_LIMITS } from '../src/limits-v3.mjs';
+
 const adapterRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const schema = JSON.parse(
   await readFile(new URL('../../../schemas/zryna-syntax-v3.schema.json', import.meta.url)),
 );
 const validateSnapshot = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
 const CHILD_TIMEOUT_MS = 30_000;
+
+test('production protocol limits match the historical M2 contract', async () => {
+  const planning = JSON.parse(
+    await readFile(new URL('../../../tests/m2-contract-v1.json', import.meta.url)),
+  );
+  assert.deepEqual(PROTOCOL_V3_LIMITS, {
+    requestBytes: planning.limits.protocolRequestBytes,
+    responseBytes: planning.limits.protocolResponseBytes,
+  });
+});
 
 async function exchangeRaw(input, options = {}) {
   const child = spawn(process.execPath, ['src/worker-v3.mjs'], {

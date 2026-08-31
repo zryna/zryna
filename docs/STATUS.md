@@ -67,8 +67,11 @@ profile is intentionally narrow.
   same opaque verified authority to selected targets, and commits one create-only atomic bundle
   with deterministic [`zryna-manifest-v2.json`](M2_MANIFEST_V2.md). Omitting `--profile` preserves
   protocol v2, `I32V1`, manifest v1, and every M1 command and bundle contract.
-- Issue #55 makes individual explicit-profile M2 build/run requests available; it does not claim
-  the fixed-oracle three-target M2 conformance or aggregate required gate owned by Issue #56.
+- Issue #55 makes individual explicit-profile M2 build/run requests available. Issue #56 adds the
+  independent fixed-oracle three-target M2 conformance registry and aggregate required gate.
+- Compiler-owned [M2 conformance evidence](M2_CONFORMANCE.md) is ready for authenticated
+  documentation and website closure by Issue #57. The `next` public status remains M1 until that
+  separate closure verifies the exported bundle, deployment, and live provenance.
 
 ## Runtime and toolchain boundary
 
@@ -83,11 +86,12 @@ profile is intentionally narrow.
 ## Deliberately unsupported
 
 Public source-level Boolean execution requires explicit `control-flow-v1`; it remains rejected by
-the default M1 path. The current public executable slice does not yet claim independently checked
-three-target equivalence for source control flow and modules,
+the default M1 path. The compiler-owned M2 gate checks three-target equivalence for the fixed
+source control-flow and module oracle, but the public status remains M1 until Issue #57
+authenticates the exported documentation, website, deployment, and live provenance. The current
+public executable slice does not claim
 heap values, browser execution, WASI, Windows or macOS native execution, static native executables,
-package resolution, watch mode, incremental builds, production readiness, or an executable M2
-conformance gate.
+package resolution, watch mode, incremental builds, or production readiness.
 
 ## Evidence and reference
 
@@ -95,6 +99,7 @@ conformance gate.
 - [Compiler architecture](ARCHITECTURE.md)
 - [M1 conformance evidence](M1_CONFORMANCE.md)
 - [M2 deterministic module closure](M2_MODULE_CLOSURE.md)
+- [M2 three-target conformance](M2_CONFORMANCE.md)
 - [M2 manifest and atomic bundle contract](M2_MANIFEST_V2.md)
 - [M2 straight-line semantics](M2_STRAIGHT_LINE_SEMANTICS.md)
 - [M2 control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md)

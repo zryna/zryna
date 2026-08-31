@@ -132,8 +132,10 @@ specific `.elf`. The selected artifacts and deterministic manifest appear togeth
 create-only atomic bundle commit below `.zryna/out`. M1 writes manifest v1; the explicit M2 profile
 writes [manifest v2](docs/M2_MANIFEST_V2.md). See the [CLI reference](docs/CLI.md) for exact
 syntax, single-target commands, typed argument grammar, output layout, JSON, exit statuses,
-security properties, and platform limits. Issue #56 still owns fixed-oracle aggregate M2
-three-target conformance; Issue #55 does not claim it early.
+security properties, and platform limits. The repository-owned
+[M2 conformance gate](docs/M2_CONFORMANCE.md) now authenticates the fixed-oracle aggregate
+three-target evidence. Issue #57 still owns public documentation, website, and live-deployment
+closure, so the published status remains M1 until that separate release boundary closes.
 
 ## Run the foundation gate
 

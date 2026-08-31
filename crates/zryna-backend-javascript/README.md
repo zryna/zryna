@@ -33,8 +33,9 @@ intrinsic. The same linear renderer first counts every exact byte and then emits
 reserved string, returning `ZRYNA-J2003` instead of an artifact beyond 32 MiB. Driver tests import
 the public aliases and execute exact `i32` and primitive `bool` wrappers through the pinned,
 bounded Node capability; backend tests cover control flow, calls, collisions, repeated bytes, and
-exact rendered budget boundaries. This
-internal API does not activate M2 in the public driver or CLI; M2 WebAssembly is a separate sealed
-internal backend and the independently verified native MIR feeds the sealed internal M2 Linux
-x86-64 native object/link-run backend. Public profile activation, manifest v2, and three-target
-conformance remain unavailable.
+exact rendered budget boundaries. M2 WebAssembly is a separate sealed internal backend and the
+independently verified native MIR feeds the sealed internal M2 Linux x86-64 native object/link-run
+backend. The public driver activates these sealed boundaries only under explicit
+`--profile control-flow-v1`, publishes manifest v2 atomically, and is covered by the independent
+[fixed-oracle three-target gate](../../docs/M2_CONFORMANCE.md). Default M1 behavior is unchanged;
+authenticated public website and live-deployment closure remain Issue #57.

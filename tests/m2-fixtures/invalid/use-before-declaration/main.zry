@@ -1,0 +1,5 @@
+export function invalid(): i32 {
+  const first: i32 = later;
+  const later: i32 = 1;
+  return first;
+}

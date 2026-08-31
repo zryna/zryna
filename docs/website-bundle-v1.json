@@ -27,6 +27,12 @@
       "title": "Language overview"
     },
     {
+      "id": "reference/m2-conformance",
+      "source": "docs/M2_CONFORMANCE.md",
+      "path": "documents/reference/m2-conformance.md",
+      "title": "M2 three-target conformance"
+    },
+    {
       "id": "reference/m2-control-flow-semantics",
       "source": "docs/M2_CONTROL_FLOW_SEMANTICS.md",
       "path": "documents/reference/m2-control-flow-semantics.md",

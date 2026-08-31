@@ -16,8 +16,9 @@ This boundary does not authorize a backend by itself. Its final authenticated sn
 [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md),
 [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md), or the independently resealed
 [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) only through the explicit driver path.
-[Manifest v2 and the atomic multi-file command](M2_MANIFEST_V2.md) are implemented. Fixed-oracle
-three-target conformance and authenticated website/live closure remain Issues #56 and #57.
+[Manifest v2 and the atomic multi-file command](M2_MANIFEST_V2.md) and the independent
+[fixed-oracle three-target gate](M2_CONFORMANCE.md) are implemented. Authenticated public
+documentation, website, and live-deployment closure remain Issue #57.
 
 ## Fixed-point algorithm
 

@@ -113,5 +113,6 @@ earlier timeout, overflow, signal, descendant-cleanup, tool-replacement, failed-
 audit tests. A stage-replacement fixture proves the retained directory identity.
 
 Issue #55 composes this boundary through public profile selection and
-[manifest v2](M2_MANIFEST_V2.md). Issue #56 owns the fixed three-target oracle and required
-aggregate gate. Issue #57 owns authenticated website synchronization and live deployment.
+[manifest v2](M2_MANIFEST_V2.md). Issue #56 implements the fixed three-target oracle and required
+[aggregate gate](M2_CONFORMANCE.md). Issue #57 owns authenticated website synchronization and live
+deployment.

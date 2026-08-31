@@ -1,0 +1,1000 @@
+{
+  "schemaVersion": 1,
+  "profile": "zryna-control-flow-fixed-oracle-v1",
+  "historicalPlanningSha256": "ce227c0834ec9c2c01bddc2ff393bc3c9deebbbd75476bea95cb69cbb07c9f6b",
+  "targetOrder": [
+    "javascript",
+    "webassembly",
+    "native"
+  ],
+  "graph": {
+    "entrypoint": "tests/m2-fixtures/valid/main.zry",
+    "sha256": "d9cafc44fb02760ed51bf989c0ec4fcf5db9c34918ba6cd07d784eeed1b57dca",
+    "sources": [
+      {
+        "id": 0,
+        "path": "tests/m2-fixtures/valid/main.zry",
+        "sha256": "833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca"
+      },
+      {
+        "id": 1,
+        "path": "tests/m2-fixtures/valid/math.zry",
+        "sha256": "a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c"
+      }
+    ],
+    "edges": [
+      {
+        "importer": "tests/m2-fixtures/valid/main.zry",
+        "target": "tests/m2-fixtures/valid/math.zry",
+        "specifier": "./math.zry",
+        "imported": "addPair",
+        "local": "addPair"
+      }
+    ],
+    "buildArtifacts": [
+      {
+        "target": "javascript",
+        "kind": "ecmascript-module",
+        "bytes": 12108,
+        "sha256": "1cc4ebdca55fde5f0156ccc47218cef68d9dc27a28dc406d2b937dd6f52f14b4"
+      },
+      {
+        "target": "webassembly",
+        "kind": "core-webassembly-module",
+        "bytes": 1276,
+        "sha256": "483330d8b8ae262dc76d55726b6e9eee89ad5c1f12a5610e23176f9cc74b9f4b"
+      },
+      {
+        "target": "native",
+        "kind": "linux-x86-64-relocatable-object",
+        "bytes": 3688,
+        "sha256": "fcd7537b073d2b043c97a874bd7c9b589b68fd3b401a1ff39dcd81291821864a"
+      }
+    ]
+  },
+  "fixtureFiles": [
+    {
+      "path": "tests/m2-fixtures/invalid/assign-to-const/main.zry",
+      "sha256": "1a05d78b565b2509677f345fd5bb261b5f0d4cf9354e5fe9f2d0995bc88cb6ae"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/bare-import/dep.zry",
+      "sha256": "8e8f9d38f3ab6b459434289bca4889bc866f9f70805dbebe5005a1bb3b4d34dc"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/bare-import/main.zry",
+      "sha256": "4f33c52f25aab9dbb3924aa0113d7f83333e16898ffa4acc418b19ed6fe4ea6e"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/case-colliding-module/Dep.zry",
+      "sha256": "8e8f9d38f3ab6b459434289bca4889bc866f9f70805dbebe5005a1bb3b4d34dc"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/case-colliding-module/main.zry",
+      "sha256": "d0d5a9dce82dce5f7e4aab15412092e02d181b70f6215332fd4852cdd27e4db3"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/import-cycle/dep.zry",
+      "sha256": "0fe27bdddc146f5dee8e95737a66a11808bfe63bb57cb6f16a2312589eb5243b"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/import-cycle/main.zry",
+      "sha256": "a303eefabfb894f68abc394ee201506c0fc0c633ea4c822fe4c5647ed8cae463"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/import-escapes-root/main.zry",
+      "sha256": "97f4cd4fe5baa5c23a4e5194bf497f9189e06caf2c4f57957c840182e7a99fed"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/missing-import/main.zry",
+      "sha256": "dd3830b990e556d0277df1024bf52f5c488ff208d618b105ff67a7db9fc5ffb8"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/numeric-condition/main.zry",
+      "sha256": "aa51f9e6105c4200a7fb23d5352efe381746ee1de6bfd99edbbb9cd76c67b50c"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/recursive-call-cycle/main.zry",
+      "sha256": "a9813aa07b87b064a2c5d79c55249db4792ef55e44e1211fddf7cacaee1ea552"
+    },
+    {
+      "path": "tests/m2-fixtures/invalid/use-before-declaration/main.zry",
+      "sha256": "7b7957987748f28a7197e88d666b5bb1cf37164fafc98a09d47ee3857579b6f3"
+    },
+    {
+      "path": "tests/m2-fixtures/valid/main.zry",
+      "sha256": "833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca"
+    },
+    {
+      "path": "tests/m2-fixtures/valid/math.zry",
+      "sha256": "a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c"
+    }
+  ],
+  "validCases": [
+    {
+      "id": "add-wraps-maximum",
+      "feature": "arithmetic",
+      "export": "addWrapsMaximum",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 2147483647
+        },
+        {
+          "type": "i32",
+          "value": 1
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": -2147483648
+      }
+    },
+    {
+      "id": "subtract-wraps-minimum",
+      "feature": "arithmetic",
+      "export": "subtractWrapsMinimum",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": -2147483648
+        },
+        {
+          "type": "i32",
+          "value": 1
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 2147483647
+      }
+    },
+    {
+      "id": "multiply-keeps-low-bits",
+      "feature": "arithmetic",
+      "export": "multiplyKeepsLowBits",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 2147483647
+        },
+        {
+          "type": "i32",
+          "value": 2
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": -2
+      }
+    },
+    {
+      "id": "negate-minimum-wraps",
+      "feature": "arithmetic",
+      "export": "negateMinimumWraps",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": -2147483648
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": -2147483648
+      }
+    },
+    {
+      "id": "signed-less-than",
+      "feature": "comparison",
+      "export": "signedLessThan",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": -1
+        },
+        {
+          "type": "i32",
+          "value": 0
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "signed-less-equal",
+      "feature": "comparison",
+      "export": "signedLessEqual",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": -1
+        },
+        {
+          "type": "i32",
+          "value": -1
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "signed-greater-than",
+      "feature": "comparison",
+      "export": "signedGreaterThan",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 1
+        },
+        {
+          "type": "i32",
+          "value": 0
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "signed-greater-equal",
+      "feature": "comparison",
+      "export": "signedGreaterEqual",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 1
+        },
+        {
+          "type": "i32",
+          "value": 1
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "i32-exact-equality",
+      "feature": "comparison",
+      "export": "i32ExactEquality",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 42
+        },
+        {
+          "type": "i32",
+          "value": 42
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "i32-exact-inequality",
+      "feature": "comparison",
+      "export": "i32ExactInequality",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 42
+        },
+        {
+          "type": "i32",
+          "value": 7
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "boolean-exact-equality",
+      "feature": "comparison",
+      "export": "booleanExactEquality",
+      "arguments": [
+        {
+          "type": "bool",
+          "value": true
+        },
+        {
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": false
+      }
+    },
+    {
+      "id": "boolean-exact-inequality",
+      "feature": "comparison",
+      "export": "booleanExactInequality",
+      "arguments": [
+        {
+          "type": "bool",
+          "value": true
+        },
+        {
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "expected": {
+        "type": "bool",
+        "value": true
+      }
+    },
+    {
+      "id": "mutable-local-assignment",
+      "feature": "locals",
+      "export": "mutableLocalAssignment",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 1
+        },
+        {
+          "type": "i32",
+          "value": 2
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 3
+      }
+    },
+    {
+      "id": "direct-call-chain",
+      "feature": "calls",
+      "export": "directCallChain",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 20
+        },
+        {
+          "type": "i32",
+          "value": 22
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 42
+      }
+    },
+    {
+      "id": "argument-order-is-positional",
+      "feature": "argument-order",
+      "export": "argumentOrder",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 20
+        },
+        {
+          "type": "i32",
+          "value": 22
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": -2
+      }
+    },
+    {
+      "id": "if-selects-true-edge",
+      "feature": "if",
+      "export": "selectEdge",
+      "arguments": [
+        {
+          "type": "bool",
+          "value": true
+        },
+        {
+          "type": "i32",
+          "value": 11
+        },
+        {
+          "type": "i32",
+          "value": 22
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 11
+      }
+    },
+    {
+      "id": "if-selects-false-edge",
+      "feature": "if",
+      "export": "selectEdge",
+      "arguments": [
+        {
+          "type": "bool",
+          "value": false
+        },
+        {
+          "type": "i32",
+          "value": 11
+        },
+        {
+          "type": "i32",
+          "value": 22
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 22
+      }
+    },
+    {
+      "id": "while-zero-iterations",
+      "feature": "while",
+      "export": "loopCount",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 0
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 0
+      }
+    },
+    {
+      "id": "while-many-iterations",
+      "feature": "while",
+      "export": "loopCount",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 5
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 5
+      }
+    },
+    {
+      "id": "named-cross-module-call",
+      "feature": "modules",
+      "export": "namedCrossModuleCall",
+      "arguments": [
+        {
+          "type": "i32",
+          "value": 40
+        },
+        {
+          "type": "i32",
+          "value": 2
+        }
+      ],
+      "expected": {
+        "type": "i32",
+        "value": 42
+      }
+    }
+  ],
+  "invalidCases": [
+    {
+      "id": "numeric-condition",
+      "entrypoint": "tests/m2-fixtures/invalid/numeric-condition/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-M2014"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-M2014",
+          "guidance": "use one bool expression without truthiness or numeric coercion",
+          "message": "if condition does not have exact bool type",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 40,
+              "file": 0,
+              "start": 39
+            }
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "assign-to-const",
+      "entrypoint": "tests/m2-fixtures/invalid/assign-to-const/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-M2005"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-M2005",
+          "guidance": "assign only a let binding; const values and parameters are immutable",
+          "message": "binding 'value' is not mutable",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 64,
+              "file": 0,
+              "start": 59
+            }
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "use-before-declaration",
+      "entrypoint": "tests/m2-fixtures/invalid/use-before-declaration/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-M2009",
+        "ZRYNA-M2004",
+        "ZRYNA-M2004"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-M2009",
+          "guidance": "end every reachable function path with one typed return",
+          "message": "function can fall through without returning its declared result",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 102,
+              "file": 0,
+              "start": 31
+            }
+          },
+          "severity": "error"
+        },
+        {
+          "code": "ZRYNA-M2004",
+          "guidance": "reference a parameter or an already initialized local binding",
+          "message": "value name 'later' is not in lexical scope",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 59,
+              "file": 0,
+              "start": 54
+            }
+          },
+          "severity": "error"
+        },
+        {
+          "code": "ZRYNA-M2004",
+          "guidance": "reference a parameter or an already initialized local binding",
+          "message": "value name 'first' is not in lexical scope",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 99,
+              "file": 0,
+              "start": 94
+            }
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "recursive-call-cycle",
+      "entrypoint": "tests/m2-fixtures/invalid/recursive-call-cycle/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-M2013"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-M2013",
+          "guidance": "remove direct, mutual, or cross-module recursion",
+          "message": "the resolved direct-call graph contains a cycle",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 85,
+              "file": 0,
+              "start": 80
+            }
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "bare-import",
+      "entrypoint": "tests/m2-fixtures/invalid/bare-import/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-F1103"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-F1103",
+          "guidance": "verify the pinned Node.js runtime and TypeScript frontend, then retry",
+          "message": "ZRYNA-F1103: frontend worker rejected a protocol request",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "import-escapes-root",
+      "entrypoint": "tests/m2-fixtures/invalid/import-escapes-root/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-D3001"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-D3001",
+          "guidance": "use an explicit ./ or ../ named .zry import that remains inside the workspace root",
+          "message": "tests/m2-fixtures/invalid/import-escapes-root/main.zry: module specifier does not resolve to one explicit portable relative .zry path",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "missing-import",
+      "entrypoint": "tests/m2-fixtures/invalid/missing-import/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-D3003"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-D3003",
+          "guidance": "provide the exact named .zry file as a stable real regular file",
+          "message": "tests/m2-fixtures/invalid/missing-import/missing.zry: source file is missing, unreadable, or not a real regular file",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "case-colliding-module",
+      "entrypoint": "tests/m2-fixtures/invalid/case-colliding-module/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-D3005"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-D3005",
+          "guidance": "use one exact spelling that remains unique when ASCII case is ignored",
+          "message": "tests/m2-fixtures/invalid/case-colliding-module/dep.zry: source path is not unique with exact portable ASCII casing",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        }
+      ]
+    },
+    {
+      "id": "import-cycle",
+      "entrypoint": "tests/m2-fixtures/invalid/import-cycle/main.zry",
+      "exitCode": 3,
+      "diagnosticCodes": [
+        "ZRYNA-D3007"
+      ],
+      "diagnostics": [
+        {
+          "code": "ZRYNA-D3007",
+          "guidance": "remove self imports and cyclic dependency paths",
+          "message": "tests/m2-fixtures/invalid/import-cycle/dep.zry: module import graph contains a cycle",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        }
+      ]
+    }
+  ],
+  "boundaryEvidence": {
+    "irreducibleCfg": {
+      "suite": "portable-ir",
+      "test": "control_flow_v1::tests::rejects_non_dominating_use_and_irreducible_cfg",
+      "diagnosticCode": "ZRYNA-I2020"
+    },
+    "atomicFailures": {
+      "suite": "driver-pipeline",
+      "test": "pipeline::tests::every_m2_pipeline_phase_failure_leaves_no_final_bundle"
+    },
+    "sourceRaces": {
+      "suite": "module-closure",
+      "test": "module_closure_tests::rejects_case_collisions_links_and_source_mutation_during_final_analysis"
+    },
+    "resourceLimits": {
+      "rows": [
+        {
+          "key": "sourceFiles",
+          "limit": 4096,
+          "commandId": "module-closure",
+          "test": "module_closure_tests::aggregate_and_file_budgets_accept_exact_and_reject_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "aggregateSourceBytes",
+          "limit": 8388608,
+          "commandId": "module-closure",
+          "test": "module_closure_tests::aggregate_and_file_budgets_accept_exact_and_reject_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "discoveryRounds",
+          "limit": 4096,
+          "commandId": "module-closure",
+          "test": "module_closure_tests::one_import_chain_is_linear_at_exact_round_and_call_limits",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "providerAnalysisCalls",
+          "limit": 4097,
+          "commandId": "module-closure",
+          "test": "module_closure::tests::provider_accounting_accepts_exact_call_and_byte_limits_and_rejects_first_extra",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "cumulativeProviderInputBytes",
+          "limit": 16777216,
+          "commandId": "module-closure",
+          "test": "module_closure::tests::provider_accounting_accepts_exact_call_and_byte_limits_and_rejects_first_extra",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "protocolRequestBytes",
+          "limit": 75497472,
+          "commandId": "adapter-boundaries",
+          "test": "transport, response, file-count, and per-file byte boundaries reject plus one and recover",
+          "mode": "lowered-test-limit",
+          "productionBindingTest": "production protocol limits match the historical M2 contract"
+        },
+        {
+          "key": "protocolResponseBytes",
+          "limit": 67108864,
+          "commandId": "adapter-boundaries",
+          "test": "transport, response, file-count, and per-file byte boundaries reject plus one and recover",
+          "mode": "lowered-test-limit",
+          "productionBindingTest": "production protocol limits match the historical M2 contract"
+        },
+        {
+          "key": "importEdges",
+          "limit": 65536,
+          "commandId": "module-closure",
+          "test": "module_closure::tests::edge_registry_accepts_exact_limit_and_rejects_duplicate_or_first_extra_edge",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "importDeclarationsPerModule",
+          "limit": 4096,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "importDeclarationsPerProgram",
+          "limit": 65536,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "importedNamesPerDeclaration",
+          "limit": 256,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "importedNamesPerProgram",
+          "limit": 65536,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "functionsPerModule",
+          "limit": 4096,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "functionsPerProgram",
+          "limit": 16384,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "parametersPerFunction",
+          "limit": 256,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "parametersPerProgram",
+          "limit": 262144,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "lexicalBlocksPerFunction",
+          "limit": 4096,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "lexicalBlocksPerProgram",
+          "limit": 65536,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "statementsPerFunction",
+          "limit": 4096,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "statementsPerProgram",
+          "limit": 65536,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "expressionsPerFunction",
+          "limit": 16384,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "expressionsPerProgram",
+          "limit": 262144,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "localsPerFunction",
+          "limit": 4096,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::every_collection_budget_accepts_the_limit_and_rejects_one_more",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "localsPerProgram",
+          "limit": 65536,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "liveMutableBindingsPerMerge",
+          "limit": 256,
+          "commandId": "control-flow-semantics",
+          "test": "control_flow_v1::tests::live_mutable_draft_boundary_accepts_256_and_rejects_257",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "irBlocksPerFunction",
+          "limit": 4096,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::exact_block_limit_verifies_iteratively_and_first_extra_fails_preflight",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "irBlocksPerProgram",
+          "limit": 65536,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::preflight_freezes_exact_and_plus_one_aggregate_ir_budgets",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "blockParametersPerBlock",
+          "limit": 256,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::preflight_freezes_parameter_block_parameter_and_function_value_budgets",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "irValuesPerFunction",
+          "limit": 16384,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::preflight_freezes_parameter_block_parameter_and_function_value_budgets",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "irValuesPerProgram",
+          "limit": 262144,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::preflight_freezes_exact_and_plus_one_aggregate_ir_budgets",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "cfgEdgesPerFunction",
+          "limit": 8192,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::preflight_freezes_cfg_and_call_edge_budgets",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "cfgEdgesPerProgram",
+          "limit": 131072,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::preflight_freezes_cfg_and_call_edge_budgets",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "callEdges",
+          "limit": 65536,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::preflight_freezes_cfg_and_call_edge_budgets",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "staticCallDepth",
+          "limit": 128,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::static_call_depth_accepts_128_and_rejects_129",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "nestingDepth",
+          "limit": 128,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::loop_nesting_accepts_128_and_rejects_129_without_recursion",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "moduleSpecifierBytes",
+          "limit": 1024,
+          "commandId": "syntax-boundaries",
+          "test": "v3::tests::aggregate_count_and_text_boundaries_are_exact",
+          "mode": "production-boundary"
+        },
+        {
+          "key": "diagnostics",
+          "limit": 256,
+          "commandId": "portable-ir",
+          "test": "control_flow_v1::tests::diagnostic_budget_is_bounded_and_terminal",
+          "mode": "production-boundary"
+        }
+      ]
+    }
+  },
+  "determinism": {
+    "sameStemBuildRepeats": 2,
+    "compareManifestBytes": true,
+    "compareArtifactBytes": true,
+    "nativeLinkedExecutableScope": "same-pinned-toolchain-and-host"
+  }
+}

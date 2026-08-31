@@ -1,0 +1,5 @@
+import { value } from "../../../../../outside.zry";
+
+export function invalid(): i32 {
+  return value();
+}

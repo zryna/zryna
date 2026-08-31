@@ -71,6 +71,7 @@ internal compiler component only. The sealed JavaScript and WebAssembly evidence
 separately. The [M2 native MIR profile](M2_NATIVE_MIR.md) and
 [M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) now implement independent lowering,
 target-specific verification, audited object emission, and bounded typed execution. The explicit
-profile and [manifest-v2 transaction](M2_MANIFEST_V2.md) are implemented by Issue #55. Public
-fixed-oracle three-target divergence/equivalence evidence and authenticated website/live closure
-remain Issues #56 and #57. All three hosts retain bounded deadlines.
+profile and [manifest-v2 transaction](M2_MANIFEST_V2.md) are implemented by Issue #55. The
+independent [fixed-oracle three-target gate](M2_CONFORMANCE.md) is implemented by Issue #56;
+authenticated public documentation, website, and live-deployment closure remain Issue #57. All
+three hosts retain bounded deadlines.

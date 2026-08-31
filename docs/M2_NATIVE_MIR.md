@@ -61,7 +61,8 @@ M2 native MIR represents `bool` and `i32` as distinct exact types. A Boolean can
 from a Boolean literal, equality/inequality, or signed comparison and can be consumed as a Boolean
 operand or branch condition. It is not an arbitrary nonzero integer. The internal native backend
 independently validates the scalar ABI 32-bit Boolean carrier as exactly `0` or `1`, narrows it for
-the typed body, and zero-extends a canonical result. Public profile activation remains a later gate.
+the typed body, and zero-extends a canonical result. The public driver activates this sealed MIR
+path only under explicit `--profile control-flow-v1`; omission preserves the default M1 path.
 
 ## Independent verification
 
@@ -146,5 +147,6 @@ currently contains 31 unit tests and 5 compile-fail doctests.
 
 The separate [M2 native backend](M2_NATIVE_BACKEND.md) now provides audited Linux x86-64 object
 emission, Boolean wrappers, internal calls, and typed link/run evidence. The explicit profile and
-[manifest v2](M2_MANIFEST_V2.md) are implemented; three-target conformance and authenticated
-website/live closure remain Issues #56 and #57.
+[manifest v2](M2_MANIFEST_V2.md) and the independent
+[three-target conformance gate](M2_CONFORMANCE.md) are implemented; authenticated public
+documentation, website, and live-deployment closure remain Issue #57.

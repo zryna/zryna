@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
-const EXPECTED_COMMANDS_SHA256 = '78a12d370431b23895ec74392d932ef282089b40fba86620f12eafaff28689af';
+const EXPECTED_COMMANDS_SHA256 = '24386fa01b20ee108a73259caa7be291b39937adcfdcbb4a8036e773ea44dafd';
 
 export const PREFLIGHT_COMMANDS = Object.freeze([
   Object.freeze({
@@ -17,6 +17,7 @@ export const PREFLIGHT_COMMANDS = Object.freeze([
       'tests/m0-conformance.test.mjs',
       'tests/docs-bundle.test.mjs',
       'tests/m2-contract.test.mjs',
+      'tests/m2-conformance.test.mjs',
       'tests/syntax-protocol-v2.test.mjs',
       'tests/syntax-protocol-v3.test.mjs',
       'adapters/typescript-6/test/worker.test.mjs',

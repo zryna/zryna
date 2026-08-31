@@ -131,11 +131,12 @@ final complete snapshot; only that final-map-bound snapshot can be returned by t
 Exact path, graph, fixed-point, race, cycle, identity, and resource rules are documented in
 [M2 deterministic module closure](M2_MODULE_CLOSURE.md) and specified normatively in
 [scalar control flow and modules v1](../spec/language/CONTROL_FLOW_MODULES_V1.md). The public driver
-and CLI do not select protocol v3 or an M2 profile. The final authenticated closure can enter the
-separately gated [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and
+and CLI select protocol v3 only under explicit `--profile control-flow-v1`; omission preserves the
+protocol-v2 M1 path. The final authenticated closure can enter the
+[M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and
 [control-flow extension](M2_CONTROL_FLOW_SEMANTICS.md), then the sealed internal
 [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md) or
 [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md), or the independently resealed
 [M2 native MIR profile](M2_NATIVE_MIR.md) and its audited internal
-[Linux x86-64 native backend](M2_NATIVE_BACKEND.md). The public M2 profile remains disabled until
-the explicit-profile gate lands.
+[Linux x86-64 native backend](M2_NATIVE_BACKEND.md). Those sealed boundaries are surfaced only
+through the explicit profile and its manifest-v2 atomic transaction.
