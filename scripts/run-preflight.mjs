@@ -1,9 +1,11 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
+const EXPECTED_COMMANDS_SHA256 = 'fd16b4520b5531597ebdff4a8fb8028aaa3d6da103396502488416d45af7f2a3';
 
 export const PREFLIGHT_COMMANDS = Object.freeze([
   Object.freeze({
@@ -38,6 +40,17 @@ export const PREFLIGHT_COMMANDS = Object.freeze([
   }),
 ]);
 
+export function preflightCommandDigest(commands = PREFLIGHT_COMMANDS) {
+  return createHash('sha256').update(JSON.stringify(commands)).digest('hex');
+}
+
+export function validatePreflightCommands(commands = PREFLIGHT_COMMANDS) {
+  if (preflightCommandDigest(commands) !== EXPECTED_COMMANDS_SHA256) {
+    throw new Error('preflight command declarations differ from the frozen command set');
+  }
+  return commands;
+}
+
 export function runPreflight(commands = PREFLIGHT_COMMANDS, spawn = spawnSync) {
   for (const [index, command] of commands.entries()) {
     console.log(`\n[preflight ${index + 1}/${commands.length}] ${command.id}`);
@@ -58,7 +71,7 @@ export function runPreflight(commands = PREFLIGHT_COMMANDS, spawn = spawnSync) {
 
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
   try {
-    runPreflight();
+    runPreflight(validatePreflightCommands());
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

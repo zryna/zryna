@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { parseDocument } from 'yaml';
 
-import { PREFLIGHT_COMMANDS, runPreflight } from '../scripts/run-preflight.mjs';
+import {
+  PREFLIGHT_COMMANDS,
+  preflightCommandDigest,
+  runPreflight,
+  validatePreflightCommands,
+} from '../scripts/run-preflight.mjs';
 
 function workflowJob(workflow, jobId) {
   const lines = workflow.split(/\r?\n/);
@@ -24,6 +30,19 @@ test('preflight has one frozen portable command order', () => {
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
+  assert.equal(preflightCommandDigest(), 'fd16b4520b5531597ebdff4a8fb8028aaa3d6da103396502488416d45af7f2a3');
+  assert.doesNotThrow(() => validatePreflightCommands());
+
+  for (const mutate of [
+    (commands) => commands[0].args.pop(),
+    (commands) => { commands[1].args[0] = 'check'; },
+    (commands) => commands[2].args.splice(commands[2].args.indexOf('--locked'), 1),
+    (commands) => commands[3].args.pop(),
+  ]) {
+    const changed = structuredClone(PREFLIGHT_COMMANDS);
+    mutate(changed);
+    assert.throws(() => validatePreflightCommands(changed), /differ from the frozen command set/);
+  }
 });
 
 test('preflight stops at the first failure', () => {
@@ -45,6 +64,9 @@ test('preflight stops at the first failure', () => {
 
 test('pull-request platform jobs wait for preflight and the aggregate requires every gate', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const document = parseDocument(workflow);
+  assert.deepEqual(document.errors, []);
+  const parsed = document.toJS();
   const preflight = workflowJob(workflow, 'preflight');
   const rust = workflowJob(workflow, 'rust');
   const adapterPlatform = workflowJob(workflow, 'adapter-platform');
@@ -57,6 +79,26 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
   assert.match(aggregate, /needs: \[preflight, rust, adapter\]/);
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /test "\$PREFLIGHT_RESULT" = success/);
+
+  assert.equal(parsed.jobs.rust.needs, 'preflight');
+  assert.equal(parsed.jobs['adapter-platform'].needs, 'preflight');
+  assert.equal(parsed.jobs.adapter.needs, 'adapter-platform');
+  assert.deepEqual(parsed.jobs.m0.needs, ['preflight', 'rust', 'adapter']);
+
+  const controlledResults = { preflight: 'failure' };
+  controlledResults.rust = controlledResults.preflight === 'success' ? 'success' : 'skipped';
+  controlledResults.adapterPlatform = controlledResults.preflight === 'success' ? 'success' : 'skipped';
+  controlledResults.adapter = controlledResults.adapterPlatform === 'success' ? 'success' : 'failure';
+  controlledResults.m0 = Object.values(controlledResults).every((result) => result === 'success')
+    ? 'success'
+    : 'failure';
+  assert.deepEqual(controlledResults, {
+    preflight: 'failure',
+    rust: 'skipped',
+    adapterPlatform: 'skipped',
+    adapter: 'failure',
+    m0: 'failure',
+  });
 });
 
 test('package exposes the exact documented preflight entrypoint', async () => {
