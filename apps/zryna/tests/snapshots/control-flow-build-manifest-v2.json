@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "profile": "zryna-control-flow-v1",
+  "command": "build",
+  "entrypoint": "examples/control-flow/main.zry",
+  "graph_sha256": "b3f8f10433ed79c0f8b64619b4d525d0347d8123dc4ca31885054687d1fc4b13",
+  "sources": [
+    {
+      "id": 0,
+      "path": "examples/control-flow/main.zry",
+      "sha256": "3cddfa2cfb2a193db98ad2032b706af1c24c03f9c73c3bdfa3ae43a887588712"
+    },
+    {
+      "id": 1,
+      "path": "examples/control-flow/math.zry",
+      "sha256": "1769433d0167be7f80f0b7da2b934c82621df6beedfe497622b30ffa928dfe0a"
+    }
+  ],
+  "edges": [
+    {
+      "importer": "examples/control-flow/main.zry",
+      "target": "examples/control-flow/math.zry",
+      "specifier": "./math.zry",
+      "imported": "double",
+      "local": "double"
+    }
+  ],
+  "stem": "m2_snapshot",
+  "targets": [
+    "javascript",
+    "webassembly",
+    "native"
+  ],
+  "artifacts": [
+    {
+      "target": "javascript",
+      "kind": "ecmascript-module",
+      "path": "javascript/m2_snapshot.mjs",
+      "bytes": 2125,
+      "sha256": "f1e902a51ce5c43f9a9a908e0244561ed984d2a70e1aba5aa93090779628da92"
+    },
+    {
+      "target": "webassembly",
+      "kind": "core-webassembly-module",
+      "path": "webassembly/m2_snapshot.wasm",
+      "bytes": 160,
+      "sha256": "f86fc116b098efd930e856abba74b2360939a52e02ec8cee04ec3b82e0eea0a2"
+    },
+    {
+      "target": "native",
+      "kind": "linux-x86-64-relocatable-object",
+      "path": "native/m2_snapshot.o",
+      "bytes": 888,
+      "sha256": "90061e52491c8c2f2b584f3888ad70a5a8df25bd12a88af90cb280de7f904cbd"
+    }
+  ],
+  "invocation": null,
+  "results": [],
+  "diagnostics": []
+}

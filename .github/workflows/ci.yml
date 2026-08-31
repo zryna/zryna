@@ -62,6 +62,8 @@ jobs:
         run: cargo test --locked -p zryna-semantics --lib control_flow_v1
       - name: Verify M2 driver security
         run: cargo test --locked -p zryna-driver --lib
+      - name: Verify public M2 CLI profile
+        run: cargo test --locked -p zryna --test cli control_flow_
       - name: Run Windows CLI smoke
         if: runner.os == 'Windows'
         run: cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact

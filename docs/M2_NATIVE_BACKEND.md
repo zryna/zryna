@@ -1,9 +1,10 @@
 # M2 Linux x86-64 native backend
 
-Status: implemented as an internal object, link, and typed-execution boundary for verified
-`ControlFlowV1`. It does not activate protocol v3 in the public driver, add a public M2 CLI or
-manifest v2, or claim three-target M2 conformance. The M1 object API, relocation-free audit,
-artifact type, CLI, and executable contract remain unchanged.
+Status: implemented as an object, link, and typed-execution boundary for verified
+`ControlFlowV1`, composed by the public driver only for explicit `--profile control-flow-v1`.
+The backend itself cannot activate protocol v3, publish a manifest, or claim three-target
+conformance. The M1 object API, relocation-free audit, artifact type, CLI, and executable contract
+remain unchanged.
 
 ## Authority chain
 
@@ -99,7 +100,7 @@ Scalar ABI normalization maps a noncanonical Boolean result to `InvalidTargetRes
 Object emission invokes no compiler, assembler, linker, loader, runtime, or generated code. Linux
 link/run is available only on x86-64 Linux. Other hosts retain `ZRYNA-N4002` before staging or
 process work. FFI, libc calls from generated bodies, memory, assembly, Windows/macOS objects, user
-linker flags, general executables, and a public M2 profile remain unsupported.
+linker flags and general executables remain unsupported.
 
 ## Evidence and remaining gates
 
@@ -111,5 +112,6 @@ branch, and loop observations while retaining the
 earlier timeout, overflow, signal, descendant-cleanup, tool-replacement, failed-link, and executable
 audit tests. A stage-replacement fixture proves the retained directory identity.
 
-Issue #55 owns public profile selection and manifest v2. Issue #56 owns the fixed three-target
-oracle and required aggregate gate. Issue #57 owns public website status and live deployment.
+Issue #55 composes this boundary through public profile selection and
+[manifest v2](M2_MANIFEST_V2.md). Issue #56 owns the fixed three-target oracle and required
+aggregate gate. Issue #57 owns authenticated website synchronization and live deployment.

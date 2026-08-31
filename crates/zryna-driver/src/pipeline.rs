@@ -1,33 +1,43 @@
 //! Atomic one-entrypoint build and run orchestration.
 
 use std::{
+    cell::RefCell,
+    collections::{BTreeMap, BTreeSet},
     fmt, fs,
     io::{self, Read, Write},
     path::{Component, Path, PathBuf},
     sync::atomic::{AtomicU64, Ordering},
 };
 
+use cap_std::{ambient_authority, fs::Dir};
 use same_file::Handle;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use zryna_abi::{RawHostScalar, ScalarHostErrorCode, ScalarOutcome, ScalarTarget, ScalarValue};
 use zryna_diagnostics::Diagnostic;
-use zryna_frontend::VerifiedFrontendProvider;
 use zryna_frontend::{
     FrontendCapabilities, ProviderExpectation, WorkerFrontend, WorkerLimits, WorkerSpec, syntax_v2,
 };
-use zryna_source::{MAX_SOURCE_FILE_BYTES, SourceFileInput, SourceMap};
+use zryna_frontend::{ProviderExpectationV3, WorkerFrontendV3, WorkerLimitsV3, WorkerSpecV3};
+use zryna_frontend::{VerifiedFrontendProvider, VerifiedFrontendProviderV3};
+use zryna_source::{MAX_SOURCE_FILE_BYTES, NormalizedSourcePath, SourceFileInput, SourceMap};
 
 use crate::{
-    ArtifactOutputRoot, NativeProcessLimits, SourceToIrError, compile_to_verified_ir,
-    discover_linux_native_toolchain,
+    ArtifactOutputRoot, NativeProcessLimits, SourceToIrError, WorkspaceSourceRoot,
+    compile_to_verified_ir, discover_linux_native_toolchain, discover_module_closure,
     javascript::validate_artifact_stem,
-    native::{prepare_native_invocation_from_verified, run_prepared_native_invocation},
+    native::{
+        prepare_control_flow_native_invocation_from_verified,
+        prepare_native_invocation_from_verified, run_prepared_native_invocation,
+    },
     runtime::{NodeRuntimeCapability, node_compatible_path},
 };
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
 const MANIFEST_PROFILE: &str = "zryna-m1-cli-v1";
+const CONTROL_FLOW_MANIFEST_NAME: &str = "zryna-manifest-v2.json";
+const CONTROL_FLOW_MANIFEST_PROFILE: &str = "zryna-control-flow-v1";
+const MAX_CONTROL_FLOW_MANIFEST_BYTES: usize = 32 * 1_024 * 1_024;
 const NATIVE_TARGET: &str = "x86_64-unknown-linux-gnu";
 const TRANSACTION_PREFIX: &str = ".zryna-transaction-";
 static NEXT_TRANSACTION: AtomicU64 = AtomicU64::new(0);
@@ -107,6 +117,35 @@ pub struct RunRequest {
     /// Exact logical scalar export.
     pub logical_export: String,
     /// Ordered typed arguments.
+    pub arguments: Vec<ScalarValue>,
+}
+
+/// One explicit multi-file `ControlFlowV1` build request.
+///
+/// This remains separate from [`BuildRequest`] so existing M1 Rust callers and struct literals do
+/// not acquire a new field or silently change profile.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ControlFlowBuildRequest {
+    /// Absolute canonical workspace root.
+    pub workspace_root: PathBuf,
+    /// Portable workspace-relative `.zry` entry module.
+    pub entrypoint: String,
+    /// Portable output stem.
+    pub artifact_stem: String,
+    /// Explicit target selection.
+    pub targets: TargetSelection,
+    /// Absolute direct Node.js executable used by the frontend and target runtimes.
+    pub node_runtime: PathBuf,
+}
+
+/// One explicit multi-file `ControlFlowV1` run request.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ControlFlowRunRequest {
+    /// Shared M2 build configuration.
+    pub build: ControlFlowBuildRequest,
+    /// Exact logical scalar export.
+    pub logical_export: String,
+    /// Ordered canonical typed arguments.
     pub arguments: Vec<ScalarValue>,
 }
 
@@ -284,7 +323,7 @@ impl CommandSuccess {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 enum ManifestTarget {
     JavaScript,
@@ -352,6 +391,70 @@ enum ManifestScalar {
     I32(i32),
 }
 
+#[derive(Serialize)]
+struct ControlFlowManifest<'a> {
+    version: u8,
+    profile: &'static str,
+    command: CommandKind,
+    entrypoint: &'a str,
+    graph_sha256: String,
+    sources: Vec<ControlFlowManifestSource<'a>>,
+    edges: Vec<ControlFlowManifestEdge<'a>>,
+    stem: &'a str,
+    targets: Vec<ManifestTarget>,
+    artifacts: &'a [PublishedTargetArtifact],
+    invocation: Option<ManifestInvocation<'a>>,
+    results: Vec<ManifestResult>,
+    diagnostics: &'a [Diagnostic],
+}
+
+#[derive(Serialize)]
+struct ControlFlowManifestSource<'a> {
+    id: u32,
+    path: &'a str,
+    sha256: String,
+}
+
+#[derive(Serialize)]
+struct ControlFlowManifestEdge<'a> {
+    importer: &'a str,
+    target: &'a str,
+    specifier: &'a str,
+    imported: &'a str,
+    local: &'a str,
+}
+
+struct PreparedControlFlowArtifacts {
+    javascript: Option<zryna_backend_javascript::JavaScriptArtifact>,
+    webassembly: Option<zryna_backend_webassembly::ValidatedWebAssemblyArtifact>,
+    native_object:
+        Option<zryna_backend_native::control_flow_v1::ValidatedControlFlowNativeObjectArtifact>,
+    native_executable: Option<crate::native::PreparedNativeExecutable>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ControlFlowPhase {
+    Discovery,
+    Semantics,
+    JavaScriptBackend,
+    WebAssemblyBackend,
+    NativeMir,
+    NativeObject,
+    NativeLink,
+    JavaScriptExecution,
+    WebAssemblyExecution,
+    NativeExecution,
+    ManifestRendering,
+    Publication,
+}
+
+type ControlFlowCheckpoint<'a> = &'a dyn Fn(ControlFlowPhase) -> Result<(), CommandFailure>;
+
+#[allow(clippy::unnecessary_wraps)]
+fn allow_control_flow_phase(_phase: ControlFlowPhase) -> Result<(), CommandFailure> {
+    Ok(())
+}
+
 struct PreparedArtifacts {
     javascript: Option<zryna_backend_javascript::JavaScriptArtifact>,
     webassembly: Option<zryna_backend_webassembly::ValidatedWebAssemblyArtifact>,
@@ -412,6 +515,234 @@ pub fn run_workspace(request: RunRequest) -> Result<CommandSuccess, CommandFailu
     let invocation =
         RunInvocation { logical_export: request.logical_export, arguments: request.arguments };
     execute(&request.build, Some(&invocation))
+}
+
+/// Builds one authenticated M2 module graph and atomically commits one complete target bundle.
+///
+/// # Errors
+///
+/// Returns stable categorized diagnostics without advertising a partial bundle.
+pub fn build_control_flow_workspace(
+    request: &ControlFlowBuildRequest,
+) -> Result<CommandSuccess, CommandFailure> {
+    execute_control_flow(request, None)
+}
+
+/// Builds and executes one authenticated M2 module graph, then atomically commits its bundle.
+///
+/// # Errors
+///
+/// Returns stable categorized diagnostics without advertising a partial bundle.
+pub fn run_control_flow_workspace(
+    request: ControlFlowRunRequest,
+) -> Result<CommandSuccess, CommandFailure> {
+    let invocation =
+        RunInvocation { logical_export: request.logical_export, arguments: request.arguments };
+    execute_control_flow(&request.build, Some(&invocation))
+}
+
+#[allow(clippy::too_many_lines)]
+fn execute_control_flow(
+    request: &ControlFlowBuildRequest,
+    run: Option<&RunInvocation>,
+) -> Result<CommandSuccess, CommandFailure> {
+    execute_control_flow_with_frontend_factory(request, run, configured_frontend_v3)
+}
+
+#[allow(clippy::too_many_lines)]
+fn execute_control_flow_with_frontend_factory<Provider, Factory>(
+    request: &ControlFlowBuildRequest,
+    run: Option<&RunInvocation>,
+    frontend_factory: Factory,
+) -> Result<CommandSuccess, CommandFailure>
+where
+    Provider: VerifiedFrontendProviderV3,
+    Factory: FnOnce(
+        &ControlFlowBuildRequest,
+        &NodeRuntimeCapability,
+    ) -> Result<Provider, CommandFailure>,
+{
+    execute_control_flow_with_frontend_factory_and_checkpoint(
+        request,
+        run,
+        frontend_factory,
+        &allow_control_flow_phase,
+    )
+}
+
+#[allow(clippy::too_many_lines)]
+fn execute_control_flow_with_frontend_factory_and_checkpoint<Provider, Factory>(
+    request: &ControlFlowBuildRequest,
+    run: Option<&RunInvocation>,
+    frontend_factory: Factory,
+    checkpoint: ControlFlowCheckpoint<'_>,
+) -> Result<CommandSuccess, CommandFailure>
+where
+    Provider: VerifiedFrontendProviderV3,
+    Factory: FnOnce(
+        &ControlFlowBuildRequest,
+        &NodeRuntimeCapability,
+    ) -> Result<Provider, CommandFailure>,
+{
+    let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
+    validate_architecture(&request.workspace_root)?;
+    let compatibility_request = BuildRequest {
+        workspace_root: request.workspace_root.clone(),
+        entrypoint: request.entrypoint.clone(),
+        artifact_stem: request.artifact_stem.clone(),
+        targets: request.targets,
+        node_runtime: request.node_runtime.clone(),
+    };
+    validate_request(&compatibility_request, command)?;
+    let output_root = ArtifactOutputRoot::prepare_for_workspace(&request.workspace_root)
+        .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
+    let final_bundle =
+        output_root.path().join(format!("{}.{}", request.artifact_stem, command.suffix()));
+    ensure_absent(&final_bundle)?;
+
+    let entrypoint = NormalizedSourcePath::new(request.entrypoint.clone()).map_err(|error| {
+        failure(CommandFailureKind::Request, Diagnostic::from_source_error(&error))
+    })?;
+    let source_root = WorkspaceSourceRoot::capture(&request.workspace_root)
+        .map_err(|diagnostic| failure(CommandFailureKind::Source, diagnostic))?;
+    let node = NodeRuntimeCapability::discover(&request.node_runtime, &request.workspace_root)
+        .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
+    let frontend = frontend_factory(request, &node)?;
+    checkpoint(ControlFlowPhase::Discovery)?;
+    let closure = discover_module_closure(&source_root, entrypoint, &frontend)
+        .map_err(|error| module_closure_failure(&error))?;
+    checkpoint(ControlFlowPhase::Semantics)?;
+    let program = closure
+        .lower_control_flow_v1()
+        .map_err(|diagnostics| CommandFailure { kind: CommandFailureKind::Source, diagnostics })?;
+    let verified_invocation = run
+        .map(|invocation| {
+            program.prepare_invocation(zryna_abi::Invocation::new(
+                invocation.logical_export.clone(),
+                invocation.arguments.clone(),
+            ))
+        })
+        .transpose()
+        .map_err(|error| {
+            failure(
+                CommandFailureKind::Source,
+                Diagnostic::error(
+                    error.code(),
+                    None,
+                    "run invocation does not match the verified ControlFlowV1 scalar ABI export",
+                    "use the exact entry-module export, arity, and scalar argument types",
+                ),
+            )
+        })?;
+    let mut prepared = compile_control_flow_selected(&program, request.targets, checkpoint)?;
+    node.revalidate().map_err(preparation_failure)?;
+
+    if run.is_some() && request.targets.native() {
+        checkpoint(ControlFlowPhase::NativeLink)?;
+        let invocation = verified_invocation.as_ref().ok_or_else(|| {
+            request_error(
+                "ZRYNA-C1010",
+                "verified M2 invocation preparation was not completed",
+                "report this compiler invariant failure",
+            )
+        })?;
+        let object = prepared.native_object.as_ref().ok_or_else(|| {
+            request_error(
+                "ZRYNA-C1010",
+                "M2 native object preparation was not completed",
+                "report this compiler invariant failure",
+            )
+        })?;
+        let toolchain = discover_linux_native_toolchain(NativeProcessLimits::default())
+            .map_err(preparation_failure)?;
+        prepared.native_executable = Some(
+            prepare_control_flow_native_invocation_from_verified(
+                &program,
+                object,
+                invocation,
+                &output_root,
+                &toolchain,
+                NativeProcessLimits::default(),
+            )
+            .map_err(native_preparation_failure)?,
+        );
+    }
+
+    let diagnostics = closure
+        .syntax()
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| diagnostic.severity() == zryna_diagnostics::Severity::Warning)
+        .cloned()
+        .collect::<Vec<_>>();
+    commit_control_flow_prepared(
+        request,
+        command,
+        run,
+        verified_invocation.as_ref(),
+        &node,
+        &output_root,
+        &final_bundle,
+        &closure,
+        &prepared,
+        diagnostics,
+        checkpoint,
+    )
+}
+
+fn compile_control_flow_selected(
+    program: &zryna_ir::control_flow_v1::VerifiedProgram,
+    targets: TargetSelection,
+    checkpoint: ControlFlowCheckpoint<'_>,
+) -> Result<PreparedControlFlowArtifacts, CommandFailure> {
+    let javascript = if targets.javascript() {
+        checkpoint(ControlFlowPhase::JavaScriptBackend)?;
+        Some(zryna_backend_javascript::emit_control_flow(program).map_err(preparation_failure)?)
+    } else {
+        None
+    };
+    let webassembly = if targets.webassembly() {
+        checkpoint(ControlFlowPhase::WebAssemblyBackend)?;
+        Some(zryna_backend_webassembly::emit_control_flow(program).map_err(preparation_failure)?)
+    } else {
+        None
+    };
+    let native_object = if targets.native() {
+        checkpoint(ControlFlowPhase::NativeMir)?;
+        let target =
+            crate::select_native_object_target(NATIVE_TARGET).map_err(preparation_failure)?;
+        let mir = zryna_native_mir::control_flow_v1::lower(program).map_err(|diagnostics| {
+            CommandFailure { kind: CommandFailureKind::Preparation, diagnostics }
+        })?;
+        checkpoint(ControlFlowPhase::NativeObject)?;
+        Some(
+            zryna_backend_native::control_flow_v1::emit_object(&mir, target)
+                .map_err(preparation_failure)?,
+        )
+    } else {
+        None
+    };
+    Ok(PreparedControlFlowArtifacts {
+        javascript,
+        webassembly,
+        native_object,
+        native_executable: None,
+    })
+}
+
+fn module_closure_failure(error: &crate::ModuleClosureError) -> CommandFailure {
+    let diagnostics = match error {
+        crate::ModuleClosureError::Frontend(worker) if worker.diagnostics().is_empty() => {
+            vec![Diagnostic::error(
+                worker.code(),
+                None,
+                worker.to_string(),
+                "verify the pinned Node.js runtime and TypeScript frontend, then retry",
+            )]
+        }
+        _ => error.diagnostics().to_vec(),
+    };
+    CommandFailure { kind: CommandFailureKind::Source, diagnostics }
 }
 
 struct RunInvocation {
@@ -737,6 +1068,327 @@ fn source_size_error() -> CommandFailure {
     )
 }
 
+fn configured_frontend_v3(
+    request: &ControlFlowBuildRequest,
+    node: &NodeRuntimeCapability,
+) -> Result<WorkerFrontendV3, CommandFailure> {
+    let adapter_root = request.workspace_root.join("adapters/typescript-6");
+    validate_real_directory(&adapter_root)
+        .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
+    let worker_entrypoint = adapter_root.join("src/worker-v3.mjs");
+    let worker_metadata = fs::symlink_metadata(&worker_entrypoint).map_err(|_| {
+        entrypoint_error("TypeScript frontend worker entrypoint is unavailable")
+            .with_kind(CommandFailureKind::Preparation)
+    })?;
+    if !worker_metadata.is_file() || metadata_is_link_or_reparse(&worker_metadata) {
+        return Err(entrypoint_error(
+            "TypeScript frontend worker entrypoint is not a real regular file",
+        )
+        .with_kind(CommandFailureKind::Preparation));
+    }
+    let node_adapter_root = node_compatible_path(&adapter_root);
+    let node_worker_entrypoint = node_compatible_path(&worker_entrypoint);
+    let expected =
+        ProviderExpectationV3::new("typescript-6", "6.0.3").map_err(|error| CommandFailure {
+            kind: CommandFailureKind::Preparation,
+            diagnostics: error.diagnostics().to_vec(),
+        })?;
+    let spec = WorkerSpecV3::new(
+        node.executable().map_err(preparation_failure)?,
+        vec![node_worker_entrypoint.into_os_string()],
+        node_adapter_root,
+        expected,
+        WorkerLimitsV3::default(),
+    )
+    .map_err(|error| CommandFailure {
+        kind: CommandFailureKind::Preparation,
+        diagnostics: error.diagnostics().to_vec(),
+    })?;
+    Ok(WorkerFrontendV3::new(spec))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn commit_control_flow_prepared(
+    request: &ControlFlowBuildRequest,
+    command: CommandKind,
+    run: Option<&RunInvocation>,
+    invocation: Option<&zryna_abi::VerifiedInvocation<'_>>,
+    node: &NodeRuntimeCapability,
+    output_root: &ArtifactOutputRoot,
+    final_bundle: &Path,
+    closure: &crate::VerifiedModuleClosure,
+    prepared: &PreparedControlFlowArtifacts,
+    diagnostics: Vec<Diagnostic>,
+    checkpoint: ControlFlowCheckpoint<'_>,
+) -> Result<CommandSuccess, CommandFailure> {
+    let mut transaction = Transaction::create(output_root)?;
+    let operation: Result<CommandSuccess, CommandFailure> = (|| {
+        let artifacts = write_control_flow_artifacts(&transaction, request, command, prepared)?;
+        let results = if let Some(invocation) = invocation {
+            execute_control_flow_targets(
+                request,
+                node,
+                output_root,
+                &transaction,
+                prepared,
+                invocation,
+                checkpoint,
+            )?
+        } else {
+            Vec::new()
+        };
+        let sources = closure
+            .modules()
+            .iter()
+            .map(|module| ControlFlowManifestSource {
+                id: module.id(),
+                path: module.path().as_str(),
+                sha256: hex_sha256(module.source_sha256()),
+            })
+            .collect::<Vec<_>>();
+        let edges = closure
+            .edges()
+            .iter()
+            .map(|edge| ControlFlowManifestEdge {
+                importer: edge.importer().as_str(),
+                target: edge.target().as_str(),
+                specifier: edge.specifier(),
+                imported: edge.imported(),
+                local: edge.local(),
+            })
+            .collect::<Vec<_>>();
+        let manifest = ControlFlowManifest {
+            version: 2,
+            profile: CONTROL_FLOW_MANIFEST_PROFILE,
+            command,
+            entrypoint: closure.entrypoint().as_str(),
+            graph_sha256: hex_sha256(closure.graph_sha256()),
+            sources,
+            edges,
+            stem: &request.artifact_stem,
+            targets: request.targets.ordered(),
+            artifacts: &artifacts,
+            invocation: run.map(|value| ManifestInvocation {
+                export: &value.logical_export,
+                arguments: &value.arguments,
+            }),
+            results: results.iter().map(manifest_result).collect(),
+            diagnostics: &diagnostics,
+        };
+        checkpoint(ControlFlowPhase::ManifestRendering)?;
+        let manifest_bytes = serialize_control_flow_manifest(&manifest)?;
+        transaction.write_manifest(CONTROL_FLOW_MANIFEST_NAME, &manifest_bytes)?;
+        checkpoint(ControlFlowPhase::Publication)?;
+        transaction.commit(output_root, final_bundle)?;
+        Ok(CommandSuccess {
+            command,
+            manifest_path: final_bundle.join(CONTROL_FLOW_MANIFEST_NAME),
+            manifest_portable_path: format!(
+                ".zryna/out/{}.{}/{CONTROL_FLOW_MANIFEST_NAME}",
+                request.artifact_stem,
+                command.suffix()
+            ),
+            artifacts,
+            results,
+            diagnostics,
+        })
+    })();
+    match operation {
+        Ok(success) => Ok(success),
+        Err(mut failure) => {
+            if let Err(cleanup) = transaction.cleanup(output_root) {
+                failure.kind = CommandFailureKind::Cleanup;
+                failure.diagnostics.extend(cleanup.diagnostics);
+            }
+            Err(failure)
+        }
+    }
+}
+
+fn write_control_flow_artifacts(
+    transaction: &Transaction,
+    request: &ControlFlowBuildRequest,
+    command: CommandKind,
+    prepared: &PreparedControlFlowArtifacts,
+) -> Result<Vec<PublishedTargetArtifact>, CommandFailure> {
+    let mut artifacts = Vec::with_capacity(request.targets.ordered().len());
+    if let Some(artifact) = &prepared.javascript {
+        artifacts.push(transaction.write_artifact(
+            ManifestTarget::JavaScript,
+            "ecmascript-module",
+            &request.artifact_stem,
+            "mjs",
+            artifact.source.as_bytes(),
+        )?);
+    }
+    if let Some(artifact) = &prepared.webassembly {
+        artifacts.push(transaction.write_artifact(
+            ManifestTarget::WebAssembly,
+            "core-webassembly-module",
+            &request.artifact_stem,
+            "wasm",
+            artifact.bytes(),
+        )?);
+    }
+    if request.targets.native() {
+        let (kind, extension, bytes): (&str, &str, &[u8]) = if command == CommandKind::Run {
+            let executable = prepared.native_executable.as_ref().ok_or_else(|| {
+                request_error(
+                    "ZRYNA-C1010",
+                    "M2 native executable preparation was not completed",
+                    "report this compiler invariant failure",
+                )
+            })?;
+            ("linux-x86-64-invocation-executable", "elf", executable.bytes())
+        } else {
+            let object = prepared.native_object.as_ref().ok_or_else(|| {
+                request_error(
+                    "ZRYNA-C1010",
+                    "M2 native object preparation was not completed",
+                    "report this compiler invariant failure",
+                )
+            })?;
+            ("linux-x86-64-relocatable-object", "o", object.bytes())
+        };
+        artifacts.push(transaction.write_artifact(
+            ManifestTarget::Native,
+            kind,
+            &request.artifact_stem,
+            extension,
+            bytes,
+        )?);
+    }
+    Ok(artifacts)
+}
+
+fn execute_control_flow_targets(
+    request: &ControlFlowBuildRequest,
+    node: &NodeRuntimeCapability,
+    output_root: &ArtifactOutputRoot,
+    transaction: &Transaction,
+    prepared: &PreparedControlFlowArtifacts,
+    invocation: &zryna_abi::VerifiedInvocation<'_>,
+    checkpoint: ControlFlowCheckpoint<'_>,
+) -> Result<Vec<TargetResult>, CommandFailure> {
+    let mut results = Vec::with_capacity(request.targets.ordered().len());
+    if request.targets.javascript() {
+        checkpoint(ControlFlowPhase::JavaScriptExecution)?;
+        let harness = render_javascript_harness(&request.artifact_stem, invocation)?;
+        let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
+        let result_type = invocation.export().result();
+        let carrier = node
+            .run_javascript_module(&harness_path, transaction.path(), result_type)
+            .map_err(runtime_failure)?;
+        results.push(TargetResult {
+            target: ManifestTarget::JavaScript,
+            outcome: normalize_carrier(ScalarTarget::JavaScript, result_type, carrier),
+        });
+    }
+    if request.targets.webassembly() {
+        checkpoint(ControlFlowPhase::WebAssemblyExecution)?;
+        let harness = render_webassembly_harness(&request.artifact_stem, invocation)?;
+        let artifact = prepared.webassembly.as_ref().ok_or_else(|| {
+            request_error(
+                "ZRYNA-C1010",
+                "M2 WebAssembly preparation was not completed",
+                "report this compiler invariant failure",
+            )
+        })?;
+        let frame = node
+            .run_webassembly_module(&harness, artifact.bytes(), transaction.path())
+            .map_err(runtime_failure)?;
+        results.push(TargetResult {
+            target: ManifestTarget::WebAssembly,
+            outcome: normalize_frame(
+                ScalarTarget::CoreWebAssembly,
+                invocation.export().result(),
+                frame,
+            ),
+        });
+    }
+    if request.targets.native() {
+        checkpoint(ControlFlowPhase::NativeExecution)?;
+        let executable = prepared.native_executable.as_ref().ok_or_else(|| {
+            request_error(
+                "ZRYNA-C1010",
+                "M2 native executable preparation was not completed",
+                "report this compiler invariant failure",
+            )
+        })?;
+        let outcome =
+            run_prepared_native_invocation(executable, output_root, NativeProcessLimits::default())
+                .map_err(|error| native_runtime_failure(error.diagnostic().clone()))?;
+        results.push(TargetResult { target: ManifestTarget::Native, outcome });
+    }
+    Ok(results)
+}
+
+fn serialize_control_flow_manifest(
+    manifest: &ControlFlowManifest<'_>,
+) -> Result<Vec<u8>, CommandFailure> {
+    let mut writer = BoundedManifestWriter::new(MAX_CONTROL_FLOW_MANIFEST_BYTES);
+    serde_json::to_writer_pretty(&mut writer, manifest).map_err(|_| {
+        request_error(
+            "ZRYNA-C1011",
+            "bounded M2 manifest serialization failed",
+            "reduce the module graph below the documented manifest budget",
+        )
+    })?;
+    writer.finish_line().map_err(|_| {
+        request_error(
+            "ZRYNA-C1011",
+            "bounded M2 manifest serialization failed",
+            "reduce the module graph below the documented manifest budget",
+        )
+    })
+}
+
+struct BoundedManifestWriter {
+    bytes: Vec<u8>,
+    maximum: usize,
+}
+
+impl BoundedManifestWriter {
+    fn new(maximum: usize) -> Self {
+        Self { bytes: Vec::new(), maximum }
+    }
+
+    fn finish_line(mut self) -> io::Result<Vec<u8>> {
+        self.write_all(b"\n")?;
+        Ok(self.bytes)
+    }
+}
+
+impl Write for BoundedManifestWriter {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let next = self.bytes.len().checked_add(bytes.len()).ok_or_else(|| {
+            io::Error::new(io::ErrorKind::OutOfMemory, "M2 manifest length overflow")
+        })?;
+        if next > self.maximum {
+            return Err(io::Error::new(
+                io::ErrorKind::WriteZero,
+                "M2 manifest byte budget exceeded",
+            ));
+        }
+        self.bytes.extend_from_slice(bytes);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+fn hex_sha256(bytes: &[u8; 32]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut output = String::with_capacity(64);
+    for byte in bytes {
+        output.push(char::from(HEX[usize::from(byte >> 4)]));
+        output.push(char::from(HEX[usize::from(byte & 0x0f)]));
+    }
+    output
+}
+
 fn configured_frontend(
     request: &BuildRequest,
     node: &NodeRuntimeCapability,
@@ -829,7 +1481,7 @@ fn commit_prepared(
             )
         })?;
         manifest_bytes.push(b'\n');
-        transaction.write_manifest(&manifest_bytes)?;
+        transaction.write_manifest(MANIFEST_NAME, &manifest_bytes)?;
         transaction.commit(output_root, final_bundle)?;
         Ok(CommandSuccess {
             command,
@@ -1059,18 +1711,37 @@ fn normalize_carrier(
 
 struct Transaction {
     path: PathBuf,
+    stage_name: String,
     identity: Handle,
+    output_directory: Dir,
+    artifacts: RefCell<BTreeMap<ManifestTarget, StagedArtifact>>,
+    harnesses: RefCell<BTreeSet<String>>,
+    manifest: RefCell<Option<StagedPrivateFile>>,
     committed: bool,
+}
+
+struct StagedArtifact {
+    filename: String,
+    bytes: u64,
+    sha256: String,
+    executable: bool,
+}
+
+struct StagedPrivateFile {
+    filename: String,
+    bytes: u64,
+    sha256: String,
 }
 
 impl Transaction {
     fn create(output_root: &ArtifactOutputRoot) -> Result<Self, CommandFailure> {
         output_root.revalidate().map_err(preparation_failure)?;
+        let output_directory = Dir::open_ambient_dir(output_root.path(), ambient_authority())
+            .map_err(|_| transaction_error("could not retain the output-root capability"))?;
         for _ in 0..64 {
             let sequence = NEXT_TRANSACTION.fetch_add(1, Ordering::Relaxed);
-            let path = output_root
-                .path()
-                .join(format!("{TRANSACTION_PREFIX}{}-{sequence}", std::process::id()));
+            let stage_name = format!("{TRANSACTION_PREFIX}{}-{sequence}", std::process::id());
+            let path = output_root.path().join(&stage_name);
             match create_private_directory(&path) {
                 Ok(()) => {
                     let Ok(identity) = Handle::from_path(&path) else {
@@ -1079,7 +1750,16 @@ impl Transaction {
                             "could not establish private stage identity",
                         ));
                     };
-                    let transaction = Self { path, identity, committed: false };
+                    let transaction = Self {
+                        path,
+                        stage_name,
+                        identity,
+                        output_directory,
+                        artifacts: RefCell::new(BTreeMap::new()),
+                        harnesses: RefCell::new(BTreeSet::new()),
+                        manifest: RefCell::new(None),
+                        committed: false,
+                    };
                     transaction.revalidate_stage()?;
                     return Ok(transaction);
                 }
@@ -1106,6 +1786,26 @@ impl Transaction {
         let directory = self.path.join(target.as_str());
         create_owned_directory(&directory)?;
         let filename = format!("{stem}.{extension}");
+        let expected_bytes = u64::try_from(bytes.len()).map_err(|_| {
+            transaction_error("artifact length could not be represented in the manifest")
+        })?;
+        let expected_sha256 = sha256(bytes);
+        if self
+            .artifacts
+            .borrow_mut()
+            .insert(
+                target,
+                StagedArtifact {
+                    filename: filename.clone(),
+                    bytes: expected_bytes,
+                    sha256: expected_sha256.clone(),
+                    executable: target == ManifestTarget::Native && extension == "elf",
+                },
+            )
+            .is_some()
+        {
+            return Err(transaction_error("target artifact was staged more than once"));
+        }
         let path = directory.join(&filename);
         write_complete_file(&path, bytes)?;
         if target == ManifestTarget::Native && extension == "elf" {
@@ -1116,36 +1816,58 @@ impl Transaction {
             target,
             kind,
             path: format!("{}/{filename}", target.as_str()),
-            bytes: u64::try_from(bytes.len()).map_err(|_| {
-                transaction_error("artifact length could not be represented in the manifest")
-            })?,
-            sha256: sha256(bytes),
+            bytes: expected_bytes,
+            sha256: expected_sha256,
         })
     }
 
     fn write_runtime_harness(&self, target: &str, bytes: &[u8]) -> Result<PathBuf, CommandFailure> {
         self.revalidate_stage()?;
-        let path = self.path.join(format!(".{target}-runtime.mjs"));
+        let name = format!(".{target}-runtime.mjs");
+        if !matches!(name.as_str(), ".javascript-runtime.mjs" | ".webassembly-runtime.mjs")
+            || !self.harnesses.borrow_mut().insert(name.clone())
+        {
+            return Err(transaction_error("runtime harness name is not a closed unique target"));
+        }
+        let path = self.path.join(&name);
         write_complete_file(&path, bytes)?;
         self.revalidate_stage()?;
         Ok(path)
     }
 
-    fn write_manifest(&self, bytes: &[u8]) -> Result<(), CommandFailure> {
+    fn write_manifest(&self, manifest_name: &str, bytes: &[u8]) -> Result<(), CommandFailure> {
         self.revalidate_stage()?;
-        for target in [".javascript-runtime.mjs", ".webassembly-runtime.mjs"] {
-            let path = self.path.join(target);
+        if !matches!(manifest_name, MANIFEST_NAME | CONTROL_FLOW_MANIFEST_NAME)
+            || self.manifest.borrow().is_some()
+        {
+            return Err(transaction_error("manifest name is not a closed unique version"));
+        }
+        let harnesses = self.harnesses.borrow().iter().cloned().collect::<Vec<_>>();
+        for target in harnesses {
+            let path = self.path.join(&target);
             match fs::remove_file(&path) {
-                Ok(()) => {}
-                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                Ok(()) => {
+                    self.harnesses.borrow_mut().remove(&target);
+                }
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                    self.harnesses.borrow_mut().remove(&target);
+                }
                 Err(_) => {
                     return Err(transaction_error("could not remove private runtime harness"));
                 }
             }
         }
-        write_complete_file(&self.path.join(MANIFEST_NAME), bytes)?;
+        self.audit_inventory(true)?;
+        write_complete_file(&self.path.join(manifest_name), bytes)?;
+        self.manifest.borrow_mut().replace(StagedPrivateFile {
+            filename: manifest_name.to_owned(),
+            bytes: u64::try_from(bytes.len())
+                .map_err(|_| transaction_error("manifest length could not be represented"))?,
+            sha256: sha256(bytes),
+        });
         sync_directory(&self.path)?;
-        self.revalidate_stage()
+        self.revalidate_stage()?;
+        self.audit_inventory(true)
     }
 
     fn commit(
@@ -1153,10 +1875,53 @@ impl Transaction {
         output_root: &ArtifactOutputRoot,
         final_bundle: &Path,
     ) -> Result<(), CommandFailure> {
+        self.commit_with_rename_hooks(output_root, final_bundle, || {}, || {})
+    }
+
+    #[cfg(test)]
+    fn commit_with_before_rename(
+        &mut self,
+        output_root: &ArtifactOutputRoot,
+        final_bundle: &Path,
+        before_rename: impl FnOnce(),
+    ) -> Result<(), CommandFailure> {
+        self.commit_with_rename_hooks(output_root, final_bundle, before_rename, || {})
+    }
+
+    fn commit_with_rename_hooks(
+        &mut self,
+        output_root: &ArtifactOutputRoot,
+        final_bundle: &Path,
+        before_final_audit: impl FnOnce(),
+        after_final_audit: impl FnOnce(),
+    ) -> Result<(), CommandFailure> {
         output_root.revalidate().map_err(preparation_failure)?;
         self.revalidate_stage()?;
+        self.audit_inventory(true)?;
         ensure_absent(final_bundle)?;
-        rename_create_only(&self.path, final_bundle)?;
+        before_final_audit();
+        self.revalidate_stage()?;
+        self.audit_inventory(true)?;
+        after_final_audit();
+        let final_name = final_bundle
+            .file_name()
+            .and_then(|value| value.to_str())
+            .filter(|_| final_bundle.parent() == Some(output_root.path()))
+            .ok_or_else(|| transaction_error("final bundle escaped the retained output root"))?;
+        let staged_path = self.path.clone();
+        rename_create_only(&self.output_directory, &self.stage_name, final_name)?;
+        self.path = final_bundle.to_path_buf();
+        if let Err(post_commit) = self.revalidate_stage().and_then(|()| self.audit_inventory(true))
+        {
+            let rollback = rename_create_only(&self.output_directory, final_name, &self.stage_name);
+            self.path = staged_path;
+            if rollback.is_err() {
+                return Err(cleanup_failure(
+                    "published bundle identity changed and rollback could not be completed",
+                ));
+            }
+            return Err(post_commit);
+        }
         self.committed = true;
         Ok(())
     }
@@ -1178,6 +1943,10 @@ impl Transaction {
         if self.path.parent() != Some(output_root.path()) || !name.starts_with(TRANSACTION_PREFIX) {
             return Err(cleanup_failure("private stage escaped the validated output root"));
         }
+        self.audit_inventory(false).map_err(|failure| CommandFailure {
+            kind: CommandFailureKind::Cleanup,
+            diagnostics: failure.diagnostics,
+        })?;
         match fs::remove_dir_all(&self.path) {
             Ok(()) => Ok(()),
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
@@ -1203,6 +1972,108 @@ impl Transaction {
         }
         Ok(())
     }
+
+    fn audit_inventory(&self, complete: bool) -> Result<(), CommandFailure> {
+        let artifacts = self.artifacts.borrow();
+        let harnesses = self.harnesses.borrow();
+        let manifest = self.manifest.borrow();
+        let mut expected_root =
+            artifacts.keys().map(|target| target.as_str().to_owned()).collect::<BTreeSet<_>>();
+        expected_root.extend(harnesses.iter().cloned());
+        expected_root.extend(manifest.iter().map(|file| file.filename.clone()));
+        let actual_root = read_directory_names(&self.path)?;
+        if (complete && actual_root != expected_root)
+            || (!complete && !actual_root.is_subset(&expected_root))
+        {
+            return Err(transaction_error("private stage inventory changed unexpectedly"));
+        }
+        for (target, artifact) in artifacts.iter() {
+            let directory = self.path.join(target.as_str());
+            if !directory.exists() && !complete {
+                continue;
+            }
+            let metadata = fs::symlink_metadata(&directory)
+                .map_err(|_| transaction_error("staged target directory is unavailable"))?;
+            if !metadata.is_dir() || metadata_is_link_or_reparse(&metadata) {
+                return Err(transaction_error("staged target path is not a real directory"));
+            }
+            let expected = BTreeSet::from([artifact.filename.clone()]);
+            let actual = read_directory_names(&directory)?;
+            if (complete && actual != expected) || (!complete && !actual.is_subset(&expected)) {
+                return Err(transaction_error("staged target inventory changed unexpectedly"));
+            }
+            let path = directory.join(&artifact.filename);
+            if !path.exists() && !complete {
+                continue;
+            }
+            let metadata = fs::symlink_metadata(&path)
+                .map_err(|_| transaction_error("staged artifact is unavailable"))?;
+            if !metadata.is_file() || metadata_is_link_or_reparse(&metadata) {
+                return Err(transaction_error("staged artifact is not a real regular file"));
+            }
+            if complete {
+                let bytes = fs::read(&path)
+                    .map_err(|_| transaction_error("staged artifact could not be audited"))?;
+                if u64::try_from(bytes.len()).ok() != Some(artifact.bytes)
+                    || sha256(&bytes) != artifact.sha256
+                {
+                    return Err(transaction_error("staged artifact bytes changed before commit"));
+                }
+                if artifact.executable && !is_executable_file(&metadata) {
+                    return Err(transaction_error("staged native executable mode changed"));
+                }
+            }
+        }
+        for name in harnesses.iter() {
+            let metadata = fs::symlink_metadata(self.path.join(name))
+                .map_err(|_| transaction_error("staged private file is unavailable"))?;
+            if !metadata.is_file() || metadata_is_link_or_reparse(&metadata) {
+                return Err(transaction_error("staged private path is not a real regular file"));
+            }
+        }
+        if let Some(manifest) = manifest.as_ref() {
+            let path = self.path.join(&manifest.filename);
+            let metadata = fs::symlink_metadata(&path)
+                .map_err(|_| transaction_error("staged manifest is unavailable"))?;
+            if !metadata.is_file() || metadata_is_link_or_reparse(&metadata) {
+                return Err(transaction_error("staged manifest is not a real regular file"));
+            }
+            if complete {
+                let bytes = fs::read(&path)
+                    .map_err(|_| transaction_error("staged manifest could not be audited"))?;
+                if u64::try_from(bytes.len()).ok() != Some(manifest.bytes)
+                    || sha256(&bytes) != manifest.sha256
+                {
+                    return Err(transaction_error("staged manifest bytes changed before commit"));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+fn read_directory_names(path: &Path) -> Result<BTreeSet<String>, CommandFailure> {
+    fs::read_dir(path)
+        .map_err(|_| transaction_error("private stage directory could not be enumerated"))?
+        .map(|entry| {
+            entry
+                .map_err(|_| transaction_error("private stage entry could not be inspected"))?
+                .file_name()
+                .into_string()
+                .map_err(|_| transaction_error("private stage entry name is not portable UTF-8"))
+        })
+        .collect()
+}
+
+#[cfg(unix)]
+fn is_executable_file(metadata: &fs::Metadata) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    metadata.permissions().mode() & 0o111 == 0o111
+}
+
+#[cfg(not(unix))]
+fn is_executable_file(_metadata: &fs::Metadata) -> bool {
+    true
 }
 
 fn create_owned_directory(path: &Path) -> Result<(), CommandFailure> {
@@ -1274,21 +2145,26 @@ fn sync_directory(path: &Path) -> Result<(), CommandFailure> {
 }
 
 #[cfg(target_os = "linux")]
-fn rename_create_only(source: &Path, destination: &Path) -> Result<(), CommandFailure> {
-    use nix::fcntl::{AT_FDCWD, RenameFlags, renameat2};
+fn rename_create_only(root: &Dir, source: &str, destination: &str) -> Result<(), CommandFailure> {
+    use nix::fcntl::{RenameFlags, renameat2};
+    use std::os::fd::AsFd;
 
-    renameat2(AT_FDCWD, source, AT_FDCWD, destination, RenameFlags::RENAME_NOREPLACE)
+    renameat2(root.as_fd(), source, root.as_fd(), destination, RenameFlags::RENAME_NOREPLACE)
         .map_err(|_| transaction_error("create-only bundle commit failed"))
 }
 
 #[cfg(windows)]
-fn rename_create_only(source: &Path, destination: &Path) -> Result<(), CommandFailure> {
-    fs::rename(source, destination)
+fn rename_create_only(root: &Dir, source: &str, destination: &str) -> Result<(), CommandFailure> {
+    root.rename(source, root, destination)
         .map_err(|_| transaction_error("create-only bundle commit failed"))
 }
 
 #[cfg(not(any(target_os = "linux", windows)))]
-fn rename_create_only(_source: &Path, _destination: &Path) -> Result<(), CommandFailure> {
+fn rename_create_only(
+    _root: &Dir,
+    _source: &str,
+    _destination: &str,
+) -> Result<(), CommandFailure> {
     Err(transaction_error("create-only bundle commit is unsupported on this platform"))
 }
 
@@ -1454,29 +2330,167 @@ fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
 mod tests {
     use std::{
         env, fs,
+        io::Write as _,
         path::{Path, PathBuf},
-        sync::atomic::{AtomicUsize, Ordering},
+        sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        },
+        time::Duration,
     };
 
     use zryna_abi::{
         Invocation, RawHostScalar, ScalarOutcome, ScalarTarget, ScalarType, ScalarValue,
     };
     use zryna_diagnostics::Diagnostic;
-    use zryna_frontend::{VerifiedFrontendProvider, WorkerError, syntax_v2};
+    use zryna_frontend::{
+        VerifiedFrontendProvider, VerifiedFrontendProviderV3, WorkerError, WorkerFrontendV3,
+        syntax_v2, syntax_v3,
+    };
     use zryna_ir::{Type, control_flow_v1};
     use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 
     #[cfg(unix)]
     use super::read_entrypoint_with_after_read;
     use super::{
-        BuildRequest, CommandFailure, CommandFailureKind, CommandKind, ManifestTarget,
-        TargetSelection, Transaction, compile_selected, native_preparation_failure,
-        native_runtime_failure, normalize_carrier, render_javascript_harness,
-        render_webassembly_harness, runtime_failure, validate_request,
+        BoundedManifestWriter, BuildRequest, CommandFailure, CommandFailureKind, CommandKind,
+        ControlFlowBuildRequest, MANIFEST_NAME, ManifestTarget, TargetSelection, Transaction,
+        compile_selected, configured_frontend_v3, execute_control_flow_with_frontend_factory,
+        native_preparation_failure, native_runtime_failure, normalize_carrier,
+        render_javascript_harness, render_webassembly_harness, runtime_failure, validate_request,
+    };
+    #[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
+    use super::{
+        ControlFlowPhase, RunInvocation, execute_control_flow_with_frontend_factory_and_checkpoint,
+        failure,
     };
     use crate::{ArtifactOutputRoot, runtime::NodeRuntimeCapability};
 
     static NEXT_ROOT: AtomicUsize = AtomicUsize::new(0);
+
+    struct CountingFrontendV3 {
+        inner: WorkerFrontendV3,
+        calls: Arc<AtomicUsize>,
+    }
+
+    impl VerifiedFrontendProviderV3 for CountingFrontendV3 {
+        fn minimum_analysis_timeout(&self) -> Duration {
+            self.inner.minimum_analysis_timeout()
+        }
+
+        fn analyze_verified_v3(
+            &self,
+            sources: &SourceMap,
+        ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
+            self.calls.fetch_add(1, Ordering::Relaxed);
+            self.inner.analyze_verified_v3(sources)
+        }
+
+        fn analyze_verified_v3_with_timeout(
+            &self,
+            sources: &SourceMap,
+            timeout: Duration,
+        ) -> Result<syntax_v3::ProjectSyntaxSnapshot, WorkerError> {
+            self.calls.fetch_add(1, Ordering::Relaxed);
+            self.inner.analyze_verified_v3_with_timeout(sources, timeout)
+        }
+    }
+
+    #[test]
+    fn bounded_manifest_writer_accepts_exact_limit_and_rejects_plus_one() {
+        let mut exact = BoundedManifestWriter::new(8);
+        exact.write_all(b"12345678").expect("the exact manifest budget must be accepted");
+        let mut plus_one = BoundedManifestWriter::new(8);
+        assert!(plus_one.write_all(b"123456789").is_err());
+    }
+
+    #[test]
+    fn public_m2_pipeline_discovers_each_batch_once_then_authenticates_one_final_graph() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .canonicalize()
+            .expect("repository root must resolve");
+        let sequence = NEXT_ROOT.fetch_add(1, Ordering::Relaxed);
+        let stem = format!("m2_counting_frontend_{}_{sequence}", std::process::id());
+        let bundle = root.join(".zryna/out").join(format!("{stem}.build"));
+        let request = ControlFlowBuildRequest {
+            workspace_root: root,
+            entrypoint: "examples/control-flow/main.zry".to_owned(),
+            artifact_stem: stem,
+            targets: TargetSelection::JavaScript,
+            node_runtime: node_executable(),
+        };
+        let calls = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&calls);
+        let result = execute_control_flow_with_frontend_factory(&request, None, |request, node| {
+            configured_frontend_v3(request, node)
+                .map(|inner| CountingFrontendV3 { inner, calls: observed })
+        });
+        result.expect("counted public M2 build must succeed");
+        assert_eq!(calls.load(Ordering::Relaxed), 3);
+        fs::remove_dir_all(bundle).expect("test-owned counted bundle must be removable");
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
+    #[test]
+    fn every_m2_pipeline_phase_failure_leaves_no_final_bundle() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .canonicalize()
+            .expect("repository root must resolve");
+        let phases = [
+            ControlFlowPhase::Discovery,
+            ControlFlowPhase::Semantics,
+            ControlFlowPhase::JavaScriptBackend,
+            ControlFlowPhase::WebAssemblyBackend,
+            ControlFlowPhase::NativeMir,
+            ControlFlowPhase::NativeObject,
+            ControlFlowPhase::NativeLink,
+            ControlFlowPhase::JavaScriptExecution,
+            ControlFlowPhase::WebAssemblyExecution,
+            ControlFlowPhase::NativeExecution,
+            ControlFlowPhase::ManifestRendering,
+            ControlFlowPhase::Publication,
+        ];
+        for (index, injected) in phases.into_iter().enumerate() {
+            let stem = format!("m2_phase_failure_{}_{}", std::process::id(), index);
+            let bundle = root.join(".zryna/out").join(format!("{stem}.run"));
+            let request = ControlFlowBuildRequest {
+                workspace_root: root.clone(),
+                entrypoint: "examples/control-flow/main.zry".to_owned(),
+                artifact_stem: stem,
+                targets: TargetSelection::All,
+                node_runtime: node_executable(),
+            };
+            let invocation = RunInvocation {
+                logical_export: "choose".to_owned(),
+                arguments: vec![ScalarValue::Bool(true), ScalarValue::I32(21)],
+            };
+            let result = execute_control_flow_with_frontend_factory_and_checkpoint(
+                &request,
+                Some(&invocation),
+                configured_frontend_v3,
+                &|phase| {
+                    if phase == injected {
+                        Err(failure(
+                            CommandFailureKind::Preparation,
+                            Diagnostic::error(
+                                "ZRYNA-C1099",
+                                None,
+                                "test-injected M2 pipeline phase failure",
+                                "verify atomic failure handling",
+                            ),
+                        ))
+                    } else {
+                        Ok(())
+                    }
+                },
+            );
+            let error = result.expect_err("the selected phase must fail");
+            assert_eq!(error.diagnostics()[0].code(), "ZRYNA-C1099");
+            assert!(!bundle.exists(), "{injected:?} must not advertise a final bundle");
+        }
+    }
 
     fn node_executable() -> PathBuf {
         let executable = if cfg!(windows) { "node.exe" } else { "node" };
@@ -1922,19 +2936,175 @@ mod tests {
                 b"export {};\n",
             )
             .expect("staged artifact must be written");
-        fs::write(stage.join(super::MANIFEST_NAME), b"occupied")
+        fs::write(stage.join(MANIFEST_NAME), b"occupied")
             .expect("manifest collision must be installed");
 
         let failure = transaction
-            .write_manifest(b"{}\n")
+            .write_manifest(MANIFEST_NAME, b"{}\n")
             .expect_err("post-stage manifest failure must be reported");
         assert_eq!(failure.kind(), CommandFailureKind::Preparation);
-        transaction.cleanup(&output).expect("failed transaction must be removed");
-        assert!(!stage.exists());
+        let cleanup = transaction
+            .cleanup(&output)
+            .expect_err("cleanup must refuse the unexpected manifest entry");
+        assert_eq!(cleanup.kind(), CommandFailureKind::Cleanup);
+        assert!(stage.exists());
         assert!(!final_bundle.exists());
-        assert!(
-            fs::read_dir(output.path()).expect("output root must remain readable").next().is_none()
+        assert_eq!(
+            fs::read(stage.join(MANIFEST_NAME)).expect("unexpected bytes must remain"),
+            b"occupied"
         );
+    }
+
+    #[test]
+    fn staged_artifact_tamper_fails_before_manifest_and_publishes_nothing() {
+        let root = TemporaryRoot::new("artifact-tamper");
+        let output = root.output();
+        let final_bundle = output.path().join("artifact.build");
+        let mut transaction = Transaction::create(&output).expect("transaction must be created");
+        let stage = transaction.path().to_path_buf();
+        transaction
+            .write_artifact(
+                ManifestTarget::JavaScript,
+                "ecmascript-module",
+                "artifact",
+                "mjs",
+                b"export const value = 1;\n",
+            )
+            .expect("artifact must be staged");
+        fs::write(stage.join("javascript/artifact.mjs"), b"changed")
+            .expect("fixture must mutate staged bytes");
+
+        let failure = transaction
+            .write_manifest(MANIFEST_NAME, b"{}\n")
+            .expect_err("tampered artifact must fail the complete inventory audit");
+        assert_eq!(failure.kind(), CommandFailureKind::Preparation);
+        assert!(!final_bundle.exists());
+        transaction.cleanup(&output).expect("known tampered stage must remain removable");
+        assert!(!stage.exists());
+    }
+
+    #[test]
+    fn unexpected_staged_entry_blocks_commit_and_refuses_recursive_cleanup() {
+        let root = TemporaryRoot::new("unexpected-stage-entry");
+        let output = root.output();
+        let final_bundle = output.path().join("artifact.build");
+        let mut transaction = Transaction::create(&output).expect("transaction must be created");
+        let stage = transaction.path().to_path_buf();
+        fs::write(stage.join("attacker-controlled"), b"do-not-delete")
+            .expect("fixture must install an unexpected entry");
+
+        let failure = transaction
+            .commit(&output, &final_bundle)
+            .expect_err("unexpected stage inventory must block commit");
+        assert_eq!(failure.kind(), CommandFailureKind::Preparation);
+        assert!(!final_bundle.exists());
+        let cleanup = transaction
+            .cleanup(&output)
+            .expect_err("cleanup must not recursively delete an unexpected entry");
+        assert_eq!(cleanup.kind(), CommandFailureKind::Cleanup);
+        assert_eq!(
+            fs::read(stage.join("attacker-controlled")).expect("entry must remain"),
+            b"do-not-delete"
+        );
+    }
+
+    #[test]
+    fn destination_installed_after_absence_check_is_never_replaced() {
+        let root = TemporaryRoot::new("destination-race");
+        let output = root.output();
+        let final_bundle = output.path().join("artifact.build");
+        let mut transaction = Transaction::create(&output).expect("transaction must be created");
+        let stage = transaction.path().to_path_buf();
+
+        let failure = transaction
+            .commit_with_before_rename(&output, &final_bundle, || {
+                fs::create_dir(&final_bundle)
+                    .expect("racing destination directory must be created");
+                fs::write(final_bundle.join("sentinel"), b"prior")
+                    .expect("racing destination sentinel must be written");
+            })
+            .expect_err("create-only rename must reject a destination race");
+        assert_eq!(failure.kind(), CommandFailureKind::Preparation);
+        assert_eq!(
+            fs::read(final_bundle.join("sentinel")).expect("racing destination must remain"),
+            b"prior"
+        );
+        transaction.cleanup(&output).expect("known empty stage must be removable");
+        assert!(!stage.exists());
+    }
+
+    #[test]
+    fn staged_bytes_changed_immediately_before_rename_are_never_published() {
+        for relative in ["javascript/artifact.mjs", MANIFEST_NAME] {
+            let root = TemporaryRoot::new("before-rename-tamper");
+            let output = root.output();
+            let final_bundle = output.path().join("artifact.build");
+            let mut transaction =
+                Transaction::create(&output).expect("transaction must be created");
+            let stage = transaction.path().to_path_buf();
+            transaction
+                .write_artifact(
+                    ManifestTarget::JavaScript,
+                    "ecmascript-module",
+                    "artifact",
+                    "mjs",
+                    b"export const value = 1;\n",
+                )
+                .expect("artifact must be staged");
+            transaction.write_manifest(MANIFEST_NAME, b"{}\n").expect("manifest must be staged");
+            let changed = stage.join(relative);
+
+            let failure = transaction
+                .commit_with_before_rename(&output, &final_bundle, || {
+                    fs::write(&changed, b"changed immediately before rename")
+                        .expect("fixture must mutate a staged file");
+                })
+                .expect_err("the final pre-rename audit must reject changed bytes");
+            assert_eq!(failure.kind(), CommandFailureKind::Preparation);
+            assert!(!final_bundle.exists());
+            transaction.cleanup(&output).expect("known staged inventory must remain removable");
+            assert!(!stage.exists());
+        }
+    }
+
+    #[test]
+    fn stage_root_displaced_after_final_audit_is_detected_and_rolled_back() {
+        let root = TemporaryRoot::new("post-audit-stage-displacement");
+        let output = root.output();
+        let final_bundle = output.path().join("artifact.build");
+        let mut transaction = Transaction::create(&output).expect("transaction must be created");
+        let stage = transaction.path().to_path_buf();
+        let displaced = output.path().join(".test-displaced-stage");
+        transaction
+            .write_artifact(
+                ManifestTarget::JavaScript,
+                "ecmascript-module",
+                "artifact",
+                "mjs",
+                b"export const value = 1;\n",
+            )
+            .expect("artifact must be staged");
+        transaction.write_manifest(MANIFEST_NAME, b"{}\n").expect("manifest must be staged");
+
+        let failure = transaction
+            .commit_with_rename_hooks(
+                &output,
+                &final_bundle,
+                || {},
+                || {
+                    fs::rename(&stage, &displaced)
+                        .expect("fixture must displace the audited stage");
+                    fs::create_dir(&stage).expect("fixture must install a replacement stage");
+                },
+            )
+            .expect_err("a different stage identity must never be committed");
+        assert_eq!(failure.kind(), CommandFailureKind::Preparation);
+        assert!(!final_bundle.exists());
+
+        fs::remove_dir(&stage).expect("test-owned replacement stage must be removable");
+        fs::rename(&displaced, &stage).expect("audited stage must be restored for bounded cleanup");
+        transaction.cleanup(&output).expect("restored audited stage must be cleanable");
+        assert!(!stage.exists());
     }
 
     #[cfg(unix)]

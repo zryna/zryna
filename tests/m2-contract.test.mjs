@@ -108,14 +108,14 @@ test('bounds canonical registry reads and distinguishes integrity from authentic
   }
 });
 
-test('normative specification freezes profile boundaries without claiming implementation', async () => {
+test('normative specification freezes the implemented explicit profile boundary', async () => {
   const specification = await readFile(
     new URL('../spec/language/CONTROL_FLOW_MODULES_V1.md', import.meta.url),
     'utf8',
   );
   const normalized = specification.replace(/\s+/g, ' ');
   for (const required of [
-    'Status: specified for M2, not implemented.',
+    'Status: frozen and implemented as the explicit public M2 `control-flow-v1` profile.',
     '`ControlFlowV1`',
     '`--profile control-flow-v1`',
     '`zryna-manifest-v2.json`',
@@ -158,11 +158,11 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
       ? 'M1 closure'
       : issue.dependsOn.map((number) => `#${number}`).join(', ');
     assert.equal(row.dependsOnText, expectedDependencyText);
-    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51, 52, 53, 54].includes(row.number) ? 'complete' : 'planned');
+    assert.equal(row.state, [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55].includes(row.number) ? 'complete' : 'planned');
   }
   assert.match(
     roadmap,
-    /Current status: contract specified,[\s\S]*M2 native object and internal typed execution implemented,[\s\S]*three-target execution remain unavailable/,
+    /Current status: contract specified,[\s\S]*M2 native object and typed execution implemented[\s\S]*explicit public `control-flow-v1` path[\s\S]*three-target M2 conformance remains unavailable/,
   );
   assert.match(roadmap, /digest-pinned planning inventory/);
   assert.match(architecture, /## Isolated `ControlFlowV1` boundary/);
@@ -171,12 +171,12 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
   assert.match(frontends, /internal module discovery/);
   assert.match(status, /## Implemented M1 slice/);
   assert.match(status, /## Implemented M2 compiler components/);
-  assert.match(status, /M2 deterministic JavaScript backend[\s\S]*M2 direct core WebAssembly backend[\s\S]*byte-deterministic WebAssembly 1\.0[\s\S]*The public driver still selects protocol v2;[\s\S]*no\s+CLI command or manifest exposes M2/);
-  assert.match(status, /does not\s+claim source control flow, modules,[\s\S]*or an executable M2[\s\S]*feature/);
+  assert.match(status, /M2 deterministic JavaScript backend[\s\S]*M2 direct core WebAssembly backend[\s\S]*byte-deterministic WebAssembly 1\.0[\s\S]*public driver now composes those boundaries[\s\S]*`zryna-manifest-v2\.json`/);
+  assert.match(status, /does not yet claim independently checked[\s\S]*three-target equivalence/);
   assert.match(moduleClosure, /exactly one final full-map protocol-v3 snapshot/);
   assert.match(moduleClosure, /ZRYNA-M2-GRAPH\\0/);
   assert.match(moduleClosure, /UNC, verbatim, device, and drive-relative roots/);
-  assert.match(moduleClosure, /does not enable the `control-flow-v1` profile/);
+  assert.match(moduleClosure, /selected only by explicit[\s\S]*`--profile control-flow-v1`/);
   assert.match(moduleClosure, /M2 Linux x86-64 native backend/);
   assert.doesNotMatch(moduleClosure, /Native, manifest v2,[\s\S]*remain gated/);
   assert.match(semantics, /public result contains only[\s\S]*VerifiedProgram/);
@@ -187,7 +187,7 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
   assert.match(controlFlow, /omitted `else` is the exact empty false path/);
   assert.match(controlFlow, /condition of a `while` is evaluated once on every[\s\S]*visit to its header/);
   assert.match(controlFlow, /`while \(true\)` is still treated as[\s\S]*potentially falling through/);
-  assert.match(controlFlow, /does not enable the public[\s\S]*manifest v2, a CLI command, or three-target M2 support/);
+  assert.match(controlFlow, /manifest-v2 transaction[\s\S]*implemented by Issue #55/);
   const normalizedWebAssembly = webassembly.replace(/\s+/g, ' ');
   for (const required of [
     '`zryna_backend_javascript::emit_control_flow`',
@@ -203,7 +203,7 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
     'parallel SSA edge semantics',
     '32 MiB',
     '`ZRYNA-J2003`',
-    'does not select protocol v3 in the public',
+    'public driver only for explicit',
   ]) {
     assert.ok(javascript.includes(required), `missing M2 JavaScript contract phrase: ${required}`);
   }
@@ -218,7 +218,7 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
     '`ZRYNA-W2004`',
     '`ZRYNA-W2005`',
     'over standard input to an inline module',
-    'does not select protocol v3 in the public',
+    'public driver only',
   ]) {
     assert.ok(normalizedWebAssembly.includes(required), `missing M2 WebAssembly contract phrase: ${required}`);
   }
@@ -257,7 +257,7 @@ test('roadmap ledger exactly matches the digest-pinned issue graph and honest st
     '`ZRYNA-N3103`',
     'artifact-bound scalar ABI',
     'device/inode identity',
-    'Issue #55 owns public profile selection',
+    'Issue #55 composes this boundary through public profile selection',
   ]) {
     assert.ok(normalizedNativeBackend.includes(required), `missing M2 native backend phrase: ${required}`);
   }
@@ -270,6 +270,6 @@ test('package exposes one focused digest-pinned contract check', async () => {
   assert.equal(packageDocument.scripts['m2:contract'], 'node scripts/check-m2-contract.mjs');
   assert.equal(
     packageDocument.scripts['docs:check'],
-    'node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs',
+    'node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs tests/m2-manifest-contract.test.mjs',
   );
 });

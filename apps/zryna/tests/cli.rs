@@ -42,6 +42,12 @@ impl WorkspaceCase {
         Self { root, source_relative, owned_paths: Vec::new(), unique }
     }
 
+    fn control_flow() -> Self {
+        let mut case = Self::new();
+        "examples/control-flow/main.zry".clone_into(&mut case.source_relative);
+        case
+    }
+
     fn stem(&mut self, label: &str, command: &str) -> String {
         let stem = format!("{}_{}", self.unique, label);
         self.owned_paths.push(self.root.join(".zryna/out").join(format!("{stem}.{command}")));
@@ -538,6 +544,10 @@ fn help_and_required_target_and_node_are_stable() {
         assert!(output.stderr.is_empty());
         let stdout = String::from_utf8(output.stdout).expect("help must be UTF-8");
         assert!(stdout.contains("Usage:"));
+        if arguments.first() == Some(&"build") || arguments.first() == Some(&"run") {
+            assert!(stdout.contains("--profile"));
+            assert!(stdout.contains("control-flow-v1"));
+        }
     }
 
     let missing_target = zryna()
@@ -554,6 +564,236 @@ fn help_and_required_target_and_node_are_stable() {
         .expect("missing-node command must start");
     assert_eq!(missing_node.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&missing_node.stderr).contains("--node"));
+}
+
+#[test]
+fn control_flow_profile_is_exact_and_selects_boolean_argument_parsing() {
+    let invalid_profile = zryna()
+        .args(["build", "src/main.zry", "--target", "javascript", "--profile", "m2", "--node"])
+        .arg(dummy_absolute_node())
+        .output()
+        .expect("invalid-profile command must start");
+    assert_eq!(invalid_profile.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&invalid_profile.stderr).contains("control-flow-v1"));
+
+    let workspace = InvalidWorkspace::new();
+    let accepted_boolean = zryna()
+        .args([
+            "run",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--profile",
+            "control-flow-v1",
+            "--export",
+            "value",
+            "--arg=bool:true",
+            "--root",
+        ])
+        .arg(&workspace.root)
+        .arg("--node")
+        .arg(dummy_absolute_node())
+        .output()
+        .expect("control-flow Boolean command must start");
+    assert_eq!(
+        accepted_boolean.status.code(),
+        Some(1),
+        "canonical Boolean must reach the architecture gate rather than fail CLI parsing"
+    );
+    assert!(!String::from_utf8_lossy(&accepted_boolean.stderr).contains("typed argument"));
+}
+
+#[test]
+fn control_flow_multifile_build_records_canonical_manifest_v2() {
+    let mut workspace = WorkspaceCase::control_flow();
+    let stem = workspace.stem("m2_multifile_all", "build");
+    let output = command_output(
+        &workspace,
+        &[
+            "build",
+            &workspace.source_relative,
+            "--profile",
+            "control-flow-v1",
+            "--target",
+            "all",
+            "--name",
+            &stem,
+            "--json",
+        ],
+    );
+    assert_success(&output);
+    let response: Value = serde_json::from_slice(&output.stdout).expect("M2 build response");
+    assert_eq!(response["ok"], true);
+    assert_eq!(response["manifest"], format!(".zryna/out/{stem}.build/zryna-manifest-v2.json"));
+    let bundle = workspace.bundle(&stem, "build");
+    let manifest = read_json(&bundle.join("zryna-manifest-v2.json"));
+    assert_eq!(manifest["version"], 2);
+    assert_eq!(manifest["profile"], "zryna-control-flow-v1");
+    assert_eq!(manifest["entrypoint"], workspace.source_relative);
+    assert_eq!(manifest["targets"], json!(["javascript", "webassembly", "native"]));
+    assert_eq!(manifest["sources"].as_array().map(Vec::len), Some(2));
+    assert_eq!(manifest["sources"][0]["id"], 0);
+    assert_eq!(manifest["sources"][0]["path"], workspace.source_relative);
+    assert_eq!(manifest["sources"][1]["id"], 1);
+    assert!(
+        manifest["sources"][1]["path"].as_str().is_some_and(|path| path.ends_with("/math.zry"))
+    );
+    assert_eq!(
+        manifest["edges"],
+        json!([{
+            "importer": workspace.source_relative,
+            "target": "examples/control-flow/math.zry",
+            "specifier": "./math.zry",
+            "imported": "double",
+            "local": "double"
+        }])
+    );
+    assert!(manifest["graph_sha256"].as_str().is_some_and(|digest| {
+        digest.len() == 64
+            && digest.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    }));
+    assert_eq!(manifest["artifacts"].as_array().map(Vec::len), Some(3));
+    assert!(manifest["invocation"].is_null());
+    assert_eq!(manifest["results"], json!([]));
+
+    let first_manifest = fs::read(bundle.join("zryna-manifest-v2.json"))
+        .expect("first M2 manifest bytes must remain readable");
+    let expected_snapshot =
+        include_str!("snapshots/control-flow-build-manifest-v2.json").replace("m2_snapshot", &stem);
+    assert_eq!(first_manifest, expected_snapshot.as_bytes());
+    fs::remove_dir_all(&bundle).expect("determinism fixture may remove its own first bundle");
+    let repeated = command_output(
+        &workspace,
+        &[
+            "build",
+            &workspace.source_relative,
+            "--profile",
+            "control-flow-v1",
+            "--target",
+            "all",
+            "--name",
+            &stem,
+            "--json",
+        ],
+    );
+    assert_success(&repeated);
+    assert_eq!(
+        fs::read(bundle.join("zryna-manifest-v2.json"))
+            .expect("repeated M2 manifest bytes must remain readable"),
+        first_manifest
+    );
+}
+
+#[test]
+fn control_flow_portable_targets_share_typed_boolean_invocation() {
+    let mut workspace = WorkspaceCase::control_flow();
+    for target in ["javascript", "webassembly"] {
+        let stem = workspace.stem(&format!("m2_bool_{target}"), "run");
+        let output = command_output(
+            &workspace,
+            &[
+                "run",
+                &workspace.source_relative,
+                "--profile",
+                "control-flow-v1",
+                "--target",
+                target,
+                "--name",
+                &stem,
+                "--export",
+                "choose",
+                "--arg=bool:true",
+                "--arg=i32:21",
+                "--json",
+            ],
+        );
+        assert_success(&output);
+        let response: Value = serde_json::from_slice(&output.stdout).expect("M2 run response");
+        assert_eq!(
+            response["results"],
+            json!([{
+                "target": target,
+                "outcome": {"kind": "returned", "value": {"type": "i32", "value": 42}}
+            }])
+        );
+        let manifest = read_json(&workspace.bundle(&stem, "run").join("zryna-manifest-v2.json"));
+        assert_eq!(
+            manifest["invocation"]["arguments"],
+            json!([
+                {"type": "bool", "value": true},
+                {"type": "i32", "value": 21}
+            ])
+        );
+        assert_eq!(manifest["results"][0]["outcome"]["value"], 42);
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
+#[test]
+fn control_flow_linux_all_run_reports_three_ordered_equal_results() {
+    let mut workspace = WorkspaceCase::control_flow();
+    let stem = workspace.stem("m2_bool_all", "run");
+    let output = command_output(
+        &workspace,
+        &[
+            "run",
+            &workspace.source_relative,
+            "--profile",
+            "control-flow-v1",
+            "--target",
+            "all",
+            "--name",
+            &stem,
+            "--export",
+            "choose",
+            "--arg=bool:true",
+            "--arg=i32:21",
+            "--json",
+        ],
+    );
+    assert_success(&output);
+    let response: Value = serde_json::from_slice(&output.stdout).expect("M2 all response");
+    let results = response["results"].as_array().expect("ordered M2 results");
+    assert_eq!(
+        results.iter().map(|result| result["target"].as_str()).collect::<Vec<_>>(),
+        [Some("javascript"), Some("webassembly"), Some("native")]
+    );
+    assert!(results.iter().all(|result| result["outcome"]["value"]["value"] == 42));
+}
+
+#[cfg(windows)]
+#[test]
+fn control_flow_windows_native_run_fails_closed_without_a_bundle() {
+    for target in ["native", "all"] {
+        let mut workspace = WorkspaceCase::control_flow();
+        let stem = workspace.stem(&format!("m2_windows_{target}"), "run");
+        let output = command_output(
+            &workspace,
+            &[
+                "run",
+                &workspace.source_relative,
+                "--profile",
+                "control-flow-v1",
+                "--target",
+                target,
+                "--name",
+                &stem,
+                "--export",
+                "choose",
+                "--arg=bool:true",
+                "--arg=i32:21",
+                "--json",
+            ],
+        );
+        assert_eq!(output.status.code(), Some(4));
+        let response: Value =
+            serde_json::from_slice(&output.stdout).expect("M2 rejection response");
+        assert_eq!(response["ok"], false);
+        assert!(response["diagnostics"].as_array().is_some_and(|diagnostics| {
+            diagnostics.iter().any(|diagnostic| diagnostic["code"] == "ZRYNA-N4002")
+        }));
+        assert!(!workspace.bundle(&stem, "run").exists());
+    }
 }
 
 #[test]
@@ -578,6 +818,31 @@ fn canonical_scalar_arguments_are_enforced_by_the_executable_parser() {
         assert!(output.stdout.is_empty());
         assert!(String::from_utf8_lossy(&output.stderr).contains("canonical"));
     }
+}
+
+#[test]
+fn omitted_profile_keeps_clap_argument_errors_even_in_json_mode() {
+    let output = zryna()
+        .args([
+            "run",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--export",
+            "add",
+            "--arg=bool:true",
+            "--json",
+            "--node",
+        ])
+        .arg(dummy_absolute_node())
+        .output()
+        .expect("invalid legacy argument command must start");
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("invalid value 'bool:true'"));
+    assert!(stderr.contains("For more information, try '--help'."));
+    assert!(!stderr.contains("\"diagnostics\""));
 }
 
 #[test]

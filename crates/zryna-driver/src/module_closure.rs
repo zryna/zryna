@@ -2,6 +2,7 @@ use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
     error::Error,
     fmt,
+    time::{Duration, Instant},
 };
 
 use sha2::{Digest, Sha256};
@@ -21,10 +22,14 @@ pub const MAX_MODULE_SOURCE_BYTES: usize = 8 * 1_024 * 1_024;
 pub const MAX_MODULE_DISCOVERY_ROUNDS: usize = 4_096;
 /// Maximum provider calls including the one final full-map call.
 pub const MAX_MODULE_PROVIDER_CALLS: usize = 4_097;
+/// Maximum aggregate wall-clock duration of one module-closure discovery operation.
+pub const MAX_MODULE_DISCOVERY_WALL_TIME: Duration = Duration::from_mins(2);
 /// Maximum cumulative source bytes supplied to the provider across discovery and final analysis.
 pub const MAX_MODULE_PROVIDER_SOURCE_BYTES: usize = 16 * 1_024 * 1_024;
 /// Maximum canonical named-import binding edges.
 pub const MAX_MODULE_IMPORT_EDGES: usize = 65_536;
+/// Maximum conservative canonical manifest bytes attributable to named-import edges.
+pub const MAX_MODULE_EDGE_MANIFEST_BYTES: usize = 32 * 1_024 * 1_024;
 /// Maximum import declarations across the complete closure.
 pub const MAX_MODULE_IMPORT_DECLARATIONS: usize = 65_536;
 /// Maximum entries inspected in any retained source directory.
@@ -326,6 +331,20 @@ pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
     entrypoint: NormalizedSourcePath,
     frontend: &Provider,
 ) -> Result<VerifiedModuleClosure, ModuleClosureError> {
+    discover_module_closure_with_clock(root, entrypoint, frontend, Instant::now)
+}
+
+#[allow(clippy::too_many_lines)]
+pub(crate) fn discover_module_closure_with_clock<
+    Provider: VerifiedFrontendProviderV3 + ?Sized,
+    Clock: FnMut() -> Instant,
+>(
+    root: &WorkspaceSourceRoot,
+    entrypoint: NormalizedSourcePath,
+    frontend: &Provider,
+    mut now: Clock,
+) -> Result<VerifiedModuleClosure, ModuleClosureError> {
+    let discovery_started = now();
     if !has_exact_zry_extension(entrypoint.as_str()) {
         return Err(rejected(module_diagnostic(
             "ZRYNA-D3001",
@@ -347,6 +366,7 @@ pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
     let mut provider_calls = 0_usize;
     let mut rounds = 0_usize;
     let mut import_declarations = 0_usize;
+    let mut edge_manifest_bytes = 0_usize;
 
     while !pending.is_empty() {
         rounds = checked_increment(rounds)?;
@@ -380,8 +400,14 @@ pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
         account_provider_bytes(&mut provider_bytes, batch_bytes)?;
         account_provider_call(&mut provider_calls, ProviderCallPhase::Discovery)?;
         let batch_map = SourceMap::build(batch_sources).map_err(|_| invariant_rejection())?;
-        let snapshot =
-            frontend.analyze_verified_v3(&batch_map).map_err(ModuleClosureError::Frontend)?;
+        let remaining = remaining_discovery_wall_time(
+            discovery_started,
+            now(),
+            frontend.minimum_analysis_timeout(),
+        )?;
+        let snapshot = frontend.analyze_verified_v3_with_timeout(&batch_map, remaining);
+        enforce_discovery_wall_time(discovery_started, now())?;
+        let snapshot = snapshot.map_err(ModuleClosureError::Frontend)?;
         reject_provider_errors(&snapshot)?;
         let batch_imports = snapshot_fingerprints(&snapshot);
 
@@ -398,6 +424,14 @@ pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
                     .map_err(|_| invalid_specifier(&path))?;
                 register_portable_path(&mut portable_paths, &target)?;
                 for binding in &import.bindings {
+                    account_edge_manifest_bytes(
+                        &mut edge_manifest_bytes,
+                        path.as_str(),
+                        target.as_str(),
+                        &import.specifier,
+                        &binding.imported,
+                        &binding.local,
+                    )?;
                     let identity = EdgeIdentity {
                         importer: path.clone(),
                         specifier: import.specifier.clone(),
@@ -432,7 +466,14 @@ pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
     let sources = SourceMap::build(final_inputs).map_err(|_| invariant_rejection())?;
     account_provider_bytes(&mut provider_bytes, aggregate_bytes)?;
     account_provider_call(&mut provider_calls, ProviderCallPhase::Final)?;
-    let syntax = frontend.analyze_verified_v3(&sources).map_err(ModuleClosureError::Frontend)?;
+    let remaining = remaining_discovery_wall_time(
+        discovery_started,
+        now(),
+        frontend.minimum_analysis_timeout(),
+    )?;
+    let syntax = frontend.analyze_verified_v3_with_timeout(&sources, remaining);
+    enforce_discovery_wall_time(discovery_started, now())?;
+    let syntax = syntax.map_err(ModuleClosureError::Frontend)?;
     reject_provider_errors(&syntax)?;
     source_session.revalidate_all().map_err(rejected)?;
     if !syntax.is_bound_to(&sources) {
@@ -480,7 +521,40 @@ pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
         )));
     }
     let graph_sha256 = graph_identity(&entrypoint, &modules, &edges)?;
+    enforce_discovery_wall_time(discovery_started, now())?;
     Ok(VerifiedModuleClosure { entrypoint, sources, syntax, modules, edges, graph_sha256 })
+}
+
+fn enforce_discovery_wall_time(
+    started: Instant,
+    current: Instant,
+) -> Result<(), ModuleClosureError> {
+    if current
+        .checked_duration_since(started)
+        .is_none_or(|elapsed| elapsed > MAX_MODULE_DISCOVERY_WALL_TIME)
+    {
+        return Err(budget_rejection("module discovery exceeded the aggregate wall-clock budget"));
+    }
+    Ok(())
+}
+
+fn remaining_discovery_wall_time(
+    started: Instant,
+    current: Instant,
+    minimum_provider_timeout: Duration,
+) -> Result<Duration, ModuleClosureError> {
+    let elapsed = current.checked_duration_since(started).ok_or_else(|| {
+        budget_rejection("module discovery clock moved before the authenticated start")
+    })?;
+    let remaining = MAX_MODULE_DISCOVERY_WALL_TIME.checked_sub(elapsed).ok_or_else(|| {
+        budget_rejection("module discovery exceeded the aggregate wall-clock budget")
+    })?;
+    if remaining < minimum_provider_timeout {
+        return Err(budget_rejection(
+            "module discovery left no safe worker cleanup reserve inside the aggregate deadline",
+        ));
+    }
+    Ok(remaining)
 }
 
 fn snapshot_fingerprints(
@@ -714,6 +788,39 @@ fn account_provider_bytes(total: &mut usize, input: usize) -> Result<(), ModuleC
     if *total > MAX_MODULE_PROVIDER_SOURCE_BYTES {
         return Err(budget_rejection(
             "module discovery exceeded the cumulative provider source-byte budget",
+        ));
+    }
+    Ok(())
+}
+
+fn account_edge_manifest_bytes(
+    total: &mut usize,
+    importer: &str,
+    target: &str,
+    specifier: &str,
+    imported_binding: &str,
+    local: &str,
+) -> Result<(), ModuleClosureError> {
+    let raw = [importer, target, specifier, imported_binding, local]
+        .into_iter()
+        .try_fold(0_usize, |sum, value| checked_add(sum, value.len()))?;
+    // Six bytes per input byte covers JSON's longest `\u00XX` escape. The fixed allowance covers
+    // keys, punctuation, indentation, and line endings without materializing edge-owned strings.
+    let escaped = raw.checked_mul(6).ok_or_else(|| {
+        budget_rejection("module edge manifest accounting exceeded the supported integer range")
+    })?;
+    let estimated = checked_add(escaped, 128)?;
+    account_edge_manifest_budget(total, estimated)
+}
+
+pub(crate) fn account_edge_manifest_budget(
+    total: &mut usize,
+    estimated: usize,
+) -> Result<(), ModuleClosureError> {
+    *total = checked_add(*total, estimated)?;
+    if *total > MAX_MODULE_EDGE_MANIFEST_BYTES {
+        return Err(budget_rejection(
+            "module discovery exceeded the canonical edge-manifest byte budget",
         ));
     }
     Ok(())

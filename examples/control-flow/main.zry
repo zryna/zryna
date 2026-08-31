@@ -1,0 +1,8 @@
+import { double } from "./math.zry";
+
+export function choose(enabled: bool, value: i32): i32 {
+  if (enabled) {
+    return double(value);
+  }
+  return value;
+}

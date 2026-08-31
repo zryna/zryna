@@ -1,17 +1,18 @@
 # Scalar control flow and modules v1
 
-Status: specified for M2, not implemented. This document does not enable a compiler profile,
-command, artifact, or public support claim.
+Status: frozen and implemented as the explicit public M2 `control-flow-v1` profile. This document
+defines that profile's normative language boundary; publication details remain owned by the driver
+and manifest-v2 contracts.
 
 ## 1. Profile identity and compatibility
 
 The exact universal profile name is `ControlFlowV1`; its CLI spelling is `control-flow-v1` and its
-future manifest profile is `zryna-control-flow-v1`. It is a separate verified profile, not an
+manifest profile is `zryna-control-flow-v1`. It is a separate verified profile, not an
 extension that weakens `I32V1` verification.
 
-Protocol v3 will be the first provider-neutral syntax protocol capable of describing this profile.
+Protocol v3 is the provider-neutral syntax protocol that describes this profile.
 Protocol v2, scalar ABI v1, the M1 CLI default, and `zryna-manifest-v1.json` remain immutable M1
-contracts. A future M2 public command must require `--profile control-flow-v1` and emit a distinct
+contracts. The M2 public command requires `--profile control-flow-v1` and emits the distinct
 canonical `zryna-manifest-v2.json`. Omitting `--profile` continues to select the implemented M1
 behavior until a separate compatibility proposal changes that default.
 

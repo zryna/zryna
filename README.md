@@ -76,15 +76,19 @@ The repository currently establishes and tests:
 - public `zryna build` and `zryna run` commands for explicit `javascript`, `webassembly`, `native`,
   and `all` selections, with mandatory architecture validation, one shared verified program,
   typed `i32` invocations, and create-only atomic output bundles.
-- an internal deterministic M2 ECMAScript backend that consumes only sealed `ControlFlowV1`
+- a deterministic M2 ECMAScript backend that consumes only sealed `ControlFlowV1`
   views, lowers exact scalar operations, direct calls, branches, loops, and parallel block edges,
-  and enforces typed `i32`/`bool` entry wrappers without activating a public M2 profile.
-- an internal direct M2 core WebAssembly backend that consumes the same sealed views, emits only
+  and enforces typed `i32`/`bool` entry wrappers.
+- a direct M2 core WebAssembly backend that consumes the same sealed views, emits only
   capability-minimal audited core bytes, and executes typed `i32`/`bool` exports from those exact
-  validated bytes without activating a public M2 profile.
-- an internal M2 Linux x86-64 native backend that consumes independently verified native MIR,
+  validated bytes.
+- an M2 Linux x86-64 native backend that consumes independently verified native MIR,
   emits local typed bodies plus scalar-ABI wrappers, audits exact call-graph-bound ELF relocations,
-  and links/runs typed `i32`/`bool` invocations without activating a public M2 profile.
+  and links/runs typed `i32`/`bool` invocations.
+- an explicit `--profile control-flow-v1` public path that authenticates one bounded multi-file
+  module graph, lowers it once, dispatches the same sealed authority to selected targets, and
+  commits one deterministic `zryna-manifest-v2.json` atomic bundle. Omitting `--profile` preserves
+  every M1 CLI and manifest-v1 contract.
 
 The TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
 silently producing a smaller program. The first strict semantic subset requires one source file,
@@ -113,18 +117,23 @@ remains verifier-gated; Boolean evidence is limited to the typed scalar-ABI carr
 ## Build and run
 
 The public CLI accepts exactly one workspace-relative `.zry` entrypoint and requires an explicit
-target. These examples use an exact Node.js 22.22.1 executable:
+target. That is the complete M1 source set when `--profile` is omitted and the root of one explicit
+relative-import module graph under `--profile control-flow-v1`. These examples use an exact Node.js
+22.22.1 executable:
 
 ```bash
 cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all --node /absolute/path/to/node
 cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-all --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
+cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2 --node /absolute/path/to/node
 ```
 
 Build publishes `.mjs`, `.wasm`, and `.o`; run publishes `.mjs`, `.wasm`, and an invocation-
 specific `.elf`. The selected artifacts and deterministic manifest appear together only after one
-create-only atomic bundle commit below `.zryna/out`. See the [CLI reference](docs/CLI.md) for exact
+create-only atomic bundle commit below `.zryna/out`. M1 writes manifest v1; the explicit M2 profile
+writes [manifest v2](docs/M2_MANIFEST_V2.md). See the [CLI reference](docs/CLI.md) for exact
 syntax, single-target commands, typed argument grammar, output layout, JSON, exit statuses,
-security properties, and platform limits.
+security properties, and platform limits. Issue #56 still owns fixed-oracle aggregate M2
+three-target conformance; Issue #55 does not claim it early.
 
 ## Run the foundation gate
 

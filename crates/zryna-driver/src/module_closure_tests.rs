@@ -6,14 +6,17 @@ use std::{
     fs,
     path::PathBuf,
     sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 
 #[cfg(unix)]
 use std::path::Path;
 
 use crate::{
-    MAX_MODULE_FILES, MAX_MODULE_IMPORT_DECLARATIONS, MAX_MODULE_PROVIDER_SOURCE_BYTES,
-    MAX_MODULE_SOURCE_BYTES, ModuleClosureError, WorkspaceSourceRoot, discover_module_closure,
+    MAX_MODULE_DISCOVERY_WALL_TIME, MAX_MODULE_EDGE_MANIFEST_BYTES, MAX_MODULE_FILES,
+    MAX_MODULE_IMPORT_DECLARATIONS, MAX_MODULE_PROVIDER_SOURCE_BYTES, MAX_MODULE_SOURCE_BYTES,
+    ModuleClosureError, WorkspaceSourceRoot, discover_module_closure,
+    module_closure::{account_edge_manifest_budget, discover_module_closure_with_clock},
 };
 use zryna_diagnostics::Severity;
 use zryna_frontend::{VerifiedFrontendProviderV3, WorkerError, syntax_v3};
@@ -349,6 +352,53 @@ fn write_declaration_budget_graph(workspace: &TemporaryWorkspace, plus_one: bool
         );
     }
     workspace.write("leaf.zry", "");
+}
+
+fn scripted_clock(times: Vec<Instant>) -> impl FnMut() -> Instant {
+    let fallback = *times.last().expect("scripted clock needs one instant");
+    let mut times = times.into_iter();
+    move || times.next().unwrap_or(fallback)
+}
+
+#[test]
+fn aggregate_discovery_deadline_is_checked_before_and_after_frontend_calls_without_sleeping() {
+    let workspace = TemporaryWorkspace::new("aggregate-deadline");
+    workspace.write("main.zry", "");
+    let started = Instant::now();
+    let expired = started + MAX_MODULE_DISCOVERY_WALL_TIME + Duration::from_nanos(1);
+
+    let before_provider = FixtureProvider::new();
+    let before = discover_module_closure_with_clock(
+        &workspace.root(),
+        entry(),
+        &before_provider,
+        scripted_clock(vec![started, expired]),
+    )
+    .expect_err("expired discovery must stop before starting the provider");
+    assert_eq!(rejection_code(before), "ZRYNA-D3201");
+    assert!(before_provider.calls().is_empty());
+
+    let after_provider = FixtureProvider::new();
+    let after = discover_module_closure_with_clock(
+        &workspace.root(),
+        entry(),
+        &after_provider,
+        scripted_clock(vec![started, started, expired]),
+    )
+    .expect_err("provider completion beyond the aggregate deadline must fail");
+    assert_eq!(rejection_code(after), "ZRYNA-D3201");
+    assert_eq!(after_provider.calls().len(), 1);
+
+    let exact_provider = FixtureProvider::new();
+    let exact = started + MAX_MODULE_DISCOVERY_WALL_TIME;
+    discover_module_closure_with_clock(
+        &workspace.root(),
+        entry(),
+        &exact_provider,
+        scripted_clock(vec![started, exact]),
+    )
+    .expect("the exact aggregate deadline remains accepted");
+    assert_eq!(exact_provider.calls().len(), 2);
 }
 
 #[test]
@@ -697,4 +747,17 @@ fn rejects_case_collisions_links_and_source_mutation_during_final_analysis() {
         ),
         "ZRYNA-D3004"
     );
+}
+
+#[test]
+fn canonical_edge_manifest_budget_accepts_exact_limit_and_rejects_plus_one() {
+    let mut exact = 0;
+    account_edge_manifest_budget(&mut exact, MAX_MODULE_EDGE_MANIFEST_BYTES)
+        .expect("the exact edge-manifest budget must be accepted");
+    assert_eq!(exact, MAX_MODULE_EDGE_MANIFEST_BYTES);
+
+    let mut plus_one = 0;
+    let error = account_edge_manifest_budget(&mut plus_one, MAX_MODULE_EDGE_MANIFEST_BYTES + 1)
+        .expect_err("one byte beyond the edge-manifest budget must be rejected");
+    assert_eq!(rejection_code(error), "ZRYNA-D3201");
 }

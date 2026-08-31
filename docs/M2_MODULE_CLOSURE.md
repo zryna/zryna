@@ -1,6 +1,7 @@
 # M2 deterministic module closure
 
-Status: implemented as an internal compiler boundary; not selected by the public CLI.
+Status: implemented as a driver-owned compiler boundary selected only by explicit
+`--profile control-flow-v1`.
 
 The M2 module-closure boundary turns one validated workspace-relative `.zry` entrypoint into one
 immutable, source-map-authenticated module graph. The compiler driver owns filesystem discovery,
@@ -9,13 +10,14 @@ protocol-v3 provider receives only normalized portable paths and immutable sourc
 receives a host path, directory handle, workspace capability, or authority to choose a resolved
 dependency.
 
-This boundary does not enable the `control-flow-v1` profile. Its final authenticated snapshot can
-enter the internal [M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and its
+This boundary does not authorize a backend by itself. Its final authenticated snapshot enters the
+[M2 straight-line semantic boundary](M2_STRAIGHT_LINE_SEMANTICS.md) and its
 [control-flow extension](M2_CONTROL_FLOW_SEMANTICS.md), then the internal
 [M2 JavaScript backend](M2_JAVASCRIPT_BACKEND.md),
 [M2 core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md), or the independently resealed
-[M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md). Manifest v2, fixed three-target
-conformance, website activation, and the public multi-file command remain gated by later M2 issues.
+[M2 Linux x86-64 native backend](M2_NATIVE_BACKEND.md) only through the explicit driver path.
+[Manifest v2 and the atomic multi-file command](M2_MANIFEST_V2.md) are implemented. Fixed-oracle
+three-target conformance and authenticated website/live closure remain Issues #56 and #57.
 
 ## Fixed-point algorithm
 
@@ -81,13 +83,16 @@ after final provider authentication.
 | provider calls including the final full-map call | 4,097 |
 | cumulative provider input source bytes | 16 MiB |
 | named-import binding edges | 65,536 |
+| conservative canonical edge-manifest bytes | 32 MiB |
 | import declarations across the closure | 65,536 |
 | entries inspected in any retained source directory | 65,536 |
+| aggregate discovery wall time | 2 minutes |
 
 Protocol v3 independently enforces the per-module, per-declaration, request, response, diagnostic,
 and syntax-arena limits frozen by the M2 language contract. Every counter uses checked arithmetic.
 The first item beyond a discovery-owned limit produces `ZRYNA-D3201` and prevents semantic or
-artifact phases from running.
+artifact phases from running. Each external worker receives only the remaining aggregate wall-time
+budget, so one late provider call cannot extend the two-minute discovery deadline.
 
 ## Canonical graph identity
 

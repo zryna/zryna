@@ -39,10 +39,11 @@ pub use javascript::{
     publish_javascript,
 };
 pub use module_closure::{
-    MAX_MODULE_DIRECTORY_ENTRIES, MAX_MODULE_DISCOVERY_ROUNDS, MAX_MODULE_FILES,
-    MAX_MODULE_IMPORT_DECLARATIONS, MAX_MODULE_IMPORT_EDGES, MAX_MODULE_PROVIDER_CALLS,
-    MAX_MODULE_PROVIDER_SOURCE_BYTES, MAX_MODULE_SOURCE_BYTES, ModuleClosureError, ModuleEdge,
-    ModuleRecord, VerifiedModuleClosure, discover_module_closure,
+    MAX_MODULE_DIRECTORY_ENTRIES, MAX_MODULE_DISCOVERY_ROUNDS, MAX_MODULE_DISCOVERY_WALL_TIME,
+    MAX_MODULE_EDGE_MANIFEST_BYTES, MAX_MODULE_FILES, MAX_MODULE_IMPORT_DECLARATIONS,
+    MAX_MODULE_IMPORT_EDGES, MAX_MODULE_PROVIDER_CALLS, MAX_MODULE_PROVIDER_SOURCE_BYTES,
+    MAX_MODULE_SOURCE_BYTES, ModuleClosureError, ModuleEdge, ModuleRecord, VerifiedModuleClosure,
+    discover_module_closure,
 };
 pub use native::{
     LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES, MAX_NATIVE_LINK_TIMEOUT,
@@ -56,8 +57,9 @@ pub use native::{
 };
 pub use pipeline::{
     BuildRequest, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,
-    PublishedTargetArtifact, RunRequest, TargetResult, TargetSelection, build_workspace,
-    run_workspace,
+    ControlFlowBuildRequest, ControlFlowRunRequest, PublishedTargetArtifact, RunRequest,
+    TargetResult, TargetSelection, build_control_flow_workspace, build_workspace,
+    run_control_flow_workspace, run_workspace,
 };
 pub use webassembly::{
     MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,

@@ -62,9 +62,13 @@ profile is intentionally narrow.
   MIR, emits local typed bodies plus scalar-ABI wrappers, and closes the exact ELF section, symbol,
   and call-graph-bound relocation inventory before constructing an artifact. The driver prepares
   link/run only through the artifact-bound scalar ABI and retains the private staging identity.
-- These are internal compiler boundaries only. The public driver still selects protocol v2; no
-  CLI command or manifest exposes M2. The executable three-target M2
-  profile and every dependent M2 issue therefore remain unsupported.
+- The public driver now composes those boundaries only when exact `--profile control-flow-v1` is
+  present. It discovers and authenticates one complete module graph, lowers it once, dispatches the
+  same opaque verified authority to selected targets, and commits one create-only atomic bundle
+  with deterministic [`zryna-manifest-v2.json`](M2_MANIFEST_V2.md). Omitting `--profile` preserves
+  protocol v2, `I32V1`, manifest v1, and every M1 command and bundle contract.
+- Issue #55 makes individual explicit-profile M2 build/run requests available; it does not claim
+  the fixed-oracle three-target M2 conformance or aggregate required gate owned by Issue #56.
 
 ## Runtime and toolchain boundary
 
@@ -73,16 +77,17 @@ profile is intentionally narrow.
 - Native executable linking and execution require canonical `/usr/bin/gcc` and GNU ld versions
   documented in the CLI and native executable specifications.
 - Successful build and run output is published only below `.zryna/out` in atomic, create-only
-  bundles with a deterministic manifest.
+  bundles with a deterministic profile-specific manifest. Windows native and `all` run reject
+  before publication with `ZRYNA-N4002`; there is no partial-target fallback.
 
 ## Deliberately unsupported
 
-Public source-level Boolean execution remains driver/profile-gated even though sealed internal M2
-JavaScript tests execute strict Boolean carriers. The current public executable slice does not
-claim source control flow, modules,
+Public source-level Boolean execution requires explicit `control-flow-v1`; it remains rejected by
+the default M1 path. The current public executable slice does not yet claim independently checked
+three-target equivalence for source control flow and modules,
 heap values, browser execution, WASI, Windows or macOS native execution, static native executables,
 package resolution, watch mode, incremental builds, production readiness, or an executable M2
-feature.
+conformance gate.
 
 ## Evidence and reference
 
@@ -90,6 +95,7 @@ feature.
 - [Compiler architecture](ARCHITECTURE.md)
 - [M1 conformance evidence](M1_CONFORMANCE.md)
 - [M2 deterministic module closure](M2_MODULE_CLOSURE.md)
+- [M2 manifest and atomic bundle contract](M2_MANIFEST_V2.md)
 - [M2 straight-line semantics](M2_STRAIGHT_LINE_SEMANTICS.md)
 - [M2 control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md)
 - [M2 deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md)

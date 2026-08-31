@@ -39,6 +39,12 @@
       "title": "M2 deterministic JavaScript backend"
     },
     {
+      "id": "reference/m2-manifest-v2",
+      "source": "docs/M2_MANIFEST_V2.md",
+      "path": "documents/reference/m2-manifest-v2.md",
+      "title": "M2 manifest and atomic bundles"
+    },
+    {
       "id": "reference/m2-module-closure",
       "source": "docs/M2_MODULE_CLOSURE.md",
       "path": "documents/reference/m2-module-closure.md",
