@@ -119,6 +119,16 @@ replacement value has already been prepared, so it carries no cleanup plan. `Dro
 the logical release operation for String, Vec, Shared, and Weak places; there are no separately
 forgeable release-helper instructions.
 
+`ClonePlace` additionally admits supported non-Copy Struct, FixedArray, and root Enum graphs with
+String leaves. It preserves the source and produces one distinct result owner. Fallible String-leaf
+clone binds a separate `AggregateCloneElementFailure` plan whose first typed action is
+`AggregateInitializedPrefix`, followed by every pre-existing live root in reverse order. Verified
+consumers use `aggregate_clone_element_failure_drop_actions()` for that role and obtain the exact
+fallible-leaf count through `aggregate_clone_fallible_leaf_count()`. The verifier derives that count
+from retained Linear32 layout and derives a root Enum's active variant from source ownership state;
+neither is caller-controlled. Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain
+excluded.
+
 There is no generic target helper, raw address, source-selected runtime symbol, implicit clone,
 implicit conversion, unchecked index, host exception, or arbitrary runtime call instruction.
 Left-to-right operand order is part of every operation. Aggregate operands must exactly match the
@@ -138,7 +148,9 @@ Trap { identity, cleanup }
 `EnumMatch` has exactly one arm for every sealed variant. `WeakUpgradeBranch` contains the
 indivisible increment-and-branch contract. `TrapIdentity` is closed to `BoundsV1`, `AllocationV1`,
 `CapacityV1`, `RefcountV1`, and `Utf8V1`. A cleanup plan is a dense ID, authoritative span, and
-ordered list whose only `DropAction` is `DropPlace(PlaceId)`.
+ordered list. Ordinary exits use `DropPlace(PlaceId)`. Only the dedicated clone-element roles may
+start with `DropVecInitializedPrefix(PlaceId)` or `DropAggregateInitializedPrefix(PlaceId)`; these
+typed prefix actions cannot be treated as ordinary whole-place drops.
 
 Calls remain direct and acyclic. Block arguments, call arguments, returns, match payloads, and weak
 upgrade results use sealed value identities with exact types. A borrow cannot cross a branch,
@@ -167,7 +179,8 @@ during preparation occurs at that producer's cleanup site and leaves the old des
 
 Raw cleanup plans are claims, not authority. Each plan must be referenced by exactly one program
 point. Verification binds that point to one closed `VerifiedCleanupRole`: `PrepareFailure`,
-`CallTrap`, `Return`, or `ControlledTrap`. Orphan plans, reused plans, and a plan attached to the
+`VecCloneElementFailure`, `AggregateCloneElementFailure`, `CallTrap`, `Return`, or
+`ControlledTrap`. Orphan plans, reused plans, and a plan attached to the
 wrong operation or exit role fail closed. `VerifiedCleanupPlan::site()` exposes only the sealed
 block, optional instruction index, and role for that one binding.
 

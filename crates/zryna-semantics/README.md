@@ -90,9 +90,13 @@ owned-element Vec loop push remain excluded.
 Vec construction, push, and direct calls reserve their parent cleanup and result resources before
 fallible child evaluation, using expression-aware net owner growth at exact limits.
 The lowerer uses `InitializePlace`, `MoveFromPlace`, and the infallible `ReplacePlace` commit after
-right-hand-side preparation. A separate bounded route constructs, moves, returns, and drops
+right-hand-side preparation. A separate bounded route constructs, moves, explicitly clones,
+returns, and drops
 acyclic owned Struct and FixedArray graphs with bool, i32, or String leaves, and owned Enums with a
-payloadless variant or one supported Copy, String, Struct, or FixedArray payload. Constructor
+payloadless variant or one supported Copy, String, Struct, or FixedArray payload. Structural clone
+retains its source, creates a distinct result owner, derives the exact fallible String-leaf count
+and root-enum active variant from sealed authorities, and reverse-drops only the initialized result
+prefix on element failure. Constructor
 operands are evaluated in sealed declaration or index order, whole-value moves transfer one owner,
 and return cleanup drops surviving roots in reverse successful-completion order. The private
 String route reports use-after-move as `ZRYNA-M3011`; the bounded owned aggregate and enum route
@@ -108,10 +112,13 @@ deterministic replay, and bounded event accounting. It is not allocator executio
 fault injection, or a public interpreter. Exact `Vec<String>` clone additionally seals a distinct
 element-failure cleanup that reverse-drops only the runtime-recorded initialized destination prefix
 before pre-existing owners; this remains compiler evidence rather than allocator execution.
+Supported aggregate clone uses its own `AggregateCloneElementFailure` role and typed initialized-
+prefix action under the same rule; neither its fallible-leaf count nor root-enum active variant is
+accepted from the fault injector.
 
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
-String elements, owned aggregate clone,
-owned projections or assignment, general owned phi joins, owned loop-carried phi joins,
+String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
+owned projections or assignment and partial moves, general owned phi joins, owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private,

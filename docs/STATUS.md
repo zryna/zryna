@@ -137,18 +137,21 @@ false exit, and permits only the final return afterward. Its stable-place subset
 replacement of one mutable outer String and Copy-element push into one mutable outer exact Vec
 without an owned header phi; Vec replacement and owned-element Vec push remain excluded. Vec construction, push,
 and calls reserve parent resources before child ownership changes. The aggregate route constructs,
-moves, returns, and drops bounded
-parameter-free private straight-line owned Struct, FixedArray, and Enum graphs with Copy/String
-leaves. The private String route reports moved uses as M3011, the aggregate/enum route reports them
+moves, explicitly clones, returns, and drops bounded parameter-free private straight-line owned
+Struct, FixedArray, and root Enum graphs with Copy/String leaves. Structural clone retains its
+source, creates a distinct owner, derives its fallible String-leaf count and root-enum active variant
+from sealed authorities, and reverse-drops only the initialized result prefix on element failure.
+The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
 8 MiB String-literal limit, and returns sealed semantics retaining verified IR plus the exact
 runtime ABI authority. An internal bounded fault/drop-trace oracle now covers every ABI-admitted
-failure of the implemented String and Vec allocation-bearing operations plus the separate checked
-Vec bounds trap; it authenticates status disposition/trap identity, pre-commit operand retention,
+failure of the implemented String, Vec, and aggregate-clone allocation-bearing operations plus the
+separate checked Vec bounds trap; it authenticates status disposition/trap identity, pre-commit operand retention,
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
-owned aggregate clone/projections/assignment, general owned phi joins,
+nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
+owned projections/assignment and partial moves, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

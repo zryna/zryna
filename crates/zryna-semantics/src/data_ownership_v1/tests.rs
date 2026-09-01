@@ -3,11 +3,11 @@ use super::{
     OwnedCfgState, OwnedStringBranchState, OwnedStringEstimateContext,
     OwnedStringPreparationBudget, OwnerState, PrivateStringLowerer, ProgramCfgBudgetLimit,
     SemanticInput, ValueBudgetLimit, accumulate_generated_cfg_function,
-    accumulate_generated_value_function, aggregate_operand_budget_violation,
-    authenticated_type_capabilities, checked_string_concat_bytes, cleanup_action_budget_violation,
-    cleanup_actions_after_additions, cleanup_actions_after_preparation,
-    cleanup_actions_after_transfer, dense_owned_value_id, derived_value_count,
-    estimate_owned_string_expression, generated_cfg_budget_violation,
+    accumulate_generated_value_function, aggregate_clone_budget_violation,
+    aggregate_operand_budget_violation, authenticated_type_capabilities,
+    checked_string_concat_bytes, cleanup_action_budget_violation, cleanup_actions_after_additions,
+    cleanup_actions_after_preparation, cleanup_actions_after_transfer, dense_owned_value_id,
+    derived_value_count, estimate_owned_string_expression, generated_cfg_budget_violation,
     is_terminal_owned_phi_candidate, lower, owned_call_cleanup_budget_violation,
     owned_cfg_budget_violation, owned_place_budget_violation, owned_value_budget_violation,
     preflight_aggregate_operand_total, preflight_owned_loop_body, preflight_owned_loop_exit,
@@ -17,9 +17,10 @@ use super::{
     terminal_owned_if, value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
-    PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity, VerifiedCleanupRole,
-    VerifiedDropActionKind, VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction,
-    VerifiedInstructionKind, VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
+    PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
+    VerifiedActiveVariant, VerifiedCleanupRole, VerifiedDropActionKind, VerifiedFunction,
+    VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind, VerifiedPlaceKind,
+    VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
 };
 use zryna_ownership_runtime_abi::{
     LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, VerifiedOwnershipRuntimeAbi,
@@ -125,6 +126,57 @@ fn response_snapshot(response: &str) -> RawProjectSyntaxSnapshot {
     let value: serde_json::Value = serde_json::from_str(response).expect("adapter response JSON");
     let result = value.get("result").expect("adapter result");
     decode_snapshot(&serde_json::to_vec(result).expect("snapshot JSON")).expect("v4 snapshot")
+}
+
+fn clone_final_return_snapshot(source: &str, response: &str) -> (String, RawProjectSyntaxSnapshot) {
+    let raw = response_snapshot(response);
+    let body = &raw.files[0].functions[0].body;
+    let RawStatementKind::Return { value: reference_value, .. } =
+        body.statements.last().expect("return").kind
+    else {
+        panic!("return")
+    };
+    let reference = body.expressions[reference_value as usize].clone();
+    let zryna_syntax::v4::RawExpressionKind::Reference { name } = &reference.kind else {
+        panic!("final reference")
+    };
+    let start = reference.span.start;
+    let end = reference.span.end;
+    let mut updated_source = source.to_owned();
+    updated_source.replace_range(
+        usize::try_from(start).expect("start")..usize::try_from(end).expect("end"),
+        &format!("clone({})", name.text),
+    );
+    let raw = shift_snapshot(raw, start, 6);
+    let mut raw = shift_snapshot(raw, end + 6, 1);
+    let body = &mut raw.files[0].functions[0].body;
+    let reference = &mut body.expressions[reference_value as usize];
+    reference.span.end -= 1;
+    let zryna_syntax::v4::RawExpressionKind::Reference { name } = &mut reference.kind else {
+        panic!("shifted final reference")
+    };
+    name.span.end -= 1;
+    let new_value = u32::try_from(body.expressions.len()).expect("expression id");
+    let RawStatementKind::Return { value, .. } =
+        &mut body.statements.last_mut().expect("return").kind
+    else {
+        panic!("return")
+    };
+    *value = new_value;
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: end + 7 },
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: zryna_source::UntrustedSpan { file: 0, start, end: start + 5 },
+            open_paren_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: start + 5,
+                end: start + 6,
+            },
+            value: reference_value,
+            close_paren_span: zryna_source::UntrustedSpan { file: 0, start: end + 6, end: end + 7 },
+        },
+    });
+    (updated_source, raw)
 }
 
 #[derive(Clone, Copy)]
@@ -3632,6 +3684,7 @@ fn pair_input<'a>(
 enum OwnedFaultInjection {
     Runtime { operation: LogicalOperation, status: RuntimeStatus },
     VecCloneElement { status: RuntimeStatus, source_length: u64, completed_prefix: u64 },
+    AggregateCloneElement { status: RuntimeStatus, completed_prefix: u64 },
     Bounds,
 }
 
@@ -3664,6 +3717,7 @@ enum OwnedFaultOracleError {
     AtomicityMismatch,
     EventLimit,
     InvalidVecClonePrefix,
+    InvalidAggregateClonePrefix,
 }
 
 fn runtime_operation(kind: VerifiedInstructionKind) -> Option<LogicalOperation> {
@@ -3716,6 +3770,15 @@ fn owned_fault_trace(
             }
             usize::try_from(completed_prefix).map_err(|_| OwnedFaultOracleError::EventLimit)?
         }
+        OwnedFaultInjection::AggregateCloneElement { completed_prefix, .. } => {
+            let leaf_count = instruction
+                .aggregate_clone_fallible_leaf_count()
+                .ok_or(OwnedFaultOracleError::StatusMismatch)?;
+            if completed_prefix >= leaf_count {
+                return Err(OwnedFaultOracleError::InvalidAggregateClonePrefix);
+            }
+            usize::try_from(completed_prefix).map_err(|_| OwnedFaultOracleError::EventLimit)?
+        }
         _ => 0,
     };
     let new_events = prefix_events.checked_add(1).ok_or(OwnedFaultOracleError::EventLimit)?;
@@ -3729,7 +3792,8 @@ fn owned_fault_trace(
         }
         OwnedFaultInjection::Bounds => return Err(OwnedFaultOracleError::StatusMismatch),
         OwnedFaultInjection::Runtime { status: RuntimeStatus::Ok, .. }
-        | OwnedFaultInjection::VecCloneElement { status: RuntimeStatus::Ok, .. } => {
+        | OwnedFaultInjection::VecCloneElement { status: RuntimeStatus::Ok, .. }
+        | OwnedFaultInjection::AggregateCloneElement { status: RuntimeStatus::Ok, .. } => {
             return Err(OwnedFaultOracleError::SuccessStatus);
         }
         OwnedFaultInjection::Runtime { operation, status } => {
@@ -3753,11 +3817,28 @@ fn owned_fault_trace(
                 .map_err(|_| OwnedFaultOracleError::AtomicityMismatch)?;
             runtime_fault_disposition(abi, status).ok_or(OwnedFaultOracleError::StatusMismatch)?
         }
+        OwnedFaultInjection::AggregateCloneElement { status, .. } => {
+            if kind != VerifiedInstructionKind::ClonePlace
+                || !operation_accepts_status(LogicalOperation::StringClone, status)
+            {
+                return Err(OwnedFaultOracleError::StatusMismatch);
+            }
+            validate_failure_atomic_transition(LogicalOperation::StringClone, status, true, true)
+                .map_err(|_| OwnedFaultOracleError::AtomicityMismatch)?;
+            runtime_fault_disposition(abi, status).ok_or(OwnedFaultOracleError::StatusMismatch)?
+        }
     };
-    let element_failure = matches!(injection, OwnedFaultInjection::VecCloneElement { .. });
-    let cleanup = if element_failure {
+    let vec_element_failure = matches!(injection, OwnedFaultInjection::VecCloneElement { .. });
+    let aggregate_element_failure =
+        matches!(injection, OwnedFaultInjection::AggregateCloneElement { .. });
+    let element_failure = vec_element_failure || aggregate_element_failure;
+    let cleanup = if vec_element_failure {
         instruction
             .vec_clone_element_cleanup()
+            .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
+    } else if aggregate_element_failure {
+        instruction
+            .aggregate_clone_element_cleanup()
             .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
     } else {
         instruction.cleanup().ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
@@ -3767,16 +3848,20 @@ fn owned_fault_trace(
         .find(|plan| plan.id() == cleanup)
         .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?;
     let site = plan.site();
-    let expected_role = if element_failure {
+    let expected_role = if vec_element_failure {
         VerifiedCleanupRole::VecCloneElementFailure
+    } else if aggregate_element_failure {
+        VerifiedCleanupRole::AggregateCloneElementFailure
     } else {
         VerifiedCleanupRole::PrepareFailure
     };
     if site.role() != expected_role {
         return Err(OwnedFaultOracleError::MissingPrepareCleanup);
     }
-    let actions = if element_failure {
+    let actions = if vec_element_failure {
         instruction.vec_clone_element_failure_drop_actions().collect::<Vec<_>>()
+    } else if aggregate_element_failure {
+        instruction.aggregate_clone_element_failure_drop_actions().collect::<Vec<_>>()
     } else {
         instruction.derived_drop_actions().collect::<Vec<_>>()
     };
@@ -3784,7 +3869,12 @@ fn owned_fault_trace(
         let Some((prefix, remaining)) = actions.split_first() else {
             return Err(OwnedFaultOracleError::AtomicityMismatch);
         };
-        if prefix.kind() != VerifiedDropActionKind::VecInitializedPrefix
+        let expected_prefix = if vec_element_failure {
+            VerifiedDropActionKind::VecInitializedPrefix
+        } else {
+            VerifiedDropActionKind::AggregateInitializedPrefix
+        };
+        if prefix.kind() != expected_prefix
             || remaining.iter().any(|action| action.kind() != VerifiedDropActionKind::Place)
         {
             return Err(OwnedFaultOracleError::AtomicityMismatch);
@@ -3846,7 +3936,8 @@ fn owned_fault_trace(
         }
     }
     let reverse_prefix = match injection {
-        OwnedFaultInjection::VecCloneElement { completed_prefix, .. } => {
+        OwnedFaultInjection::VecCloneElement { completed_prefix, .. }
+        | OwnedFaultInjection::AggregateCloneElement { completed_prefix, .. } => {
             (0..completed_prefix).rev().collect()
         }
         _ => Vec::new(),
@@ -3969,6 +4060,268 @@ fn private_owned_struct_prepares_in_source_order_and_commits_in_declaration_orde
     assert_eq!(instructions[1].derived_drop_actions().count(), 0);
     assert_eq!(instructions[2].cleanup(), None);
     assert_eq!(block.terminator().derived_drop_actions().count(), 0);
+}
+
+#[test]
+fn string_bearing_struct_clone_retains_source_and_seals_recursive_prefix_cleanup() {
+    let (source, raw) = clone_final_return_snapshot(OWNED_PAIR_SOURCE, OWNED_PAIR_RESPONSE);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful aggregate clone v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("owned aggregate clone must verify");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    assert_eq!(
+        instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
+        vec![
+            VerifiedInstructionKind::BoolLiteral,
+            VerifiedInstructionKind::StringFromUtf8,
+            VerifiedInstructionKind::StructConstruct,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::ClonePlace,
+        ]
+    );
+    let clone = instructions[4];
+    let source_owner = clone.place_operands().next().expect("source owner");
+    let result_owner = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if Some(value) == clone.result()))
+        .expect("distinct clone result owner")
+        .id();
+    assert_ne!(source_owner, result_owner);
+    assert_eq!(
+        clone.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        vec![source_owner],
+    );
+    let failure = clone.aggregate_clone_element_failure_drop_actions().collect::<Vec<_>>();
+    assert_eq!(failure.len(), 2);
+    assert_eq!(failure[0].kind(), VerifiedDropActionKind::AggregateInitializedPrefix);
+    assert_eq!(failure[0].root(), result_owner);
+    assert_eq!(failure[1].kind(), VerifiedDropActionKind::Place);
+    assert_eq!(failure[1].root(), source_owner);
+    assert_eq!(
+        block.terminator().derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        vec![source_owner],
+        "successful return transfers only the distinct clone and retains the source",
+    );
+}
+
+#[test]
+fn string_bearing_fixed_array_and_enum_clone_use_the_same_recursive_failure_authority() {
+    for (source, response, label, leaf_count, active_variant) in [
+        (OWNED_ARRAY_SOURCE, OWNED_ARRAY_RESPONSE, "fixed array", 2, None),
+        (OWNED_ENUM_STRING_SOURCE, OWNED_ENUM_STRING_RESPONSE, "active enum variant", 1, Some(1)),
+    ] {
+        let (source, raw) = clone_final_return_snapshot(source, response);
+        let sources = sources_for(&source);
+        let syntax = verify_snapshot(raw, &sources).expect("source-faithful structural clone v4");
+        let program = lower(pair_input(&syntax, &sources)).expect(label);
+        let function =
+            program.modules().next().expect("module").functions().next().expect("function");
+        let block = function.blocks().next().expect("block");
+        let clone = block
+            .instructions()
+            .find(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+            .expect("structural clone");
+        let source_owner = clone.place_operands().next().expect("source owner");
+        let result_owner = function
+            .places()
+            .find(|place| {
+                matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if Some(value) == clone.result())
+            })
+            .expect("clone owner")
+            .id();
+        let failure = clone.aggregate_clone_element_failure_drop_actions().collect::<Vec<_>>();
+        assert_eq!(clone.aggregate_clone_fallible_leaf_count(), Some(leaf_count),);
+        assert_eq!(failure[0].kind(), VerifiedDropActionKind::AggregateInitializedPrefix);
+        assert_eq!(failure[0].root(), result_owner);
+        assert_eq!(failure[0].active_variant(), active_variant);
+        assert_eq!(
+            failure[0]
+                .active_variants()
+                .find(|variant| variant.place() == result_owner)
+                .map(VerifiedActiveVariant::variant),
+            active_variant,
+        );
+        assert!(failure.iter().skip(1).any(|action| action.root() == source_owner));
+        assert!(
+            block.terminator().derived_drop_actions().any(|action| action.root() == source_owner)
+        );
+    }
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn structural_clone_fault_oracle_authenticates_recursive_string_leaf_failure() {
+    let (source, raw) = clone_final_return_snapshot(OWNED_PAIR_SOURCE, OWNED_PAIR_RESPONSE);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful aggregate clone v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("owned aggregate clone");
+    let abi = program.runtime_abi();
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let clone = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+        .expect("clone");
+    let source_owner = clone.place_operands().next().expect("source");
+    for status in [RuntimeStatus::Allocation, RuntimeStatus::Capacity, RuntimeStatus::AbiViolation]
+    {
+        let completed_prefix = 0;
+        let injection = OwnedFaultInjection::AggregateCloneElement { status, completed_prefix };
+        let event_limit = usize::try_from(completed_prefix).expect("small prefix") + 1;
+        let first = owned_fault_trace(abi, function, clone, injection, 0, event_limit)
+            .expect("recursive StringClone failure");
+        let replay = owned_fault_trace(abi, function, clone, injection, 0, event_limit)
+            .expect("deterministic recursive failure");
+        assert_eq!(first, replay);
+        assert!(!first.result_committed);
+        assert_eq!(first.uncommitted_result, clone.result());
+        assert!(first.retained_roots.contains(&source_owner));
+        assert!(first.reverse_cleanup.contains(&source_owner));
+        assert_eq!(first.reverse_prefix, (0..completed_prefix).rev().collect::<Vec<_>>());
+    }
+    assert_eq!(
+        owned_fault_trace(
+            abi,
+            function,
+            clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 1,
+            },
+            0,
+            2,
+        ),
+        Err(OwnedFaultOracleError::InvalidAggregateClonePrefix),
+    );
+    assert_eq!(
+        owned_fault_trace(
+            abi,
+            function,
+            clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 0,
+            },
+            0,
+            0,
+        ),
+        Err(OwnedFaultOracleError::EventLimit),
+    );
+
+    let (array_source, array_raw) =
+        clone_final_return_snapshot(OWNED_ARRAY_SOURCE, OWNED_ARRAY_RESPONSE);
+    let array_sources = sources_for(&array_source);
+    let array_syntax =
+        verify_snapshot(array_raw, &array_sources).expect("source-faithful array clone");
+    let array_program =
+        lower(pair_input(&array_syntax, &array_sources)).expect("owned array clone");
+    let array_function =
+        array_program.modules().next().expect("module").functions().next().expect("function");
+    let array_clone = array_function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+        .expect("array clone");
+    let last_valid = OwnedFaultInjection::AggregateCloneElement {
+        status: RuntimeStatus::Allocation,
+        completed_prefix: 1,
+    };
+    assert_eq!(
+        owned_fault_trace(
+            array_program.runtime_abi(),
+            array_function,
+            array_clone,
+            last_valid,
+            0,
+            1,
+        ),
+        Err(OwnedFaultOracleError::EventLimit),
+        "event bound is checked before materializing the recursive prefix trace",
+    );
+    let trace = owned_fault_trace(
+        array_program.runtime_abi(),
+        array_function,
+        array_clone,
+        last_valid,
+        0,
+        2,
+    )
+    .expect("last valid fixed-array String leaf prefix");
+    assert_eq!(trace.reverse_prefix, vec![0]);
+    assert_eq!(
+        owned_fault_trace(
+            array_program.runtime_abi(),
+            array_function,
+            array_clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 2,
+            },
+            0,
+            3,
+        ),
+        Err(OwnedFaultOracleError::InvalidAggregateClonePrefix),
+    );
+}
+
+#[test]
+fn structural_clone_resource_preflight_accepts_exact_limits_and_rejects_excess_or_overflow() {
+    assert!(!aggregate_clone_budget_violation(
+        zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION - 1,
+        zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION - 1,
+        zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1,
+        zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION - 2,
+        zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION - 3,
+        1,
+    ));
+    assert!(aggregate_clone_budget_violation(
+        zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION,
+        0,
+        0,
+        0,
+        0,
+        0,
+    ));
+    assert!(aggregate_clone_budget_violation(
+        0,
+        zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION,
+        0,
+        0,
+        0,
+        0,
+    ));
+    assert!(aggregate_clone_budget_violation(
+        0,
+        0,
+        zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION,
+        0,
+        0,
+        0,
+    ));
+    assert!(aggregate_clone_budget_violation(
+        0,
+        0,
+        0,
+        zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION - 1,
+        0,
+        0,
+    ));
+    assert!(aggregate_clone_budget_violation(
+        0,
+        0,
+        0,
+        0,
+        zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION - 2,
+        1,
+    ));
+    assert!(aggregate_clone_budget_violation(0, 0, 0, 0, usize::MAX, 0));
+    assert!(aggregate_clone_budget_violation(0, 0, 0, 0, 0, usize::MAX));
 }
 
 #[test]

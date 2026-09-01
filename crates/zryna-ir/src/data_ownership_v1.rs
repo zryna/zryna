@@ -191,43 +191,152 @@ pub mod raw {
     pub enum InstructionKind {
         BoolLiteral(bool),
         I32Literal(i32),
-        I32Add { lhs: ValueId, rhs: ValueId },
-        I32Sub { lhs: ValueId, rhs: ValueId },
-        I32Mul { lhs: ValueId, rhs: ValueId },
-        I32Neg { operand: ValueId },
-        Eq { lhs: ValueId, rhs: ValueId },
-        Ne { lhs: ValueId, rhs: ValueId },
-        I32LtS { lhs: ValueId, rhs: ValueId },
-        I32LeS { lhs: ValueId, rhs: ValueId },
-        I32GtS { lhs: ValueId, rhs: ValueId },
-        I32GeS { lhs: ValueId, rhs: ValueId },
-        DirectCall { callee: FunctionId, arguments: Vec<CallArgument>, cleanup: CleanupPlanId },
-        StructConstruct { fields: Vec<ValueId>, cleanup: Option<CleanupPlanId> },
-        EnumConstruct { variant: u32, payload: Option<ValueId>, cleanup: Option<CleanupPlanId> },
-        FixedArrayConstruct { elements: Vec<ValueId>, cleanup: Option<CleanupPlanId> },
-        CopyFromPlace { place: PlaceId },
-        MoveFromPlace { place: PlaceId },
-        ClonePlace { place: PlaceId, cleanup: CleanupPlanId },
-        InitializePlace { place: PlaceId, value: ValueId },
-        ReplacePlace { place: PlaceId, value: ValueId },
-        DropPlace { place: PlaceId },
-        EnumDiscriminant { place: PlaceId },
-        FixedArrayIndexCopy { place: PlaceId, index: ValueId, cleanup: CleanupPlanId },
-        VecIndexCopy { place: PlaceId, index: ValueId, cleanup: CleanupPlanId },
-        StringFromUtf8 { bytes: Vec<u8>, cleanup: CleanupPlanId },
-        StringClone { place: PlaceId, cleanup: CleanupPlanId },
-        StringConcat { left: PlaceId, right: PlaceId, cleanup: CleanupPlanId },
-        VecClone { place: PlaceId, cleanup: CleanupPlanId, element_cleanup: Option<CleanupPlanId> },
-        VecConstruct { elements: Vec<ValueId>, cleanup: CleanupPlanId },
-        VecPush { vector: PlaceId, value: ValueId, cleanup: CleanupPlanId },
-        SharedConstruct { value: ValueId, cleanup: CleanupPlanId },
-        SharedClone { place: PlaceId, cleanup: CleanupPlanId },
-        WeakDowngrade { place: PlaceId, cleanup: CleanupPlanId },
-        WeakClone { place: PlaceId, cleanup: CleanupPlanId },
+        I32Add {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        I32Sub {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        I32Mul {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        I32Neg {
+            operand: ValueId,
+        },
+        Eq {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        Ne {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        I32LtS {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        I32LeS {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        I32GtS {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        I32GeS {
+            lhs: ValueId,
+            rhs: ValueId,
+        },
+        DirectCall {
+            callee: FunctionId,
+            arguments: Vec<CallArgument>,
+            cleanup: CleanupPlanId,
+        },
+        StructConstruct {
+            fields: Vec<ValueId>,
+            cleanup: Option<CleanupPlanId>,
+        },
+        EnumConstruct {
+            variant: u32,
+            payload: Option<ValueId>,
+            cleanup: Option<CleanupPlanId>,
+        },
+        FixedArrayConstruct {
+            elements: Vec<ValueId>,
+            cleanup: Option<CleanupPlanId>,
+        },
+        CopyFromPlace {
+            place: PlaceId,
+        },
+        MoveFromPlace {
+            place: PlaceId,
+        },
+        ClonePlace {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+            element_cleanup: Option<CleanupPlanId>,
+        },
+        InitializePlace {
+            place: PlaceId,
+            value: ValueId,
+        },
+        ReplacePlace {
+            place: PlaceId,
+            value: ValueId,
+        },
+        DropPlace {
+            place: PlaceId,
+        },
+        EnumDiscriminant {
+            place: PlaceId,
+        },
+        FixedArrayIndexCopy {
+            place: PlaceId,
+            index: ValueId,
+            cleanup: CleanupPlanId,
+        },
+        VecIndexCopy {
+            place: PlaceId,
+            index: ValueId,
+            cleanup: CleanupPlanId,
+        },
+        StringFromUtf8 {
+            bytes: Vec<u8>,
+            cleanup: CleanupPlanId,
+        },
+        StringClone {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+        },
+        StringConcat {
+            left: PlaceId,
+            right: PlaceId,
+            cleanup: CleanupPlanId,
+        },
+        VecClone {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+            element_cleanup: Option<CleanupPlanId>,
+        },
+        VecConstruct {
+            elements: Vec<ValueId>,
+            cleanup: CleanupPlanId,
+        },
+        VecPush {
+            vector: PlaceId,
+            value: ValueId,
+            cleanup: CleanupPlanId,
+        },
+        SharedConstruct {
+            value: ValueId,
+            cleanup: CleanupPlanId,
+        },
+        SharedClone {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+        },
+        WeakDowngrade {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+        },
+        WeakClone {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+        },
         BeginBorrow(BorrowDefinition),
-        BorrowRead { borrow: BorrowId },
-        BorrowWrite { borrow: BorrowId, value: ValueId },
-        EndBorrow { borrow: BorrowId },
+        BorrowRead {
+            borrow: BorrowId,
+        },
+        BorrowWrite {
+            borrow: BorrowId,
+            value: ValueId,
+        },
+        EndBorrow {
+            borrow: BorrowId,
+        },
     }
 
     #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -280,6 +389,7 @@ pub mod raw {
     pub enum DropAction {
         DropPlace(PlaceId),
         DropVecInitializedPrefix(PlaceId),
+        DropAggregateInitializedPrefix(PlaceId),
     }
 }
 
@@ -392,6 +502,8 @@ pub enum VerifiedCleanupRole {
     PrepareFailure,
     /// One element clone failed after a destination Vec prefix was initialized.
     VecCloneElementFailure,
+    /// One recursive leaf clone failed after an aggregate prefix was initialized.
+    AggregateCloneElementFailure,
     /// A direct callee trapped after its by-value arguments were transferred.
     CallTrap,
     /// A function returned normally after transferring its result.
@@ -890,6 +1002,43 @@ impl<'a> VerifiedInstruction<'a> {
         };
         Some(CleanupPlanIdentity { owner: self.function.id(), index: cleanup.0 })
     }
+    /// Returns the separately sealed recursive-leaf failure cleanup for structural clone.
+    #[must_use]
+    pub const fn aggregate_clone_element_cleanup(self) -> Option<CleanupPlanIdentity> {
+        let raw::InstructionKind::ClonePlace { element_cleanup: Some(cleanup), .. } =
+            &self.instruction.kind
+        else {
+            return None;
+        };
+        Some(CleanupPlanIdentity { owner: self.function.id(), index: cleanup.0 })
+    }
+    /// Returns the exact number of fallible String-leaf clones for the selected root shape.
+    ///
+    /// Root enums require their authenticated active variant. Nested enums are outside this
+    /// private structural-clone checkpoint.
+    #[must_use]
+    pub fn aggregate_clone_fallible_leaf_count(self) -> Option<u64> {
+        let raw::InstructionKind::ClonePlace { place, element_cleanup: Some(_), .. } =
+            &self.instruction.kind
+        else {
+            return None;
+        };
+        let ty = self.instruction.result?.ty;
+        let ty = layout_type(&self.function.owner.linear32, ty)?.id();
+        let category = self.function.owner.linear32.type_by_id(ty)?.category();
+        let active_variant = if category == TypeCategory::Enum {
+            let (_, variants) = derive_state_before(
+                self.function.function,
+                &self.function.owner.linear32,
+                self.block_index,
+                self.instruction_index,
+            )?;
+            variants.get(place.0 as usize).copied().flatten()
+        } else {
+            None
+        };
+        aggregate_clone_fallible_leaf_count(ty, &self.function.owner.linear32, active_variant, true)
+    }
     #[must_use]
     pub fn result_type(self) -> Option<LayoutTypeId> {
         self.instruction
@@ -1049,6 +1198,44 @@ impl<'a> VerifiedInstruction<'a> {
                 else {
                     return None;
                 };
+                Some(sealed_drop_actions(
+                    self.function.id(),
+                    self.function.function,
+                    *plan,
+                    &states,
+                    &variants,
+                ))
+            })
+            .unwrap_or_default();
+        actions.into_iter()
+    }
+    /// Returns the sealed recursive-prefix failure cleanup for structural aggregate clone.
+    #[must_use]
+    pub fn aggregate_clone_element_failure_drop_actions(
+        self,
+    ) -> impl ExactSizeIterator<Item = VerifiedDropAction> {
+        let state = derive_state_before(
+            self.function.function,
+            &self.function.owner.linear32,
+            self.block_index,
+            self.instruction_index,
+        );
+        let actions = state
+            .and_then(|(states, mut variants)| {
+                let raw::InstructionKind::ClonePlace { place, element_cleanup: Some(plan), .. } =
+                    &self.instruction.kind
+                else {
+                    return None;
+                };
+                let result = self.instruction.result?;
+                let result_owner = self
+                    .function
+                    .function
+                    .places
+                    .iter()
+                    .find(|candidate| candidate.kind == raw::PlaceKind::Temporary(result.id))?
+                    .id;
+                variants[result_owner.0 as usize] = variants[place.0 as usize];
                 Some(sealed_drop_actions(
                     self.function.id(),
                     self.function.function,
@@ -1240,6 +1427,8 @@ pub enum VerifiedDropActionKind {
     Place,
     /// Drop the runtime-recorded initialized Vec prefix in reverse, then release its storage.
     VecInitializedPrefix,
+    /// Drop the runtime-recorded initialized structural prefix recursively.
+    AggregateInitializedPrefix,
 }
 /// One exact active enum variant retained for recursive partial cleanup.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1339,7 +1528,8 @@ impl<'a> VerifiedCleanupPlan<'a> {
     pub fn actions(self) -> impl ExactSizeIterator<Item = PlaceIdentity> + 'a {
         self.plan.actions.iter().map(move |action| match action {
             raw::DropAction::DropPlace(place)
-            | raw::DropAction::DropVecInitializedPrefix(place) => {
+            | raw::DropAction::DropVecInitializedPrefix(place)
+            | raw::DropAction::DropAggregateInitializedPrefix(place) => {
                 PlaceIdentity { owner: self.function.id(), index: place.0 }
             }
         })
@@ -1791,7 +1981,8 @@ fn verify_structure(
                 if plan.id.0 as usize != plan_index
                     || plan.actions.iter().any(|a| match a {
                         raw::DropAction::DropPlace(p)
-                        | raw::DropAction::DropVecInitializedPrefix(p) => {
+                        | raw::DropAction::DropVecInitializedPrefix(p)
+                        | raw::DropAction::DropAggregateInitializedPrefix(p) => {
                             p.0 as usize >= function.places.len() || !dropped.insert(*p)
                         }
                     })
@@ -2493,10 +2684,16 @@ fn derive_state_before(
                         &mut replay_errors,
                     );
                 }
-                flow.variants[owner.0 as usize] = match instruction.kind {
-                    raw::InstructionKind::EnumConstruct { variant, .. } => Some(variant),
-                    _ => None,
-                };
+                match instruction.kind {
+                    raw::InstructionKind::EnumConstruct { variant, .. } => {
+                        flow.variants[owner.0 as usize] = Some(variant);
+                    }
+                    raw::InstructionKind::ClonePlace { place, .. } => {
+                        flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
+                    }
+                    raw::InstructionKind::MoveFromPlace { .. } => {}
+                    _ => flow.variants[owner.0 as usize] = None,
+                }
             }
         }
         if block_index == target_block && target_instruction == block.instructions.len() {
@@ -2557,6 +2754,9 @@ fn sealed_drop_actions(
                 raw::DropAction::DropPlace(root) => (*root, VerifiedDropActionKind::Place),
                 raw::DropAction::DropVecInitializedPrefix(root) => {
                     (*root, VerifiedDropActionKind::VecInitializedPrefix)
+                }
+                raw::DropAction::DropAggregateInitializedPrefix(root) => {
+                    (*root, VerifiedDropActionKind::AggregateInitializedPrefix)
                 }
             };
             sealed_drop_action_with_kind(owner, function, root, states, variants, kind)
@@ -2729,6 +2929,23 @@ fn verify_ownership_dataflow(
                     .and_then(|result| value_owners.get(result.id.0 as usize).copied().flatten());
                 verify_vec_clone_element_cleanup(*cleanup, result_owner, function, &flow, errors);
             }
+            if let raw::InstructionKind::ClonePlace {
+                place, element_cleanup: Some(cleanup), ..
+            } = &instruction.kind
+            {
+                let result_owner = instruction
+                    .result
+                    .and_then(|result| value_owners.get(result.id.0 as usize).copied().flatten());
+                verify_aggregate_clone_element_cleanup(
+                    *cleanup,
+                    result_owner,
+                    *place,
+                    function,
+                    layouts,
+                    &flow,
+                    errors,
+                );
+            }
             apply_ownership_instruction(
                 instruction,
                 function,
@@ -2754,10 +2971,16 @@ fn verify_ownership_dataflow(
                 if !matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. }) {
                     push_pending_owner(owner, function, &mut flow, instruction.span, errors);
                 }
-                flow.variants[owner.0 as usize] = match instruction.kind {
-                    raw::InstructionKind::EnumConstruct { variant, .. } => Some(variant),
-                    _ => None,
-                };
+                match instruction.kind {
+                    raw::InstructionKind::EnumConstruct { variant, .. } => {
+                        flow.variants[owner.0 as usize] = Some(variant);
+                    }
+                    raw::InstructionKind::ClonePlace { place, .. } => {
+                        flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
+                    }
+                    raw::InstructionKind::MoveFromPlace { .. } => {}
+                    _ => flow.variants[owner.0 as usize] = None,
+                }
             }
         }
         if active.iter().skip(function.borrow_parameters.len()).any(Option::is_some) {
@@ -2872,6 +3095,16 @@ fn cleanup_references(function: &raw::Function) -> Vec<CleanupReference> {
                     block: block_index,
                     instruction: Some(instruction_index),
                     role: VerifiedCleanupRole::VecCloneElementFailure,
+                });
+            }
+            if let raw::InstructionKind::ClonePlace { element_cleanup: Some(plan), .. } =
+                instruction.kind
+            {
+                references.push(CleanupReference {
+                    plan,
+                    block: block_index,
+                    instruction: Some(instruction_index),
+                    role: VerifiedCleanupRole::AggregateCloneElementFailure,
                 });
             }
         }
@@ -3599,6 +3832,56 @@ fn verify_vec_clone_element_cleanup(
     }
 }
 
+fn verify_aggregate_clone_element_cleanup(
+    id: raw::CleanupPlanId,
+    result_owner: Option<raw::PlaceId>,
+    source: raw::PlaceId,
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    flow: &OwnershipFlow,
+    errors: &mut Errors,
+) {
+    let Some(plan) = function.cleanup_plans.get(id.0 as usize) else { return };
+    let Some(result_owner) = result_owner else {
+        errors.push(error_at(
+            "ZRYNA-I3012",
+            plan.span,
+            "aggregate clone element cleanup lacks its distinct destination owner",
+            "bind the clone result to one exact temporary owner",
+        ));
+        return;
+    };
+    let expected = std::iter::once(raw::DropAction::DropAggregateInitializedPrefix(result_owner))
+        .chain(flow.pending.iter().rev().copied().map(raw::DropAction::DropPlace))
+        .collect::<Vec<_>>();
+    if plan.actions != expected {
+        errors.push(error_at(
+            "ZRYNA-I3013",
+            plan.span,
+            "aggregate clone element cleanup does not reverse-drop the recursive destination prefix before live roots",
+            "drop the initialized structural destination prefix first, then every pre-existing owner in reverse order",
+        ));
+    }
+    let source_ty =
+        function.places.get(source.0 as usize).and_then(|place| layout_type(layouts, place.ty));
+    let active_variant = source_ty.and_then(|record| {
+        (record.category() == TypeCategory::Enum)
+            .then(|| flow.variants.get(source.0 as usize).copied().flatten())
+            .flatten()
+    });
+    let has_exact_shape = source_ty.is_some_and(|record| {
+        aggregate_clone_fallible_leaf_count(record.id(), layouts, active_variant, true).is_some()
+    });
+    if !has_exact_shape {
+        errors.push(error_at(
+            "ZRYNA-I3013",
+            plan.span,
+            "aggregate clone element cleanup lacks an authenticated active root shape",
+            "clone a structurally supported source whose root Enum variant is known at this program point",
+        ));
+    }
+}
+
 fn ownership_error(span: Span, message: &'static str, errors: &mut Errors) {
     errors.push(error_at(
         "ZRYNA-I3010",
@@ -3955,11 +4238,43 @@ fn verify_use(
     }
 }
 
+fn aggregate_clone_fallible_leaf_count(
+    ty: zryna_layout::TypeId,
+    layouts: &VerifiedLayouts,
+    root_variant: Option<u32>,
+    root: bool,
+) -> Option<u64> {
+    let record = layouts.type_by_id(ty)?;
+    match record.category() {
+        TypeCategory::Bool | TypeCategory::I32 => Some(0),
+        TypeCategory::String => Some(1),
+        TypeCategory::Struct => record.fields().iter().try_fold(0_u64, |total, field| {
+            total.checked_add(aggregate_clone_fallible_leaf_count(
+                field.ty(),
+                layouts,
+                None,
+                false,
+            )?)
+        }),
+        TypeCategory::FixedArray => record.array_length()?.checked_mul(
+            aggregate_clone_fallible_leaf_count(record.referenced_type()?, layouts, None, false)?,
+        ),
+        TypeCategory::Enum if root => {
+            let variant = usize::try_from(root_variant?).ok()?;
+            record.variants().get(variant)?.payload().map_or(Some(0), |payload| {
+                aggregate_clone_fallible_leaf_count(payload, layouts, None, false)
+            })
+        }
+        TypeCategory::Enum | TypeCategory::Vec | TypeCategory::Shared | TypeCategory::Weak => None,
+    }
+}
+
 fn structural_clone_capable(ty: raw::TypeId, layouts: &VerifiedLayouts) -> bool {
     fn visit(
         ty: zryna_layout::TypeId,
         layouts: &VerifiedLayouts,
         active: &mut BTreeSet<u32>,
+        root: bool,
     ) -> bool {
         if !active.insert(ty.index()) {
             return false;
@@ -3968,20 +4283,19 @@ fn structural_clone_capable(ty: raw::TypeId, layouts: &VerifiedLayouts) -> bool 
             return false;
         };
         let capable = match record.category() {
-            TypeCategory::Bool | TypeCategory::I32 => true,
+            TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String => true,
             TypeCategory::Struct => {
-                record.fields().iter().all(|field| visit(field.ty(), layouts, active))
+                record.fields().iter().all(|field| visit(field.ty(), layouts, active, false))
             }
-            TypeCategory::Enum => record.variants().iter().all(|variant| {
-                variant.payload().is_none_or(|payload| visit(payload, layouts, active))
+            TypeCategory::Enum if root => record.variants().iter().all(|variant| {
+                variant.payload().is_none_or(|payload| visit(payload, layouts, active, false))
             }),
-            TypeCategory::FixedArray => {
-                record.referenced_type().is_some_and(|element| visit(element, layouts, active))
+            TypeCategory::FixedArray => record
+                .referenced_type()
+                .is_some_and(|element| visit(element, layouts, active, false)),
+            TypeCategory::Enum | TypeCategory::Vec | TypeCategory::Shared | TypeCategory::Weak => {
+                false
             }
-            TypeCategory::String
-            | TypeCategory::Vec
-            | TypeCategory::Shared
-            | TypeCategory::Weak => false,
         };
         active.remove(&ty.index());
         capable
@@ -3993,7 +4307,7 @@ fn structural_clone_capable(ty: raw::TypeId, layouts: &VerifiedLayouts) -> bool 
     matches!(
         layouts.type_by_id(ty).map(zryna_layout::VerifiedType::category),
         Some(TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray)
-    ) && visit(ty, layouts, &mut BTreeSet::new())
+    ) && visit(ty, layouts, &mut BTreeSet::new(), true)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -4083,9 +4397,14 @@ fn verify_operation_types(
         I::CopyFromPlace { place } | I::MoveFromPlace { place } => {
             place_type(*place) == result_type
         }
-        I::ClonePlace { place, .. } => {
+        I::ClonePlace { place, element_cleanup, .. } => {
             place_type(*place) == result_type
-                && result_type.is_some_and(|ty| structural_clone_capable(ty, layouts))
+                && result_type.is_some_and(|ty| {
+                    structural_clone_capable(ty, layouts)
+                        && layout_type(layouts, ty).is_some_and(|record| {
+                            (record.drop_kind() == 0) == element_cleanup.is_none()
+                        })
+                })
         }
         I::InitializePlace { place, value } | I::ReplacePlace { place, value, .. } => {
             place_type(*place) == value_info(values, *value).map(|info| info.ty)
@@ -4376,8 +4695,12 @@ fn verify_instruction_shape(
         | I::DropPlace { place }
         | I::EnumDiscriminant { place }
         | I::ReplacePlace { place, .. } => !place_valid(*place),
-        I::ClonePlace { place, cleanup }
-        | I::FixedArrayIndexCopy { place, cleanup, .. }
+        I::ClonePlace { place, cleanup, element_cleanup } => {
+            !place_valid(*place)
+                || !cleanup_valid(*cleanup)
+                || element_cleanup.is_some_and(|cleanup| !cleanup_valid(cleanup))
+        }
+        I::FixedArrayIndexCopy { place, cleanup, .. }
         | I::VecIndexCopy { place, cleanup, .. }
         | I::StringClone { place, cleanup }
         | I::SharedClone { place, cleanup }

@@ -11,8 +11,8 @@ use super::{
     MAX_FUNCTIONS_PER_MODULE, MAX_LOOP_NESTING, MAX_MODULES, MAX_NOMINAL_DECLARATIONS,
     MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, MAX_PARAMETERS_PER_FUNCTION, MAX_PLACES_PER_FUNCTION,
     MAX_STATIC_CALL_DEPTH, MAX_STRING_LITERAL_BYTES, MAX_VALUES_PER_FUNCTION,
-    RuntimeContractIdentity, VerifiedCleanupRole, VerifiedDropActionKind, VerifiedInstructionKind,
-    raw, verify, verify_reducible_loops,
+    RuntimeContractIdentity, VerifiedActiveVariant, VerifiedCleanupRole, VerifiedDropActionKind,
+    VerifiedInstructionKind, raw, verify, verify_reducible_loops,
 };
 
 fn authorities() -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::VerifiedLayouts) {
@@ -92,6 +92,58 @@ fn authorities() -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::Ver
             raw_layout::NodeId(7),
             raw_layout::NodeId(8),
         ],
+    };
+    let linear =
+        zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
+    let linux = zryna_layout::verify(&graph, &sources, StorageTarget::LinuxX8664V1)
+        .expect("native layouts");
+    (sources, linear, linux)
+}
+
+fn payloadless_enum_authorities()
+-> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::VerifiedLayouts) {
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "main.zry".into(),
+        text: "export function id(value: i32): i32 { return value; }".into(),
+    }])
+    .expect("source map");
+    let file = sources.verify_file_id(0).expect("source file");
+    let graph = raw_layout::Graph {
+        modules: vec![raw_layout::Module {
+            id: raw_layout::ModuleId(0),
+            source_file: file,
+            data_declarations: 1,
+        }],
+        types: vec![
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(0),
+                span: None,
+                kind: raw_layout::TypeKind::Bool,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(1),
+                span: None,
+                kind: raw_layout::TypeKind::I32,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(2),
+                span: None,
+                kind: raw_layout::TypeKind::String,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(3),
+                span: Some(sources.span(file, 0, 6).expect("nominal span")),
+                kind: raw_layout::TypeKind::Enum {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 0,
+                    variants: vec![
+                        raw_layout::Variant { ordinal: 0, payload: None },
+                        raw_layout::Variant { ordinal: 1, payload: Some(raw_layout::NodeId(2)) },
+                    ],
+                },
+            },
+        ],
+        program_roots: vec![raw_layout::NodeId(3)],
     };
     let linear =
         zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
@@ -513,7 +565,11 @@ fn string_clone_program(
         result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty, span }),
         span,
         kind: if generic {
-            raw::InstructionKind::ClonePlace { place: raw::PlaceId(0), cleanup }
+            raw::InstructionKind::ClonePlace {
+                place: raw::PlaceId(0),
+                cleanup,
+                element_cleanup: None,
+            }
         } else {
             raw::InstructionKind::StringClone { place: raw::PlaceId(0), cleanup }
         },
@@ -533,6 +589,114 @@ fn string_clone_program(
                 raw::DropAction::DropPlace(raw::PlaceId(1)),
                 raw::DropAction::DropPlace(raw::PlaceId(0)),
             ],
+        },
+    ];
+    program
+}
+
+fn string_bearing_aggregate_clone_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    ty: raw::TypeId,
+) -> raw::Program {
+    let mut program = string_clone_program(sources, linear, linux, ty, true);
+    let function = &mut program.modules[0].functions[0];
+    let span = function.span;
+    let element_cleanup = raw::CleanupPlanId(2);
+    let raw::InstructionKind::ClonePlace { element_cleanup: claim, .. } =
+        &mut function.blocks[0].instructions[0].kind
+    else {
+        panic!("ClonePlace")
+    };
+    *claim = Some(element_cleanup);
+    function.cleanup_plans.push(raw::CleanupPlan {
+        id: element_cleanup,
+        span,
+        actions: vec![
+            raw::DropAction::DropAggregateInitializedPrefix(raw::PlaceId(1)),
+            raw::DropAction::DropPlace(raw::PlaceId(0)),
+        ],
+    });
+    program
+}
+
+fn payloadless_active_enum_clone_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+) -> raw::Program {
+    let mut program = program(sources, linear, linux);
+    program.modules[0].data_declarations = 1;
+    let function = &mut program.modules[0].functions[0];
+    let span = function.span;
+    function.entry_export = None;
+    function.parameters.clear();
+    function.result = raw::TypeId(3);
+    function.places = vec![
+        raw::Place {
+            id: raw::PlaceId(0),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(0)),
+        },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Local(0),
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(1)),
+        },
+    ];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(0), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::EnumConstruct { variant: 0, payload: None, cleanup: None },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(1),
+                value: raw::ValueId(0),
+            },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::ClonePlace {
+                place: raw::PlaceId(1),
+                cleanup: raw::CleanupPlanId(0),
+                element_cleanup: Some(raw::CleanupPlanId(1)),
+            },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(2) };
+    function.cleanup_plans = vec![
+        raw::CleanupPlan {
+            id: raw::CleanupPlanId(0),
+            span,
+            actions: vec![raw::DropAction::DropPlace(raw::PlaceId(1))],
+        },
+        raw::CleanupPlan {
+            id: raw::CleanupPlanId(1),
+            span,
+            actions: vec![
+                raw::DropAction::DropAggregateInitializedPrefix(raw::PlaceId(2)),
+                raw::DropAction::DropPlace(raw::PlaceId(1)),
+            ],
+        },
+        raw::CleanupPlan {
+            id: raw::CleanupPlanId(2),
+            span,
+            actions: vec![raw::DropAction::DropPlace(raw::PlaceId(1))],
         },
     ];
     program
@@ -1608,8 +1772,6 @@ fn owned_utf8_literal_rejects_invalid_utf8_result_and_cleanup() {
 fn generic_clone_is_limited_to_structural_aggregate_categories() {
     for (ty, label) in [
         (raw::TypeId(2), "String"),
-        (raw::TypeId(3), "struct containing String"),
-        (raw::TypeId(4), "enum containing String"),
         (raw::TypeId(6), "Vec"),
         (raw::TypeId(7), "Shared"),
         (raw::TypeId(8), "Weak"),
@@ -1624,6 +1786,18 @@ fn generic_clone_is_limited_to_structural_aggregate_categories() {
         );
     }
 
+    let (sources, linear, linux) = authorities();
+    let raw = string_bearing_aggregate_clone_program(&sources, &linear, &linux, raw::TypeId(3));
+    let entry = sources.verify_file_id(0).expect("entry");
+    verify(raw, &sources, entry, linear, linux).expect("struct containing String");
+
+    let (sources, linear, linux) = authorities();
+    let raw = string_bearing_aggregate_clone_program(&sources, &linear, &linux, raw::TypeId(4));
+    let entry = sources.verify_file_id(0).expect("entry");
+    let diagnostics = verify(raw, &sources, entry, linear, linux)
+        .expect_err("unrefined enum parameter must not authorize structural clone");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3013"));
+
     for (runtime_child, label) in [(0, "Vec child"), (1, "Shared child"), (2, "Weak child")] {
         let (sources, linear, linux, ty) = runtime_child_clone_authorities(runtime_child);
         let mut raw = string_clone_program(&sources, &linear, &linux, ty, true);
@@ -1636,14 +1810,209 @@ fn generic_clone_is_limited_to_structural_aggregate_categories() {
         );
     }
 
-    let (sources, linear, linux, ty) = copy_clone_authorities();
+    let (sources, linear, linux, _) = copy_clone_authorities();
+    let ty = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 0)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("Copy struct");
     let mut raw = string_clone_program(&sources, &linear, &linux, ty, true);
     raw.modules[0].data_declarations = 3;
     for plan in &mut raw.modules[0].functions[0].cleanup_plans {
         plan.actions.clear();
     }
     let entry = sources.verify_file_id(0).expect("entry");
-    verify(raw, &sources, entry, linear, linux).expect("recursively Copy structural clone");
+    let verified =
+        verify(raw, &sources, entry, linear, linux).expect("recursively Copy structural clone");
+    let clone = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .next()
+        .expect("clone");
+    assert_eq!(clone.aggregate_clone_fallible_leaf_count(), None);
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn string_bearing_aggregate_clone_cleanup_is_exact_and_fail_closed() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let baseline =
+        string_bearing_aggregate_clone_program(&sources, &linear, &linux, raw::TypeId(3));
+    let verified = verify(baseline.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("String-bearing Struct clone");
+    let function = verified.modules().next().expect("module").functions().next().expect("function");
+    let clone = function.blocks().next().expect("block").instructions().next().expect("clone");
+    assert_eq!(
+        clone
+            .aggregate_clone_element_cleanup()
+            .and_then(|plan| { function.cleanup_plans().find(|candidate| candidate.id() == plan) })
+            .map(super::VerifiedCleanupPlan::site)
+            .map(super::VerifiedCleanupSite::role),
+        Some(VerifiedCleanupRole::AggregateCloneElementFailure),
+    );
+    assert_eq!(
+        clone
+            .aggregate_clone_element_failure_drop_actions()
+            .map(|action| (action.kind(), action.root().index()))
+            .collect::<Vec<_>>(),
+        vec![
+            (VerifiedDropActionKind::AggregateInitializedPrefix, 1),
+            (VerifiedDropActionKind::Place, 0),
+        ]
+    );
+
+    let assert_rejected = |raw: raw::Program, label: &str| {
+        let diagnostics =
+            verify(raw, &sources, entry, linear.clone(), linux.clone()).expect_err(label);
+        assert!(
+            diagnostics.iter().any(|diagnostic| {
+                matches!(
+                    diagnostic.code(),
+                    "ZRYNA-I3005" | "ZRYNA-I3006" | "ZRYNA-I3012" | "ZRYNA-I3013"
+                )
+            }),
+            "{label}: {diagnostics:?}",
+        );
+    };
+
+    let mut missing = baseline.clone();
+    let raw::InstructionKind::ClonePlace { element_cleanup, .. } =
+        &mut missing.modules[0].functions[0].blocks[0].instructions[0].kind
+    else {
+        panic!("ClonePlace")
+    };
+    *element_cleanup = None;
+    assert_rejected(missing, "missing element cleanup");
+
+    let mut foreign = baseline.clone();
+    let raw::InstructionKind::ClonePlace { element_cleanup, .. } =
+        &mut foreign.modules[0].functions[0].blocks[0].instructions[0].kind
+    else {
+        panic!("ClonePlace")
+    };
+    *element_cleanup = Some(raw::CleanupPlanId(99));
+    assert_rejected(foreign, "foreign element cleanup");
+
+    let mut reused = baseline.clone();
+    let raw::InstructionKind::ClonePlace { element_cleanup, .. } =
+        &mut reused.modules[0].functions[0].blocks[0].instructions[0].kind
+    else {
+        panic!("ClonePlace")
+    };
+    *element_cleanup = Some(raw::CleanupPlanId(0));
+    assert_rejected(reused, "reused element cleanup");
+
+    for (actions, label) in [
+        (
+            vec![raw::DropAction::DropAggregateInitializedPrefix(raw::PlaceId(0))],
+            "wrong result owner and missing roots",
+        ),
+        (
+            vec![
+                raw::DropAction::DropPlace(raw::PlaceId(0)),
+                raw::DropAction::DropAggregateInitializedPrefix(raw::PlaceId(1)),
+            ],
+            "reordered roots",
+        ),
+        (
+            vec![
+                raw::DropAction::DropAggregateInitializedPrefix(raw::PlaceId(1)),
+                raw::DropAction::DropPlace(raw::PlaceId(0)),
+                raw::DropAction::DropPlace(raw::PlaceId(1)),
+            ],
+            "extra root",
+        ),
+    ] {
+        let mut raw = baseline.clone();
+        raw.modules[0].functions[0].cleanup_plans[2].actions = actions;
+        assert_rejected(raw, label);
+    }
+
+    let mut prefix_in_ordinary = baseline.clone();
+    prefix_in_ordinary.modules[0].functions[0].cleanup_plans[0].actions =
+        vec![raw::DropAction::DropAggregateInitializedPrefix(raw::PlaceId(0))];
+    assert_rejected(prefix_in_ordinary, "prefix in ordinary cleanup");
+
+    let (copy_sources, copy_linear, copy_linux, _) = copy_clone_authorities();
+    let copy_ty = copy_linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 0)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("Copy struct");
+    let mut copy = string_clone_program(&copy_sources, &copy_linear, &copy_linux, copy_ty, true);
+    copy.modules[0].data_declarations = 3;
+    for plan in &mut copy.modules[0].functions[0].cleanup_plans {
+        plan.actions.clear();
+    }
+    let copy_span = copy.modules[0].functions[0].span;
+    copy.modules[0].functions[0].cleanup_plans.push(raw::CleanupPlan {
+        id: raw::CleanupPlanId(2),
+        span: copy_span,
+        actions: vec![],
+    });
+    let raw::InstructionKind::ClonePlace { element_cleanup, .. } =
+        &mut copy.modules[0].functions[0].blocks[0].instructions[0].kind
+    else {
+        panic!("ClonePlace")
+    };
+    *element_cleanup = Some(raw::CleanupPlanId(2));
+    let copy_entry = copy_sources.verify_file_id(0).expect("entry");
+    let diagnostics = verify(copy, &copy_sources, copy_entry, copy_linear, copy_linux)
+        .expect_err("Copy aggregate with element cleanup");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3005"));
+
+    let (payloadless_sources, payloadless_linear, payloadless_linux) =
+        payloadless_enum_authorities();
+    let payloadless = payloadless_active_enum_clone_program(
+        &payloadless_sources,
+        &payloadless_linear,
+        &payloadless_linux,
+    );
+    let payloadless_entry = payloadless_sources.verify_file_id(0).expect("entry");
+    let verified = verify(
+        payloadless,
+        &payloadless_sources,
+        payloadless_entry,
+        payloadless_linear,
+        payloadless_linux,
+    )
+    .expect("payloadless active enum clone");
+    let clone = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+        .expect("clone");
+    assert_eq!(clone.aggregate_clone_fallible_leaf_count(), Some(0));
+    let prefix = clone
+        .aggregate_clone_element_failure_drop_actions()
+        .next()
+        .expect("aggregate prefix action");
+    assert_eq!(prefix.kind(), VerifiedDropActionKind::AggregateInitializedPrefix);
+    assert_eq!(prefix.active_variant(), Some(0));
+    assert_eq!(
+        prefix
+            .active_variants()
+            .find(|variant| variant.place() == prefix.root())
+            .map(VerifiedActiveVariant::variant),
+        Some(0),
+    );
 }
 
 #[test]

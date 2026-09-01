@@ -667,6 +667,27 @@ fn resource_budget_violation(current: usize, extra: usize, maximum: usize) -> bo
     current.checked_add(extra).is_none_or(|total| total > maximum)
 }
 
+fn aggregate_clone_budget_violation(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    cleanup_plans: usize,
+    cleanup_actions: usize,
+    pending: usize,
+) -> bool {
+    let Some(prefix_actions) = pending.checked_add(1) else { return true };
+    let Some(new_actions) = pending.checked_add(prefix_actions) else { return true };
+    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
+        || resource_budget_violation(places, 1, ir::MAX_PLACES_PER_FUNCTION)
+        || resource_budget_violation(transitions, 1, ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION)
+        || resource_budget_violation(cleanup_plans, 2, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
+        || resource_budget_violation(
+            cleanup_actions,
+            new_actions,
+            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+        )
+}
+
 fn cleanup_action_budget_violation(current: usize, pending: usize, excluded_present: bool) -> bool {
     let actions = pending.saturating_sub(usize::from(excluded_present));
     resource_budget_violation(current, actions, ir::MAX_DROP_ACTIONS_PER_FUNCTION)
@@ -5189,6 +5210,126 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         Some(value)
     }
 
+    fn clone_aggregate(&mut self, operand: u32, expected: Ty, at: Span) -> Option<raw::ValueId> {
+        if expected.is_copy()
+            || !matches!(
+                expected.category,
+                TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray
+            )
+            || !self.supported(expected)
+        {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "structural clone requires one exact supported String-bearing aggregate",
+                "clone an acyclic private Struct, Enum, or fixed array containing only bool, i32, String, and supported aggregate nodes",
+            );
+            return None;
+        }
+        let operand = self.expression(operand)?.clone();
+        let RawExpressionKind::Reference { name } = operand.kind else {
+            self.errors.at(
+                "ZRYNA-M3013",
+                span(self.input.sources(), operand.span),
+                "structural clone requires an addressable aggregate local root",
+                "clone one available aggregate local by name",
+            );
+            return None;
+        };
+        let Some(binding) = self.bindings.get(&name.text).cloned() else {
+            self.errors.at(
+                "ZRYNA-M3002",
+                span(self.input.sources(), name.span),
+                format!("aggregate binding '{}' is not declared in this function", name.text),
+                "clone one preceding available aggregate local",
+            );
+            return None;
+        };
+        if binding.ty != expected {
+            self.errors.at(
+                "ZRYNA-M3016",
+                span(self.input.sources(), name.span),
+                "structural clone source has the wrong exact aggregate type",
+                "clone a local with the exact contextual aggregate type",
+            );
+            return None;
+        }
+        if !self.owners.contains(binding.place) {
+            self.errors.at(
+                "ZRYNA-M3014",
+                span(self.input.sources(), name.span),
+                format!("aggregate value '{}' was already moved", name.text),
+                "clone the aggregate only while its owner remains available",
+            );
+            return None;
+        }
+
+        let pending = self.owners.pending().len();
+        let prefix_actions = pending.checked_add(1).or_else(|| {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "aggregate clone prefix cleanup overflows its checked action count",
+                "reduce simultaneously live owned aggregates",
+            );
+            None
+        })?;
+        let _total_actions = pending.checked_add(prefix_actions).or_else(|| {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "aggregate clone cleanup accounting overflows",
+                "reduce simultaneously live owned aggregates",
+            );
+            None
+        })?;
+        if aggregate_clone_budget_violation(
+            self.next_value as usize,
+            self.places.len(),
+            self.instructions.len(),
+            self.cleanup_plans.len(),
+            self.cleanup_actions,
+            pending,
+        ) {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "structural clone exceeds a checked value, place, or cleanup resource limit",
+                "reduce simultaneously live owned aggregates or clone sites",
+            );
+            return None;
+        }
+
+        let cleanup = self.push_cleanup(at, None)?;
+        let result_owner = raw::PlaceId(u32::try_from(self.places.len()).ok()?);
+        let element_cleanup = self.push_aggregate_clone_prefix_cleanup(at, result_owner)?;
+        self.emit(
+            expected,
+            at,
+            raw::InstructionKind::ClonePlace {
+                place: binding.place,
+                cleanup,
+                element_cleanup: Some(element_cleanup),
+            },
+        )
+    }
+
+    fn push_aggregate_clone_prefix_cleanup(
+        &mut self,
+        at: Span,
+        result_owner: raw::PlaceId,
+    ) -> Option<raw::CleanupPlanId> {
+        let action_count = self.owners.pending().len().checked_add(1)?;
+        let id = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).ok()?);
+        let actions =
+            std::iter::once(raw::DropAction::DropAggregateInitializedPrefix(result_owner))
+                .chain(self.owners.pending().iter().rev().copied().map(raw::DropAction::DropPlace))
+                .collect();
+        self.cleanup_plans.push(raw::CleanupPlan { id, span: at, actions });
+        self.cleanup_actions += action_count;
+        Some(id)
+    }
+
     fn value(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
         let expression = self.expression(id)?.clone();
         let at = span(self.input.sources(), expression.span);
@@ -5218,6 +5359,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 self.emit(expected, at, raw::InstructionKind::StringFromUtf8 { bytes, cleanup })
             }
             RawExpressionKind::Reference { name } => self.reference_value(&name, expected, at),
+            RawExpressionKind::Clone { value, .. } => self.clone_aggregate(value, expected, at),
             RawExpressionKind::StructConstruction { type_name, fields, .. }
                 if expected.category == TypeCategory::Struct =>
             {

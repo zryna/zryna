@@ -39,6 +39,10 @@ document. Its private owned String/Vec route currently proves:
 - bounded construction, whole-value local moves, return, and reverse-order survivor cleanup for
   parameter-free private straight-line owned Struct and FixedArray graphs with bool, i32, or String
   leaves, and owned Enums with payloadless or supported Copy, String, Struct, or FixedArray payloads;
+- explicit structural clone of supported non-Copy Struct, FixedArray, and root Enum values with
+  String leaves, retaining the source and creating one distinct result owner; recursive String-clone
+  failure derives its exact fallible-leaf count and root-enum active variant from sealed authorities,
+  reverse-drops only the initialized result prefix, and then cleans pre-existing roots;
 - `InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace` lowering, with
   private String use-after-move rejected as `ZRYNA-M3011`, aggregate/enum moved-owner violations as
   `ZRYNA-M3014`, unresolved binding names as `ZRYNA-M3002`, and excluded private String shapes as
@@ -53,8 +57,8 @@ document. Its private owned String/Vec route currently proves:
 - a sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the
   exact verified ownership-runtime ABI authority.
 
-General structural Vec clone beyond String elements, owned aggregate clone, owned place projections
-or assignment, general owned phi joins,
+General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
+Vec, Shared, or Weak values, owned place projections or assignment and partial moves, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -79,8 +83,9 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | stable-place loop mutation | complete | String replacement and Copy-element Vec push retain one exact outer place across repeated execution |
 | general loop-carried values and scope exits | pending | owned header phi, Vec replacement/owned-element push, and arbitrary exits remain excluded |
 | exact `Vec<bool>`/`Vec<i32>`/`Vec<String>` clone | complete | distinct result owner, retained source, authenticated allocation and element-clone failures, prefix-safe reverse cleanup, and exact resource rollback |
-| general structural Vec and aggregate clone, projections, assignment, and partial moves | pending | nested structural clone capability and moved-subobject masks |
-| controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> partial initialization, are complete for admitted operations; executable target fault injection remains pending |
+| supported String-bearing aggregate clone | complete | distinct result owner, retained source, sealed layout/variant-derived fallible leaves, authenticated prefix-safe recursive failure cleanup, and atomic resource rollback |
+| general structural Vec clone, nested aggregate clone, projections, assignment, and partial moves | pending | recursive Vec/Enum/Shared/Weak clone capability and moved-subobject masks |
+| controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
 This ledger records implementation evidence, not public language availability. Every row remains
@@ -220,6 +225,8 @@ one closed role:
 - `PrepareFailure`, for one potentially failing checked prepare operation;
 - `VecCloneElementFailure`, for the separately authenticated failure of one exact String element
   clone after a runtime-recorded destination prefix has initialized;
+- `AggregateCloneElementFailure`, for the separately authenticated failure of one exact String leaf
+  after a verifier-derived aggregate destination prefix has initialized;
 - `CallTrap`, after by-value arguments have transferred into a called function;
 - `Return`, after the returned-owner transfer; or
 - `ControlledTrap`, before reporting one exact trap identity.
@@ -269,6 +276,11 @@ The operation-specific consequences are:
   source and excluding the uncommitted result.
 - General structural Vec clone beyond String elements remains a closure target with the same
   prefix-safe rule derived recursively from the element clone capability.
+- Supported String-bearing Struct, FixedArray, and root Enum clone reserves a distinct result owner
+  and a separate aggregate-element failure plan before emission. The verifier derives the exact
+  fallible String-leaf count from retained Linear32 layout and derives a root Enum's active variant
+  from source ownership state. Failure reverse-drops only the completed destination prefix and then
+  pre-existing roots while retaining the source and excluding the uncommitted result.
 - `VecPush` evaluates its value first. Reserve failure retains both vector and argument; commit
   moves the argument into the new final element.
 - Checked fixed-array or Vec indexing performs no ownership transfer on bounds failure.
@@ -307,6 +319,12 @@ Vec element bound, and the completed prefix must be strictly shorter than that s
 trace allocation. The oracle then emits exactly the completed indices in reverse order, followed by
 storage release and the pre-existing owner cleanup; zero, middle, last-valid, first-extra, and
 arithmetic/event-limit boundaries are deterministic.
+
+For supported aggregate clone, element failure separately authenticates `StringClone` and requires
+the exact `AggregateCloneElementFailure` site. The completed prefix must be strictly below the
+fallible String-leaf count derived from sealed layout and the authenticated active root-enum
+variant. The oracle emits the completed String leaves in reverse structural order, then the
+pre-existing root cleanup; caller-supplied leaf counts or enum variants are not accepted.
 
 Cleanup and release are infallible logical effects, do not allocate, and cannot replace the
 original trap. A release-contract violation is an internal runtime violation for later executable
@@ -454,6 +472,8 @@ Focused acceptance evidence must include at least:
 - String and Vec allocation failure with pre-commit operands retained;
 - exact `Vec<String>` element-clone failure at zero, middle, and last-valid completed prefixes, plus
   rejection of the first impossible prefix before trace allocation;
+- supported aggregate element-clone failure at zero, middle, and last-valid completed prefixes,
+  including active root-enum selection and first-impossible-prefix rejection before trace allocation;
 - `VecPush` failure retaining both vector and argument, followed by exact cleanup;
 - partial aggregate, active enum, fixed-array prefix, Vec length, and moved-subobject drop shapes;
 - use-after-move, double consumption, duplicate root aliases, missing/extra/reordered cleanup,

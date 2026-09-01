@@ -210,13 +210,17 @@ RHS preparation or pushes a Copy element into one mutable outer exact Vec withou
 phi; Vec replacement and owned-element Vec push remain pending. The same gate proves use-after-move diagnostics, one-plan/one-site cleanup roles, and the
 cumulative 8 MiB String-literal limit while retaining verified IR and the exact runtime ABI
 authority. Its internal fault/drop-trace oracle consumes authenticated runtime status dispositions
-and exact trap identities for all admitted implemented String/Vec failures, keeps Vec bounds as a
+and exact trap identities for all admitted implemented String/Vec/aggregate-clone failures, keeps Vec bounds as a
 separate verified trap, and proves pre-commit retention, result exclusion, reverse cleanup,
-determinism, and bounded trace accounting without runtime execution. A bounded parameter-free private straight-line route also constructs, moves, returns,
-and drops owned Struct, FixedArray, and Enum graphs with Copy/String leaves. The private String and
+determinism, and bounded trace accounting without runtime execution. A bounded parameter-free
+private straight-line route also constructs, moves, explicitly clones, returns, and drops owned
+Struct, FixedArray, and root Enum graphs with Copy/String leaves. Structural clone retains its
+source, derives its fallible String-leaf count and root-enum active variant from sealed authorities,
+and uses prefix-safe failure cleanup. The private String and
 aggregate/enum routes retain their distinct M3011 and M3014 moved-owner diagnostics, and unresolved
-bindings use M3002. General structural Vec clone beyond String elements, owned aggregate
-clone/projections/assignment, general owned joins,
+bindings use M3002. General structural Vec clone beyond String elements, nested aggregate clone
+graphs containing Enum, Vec, Shared, or Weak values, owned projections/assignment and partial moves,
+general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits remain closure
 work. Issue #81 is
 not complete, so #82 remains planned and is not ready to start.

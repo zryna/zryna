@@ -74,18 +74,21 @@ The repository currently establishes and tests:
   reaches one final return. Its stable-place subset may replace one mutable outer String after
   complete RHS preparation or push a Copy element into one mutable outer exact Vec; the outer
   place identity remains unchanged and no owned header phi is introduced. The same parameter-free private
-  straight-line aggregate gate now constructs, moves, returns,
-  and deterministically drops bounded owned Struct, FixedArray, and Enum graphs containing Copy or
-  String leaves. It proves one exact non-Copy owner while preserving addressable Copy storage and
-  binds every cleanup plan to one exact site and role. The private String route reports moved
+  straight-line aggregate gate now constructs, moves, explicitly clones, returns,
+  and deterministically drops bounded owned Struct, FixedArray, and root Enum graphs containing
+  Copy or String leaves. A fallible structural clone derives the exact String-leaf count and active
+  root-enum variant from sealed layout and verifier state, retains its source, and reverse-drops only
+  the initialized result prefix before pre-existing roots. It proves one exact non-Copy owner while
+  preserving addressable Copy storage and binds every cleanup plan to one exact site and role. The
+  private String route reports moved
   bindings as M3011; the bounded aggregate and enum route reports moved owners as M3014;
   unresolved binding names report M3002;
   cumulative 8 MiB String-literal limits fail closed. A bounded internal fault/drop-trace oracle
-  authenticates every admitted implemented String/Vec failure disposition and trap identity,
+  authenticates every admitted implemented String/Vec/aggregate-clone failure disposition and trap identity,
   preserves pre-commit owners, excludes uncommitted results, and pins reverse cleanup without
   executing an allocator or target runtime. General structural Vec clone beyond String elements,
-  owned aggregate clone, owned
-  projections, aggregate assignment, general owned phi joins, owned loop-carried phi joins,
+  nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, owned projections,
+  aggregate assignment, partial moves, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
   and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
   loop-body return, and post-loop effects remain excluded;

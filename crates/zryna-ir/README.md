@@ -141,13 +141,22 @@ initialized destination prefix before pre-existing roots. Executable consumers m
 verified drop-action view for this role rather than treating its root-only compatibility view as an
 ordinary whole-place drop. This does not claim general `Vec<T: Clone>` support.
 
+`ClonePlace` additionally admits supported non-Copy Struct, FixedArray, and root Enum graphs whose
+fallible leaves are Strings. It preserves the source, produces one distinct result owner, and binds
+String-leaf failure to a separately site-bound `AggregateCloneElementFailure` plan. That plan starts
+with the typed `AggregateInitializedPrefix` action and then lists every pre-existing live root in
+reverse order. The verifier derives the fallible-leaf count from retained Linear32 layout and the
+root Enum's active variant from source ownership state; neither fact is accepted from a caller.
+Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain outside this checkpoint.
+
 Every raw cleanup plan is bound to exactly one verified site and one closed role:
-`PrepareFailure`, `CallTrap`, `Return`, or `ControlledTrap`. A cleanup-bearing site with a foreign
+`PrepareFailure`, `VecCloneElementFailure`, `AggregateCloneElementFailure`, `CallTrap`, `Return`, or
+`ControlledTrap`. A cleanup-bearing site with a foreign
 identity, an orphan plan, or a plan reused by another site fails closed. Opaque verified site and
 drop-action views expose that authority without returning raw plans; explicit `DropPlace` views
 derive their recursive state from the instruction's pre-drop program point. These are compiler
 proof foundations only. The verifier vocabulary is broader than the current private straight-line
-String/Vec semantic producer; general projections, calls and CFG ownership, target cleanup,
+String/Vec/aggregate semantic producer; general projections, calls and CFG ownership, target cleanup,
 allocators, and executable M3 profiles remain unavailable.
 
 The exact authority tuple, raw vocabulary, limits, diagnostics, and verified-view contract are
