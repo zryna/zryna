@@ -227,8 +227,11 @@ StructField and FixedArrayConstant projections, retains Copy leaves, moves exact
 and preserves disjoint siblings plus the enclosing cleanup obligation. It also prepares and commits
 replacement of mutable available String leaves without disturbing sibling masks, and explicitly
 clones initialized available String leaves into distinct temporary owners while retaining the
-source root and its partial-state masks. Aggregate/enum subobject
-moves, whole-partial-owner transfer, dynamic projections, and general non-String projected clone and assignment remain open, alongside
+source root and its partial-state masks. An exact-type direct local declaration can now transfer a
+partially moved supported Struct or FixedArray root through its move-result temporary into one new
+local; the producer materializes the complete static topology and migrates the exact root-relative
+mask at both owner renames. Enum partial-root transfer, aggregate/enum subobject moves, transfer in
+return/call/assignment/CFG contexts, dynamic projections, and general non-String projected clone and assignment remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is

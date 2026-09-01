@@ -677,6 +677,43 @@ fn aggregate_transition_budget_violation(
     })
 }
 
+fn partial_transfer_place_delta(topology: usize, existing: usize) -> Option<usize> {
+    if existing > topology {
+        return None;
+    }
+    topology.checked_mul(3)?.checked_sub(existing)?.checked_add(2)
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PartialTransferBudgetViolation {
+    PlaceAccounting,
+    Values,
+    Places,
+    Transitions,
+}
+
+fn partial_transfer_budget_preflight(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    topology: usize,
+    existing: usize,
+) -> Result<usize, PartialTransferBudgetViolation> {
+    let additional_places = partial_transfer_place_delta(topology, existing)
+        .ok_or(PartialTransferBudgetViolation::PlaceAccounting)?;
+    if owned_value_budget_violation(values, 1) {
+        return Err(PartialTransferBudgetViolation::Values);
+    }
+    if owned_place_budget_violation(places, additional_places) {
+        return Err(PartialTransferBudgetViolation::Places);
+    }
+    if aggregate_transition_budget_violation(transitions, reserved_transitions, 2) {
+        return Err(PartialTransferBudgetViolation::Transitions);
+    }
+    Ok(additional_places)
+}
+
 fn aggregate_clone_budget_violation(
     values: usize,
     places: usize,
@@ -5011,6 +5048,19 @@ struct OwnedAggregatePlace {
     is_root: bool,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OwnedStaticProjectionKind {
+    StructField { ordinal: u32 },
+    FixedArrayConstant { index: u32 },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct OwnedProjectionShapeEntry {
+    parent: Option<usize>,
+    ty: Ty,
+    kind: OwnedStaticProjectionKind,
+}
+
 impl PrivateOwnedAggregateLowerer<'_, '_> {
     fn expression(&self, id: u32) -> Option<&syntax::RawExpressionSyntax> {
         usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))
@@ -5049,6 +5099,141 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
 
     fn places_overlap(&self, left: raw::PlaceId, right: raw::PlaceId) -> bool {
         self.place_is_at_or_below(left, right) || self.place_is_at_or_below(right, left)
+    }
+
+    fn append_projection_shape(
+        &self,
+        ty: Ty,
+        parent: Option<usize>,
+        shape: &mut Vec<OwnedProjectionShapeEntry>,
+    ) -> Option<()> {
+        let record = self.layouts.type_by_id(ty.layout)?;
+        match ty.category {
+            TypeCategory::Struct => {
+                for field in record.fields() {
+                    if shape.len() >= ir::MAX_PLACES_PER_FUNCTION {
+                        return None;
+                    }
+                    let child = self.ty_for_layout(field.ty())?;
+                    let index = shape.len();
+                    shape.push(OwnedProjectionShapeEntry {
+                        parent,
+                        ty: child,
+                        kind: OwnedStaticProjectionKind::StructField { ordinal: field.ordinal() },
+                    });
+                    self.append_projection_shape(child, Some(index), shape)?;
+                }
+            }
+            TypeCategory::FixedArray => {
+                let child = self.ty_for_layout(record.referenced_type()?)?;
+                let length = usize::try_from(record.array_length()?).ok()?;
+                for index in 0..length {
+                    if shape.len() >= ir::MAX_PLACES_PER_FUNCTION {
+                        return None;
+                    }
+                    let ordinal = u32::try_from(index).ok()?;
+                    let child_index = shape.len();
+                    shape.push(OwnedProjectionShapeEntry {
+                        parent,
+                        ty: child,
+                        kind: OwnedStaticProjectionKind::FixedArrayConstant { index: ordinal },
+                    });
+                    self.append_projection_shape(child, Some(child_index), shape)?;
+                }
+            }
+            TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String => {}
+            TypeCategory::Enum | TypeCategory::Vec | TypeCategory::Shared | TypeCategory::Weak => {
+                return None;
+            }
+        }
+        Some(())
+    }
+
+    fn complete_projection_shape(&self, ty: Ty) -> Option<Vec<OwnedProjectionShapeEntry>> {
+        let mut shape = Vec::new();
+        self.append_projection_shape(ty, None, &mut shape)?;
+        Some(shape)
+    }
+
+    fn existing_projection_shape(
+        &self,
+        root: raw::PlaceId,
+        shape: &[OwnedProjectionShapeEntry],
+    ) -> Vec<Option<raw::PlaceId>> {
+        let mut places = Vec::with_capacity(shape.len());
+        for entry in shape {
+            let parent = match entry.parent {
+                Some(index) => places[index],
+                None => Some(root),
+            };
+            places.push(parent.and_then(|parent| {
+                let key = match entry.kind {
+                    OwnedStaticProjectionKind::StructField { ordinal } => (parent.0, 0, ordinal),
+                    OwnedStaticProjectionKind::FixedArrayConstant { index } => (parent.0, 1, index),
+                };
+                self.projections.get(&key).copied()
+            }));
+        }
+        places
+    }
+
+    fn materialize_projection_shape(
+        &mut self,
+        root: raw::PlaceId,
+        shape: &[OwnedProjectionShapeEntry],
+        at: Span,
+    ) -> Vec<raw::PlaceId> {
+        let mut places = Vec::with_capacity(shape.len());
+        for entry in shape {
+            let parent = entry.parent.map_or(root, |index| places[index]);
+            let (key, kind) = match entry.kind {
+                OwnedStaticProjectionKind::StructField { ordinal } => {
+                    ((parent.0, 0, ordinal), raw::PlaceKind::StructField { base: parent, ordinal })
+                }
+                OwnedStaticProjectionKind::FixedArrayConstant { index } => (
+                    (parent.0, 1, index),
+                    raw::PlaceKind::FixedArrayConstant { base: parent, index },
+                ),
+            };
+            places.push(
+                self.push_projection(entry.ty, at, key, kind)
+                    .expect("partial transfer topology capacity preflighted"),
+            );
+        }
+        places
+    }
+
+    fn migrate_partial_mask(
+        &mut self,
+        source_root: raw::PlaceId,
+        target_root: raw::PlaceId,
+        source_places: &[raw::PlaceId],
+        target_places: &[raw::PlaceId],
+    ) {
+        assert_eq!(source_places.len(), target_places.len(), "partial transfer topology matched");
+        assert!(self.partial_roots.contains(&source_root), "partial transfer source tracked");
+        let moved = self
+            .moved_projections
+            .iter()
+            .copied()
+            .filter(|place| self.place_is_at_or_below(*place, source_root))
+            .collect::<Vec<_>>();
+        let mapped = moved
+            .iter()
+            .map(|source| {
+                source_places
+                    .iter()
+                    .position(|candidate| candidate == source)
+                    .map(|index| target_places[index])
+            })
+            .collect::<Option<Vec<_>>>()
+            .expect("complete partial transfer mask mapping");
+        assert!(self.partial_roots.remove(&source_root), "partial transfer source tracked");
+        self.partial_roots.insert(target_root);
+        for (source, target) in moved.into_iter().zip(mapped) {
+            self.moved_projections.remove(&source);
+            self.moved_projections.insert(target);
+        }
     }
 
     fn whole_root_available(&self, root: raw::PlaceId) -> bool {
@@ -5605,6 +5790,142 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
 
     fn ty_for_layout(&self, id: layout::TypeId) -> Option<Ty> {
         self.node_types.iter().flatten().find(|ty| ty.layout == id).copied()
+    }
+
+    fn partial_local_transfer_source(
+        &self,
+        initializer: u32,
+        expected: Ty,
+    ) -> Option<raw::PlaceId> {
+        if !matches!(expected.category, TypeCategory::Struct | TypeCategory::FixedArray) {
+            return None;
+        }
+        let RawExpressionKind::Reference { name } = &self.expression(initializer)?.kind else {
+            return None;
+        };
+        let binding = self.bindings.get(&name.text)?;
+        (binding.ty == expected
+            && self.owners.contains(binding.place)
+            && self.partial_roots.contains(&binding.place))
+        .then_some(binding.place)
+    }
+
+    fn report_partial_transfer_budget(
+        &mut self,
+        violation: PartialTransferBudgetViolation,
+        at: Span,
+    ) {
+        let (message, guidance) = match violation {
+            PartialTransferBudgetViolation::PlaceAccounting => (
+                "partial aggregate transfer place accounting overflowed".to_owned(),
+                "reduce projected aggregate depth and local transfers",
+            ),
+            PartialTransferBudgetViolation::Values => (
+                "partial aggregate transfer exceeds the per-function value limit".to_owned(),
+                "reduce private aggregate expressions and transfers",
+            ),
+            PartialTransferBudgetViolation::Places => (
+                format!(
+                    "derived places exceed the per-function M3 limit of {}",
+                    ir::MAX_PLACES_PER_FUNCTION
+                ),
+                "reduce owned parameters, expressions, and local declarations",
+            ),
+            PartialTransferBudgetViolation::Transitions => (
+                format!(
+                    "derived ownership transitions exceed the per-function M3 limit of {}",
+                    ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
+                ),
+                "reduce private aggregate expressions and assignments",
+            ),
+        };
+        self.errors.at("ZRYNA-M3201", at, message, guidance);
+    }
+
+    fn lower_partial_local_transfer(
+        &mut self,
+        source: raw::PlaceId,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::PlaceId> {
+        let Some(shape) = self.complete_projection_shape(ty) else {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "partial aggregate transfer topology exceeds a deterministic resource limit",
+                "reduce nested Struct fields, fixed-array lengths, and local transfers",
+            );
+            return None;
+        };
+        let existing = self.existing_projection_shape(source, &shape);
+        let existing_count = existing.iter().filter(|place| place.is_some()).count();
+        let _additional_places = match partial_transfer_budget_preflight(
+            self.next_value as usize,
+            self.places.len(),
+            self.instructions.len(),
+            self.reserved_transitions,
+            shape.len(),
+            existing_count,
+        ) {
+            Ok(additional_places) => additional_places,
+            Err(violation) => {
+                self.report_partial_transfer_budget(violation, at);
+                return None;
+            }
+        };
+        let next_local = self.next_local.checked_add(1).or_else(|| {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "partial aggregate transfer local identity overflowed",
+                "reduce private aggregate local declarations",
+            );
+            None
+        })?;
+
+        let source_places = self.materialize_projection_shape(source, &shape, at);
+        let value = raw::ValueId(self.next_value);
+        self.next_value = self.next_value.checked_add(1).expect("value capacity preflighted");
+        self.instructions.push(raw::Instruction {
+            result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+            span: at,
+            kind: raw::InstructionKind::MoveFromPlace { place: source },
+        });
+        let temporary = raw::PlaceId(
+            u32::try_from(self.places.len()).expect("partial transfer place capacity preflighted"),
+        );
+        self.places.push(raw::Place {
+            id: temporary,
+            ty: ty.ir,
+            span: at,
+            kind: raw::PlaceKind::Temporary(value),
+        });
+        self.owners.register(value, temporary).expect("fresh partial transfer temporary owner");
+        let temporary_places = self.materialize_projection_shape(temporary, &shape, at);
+        self.owners
+            .rehome_move_result(value, source)
+            .expect("partial transfer source owner available");
+        self.migrate_partial_mask(source, temporary, &source_places, &temporary_places);
+
+        let local = raw::PlaceId(
+            u32::try_from(self.places.len()).expect("partial transfer place capacity preflighted"),
+        );
+        self.places.push(raw::Place {
+            id: local,
+            ty: ty.ir,
+            span: at,
+            kind: raw::PlaceKind::Local(self.next_local),
+        });
+        self.next_local = next_local;
+        let local_places = self.materialize_projection_shape(local, &shape, at);
+        self.instructions.push(raw::Instruction {
+            result: None,
+            span: at,
+            kind: raw::InstructionKind::InitializePlace { place: local, value },
+        });
+        self.owners.rename(value, local).expect("partial transfer temporary owner available");
+        self.migrate_partial_mask(temporary, local, &temporary_places, &local_places);
+        Some(local)
     }
 
     fn reference_value(
@@ -6370,6 +6691,14 @@ fn lower_private_owned_aggregate_function<'a>(
                     );
                     return None;
                 }
+                let statement_span = span(input.sources(), statement.span);
+                if let Some(source) = lowerer.partial_local_transfer_source(*initializer, ty) {
+                    let place = lowerer.lower_partial_local_transfer(source, ty, statement_span)?;
+                    lowerer
+                        .bindings
+                        .insert(name.text.clone(), Binding { ty, place, mutable: *mutable });
+                    continue;
+                }
                 let value = lowerer.value(*initializer, ty)?;
                 if lowerer.places.len() >= ir::MAX_PLACES_PER_FUNCTION {
                     lowerer.errors.at(
@@ -6384,12 +6713,12 @@ fn lower_private_owned_aggregate_function<'a>(
                 lowerer.places.push(raw::Place {
                     id: place,
                     ty: ty.ir,
-                    span: span(input.sources(), statement.span),
+                    span: statement_span,
                     kind: raw::PlaceKind::Local(lowerer.next_local),
                 });
                 lowerer.next_local += 1;
                 if !lowerer.emit_effect(
-                    span(input.sources(), statement.span),
+                    statement_span,
                     raw::InstructionKind::InitializePlace { place, value },
                 ) {
                     return None;
@@ -6397,7 +6726,7 @@ fn lower_private_owned_aggregate_function<'a>(
                 if !ty.is_copy() && lowerer.owners.rename(value, place).is_none() {
                     lowerer.errors.at(
                         "ZRYNA-M3014",
-                        span(input.sources(), statement.span),
+                        statement_span,
                         "owned aggregate local initializer has no available owner",
                         "initialize from one exact available owned value",
                     );

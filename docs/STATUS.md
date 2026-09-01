@@ -149,10 +149,13 @@ uses it for prepare-before-commit replacement of mutable available static String
 retains the enclosing root and commit drops only the exact old leaf. General non-String projected
 assignment remains unfinished. The producer also resolves canonical static StructField and
 FixedArrayConstant source places for Copy reads and exact String-leaf moves, preserves the enclosing
-root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption.
+root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption
+outside the exact direct-local transfer described below.
 Initialized available String leaves under those same paths now admit explicit clone into a distinct
 temporary owner; failure cleanup retains the enclosing root's exact partial-state masks, and cloning
-a moved or overlapping leaf fails closed.
+a moved or overlapping leaf fails closed. An exact-type direct local declaration now transfers one
+partially moved supported Struct or FixedArray root through its move-result temporary into the new
+local, materializing the complete static topology and migrating exact masks at both owner renames.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
@@ -164,7 +167,8 @@ uncommitted-result exclusion, reverse cleanup, deterministic replay, and event l
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
-projected clone and assignment, whole-partial-owner transfer, general owned phi joins,
+projected clone and assignment, partial Enum transfer or partial-root transfer in
+return/call/assignment/CFG contexts, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

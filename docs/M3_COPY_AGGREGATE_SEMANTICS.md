@@ -104,12 +104,14 @@ prepare-before-commit assignment whose commit drops only the exact old leaf. Ini
 String projections also admit explicit clone, retaining the enclosing root and its partial-state
 masks while producing a distinct temporary owner. Copy projections retain their source; exact String leaves
 move once and refine the enclosing root's recursive cleanup mask while disjoint siblings remain
-available.
+available. An exact-type direct local declaration additionally transfers one partially moved
+supported Struct or FixedArray root through a move-result temporary into the new local, using the
+complete static topology and exact root-relative masks.
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
-This checkpoint does not enable general owned values: aggregate/enum subobject moves,
-whole-partial-owner transfer, dynamic or Vec-element projections, or general non-String projected
+This checkpoint does not enable general owned values: aggregate/enum subobject moves, partial Enum
+transfer or partial-root transfer outside the exact direct-local form, dynamic or Vec-element projections, or general non-String projected
 clone and assignment,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
 Public owned results remain rejected by scalar ABI v1.
