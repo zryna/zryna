@@ -2239,11 +2239,130 @@ fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, er
             verify_terminator_types(terminator, function, &values, layouts, errors);
         }
     }
+    verify_aggregate_subobject_move_contexts(function, layouts, errors);
+    if !errors.is_empty() {
+        return;
+    }
     let value_owners = derive_value_owners(function, &values, layouts, errors);
     if !errors.is_empty() {
         return;
     }
     verify_ownership_dataflow(function, &value_owners, layouts, &successors, errors);
+}
+
+fn static_projection_path(mut place: raw::PlaceId, function: &raw::Function) -> bool {
+    let mut projected = false;
+    let mut visited = BTreeSet::new();
+    while visited.insert(place) {
+        let Some(record) = function.places.get(place.0 as usize) else { return false };
+        match record.kind {
+            raw::PlaceKind::StructField { base, .. }
+            | raw::PlaceKind::FixedArrayConstant { base, .. } => {
+                projected = true;
+                place = base;
+            }
+            raw::PlaceKind::Parameter(_)
+            | raw::PlaceKind::Local(_)
+            | raw::PlaceKind::Temporary(_) => return projected,
+            raw::PlaceKind::EnumPayload { .. } => return false,
+        }
+    }
+    false
+}
+
+fn verify_aggregate_subobject_move_contexts(
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    errors: &mut Errors,
+) {
+    let private_straight_line = function.entry_export.is_none()
+        && function.blocks.len() == 1
+        && function
+            .blocks
+            .first()
+            .and_then(|block| block.terminators.first())
+            .is_some_and(|terminator| terminator_edges(&terminator.kind).is_empty());
+    let moves = function
+        .blocks
+        .iter()
+        .flat_map(|block| {
+            block.instructions.iter().enumerate().filter_map(move |(index, instruction)| {
+                let raw::InstructionKind::MoveFromPlace { place } = instruction.kind else {
+                    return None;
+                };
+                let result = instruction.result?;
+                let source = function.places.get(place.0 as usize)?;
+                (projection_base(&source.kind).is_some()
+                    && layout_type(layouts, result.ty).is_some_and(|ty| {
+                        matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+                    }))
+                .then_some((block, index, instruction, place, result))
+            })
+        })
+        .collect::<Vec<_>>();
+    if let Some((_, _, instruction, _, _)) = moves.get(1) {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "function contains more than one aggregate projection move",
+            "move at most one complete static Struct or fixed-array subobject into one exact direct local",
+        ));
+        return;
+    }
+    let Some((block, instruction_index, instruction, place, result)) = moves.first().copied()
+    else {
+        return;
+    };
+    let temporary_owner = function
+        .places
+        .iter()
+        .filter(|candidate| {
+            candidate.ty == result.ty
+                && matches!(candidate.kind, raw::PlaceKind::Temporary(value) if value == result.id)
+        })
+        .count()
+        == 1;
+    let direct_local = block.instructions.get(instruction_index + 1).is_some_and(|next| {
+        matches!(
+            next.kind,
+            raw::InstructionKind::InitializePlace { place: target, value }
+                if value == result.id
+                    && function.places.get(target.0 as usize).is_some_and(|target| {
+                        target.ty == result.ty && matches!(target.kind, raw::PlaceKind::Local(_))
+                    })
+        )
+    });
+    let uses = function
+        .blocks
+        .iter()
+        .flat_map(|candidate| {
+            candidate
+                .instructions
+                .iter()
+                .flat_map(|candidate| instruction_operands(&candidate.kind))
+                .chain(
+                    candidate
+                        .terminators
+                        .iter()
+                        .flat_map(|terminator| terminator_operands(&terminator.kind)),
+                )
+        })
+        .filter(|value| *value == result.id)
+        .count();
+    if !private_straight_line
+        || !static_projection_path(place, function)
+        || !has_exact_projection_topology(place, function, layouts)
+        || !temporary_owner
+        || !direct_local
+        || uses != 1
+    {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "aggregate projection move escapes its exact direct-local context",
+            "move one complete static Struct or fixed-array subobject into the immediately following same-type local initialization",
+        ));
+    }
 }
 
 fn instruction_place_operands(kind: &raw::InstructionKind) -> Vec<raw::PlaceId> {
@@ -3548,6 +3667,22 @@ fn apply_value_transfers(
                 rename_pending_owner(root, result_owner, function, flow, instruction.span, errors);
             } else {
                 flow.states[place.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+                let aggregate = function
+                    .places
+                    .get(place.0 as usize)
+                    .and_then(|place| layout_type(layouts, place.ty))
+                    .is_some_and(|ty| {
+                        matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+                    });
+                if aggregate {
+                    for projection in &function.places {
+                        if is_projection_below(projection.id, *place, &function.places) {
+                            flow.states[projection.id.0 as usize] =
+                                PlaceState { kind: PlaceStateKind::Moved };
+                            flow.variants[projection.id.0 as usize] = None;
+                        }
+                    }
+                }
                 mark_ancestors_partial(*place, function, &mut flow.states);
                 push_pending_owner(result_owner, function, flow, instruction.span, errors);
             }

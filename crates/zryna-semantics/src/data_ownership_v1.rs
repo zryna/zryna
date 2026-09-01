@@ -782,6 +782,19 @@ fn partial_assignment_budget_preflight(
     Ok(additional_places)
 }
 
+fn projected_subobject_move_budget_violation(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    missing_descendants: usize,
+) -> bool {
+    let Some(additional_places) = missing_descendants.checked_add(1) else { return true };
+    owned_value_budget_violation(values, 1)
+        || owned_place_budget_violation(places, additional_places)
+        || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
+}
+
 fn aggregate_clone_budget_violation(
     values: usize,
     places: usize,
@@ -5101,6 +5114,7 @@ struct PrivateOwnedAggregateLowerer<'a, 'e> {
     cleanup_plans: Vec<raw::CleanupPlan>,
     cleanup_actions: usize,
     aggregate_operands: usize,
+    aggregate_subobject_moves: usize,
     reserved_transitions: usize,
     owners: OwnerState,
     next_value: u32,
@@ -6193,7 +6207,25 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         Some(value)
     }
 
-    fn projected_value(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
+    fn preflight_aggregate_subobject_move_site(&mut self, at: Span) -> bool {
+        if self.aggregate_subobject_moves == 0 {
+            return true;
+        }
+        self.errors.at(
+            "ZRYNA-M3016",
+            at,
+            "this checkpoint admits only one aggregate-subobject move per function",
+            "move one supported Struct or fixed-array subobject into one exact direct local",
+        );
+        false
+    }
+
+    fn projected_value(
+        &mut self,
+        id: u32,
+        expected: Ty,
+        allow_aggregate_local: bool,
+    ) -> Option<raw::ValueId> {
         let expression = self.expression(id)?.clone();
         let at = span(self.input.sources(), expression.span);
         let projection = self.owned_place(id)?;
@@ -6222,20 +6254,70 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 raw::InstructionKind::CopyFromPlace { place: projection.place },
             );
         }
-        if expected.category != TypeCategory::String {
+        let aggregate_subobject =
+            matches!(expected.category, TypeCategory::Struct | TypeCategory::FixedArray);
+        if aggregate_subobject && !allow_aggregate_local {
             self.errors.at(
                 "ZRYNA-M3016",
                 at,
-                "this checkpoint moves only owned String projections",
-                "move a String field or constant String fixed-array element",
+                "static aggregate-subobject move requires one exact direct local",
+                "initialize one exact private local from the Struct field or constant fixed-array element",
             );
             return None;
+        }
+        if aggregate_subobject && !self.preflight_aggregate_subobject_move_site(at) {
+            return None;
+        }
+        if !matches!(
+            expected.category,
+            TypeCategory::String | TypeCategory::Struct | TypeCategory::FixedArray
+        ) || !self.supported(expected)
+        {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "owned projection type is outside the static subobject move checkpoint",
+                "move a String, supported Struct, or supported fixed-array field or constant element into one exact direct local",
+            );
+            return None;
+        }
+        if aggregate_subobject {
+            let Some(shape) = self.complete_projection_shape(expected) else {
+                self.errors.at(
+                    "ZRYNA-M3016",
+                    at,
+                    "owned subobject projection has no finite static topology",
+                    "move an acyclic supported Struct or fixed-array projection",
+                );
+                return None;
+            };
+            let existing = self.existing_projection_shape(projection.place, &shape);
+            let missing = existing.iter().filter(|place| place.is_none()).count();
+            if projected_subobject_move_budget_violation(
+                self.next_value as usize,
+                self.places.len(),
+                self.instructions.len(),
+                self.reserved_transitions,
+                missing,
+            ) {
+                self.errors.at(
+                    "ZRYNA-M3201",
+                    at,
+                    "static aggregate-subobject move exceeds an M3 resource limit",
+                    "reduce projected aggregate topology or preceding owned expressions",
+                );
+                return None;
+            }
+            self.materialize_projection_shape(projection.place, &shape, at);
         }
         let value = self.emit(
             expected,
             at,
             raw::InstructionKind::MoveFromPlace { place: projection.place },
         )?;
+        if aggregate_subobject {
+            self.aggregate_subobject_moves += 1;
+        }
         self.moved_projections.insert(projection.place);
         self.partial_roots.insert(projection.root);
         Some(value)
@@ -6445,7 +6527,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             }
             RawExpressionKind::Reference { name } => self.reference_value(&name, expected, at),
             RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
-                self.projected_value(id, expected)
+                self.projected_value(id, expected, false)
             }
             RawExpressionKind::Clone { value, .. } if expected.category == TypeCategory::String => {
                 self.clone_projected_string(value, expected, at)
@@ -6802,6 +6884,7 @@ fn lower_private_owned_aggregate_function<'a>(
         cleanup_plans: Vec::new(),
         cleanup_actions: 0,
         aggregate_operands: 0,
+        aggregate_subobject_moves: 0,
         reserved_transitions: 0,
         owners: OwnerState::default(),
         next_value: 0,
@@ -6913,7 +6996,20 @@ fn lower_private_owned_aggregate_function<'a>(
                         .insert(name.text.clone(), Binding { ty, place, mutable: *mutable });
                     continue;
                 }
-                let value = lowerer.value(*initializer, ty)?;
+                let aggregate_projection_local =
+                    matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
+                        && lowerer.expression(*initializer).is_some_and(|expression| {
+                            matches!(
+                                &expression.kind,
+                                RawExpressionKind::FieldAccess { .. }
+                                    | RawExpressionKind::Index { .. }
+                            )
+                        });
+                let value = if aggregate_projection_local {
+                    lowerer.projected_value(*initializer, ty, true)?
+                } else {
+                    lowerer.value(*initializer, ty)?
+                };
                 if lowerer.places.len() >= ir::MAX_PLACES_PER_FUNCTION {
                     lowerer.errors.at(
                         "ZRYNA-M3201",

@@ -148,8 +148,10 @@ prepared subtree's masks and enum refinement without disturbing siblings. The se
 uses it for prepare-before-commit replacement of mutable available static String leaves; preparation
 retains the enclosing root and commit drops only the exact old leaf. General non-String projected
 assignment remains unfinished. The producer also resolves canonical static StructField and
-FixedArrayConstant source places for Copy reads and exact String-leaf moves, preserves the enclosing
-root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption
+FixedArrayConstant source places for Copy reads, exact String-leaf moves, and at most one supported
+Struct/FixedArray subobject move into an exact directly initialized same-type local. It materializes
+the selected subobject's complete descendants, preserves the enclosing root's masked cleanup
+obligation and disjoint siblings, and rejects repeated, overlapping, or later whole-root consumption
 outside the exact direct-local, final-return, and whole-root assignment transfers described below.
 Initialized available String leaves under those same paths now admit explicit clone into a distinct
 temporary owner; failure cleanup retains the enclosing root's exact partial-state masks, and cloning
@@ -173,9 +175,9 @@ separate checked Vec bounds trap; it authenticates status disposition/trap ident
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
+aggregate-subobject moves outside that direct-local exception, enum-payload moves, dynamic or Vec-element projections, general non-String
 projected clone and assignment, partial Enum transfer or partial-root transfer in
-call/CFG contexts, projected assignment, or non-final/non-reference returns, general owned phi joins,
+call/CFG contexts, projected assignment or clone, direct projected returns, public contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

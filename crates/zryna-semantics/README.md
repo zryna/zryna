@@ -101,8 +101,11 @@ distinct right-hand side before the infallible `ReplacePlace` commit, rejects di
 self-consumption, and exposes the old destination's recursive drop shape. Constructor
 operands are evaluated in sealed declaration or index order, whole-value moves transfer one owner,
 and return cleanup drops surviving roots in reverse successful-completion order. Canonical static
-struct-field and constant fixed-array projections additionally admit Copy reads and exact
-String-leaf moves plus prepare-before-commit assignment to one mutable available String leaf.
+struct-field and constant fixed-array projections additionally admit Copy reads, exact String-leaf
+moves, and at most one exact supported Struct/FixedArray subobject move into a directly initialized
+same-type local, plus prepare-before-commit assignment to one mutable available String leaf. The
+subobject route materializes its complete static descendant topology before the move; the enclosing
+root keeps one masked cleanup obligation while the new local owns the moved subtree.
 Assignment preparation retains the enclosing root and commit drops only the exact old leaf while
 leaving sibling masks unchanged. A moved leaf is excluded from the enclosing root's recursive return cleanup;
 disjoint leaves stay available, while a repeated or overlapping move and later whole-root
@@ -126,23 +129,25 @@ accepted from the fault injector.
 
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
+aggregate-subobject moves outside one exact direct local, enum-payload moves, dynamic or Vec-element projections, general non-String
 projected clone and assignment, whole-partial-owner transfer outside the exact-type direct-local,
 final-return, or whole-root assignment Struct/FixedArray exceptions, general owned phi joins,
 owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
-its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves,
-String-leaf clone, and String-leaf assignment. A partially moved Struct or FixedArray root may move
+its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, one
+direct-local supported Struct/FixedArray subobject move, String-leaf clone, and String-leaf
+assignment. A partially moved Struct or FixedArray root may move
 through one exact direct-reference initializer into a same-type local, through one final exact
 direct-reference return, or into one distinct mutable fully initialized same-type whole-root
 assignment destination. Assignment prepares the source without touching the destination, then an
 infallible `ReplacePlace` drops the old destination and installs the exact partial mask. Lowering
 preserves the complete recursive static topology, migrates the moved mask through every
 temporary/local owner, excludes a returned owner from survivor cleanup, and invalidates old
-owners. Calls, projected initializers or destinations, Enum roots, and control-flow contexts remain
-outside those narrow transfer routes. Projected clone retains the enclosing root and
+owners. Enum-payload, dynamic, or Vec-element moves and aggregate-subobject use in projected
+assignment or clone, calls, direct returns, CFG transfer, or public functions remain outside the
+narrow subobject route. Projected clone retains the enclosing root and
 its partial-state masks while creating one distinct temporary String owner.
 Dynamic bounds execution, borrows, shared or weak references,
 and public owned parameters or results also remain unavailable. The Pair scalar oracle
