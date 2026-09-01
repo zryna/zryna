@@ -330,7 +330,7 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /one-plan\/one-site cleanup roles/);
   assert.match(document, /cumulative String-literal preflight at 8 MiB/);
   assert.match(document, /sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the\s+exact verified ownership-runtime ABI authority/);
-  assert.match(document, /General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,\s+Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element\s+projections, projected clone and assignment, whole-partial-owner transfer, general owned phi joins/);
+  assert.match(document, /General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,\s+Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element\s+projections, projected clone and general non-String projected assignment, whole-partial-owner transfer, general owned phi joins/);
   assert.match(document, /Owned String\/Vec signatures remain bounded\s+to zero arguments or one exact owned\/bool argument/);
   assert.match(document, /## Issue #81 implementation ledger/);
   assert.match(document, /no-carried-owner loop\/backedge cleanup \| complete/);
@@ -339,7 +339,7 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /supported String-bearing aggregate clone \| complete/);
   assert.match(document, /supported whole-root owned aggregate assignment \| complete/);
   assert.match(document, /static owned projection reads and String-leaf moves \| complete/);
-  assert.match(document, /general structural Vec clone, nested aggregate clone, aggregate\/enum subobject moves, and projected assignment \| pending/);
+  assert.match(document, /general structural Vec clone, nested aggregate clone, aggregate\/enum subobject moves, and non-String projected assignment \| pending/);
   assert.match(architecture, /Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`/);
   assert.match(architecture, /General structural Vec clone beyond\s+String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values/);
   assert.match(document, /controlled allocation\/capacity\/bounds\/UTF-8 fault closure \| in progress/);

@@ -6340,6 +6340,83 @@ fn lower_private_owned_aggregate_function<'a>(
             }
             RawStatementKind::Assignment { target, value, .. } => {
                 let target_expression = lowerer.expression(*target)?.clone();
+                if !matches!(
+                    target_expression.kind,
+                    RawExpressionKind::Reference { .. }
+                        | RawExpressionKind::FieldAccess { .. }
+                        | RawExpressionKind::Index { .. }
+                ) {
+                    lowerer.errors.at(
+                        "ZRYNA-M3013",
+                        span(input.sources(), target_expression.span),
+                        "owned aggregate assignment target is not an addressable static place",
+                        "assign to one mutable root or static Struct/FixedArray String projection",
+                    );
+                    return None;
+                }
+                if !matches!(target_expression.kind, RawExpressionKind::Reference { .. }) {
+                    let target_place = lowerer.owned_place(*target)?;
+                    let target_span = span(input.sources(), target_expression.span);
+                    if target_place.is_root || target_place.ty.category != TypeCategory::String {
+                        lowerer.errors.at(
+                            "ZRYNA-M3013",
+                            target_span,
+                            "owned projected assignment requires one exact String leaf",
+                            "assign only to a static String field or constant String fixed-array element",
+                        );
+                        return None;
+                    }
+                    if !target_place.mutable
+                        || !lowerer.projection_available(target_place.place, target_place.root)
+                    {
+                        lowerer.errors.at(
+                            "ZRYNA-M3014",
+                            target_span,
+                            "owned projected assignment target is immutable, moved, or overlaps a moved subobject",
+                            "assign only to an initialized mutable available String projection",
+                        );
+                        return None;
+                    }
+                    if let Some(reference_span) =
+                        lowerer.target_consumption_span(*value, target_place.root, true)
+                    {
+                        lowerer.errors.at(
+                            "ZRYNA-M3014",
+                            span(input.sources(), reference_span),
+                            "owned projected assignment cannot consume its enclosing root while preparing the replacement",
+                            "prepare a distinct String value before replacing the projection",
+                        );
+                        return None;
+                    }
+                    let assignment_span = span(input.sources(), statement.span);
+                    if !lowerer.reserve_transition(assignment_span) {
+                        return None;
+                    }
+                    let Some(prepared) = lowerer.value(*value, target_place.ty) else {
+                        lowerer.release_transition();
+                        return None;
+                    };
+                    lowerer.release_transition();
+                    if !lowerer.emit_effect(
+                        assignment_span,
+                        raw::InstructionKind::ReplacePlace {
+                            place: target_place.place,
+                            value: prepared,
+                        },
+                    ) {
+                        return None;
+                    }
+                    if lowerer.owners.transfer(prepared).is_none() {
+                        lowerer.errors.at(
+                            "ZRYNA-M3014",
+                            assignment_span,
+                            "owned projected assignment replacement has no distinct prepared owner",
+                            "replace from one available independently prepared String value",
+                        );
+                        return None;
+                    }
+                    continue;
+                }
                 let RawExpressionKind::Reference { name } = target_expression.kind else {
                     lowerer.errors.at(
                         "ZRYNA-M3013",
