@@ -216,10 +216,11 @@ determinism, and bounded trace accounting without runtime execution. A bounded p
 private straight-line route also constructs, moves, explicitly clones, returns, and drops owned
 Struct, FixedArray, and root Enum graphs with Copy/String leaves. Structural clone retains its
 source, derives its fallible String-leaf count and root-enum active variant from sealed authorities,
-and uses prefix-safe failure cleanup. The private String and
+and uses prefix-safe failure cleanup. Mutable whole-root assignment for those graphs prepares a
+distinct replacement before `ReplacePlace` commits the sealed recursive old-value drop. The private String and
 aggregate/enum routes retain their distinct M3011 and M3014 moved-owner diagnostics, and unresolved
 bindings use M3002. General structural Vec clone beyond String elements, nested aggregate clone
-graphs containing Enum, Vec, Shared, or Weak values, owned projections/assignment and partial moves,
+graphs containing Enum, Vec, Shared, or Weak values, owned projections, projected assignment, and partial moves,
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits remain closure
 work. Issue #81 is

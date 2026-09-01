@@ -96,7 +96,9 @@ acyclic owned Struct and FixedArray graphs with bool, i32, or String leaves, and
 payloadless variant or one supported Copy, String, Struct, or FixedArray payload. Structural clone
 retains its source, creates a distinct result owner, derives the exact fallible String-leaf count
 and root-enum active variant from sealed authorities, and reverse-drops only the initialized result
-prefix on element failure. Constructor
+prefix on element failure. Mutable whole-root assignment for the same aggregate graphs prepares a
+distinct right-hand side before the infallible `ReplacePlace` commit, rejects direct
+self-consumption, and exposes the old destination's recursive drop shape. Constructor
 operands are evaluated in sealed declaration or index order, whole-value moves transfer one owner,
 and return cleanup drops surviving roots in reverse successful-completion order. The private
 String route reports use-after-move as `ZRYNA-M3011`; the bounded owned aggregate and enum route
@@ -118,7 +120,7 @@ accepted from the fault injector.
 
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-owned projections or assignment and partial moves, general owned phi joins, owned loop-carried phi joins,
+owned projections, projected assignment, and partial moves, general owned phi joins, owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private,

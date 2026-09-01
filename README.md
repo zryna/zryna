@@ -78,7 +78,9 @@ The repository currently establishes and tests:
   and deterministically drops bounded owned Struct, FixedArray, and root Enum graphs containing
   Copy or String leaves. A fallible structural clone derives the exact String-leaf count and active
   root-enum variant from sealed layout and verifier state, retains its source, and reverse-drops only
-  the initialized result prefix before pre-existing roots. It proves one exact non-Copy owner while
+  the initialized result prefix before pre-existing roots. Mutable whole-root assignment for those
+  supported aggregates prepares a distinct replacement while preserving the old root, then commits
+  with sealed recursive old-value cleanup. It proves one exact non-Copy owner while
   preserving addressable Copy storage and binds every cleanup plan to one exact site and role. The
   private String route reports moved
   bindings as M3011; the bounded aggregate and enum route reports moved owners as M3014;
@@ -88,7 +90,7 @@ The repository currently establishes and tests:
   preserves pre-commit owners, excludes uncommitted results, and pins reverse cleanup without
   executing an allocator or target runtime. General structural Vec clone beyond String elements,
   nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, owned projections,
-  aggregate assignment, partial moves, general owned phi joins, owned loop-carried phi joins,
+  projected assignment, partial moves, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
   and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
   loop-body return, and post-loop effects remain excluded;

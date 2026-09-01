@@ -43,6 +43,10 @@ document. Its private owned String/Vec route currently proves:
   String leaves, retaining the source and creating one distinct result owner; recursive String-clone
   failure derives its exact fallible-leaf count and root-enum active variant from sealed authorities,
   reverse-drops only the initialized result prefix, and then cleans pre-existing roots;
+- mutable whole-root assignment for the same supported Struct, FixedArray, and root Enum graphs;
+  the complete right-hand side is prepared while the old destination remains live, direct
+  self-consumption is rejected, and `ReplacePlace` commits the prepared owner with the sealed
+  recursive old-value drop shape;
 - `InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace` lowering, with
   private String use-after-move rejected as `ZRYNA-M3011`, aggregate/enum moved-owner violations as
   `ZRYNA-M3014`, unresolved binding names as `ZRYNA-M3002`, and excluded private String shapes as
@@ -58,7 +62,7 @@ document. Its private owned String/Vec route currently proves:
   exact verified ownership-runtime ABI authority.
 
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
-Vec, Shared, or Weak values, owned place projections or assignment and partial moves, general owned phi joins,
+Vec, Shared, or Weak values, owned place projections, projected assignment, and partial moves, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -84,7 +88,8 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | general loop-carried values and scope exits | pending | owned header phi, Vec replacement/owned-element push, and arbitrary exits remain excluded |
 | exact `Vec<bool>`/`Vec<i32>`/`Vec<String>` clone | complete | distinct result owner, retained source, authenticated allocation and element-clone failures, prefix-safe reverse cleanup, and exact resource rollback |
 | supported String-bearing aggregate clone | complete | distinct result owner, retained source, sealed layout/variant-derived fallible leaves, authenticated prefix-safe recursive failure cleanup, and atomic resource rollback |
-| general structural Vec clone, nested aggregate clone, projections, assignment, and partial moves | pending | recursive Vec/Enum/Shared/Weak clone capability and moved-subobject masks |
+| supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
+| general structural Vec clone, nested aggregate clone, projections, projected assignment, and partial moves | pending | recursive Vec/Enum/Shared/Weak clone capability and moved-subobject masks |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
@@ -294,9 +299,9 @@ callee is entered, and callee trap cleanup owns those parameters as described ab
 carries no prepare-failure plan and exposes the derived drop shape of the old destination. Plain
 struct, enum, and fixed-array construction commits already prepared operands without a failure
 plan. Allocation-bearing Vec construction and clone steps retain their exact prepare-failure sites.
-The current semantic checkpoint emits `ReplacePlace` only for private root-local String and the
-supported exact Vec roots; projected destinations, owned calls, and CFG replacement remain outside
-that checkpoint.
+The current semantic checkpoint emits `ReplacePlace` for private root-local String, supported exact
+Vec roots, and supported String-bearing Struct, FixedArray, and root Enum values. Projected
+destinations, owned calls, and CFG replacement remain outside that checkpoint.
 
 The retained runtime ABI authority also closes contextual transition evidence: atomic failure is
 validated against one exact `LogicalOperation`, and Vec allocation/reserve validation consumes a

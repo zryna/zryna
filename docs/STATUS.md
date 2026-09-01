@@ -141,6 +141,8 @@ moves, explicitly clones, returns, and drops bounded parameter-free private stra
 Struct, FixedArray, and root Enum graphs with Copy/String leaves. Structural clone retains its
 source, creates a distinct owner, derives its fallible String-leaf count and root-enum active variant
 from sealed authorities, and reverse-drops only the initialized result prefix on element failure.
+Whole-root assignment for the same graphs is prepare-before-commit, rejects direct
+self-consumption, and preserves sealed recursive cleanup for the old destination.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
@@ -151,7 +153,7 @@ separate checked Vec bounds trap; it authenticates status disposition/trap ident
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-owned projections/assignment and partial moves, general owned phi joins,
+owned projections, projected assignment, and partial moves, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

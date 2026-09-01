@@ -667,6 +667,16 @@ fn resource_budget_violation(current: usize, extra: usize, maximum: usize) -> bo
     current.checked_add(extra).is_none_or(|total| total > maximum)
 }
 
+fn aggregate_transition_budget_violation(
+    current: usize,
+    reserved: usize,
+    additional: usize,
+) -> bool {
+    reserved.checked_add(additional).is_none_or(|extra| {
+        resource_budget_violation(current, extra, ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION)
+    })
+}
+
 fn aggregate_clone_budget_violation(
     values: usize,
     places: usize,
@@ -4967,6 +4977,7 @@ struct PrivateOwnedAggregateLowerer<'a, 'e> {
     cleanup_plans: Vec<raw::CleanupPlan>,
     cleanup_actions: usize,
     aggregate_operands: usize,
+    reserved_transitions: usize,
     owners: OwnerState,
     next_value: u32,
     next_local: u32,
@@ -4983,6 +4994,49 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         } else {
             aggregate_graph_is_supported(ty, self.layouts, &mut BTreeSet::new())
         }
+    }
+
+    fn preflight_transition(&mut self, additional: usize, at: Span) -> bool {
+        if aggregate_transition_budget_violation(
+            self.instructions.len(),
+            self.reserved_transitions,
+            additional,
+        ) {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                format!(
+                    "derived ownership transitions exceed the per-function M3 limit of {}",
+                    ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
+                ),
+                "reduce private aggregate expressions and assignments",
+            );
+            return false;
+        }
+        true
+    }
+
+    fn reserve_transition(&mut self, at: Span) -> bool {
+        if !self.preflight_transition(1, at) {
+            return false;
+        }
+        self.reserved_transitions += 1;
+        true
+    }
+
+    fn release_transition(&mut self) {
+        self.reserved_transitions = self
+            .reserved_transitions
+            .checked_sub(1)
+            .expect("reserved aggregate assignment transition");
+    }
+
+    fn emit_effect(&mut self, at: Span, kind: raw::InstructionKind) -> bool {
+        if !self.preflight_transition(1, at) {
+            return false;
+        }
+        self.instructions.push(raw::Instruction { result: None, span: at, kind });
+        true
     }
 
     fn push_cleanup(
@@ -5031,6 +5085,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
     }
 
     fn emit(&mut self, ty: Ty, at: Span, kind: raw::InstructionKind) -> Option<raw::ValueId> {
+        if !self.preflight_transition(1, at) {
+            return None;
+        }
         if self.next_value as usize >= ir::MAX_VALUES_PER_FUNCTION {
             self.errors.at(
                 "ZRYNA-M3201",
@@ -5073,6 +5130,44 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             self.owners.register(value, owner)?;
         }
         Some(value)
+    }
+
+    fn target_consumption_span(
+        &self,
+        id: u32,
+        target: raw::PlaceId,
+        consumes_reference: bool,
+    ) -> Option<UntrustedSpan> {
+        let expression = self.expression(id)?;
+        match &expression.kind {
+            RawExpressionKind::Reference { name }
+                if consumes_reference
+                    && self.bindings.get(&name.text).is_some_and(|binding| {
+                        binding.place == target && self.owners.contains(binding.place)
+                    }) =>
+            {
+                Some(name.span)
+            }
+            RawExpressionKind::Clone { value, .. } => {
+                self.target_consumption_span(*value, target, false)
+            }
+            RawExpressionKind::StructConstruction { fields, .. } => {
+                fields.iter().find_map(|field| {
+                    let value = match field.kind {
+                        RawFieldInitializerKind::Shorthand { value, .. }
+                        | RawFieldInitializerKind::Explicit { value, .. } => value,
+                    };
+                    self.target_consumption_span(value, target, true)
+                })
+            }
+            RawExpressionKind::FixedArrayConstruction { elements, .. } => elements
+                .iter()
+                .find_map(|element| self.target_consumption_span(*element, target, true)),
+            RawExpressionKind::EnumConstruction { payload: Some(payload), .. } => {
+                self.target_consumption_span(*payload, target, true)
+            }
+            _ => None,
+        }
     }
 
     fn reserve_operands(&mut self, additional: usize, at: Span) -> Option<()> {
@@ -5708,6 +5803,7 @@ fn lower_private_owned_aggregate_function<'a>(
         cleanup_plans: Vec::new(),
         cleanup_actions: 0,
         aggregate_operands: 0,
+        reserved_transitions: 0,
         owners: OwnerState::default(),
         next_value: 0,
         next_local: 0,
@@ -5828,11 +5924,12 @@ fn lower_private_owned_aggregate_function<'a>(
                     kind: raw::PlaceKind::Local(lowerer.next_local),
                 });
                 lowerer.next_local += 1;
-                lowerer.instructions.push(raw::Instruction {
-                    result: None,
-                    span: span(input.sources(), statement.span),
-                    kind: raw::InstructionKind::InitializePlace { place, value },
-                });
+                if !lowerer.emit_effect(
+                    span(input.sources(), statement.span),
+                    raw::InstructionKind::InitializePlace { place, value },
+                ) {
+                    return None;
+                }
                 if !ty.is_copy() && lowerer.owners.rename(value, place).is_none() {
                     lowerer.errors.at(
                         "ZRYNA-M3014",
@@ -5849,6 +5946,86 @@ fn lower_private_owned_aggregate_function<'a>(
             RawStatementKind::Return { value, .. } => {
                 returned =
                     Some((lowerer.value(*value, result)?, span(input.sources(), statement.span)));
+            }
+            RawStatementKind::Assignment { target, value, .. } => {
+                let target_expression = lowerer.expression(*target)?.clone();
+                let RawExpressionKind::Reference { name } = target_expression.kind else {
+                    lowerer.errors.at(
+                        "ZRYNA-M3013",
+                        span(input.sources(), target_expression.span),
+                        "owned aggregate assignment requires one root local target",
+                        "assign only to an initialized mutable Struct, Enum, or fixed-array local",
+                    );
+                    return None;
+                };
+                let Some(binding) = lowerer.bindings.get(&name.text).cloned() else {
+                    lowerer.errors.at(
+                        "ZRYNA-M3002",
+                        span(input.sources(), name.span),
+                        format!("aggregate assignment target '{}' is not declared", name.text),
+                        "assign one exact preceding local",
+                    );
+                    return None;
+                };
+                if binding.ty.is_copy()
+                    || !matches!(
+                        binding.ty.category,
+                        TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray
+                    )
+                    || !lowerer.supported(binding.ty)
+                {
+                    lowerer.errors.at(
+                        "ZRYNA-M3013",
+                        span(input.sources(), name.span),
+                        "assignment target is outside the exact supported owned aggregate graph",
+                        "assign only to a supported String-bearing Struct, Enum, or fixed-array root",
+                    );
+                    return None;
+                }
+                if !binding.mutable || !lowerer.owners.contains(binding.place) {
+                    lowerer.errors.at(
+                        "ZRYNA-M3014",
+                        span(input.sources(), name.span),
+                        "owned aggregate assignment target is immutable, uninitialized, or already moved",
+                        "assign only to an initialized mutable available aggregate root",
+                    );
+                    return None;
+                }
+                if let Some(reference_span) =
+                    lowerer.target_consumption_span(*value, binding.place, true)
+                {
+                    lowerer.errors.at(
+                        "ZRYNA-M3014",
+                        span(input.sources(), reference_span),
+                        "owned aggregate assignment cannot consume its destination while preparing its replacement",
+                        "clone the destination or prepare a distinct aggregate value before replacement",
+                    );
+                    return None;
+                }
+                let assignment_span = span(input.sources(), statement.span);
+                if !lowerer.reserve_transition(assignment_span) {
+                    return None;
+                }
+                let Some(prepared) = lowerer.value(*value, binding.ty) else {
+                    lowerer.release_transition();
+                    return None;
+                };
+                lowerer.release_transition();
+                if !lowerer.emit_effect(
+                    assignment_span,
+                    raw::InstructionKind::ReplacePlace { place: binding.place, value: prepared },
+                ) {
+                    return None;
+                }
+                if lowerer.owners.replace(prepared, binding.place).is_none() {
+                    lowerer.errors.at(
+                        "ZRYNA-M3014",
+                        assignment_span,
+                        "owned aggregate assignment replacement has no distinct prepared owner",
+                        "replace from one available independently prepared aggregate value",
+                    );
+                    return None;
+                }
             }
             _ => {
                 lowerer.errors.at(
