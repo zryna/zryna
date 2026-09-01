@@ -389,7 +389,7 @@ instruction nevertheless derives one exact pre-commit recursive drop action for 
 static-projection destination. Projection replay transplants the prepared source subtree's state
 and active enum variants while retaining the enclosing owner's pending obligation and sibling
 masks. The semantic producer now uses that authority for mutable available static String leaves;
-general non-String projected clone and assignment remain later checkpoints.
+general non-String projected assignment remains a later checkpoint.
 Those same initialized available static String leaves admit explicit clone. Its fallible
 preparation reads without consuming the leaf, retains the enclosing root with its current
 partial-state masks, and creates one distinct temporary owner before any later assignment commit.
@@ -428,7 +428,12 @@ The producer materializes the moved projection's complete descendant topology be
 verified IR marks that projection and every descendant moved under the enclosing root while the
 new local receives the complete subobject owner. Projection identity is root-relative and stable,
 moved subobjects refine the enclosing root's cleanup mask, and disjoint siblings remain
-available; repeated and overlapping consumption is rejected. For one exact-type direct local
+available; repeated and overlapping consumption is rejected. At most one initialized available
+non-Copy Struct or FixedArray projection under those static paths may also be explicitly cloned
+into the immediately following exact same-type root local. That clone leaves the enclosing owner
+and all masks unchanged, derives recursive String-leaf failure cleanup from sealed layout, and is
+independently rejected outside a private one-block context or when its unique temporary result has
+an alternate use. For one exact-type direct local
 declaration, a partially moved supported Struct or FixedArray root now transfers through its
 move-result temporary into the new local. The producer derives and materializes one complete static
 topology for all three roots, then migrates the exact root-relative mask at both owner renames; the
@@ -454,11 +459,13 @@ M3002, and preflights cumulative String-literal bytes at 8 MiB. General structur
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside at most one exact direct local or the single-variant match-local
 enum-payload exception, dynamic or Vec-element projections, general non-String
-projected clone and assignment, partial Enum transfer or partial-root transfer outside the exact
+projected assignment, projected aggregate clone outside the exact direct-local exception, partial
+Enum transfer or partial-root transfer outside the exact
 direct-local, final-return, or whole-root assignment forms, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
-admitted. Neither narrow subobject exception extends to projected assignment or clone, calls,
-direct payload returns, owner-carrying CFG transfer, public functions, multi-variant Enum payloads,
+admitted. Neither narrow subobject exception extends to projected aggregate assignment, calls,
+direct projected-clone or payload returns, owner-carrying CFG transfer, public functions,
+multi-variant Enum payloads,
 or dynamic/Vec projections. Its sealed
 semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no

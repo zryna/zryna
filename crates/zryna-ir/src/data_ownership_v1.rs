@@ -2242,6 +2242,7 @@ fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, er
     let enum_payloads = classify_enum_payload_projections(function);
     verify_enum_payload_move_contexts(function, layouts, &enum_payloads, errors);
     verify_aggregate_subobject_move_contexts(function, layouts, &enum_payloads, errors);
+    verify_projected_aggregate_clone_contexts(function, layouts, errors);
     if !errors.is_empty() {
         return;
     }
@@ -2605,6 +2606,103 @@ fn verify_aggregate_subobject_move_contexts(
             instruction.span,
             "aggregate projection move escapes its exact direct-local context",
             "move one complete static Struct or fixed-array subobject into the immediately following same-type local initialization",
+        ));
+    }
+}
+
+fn verify_projected_aggregate_clone_contexts(
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    errors: &mut Errors,
+) {
+    let private_straight_line = function.entry_export.is_none()
+        && function.blocks.len() == 1
+        && function
+            .blocks
+            .first()
+            .and_then(|block| block.terminators.first())
+            .is_some_and(|terminator| terminator_edges(&terminator.kind).is_empty());
+    let mut clones = Vec::with_capacity(2);
+    'blocks: for block in &function.blocks {
+        for (index, instruction) in block.instructions.iter().enumerate() {
+            let raw::InstructionKind::ClonePlace { place, .. } = instruction.kind else {
+                continue;
+            };
+            let Some(result) = instruction.result else { continue };
+            let Some(source) = function.places.get(place.0 as usize) else { continue };
+            if projection_base(&source.kind).is_some() {
+                clones.push((block, index, instruction, place, result));
+                if clones.len() == 2 {
+                    break 'blocks;
+                }
+            }
+        }
+    }
+    if let Some((_, _, instruction, _, _)) = clones.get(1) {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "function contains more than one projected aggregate clone",
+            "clone at most one static Struct or fixed-array subobject into one exact direct local",
+        ));
+        return;
+    }
+    let Some((block, instruction_index, instruction, place, result)) = clones.first().copied()
+    else {
+        return;
+    };
+    let valid_type = layout_type(layouts, result.ty).is_some_and(|ty| {
+        ty.drop_kind() != 0
+            && matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+    });
+    let temporary_owner = function
+        .places
+        .iter()
+        .filter(|candidate| {
+            candidate.ty == result.ty
+                && matches!(candidate.kind, raw::PlaceKind::Temporary(value) if value == result.id)
+        })
+        .count()
+        == 1;
+    let direct_local = block.instructions.get(instruction_index + 1).is_some_and(|next| {
+        matches!(
+            next.kind,
+            raw::InstructionKind::InitializePlace { place: target, value }
+                if value == result.id
+                    && function.places.get(target.0 as usize).is_some_and(|target| {
+                        target.ty == result.ty && matches!(target.kind, raw::PlaceKind::Local(_))
+                    })
+        )
+    });
+    let uses = function
+        .blocks
+        .iter()
+        .flat_map(|candidate| {
+            candidate
+                .instructions
+                .iter()
+                .flat_map(|candidate| instruction_operands(&candidate.kind))
+                .chain(
+                    candidate
+                        .terminators
+                        .iter()
+                        .flat_map(|terminator| terminator_operands(&terminator.kind)),
+                )
+        })
+        .filter(|value| *value == result.id)
+        .count();
+    if !private_straight_line
+        || !valid_type
+        || !static_projection_path(place, function)
+        || !temporary_owner
+        || !direct_local
+        || uses != 1
+    {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "projected aggregate clone escapes its exact direct-local context",
+            "clone one initialized static Struct or fixed-array subobject into the immediately following same-type local initialization",
         ));
     }
 }

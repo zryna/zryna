@@ -102,7 +102,11 @@ prepare-before-commit whole-root assignment, and canonical static StructField or
 FixedArrayConstant source projections. Mutable available String projections additionally admit
 prepare-before-commit assignment whose commit drops only the exact old leaf. Initialized available
 String projections also admit explicit clone, retaining the enclosing root and its partial-state
-masks while producing a distinct temporary owner. Copy projections retain their source; exact String leaves
+masks while producing a distinct temporary owner. One initialized available non-Copy Struct or
+FixedArray projection may also be explicitly cloned into the immediately following exact same-type
+direct local. The enclosing owner and masks remain unchanged, recursive String-leaf failure cleanup
+comes from sealed layout, and independent IR verification limits this to one private straight-line
+site. Copy projections retain their source; exact String leaves
 move once and refine the enclosing root's recursive cleanup mask while disjoint siblings remain
 available. One exact directly initialized local also admits a supported Struct or FixedArray field
 or constant array-element move. Its complete static descendants are materialized before the move,
@@ -126,11 +130,11 @@ drops the emptied Enum root, and jumps without owner arguments to the final loca
 This checkpoint does not enable general owned values: aggregate-subobject moves outside that at-most-one
 exact direct-local form or the exact match-local exception above, broader enum-payload moves, partial Enum
 transfer or partial-root transfer outside the exact direct-local, final-return, or whole-root
-assignment forms, dynamic or Vec-element projections, or general non-String projected
-clone and assignment,
+assignment forms, dynamic or Vec-element projections, projected aggregate clone outside the exact
+direct-local form, or general non-String projected assignment,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
-The exceptions also exclude projected assignment or clone, direct payload return, owner-carrying
-CFG transfer, multi-variant extraction, and public owned contexts.
+The exceptions also exclude projected aggregate assignment, direct projected-clone or payload
+return, owner-carrying CFG transfer, multi-variant extraction, and public owned contexts.
 Public owned results remain rejected by scalar ABI v1.
 `Shared`, `Weak`, shared or exclusive borrows, and their
 operations also remain unavailable. The boundary still rejects recursive by-value layouts,

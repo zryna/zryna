@@ -155,7 +155,11 @@ obligation and disjoint siblings, and rejects repeated, overlapping, or later wh
 outside the exact direct-local, final-return, and whole-root assignment transfers described below.
 Initialized available String leaves under those same paths now admit explicit clone into a distinct
 temporary owner; failure cleanup retains the enclosing root's exact partial-state masks, and cloning
-a moved or overlapping leaf fails closed. An exact-type direct local declaration now transfers one
+a moved or overlapping leaf fails closed. One initialized available non-Copy Struct or FixedArray
+projection under the same static paths may also be cloned into the immediately following exact
+same-type local. The source root and masks are retained, the result has a distinct temporary owner,
+and the verifier seals one private straight-line site with layout-derived prefix failure cleanup.
+An exact-type direct local declaration now transfers one
 partially moved supported Struct or FixedArray root through its move-result temporary into the new
 local, materializing the complete static topology and migrating exact masks at both owner renames.
 One final exact-reference return now transfers the same partial root into an exact-topology
@@ -183,8 +187,9 @@ executing an allocator or target runtime. General structural Vec clone beyond St
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside that direct-local exception or the single-variant match-local enum
 payload extraction, broader enum-payload moves, dynamic or Vec-element projections, general non-String
-projected clone and assignment, partial Enum transfer or partial-root transfer in
-call/CFG contexts, projected assignment or clone, direct projected returns, public contexts, or non-final/non-reference returns, general owned phi joins,
+projected assignment, projected aggregate clone outside the direct-local exception, partial Enum
+transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
+contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

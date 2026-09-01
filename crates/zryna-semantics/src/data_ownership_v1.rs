@@ -816,6 +816,31 @@ fn aggregate_clone_budget_violation(
         )
 }
 
+#[allow(clippy::too_many_arguments)]
+fn projected_aggregate_clone_budget_violation(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    cleanup_plans: usize,
+    cleanup_actions: usize,
+    pending: usize,
+    missing_path_places: usize,
+) -> bool {
+    let Some(additional_places) = missing_path_places.checked_add(2) else { return true };
+    let Some(prefix_actions) = pending.checked_add(1) else { return true };
+    let Some(additional_actions) = pending.checked_add(prefix_actions) else { return true };
+    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
+        || resource_budget_violation(places, additional_places, ir::MAX_PLACES_PER_FUNCTION)
+        || aggregate_transition_budget_violation(transitions, reserved_transitions, 2)
+        || resource_budget_violation(cleanup_plans, 2, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
+        || resource_budget_violation(
+            cleanup_actions,
+            additional_actions,
+            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+        )
+}
+
 fn projected_string_clone_budget_violation(
     values: usize,
     places: usize,
@@ -5132,6 +5157,7 @@ struct PrivateOwnedAggregateLowerer<'a, 'e> {
     cleanup_actions: usize,
     aggregate_operands: usize,
     aggregate_subobject_moves: usize,
+    projected_aggregate_clones: usize,
     reserved_transitions: usize,
     owners: OwnerState,
     next_value: u32,
@@ -5145,6 +5171,13 @@ struct OwnedAggregatePlace {
     root: raw::PlaceId,
     mutable: bool,
     is_root: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct OwnedAggregatePlacePreflight {
+    place: OwnedAggregatePlace,
+    missing: usize,
+    lineage: Vec<raw::PlaceId>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -5548,6 +5581,106 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             }
             _ => None,
         }
+    }
+
+    fn owned_place_preflight(&self, id: u32) -> Option<OwnedAggregatePlacePreflight> {
+        let expression = self.expression(id)?;
+        match &expression.kind {
+            RawExpressionKind::Reference { name } => {
+                let binding = self.bindings.get(&name.text)?;
+                Some(OwnedAggregatePlacePreflight {
+                    place: OwnedAggregatePlace {
+                        ty: binding.ty,
+                        place: binding.place,
+                        root: binding.place,
+                        mutable: binding.mutable,
+                        is_root: true,
+                    },
+                    missing: 0,
+                    lineage: vec![binding.place],
+                })
+            }
+            RawExpressionKind::FieldAccess { base, field, .. } => {
+                let mut base = self.owned_place_preflight(*base)?;
+                let nominal = self.layouts.type_by_id(base.place.ty.layout)?.nominal_identity()?;
+                let declaration = self.declarations.iter().find(|declaration| {
+                    (
+                        u32::try_from(declaration.module).ok(),
+                        u32::try_from(declaration.declaration).ok(),
+                    ) == (Some(nominal.0), Some(nominal.1))
+                })?;
+                let RawDataDeclarationKind::Struct { fields, .. } =
+                    &self.file.data_declarations()[declaration.declaration].kind
+                else {
+                    return None;
+                };
+                let ordinal = u32::try_from(
+                    fields.iter().position(|candidate| candidate.name.text == field.text)?,
+                )
+                .ok()?;
+                let ty = self.projection_expression_type(id)?;
+                let key = (base.place.place.0, 0, ordinal);
+                let place = if let Some(place) = self.projections.get(&key).copied() {
+                    place
+                } else {
+                    let index = self.places.len().checked_add(base.missing)?;
+                    base.missing = base.missing.checked_add(1)?;
+                    raw::PlaceId(u32::try_from(index).ok()?)
+                };
+                base.lineage.push(place);
+                base.place = OwnedAggregatePlace {
+                    ty,
+                    place,
+                    root: base.place.root,
+                    mutable: base.place.mutable,
+                    is_root: false,
+                };
+                Some(base)
+            }
+            RawExpressionKind::Index { base, index, .. } => {
+                let mut base = self.owned_place_preflight(*base)?;
+                if base.place.ty.category != TypeCategory::FixedArray {
+                    return None;
+                }
+                let RawExpressionKind::I32Literal { spelling } = &self.expression(*index)?.kind
+                else {
+                    return None;
+                };
+                let index = spelling.parse::<u32>().ok()?;
+                let record = self.layouts.type_by_id(base.place.ty.layout)?;
+                if u64::from(index) >= record.array_length()? {
+                    return None;
+                }
+                let ty = self.projection_expression_type(id)?;
+                let key = (base.place.place.0, 1, index);
+                let place = if let Some(place) = self.projections.get(&key).copied() {
+                    place
+                } else {
+                    let place_index = self.places.len().checked_add(base.missing)?;
+                    base.missing = base.missing.checked_add(1)?;
+                    raw::PlaceId(u32::try_from(place_index).ok()?)
+                };
+                base.lineage.push(place);
+                base.place = OwnedAggregatePlace {
+                    ty,
+                    place,
+                    root: base.place.root,
+                    mutable: base.place.mutable,
+                    is_root: false,
+                };
+                Some(base)
+            }
+            _ => None,
+        }
+    }
+
+    fn preflight_projection_available(&self, place: &OwnedAggregatePlacePreflight) -> bool {
+        self.owners.contains(place.place.root)
+            && !self.moved_projections.iter().any(|moved| {
+                place.lineage.contains(moved)
+                    || (self.places.get(place.place.place.0 as usize).is_some()
+                        && self.place_is_at_or_below(*moved, place.place.place))
+            })
     }
 
     fn owned_place(&mut self, id: u32) -> Option<OwnedAggregatePlace> {
@@ -6465,6 +6598,95 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 element_cleanup: Some(element_cleanup),
             },
         )
+    }
+
+    fn clone_projected_aggregate_local(
+        &mut self,
+        operand: u32,
+        expected: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        if self.projected_aggregate_clones != 0 {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "this checkpoint admits only one projected aggregate clone per function",
+                "clone one static Struct or fixed-array subobject into one exact direct local",
+            );
+            return None;
+        }
+        if expected.is_copy()
+            || !matches!(expected.category, TypeCategory::Struct | TypeCategory::FixedArray)
+            || !self.supported(expected)
+        {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "projected structural clone requires one exact supported non-Copy aggregate",
+                "clone an acyclic static Struct or fixed-array subobject containing only bool, i32, String, and supported aggregate nodes",
+            );
+            return None;
+        }
+        let Some(preflight) = self.owned_place_preflight(operand) else {
+            let _ = self.owned_place(operand);
+            return None;
+        };
+        if preflight.place.is_root || preflight.place.ty != expected {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "projected structural clone source has the wrong exact contextual type",
+                "clone one exact supported Struct field or constant fixed-array element",
+            );
+            return None;
+        }
+        if !self.preflight_projection_available(&preflight) {
+            self.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "projected aggregate clone source is unavailable or overlaps a moved subobject",
+                "clone only one initialized available static aggregate projection",
+            );
+            return None;
+        }
+        let pending = self.owners.pending().len();
+        if projected_aggregate_clone_budget_violation(
+            self.next_value as usize,
+            self.places.len(),
+            self.instructions.len(),
+            self.reserved_transitions,
+            self.cleanup_plans.len(),
+            self.cleanup_actions,
+            pending,
+            preflight.missing,
+        ) {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "projected structural clone exceeds a checked value, place, transition, or cleanup resource limit",
+                "reduce static projection depth, simultaneously live owners, or projected clone sites",
+            );
+            return None;
+        }
+
+        let projection = self.owned_place(operand)?;
+        debug_assert_eq!(projection.ty, expected);
+        debug_assert!(!projection.is_root);
+        debug_assert!(self.projection_available(projection.place, projection.root));
+        let cleanup = self.push_cleanup(at, None)?;
+        let result_owner = raw::PlaceId(u32::try_from(self.places.len()).ok()?);
+        let element_cleanup = self.push_aggregate_clone_prefix_cleanup(at, result_owner)?;
+        let result = self.emit(
+            expected,
+            at,
+            raw::InstructionKind::ClonePlace {
+                place: projection.place,
+                cleanup,
+                element_cleanup: Some(element_cleanup),
+            },
+        )?;
+        self.projected_aggregate_clones += 1;
+        Some(result)
     }
 
     fn clone_projected_string(
@@ -7403,6 +7625,7 @@ fn lower_private_owned_aggregate_function<'a>(
         cleanup_actions: 0,
         aggregate_operands: 0,
         aggregate_subobject_moves: 0,
+        projected_aggregate_clones: 0,
         reserved_transitions: 0,
         owners: OwnerState::default(),
         next_value: 0,
@@ -7523,7 +7746,27 @@ fn lower_private_owned_aggregate_function<'a>(
                                     | RawExpressionKind::Index { .. }
                             )
                         });
-                let value = if aggregate_projection_local {
+                let projected_aggregate_clone_operand =
+                    matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
+                        .then(|| lowerer.expression(*initializer))
+                        .flatten()
+                        .and_then(|expression| match &expression.kind {
+                            RawExpressionKind::Clone { value, .. }
+                                if lowerer.expression(*value).is_some_and(|operand| {
+                                    matches!(
+                                        &operand.kind,
+                                        RawExpressionKind::FieldAccess { .. }
+                                            | RawExpressionKind::Index { .. }
+                                    )
+                                }) =>
+                            {
+                                Some((*value, span(input.sources(), expression.span)))
+                            }
+                            _ => None,
+                        });
+                let value = if let Some((operand, clone_span)) = projected_aggregate_clone_operand {
+                    lowerer.clone_projected_aggregate_local(operand, ty, clone_span)?
+                } else if aggregate_projection_local {
                     lowerer.projected_value(*initializer, ty, true)?
                 } else {
                     lowerer.value(*initializer, ty)?

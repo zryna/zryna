@@ -208,6 +208,15 @@ use, the return cleanup has zero actions, and a second site or alternate CFG fai
 not admit broader Enum-payload, dynamic, or Vec-element moves, nor projected
 assignment/clone, call, direct-return, CFG-edge, or public transfer contexts. At most one such
 aggregate-subobject move site is admitted per function.
+Separately, at most one non-root `ClonePlace` may read an initialized non-Copy Struct or FixedArray
+through a canonical `StructField`/`FixedArrayConstant` path in a private one-block function. It must
+produce one unique temporary and be immediately followed by same-type `InitializePlace` into a
+root local; the result has exactly one use. The source and its enclosing partial-state mask are
+unchanged. Its prepare cleanup contains the pre-existing live roots, while its
+`AggregateCloneElementFailure` cleanup begins with the temporary's initialized-prefix action and
+then those roots in reverse order. Recursive fallible leaves come from sealed layout, so no
+descendant place expansion is required. Enum-payload, public, CFG, alternate-use, direct-return,
+and second projected-clone contexts fail closed.
 Replacement evaluation and allocation happen before
 `ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an
