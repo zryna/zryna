@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
-const EXPECTED_COMMANDS_SHA256 = '67d121f5aafed852f0dffefb6eb4c843aae688c308e97972ab09fda08d4968d9';
+const EXPECTED_COMMANDS_SHA256 = '9f546e43c21bd9cec716bf440e057d66dc01afaf6ddda8cbaa77aa41a0d82cc1';
 
 export const PREFLIGHT_COMMANDS = Object.freeze([
   Object.freeze({
@@ -54,6 +54,19 @@ export const PREFLIGHT_COMMANDS = Object.freeze([
     id: 'm3-data-ir-tests',
     executable: 'cargo',
     args: Object.freeze(['test', '--locked', '-p', 'zryna-ir', 'data_ownership_v1']),
+  }),
+  Object.freeze({
+    id: 'm3-aggregate-semantics-tests',
+    executable: 'cargo',
+    args: Object.freeze([
+      'test',
+      '--locked',
+      '-p',
+      'zryna-semantics',
+      'data_ownership_v1',
+      '--',
+      '--include-ignored',
+    ]),
   }),
   Object.freeze({
     id: 'rust-workspace-check',

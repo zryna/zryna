@@ -27,13 +27,14 @@ test('preflight has one frozen portable command order', () => {
       ['m2-semantic-driver-tests', 'cargo'],
       ['m3-layout-tests', 'cargo'],
       ['m3-data-ir-tests', 'cargo'],
+      ['m3-aggregate-semantics-tests', 'cargo'],
       ['rust-workspace-check', 'cargo'],
       ['frontend-syntax-tests', 'cargo'],
     ],
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), '67d121f5aafed852f0dffefb6eb4c843aae688c308e97972ab09fda08d4968d9');
+  assert.equal(preflightCommandDigest(), '9f546e43c21bd9cec716bf440e057d66dc01afaf6ddda8cbaa77aa41a0d82cc1');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [
@@ -44,6 +45,7 @@ test('preflight has one frozen portable command order', () => {
     (commands) => commands[4].args.pop(),
     (commands) => commands[5].args.pop(),
     (commands) => commands[6].args.pop(),
+    (commands) => commands[7].args.pop(),
   ]) {
     const changed = structuredClone(PREFLIGHT_COMMANDS);
     mutate(changed);
@@ -120,5 +122,9 @@ test('package exposes the exact documented preflight entrypoint', async () => {
   assert.equal(
     packageDocument.scripts['m2:quick'],
     'node scripts/run-m2-quick.mjs',
+  );
+  assert.equal(
+    packageDocument.scripts['m3:data:quick'],
+    'cargo test --locked -p zryna-semantics data_ownership_v1 -- --skip authenticated_v4_derived_value_budget_is_exact_and_plus_one_fails_m3201',
   );
 });

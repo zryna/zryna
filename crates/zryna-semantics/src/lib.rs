@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod control_flow_v1;
+pub mod data_ownership_v1;
 
 use std::{cmp::Ordering, collections::BTreeMap};
 

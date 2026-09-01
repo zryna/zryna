@@ -75,7 +75,7 @@ profile is intentionally narrow.
 - Issue #57 records the separate authenticated website import, deployment, and live commit/digest
   evidence. This compiler status does not assert that an external website deployment has occurred.
 
-## Specified M3 profile with internal syntax, layout, and IR authorities
+## Specified M3 profile with internal syntax, layout, IR, and Copy aggregate semantics
 
 Issue #75 specifies the separate future `DataOwnershipV1` profile and exact CLI spelling
 `data-ownership-v1`. The normative data/ownership, aggregate-layout, and ownership-runtime-ABI
@@ -107,17 +107,25 @@ constructing opaque immutable views. The verified program retains both layout au
 ABI v1 for entry-module scalar exports, and only the enum identity of the planned
 `OwnershipRuntimeV1` contract. It does not implement or seal the runtime ABI planned by issue #80.
 
+The internal `zryna-semantics::data_ownership_v1` boundary now consumes an exact verified
+protocol-v4 source authority, owns nominal and exact type resolution, verifies the semantic type
+graph for both admitted layout targets, and lowers recursively Copy structs, enums, and fixed
+arrays into that sealed IR. Fixed-array projection is constant-only and checked statically. The
+Pair results are observed by a test-only scalar evaluator over opaque verified views; this is not
+a production interpreter or target execution path.
+
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
 JavaScript/WebAssembly/native artifacts, or accept `--profile data-ownership-v1`. Default M1 and
 explicit `control-flow-v1` M2 remain the only public profiles.
 
-The first planned executable slice is an internal scalarizable `Pair` struct observed through a
-scalar ABI v1 result. Later dependency-ready issues add checked aggregates, owned String and Vec,
-moves and deterministic drops, bounded lexical borrows, explicit shared/weak references, three
-target implementations, an atomic manifest v3 CLI, fixed-oracle conformance, and authenticated
-website publication. Tracing GC, public aggregate ABI, raw pointers, unsafe, FFI, threads, WASI,
-Components, custom allocators, and freestanding targets remain outside M3.
+The first planned executable slice remains an internal scalarizable `Pair` struct observed through
+a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. Later
+dependency-ready issues add owned String and Vec, moves and deterministic drops, bounded lexical
+borrows, explicit shared/weak references, three target implementations, an atomic manifest v3 CLI,
+fixed-oracle conformance, and authenticated website publication. Tracing GC, public aggregate ABI,
+raw pointers, unsafe, FFI, threads, WASI, Components, custom allocators, and freestanding targets
+remain outside M3.
 
 ## Runtime and toolchain boundary
 
@@ -153,6 +161,7 @@ data profiles.
 - [M2 deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md)
 - [M2 direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md)
 - [M2 verified native MIR](M2_NATIVE_MIR.md)
+- [M3 Copy aggregate semantics](M3_COPY_AGGREGATE_SEMANTICS.md)
 - [M3 verified data and ownership IR](M3_DATA_OWNERSHIP_IR.md)
 - [Roadmap](ROADMAP.md)
 - [Aggregate layout v1](../spec/memory-model/AGGREGATE_LAYOUT_V1.md)

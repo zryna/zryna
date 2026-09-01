@@ -55,3 +55,21 @@ and `while` lowering carries definite mutable state through typed merge and loop
 with reachability and all-path return checks. No backend or public CLI selects this profile. See
 [M2 straight-line semantics](../../docs/M2_STRAIGHT_LINE_SEMANTICS.md) and
 [M2 control-flow semantics](../../docs/M2_CONTROL_FLOW_SEMANTICS.md).
+
+## Internal M3 Copy aggregate semantics boundary
+
+The separate `data_ownership_v1` module consumes an exact source-map-bound verified protocol-v4
+snapshot and entry file. It owns nominal identities, names, exact types, field and variant
+ordinals, and recursively Copy classification. It verifies the same semantic type graph through
+both `Linear32V1` and `LinuxX8664V1` layout authorities, lowers only Copy structs, enums, and fixed
+arrays, and returns only mandatory-verifier-approved
+`zryna_ir::data_ownership_v1::VerifiedProgram`.
+
+Fixed-array access in this internal gate is limited to a compile-time in-range constant. Heap and
+ownership-bearing values, dynamic bounds traps, moves, clones, drops, borrows, shared or weak
+references, and public aggregate parameters or results remain unavailable. The Pair scalar oracle
+is observed only by a test evaluator over opaque verified views. Enum matching is limited to an
+internal single-return function with scalar literal, parameter, or active-payload arms; this is not
+a general expression-level match implementation. No runtime, backend, driver, CLI, or public
+`data-ownership-v1` profile selects this module. See
+[M3 Copy aggregate semantics](../../docs/M3_COPY_AGGREGATE_SEMANTICS.md).

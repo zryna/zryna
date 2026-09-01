@@ -2311,7 +2311,6 @@ fn verify_expression_structure(
                 Some(*keyword_span),
                 Some(*open_paren_span),
                 child(*scrutinee),
-                Some(*close_paren_span),
                 Some(*open_brace_span),
             ]
             .into_iter()
@@ -2330,6 +2329,7 @@ fn verify_expression_structure(
                 out.push(arm.span);
             }
             out.push(*close_brace_span);
+            out.push(*close_paren_span);
             out
         }
     };
