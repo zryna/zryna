@@ -75,6 +75,58 @@ pub enum RuntimeStatus {
     AbiViolation = 255,
 }
 
+/// Closed verified disposition of one ownership-runtime status.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum VerifiedStatusDisposition {
+    /// Successful operation.
+    Success,
+    /// Deterministic language-level controlled trap.
+    ControlledTrap,
+    /// Non-faulting branch outcome.
+    Branch,
+    /// Trusted ABI or host failure.
+    HostFailure,
+}
+
+/// Closed verified controlled-trap identity declared by the ownership runtime ABI.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum VerifiedStatusTrapIdentity {
+    /// Allocation failure.
+    AllocationV1,
+    /// Capacity or checked-arithmetic failure.
+    CapacityV1,
+    /// Reference-count overflow.
+    RefcountV1,
+    /// Invalid UTF-8 input.
+    Utf8V1,
+}
+
+/// Immutable status declaration retained only after exact runtime-ABI verification.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct VerifiedStatusDeclaration {
+    status: RuntimeStatus,
+    disposition: VerifiedStatusDisposition,
+    trap_identity: Option<VerifiedStatusTrapIdentity>,
+}
+
+impl VerifiedStatusDeclaration {
+    /// Returns the exact numeric status identity.
+    #[must_use]
+    pub const fn status(self) -> RuntimeStatus {
+        self.status
+    }
+    /// Returns the authenticated status disposition.
+    #[must_use]
+    pub const fn disposition(self) -> VerifiedStatusDisposition {
+        self.disposition
+    }
+    /// Returns the exact authenticated controlled-trap identity, when present.
+    #[must_use]
+    pub const fn trap_identity(self) -> Option<VerifiedStatusTrapIdentity> {
+        self.trap_identity
+    }
+}
+
 /// Canonical logical operation identities, in ABI order.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum LogicalOperation {
@@ -596,6 +648,50 @@ impl VerifiedOwnershipRuntimeAbi {
         ]
         .into_iter()
     }
+    /// Iterates the exact authenticated status declarations in numeric-contract order.
+    #[must_use]
+    pub fn status_declarations(&self) -> impl ExactSizeIterator<Item = VerifiedStatusDeclaration> {
+        use VerifiedStatusDisposition as D;
+        use VerifiedStatusTrapIdentity as T;
+        [
+            VerifiedStatusDeclaration {
+                status: RuntimeStatus::Ok,
+                disposition: D::Success,
+                trap_identity: None,
+            },
+            VerifiedStatusDeclaration {
+                status: RuntimeStatus::Allocation,
+                disposition: D::ControlledTrap,
+                trap_identity: Some(T::AllocationV1),
+            },
+            VerifiedStatusDeclaration {
+                status: RuntimeStatus::Capacity,
+                disposition: D::ControlledTrap,
+                trap_identity: Some(T::CapacityV1),
+            },
+            VerifiedStatusDeclaration {
+                status: RuntimeStatus::Refcount,
+                disposition: D::ControlledTrap,
+                trap_identity: Some(T::RefcountV1),
+            },
+            VerifiedStatusDeclaration {
+                status: RuntimeStatus::Utf8,
+                disposition: D::ControlledTrap,
+                trap_identity: Some(T::Utf8V1),
+            },
+            VerifiedStatusDeclaration {
+                status: RuntimeStatus::Expired,
+                disposition: D::Branch,
+                trap_identity: None,
+            },
+            VerifiedStatusDeclaration {
+                status: RuntimeStatus::AbiViolation,
+                disposition: D::HostFailure,
+                trap_identity: None,
+            },
+        ]
+        .into_iter()
+    }
     /// Iterates verified JavaScript logical helper mappings. These have no symbol or storage target.
     #[must_use]
     pub fn javascript_helpers(
@@ -805,6 +901,103 @@ impl VerifiedElementLayout<'_> {
     pub const fn alignment(self) -> u64 {
         self.record.alignment
     }
+
+    /// Binds one fresh-allocation transition claim to this exact target and element identity.
+    #[must_use]
+    pub const fn bind_vec_allocate(
+        self,
+        requested: u64,
+        status: RuntimeStatus,
+        pointer: u64,
+        length: u64,
+        capacity: u64,
+    ) -> BoundVecTransitionClaim {
+        BoundVecTransitionClaim {
+            target: self.target(),
+            element: self.element(),
+            kind: BoundVecTransitionKind::Allocate { requested, status, pointer, length, capacity },
+        }
+    }
+
+    /// Binds one reserve transition claim, including its old storage identity, to this exact target
+    /// and element identity.
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub const fn bind_vec_reserve(
+        self,
+        old_pointer: u64,
+        old_length: u64,
+        old_capacity: u64,
+        required_length: u64,
+        status: RuntimeStatus,
+        pointer: u64,
+        length: u64,
+        capacity: u64,
+        input_unchanged: bool,
+    ) -> BoundVecTransitionClaim {
+        BoundVecTransitionClaim {
+            target: self.target(),
+            element: self.element(),
+            kind: BoundVecTransitionKind::Reserve {
+                old_pointer,
+                old_length,
+                old_capacity,
+                required_length,
+                status,
+                pointer,
+                length,
+                capacity,
+                input_unchanged,
+            },
+        }
+    }
+}
+
+/// Opaque Vec transition evidence bound to one exact sealed target and element layout.
+///
+/// Claims can only be constructed from a [`VerifiedElementLayout`]. The private transition payload
+/// additionally records the old storage identity for reserve operations.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct BoundVecTransitionClaim {
+    target: StorageTarget,
+    element: TypeId,
+    kind: BoundVecTransitionKind,
+}
+
+impl BoundVecTransitionClaim {
+    /// Returns the sealed storage target that issued this claim.
+    #[must_use]
+    pub const fn target(self) -> StorageTarget {
+        self.target
+    }
+
+    /// Returns the sealed element identity that issued this claim.
+    #[must_use]
+    pub const fn element(self) -> TypeId {
+        self.element
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum BoundVecTransitionKind {
+    Allocate {
+        requested: u64,
+        status: RuntimeStatus,
+        pointer: u64,
+        length: u64,
+        capacity: u64,
+    },
+    Reserve {
+        old_pointer: u64,
+        old_length: u64,
+        old_capacity: u64,
+        required_length: u64,
+        status: RuntimeStatus,
+        pointer: u64,
+        length: u64,
+        capacity: u64,
+        input_unchanged: bool,
+    },
 }
 
 /// Immutable Shared/Weak control-layout view.
@@ -966,28 +1159,9 @@ pub fn validate_transition(claim: TransitionClaim) -> Result<(), RuntimeAbiViola
         TransitionClaim::Control { operation, before, status, bool_result, after } => {
             validate_control_transition(operation, before, status, bool_result, after)
         }
-        TransitionClaim::VecAllocate { requested, status, pointer, length, capacity } => {
-            validate_vec_allocate(requested, status, pointer, length, capacity)
-        }
-        TransitionClaim::VecReserve {
-            old_length,
-            old_capacity,
-            required_length,
-            status,
-            pointer,
-            length,
-            capacity,
-            input_unchanged,
-        } => validate_vec_reserve(
-            old_length,
-            old_capacity,
-            required_length,
-            status,
-            pointer,
-            length,
-            capacity,
-            input_unchanged,
-        ),
+        TransitionClaim::VecAllocate { .. }
+        | TransitionClaim::VecReserve { .. }
+        | TransitionClaim::FailureAtomic { .. } => false,
         TransitionClaim::CountIncrement { before, status, after } => match status {
             RuntimeStatus::Ok => before > 0 && before < u32::MAX && after == before + 1,
             RuntimeStatus::Refcount => before == u32::MAX && after == before,
@@ -1012,10 +1186,155 @@ pub fn validate_transition(claim: TransitionClaim) -> Result<(), RuntimeAbiViola
                 && deallocated == (after == 0 && strong == 0)
                 && !(after == 0 && strong > 0)
         }
-        TransitionClaim::FailureAtomic { status, outputs_zero, input_unchanged } => {
-            status != RuntimeStatus::Ok && outputs_zero && input_unchanged
-        }
     };
+    transition_result(valid)
+}
+
+/// Validates one operation-bound atomic failure result.
+///
+/// The explicit operation prevents a generic failure shape from authenticating a status that the
+/// frozen operation declaration does not admit.
+///
+/// # Errors
+///
+/// Returns `ZRYNA-R3002` when the status is successful, is not admitted by the operation, or the
+/// claimed result does not preserve zero outputs and exact input state.
+pub fn validate_failure_atomic_transition(
+    operation: LogicalOperation,
+    status: RuntimeStatus,
+    outputs_zero: bool,
+    input_unchanged: bool,
+) -> Result<(), RuntimeAbiViolation> {
+    transition_result(
+        status != RuntimeStatus::Ok
+            && operation_accepts_status(operation, status)
+            && outputs_zero
+            && input_unchanged,
+    )
+}
+
+/// Validates one Vec transition against an opaque sealed element-layout view.
+///
+/// The layout supplies the verifier-owned positive stride used for every checked byte-capacity
+/// calculation. Only [`TransitionClaim::VecAllocate`] and [`TransitionClaim::VecReserve`] are
+/// admitted by this entry point.
+///
+/// # Errors
+///
+/// Returns `ZRYNA-R3002` when the claim kind, status, result shape, deterministic capacity, element
+/// limit, or checked byte amplification violates the frozen transition.
+pub fn validate_vec_transition(
+    layout: VerifiedElementLayout<'_>,
+    claim: TransitionClaim,
+) -> Result<(), RuntimeAbiViolation> {
+    let stride = layout.stride();
+    let valid = match claim {
+        TransitionClaim::VecAllocate { requested, status, pointer, length, capacity } => {
+            validate_vec_allocate(requested, status, pointer, length, capacity, stride)
+        }
+        TransitionClaim::VecReserve {
+            old_length,
+            old_capacity,
+            required_length,
+            status,
+            pointer,
+            length,
+            capacity,
+            input_unchanged,
+        } => validate_vec_reserve(
+            old_length,
+            old_capacity,
+            required_length,
+            status,
+            pointer,
+            length,
+            capacity,
+            input_unchanged,
+            stride,
+        ),
+        _ => false,
+    };
+    transition_result(valid)
+}
+
+/// Validates target-, element-, and storage-bound Vec transition evidence.
+///
+/// Unlike [`validate_vec_transition`], this additive entry point rejects replay against a different
+/// sealed target or element layout. A successful reserve that requires no growth must retain the
+/// exact old storage pointer. Growth and failure retain the frozen checked-capacity, byte
+/// amplification, result-shape, and failure-atomic rules.
+///
+/// # Errors
+///
+/// Returns `ZRYNA-R3002` when the claim is replayed against another layout or violates the bound
+/// Vec transition contract.
+pub fn validate_bound_vec_transition(
+    layout: VerifiedElementLayout<'_>,
+    claim: BoundVecTransitionClaim,
+) -> Result<(), RuntimeAbiViolation> {
+    let identity_matches = claim.target == layout.target() && claim.element == layout.element();
+    let valid = identity_matches
+        && match claim.kind {
+            BoundVecTransitionKind::Allocate { requested, status, pointer, length, capacity } => {
+                validate_vec_allocate(requested, status, pointer, length, capacity, layout.stride())
+            }
+            BoundVecTransitionKind::Reserve {
+                old_pointer,
+                old_length,
+                old_capacity,
+                required_length,
+                status,
+                pointer,
+                length,
+                capacity,
+                input_unchanged,
+            } => {
+                validate_vec_reserve(
+                    old_length,
+                    old_capacity,
+                    required_length,
+                    status,
+                    pointer,
+                    length,
+                    capacity,
+                    input_unchanged,
+                    layout.stride(),
+                ) && validate_bound_vec_storage_identity(
+                    old_pointer,
+                    old_length,
+                    old_capacity,
+                    required_length,
+                    status,
+                    pointer,
+                )
+            }
+        };
+    transition_result(valid)
+}
+
+const fn validate_bound_vec_storage_identity(
+    old_pointer: u64,
+    old_length: u64,
+    old_capacity: u64,
+    required_length: u64,
+    status: RuntimeStatus,
+    pointer: u64,
+) -> bool {
+    let old_storage_well_formed =
+        if old_capacity == 0 { old_pointer == 0 && old_length == 0 } else { old_pointer != 0 };
+    match status {
+        RuntimeStatus::Ok if required_length <= old_capacity => {
+            old_storage_well_formed && pointer == old_pointer
+        }
+        RuntimeStatus::Ok | RuntimeStatus::Allocation | RuntimeStatus::Capacity => {
+            old_storage_well_formed
+        }
+        RuntimeStatus::AbiViolation => true,
+        _ => false,
+    }
+}
+
+fn transition_result(valid: bool) -> Result<(), RuntimeAbiViolation> {
     if valid {
         Ok(())
     } else {
@@ -1034,17 +1353,15 @@ fn validate_vec_allocate(
     pointer: u64,
     length: u64,
     capacity: u64,
+    stride: u64,
 ) -> bool {
+    let request_fits = vec_capacity_fits(requested, stride);
     match status {
         RuntimeStatus::Ok if requested == 0 => pointer == 0 && length == 0 && capacity == 0,
-        RuntimeStatus::Ok => {
-            requested <= MAX_VEC_ELEMENTS && pointer != 0 && length == 0 && capacity == requested
-        }
-        RuntimeStatus::Capacity => {
-            requested > MAX_VEC_ELEMENTS && pointer == 0 && length == 0 && capacity == 0
-        }
+        RuntimeStatus::Ok => request_fits && pointer != 0 && length == 0 && capacity == requested,
+        RuntimeStatus::Capacity => !request_fits && pointer == 0 && length == 0 && capacity == 0,
         RuntimeStatus::Allocation => {
-            requested <= MAX_VEC_ELEMENTS && pointer == 0 && length == 0 && capacity == 0
+            requested > 0 && request_fits && pointer == 0 && length == 0 && capacity == 0
         }
         RuntimeStatus::AbiViolation => pointer == 0 && length == 0 && capacity == 0,
         _ => false,
@@ -1061,26 +1378,31 @@ fn validate_vec_reserve(
     length: u64,
     capacity: u64,
     input_unchanged: bool,
+    stride: u64,
 ) -> bool {
+    let old_valid = old_length <= old_capacity && vec_capacity_fits(old_capacity, stride);
+    let reserved =
+        old_valid.then(|| reserve_capacity(old_capacity, required_length, stride)).flatten();
     match status {
         RuntimeStatus::Ok => {
-            old_length <= old_capacity
-                && required_length <= MAX_VEC_ELEMENTS
+            old_valid
+                && reserved.is_some()
                 && length == old_length
-                && capacity == reserve_capacity(old_capacity, required_length).unwrap_or(u64::MAX)
+                && Some(capacity) == reserved
                 && (capacity == 0 || pointer != 0)
         }
         RuntimeStatus::Capacity => {
-            required_length > MAX_VEC_ELEMENTS
+            old_valid
+                && reserved.is_none()
                 && pointer == 0
                 && length == 0
                 && capacity == 0
                 && input_unchanged
         }
         RuntimeStatus::Allocation => {
-            old_length <= old_capacity
+            old_valid
                 && required_length > old_capacity
-                && required_length <= MAX_VEC_ELEMENTS
+                && reserved.is_some()
                 && pointer == 0
                 && length == 0
                 && capacity == 0
@@ -1091,6 +1413,12 @@ fn validate_vec_reserve(
         }
         _ => false,
     }
+}
+
+fn vec_capacity_fits(capacity: u64, stride: u64) -> bool {
+    stride > 0
+        && capacity <= MAX_VEC_ELEMENTS
+        && capacity.checked_mul(stride).is_some_and(|bytes| bytes <= MAX_DYNAMIC_ALLOCATION_BYTES)
 }
 
 /// Returns whether one status is admitted by an operation's exact v1 status set.
@@ -1257,18 +1585,21 @@ const fn valid_control_state(state: ControlState) -> bool {
     }
 }
 
-fn reserve_capacity(old: u64, required: u64) -> Option<u64> {
+fn reserve_capacity(old: u64, required: u64, stride: u64) -> Option<u64> {
+    if !vec_capacity_fits(old, stride) || !vec_capacity_fits(required, stride) {
+        return None;
+    }
     if required <= old {
         return Some(old);
     }
     let mut candidate = if old == 0 { 4 } else { old.checked_mul(2)? };
     while candidate < required {
-        candidate = candidate.checked_mul(2)?;
-        if candidate > MAX_VEC_ELEMENTS {
-            return (required <= MAX_VEC_ELEMENTS).then_some(required);
+        if !vec_capacity_fits(candidate, stride) {
+            return Some(required);
         }
+        candidate = candidate.checked_mul(2)?;
     }
-    (candidate <= MAX_VEC_ELEMENTS).then_some(candidate.max(required))
+    Some(if vec_capacity_fits(candidate, stride) { candidate } else { required })
 }
 
 /// Builds the exact untrusted v1 declaration claim for the supplied sealed layouts.

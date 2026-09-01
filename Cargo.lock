@@ -1276,6 +1276,7 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-ir",
  "zryna-layout",
+ "zryna-ownership-runtime-abi",
  "zryna-source",
  "zryna-syntax",
 ]

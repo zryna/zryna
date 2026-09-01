@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
-const EXPECTED_COMMANDS_SHA256 = '333e0f2538ce879c5399dfde520baa2be025cd3671cedb628d33d33bf3b6a866';
+const EXPECTED_COMMANDS_SHA256 = '8995cc25cf331a709688d5837fd67eb804a6e30804469872b15aec71f95091cd';
 
 export const PREFLIGHT_COMMANDS = Object.freeze([
   Object.freeze({
@@ -65,7 +65,20 @@ export const PREFLIGHT_COMMANDS = Object.freeze([
   Object.freeze({
     id: 'm3-data-ir-tests',
     executable: 'cargo',
-    args: Object.freeze(['test', '--locked', '-p', 'zryna-ir', 'data_ownership_v1']),
+    args: Object.freeze([
+      'test',
+      '--locked',
+      '-p',
+      'zryna-ir',
+      'data_ownership_v1',
+      '--',
+      '--include-ignored',
+    ]),
+  }),
+  Object.freeze({
+    id: 'm3-data-ir-doc-tests',
+    executable: 'cargo',
+    args: Object.freeze(['test', '--locked', '-p', 'zryna-ir', '--doc', 'data_ownership_v1']),
   }),
   Object.freeze({
     id: 'm3-aggregate-semantics-tests',
@@ -78,6 +91,18 @@ export const PREFLIGHT_COMMANDS = Object.freeze([
       'data_ownership_v1',
       '--',
       '--include-ignored',
+    ]),
+  }),
+  Object.freeze({
+    id: 'm3-aggregate-semantics-doc-tests',
+    executable: 'cargo',
+    args: Object.freeze([
+      'test',
+      '--locked',
+      '-p',
+      'zryna-semantics',
+      '--doc',
+      'data_ownership_v1',
     ]),
   }),
   Object.freeze({

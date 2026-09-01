@@ -115,9 +115,54 @@ a production interpreter or target execution path.
 
 The separate internal ownership-runtime ABI v1 authority now verifies the exact 17-operation
 declaration set, target symbols and signatures, authenticated `Linear32V1` and `LinuxX8664V1`
-layout-derived records, checked C-header evidence, and pure logical transitions before exposing
-opaque immutable views. It does not allocate, mutate runtime state, implement a helper, compile or
-link an object, lower a backend, or activate a driver or CLI route.
+layout-derived records, checked C-header evidence, operation-bound atomic-failure status, sealed
+element-layout Vec stride and checked byte amplification, and pure logical transitions before
+exposing opaque immutable views. It does not allocate, mutate runtime state, implement a helper,
+compile or link an object, lower a backend, or activate a driver or CLI route.
+
+Issue #81 is in progress. Its current internal bounded private checkpoint
+supports String literals, explicit clone, checked concatenation, moves, return cleanup, and
+root-local replacement, plus Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`,
+and `Vec<String>`, moves, return, push, checked Copy-element indexing,
+and replacement of supported exact Vec roots. Private zero-argument producers and one-argument
+owned identity calls are available internally. String/Vec functions also admit one canonical
+top-level no-phi `if`/`else` from a bool literal or Copy bool parameter; branch-local owners drop in
+reverse, incoming owners are restored exactly, and mutation of an incoming Vec fails before its
+right-hand side. Private String and exact Vec result functions additionally admit one bounded
+terminal `if`/`else`: each arm returns one owned-producing expression through a canonical
+one-parameter owned join, and return cleanup excludes the joined value. One bounded top-level
+no-carried-owner `while` evaluates its bool condition in a canonical header, reverse-drops
+iteration-local owners before the backedge, restores incoming ownership state on the backedge and
+false exit, and permits only the final return afterward. Its stable-place subset supports prepared
+replacement of one mutable outer String and Copy-element push into one mutable outer exact Vec
+without an owned header phi; Vec replacement and owned-element Vec push remain excluded. Vec construction, push,
+and calls reserve parent resources before child ownership changes. The aggregate route constructs,
+moves, explicitly clones, returns, and drops bounded parameter-free private straight-line owned
+Struct, FixedArray, and root Enum graphs with Copy/String leaves. Structural clone retains its
+source, creates a distinct owner, derives its fallible String-leaf count and root-enum active variant
+from sealed authorities, and reverse-drops only the initialized result prefix on element failure.
+Whole-root assignment for the same graphs is prepare-before-commit, rejects direct
+self-consumption, and preserves sealed recursive cleanup for the old destination.
+The verified IR now also seals projected replacement's old-subobject traversal and transfers the
+prepared subtree's masks and enum refinement without disturbing siblings; semantic projected
+assignment remains unfinished. The semantic producer resolves canonical static StructField and
+FixedArrayConstant source places for Copy reads and exact String-leaf moves, preserves the enclosing
+root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption.
+The private String route reports moved uses as M3011, the aggregate/enum route reports them
+as M3014, and unresolved
+binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
+8 MiB String-literal limit, and returns sealed semantics retaining verified IR plus the exact
+runtime ABI authority. An internal bounded fault/drop-trace oracle now covers every ABI-admitted
+failure of the implemented String, Vec, and aggregate-clone allocation-bearing operations plus the
+separate checked Vec bounds trap; it authenticates status disposition/trap identity, pre-commit operand retention,
+uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
+executing an allocator or target runtime. General structural Vec clone beyond String elements,
+nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone and
+assignment, whole-partial-owner transfer, general owned phi joins,
+owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
+unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
+complete and Issue #82 is not ready.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
@@ -125,10 +170,11 @@ JavaScript/WebAssembly/native artifacts, or accept `--profile data-ownership-v1`
 explicit `control-flow-v1` M2 remain the only public profiles.
 
 The first planned executable slice remains an internal scalarizable `Pair` struct observed through
-a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. Later
-dependency-ready issues add owned String and Vec, moves and deterministic drops, bounded lexical
-borrows, explicit shared/weak references, three target implementations, an atomic manifest v3 CLI,
-fixed-oracle conformance, and authenticated website publication. Tracing GC, public aggregate ABI,
+a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. The
+in-progress owned String/Vec work remains compiler-internal; later dependency-ready issues add
+bounded lexical borrows, explicit shared/weak references, three target implementations, an atomic
+manifest v3 CLI, fixed-oracle conformance, and authenticated website publication. Tracing GC,
+public aggregate ABI,
 raw pointers, unsafe, FFI, threads, WASI, Components, custom allocators, and freestanding targets
 remain outside M3.
 

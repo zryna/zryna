@@ -12,10 +12,12 @@ FrontendProvider
     ├── TypeScript 7 IPC adapter (planned after a stable upstream API)
     └── native Zryna frontend (planned)
     ↓
-RawProjectSyntaxSnapshot v1 (declarations), v2 (M1), or v3 (M2 syntax)
+RawProjectSyntaxSnapshot v1 (declarations), v2 (M1), v3 (M2 syntax),
+or internal v4 (M3 data and ownership syntax)
     ↓ exact file-set, path, budget, graph, and span verification
 ProjectSyntaxSnapshot v1, zryna_syntax::v2::ProjectSyntaxSnapshot,
-or zryna_syntax::v3::ProjectSyntaxSnapshot
+zryna_syntax::v3::ProjectSyntaxSnapshot, or the internal
+zryna_syntax::v4::ProjectSyntaxSnapshot
     ↓
 Zryna name resolution and strict semantic checking
     ↓
@@ -39,7 +41,7 @@ semantic lowering never depends on a replaceable provider.
 1. `zryna-architecture` proves that the repository can be inspected completely and matches its declared graph.
 2. A frontend provider reads compatible syntax and produces an untrusted, provider-neutral raw
    snapshot.
-3. `zryna-syntax` verifies protocol-v2 or protocol-v3 file identity, budgets, source spans,
+3. `zryna-syntax` verifies protocol-v2, protocol-v3, or internal protocol-v4 file identity, budgets, source spans,
    lexical order, and canonical expression/block graphs before constructing opaque executable
    syntax.
 4. Zryna semantics resolves names, modules, scopes, and exact types. The protocol-v2/M1 path
@@ -357,9 +359,10 @@ Its remaining authority chain is:
 verified protocol-v4 syntax
     ↓
 compiler-owned nominal/type/ownership semantics
-    ├── implemented Copy-only aggregate lowering
+    ├── implemented Copy aggregate lowering
+    ├── private straight-line String/Vec ownership checkpoint
     ├── verified aggregate-layout authority
-    └── implemented sealed ownership-runtime ABI declaration authority
+    └── retained sealed ownership-runtime ABI declaration authority
     ↓
 raw DataOwnershipV1 IR
     ↓ independent exhaustive verifier
@@ -376,6 +379,16 @@ same source-map and type-universe identities, and fingerprints claimed by the ra
 Success retains both sealed layout authorities and scalar ABI v1 while exposing only opaque
 module, function, block, value, place, projection, ownership, borrow, and cleanup views. Its
 `OwnershipRuntimeV1` value is a closed contract-identity enum that later authorities bind exactly.
+The Issue #81 verifier foundations add bounded immutable `StringFromUtf8` bytes, one exact owner
+place for each non-Copy value while allowing addressable Copy storage without a cleanup obligation,
+and site-bound cleanup authority. Every cleanup plan belongs to one exact block instruction or
+terminator and one closed `PrepareFailure`, `VecCloneElementFailure`,
+`AggregateCloneElementFailure`, `CallTrap`, `Return`, or `ControlledTrap` role;
+`ReplacePlace` is the infallible commit after preparation and carries no cleanup plan. The verified
+instruction nevertheless derives one exact pre-commit recursive drop action for the old root or
+static-projection destination. Projection replay transplants the prepared source subtree's state
+and active enum variants while retaining the enclosing owner's pending obligation and sibling
+masks. Semantic projected assignment remains a later checkpoint.
 The separate [`ownership-runtime ABI authority`](M3_OWNERSHIP_RUNTIME_ABI.md) now verifies the exact
 17-operation declaration vocabulary, target symbols and signatures, authenticated layout-derived
 records, checked header evidence, and pure transition evidence behind opaque immutable views. It is
@@ -387,7 +400,36 @@ exact source-map-bound protocol-v4 authority, resolves canonical nominal identit
 types, verifies one type graph for both layout targets, and lowers recursively Copy structs, enums,
 and fixed arrays into the independently verified IR. Fixed-array projection is limited to a
 compile-time in-range constant. The internal Pair oracle is observed only through a test evaluator
-over opaque verified views. This semantic gate exposes no raw layout or IR claim and creates no
+over opaque verified views. The same private boundary now recognizes canonical String and
+`Vec<T>` type graphs. Its private owned-data checkpoint lowers String literals, explicit clone,
+checked concatenation, moves, return cleanup, and mutable root-local replacement; it also lowers
+Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves,
+return, push, checked Copy-element indexing, and supported root-local replacement. Bounded private owned functions
+support exact owned parameters and internal calls,
+one top-level branch or while loop, terminal owned branch-result joins, reverse-order cleanup of
+branch/iteration locals, and a single stable mutable String or Vec root across the admitted loop
+mutation shape. A separate parameter-free private straight-line route constructs, moves,
+explicitly clones, returns, and reverse-order drops bounded owned Struct, FixedArray, and root Enum
+graphs with Copy/String leaves. Structural clone retains its source, creates a distinct result owner,
+derives the fallible String-leaf count and active root-enum variant from sealed authorities, and
+reverse-drops only the initialized result prefix on element failure. Mutable whole-root assignment
+for these supported aggregate graphs prepares a distinct replacement before committing it and
+retains the old root across preparation failure. These operations use
+`InitializePlace`, `MoveFromPlace`, and `ClonePlace`; String/Vec/aggregate replacement uses the
+infallible `ReplacePlace` commit after right-hand-side preparation.
+Canonical static `StructField` and `FixedArrayConstant` places also carry Copy reads and exact
+String-leaf moves from source syntax through verified IR. Projection identity is root-relative and
+stable, moved leaves refine the enclosing root's cleanup mask, and disjoint siblings remain
+available; repeated, overlapping, or later whole-root consumption is rejected.
+The boundary reports moved
+bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
+M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
+String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone
+and assignment, whole-partial-owner transfer, general nested or repeated owned control flow, loop-carried owned
+phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
+admitted. Its sealed semantic result retains both the verified IR and the exact verified
+ownership-runtime declaration authority without exposing either raw input. This creates no
 runtime, backend, driver, CLI, manifest, target artifact, or public aggregate ABI capability.
 
 The normative planning authorities are

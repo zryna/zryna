@@ -195,6 +195,42 @@ checked header evidence, and pure transitions; it implements no allocator or hel
 selected by the public driver and exposes no runtime, backend, CLI, public aggregate ABI, target
 artifact, or host capability.
 
+Issue #81 is in progress at a bounded internal checkpoint. Private functions now cover String
+literals, explicit clone, checked concatenation, moves, return cleanup, and root-local replacement,
+plus Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves,
+return, push, checked Copy-element indexing, and supported exact
+root-local replacement. Zero-argument producers and one-argument owned identity calls transfer
+owners through independently verified direct-call boundaries. One canonical top-level no-phi
+String/Vec branch restores its incoming owner state after reverse-dropping branch locals, and one
+bounded terminal branch transfers either owned arm result through a canonical block-parameter
+join. One bounded top-level no-carried-owner loop reevaluates its condition in a canonical header,
+reverse-drops iteration locals before the backedge, and restores its exact incoming state on both
+the backedge and false exit. Its stable-place subset replaces one mutable outer String after full
+RHS preparation or pushes a Copy element into one mutable outer exact Vec without an owned header
+phi; Vec replacement and owned-element Vec push remain pending. The same gate proves use-after-move diagnostics, one-plan/one-site cleanup roles, and the
+cumulative 8 MiB String-literal limit while retaining verified IR and the exact runtime ABI
+authority. Its internal fault/drop-trace oracle consumes authenticated runtime status dispositions
+and exact trap identities for all admitted implemented String/Vec/aggregate-clone failures, keeps Vec bounds as a
+separate verified trap, and proves pre-commit retention, result exclusion, reverse cleanup,
+determinism, and bounded trace accounting without runtime execution. A bounded parameter-free
+private straight-line route also constructs, moves, explicitly clones, returns, and drops owned
+Struct, FixedArray, and root Enum graphs with Copy/String leaves. Structural clone retains its
+source, derives its fallible String-leaf count and root-enum active variant from sealed authorities,
+and uses prefix-safe failure cleanup. Mutable whole-root assignment for those graphs prepares a
+distinct replacement before `ReplacePlace` commits the sealed recursive old-value drop. The private String and
+aggregate/enum routes retain their distinct M3011 and M3014 moved-owner diagnostics, and unresolved
+bindings use M3002. General structural Vec clone beyond String elements, nested aggregate clone
+graphs containing Enum, Vec, Shared, or Weak values remain open. The verified IR prerequisite for
+projected replacement now seals the exact old-subobject traversal and preserves replacement
+subtree masks, enum refinement, and siblings. The semantic producer now resolves canonical static
+StructField and FixedArrayConstant projections, retains Copy leaves, moves exact String leaves,
+and preserves disjoint siblings plus the enclosing cleanup obligation. Aggregate/enum subobject
+moves, whole-partial-owner transfer, dynamic projections, and projected assignment remain open, alongside
+general owned joins,
+owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
+work. Issue #81 is
+not complete, so #82 remains planned and is not ready to start.
+
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |
 |   #75 | normative profile, layout, ownership, and runtime ABI contract       | M2 closure              | complete    |
@@ -203,7 +239,7 @@ artifact, or host capability.
 |   #78 | separately verified DataOwnershipV1 Universal IR                     | #75, #77                | complete    |
 |   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | complete    |
 |   #80 | versioned ownership runtime ABI authority                            | #75, #77                | complete    |
-|   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | planned     |
+|   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | in progress |
 |   #82 | bounded nonescaping lexical borrowing                                | #81                     | planned     |
 |   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | planned     |
 |   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | planned     |

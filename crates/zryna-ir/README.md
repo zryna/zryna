@@ -125,5 +125,42 @@ implementation. The separate issue #80 authority verifies declarations, authenti
 header evidence, and pure transitions; no helper implementation, target runtime, backend, driver
 route, CLI profile, or public aggregate ABI is supplied here.
 
+The Issue #81 verifier foundations additionally admit bounded immutable UTF-8 bytes through
+`StringFromUtf8`, derive exactly one non-Copy owner place per owned value, preserve Copy
+parameter/local/temporary storage without adding Copy cleanup obligations, and transfer pending
+drop order across calls, returns, and CFG edges. `ReplacePlace` is an infallible commit and carries
+no prepare-failure cleanup identity. Its verified view derives the old destination's exact
+recursive drop traversal from the pre-commit state for either a canonical root or a static
+projection, and ownership replay transfers the prepared source subtree's state and active enum
+variants without changing enclosing siblings. The current semantic producer uses that instruction
+for private root-local String, supported Vec, and supported whole-root aggregate replacement;
+projected, call, and CFG replacement are not part of the current semantic checkpoint.
+
+`VecClone` currently admits only exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>` sources, preserves
+the source owner, and requires one distinct temporary result owner. Every clone binds allocation
+failure to its exact prepare cleanup. `Vec<String>` additionally binds per-element `StringClone`
+failure to a distinct sealed role whose first typed action reverse-drops the runtime-recorded
+initialized destination prefix before pre-existing roots. Executable consumers must use the typed
+verified drop-action view for this role rather than treating its root-only compatibility view as an
+ordinary whole-place drop. This does not claim general `Vec<T: Clone>` support.
+
+`ClonePlace` additionally admits supported non-Copy Struct, FixedArray, and root Enum graphs whose
+fallible leaves are Strings. It preserves the source, produces one distinct result owner, and binds
+String-leaf failure to a separately site-bound `AggregateCloneElementFailure` plan. That plan starts
+with the typed `AggregateInitializedPrefix` action and then lists every pre-existing live root in
+reverse order. The verifier derives the fallible-leaf count from retained Linear32 layout and the
+root Enum's active variant from source ownership state; neither fact is accepted from a caller.
+Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain outside this checkpoint.
+
+Every raw cleanup plan is bound to exactly one verified site and one closed role:
+`PrepareFailure`, `VecCloneElementFailure`, `AggregateCloneElementFailure`, `CallTrap`, `Return`, or
+`ControlledTrap`. A cleanup-bearing site with a foreign
+identity, an orphan plan, or a plan reused by another site fails closed. Opaque verified site and
+drop-action views expose that authority without returning raw plans; explicit `DropPlace` views
+derive their recursive state from the instruction's pre-drop program point. These are compiler
+proof foundations only. The verifier vocabulary is broader than the current private straight-line
+String/Vec/aggregate semantic producer; general projections, calls and CFG ownership, target cleanup,
+allocators, and executable M3 profiles remain unavailable.
+
 The exact authority tuple, raw vocabulary, limits, diagnostics, and verified-view contract are
 documented in [`M3_DATA_OWNERSHIP_IR.md`](../../docs/M3_DATA_OWNERSHIP_IR.md).

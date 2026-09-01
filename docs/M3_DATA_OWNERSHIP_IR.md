@@ -1,8 +1,9 @@
 # M3 verified data and ownership IR
 
 Status: implemented internal compiler trust boundary. This document describes the separately
-verified `DataOwnershipV1` Universal IR added by issue #78. It does not activate an M3 semantic
-lowerer, runtime, backend, driver route, CLI profile, manifest, or public aggregate ABI.
+verified `DataOwnershipV1` Universal IR added by issue #78 and the ownership-proof foundations
+extended for issue #81. It does not activate a runtime, backend, driver route, CLI profile,
+manifest, or public aggregate ABI.
 
 ## Authority and isolation
 
@@ -94,18 +95,39 @@ StructConstruct, EnumConstruct, FixedArrayConstruct,
 CopyFromPlace, MoveFromPlace, ClonePlace,
 InitializePlace, ReplacePlace, DropPlace,
 EnumDiscriminant, FixedArrayIndexCopy, VecIndexCopy,
-StringClone, StringConcat,
-VecConstruct, VecPush,
+StringFromUtf8, StringClone, StringConcat,
+VecClone, VecConstruct, VecPush,
 SharedConstruct, SharedClone,
 WeakDowngrade, WeakClone,
 BeginBorrow, BorrowRead, BorrowWrite, EndBorrow
 ```
 
 `BeginBorrow` contains one dense `BorrowDefinition` with `Shared` or `Exclusive` access.
-Potentially trapping calls, constructions, clones, replacement, indexing, concatenation, vector
-growth, shared construction, and reference-count increments name the cleanup plan required by
-their exact raw variant. `DropPlace` also supplies the logical release operation for String, Vec,
-Shared, and Weak places; there are no separately forgeable release-helper instructions.
+Potentially trapping calls, String construction, allocation-bearing constructions, clones,
+indexing, concatenation, vector growth, shared construction, and reference-count increments name
+the cleanup plan required by their exact raw variant. `StringFromUtf8` carries verifier-checked
+immutable UTF-8 bytes and a prepare-failure cleanup identity; it is internal IR vocabulary, not a
+public String runtime or compiler profile. `VecClone` currently admits only exact `Vec<bool>`,
+`Vec<i32>`, and `Vec<String>` sources, preserves the source owner, and requires a distinct temporary
+result owner. Every clone binds allocation failure to its exact prepare cleanup. `Vec<String>` also
+requires a separately site-bound `VecCloneElementFailure` plan whose first typed action is
+`VecInitializedPrefix`, followed by every pre-existing owner in reverse order. Executable consumers
+must use `vec_clone_element_failure_drop_actions()` and its typed action kind for that role; the
+root-only cleanup-plan compatibility view does not turn the prefix into an ordinary whole-place
+drop. This does not claim general `Vec<T: Clone>` support. `ReplacePlace` is the infallible commit after its
+replacement value has already been prepared, so it carries no cleanup plan. `DropPlace` supplies
+the logical release operation for String, Vec, Shared, and Weak places; there are no separately
+forgeable release-helper instructions.
+
+`ClonePlace` additionally admits supported non-Copy Struct, FixedArray, and root Enum graphs with
+String leaves. It preserves the source and produces one distinct result owner. Fallible String-leaf
+clone binds a separate `AggregateCloneElementFailure` plan whose first typed action is
+`AggregateInitializedPrefix`, followed by every pre-existing live root in reverse order. Verified
+consumers use `aggregate_clone_element_failure_drop_actions()` for that role and obtain the exact
+fallible-leaf count through `aggregate_clone_fallible_leaf_count()`. The verifier derives that count
+from retained Linear32 layout and derives a root Enum's active variant from source ownership state;
+neither is caller-controlled. Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain
+excluded.
 
 There is no generic target helper, raw address, source-selected runtime symbol, implicit clone,
 implicit conversion, unchecked index, host exception, or arbitrary runtime call instruction.
@@ -126,7 +148,9 @@ Trap { identity, cleanup }
 `EnumMatch` has exactly one arm for every sealed variant. `WeakUpgradeBranch` contains the
 indivisible increment-and-branch contract. `TrapIdentity` is closed to `BoundsV1`, `AllocationV1`,
 `CapacityV1`, `RefcountV1`, and `Utf8V1`. A cleanup plan is a dense ID, authoritative span, and
-ordered list whose only `DropAction` is `DropPlace(PlaceId)`.
+ordered list. Ordinary exits use `DropPlace(PlaceId)`. Only the dedicated clone-element roles may
+start with `DropVecInitializedPrefix(PlaceId)` or `DropAggregateInitializedPrefix(PlaceId)`; these
+typed prefix actions cannot be treated as ordinary whole-place drops.
 
 Calls remain direct and acyclic. Block arguments, call arguments, returns, match payloads, and weak
 upgrade results use sealed value identities with exact types. A borrow cannot cross a branch,
@@ -136,18 +160,36 @@ match, weak-upgrade, loop, return, or trap edge.
 
 The verifier derives state along reachable CFG paths rather than trusting the order of raw
 transition records. Each non-`Copy` place is exactly one of `uninitialized`, `initialized`,
-`shared-borrowed(k)`, `exclusive-borrowed`, `moved`, or `dropped`. It rejects reads before
-initialization or after move/drop, conflicting or escaping borrows, moves or drops while borrowed,
-contradictory parent/child state, and double ownership effects.
+`shared-borrowed(k)`, `exclusive-borrowed`, `moved`, or `dropped`, with derived partial projection
+metadata retained for aggregate cleanup. It rejects reads before initialization or after
+move/drop, conflicting or escaping borrows, moves or drops while borrowed, contradictory
+parent/child state, and double ownership effects.
+
+Addressable storage and ownership are separate proofs. Copy parameters, locals, and temporaries
+may have canonical places so projections and storage identity remain exact, but Copy values are
+excluded from the non-Copy value-to-owner map and never create a pending-drop obligation. Every
+non-Copy value has exactly one canonical owner place; duplicate roots and ownerless values fail
+closed.
 
 Every reachable join requires exact state equality for every live place. Loop backedges restore
 the exact header state. Passing or returning a non-`Copy` value transfers its one pending drop
-obligation. Replacement evaluates its new value first; only successful completion drops the old
-destination and installs the replacement. A trapping replacement leaves the old destination live
-for cleanup.
+obligation. Replacement evaluation and allocation happen before `ReplacePlace`; the instruction
+itself commits by dropping the old destination and installing the already prepared value. Like an
+explicit `DropPlace`, its verified view derives a planless recursive old-value action from the
+pre-commit state. That action's traversal root may be a canonical owner or an exact static
+projection. Projected replacement replay transfers only the prepared source subtree's state and
+active enum variants, preserving the enclosing owner and every sibling mask. A trap during
+preparation occurs at that producer's cleanup site and leaves the old destination live.
 
-Raw cleanup plans are claims, not authority. The verifier independently derives the exact actions
-required at every normal and controlled-trap exit and compares place identity, action, and order.
+Raw cleanup plans are claims, not authority. Each plan must be referenced by exactly one program
+point. Verification binds that point to one closed `VerifiedCleanupRole`: `PrepareFailure`,
+`VecCloneElementFailure`, `AggregateCloneElementFailure`, `CallTrap`, `Return`, or
+`ControlledTrap`. Orphan plans, reused plans, and a plan attached to the
+wrong operation or exit role fail closed. `VerifiedCleanupPlan::site()` exposes only the sealed
+block, optional instruction index, and role for that one binding.
+
+The verifier independently derives the exact actions required at every normal and controlled-trap
+exit and compares place identity, action, and order.
 Every live owned value is dropped exactly once in reverse successful-completion order. Struct
 fields use reverse declaration order, only the active enum payload is dropped, arrays and vectors
 drop the initialized prefix from its highest element to zero, and container storage is released
@@ -155,12 +197,19 @@ after its contents. Copy, uninitialized, moved, and already dropped places have 
 Missing, duplicate, extra, reordered, unreachable, or wrong-exit cleanup fails verification.
 
 Every verified instruction or terminator that names cleanup exposes `derived_drop_actions()` for
-that exact program point. Each returned `VerifiedDropAction` seals:
+that exact program point. An explicit `DropPlace` and an infallible `ReplacePlace` commit also
+expose their derived recursive old-value state from the instruction's pre-commit point even though
+neither names a cleanup plan. Each returned
+`VerifiedDropAction` seals:
 
-- `root`, the owned root place released by the action;
+- `root`, the exact recursive traversal root released by the action, which may be a canonical
+  owner or a static owned subobject;
 - `moved_projections()`, the descendants already moved or dropped and therefore excluded;
 - `initialized_projections()`, the descendants whose initialization completed and remain live; and
-- `active_variant()`, the exact active enum variant when the root is an enum.
+- `active_variant()`, the statically refined active enum variant when one is required or known.
+
+A fully initialized enum without static refinement remains self-describing through its stored
+runtime tag. Partial enum cleanup is admitted only when the verifier seals an exact active variant.
 
 These values are derived inside the verifier from the retained verified CFG and ownership state;
 they are not copied from the raw cleanup list. A backend combines this sealed state with the
