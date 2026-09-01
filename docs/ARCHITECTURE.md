@@ -398,8 +398,8 @@ compile-time in-range constant. The internal Pair oracle is observed only throug
 over opaque verified views. The same private boundary now recognizes canonical String and
 `Vec<T>` type graphs. Its private owned-data checkpoint lowers String literals, explicit clone,
 checked concatenation, moves, return cleanup, and mutable root-local replacement; it also lowers
-Vec construction, explicit clone for exact `Vec<bool>` and `Vec<i32>`, moves, return, push, checked
-Copy-element indexing, and supported root-local replacement. Bounded private owned functions
+Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves,
+return, push, checked Copy-element indexing, and supported root-local replacement. Bounded private owned functions
 support exact owned parameters and internal calls,
 one top-level branch or while loop, terminal owned branch-result joins, reverse-order cleanup of
 branch/iteration locals, and a single stable mutable String or Vec root across the admitted loop
@@ -408,7 +408,8 @@ returns, and reverse-order drops bounded owned Struct, FixedArray, and Enum grap
 leaves. These operations use `InitializePlace` and `MoveFromPlace`; String/Vec replacement uses the
 infallible `ReplacePlace` commit after right-hand-side preparation. The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
-M3002, and preflights cumulative String-literal bytes at 8 MiB. Non-Copy Vec clone, owned aggregate clone,
+M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
+String elements, owned aggregate clone,
 owned projections/assignment, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
 admitted. Its sealed semantic result retains both the verified IR and the exact verified

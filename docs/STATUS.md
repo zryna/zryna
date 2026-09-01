@@ -122,8 +122,8 @@ compile or link an object, lower a backend, or activate a driver or CLI route.
 
 Issue #81 is in progress. Its current internal bounded private checkpoint
 supports String literals, explicit clone, checked concatenation, moves, return cleanup, and
-root-local replacement, plus Vec construction, explicit clone for exact `Vec<bool>` and `Vec<i32>`,
-moves, return, push, checked Copy-element indexing,
+root-local replacement, plus Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`,
+and `Vec<String>`, moves, return, push, checked Copy-element indexing,
 and replacement of supported exact Vec roots. Private zero-argument producers and one-argument
 owned identity calls are available internally. String/Vec functions also admit one canonical
 top-level no-phi `if`/`else` from a bool literal or Copy bool parameter; branch-local owners drop in
@@ -147,7 +147,8 @@ runtime ABI authority. An internal bounded fault/drop-trace oracle now covers ev
 failure of the implemented String and Vec allocation-bearing operations plus the separate checked
 Vec bounds trap; it authenticates status disposition/trap identity, pre-commit operand retention,
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
-executing an allocator or target runtime. Non-Copy Vec clone, owned aggregate clone/projections/assignment, general owned phi joins,
+executing an allocator or target runtime. General structural Vec clone beyond String elements,
+owned aggregate clone/projections/assignment, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

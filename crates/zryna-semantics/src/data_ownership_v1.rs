@@ -5997,13 +5997,18 @@ impl PrivateVecLowerer<'_, '_> {
                     binding.ty == expected && self.owners.contains(binding.place)
                 })?;
                 let end_pending = pending.checked_add(1)?;
+                let clones_non_copy_elements = self.element.category == TypeCategory::String;
                 Some(VecPreparationEstimate {
                     end_pending,
                     resources: OwnedStringPreparationEstimate {
                         end_pending,
                         peak_pending: end_pending,
-                        cleanup_plans: 1,
-                        cleanup_actions: pending,
+                        cleanup_plans: 1 + usize::from(clones_non_copy_elements),
+                        cleanup_actions: pending.checked_add(if clones_non_copy_elements {
+                            pending.checked_add(1)?
+                        } else {
+                            0
+                        })?,
                         values: 1,
                         places: 1,
                         transitions: 1,
@@ -6204,13 +6209,17 @@ impl PrivateVecLowerer<'_, '_> {
             self.reserved_cleanup_actions.checked_sub(actions).expect("reserved cleanup actions");
     }
 
+    #[allow(clippy::too_many_lines)]
     fn clone_vec(&mut self, operand: u32, expected: Ty, at: Span) -> Option<raw::ValueId> {
-        if !matches!(self.element.category, TypeCategory::Bool | TypeCategory::I32) {
+        if !matches!(
+            self.element.category,
+            TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String
+        ) {
             self.errors.at(
                 "ZRYNA-M3016",
                 at,
-                "Vec clone is currently sealed to exact Vec<bool> and Vec<i32>",
-                "use clone only with a private available Vec<bool> or Vec<i32>; Vec<String> clone is deferred",
+                "Vec clone is sealed to exact Vec<bool>, Vec<i32>, and Vec<String>",
+                "use clone only with one admitted exact private Vec element type",
             );
             return None;
         }
@@ -6252,6 +6261,20 @@ impl PrivateVecLowerer<'_, '_> {
             return None;
         }
         let actions = self.owners.pending().len();
+        let clones_non_copy_elements = self.element.category == TypeCategory::String;
+        let prefix_actions = if clones_non_copy_elements {
+            Some(actions.checked_add(1).or_else(|| {
+                self.errors.at(
+                    "ZRYNA-M3201",
+                    at,
+                    "Vec clone prefix cleanup overflows its checked action count",
+                    "reduce simultaneously live owned values",
+                );
+                None
+            })?)
+        } else {
+            None
+        };
         self.cfg.reserve_values(1, at, self.errors)?;
         if !self.reserve_local_place(at) {
             self.cfg.release_values(1);
@@ -6268,19 +6291,69 @@ impl PrivateVecLowerer<'_, '_> {
             self.cfg.release_values(1);
             return None;
         }
+        if prefix_actions
+            .is_some_and(|prefix_actions| !self.reserve_cleanup_capacity(prefix_actions, at))
+        {
+            self.release_cleanup_capacity(actions);
+            self.cfg.release_transitions(1);
+            self.release_local_place();
+            self.cfg.release_values(1);
+            return None;
+        }
+        if let Some(prefix_actions) = prefix_actions {
+            self.release_cleanup_capacity(prefix_actions);
+        }
         self.release_cleanup_capacity(actions);
         self.cfg.release_transitions(1);
         self.release_local_place();
         self.cfg.release_values(1);
         let cleanup = self.push_instruction_cleanup(at, None)?;
+        let result_owner = raw::PlaceId(u32::try_from(self.places.len()).expect("bounded places"));
+        let element_cleanup = if clones_non_copy_elements {
+            Some(self.push_vec_clone_prefix_cleanup(at, result_owner)?)
+        } else {
+            None
+        };
         Some(
             self.emit(
                 expected,
                 at,
-                raw::InstructionKind::VecClone { place: binding.place, cleanup },
+                raw::InstructionKind::VecClone { place: binding.place, cleanup, element_cleanup },
             )?
             .0,
         )
+    }
+
+    fn push_vec_clone_prefix_cleanup(
+        &mut self,
+        at: Span,
+        result_owner: raw::PlaceId,
+    ) -> Option<raw::CleanupPlanId> {
+        let action_count = self.owners.pending().len().checked_add(1)?;
+        if resource_budget_violation(
+            self.cleanup_plans.len(),
+            self.reserved_cleanup_plans.saturating_add(1),
+            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
+        ) || resource_budget_violation(
+            self.cleanup_actions,
+            self.reserved_cleanup_actions.saturating_add(action_count),
+            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+        ) {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "Vec clone element cleanup exceeds the per-function M3 limits",
+                "reduce simultaneously live owned values or fallible Vec clones",
+            );
+            return None;
+        }
+        let id = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).ok()?);
+        let actions = std::iter::once(raw::DropAction::DropVecInitializedPrefix(result_owner))
+            .chain(self.owners.pending().iter().rev().copied().map(raw::DropAction::DropPlace))
+            .collect();
+        self.cleanup_plans.push(raw::CleanupPlan { id, span: at, actions });
+        self.cleanup_actions += action_count;
+        Some(id)
     }
 
     fn condition(&mut self, id: u32, bool_ty: Ty) -> Option<raw::ValueId> {

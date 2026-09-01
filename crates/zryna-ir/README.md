@@ -133,10 +133,13 @@ no prepare-failure cleanup identity. The current semantic producer uses that ins
 private root-local String and supported Vec replacement; projection, call, and CFG replacement are
 not part of the current semantic checkpoint.
 
-`VecClone` currently admits only exact `Vec<bool>` and `Vec<i32>` sources, preserves the source
-owner, requires one distinct temporary result owner, and binds allocation failure to its exact
-prepare cleanup. It does not claim general `Vec<T: Clone>` support or prefix-safe non-Copy element
-initialization.
+`VecClone` currently admits only exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>` sources, preserves
+the source owner, and requires one distinct temporary result owner. Every clone binds allocation
+failure to its exact prepare cleanup. `Vec<String>` additionally binds per-element `StringClone`
+failure to a distinct sealed role whose first typed action reverse-drops the runtime-recorded
+initialized destination prefix before pre-existing roots. Executable consumers must use the typed
+verified drop-action view for this role rather than treating its root-only compatibility view as an
+ordinary whole-place drop. This does not claim general `Vec<T: Clone>` support.
 
 Every raw cleanup plan is bound to exactly one verified site and one closed role:
 `PrepareFailure`, `CallTrap`, `Return`, or `ControlledTrap`. A cleanup-bearing site with a foreign

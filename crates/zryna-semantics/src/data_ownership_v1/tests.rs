@@ -16,15 +16,15 @@ use super::{
     resource_budget_violation, semantic_preflight, span, string_byte_budget_violation,
     terminal_owned_if, value_budget_violation, vec_push_target_invalid,
 };
-use zryna_diagnostics::PrimaryLocation;
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity, VerifiedCleanupRole,
-    VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind,
-    VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
+    VerifiedDropActionKind, VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction,
+    VerifiedInstructionKind, VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
 };
 use zryna_ownership_runtime_abi::{
-    LogicalOperation, RuntimeStatus, VerifiedOwnershipRuntimeAbi, VerifiedStatusDisposition,
-    VerifiedStatusTrapIdentity, operation_accepts_status, validate_failure_atomic_transition,
+    LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, VerifiedOwnershipRuntimeAbi,
+    VerifiedStatusDisposition, VerifiedStatusTrapIdentity, operation_accepts_status,
+    validate_failure_atomic_transition,
 };
 use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap, Span as FaultSpan};
 use zryna_syntax::v4::{
@@ -358,8 +358,9 @@ fn untrusted_range(
 fn private_vec_clone_fixture(element: &str) -> (String, RawProjectSyntaxSnapshot) {
     use zryna_syntax::v4::RawExpressionKind;
 
+    let elements = if element == "String" { "[\"a\", \"b\", \"c\"]" } else { "[]" };
     let source = format!(
-        "function copy(): Vec<{element}> {{ const source: Vec<{element}> = Vec<{element}>([]); return clone(source); }}"
+        "function copy(): Vec<{element}> {{ const source: Vec<{element}> = Vec<{element}>({elements}); return clone(source); }}"
     );
     let token = |needle, ordinal| nth_untrusted_span(&source, needle, ordinal);
     let range = |start, start_ordinal, end, end_ordinal| {
@@ -413,34 +414,51 @@ fn private_vec_clone_fixture(element: &str) -> (String, RawProjectSyntaxSnapshot
     let root = range("{", 0, "}", 0);
     let local = range("const", 0, ";", 0);
     let returned = range("return", 0, ";", 1);
-    let expressions = vec![
-        RawExpressionSyntax {
-            span: range(&spelling, 2, ")", 1),
-            kind: RawExpressionKind::VecConstruction {
-                type_syntax: vec_types[2],
-                open_paren_span: token("(", 1),
-                open_bracket_span: token("[", 0),
-                elements: Vec::new(),
-                close_bracket_span: token("]", 0),
-                close_paren_span: token(")", 1),
-            },
+    let mut expressions = Vec::new();
+    let element_ids = if element == "String" {
+        ["\"a\"", "\"b\"", "\"c\""]
+            .into_iter()
+            .map(|spelling| {
+                let id = u32::try_from(expressions.len()).expect("expression id");
+                expressions.push(RawExpressionSyntax {
+                    span: token(spelling, 0),
+                    kind: RawExpressionKind::StringLiteral { spelling: spelling.to_owned() },
+                });
+                id
+            })
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+    let construct = u32::try_from(expressions.len()).expect("expression id");
+    expressions.push(RawExpressionSyntax {
+        span: range(&spelling, 2, ")", 1),
+        kind: RawExpressionKind::VecConstruction {
+            type_syntax: vec_types[2],
+            open_paren_span: token("(", 1),
+            open_bracket_span: token("[", 0),
+            elements: element_ids,
+            close_bracket_span: token("]", 0),
+            close_paren_span: token(")", 1),
         },
-        RawExpressionSyntax {
-            span: token("source", 1),
-            kind: RawExpressionKind::Reference {
-                name: RawIdentifierSyntax { text: "source".to_owned(), span: token("source", 1) },
-            },
+    });
+    let reference = u32::try_from(expressions.len()).expect("expression id");
+    expressions.push(RawExpressionSyntax {
+        span: token("source", 1),
+        kind: RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "source".to_owned(), span: token("source", 1) },
         },
-        RawExpressionSyntax {
-            span: range("clone", 0, ")", 2),
-            kind: RawExpressionKind::Clone {
-                keyword_span: token("clone", 0),
-                open_paren_span: token("(", 2),
-                value: 1,
-                close_paren_span: token(")", 2),
-            },
+    });
+    let cloned = u32::try_from(expressions.len()).expect("expression id");
+    expressions.push(RawExpressionSyntax {
+        span: range("clone", 0, ")", 2),
+        kind: RawExpressionKind::Clone {
+            keyword_span: token("clone", 0),
+            open_paren_span: token("(", 2),
+            value: reference,
+            close_paren_span: token(")", 2),
         },
-    ];
+    });
     let statements = vec![
         RawStatementSyntax {
             span: local,
@@ -450,7 +468,7 @@ fn private_vec_clone_fixture(element: &str) -> (String, RawProjectSyntaxSnapshot
                 name: RawIdentifierSyntax { text: "source".to_owned(), span: token("source", 0) },
                 type_syntax: vec_types[1],
                 equals_span: token("=", 0),
-                initializer: 0,
+                initializer: construct,
                 semicolon_span: token(";", 0),
             },
         },
@@ -458,7 +476,7 @@ fn private_vec_clone_fixture(element: &str) -> (String, RawProjectSyntaxSnapshot
             span: returned,
             kind: RawStatementKind::Return {
                 keyword_span: token("return", 0),
-                value: 2,
+                value: cloned,
                 semicolon_span: token(";", 1),
             },
         },
@@ -3613,6 +3631,7 @@ fn pair_input<'a>(
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum OwnedFaultInjection {
     Runtime { operation: LogicalOperation, status: RuntimeStatus },
+    VecCloneElement { status: RuntimeStatus, source_length: u64, completed_prefix: u64 },
     Bounds,
 }
 
@@ -3633,6 +3652,8 @@ struct OwnedFaultTrace {
     uncommitted_result: Option<FaultValueIdentity>,
     retained_roots: Vec<FaultPlaceIdentity>,
     reverse_cleanup: Vec<FaultPlaceIdentity>,
+    prefix_owner: Option<FaultPlaceIdentity>,
+    reverse_prefix: Vec<u64>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -3642,6 +3663,7 @@ enum OwnedFaultOracleError {
     MissingPrepareCleanup,
     AtomicityMismatch,
     EventLimit,
+    InvalidVecClonePrefix,
 }
 
 fn runtime_operation(kind: VerifiedInstructionKind) -> Option<LogicalOperation> {
@@ -3678,6 +3700,7 @@ fn runtime_fault_disposition(
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn owned_fault_trace(
     abi: &VerifiedOwnershipRuntimeAbi,
     function: VerifiedFunction<'_>,
@@ -3686,7 +3709,17 @@ fn owned_fault_trace(
     retained_events: usize,
     event_limit: usize,
 ) -> Result<OwnedFaultTrace, OwnedFaultOracleError> {
-    if retained_events.checked_add(1).is_none_or(|total| total > event_limit) {
+    let prefix_events = match injection {
+        OwnedFaultInjection::VecCloneElement { source_length, completed_prefix, .. } => {
+            if source_length > MAX_VEC_ELEMENTS || completed_prefix >= source_length {
+                return Err(OwnedFaultOracleError::InvalidVecClonePrefix);
+            }
+            usize::try_from(completed_prefix).map_err(|_| OwnedFaultOracleError::EventLimit)?
+        }
+        _ => 0,
+    };
+    let new_events = prefix_events.checked_add(1).ok_or(OwnedFaultOracleError::EventLimit)?;
+    if retained_events.checked_add(new_events).is_none_or(|total| total > event_limit) {
         return Err(OwnedFaultOracleError::EventLimit);
     }
     let kind = instruction.kind();
@@ -3695,7 +3728,8 @@ fn owned_fault_trace(
             OwnedFaultDisposition::ControlledTrap(VerifiedTrapIdentity::BoundsV1)
         }
         OwnedFaultInjection::Bounds => return Err(OwnedFaultOracleError::StatusMismatch),
-        OwnedFaultInjection::Runtime { status: RuntimeStatus::Ok, .. } => {
+        OwnedFaultInjection::Runtime { status: RuntimeStatus::Ok, .. }
+        | OwnedFaultInjection::VecCloneElement { status: RuntimeStatus::Ok, .. } => {
             return Err(OwnedFaultOracleError::SuccessStatus);
         }
         OwnedFaultInjection::Runtime { operation, status } => {
@@ -3709,18 +3743,71 @@ fn owned_fault_trace(
                 .map_err(|_| OwnedFaultOracleError::AtomicityMismatch)?;
             runtime_fault_disposition(abi, status).ok_or(OwnedFaultOracleError::StatusMismatch)?
         }
+        OwnedFaultInjection::VecCloneElement { status, .. } => {
+            if kind != VerifiedInstructionKind::VecClone
+                || !operation_accepts_status(LogicalOperation::StringClone, status)
+            {
+                return Err(OwnedFaultOracleError::StatusMismatch);
+            }
+            validate_failure_atomic_transition(LogicalOperation::StringClone, status, true, true)
+                .map_err(|_| OwnedFaultOracleError::AtomicityMismatch)?;
+            runtime_fault_disposition(abi, status).ok_or(OwnedFaultOracleError::StatusMismatch)?
+        }
     };
-    let cleanup = instruction.cleanup().ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?;
+    let element_failure = matches!(injection, OwnedFaultInjection::VecCloneElement { .. });
+    let cleanup = if element_failure {
+        instruction
+            .vec_clone_element_cleanup()
+            .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
+    } else {
+        instruction.cleanup().ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
+    };
     let plan = function
         .cleanup_plans()
         .find(|plan| plan.id() == cleanup)
         .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?;
     let site = plan.site();
-    if site.role() != VerifiedCleanupRole::PrepareFailure {
+    let expected_role = if element_failure {
+        VerifiedCleanupRole::VecCloneElementFailure
+    } else {
+        VerifiedCleanupRole::PrepareFailure
+    };
+    if site.role() != expected_role {
         return Err(OwnedFaultOracleError::MissingPrepareCleanup);
     }
-    let reverse_cleanup =
-        instruction.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>();
+    let actions = if element_failure {
+        instruction.vec_clone_element_failure_drop_actions().collect::<Vec<_>>()
+    } else {
+        instruction.derived_drop_actions().collect::<Vec<_>>()
+    };
+    let (prefix_owner, reverse_cleanup) = if element_failure {
+        let Some((prefix, remaining)) = actions.split_first() else {
+            return Err(OwnedFaultOracleError::AtomicityMismatch);
+        };
+        if prefix.kind() != VerifiedDropActionKind::VecInitializedPrefix
+            || remaining.iter().any(|action| action.kind() != VerifiedDropActionKind::Place)
+        {
+            return Err(OwnedFaultOracleError::AtomicityMismatch);
+        }
+        (
+            Some(prefix.root()),
+            remaining
+                .iter()
+                .map(zryna_ir::data_ownership_v1::VerifiedDropAction::root)
+                .collect::<Vec<_>>(),
+        )
+    } else {
+        if actions.iter().any(|action| action.kind() != VerifiedDropActionKind::Place) {
+            return Err(OwnedFaultOracleError::AtomicityMismatch);
+        }
+        (
+            None,
+            actions
+                .iter()
+                .map(zryna_ir::data_ownership_v1::VerifiedDropAction::root)
+                .collect::<Vec<_>>(),
+        )
+    };
     let mut retained_roots = instruction.place_operands().collect::<Vec<_>>();
     for value in instruction.value_operands() {
         let candidates = function
@@ -3750,6 +3837,20 @@ fn owned_fault_trace(
     {
         return Err(OwnedFaultOracleError::AtomicityMismatch);
     }
+    if let (Some(result), Some(prefix)) = (instruction.result(), prefix_owner) {
+        let matches_result = function.places().any(|place| {
+            place.kind() == VerifiedPlaceKind::Temporary(result) && place.id() == prefix
+        });
+        if !matches_result {
+            return Err(OwnedFaultOracleError::AtomicityMismatch);
+        }
+    }
+    let reverse_prefix = match injection {
+        OwnedFaultInjection::VecCloneElement { completed_prefix, .. } => {
+            (0..completed_prefix).rev().collect()
+        }
+        _ => Vec::new(),
+    };
     Ok(OwnedFaultTrace {
         kind,
         span: instruction.span(),
@@ -3762,6 +3863,8 @@ fn owned_fault_trace(
         uncommitted_result: instruction.result(),
         retained_roots,
         reverse_cleanup,
+        prefix_owner,
+        reverse_prefix,
     })
 }
 
@@ -6227,23 +6330,160 @@ fn private_vec_bool_clone_uses_the_same_copy_only_contract() {
 }
 
 #[test]
-fn private_vec_clone_rejects_string_source_precisely() {
+#[allow(clippy::too_many_lines)]
+fn private_vec_string_clone_seals_allocation_and_prefix_failures() {
     let (source, raw) = private_vec_clone_fixture("String");
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful Vec<String> clone");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("Vec<String> clone deferred");
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3016");
+    let program = lower(pair_input(&syntax, &sources)).expect("private Vec<String> clone");
+    let abi = program.runtime_abi();
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let clone = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::VecClone)
+        .expect("VecClone<String>");
+    assert_eq!(clone.place_operands().next().expect("source").index(), 4);
+    assert_eq!(clone.result().expect("result").index(), 4);
     assert_eq!(
-        diagnostics[0].primary(),
-        &PrimaryLocation::Source {
-            span: sources
-                .span(
-                    sources.verify_file_id(0).expect("file"),
-                    nth_untrusted_span(&source, "clone", 0).start,
-                    nth_untrusted_span(&source, ")", 2).end,
-                )
-                .expect("span"),
+        clone.derived_drop_actions().map(|action| action.root().index()).collect::<Vec<_>>(),
+        [4]
+    );
+    let element_actions = clone.vec_clone_element_failure_drop_actions().collect::<Vec<_>>();
+    assert_eq!(
+        element_actions
+            .iter()
+            .map(zryna_ir::data_ownership_v1::VerifiedDropAction::kind)
+            .collect::<Vec<_>>(),
+        [VerifiedDropActionKind::VecInitializedPrefix, VerifiedDropActionKind::Place]
+    );
+    assert_eq!(
+        element_actions.iter().map(|action| action.root().index()).collect::<Vec<_>>(),
+        [5, 4]
+    );
+
+    let allocation = owned_fault_trace(
+        abi,
+        function,
+        clone,
+        OwnedFaultInjection::Runtime {
+            operation: LogicalOperation::VecAllocate,
+            status: RuntimeStatus::Allocation,
+        },
+        0,
+        1,
+    )
+    .expect("allocation phase");
+    assert_eq!(
+        allocation.retained_roots.iter().map(|place| place.index()).collect::<Vec<_>>(),
+        [4]
+    );
+    assert_eq!(
+        allocation.reverse_cleanup.iter().map(|place| place.index()).collect::<Vec<_>>(),
+        [4]
+    );
+    assert!(allocation.prefix_owner.is_none());
+
+    for (status, expected) in [
+        (
+            RuntimeStatus::Allocation,
+            OwnedFaultDisposition::ControlledTrap(VerifiedTrapIdentity::AllocationV1),
+        ),
+        (
+            RuntimeStatus::Capacity,
+            OwnedFaultDisposition::ControlledTrap(VerifiedTrapIdentity::CapacityV1),
+        ),
+        (RuntimeStatus::AbiViolation, OwnedFaultDisposition::HostFailure),
+    ] {
+        for completed_prefix in [0, 1, 2] {
+            let injection =
+                OwnedFaultInjection::VecCloneElement { status, source_length: 3, completed_prefix };
+            let event_limit = usize::try_from(completed_prefix).expect("small prefix") + 1;
+            let first = owned_fault_trace(abi, function, clone, injection, 0, event_limit)
+                .expect("element clone failure");
+            let second = owned_fault_trace(abi, function, clone, injection, 0, event_limit)
+                .expect("deterministic element failure");
+            assert_eq!(first, second);
+            assert_eq!(first.disposition, expected);
+            assert_eq!(
+                first.retained_roots.iter().map(|place| place.index()).collect::<Vec<_>>(),
+                [4]
+            );
+            assert_eq!(
+                first.reverse_cleanup.iter().map(|place| place.index()).collect::<Vec<_>>(),
+                [4]
+            );
+            assert_eq!(first.prefix_owner.expect("prefix owner").index(), 5);
+            assert_eq!(first.reverse_prefix, (0..completed_prefix).rev().collect::<Vec<_>>());
         }
+    }
+    let middle = OwnedFaultInjection::VecCloneElement {
+        status: RuntimeStatus::Allocation,
+        source_length: 3,
+        completed_prefix: 2,
+    };
+    assert_eq!(
+        owned_fault_trace(abi, function, clone, middle, 0, 2),
+        Err(OwnedFaultOracleError::EventLimit)
+    );
+    assert_eq!(
+        owned_fault_trace(
+            abi,
+            function,
+            clone,
+            OwnedFaultInjection::VecCloneElement {
+                status: RuntimeStatus::Allocation,
+                source_length: MAX_VEC_ELEMENTS,
+                completed_prefix: u64::MAX,
+            },
+            usize::MAX,
+            usize::MAX,
+        ),
+        Err(OwnedFaultOracleError::InvalidVecClonePrefix)
+    );
+    for (source_length, completed_prefix) in [(3, 3), (MAX_VEC_ELEMENTS + 1, 0), (0, 0)] {
+        assert_eq!(
+            owned_fault_trace(
+                abi,
+                function,
+                clone,
+                OwnedFaultInjection::VecCloneElement {
+                    status: RuntimeStatus::Allocation,
+                    source_length,
+                    completed_prefix,
+                },
+                0,
+                usize::MAX,
+            ),
+            Err(OwnedFaultOracleError::InvalidVecClonePrefix)
+        );
+    }
+
+    let replay = lower(pair_input(&syntax, &sources)).expect("deterministic Vec<String> replay");
+    let replay_clone = replay
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::VecClone)
+        .expect("replayed clone");
+    assert_eq!(
+        replay_clone
+            .vec_clone_element_failure_drop_actions()
+            .map(|action| (action.kind(), action.root().index()))
+            .collect::<Vec<_>>(),
+        element_actions
+            .iter()
+            .map(|action| (action.kind(), action.root().index()))
+            .collect::<Vec<_>>()
     );
 }
 
@@ -6436,6 +6676,123 @@ fn private_vec_clone_preflights_exact_first_extra_and_overflow_atomically() {
             span(&sources, function.body.expressions[1].span)
         };
         assert_eq!(diagnostics[0].primary_span(), Some(expected));
+    }
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn private_vec_string_clone_prefix_cleanup_is_exact_plus_one_and_overflow_atomic() {
+    let (source, raw) = private_vec_clone_fixture("String");
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful Vec<String> clone");
+    let input = pair_input(&syntax, &sources);
+    let mut setup_errors = Errors::new(&sources);
+    semantic_preflight(input, &mut setup_errors);
+    let (graph, declarations) = super::build_graph(input, &mut setup_errors);
+    let layouts = zryna_layout::verify(&graph, &sources, zryna_layout::StorageTarget::Linear32V1)
+        .expect("verified layouts");
+    let node_types = super::map_node_types(&graph, &layouts, &mut setup_errors);
+    assert!(setup_errors.finish().is_empty());
+    let vec_ty = node_types
+        .iter()
+        .flatten()
+        .find(|ty| ty.category == zryna_layout::TypeCategory::Vec)
+        .copied()
+        .expect("Vec<String>");
+    let element = node_types
+        .iter()
+        .flatten()
+        .find(|ty| ty.category == zryna_layout::TypeCategory::String)
+        .copied()
+        .expect("String");
+    let file = &syntax.files()[0];
+    let function = &file.functions()[0];
+    let catalog = FunctionCatalog { modules: vec![vec![]] };
+    let at = span(&sources, function.body.expressions[5].span);
+
+    for mode in 0..4 {
+        let mut errors = Errors::new(&sources);
+        let cfg = OwnedCfgState::single_block(at, &mut errors).expect("entry");
+        let source_place = raw::PlaceId(0);
+        let owners = OwnerState {
+            pending: vec![source_place],
+            value_owners: std::collections::BTreeMap::new(),
+        };
+        let mut lowerer = super::PrivateVecLowerer {
+            input,
+            file,
+            function,
+            module: 0,
+            declarations: &declarations,
+            graph: &graph,
+            node_types: &node_types,
+            catalog: &catalog,
+            vec_ty,
+            element,
+            errors: &mut errors,
+            bindings: std::collections::BTreeMap::from([(
+                "source".to_owned(),
+                super::Binding { ty: vec_ty, place: source_place, mutable: false },
+            )]),
+            places: vec![raw::Place {
+                id: source_place,
+                ty: vec_ty.ir,
+                span: at,
+                kind: raw::PlaceKind::Local(0),
+            }],
+            reserved_places: 0,
+            cfg,
+            cleanup_plans: Vec::new(),
+            cleanup_actions: 0,
+            reserved_cleanup_plans: if mode == 1 {
+                zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION - 1
+            } else {
+                zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION - 2
+            },
+            reserved_cleanup_actions: match mode {
+                2 => zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION - 2,
+                3 => usize::MAX,
+                _ => zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION - 3,
+            },
+            owners,
+            known_string_bytes: std::collections::BTreeMap::new(),
+            next_value: 0,
+            next_local: 1,
+        };
+        let before = (
+            lowerer.places.clone(),
+            lowerer.cfg.current_block().expect("entry").instructions.clone(),
+            lowerer.owners.clone(),
+            lowerer.cleanup_plans.clone(),
+            lowerer.next_value,
+        );
+        let result = lowerer.clone_vec(4, vec_ty, at);
+        if mode == 0 {
+            assert!(result.is_some(), "exact two-phase cleanup budget");
+            assert_eq!(lowerer.cleanup_plans.len(), 2);
+            assert_eq!(lowerer.cleanup_actions, 3);
+        } else {
+            assert!(result.is_none(), "first extra or overflow must fail");
+            assert_eq!(
+                (
+                    lowerer.places.clone(),
+                    lowerer.cfg.current_block().expect("entry").instructions.clone(),
+                    lowerer.owners.clone(),
+                    lowerer.cleanup_plans.clone(),
+                    lowerer.next_value,
+                ),
+                before
+            );
+        }
+        drop(lowerer);
+        let diagnostics = errors.finish();
+        if mode == 0 {
+            assert!(diagnostics.is_empty());
+        } else {
+            assert_eq!(diagnostics.len(), 1);
+            assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
+            assert_eq!(diagnostics[0].primary_span(), Some(at));
+        }
     }
 }
 

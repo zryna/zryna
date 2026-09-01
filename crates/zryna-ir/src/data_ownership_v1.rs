@@ -217,7 +217,7 @@ pub mod raw {
         StringFromUtf8 { bytes: Vec<u8>, cleanup: CleanupPlanId },
         StringClone { place: PlaceId, cleanup: CleanupPlanId },
         StringConcat { left: PlaceId, right: PlaceId, cleanup: CleanupPlanId },
-        VecClone { place: PlaceId, cleanup: CleanupPlanId },
+        VecClone { place: PlaceId, cleanup: CleanupPlanId, element_cleanup: Option<CleanupPlanId> },
         VecConstruct { elements: Vec<ValueId>, cleanup: CleanupPlanId },
         VecPush { vector: PlaceId, value: ValueId, cleanup: CleanupPlanId },
         SharedConstruct { value: ValueId, cleanup: CleanupPlanId },
@@ -279,6 +279,7 @@ pub mod raw {
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
     pub enum DropAction {
         DropPlace(PlaceId),
+        DropVecInitializedPrefix(PlaceId),
     }
 }
 
@@ -389,6 +390,8 @@ impl CleanupPlanIdentity {
 pub enum VerifiedCleanupRole {
     /// A fallible operation failed before committing its result.
     PrepareFailure,
+    /// One element clone failed after a destination Vec prefix was initialized.
+    VecCloneElementFailure,
     /// A direct callee trapped after its by-value arguments were transferred.
     CallTrap,
     /// A function returned normally after transferring its result.
@@ -877,6 +880,16 @@ impl<'a> VerifiedInstruction<'a> {
             I::EndBorrow { .. } => VerifiedInstructionKind::EndBorrow,
         }
     }
+    /// Returns the separately sealed per-element failure cleanup for non-Copy Vec clone.
+    #[must_use]
+    pub const fn vec_clone_element_cleanup(self) -> Option<CleanupPlanIdentity> {
+        let raw::InstructionKind::VecClone { element_cleanup: Some(cleanup), .. } =
+            &self.instruction.kind
+        else {
+            return None;
+        };
+        Some(CleanupPlanIdentity { owner: self.function.id(), index: cleanup.0 })
+    }
     #[must_use]
     pub fn result_type(self) -> Option<LayoutTypeId> {
         self.instruction
@@ -1014,6 +1027,35 @@ impl<'a> VerifiedInstruction<'a> {
                         &variants,
                     )
                 }),
+            })
+            .unwrap_or_default();
+        actions.into_iter()
+    }
+    /// Returns the sealed per-element failure cleanup for a non-Copy Vec clone.
+    #[must_use]
+    pub fn vec_clone_element_failure_drop_actions(
+        self,
+    ) -> impl ExactSizeIterator<Item = VerifiedDropAction> {
+        let state = derive_state_before(
+            self.function.function,
+            &self.function.owner.linear32,
+            self.block_index,
+            self.instruction_index,
+        );
+        let actions = state
+            .and_then(|(states, variants)| {
+                let raw::InstructionKind::VecClone { element_cleanup: Some(plan), .. } =
+                    &self.instruction.kind
+                else {
+                    return None;
+                };
+                Some(sealed_drop_actions(
+                    self.function.id(),
+                    self.function.function,
+                    *plan,
+                    &states,
+                    &variants,
+                ))
             })
             .unwrap_or_default();
         actions.into_iter()
@@ -1185,10 +1227,19 @@ impl<'a> VerifiedTerminator<'a> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerifiedDropAction {
     root: PlaceIdentity,
+    kind: VerifiedDropActionKind,
     moved_projections: Vec<PlaceIdentity>,
     initialized_projections: Vec<PlaceIdentity>,
     active_variant: Option<u32>,
     active_variants: Vec<VerifiedActiveVariant>,
+}
+/// Closed cleanup behavior for one verified drop action.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum VerifiedDropActionKind {
+    /// Recursively drop one fully or statically partially initialized owner.
+    Place,
+    /// Drop the runtime-recorded initialized Vec prefix in reverse, then release its storage.
+    VecInitializedPrefix,
 }
 /// One exact active enum variant retained for recursive partial cleanup.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1212,6 +1263,10 @@ impl VerifiedDropAction {
     #[must_use]
     pub const fn root(&self) -> PlaceIdentity {
         self.root
+    }
+    #[must_use]
+    pub const fn kind(&self) -> VerifiedDropActionKind {
+        self.kind
     }
     #[must_use]
     pub fn moved_projections(&self) -> impl ExactSizeIterator<Item = PlaceIdentity> + '_ {
@@ -1283,7 +1338,8 @@ impl<'a> VerifiedCleanupPlan<'a> {
     #[must_use]
     pub fn actions(self) -> impl ExactSizeIterator<Item = PlaceIdentity> + 'a {
         self.plan.actions.iter().map(move |action| match action {
-            raw::DropAction::DropPlace(place) => {
+            raw::DropAction::DropPlace(place)
+            | raw::DropAction::DropVecInitializedPrefix(place) => {
                 PlaceIdentity { owner: self.function.id(), index: place.0 }
             }
         })
@@ -1734,7 +1790,8 @@ fn verify_structure(
                 let mut dropped = BTreeSet::new();
                 if plan.id.0 as usize != plan_index
                     || plan.actions.iter().any(|a| match a {
-                        raw::DropAction::DropPlace(p) => {
+                        raw::DropAction::DropPlace(p)
+                        | raw::DropAction::DropVecInitializedPrefix(p) => {
                             p.0 as usize >= function.places.len() || !dropped.insert(*p)
                         }
                     })
@@ -2496,8 +2553,13 @@ fn sealed_drop_actions(
         .actions
         .iter()
         .map(|action| {
-            let raw::DropAction::DropPlace(root) = action;
-            sealed_drop_action(owner, function, *root, states, variants)
+            let (root, kind) = match action {
+                raw::DropAction::DropPlace(root) => (*root, VerifiedDropActionKind::Place),
+                raw::DropAction::DropVecInitializedPrefix(root) => {
+                    (*root, VerifiedDropActionKind::VecInitializedPrefix)
+                }
+            };
+            sealed_drop_action_with_kind(owner, function, root, states, variants, kind)
         })
         .collect()
 }
@@ -2508,6 +2570,24 @@ fn sealed_drop_action(
     root: raw::PlaceId,
     states: &[PlaceState],
     variants: &[Option<u32>],
+) -> VerifiedDropAction {
+    sealed_drop_action_with_kind(
+        owner,
+        function,
+        root,
+        states,
+        variants,
+        VerifiedDropActionKind::Place,
+    )
+}
+
+fn sealed_drop_action_with_kind(
+    owner: FunctionIdentity,
+    function: &raw::Function,
+    root: raw::PlaceId,
+    states: &[PlaceState],
+    variants: &[Option<u32>],
+    kind: VerifiedDropActionKind,
 ) -> VerifiedDropAction {
     let moved_projections = function
         .places
@@ -2543,6 +2623,7 @@ fn sealed_drop_action(
         .collect();
     VerifiedDropAction {
         root: PlaceIdentity { owner, index: root.0 },
+        kind,
         moved_projections,
         initialized_projections,
         active_variant: variants[root.0 as usize],
@@ -2639,6 +2720,14 @@ fn verify_ownership_dataflow(
             }
             if let Some(cleanup) = instruction_cleanup(&instruction.kind) {
                 verify_cleanup(cleanup, function, layouts, &flow, errors);
+            }
+            if let raw::InstructionKind::VecClone { element_cleanup: Some(cleanup), .. } =
+                &instruction.kind
+            {
+                let result_owner = instruction
+                    .result
+                    .and_then(|result| value_owners.get(result.id.0 as usize).copied().flatten());
+                verify_vec_clone_element_cleanup(*cleanup, result_owner, function, &flow, errors);
             }
             apply_ownership_instruction(
                 instruction,
@@ -2773,6 +2862,16 @@ fn cleanup_references(function: &raw::Function) -> Vec<CleanupReference> {
                     block: block_index,
                     instruction: Some(instruction_index),
                     role,
+                });
+            }
+            if let raw::InstructionKind::VecClone { element_cleanup: Some(plan), .. } =
+                instruction.kind
+            {
+                references.push(CleanupReference {
+                    plan,
+                    block: block_index,
+                    instruction: Some(instruction_index),
+                    role: VerifiedCleanupRole::VecCloneElementFailure,
                 });
             }
         }
@@ -3436,14 +3535,9 @@ fn verify_cleanup(
     errors: &mut Errors,
 ) {
     let Some(plan) = function.cleanup_plans.get(id.0 as usize) else { return };
-    let expected = flow.pending.iter().rev().copied().collect::<Vec<_>>();
-    let claimed = plan
-        .actions
-        .iter()
-        .map(|action| match action {
-            raw::DropAction::DropPlace(place) => *place,
-        })
-        .collect::<Vec<_>>();
+    let roots = flow.pending.iter().rev().copied().collect::<Vec<_>>();
+    let expected = roots.iter().copied().map(raw::DropAction::DropPlace).collect::<Vec<_>>();
+    let claimed = plan.actions.clone();
     if claimed != expected {
         errors.push(error_at(
             "ZRYNA-I3012",
@@ -3452,7 +3546,7 @@ fn verify_cleanup(
             "drop every live non-Copy root exactly once in reverse completion order",
         ));
     }
-    for root in &expected {
+    for root in &roots {
         for place in function.places.iter().filter(|place| {
             place.id == *root || is_projection_below(place.id, *root, &function.places)
         }) {
@@ -3472,6 +3566,36 @@ fn verify_cleanup(
                 ));
             }
         }
+    }
+}
+
+fn verify_vec_clone_element_cleanup(
+    id: raw::CleanupPlanId,
+    result_owner: Option<raw::PlaceId>,
+    function: &raw::Function,
+    flow: &OwnershipFlow,
+    errors: &mut Errors,
+) {
+    let Some(plan) = function.cleanup_plans.get(id.0 as usize) else { return };
+    let Some(result_owner) = result_owner else {
+        errors.push(error_at(
+            "ZRYNA-I3012",
+            plan.span,
+            "Vec clone element cleanup lacks its distinct destination owner",
+            "bind the clone result to one exact temporary owner",
+        ));
+        return;
+    };
+    let expected = std::iter::once(raw::DropAction::DropVecInitializedPrefix(result_owner))
+        .chain(flow.pending.iter().rev().copied().map(raw::DropAction::DropPlace))
+        .collect::<Vec<_>>();
+    if plan.actions != expected {
+        errors.push(error_at(
+            "ZRYNA-I3013",
+            plan.span,
+            "Vec clone element cleanup does not reverse-drop the completed destination prefix before live roots",
+            "drop the initialized destination prefix first, then every pre-existing owner in reverse order",
+        ));
     }
 }
 
@@ -4012,14 +4136,21 @@ fn verify_operation_types(
                 && place_type(*right) == result_type
                 && result == Some(TypeCategory::String)
         }
-        I::VecClone { place, .. } => {
+        I::VecClone { place, element_cleanup, .. } => {
             place_type(*place) == result_type
                 && result_type.and_then(|ty| layout_type(layouts, ty)).is_some_and(|ty| {
                     ty.category() == TypeCategory::Vec
                         && ty.referenced_type().is_some_and(|element| {
                             layouts.type_by_id(element).is_some_and(|element| {
-                                matches!(element.category(), TypeCategory::Bool | TypeCategory::I32)
-                                    && element.drop_kind() == 0
+                                match element.category() {
+                                    TypeCategory::Bool | TypeCategory::I32 => {
+                                        element.drop_kind() == 0 && element_cleanup.is_none()
+                                    }
+                                    TypeCategory::String => {
+                                        element.drop_kind() != 0 && element_cleanup.is_some()
+                                    }
+                                    _ => false,
+                                }
                             })
                         })
                 })
@@ -4249,10 +4380,14 @@ fn verify_instruction_shape(
         | I::FixedArrayIndexCopy { place, cleanup, .. }
         | I::VecIndexCopy { place, cleanup, .. }
         | I::StringClone { place, cleanup }
-        | I::VecClone { place, cleanup }
         | I::SharedClone { place, cleanup }
         | I::WeakDowngrade { place, cleanup }
         | I::WeakClone { place, cleanup } => !place_valid(*place) || !cleanup_valid(*cleanup),
+        I::VecClone { place, cleanup, element_cleanup } => {
+            !place_valid(*place)
+                || !cleanup_valid(*cleanup)
+                || element_cleanup.is_some_and(|cleanup| !cleanup_valid(cleanup))
+        }
         I::StringFromUtf8 { cleanup, .. }
         | I::DirectCall { cleanup, .. }
         | I::VecConstruct { cleanup, .. }

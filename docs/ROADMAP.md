@@ -197,8 +197,8 @@ artifact, or host capability.
 
 Issue #81 is in progress at a bounded internal checkpoint. Private functions now cover String
 literals, explicit clone, checked concatenation, moves, return cleanup, and root-local replacement,
-plus Vec construction, explicit clone for exact `Vec<bool>` and `Vec<i32>`, moves, return, push,
-checked Copy-element indexing, and supported exact
+plus Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves,
+return, push, checked Copy-element indexing, and supported exact
 root-local replacement. Zero-argument producers and one-argument owned identity calls transfer
 owners through independently verified direct-call boundaries. One canonical top-level no-phi
 String/Vec branch restores its incoming owner state after reverse-dropping branch locals, and one
@@ -215,7 +215,8 @@ separate verified trap, and proves pre-commit retention, result exclusion, rever
 determinism, and bounded trace accounting without runtime execution. A bounded parameter-free private straight-line route also constructs, moves, returns,
 and drops owned Struct, FixedArray, and Enum graphs with Copy/String leaves. The private String and
 aggregate/enum routes retain their distinct M3011 and M3014 moved-owner diagnostics, and unresolved
-bindings use M3002. Non-Copy Vec clone, owned aggregate clone/projections/assignment, general owned joins,
+bindings use M3002. General structural Vec clone beyond String elements, owned aggregate
+clone/projections/assignment, general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits remain closure
 work. Issue #81 is
 not complete, so #82 remains planned and is not ready to start.

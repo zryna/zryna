@@ -11,8 +11,8 @@ use super::{
     MAX_FUNCTIONS_PER_MODULE, MAX_LOOP_NESTING, MAX_MODULES, MAX_NOMINAL_DECLARATIONS,
     MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, MAX_PARAMETERS_PER_FUNCTION, MAX_PLACES_PER_FUNCTION,
     MAX_STATIC_CALL_DEPTH, MAX_STRING_LITERAL_BYTES, MAX_VALUES_PER_FUNCTION,
-    RuntimeContractIdentity, VerifiedCleanupRole, VerifiedInstructionKind, raw, verify,
-    verify_reducible_loops,
+    RuntimeContractIdentity, VerifiedCleanupRole, VerifiedDropActionKind, VerifiedInstructionKind,
+    raw, verify, verify_reducible_loops,
 };
 
 fn authorities() -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::VerifiedLayouts) {
@@ -800,6 +800,7 @@ fn vec_i32_clone_program(
         kind: raw::InstructionKind::VecClone {
             place: raw::PlaceId(0),
             cleanup: raw::CleanupPlanId(0),
+            element_cleanup: None,
         },
     }];
     function.blocks[0].terminators[0].kind =
@@ -809,6 +810,36 @@ fn vec_i32_clone_program(
         raw::CleanupPlan { id: raw::CleanupPlanId(0), span, actions: actions.clone() },
         raw::CleanupPlan { id: raw::CleanupPlanId(1), span, actions },
     ];
+    program
+}
+
+fn vec_string_clone_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+) -> raw::Program {
+    let mut program = vec_i32_clone_program(sources, linear, linux);
+    let function = &mut program.modules[0].functions[0];
+    let span = function.span;
+    function.parameters[0].ty = raw::TypeId(6);
+    function.result = raw::TypeId(6);
+    function.places[0].ty = raw::TypeId(6);
+    function.places[1].ty = raw::TypeId(6);
+    function.blocks[0].instructions[0].result.as_mut().expect("result").ty = raw::TypeId(6);
+    let raw::InstructionKind::VecClone { element_cleanup, .. } =
+        &mut function.blocks[0].instructions[0].kind
+    else {
+        panic!("VecClone")
+    };
+    *element_cleanup = Some(raw::CleanupPlanId(2));
+    function.cleanup_plans.push(raw::CleanupPlan {
+        id: raw::CleanupPlanId(2),
+        span,
+        actions: vec![
+            raw::DropAction::DropVecInitializedPrefix(raw::PlaceId(1)),
+            raw::DropAction::DropPlace(raw::PlaceId(0)),
+        ],
+    });
     program
 }
 
@@ -1046,20 +1077,33 @@ fn vec_clone_preserves_copy_element_source_and_authenticates_cleanup() {
 }
 
 #[test]
-fn vec_clone_rejects_non_copy_wrong_result_and_unavailable_source() {
+fn vec_clone_accepts_string_prefix_cleanup_and_rejects_wrong_result_or_unavailable_source() {
     let (sources, linear, linux) = authorities();
     let entry = sources.verify_file_id(0).expect("entry");
 
-    let mut non_copy = vec_i32_clone_program(&sources, &linear, &linux);
-    let function = &mut non_copy.modules[0].functions[0];
-    function.parameters[0].ty = raw::TypeId(6);
-    function.result = raw::TypeId(6);
-    function.places[0].ty = raw::TypeId(6);
-    function.places[1].ty = raw::TypeId(6);
-    function.blocks[0].instructions[0].result.as_mut().expect("result").ty = raw::TypeId(6);
-    let diagnostics = verify(non_copy, &sources, entry, linear.clone(), linux.clone())
-        .expect_err("Vec<String> clone deferred");
-    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3005"));
+    let string_clone = vec_string_clone_program(&sources, &linear, &linux);
+    let verified = verify(string_clone, &sources, entry, linear.clone(), linux.clone())
+        .expect("Vec<String> clone prefix authority");
+    let clone = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .next()
+        .expect("clone");
+    assert_eq!(clone.vec_clone_element_cleanup().expect("element cleanup").index(), 2);
+    let actions = clone.vec_clone_element_failure_drop_actions().collect::<Vec<_>>();
+    assert_eq!(actions.len(), 2);
+    assert_eq!(actions[0].kind(), VerifiedDropActionKind::VecInitializedPrefix);
+    assert_eq!(actions[0].root().index(), 1);
+    assert_eq!(actions[1].kind(), VerifiedDropActionKind::Place);
+    assert_eq!(actions[1].root().index(), 0);
 
     let mut wrong_result = vec_i32_clone_program(&sources, &linear, &linux);
     wrong_result.modules[0].functions[0].blocks[0].instructions[0]
@@ -1172,6 +1216,78 @@ fn vec_clone_rejects_cleanup_and_result_owner_forgery() {
         verify(missing_result_owner, &sources, entry, linear, linux).is_err(),
         "owned clone result requires its exact temporary place"
     );
+}
+
+#[test]
+fn vec_string_clone_rejects_every_prefix_authority_forgery() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+
+    let mut missing = vec_string_clone_program(&sources, &linear, &linux);
+    let raw::InstructionKind::VecClone { element_cleanup, .. } =
+        &mut missing.modules[0].functions[0].blocks[0].instructions[0].kind
+    else {
+        panic!("VecClone")
+    };
+    *element_cleanup = None;
+    assert!(verify(missing, &sources, entry, linear.clone(), linux.clone()).is_err());
+
+    let mut foreign = vec_string_clone_program(&sources, &linear, &linux);
+    let raw::InstructionKind::VecClone { element_cleanup, .. } =
+        &mut foreign.modules[0].functions[0].blocks[0].instructions[0].kind
+    else {
+        panic!("VecClone")
+    };
+    *element_cleanup = Some(raw::CleanupPlanId(99));
+    assert!(verify(foreign, &sources, entry, linear.clone(), linux.clone()).is_err());
+
+    for forged in [
+        vec![raw::DropAction::DropPlace(raw::PlaceId(0))],
+        vec![
+            raw::DropAction::DropVecInitializedPrefix(raw::PlaceId(0)),
+            raw::DropAction::DropPlace(raw::PlaceId(0)),
+        ],
+        vec![
+            raw::DropAction::DropPlace(raw::PlaceId(0)),
+            raw::DropAction::DropVecInitializedPrefix(raw::PlaceId(1)),
+        ],
+        vec![
+            raw::DropAction::DropVecInitializedPrefix(raw::PlaceId(1)),
+            raw::DropAction::DropPlace(raw::PlaceId(0)),
+            raw::DropAction::DropPlace(raw::PlaceId(1)),
+        ],
+    ] {
+        let mut program = vec_string_clone_program(&sources, &linear, &linux);
+        program.modules[0].functions[0].cleanup_plans[2].actions = forged;
+        assert!(
+            verify(program, &sources, entry, linear.clone(), linux.clone()).is_err(),
+            "missing, wrong-root, reordered, and extra prefix claims fail closed"
+        );
+    }
+
+    let mut ordinary_prefix = vec_i32_clone_program(&sources, &linear, &linux);
+    ordinary_prefix.modules[0].functions[0].cleanup_plans[0].actions[0] =
+        raw::DropAction::DropVecInitializedPrefix(raw::PlaceId(0));
+    assert!(
+        verify(ordinary_prefix, &sources, entry, linear.clone(), linux.clone()).is_err(),
+        "ordinary allocation cleanup cannot forge a dynamic prefix action"
+    );
+
+    let mut copy_with_element_cleanup = vec_i32_clone_program(&sources, &linear, &linux);
+    let function = &mut copy_with_element_cleanup.modules[0].functions[0];
+    let span = function.span;
+    let raw::InstructionKind::VecClone { element_cleanup, .. } =
+        &mut function.blocks[0].instructions[0].kind
+    else {
+        panic!("VecClone")
+    };
+    *element_cleanup = Some(raw::CleanupPlanId(2));
+    function.cleanup_plans.push(raw::CleanupPlan {
+        id: raw::CleanupPlanId(2),
+        span,
+        actions: vec![raw::DropAction::DropVecInitializedPrefix(raw::PlaceId(1))],
+    });
+    assert!(verify(copy_with_element_cleanup, &sources, entry, linear, linux).is_err());
 }
 
 #[test]

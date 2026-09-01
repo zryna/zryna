@@ -62,8 +62,8 @@ The repository currently establishes and tests:
   identity behind opaque read-only views; the in-progress Issue #81 checkpoint additionally lowers
   bounded private functions with String literals, explicit clone, checked
   concatenation, moves, return cleanup, and mutable root-local replacement, plus canonical Vec
-  construction, explicit clone for exact `Vec<bool>` and `Vec<i32>`, moves, return, push, checked
-  Copy-element indexing, and supported root-local replacement. String/Vec producers and
+  construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves, return,
+  push, checked Copy-element indexing, and supported root-local replacement. String/Vec producers and
   one-argument owned identity calls are supported internally,
   together with one canonical top-level no-phi `if`/`else`; branch-local owners drop in reverse and
   incoming Vec mutation fails before right-hand-side evaluation. A separate bounded terminal
@@ -83,7 +83,8 @@ The repository currently establishes and tests:
   cumulative 8 MiB String-literal limits fail closed. A bounded internal fault/drop-trace oracle
   authenticates every admitted implemented String/Vec failure disposition and trap identity,
   preserves pre-commit owners, excludes uncommitted results, and pins reverse cleanup without
-  executing an allocator or target runtime. Non-Copy Vec clone, owned aggregate clone, owned
+  executing an allocator or target runtime. General structural Vec clone beyond String elements,
+  owned aggregate clone, owned
   projections, aggregate assignment, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
   and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
@@ -217,8 +218,8 @@ the final local gate.
 
 `pnpm m3:owned:quick` is the seconds-scale Issue #81 foundation check. It runs the focused
 DataOwnershipV1 IR and semantic tests plus both modules' opacity doctests, including bounded UTF-8
-String creation, clone and checked concatenation, Vec construction/exact Copy-element clone/push/Copy
-indexing, owner
+String creation, clone and checked concatenation, Vec construction/exact Copy- or String-element
+clone/push/Copy indexing, owner
 transfer, private root-local replacement, site-bound cleanup roles, partial drop metadata, and the
 retained runtime-ABI authority. It does not claim projections, owned calls/CFG, general scope
 exits, a runtime, a backend, a CLI route, or a public profile. The full `pnpm preflight` gate

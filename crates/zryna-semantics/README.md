@@ -71,8 +71,8 @@ in-progress Issue #81 checkpoint recognizes canonical String and `Vec<T>` type g
 bounded private functions. String supports UTF-8 literals through
 `StringFromUtf8`, explicit clone, checked concatenation, local moves, return with reverse-order
 cleanup, and mutable root-local replacement. Vec supports construction, explicit clone for exact
-`Vec<bool>` and `Vec<i32>`, local moves, return, push, checked indexing that returns a Copy element,
-and replacement for the supported exact Vec roots.
+`Vec<bool>`, `Vec<i32>`, and `Vec<String>`, local moves, return, push, checked indexing that returns
+a Copy element, and replacement for the supported exact Vec roots.
 Both routes admit private zero-argument producers and one-argument owned identity calls. They also
 lower one top-level no-phi `if`/`else` from a bool literal or Copy bool parameter into canonical
 entry/then/else/join blocks. Branch-local owned roots drop once in reverse order; incoming owners
@@ -105,9 +105,12 @@ String construction/clone/concat and Vec allocation/reserve operations, plus the
 Vec bounds trap. It consumes authenticated status disposition/trap declarations, retains all
 pre-commit operand owners, excludes the uncommitted result, and checks exact reverse cleanup,
 deterministic replay, and bounded event accounting. It is not allocator execution, target runtime
-fault injection, or a public interpreter; prefix-safe clone initialization remains closure work.
+fault injection, or a public interpreter. Exact `Vec<String>` clone additionally seals a distinct
+element-failure cleanup that reverse-drops only the runtime-recorded initialized destination prefix
+before pre-existing owners; this remains compiler evidence rather than allocator execution.
 
-This checkpoint does not complete general owned lowering. Non-Copy Vec clone, owned aggregate clone,
+This checkpoint does not complete general owned lowering. General structural Vec clone beyond
+String elements, owned aggregate clone,
 owned projections or assignment, general owned phi joins, owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one

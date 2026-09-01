@@ -107,10 +107,14 @@ Potentially trapping calls, String construction, allocation-bearing construction
 indexing, concatenation, vector growth, shared construction, and reference-count increments name
 the cleanup plan required by their exact raw variant. `StringFromUtf8` carries verifier-checked
 immutable UTF-8 bytes and a prepare-failure cleanup identity; it is internal IR vocabulary, not a
-public String runtime or compiler profile. `VecClone` currently admits only exact `Vec<bool>` and
-`Vec<i32>` sources, preserves the source owner, requires a distinct temporary result owner, and
-binds allocation failure to its exact prepare cleanup. It does not claim general `Vec<T: Clone>`
-support or prefix-safe non-Copy element initialization. `ReplacePlace` is the infallible commit after its
+public String runtime or compiler profile. `VecClone` currently admits only exact `Vec<bool>`,
+`Vec<i32>`, and `Vec<String>` sources, preserves the source owner, and requires a distinct temporary
+result owner. Every clone binds allocation failure to its exact prepare cleanup. `Vec<String>` also
+requires a separately site-bound `VecCloneElementFailure` plan whose first typed action is
+`VecInitializedPrefix`, followed by every pre-existing owner in reverse order. Executable consumers
+must use `vec_clone_element_failure_drop_actions()` and its typed action kind for that role; the
+root-only cleanup-plan compatibility view does not turn the prefix into an ordinary whole-place
+drop. This does not claim general `Vec<T: Clone>` support. `ReplacePlace` is the infallible commit after its
 replacement value has already been prepared, so it carries no cleanup plan. `DropPlace` supplies
 the logical release operation for String, Vec, Shared, and Weak places; there are no separately
 forgeable release-helper instructions.

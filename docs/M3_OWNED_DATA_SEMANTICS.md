@@ -17,9 +17,9 @@ document. Its private owned String/Vec route currently proves:
 
 - String creation from UTF-8 literals, explicit clone, checked concatenation, local moves, return
   with reverse-order cleanup, and replacement of one initialized mutable root-local String;
-- canonical Vec construction, explicit clone of exact `Vec<bool>` and `Vec<i32>`, local moves,
-  return, push, checked indexing that yields a Copy element, and replacement of one initialized
-  mutable supported exact Vec root;
+- canonical Vec construction, explicit clone of exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`,
+  local moves, return, push, checked indexing that yields a Copy element, and replacement of one
+  initialized mutable supported exact Vec root;
 - private zero-argument producers and one-argument owned identity calls with atomic result,
   storage, transition, and cleanup reservation before argument ownership changes;
 - one bounded top-level no-phi `if`/`else` for String and exact Vec functions, using a bool literal
@@ -53,7 +53,8 @@ document. Its private owned String/Vec route currently proves:
 - a sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the
   exact verified ownership-runtime ABI authority.
 
-Non-Copy Vec clone, owned aggregate clone, owned place projections or assignment, general owned phi joins,
+General structural Vec clone beyond String elements, owned aggregate clone, owned place projections
+or assignment, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -77,9 +78,9 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | no-carried-owner loop/backedge cleanup | complete | one top-level loop with exact incoming-state restoration |
 | stable-place loop mutation | complete | String replacement and Copy-element Vec push retain one exact outer place across repeated execution |
 | general loop-carried values and scope exits | pending | owned header phi, Vec replacement/owned-element push, and arbitrary exits remain excluded |
-| exact `Vec<bool>`/`Vec<i32>` clone | complete | distinct result owner, retained source, authenticated allocation failure, and exact resource rollback |
-| non-Copy Vec and aggregate clone, projections, assignment, and partial moves | pending | prefix-safe failure cleanup and moved-subobject masks |
-| controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces are complete for admitted String/Vec operations; executable fault injection and prefix-safe partial initialization remain pending |
+| exact `Vec<bool>`/`Vec<i32>`/`Vec<String>` clone | complete | distinct result owner, retained source, authenticated allocation and element-clone failures, prefix-safe reverse cleanup, and exact resource rollback |
+| general structural Vec and aggregate clone, projections, assignment, and partial moves | pending | nested structural clone capability and moved-subobject masks |
+| controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
 This ledger records implementation evidence, not public language availability. Every row remains
@@ -217,6 +218,8 @@ A raw cleanup plan is only an ordered claim. Verification binds it to one exact 
 one closed role:
 
 - `PrepareFailure`, for one potentially failing checked prepare operation;
+- `VecCloneElementFailure`, for the separately authenticated failure of one exact String element
+  clone after a runtime-recorded destination prefix has initialized;
 - `CallTrap`, after by-value arguments have transferred into a called function;
 - `Return`, after the returned-owner transfer; or
 - `ControlledTrap`, before reporting one exact trap identity.
@@ -260,8 +263,12 @@ The operation-specific consequences are:
 - Exact `Vec<bool>` and `Vec<i32>` clone reserves the result owner, storage, ownership transition,
   and cleanup before emission. Allocation failure retains the source and excludes the result;
   success creates one distinct temporary result owner.
-- Non-Copy Vec clone is a closure target: it constructs elements in ascending order, and failure
-  must drop only the completed destination prefix in reverse order while retaining the source.
+- Exact `Vec<String>` clone additionally reserves a distinct per-element failure plan and its action
+  sum before emission. Elements clone in ascending order; failure reverse-drops only the completed
+  destination prefix, releases its storage, then cleans pre-existing roots while retaining the
+  source and excluding the uncommitted result.
+- General structural Vec clone beyond String elements remains a closure target with the same
+  prefix-safe rule derived recursively from the element clone capability.
 - `VecPush` evaluates its value first. Reserve failure retains both vector and argument; commit
   moves the argument into the new final element.
 - Checked fixed-array or Vec indexing performs no ownership transfer on bounds failure.
@@ -293,6 +300,13 @@ or one that includes the uncommitted result. Bounds failure is modeled separatel
 IR's `BoundsV1` trap rather than being relabeled as a runtime status. This is compiler evidence over
 sealed declarations and verified IR; it does not inject a failure into an allocator or execute a
 target runtime.
+
+For exact `Vec<String>` clone, allocation failure authenticates `VecAllocate`, while an element
+failure separately authenticates `StringClone`. The modeled source length must be within the sealed
+Vec element bound, and the completed prefix must be strictly shorter than that source length before
+trace allocation. The oracle then emits exactly the completed indices in reverse order, followed by
+storage release and the pre-existing owner cleanup; zero, middle, last-valid, first-extra, and
+arithmetic/event-limit boundaries are deterministic.
 
 Cleanup and release are infallible logical effects, do not allocate, and cannot replace the
 original trap. A release-contract violation is an internal runtime violation for later executable
@@ -438,6 +452,8 @@ Focused acceptance evidence must include at least:
 - rejected unequal branch stacks and leaked or reordered loop-backedge obligations;
 - explicit scope-exit drops on fallthrough, branch, loop backedge, and loop exit;
 - String and Vec allocation failure with pre-commit operands retained;
+- exact `Vec<String>` element-clone failure at zero, middle, and last-valid completed prefixes, plus
+  rejection of the first impossible prefix before trace allocation;
 - `VecPush` failure retaining both vector and argument, followed by exact cleanup;
 - partial aggregate, active enum, fixed-array prefix, Vec length, and moved-subobject drop shapes;
 - use-after-move, double consumption, duplicate root aliases, missing/extra/reordered cleanup,
