@@ -146,10 +146,11 @@ self-consumption, and preserves sealed recursive cleanup for the old destination
 The verified IR now also seals projected replacement's old-subobject traversal and transfers the
 prepared subtree's masks and enum refinement without disturbing siblings. The semantic producer
 uses it for prepare-before-commit replacement of mutable available static String leaves and for at
-most one private straight-line aggregate site. That aggregate site moves a distinct fully
-initialized exact same-type supported non-Copy Struct or FixedArray whole root into a mutable
-available `StructField`/`FixedArrayConstant` projection; commit recursively drops only the old
-target, consumes the source, and retains the destination root and sibling masks. The producer also
+most one combined private straight-line aggregate site. That aggregate site moves or explicitly
+clones a distinct fully initialized exact same-type supported non-Copy Struct or FixedArray whole
+root into a mutable available `StructField`/`FixedArrayConstant` projection. Move consumes the
+source; clone retains it, and both clone failure paths retain source and destination. Commit
+recursively drops only the old target and retains the destination root and sibling masks. The producer also
 resolves canonical static StructField and
 FixedArrayConstant source places for Copy reads, exact String-leaf moves, and at most one supported
 Struct/FixedArray subobject move into an exact directly initialized same-type local. It materializes
@@ -190,7 +191,7 @@ executing an allocator or target runtime. General structural Vec clone beyond St
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside that direct-local exception or the single-variant match-local enum
 payload extraction, broader enum-payload moves, dynamic or Vec-element projections, projected
-aggregate assignment outside the exact whole-root-to-static-projection site, projected aggregate
+aggregate assignment outside the exact whole-root-move-or-clone-to-static-projection site, projected aggregate
 clone outside the direct-local exception, partial Enum
 transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
 contexts, or non-final/non-reference returns, general owned phi joins,

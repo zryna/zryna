@@ -17,11 +17,12 @@ use super::{
     partial_transfer_place_delta, preflight_aggregate_operand_total, preflight_owned_loop_body,
     preflight_owned_loop_exit, preflight_owned_place_capacity,
     preflight_owned_place_capacity_with_reserved, preflight_owned_string_preparation,
-    projected_aggregate_assignment_budget_violation, projected_aggregate_clone_budget_violation,
-    projected_string_clone_budget_violation, projected_subobject_move_budget_violation,
-    raw_function_value_count, raw_terminator_edge_count, resource_budget_violation,
-    semantic_preflight, span, string_byte_budget_violation, terminal_owned_if,
-    value_budget_violation, vec_push_target_invalid,
+    projected_aggregate_assignment_budget_violation,
+    projected_aggregate_clone_assignment_budget_violation,
+    projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
+    projected_subobject_move_budget_violation, raw_function_value_count, raw_terminator_edge_count,
+    resource_budget_violation, semantic_preflight, span, string_byte_budget_violation,
+    terminal_owned_if, value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -337,6 +338,55 @@ fn projected_aggregate_clone_local_snapshot(
         },
     });
     (updated_source, raw)
+}
+
+fn projected_aggregate_clone_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let mut raw = response_snapshot(PROJECTED_AGGREGATE_ASSIGNMENT_RESPONSE);
+    let RawStatementKind::Assignment { value: operand_id, .. } =
+        raw.files[0].functions[0].body.statements[2].kind
+    else {
+        panic!("projected aggregate assignment")
+    };
+    let operand = raw.files[0].functions[0].body.expressions[operand_id as usize].clone();
+    let start = operand.span.start;
+    let end = operand.span.end;
+    let mut source = PROJECTED_AGGREGATE_ASSIGNMENT_SOURCE.to_owned();
+    let spelling = source
+        .get(
+            usize::try_from(start).expect("operand start")
+                ..usize::try_from(end).expect("operand end"),
+        )
+        .expect("assignment operand")
+        .to_owned();
+    source.replace_range(
+        usize::try_from(start).expect("operand start")..usize::try_from(end).expect("operand end"),
+        &format!("clone({spelling})"),
+    );
+    raw = shift_snapshot(raw, start, 6);
+    raw = shift_snapshot(raw, end + 6, 1);
+    let mut value = serde_json::to_value(raw).expect("snapshot value");
+    exclude_inserted_close(&mut value, end + 6);
+    raw = serde_json::from_value(value).expect("clone assignment snapshot");
+    let body = &mut raw.files[0].functions[0].body;
+    let clone = u32::try_from(body.expressions.len()).expect("clone expression id");
+    let RawStatementKind::Assignment { value, .. } = &mut body.statements[2].kind else {
+        panic!("projected aggregate assignment")
+    };
+    *value = clone;
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: end + 7 },
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: zryna_source::UntrustedSpan { file: 0, start, end: start + 5 },
+            open_paren_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: start + 5,
+                end: start + 6,
+            },
+            value: operand_id,
+            close_paren_span: zryna_source::UntrustedSpan { file: 0, start: end + 6, end: end + 7 },
+        },
+    });
+    (source, raw)
 }
 
 fn projected_aggregate_clone_direct_return_snapshot() -> (String, RawProjectSyntaxSnapshot) {
@@ -8426,6 +8476,76 @@ fn projected_aggregate_assignment_moves_one_complete_root_into_a_static_field() 
 }
 
 #[test]
+fn projected_aggregate_assignment_clones_one_complete_root_into_a_static_field() {
+    let (source, raw) = projected_aggregate_clone_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful clone assignment");
+    let program =
+        lower(pair_input(&syntax, &sources)).expect("projected aggregate clone assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let destination = roots[&0];
+    let source = roots[&1];
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("projected aggregate replacement");
+    let clone = instructions[replace_index - 1];
+    let replace = instructions[replace_index];
+    assert_eq!(clone.kind(), VerifiedInstructionKind::ClonePlace);
+    assert_eq!(clone.place_operands().next(), Some(source));
+    assert_eq!(replace.value_operands().next(), clone.result());
+    let target = replace.place_operands().next().expect("static target");
+    assert!(matches!(
+        function.places().find(|place| place.id() == target).expect("target place").kind(),
+        VerifiedPlaceKind::StructField { base, ordinal: 0 } if base == destination
+    ));
+    let temporary = clone
+        .result()
+        .and_then(|value| {
+            function.places().find(
+                |place| matches!(place.kind(), VerifiedPlaceKind::Temporary(owner) if owner == value),
+            )
+        })
+        .expect("clone temporary")
+        .id();
+    assert_eq!(
+        clone.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [source, destination],
+        "clone allocation failure retains source and destination",
+    );
+    let element_failure = clone.aggregate_clone_element_failure_drop_actions().collect::<Vec<_>>();
+    assert_eq!(element_failure[0].kind(), VerifiedDropActionKind::AggregateInitializedPrefix);
+    assert_eq!(element_failure[0].root(), temporary);
+    assert_eq!(
+        element_failure[1..]
+            .iter()
+            .map(zryna_ir::data_ownership_v1::VerifiedDropAction::root)
+            .collect::<Vec<_>>(),
+        [source, destination],
+        "prefix failure retains both pre-existing roots",
+    );
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+        "commit drops only the old projected subtree",
+    );
+    assert_eq!(
+        block.terminator().derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [source],
+        "successful clone retains the source root until function exit",
+    );
+}
+
+#[test]
 fn projected_aggregate_assignment_rejects_a_projected_source() {
     let mut source = PROJECTED_AGGREGATE_ASSIGNMENT_SOURCE.to_owned();
     let start = source.rfind("replacement").expect("assignment source");
@@ -9523,6 +9643,47 @@ fn projected_aggregate_assignment_resource_preflight_is_exact_and_overflow_check
             places,
             transitions,
             reserved,
+            missing,
+        ));
+    }
+}
+
+#[test]
+fn projected_aggregate_clone_assignment_resource_preflight_is_exact_and_overflow_checked() {
+    use zryna_ir::data_ownership_v1::{
+        MAX_CLEANUP_PLANS_PER_FUNCTION, MAX_DROP_ACTIONS_PER_FUNCTION,
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, MAX_PLACES_PER_FUNCTION, MAX_VALUES_PER_FUNCTION,
+    };
+
+    assert!(!projected_aggregate_clone_assignment_budget_violation(
+        MAX_VALUES_PER_FUNCTION - 1,
+        MAX_PLACES_PER_FUNCTION - 4,
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 3,
+        1,
+        MAX_CLEANUP_PLANS_PER_FUNCTION - 2,
+        MAX_DROP_ACTIONS_PER_FUNCTION - 5,
+        2,
+        3,
+    ));
+    for (values, places, transitions, reserved, plans, actions, pending, missing) in [
+        (MAX_VALUES_PER_FUNCTION, 0, 0, 0, 0, 0, 0, 0),
+        (0, MAX_PLACES_PER_FUNCTION - 3, 0, 0, 0, 0, 0, 3),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1, 0, 0, 0, 0, 0),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 2, 1, 0, 0, 0, 0),
+        (0, 0, 0, 0, MAX_CLEANUP_PLANS_PER_FUNCTION - 1, 0, 0, 0),
+        (0, 0, 0, 0, 0, MAX_DROP_ACTIONS_PER_FUNCTION - 4, 2, 0),
+        (0, usize::MAX, 0, 0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0, 0, 0, usize::MAX),
+        (0, 0, 0, 0, 0, 0, usize::MAX, 0),
+    ] {
+        assert!(projected_aggregate_clone_assignment_budget_violation(
+            values,
+            places,
+            transitions,
+            reserved,
+            plans,
+            actions,
+            pending,
             missing,
         ));
     }

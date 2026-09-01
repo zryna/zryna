@@ -389,12 +389,13 @@ instruction nevertheless derives one exact pre-commit recursive drop action for 
 static-projection destination. Projection replay transplants the prepared source subtree's state
 and active enum variants while retaining the enclosing owner's pending obligation and sibling
 masks. The semantic producer now uses that authority for mutable available static String leaves and
-for at most one private straight-line aggregate site. That narrow site immediately moves one
-distinct fully initialized exact same-type supported non-Copy Struct or FixedArray whole local into
-a mutable available `StructField` or `FixedArrayConstant` projection. Commit consumes the source,
-recursively drops the exact old target, and retains the destination root plus every sibling mask.
-Projected sources, dynamic/Vec/Enum targets, calls, CFG/public contexts, and second sites remain
-later checkpoints.
+for at most one combined private straight-line aggregate site. That narrow site immediately moves
+or explicitly clones one distinct fully initialized exact same-type supported non-Copy Struct or
+FixedArray whole local into a mutable available `StructField` or `FixedArrayConstant` projection.
+Move consumes the source; clone retains it, while its prepare and initialized-prefix failure cleanup
+retain both source and destination. Commit recursively drops the exact old target and retains the
+destination root plus every sibling mask. Fresh, projected, or partial sources, dynamic/Vec/Enum
+targets, calls, CFG/public contexts, and second sites remain later checkpoints.
 Those same initialized available static String leaves admit explicit clone. Its fallible
 preparation reads without consuming the leaf, retains the enclosing root with its current
 partial-state masks, and creates one distinct temporary owner before any later assignment commit.
@@ -464,12 +465,13 @@ M3002, and preflights cumulative String-literal bytes at 8 MiB. General structur
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside at most one exact direct local or the single-variant match-local
 enum-payload exception, dynamic or Vec-element projections, projected aggregate assignment outside
-the exact whole-root-to-static-projection exception, projected aggregate clone outside the exact
+the exact whole-root-move-or-clone-to-static-projection exception, projected aggregate clone outside the exact
 direct-local exception, partial
 Enum transfer or partial-root transfer outside the exact
 direct-local, final-return, or whole-root assignment forms, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
-admitted. The assignment exception does not extend to projected sources, dynamic/Vec/Enum targets,
+admitted. The assignment exception does not extend to fresh, projected, or partial sources,
+dynamic/Vec/Enum targets,
 calls,
 direct projected-clone or payload returns, owner-carrying CFG transfer, public functions,
 multi-variant Enum payloads,

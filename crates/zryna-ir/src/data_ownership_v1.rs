@@ -2748,7 +2748,7 @@ fn verify_projected_aggregate_assignment_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "function contains more than one projected aggregate assignment",
-            "move at most one complete aggregate root into one static Struct or fixed-array projection",
+            "move or clone at most one complete aggregate root into one static Struct or fixed-array projection",
         ));
         return;
     }
@@ -2768,15 +2768,17 @@ fn verify_projected_aggregate_assignment_contexts(
                 && matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
         }) && structural_clone_capable(place.ty, layouts)
     });
-    let preceding_move = instruction_index.checked_sub(1).and_then(|index| {
+    let preceding_source = instruction_index.checked_sub(1).and_then(|index| {
         let preceding = block.instructions.get(index)?;
-        let raw::InstructionKind::MoveFromPlace { place: source } = preceding.kind else {
+        let (raw::InstructionKind::MoveFromPlace { place: source }
+        | raw::InstructionKind::ClonePlace { place: source, .. }) = preceding.kind
+        else {
             return None;
         };
         let result = preceding.result?;
         (result.id == value).then_some((source, result))
     });
-    let source_is_distinct_root = preceding_move.is_some_and(|(source, result)| {
+    let source_is_distinct_root = preceding_source.is_some_and(|(source, result)| {
         source != target_root
             && root_place(source, function) == source
             && function.places.get(source.0 as usize).is_some_and(|place| {
@@ -2801,7 +2803,7 @@ fn verify_projected_aggregate_assignment_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "projected aggregate assignment escapes its exact root-to-static-projection context",
-            "move one distinct complete Struct or fixed-array local immediately into one same-type static projection",
+            "move or clone one distinct complete Struct or fixed-array local immediately into one same-type static projection",
         ));
     }
 }

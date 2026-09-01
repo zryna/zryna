@@ -119,12 +119,13 @@ into an exact-topology temporary, excludes that result from cleanup, and reverse
 One distinct mutable fully initialized same-type whole-root assignment destination also admits the
 partial Struct or FixedArray source after complete source, temporary, and destination topology
 preflight. `ReplacePlace` drops the old destination exactly once and installs the transferred mask.
-At most one separate private straight-line projected assignment moves a distinct, fully initialized
-exact same-type supported non-Copy Struct or FixedArray whole root into one mutable available static
-`StructField` or `FixedArrayConstant` projection. The source moves; commit recursively drops the
-exact old target while retaining the destination root and every sibling mask. Its exact atomic
-resource delta is one value, `M + 1` places for `M` missing target-path places plus the temporary,
-two ownership transitions, and no cleanup plan.
+At most one combined private straight-line projected assignment moves or explicitly clones a
+distinct, fully initialized exact same-type supported non-Copy Struct or FixedArray whole root into
+one mutable available static `StructField` or `FixedArrayConstant` projection. Move consumes the
+source; clone retains it, and prepare/prefix failure cleanup retains source plus destination. Commit
+recursively drops the exact old target while retaining the destination root and every sibling mask.
+Both forms add one value, `M + 1` places, and two transitions. Move adds no cleanup plan; with `P`
+pending roots, clone adds two plans and `2P + 1` actions.
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
@@ -137,11 +138,11 @@ This checkpoint does not enable general owned values: aggregate-subobject moves 
 exact direct-local form or the exact match-local exception above, broader enum-payload moves, partial Enum
 transfer or partial-root transfer outside the exact direct-local, final-return, or whole-root
 assignment forms, dynamic or Vec-element projections, projected aggregate clone outside the exact
-direct-local form, or projected aggregate assignment outside the exact whole-root-to-static-
-projection form,
+direct-local form, or projected aggregate assignment outside the exact whole-root-move-or-clone-to-
+static-projection form,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
-The exceptions also exclude projected or partial assignment sources, dynamic/Vec/Enum targets,
-second assignment sites, direct projected-clone or payload return, owner-carrying CFG transfer,
+The exceptions also exclude fresh/projected/partial assignment sources, dynamic/Vec/Enum targets,
+second move-or-clone assignment sites, direct projected-clone or payload return, owner-carrying CFG transfer,
 multi-variant extraction, and public owned contexts.
 Public owned results remain rejected by scalar ABI v1.
 `Shared`, `Weak`, shared or exclusive borrows, and their
