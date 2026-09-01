@@ -2243,6 +2243,7 @@ fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, er
     verify_enum_payload_move_contexts(function, layouts, &enum_payloads, errors);
     verify_aggregate_subobject_move_contexts(function, layouts, &enum_payloads, errors);
     verify_projected_aggregate_clone_contexts(function, layouts, errors);
+    verify_projected_aggregate_assignment_contexts(function, layouts, errors);
     if !errors.is_empty() {
         return;
     }
@@ -2610,6 +2611,26 @@ fn verify_aggregate_subobject_move_contexts(
     }
 }
 
+fn value_use_count(function: &raw::Function, value: raw::ValueId) -> usize {
+    function
+        .blocks
+        .iter()
+        .flat_map(|block| {
+            block
+                .instructions
+                .iter()
+                .flat_map(|instruction| instruction_operands(&instruction.kind))
+                .chain(
+                    block
+                        .terminators
+                        .iter()
+                        .flat_map(|terminator| terminator_operands(&terminator.kind)),
+                )
+        })
+        .filter(|candidate| *candidate == value)
+        .count()
+}
+
 fn verify_projected_aggregate_clone_contexts(
     function: &raw::Function,
     layouts: &VerifiedLayouts,
@@ -2674,23 +2695,7 @@ fn verify_projected_aggregate_clone_contexts(
                     })
         )
     });
-    let uses = function
-        .blocks
-        .iter()
-        .flat_map(|candidate| {
-            candidate
-                .instructions
-                .iter()
-                .flat_map(|candidate| instruction_operands(&candidate.kind))
-                .chain(
-                    candidate
-                        .terminators
-                        .iter()
-                        .flat_map(|terminator| terminator_operands(&terminator.kind)),
-                )
-        })
-        .filter(|value| *value == result.id)
-        .count();
+    let uses = value_use_count(function, result.id);
     if !private_straight_line
         || !valid_type
         || !static_projection_path(place, function)
@@ -2703,6 +2708,100 @@ fn verify_projected_aggregate_clone_contexts(
             instruction.span,
             "projected aggregate clone escapes its exact direct-local context",
             "clone one initialized static Struct or fixed-array subobject into the immediately following same-type local initialization",
+        ));
+    }
+}
+
+fn verify_projected_aggregate_assignment_contexts(
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    errors: &mut Errors,
+) {
+    let private_straight_line = function.entry_export.is_none()
+        && function.blocks.len() == 1
+        && function
+            .blocks
+            .first()
+            .and_then(|block| block.terminators.first())
+            .is_some_and(|terminator| terminator_edges(&terminator.kind).is_empty());
+    let mut replacements = Vec::with_capacity(2);
+    'blocks: for block in &function.blocks {
+        for (index, instruction) in block.instructions.iter().enumerate() {
+            let raw::InstructionKind::ReplacePlace { place, value, .. } = instruction.kind else {
+                continue;
+            };
+            let Some(target) = function.places.get(place.0 as usize) else { continue };
+            if projection_base(&target.kind).is_some()
+                && layout_type(layouts, target.ty).is_some_and(|ty| {
+                    matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+                })
+            {
+                replacements.push((block, index, instruction, place, value));
+                if replacements.len() == 2 {
+                    break 'blocks;
+                }
+            }
+        }
+    }
+    if let Some((_, _, instruction, _, _)) = replacements.get(1) {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "function contains more than one projected aggregate assignment",
+            "move at most one complete aggregate root into one static Struct or fixed-array projection",
+        ));
+        return;
+    }
+    let Some((block, instruction_index, instruction, target, value)) =
+        replacements.first().copied()
+    else {
+        return;
+    };
+    let target_root = root_place(target, function);
+    let target_is_local = function
+        .places
+        .get(target_root.0 as usize)
+        .is_some_and(|place| matches!(place.kind, raw::PlaceKind::Local(_)));
+    let valid_type = function.places.get(target.0 as usize).is_some_and(|place| {
+        layout_type(layouts, place.ty).is_some_and(|ty| {
+            ty.drop_kind() != 0
+                && matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+        }) && structural_clone_capable(place.ty, layouts)
+    });
+    let preceding_move = instruction_index.checked_sub(1).and_then(|index| {
+        let preceding = block.instructions.get(index)?;
+        let raw::InstructionKind::MoveFromPlace { place: source } = preceding.kind else {
+            return None;
+        };
+        let result = preceding.result?;
+        (result.id == value).then_some((source, result))
+    });
+    let source_is_distinct_root = preceding_move.is_some_and(|(source, result)| {
+        source != target_root
+            && root_place(source, function) == source
+            && function.places.get(source.0 as usize).is_some_and(|place| {
+                place.ty == result.ty && matches!(place.kind, raw::PlaceKind::Local(_))
+            })
+            && function.places.get(target.0 as usize).is_some_and(|place| place.ty == result.ty)
+    });
+    let temporary_owner = function.places.iter().filter(|candidate| {
+        matches!(candidate.kind, raw::PlaceKind::Temporary(owner) if owner == value)
+    }).count()
+        == 1;
+    let uses = value_use_count(function, value);
+    if !private_straight_line
+        || !valid_type
+        || !target_is_local
+        || !static_projection_path(target, function)
+        || !source_is_distinct_root
+        || !temporary_owner
+        || uses != 1
+    {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "projected aggregate assignment escapes its exact root-to-static-projection context",
+            "move one distinct complete Struct or fixed-array local immediately into one same-type static projection",
         ));
     }
 }
@@ -4066,6 +4165,14 @@ fn apply_value_transfers(
                 return;
             };
             if target != *place {
+                if flow.states[place.0 as usize].kind != PlaceStateKind::Initialized {
+                    ownership_error(
+                        instruction.span,
+                        "projection replacement target is unavailable",
+                        errors,
+                    );
+                    return;
+                }
                 if flow.states[source.0 as usize].kind != PlaceStateKind::Initialized {
                     ownership_error(
                         instruction.span,

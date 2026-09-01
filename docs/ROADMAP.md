@@ -245,9 +245,12 @@ supported Struct/FixedArray payload into a direct local, drops the emptied enum 
 final local return through a zero-argument continuation with exact `D + 5` place amplification.
 Enum partial-root transfer, aggregate-subobject moves outside that at-most-one direct-local form or
 that one match-local payload extraction, and broader enum-payload moves,
-transfer in call/CFG contexts, projected assignment, or non-final/non-reference returns, dynamic projections,
+transfer in call/CFG contexts, projected assignment outside the narrow site below, or
+non-final/non-reference returns, dynamic projections,
 direct projected-clone returns, public contexts, projected aggregate clone outside that exact
-direct-local form, and general non-String projected assignment remain open, alongside
+direct-local form, and projected aggregate assignment outside one private straight-line move from
+a distinct fully initialized exact same-type whole Struct/FixedArray root into a mutable available
+static `StructField`/`FixedArrayConstant` projection remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is

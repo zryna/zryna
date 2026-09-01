@@ -17,10 +17,11 @@ use super::{
     partial_transfer_place_delta, preflight_aggregate_operand_total, preflight_owned_loop_body,
     preflight_owned_loop_exit, preflight_owned_place_capacity,
     preflight_owned_place_capacity_with_reserved, preflight_owned_string_preparation,
-    projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
-    projected_subobject_move_budget_violation, raw_function_value_count, raw_terminator_edge_count,
-    resource_budget_violation, semantic_preflight, span, string_byte_budget_violation,
-    terminal_owned_if, value_budget_violation, vec_push_target_invalid,
+    projected_aggregate_assignment_budget_violation, projected_aggregate_clone_budget_violation,
+    projected_string_clone_budget_violation, projected_subobject_move_budget_violation,
+    raw_function_value_count, raw_terminator_edge_count, resource_budget_violation,
+    semantic_preflight, span, string_byte_budget_violation, terminal_owned_if,
+    value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -138,6 +139,8 @@ const OWNED_ENUM_LOCAL_AFTER_RETURN_RESPONSE: &str = r#"{"id":21,"result":{"sche
 
 const PROJECTED_INNER_DIRECT_RETURN_SOURCE: &str = "interface Inner extends ZrynaStruct { text: String; }\ninterface Outer extends ZrynaStruct { inner: Inner; tail: String; }\nfunction make(): Inner { const o: Outer = Outer({ tail: \"b\", inner: Inner({ text: \"a\" }) }); return o.inner; }";
 const PROJECTED_INNER_DIRECT_RETURN_RESPONSE: &str = r#"{"id":813,"result":{"schema_version":4,"files":[{"id":0,"path":"src/main.zry","imports":[],"type_syntax":[{"span":{"file":0,"start":44,"end":50},"kind":{"kind":"string","keyword_span":{"file":0,"start":44,"end":50}}},{"span":{"file":0,"start":99,"end":104},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":99,"end":104}}}},{"span":{"file":0,"start":112,"end":118},"kind":{"kind":"string","keyword_span":{"file":0,"start":112,"end":118}}},{"span":{"file":0,"start":139,"end":144},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":139,"end":144}}}},{"span":{"file":0,"start":156,"end":161},"kind":{"kind":"named","name":{"text":"Outer","span":{"file":0,"start":156,"end":161}}}}],"data_declarations":[{"span":{"file":0,"start":0,"end":53},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":0,"end":9},"name":{"text":"Inner","span":{"file":0,"start":10,"end":15}},"extends_span":{"file":0,"start":16,"end":23},"marker_span":{"file":0,"start":24,"end":35},"open_brace_span":{"file":0,"start":36,"end":37},"close_brace_span":{"file":0,"start":52,"end":53},"fields":[{"span":{"file":0,"start":38,"end":51},"name":{"text":"text","span":{"file":0,"start":38,"end":42}},"colon_span":{"file":0,"start":42,"end":43},"semicolon_span":{"file":0,"start":50,"end":51},"type_syntax":0}]}},{"span":{"file":0,"start":54,"end":121},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":54,"end":63},"name":{"text":"Outer","span":{"file":0,"start":64,"end":69}},"extends_span":{"file":0,"start":70,"end":77},"marker_span":{"file":0,"start":78,"end":89},"open_brace_span":{"file":0,"start":90,"end":91},"close_brace_span":{"file":0,"start":120,"end":121},"fields":[{"span":{"file":0,"start":92,"end":105},"name":{"text":"inner","span":{"file":0,"start":92,"end":97}},"colon_span":{"file":0,"start":97,"end":98},"semicolon_span":{"file":0,"start":104,"end":105},"type_syntax":1},{"span":{"file":0,"start":106,"end":119},"name":{"text":"tail","span":{"file":0,"start":106,"end":110}},"colon_span":{"file":0,"start":110,"end":111},"semicolon_span":{"file":0,"start":118,"end":119},"type_syntax":2}]}}],"functions":[{"span":{"file":0,"start":122,"end":232},"export_span":null,"function_span":{"file":0,"start":122,"end":130},"name":{"text":"make","span":{"file":0,"start":131,"end":135}},"parameters":[],"result_type":3,"body":{"span":{"file":0,"start":145,"end":232},"root_block":0,"blocks":[{"span":{"file":0,"start":145,"end":232},"open_brace_span":{"file":0,"start":145,"end":146},"statements":[0,1],"close_brace_span":{"file":0,"start":231,"end":232}}],"statements":[{"span":{"file":0,"start":147,"end":214},"kind":{"kind":"local-declaration","keyword_span":{"file":0,"start":147,"end":152},"mutable":false,"name":{"text":"o","span":{"file":0,"start":153,"end":154}},"type_syntax":4,"equals_span":{"file":0,"start":162,"end":163},"initializer":3,"semicolon_span":{"file":0,"start":213,"end":214}}},{"span":{"file":0,"start":215,"end":230},"kind":{"kind":"return","keyword_span":{"file":0,"start":215,"end":221},"value":5,"semicolon_span":{"file":0,"start":229,"end":230}}}],"expressions":[{"span":{"file":0,"start":178,"end":181},"kind":{"kind":"string-literal","spelling":"\"b\""}},{"span":{"file":0,"start":204,"end":207},"kind":{"kind":"string-literal","spelling":"\"a\""}},{"span":{"file":0,"start":190,"end":210},"kind":{"kind":"struct-construction","type_name":{"text":"Inner","span":{"file":0,"start":190,"end":195}},"open_paren_span":{"file":0,"start":195,"end":196},"open_brace_span":{"file":0,"start":196,"end":197},"fields":[{"span":{"file":0,"start":198,"end":207},"kind":{"kind":"explicit","name":{"text":"text","span":{"file":0,"start":198,"end":202}},"colon_span":{"file":0,"start":202,"end":203},"value":1}}],"close_brace_span":{"file":0,"start":208,"end":209},"close_paren_span":{"file":0,"start":209,"end":210}}},{"span":{"file":0,"start":164,"end":213},"kind":{"kind":"struct-construction","type_name":{"text":"Outer","span":{"file":0,"start":164,"end":169}},"open_paren_span":{"file":0,"start":169,"end":170},"open_brace_span":{"file":0,"start":170,"end":171},"fields":[{"span":{"file":0,"start":172,"end":181},"kind":{"kind":"explicit","name":{"text":"tail","span":{"file":0,"start":172,"end":176}},"colon_span":{"file":0,"start":176,"end":177},"value":0}},{"span":{"file":0,"start":183,"end":210},"kind":{"kind":"explicit","name":{"text":"inner","span":{"file":0,"start":183,"end":188}},"colon_span":{"file":0,"start":188,"end":189},"value":2}}],"close_brace_span":{"file":0,"start":211,"end":212},"close_paren_span":{"file":0,"start":212,"end":213}}},{"span":{"file":0,"start":222,"end":223},"kind":{"kind":"reference","name":{"text":"o","span":{"file":0,"start":222,"end":223}}}},{"span":{"file":0,"start":222,"end":229},"kind":{"kind":"field-access","base":4,"dot_span":{"file":0,"start":223,"end":224},"field":{"text":"inner","span":{"file":0,"start":224,"end":229}}}}]}}]}],"diagnostics":[]}}"#;
+const PROJECTED_AGGREGATE_ASSIGNMENT_SOURCE: &str = "interface Inner extends ZrynaStruct { text: String; }\ninterface Outer extends ZrynaStruct { inner: Inner; tail: String; }\nfunction make(): Outer { let o: Outer = Outer({ tail: \"b\", inner: Inner({ text: \"a\" }) }); const replacement: Inner = Inner({ text: \"c\" }); o.inner = replacement; return o; }";
+const PROJECTED_AGGREGATE_ASSIGNMENT_RESPONSE: &str = r#"{"id":814,"result":{"schema_version":4,"files":[{"id":0,"path":"src/main.zry","imports":[],"type_syntax":[{"span":{"file":0,"start":44,"end":50},"kind":{"kind":"string","keyword_span":{"file":0,"start":44,"end":50}}},{"span":{"file":0,"start":99,"end":104},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":99,"end":104}}}},{"span":{"file":0,"start":112,"end":118},"kind":{"kind":"string","keyword_span":{"file":0,"start":112,"end":118}}},{"span":{"file":0,"start":139,"end":144},"kind":{"kind":"named","name":{"text":"Outer","span":{"file":0,"start":139,"end":144}}}},{"span":{"file":0,"start":154,"end":159},"kind":{"kind":"named","name":{"text":"Outer","span":{"file":0,"start":154,"end":159}}}},{"span":{"file":0,"start":232,"end":237},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":232,"end":237}}}}],"data_declarations":[{"span":{"file":0,"start":0,"end":53},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":0,"end":9},"name":{"text":"Inner","span":{"file":0,"start":10,"end":15}},"extends_span":{"file":0,"start":16,"end":23},"marker_span":{"file":0,"start":24,"end":35},"open_brace_span":{"file":0,"start":36,"end":37},"close_brace_span":{"file":0,"start":52,"end":53},"fields":[{"span":{"file":0,"start":38,"end":51},"name":{"text":"text","span":{"file":0,"start":38,"end":42}},"colon_span":{"file":0,"start":42,"end":43},"semicolon_span":{"file":0,"start":50,"end":51},"type_syntax":0}]}},{"span":{"file":0,"start":54,"end":121},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":54,"end":63},"name":{"text":"Outer","span":{"file":0,"start":64,"end":69}},"extends_span":{"file":0,"start":70,"end":77},"marker_span":{"file":0,"start":78,"end":89},"open_brace_span":{"file":0,"start":90,"end":91},"close_brace_span":{"file":0,"start":120,"end":121},"fields":[{"span":{"file":0,"start":92,"end":105},"name":{"text":"inner","span":{"file":0,"start":92,"end":97}},"colon_span":{"file":0,"start":97,"end":98},"semicolon_span":{"file":0,"start":104,"end":105},"type_syntax":1},{"span":{"file":0,"start":106,"end":119},"name":{"text":"tail","span":{"file":0,"start":106,"end":110}},"colon_span":{"file":0,"start":110,"end":111},"semicolon_span":{"file":0,"start":118,"end":119},"type_syntax":2}]}}],"functions":[{"span":{"file":0,"start":122,"end":296},"export_span":null,"function_span":{"file":0,"start":122,"end":130},"name":{"text":"make","span":{"file":0,"start":131,"end":135}},"parameters":[],"result_type":3,"body":{"span":{"file":0,"start":145,"end":296},"root_block":0,"blocks":[{"span":{"file":0,"start":145,"end":296},"open_brace_span":{"file":0,"start":145,"end":146},"statements":[0,1,2,3],"close_brace_span":{"file":0,"start":295,"end":296}}],"statements":[{"span":{"file":0,"start":147,"end":212},"kind":{"kind":"local-declaration","keyword_span":{"file":0,"start":147,"end":150},"mutable":true,"name":{"text":"o","span":{"file":0,"start":151,"end":152}},"type_syntax":4,"equals_span":{"file":0,"start":160,"end":161},"initializer":3,"semicolon_span":{"file":0,"start":211,"end":212}}},{"span":{"file":0,"start":213,"end":261},"kind":{"kind":"local-declaration","keyword_span":{"file":0,"start":213,"end":218},"mutable":false,"name":{"text":"replacement","span":{"file":0,"start":219,"end":230}},"type_syntax":5,"equals_span":{"file":0,"start":238,"end":239},"initializer":5,"semicolon_span":{"file":0,"start":260,"end":261}}},{"span":{"file":0,"start":262,"end":284},"kind":{"kind":"assignment","target":7,"equals_span":{"file":0,"start":270,"end":271},"value":8,"semicolon_span":{"file":0,"start":283,"end":284}}},{"span":{"file":0,"start":285,"end":294},"kind":{"kind":"return","keyword_span":{"file":0,"start":285,"end":291},"value":9,"semicolon_span":{"file":0,"start":293,"end":294}}}],"expressions":[{"span":{"file":0,"start":176,"end":179},"kind":{"kind":"string-literal","spelling":"\"b\""}},{"span":{"file":0,"start":202,"end":205},"kind":{"kind":"string-literal","spelling":"\"a\""}},{"span":{"file":0,"start":188,"end":208},"kind":{"kind":"struct-construction","type_name":{"text":"Inner","span":{"file":0,"start":188,"end":193}},"open_paren_span":{"file":0,"start":193,"end":194},"open_brace_span":{"file":0,"start":194,"end":195},"fields":[{"span":{"file":0,"start":196,"end":205},"kind":{"kind":"explicit","name":{"text":"text","span":{"file":0,"start":196,"end":200}},"colon_span":{"file":0,"start":200,"end":201},"value":1}}],"close_brace_span":{"file":0,"start":206,"end":207},"close_paren_span":{"file":0,"start":207,"end":208}}},{"span":{"file":0,"start":162,"end":211},"kind":{"kind":"struct-construction","type_name":{"text":"Outer","span":{"file":0,"start":162,"end":167}},"open_paren_span":{"file":0,"start":167,"end":168},"open_brace_span":{"file":0,"start":168,"end":169},"fields":[{"span":{"file":0,"start":170,"end":179},"kind":{"kind":"explicit","name":{"text":"tail","span":{"file":0,"start":170,"end":174}},"colon_span":{"file":0,"start":174,"end":175},"value":0}},{"span":{"file":0,"start":181,"end":208},"kind":{"kind":"explicit","name":{"text":"inner","span":{"file":0,"start":181,"end":186}},"colon_span":{"file":0,"start":186,"end":187},"value":2}}],"close_brace_span":{"file":0,"start":209,"end":210},"close_paren_span":{"file":0,"start":210,"end":211}}},{"span":{"file":0,"start":254,"end":257},"kind":{"kind":"string-literal","spelling":"\"c\""}},{"span":{"file":0,"start":240,"end":260},"kind":{"kind":"struct-construction","type_name":{"text":"Inner","span":{"file":0,"start":240,"end":245}},"open_paren_span":{"file":0,"start":245,"end":246},"open_brace_span":{"file":0,"start":246,"end":247},"fields":[{"span":{"file":0,"start":248,"end":257},"kind":{"kind":"explicit","name":{"text":"text","span":{"file":0,"start":248,"end":252}},"colon_span":{"file":0,"start":252,"end":253},"value":4}}],"close_brace_span":{"file":0,"start":258,"end":259},"close_paren_span":{"file":0,"start":259,"end":260}}},{"span":{"file":0,"start":262,"end":263},"kind":{"kind":"reference","name":{"text":"o","span":{"file":0,"start":262,"end":263}}}},{"span":{"file":0,"start":262,"end":269},"kind":{"kind":"field-access","base":6,"dot_span":{"file":0,"start":263,"end":264},"field":{"text":"inner","span":{"file":0,"start":264,"end":269}}}},{"span":{"file":0,"start":272,"end":283},"kind":{"kind":"reference","name":{"text":"replacement","span":{"file":0,"start":272,"end":283}}}},{"span":{"file":0,"start":292,"end":293},"kind":{"kind":"reference","name":{"text":"o","span":{"file":0,"start":292,"end":293}}}}]}}]}],"diagnostics":[]}}"#;
 
 fn response_snapshot(response: &str) -> RawProjectSyntaxSnapshot {
     let value: serde_json::Value = serde_json::from_str(response).expect("adapter response JSON");
@@ -8374,6 +8377,106 @@ fn projected_aggregate_clone_stays_excluded_from_direct_return() {
 }
 
 #[test]
+fn projected_aggregate_assignment_moves_one_complete_root_into_a_static_field() {
+    let sources = sources_for(PROJECTED_AGGREGATE_ASSIGNMENT_SOURCE);
+    let syntax =
+        verify_snapshot(response_snapshot(PROJECTED_AGGREGATE_ASSIGNMENT_RESPONSE), &sources)
+            .expect("source-faithful projected aggregate assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("projected aggregate assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let destination = roots[&0];
+    let source = roots[&1];
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("projected aggregate replacement");
+    let moved = instructions[replace_index - 1];
+    let replace = instructions[replace_index];
+    assert_eq!(moved.kind(), VerifiedInstructionKind::MoveFromPlace);
+    assert_eq!(moved.place_operands().next(), Some(source));
+    assert_eq!(replace.value_operands().next(), moved.result());
+    let target = replace.place_operands().next().expect("static target");
+    assert!(matches!(
+        function.places().find(|place| place.id() == target).expect("target place").kind(),
+        VerifiedPlaceKind::StructField { base, ordinal: 0 } if base == destination
+    ));
+    let temporary = moved.result().and_then(|value| {
+        function.places().find(
+            |place| matches!(place.kind(), VerifiedPlaceKind::Temporary(owner) if owner == value),
+        )
+    });
+    assert!(temporary.is_some(), "whole-root move has one distinct temporary owner");
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+        "commit drops only the old projected aggregate subtree",
+    );
+    assert_eq!(instructions[replace_index + 1].kind(), VerifiedInstructionKind::MoveFromPlace);
+    assert_eq!(instructions[replace_index + 1].place_operands().next(), Some(destination));
+    assert_eq!(block.terminator().derived_drop_actions().count(), 0);
+}
+
+#[test]
+fn projected_aggregate_assignment_rejects_a_projected_source() {
+    let mut source = PROJECTED_AGGREGATE_ASSIGNMENT_SOURCE.to_owned();
+    let start = source.rfind("replacement").expect("assignment source");
+    let end = start + "replacement".len();
+    source.replace_range(start..end, "o.inner");
+    let start = u32::try_from(start).expect("source start");
+    let end = u32::try_from(end).expect("source end");
+    let mut raw = shift_snapshot_signed(
+        response_snapshot(PROJECTED_AGGREGATE_ASSIGNMENT_RESPONSE),
+        end,
+        i32::try_from("o.inner".len()).expect("replacement length")
+            - i32::try_from("replacement".len()).expect("source length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    body.expressions[8] = RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: start + 1 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "o".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start, end: start + 1 },
+            },
+        },
+    };
+    let projected = u32::try_from(body.expressions.len()).expect("projected source");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: start + 7 },
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: 8,
+            dot_span: zryna_source::UntrustedSpan { file: 0, start: start + 1, end: start + 2 },
+            field: RawIdentifierSyntax {
+                text: "inner".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start: start + 2, end: start + 7 },
+            },
+        },
+    });
+    let RawStatementKind::Assignment { value, .. } = &mut body.statements[2].kind else {
+        panic!("assignment")
+    };
+    *value = projected;
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful projected source");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("projected source");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3013");
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(&sources, nth_untrusted_span(&source, "o.inner", 1))),
+    );
+}
+
+#[test]
 fn static_subobject_move_rejects_the_wrong_exact_contextual_type() {
     let mut source = PROJECTED_INNER_MOVE_SOURCE.to_owned();
     let type_start =
@@ -9392,6 +9495,37 @@ fn structural_clone_resource_preflight_accepts_exact_limits_and_rejects_excess_o
     ));
     assert!(aggregate_clone_budget_violation(0, 0, 0, 0, usize::MAX, 0));
     assert!(aggregate_clone_budget_violation(0, 0, 0, 0, 0, usize::MAX));
+}
+
+#[test]
+fn projected_aggregate_assignment_resource_preflight_is_exact_and_overflow_checked() {
+    use zryna_ir::data_ownership_v1::{
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, MAX_PLACES_PER_FUNCTION, MAX_VALUES_PER_FUNCTION,
+    };
+
+    assert!(!projected_aggregate_assignment_budget_violation(
+        MAX_VALUES_PER_FUNCTION - 1,
+        MAX_PLACES_PER_FUNCTION - 4,
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 3,
+        1,
+        3,
+    ));
+    for (values, places, transitions, reserved, missing) in [
+        (MAX_VALUES_PER_FUNCTION, 0, 0, 0, 0),
+        (0, MAX_PLACES_PER_FUNCTION - 3, 0, 0, 3),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1, 0, 0),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 2, 1, 0),
+        (0, usize::MAX, 0, 0, 0),
+        (0, 0, 0, 0, usize::MAX),
+    ] {
+        assert!(projected_aggregate_assignment_budget_violation(
+            values,
+            places,
+            transitions,
+            reserved,
+            missing,
+        ));
+    }
 }
 
 #[test]

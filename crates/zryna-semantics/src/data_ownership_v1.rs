@@ -795,6 +795,19 @@ fn projected_subobject_move_budget_violation(
         || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
 }
 
+fn projected_aggregate_assignment_budget_violation(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    missing_path_places: usize,
+) -> bool {
+    let Some(additional_places) = missing_path_places.checked_add(1) else { return true };
+    owned_value_budget_violation(values, 1)
+        || owned_place_budget_violation(places, additional_places)
+        || aggregate_transition_budget_violation(transitions, reserved_transitions, 2)
+}
+
 fn aggregate_clone_budget_violation(
     values: usize,
     places: usize,
@@ -5158,6 +5171,7 @@ struct PrivateOwnedAggregateLowerer<'a, 'e> {
     aggregate_operands: usize,
     aggregate_subobject_moves: usize,
     projected_aggregate_clones: usize,
+    projected_aggregate_assignments: usize,
     reserved_transitions: usize,
     owners: OwnerState,
     next_value: u32,
@@ -6600,6 +6614,155 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         )
     }
 
+    fn projected_aggregate_assignment_source(
+        &mut self,
+        value: u32,
+        expected: Ty,
+        target_root: raw::PlaceId,
+    ) -> Option<(Binding, syntax::RawIdentifierSyntax, Span)> {
+        let expression = self.expression(value).cloned()?;
+        let RawExpressionKind::Reference { name } = expression.kind else {
+            self.errors.at(
+                "ZRYNA-M3013",
+                span(self.input.sources(), expression.span),
+                "projected aggregate assignment requires one whole-root direct reference source",
+                "move one distinct fully initialized exact aggregate local into the projection",
+            );
+            return None;
+        };
+        let Some(source) = self.bindings.get(&name.text).cloned() else {
+            self.errors.at(
+                "ZRYNA-M3002",
+                span(self.input.sources(), name.span),
+                format!("aggregate value '{}' is not declared", name.text),
+                "reference one exact preceding aggregate local",
+            );
+            return None;
+        };
+        if source.ty != expected {
+            self.errors.at(
+                "ZRYNA-M3016",
+                span(self.input.sources(), name.span),
+                "projected aggregate assignment source has the wrong exact type",
+                "move a whole root with the exact target projection type",
+            );
+            return None;
+        }
+        if source.place == target_root {
+            self.errors.at(
+                "ZRYNA-M3014",
+                span(self.input.sources(), name.span),
+                "projected aggregate assignment cannot consume its enclosing root",
+                "move one distinct aggregate root into the projection",
+            );
+            return None;
+        }
+        if !self.whole_root_available(source.place) {
+            self.errors.at(
+                "ZRYNA-M3014",
+                span(self.input.sources(), name.span),
+                "projected aggregate assignment source is moved or only partially available",
+                "move one distinct fully initialized aggregate root into the projection",
+            );
+            return None;
+        }
+        let expression_span = span(self.input.sources(), expression.span);
+        Some((source, name, expression_span))
+    }
+
+    fn lower_projected_aggregate_assignment(
+        &mut self,
+        target: u32,
+        value: u32,
+        at: Span,
+    ) -> Option<()> {
+        if self.projected_aggregate_assignments != 0 {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "this checkpoint admits only one projected aggregate assignment per function",
+                "move one complete Struct or fixed-array root into one static aggregate projection",
+            );
+            return None;
+        }
+        let Some(target_preflight) = self.owned_place_preflight(target) else {
+            let _ = self.owned_place(target);
+            return None;
+        };
+        let target_ty = target_preflight.place.ty;
+        if target_preflight.place.is_root
+            || target_ty.is_copy()
+            || !matches!(target_ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
+            || !self.supported(target_ty)
+        {
+            self.errors.at(
+                "ZRYNA-M3013",
+                at,
+                "projected aggregate assignment requires one exact non-Copy static Struct or fixed-array target",
+                "assign one complete exact aggregate root to a static Struct field or constant fixed-array element",
+            );
+            return None;
+        }
+        if !target_preflight.place.mutable
+            || !self.preflight_projection_available(&target_preflight)
+        {
+            self.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "projected aggregate assignment target is immutable, moved, or overlaps a moved subobject",
+                "replace one initialized mutable available static aggregate projection",
+            );
+            return None;
+        }
+        let (_source, name, source_span) = self.projected_aggregate_assignment_source(
+            value,
+            target_ty,
+            target_preflight.place.root,
+        )?;
+        if projected_aggregate_assignment_budget_violation(
+            self.next_value as usize,
+            self.places.len(),
+            self.instructions.len(),
+            self.reserved_transitions,
+            target_preflight.missing,
+        ) {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "projected aggregate assignment exceeds a checked value, place, or transition resource limit",
+                "reduce static projection depth or preceding owned expressions",
+            );
+            return None;
+        }
+
+        let target = self.owned_place(target)?;
+        debug_assert_eq!(target.ty, target_ty);
+        debug_assert!(!target.is_root);
+        if !self.reserve_transition(at) {
+            return None;
+        }
+        let prepared = self.reference_value(&name, target_ty, source_span);
+        self.release_transition();
+        let prepared = prepared?;
+        if !self.emit_effect(
+            at,
+            raw::InstructionKind::ReplacePlace { place: target.place, value: prepared },
+        ) {
+            return None;
+        }
+        if self.owners.transfer(prepared).is_none() {
+            self.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "projected aggregate assignment has no distinct prepared owner",
+                "move one available independently owned aggregate root into the projection",
+            );
+            return None;
+        }
+        self.projected_aggregate_assignments += 1;
+        Some(())
+    }
+
     fn clone_projected_aggregate_local(
         &mut self,
         operand: u32,
@@ -7626,6 +7789,7 @@ fn lower_private_owned_aggregate_function<'a>(
         aggregate_operands: 0,
         aggregate_subobject_moves: 0,
         projected_aggregate_clones: 0,
+        projected_aggregate_assignments: 0,
         reserved_transitions: 0,
         owners: OwnerState::default(),
         next_value: 0,
@@ -7834,6 +7998,17 @@ fn lower_private_owned_aggregate_function<'a>(
                     return None;
                 }
                 if !matches!(target_expression.kind, RawExpressionKind::Reference { .. }) {
+                    let target_ty = lowerer.projection_expression_type(*target);
+                    if target_ty.is_some_and(|ty| {
+                        matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
+                    }) {
+                        lowerer.lower_projected_aggregate_assignment(
+                            *target,
+                            *value,
+                            span(input.sources(), statement.span),
+                        )?;
+                        continue;
+                    }
                     let target_place = lowerer.owned_place(*target)?;
                     let target_span = span(input.sources(), target_expression.span);
                     if target_place.is_root || target_place.ty.category != TypeCategory::String {

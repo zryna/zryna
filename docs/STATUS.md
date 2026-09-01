@@ -145,9 +145,12 @@ Whole-root assignment for the same graphs is prepare-before-commit, rejects dire
 self-consumption, and preserves sealed recursive cleanup for the old destination.
 The verified IR now also seals projected replacement's old-subobject traversal and transfers the
 prepared subtree's masks and enum refinement without disturbing siblings. The semantic producer
-uses it for prepare-before-commit replacement of mutable available static String leaves; preparation
-retains the enclosing root and commit drops only the exact old leaf. General non-String projected
-assignment remains unfinished. The producer also resolves canonical static StructField and
+uses it for prepare-before-commit replacement of mutable available static String leaves and for at
+most one private straight-line aggregate site. That aggregate site moves a distinct fully
+initialized exact same-type supported non-Copy Struct or FixedArray whole root into a mutable
+available `StructField`/`FixedArrayConstant` projection; commit recursively drops only the old
+target, consumes the source, and retains the destination root and sibling masks. The producer also
+resolves canonical static StructField and
 FixedArrayConstant source places for Copy reads, exact String-leaf moves, and at most one supported
 Struct/FixedArray subobject move into an exact directly initialized same-type local. It materializes
 the selected subobject's complete descendants, preserves the enclosing root's masked cleanup
@@ -186,8 +189,9 @@ uncommitted-result exclusion, reverse cleanup, deterministic replay, and event l
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside that direct-local exception or the single-variant match-local enum
-payload extraction, broader enum-payload moves, dynamic or Vec-element projections, general non-String
-projected assignment, projected aggregate clone outside the direct-local exception, partial Enum
+payload extraction, broader enum-payload moves, dynamic or Vec-element projections, projected
+aggregate assignment outside the exact whole-root-to-static-projection site, projected aggregate
+clone outside the direct-local exception, partial Enum
 transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
 contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
