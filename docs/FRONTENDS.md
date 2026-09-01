@@ -141,3 +141,21 @@ protocol-v2 M1 path. The final authenticated closure can enter the
 [M2 native MIR profile](M2_NATIVE_MIR.md) and its audited internal
 [Linux x86-64 native backend](M2_NATIVE_BACKEND.md). Those sealed boundaries are surfaced only
 through the explicit profile and its manifest-v2 atomic transaction.
+
+## Protocol v4 data and ownership syntax
+
+Protocol v4 is a separate internal M3 contract. It adds a module-flat, canonical type-syntax
+arena; nominal struct and enum declaration syntax; fixed arrays and compiler-known owned,
+borrowed, shared, and weak container spellings; and source-faithful construction, projection,
+match, and weak-upgrade forms. The pinned TypeScript 6 worker uses parser AST shape and exact UTF-8
+byte spans only. It does not create a TypeScript `Program`, resolve a symbol or module, infer a
+type, classify a move, compute layout, apply ownership rules, or construct IR.
+
+The matching Rust transport requires exact protocol version `4` and the capability tuple
+`module_resolution: false`, `semantic_diagnostics: false`, `control_flow_v1: true`, and
+`data_ownership_syntax_v1: true`. Its bounded decoder and source-map verifier reject the complete
+response on unknown fields, malformed or non-source-faithful spans, noncanonical arenas,
+prototype-sensitive names, or the first item beyond a frozen limit. Protocols v2 and v3 remain
+independent and unchanged. Protocol v4 is not selected by the public driver or CLI; later M3
+semantics may consume only its opaque verified snapshot. See
+[syntax protocol v4](SYNTAX_PROTOCOL_V4.md).

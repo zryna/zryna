@@ -123,6 +123,12 @@
       "title": "Scalar ABI v1"
     },
     {
+      "id": "reference/syntax-protocol-v4",
+      "source": "docs/SYNTAX_PROTOCOL_V4.md",
+      "path": "documents/reference/syntax-protocol-v4.md",
+      "title": "Syntax protocol v4"
+    },
+    {
       "id": "status/current",
       "source": "docs/STATUS.md",
       "path": "documents/status/current.md",
