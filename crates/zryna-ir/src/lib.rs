@@ -9,6 +9,8 @@ use zryna_source::{SourceMap, Span};
 
 /// Versioned structured control-flow IR for the planned M2 profile.
 pub mod control_flow_v1;
+/// Separately verified data, ownership, and cleanup IR for the planned M3 profile.
+pub mod data_ownership_v1;
 
 pub use zryna_abi::{LogicalExportName, VerifiedScalarExport};
 

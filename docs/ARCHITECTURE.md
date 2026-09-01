@@ -348,10 +348,10 @@ artifact contract is reinterpreted.
 
 ## Isolated `DataOwnershipV1` boundary
 
-M3 is specified as another separately selected and separately verified profile. Its first two
-internal compiler authorities are implemented, but the profile is not publicly selectable. It may not widen
-`I32V1`, mutate `ControlFlowV1`, or expose a partial public command. Its authority chain is planned
-as:
+M3 is specified as another separately selected and separately verified profile. Its syntax,
+layout, and Universal IR authorities are implemented internally, but the profile is not publicly
+selectable. It may not widen `I32V1`, mutate `ControlFlowV1`, or expose a partial public command.
+Its remaining authority chain is:
 
 ```text
 verified protocol-v4 syntax
@@ -367,6 +367,15 @@ opaque verified DataOwnershipV1 views
     ├── audited memory-bearing core WebAssembly
     └── independently verified native MIR → audited Linux x86-64 artifact
 ```
+
+The isolated [`DataOwnershipV1` IR contract](M3_DATA_OWNERSHIP_IR.md) verifies one raw program
+against an independently supplied final `SourceMap`, expected entry file, and owned verified
+`Linear32V1` and `LinuxX8664V1` layout snapshots. The two snapshots must carry the exact targets,
+same source-map and type-universe identities, and fingerprints claimed by the raw authority tuple.
+Success retains both sealed layout authorities and scalar ABI v1 while exposing only opaque
+module, function, block, value, place, projection, ownership, borrow, and cleanup views. Its
+`OwnershipRuntimeV1` value is only a closed contract-identity enum; the sealed runtime ABI and its
+implementation remain issue #80 work.
 
 The normative planning authorities are
 [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md),
@@ -393,11 +402,11 @@ paths, addresses, allocation state, or compiler version text enters a layout doc
 machine-readable `crates/zryna-layout/src/fixtures/layout-v1.json` oracle is shared with later IR, backend,
 runtime, and conformance work.
 
-Issues #75, #76, and #77 add no executable capability. Later components must keep syntax providers free
-of semantics, make every backend consume these opaque verified views, depend on ABI declarations
-rather than runtime implementations, and never recompute host layouts. The driver alone may
-compose audited target runtimes and publish the future explicit `data-ownership-v1` manifest-v3
-transaction after all target gates exist.
+Issues #75 through #78 add no executable capability. Later components must keep syntax providers
+free of semantics, make every backend consume these opaque verified views, depend on ABI
+declarations rather than runtime implementations, and never recompute host layouts. The driver
+alone may compose audited target runtimes and publish the future explicit `data-ownership-v1`
+manifest-v3 transaction after all target gates exist.
 
 ## WebAssembly profiles
 

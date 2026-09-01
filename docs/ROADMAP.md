@@ -185,18 +185,18 @@ Pair slice, checked layout rules, ownership transitions, and non-Rust runtime AB
 implementation is activated. The canonical planning inventory is digest-pinned in
 `tests/m3-contract-v1.json`.
 
-Current status: the contract, internal verified aggregate-layout authority, and separately
-versioned protocol-v4 syntax boundary are implemented. The syntax boundary includes a pinned
-TypeScript 6 syntax-only worker and an opaque source-map-bound Rust verifier, but it performs no
-M3 semantics and is not selected by the public driver. No M3 IR, runtime, backend, CLI, or host
-capability is public.
+Current status: the contract, internal verified aggregate-layout authority, separately versioned
+protocol-v4 syntax boundary, and isolated `DataOwnershipV1` raw-to-verified IR boundary are
+implemented. The syntax boundary includes a pinned TypeScript 6 syntax-only worker and an opaque
+source-map-bound Rust verifier, but it performs no M3 semantics and is not selected by the public
+driver. The IR boundary exposes no runtime, backend, driver, CLI, or host capability.
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |
 |   #75 | normative profile, layout, ownership, and runtime ABI contract       | M2 closure              | complete    |
 |   #76 | syntax protocol v4 and TypeScript 6 syntax-only adapter              | #75                     | complete    |
 |   #77 | verified aggregate layout authority                                  | #75                     | complete    |
-|   #78 | separately verified DataOwnershipV1 Universal IR                     | #75, #77                | planned     |
+|   #78 | separately verified DataOwnershipV1 Universal IR                     | #75, #77                | complete    |
 |   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | planned     |
 |   #80 | versioned ownership runtime ABI authority                            | #75, #77                | planned     |
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | planned     |

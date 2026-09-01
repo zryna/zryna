@@ -75,7 +75,7 @@ profile is intentionally narrow.
 - Issue #57 records the separate authenticated website import, deployment, and live commit/digest
   evidence. This compiler status does not assert that an external website deployment has occurred.
 
-## Specified M3 profile with internal syntax and layout authorities
+## Specified M3 profile with internal syntax, layout, and IR authorities
 
 Issue #75 specifies the separate future `DataOwnershipV1` profile and exact CLI spelling
 `data-ownership-v1`. The normative data/ownership, aggregate-layout, and ownership-runtime-ABI
@@ -99,8 +99,16 @@ module-resolution or semantic authority. A typed frontend process boundary requi
 capability tuple and fails closed before exposing an opaque source-bound snapshot. Protocol v2 and
 v3 behavior remains unchanged.
 
+The isolated `zryna-ir::data_ownership_v1` boundary now accepts an untrusted M3 program only with
+the exact final source map, independently selected entry file, and verified `Linear32V1` and
+`LinuxX8664V1` layout snapshots. It proves the complete source and CFG structure, branded layout
+types and projections, ownership transitions, borrow state, and exact cleanup plans before
+constructing opaque immutable views. The verified program retains both layout authorities, scalar
+ABI v1 for entry-module scalar exports, and only the enum identity of the planned
+`OwnershipRuntimeV1` contract. It does not implement or seal the runtime ABI planned by issue #80.
+
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
-expose DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
+route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
 JavaScript/WebAssembly/native artifacts, or accept `--profile data-ownership-v1`. Default M1 and
 explicit `control-flow-v1` M2 remain the only public profiles.
 
@@ -145,6 +153,7 @@ data profiles.
 - [M2 deterministic JavaScript backend](M2_JAVASCRIPT_BACKEND.md)
 - [M2 direct core WebAssembly backend](M2_WEBASSEMBLY_BACKEND.md)
 - [M2 verified native MIR](M2_NATIVE_MIR.md)
+- [M3 verified data and ownership IR](M3_DATA_OWNERSHIP_IR.md)
 - [Roadmap](ROADMAP.md)
 - [Aggregate layout v1](../spec/memory-model/AGGREGATE_LAYOUT_V1.md)
 - [Syntax protocol v4](SYNTAX_PROTOCOL_V4.md)

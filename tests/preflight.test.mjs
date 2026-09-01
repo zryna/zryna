@@ -26,13 +26,14 @@ test('preflight has one frozen portable command order', () => {
       ['rust-format', 'cargo'],
       ['m2-semantic-driver-tests', 'cargo'],
       ['m3-layout-tests', 'cargo'],
+      ['m3-data-ir-tests', 'cargo'],
       ['rust-workspace-check', 'cargo'],
       ['frontend-syntax-tests', 'cargo'],
     ],
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), '4ead02af23b15506290c9f177d42f53ac762d55ba3affe2f20dcdd2cb9acaf01');
+  assert.equal(preflightCommandDigest(), '67d121f5aafed852f0dffefb6eb4c843aae688c308e97972ab09fda08d4968d9');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [
@@ -42,6 +43,7 @@ test('preflight has one frozen portable command order', () => {
     (commands) => commands[3].args.pop(),
     (commands) => commands[4].args.pop(),
     (commands) => commands[5].args.pop(),
+    (commands) => commands[6].args.pop(),
   ]) {
     const changed = structuredClone(PREFLIGHT_COMMANDS);
     mutate(changed);
