@@ -1,0 +1,251 @@
+# M3 verified data and ownership IR
+
+Status: implemented internal compiler trust boundary. This document describes the separately
+verified `DataOwnershipV1` Universal IR added by issue #78. It does not activate an M3 semantic
+lowerer, runtime, backend, driver route, CLI profile, manifest, or public aggregate ABI.
+
+## Authority and isolation
+
+`zryna-ir::data_ownership_v1` is independent of the M1 `I32V1` and M2 `ControlFlowV1` raw and
+verified programs. It does not add a type, operation, diagnostic, artifact field, or acceptance
+case to either older profile.
+
+The only constructor of its verified program has this authority shape:
+
+```text
+verify(
+    raw Program,
+    &SourceMap,
+    expected entry FileId,
+    owned Linear32V1 VerifiedLayouts,
+    owned LinuxX8664V1 VerifiedLayouts,
+) -> Result<VerifiedProgram, Vec<Diagnostic>>
+```
+
+The raw program carries these exact independent claims:
+
+```text
+AuthorityClaims {
+    runtime: OwnershipRuntimeV1,
+    type_universe: [u8; 32],
+    linear32_fingerprint: [u8; 32],
+    linux_x86_64_fingerprint: [u8; 32],
+}
+```
+
+Verification requires both layout snapshots to have the same `SourceMapIdentity` as the supplied
+source map and the same `TypeUniverseIdentity` as one another and the raw claim. Their targets must
+be exactly `Linear32V1` and `LinuxX8664V1`, respectively, and their complete sealed fingerprints
+must match the corresponding claims. Every IR `TypeId` is looked up through both snapshots; a
+foreign universe, unknown index, target swap, or fingerprint mismatch fails closed. Success moves
+both snapshots into the verified program, so later target work can consume the authority without
+reconstructing layout.
+
+The expected entry file is independent of the raw entry-module claim. Modules are dense and in
+the final source-map order, each module is bound to one exact `FileId`, and every span must resolve
+through that source map inside its containing module. The verifier derives CFG predecessor,
+successor, reachability, dominance, loop, and exit facts from the exactly-one terminator in each
+block; raw code cannot supply a competing CFG authority.
+
+Only entry-module scalar exports enter scalar ABI v1. Aggregate, owned, shared, weak, and borrowed
+values cannot appear in the public ABI. The verified program retains the sealed scalar ABI beside
+the two layout snapshots.
+
+## Closed raw vocabulary
+
+The raw program owns dense arenas for modules, functions, blocks, values, places, borrows, cleanup
+plans, and cleanup actions. Ownership transitions are re-derived from instructions and CFG edges;
+there is no raw transition enum whose claims could substitute for that proof. IDs are local to
+their documented owner. A numerically
+equal ID from another program, module, function, block, type universe, or arena has no authority.
+Every retained arena entry must be reachable and have exactly the required owner; sparse,
+duplicate, cross-owner, shared, and orphan claims are rejected.
+
+Each raw `TypeId(u32)` is only an untrusted canonical-index claim. Verification resolves it through
+both branded `zryna-layout::TypeId` universes. Stored type structure, nominal identity, field and
+variant order, array length, element or payload type, drop kind, and runtime kind come only from
+those layout views. Borrow parameters and definitions separately pair one resolved referent type
+with exact `Shared` or `Exclusive` access. The IR never treats the raw integer as authority or
+recomputes a host layout.
+
+The closed `PlaceKind` inventory is exactly:
+
+- `Parameter(u32)`, `Local(u32)`, or `Temporary(ValueId)` roots;
+- `StructField { base, ordinal }` selected by its sealed source ordinal;
+- `EnumPayload { base, variant }` selected by its sealed variant ordinal and dominating variant
+  proof; or
+- `FixedArrayConstant { base, index }` selected by one in-range constant index.
+
+Each projection records its claimed result type, but verification derives that type step by step
+from the base place and layout authority. Projection through another category, an invalid ordinal
+or index, an inactive enum payload, or a mismatched type is rejected. Parent places overlap all
+children; distinct struct fields and distinct constant array indices are disjoint. Dynamic fixed
+array indexing and vector indexing are value-producing instructions and conservatively borrow the
+complete container rather than manufacturing independently movable projected places.
+
+The exact closed `InstructionKind` inventory is:
+
+```text
+BoolLiteral, I32Literal,
+I32Add, I32Sub, I32Mul, I32Neg,
+Eq, Ne, I32LtS, I32LeS, I32GtS, I32GeS,
+DirectCall,
+StructConstruct, EnumConstruct, FixedArrayConstruct,
+CopyFromPlace, MoveFromPlace, ClonePlace,
+InitializePlace, ReplacePlace, DropPlace,
+EnumDiscriminant, FixedArrayIndexCopy, VecIndexCopy,
+StringClone, StringConcat,
+VecConstruct, VecPush,
+SharedConstruct, SharedClone,
+WeakDowngrade, WeakClone,
+BeginBorrow, BorrowRead, BorrowWrite, EndBorrow
+```
+
+`BeginBorrow` contains one dense `BorrowDefinition` with `Shared` or `Exclusive` access.
+Potentially trapping calls, constructions, clones, replacement, indexing, concatenation, vector
+growth, shared construction, and reference-count increments name the cleanup plan required by
+their exact raw variant. `DropPlace` also supplies the logical release operation for String, Vec,
+Shared, and Weak places; there are no separately forgeable release-helper instructions.
+
+There is no generic target helper, raw address, source-selected runtime symbol, implicit clone,
+implicit conversion, unchecked index, host exception, or arbitrary runtime call instruction.
+Left-to-right operand order is part of every operation. Aggregate operands must exactly match the
+verified field, payload, or element inventory and types.
+
+Every block ends in exactly one terminator from this closed inventory:
+
+```text
+Return { value, cleanup }
+Jump(Edge)
+Branch { condition, when_true, when_false }
+EnumMatch { place, arms }
+WeakUpgradeBranch { weak, success, expired, cleanup }
+Trap { identity, cleanup }
+```
+
+`EnumMatch` has exactly one arm for every sealed variant. `WeakUpgradeBranch` contains the
+indivisible increment-and-branch contract. `TrapIdentity` is closed to `BoundsV1`, `AllocationV1`,
+`CapacityV1`, `RefcountV1`, and `Utf8V1`. A cleanup plan is a dense ID, authoritative span, and
+ordered list whose only `DropAction` is `DropPlace(PlaceId)`.
+
+Calls remain direct and acyclic. Block arguments, call arguments, returns, match payloads, and weak
+upgrade results use sealed value identities with exact types. A borrow cannot cross a branch,
+match, weak-upgrade, loop, return, or trap edge.
+
+## Ownership and cleanup proof
+
+The verifier derives state along reachable CFG paths rather than trusting the order of raw
+transition records. Each non-`Copy` place is exactly one of `uninitialized`, `initialized`,
+`shared-borrowed(k)`, `exclusive-borrowed`, `moved`, or `dropped`. It rejects reads before
+initialization or after move/drop, conflicting or escaping borrows, moves or drops while borrowed,
+contradictory parent/child state, and double ownership effects.
+
+Every reachable join requires exact state equality for every live place. Loop backedges restore
+the exact header state. Passing or returning a non-`Copy` value transfers its one pending drop
+obligation. Replacement evaluates its new value first; only successful completion drops the old
+destination and installs the replacement. A trapping replacement leaves the old destination live
+for cleanup.
+
+Raw cleanup plans are claims, not authority. The verifier independently derives the exact actions
+required at every normal and controlled-trap exit and compares place identity, action, and order.
+Every live owned value is dropped exactly once in reverse successful-completion order. Struct
+fields use reverse declaration order, only the active enum payload is dropped, arrays and vectors
+drop the initialized prefix from its highest element to zero, and container storage is released
+after its contents. Copy, uninitialized, moved, and already dropped places have no drop action.
+Missing, duplicate, extra, reordered, unreachable, or wrong-exit cleanup fails verification.
+
+Every verified instruction or terminator that names cleanup exposes `derived_drop_actions()` for
+that exact program point. Each returned `VerifiedDropAction` seals:
+
+- `root`, the owned root place released by the action;
+- `moved_projections()`, the descendants already moved or dropped and therefore excluded;
+- `initialized_projections()`, the descendants whose initialization completed and remain live; and
+- `active_variant()`, the exact active enum variant when the root is an enum.
+
+These values are derived inside the verifier from the retained verified CFG and ownership state;
+they are not copied from the raw cleanup list. A backend combines this sealed state with the
+retained verified layout views to perform recursive field, element, payload, and container cleanup.
+It never replays raw ownership transitions or invents a partial-initialization mask.
+
+Controlled traps stop later evaluation, execute the verified cleanup plan, and retain the original
+language-trap identity. Cleanup itself is an infallible logical effect. This boundary does not
+implement target cleanup or a runtime.
+
+## Runtime contract identity only
+
+`RuntimeContractIdentity` is a closed enum whose only admitted value is `OwnershipRuntimeV1`.
+It pins the declaration name `zryna-ownership-runtime-v1` and lets later issues reject a program
+claiming another contract. It is not the sealed ownership-runtime ABI authority planned by issue
+#80. This IR does not define target helper symbols, status-number encodings, imports, allocator
+capabilities, runtime object bytes, or an implementation of allocate, release, String, Vec,
+Shared, or Weak operations. Those later authorities must validate their own raw claims and bind
+back to this retained identity.
+
+## Resource limits
+
+Existing `ControlFlowV1` module, function, parameter, block, value, edge, call-depth, and loop-depth
+limits continue to bound the corresponding independent M3 arenas. Fully instantiated types,
+fixed-array length, layout depth, fields and variants, and layout dependency edges retain the
+limits already enforced by the supplied sealed `zryna-layout` authorities; Data IR does not assign
+or recount those layout-owned resources.
+
+The additional IR-owned limits are:
+
+| Resource | Maximum |
+| --- | ---: |
+| Nominal declarations per program | 4,096 |
+| Aggregate-construction operands per program | 262,144 |
+| Ownership places per function | 65,536 |
+| Ownership state transitions per function | 262,144 |
+| Simultaneously active borrows per function | 16,384 |
+| Cleanup plans per function | 65,536 |
+| Inserted cleanup/drop actions per function | 262,144 |
+| Retained diagnostics, including the terminal diagnostic | 256 |
+
+Resource preflight uses checked aggregate counters and runs before proportional graph, layout,
+ownership, or cleanup work. Exact-limit and first-extra tests freeze every new limit. One resource
+failure is terminal and prevents later verification phases from constructing partial authority.
+
+## Stable diagnostics
+
+`ZRYNA-I3xxx` is reserved for this verifier. The exact implemented allocation is:
+
+| Code | Rejected claim |
+| --- | --- |
+| `ZRYNA-I3001` | authority tuple, source, entry, or module mismatch |
+| `ZRYNA-I3002` | malformed, sparse, duplicate, foreign, or orphan structural identity |
+| `ZRYNA-I3003` | layout target, universe, fingerprint, `TypeId`, or stored-type mismatch |
+| `ZRYNA-I3004` | invalid, foreign, or cross-module source span |
+| `ZRYNA-I3005` | invalid value, operation, operand, or result type |
+| `ZRYNA-I3006` | invalid place, projection, overlap, ordinal, or index |
+| `ZRYNA-I3007` | invalid CFG edge, reachability, dominance, loop, or exit claim |
+| `ZRYNA-I3008` | orphan ownership claim or invalid ownership dominance/owner relation |
+| `ZRYNA-I3009` | scalar ABI, export, direct-call, argument, or result mismatch |
+| `ZRYNA-I3010` | invalid ownership-state transition, move, initialization, or replacement |
+| `ZRYNA-I3011` | invalid, conflicting, or escaping borrow |
+| `ZRYNA-I3012` | missing, duplicate, extra, or incorrectly ordered cleanup/drop action |
+| `ZRYNA-I3013` | invalid partial aggregate initialization or initialized-prefix cleanup |
+| `ZRYNA-I3014` | runtime identity, trap, or weak-upgrade contract mismatch |
+| `ZRYNA-I3201` | deterministic resource budget exhausted |
+| `ZRYNA-I3202` | diagnostic budget exhausted or impossible bounded construction failed |
+
+Diagnostics are deterministic and source-located when an authoritative span exists. At most 256
+are retained, including one final `ZRYNA-I3202` when additional details are omitted. Any diagnostic
+prevents construction of the verified program.
+
+## Opaque verified views and non-goals
+
+Verified program, module, function, block, value, place, projection, instruction, terminator,
+borrow, transition, cleanup, and identity fields are private. Public methods expose immutable
+views, opaque identities, exact-size iterators, both sealed layout snapshots, and the sealed scalar
+ABI. Role-preserving payload views include function and block signatures, complete place-root or
+projection kinds, literal values, direct callees and typed value-or-borrow call arguments, enum
+construction variants, borrow identities and access, exhaustive enum arm-to-edge mappings, exact
+trap identities, ordered true/false branch edges, ordered weak-upgrade success/expired edges, and
+the per-site derived drop metadata described above. They do not expose the retained raw program or
+offer a raw-to-verified identity conversion. Compile-fail tests protect construction, raw recovery,
+and mutation boundaries.
+
+This component performs no syntax lowering, semantic analysis, target lowering, optimization,
+allocation, runtime execution, artifact emission, linking, publication, manifest production, or
+CLI selection. Pair is not executable here. M1 and M2 remain the only public compiler profiles.

@@ -240,6 +240,31 @@ test("normative documents preserve old profiles and keep M3 specification-only",
   assert.match(normalized[2], /never exposes Rust `String`/);
 });
 
+test("implemented data IR document freezes the internal authority without runtime activation", async () => {
+  const document = await readFile(
+    new URL("../docs/M3_DATA_OWNERSHIP_IR.md", import.meta.url),
+    "utf8",
+  );
+  assert.match(document, /expected entry FileId/);
+  assert.match(document, /owned Linear32V1 VerifiedLayouts/);
+  assert.match(document, /owned LinuxX8664V1 VerifiedLayouts/);
+  assert.match(document, /same `SourceMapIdentity`/);
+  assert.match(document, /same `TypeUniverseIdentity`/);
+  assert.match(document, /ZRYNA-I3001/);
+  assert.match(document, /ZRYNA-I3014/);
+  assert.match(document, /ZRYNA-I3201/);
+  assert.match(document, /ZRYNA-I3202/);
+  assert.match(document, /Cleanup plans per function \| 65,536/);
+  assert.match(document, /already enforced by the supplied sealed `zryna-layout` authorities/);
+  assert.match(document, /derived_drop_actions\(\)/);
+  assert.match(document, /moved_projections\(\)/);
+  assert.match(document, /initialized_projections\(\)/);
+  assert.match(document, /active_variant\(\)/);
+  assert.match(document, /ordered weak-upgrade success\/expired edges/);
+  assert.match(document, /not the sealed ownership-runtime ABI authority planned by issue/);
+  assert.match(document, /M1 and M2 remain the only public compiler profiles/);
+});
+
 test("package and preflight expose one focused M3 contract gate", async () => {
   const packageDocument = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),

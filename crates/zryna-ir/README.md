@@ -105,3 +105,24 @@ through later verified boundaries; none weaken this IR constructor boundary.
 `ZRYNA-I2xxx` identifies structured-IR failures. `ZRYNA-I2201` is deterministic resource
 exhaustion and `ZRYNA-I2202` is terminal diagnostic-budget exhaustion or an impossible bounded
 construction failure.
+
+## Isolated `DataOwnershipV1` verifier component
+
+The `data_ownership_v1` module is the separate internal M3 Universal IR trust boundary. It does
+not extend the M1 `I32V1` program or the M2 `ControlFlowV1` program. Its verifier accepts raw M3
+claims only with the independently supplied final `SourceMap`, expected entry file, and verified
+`Linear32V1` and `LinuxX8664V1` layout snapshots. It proves that the source-map identity,
+target-neutral type universe, exact storage targets, and both claimed layout fingerprints agree,
+then retains both opaque layout authorities in the verified program.
+
+Raw programs contain their own dense module, function, block, value, place, borrow, and cleanup
+arenas. Ownership transitions are derived from instructions and CFG edges rather than accepted as
+an independent raw state graph. Verification checks exact scalar ABI exports, typed aggregate operations,
+place projections, ownership state, nonescaping borrows, control-flow joins, and deterministic
+cleanup before exposing immutable views. The retained runtime value is only the closed
+`OwnershipRuntimeV1` contract identity. It is not the sealed runtime ABI authority or a runtime
+implementation planned by issue #80, and no helper symbol, target runtime, backend, driver route,
+CLI profile, or public aggregate ABI is supplied here.
+
+The exact authority tuple, raw vocabulary, limits, diagnostics, and verified-view contract are
+documented in [`M3_DATA_OWNERSHIP_IR.md`](../../docs/M3_DATA_OWNERSHIP_IR.md).

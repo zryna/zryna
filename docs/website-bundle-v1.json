@@ -105,6 +105,12 @@
       "title": "M2 direct core WebAssembly backend"
     },
     {
+      "id": "reference/m3-data-ownership-ir",
+      "source": "docs/M3_DATA_OWNERSHIP_IR.md",
+      "path": "documents/reference/m3-data-ownership-ir.md",
+      "title": "M3 verified data and ownership IR"
+    },
+    {
       "id": "reference/memory-model",
       "source": "spec/memory-model/OVERVIEW.md",
       "path": "documents/reference/memory-model.md",

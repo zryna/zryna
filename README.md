@@ -56,6 +56,10 @@ The repository currently establishes and tests:
   flat type and expression arenas, exact UTF-8 spans, a syntax-only TypeScript 6 worker, and an
   opaque source-map-bound Rust verifier; this does not activate `data-ownership-v1` or change
   protocol v2/v3;
+- an internal aggregate-layout authority and a separate `DataOwnershipV1` Universal IR verifier
+  that bind one exact source, CFG, target-neutral type universe, both admitted storage layouts,
+  scalar ABI, and the declared ownership-runtime contract identity behind opaque read-only views;
+  no M3 runtime, backend, driver, CLI, or public aggregate ABI is enabled;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and

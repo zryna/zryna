@@ -10,6 +10,7 @@ repository.workspace = true
 serde.workspace = true
 zryna-abi.workspace = true
 zryna-diagnostics = { path = "../zryna-diagnostics" }
+zryna-layout = { path = "../zryna-layout" }
 zryna-source = { path = "../zryna-source" }
 
 [lints]

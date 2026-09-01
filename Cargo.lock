@@ -1231,6 +1231,7 @@ dependencies = [
  "serde",
  "zryna-abi",
  "zryna-diagnostics",
+ "zryna-layout",
  "zryna-source",
 ]
 
