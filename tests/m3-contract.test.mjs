@@ -261,7 +261,7 @@ test("implemented data IR document freezes the internal authority without runtim
   assert.match(document, /initialized_projections\(\)/);
   assert.match(document, /active_variant\(\)/);
   assert.match(document, /ordered weak-upgrade success\/expired edges/);
-  assert.match(document, /not the sealed ownership-runtime ABI authority planned by issue/);
+  assert.match(document, /separate issue #80 authority now seals the exact runtime/);
   assert.match(document, /M1 and M2 remain the only public compiler profiles/);
 });
 
@@ -283,7 +283,104 @@ test("implemented Copy aggregate semantics remain internal and runtime-free", as
   assert.match(document, /OwnershipRuntimeV1.*non-executable contract identity/s);
   assert.match(document, /M1 and explicit M2 remain the only public compiler profiles/);
   assert.match(document, /Public aggregate parameters\s+or results/);
-  assert.match(document, /No allocator, runtime import, heap operation, drop helper, target\s+artifact/);
+  assert.match(document, /No allocator,\s+runtime\s+import, heap operation, drop helper, target\s+artifact/);
+});
+
+test("implemented ownership-runtime ABI document freezes declarations without runtime activation", async () => {
+  const document = await readFile(
+    new URL("../docs/M3_OWNERSHIP_RUNTIME_ABI.md", import.meta.url),
+    "utf8",
+  );
+  assert.match(document, /exact\s+identifier `zryna-ownership-runtime-v1`/);
+  assert.match(document, /exactly 17 logical operations/);
+  assert.match(document, /owned, verified `Linear32V1` and `LinuxX8664V1` layout authorities/);
+  assert.match(document, /checked C-header evidence/);
+  assert.match(document, /opaque immutable views/);
+  assert.match(document, /Vec allocation and reserve plus all 12 canonical Shared\/Weak control/);
+  assert.match(document, /Raw storage and owned-String behavior are sealed as exact operation/);
+  assert.match(document, /`ZRYNA-R3001` covers ABI\s+identity, version, inventory, operation, and symbol/);
+  assert.match(document, /`ZRYNA-R3002` covers invalid carriers,\s+signatures, results, records, and transitions/);
+  assert.match(document, /ZRYNA-R3201/);
+  assert.match(document, /256 operation records/);
+  assert.match(document, /4,096 target declarations aggregated/);
+  assert.match(document, /65,536 record declarations/);
+  assert.match(document, /65,536 nested declaration\s+items/);
+  assert.match(document, /16 MiB of checked header bytes/);
+  assert.match(document, /256-violation cap/);
+  assert.match(document, /relocation\/call-edge and runtime object\/module\s+byte limits remain reserved for later artifact auditors/);
+  assert.match(document, /failure\s+returns no partial verified authority/);
+  assert.match(document, /no allocator, runtime implementation, target helper body, backend lowering/);
+  assert.match(document, /does not activate `data-ownership-v1`/);
+  assert.match(document, /does not widen or reinterpret M1,\s+M2, scalar ABI v1/);
+});
+
+test("canonical ownership-runtime fixture freezes exact inventories", async () => {
+  const fixture = JSON.parse(
+    await readFile(
+      new URL("../spec/abi/ownership-runtime-v1-fixtures.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const operationOrder = [
+    "allocate",
+    "grow",
+    "release",
+    "stringFromUtf8Copy",
+    "stringClone",
+    "stringConcat",
+    "stringRelease",
+    "vecAllocate",
+    "vecReserve",
+    "vecReleaseStorage",
+    "strongClone",
+    "weakDowngrade",
+    "weakClone",
+    "weakUpgrade",
+    "strongReleaseBegin",
+    "strongReleaseFinish",
+    "weakRelease",
+  ];
+  assert.equal(fixture.schemaVersion, 1);
+  assert.equal(fixture.abiId, "zryna-ownership-runtime-v1");
+  assert.deepEqual(
+    fixture.statuses.map(({ number, name }) => [number, name]),
+    [[0, "OK"], [1, "ALLOCATION"], [2, "CAPACITY"], [3, "REFCOUNT"], [4, "UTF8"], [5, "EXPIRED"], [255, "ABI_VIOLATION"]],
+  );
+  assert.deepEqual(fixture.operationOrder, operationOrder);
+  assert.deepEqual(fixture.operations.map(({ name }) => name), operationOrder);
+  for (const operation of fixture.operations) {
+    assert.equal(typeof operation.javascript.result.carrier, "string");
+    assert.equal(typeof operation.webAssembly.result.carrier, "string");
+    assert.match(operation.nativeLinuxX8664.symbol, /^zryna_rt_o1_[a-z0-9_]+$/);
+    assert.equal(operation.nativeLinuxX8664.result.carrier, "u32-status");
+  }
+  assert.equal(fixture.records.length, 4);
+  assert.equal(fixture.transitionCases.length, 12);
+  assert.deepEqual(
+    fixture.transitionCases.map(({ id }) => id),
+    [
+      "strong-clone",
+      "strong-clone-overflow",
+      "weak-downgrade",
+      "weak-clone-after-expiry",
+      "weak-upgrade",
+      "weak-upgrade-expired",
+      "strong-release-nonlast",
+      "strong-release-last-begin",
+      "strong-release-finish-deallocates",
+      "strong-release-finish-retains-explicit-weak",
+      "weak-release-deallocates",
+      "finish-without-pending-last-strong",
+    ],
+  );
+  assert.equal(fixture.limits.runtimeOperations, 256);
+  assert.equal(fixture.limits.runtimeSymbols, 4_096);
+  assert.equal(fixture.limits.runtimeLayoutReferences, 65_536);
+  assert.equal(fixture.limits.runtimeEdges, 65_536);
+  assert.equal(fixture.limits.runtimeObjectBytes, 16 * 1024 * 1024);
+  assert.equal(fixture.limits.diagnostics, 256);
+  assert.ok(fixture.nonCapabilities.includes("runtime-implementation"));
+  assert.ok(fixture.nonCapabilities.includes("public-aggregate-host-abi"));
 });
 
 test("package and preflight expose one focused M3 contract gate", async () => {
@@ -303,4 +400,8 @@ test("package and preflight expose one focused M3 contract gate", async () => {
     "utf8",
   );
   assert.match(preflight, /tests\/m3-contract\.test\.mjs/);
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  assert.match(readme, /pnpm m3:runtime-abi:quick/);
+  assert.match(readme, /runs 17 unit tests and two compile-fail doctests/);
+  assert.match(readme, /full `pnpm preflight` gate includes all 20 unit tests\s+and both compile-fail doctests/);
 });

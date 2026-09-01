@@ -67,6 +67,13 @@
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
+      "id": "zryna-ownership-runtime-abi",
+      "root": "crates/zryna-ownership-runtime-abi",
+      "kind": "compiler",
+      "dependencies": ["zryna-layout", "zryna-source"],
+      "allowedEntries": ["Cargo.toml", "README.md", "include", "src"]
+    },
+    {
       "id": "zryna-backend-javascript",
       "root": "crates/zryna-backend-javascript",
       "kind": "backend",

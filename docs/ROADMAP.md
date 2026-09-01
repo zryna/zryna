@@ -187,10 +187,13 @@ implementation is activated. The canonical planning inventory is digest-pinned i
 
 Current status: the contract, internal verified aggregate-layout authority, separately versioned
 protocol-v4 syntax boundary, isolated `DataOwnershipV1` raw-to-verified IR boundary, and internal
-Copy-only struct/enum/fixed-array semantic lowerer are implemented. The semantic boundary resolves
+Copy-only struct/enum/fixed-array semantic lowerer, and sealed ownership-runtime ABI v1 declaration
+authority are implemented. The semantic boundary resolves
 nominal types and constant fixed-array projections, verifies both target layouts, and returns only
-sealed IR. It is not selected by the public driver and exposes no runtime, backend, CLI, public
-aggregate ABI, target artifact, or host capability.
+sealed IR. The ABI authority verifies exact declarations, authenticated layout-derived records,
+checked header evidence, and pure transitions; it implements no allocator or helper. M3 is not
+selected by the public driver and exposes no runtime, backend, CLI, public aggregate ABI, target
+artifact, or host capability.
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |
@@ -199,7 +202,7 @@ aggregate ABI, target artifact, or host capability.
 |   #77 | verified aggregate layout authority                                  | #75                     | complete    |
 |   #78 | separately verified DataOwnershipV1 Universal IR                     | #75, #77                | complete    |
 |   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | complete    |
-|   #80 | versioned ownership runtime ABI authority                            | #75, #77                | planned     |
+|   #80 | versioned ownership runtime ABI authority                            | #75, #77                | complete    |
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | planned     |
 |   #82 | bounded nonescaping lexical borrowing                                | #81                     | planned     |
 |   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | planned     |

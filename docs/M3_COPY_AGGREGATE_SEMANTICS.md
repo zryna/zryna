@@ -145,8 +145,10 @@ semantic success can bypass those independent layout or IR resource gates.
 
 Issue #79 adds no runtime ABI authority or implementation. The retained
 `OwnershipRuntimeV1` value in verified IR remains a non-executable contract identity; the sealed
-runtime ABI is Issue #80 work. No allocator, runtime import, heap operation, drop helper, target
-artifact, host observation, or profile manifest is constructed here.
+declaration authority is implemented separately by Issue #80. That authority verifies declarations,
+layout binding, header evidence, and pure transitions but implements no runtime. No allocator, runtime
+import, heap operation, drop helper, target artifact, host observation, or profile manifest is
+constructed here.
 
 The JavaScript, WebAssembly, native, driver, and CLI components do not depend on or select this
 boundary. M1 and explicit M2 remain the only public compiler profiles. Public aggregate parameters

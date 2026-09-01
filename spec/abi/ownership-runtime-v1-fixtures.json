@@ -1,0 +1,1530 @@
+{
+  "schemaVersion": 1,
+  "abiId": "zryna-ownership-runtime-v1",
+  "statuses": [
+    {
+      "number": 0,
+      "name": "OK",
+      "disposition": "success",
+      "trapIdentity": null
+    },
+    {
+      "number": 1,
+      "name": "ALLOCATION",
+      "disposition": "controlled-trap",
+      "trapIdentity": "zryna.trap.allocation-v1"
+    },
+    {
+      "number": 2,
+      "name": "CAPACITY",
+      "disposition": "controlled-trap",
+      "trapIdentity": "zryna.trap.capacity-v1"
+    },
+    {
+      "number": 3,
+      "name": "REFCOUNT",
+      "disposition": "controlled-trap",
+      "trapIdentity": "zryna.trap.refcount-v1"
+    },
+    {
+      "number": 4,
+      "name": "UTF8",
+      "disposition": "controlled-trap",
+      "trapIdentity": "zryna.trap.utf8-v1"
+    },
+    {
+      "number": 5,
+      "name": "EXPIRED",
+      "disposition": "branch",
+      "trapIdentity": null
+    },
+    {
+      "number": 255,
+      "name": "ABI_VIOLATION",
+      "disposition": "host-failure",
+      "trapIdentity": null
+    }
+  ],
+  "operationOrder": [
+    "allocate",
+    "grow",
+    "release",
+    "stringFromUtf8Copy",
+    "stringClone",
+    "stringConcat",
+    "stringRelease",
+    "vecAllocate",
+    "vecReserve",
+    "vecReleaseStorage",
+    "strongClone",
+    "weakDowngrade",
+    "weakClone",
+    "weakUpgrade",
+    "strongReleaseBegin",
+    "strongReleaseFinish",
+    "weakRelease"
+  ],
+  "operations": [
+    {
+      "name": "allocate",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "byteSize",
+            "role": "input",
+            "carrier": "unsigned-integer"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "alignment"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "pointer"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "byteSize",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i64-packed-status-pointer",
+          "outRecord": "pointer"
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_allocate",
+        "parameters": [
+          {
+            "name": "byteSize",
+            "role": "input",
+            "carrier": "uint64_t"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "uint32_t"
+          },
+          {
+            "name": "outPointer",
+            "role": "out-zeroed",
+            "carrier": "uintptr_t *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "grow",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "input",
+            "carrier": "opaque-pointer"
+          },
+          {
+            "name": "oldByteSize",
+            "role": "input",
+            "carrier": "unsigned-integer"
+          },
+          {
+            "name": "newByteSize",
+            "role": "input",
+            "carrier": "unsigned-integer"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "alignment"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "pointer"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "oldByteSize",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "newByteSize",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i64-packed-status-pointer",
+          "outRecord": "pointer"
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_grow",
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "input",
+            "carrier": "uintptr_t"
+          },
+          {
+            "name": "oldByteSize",
+            "role": "input",
+            "carrier": "uint64_t"
+          },
+          {
+            "name": "newByteSize",
+            "role": "input",
+            "carrier": "uint64_t"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "uint32_t"
+          },
+          {
+            "name": "outPointer",
+            "role": "out-zeroed",
+            "carrier": "uintptr_t *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "release",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "input",
+            "carrier": "opaque-pointer"
+          },
+          {
+            "name": "byteSize",
+            "role": "input",
+            "carrier": "unsigned-integer"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "alignment"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "byteSize",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_release",
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "input",
+            "carrier": "uintptr_t"
+          },
+          {
+            "name": "byteSize",
+            "role": "input",
+            "carrier": "uint64_t"
+          },
+          {
+            "name": "alignment",
+            "role": "input",
+            "carrier": "uint32_t"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "stringFromUtf8Copy",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "bytes",
+            "role": "const-input",
+            "carrier": "byte-sequence"
+          },
+          {
+            "name": "byteLength",
+            "role": "input",
+            "carrier": "unsigned-integer"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "handle"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "bytes",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "byteLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "outString",
+            "role": "out-zeroed",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_string_from_utf8_copy",
+        "parameters": [
+          {
+            "name": "bytes",
+            "role": "const-input",
+            "carrier": "const uint8_t *"
+          },
+          {
+            "name": "byteLength",
+            "role": "input",
+            "carrier": "uint64_t"
+          },
+          {
+            "name": "outString",
+            "role": "out-zeroed",
+            "carrier": "zryna_rt_o1_handle *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "stringClone",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "source",
+            "role": "const-input",
+            "carrier": "string-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "handle"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "byteLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "capacity",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "outString",
+            "role": "out-zeroed",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_string_clone",
+        "parameters": [
+          {
+            "name": "source",
+            "role": "const-input",
+            "carrier": "const zryna_rt_o1_handle *"
+          },
+          {
+            "name": "outString",
+            "role": "out-zeroed",
+            "carrier": "zryna_rt_o1_handle *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "stringConcat",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "left",
+            "role": "const-input",
+            "carrier": "string-handle"
+          },
+          {
+            "name": "right",
+            "role": "const-input",
+            "carrier": "string-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "handle"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "leftPointer",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "leftLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "leftCapacity",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "rightPointer",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "rightLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "rightCapacity",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "outString",
+            "role": "out-zeroed",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_string_concat",
+        "parameters": [
+          {
+            "name": "left",
+            "role": "const-input",
+            "carrier": "const zryna_rt_o1_handle *"
+          },
+          {
+            "name": "right",
+            "role": "const-input",
+            "carrier": "const zryna_rt_o1_handle *"
+          },
+          {
+            "name": "outString",
+            "role": "out-zeroed",
+            "carrier": "zryna_rt_o1_handle *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "stringRelease",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "value",
+            "role": "const-input",
+            "carrier": "string-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "pointer",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "byteLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "capacity",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_string_release",
+        "parameters": [
+          {
+            "name": "value",
+            "role": "const-input",
+            "carrier": "const zryna_rt_o1_handle *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "vecAllocate",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "elementLayout",
+            "role": "const-input",
+            "carrier": "sealed-layout"
+          },
+          {
+            "name": "requiredCapacity",
+            "role": "input",
+            "carrier": "unsigned-integer"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "handle"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "elementLayoutId",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "requiredCapacity",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "outStorage",
+            "role": "out-zeroed",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_vec_allocate",
+        "parameters": [
+          {
+            "name": "elementLayoutId",
+            "role": "const-input",
+            "carrier": "uint32_t"
+          },
+          {
+            "name": "requiredCapacity",
+            "role": "input",
+            "carrier": "uint64_t"
+          },
+          {
+            "name": "outStorage",
+            "role": "out-zeroed",
+            "carrier": "zryna_rt_o1_handle *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "vecReserve",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "elementLayout",
+            "role": "const-input",
+            "carrier": "sealed-layout"
+          },
+          {
+            "name": "storage",
+            "role": "const-input",
+            "carrier": "vec-storage"
+          },
+          {
+            "name": "requiredLength",
+            "role": "input",
+            "carrier": "unsigned-integer"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "handle"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "elementLayoutId",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "pointer",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "elementLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "capacity",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "requiredLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "outStorage",
+            "role": "out-zeroed",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_vec_reserve",
+        "parameters": [
+          {
+            "name": "elementLayoutId",
+            "role": "const-input",
+            "carrier": "uint32_t"
+          },
+          {
+            "name": "storage",
+            "role": "const-input",
+            "carrier": "const zryna_rt_o1_handle *"
+          },
+          {
+            "name": "requiredLength",
+            "role": "input",
+            "carrier": "uint64_t"
+          },
+          {
+            "name": "outStorage",
+            "role": "out-zeroed",
+            "carrier": "zryna_rt_o1_handle *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "vecReleaseStorage",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "elementLayout",
+            "role": "const-input",
+            "carrier": "sealed-layout"
+          },
+          {
+            "name": "storage",
+            "role": "const-input",
+            "carrier": "vec-storage"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "elementLayoutId",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "pointer",
+            "role": "const-input",
+            "carrier": "i32"
+          },
+          {
+            "name": "elementLength",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "capacity",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_vec_release_storage",
+        "parameters": [
+          {
+            "name": "elementLayoutId",
+            "role": "const-input",
+            "carrier": "uint32_t"
+          },
+          {
+            "name": "storage",
+            "role": "const-input",
+            "carrier": "const zryna_rt_o1_handle *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "strongClone",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "control-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_strong_clone",
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "uintptr_t"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "weakDowngrade",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "control-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_weak_downgrade",
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "uintptr_t"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "weakClone",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "control-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_weak_clone",
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "uintptr_t"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "weakUpgrade",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "control-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_weak_upgrade",
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "uintptr_t"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "strongReleaseBegin",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "control-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "bool"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "outIsLastStrong",
+            "role": "out-zeroed",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_strong_release_begin",
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "uintptr_t"
+          },
+          {
+            "name": "outIsLastStrong",
+            "role": "out-zeroed",
+            "carrier": "uint32_t *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "strongReleaseFinish",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "control-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": null
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_strong_release_finish",
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "uintptr_t"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    },
+    {
+      "name": "weakRelease",
+      "javascript": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "control-handle"
+          }
+        ],
+        "result": {
+          "carrier": "numeric-status",
+          "outRecord": "bool"
+        }
+      },
+      "webAssembly": {
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "i32"
+          },
+          {
+            "name": "outDeallocated",
+            "role": "out-zeroed",
+            "carrier": "i32"
+          }
+        ],
+        "result": {
+          "carrier": "i32-status",
+          "outRecord": null
+        }
+      },
+      "nativeLinuxX8664": {
+        "symbol": "zryna_rt_o1_weak_release",
+        "parameters": [
+          {
+            "name": "control",
+            "role": "input",
+            "carrier": "uintptr_t"
+          },
+          {
+            "name": "outDeallocated",
+            "role": "out-zeroed",
+            "carrier": "uint32_t *"
+          }
+        ],
+        "result": {
+          "carrier": "u32-status",
+          "outRecord": null
+        }
+      }
+    }
+  ],
+  "records": [
+    {
+      "target": "linear32-v1",
+      "kind": "handle",
+      "size": 12,
+      "alignment": 4,
+      "fields": [
+        {
+          "name": "pointer",
+          "offset": 0,
+          "carrier": "u32"
+        },
+        {
+          "name": "length",
+          "offset": 4,
+          "carrier": "u32"
+        },
+        {
+          "name": "capacity",
+          "offset": 8,
+          "carrier": "u32"
+        }
+      ]
+    },
+    {
+      "target": "linear32-v1",
+      "kind": "bool",
+      "size": 4,
+      "alignment": 4,
+      "fields": [
+        {
+          "name": "value",
+          "offset": 0,
+          "carrier": "u32-zero-or-one"
+        }
+      ]
+    },
+    {
+      "target": "linux-x86-64-v1",
+      "kind": "handle",
+      "size": 24,
+      "alignment": 8,
+      "fields": [
+        {
+          "name": "pointer",
+          "offset": 0,
+          "carrier": "uintptr_t"
+        },
+        {
+          "name": "length",
+          "offset": 8,
+          "carrier": "uint64_t"
+        },
+        {
+          "name": "capacity",
+          "offset": 16,
+          "carrier": "uint64_t"
+        }
+      ]
+    },
+    {
+      "target": "linux-x86-64-v1",
+      "kind": "bool",
+      "size": 4,
+      "alignment": 4,
+      "fields": [
+        {
+          "name": "value",
+          "offset": 0,
+          "carrier": "uint32_t-zero-or-one"
+        }
+      ]
+    }
+  ],
+  "controlBlock": {
+    "endianness": "little",
+    "prefixSize": 8,
+    "strongCount": {
+      "offset": 0,
+      "carrier": "u32"
+    },
+    "weakCount": {
+      "offset": 4,
+      "carrier": "u32"
+    },
+    "payloadOffset": "alignUp(8,payloadAlignment)",
+    "controlAlignment": "max(4,payloadAlignment)",
+    "controlSize": "alignUp(payloadOffset+payloadSize,controlAlignment)",
+    "weakCountRule": "explicitWeakHandles+implicitWeakOwnerWhileStrongCountPositive",
+    "pendingLastStrongRule": "payloadDropBeforeImplicitWeakOwnerRelease",
+    "zeroSizedPayloadUsesNonzeroAllocation": true
+  },
+  "limits": {
+    "dynamicAllocationBytes": 2147483647,
+    "stringBytes": 2147483647,
+    "vecElements": 1048576,
+    "allocationAlignments": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "strongHandleCount": 4294967295,
+    "weakCount": 4294967295,
+    "liveAllocationsPerInvocation": 1048576,
+    "allocationGrowthOperationsPerInvocation": 1048576,
+    "runtimeStatusTransitionsPerInvocation": 4194304,
+    "wasmMemoryMinimumPages": 1,
+    "wasmMemoryMaximumPages": 32768,
+    "wasmHeapAlignmentBytes": 8,
+    "runtimeOperations": 256,
+    "runtimeSymbols": 4096,
+    "runtimeLayoutReferences": 65536,
+    "runtimeEdges": 65536,
+    "runtimeObjectBytes": 16777216,
+    "diagnostics": 256
+  },
+  "transitionCases": [
+    {
+      "id": "strong-clone",
+      "operation": "strongClone",
+      "before": {
+        "strongCount": 1,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 2,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      }
+    },
+    {
+      "id": "strong-clone-overflow",
+      "operation": "strongClone",
+      "before": {
+        "strongCount": 4294967295,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      },
+      "result": {
+        "status": "REFCOUNT",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 4294967295,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      }
+    },
+    {
+      "id": "weak-downgrade",
+      "operation": "weakDowngrade",
+      "before": {
+        "strongCount": 1,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 1,
+        "weakCount": 2,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      }
+    },
+    {
+      "id": "weak-clone-after-expiry",
+      "operation": "weakClone",
+      "before": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 0,
+        "weakCount": 2,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      }
+    },
+    {
+      "id": "weak-upgrade",
+      "operation": "weakUpgrade",
+      "before": {
+        "strongCount": 1,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 2,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      }
+    },
+    {
+      "id": "weak-upgrade-expired",
+      "operation": "weakUpgrade",
+      "before": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      },
+      "result": {
+        "status": "EXPIRED",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      }
+    },
+    {
+      "id": "strong-release-nonlast",
+      "operation": "strongReleaseBegin",
+      "before": {
+        "strongCount": 2,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": false
+      },
+      "after": {
+        "strongCount": 1,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      }
+    },
+    {
+      "id": "strong-release-last-begin",
+      "operation": "strongReleaseBegin",
+      "before": {
+        "strongCount": 1,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": true,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": true
+      },
+      "after": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": true,
+        "payloadInitialized": true,
+        "allocated": true
+      }
+    },
+    {
+      "id": "strong-release-finish-deallocates",
+      "operation": "strongReleaseFinish",
+      "before": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": true,
+        "payloadInitialized": false,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 0,
+        "weakCount": 0,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": false
+      }
+    },
+    {
+      "id": "strong-release-finish-retains-explicit-weak",
+      "operation": "strongReleaseFinish",
+      "before": {
+        "strongCount": 0,
+        "weakCount": 2,
+        "pendingLastStrong": true,
+        "payloadInitialized": false,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      }
+    },
+    {
+      "id": "weak-release-deallocates",
+      "operation": "weakRelease",
+      "before": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      },
+      "result": {
+        "status": "OK",
+        "boolResult": true
+      },
+      "after": {
+        "strongCount": 0,
+        "weakCount": 0,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": false
+      }
+    },
+    {
+      "id": "finish-without-pending-last-strong",
+      "operation": "strongReleaseFinish",
+      "before": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      },
+      "result": {
+        "status": "ABI_VIOLATION",
+        "boolResult": null
+      },
+      "after": {
+        "strongCount": 0,
+        "weakCount": 1,
+        "pendingLastStrong": false,
+        "payloadInitialized": false,
+        "allocated": true
+      }
+    }
+  ],
+  "nonCapabilities": [
+    "runtime-implementation",
+    "allocator-algorithm",
+    "allocator-context",
+    "public-aggregate-host-abi",
+    "rust-standard-library-layout",
+    "rust-abi",
+    "source-selected-allocator",
+    "raw-pointers",
+    "threads",
+    "atomics",
+    "callbacks",
+    "finalizers",
+    "exceptions",
+    "unwinding",
+    "tracing-gc",
+    "cycle-collection",
+    "javascript-weakref",
+    "webassembly-gc",
+    "wasi",
+    "component-model",
+    "memory64",
+    "shared-memory",
+    "windows-native-runtime",
+    "macos-native-runtime",
+    "freestanding-target"
+  ]
+}

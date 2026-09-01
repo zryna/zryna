@@ -19,6 +19,7 @@
     "m3:contract": "node scripts/check-m3-contract.mjs",
     "m3:data:quick": "cargo test --locked -p zryna-semantics data_ownership_v1 -- --skip authenticated_v4_derived_value_budget_is_exact_and_plus_one_fails_m3201",
     "m3:layout": "cargo test --locked -p zryna-layout",
+    "m3:runtime-abi:quick": "cargo test --locked -p zryna-ownership-runtime-abi",
     "m3:syntax:quick": "node --test tests/syntax-protocol-v4.test.mjs adapters/typescript-6/test/worker-v4.test.mjs && cargo test --locked -p zryna-syntax v4:: && cargo test --locked -p zryna-frontend --test worker_process",
     "adapter:check": "pnpm --filter @zryna/adapter-typescript-6 check",
     "adapter:test": "pnpm --filter @zryna/adapter-typescript-6 test",

@@ -121,8 +121,9 @@ an independent raw state graph. Verification checks exact scalar ABI exports, ty
 place projections, ownership state, nonescaping borrows, control-flow joins, and deterministic
 cleanup before exposing immutable views. The retained runtime value is only the closed
 `OwnershipRuntimeV1` contract identity. It is not the sealed runtime ABI authority or a runtime
-implementation planned by issue #80, and no helper symbol, target runtime, backend, driver route,
-CLI profile, or public aggregate ABI is supplied here.
+implementation. The separate issue #80 authority verifies declarations, authenticated layouts,
+header evidence, and pure transitions; no helper implementation, target runtime, backend, driver
+route, CLI profile, or public aggregate ABI is supplied here.
 
 The exact authority tuple, raw vocabulary, limits, diagnostics, and verified-view contract are
 documented in [`M3_DATA_OWNERSHIP_IR.md`](../../docs/M3_DATA_OWNERSHIP_IR.md).
