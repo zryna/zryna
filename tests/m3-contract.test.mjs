@@ -330,6 +330,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /migrating its exact mask from source\s+through the move-result temporary to the new local/);
   assert.match(document, /final exact-reference return of one partially moved supported Struct or FixedArray root/);
   assert.match(document, /migrating the same complete topology and mask into the returned temporary before reverse cleanup/);
+  assert.match(document, /whole-root assignment from one distinct exact-reference partially moved supported Struct or\s+FixedArray source/);
+  assert.match(document, /drops the old destination and\s+installs the exact mask/);
   assert.match(document, /static projection\s+commit exposes the old subobject's exact pre-state recursive drop action/);
   assert.match(document, /private String use-after-move rejected as `ZRYNA-M3011`, aggregate\/enum moved-owner violations as\s+`ZRYNA-M3014`/);
   assert.match(document, /unresolved binding names as `ZRYNA-M3002`/);
@@ -337,7 +339,7 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /one-plan\/one-site cleanup roles/);
   assert.match(document, /cumulative String-literal preflight at 8 MiB/);
   assert.match(document, /sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the\s+exact verified ownership-runtime ABI authority/);
-  assert.match(document, /General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,\s+Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element\s+projections, general non-String projected clone and assignment, partial-root transfer for Enum or\s+outside one exact-type direct local declaration or final exact-reference return, general owned phi joins/);
+  assert.match(document, /General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,\s+Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element\s+projections, general non-String projected clone and assignment, partial-root transfer for Enum or\s+outside one exact-type direct local declaration, final exact-reference return, or distinct\s+whole-root assignment, general owned phi joins/);
   assert.match(document, /Owned String\/Vec signatures remain bounded\s+to zero arguments or one exact owned\/bool argument/);
   assert.match(document, /## Issue #81 implementation ledger/);
   assert.match(document, /no-carried-owner loop\/backedge cleanup \| complete/);
@@ -350,11 +352,15 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /source-to-temporary-to-local owner\/mask migration/);
   assert.match(document, /final return transfer of a partial Struct\/FixedArray root \| complete/);
   assert.match(document, /source-to-return-temporary mask migration, returned-owner exclusion/);
+  assert.match(document, /whole-root assignment transfer of a partial Struct\/FixedArray root \| complete/);
+  assert.match(document, /source-to-temporary-to-destination mask migration, old-destination recursive drop at commit/);
+  assert.match(document, /`3N - E_source - E_target \+ 1` places/);
   assert.match(document, /general structural Vec clone, nested aggregate clone, aggregate\/enum subobject moves, and non-String projected clone\/assignment \| pending/);
   assert.match(architecture, /Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`/);
   assert.match(architecture, /General structural Vec clone beyond\s+String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values/);
   assert.match(architecture, /complete static\s+topology for all three roots, then migrates the exact root-relative mask at both owner renames/);
   assert.match(architecture, /final exact-reference return uses the same sealed topology/);
+  assert.match(architecture, /distinct mutable fully initialized same-type whole-root assignment destination/);
   assert.match(document, /controlled allocation\/capacity\/bounds\/UTF-8 fault closure \| in progress/);
   assert.match(document, /authenticated internal fault\/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete.*executable target fault injection remains pending/);
   assert.match(document, /test-only fault oracle additionally consumes the ABI authority's sealed status\s+declarations/);

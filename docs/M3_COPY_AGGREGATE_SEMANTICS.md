@@ -109,11 +109,15 @@ supported Struct or FixedArray root through a move-result temporary into the new
 complete static topology and exact root-relative masks.
 A final exact-reference return admits the same supported partial root, transfers its complete mask
 into an exact-topology temporary, excludes that result from cleanup, and reverse-drops survivors.
+One distinct mutable fully initialized same-type whole-root assignment destination also admits the
+partial Struct or FixedArray source after complete source, temporary, and destination topology
+preflight. `ReplacePlace` drops the old destination exactly once and installs the transferred mask.
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
 This checkpoint does not enable general owned values: aggregate/enum subobject moves, partial Enum
-transfer or partial-root transfer outside the exact direct-local or final-return forms, dynamic or Vec-element projections, or general non-String projected
+transfer or partial-root transfer outside the exact direct-local, final-return, or whole-root
+assignment forms, dynamic or Vec-element projections, or general non-String projected
 clone and assignment,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
 Public owned results remain rejected by scalar ABI v1.

@@ -150,7 +150,7 @@ retains the enclosing root and commit drops only the exact old leaf. General non
 assignment remains unfinished. The producer also resolves canonical static StructField and
 FixedArrayConstant source places for Copy reads and exact String-leaf moves, preserves the enclosing
 root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption
-outside the exact direct-local and final-return transfers described below.
+outside the exact direct-local, final-return, and whole-root assignment transfers described below.
 Initialized available String leaves under those same paths now admit explicit clone into a distinct
 temporary owner; failure cleanup retains the enclosing root's exact partial-state masks, and cloning
 a moved or overlapping leaf fails closed. An exact-type direct local declaration now transfers one
@@ -159,6 +159,10 @@ local, materializing the complete static topology and migrating exact masks at b
 One final exact-reference return now transfers the same partial root into an exact-topology
 temporary before cleanup; the verifier excludes the returned owner and reverse-drops every
 survivor, while missing, extra, wrong, or unsupported topology fails closed.
+One distinct mutable fully initialized same-type whole-root destination now accepts that partial
+Struct or FixedArray from an exact-reference source. Complete source, temporary, and destination
+topology plus value/place/transition capacity are preflighted before mutation; `ReplacePlace` drops
+the old destination once, installs the exact mask, and invalidates source and temporary.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
@@ -171,7 +175,7 @@ executing an allocator or target runtime. General structural Vec clone beyond St
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
 projected clone and assignment, partial Enum transfer or partial-root transfer in
-call/assignment/CFG contexts or non-final/non-reference returns, general owned phi joins,
+call/CFG contexts, projected assignment, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

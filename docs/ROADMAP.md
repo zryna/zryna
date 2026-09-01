@@ -232,8 +232,11 @@ partially moved supported Struct or FixedArray root through its move-result temp
 local; the producer materializes the complete static topology and migrates the exact root-relative
 mask at both owner renames. One final exact-reference return also transfers that complete partial
 state into an exact-topology temporary before survivor cleanup, with independent IR rejection of
-forged or unsupported topology. Enum partial-root transfer, aggregate/enum subobject moves,
-transfer in call/assignment/CFG contexts or non-final/non-reference returns, dynamic projections,
+forged or unsupported topology. One distinct mutable initialized same-type whole-root assignment
+destination now accepts that partial Struct or FixedArray after complete source, temporary, and
+destination topology plus resource preflight; replacement drops the old destination once and
+installs the exact mask. Enum partial-root transfer, aggregate/enum subobject moves,
+transfer in call/CFG contexts, projected assignment, or non-final/non-reference returns, dynamic projections,
 and general non-String projected clone and assignment remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure

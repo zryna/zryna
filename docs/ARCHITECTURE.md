@@ -433,13 +433,18 @@ A final exact-reference return uses the same sealed topology to migrate a partia
 mask into the returned temporary before cleanup. The verifier transfers that temporary out, then
 requires exact reverse cleanup of only the surviving owners; forged paths, unsupported graphs, or
 a returned-owner drop are rejected.
+One distinct mutable fully initialized same-type whole-root assignment destination admits that
+partial source. The producer preflights and materializes complete source, temporary, and
+destination topology before mutation; `ReplacePlace` drops the old destination exactly once and
+installs the transferred mask. The verifier rejects incomplete or forged topology, a partial
+destination, and any partial owner on a CFG edge.
 The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
 projected clone and assignment, partial Enum transfer or partial-root transfer outside the exact
-direct-local or final-return forms, general nested or repeated owned control flow, loop-carried owned
+direct-local, final-return, or whole-root assignment forms, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
 admitted. Its sealed semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no
