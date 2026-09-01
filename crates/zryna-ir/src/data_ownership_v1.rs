@@ -2239,7 +2239,9 @@ fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, er
             verify_terminator_types(terminator, function, &values, layouts, errors);
         }
     }
-    verify_aggregate_subobject_move_contexts(function, layouts, errors);
+    let enum_payloads = classify_enum_payload_projections(function);
+    verify_enum_payload_move_contexts(function, layouts, &enum_payloads, errors);
+    verify_aggregate_subobject_move_contexts(function, layouts, &enum_payloads, errors);
     if !errors.is_empty() {
         return;
     }
@@ -2270,9 +2272,248 @@ fn static_projection_path(mut place: raw::PlaceId, function: &raw::Function) -> 
     false
 }
 
+fn classify_enum_payload_projections(
+    function: &raw::Function,
+) -> Vec<Option<(raw::PlaceId, raw::PlaceId, u32)>> {
+    let mut classifications = vec![None; function.places.len()];
+    for place in &function.places {
+        classifications[place.id.0 as usize] = match place.kind {
+            raw::PlaceKind::StructField { base, .. }
+            | raw::PlaceKind::FixedArrayConstant { base, .. } => {
+                classifications.get(base.0 as usize).copied().flatten()
+            }
+            raw::PlaceKind::EnumPayload { base, variant } => Some((place.id, base, variant)),
+            raw::PlaceKind::Parameter(_)
+            | raw::PlaceKind::Local(_)
+            | raw::PlaceKind::Temporary(_) => None,
+        };
+    }
+    classifications
+}
+
+#[allow(clippy::too_many_lines)]
+fn verify_enum_payload_move_contexts(
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    enum_payloads: &[Option<(raw::PlaceId, raw::PlaceId, u32)>],
+    errors: &mut Errors,
+) {
+    let mut moves = Vec::with_capacity(2);
+    'blocks: for (block_index, block) in function.blocks.iter().enumerate() {
+        for (index, instruction) in block.instructions.iter().enumerate() {
+            let raw::InstructionKind::MoveFromPlace { place } = instruction.kind else {
+                continue;
+            };
+            let Some(result) = instruction.result else { continue };
+            let aggregate = layout_type(layouts, result.ty).is_some_and(|ty| {
+                matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+            });
+            let projection = enum_payloads.get(place.0 as usize).copied().flatten();
+            if aggregate && let Some(projection) = projection {
+                moves.push((block_index, block, index, instruction, place, result, projection));
+                if moves.len() == 2 {
+                    break 'blocks;
+                }
+            }
+        }
+    }
+    if let Some((_, _, _, instruction, _, _, _)) = moves.get(1) {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "function contains more than one enum payload move",
+            "move at most one complete active Struct or fixed-array payload through its exact canonical enum arm",
+        ));
+        return;
+    }
+    let Some((arm_index, arm, instruction_index, instruction, source, result, projection)) =
+        moves.first().copied()
+    else {
+        return;
+    };
+    let (payload, enum_root, variant) = projection;
+    let valid_payload_type = layout_type(layouts, result.ty)
+        .is_some_and(|ty| matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray));
+    let enum_type =
+        function.places.get(enum_root.0 as usize).and_then(|place| layout_type(layouts, place.ty));
+    let one_exact_variant = enum_type.is_some_and(|ty| {
+        ty.category() == TypeCategory::Enum
+            && ty.variants().len() == 1
+            && ty.variants()[0].ordinal() == variant
+            && ty.variants()[0].payload().is_some_and(|ty| ty.index() == result.ty.0)
+    });
+    let root_is_parameter = function.places.get(enum_root.0 as usize).is_some_and(|place| {
+        matches!(place.kind, raw::PlaceKind::Parameter(parameter) if function.parameters.get(parameter as usize).is_some_and(|value| value.ty == place.ty))
+    });
+    let move_owners = function
+        .places
+        .iter()
+        .filter(|candidate| {
+            candidate.ty == result.ty
+                && matches!(candidate.kind, raw::PlaceKind::Temporary(value) if value == result.id)
+        })
+        .map(|candidate| candidate.id)
+        .collect::<Vec<_>>();
+    let move_owner = (move_owners.len() == 1).then(|| move_owners[0]);
+    let direct_local = arm.instructions.get(instruction_index + 1).and_then(|next| {
+        let raw::InstructionKind::InitializePlace { place: target, value } = next.kind else {
+            return None;
+        };
+        (value == result.id
+            && function.places.get(target.0 as usize).is_some_and(|target| {
+                target.ty == result.ty && matches!(target.kind, raw::PlaceKind::Local(_))
+            }))
+        .then_some(target)
+    });
+    let exact_drop = arm.instructions.get(instruction_index + 2).is_some_and(
+        |next| matches!(next.kind, raw::InstructionKind::DropPlace { place } if place == enum_root),
+    );
+    let value_uses = function
+        .blocks
+        .iter()
+        .flat_map(|block| {
+            block
+                .instructions
+                .iter()
+                .flat_map(|candidate| instruction_operands(&candidate.kind))
+                .chain(
+                    block
+                        .terminators
+                        .iter()
+                        .flat_map(|terminator| terminator_operands(&terminator.kind)),
+                )
+        })
+        .filter(|value| *value == result.id)
+        .count();
+    let entry = function.blocks.first();
+    let canonical_entry = entry.is_some_and(|entry| {
+        entry.instructions.is_empty()
+            && entry.terminators.len() == 1
+            && entry.terminators.first().is_some_and(|terminator| {
+                matches!(
+                    &terminator.kind,
+                    raw::Terminator::EnumMatch { place, arms }
+                        if *place == enum_root
+                            && arms.len() == 1
+                            && arms[0].variant == variant
+                            && arms[0].edge.target.0 as usize == arm_index
+                            && arms[0].edge.arguments.is_empty()
+                )
+            })
+    });
+    let continuation_index = arm.terminators.first().and_then(|terminator| {
+        let raw::Terminator::Jump(edge) = &terminator.kind else { return None };
+        edge.arguments.is_empty().then_some(edge.target.0 as usize)
+    });
+    let canonical_continuation = direct_local.zip(continuation_index).and_then(
+        |(local, continuation_index)| {
+            let continuation = function.blocks.get(continuation_index)?;
+            let [final_move] = continuation.instructions.as_slice() else { return None };
+            let raw::InstructionKind::MoveFromPlace { place } = final_move.kind else {
+                return None;
+            };
+            let final_result = final_move.result?;
+            let final_owners = function
+                .places
+                .iter()
+                .filter(|candidate| {
+                    candidate.ty == final_result.ty
+                        && matches!(candidate.kind, raw::PlaceKind::Temporary(value) if value == final_result.id)
+                })
+                .map(|candidate| candidate.id)
+                .collect::<Vec<_>>();
+            let final_owner = (final_owners.len() == 1).then(|| final_owners[0])?;
+            let exact_return = continuation.terminators.first().is_some_and(|terminator| {
+                let raw::Terminator::Return { value, cleanup } = terminator.kind else {
+                    return false;
+                };
+                value == final_result.id
+                    && function
+                        .cleanup_plans
+                        .get(cleanup.0 as usize)
+                        .is_some_and(|plan| plan.actions.is_empty())
+            });
+            (place == local
+                && continuation.terminators.len() == 1
+                && final_result.ty == result.ty
+                && function.result == result.ty
+                && exact_return)
+                .then_some((final_result, final_owner))
+        },
+    );
+    let exact_parameter = function.parameters.as_slice().first().is_some_and(|parameter| {
+        function.parameters.len() == 1
+            && parameter.id == raw::ValueId(0)
+            && function.places.get(enum_root.0 as usize).is_some_and(|place| {
+                place.ty == parameter.ty && matches!(place.kind, raw::PlaceKind::Parameter(0))
+            })
+    });
+    let instruction_results = function
+        .blocks
+        .iter()
+        .flat_map(|block| block.instructions.iter().filter_map(|instruction| instruction.result))
+        .collect::<Vec<_>>();
+    let exact_values = instruction_results.len() == 2
+        && instruction_results[0] == result
+        && canonical_continuation
+            .is_some_and(|(final_result, _)| instruction_results[1] == final_result);
+    let source_descendants = function
+        .places
+        .iter()
+        .filter(|place| is_projection_below(place.id, source, &function.places))
+        .map(|place| place.id)
+        .collect::<BTreeSet<_>>();
+    let exact_places = move_owner.zip(direct_local).zip(canonical_continuation).is_some_and(
+        |((move_owner, local), (_, final_owner))| {
+            let mut expected = source_descendants.clone();
+            expected.extend([enum_root, source, move_owner, local, final_owner]);
+            function.places.len() == source_descendants.len() + 5
+                && expected.len() == function.places.len()
+                && function.places.iter().all(|place| expected.contains(&place.id))
+        },
+    );
+    let exact_cleanup_metadata = function.cleanup_plans.len() == 1
+        && function.cleanup_plans[0].id == raw::CleanupPlanId(0)
+        && function.cleanup_plans[0].actions.is_empty();
+    let exact_shape = function.entry_export.is_none()
+        && function.borrow_parameters.is_empty()
+        && function.blocks.len() == 3
+        && function.blocks.iter().all(|block| block.parameters.is_empty())
+        && arm_index != 0
+        && arm.instructions.len() == 3
+        && arm.terminators.len() == 1
+        && instruction_index == 0
+        && continuation_index.is_some_and(|index| index != 0 && index != arm_index);
+    if !exact_shape
+        || source != payload
+        || !valid_payload_type
+        || !one_exact_variant
+        || !root_is_parameter
+        || !exact_parameter
+        || !canonical_entry
+        || move_owner.is_none()
+        || direct_local.is_none()
+        || !exact_drop
+        || value_uses != 1
+        || !has_exact_projection_topology(source, function, layouts)
+        || canonical_continuation.is_none()
+        || !exact_values
+        || !exact_places
+        || !exact_cleanup_metadata
+    {
+        errors.push(error_at(
+            "ZRYNA-I3010",
+            instruction.span,
+            "enum payload move escapes its exact canonical arm",
+            "move one complete active Struct or fixed-array payload into the immediately following same-type local, drop its one-variant enum root, and jump without ownership arguments to an exact local return",
+        ));
+    }
+}
+
 fn verify_aggregate_subobject_move_contexts(
     function: &raw::Function,
     layouts: &VerifiedLayouts,
+    enum_payloads: &[Option<(raw::PlaceId, raw::PlaceId, u32)>],
     errors: &mut Errors,
 ) {
     let private_straight_line = function.entry_export.is_none()
@@ -2282,24 +2523,27 @@ fn verify_aggregate_subobject_move_contexts(
             .first()
             .and_then(|block| block.terminators.first())
             .is_some_and(|terminator| terminator_edges(&terminator.kind).is_empty());
-    let moves = function
-        .blocks
-        .iter()
-        .flat_map(|block| {
-            block.instructions.iter().enumerate().filter_map(move |(index, instruction)| {
-                let raw::InstructionKind::MoveFromPlace { place } = instruction.kind else {
-                    return None;
-                };
-                let result = instruction.result?;
-                let source = function.places.get(place.0 as usize)?;
-                (projection_base(&source.kind).is_some()
-                    && layout_type(layouts, result.ty).is_some_and(|ty| {
-                        matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
-                    }))
-                .then_some((block, index, instruction, place, result))
-            })
-        })
-        .collect::<Vec<_>>();
+    let mut moves = Vec::with_capacity(2);
+    'blocks: for block in &function.blocks {
+        for (index, instruction) in block.instructions.iter().enumerate() {
+            let raw::InstructionKind::MoveFromPlace { place } = instruction.kind else {
+                continue;
+            };
+            let Some(result) = instruction.result else { continue };
+            let Some(source) = function.places.get(place.0 as usize) else { continue };
+            if projection_base(&source.kind).is_some()
+                && enum_payloads.get(place.0 as usize).is_none_or(Option::is_none)
+                && layout_type(layouts, result.ty).is_some_and(|ty| {
+                    matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+                })
+            {
+                moves.push((block, index, instruction, place, result));
+                if moves.len() == 2 {
+                    break 'blocks;
+                }
+            }
+        }
+    }
     if let Some((_, _, instruction, _, _)) = moves.get(1) {
         errors.push(error_at(
             "ZRYNA-I3010",

@@ -442,16 +442,24 @@ partial source. The producer preflights and materializes complete source, tempor
 destination topology before mutation; `ReplacePlace` drops the old destination exactly once and
 installs the transferred mask. The verifier rejects incomplete or forged topology, a partial
 destination, and any partial owner on a CFG edge.
+One separate source-faithful exception accepts a private one-parameter function whose single-
+variant enum is exhaustively matched into an exact direct local. The refined arm moves the complete
+supported Struct/FixedArray payload, initializes the local, drops the emptied enum root, and jumps
+without owner arguments to one final local return. The verifier seals the exact three-block graph,
+active ordinal, complete payload topology, zero-action return cleanup, and the absence of a second
+site or alternate escape.
 The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject moves outside at most one exact direct local, enum-payload moves, dynamic or Vec-element projections, general non-String
+aggregate-subobject moves outside at most one exact direct local or the single-variant match-local
+enum-payload exception, dynamic or Vec-element projections, general non-String
 projected clone and assignment, partial Enum transfer or partial-root transfer outside the exact
 direct-local, final-return, or whole-root assignment forms, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
-admitted. The subobject exception does not extend to projected assignment or clone, calls, direct
-returns, CFG transfer, public functions, Enum payloads, or dynamic/Vec projections. Its sealed
+admitted. Neither narrow subobject exception extends to projected assignment or clone, calls,
+direct payload returns, owner-carrying CFG transfer, public functions, multi-variant Enum payloads,
+or dynamic/Vec projections. Its sealed
 semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no
 runtime, backend, driver, CLI, manifest, target artifact, or public aggregate ABI capability.

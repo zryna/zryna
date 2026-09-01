@@ -88,6 +88,10 @@ The repository currently establishes and tests:
   the exact old leaf without disturbing sibling masks. Initialized available String leaves under
   those same paths also support explicit clone: clone preparation retains the enclosing root,
   creates a distinct temporary owner, and preserves existing moved/initialized sibling masks.
+  One canonical private one-parameter function may additionally extract the complete supported
+  Struct/FixedArray payload of a single-variant Enum through an exhaustive one-arm `match`, move it
+  into an exact direct local, drop the emptied Enum root, and return that local through a
+  zero-argument continuation.
   It proves one exact non-Copy owner while
   preserving addressable Copy storage and binds every cleanup plan to one exact site and role. The
   private String route reports moved
@@ -98,7 +102,8 @@ The repository currently establishes and tests:
   preserves pre-commit owners, excludes uncommitted results, and pins reverse cleanup without
   executing an allocator or target runtime. General structural Vec clone beyond String elements,
   nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, aggregate-subobject
-  and enum-payload moves, dynamic or Vec-element projections, and general non-String projected
+  moves outside the exact direct-local forms, broader enum-payload moves, dynamic or Vec-element
+  projections, and general non-String projected
   clone and assignment,
   whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished

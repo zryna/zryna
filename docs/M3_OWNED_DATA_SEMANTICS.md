@@ -79,7 +79,8 @@ document. Its private owned String/Vec route currently proves:
   exact verified ownership-runtime ABI authority.
 
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
-Vec, Shared, or Weak values, aggregate-subobject moves outside one exact direct local, enum-payload moves, dynamic or Vec-element
+Vec, Shared, or Weak values, aggregate-subobject moves outside one exact direct local or the exact
+single-variant match-local enum extraction, broader enum-payload moves, dynamic or Vec-element
 projections, general non-String projected clone and assignment, partial-root transfer for Enum or
 outside one exact-type direct local declaration, final exact-reference return, or distinct
 whole-root assignment, general owned phi joins,
@@ -95,8 +96,9 @@ returns, and effects after the loop remain excluded. The aggregate route remains
 private, and straight-line. Its partial-move subset is limited to exact String leaves and supported
 Struct/FixedArray subobjects reached through static StructField or FixedArrayConstant paths; an
 aggregate subobject may move only into one exact directly initialized same-type local. Nested enums,
-Vec members, recursive graphs, Enum-payload moves, projected assignment or clone, calls, direct
-returns, CFG transfer, public functions, and aggregate match
+Vec members, recursive graphs, Enum-payload moves outside the exact single-variant match-local
+exception, projected assignment or clone, direct payload returns, owner-carrying CFG transfer,
+public functions, and broader aggregate match
 are also excluded. Those are closure work, not properties of the current checkpoint.
 
 ## Issue #81 implementation ledger
@@ -115,10 +117,11 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
 | static owned projection reads, String-leaf moves, clone, and assignment | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, source-retaining clone, prepare-before-commit replacement, root-relative cleanup masks, and precise repeat/overlap rejection |
 | direct-local static Struct/FixedArray subobject move | complete | exact contextual type, complete source descendant topology, whole-subtree parent mask, distinct local owner, overlap/reuse rejection, and checked preparation amplification |
+| single-variant Enum payload move through a match-local | complete | active ordinal proof, complete Struct/FixedArray payload topology, direct local owner, explicit emptied-root drop, zero-argument continuation, zero-action return cleanup, and exact `D + 5` place amplification |
 | direct local transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-temporary-to-local owner/mask migration, deterministic rejection of old-owner reuse, and checked amplification |
 | final return transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-return-temporary mask migration, returned-owner exclusion, reverse survivor cleanup, and checked amplification |
 | whole-root assignment transfer of a partial Struct/FixedArray root | complete | distinct mutable initialized exact-type destination, source-to-temporary-to-destination mask migration, old-destination recursive drop at commit, and checked amplification |
-| general structural Vec clone, nested aggregate clone, broader aggregate/Enum subobject moves, and non-String projected clone/assignment | pending | recursive Vec/Enum/Shared/Weak clone, Enum payload or non-local subobject transfer, dynamic projection, and broader clone/replacement capability |
+| general structural Vec clone, nested aggregate clone, broader aggregate/Enum subobject moves, and non-String projected clone/assignment | pending | recursive Vec/Enum/Shared/Weak clone, multi-variant or non-local Enum payload transfer, dynamic projection, and broader clone/replacement capability |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
@@ -337,7 +340,11 @@ moves, and one direct-local supported Struct/FixedArray subobject move. Before m
 subobject it materializes every static descendant below the source projection; recursive cleanup
 then marks the selected projection and its descendants moved while retaining the enclosing root.
 The move result initializes one exact same-type local owner, and at most one such aggregate move
-site is admitted per function. This route does not admit Enum payloads,
+site is admitted per function. A separate canonical route admits one complete supported
+Struct/FixedArray payload from a single-variant Enum through its exhaustive one-arm `match` into an
+exact immutable local. Its refined arm moves the payload, initializes the local, explicitly drops
+the emptied Enum root, and jumps without owner arguments to one final local return. This route does
+not admit multi-variant or direct-return Enum payloads,
 dynamic or Vec projections, projected assignment or clone, calls, direct returns, CFG transfer, or
 public owned functions.
 
@@ -448,8 +455,8 @@ rule for String leaves and for a supported Struct/FixedArray subobject moved int
 local under canonical static Struct/FixedArray paths. It additionally implements the
 bounded direct-local and final-return whole transfers described above for partial Struct/FixedArray
 roots;
-Enum-payload subobject moves and all broader aggregate-subobject or partial-owner transfer contexts
-remain closure work
+Enum-payload moves outside the exact single-variant match-local route and all broader aggregate-
+subobject or partial-owner transfer contexts remain closure work
 even though verified IR can represent their cleanup masks.
 
 Cloning a disjoint available String leaf does not alter that state: existing moved projections stay
@@ -569,6 +576,13 @@ places: the missing source descendants plus the move-result temporary owner. The
 local then uses the existing separately checked local root and `InitializePlace` transition. Checked
 addition and value/place/transition limits reject the preparation before it can return any partial
 semantic program.
+
+For the single-variant Enum match-local extraction with `D` declared descendants below the payload,
+the complete function has exactly three blocks, two edges, three values, `D + 5` places, four
+ownership transitions, one cleanup plan, and zero cleanup actions. The five non-descendant places
+are the Enum parameter root, payload root, move-result temporary, direct local, and return
+temporary. All checked arithmetic and every limit check precede IR place or CFG construction; the
+bounded projection-shape count is derived first and is not itself emitted IR topology.
 
 Runtime String and Vec lengths, capacities, element byte sizes, and allocation sizes remain bound
 by the sealed ownership-runtime ABI rules and checked target layouts. Semantics proves representable

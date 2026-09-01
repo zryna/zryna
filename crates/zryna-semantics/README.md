@@ -106,6 +106,11 @@ moves, and at most one exact supported Struct/FixedArray subobject move into a d
 same-type local, plus prepare-before-commit assignment to one mutable available String leaf. The
 subobject route materializes its complete static descendant topology before the move; the enclosing
 root keeps one masked cleanup obligation while the new local owns the moved subtree.
+One additional canonical private route extracts the complete non-Copy Struct or FixedArray payload
+of a single-variant enum through an exhaustive one-arm `match`, initializes one exact direct local,
+drops the now-empty enum root, and returns that local through a zero-argument continuation. The
+payload source topology is complete, while the whole destination owner needs no duplicated
+descendant places.
 Assignment preparation retains the enclosing root and commit drops only the exact old leaf while
 leaving sibling masks unchanged. A moved leaf is excluded from the enclosing root's recursive return cleanup;
 disjoint leaves stay available, while a repeated or overlapping move and later whole-root
@@ -129,7 +134,8 @@ accepted from the fault injector.
 
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject moves outside one exact direct local, enum-payload moves, dynamic or Vec-element projections, general non-String
+aggregate-subobject moves outside one exact direct local or the one single-variant match-local enum
+payload extraction, dynamic or Vec-element projections, general non-String
 projected clone and assignment, whole-partial-owner transfer outside the exact-type direct-local,
 final-return, or whole-root assignment Struct/FixedArray exceptions, general owned phi joins,
 owned loop-carried phi joins,
@@ -145,7 +151,8 @@ assignment destination. Assignment prepares the source without touching the dest
 infallible `ReplacePlace` drops the old destination and installs the exact partial mask. Lowering
 preserves the complete recursive static topology, migrates the moved mask through every
 temporary/local owner, excludes a returned owner from survivor cleanup, and invalidates old
-owners. Enum-payload, dynamic, or Vec-element moves and aggregate-subobject use in projected
+owners. Enum-payload moves outside that exact one-arm direct-local form, dynamic or Vec-element
+moves, and aggregate-subobject use in projected
 assignment or clone, calls, direct returns, CFG transfer, or public functions remain outside the
 narrow subobject route. Projected clone retains the enclosing root and
 its partial-state masks while creating one distinct temporary String owner.

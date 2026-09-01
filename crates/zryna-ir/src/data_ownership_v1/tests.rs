@@ -297,6 +297,82 @@ fn subobject_move_authorities() -> (
     (sources, linear, linux, inner, outer, array)
 }
 
+fn enum_payload_move_authorities() -> (
+    SourceMap,
+    zryna_layout::VerifiedLayouts,
+    zryna_layout::VerifiedLayouts,
+    raw::TypeId,
+    raw::TypeId,
+) {
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "main.zry".into(),
+        text: "export function id(value: i32): i32 { return value; }".into(),
+    }])
+    .expect("source map");
+    let file = sources.verify_file_id(0).expect("source file");
+    let graph = raw_layout::Graph {
+        modules: vec![raw_layout::Module {
+            id: raw_layout::ModuleId(0),
+            source_file: file,
+            data_declarations: 2,
+        }],
+        types: vec![
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(0),
+                span: None,
+                kind: raw_layout::TypeKind::Bool,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(1),
+                span: None,
+                kind: raw_layout::TypeKind::I32,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(2),
+                span: None,
+                kind: raw_layout::TypeKind::String,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(3),
+                span: Some(sources.span(file, 0, 6).expect("payload span")),
+                kind: raw_layout::TypeKind::Struct {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 0,
+                    fields: vec![raw_layout::Field { ordinal: 0, ty: raw_layout::NodeId(2) }],
+                },
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(4),
+                span: Some(sources.span(file, 7, 13).expect("enum span")),
+                kind: raw_layout::TypeKind::Enum {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 1,
+                    variants: vec![raw_layout::Variant {
+                        ordinal: 0,
+                        payload: Some(raw_layout::NodeId(3)),
+                    }],
+                },
+            },
+        ],
+        program_roots: vec![raw_layout::NodeId(4)],
+    };
+    let linear =
+        zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
+    let linux = zryna_layout::verify(&graph, &sources, StorageTarget::LinuxX8664V1)
+        .expect("native layouts");
+    let payload = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 0)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("payload type");
+    let enum_ty = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 1)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("enum type");
+    (sources, linear, linux, payload, enum_ty)
+}
+
 fn mixed_aggregate_authorities() -> (
     SourceMap,
     zryna_layout::VerifiedLayouts,
@@ -686,6 +762,116 @@ fn aggregate_subobject_move_program(
         raw::DropAction::DropPlace(raw::PlaceId(5)),
         raw::DropAction::DropPlace(raw::PlaceId(0)),
     ];
+    raw
+}
+
+#[allow(clippy::too_many_lines)]
+fn enum_payload_move_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    payload: raw::TypeId,
+    enum_ty: raw::TypeId,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.entry_export = None;
+    function.parameters = vec![raw::ValueDefinition { id: raw::ValueId(0), ty: enum_ty, span }];
+    function.result = payload;
+    function.places = vec![
+        raw::Place { id: raw::PlaceId(0), ty: enum_ty, span, kind: raw::PlaceKind::Parameter(0) },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: payload,
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(0), variant: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(1), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: payload,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(1)),
+        },
+        raw::Place { id: raw::PlaceId(4), ty: payload, span, kind: raw::PlaceKind::Local(0) },
+        raw::Place {
+            id: raw::PlaceId(5),
+            ty: payload,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+    ];
+    function.blocks = vec![
+        raw::Block {
+            id: raw::BlockId(0),
+            parameters: vec![],
+            instructions: vec![],
+            terminators: vec![raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::EnumMatch {
+                    place: raw::PlaceId(0),
+                    arms: vec![raw::EnumArm {
+                        variant: 0,
+                        edge: raw::Edge { target: raw::BlockId(1), arguments: vec![] },
+                    }],
+                },
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(1),
+            parameters: vec![],
+            instructions: vec![
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: payload, span }),
+                    span,
+                    kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+                },
+                raw::Instruction {
+                    result: None,
+                    span,
+                    kind: raw::InstructionKind::InitializePlace {
+                        place: raw::PlaceId(4),
+                        value: raw::ValueId(1),
+                    },
+                },
+                raw::Instruction {
+                    result: None,
+                    span,
+                    kind: raw::InstructionKind::DropPlace { place: raw::PlaceId(0) },
+                },
+            ],
+            terminators: vec![raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::Jump(raw::Edge {
+                    target: raw::BlockId(2),
+                    arguments: vec![],
+                }),
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(2),
+            parameters: vec![],
+            instructions: vec![raw::Instruction {
+                result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: payload, span }),
+                span,
+                kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(4) },
+            }],
+            terminators: vec![raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::Return {
+                    value: raw::ValueId(2),
+                    cleanup: raw::CleanupPlanId(0),
+                },
+            }],
+        },
+    ];
+    function.cleanup_plans[0].actions.clear();
     raw
 }
 
@@ -4097,6 +4283,365 @@ fn aggregate_subobject_move_rejects_duplicate_and_overlapping_moves() {
         .expect_err("aggregate parent move after child move");
     assert!(
         diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn enum_payload_move_follows_one_exact_refined_arm_and_returns_the_local() {
+    let (sources, linear, linux, payload, enum_ty) = enum_payload_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = enum_payload_move_program(&sources, &linear, &linux, payload, enum_ty);
+    let verified =
+        verify(raw, &sources, entry, linear, linux).expect("one-variant aggregate payload move");
+    let function = verified.modules().next().expect("module").functions().next().expect("function");
+    assert_eq!(function.places().count(), 6, "one payload descendant plus five route roots");
+    let arm = function.blocks().nth(1).expect("payload arm");
+    assert_eq!(
+        arm.instructions().map(super::VerifiedInstruction::kind).collect::<Vec<_>>(),
+        [
+            VerifiedInstructionKind::MoveFromPlace,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::DropPlace,
+        ]
+    );
+    let continuation = function.blocks().nth(2).expect("continuation");
+    assert_eq!(
+        continuation.instructions().map(super::VerifiedInstruction::kind).collect::<Vec<_>>(),
+        [VerifiedInstructionKind::MoveFromPlace]
+    );
+    assert_eq!(continuation.terminator().derived_drop_actions().count(), 0);
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn enum_payload_move_rejects_extra_parameter_place_value_and_cleanup_metadata() {
+    let (sources, linear, linux, payload, enum_ty) = enum_payload_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = enum_payload_move_program(&sources, &linear, &linux, payload, enum_ty);
+
+    let mut extra_parameter = raw.clone();
+    let function = &mut extra_parameter.modules[0].functions[0];
+    let span = function.span;
+    function.parameters.push(raw::ValueDefinition {
+        id: raw::ValueId(1),
+        ty: raw::TypeId(1),
+        span,
+    });
+    if let Some(result) = &mut function.blocks[1].instructions[0].result {
+        result.id = raw::ValueId(2);
+    }
+    if let raw::PlaceKind::Temporary(value) = &mut function.places[3].kind {
+        *value = raw::ValueId(2);
+    }
+    if let raw::InstructionKind::InitializePlace { value, .. } =
+        &mut function.blocks[1].instructions[1].kind
+    {
+        *value = raw::ValueId(2);
+    }
+    if let Some(result) = &mut function.blocks[2].instructions[0].result {
+        result.id = raw::ValueId(3);
+    }
+    if let raw::PlaceKind::Temporary(value) = &mut function.places[5].kind {
+        *value = raw::ValueId(3);
+    }
+    if let raw::Terminator::Return { value, .. } = &mut function.blocks[2].terminators[0].kind {
+        *value = raw::ValueId(3);
+    }
+    let diagnostics = verify(extra_parameter, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("extra Copy parameter and value metadata");
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-I3010"
+                && diagnostic.message().contains("enum payload move escapes")
+        }),
+        "{diagnostics:?}"
+    );
+
+    let mut extra_place = raw.clone();
+    let span = extra_place.modules[0].functions[0].span;
+    extra_place.modules[0].functions[0].places.push(raw::Place {
+        id: raw::PlaceId(6),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(1),
+    });
+    let diagnostics = verify(extra_place, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("extra unused Copy local place");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut extra_borrow = raw.clone();
+    let span = extra_borrow.modules[0].functions[0].span;
+    extra_borrow.modules[0].functions[0].borrow_parameters.push(raw::BorrowParameter {
+        id: raw::BorrowId(0),
+        referent: raw::TypeId(1),
+        access: raw::BorrowAccess::Shared,
+        span,
+    });
+    let diagnostics = verify(extra_borrow, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("extra unused Copy borrow parameter metadata");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut extra_cleanup = raw;
+    let span = extra_cleanup.modules[0].functions[0].span;
+    extra_cleanup.modules[0].functions[0].cleanup_plans.push(raw::CleanupPlan {
+        id: raw::CleanupPlanId(1),
+        span,
+        actions: vec![],
+    });
+    let diagnostics = verify(extra_cleanup, &sources, entry, linear, linux)
+        .expect_err("extra unused cleanup metadata");
+    assert!(
+        diagnostics.iter().any(|diagnostic| matches!(
+            diagnostic.code(),
+            "ZRYNA-I3008" | "ZRYNA-I3010" | "ZRYNA-I3012"
+        )),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn enum_payload_move_rejects_inactive_variant_and_incomplete_topology() {
+    let (sources, linear, linux, payload, enum_ty) = enum_payload_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = enum_payload_move_program(&sources, &linear, &linux, payload, enum_ty);
+
+    let mut inactive = raw.clone();
+    if let raw::PlaceKind::EnumPayload { variant, .. } =
+        &mut inactive.modules[0].functions[0].places[1].kind
+    {
+        *variant = 1;
+    }
+    let diagnostics = verify(inactive, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("inactive payload variant");
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diagnostic| matches!(diagnostic.code(), "ZRYNA-I3006" | "ZRYNA-I3010")),
+        "{diagnostics:?}"
+    );
+
+    let mut incomplete = raw;
+    incomplete.modules[0].functions[0].places[2].kind = raw::PlaceKind::Local(9);
+    let diagnostics = verify(incomplete, &sources, entry, linear, linux)
+        .expect_err("payload topology missing its String field");
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-I3010"
+                && diagnostic.message().contains("enum payload move escapes")
+        }),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn enum_payload_move_rejects_noncanonical_cfg_use_and_drop_order() {
+    let (sources, linear, linux, payload, enum_ty) = enum_payload_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = enum_payload_move_program(&sources, &linear, &linux, payload, enum_ty);
+
+    let mut noncanonical_entry = raw.clone();
+    let span = noncanonical_entry.modules[0].functions[0].span;
+    noncanonical_entry.modules[0].functions[0].blocks[0].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::DropPlace { place: raw::PlaceId(0) },
+    });
+    let diagnostics = verify(noncanonical_entry, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("entry work before enum match");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut non_dominating = raw.clone();
+    if let raw::Terminator::EnumMatch { arms, .. } =
+        &mut non_dominating.modules[0].functions[0].blocks[0].terminators[0].kind
+    {
+        arms[0].edge.target = raw::BlockId(2);
+    }
+    let diagnostics = verify(non_dominating, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("payload arm is not dominated by the matching edge");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3007"),
+        "{diagnostics:?}"
+    );
+
+    let mut continuation_cycle = raw.clone();
+    if let raw::Terminator::Jump(edge) =
+        &mut continuation_cycle.modules[0].functions[0].blocks[1].terminators[0].kind
+    {
+        edge.target = raw::BlockId(0);
+    }
+    let diagnostics = verify(continuation_cycle, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("payload arm jumps back to the entry");
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diagnostic| matches!(diagnostic.code(), "ZRYNA-I3007" | "ZRYNA-I3010")),
+        "{diagnostics:?}"
+    );
+
+    let mut extra_use = raw.clone();
+    let duplicate = extra_use.modules[0].functions[0].blocks[1].instructions[1].clone();
+    extra_use.modules[0].functions[0].blocks[1].instructions.insert(2, duplicate);
+    let diagnostics = verify(extra_use, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("payload result has an extra use");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut forged_source = raw.clone();
+    if let raw::InstructionKind::MoveFromPlace { place } =
+        &mut forged_source.modules[0].functions[0].blocks[1].instructions[0].kind
+    {
+        *place = raw::PlaceId(4);
+    }
+    let diagnostics = verify(forged_source, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("uninitialized local forged as the payload source");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    for (mut invalid, reason) in [
+        (raw.clone(), "enum root drop omitted"),
+        (raw, "enum root dropped before local initialization"),
+    ] {
+        if reason.contains("omitted") {
+            invalid.modules[0].functions[0].blocks[1].instructions.pop();
+        } else {
+            invalid.modules[0].functions[0].blocks[1].instructions.swap(1, 2);
+        }
+        let diagnostics =
+            verify(invalid, &sources, entry, linear.clone(), linux.clone()).expect_err(reason);
+        assert!(
+            diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+            "{reason}: {diagnostics:?}"
+        );
+    }
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn enum_payload_move_rejects_edge_transfer_cleanup_forgery_and_second_move() {
+    let (sources, linear, linux, payload, enum_ty) = enum_payload_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = enum_payload_move_program(&sources, &linear, &linux, payload, enum_ty);
+
+    let mut edge_transfer = raw.clone();
+    let span = edge_transfer.modules[0].functions[0].span;
+    edge_transfer.modules[0].functions[0].blocks[2].parameters.push(raw::ValueDefinition {
+        id: raw::ValueId(2),
+        ty: payload,
+        span,
+    });
+    edge_transfer.modules[0].functions[0].places.extend([
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: payload,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+        raw::Place {
+            id: raw::PlaceId(7),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(6), ordinal: 0 },
+        },
+    ]);
+    if let raw::PlaceKind::Temporary(value) =
+        &mut edge_transfer.modules[0].functions[0].places[5].kind
+    {
+        *value = raw::ValueId(3);
+    }
+    if let Some(result) =
+        &mut edge_transfer.modules[0].functions[0].blocks[2].instructions[0].result
+    {
+        result.id = raw::ValueId(3);
+    }
+    if let raw::Terminator::Return { value, .. } =
+        &mut edge_transfer.modules[0].functions[0].blocks[2].terminators[0].kind
+    {
+        *value = raw::ValueId(3);
+    }
+    if let raw::Terminator::Jump(edge) =
+        &mut edge_transfer.modules[0].functions[0].blocks[1].terminators[0].kind
+    {
+        edge.arguments.push(raw::ValueId(1));
+    }
+    let diagnostics = verify(edge_transfer, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("payload owner carried across the edge");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut forged_cleanup = raw.clone();
+    forged_cleanup.modules[0].functions[0].cleanup_plans[0]
+        .actions
+        .push(raw::DropAction::DropPlace(raw::PlaceId(4)));
+    let diagnostics = verify(forged_cleanup, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("continuation return cleanup is not empty");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut second_move = raw;
+    let function = &mut second_move.modules[0].functions[0];
+    function.places.extend([
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: payload,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+        raw::Place {
+            id: raw::PlaceId(7),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(6), ordinal: 0 },
+        },
+    ]);
+    function.blocks[1].instructions.insert(
+        1,
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: payload, span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+    );
+    for id in 3..35 {
+        function.blocks[1].instructions.push(raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(id), ty: raw::TypeId(1), span }),
+            span,
+            kind: raw::InstructionKind::I32Literal(i32::try_from(id).expect("small noise id")),
+        });
+    }
+    if let raw::PlaceKind::Temporary(value) = &mut function.places[5].kind {
+        *value = raw::ValueId(35);
+    }
+    if let Some(result) = &mut function.blocks[2].instructions[0].result {
+        result.id = raw::ValueId(35);
+    }
+    if let raw::Terminator::Return { value, .. } = &mut function.blocks[2].terminators[0].kind {
+        *value = raw::ValueId(35);
+    }
+    let diagnostics =
+        verify(second_move, &sources, entry, linear, linux).expect_err("second enum payload move");
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-I3010"
+                && diagnostic.message().contains("more than one enum payload move")
+        }),
         "{diagnostics:?}"
     );
 }
