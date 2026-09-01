@@ -3344,21 +3344,69 @@ fn partial_move_cleanup_keeps_parent_obligation() {
             span,
             kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
         },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(3), ordinal: 0 },
+        },
     ];
-    function.blocks[0].instructions.push(raw::Instruction {
-        result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(2), span }),
-        span,
-        kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
-    });
+    function.blocks[0].instructions.extend([
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(0) },
+        },
+    ]);
     if let raw::Terminator::Return { value, .. } = &mut function.blocks[0].terminators[0].kind {
         *value = raw::ValueId(1);
     }
     function.cleanup_plans[0].actions = vec![
         raw::DropAction::DropPlace(raw::PlaceId(2)),
-        raw::DropAction::DropPlace(raw::PlaceId(0)),
+        raw::DropAction::DropPlace(raw::PlaceId(3)),
     ];
     let entry = sources.verify_file_id(0).expect("entry");
-    verify(raw, &sources, entry, linear, linux).expect("partial cleanup remains complete");
+    let verified = verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("partial cleanup remains complete after rename");
+    let actions = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .terminator()
+        .derived_drop_actions()
+        .collect::<Vec<_>>();
+    assert_eq!(
+        actions[1].moved_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+        [4]
+    );
+
+    let mut missing_destination = raw;
+    missing_destination.modules[0].functions[0].places.pop();
+    let diagnostics = verify(missing_destination, &sources, entry, linear, linux)
+        .expect_err("partial move rename without matching destination projection metadata");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3010"
+            && diagnostic
+                .message()
+                .contains("partial owner rename requires exact matching projection metadata")
+    }));
 }
 
 #[test]
@@ -4528,9 +4576,11 @@ fn nested_enum_payload_prefix_activates_one_variant_and_rejects_another() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn whole_owner_rename_preserves_partial_projection_metadata() {
-    let (sources, linear, linux) = authorities();
+    let (sources, linear, linux) = pair_authorities();
     let mut raw = program(&sources, &linear, &linux);
+    raw.modules[0].data_declarations = 1;
     let span = raw.modules[0].functions[0].span;
     let function = &mut raw.modules[0].functions[0];
     function.entry_export = None;
@@ -4559,15 +4609,27 @@ fn whole_owner_rename_preserves_partial_projection_metadata() {
         },
         raw::Place {
             id: raw::PlaceId(3),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(1), ordinal: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
             ty: raw::TypeId(3),
             span,
             kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
         },
         raw::Place {
-            id: raw::PlaceId(4),
+            id: raw::PlaceId(5),
             ty: raw::TypeId(2),
             span,
-            kind: raw::PlaceKind::StructField { base: raw::PlaceId(3), ordinal: 0 },
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 1 },
         },
     ];
     function.blocks[0].instructions = vec![
@@ -4589,9 +4651,10 @@ fn whole_owner_rename_preserves_partial_projection_metadata() {
         identity: raw::TrapIdentity::AllocationV1,
         cleanup: raw::CleanupPlanId(0),
     };
-    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(3))];
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(4))];
     let entry = sources.verify_file_id(0).expect("entry");
-    let verified = verify(raw, &sources, entry, linear, linux).expect("partial owner rename");
+    let verified = verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("partial owner rename");
     let action = verified
         .modules()
         .next()
@@ -4608,8 +4671,20 @@ fn whole_owner_rename_preserves_partial_projection_metadata() {
         .expect("drop action");
     assert_eq!(
         action.initialized_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
-        [4]
+        [5]
     );
+
+    let mut missing_destination = raw;
+    missing_destination.modules[0].functions[0].places.remove(5);
+    missing_destination.modules[0].functions[0].places[5].id = raw::PlaceId(5);
+    let diagnostics = verify(missing_destination, &sources, entry, linear, linux)
+        .expect_err("partial rename without matching destination projection metadata");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3010"
+            && diagnostic
+                .message()
+                .contains("partial owner rename requires exact matching projection metadata")
+    }));
 }
 
 #[test]
