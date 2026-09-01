@@ -126,13 +126,14 @@ accepted from the fault injector.
 
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone,
-general non-String projected assignment, whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
+projected clone and assignment, whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
-its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, and
-String-leaf assignment.
+its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves,
+String-leaf clone, and String-leaf assignment. Projected clone retains the enclosing root and its
+partial-state masks while creating one distinct temporary String owner.
 Dynamic bounds execution, borrows, shared or weak references,
 and public owned parameters or results also remain unavailable. The Pair scalar oracle
 is observed only by a test evaluator over opaque verified views. Enum matching is limited to an

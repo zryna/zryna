@@ -698,6 +698,22 @@ fn aggregate_clone_budget_violation(
         )
 }
 
+fn projected_string_clone_budget_violation(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    cleanup_plans: usize,
+    cleanup_actions: usize,
+    pending: usize,
+) -> bool {
+    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
+        || resource_budget_violation(places, 1, ir::MAX_PLACES_PER_FUNCTION)
+        || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
+        || resource_budget_violation(cleanup_plans, 1, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
+        || cleanup_action_budget_violation(cleanup_actions, pending, false)
+}
+
 fn cleanup_action_budget_violation(current: usize, pending: usize, excluded_present: bool) -> bool {
     let actions = pending.saturating_sub(usize::from(excluded_present));
     resource_budget_violation(current, actions, ir::MAX_DROP_ACTIONS_PER_FUNCTION)
@@ -5794,6 +5810,60 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         )
     }
 
+    fn clone_projected_string(
+        &mut self,
+        operand: u32,
+        expected: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        let projection = self.owned_place(operand)?;
+        if projection.is_root
+            || expected.category != TypeCategory::String
+            || projection.ty != expected
+        {
+            self.errors.at(
+                "ZRYNA-M3012",
+                at,
+                "projected String clone requires one exact static String leaf",
+                "clone an initialized Struct field or constant fixed-array String element",
+            );
+            return None;
+        }
+        if !self.projection_available(projection.place, projection.root) {
+            self.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "projected String clone source is moved or overlaps a moved subobject",
+                "clone only an initialized available static String projection",
+            );
+            return None;
+        }
+        let pending = self.owners.pending().len();
+        if projected_string_clone_budget_violation(
+            self.next_value as usize,
+            self.places.len(),
+            self.instructions.len(),
+            self.reserved_transitions,
+            self.cleanup_plans.len(),
+            self.cleanup_actions,
+            pending,
+        ) {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "projected String clone exceeds a checked value, place, transition, or cleanup limit",
+                "reduce simultaneously live owned aggregates or projected clone sites",
+            );
+            return None;
+        }
+        let cleanup = self.push_cleanup(at, None)?;
+        self.emit(
+            expected,
+            at,
+            raw::InstructionKind::StringClone { place: projection.place, cleanup },
+        )
+    }
+
     fn push_aggregate_clone_prefix_cleanup(
         &mut self,
         at: Span,
@@ -5841,6 +5911,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             RawExpressionKind::Reference { name } => self.reference_value(&name, expected, at),
             RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
                 self.projected_value(id, expected)
+            }
+            RawExpressionKind::Clone { value, .. } if expected.category == TypeCategory::String => {
+                self.clone_projected_string(value, expected, at)
             }
             RawExpressionKind::Clone { value, .. } => self.clone_aggregate(value, expected, at),
             RawExpressionKind::StructConstruction { type_name, fields, .. }

@@ -100,15 +100,17 @@ move, returns one exact owner, and drops surviving roots in reverse successful-c
 It also admits explicit clone for exact Copy/String Vec and supported String-bearing aggregates,
 prepare-before-commit whole-root assignment, and canonical static StructField or
 FixedArrayConstant source projections. Mutable available String projections additionally admit
-prepare-before-commit assignment whose commit drops only the exact old leaf. Copy projections retain their source; exact String leaves
+prepare-before-commit assignment whose commit drops only the exact old leaf. Initialized available
+String projections also admit explicit clone, retaining the enclosing root and its partial-state
+masks while producing a distinct temporary owner. Copy projections retain their source; exact String leaves
 move once and refine the enclosing root's recursive cleanup mask while disjoint siblings remain
 available.
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
 This checkpoint does not enable general owned values: aggregate/enum subobject moves,
-whole-partial-owner transfer, dynamic or Vec-element projections, projected clone or general
-non-String projected assignment,
+whole-partial-owner transfer, dynamic or Vec-element projections, or general non-String projected
+clone and assignment,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
 Public owned results remain rejected by scalar ABI v1.
 `Shared`, `Weak`, shared or exclusive borrows, and their
