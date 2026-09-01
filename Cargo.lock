@@ -1264,6 +1264,7 @@ dependencies = [
  "zryna-abi",
  "zryna-diagnostics",
  "zryna-ir",
+ "zryna-layout",
  "zryna-source",
  "zryna-syntax",
 ]

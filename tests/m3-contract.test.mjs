@@ -265,6 +265,27 @@ test("implemented data IR document freezes the internal authority without runtim
   assert.match(document, /M1 and M2 remain the only public compiler profiles/);
 });
 
+test("implemented Copy aggregate semantics remain internal and runtime-free", async () => {
+  const document = await readFile(
+    new URL("../docs/M3_COPY_AGGREGATE_SEMANTICS.md", import.meta.url),
+    "utf8",
+  );
+  assert.match(document, /verified protocol-v4 syntax snapshot/);
+  assert.match(document, /only `zryna_ir::data_ownership_v1::VerifiedProgram`/);
+  assert.match(document, /only a compile-time constant index/);
+  assert.match(document, /negative, nonconstant,\s+and out-of-bounds source indices are semantic errors/);
+  assert.match(document, /Reading a Copy aggregate does not\s+move, clone, drop, allocate/);
+  assert.match(document, /test-only scalar evaluator/);
+  assert.match(document, /ZRYNA-M3002/);
+  assert.match(document, /ZRYNA-M3010/);
+  assert.match(document, /ZRYNA-M3202/);
+  assert.match(document, /retain their owning `ZRYNA-Y4xxx`,\s+`ZRYNA-L3xxx`, and `ZRYNA-I3xxx` codes/);
+  assert.match(document, /OwnershipRuntimeV1.*non-executable contract identity/s);
+  assert.match(document, /M1 and explicit M2 remain the only public compiler profiles/);
+  assert.match(document, /Public aggregate parameters\s+or results/);
+  assert.match(document, /No allocator, runtime import, heap operation, drop helper, target\s+artifact/);
+});
+
 test("package and preflight expose one focused M3 contract gate", async () => {
   const packageDocument = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),

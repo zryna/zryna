@@ -56,10 +56,12 @@ The repository currently establishes and tests:
   flat type and expression arenas, exact UTF-8 spans, a syntax-only TypeScript 6 worker, and an
   opaque source-map-bound Rust verifier; this does not activate `data-ownership-v1` or change
   protocol v2/v3;
-- an internal aggregate-layout authority and a separate `DataOwnershipV1` Universal IR verifier
-  that bind one exact source, CFG, target-neutral type universe, both admitted storage layouts,
-  scalar ABI, and the declared ownership-runtime contract identity behind opaque read-only views;
-  no M3 runtime, backend, driver, CLI, or public aggregate ABI is enabled;
+- an internal aggregate-layout authority, a Copy-only struct/enum/fixed-array semantic lowerer, and
+  a separate `DataOwnershipV1` Universal IR verifier that bind one exact source, target-neutral
+  type universe, both admitted storage layouts, scalar ABI, and the declared ownership-runtime
+  contract identity behind opaque read-only views; constant fixed-array projections and the
+  scalar-observed Pair oracle remain internal, and no M3 runtime, backend, driver, CLI, or public
+  aggregate ABI is enabled;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and
@@ -166,11 +168,18 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm m3:data:quick
 pnpm m3:syntax:quick
 pnpm m2:quick
 pnpm preflight
 pnpm m0:check
 ```
+
+`pnpm m3:data:quick` is the narrowest Issue #79 edit-loop check. It authenticates the protocol-v4
+fixtures, derives both aggregate layouts, verifies the Copy-only data IR, and runs the internal
+Pair oracle without building public backends or waiting for remote CI. It skips only the large
+exact/first-extra authenticated value-budget proof; `pnpm preflight` retains that boundary test for
+the final local gate.
 
 `pnpm m2:quick` is the narrowest edit-loop check for deterministic M2 JavaScript, WebAssembly, and
 native objects; native MIR; module closure; retained workspace and native-stage security; and
@@ -210,6 +219,7 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M2 control-flow semantics](docs/M2_CONTROL_FLOW_SEMANTICS.md),
 [M2 deterministic JavaScript backend](docs/M2_JAVASCRIPT_BACKEND.md),
 [M2 direct core WebAssembly backend](docs/M2_WEBASSEMBLY_BACKEND.md), [Roadmap](docs/ROADMAP.md),
+[M3 Copy aggregate semantics](docs/M3_COPY_AGGREGATE_SEMANTICS.md),
 [M0 conformance](docs/M0_CONFORMANCE.md), and
 [compiler documentation bundles](docs/DOCUMENTATION_BUNDLES.md).
 

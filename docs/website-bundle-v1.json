@@ -105,6 +105,12 @@
       "title": "M2 direct core WebAssembly backend"
     },
     {
+      "id": "reference/m3-copy-aggregate-semantics",
+      "source": "docs/M3_COPY_AGGREGATE_SEMANTICS.md",
+      "path": "documents/reference/m3-copy-aggregate-semantics.md",
+      "title": "M3 Copy aggregate semantics"
+    },
+    {
       "id": "reference/m3-data-ownership-ir",
       "source": "docs/M3_DATA_OWNERSHIP_IR.md",
       "path": "documents/reference/m3-data-ownership-ir.md",

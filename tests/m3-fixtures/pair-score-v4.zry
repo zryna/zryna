@@ -1,0 +1,2 @@
+interface Pair extends ZrynaStruct { left: i32; right: i32; }
+function pairScore(left: i32, right: i32): i32 { const pair: Pair = Pair({ left, right }); return pair.left * 31 + pair.right; }

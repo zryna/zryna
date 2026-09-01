@@ -186,10 +186,11 @@ implementation is activated. The canonical planning inventory is digest-pinned i
 `tests/m3-contract-v1.json`.
 
 Current status: the contract, internal verified aggregate-layout authority, separately versioned
-protocol-v4 syntax boundary, and isolated `DataOwnershipV1` raw-to-verified IR boundary are
-implemented. The syntax boundary includes a pinned TypeScript 6 syntax-only worker and an opaque
-source-map-bound Rust verifier, but it performs no M3 semantics and is not selected by the public
-driver. The IR boundary exposes no runtime, backend, driver, CLI, or host capability.
+protocol-v4 syntax boundary, isolated `DataOwnershipV1` raw-to-verified IR boundary, and internal
+Copy-only struct/enum/fixed-array semantic lowerer are implemented. The semantic boundary resolves
+nominal types and constant fixed-array projections, verifies both target layouts, and returns only
+sealed IR. It is not selected by the public driver and exposes no runtime, backend, CLI, public
+aggregate ABI, target artifact, or host capability.
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |
@@ -197,7 +198,7 @@ driver. The IR boundary exposes no runtime, backend, driver, CLI, or host capabi
 |   #76 | syntax protocol v4 and TypeScript 6 syntax-only adapter              | #75                     | complete    |
 |   #77 | verified aggregate layout authority                                  | #75                     | complete    |
 |   #78 | separately verified DataOwnershipV1 Universal IR                     | #75, #77                | complete    |
-|   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | planned     |
+|   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | complete    |
 |   #80 | versioned ownership runtime ABI authority                            | #75, #77                | planned     |
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | planned     |
 |   #82 | bounded nonescaping lexical borrowing                                | #81                     | planned     |
@@ -211,10 +212,11 @@ driver. The IR boundary exposes no runtime, backend, driver, CLI, or host capabi
 |   #90 | public profile activation, authenticated docs, website, and provenance | #89                     | planned     |
 
 `Pair` is the smallest mandatory fixed-oracle case, remains internal, and preserves scalar ABI v1
-exports. It proves nominal identity, construction, source field order and access, sealed logical
-layout, verified IR, and matching scalar observations across all three targets without heap
-allocation. It becomes executable only inside the complete dependency-ordered backend, integration,
-and conformance work in #84 through #89; it is not an earlier partial-profile checkpoint.
+exports. Issue #79 proves nominal identity, construction, source field order and access, sealed
+logical layout, verified IR, and the fixed scalar results through a test-only evaluator over opaque
+verified views, without heap allocation or a production execution path. Pair becomes executable
+across targets only inside the complete dependency-ordered backend, integration, and conformance
+work in #84 through #89; it is not an earlier partial-profile checkpoint.
 
 #88 produces an internally testable candidate route and manifest, not a supported public selector.
 Exact `--profile data-ownership-v1` activation and support claims wait for #89 conformance and the

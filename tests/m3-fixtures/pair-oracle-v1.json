@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "profile": "zryna-data-ownership-pair-oracle-v1",
+  "source": "tests/m3-fixtures/pair-score-v4.zry",
+  "function": "pairScore",
+  "cases": [
+    {
+      "id": "zero-pair",
+      "arguments": [
+        { "type": "i32", "value": 0 },
+        { "type": "i32", "value": 0 }
+      ],
+      "expected": { "type": "i32", "value": 0 }
+    },
+    {
+      "id": "positive-pair",
+      "arguments": [
+        { "type": "i32", "value": 1 },
+        { "type": "i32", "value": 2 }
+      ],
+      "expected": { "type": "i32", "value": 33 }
+    },
+    {
+      "id": "negative-left-pair",
+      "arguments": [
+        { "type": "i32", "value": -1 },
+        { "type": "i32", "value": 2 }
+      ],
+      "expected": { "type": "i32", "value": -29 }
+    },
+    {
+      "id": "maximum-left-wraps",
+      "arguments": [
+        { "type": "i32", "value": 2147483647 },
+        { "type": "i32", "value": 1 }
+      ],
+      "expected": { "type": "i32", "value": 2147483618 }
+    },
+    {
+      "id": "minimum-left-wraps",
+      "arguments": [
+        { "type": "i32", "value": -2147483648 },
+        { "type": "i32", "value": -1 }
+      ],
+      "expected": { "type": "i32", "value": 2147483647 }
+    }
+  ]
+}
