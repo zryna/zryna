@@ -10,7 +10,8 @@ use super::{
     MAX_RUNTIME_OPERATIONS, MAX_STATUS_TRANSITIONS, MAX_STRING_BYTES, MAX_TARGET_FUNCTIONS,
     MAX_VEC_ELEMENTS, MAX_VIOLATIONS, NON_CAPABILITIES, OWNERSHIP_RUNTIME_V1_IDENTIFIER,
     OWNERSHIP_RUNTIME_V1_SCHEMA_VERSION, RuntimeAbiViolationKind, RuntimeStatus,
-    TRANSITION_RULE_IDENTITIES, TransitionClaim, raw, raw_v1, validate_transition, verify_v1,
+    TRANSITION_RULE_IDENTITIES, TransitionClaim, raw, raw_v1, validate_bound_vec_transition,
+    validate_failure_atomic_transition, validate_transition, validate_vec_transition, verify_v1,
 };
 
 const CHECKED_FIXTURE: &str = include_str!("../../../spec/abi/ownership-runtime-v1-fixtures.json");
@@ -226,6 +227,56 @@ fn authorities() -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::Ver
             },
         ],
         program_roots: (0..6).map(raw_layout::NodeId).collect(),
+    };
+    let linear =
+        zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
+    let linux =
+        zryna_layout::verify(&graph, &sources, StorageTarget::LinuxX8664V1).expect("linux layouts");
+    (sources, linear, linux)
+}
+
+fn vec_string_authorities()
+-> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::VerifiedLayouts) {
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "src/main.zry".to_owned(),
+        text: "runtime Vec<i32>/Vec<String> universe\n".to_owned(),
+    }])
+    .expect("source map");
+    let file = sources.verify_file_id(0).expect("file");
+    let graph = raw_layout::Graph {
+        modules: vec![raw_layout::Module {
+            id: raw_layout::ModuleId(0),
+            source_file: file,
+            data_declarations: 0,
+        }],
+        types: vec![
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(0),
+                span: None,
+                kind: raw_layout::TypeKind::Bool,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(1),
+                span: None,
+                kind: raw_layout::TypeKind::I32,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(2),
+                span: None,
+                kind: raw_layout::TypeKind::String,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(3),
+                span: None,
+                kind: raw_layout::TypeKind::Vec { element: raw_layout::NodeId(1) },
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(4),
+                span: None,
+                kind: raw_layout::TypeKind::Vec { element: raw_layout::NodeId(2) },
+            },
+        ],
+        program_roots: (0..5).map(raw_layout::NodeId).collect(),
     };
     let linear =
         zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
@@ -876,42 +927,57 @@ fn violations_are_bounded_and_deterministic() {
 
 #[test]
 fn pure_vec_and_count_transitions_are_exact() {
-    validate_transition(TransitionClaim::VecAllocate {
-        requested: 0,
-        status: RuntimeStatus::Ok,
-        pointer: 0,
-        length: 0,
-        capacity: 0,
-    })
+    let (_sources, linear, linux) = authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("runtime ABI");
+    let layout = verified.element_layouts().next().expect("sealed Vec element layout");
+    validate_vec_transition(
+        layout,
+        TransitionClaim::VecAllocate {
+            requested: 0,
+            status: RuntimeStatus::Ok,
+            pointer: 0,
+            length: 0,
+            capacity: 0,
+        },
+    )
     .expect("canonical empty");
-    validate_transition(TransitionClaim::VecAllocate {
-        requested: 7,
-        status: RuntimeStatus::Ok,
-        pointer: 1,
-        length: 0,
-        capacity: 7,
-    })
-    .expect("fresh capacity equals request");
-    assert!(
-        validate_transition(TransitionClaim::VecAllocate {
+    validate_vec_transition(
+        layout,
+        TransitionClaim::VecAllocate {
             requested: 7,
             status: RuntimeStatus::Ok,
             pointer: 1,
             length: 0,
-            capacity: 8,
-        })
+            capacity: 7,
+        },
+    )
+    .expect("fresh capacity equals request");
+    assert!(
+        validate_vec_transition(
+            layout,
+            TransitionClaim::VecAllocate {
+                requested: 7,
+                status: RuntimeStatus::Ok,
+                pointer: 1,
+                length: 0,
+                capacity: 8,
+            }
+        )
         .is_err()
     );
-    validate_transition(TransitionClaim::VecReserve {
-        old_length: 3,
-        old_capacity: 4,
-        required_length: 9,
-        status: RuntimeStatus::Ok,
-        pointer: 9,
-        length: 3,
-        capacity: 16,
-        input_unchanged: false,
-    })
+    validate_vec_transition(
+        layout,
+        TransitionClaim::VecReserve {
+            old_length: 3,
+            old_capacity: 4,
+            required_length: 9,
+            status: RuntimeStatus::Ok,
+            pointer: 9,
+            length: 3,
+            capacity: 16,
+            input_unchanged: false,
+        },
+    )
     .expect("frozen doubling");
     validate_transition(TransitionClaim::CountIncrement {
         before: 7,
@@ -946,12 +1012,13 @@ fn pure_vec_and_count_transitions_are_exact() {
         deallocated: true,
     })
     .expect("last weak deallocates only at strong zero");
-    validate_transition(TransitionClaim::FailureAtomic {
-        status: RuntimeStatus::Allocation,
-        outputs_zero: true,
-        input_unchanged: true,
-    })
-    .expect("failure atomicity");
+    validate_failure_atomic_transition(
+        LogicalOperation::VecAllocate,
+        RuntimeStatus::Allocation,
+        true,
+        true,
+    )
+    .expect("operation-bound failure atomicity");
 }
 
 #[test]
@@ -1035,6 +1102,36 @@ fn raw_schema_version_and_status_semantics_fail_closed() {
     let mut trap = raw_v1(&linear, &linux);
     trap.statuses[1].trap_identity = None;
     assert_eq!(verify_v1(trap, &linear, &linux).expect_err("trap")[0].code(), "ZRYNA-R3002");
+}
+
+#[test]
+fn verified_status_declaration_matrix_is_exact_and_closed() {
+    use super::{VerifiedStatusDisposition as D, VerifiedStatusTrapIdentity as T};
+
+    let (_sources, linear, linux) = authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("canonical ABI");
+    let matrix = verified
+        .status_declarations()
+        .map(|declaration| {
+            (declaration.status(), declaration.disposition(), declaration.trap_identity())
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        matrix,
+        [
+            (RuntimeStatus::Ok, D::Success, None),
+            (RuntimeStatus::Allocation, D::ControlledTrap, Some(T::AllocationV1)),
+            (RuntimeStatus::Capacity, D::ControlledTrap, Some(T::CapacityV1)),
+            (RuntimeStatus::Refcount, D::ControlledTrap, Some(T::RefcountV1)),
+            (RuntimeStatus::Utf8, D::ControlledTrap, Some(T::Utf8V1)),
+            (RuntimeStatus::Expired, D::Branch, None),
+            (RuntimeStatus::AbiViolation, D::HostFailure, None),
+        ]
+    );
+    assert_eq!(
+        verified.statuses().collect::<Vec<_>>(),
+        matrix.iter().map(|(status, _, _)| *status).collect::<Vec<_>>()
+    );
 }
 
 #[test]
@@ -1178,60 +1275,505 @@ fn non_success_control_results_are_zero_shaped() {
 
 #[test]
 fn vec_failures_use_only_operation_specific_atomic_statuses() {
-    validate_transition(TransitionClaim::VecAllocate {
-        requested: MAX_VEC_ELEMENTS + 1,
-        status: RuntimeStatus::Capacity,
-        pointer: 0,
-        length: 0,
-        capacity: 0,
-    })
-    .expect("oversized allocation is capacity failure");
-    assert!(
-        validate_transition(TransitionClaim::VecAllocate {
+    let (_sources, linear, linux) = authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("runtime ABI");
+    let layout = verified.element_layouts().next().expect("sealed Vec element layout");
+    validate_vec_transition(
+        layout,
+        TransitionClaim::VecAllocate {
             requested: MAX_VEC_ELEMENTS + 1,
-            status: RuntimeStatus::Allocation,
+            status: RuntimeStatus::Capacity,
             pointer: 0,
             length: 0,
             capacity: 0,
+        },
+    )
+    .expect("oversized allocation is capacity failure");
+    assert!(
+        validate_vec_transition(
+            layout,
+            TransitionClaim::VecAllocate {
+                requested: MAX_VEC_ELEMENTS + 1,
+                status: RuntimeStatus::Allocation,
+                pointer: 0,
+                length: 0,
+                capacity: 0,
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        validate_vec_transition(
+            layout,
+            TransitionClaim::VecAllocate {
+                requested: 1,
+                status: RuntimeStatus::Expired,
+                pointer: 0,
+                length: 0,
+                capacity: 0,
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        validate_vec_transition(
+            layout,
+            TransitionClaim::VecReserve {
+                old_length: 1,
+                old_capacity: 1,
+                required_length: 2,
+                status: RuntimeStatus::Utf8,
+                pointer: 0,
+                length: 0,
+                capacity: 0,
+                input_unchanged: true,
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        validate_vec_transition(
+            layout,
+            TransitionClaim::VecReserve {
+                old_length: 1,
+                old_capacity: 1,
+                required_length: MAX_VEC_ELEMENTS + 1,
+                status: RuntimeStatus::Allocation,
+                pointer: 0,
+                length: 0,
+                capacity: 0,
+                input_unchanged: true,
+            }
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn contextual_transition_claims_fail_closed_without_their_authority() {
+    assert!(
+        validate_transition(TransitionClaim::FailureAtomic {
+            status: RuntimeStatus::Allocation,
+            outputs_zero: true,
+            input_unchanged: true,
         })
         .is_err()
     );
     assert!(
         validate_transition(TransitionClaim::VecAllocate {
             requested: 1,
-            status: RuntimeStatus::Expired,
-            pointer: 0,
+            status: RuntimeStatus::Ok,
+            pointer: 1,
             length: 0,
-            capacity: 0,
+            capacity: 1,
         })
         .is_err()
     );
     assert!(
         validate_transition(TransitionClaim::VecReserve {
-            old_length: 1,
-            old_capacity: 1,
-            required_length: 2,
-            status: RuntimeStatus::Utf8,
-            pointer: 0,
+            old_length: 0,
+            old_capacity: 0,
+            required_length: 1,
+            status: RuntimeStatus::Ok,
+            pointer: 1,
             length: 0,
-            capacity: 0,
-            input_unchanged: true,
+            capacity: 4,
+            input_unchanged: false,
         })
+        .is_err()
+    );
+}
+
+#[test]
+fn failure_atomicity_is_bound_to_the_exact_operation_status_set() {
+    validate_failure_atomic_transition(
+        LogicalOperation::StringFromUtf8Copy,
+        RuntimeStatus::Utf8,
+        true,
+        true,
+    )
+    .expect("UTF-8 failure belongs to String construction");
+    validate_failure_atomic_transition(
+        LogicalOperation::VecAllocate,
+        RuntimeStatus::Allocation,
+        true,
+        true,
+    )
+    .expect("allocation failure belongs to Vec allocation");
+    validate_failure_atomic_transition(
+        LogicalOperation::WeakUpgrade,
+        RuntimeStatus::Expired,
+        true,
+        true,
+    )
+    .expect("expired is the Weak upgrade failure branch");
+
+    assert!(
+        validate_failure_atomic_transition(
+            LogicalOperation::StringClone,
+            RuntimeStatus::Utf8,
+            true,
+            true,
+        )
         .is_err()
     );
     assert!(
-        validate_transition(TransitionClaim::VecReserve {
+        validate_failure_atomic_transition(
+            LogicalOperation::StringRelease,
+            RuntimeStatus::Allocation,
+            true,
+            true,
+        )
+        .is_err()
+    );
+    assert!(
+        validate_failure_atomic_transition(
+            LogicalOperation::VecAllocate,
+            RuntimeStatus::Ok,
+            true,
+            true,
+        )
+        .is_err()
+    );
+    assert!(
+        validate_failure_atomic_transition(
+            LogicalOperation::VecAllocate,
+            RuntimeStatus::Allocation,
+            false,
+            true,
+        )
+        .is_err()
+    );
+    assert!(
+        validate_failure_atomic_transition(
+            LogicalOperation::VecAllocate,
+            RuntimeStatus::Allocation,
+            true,
+            false,
+        )
+        .is_err()
+    );
+
+    let first = validate_failure_atomic_transition(
+        LogicalOperation::StringClone,
+        RuntimeStatus::Utf8,
+        true,
+        true,
+    );
+    let second = validate_failure_atomic_transition(
+        LogicalOperation::StringClone,
+        RuntimeStatus::Utf8,
+        true,
+        true,
+    );
+    assert_eq!(first, second);
+}
+
+#[test]
+fn vec_transitions_use_sealed_stride_and_checked_byte_amplification() {
+    let (_sources, linear, linux) = authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("runtime ABI");
+    let canonical = verified.element_layouts().next().expect("sealed Vec element layout");
+    validate_vec_transition(
+        canonical,
+        TransitionClaim::VecAllocate {
+            requested: MAX_VEC_ELEMENTS,
+            status: RuntimeStatus::Ok,
+            pointer: 1,
+            length: 0,
+            capacity: MAX_VEC_ELEMENTS,
+        },
+    )
+    .expect("stride-four element maximum remains below the byte maximum");
+
+    let wide_record = super::ElementLayoutRecord {
+        target: canonical.target(),
+        element: canonical.element(),
+        stride: 4_096,
+        alignment: canonical.alignment(),
+    };
+    let wide = super::VerifiedElementLayout { record: &wide_record };
+    let exact = MAX_DYNAMIC_ALLOCATION_BYTES / wide.stride();
+    assert_eq!(exact, 524_287);
+    validate_vec_transition(
+        wide,
+        TransitionClaim::VecAllocate {
+            requested: exact,
+            status: RuntimeStatus::Ok,
+            pointer: 1,
+            length: 0,
+            capacity: exact,
+        },
+    )
+    .expect("exact byte-amplification boundary");
+    validate_vec_transition(
+        wide,
+        TransitionClaim::VecAllocate {
+            requested: exact + 1,
+            status: RuntimeStatus::Capacity,
+            pointer: 0,
+            length: 0,
+            capacity: 0,
+        },
+    )
+    .expect("first byte-amplification excess is capacity");
+    assert!(
+        validate_vec_transition(
+            wide,
+            TransitionClaim::VecAllocate {
+                requested: exact + 1,
+                status: RuntimeStatus::Ok,
+                pointer: 1,
+                length: 0,
+                capacity: exact + 1,
+            },
+        )
+        .is_err()
+    );
+    assert!(
+        validate_vec_transition(
+            wide,
+            TransitionClaim::VecAllocate {
+                requested: exact + 1,
+                status: RuntimeStatus::Allocation,
+                pointer: 0,
+                length: 0,
+                capacity: 0,
+            },
+        )
+        .is_err()
+    );
+    assert!(
+        validate_vec_transition(
+            wide,
+            TransitionClaim::VecAllocate {
+                requested: 0,
+                status: RuntimeStatus::Allocation,
+                pointer: 0,
+                length: 0,
+                capacity: 0,
+            },
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn vec_reserve_uses_checked_byte_amplification_and_exact_old_state() {
+    let (_sources, linear, linux) = authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("runtime ABI");
+    let canonical = verified.element_layouts().next().expect("sealed Vec element layout");
+    let wide_record = super::ElementLayoutRecord {
+        target: canonical.target(),
+        element: canonical.element(),
+        stride: 4_096,
+        alignment: canonical.alignment(),
+    };
+    let wide = super::VerifiedElementLayout { record: &wide_record };
+    let exact = MAX_DYNAMIC_ALLOCATION_BYTES / wide.stride();
+    validate_vec_transition(
+        wide,
+        TransitionClaim::VecReserve {
+            old_length: 262_144,
+            old_capacity: 262_144,
+            required_length: exact,
+            status: RuntimeStatus::Ok,
+            pointer: 7,
+            length: 262_144,
+            capacity: exact,
+            input_unchanged: false,
+        },
+    )
+    .expect("growth falls back to the exact request when doubling exceeds the byte maximum");
+    validate_vec_transition(
+        wide,
+        TransitionClaim::VecReserve {
             old_length: 1,
             old_capacity: 1,
-            required_length: MAX_VEC_ELEMENTS + 1,
-            status: RuntimeStatus::Allocation,
+            required_length: exact + 1,
+            status: RuntimeStatus::Capacity,
             pointer: 0,
             length: 0,
             capacity: 0,
             input_unchanged: true,
-        })
+        },
+    )
+    .expect("reserve first byte excess is atomic capacity failure");
+    assert!(
+        validate_vec_transition(
+            wide,
+            TransitionClaim::VecReserve {
+                old_length: 1,
+                old_capacity: exact + 1,
+                required_length: exact + 1,
+                status: RuntimeStatus::Capacity,
+                pointer: 0,
+                length: 0,
+                capacity: 0,
+                input_unchanged: true,
+            },
+        )
         .is_err()
     );
+    validate_vec_transition(
+        wide,
+        TransitionClaim::VecReserve {
+            old_length: 1,
+            old_capacity: exact + 1,
+            required_length: exact + 1,
+            status: RuntimeStatus::AbiViolation,
+            pointer: 0,
+            length: 0,
+            capacity: 0,
+            input_unchanged: true,
+        },
+    )
+    .expect("invalid old storage admits only the exact ABI-violation result shape");
+}
+
+#[test]
+fn bound_vec_claim_rejects_cross_target_and_element_replay() {
+    let (_sources, linear, linux) = vec_string_authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("runtime ABI");
+    let linear_i32 = verified
+        .element_layouts()
+        .find(|layout| {
+            layout.target() == StorageTarget::Linear32V1 && layout.element().index() == 1
+        })
+        .expect("Linear32 Vec<i32> layout");
+    let linux_string = verified
+        .element_layouts()
+        .find(|layout| {
+            layout.target() == StorageTarget::LinuxX8664V1 && layout.element().index() == 2
+        })
+        .expect("Linux Vec<String> layout");
+    let claim = linux_string.bind_vec_allocate(4, RuntimeStatus::Ok, 7, 0, 4);
+    assert_eq!(claim.target(), StorageTarget::LinuxX8664V1);
+    assert_eq!(claim.element(), linux_string.element());
+    validate_bound_vec_transition(linux_string, claim).expect("exact bound layout");
+    assert!(validate_bound_vec_transition(linear_i32, claim).is_err());
+
+    validate_bound_vec_transition(
+        linux_string,
+        linux_string.bind_vec_allocate(MAX_VEC_ELEMENTS, RuntimeStatus::Ok, 9, 0, MAX_VEC_ELEMENTS),
+    )
+    .expect("exact element-count boundary");
+    validate_bound_vec_transition(
+        linux_string,
+        linux_string.bind_vec_allocate(MAX_VEC_ELEMENTS + 1, RuntimeStatus::Capacity, 0, 0, 0),
+    )
+    .expect("first element-count excess is an atomic capacity failure");
+}
+
+#[test]
+fn bound_vec_reserve_preserves_no_growth_storage_and_exact_growth_rules() {
+    let (_sources, linear, linux) = authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("runtime ABI");
+    let layout = verified
+        .element_layouts()
+        .find(|layout| layout.target() == StorageTarget::LinuxX8664V1)
+        .expect("Linux Vec element layout");
+
+    validate_bound_vec_transition(
+        layout,
+        layout.bind_vec_reserve(11, 2, 8, 3, RuntimeStatus::Ok, 11, 2, 8, false),
+    )
+    .expect("no-growth reserve retains exact storage");
+    assert!(
+        validate_bound_vec_transition(
+            layout,
+            layout.bind_vec_reserve(11, 2, 8, 3, RuntimeStatus::Ok, 12, 2, 8, false),
+        )
+        .is_err()
+    );
+
+    validate_bound_vec_transition(
+        layout,
+        layout.bind_vec_reserve(11, 8, 8, 9, RuntimeStatus::Allocation, 0, 0, 0, true),
+    )
+    .expect("allocation failure retains exact old storage");
+
+    validate_bound_vec_transition(
+        layout,
+        layout.bind_vec_reserve(11, 8, 8, 9, RuntimeStatus::Ok, 12, 8, 16, false),
+    )
+    .expect("growth may replace storage at the deterministic capacity");
+    assert!(
+        validate_bound_vec_transition(
+            layout,
+            layout.bind_vec_reserve(11, 8, 8, 9, RuntimeStatus::Ok, 12, 8, 9, false),
+        )
+        .is_err()
+    );
+
+    validate_bound_vec_transition(
+        layout,
+        layout.bind_vec_reserve(
+            11,
+            8,
+            8,
+            MAX_VEC_ELEMENTS + 1,
+            RuntimeStatus::Capacity,
+            0,
+            0,
+            0,
+            true,
+        ),
+    )
+    .expect("capacity failure retains exact old storage");
+    assert!(
+        validate_bound_vec_transition(
+            layout,
+            layout.bind_vec_reserve(
+                11,
+                8,
+                8,
+                MAX_VEC_ELEMENTS + 1,
+                RuntimeStatus::Capacity,
+                0,
+                0,
+                0,
+                false,
+            ),
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn byte_amplification_violations_replay_deterministically() {
+    let (_sources, linear, linux) = authorities();
+    let verified = verify_v1(raw_v1(&linear, &linux), &linear, &linux).expect("runtime ABI");
+    let canonical = verified.element_layouts().next().expect("sealed Vec element layout");
+    let wide_record = super::ElementLayoutRecord {
+        target: canonical.target(),
+        element: canonical.element(),
+        stride: 4_096,
+        alignment: canonical.alignment(),
+    };
+    let wide = super::VerifiedElementLayout { record: &wide_record };
+    let exact = MAX_DYNAMIC_ALLOCATION_BYTES / wide.stride();
+    let first = validate_vec_transition(
+        wide,
+        TransitionClaim::VecAllocate {
+            requested: exact + 1,
+            status: RuntimeStatus::Ok,
+            pointer: 1,
+            length: 0,
+            capacity: exact + 1,
+        },
+    );
+    let second = validate_vec_transition(
+        wide,
+        TransitionClaim::VecAllocate {
+            requested: exact + 1,
+            status: RuntimeStatus::Ok,
+            pointer: 1,
+            length: 0,
+            capacity: exact + 1,
+        },
+    );
+    assert_eq!(first, second);
 }
 
 #[test]

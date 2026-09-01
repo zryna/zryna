@@ -125,5 +125,27 @@ implementation. The separate issue #80 authority verifies declarations, authenti
 header evidence, and pure transitions; no helper implementation, target runtime, backend, driver
 route, CLI profile, or public aggregate ABI is supplied here.
 
+The Issue #81 verifier foundations additionally admit bounded immutable UTF-8 bytes through
+`StringFromUtf8`, derive exactly one non-Copy owner place per owned value, preserve Copy
+parameter/local/temporary storage without adding Copy cleanup obligations, and transfer pending
+drop order across calls, returns, and CFG edges. `ReplacePlace` is an infallible commit and carries
+no prepare-failure cleanup identity. The current semantic producer uses that instruction for
+private root-local String and supported Vec replacement; projection, call, and CFG replacement are
+not part of the current semantic checkpoint.
+
+`VecClone` currently admits only exact `Vec<bool>` and `Vec<i32>` sources, preserves the source
+owner, requires one distinct temporary result owner, and binds allocation failure to its exact
+prepare cleanup. It does not claim general `Vec<T: Clone>` support or prefix-safe non-Copy element
+initialization.
+
+Every raw cleanup plan is bound to exactly one verified site and one closed role:
+`PrepareFailure`, `CallTrap`, `Return`, or `ControlledTrap`. A cleanup-bearing site with a foreign
+identity, an orphan plan, or a plan reused by another site fails closed. Opaque verified site and
+drop-action views expose that authority without returning raw plans; explicit `DropPlace` views
+derive their recursive state from the instruction's pre-drop program point. These are compiler
+proof foundations only. The verifier vocabulary is broader than the current private straight-line
+String/Vec semantic producer; general projections, calls and CFG ownership, target cleanup,
+allocators, and executable M3 profiles remain unavailable.
+
 The exact authority tuple, raw vocabulary, limits, diagnostics, and verified-view contract are
 documented in [`M3_DATA_OWNERSHIP_IR.md`](../../docs/M3_DATA_OWNERSHIP_IR.md).

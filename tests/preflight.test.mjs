@@ -28,14 +28,16 @@ test('preflight has one frozen portable command order', () => {
       ['m3-layout-tests', 'cargo'],
       ['m3-ownership-runtime-abi-tests', 'cargo'],
       ['m3-data-ir-tests', 'cargo'],
+      ['m3-data-ir-doc-tests', 'cargo'],
       ['m3-aggregate-semantics-tests', 'cargo'],
+      ['m3-aggregate-semantics-doc-tests', 'cargo'],
       ['rust-workspace-check', 'cargo'],
       ['frontend-syntax-tests', 'cargo'],
     ],
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), '333e0f2538ce879c5399dfde520baa2be025cd3671cedb628d33d33bf3b6a866');
+  assert.equal(preflightCommandDigest(), '8995cc25cf331a709688d5837fd67eb804a6e30804469872b15aec71f95091cd');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [
@@ -48,6 +50,8 @@ test('preflight has one frozen portable command order', () => {
     (commands) => commands[6].args.pop(),
     (commands) => commands[7].args.pop(),
     (commands) => commands[8].args.pop(),
+    (commands) => commands[9].args.pop(),
+    (commands) => commands[10].args.pop(),
   ]) {
     const changed = structuredClone(PREFLIGHT_COMMANDS);
     mutate(changed);
@@ -77,11 +81,19 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
   const document = parseDocument(workflow);
   assert.deepEqual(document.errors, []);
   const parsed = document.toJS();
+  const ownedDataQuick = workflowJob(workflow, 'owned-data-quick');
   const preflight = workflowJob(workflow, 'preflight');
   const rust = workflowJob(workflow, 'rust');
   const adapterPlatform = workflowJob(workflow, 'adapter-platform');
   const aggregate = workflowJob(workflow, 'm0');
 
+  assert.match(ownedDataQuick, /name: owned data quick \(\$\{\{ matrix\.os \}\}\)/);
+  assert.match(ownedDataQuick, /name: Verify M3 owned-data semantics\s+run: pnpm m3:owned:quick/);
+  assert.doesNotMatch(ownedDataQuick, /needs:/);
+  assert.deepEqual(parsed.jobs['owned-data-quick'].strategy.matrix.os, [
+    'ubuntu-latest',
+    'windows-latest',
+  ]);
   assert.match(preflight, /name: preflight/);
   assert.match(preflight, /run: pnpm preflight/);
   assert.match(rust, /name: Fetch locked Rust dependencies\s+run: cargo fetch --locked/);
@@ -89,18 +101,25 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
     rust,
     /name: Verify M2 semantics\s+run: cargo test --locked -p zryna-semantics --lib control_flow_v1/,
   );
+  assert.doesNotMatch(rust, /pnpm m3:owned:quick/);
+  assert.deepEqual(parsed.jobs.rust.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
   assert.match(rust, /run: cargo test --locked -p zryna-driver --lib/);
   assert.doesNotMatch(rust, /module_closure_tests::/);
   assert.match(rust, /needs: preflight/);
   assert.match(adapterPlatform, /needs: preflight/);
-  assert.match(aggregate, /needs: \[preflight, rust, adapter\]/);
+  assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter\]/);
+  assert.match(
+    aggregate,
+    /OWNED_DATA_QUICK_RESULT: \$\{\{ needs\.owned-data-quick\.result \}\}/,
+  );
+  assert.match(aggregate, /test "\$OWNED_DATA_QUICK_RESULT" = success/);
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /test "\$PREFLIGHT_RESULT" = success/);
 
   assert.equal(parsed.jobs.rust.needs, 'preflight');
   assert.equal(parsed.jobs['adapter-platform'].needs, 'preflight');
   assert.equal(parsed.jobs.adapter.needs, 'adapter-platform');
-  assert.deepEqual(parsed.jobs.m0.needs, ['preflight', 'rust', 'adapter']);
+  assert.deepEqual(parsed.jobs.m0.needs, ['owned-data-quick', 'preflight', 'rust', 'adapter']);
 
   const controlledResults = { preflight: 'failure' };
   controlledResults.rust = controlledResults.preflight === 'success' ? 'success' : 'skipped';
@@ -128,6 +147,10 @@ test('package exposes the exact documented preflight entrypoint', async () => {
   assert.equal(
     packageDocument.scripts['m3:data:quick'],
     'cargo test --locked -p zryna-semantics data_ownership_v1 -- --skip authenticated_v4_derived_value_budget_is_exact_and_plus_one_fails_m3201',
+  );
+  assert.equal(
+    packageDocument.scripts['m3:owned:quick'],
+    'cargo test --locked -p zryna-ir data_ownership_v1 && cargo test --locked -p zryna-ir --doc data_ownership_v1 && cargo test --locked -p zryna-semantics data_ownership_v1 -- --skip authenticated_v4_derived_value_budget_is_exact_and_plus_one_fails_m3201 && cargo test --locked -p zryna-semantics --doc data_ownership_v1',
   );
   assert.equal(
     packageDocument.scripts['m3:runtime-abi:quick'],

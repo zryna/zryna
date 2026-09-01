@@ -59,6 +59,8 @@ pub const MAX_ACTIVE_BORROWS_PER_FUNCTION: usize = 16_384;
 pub const MAX_DROP_ACTIONS_PER_FUNCTION: usize = 262_144;
 /// Maximum cleanup plans, including empty plans, in one function.
 pub const MAX_CLEANUP_PLANS_PER_FUNCTION: usize = 65_536;
+/// Maximum cumulative UTF-8 literal bytes retained by one program.
+pub const MAX_STRING_LITERAL_BYTES: usize = 8 * 1024 * 1024;
 /// Maximum retained diagnostics including the terminal diagnostic.
 pub const MAX_DIAGNOSTICS: usize = 256;
 
@@ -189,143 +191,43 @@ pub mod raw {
     pub enum InstructionKind {
         BoolLiteral(bool),
         I32Literal(i32),
-        I32Add {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        I32Sub {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        I32Mul {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        I32Neg {
-            operand: ValueId,
-        },
-        Eq {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        Ne {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        I32LtS {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        I32LeS {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        I32GtS {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        I32GeS {
-            lhs: ValueId,
-            rhs: ValueId,
-        },
-        DirectCall {
-            callee: FunctionId,
-            arguments: Vec<CallArgument>,
-            cleanup: Option<CleanupPlanId>,
-        },
-        StructConstruct {
-            fields: Vec<ValueId>,
-            cleanup: Option<CleanupPlanId>,
-        },
-        EnumConstruct {
-            variant: u32,
-            payload: Option<ValueId>,
-            cleanup: Option<CleanupPlanId>,
-        },
-        FixedArrayConstruct {
-            elements: Vec<ValueId>,
-            cleanup: Option<CleanupPlanId>,
-        },
-        CopyFromPlace {
-            place: PlaceId,
-        },
-        MoveFromPlace {
-            place: PlaceId,
-        },
-        ClonePlace {
-            place: PlaceId,
-            cleanup: CleanupPlanId,
-        },
-        InitializePlace {
-            place: PlaceId,
-            value: ValueId,
-        },
-        ReplacePlace {
-            place: PlaceId,
-            value: ValueId,
-            cleanup: CleanupPlanId,
-        },
-        DropPlace {
-            place: PlaceId,
-        },
-        EnumDiscriminant {
-            place: PlaceId,
-        },
-        FixedArrayIndexCopy {
-            place: PlaceId,
-            index: ValueId,
-            cleanup: CleanupPlanId,
-        },
-        VecIndexCopy {
-            place: PlaceId,
-            index: ValueId,
-            cleanup: CleanupPlanId,
-        },
-        StringClone {
-            place: PlaceId,
-            cleanup: CleanupPlanId,
-        },
-        StringConcat {
-            left: PlaceId,
-            right: PlaceId,
-            cleanup: CleanupPlanId,
-        },
-        VecConstruct {
-            elements: Vec<ValueId>,
-            cleanup: CleanupPlanId,
-        },
-        VecPush {
-            vector: PlaceId,
-            value: ValueId,
-            cleanup: CleanupPlanId,
-        },
-        SharedConstruct {
-            value: ValueId,
-            cleanup: CleanupPlanId,
-        },
-        SharedClone {
-            place: PlaceId,
-            cleanup: CleanupPlanId,
-        },
-        WeakDowngrade {
-            place: PlaceId,
-            cleanup: CleanupPlanId,
-        },
-        WeakClone {
-            place: PlaceId,
-            cleanup: CleanupPlanId,
-        },
+        I32Add { lhs: ValueId, rhs: ValueId },
+        I32Sub { lhs: ValueId, rhs: ValueId },
+        I32Mul { lhs: ValueId, rhs: ValueId },
+        I32Neg { operand: ValueId },
+        Eq { lhs: ValueId, rhs: ValueId },
+        Ne { lhs: ValueId, rhs: ValueId },
+        I32LtS { lhs: ValueId, rhs: ValueId },
+        I32LeS { lhs: ValueId, rhs: ValueId },
+        I32GtS { lhs: ValueId, rhs: ValueId },
+        I32GeS { lhs: ValueId, rhs: ValueId },
+        DirectCall { callee: FunctionId, arguments: Vec<CallArgument>, cleanup: CleanupPlanId },
+        StructConstruct { fields: Vec<ValueId>, cleanup: Option<CleanupPlanId> },
+        EnumConstruct { variant: u32, payload: Option<ValueId>, cleanup: Option<CleanupPlanId> },
+        FixedArrayConstruct { elements: Vec<ValueId>, cleanup: Option<CleanupPlanId> },
+        CopyFromPlace { place: PlaceId },
+        MoveFromPlace { place: PlaceId },
+        ClonePlace { place: PlaceId, cleanup: CleanupPlanId },
+        InitializePlace { place: PlaceId, value: ValueId },
+        ReplacePlace { place: PlaceId, value: ValueId },
+        DropPlace { place: PlaceId },
+        EnumDiscriminant { place: PlaceId },
+        FixedArrayIndexCopy { place: PlaceId, index: ValueId, cleanup: CleanupPlanId },
+        VecIndexCopy { place: PlaceId, index: ValueId, cleanup: CleanupPlanId },
+        StringFromUtf8 { bytes: Vec<u8>, cleanup: CleanupPlanId },
+        StringClone { place: PlaceId, cleanup: CleanupPlanId },
+        StringConcat { left: PlaceId, right: PlaceId, cleanup: CleanupPlanId },
+        VecClone { place: PlaceId, cleanup: CleanupPlanId },
+        VecConstruct { elements: Vec<ValueId>, cleanup: CleanupPlanId },
+        VecPush { vector: PlaceId, value: ValueId, cleanup: CleanupPlanId },
+        SharedConstruct { value: ValueId, cleanup: CleanupPlanId },
+        SharedClone { place: PlaceId, cleanup: CleanupPlanId },
+        WeakDowngrade { place: PlaceId, cleanup: CleanupPlanId },
+        WeakClone { place: PlaceId, cleanup: CleanupPlanId },
         BeginBorrow(BorrowDefinition),
-        BorrowRead {
-            borrow: BorrowId,
-        },
-        BorrowWrite {
-            borrow: BorrowId,
-            value: ValueId,
-        },
-        EndBorrow {
-            borrow: BorrowId,
-        },
+        BorrowRead { borrow: BorrowId },
+        BorrowWrite { borrow: BorrowId, value: ValueId },
+        EndBorrow { borrow: BorrowId },
     }
 
     #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -480,6 +382,40 @@ impl CleanupPlanIdentity {
     #[must_use]
     pub const fn index(self) -> u32 {
         self.index
+    }
+}
+/// Closed reason an exact cleanup site may unwind owned values.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum VerifiedCleanupRole {
+    /// A fallible operation failed before committing its result.
+    PrepareFailure,
+    /// A direct callee trapped after its by-value arguments were transferred.
+    CallTrap,
+    /// A function returned normally after transferring its result.
+    Return,
+    /// The program entered an explicit controlled trap.
+    ControlledTrap,
+}
+/// Exact verified program point authorized to use one cleanup plan.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct VerifiedCleanupSite {
+    block: BlockIdentity,
+    instruction: Option<u32>,
+    role: VerifiedCleanupRole,
+}
+#[allow(missing_docs)]
+impl VerifiedCleanupSite {
+    #[must_use]
+    pub const fn block(self) -> BlockIdentity {
+        self.block
+    }
+    #[must_use]
+    pub const fn instruction_index(self) -> Option<u32> {
+        self.instruction
+    }
+    #[must_use]
+    pub const fn role(self) -> VerifiedCleanupRole {
+        self.role
     }
 }
 
@@ -778,6 +714,11 @@ impl VerifiedPlace<'_> {
     pub fn ty(self) -> LayoutTypeId {
         layout_type(&self.function.owner.linear32, self.place.ty).expect("verified type").id()
     }
+    /// Returns whether the sealed place type has no ownership/drop obligation.
+    #[must_use]
+    pub fn is_copy(self) -> bool {
+        place_is_copy(self.place.id, self.function.function, &self.function.owner.linear32)
+    }
     #[must_use]
     pub const fn span(self) -> Span {
         self.place.span
@@ -821,6 +762,14 @@ pub enum VerifiedPlaceKind {
 }
 #[derive(Clone, Copy, Debug)]
 /// Immutable view of one verified instruction.
+///
+/// Literal bytes are immutable through the verified view:
+///
+/// ```compile_fail
+/// fn mutate(instruction: zryna_ir::data_ownership_v1::VerifiedInstruction<'_>) {
+///     instruction.string_utf8_bytes().expect("String literal")[0] = b'x';
+/// }
+/// ```
 pub struct VerifiedInstruction<'a> {
     function: VerifiedFunction<'a>,
     block_index: usize,
@@ -856,8 +805,10 @@ pub enum VerifiedInstructionKind {
     EnumDiscriminant,
     FixedArrayIndexCopy,
     VecIndexCopy,
+    StringFromUtf8,
     StringClone,
     StringConcat,
+    VecClone,
     VecConstruct,
     VecPush,
     SharedConstruct,
@@ -910,8 +861,10 @@ impl<'a> VerifiedInstruction<'a> {
             I::EnumDiscriminant { .. } => VerifiedInstructionKind::EnumDiscriminant,
             I::FixedArrayIndexCopy { .. } => VerifiedInstructionKind::FixedArrayIndexCopy,
             I::VecIndexCopy { .. } => VerifiedInstructionKind::VecIndexCopy,
+            I::StringFromUtf8 { .. } => VerifiedInstructionKind::StringFromUtf8,
             I::StringClone { .. } => VerifiedInstructionKind::StringClone,
             I::StringConcat { .. } => VerifiedInstructionKind::StringConcat,
+            I::VecClone { .. } => VerifiedInstructionKind::VecClone,
             I::VecConstruct { .. } => VerifiedInstructionKind::VecConstruct,
             I::VecPush { .. } => VerifiedInstructionKind::VecPush,
             I::SharedConstruct { .. } => VerifiedInstructionKind::SharedConstruct,
@@ -962,6 +915,14 @@ impl<'a> VerifiedInstruction<'a> {
     pub const fn i32_literal(self) -> Option<i32> {
         if let raw::InstructionKind::I32Literal(value) = &self.instruction.kind {
             Some(*value)
+        } else {
+            None
+        }
+    }
+    #[must_use]
+    pub fn string_utf8_bytes(self) -> Option<&'a [u8]> {
+        if let raw::InstructionKind::StringFromUtf8 { bytes, .. } = &self.instruction.kind {
+            Some(bytes)
         } else {
             None
         }
@@ -1024,15 +985,27 @@ impl<'a> VerifiedInstruction<'a> {
     }
     #[must_use]
     pub fn derived_drop_actions(self) -> impl ExactSizeIterator<Item = VerifiedDropAction> {
-        let actions = instruction_cleanup(&self.instruction.kind)
-            .and_then(|plan| {
-                derive_state_before(
-                    self.function.function,
-                    &self.function.owner.linear32,
-                    self.block_index,
-                    self.instruction_index,
-                )
-                .map(|(states, variants)| {
+        let state = derive_state_before(
+            self.function.function,
+            &self.function.owner.linear32,
+            self.block_index,
+            self.instruction_index,
+        );
+        let actions = state
+            .map(|(states, variants)| match self.instruction.kind {
+                raw::InstructionKind::DropPlace { place }
+                | raw::InstructionKind::ReplacePlace { place, .. }
+                    if root_place(place, self.function.function) == place =>
+                {
+                    vec![sealed_drop_action(
+                        self.function.id(),
+                        self.function.function,
+                        place,
+                        &states,
+                        &variants,
+                    )]
+                }
+                _ => instruction_cleanup(&self.instruction.kind).map_or_else(Vec::new, |plan| {
                     sealed_drop_actions(
                         self.function.id(),
                         self.function.function,
@@ -1040,7 +1013,7 @@ impl<'a> VerifiedInstruction<'a> {
                         &states,
                         &variants,
                     )
-                })
+                }),
             })
             .unwrap_or_default();
         actions.into_iter()
@@ -1215,6 +1188,24 @@ pub struct VerifiedDropAction {
     moved_projections: Vec<PlaceIdentity>,
     initialized_projections: Vec<PlaceIdentity>,
     active_variant: Option<u32>,
+    active_variants: Vec<VerifiedActiveVariant>,
+}
+/// One exact active enum variant retained for recursive partial cleanup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct VerifiedActiveVariant {
+    place: PlaceIdentity,
+    variant: u32,
+}
+#[allow(missing_docs)]
+impl VerifiedActiveVariant {
+    #[must_use]
+    pub const fn place(self) -> PlaceIdentity {
+        self.place
+    }
+    #[must_use]
+    pub const fn variant(self) -> u32 {
+        self.variant
+    }
 }
 #[allow(missing_docs)]
 impl VerifiedDropAction {
@@ -1233,6 +1224,10 @@ impl VerifiedDropAction {
     #[must_use]
     pub const fn active_variant(&self) -> Option<u32> {
         self.active_variant
+    }
+    #[must_use]
+    pub fn active_variants(&self) -> impl ExactSizeIterator<Item = VerifiedActiveVariant> + '_ {
+        self.active_variants.iter().copied()
     }
 }
 /// Sealed trap ABI identity.
@@ -1297,6 +1292,28 @@ impl<'a> VerifiedCleanupPlan<'a> {
     pub const fn span(self) -> Span {
         self.plan.span
     }
+    /// Returns the single sealed site authorized to execute this plan.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the verifier's retained site binding is internally corrupted.
+    #[must_use]
+    pub fn site(self) -> VerifiedCleanupSite {
+        let reference = cleanup_references(self.function.function)
+            .into_iter()
+            .find(|reference| reference.plan == self.plan.id)
+            .expect("verified cleanup site");
+        VerifiedCleanupSite {
+            block: BlockIdentity {
+                owner: self.function.id(),
+                index: u32::try_from(reference.block).expect("bounded block index"),
+            },
+            instruction: reference
+                .instruction
+                .map(|index| u32::try_from(index).expect("bounded instruction index")),
+            role: reference.role,
+        }
+    }
 }
 
 /// Verifies one raw M3 program against exact source and dual-target layout authorities.
@@ -1360,6 +1377,7 @@ fn preflight(program: &raw::Program, layouts: &VerifiedLayouts, errors: &mut Err
     let mut values = 0usize;
     let mut edges = 0usize;
     let mut aggregate_operands = 0usize;
+    let mut string_literal_bytes = 0usize;
     let mut nominals = 0usize;
     let mut calls = 0usize;
     for module in &program.modules {
@@ -1466,8 +1484,28 @@ fn preflight(program: &raw::Program, layouts: &VerifiedLayouts, errors: &mut Err
                         "aggregate operand count",
                         errors,
                     );
+                    if let raw::InstructionKind::StringFromUtf8 { bytes, .. } = &instruction.kind {
+                        string_literal_bytes = checked_add(
+                            string_literal_bytes,
+                            bytes.len(),
+                            "String literal byte count",
+                            errors,
+                        );
+                        if string_literal_bytes > MAX_STRING_LITERAL_BYTES {
+                            errors.limit("String literal byte count", MAX_STRING_LITERAL_BYTES);
+                            return;
+                        }
+                    }
                     if matches!(instruction.kind, raw::InstructionKind::DirectCall { .. }) {
                         calls = checked_add(calls, 1, "call edge count", errors);
+                    }
+                    if matches!(instruction.kind, raw::InstructionKind::DropPlace { .. }) {
+                        drops = checked_add(drops, 1, "drop action count", errors);
+                        if drops > MAX_DROP_ACTIONS_PER_FUNCTION {
+                            errors
+                                .limit("drop actions per function", MAX_DROP_ACTIONS_PER_FUNCTION);
+                            return;
+                        }
                     }
                 }
                 if transitions > MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION {
@@ -1776,35 +1814,15 @@ fn verify_structure(
                     verify_terminator(terminator, function, errors);
                 }
             }
-            let mut referenced_plans = BTreeSet::new();
-            for block in &function.blocks {
-                referenced_plans.extend(
-                    block
-                        .instructions
-                        .iter()
-                        .filter_map(|instruction| instruction_cleanup(&instruction.kind)),
-                );
-                if let Some(terminator) = block.terminators.first() {
-                    match terminator.kind {
-                        raw::Terminator::Return { cleanup, .. }
-                        | raw::Terminator::WeakUpgradeBranch { cleanup, .. }
-                        | raw::Terminator::Trap { cleanup, .. } => {
-                            referenced_plans.insert(cleanup);
-                        }
-                        raw::Terminator::Jump(_)
-                        | raw::Terminator::Branch { .. }
-                        | raw::Terminator::EnumMatch { .. } => {}
-                    }
-                }
-            }
-            if let Some(plan) =
-                function.cleanup_plans.iter().find(|plan| !referenced_plans.contains(&plan.id))
-            {
+            let cleanup_references = cleanup_references(function);
+            if let Some(plan) = function.cleanup_plans.iter().find(|plan| {
+                cleanup_references.iter().filter(|reference| reference.plan == plan.id).count() != 1
+            }) {
                 errors.push(error_at(
                     "ZRYNA-I3012",
                     plan.span,
-                    "function contains an orphan cleanup plan",
-                    "retain only cleanup plans referenced by a verified fallible operation or exit",
+                    "cleanup plan is not bound to exactly one operation or exit site",
+                    "create one dense cleanup plan for each exact prepare, call, return, or trap site",
                 ));
             }
             if !errors.is_empty() {
@@ -1935,10 +1953,6 @@ fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, er
     if !errors.is_empty() {
         return;
     }
-    verify_enum_payload_dominance(function, &dominators, errors);
-    if !errors.is_empty() {
-        return;
-    }
     for (block_index, block) in function.blocks.iter().enumerate() {
         for (instruction_index, instruction) in block.instructions.iter().enumerate() {
             for operand in instruction_operands(&instruction.kind) {
@@ -1969,53 +1983,11 @@ fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, er
             verify_terminator_types(terminator, function, &values, layouts, errors);
         }
     }
-    verify_owned_value_owners(function, &values, layouts, &successors, errors);
+    let value_owners = derive_value_owners(function, &values, layouts, errors);
     if !errors.is_empty() {
         return;
     }
-    verify_ownership_dataflow(function, layouts, &successors, errors);
-}
-
-fn verify_enum_payload_dominance(
-    function: &raw::Function,
-    dominators: &[BTreeSet<usize>],
-    errors: &mut Errors,
-) {
-    for place in &function.places {
-        let raw::PlaceKind::EnumPayload { base, variant } = place.kind else { continue };
-        let refinements = function
-            .blocks
-            .iter()
-            .filter_map(|block| block.terminators.first())
-            .filter_map(|terminator| match &terminator.kind {
-                raw::Terminator::EnumMatch { place, arms } if *place == base => arms
-                    .iter()
-                    .find(|arm| arm.variant == variant)
-                    .map(|arm| arm.edge.target.0 as usize),
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        for (block_index, block) in function.blocks.iter().enumerate() {
-            let used = block.instructions.iter().any(|instruction| {
-                instruction_place_operands(&instruction.kind).contains(&place.id)
-            }) || block.terminators.first().is_some_and(|terminator| {
-                terminator_place_operands(&terminator.kind).contains(&place.id)
-            });
-            if used
-                && !refinements
-                    .iter()
-                    .any(|refinement| dominators[block_index].contains(refinement))
-            {
-                errors.push(error_at(
-                    "ZRYNA-I3013",
-                    place.span,
-                    "enum payload use is not dominated by its matching active-variant arm",
-                    "use a payload only below the exact exhaustive-match successor for its variant",
-                ));
-                return;
-            }
-        }
-    }
+    verify_ownership_dataflow(function, &value_owners, layouts, &successors, errors);
 }
 
 fn instruction_place_operands(kind: &raw::InstructionKind) -> Vec<raw::PlaceId> {
@@ -2031,6 +2003,7 @@ fn instruction_place_operands(kind: &raw::InstructionKind) -> Vec<raw::PlaceId> 
         | I::FixedArrayIndexCopy { place, .. }
         | I::VecIndexCopy { place, .. }
         | I::StringClone { place, .. }
+        | I::VecClone { place, .. }
         | I::SharedClone { place, .. }
         | I::WeakDowngrade { place, .. }
         | I::WeakClone { place, .. } => vec![*place],
@@ -2050,124 +2023,65 @@ fn terminator_place_operands(kind: &raw::Terminator) -> Vec<raw::PlaceId> {
 }
 
 #[allow(clippy::too_many_lines)]
-fn verify_owned_value_owners(
+fn derive_value_owners(
     function: &raw::Function,
     values: &[ValueInfo],
     layouts: &VerifiedLayouts,
-    successors: &[Vec<usize>],
     errors: &mut Errors,
-) {
-    const UNAVAILABLE: u8 = 0;
-    const AVAILABLE: u8 = 1;
-    const CONSUMED: u8 = 2;
-    let non_copy = |id: raw::ValueId| {
+) -> Vec<Option<raw::PlaceId>> {
+    let is_non_copy = |id: raw::ValueId| {
         value_info(values, id)
             .and_then(|info| layout_type(layouts, info.ty))
             .is_some_and(|ty| ty.drop_kind() != 0)
     };
-    let mut initial = vec![UNAVAILABLE; values.len()];
-    for parameter in &function.parameters {
-        if non_copy(parameter.id) {
-            initial[parameter.id.0 as usize] = AVAILABLE;
-        }
-    }
+    let mut owners = vec![None; values.len()];
     for place in &function.places {
-        if let raw::PlaceKind::Parameter(parameter) = place.kind {
-            let id = raw::ValueId(parameter);
-            if non_copy(id) {
-                initial[id.0 as usize] = CONSUMED;
-            }
-        }
-    }
-    let consume = |id: raw::ValueId, state: &mut [u8], span: Span, errors: &mut Errors| {
-        if !non_copy(id) {
-            return;
-        }
-        let Some(slot) = state.get_mut(id.0 as usize) else { return };
-        if *slot == AVAILABLE {
-            *slot = CONSUMED;
-        } else {
+        let value = match place.kind {
+            raw::PlaceKind::Parameter(parameter) => Some(raw::ValueId(parameter)),
+            raw::PlaceKind::Temporary(value) => Some(value),
+            _ => None,
+        };
+        let Some(value) = value else { continue };
+        let Some(info) = value_info(values, value) else { continue };
+        let root_is_valid = info.ty == place.ty && projection_base(&place.kind).is_none();
+        if !root_is_valid {
             errors.push(error_at(
                 "ZRYNA-I3008",
-                span,
-                "non-Copy value is consumed more than once or before it is available",
-                "transfer each non-Copy value exactly once on every reachable path",
+                place.span,
+                "parameter or temporary place root is ill-typed",
+                "bind each addressable root to one existing value of the exact sealed type",
+            ));
+            continue;
+        }
+        if !is_non_copy(value) {
+            continue;
+        }
+        let Some(slot) = owners.get_mut(value.0 as usize) else { continue };
+        if slot.replace(place.id).is_some() {
+            errors.push(error_at(
+                "ZRYNA-I3008",
+                place.span,
+                "non-Copy value has more than one root owner",
+                "bind each non-Copy value to exactly one parameter or temporary root",
             ));
         }
-    };
-    let mut entries = vec![None::<Vec<u8>>; function.blocks.len()];
-    entries[0] = Some(initial);
-    let mut queue = VecDeque::from([0usize]);
-    while let Some(block_index) = queue.pop_front() {
-        let Some(mut state) = entries[block_index].clone() else { continue };
-        let block = &function.blocks[block_index];
-        for parameter in &block.parameters {
-            if non_copy(parameter.id) {
-                state[parameter.id.0 as usize] = AVAILABLE;
-            }
-        }
-        for instruction in &block.instructions {
-            for operand in consuming_instruction_operands(&instruction.kind) {
-                consume(operand, &mut state, instruction.span, errors);
-            }
-            if let Some(result) = instruction.result
-                && non_copy(result.id)
-            {
-                state[result.id.0 as usize] = if function.places.iter().any(
-                    |place| matches!(place.kind, raw::PlaceKind::Temporary(value) if value == result.id),
-                ) {
-                    CONSUMED
+    }
+    for (index, info) in values.iter().enumerate() {
+        let non_copy = layout_type(layouts, info.ty).is_some_and(|ty| ty.drop_kind() != 0);
+        if non_copy != owners[index].is_some() {
+            errors.push(error_at(
+                "ZRYNA-I3008",
+                function.span,
+                if non_copy {
+                    "non-Copy value has no root owner"
                 } else {
-                    AVAILABLE
-                };
-            }
-        }
-        let Some(terminator) = block.terminators.first() else { continue };
-        if let raw::Terminator::Return { value, .. } = terminator.kind {
-            consume(value, &mut state, terminator.span, errors);
-            if state.contains(&AVAILABLE) {
-                errors.push(error_at(
-                    "ZRYNA-I3008",
-                    terminator.span,
-                    "reachable return leaves a non-Copy SSA value without an owner",
-                    "place, transfer, or return every non-Copy value on this path",
-                ));
-            }
-            continue;
-        }
-        if matches!(terminator.kind, raw::Terminator::Trap { .. }) {
-            if state.contains(&AVAILABLE) {
-                errors.push(error_at(
-                    "ZRYNA-I3008",
-                    terminator.span,
-                    "reachable trap leaves a non-Copy SSA value without an owner",
-                    "place or transfer every non-Copy value before trapping",
-                ));
-            }
-            continue;
-        }
-        for (edge, successor) in
-            terminator_edges(&terminator.kind).into_iter().zip(&successors[block_index])
-        {
-            let mut edge_state = state.clone();
-            for argument in &edge.arguments {
-                consume(*argument, &mut edge_state, terminator.span, errors);
-            }
-            match &entries[*successor] {
-                None => {
-                    entries[*successor] = Some(edge_state);
-                    queue.push_back(*successor);
-                }
-                Some(existing) if existing != &edge_state => errors.push(error_at(
-                    "ZRYNA-I3008",
-                    terminator.span,
-                    "non-Copy value ownership differs across a CFG join or backedge",
-                    "make every incoming path transfer exactly the same SSA ownership state",
-                )),
-                Some(_) => {}
-            }
+                    "Copy value unexpectedly has a root owner"
+                },
+                "derive exactly one owner root for every non-Copy value and none for Copy values",
+            ));
         }
     }
+    owners
 }
 
 fn consuming_instruction_operands(kind: &raw::InstructionKind) -> Vec<raw::ValueId> {
@@ -2386,15 +2300,51 @@ enum PlaceStateKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct PlaceState {
     kind: PlaceStateKind,
-    completion: Option<usize>,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct OwnershipFlow {
+    states: Vec<PlaceState>,
+    variants: Vec<Option<u32>>,
+    pending: Vec<raw::PlaceId>,
+}
+
+#[allow(clippy::too_many_lines)]
 fn derive_state_before(
     function: &raw::Function,
     layouts: &VerifiedLayouts,
     target_block: usize,
     target_instruction: usize,
 ) -> Option<(Vec<PlaceState>, Vec<Option<u32>>)> {
+    let value_count = function
+        .parameters
+        .iter()
+        .chain(function.blocks.iter().flat_map(|block| &block.parameters))
+        .chain(
+            function
+                .blocks
+                .iter()
+                .flat_map(|block| &block.instructions)
+                .filter_map(|instruction| instruction.result.as_ref()),
+        )
+        .map(|value| value.id.0 as usize + 1)
+        .max()
+        .unwrap_or(0);
+    let mut owners = vec![None; value_count];
+    for place in &function.places {
+        let value = match place.kind {
+            raw::PlaceKind::Parameter(index) => {
+                function.parameters.get(index as usize).map(|value| value.id)
+            }
+            raw::PlaceKind::Temporary(value) => Some(value),
+            _ => None,
+        };
+        if let Some(value) = value
+            && layout_type(layouts, place.ty).is_some_and(|ty| ty.drop_kind() != 0)
+        {
+            owners[value.0 as usize] = Some(place.id);
+        }
+    }
     let mut initial = function
         .places
         .iter()
@@ -2404,86 +2354,130 @@ fn derive_state_before(
             } else {
                 PlaceStateKind::Uninitialized
             },
-            completion: matches!(place.kind, raw::PlaceKind::Parameter(_)).then_some(0),
         })
         .collect::<Vec<_>>();
     for index in 0..function.places.len() {
         if let Some(base) = projection_base(&function.places[index].kind)
             && initial[base.0 as usize].kind == PlaceStateKind::Initialized
         {
-            initial[index] = PlaceState { kind: PlaceStateKind::Initialized, completion: Some(0) };
+            initial[index] = PlaceState { kind: PlaceStateKind::Initialized };
         }
     }
+    let pending = function
+        .parameters
+        .iter()
+        .filter_map(|parameter| owners.get(parameter.id.0 as usize).copied().flatten())
+        .collect();
     let mut entries = vec![None; function.blocks.len()];
-    entries[0] = Some((initial, vec![None; function.places.len()]));
+    entries[0] = Some(OwnershipFlow {
+        states: initial,
+        variants: vec![None; function.places.len()],
+        pending,
+    });
     let mut queue = VecDeque::from([0usize]);
     while let Some(block_index) = queue.pop_front() {
-        let (mut states, mut variants) = entries[block_index].clone()?;
+        let mut flow = entries[block_index].clone()?;
         let block = &function.blocks[block_index];
+        let mut active = vec![];
+        let mut replay_errors = Errors::default();
         for (instruction_index, instruction) in block.instructions.iter().enumerate() {
             if block_index == target_block && instruction_index == target_instruction {
-                return Some((states, variants));
+                if matches!(instruction.kind, raw::InstructionKind::DirectCall { .. }) {
+                    transfer_consumed_values(
+                        &consuming_instruction_operands(&instruction.kind),
+                        &owners,
+                        function,
+                        &mut flow,
+                        instruction.span,
+                        &mut replay_errors,
+                    );
+                }
+                return Some((flow.states, flow.variants));
             }
-            let completion = block_index
-                .saturating_mul(MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION)
-                .saturating_add(instruction_index + 1);
-            match instruction.kind {
-                raw::InstructionKind::MoveFromPlace { place }
-                    if !place_is_copy(place, function, layouts) =>
-                {
-                    states[place.0 as usize] =
-                        PlaceState { kind: PlaceStateKind::Moved, completion: None };
-                    mark_ancestors_partial(place, function, &mut states);
-                }
-                raw::InstructionKind::InitializePlace { place, .. } => {
-                    states[place.0 as usize] = PlaceState {
-                        kind: PlaceStateKind::Initialized,
-                        completion: Some(completion),
-                    };
-                    initialize_projections(place, function, &mut states, completion);
-                    mark_ancestors_partially_initialized(place, function, &mut states, completion);
-                    variants[place.0 as usize] = None;
-                }
-                raw::InstructionKind::ReplacePlace { place, .. } => {
-                    states[place.0 as usize].completion = Some(completion);
-                    variants[place.0 as usize] = None;
-                }
-                raw::InstructionKind::DropPlace { place } => {
-                    states[place.0 as usize] =
-                        PlaceState { kind: PlaceStateKind::Dropped, completion: None };
-                    mark_ancestors_partial(place, function, &mut states);
-                }
-                _ => {}
+            let call = matches!(instruction.kind, raw::InstructionKind::DirectCall { .. });
+            if call {
+                transfer_consumed_values(
+                    &consuming_instruction_operands(&instruction.kind),
+                    &owners,
+                    function,
+                    &mut flow,
+                    instruction.span,
+                    &mut replay_errors,
+                );
             }
-            if let Some(result) = instruction.result {
-                for (index, place) in function.places.iter().enumerate() {
-                    if matches!(place.kind, raw::PlaceKind::Temporary(value) if value == result.id)
-                    {
-                        states[index] = PlaceState {
-                            kind: PlaceStateKind::Initialized,
-                            completion: Some(completion),
-                        };
-                        initialize_projections(place.id, function, &mut states, completion);
-                        variants[index] = match instruction.kind {
-                            raw::InstructionKind::EnumConstruct { variant, .. } => Some(variant),
-                            _ => None,
-                        };
-                    }
+            apply_ownership_instruction(
+                instruction,
+                function,
+                layouts,
+                &mut flow.states,
+                &mut flow.variants,
+                &mut active,
+                &mut replay_errors,
+            );
+            if !call {
+                apply_value_transfers(
+                    instruction,
+                    &owners,
+                    function,
+                    layouts,
+                    &mut flow,
+                    &mut replay_errors,
+                );
+            }
+            if let Some(result) = instruction.result
+                && let Some(owner) = owners.get(result.id.0 as usize).copied().flatten()
+            {
+                if !matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. }) {
+                    push_pending_owner(
+                        owner,
+                        function,
+                        &mut flow,
+                        instruction.span,
+                        &mut replay_errors,
+                    );
                 }
+                flow.variants[owner.0 as usize] = match instruction.kind {
+                    raw::InstructionKind::EnumConstruct { variant, .. } => Some(variant),
+                    _ => None,
+                };
             }
         }
         if block_index == target_block && target_instruction == block.instructions.len() {
-            return Some((states, variants));
+            if let Some(raw::SpannedTerminator {
+                kind: raw::Terminator::Return { value, .. },
+                span,
+            }) = block.terminators.first()
+            {
+                transfer_consumed_values(
+                    &[*value],
+                    &owners,
+                    function,
+                    &mut flow,
+                    *span,
+                    &mut replay_errors,
+                );
+            }
+            return Some((flow.states, flow.variants));
         }
         let Some(terminator) = block.terminators.first() else { continue };
         for (edge_index, edge) in terminator_edges(&terminator.kind).into_iter().enumerate() {
-            let mut edge_variants = variants.clone();
+            let mut incoming = flow.clone();
             if let raw::Terminator::EnumMatch { place, arms } = &terminator.kind {
-                edge_variants[place.0 as usize] = Some(arms[edge_index].variant);
+                incoming.variants[place.0 as usize] = Some(arms[edge_index].variant);
             }
+            transfer_edge_owners(
+                edge,
+                &terminator.kind,
+                function,
+                &owners,
+                &mut incoming,
+                terminator.span,
+                &mut replay_errors,
+            );
+            normalize_dead_places(&mut incoming, function, layouts);
             let target = edge.target.0 as usize;
             if entries[target].is_none() {
-                entries[target] = Some((states.clone(), edge_variants));
+                entries[target] = Some(incoming);
                 queue.push_back(target);
             }
         }
@@ -2503,35 +2497,57 @@ fn sealed_drop_actions(
         .iter()
         .map(|action| {
             let raw::DropAction::DropPlace(root) = action;
-            let moved_projections = function
-                .places
-                .iter()
-                .filter(|place| {
-                    is_projection_below(place.id, *root, &function.places)
-                        && matches!(
-                            states[place.id.0 as usize].kind,
-                            PlaceStateKind::Moved | PlaceStateKind::Dropped
-                        )
-                })
-                .map(|place| PlaceIdentity { owner, index: place.id.0 })
-                .collect();
-            let initialized_projections = function
-                .places
-                .iter()
-                .filter(|place| {
-                    is_projection_below(place.id, *root, &function.places)
-                        && states[place.id.0 as usize].kind == PlaceStateKind::Initialized
-                })
-                .map(|place| PlaceIdentity { owner, index: place.id.0 })
-                .collect();
-            VerifiedDropAction {
-                root: PlaceIdentity { owner, index: root.0 },
-                moved_projections,
-                initialized_projections,
-                active_variant: variants[root.0 as usize],
-            }
+            sealed_drop_action(owner, function, *root, states, variants)
         })
         .collect()
+}
+
+fn sealed_drop_action(
+    owner: FunctionIdentity,
+    function: &raw::Function,
+    root: raw::PlaceId,
+    states: &[PlaceState],
+    variants: &[Option<u32>],
+) -> VerifiedDropAction {
+    let moved_projections = function
+        .places
+        .iter()
+        .filter(|place| {
+            is_projection_below(place.id, root, &function.places)
+                && matches!(
+                    states[place.id.0 as usize].kind,
+                    PlaceStateKind::Moved | PlaceStateKind::Dropped
+                )
+        })
+        .map(|place| PlaceIdentity { owner, index: place.id.0 })
+        .collect();
+    let initialized_projections = function
+        .places
+        .iter()
+        .filter(|place| {
+            is_projection_below(place.id, root, &function.places)
+                && states[place.id.0 as usize].kind == PlaceStateKind::Initialized
+        })
+        .map(|place| PlaceIdentity { owner, index: place.id.0 })
+        .collect();
+    let active_variants = function
+        .places
+        .iter()
+        .filter(|place| place.id == root || is_projection_below(place.id, root, &function.places))
+        .filter_map(|place| {
+            variants[place.id.0 as usize].map(|variant| VerifiedActiveVariant {
+                place: PlaceIdentity { owner, index: place.id.0 },
+                variant,
+            })
+        })
+        .collect();
+    VerifiedDropAction {
+        root: PlaceIdentity { owner, index: root.0 },
+        moved_projections,
+        initialized_projections,
+        active_variant: variants[root.0 as usize],
+        active_variants,
+    }
 }
 
 fn is_projection_below(mut place: raw::PlaceId, root: raw::PlaceId, places: &[raw::Place]) -> bool {
@@ -2553,6 +2569,7 @@ fn is_projection_below(mut place: raw::PlaceId, root: raw::PlaceId, places: &[ra
 #[allow(clippy::too_many_lines)]
 fn verify_ownership_dataflow(
     function: &raw::Function,
+    value_owners: &[Option<raw::PlaceId>],
     layouts: &VerifiedLayouts,
     successors: &[Vec<usize>],
     errors: &mut Errors,
@@ -2564,11 +2581,11 @@ fn verify_ownership_dataflow(
         .places
         .iter()
         .map(|place| PlaceState {
-            kind: match place.kind {
-                raw::PlaceKind::Parameter(_) => PlaceStateKind::Initialized,
-                _ => PlaceStateKind::Uninitialized,
+            kind: if matches!(place.kind, raw::PlaceKind::Parameter(_)) {
+                PlaceStateKind::Initialized
+            } else {
+                PlaceStateKind::Uninitialized
             },
-            completion: matches!(place.kind, raw::PlaceKind::Parameter(_)).then_some(0),
         })
         .collect::<Vec<_>>();
     for index in 0..function.places.len() {
@@ -2577,15 +2594,23 @@ fn verify_ownership_dataflow(
                 .get(base.0 as usize)
                 .is_some_and(|state| state.kind == PlaceStateKind::Initialized)
         {
-            initial[index] = PlaceState { kind: PlaceStateKind::Initialized, completion: Some(0) };
+            initial[index] = PlaceState { kind: PlaceStateKind::Initialized };
         }
     }
-    let initial_variants = vec![None::<u32>; function.places.len()];
-    let mut entries = vec![None::<(Vec<PlaceState>, Vec<Option<u32>>)>; function.blocks.len()];
-    entries[0] = Some((initial, initial_variants));
+    let pending = function
+        .parameters
+        .iter()
+        .filter_map(|parameter| value_owners.get(parameter.id.0 as usize).copied().flatten())
+        .collect();
+    let mut entries = vec![None::<OwnershipFlow>; function.blocks.len()];
+    entries[0] = Some(OwnershipFlow {
+        states: initial,
+        variants: vec![None; function.places.len()],
+        pending,
+    });
     let mut queue = VecDeque::from([0usize]);
     while let Some(block_index) = queue.pop_front() {
-        let Some((mut state, mut active_variants)) = entries[block_index].clone() else {
+        let Some(mut flow) = entries[block_index].clone() else {
             continue;
         };
         let mut active = vec![
@@ -2600,39 +2625,50 @@ fn verify_ownership_dataflow(
             }
         }
         let block = &function.blocks[block_index];
-        for (instruction_index, instruction) in block.instructions.iter().enumerate() {
-            let completion = block_index
-                .saturating_mul(MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION)
-                .saturating_add(instruction_index)
-                .saturating_add(1);
+        for instruction in &block.instructions {
+            let call = matches!(instruction.kind, raw::InstructionKind::DirectCall { .. });
+            if call {
+                transfer_consumed_values(
+                    &consuming_instruction_operands(&instruction.kind),
+                    value_owners,
+                    function,
+                    &mut flow,
+                    instruction.span,
+                    errors,
+                );
+            }
             if let Some(cleanup) = instruction_cleanup(&instruction.kind) {
-                verify_cleanup(cleanup, function, layouts, &state, &active_variants, errors);
+                verify_cleanup(cleanup, function, layouts, &flow, errors);
             }
             apply_ownership_instruction(
                 instruction,
                 function,
                 layouts,
-                &mut state,
-                &mut active_variants,
+                &mut flow.states,
+                &mut flow.variants,
                 &mut active,
-                completion,
                 errors,
             );
-            if let Some(result) = instruction.result {
-                for (place_index, place) in function.places.iter().enumerate() {
-                    if matches!(place.kind, raw::PlaceKind::Temporary(value) if value == result.id)
-                    {
-                        state[place_index] = PlaceState {
-                            kind: PlaceStateKind::Initialized,
-                            completion: Some(completion),
-                        };
-                        initialize_projections(place.id, function, &mut state, completion);
-                        active_variants[place_index] = match instruction.kind {
-                            raw::InstructionKind::EnumConstruct { variant, .. } => Some(variant),
-                            _ => None,
-                        };
-                    }
+            if !call {
+                apply_value_transfers(
+                    instruction,
+                    value_owners,
+                    function,
+                    layouts,
+                    &mut flow,
+                    errors,
+                );
+            }
+            if let Some(result) = instruction.result
+                && let Some(owner) = value_owners.get(result.id.0 as usize).copied().flatten()
+            {
+                if !matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. }) {
+                    push_pending_owner(owner, function, &mut flow, instruction.span, errors);
                 }
+                flow.variants[owner.0 as usize] = match instruction.kind {
+                    raw::InstructionKind::EnumConstruct { variant, .. } => Some(variant),
+                    _ => None,
+                };
             }
         }
         if active.iter().skip(function.borrow_parameters.len()).any(Option::is_some) {
@@ -2650,7 +2686,7 @@ fn verify_ownership_dataflow(
                 _ => None,
             };
             if place_read.is_some_and(|place| {
-                state
+                flow.states
                     .get(place.0 as usize)
                     .is_none_or(|state| state.kind != PlaceStateKind::Initialized)
                     || overlaps_exclusive(place, &active, &function.places)
@@ -2663,25 +2699,48 @@ fn verify_ownership_dataflow(
                 ));
             }
             match &terminator.kind {
-                raw::Terminator::Return { cleanup, .. }
-                | raw::Terminator::Trap { cleanup, .. }
+                raw::Terminator::Return { value, cleanup } => {
+                    transfer_consumed_values(
+                        &[*value],
+                        value_owners,
+                        function,
+                        &mut flow,
+                        terminator.span,
+                        errors,
+                    );
+                    verify_cleanup(*cleanup, function, layouts, &flow, errors);
+                }
+                raw::Terminator::Trap { cleanup, .. }
                 | raw::Terminator::WeakUpgradeBranch { cleanup, .. } => {
-                    verify_cleanup(*cleanup, function, layouts, &state, &active_variants, errors);
+                    verify_cleanup(*cleanup, function, layouts, &flow, errors);
                 }
                 _ => {}
             }
         }
         for (edge_index, successor) in successors[block_index].iter().enumerate() {
-            let mut successor_variants = active_variants.clone();
+            let mut incoming = flow.clone();
             if let Some(raw::SpannedTerminator {
                 kind: raw::Terminator::EnumMatch { place, arms },
                 ..
             }) = block.terminators.first()
                 && let Some(arm) = arms.get(edge_index)
             {
-                successor_variants[place.0 as usize] = Some(arm.variant);
+                incoming.variants[place.0 as usize] = Some(arm.variant);
             }
-            let incoming = (state.clone(), successor_variants);
+            if let Some(terminator) = block.terminators.first()
+                && let Some(edge) = terminator_edges(&terminator.kind).get(edge_index)
+            {
+                transfer_edge_owners(
+                    edge,
+                    &terminator.kind,
+                    function,
+                    value_owners,
+                    &mut incoming,
+                    terminator.span,
+                    errors,
+                );
+            }
+            normalize_dead_places(&mut incoming, function, layouts);
             match &entries[*successor] {
                 None => { entries[*successor] = Some(incoming); queue.push_back(*successor); }
                 Some(existing) if existing != &incoming => errors.push(error_at("ZRYNA-I3010", block.terminators[0].span, "ownership, initialization, or active-enum state differs across a CFG join or backedge", "restore every live place and enum refinement to one exact state on every incoming edge")),
@@ -2691,19 +2750,74 @@ fn verify_ownership_dataflow(
     }
 }
 
+#[derive(Clone, Copy)]
+struct CleanupReference {
+    plan: raw::CleanupPlanId,
+    block: usize,
+    instruction: Option<usize>,
+    role: VerifiedCleanupRole,
+}
+
+fn cleanup_references(function: &raw::Function) -> Vec<CleanupReference> {
+    let mut references = Vec::new();
+    for (block_index, block) in function.blocks.iter().enumerate() {
+        for (instruction_index, instruction) in block.instructions.iter().enumerate() {
+            if let Some(plan) = instruction_cleanup(&instruction.kind) {
+                let role = if matches!(instruction.kind, raw::InstructionKind::DirectCall { .. }) {
+                    VerifiedCleanupRole::CallTrap
+                } else {
+                    VerifiedCleanupRole::PrepareFailure
+                };
+                references.push(CleanupReference {
+                    plan,
+                    block: block_index,
+                    instruction: Some(instruction_index),
+                    role,
+                });
+            }
+        }
+        if let Some(terminator) = block.terminators.first() {
+            let site = match terminator.kind {
+                raw::Terminator::Return { cleanup, .. } => {
+                    Some((cleanup, VerifiedCleanupRole::Return))
+                }
+                raw::Terminator::WeakUpgradeBranch { cleanup, .. } => {
+                    Some((cleanup, VerifiedCleanupRole::PrepareFailure))
+                }
+                raw::Terminator::Trap { cleanup, .. } => {
+                    Some((cleanup, VerifiedCleanupRole::ControlledTrap))
+                }
+                raw::Terminator::Jump(_)
+                | raw::Terminator::Branch { .. }
+                | raw::Terminator::EnumMatch { .. } => None,
+            };
+            if let Some((plan, role)) = site {
+                references.push(CleanupReference {
+                    plan,
+                    block: block_index,
+                    instruction: None,
+                    role,
+                });
+            }
+        }
+    }
+    references
+}
+
 fn instruction_cleanup(kind: &raw::InstructionKind) -> Option<raw::CleanupPlanId> {
     use raw::InstructionKind as I;
     match kind {
-        I::DirectCall { cleanup, .. }
-        | I::StructConstruct { cleanup, .. }
+        I::StructConstruct { cleanup, .. }
         | I::EnumConstruct { cleanup, .. }
         | I::FixedArrayConstruct { cleanup, .. } => *cleanup,
-        I::ClonePlace { cleanup, .. }
-        | I::ReplacePlace { cleanup, .. }
+        I::DirectCall { cleanup, .. }
+        | I::ClonePlace { cleanup, .. }
         | I::FixedArrayIndexCopy { cleanup, .. }
         | I::VecIndexCopy { cleanup, .. }
+        | I::StringFromUtf8 { cleanup, .. }
         | I::StringClone { cleanup, .. }
         | I::StringConcat { cleanup, .. }
+        | I::VecClone { cleanup, .. }
         | I::VecConstruct { cleanup, .. }
         | I::VecPush { cleanup, .. }
         | I::SharedConstruct { cleanup, .. }
@@ -2711,6 +2825,363 @@ fn instruction_cleanup(kind: &raw::InstructionKind) -> Option<raw::CleanupPlanId
         | I::WeakDowngrade { cleanup, .. }
         | I::WeakClone { cleanup, .. } => Some(*cleanup),
         _ => None,
+    }
+}
+
+fn root_place(mut place: raw::PlaceId, function: &raw::Function) -> raw::PlaceId {
+    let mut seen = BTreeSet::new();
+    while seen.insert(place) {
+        let Some(base) =
+            function.places.get(place.0 as usize).and_then(|place| projection_base(&place.kind))
+        else {
+            break;
+        };
+        place = base;
+    }
+    place
+}
+
+fn pending_slot(flow: &OwnershipFlow, owner: raw::PlaceId) -> Option<usize> {
+    flow.pending.iter().position(|candidate| *candidate == owner)
+}
+
+fn remove_pending_owner(
+    owner: raw::PlaceId,
+    function: &raw::Function,
+    flow: &mut OwnershipFlow,
+    span: Span,
+    errors: &mut Errors,
+) {
+    let Some(slot) = pending_slot(flow, owner) else {
+        ownership_error(span, "non-Copy value owner is unavailable or already consumed", errors);
+        return;
+    };
+    flow.pending.remove(slot);
+    flow.states[owner.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+    flow.variants[owner.0 as usize] = None;
+    for place in &function.places {
+        if is_projection_below(place.id, owner, &function.places) {
+            flow.states[place.id.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+            flow.variants[place.id.0 as usize] = None;
+        }
+    }
+}
+
+fn push_pending_owner(
+    owner: raw::PlaceId,
+    function: &raw::Function,
+    flow: &mut OwnershipFlow,
+    span: Span,
+    errors: &mut Errors,
+) {
+    if pending_slot(flow, owner).is_some() {
+        ownership_error(span, "non-Copy result owner is already live", errors);
+        return;
+    }
+    flow.states[owner.0 as usize] = PlaceState { kind: PlaceStateKind::Initialized };
+    initialize_projections(owner, function, &mut flow.states);
+    flow.pending.push(owner);
+}
+
+fn rename_pending_owner(
+    source: raw::PlaceId,
+    target: raw::PlaceId,
+    function: &raw::Function,
+    flow: &mut OwnershipFlow,
+    span: Span,
+    errors: &mut Errors,
+) {
+    let Some(slot) = pending_slot(flow, source) else {
+        ownership_error(span, "ownership rename source is unavailable", errors);
+        return;
+    };
+    if source != target && pending_slot(flow, target).is_some() {
+        ownership_error(span, "ownership rename target is already live", errors);
+        return;
+    }
+    if source == target {
+        return;
+    }
+    let source_kind = flow.states[source.0 as usize].kind;
+    let source_variant = flow.variants[source.0 as usize];
+    let source_projections = function
+        .places
+        .iter()
+        .filter_map(|place| {
+            projection_path(place.id, source, &function.places).map(|path| {
+                (path, flow.states[place.id.0 as usize], flow.variants[place.id.0 as usize])
+            })
+        })
+        .collect::<Vec<_>>();
+    flow.pending[slot] = target;
+    flow.states[source.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+    flow.variants[source.0 as usize] = None;
+    for place in &function.places {
+        if is_projection_below(place.id, source, &function.places) {
+            flow.states[place.id.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+            flow.variants[place.id.0 as usize] = None;
+        }
+    }
+    flow.states[target.0 as usize] = PlaceState { kind: source_kind };
+    flow.variants[target.0 as usize] = source_variant;
+    for place in &function.places {
+        let Some(path) = projection_path(place.id, target, &function.places) else { continue };
+        if let Some((_, state, variant)) =
+            source_projections.iter().find(|(source_path, _, _)| *source_path == path)
+        {
+            flow.states[place.id.0 as usize] = *state;
+            flow.variants[place.id.0 as usize] = *variant;
+        } else if source_kind == PlaceStateKind::Initialized {
+            flow.states[place.id.0 as usize] = PlaceState { kind: PlaceStateKind::Initialized };
+            flow.variants[place.id.0 as usize] = None;
+        } else {
+            ownership_error(
+                span,
+                "partial owner rename lacks matching projection metadata",
+                errors,
+            );
+        }
+    }
+}
+
+fn projection_path(
+    mut place: raw::PlaceId,
+    root: raw::PlaceId,
+    places: &[raw::Place],
+) -> Option<Vec<(u8, u32)>> {
+    if place == root {
+        return None;
+    }
+    let mut path = vec![];
+    let mut seen = BTreeSet::new();
+    while seen.insert(place) {
+        let item = places.get(place.0 as usize)?;
+        let (base, step) = match item.kind {
+            raw::PlaceKind::StructField { base, ordinal } => (base, (0, ordinal)),
+            raw::PlaceKind::EnumPayload { base, variant } => (base, (1, variant)),
+            raw::PlaceKind::FixedArrayConstant { base, index } => (base, (2, index)),
+            _ => return None,
+        };
+        path.push(step);
+        if base == root {
+            path.reverse();
+            return Some(path);
+        }
+        place = base;
+    }
+    None
+}
+
+fn transfer_consumed_values(
+    values: &[raw::ValueId],
+    value_owners: &[Option<raw::PlaceId>],
+    function: &raw::Function,
+    flow: &mut OwnershipFlow,
+    span: Span,
+    errors: &mut Errors,
+) {
+    for value in values {
+        if let Some(owner) = value_owners.get(value.0 as usize).copied().flatten() {
+            if flow.states[owner.0 as usize].kind != PlaceStateKind::Initialized {
+                ownership_error(
+                    span,
+                    "partial non-Copy owner cannot enter a context without mask transfer",
+                    errors,
+                );
+                continue;
+            }
+            remove_pending_owner(owner, function, flow, span, errors);
+        }
+    }
+}
+
+#[allow(clippy::too_many_lines)]
+fn apply_value_transfers(
+    instruction: &raw::Instruction,
+    value_owners: &[Option<raw::PlaceId>],
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    flow: &mut OwnershipFlow,
+    errors: &mut Errors,
+) {
+    use raw::InstructionKind as I;
+    match &instruction.kind {
+        I::MoveFromPlace { place } if !place_is_copy(*place, function, layouts) => {
+            let Some(result_owner) = instruction
+                .result
+                .and_then(|result| value_owners.get(result.id.0 as usize).copied().flatten())
+            else {
+                return;
+            };
+            let root = root_place(*place, function);
+            if root == *place {
+                rename_pending_owner(root, result_owner, function, flow, instruction.span, errors);
+            } else {
+                flow.states[place.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+                mark_ancestors_partial(*place, function, &mut flow.states);
+                push_pending_owner(result_owner, function, flow, instruction.span, errors);
+            }
+        }
+        I::InitializePlace { place, value } => {
+            let target = root_place(*place, function);
+            if let Some(source) = value_owners.get(value.0 as usize).copied().flatten() {
+                if flow.states[source.0 as usize].kind != PlaceStateKind::Initialized {
+                    ownership_error(
+                        instruction.span,
+                        "partial owner cannot initialize a projection without exact mask transfer",
+                        errors,
+                    );
+                    return;
+                }
+                if target == *place {
+                    rename_pending_owner(source, target, function, flow, instruction.span, errors);
+                } else if pending_slot(flow, target).is_none() {
+                    let Some(slot) = pending_slot(flow, source) else {
+                        ownership_error(
+                            instruction.span,
+                            "initialization source is unavailable",
+                            errors,
+                        );
+                        return;
+                    };
+                    flow.pending[slot] = target;
+                    flow.states[source.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+                    flow.variants[source.0 as usize] = None;
+                    for source_projection in &function.places {
+                        if is_projection_below(source_projection.id, source, &function.places) {
+                            flow.states[source_projection.id.0 as usize] =
+                                PlaceState { kind: PlaceStateKind::Moved };
+                            flow.variants[source_projection.id.0 as usize] = None;
+                        }
+                    }
+                } else {
+                    remove_pending_owner(source, function, flow, instruction.span, errors);
+                }
+            } else if target != *place
+                && !place_is_copy(target, function, layouts)
+                && pending_slot(flow, target).is_none()
+            {
+                flow.pending.push(target);
+            }
+        }
+        I::ReplacePlace { place, value, .. } => {
+            let target = root_place(*place, function);
+            let Some(source) = value_owners.get(value.0 as usize).copied().flatten() else {
+                return;
+            };
+            if target != *place {
+                if flow.states[source.0 as usize].kind != PlaceStateKind::Initialized {
+                    ownership_error(
+                        instruction.span,
+                        "partial owner cannot replace a projection without exact mask transfer",
+                        errors,
+                    );
+                    return;
+                }
+                if pending_slot(flow, target).is_none() {
+                    ownership_error(
+                        instruction.span,
+                        "projection replacement root is not pending",
+                        errors,
+                    );
+                    return;
+                }
+                remove_pending_owner(source, function, flow, instruction.span, errors);
+                return;
+            }
+            let Some(target_slot) = pending_slot(flow, target) else {
+                ownership_error(instruction.span, "replacement target is not pending", errors);
+                return;
+            };
+            flow.pending.remove(target_slot);
+            rename_pending_owner(source, target, function, flow, instruction.span, errors);
+        }
+        I::VecPush { value, .. } => {
+            transfer_consumed_values(
+                &[*value],
+                value_owners,
+                function,
+                flow,
+                instruction.span,
+                errors,
+            );
+        }
+        I::DropPlace { place } => {
+            let root = root_place(*place, function);
+            if root == *place {
+                if let Some(slot) = pending_slot(flow, root) {
+                    flow.pending.remove(slot);
+                } else {
+                    ownership_error(instruction.span, "dropped owner is not pending", errors);
+                }
+            }
+        }
+        _ => transfer_consumed_values(
+            &consuming_instruction_operands(&instruction.kind),
+            value_owners,
+            function,
+            flow,
+            instruction.span,
+            errors,
+        ),
+    }
+}
+
+fn transfer_edge_owners(
+    edge: &raw::Edge,
+    terminator: &raw::Terminator,
+    function: &raw::Function,
+    value_owners: &[Option<raw::PlaceId>],
+    flow: &mut OwnershipFlow,
+    span: Span,
+    errors: &mut Errors,
+) {
+    let Some(block) = function.blocks.get(edge.target.0 as usize) else { return };
+    let synthesized = matches!(terminator, raw::Terminator::WeakUpgradeBranch { success, .. } if std::ptr::eq(edge, success));
+    if synthesized
+        && let Some(parameter) = block.parameters.first()
+        && let Some(owner) = value_owners.get(parameter.id.0 as usize).copied().flatten()
+    {
+        push_pending_owner(owner, function, flow, span, errors);
+    }
+    let parameters = if synthesized && !block.parameters.is_empty() {
+        &block.parameters[1..]
+    } else {
+        &block.parameters[..]
+    };
+    for (argument, parameter) in edge.arguments.iter().zip(parameters) {
+        let source = value_owners.get(argument.0 as usize).copied().flatten();
+        let target = value_owners.get(parameter.id.0 as usize).copied().flatten();
+        match (source, target) {
+            (Some(source), Some(target)) => {
+                rename_pending_owner(source, target, function, flow, span, errors);
+            }
+            (None, None) => {}
+            _ => ownership_error(span, "CFG ownership argument and parameter disagree", errors),
+        }
+    }
+}
+
+fn normalize_dead_places(
+    flow: &mut OwnershipFlow,
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+) {
+    for place in &function.places {
+        if projection_base(&place.kind).is_none()
+            && layout_type(layouts, place.ty).is_some_and(|ty| ty.drop_kind() != 0)
+            && !flow.pending.contains(&place.id)
+        {
+            flow.states[place.id.0 as usize] = PlaceState { kind: PlaceStateKind::Uninitialized };
+            flow.variants[place.id.0 as usize] = None;
+            for projection in &function.places {
+                if is_projection_below(projection.id, place.id, &function.places) {
+                    flow.states[projection.id.0 as usize] =
+                        PlaceState { kind: PlaceStateKind::Uninitialized };
+                    flow.variants[projection.id.0 as usize] = None;
+                }
+            }
+        }
     }
 }
 
@@ -2722,22 +3193,22 @@ fn apply_ownership_instruction(
     states: &mut [PlaceState],
     active_variants: &mut [Option<u32>],
     active: &mut Vec<Option<(raw::PlaceId, raw::BorrowAccess)>>,
-    completion: usize,
     errors: &mut Errors,
 ) {
     use raw::InstructionKind as I;
     let state = |place: raw::PlaceId, states: &[PlaceState]| states.get(place.0 as usize).copied();
-    for place in instruction_place_operands(&instruction.kind) {
-        if let Some(raw::Place { kind: raw::PlaceKind::EnumPayload { base, variant }, .. }) =
-            function.places.get(place.0 as usize)
-            && active_variants.get(base.0 as usize).copied().flatten() != Some(*variant)
-        {
-            errors.push(error_at(
-                "ZRYNA-I3013",
-                instruction.span,
-                "enum payload ownership operation does not match the active variant",
-                "operate on a payload only in its exact refined enum arm",
-            ));
+    if !matches!(instruction.kind, I::InitializePlace { .. }) {
+        for place in instruction_place_operands(&instruction.kind) {
+            for (base, variant) in enum_payload_ancestors(place, function) {
+                if active_variants.get(base.0 as usize).copied().flatten() != Some(variant) {
+                    errors.push(error_at(
+                        "ZRYNA-I3013",
+                        instruction.span,
+                        "enum payload ownership operation does not match the active variant",
+                        "operate on a payload only in its exact refined enum arm",
+                    ));
+                }
+            }
         }
     }
     match &instruction.kind {
@@ -2754,18 +3225,26 @@ fn apply_ownership_instruction(
             }
         }
         I::MoveFromPlace { place } => {
-            if state(*place, states).is_none_or(|state| state.kind != PlaceStateKind::Initialized)
-                || overlaps_active(*place, active, &function.places)
-            {
+            let whole_non_copy =
+                root_place(*place, function) == *place && !place_is_copy(*place, function, layouts);
+            let unavailable = state(*place, states).is_none_or(|state| {
+                if whole_non_copy {
+                    !matches!(
+                        state.kind,
+                        PlaceStateKind::Initialized
+                            | PlaceStateKind::PartiallyInitialized
+                            | PlaceStateKind::PartiallyMoved
+                    )
+                } else {
+                    state.kind != PlaceStateKind::Initialized
+                }
+            }) || overlaps_active(*place, active, &function.places);
+            if unavailable {
                 ownership_error(
                     instruction.span,
                     "move from an unavailable or borrowed place",
                     errors,
                 );
-            } else if !place_is_copy(*place, function, layouts) {
-                states[place.0 as usize] =
-                    PlaceState { kind: PlaceStateKind::Moved, completion: None };
-                mark_ancestors_partial(*place, function, states);
             }
         }
         I::ClonePlace { place, .. }
@@ -2773,6 +3252,7 @@ fn apply_ownership_instruction(
         | I::FixedArrayIndexCopy { place, .. }
         | I::VecIndexCopy { place, .. }
         | I::StringClone { place, .. }
+        | I::VecClone { place, .. }
         | I::SharedClone { place, .. }
         | I::WeakDowngrade { place, .. }
         | I::WeakClone { place, .. } => {
@@ -2806,8 +3286,9 @@ fn apply_ownership_instruction(
             }
         }
         I::InitializePlace { place, .. } => {
-            let Some(slot) = states.get_mut(place.0 as usize) else { return };
-            if slot.kind == PlaceStateKind::Initialized
+            let index = place.0 as usize;
+            let Some(slot) = states.get(index).copied() else { return };
+            if slot.kind != PlaceStateKind::Uninitialized
                 || overlaps_active(*place, active, &function.places)
             {
                 ownership_error(
@@ -2815,12 +3296,19 @@ fn apply_ownership_instruction(
                     "initialization targets an initialized or borrowed place",
                     errors,
                 );
-            } else {
-                *slot =
-                    PlaceState { kind: PlaceStateKind::Initialized, completion: Some(completion) };
-                initialize_projections(*place, function, states, completion);
-                mark_ancestors_partially_initialized(*place, function, states, completion);
+            } else if validate_projection_initialization(
+                *place,
+                function,
+                layouts,
+                states,
+                active_variants,
+                instruction.span,
+                errors,
+            ) {
+                states[index] = PlaceState { kind: PlaceStateKind::Initialized };
+                initialize_projections(*place, function, states);
                 active_variants[place.0 as usize] = None;
+                promote_initialized_ancestors(*place, function, layouts, states, active_variants);
             }
         }
         I::ReplacePlace { place, .. } => {
@@ -2834,7 +3322,6 @@ fn apply_ownership_instruction(
                     errors,
                 );
             } else {
-                states[place.0 as usize].completion = Some(completion);
                 active_variants[place.0 as usize] = None;
             }
         }
@@ -2855,8 +3342,7 @@ fn apply_ownership_instruction(
                     errors,
                 );
             } else {
-                states[place.0 as usize] =
-                    PlaceState { kind: PlaceStateKind::Dropped, completion: None };
+                states[place.0 as usize] = PlaceState { kind: PlaceStateKind::Dropped };
                 mark_ancestors_partial(*place, function, states);
             }
         }
@@ -2946,34 +3432,11 @@ fn verify_cleanup(
     id: raw::CleanupPlanId,
     function: &raw::Function,
     layouts: &VerifiedLayouts,
-    states: &[PlaceState],
-    active_variants: &[Option<u32>],
+    flow: &OwnershipFlow,
     errors: &mut Errors,
 ) {
     let Some(plan) = function.cleanup_plans.get(id.0 as usize) else { return };
-    let mut expected = function
-        .places
-        .iter()
-        .enumerate()
-        .filter(|(index, place)| {
-            projection_base(&place.kind).is_none()
-                && matches!(
-                    states[*index].kind,
-                    PlaceStateKind::Initialized
-                        | PlaceStateKind::PartiallyInitialized
-                        | PlaceStateKind::PartiallyMoved
-                )
-                && layout_type(layouts, place.ty).is_some_and(|ty| ty.drop_kind() != 0)
-        })
-        .map(|(index, _)| {
-            (
-                states[index].completion.unwrap_or(0),
-                raw::PlaceId(u32::try_from(index).expect("bounded place index")),
-            )
-        })
-        .collect::<Vec<_>>();
-    expected.sort_by(|left, right| right.cmp(left));
-    let expected = expected.into_iter().map(|(_, place)| place).collect::<Vec<_>>();
+    let expected = flow.pending.iter().rev().copied().collect::<Vec<_>>();
     let claimed = plan
         .actions
         .iter()
@@ -2989,21 +3452,25 @@ fn verify_cleanup(
             "drop every live non-Copy root exactly once in reverse completion order",
         ));
     }
-    for place in &expected {
-        let index = place.0 as usize;
-        if matches!(
-            states[index].kind,
-            PlaceStateKind::PartiallyInitialized | PlaceStateKind::PartiallyMoved
-        ) && layout_type(layouts, function.places[index].ty)
-            .is_some_and(|ty| ty.category() == TypeCategory::Enum)
-            && active_variants[index].is_none()
-        {
-            errors.push(error_at(
-                "ZRYNA-I3013",
-                plan.span,
-                "partial enum cleanup lacks an exact active-variant refinement",
-                "derive cleanup only while the enum's active variant is sealed on this path",
-            ));
+    for root in &expected {
+        for place in function.places.iter().filter(|place| {
+            place.id == *root || is_projection_below(place.id, *root, &function.places)
+        }) {
+            let index = place.id.0 as usize;
+            if matches!(
+                flow.states[index].kind,
+                PlaceStateKind::PartiallyInitialized | PlaceStateKind::PartiallyMoved
+            ) && layout_type(layouts, function.places[index].ty)
+                .is_some_and(|ty| ty.category() == TypeCategory::Enum)
+                && flow.variants[index].is_none()
+            {
+                errors.push(error_at(
+                    "ZRYNA-I3013",
+                    plan.span,
+                    "partial enum cleanup lacks an exact active-variant refinement",
+                    "derive cleanup only while every partial enum's active variant is sealed",
+                ));
+            }
         }
     }
 }
@@ -3031,12 +3498,189 @@ fn projection_base(kind: &raw::PlaceKind) -> Option<raw::PlaceId> {
         _ => None,
     }
 }
-fn initialize_projections(
-    root: raw::PlaceId,
+
+fn canonical_children(
+    base: raw::PlaceId,
     function: &raw::Function,
+    layouts: &VerifiedLayouts,
+) -> Option<Vec<raw::PlaceId>> {
+    let place = function.places.get(base.0 as usize)?;
+    let ty = layout_type(layouts, place.ty)?;
+    match ty.category() {
+        TypeCategory::Struct => ty
+            .fields()
+            .iter()
+            .map(|field| {
+                function.places.iter().find_map(|place| match place.kind {
+                    raw::PlaceKind::StructField { base: candidate, ordinal }
+                        if candidate == base && ordinal == field.ordinal() =>
+                    {
+                        Some(place.id)
+                    }
+                    _ => None,
+                })
+            })
+            .collect(),
+        TypeCategory::FixedArray => {
+            let length = usize::try_from(ty.array_length()?).ok()?;
+            (0..length)
+                .map(|index| {
+                    let index = u32::try_from(index).ok()?;
+                    function.places.iter().find_map(|place| match place.kind {
+                        raw::PlaceKind::FixedArrayConstant {
+                            base: candidate,
+                            index: candidate_index,
+                        } if candidate == base && candidate_index == index => Some(place.id),
+                        _ => None,
+                    })
+                })
+                .collect()
+        }
+        _ => None,
+    }
+}
+
+fn enum_payload_ancestors(
+    mut place: raw::PlaceId,
+    function: &raw::Function,
+) -> Vec<(raw::PlaceId, u32)> {
+    let mut out = Vec::new();
+    let mut seen = BTreeSet::new();
+    while seen.insert(place) {
+        let Some(item) = function.places.get(place.0 as usize) else { break };
+        if let raw::PlaceKind::EnumPayload { base, variant } = item.kind {
+            out.push((base, variant));
+        }
+        let Some(base) = projection_base(&item.kind) else { break };
+        place = base;
+    }
+    out
+}
+
+fn validate_projection_initialization(
+    mut child: raw::PlaceId,
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    states: &[PlaceState],
+    variants: &[Option<u32>],
+    span: Span,
+    errors: &mut Errors,
+) -> bool {
+    let mut valid = true;
+    let mut seen = BTreeSet::new();
+    while seen.insert(child) {
+        let Some(item) = function.places.get(child.0 as usize) else { break };
+        let Some(base) = projection_base(&item.kind) else { break };
+        let Some(base_place) = function.places.get(base.0 as usize) else { break };
+        let Some(base_ty) = layout_type(layouts, base_place.ty) else { break };
+        match base_ty.category() {
+            TypeCategory::Struct | TypeCategory::FixedArray => {
+                let Some(children) = canonical_children(base, function, layouts) else {
+                    errors.push(error_at(
+                        "ZRYNA-I3013",
+                        span,
+                        "partial aggregate initialization lacks complete canonical child projections",
+                        "declare every immediate field or fixed-array index before prefix initialization",
+                    ));
+                    return false;
+                };
+                let Some(selected) = children.iter().position(|candidate| *candidate == child)
+                else {
+                    errors.push(error_at(
+                        "ZRYNA-I3013",
+                        span,
+                        "partial aggregate initialization does not follow a canonical child path",
+                        "initialize one exact declared field or fixed-array index",
+                    ));
+                    return false;
+                };
+                let prefix = children[..selected]
+                    .iter()
+                    .all(|place| states[place.0 as usize].kind == PlaceStateKind::Initialized);
+                let suffix = children[selected + 1..]
+                    .iter()
+                    .all(|place| states[place.0 as usize].kind == PlaceStateKind::Uninitialized);
+                if !prefix || !suffix {
+                    errors.push(error_at(
+                        "ZRYNA-I3013",
+                        span,
+                        "aggregate projection initialization contains a hole or is out of order",
+                        "commit fields or fixed-array elements in exact declaration or index order",
+                    ));
+                    valid = false;
+                }
+            }
+            TypeCategory::Enum => {
+                let raw::PlaceKind::EnumPayload { variant, .. } = item.kind else {
+                    errors.push(error_at(
+                        "ZRYNA-I3013",
+                        span,
+                        "partial enum initialization does not enter one payload projection",
+                        "initialize only the exact payload projection of one variant",
+                    ));
+                    return false;
+                };
+                if variants[base.0 as usize].is_some_and(|active| active != variant) {
+                    errors.push(error_at(
+                        "ZRYNA-I3013",
+                        span,
+                        "enum payload initialization conflicts with the active variant",
+                        "continue initializing only the already active variant payload",
+                    ));
+                    valid = false;
+                }
+            }
+            _ => {}
+        }
+        child = base;
+    }
+    valid
+}
+
+fn promote_initialized_ancestors(
+    mut child: raw::PlaceId,
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
     states: &mut [PlaceState],
-    completion: usize,
+    variants: &mut [Option<u32>],
 ) {
+    let mut seen = BTreeSet::new();
+    while seen.insert(child) {
+        let Some(item) = function.places.get(child.0 as usize) else { break };
+        let Some(base) = projection_base(&item.kind) else { break };
+        let Some(base_place) = function.places.get(base.0 as usize) else { break };
+        let Some(base_ty) = layout_type(layouts, base_place.ty) else { break };
+        states[base.0 as usize].kind = match base_ty.category() {
+            TypeCategory::Struct | TypeCategory::FixedArray => {
+                if canonical_children(base, function, layouts)
+                    .filter(|children| !children.is_empty())
+                    .is_some_and(|children| {
+                        children.iter().all(|place| {
+                            states[place.0 as usize].kind == PlaceStateKind::Initialized
+                        })
+                    })
+                {
+                    PlaceStateKind::Initialized
+                } else {
+                    PlaceStateKind::PartiallyInitialized
+                }
+            }
+            TypeCategory::Enum => {
+                if let raw::PlaceKind::EnumPayload { variant, .. } = item.kind {
+                    variants[base.0 as usize] = Some(variant);
+                }
+                if states[child.0 as usize].kind == PlaceStateKind::Initialized {
+                    PlaceStateKind::Initialized
+                } else {
+                    PlaceStateKind::PartiallyInitialized
+                }
+            }
+            _ => states[base.0 as usize].kind,
+        };
+        child = base;
+    }
+}
+fn initialize_projections(root: raw::PlaceId, function: &raw::Function, states: &mut [PlaceState]) {
     let mut visited = vec![false; function.places.len()];
     let mut queue = VecDeque::from([root]);
     while let Some(parent) = queue.pop_front() {
@@ -3047,8 +3691,7 @@ fn initialize_projections(
         visited[parent_index] = true;
         for (index, place) in function.places.iter().enumerate() {
             if projection_base(&place.kind) == Some(parent) && !visited[index] {
-                states[index] =
-                    PlaceState { kind: PlaceStateKind::Initialized, completion: Some(completion) };
+                states[index] = PlaceState { kind: PlaceStateKind::Initialized };
                 queue.push_back(raw::PlaceId(u32::try_from(index).expect("bounded place index")));
             }
         }
@@ -3071,30 +3714,6 @@ fn mark_ancestors_partial(
         visited[index] = true;
         if states[index].kind == PlaceStateKind::Initialized {
             states[index].kind = PlaceStateKind::PartiallyMoved;
-        }
-        place = base;
-    }
-}
-fn mark_ancestors_partially_initialized(
-    mut place: raw::PlaceId,
-    function: &raw::Function,
-    states: &mut [PlaceState],
-    completion: usize,
-) {
-    let mut visited = vec![false; function.places.len()];
-    while let Some(base) =
-        function.places.get(place.0 as usize).and_then(|place| projection_base(&place.kind))
-    {
-        let Ok(index) = usize::try_from(base.0) else {
-            break;
-        };
-        if index >= visited.len() || visited[index] {
-            break;
-        }
-        visited[index] = true;
-        if states[index].kind == PlaceStateKind::Uninitialized {
-            states[index].kind = PlaceStateKind::PartiallyInitialized;
-            states[index].completion = Some(completion);
         }
         place = base;
     }
@@ -3212,6 +3831,47 @@ fn verify_use(
     }
 }
 
+fn structural_clone_capable(ty: raw::TypeId, layouts: &VerifiedLayouts) -> bool {
+    fn visit(
+        ty: zryna_layout::TypeId,
+        layouts: &VerifiedLayouts,
+        active: &mut BTreeSet<u32>,
+    ) -> bool {
+        if !active.insert(ty.index()) {
+            return false;
+        }
+        let Some(record) = layouts.type_by_id(ty) else {
+            return false;
+        };
+        let capable = match record.category() {
+            TypeCategory::Bool | TypeCategory::I32 => true,
+            TypeCategory::Struct => {
+                record.fields().iter().all(|field| visit(field.ty(), layouts, active))
+            }
+            TypeCategory::Enum => record.variants().iter().all(|variant| {
+                variant.payload().is_none_or(|payload| visit(payload, layouts, active))
+            }),
+            TypeCategory::FixedArray => {
+                record.referenced_type().is_some_and(|element| visit(element, layouts, active))
+            }
+            TypeCategory::String
+            | TypeCategory::Vec
+            | TypeCategory::Shared
+            | TypeCategory::Weak => false,
+        };
+        active.remove(&ty.index());
+        capable
+    }
+
+    let Some(ty) = layout_type(layouts, ty).map(zryna_layout::VerifiedType::id) else {
+        return false;
+    };
+    matches!(
+        layouts.type_by_id(ty).map(zryna_layout::VerifiedType::category),
+        Some(TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray)
+    ) && visit(ty, layouts, &mut BTreeSet::new())
+}
+
 #[allow(clippy::too_many_lines)]
 fn verify_operation_types(
     instruction: &raw::Instruction,
@@ -3259,40 +3919,49 @@ fn verify_operation_types(
                     && result == Some(TypeCategory::Bool)
             })
         }
-        I::StructConstruct { fields, .. } => {
-            result_type.and_then(|ty| layout_type(layouts, ty)).is_some_and(|ty| {
-                ty.category() == TypeCategory::Struct
-                    && fields.len() == ty.fields().len()
-                    && fields.iter().zip(ty.fields()).all(|(value, field)| {
-                        value_info(values, *value)
-                            .is_some_and(|info| info.ty.0 == field.ty().index())
-                    })
-            })
-        }
-        I::EnumConstruct { variant, payload, .. } => result_type
-            .and_then(|ty| layout_type(layouts, ty))
-            .and_then(|ty| ty.variants().get(*variant as usize).copied())
-            .is_some_and(|record| match (payload, record.payload()) {
-                (None, None) => true,
-                (Some(value), Some(ty)) => {
-                    value_info(values, *value).is_some_and(|info| info.ty.0 == ty.index())
-                }
-                _ => false,
-            }),
-        I::FixedArrayConstruct { elements, .. } => {
-            result_type.and_then(|ty| layout_type(layouts, ty)).is_some_and(|ty| {
-                ty.category() == TypeCategory::FixedArray
-                    && ty.array_length() == Some(elements.len() as u64)
-                    && ty.referenced_type().is_some_and(|element| {
-                        elements.iter().all(|value| {
+        I::StructConstruct { fields, cleanup } => {
+            cleanup.is_none()
+                && result_type.and_then(|ty| layout_type(layouts, ty)).is_some_and(|ty| {
+                    ty.category() == TypeCategory::Struct
+                        && fields.len() == ty.fields().len()
+                        && fields.iter().zip(ty.fields()).all(|(value, field)| {
                             value_info(values, *value)
-                                .is_some_and(|info| info.ty.0 == element.index())
+                                .is_some_and(|info| info.ty.0 == field.ty().index())
                         })
-                    })
-            })
+                })
         }
-        I::CopyFromPlace { place } | I::MoveFromPlace { place } | I::ClonePlace { place, .. } => {
+        I::EnumConstruct { variant, payload, cleanup } => {
+            cleanup.is_none()
+                && result_type
+                    .and_then(|ty| layout_type(layouts, ty))
+                    .and_then(|ty| ty.variants().get(*variant as usize).copied())
+                    .is_some_and(|record| match (payload, record.payload()) {
+                        (None, None) => true,
+                        (Some(value), Some(ty)) => {
+                            value_info(values, *value).is_some_and(|info| info.ty.0 == ty.index())
+                        }
+                        _ => false,
+                    })
+        }
+        I::FixedArrayConstruct { elements, cleanup } => {
+            cleanup.is_none()
+                && result_type.and_then(|ty| layout_type(layouts, ty)).is_some_and(|ty| {
+                    ty.category() == TypeCategory::FixedArray
+                        && ty.array_length() == Some(elements.len() as u64)
+                        && ty.referenced_type().is_some_and(|element| {
+                            elements.iter().all(|value| {
+                                value_info(values, *value)
+                                    .is_some_and(|info| info.ty.0 == element.index())
+                            })
+                        })
+                })
+        }
+        I::CopyFromPlace { place } | I::MoveFromPlace { place } => {
             place_type(*place) == result_type
+        }
+        I::ClonePlace { place, .. } => {
+            place_type(*place) == result_type
+                && result_type.is_some_and(|ty| structural_clone_capable(ty, layouts))
         }
         I::InitializePlace { place, value } | I::ReplacePlace { place, value, .. } => {
             place_type(*place) == value_info(values, *value).map(|info| info.ty)
@@ -3332,6 +4001,9 @@ fn verify_operation_types(
             layouts,
             result_type,
         ),
+        I::StringFromUtf8 { bytes, .. } => {
+            result == Some(TypeCategory::String) && std::str::from_utf8(bytes).is_ok()
+        }
         I::StringClone { place, .. } => {
             place_type(*place) == result_type && result == Some(TypeCategory::String)
         }
@@ -3339,6 +4011,18 @@ fn verify_operation_types(
             place_type(*left) == result_type
                 && place_type(*right) == result_type
                 && result == Some(TypeCategory::String)
+        }
+        I::VecClone { place, .. } => {
+            place_type(*place) == result_type
+                && result_type.and_then(|ty| layout_type(layouts, ty)).is_some_and(|ty| {
+                    ty.category() == TypeCategory::Vec
+                        && ty.referenced_type().is_some_and(|element| {
+                            layouts.type_by_id(element).is_some_and(|element| {
+                                matches!(element.category(), TypeCategory::Bool | TypeCategory::I32)
+                                    && element.drop_kind() == 0
+                            })
+                        })
+                })
         }
         I::VecConstruct { elements, .. } => {
             container_elements(elements, TypeCategory::Vec, result_type, values, layouts)
@@ -3540,6 +4224,7 @@ fn verify_instruction_shape(
         I::InitializePlace { .. }
             | I::ReplacePlace { .. }
             | I::DropPlace { .. }
+            | I::VecPush { .. }
             | I::BeginBorrow(_)
             | I::BorrowWrite { .. }
             | I::EndBorrow { .. }
@@ -3558,24 +4243,24 @@ fn verify_instruction_shape(
         I::CopyFromPlace { place }
         | I::MoveFromPlace { place }
         | I::DropPlace { place }
-        | I::EnumDiscriminant { place } => !place_valid(*place),
+        | I::EnumDiscriminant { place }
+        | I::ReplacePlace { place, .. } => !place_valid(*place),
         I::ClonePlace { place, cleanup }
         | I::FixedArrayIndexCopy { place, cleanup, .. }
         | I::VecIndexCopy { place, cleanup, .. }
         | I::StringClone { place, cleanup }
+        | I::VecClone { place, cleanup }
         | I::SharedClone { place, cleanup }
         | I::WeakDowngrade { place, cleanup }
-        | I::WeakClone { place, cleanup }
-        | I::ReplacePlace { place, cleanup, .. } => {
-            !place_valid(*place) || !cleanup_valid(*cleanup)
-        }
+        | I::WeakClone { place, cleanup } => !place_valid(*place) || !cleanup_valid(*cleanup),
+        I::StringFromUtf8 { cleanup, .. }
+        | I::DirectCall { cleanup, .. }
+        | I::VecConstruct { cleanup, .. }
+        | I::SharedConstruct { cleanup, .. } => !cleanup_valid(*cleanup),
         I::StringConcat { left, right, cleanup } => {
             !place_valid(*left) || !place_valid(*right) || !cleanup_valid(*cleanup)
         }
         I::VecPush { vector, cleanup, .. } => !place_valid(*vector) || !cleanup_valid(*cleanup),
-        I::VecConstruct { cleanup, .. } | I::SharedConstruct { cleanup, .. } => {
-            !cleanup_valid(*cleanup)
-        }
         I::BeginBorrow(def) => !place_valid(def.place),
         _ => false,
     };

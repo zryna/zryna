@@ -271,7 +271,9 @@ test("implemented Copy aggregate semantics remain internal and runtime-free", as
     "utf8",
   );
   assert.match(document, /verified protocol-v4 syntax snapshot/);
-  assert.match(document, /only `zryna_ir::data_ownership_v1::VerifiedProgram`/);
+  assert.match(document, /only the sealed\s+`zryna_semantics::data_ownership_v1::VerifiedProgram`/);
+  assert.match(document, /retains the mandatory-verifier-approved\s+IR together with the exact verified ownership-runtime ABI declaration authority/);
+  assert.match(document, /Raw layout, IR,\s+and runtime declarations remain private/);
   assert.match(document, /only a compile-time constant index/);
   assert.match(document, /negative, nonconstant,\s+and out-of-bounds source indices are semantic errors/);
   assert.match(document, /Reading a Copy aggregate does not\s+move, clone, drop, allocate/);
@@ -283,7 +285,59 @@ test("implemented Copy aggregate semantics remain internal and runtime-free", as
   assert.match(document, /OwnershipRuntimeV1.*non-executable contract identity/s);
   assert.match(document, /M1 and explicit M2 remain the only public compiler profiles/);
   assert.match(document, /Public aggregate parameters\s+or results/);
-  assert.match(document, /No allocator,\s+runtime\s+import, heap operation, drop helper, target\s+artifact/);
+  assert.match(document, /implements no allocator or runtime\. No runtime import, heap helper body, target artifact/);
+});
+
+test("in-progress owned-data semantics separate the implemented checkpoint from closure", async () => {
+  const document = await readFile(
+    new URL("../docs/M3_OWNED_DATA_SEMANTICS.md", import.meta.url),
+    "utf8",
+  );
+  const architecture = await readFile(
+    new URL("../docs/ARCHITECTURE.md", import.meta.url),
+    "utf8",
+  );
+  assert.match(document, /Status: implementation in progress for Issue #81/);
+  assert.match(document, /## Current implementation checkpoint/);
+  assert.match(document, /String creation from UTF-8 literals, explicit clone, checked concatenation/);
+  assert.match(document, /canonical Vec construction, explicit clone of exact `Vec<bool>` and `Vec<i32>`, local moves,\s+return, push, checked indexing that yields a Copy element/);
+  assert.match(document, /replacement of one initialized mutable root-local String/);
+  assert.match(document, /replacement of one initialized\s+mutable supported exact Vec root/);
+  assert.match(document, /private zero-argument producers and one-argument owned identity calls/);
+  assert.match(document, /one bounded top-level no-phi `if`\/`else` for String and exact Vec functions/);
+  assert.match(document, /reverse drops\s+of branch-local owners, and exact restoration of every incoming owner/);
+  assert.match(document, /one bounded terminal owned `if`\/`else` for private String and exact Vec results/);
+  assert.match(document, /canonical one-parameter join; the join owns the\s+selected value exactly once and excludes it from return-site cleanup/);
+  assert.match(document, /one bounded top-level no-carried-owner `while` for private String and exact Vec functions/);
+  assert.match(document, /condition evaluation in a canonical loop header, reverse drops of every\s+iteration-local owner before the backedge, exact restoration of incoming ownership state/);
+  assert.match(document, /push or replacement of an incoming Vec is rejected before its right-hand side/);
+  assert.match(document, /bounded construction, whole-value local moves, return, and reverse-order survivor cleanup/);
+  assert.match(document, /private String use-after-move rejected as `ZRYNA-M3011`, aggregate\/enum moved-owner violations as\s+`ZRYNA-M3014`/);
+  assert.match(document, /unresolved binding names as `ZRYNA-M3002`/);
+  assert.match(document, /`InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace`/);
+  assert.match(document, /one-plan\/one-site cleanup roles/);
+  assert.match(document, /cumulative String-literal preflight at 8 MiB/);
+  assert.match(document, /sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the\s+exact verified ownership-runtime ABI authority/);
+  assert.match(document, /Non-Copy Vec clone, owned aggregate clone, owned place projections or assignment, general owned phi joins,\s+owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits/);
+  assert.match(document, /Owned String\/Vec signatures remain bounded\s+to zero arguments or one exact owned\/bool argument/);
+  assert.match(document, /## Issue #81 implementation ledger/);
+  assert.match(document, /no-carried-owner loop\/backedge cleanup \| complete/);
+  assert.match(document, /exact `Vec<bool>`\/`Vec<i32>` clone \| complete/);
+  assert.match(document, /distinct result owner, retained source, authenticated allocation failure, and exact resource rollback/);
+  assert.match(document, /non-Copy Vec and aggregate clone, projections, assignment, and partial moves \| pending/);
+  assert.match(architecture, /Vec construction, explicit clone for exact `Vec<bool>` and `Vec<i32>`/);
+  assert.match(architecture, /Non-Copy Vec clone, owned aggregate clone/);
+  assert.match(document, /controlled allocation\/capacity\/bounds\/UTF-8 fault closure \| in progress/);
+  assert.match(document, /authenticated internal fault\/drop traces are complete.*executable fault injection and prefix-safe partial initialization remain pending/);
+  assert.match(document, /test-only fault oracle additionally consumes the ABI authority's sealed status\s+declarations/);
+  assert.match(document, /Bounds failure is modeled separately as the verified\s+IR's `BoundsV1` trap/);
+  assert.match(document, /does not inject a failure into an allocator or execute a\s+target runtime/);
+  assert.match(document, /This ledger records implementation evidence, not public language availability/);
+  assert.match(document, /## Issue #81 closure target/);
+  assert.match(document, /inventory is the closure target, not a claim about the narrower current checkpoint/);
+  assert.match(document, /atomic failure is\s+validated against one exact `LogicalOperation`/);
+  assert.match(document, /sealed verified element layout whose positive stride is used for checked `capacity \* stride` byte\s+amplification/);
+  assert.match(document, /No runtime, backend, driver route, CLI selector, manifest profile,\s+or public aggregate ABI is activated here/);
 });
 
 test("implemented ownership-runtime ABI document freezes declarations without runtime activation", async () => {
@@ -297,6 +351,12 @@ test("implemented ownership-runtime ABI document freezes declarations without ru
   assert.match(document, /checked C-header evidence/);
   assert.match(document, /opaque immutable views/);
   assert.match(document, /Vec allocation and reserve plus all 12 canonical Shared\/Weak control/);
+  assert.match(document, /Atomic failure validation binds\s+the returned status to one exact logical operation/);
+  assert.match(document, /checked `capacity \* stride` amplification/);
+  assert.match(document, /opaque `BoundVecTransitionClaim`/);
+  assert.match(document, /rejects cross-target or cross-element replay/);
+  assert.match(document, /successful no-growth reserve to return\s+the exact old storage pointer/);
+  assert.match(document, /legacy `validate_vec_transition` remains\s+layout-bound/);
   assert.match(document, /Raw storage and owned-String behavior are sealed as exact operation/);
   assert.match(document, /`ZRYNA-R3001` covers ABI\s+identity, version, inventory, operation, and symbol/);
   assert.match(document, /`ZRYNA-R3002` covers invalid carriers,\s+signatures, results, records, and transitions/);
@@ -402,6 +462,6 @@ test("package and preflight expose one focused M3 contract gate", async () => {
   assert.match(preflight, /tests\/m3-contract\.test\.mjs/);
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
   assert.match(readme, /pnpm m3:runtime-abi:quick/);
-  assert.match(readme, /runs 17 unit tests and two compile-fail doctests/);
-  assert.match(readme, /full `pnpm preflight` gate includes all 20 unit tests\s+and both compile-fail doctests/);
+  assert.match(readme, /runs 25 ordinary unit tests and two compile-fail doctests/);
+  assert.match(readme, /full `pnpm preflight` gate includes all 28 unit\s+tests and both compile-fail doctests/);
 });

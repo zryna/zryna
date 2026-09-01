@@ -117,6 +117,12 @@
       "title": "M3 verified data and ownership IR"
     },
     {
+      "id": "reference/m3-owned-data-semantics",
+      "source": "docs/M3_OWNED_DATA_SEMANTICS.md",
+      "path": "documents/reference/m3-owned-data-semantics.md",
+      "title": "M3 owned data semantics"
+    },
+    {
       "id": "reference/m3-ownership-runtime-abi",
       "source": "docs/M3_OWNERSHIP_RUNTIME_ABI.md",
       "path": "documents/reference/m3-ownership-runtime-abi.md",

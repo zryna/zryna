@@ -44,6 +44,29 @@ retention of explicit Weak handles, final deallocation, and illegal finish witho
 last-strong transition. Successful transitions, controlled failures, and ABI violations must preserve
 the exact v1 prepare-before-commit rules.
 
+Contextual proofs fail closed at the legacy transition entry point. Atomic failure validation binds
+the returned status to one exact logical operation and rejects statuses outside that operation's
+sealed set. Vec allocation and reserve validation consumes an opaque verified element-layout view;
+its positive stride is the authority for checked `capacity * stride` amplification against the
+dynamic-allocation byte limit as well as the independent element-count limit. An unbound generic
+failure shape or count-only Vec result is not transition evidence.
+
+The verified authority also exposes an immutable seven-row status-declaration view without raw
+contract recovery. Each row retains the exact status, closed disposition, and optional closed trap
+identity authenticated by the canonical contract: success for `OK`; the matching controlled trap
+for `ALLOCATION`, `CAPACITY`, `REFCOUNT`, and `UTF8`; a branch result for `EXPIRED`; and a host
+failure for `ABI_VIOLATION`. Forged dispositions or trap identities fail before any verified
+authority is returned.
+
+Replay-resistant consumers use an opaque `BoundVecTransitionClaim`, constructed only from one
+exact `VerifiedElementLayout`. The claim intrinsically retains its storage target and element type;
+reserve claims additionally retain the old storage identity. `validate_bound_vec_transition`
+rejects cross-target or cross-element replay, applies checked element-count and byte-amplification
+rules, preserves the old state on failure, and requires a successful no-growth reserve to return
+the exact old storage pointer. The source-compatible legacy `validate_vec_transition` remains
+layout-bound, but its raw `TransitionClaim` does not intrinsically retain target/element identity or
+the old reserve storage pointer; it must not be treated as replay-resistant bound evidence.
+
 Raw storage and owned-String behavior are sealed as exact operation, status, result, and target
 declaration rules; this issue does not execute allocator or String state models. Verification executes
 no allocation, release, reference-count mutation, cleanup, target helper, source callback, or host
@@ -64,9 +87,10 @@ returns no partial verified authority. The normative relocation/call-edge and ru
 byte limits remain reserved for later artifact auditors; this declaration-only verifier neither
 accepts nor claims to enforce those artifact inputs.
 
-Use `pnpm m3:runtime-abi:quick` for 17 focused unit tests plus two compile-fail opacity doctests; three
-proportional record, nested-item, and checked-header boundary tests remain ignored in that quick lane.
-The full repository preflight includes all 20 unit tests plus both compile-fail doctests.
+Use `pnpm m3:runtime-abi:quick` for 25 ordinary unit tests plus two compile-fail opacity doctests;
+three proportional record, nested-item, and checked-header boundary tests remain ignored in that
+quick lane. The full repository preflight includes all 28 unit tests plus both compile-fail
+doctests.
 
 ## Deliberately unavailable
 

@@ -17,14 +17,16 @@ identity as `(ModuleId, source-order declaration index)`, checks exact types and
 subset, constructs the source-bound raw layout graph, and independently verifies that same graph
 for both `Linear32V1` and `LinuxX8664V1`. It then lowers raw `DataOwnershipV1` and calls the
 independent IR verifier with the exact source map, expected entry, and both sealed layout
-authorities. Success exposes only `zryna_ir::data_ownership_v1::VerifiedProgram`; raw layout and IR
-claims remain private.
+authorities. Success exposes only the sealed
+`zryna_semantics::data_ownership_v1::VerifiedProgram`, which retains the mandatory-verifier-approved
+IR together with the exact verified ownership-runtime ABI declaration authority. Raw layout, IR,
+and runtime declarations remain private.
 
 The public semantic boundary is deliberately small:
 
 ```text
 SemanticInput::try_new(&v4::ProjectSyntaxSnapshot, &SourceMap, expected_entry: FileId)
-lower(SemanticInput) -> Result<DataOwnershipV1 VerifiedProgram, Vec<Diagnostic>>
+lower(SemanticInput) -> Result<semantics::data_ownership_v1::VerifiedProgram, Vec<Diagnostic>>
 ```
 
 `SemanticInput` exposes read-only `syntax()`, `sources()`, and `entry()` accessors. Its fields are
@@ -76,13 +78,34 @@ remains unavailable until a later gate adds the corresponding executable failure
 Copy is derived transitively from the sealed semantic and layout type graph, never from source
 spelling, structural similarity, host layout, or target size. Reading a Copy aggregate does not
 move, clone, drop, allocate, or create a cleanup obligation. Same-shaped nominal types remain
-distinct.
+distinct. Copy parameters, locals, and temporaries may still have addressable places for exact
+storage and projection identity; the IR verifier excludes those values from its non-Copy owner map
+and pending-drop stack.
 
-The gate rejects imported aggregate-name lookup and direct calls. It also rejects every heap-backed
-or ownership-bearing type and operation, including `String`,
-`Vec`, `Shared`, `Weak`, shared or exclusive borrows, ownership moves, cloning, replacement,
-deterministic drop, and cleanup effects. It also rejects recursive by-value layouts, unresolved
-names or types, invalid projections, duplicate declarations or members, and
+The gate rejects imported aggregate-name lookup and direct calls. The in-progress Issue #81
+checkpoint extends the same private boundary to canonical String and `Vec<T>` type graphs in
+parameter-free straight-line functions. String supports UTF-8 literals, explicit clone, checked
+concatenation, moves, return cleanup, and mutable root-local replacement. Vec supports
+construction, moves, return, push, checked Copy-element indexing, and replacement of supported
+exact root locals. Preparation precedes the infallible `ReplacePlace` commit; return transfers the
+selected owner first and drops remaining locals in reverse successful-completion order. Cumulative
+String-literal bytes are preflighted against the exact 8 MiB IR limit before proportional lowering.
+
+A second bounded Issue #81 route now admits parameter-free private straight-line owned Struct,
+FixedArray, and Enum results. Struct and FixedArray graphs may contain bool, i32, String, and
+supported nested Struct or FixedArray values. Enum variants are payloadless or carry one supported
+Copy, String, Struct, or FixedArray payload; nested enum and Vec payload graphs remain excluded.
+The route evaluates constructors in sealed declaration or index order, transfers whole values on
+move, returns one exact owner, and drops surviving roots in reverse successful-completion order.
+Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
+and enum bindings report `ZRYNA-M3014`.
+
+This checkpoint does not enable general owned values: Vec clone, owned aggregate clone,
+owned projections or assignment, owned parameters or calls, branching/loops, and general lexical
+scope-drop insertion remain unavailable. Public owned results remain rejected by scalar ABI v1.
+`Shared`, `Weak`, shared or exclusive borrows, and their
+operations also remain unavailable. The boundary still rejects recursive by-value layouts,
+unresolved names or types, invalid projections, duplicate declarations or members, and
 missing, duplicate, extra, or mistyped constructor and match data. Layout recursion diagnostics
 remain owned by `zryna-layout`; verified-IR diagnostics remain owned by `zryna-ir` rather than
 being reinterpreted as semantic success.
@@ -127,15 +150,19 @@ The semantic diagnostic families are frozen as follows:
 | `ZRYNA-M3008` | scalar expression, literal, or operator rejection |
 | `ZRYNA-M3009` | enum-match scrutinee, arm, payload, exhaustiveness, or result mismatch |
 | `ZRYNA-M3010` | return shape or scalar-only public ABI rejection |
+| `ZRYNA-M3011` | unavailable, unknown, or already moved private String binding |
+| `ZRYNA-M3012` | private String statement, expression, type, or shape outside the straight-line slice |
+| `ZRYNA-M3014` | unavailable, duplicate, or already moved owned aggregate or enum owner |
+| `ZRYNA-M3016` | owned aggregate graph, constructor, statement, or operation outside the bounded slice |
 | `ZRYNA-M3201` | nominal-declaration or derived-value amplification exceeds a verified-IR limit |
 | `ZRYNA-M3202` | terminal semantic diagnostic-budget exhaustion |
 
 Protocol-v4, aggregate-layout, and verified-IR failures retain their owning `ZRYNA-Y4xxx`,
 `ZRYNA-L3xxx`, and `ZRYNA-I3xxx` codes and locations. Semantic lowering does not relabel them.
 
-The semantic gate preflights nominal-declaration and derived-value amplification before graph
-construction, including the exact `DataOwnershipV1` limits and their first rejected declaration or
-function.
+The semantic gate preflights nominal-declaration, derived-value amplification, and cumulative
+String literal bytes before graph construction, including the exact `DataOwnershipV1` limits and
+their first rejected declaration, value, or byte.
 Protocol-v4 independently
 bounds source collections before semantics; aggregate layout and `DataOwnershipV1` independently
 bound and verify their derived graphs. Diagnostic retention is separately capped at 256. No
@@ -143,12 +170,11 @@ semantic success can bypass those independent layout or IR resource gates.
 
 ## Deliberately unavailable
 
-Issue #79 adds no runtime ABI authority or implementation. The retained
-`OwnershipRuntimeV1` value in verified IR remains a non-executable contract identity; the sealed
-declaration authority is implemented separately by Issue #80. That authority verifies declarations,
-layout binding, header evidence, and pure transitions but implements no runtime. No allocator, runtime
-import, heap operation, drop helper, target artifact, host observation, or profile manifest is
-constructed here.
+The `OwnershipRuntimeV1` value in verified IR remains a non-executable contract identity. The
+semantic result now retains the separately verified Issue #80 declaration authority beside that
+IR, binding exact declarations, both authenticated layouts, header evidence, and pure transitions.
+It still implements no allocator or runtime. No runtime import, heap helper body, target artifact,
+host observation, or profile manifest is constructed here.
 
 The JavaScript, WebAssembly, native, driver, and CLI components do not depend on or select this
 boundary. M1 and explicit M2 remain the only public compiler profiles. Public aggregate parameters

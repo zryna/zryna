@@ -56,11 +56,38 @@ The repository currently establishes and tests:
   flat type and expression arenas, exact UTF-8 spans, a syntax-only TypeScript 6 worker, and an
   opaque source-map-bound Rust verifier; this does not activate `data-ownership-v1` or change
   protocol v2/v3;
-- an internal aggregate-layout authority, a Copy-only struct/enum/fixed-array semantic lowerer, and
-  a separate `DataOwnershipV1` Universal IR verifier that bind one exact source, target-neutral
-  type universe, both admitted storage layouts, scalar ABI, and the declared ownership-runtime
-  contract identity behind opaque read-only views; constant fixed-array projections and the
-  scalar-observed Pair oracle remain internal;
+- an internal aggregate-layout authority, a Copy struct/enum/fixed-array semantic lowerer, and a
+  separate `DataOwnershipV1` Universal IR verifier that bind one exact source, target-neutral type
+  universe, both admitted storage layouts, scalar ABI, and the declared ownership-runtime contract
+  identity behind opaque read-only views; the in-progress Issue #81 checkpoint additionally lowers
+  bounded private functions with String literals, explicit clone, checked
+  concatenation, moves, return cleanup, and mutable root-local replacement, plus canonical Vec
+  construction, explicit clone for exact `Vec<bool>` and `Vec<i32>`, moves, return, push, checked
+  Copy-element indexing, and supported root-local replacement. String/Vec producers and
+  one-argument owned identity calls are supported internally,
+  together with one canonical top-level no-phi `if`/`else`; branch-local owners drop in reverse and
+  incoming Vec mutation fails before right-hand-side evaluation. A separate bounded terminal
+  String/exact-Vec `if`/`else` carries one owned-producing arm result through a canonical owned join
+  and excludes the joined value from return cleanup. One bounded top-level no-carried-owner
+  `while` reevaluates its bool condition in a canonical header, reverse-drops iteration-local
+  owners before its backedge, restores the exact incoming state on both loop edges, and then
+  reaches one final return. Its stable-place subset may replace one mutable outer String after
+  complete RHS preparation or push a Copy element into one mutable outer exact Vec; the outer
+  place identity remains unchanged and no owned header phi is introduced. The same parameter-free private
+  straight-line aggregate gate now constructs, moves, returns,
+  and deterministically drops bounded owned Struct, FixedArray, and Enum graphs containing Copy or
+  String leaves. It proves one exact non-Copy owner while preserving addressable Copy storage and
+  binds every cleanup plan to one exact site and role. The private String route reports moved
+  bindings as M3011; the bounded aggregate and enum route reports moved owners as M3014;
+  unresolved binding names report M3002;
+  cumulative 8 MiB String-literal limits fail closed. A bounded internal fault/drop-trace oracle
+  authenticates every admitted implemented String/Vec failure disposition and trap identity,
+  preserves pre-commit owners, excludes uncommitted results, and pins reverse cleanup without
+  executing an allocator or target runtime. Non-Copy Vec clone, owned aggregate clone, owned
+  projections, aggregate assignment, general owned phi joins, owned loop-carried phi joins,
+  repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
+  and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
+  loop-body return, and post-loop effects remain excluded;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
@@ -174,6 +201,7 @@ Requirements:
 ```bash
 pnpm install --frozen-lockfile
 pnpm m3:runtime-abi:quick
+pnpm m3:owned:quick
 pnpm m3:data:quick
 pnpm m3:syntax:quick
 pnpm m2:quick
@@ -187,12 +215,22 @@ Pair oracle without building public backends or waiting for remote CI. It skips 
 exact/first-extra authenticated value-budget proof; `pnpm preflight` retains that boundary test for
 the final local gate.
 
+`pnpm m3:owned:quick` is the seconds-scale Issue #81 foundation check. It runs the focused
+DataOwnershipV1 IR and semantic tests plus both modules' opacity doctests, including bounded UTF-8
+String creation, clone and checked concatenation, Vec construction/exact Copy-element clone/push/Copy
+indexing, owner
+transfer, private root-local replacement, site-bound cleanup roles, partial drop metadata, and the
+retained runtime-ABI authority. It does not claim projections, owned calls/CFG, general scope
+exits, a runtime, a backend, a CLI route, or a public profile. The full `pnpm preflight` gate
+retains ignored proportional boundaries and the complete repository regression surface.
+
 `pnpm m3:runtime-abi:quick` is the focused Issue #80 declaration-authority check. It verifies the
 exact operation vocabulary, canonical JSON fixture, target declarations, layout binding, checked
-header evidence, Vec and Shared/Weak transitions, opacity, and ordinary negative cases without
-claiming or executing a runtime. It runs 17 unit tests and two compile-fail doctests while leaving
-three proportional boundary tests ignored. The full `pnpm preflight` gate includes all 20 unit tests
-and both compile-fail doctests.
+header evidence, operation-bound atomic-failure claims, sealed-layout Vec stride and checked byte
+amplification, Shared/Weak transitions, opacity, and ordinary negative cases without claiming or
+executing a runtime. It runs 25 ordinary unit tests and two compile-fail doctests while leaving
+three proportional boundary tests ignored. The full `pnpm preflight` gate includes all 28 unit
+tests and both compile-fail doctests.
 
 `pnpm m2:quick` is the narrowest edit-loop check for deterministic M2 JavaScript, WebAssembly, and
 native objects; native MIR; module closure; retained workspace and native-stage security; and
@@ -234,6 +272,7 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M2 direct core WebAssembly backend](docs/M2_WEBASSEMBLY_BACKEND.md), [Roadmap](docs/ROADMAP.md),
 [M3 ownership runtime ABI authority](docs/M3_OWNERSHIP_RUNTIME_ABI.md),
 [M3 Copy aggregate semantics](docs/M3_COPY_AGGREGATE_SEMANTICS.md),
+[M3 owned-data semantic design contract](docs/M3_OWNED_DATA_SEMANTICS.md),
 [M0 conformance](docs/M0_CONFORMANCE.md), and
 [compiler documentation bundles](docs/DOCUMENTATION_BUNDLES.md).
 
