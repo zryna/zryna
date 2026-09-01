@@ -691,6 +691,21 @@ fn partial_return_place_delta(topology: usize, existing: usize) -> Option<usize>
     topology.checked_mul(2)?.checked_sub(existing)?.checked_add(1)
 }
 
+fn partial_assignment_place_delta(
+    topology: usize,
+    source_existing: usize,
+    target_existing: usize,
+) -> Option<usize> {
+    if source_existing > topology || target_existing > topology {
+        return None;
+    }
+    topology
+        .checked_mul(3)?
+        .checked_sub(source_existing)?
+        .checked_sub(target_existing)?
+        .checked_add(1)
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum PartialTransferBudgetViolation {
     PlaceAccounting,
@@ -738,6 +753,30 @@ fn partial_return_budget_preflight(
         return Err(PartialTransferBudgetViolation::Places);
     }
     if aggregate_transition_budget_violation(transitions, reserved_transitions, 1) {
+        return Err(PartialTransferBudgetViolation::Transitions);
+    }
+    Ok(additional_places)
+}
+
+fn partial_assignment_budget_preflight(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    topology: usize,
+    source_existing: usize,
+    target_existing: usize,
+) -> Result<usize, PartialTransferBudgetViolation> {
+    let additional_places =
+        partial_assignment_place_delta(topology, source_existing, target_existing)
+            .ok_or(PartialTransferBudgetViolation::PlaceAccounting)?;
+    if owned_value_budget_violation(values, 1) {
+        return Err(PartialTransferBudgetViolation::Values);
+    }
+    if owned_place_budget_violation(places, additional_places) {
+        return Err(PartialTransferBudgetViolation::Places);
+    }
+    if aggregate_transition_budget_violation(transitions, reserved_transitions, 2) {
         return Err(PartialTransferBudgetViolation::Transitions);
     }
     Ok(additional_places)
@@ -5853,6 +5892,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         .then_some(binding.place)
     }
 
+    fn partial_assignment_transfer_source(
+        &self,
+        value: u32,
+        expected: Ty,
+        target: raw::PlaceId,
+    ) -> Option<raw::PlaceId> {
+        let source = self.partial_return_transfer_source(value, expected)?;
+        (source != target).then_some(source)
+    }
+
     fn report_partial_transfer_budget(
         &mut self,
         violation: PartialTransferBudgetViolation,
@@ -6024,6 +6073,73 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             .expect("partial return source owner available");
         self.migrate_partial_mask(source, temporary, &source_places, &temporary_places);
         Some(value)
+    }
+
+    fn lower_partial_assignment_transfer(
+        &mut self,
+        source: raw::PlaceId,
+        target: raw::PlaceId,
+        ty: Ty,
+        at: Span,
+    ) -> Option<()> {
+        let Some(shape) = self.complete_projection_shape(ty) else {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "partial aggregate assignment topology exceeds a deterministic resource limit",
+                "reduce nested Struct fields, fixed-array lengths, and assignment transfers",
+            );
+            return None;
+        };
+        let source_existing = self.existing_projection_shape(source, &shape);
+        let target_existing = self.existing_projection_shape(target, &shape);
+        if let Err(violation) = partial_assignment_budget_preflight(
+            self.next_value as usize,
+            self.places.len(),
+            self.instructions.len(),
+            self.reserved_transitions,
+            shape.len(),
+            source_existing.iter().filter(|place| place.is_some()).count(),
+            target_existing.iter().filter(|place| place.is_some()).count(),
+        ) {
+            self.report_partial_transfer_budget(violation, at);
+            return None;
+        }
+
+        let source_places = self.materialize_projection_shape(source, &shape, at);
+        let target_places = self.materialize_projection_shape(target, &shape, at);
+        let value = raw::ValueId(self.next_value);
+        self.next_value = self.next_value.checked_add(1).expect("value capacity preflighted");
+        self.instructions.push(raw::Instruction {
+            result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+            span: at,
+            kind: raw::InstructionKind::MoveFromPlace { place: source },
+        });
+        let temporary = raw::PlaceId(
+            u32::try_from(self.places.len())
+                .expect("partial assignment place capacity preflighted"),
+        );
+        self.places.push(raw::Place {
+            id: temporary,
+            ty: ty.ir,
+            span: at,
+            kind: raw::PlaceKind::Temporary(value),
+        });
+        self.owners.register(value, temporary).expect("fresh partial assignment temporary owner");
+        let temporary_places = self.materialize_projection_shape(temporary, &shape, at);
+        self.owners
+            .rehome_move_result(value, source)
+            .expect("partial assignment source owner available");
+        self.migrate_partial_mask(source, temporary, &source_places, &temporary_places);
+
+        self.instructions.push(raw::Instruction {
+            result: None,
+            span: at,
+            kind: raw::InstructionKind::ReplacePlace { place: target, value },
+        });
+        self.owners.replace(value, target).expect("partial assignment temporary owner available");
+        self.migrate_partial_mask(temporary, target, &temporary_places, &target_places);
+        Some(())
     }
 
     fn reference_value(
@@ -6977,6 +7093,17 @@ fn lower_private_owned_aggregate_function<'a>(
                     return None;
                 }
                 let assignment_span = span(input.sources(), statement.span);
+                if let Some(source) =
+                    lowerer.partial_assignment_transfer_source(*value, binding.ty, binding.place)
+                {
+                    lowerer.lower_partial_assignment_transfer(
+                        source,
+                        binding.place,
+                        binding.ty,
+                        assignment_span,
+                    )?;
+                    continue;
+                }
                 if !lowerer.reserve_transition(assignment_span) {
                     return None;
                 }

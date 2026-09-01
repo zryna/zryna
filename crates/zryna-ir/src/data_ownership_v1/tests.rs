@@ -5471,6 +5471,621 @@ fn root_replace_exposes_old_recursive_drop_shape_and_rejects_invalid_states() {
     );
 }
 
+#[derive(Clone, Copy)]
+enum PartialReplaceShape {
+    Struct,
+    FixedArray,
+}
+
+#[derive(Clone, Copy)]
+struct PartialReplaceTopology {
+    destination_second: bool,
+    source_second: bool,
+    temporary_second: bool,
+}
+
+const EXACT_PARTIAL_REPLACE_TOPOLOGY: PartialReplaceTopology = PartialReplaceTopology {
+    destination_second: true,
+    source_second: true,
+    temporary_second: true,
+};
+
+fn partial_replace_projection(
+    shape: PartialReplaceShape,
+    base: raw::PlaceId,
+    index: u32,
+) -> raw::PlaceKind {
+    match shape {
+        PartialReplaceShape::Struct => raw::PlaceKind::StructField { base, ordinal: index },
+        PartialReplaceShape::FixedArray => raw::PlaceKind::FixedArrayConstant { base, index },
+    }
+}
+
+fn push_partial_replace_place(
+    places: &mut Vec<raw::Place>,
+    ty: raw::TypeId,
+    span: zryna_source::Span,
+    kind: raw::PlaceKind,
+) -> raw::PlaceId {
+    let id = raw::PlaceId(u32::try_from(places.len()).expect("bounded partial replace place"));
+    places.push(raw::Place { id, ty, span, kind });
+    id
+}
+
+#[allow(clippy::too_many_arguments)]
+fn partial_replace_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    data_declarations: u32,
+    root_ty: raw::TypeId,
+    shape: PartialReplaceShape,
+    topology: PartialReplaceTopology,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    raw.modules[0].data_declarations = data_declarations;
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: root_ty, span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: root_ty, span },
+        raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(1), span },
+    ];
+    function.result = raw::TypeId(1);
+
+    let mut places = Vec::new();
+    let destination =
+        push_partial_replace_place(&mut places, root_ty, span, raw::PlaceKind::Parameter(0));
+    let destination_first = push_partial_replace_place(
+        &mut places,
+        raw::TypeId(2),
+        span,
+        partial_replace_projection(shape, destination, 0),
+    );
+    if topology.destination_second {
+        push_partial_replace_place(
+            &mut places,
+            raw::TypeId(2),
+            span,
+            partial_replace_projection(shape, destination, 1),
+        );
+    }
+    let source =
+        push_partial_replace_place(&mut places, root_ty, span, raw::PlaceKind::Parameter(1));
+    let source_first = push_partial_replace_place(
+        &mut places,
+        raw::TypeId(2),
+        span,
+        partial_replace_projection(shape, source, 0),
+    );
+    if topology.source_second {
+        push_partial_replace_place(
+            &mut places,
+            raw::TypeId(2),
+            span,
+            partial_replace_projection(shape, source, 1),
+        );
+    }
+    let moved_leaf = push_partial_replace_place(
+        &mut places,
+        raw::TypeId(2),
+        span,
+        raw::PlaceKind::Temporary(raw::ValueId(3)),
+    );
+    let prepared = push_partial_replace_place(
+        &mut places,
+        root_ty,
+        span,
+        raw::PlaceKind::Temporary(raw::ValueId(4)),
+    );
+    push_partial_replace_place(
+        &mut places,
+        raw::TypeId(2),
+        span,
+        partial_replace_projection(shape, prepared, 0),
+    );
+    if topology.temporary_second {
+        push_partial_replace_place(
+            &mut places,
+            raw::TypeId(2),
+            span,
+            partial_replace_projection(shape, prepared, 1),
+        );
+    }
+    function.places = places;
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: source_first },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(4), ty: root_ty, span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: source },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::ReplacePlace { place: destination, value: raw::ValueId(4) },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions =
+        vec![raw::DropAction::DropPlace(moved_leaf), raw::DropAction::DropPlace(destination)];
+    let _ = destination_first;
+    raw
+}
+
+fn assert_partial_replace_verified(
+    raw: raw::Program,
+    sources: &SourceMap,
+    linear: zryna_layout::VerifiedLayouts,
+    linux: zryna_layout::VerifiedLayouts,
+) {
+    let entry = sources.verify_file_id(0).expect("entry");
+    let verified = verify(raw, sources, entry, linear, linux).expect("exact partial replacement");
+    let block = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block");
+    let old_destination = block
+        .instructions()
+        .nth(2)
+        .expect("replacement")
+        .derived_drop_actions()
+        .next()
+        .expect("old destination action");
+    assert_eq!(old_destination.root().index(), 0);
+    assert_eq!(
+        old_destination
+            .initialized_projections()
+            .map(super::PlaceIdentity::index)
+            .collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert_eq!(old_destination.moved_projections().count(), 0);
+
+    let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+    assert_eq!(cleanup.len(), 2);
+    assert_eq!(cleanup[1].root().index(), 0);
+    assert_eq!(
+        cleanup[1].moved_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+        [1]
+    );
+    assert_eq!(
+        cleanup[1].initialized_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+        [2]
+    );
+}
+
+#[test]
+fn root_replace_accepts_exact_partial_struct_and_fixed_array_topology() {
+    let (sources, linear, linux) = pair_authorities();
+    let raw = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        1,
+        raw::TypeId(3),
+        PartialReplaceShape::Struct,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+    assert_partial_replace_verified(raw, &sources, linear, linux);
+
+    let (sources, linear, linux, _, array_ty, _) = mixed_aggregate_authorities();
+    let raw = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        2,
+        array_ty,
+        PartialReplaceShape::FixedArray,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+    assert_partial_replace_verified(raw, &sources, linear, linux);
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn root_replace_rejects_incomplete_or_forged_partial_topology() {
+    let (sources, linear, linux) = pair_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    for (name, topology) in [
+        (
+            "matching but incomplete topology",
+            PartialReplaceTopology {
+                destination_second: false,
+                source_second: false,
+                temporary_second: false,
+            },
+        ),
+        (
+            "missing destination projection",
+            PartialReplaceTopology { destination_second: false, ..EXACT_PARTIAL_REPLACE_TOPOLOGY },
+        ),
+        (
+            "missing source projection",
+            PartialReplaceTopology { source_second: false, ..EXACT_PARTIAL_REPLACE_TOPOLOGY },
+        ),
+        (
+            "missing temporary projection",
+            PartialReplaceTopology { temporary_second: false, ..EXACT_PARTIAL_REPLACE_TOPOLOGY },
+        ),
+    ] {
+        let raw = partial_replace_program(
+            &sources,
+            &linear,
+            &linux,
+            1,
+            raw::TypeId(3),
+            PartialReplaceShape::Struct,
+            topology,
+        );
+        let diagnostics =
+            verify(raw, &sources, entry, linear.clone(), linux.clone()).expect_err(name);
+        assert!(
+            diagnostics.iter().any(|diagnostic| {
+                diagnostic.code() == "ZRYNA-I3010"
+                    && (diagnostic.message().contains("exact sealed projection topology")
+                        || diagnostic.message().contains("exact matching projection metadata"))
+            }),
+            "{name}: {diagnostics:?}"
+        );
+    }
+
+    let mut extra = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        1,
+        raw::TypeId(3),
+        PartialReplaceShape::Struct,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+    let function = &mut extra.modules[0].functions[0];
+    let prepared = raw::PlaceId(7);
+    push_partial_replace_place(
+        &mut function.places,
+        raw::TypeId(2),
+        function.span,
+        raw::PlaceKind::StructField { base: prepared, ordinal: 2 },
+    );
+    assert!(
+        verify(extra, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("extra temporary topology")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3006")
+    );
+
+    let mut extra_source = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        1,
+        raw::TypeId(3),
+        PartialReplaceShape::Struct,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+    let function = &mut extra_source.modules[0].functions[0];
+    push_partial_replace_place(
+        &mut function.places,
+        raw::TypeId(2),
+        function.span,
+        raw::PlaceKind::StructField { base: raw::PlaceId(3), ordinal: 2 },
+    );
+    assert!(
+        verify(extra_source, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("extra source topology")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3006")
+    );
+
+    let mut wrong = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        1,
+        raw::TypeId(3),
+        PartialReplaceShape::Struct,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+    let function = &mut wrong.modules[0].functions[0];
+    let raw::PlaceKind::StructField { ordinal, .. } = &mut function.places[9].kind else {
+        panic!("prepared field")
+    };
+    *ordinal = 0;
+    assert!(
+        verify(wrong, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("wrong temporary topology")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3006")
+    );
+
+    let mut wrong_destination = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        1,
+        raw::TypeId(3),
+        PartialReplaceShape::Struct,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+    let function = &mut wrong_destination.modules[0].functions[0];
+    let raw::PlaceKind::StructField { ordinal, .. } = &mut function.places[2].kind else {
+        panic!("destination field")
+    };
+    *ordinal = 2;
+    assert!(
+        verify(wrong_destination, &sources, entry, linear, linux)
+            .expect_err("wrong destination topology")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3006")
+    );
+}
+
+#[test]
+fn root_replace_rejects_partial_destination_and_cleanup_owner_misuse() {
+    let (sources, linear, linux) = pair_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let exact = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        1,
+        raw::TypeId(3),
+        PartialReplaceShape::Struct,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+
+    let mut partial_destination = exact.clone();
+    let function = &mut partial_destination.modules[0].functions[0];
+    let moved_destination_leaf = push_partial_replace_place(
+        &mut function.places,
+        raw::TypeId(2),
+        function.span,
+        raw::PlaceKind::Temporary(raw::ValueId(5)),
+    );
+    function.blocks[0].instructions.insert(
+        2,
+        raw::Instruction {
+            result: Some(raw::ValueDefinition {
+                id: raw::ValueId(5),
+                ty: raw::TypeId(2),
+                span: function.span,
+            }),
+            span: function.span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+    );
+    function.cleanup_plans[0].actions.insert(0, raw::DropAction::DropPlace(moved_destination_leaf));
+    let diagnostics = verify(partial_destination, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("partial destination");
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-I3010"
+                && diagnostic.message().contains("replacement targets an unavailable")
+        }),
+        "{diagnostics:?}"
+    );
+
+    let mut stale_source_cleanup = exact.clone();
+    stale_source_cleanup.modules[0].functions[0].cleanup_plans[0]
+        .actions
+        .insert(0, raw::DropAction::DropPlace(raw::PlaceId(3)));
+    assert!(
+        verify(stale_source_cleanup, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("cleanup includes transferred source")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3012")
+    );
+
+    let mut dropped_destination_cleanup = exact;
+    let function = &mut dropped_destination_cleanup.modules[0].functions[0];
+    function.blocks[0].instructions.push(raw::Instruction {
+        result: None,
+        span: function.span,
+        kind: raw::InstructionKind::DropPlace { place: raw::PlaceId(0) },
+    });
+    assert!(
+        verify(dropped_destination_cleanup, &sources, entry, linear, linux)
+            .expect_err("cleanup includes dropped replacement destination")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3012")
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn partial_replace_does_not_expand_enum_or_cfg_admission() {
+    let (sources, linear, linux) = pair_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut partial_edge = partial_replace_program(
+        &sources,
+        &linear,
+        &linux,
+        1,
+        raw::TypeId(3),
+        PartialReplaceShape::Struct,
+        EXACT_PARTIAL_REPLACE_TOPOLOGY,
+    );
+    let function = &mut partial_edge.modules[0].functions[0];
+    function.blocks[0].instructions.pop().expect("remove replacement");
+    let target_value = raw::ValueId(5);
+    let target = push_partial_replace_place(
+        &mut function.places,
+        raw::TypeId(3),
+        function.span,
+        raw::PlaceKind::Temporary(target_value),
+    );
+    push_partial_replace_place(
+        &mut function.places,
+        raw::TypeId(2),
+        function.span,
+        raw::PlaceKind::StructField { base: target, ordinal: 0 },
+    );
+    push_partial_replace_place(
+        &mut function.places,
+        raw::TypeId(2),
+        function.span,
+        raw::PlaceKind::StructField { base: target, ordinal: 1 },
+    );
+    function.blocks[0].terminators[0].kind = raw::Terminator::Jump(raw::Edge {
+        target: raw::BlockId(1),
+        arguments: vec![raw::ValueId(4)],
+    });
+    function.blocks.push(raw::Block {
+        id: raw::BlockId(1),
+        parameters: vec![raw::ValueDefinition {
+            id: target_value,
+            ty: raw::TypeId(3),
+            span: function.span,
+        }],
+        instructions: vec![],
+        terminators: vec![raw::SpannedTerminator {
+            span: function.span,
+            kind: raw::Terminator::Return {
+                value: raw::ValueId(2),
+                cleanup: raw::CleanupPlanId(0),
+            },
+        }],
+    });
+    function.cleanup_plans[0].actions = vec![
+        raw::DropAction::DropPlace(raw::PlaceId(6)),
+        raw::DropAction::DropPlace(target),
+        raw::DropAction::DropPlace(raw::PlaceId(0)),
+    ];
+    let diagnostics = verify(partial_edge, &sources, entry, linear, linux)
+        .expect_err("partial CFG edge remains excluded");
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-I3010"
+                && diagnostic.message().contains("CFG edge without mask transfer")
+        }),
+        "{diagnostics:?}"
+    );
+
+    let (sources, linear, linux) = payloadless_enum_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut partial_enum = program(&sources, &linear, &linux);
+    partial_enum.modules[0].data_declarations = 1;
+    let function = &mut partial_enum.modules[0].functions[0];
+    let span = function.span;
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: raw::TypeId(2), span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+    ];
+    function.result = raw::TypeId(1);
+    function.places = vec![
+        raw::Place {
+            id: raw::PlaceId(0),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Parameter(0),
+        },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(1), variant: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(3), variant: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(5),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(4)),
+        },
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(5)),
+        },
+        raw::Place {
+            id: raw::PlaceId(7),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(6), variant: 1 },
+        },
+    ];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::EnumConstruct { variant: 0, payload: None, cleanup: None },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::EnumConstruct {
+                variant: 1,
+                payload: Some(raw::ValueId(0)),
+                cleanup: None,
+            },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(4), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(4) },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(5), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(3) },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::ReplacePlace {
+                place: raw::PlaceId(1),
+                value: raw::ValueId(5),
+            },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![
+        raw::DropAction::DropPlace(raw::PlaceId(5)),
+        raw::DropAction::DropPlace(raw::PlaceId(1)),
+    ];
+    let diagnostics = verify(partial_enum, &sources, entry, linear, linux)
+        .expect_err("partial Enum replacement remains excluded");
+    assert!(
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-I3010"
+                && diagnostic.message().contains("exact sealed projection topology")
+        }),
+        "{diagnostics:?}"
+    );
+}
+
 #[test]
 #[allow(clippy::too_many_lines)]
 fn partial_aggregate_cannot_be_consumed_by_a_direct_call() {

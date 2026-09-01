@@ -186,6 +186,14 @@ order while the returned root does not. Missing, extra, or wrong projection path
 Enum/Vec/Shared/Weak graphs, a prior drop, and cleanup that includes the returned owner fail closed.
 The generic consumed-value path remains initialized-only, so `DirectCall` and other operands do not
 inherit this return-specific admission.
+Root `ReplacePlace` may likewise consume an exact-topology partial temporary only when the sealed
+source and fully initialized destination are same-type acyclic Struct/FixedArray graphs containing
+Bool, i32, or String leaves. Verification authenticates complete relative paths on both roots,
+derives the old destination's recursive drop action from its pre-state, then migrates the exact mask
+into the destination. Matching-but-incomplete, missing, extra, or wrong topology, a partial
+destination, partial Enum/Vec/Shared/Weak roots, and prior-drop or cleanup misuse fail closed.
+CFG block-parameter edges remain initialized-only: no partial owner can cross an edge until a later
+profile defines and verifies edge mask transport and join equality.
 Replacement evaluation and allocation happen before
 `ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an

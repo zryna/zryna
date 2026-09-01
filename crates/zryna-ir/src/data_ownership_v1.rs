@@ -3616,6 +3616,19 @@ fn apply_value_transfers(
                 );
                 return;
             }
+            let source_state = flow.states[source.0 as usize].kind;
+            if matches!(
+                source_state,
+                PlaceStateKind::PartiallyInitialized | PlaceStateKind::PartiallyMoved
+            ) && !has_exact_projection_topology(source, function, layouts)
+            {
+                ownership_error(
+                    instruction.span,
+                    "partial replacement owner lacks exact sealed projection topology",
+                    errors,
+                );
+                return;
+            }
             let Some(target_slot) = pending_slot(flow, target) else {
                 ownership_error(instruction.span, "replacement target is not pending", errors);
                 return;
@@ -3681,6 +3694,14 @@ fn transfer_edge_owners(
         let target = value_owners.get(parameter.id.0 as usize).copied().flatten();
         match (source, target) {
             (Some(source), Some(target)) => {
+                if flow.states[source.0 as usize].kind != PlaceStateKind::Initialized {
+                    ownership_error(
+                        span,
+                        "partial non-Copy owner cannot enter a CFG edge without mask transfer",
+                        errors,
+                    );
+                    continue;
+                }
                 rename_pending_owner(source, target, function, flow, span, errors);
             }
             (None, None) => {}

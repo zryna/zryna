@@ -11,6 +11,7 @@ use super::{
     estimate_owned_string_expression, generated_cfg_budget_violation,
     is_terminal_owned_phi_candidate, lower, owned_call_cleanup_budget_violation,
     owned_cfg_budget_violation, owned_place_budget_violation, owned_value_budget_violation,
+    partial_assignment_budget_preflight, partial_assignment_place_delta,
     partial_return_budget_preflight, partial_return_place_delta, partial_transfer_budget_preflight,
     partial_transfer_place_delta, preflight_aggregate_operand_total, preflight_owned_loop_body,
     preflight_owned_loop_exit, preflight_owned_place_capacity,
@@ -1613,6 +1614,178 @@ fn owned_pair_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot)
     (source, raw)
 }
 
+#[allow(clippy::too_many_lines)]
+fn owned_pair_partial_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const INSERT: &str = "let q: OwnedPair = OwnedPair({ flag: false, first: \"old\" }); q = p; ";
+    let (mut source, mut raw) = owned_pair_partial_then_root_snapshot();
+    let insertion = source.find("return p;").expect("partial assignment insertion");
+    source.insert_str(insertion, INSERT);
+    let return_value = source.rfind("p;").expect("partial assignment return value");
+    source.replace_range(return_value..=return_value, "q");
+    let insertion = u32::try_from(insertion).expect("partial assignment offset");
+    raw = shift_snapshot(
+        raw,
+        insertion,
+        u32::try_from(INSERT.len()).expect("partial assignment length"),
+    );
+    let s = |start: u32, end: u32| zryna_source::UntrustedSpan {
+        file: 0,
+        start: insertion + start,
+        end: insertion + end,
+    };
+    let pair_type = u32::try_from(raw.files[0].type_syntax.len()).expect("Pair type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(7, 16),
+        kind: RawTypeSyntaxKind::Named {
+            name: RawIdentifierSyntax { text: "OwnedPair".to_owned(), span: s(7, 16) },
+        },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let flag = u32::try_from(body.expressions.len()).expect("assignment flag value");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(37, 42),
+        kind: zryna_syntax::v4::RawExpressionKind::BoolLiteral { value: false },
+    });
+    let old = u32::try_from(body.expressions.len()).expect("assignment old String value");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(51, 56),
+        kind: zryna_syntax::v4::RawExpressionKind::StringLiteral { spelling: "\"old\"".to_owned() },
+    });
+    let target_initializer =
+        u32::try_from(body.expressions.len()).expect("assignment target initializer");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(19, 59),
+        kind: zryna_syntax::v4::RawExpressionKind::StructConstruction {
+            type_name: RawIdentifierSyntax { text: "OwnedPair".to_owned(), span: s(19, 28) },
+            open_paren_span: s(28, 29),
+            open_brace_span: s(29, 30),
+            fields: vec![
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(31, 42),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax { text: "flag".to_owned(), span: s(31, 35) },
+                        colon_span: s(35, 36),
+                        value: flag,
+                    },
+                },
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(44, 56),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax { text: "first".to_owned(), span: s(44, 49) },
+                        colon_span: s(49, 50),
+                        value: old,
+                    },
+                },
+            ],
+            close_brace_span: s(57, 58),
+            close_paren_span: s(58, 59),
+        },
+    });
+    let target = u32::try_from(body.expressions.len()).expect("assignment target value");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(61, 62),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "q".to_owned(), span: s(61, 62) },
+        },
+    });
+    let partial_source = u32::try_from(body.expressions.len()).expect("partial assignment source");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(65, 66),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "p".to_owned(), span: s(65, 66) },
+        },
+    });
+    body.statements.insert(
+        2,
+        RawStatementSyntax {
+            span: s(0, 60),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(0, 3),
+                mutable: true,
+                name: RawIdentifierSyntax { text: "q".to_owned(), span: s(4, 5) },
+                type_syntax: pair_type,
+                equals_span: s(17, 18),
+                initializer: target_initializer,
+                semicolon_span: s(59, 60),
+            },
+        },
+    );
+    body.statements.insert(
+        3,
+        RawStatementSyntax {
+            span: s(61, 67),
+            kind: RawStatementKind::Assignment {
+                target,
+                equals_span: s(63, 64),
+                value: partial_source,
+                semicolon_span: s(66, 67),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2, 3, 4];
+    let RawStatementKind::Return { value, .. } = body.statements[4].kind else {
+        panic!("partial assignment return")
+    };
+    let return_value = u32::try_from(return_value).expect("partial assignment return offset");
+    body.expressions[value as usize] = RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: return_value, end: return_value + 1 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "q".to_owned(),
+                span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: return_value,
+                    end: return_value + 1,
+                },
+            },
+        },
+    };
+    (source, raw)
+}
+
+fn owned_pair_partial_assignment_old_source_return_snapshot() -> (String, RawProjectSyntaxSnapshot)
+{
+    let (mut source, mut raw) = owned_pair_partial_assignment_snapshot();
+    let start = source.rfind("q;").expect("assigned-root return");
+    source.replace_range(start..=start, "p");
+    let start = u32::try_from(start).expect("old-source return offset");
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::Return { value, .. } = body.statements[4].kind else {
+        panic!("partial assignment return")
+    };
+    body.expressions[value as usize] = RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: start + 1 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "p".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start, end: start + 1 },
+            },
+        },
+    };
+    (source, raw)
+}
+
+fn owned_pair_partial_self_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, mut raw) = owned_pair_partial_assignment_snapshot();
+    let start = source.find("q = p;").expect("partial assignment target");
+    source.replace_range(start..=start, "p");
+    let start = u32::try_from(start).expect("partial self-assignment offset");
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::Assignment { target, .. } = body.statements[3].kind else {
+        panic!("partial assignment statement")
+    };
+    body.expressions[target as usize] = RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: start + 1 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "p".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start, end: start + 1 },
+            },
+        },
+    };
+    (source, raw)
+}
+
 fn owned_array_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot) {
     const LOCAL: &str = "const text: String = a[0]; ";
     let mut source = OWNED_ARRAY_SOURCE.to_owned();
@@ -1675,6 +1848,158 @@ fn owned_array_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot
         },
     );
     body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+#[allow(clippy::too_many_lines)]
+fn owned_array_partial_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const INSERT: &str =
+        "let b: FixedArray<String, 2> = FixedArray<String, 2>([\"old0\", \"old1\"]); b = a; ";
+    let (mut source, mut raw) = owned_array_partial_then_root_snapshot();
+    let insertion = source.find("return a;").expect("partial array assignment insertion");
+    source.insert_str(insertion, INSERT);
+    let return_value = source.rfind("a;").expect("partial array assignment return");
+    source.replace_range(return_value..=return_value, "b");
+    let insertion = u32::try_from(insertion).expect("partial array assignment offset");
+    raw = shift_snapshot(
+        raw,
+        insertion,
+        u32::try_from(INSERT.len()).expect("partial array assignment length"),
+    );
+    let s = |start: u32, end: u32| zryna_source::UntrustedSpan {
+        file: 0,
+        start: insertion + start,
+        end: insertion + end,
+    };
+    let annotation_element =
+        u32::try_from(raw.files[0].type_syntax.len()).expect("array annotation element type");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(18, 24),
+        kind: RawTypeSyntaxKind::String { keyword_span: s(18, 24) },
+    });
+    let annotation_type =
+        u32::try_from(raw.files[0].type_syntax.len()).expect("array annotation type");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(7, 28),
+        kind: RawTypeSyntaxKind::FixedArray {
+            keyword_span: s(7, 17),
+            less_than_span: s(17, 18),
+            element: annotation_element,
+            comma_span: s(24, 25),
+            length_span: s(26, 27),
+            length: 2,
+            length_spelling: "2".to_owned(),
+            greater_than_span: s(27, 28),
+        },
+    });
+    let constructor_element =
+        u32::try_from(raw.files[0].type_syntax.len()).expect("array constructor element type");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(42, 48),
+        kind: RawTypeSyntaxKind::String { keyword_span: s(42, 48) },
+    });
+    let constructor_type =
+        u32::try_from(raw.files[0].type_syntax.len()).expect("array constructor type");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(31, 52),
+        kind: RawTypeSyntaxKind::FixedArray {
+            keyword_span: s(31, 41),
+            less_than_span: s(41, 42),
+            element: constructor_element,
+            comma_span: s(48, 49),
+            length_span: s(50, 51),
+            length: 2,
+            length_spelling: "2".to_owned(),
+            greater_than_span: s(51, 52),
+        },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let old0 = u32::try_from(body.expressions.len()).expect("old array element zero");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(54, 60),
+        kind: zryna_syntax::v4::RawExpressionKind::StringLiteral {
+            spelling: "\"old0\"".to_owned(),
+        },
+    });
+    let old1 = u32::try_from(body.expressions.len()).expect("old array element one");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(62, 68),
+        kind: zryna_syntax::v4::RawExpressionKind::StringLiteral {
+            spelling: "\"old1\"".to_owned(),
+        },
+    });
+    let initializer = u32::try_from(body.expressions.len()).expect("old array initializer");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(31, 70),
+        kind: zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction {
+            type_syntax: constructor_type,
+            open_paren_span: s(52, 53),
+            open_bracket_span: s(53, 54),
+            elements: vec![old0, old1],
+            close_bracket_span: s(68, 69),
+            close_paren_span: s(69, 70),
+        },
+    });
+    let target = u32::try_from(body.expressions.len()).expect("partial array assignment target");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(72, 73),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "b".to_owned(), span: s(72, 73) },
+        },
+    });
+    let partial_source =
+        u32::try_from(body.expressions.len()).expect("partial array assignment source");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(76, 77),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "a".to_owned(), span: s(76, 77) },
+        },
+    });
+    body.statements.insert(
+        2,
+        RawStatementSyntax {
+            span: s(0, 71),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(0, 3),
+                mutable: true,
+                name: RawIdentifierSyntax { text: "b".to_owned(), span: s(4, 5) },
+                type_syntax: annotation_type,
+                equals_span: s(29, 30),
+                initializer,
+                semicolon_span: s(70, 71),
+            },
+        },
+    );
+    body.statements.insert(
+        3,
+        RawStatementSyntax {
+            span: s(72, 78),
+            kind: RawStatementKind::Assignment {
+                target,
+                equals_span: s(74, 75),
+                value: partial_source,
+                semicolon_span: s(77, 78),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2, 3, 4];
+    let RawStatementKind::Return { value, .. } = body.statements[4].kind else {
+        panic!("partial array assignment return")
+    };
+    let return_value = u32::try_from(return_value).expect("partial array return offset");
+    body.expressions[value as usize] = RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: return_value, end: return_value + 1 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "b".to_owned(),
+                span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: return_value,
+                    end: return_value + 1,
+                },
+            },
+        },
+    };
     (source, raw)
 }
 
@@ -2298,6 +2623,106 @@ fn nested_owned_partial_return_snapshot() -> (String, RawProjectSyntaxSnapshot) 
         },
     });
     body.blocks[0].statements.push(return_id);
+    (source, raw)
+}
+
+fn nested_owned_partial_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const ASSIGNMENT: &str = "unused = q; ";
+    let (mut source, mut raw) = nested_owned_partial_return_snapshot();
+    let local_start = source.rfind("const unused").expect("nested assignment target local");
+    source.replace_range(local_start..local_start + 5, "let  ");
+    let insertion = source.rfind("return q;").expect("nested assignment insertion");
+    source.insert_str(insertion, ASSIGNMENT);
+    raw = shift_snapshot(
+        raw,
+        u32::try_from(insertion).expect("nested assignment offset"),
+        u32::try_from(ASSIGNMENT.len()).expect("nested assignment length"),
+    );
+    let return_value = insertion + ASSIGNMENT.len() + "return ".len();
+    source.replace_range(return_value..=return_value, "unused");
+    raw = shift_snapshot(
+        raw,
+        u32::try_from(return_value + 1).expect("nested assignment return growth start"),
+        u32::try_from("unused".len() - 1).expect("nested assignment return growth"),
+    );
+    let s = |start: usize, end: usize| zryna_source::UntrustedSpan {
+        file: 0,
+        start: u32::try_from(start).expect("nested assignment span start"),
+        end: u32::try_from(end).expect("nested assignment span end"),
+    };
+    let body = &mut raw.files[0].functions[0].body;
+    let target_statement = body
+        .statements
+        .iter_mut()
+        .find(|statement| {
+            matches!(
+                &statement.kind,
+                RawStatementKind::LocalDeclaration { name, .. } if name.text == "unused"
+            )
+        })
+        .expect("nested assignment target declaration");
+    let RawStatementKind::LocalDeclaration { keyword_span, mutable, .. } =
+        &mut target_statement.kind
+    else {
+        unreachable!("filtered target declaration")
+    };
+    keyword_span.end = keyword_span.start + 3;
+    *mutable = true;
+    let target = u32::try_from(body.expressions.len()).expect("nested assignment target");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion, insertion + 6),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "unused".to_owned(),
+                span: s(insertion, insertion + 6),
+            },
+        },
+    });
+    let partial_source = u32::try_from(body.expressions.len()).expect("nested assignment source");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 9, insertion + 10),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "q".to_owned(),
+                span: s(insertion + 9, insertion + 10),
+            },
+        },
+    });
+    let return_index = body.statements.len() - 1;
+    body.statements.insert(
+        return_index,
+        RawStatementSyntax {
+            span: s(insertion, insertion + 11),
+            kind: RawStatementKind::Assignment {
+                target,
+                equals_span: s(insertion + 7, insertion + 8),
+                value: partial_source,
+                semicolon_span: s(insertion + 10, insertion + 11),
+            },
+        },
+    );
+    let return_start = insertion + ASSIGNMENT.len();
+    let return_statement = &mut body.statements[return_index + 1];
+    return_statement.span = s(return_start, return_value + 7);
+    let RawStatementKind::Return { value, keyword_span, semicolon_span } =
+        &mut return_statement.kind
+    else {
+        panic!("nested assignment return")
+    };
+    let value = *value;
+    *keyword_span = s(return_start, return_start + 6);
+    *semicolon_span = s(return_value + 6, return_value + 7);
+    body.expressions[value as usize] = RawExpressionSyntax {
+        span: s(return_value, return_value + 6),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "unused".to_owned(),
+                span: s(return_value, return_value + 6),
+            },
+        },
+    };
+    body.blocks[0].statements =
+        (0..u32::try_from(body.statements.len()).expect("nested assignment statements")).collect();
     (source, raw)
 }
 
@@ -6873,6 +7298,302 @@ fn aggregate_clone_target_assignment_retains_source_until_replace_commit() {
 }
 
 #[test]
+fn partial_struct_assignment_prepares_then_replaces_and_returns_the_exact_mask() {
+    let (source, raw) = owned_pair_partial_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful partial assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("partial Struct assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let moved_leaf = roots[&1];
+    let target_root = roots[&2];
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let assignment_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("partial assignment preparation");
+    let replace = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::ReplacePlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("partial assignment commit");
+    let return_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("partial assigned-root return");
+    assert!(assignment_move < replace && replace < return_move);
+    assert_eq!(
+        instructions[replace]
+            .derived_drop_actions()
+            .map(|action| action.root())
+            .collect::<Vec<_>>(),
+        [target_root],
+        "the fully initialized old destination is dropped exactly at commit",
+    );
+    let assignment_value = instructions[assignment_move].result().expect("assignment value");
+    let assignment_temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == assignment_value)
+        })
+        .expect("partial assignment temporary")
+        .id();
+    let returned_value = instructions[return_move].result().expect("return value");
+    let return_temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == returned_value)
+        })
+        .expect("partial return temporary")
+        .id();
+    let fields = |root| {
+        function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>()
+    };
+    for root in [source_root, assignment_temporary, target_root, return_temporary] {
+        assert_eq!(fields(root).keys().copied().collect::<Vec<_>>(), [0, 1]);
+    }
+    assert_eq!(
+        block.terminator().derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [moved_leaf],
+        "only the moved String leaf survives reverse return cleanup",
+    );
+}
+
+#[test]
+fn partial_struct_assignment_invalidates_the_source_owner() {
+    let (source, raw) = owned_pair_partial_assignment_old_source_return_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful old assignment source");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("assigned source must move");
+    let replay = lower(pair_input(&syntax, &sources)).expect_err("assigned source replay");
+    assert_eq!(diagnostics, replay);
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
+    assert_eq!(
+        diagnostics[0].message(),
+        "aggregate value 'p' is moved or only partially available",
+    );
+}
+
+#[test]
+fn partial_struct_assignment_rejects_a_partial_destination_before_rhs_mutation() {
+    let (source, raw) = owned_pair_partial_self_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful partial destination");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("partial destination");
+    let replay = lower(pair_input(&syntax, &sources)).expect_err("partial destination replay");
+    assert_eq!(diagnostics, replay);
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
+    assert_eq!(
+        diagnostics[0].message(),
+        "owned aggregate assignment target is immutable, moved, or only partially available",
+    );
+}
+
+#[test]
+fn partial_fixed_array_assignment_preserves_exact_elements_and_old_value_drop() {
+    let (source, raw) = owned_array_partial_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful partial array assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("partial FixedArray assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let moved_leaf = roots[&1];
+    let target_root = roots[&2];
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let assignment_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("partial array assignment move");
+    let replace = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::ReplacePlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("partial array assignment replacement");
+    let return_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("partial assigned array return");
+    assert!(assignment_move < replace && replace < return_move);
+    assert_eq!(
+        instructions[replace]
+            .derived_drop_actions()
+            .map(|action| action.root())
+            .collect::<Vec<_>>(),
+        [target_root],
+    );
+    let assignment_value = instructions[assignment_move].result().expect("assignment value");
+    let returned_value = instructions[return_move].result().expect("return value");
+    let assignment_temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == assignment_value)
+        })
+        .expect("partial array assignment temporary")
+        .id();
+    let return_temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == returned_value)
+        })
+        .expect("partial array return temporary")
+        .id();
+    for root in [source_root, assignment_temporary, target_root, return_temporary] {
+        assert_eq!(
+            function
+                .places()
+                .filter_map(|place| match place.kind() {
+                    VerifiedPlaceKind::FixedArrayConstant { base, index } if base == root => {
+                        Some(index)
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>(),
+            [0, 1],
+        );
+    }
+    assert_eq!(
+        block.terminator().derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [moved_leaf],
+    );
+}
+
+#[test]
+fn nested_partial_struct_assignment_preserves_recursive_topology_and_cleanup() {
+    let (source, raw) = nested_owned_partial_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful nested assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("nested partial Struct assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let moved_leaf = roots[&1];
+    let source_root = roots[&2];
+    let target_root = roots[&3];
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let assignment_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("nested assignment preparation");
+    let replace = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::ReplacePlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("nested assignment replacement");
+    let return_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("nested assignment return");
+    assert!(assignment_move < replace && replace < return_move);
+    assert_eq!(
+        instructions[replace]
+            .derived_drop_actions()
+            .map(|action| action.root())
+            .collect::<Vec<_>>(),
+        [target_root],
+    );
+    let assignment_value = instructions[assignment_move].result().expect("assignment value");
+    let return_value = instructions[return_move].result().expect("return value");
+    let assignment_temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == assignment_value)
+        })
+        .expect("nested assignment temporary")
+        .id();
+    let return_temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == return_value)
+        })
+        .expect("nested return temporary")
+        .id();
+    for root in [source_root, assignment_temporary, target_root, return_temporary] {
+        let fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+        assert_eq!(
+            function
+                .places()
+                .filter_map(|place| match place.kind() {
+                    VerifiedPlaceKind::StructField { base, ordinal } if base == fields[&0] => {
+                        Some(ordinal)
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>(),
+            [0],
+        );
+    }
+    assert_eq!(
+        block.terminator().derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [moved_leaf],
+    );
+}
+
+#[test]
 fn string_fixed_array_clone_assignment_replaces_one_mutable_whole_root() {
     let (source, raw) = owned_fixed_array_clone_assignment_snapshot();
     let sources = sources_for(&source);
@@ -7363,6 +8084,45 @@ fn partial_return_place_accounting_is_exact_and_checked() {
     assert_eq!(
         partial_return_budget_preflight(usize::MAX, 0, 0, 0, 0, 0),
         Err(PartialTransferBudgetViolation::Values),
+    );
+}
+
+#[test]
+fn partial_assignment_place_accounting_is_exact_and_checked() {
+    assert_eq!(partial_assignment_place_delta(0, 0, 0), Some(1));
+    assert_eq!(partial_assignment_place_delta(2, 0, 0), Some(7));
+    assert_eq!(partial_assignment_place_delta(2, 1, 0), Some(6));
+    assert_eq!(partial_assignment_place_delta(2, 1, 1), Some(5));
+    assert_eq!(partial_assignment_place_delta(2, 2, 2), Some(3));
+    assert_eq!(partial_assignment_place_delta(1, 2, 0), None);
+    assert_eq!(partial_assignment_place_delta(1, 0, 2), None);
+    assert_eq!(partial_assignment_place_delta(usize::MAX, 0, 0), None);
+    let values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION;
+    let places = zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION;
+    let transitions = zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION;
+    assert_eq!(
+        partial_assignment_budget_preflight(values - 1, places - 5, transitions - 2, 0, 2, 1, 1,),
+        Ok(5),
+    );
+    assert_eq!(
+        partial_assignment_budget_preflight(values, places - 5, transitions - 2, 0, 2, 1, 1,),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+    assert_eq!(
+        partial_assignment_budget_preflight(values - 1, places - 4, transitions - 2, 0, 2, 1, 1,),
+        Err(PartialTransferBudgetViolation::Places),
+    );
+    assert_eq!(
+        partial_assignment_budget_preflight(values - 1, places - 5, transitions - 1, 0, 2, 1, 1,),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_assignment_budget_preflight(values - 1, places - 5, transitions - 2, 1, 2, 1, 1,),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_assignment_budget_preflight(0, 0, 0, 0, usize::MAX, 0, 0),
+        Err(PartialTransferBudgetViolation::PlaceAccounting),
     );
 }
 
