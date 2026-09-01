@@ -179,6 +179,13 @@ rejects a missing or extra path before changing ownership state, so no partial m
 variant metadata can be silently discarded. This rule admits a whole-root `InitializePlace`
 rename from a partial temporary into an exact-topology local; initializing a projection from a
 partial owner remains rejected because that route has no subtree-mask transfer contract.
+One final `Return` may also transfer an exact-topology partial temporary whose sealed root is a
+Struct or FixedArray containing only acyclic Struct/FixedArray, Bool, i32, and String nodes. The
+return removes that owner before cleanup, so every survivor still appears exactly once in reverse
+order while the returned root does not. Missing, extra, or wrong projection paths, unsupported
+Enum/Vec/Shared/Weak graphs, a prior drop, and cleanup that includes the returned owner fail closed.
+The generic consumed-value path remains initialized-only, so `DirectCall` and other operands do not
+inherit this return-specific admission.
 Replacement evaluation and allocation happen before
 `ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an

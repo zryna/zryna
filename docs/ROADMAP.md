@@ -230,8 +230,11 @@ clones initialized available String leaves into distinct temporary owners while 
 source root and its partial-state masks. An exact-type direct local declaration can now transfer a
 partially moved supported Struct or FixedArray root through its move-result temporary into one new
 local; the producer materializes the complete static topology and migrates the exact root-relative
-mask at both owner renames. Enum partial-root transfer, aggregate/enum subobject moves, transfer in
-return/call/assignment/CFG contexts, dynamic projections, and general non-String projected clone and assignment remain open, alongside
+mask at both owner renames. One final exact-reference return also transfers that complete partial
+state into an exact-topology temporary before survivor cleanup, with independent IR rejection of
+forged or unsupported topology. Enum partial-root transfer, aggregate/enum subobject moves,
+transfer in call/assignment/CFG contexts or non-final/non-reference returns, dynamic projections,
+and general non-String projected clone and assignment remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is
