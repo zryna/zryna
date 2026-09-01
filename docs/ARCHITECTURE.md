@@ -422,8 +422,12 @@ retains the old root across preparation failure. These operations use
 `InitializePlace`, `MoveFromPlace`, and `ClonePlace`; String/Vec/aggregate replacement uses the
 infallible `ReplacePlace` commit after right-hand-side preparation.
 Canonical static `StructField` and `FixedArrayConstant` places also carry Copy reads and exact
-String-leaf moves from source syntax through verified IR. Projection identity is root-relative and
-stable, moved leaves refine the enclosing root's cleanup mask, and disjoint siblings remain
+String-leaf moves from source syntax through verified IR. One exact direct local may additionally
+move a supported acyclic Struct or FixedArray subobject from either canonical static projection.
+The producer materializes the moved projection's complete descendant topology before emission;
+verified IR marks that projection and every descendant moved under the enclosing root while the
+new local receives the complete subobject owner. Projection identity is root-relative and stable,
+moved subobjects refine the enclosing root's cleanup mask, and disjoint siblings remain
 available; repeated and overlapping consumption is rejected. For one exact-type direct local
 declaration, a partially moved supported Struct or FixedArray root now transfers through its
 move-result temporary into the new local. The producer derives and materializes one complete static
@@ -442,11 +446,13 @@ The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
+aggregate-subobject moves outside at most one exact direct local, enum-payload moves, dynamic or Vec-element projections, general non-String
 projected clone and assignment, partial Enum transfer or partial-root transfer outside the exact
 direct-local, final-return, or whole-root assignment forms, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
-admitted. Its sealed semantic result retains both the verified IR and the exact verified
+admitted. The subobject exception does not extend to projected assignment or clone, calls, direct
+returns, CFG transfer, public functions, Enum payloads, or dynamic/Vec projections. Its sealed
+semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no
 runtime, backend, driver, CLI, manifest, target artifact, or public aggregate ABI capability.
 

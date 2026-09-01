@@ -194,6 +194,15 @@ into the destination. Matching-but-incomplete, missing, extra, or wrong topology
 destination, partial Enum/Vec/Shared/Weak roots, and prior-drop or cleanup misuse fail closed.
 CFG block-parameter edges remain initialized-only: no partial owner can cross an edge until a later
 profile defines and verifies edge mask transport and join equality.
+Moving one canonical static Struct-field or fixed-array-constant subobject marks the selected
+projection and every declared descendant moved beneath the still-pending enclosing root. The move
+result receives one distinct initialized owner, so initializing one exact same-type direct local
+renames that complete owner without transferring a partial mask. Derived cleanup therefore excludes
+the entire moved subtree from the parent and drops the new local exactly once. Projection typing,
+base/selector identity, duplicate or overlapping consumption, and cleanup claims are independently
+verified. This does not admit Enum-payload, dynamic, or Vec-element moves, nor projected
+assignment/clone, call, direct-return, CFG-edge, or public transfer contexts. At most one such
+aggregate-subobject move site is admitted per function.
 Replacement evaluation and allocation happen before
 `ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an

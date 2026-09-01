@@ -223,8 +223,10 @@ bindings use M3002. General structural Vec clone beyond String elements, nested 
 graphs containing Enum, Vec, Shared, or Weak values remain open. The verified IR prerequisite for
 projected replacement now seals the exact old-subobject traversal and preserves replacement
 subtree masks, enum refinement, and siblings. The semantic producer now resolves canonical static
-StructField and FixedArrayConstant projections, retains Copy leaves, moves exact String leaves,
-and preserves disjoint siblings plus the enclosing cleanup obligation. It also prepares and commits
+StructField and FixedArrayConstant projections, retains Copy leaves, moves exact String leaves, and
+moves one supported Struct/FixedArray subobject into an exact directly initialized same-type local.
+The subobject path materializes all source descendants, masks that whole subtree in the enclosing
+cleanup obligation, and preserves disjoint siblings. It also prepares and commits
 replacement of mutable available String leaves without disturbing sibling masks, and explicitly
 clones initialized available String leaves into distinct temporary owners while retaining the
 source root and its partial-state masks. An exact-type direct local declaration can now transfer a
@@ -235,9 +237,10 @@ state into an exact-topology temporary before survivor cleanup, with independent
 forged or unsupported topology. One distinct mutable initialized same-type whole-root assignment
 destination now accepts that partial Struct or FixedArray after complete source, temporary, and
 destination topology plus resource preflight; replacement drops the old destination once and
-installs the exact mask. Enum partial-root transfer, aggregate/enum subobject moves,
+installs the exact mask. Enum partial-root transfer, aggregate-subobject moves outside that at-most-one
+direct-local form, and enum-payload moves,
 transfer in call/CFG contexts, projected assignment, or non-final/non-reference returns, dynamic projections,
-and general non-String projected clone and assignment remain open, alongside
+direct projected returns, public contexts, and general non-String projected clone and assignment remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is

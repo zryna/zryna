@@ -104,7 +104,10 @@ prepare-before-commit assignment whose commit drops only the exact old leaf. Ini
 String projections also admit explicit clone, retaining the enclosing root and its partial-state
 masks while producing a distinct temporary owner. Copy projections retain their source; exact String leaves
 move once and refine the enclosing root's recursive cleanup mask while disjoint siblings remain
-available. An exact-type direct local declaration additionally transfers one partially moved
+available. One exact directly initialized local also admits a supported Struct or FixedArray field
+or constant array-element move. Its complete static descendants are materialized before the move,
+the enclosing root excludes that whole subtree from cleanup, and the new same-type local owns it.
+An exact-type direct local declaration additionally transfers one partially moved
 supported Struct or FixedArray root through a move-result temporary into the new local, using the
 complete static topology and exact root-relative masks.
 A final exact-reference return admits the same supported partial root, transfers its complete mask
@@ -115,11 +118,14 @@ preflight. `ReplacePlace` drops the old destination exactly once and installs th
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
-This checkpoint does not enable general owned values: aggregate/enum subobject moves, partial Enum
+This checkpoint does not enable general owned values: aggregate-subobject moves outside that at-most-one
+exact direct-local form, enum-payload moves, partial Enum
 transfer or partial-root transfer outside the exact direct-local, final-return, or whole-root
 assignment forms, dynamic or Vec-element projections, or general non-String projected
 clone and assignment,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
+The subobject exception also excludes projected assignment or clone, direct return, and public
+owned contexts.
 Public owned results remain rejected by scalar ABI v1.
 `Shared`, `Weak`, shared or exclusive borrows, and their
 operations also remain unavailable. The boundary still rejects recursive by-value layouts,

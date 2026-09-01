@@ -203,6 +203,100 @@ fn pair_authorities() -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout
     (sources, linear, linux)
 }
 
+fn subobject_move_authorities() -> (
+    SourceMap,
+    zryna_layout::VerifiedLayouts,
+    zryna_layout::VerifiedLayouts,
+    raw::TypeId,
+    raw::TypeId,
+    raw::TypeId,
+) {
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "main.zry".into(),
+        text: "export function id(value: i32): i32 { return value; }".into(),
+    }])
+    .expect("source map");
+    let file = sources.verify_file_id(0).expect("source file");
+    let graph = raw_layout::Graph {
+        modules: vec![raw_layout::Module {
+            id: raw_layout::ModuleId(0),
+            source_file: file,
+            data_declarations: 2,
+        }],
+        types: vec![
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(0),
+                span: None,
+                kind: raw_layout::TypeKind::Bool,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(1),
+                span: None,
+                kind: raw_layout::TypeKind::I32,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(2),
+                span: None,
+                kind: raw_layout::TypeKind::String,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(3),
+                span: Some(sources.span(file, 0, 6).expect("inner span")),
+                kind: raw_layout::TypeKind::Struct {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 0,
+                    fields: vec![raw_layout::Field { ordinal: 0, ty: raw_layout::NodeId(2) }],
+                },
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(4),
+                span: Some(sources.span(file, 7, 13).expect("outer span")),
+                kind: raw_layout::TypeKind::Struct {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 1,
+                    fields: vec![
+                        raw_layout::Field { ordinal: 0, ty: raw_layout::NodeId(3) },
+                        raw_layout::Field { ordinal: 1, ty: raw_layout::NodeId(2) },
+                    ],
+                },
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(5),
+                span: None,
+                kind: raw_layout::TypeKind::FixedArray {
+                    element: raw_layout::NodeId(3),
+                    length: 2,
+                },
+            },
+        ],
+        program_roots: vec![raw_layout::NodeId(4), raw_layout::NodeId(5)],
+    };
+    let linear =
+        zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
+    let linux = zryna_layout::verify(&graph, &sources, StorageTarget::LinuxX8664V1)
+        .expect("native layouts");
+    let inner = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 0)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("inner type");
+    let outer = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 1)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("outer type");
+    let array = linear
+        .types()
+        .find(|ty| {
+            ty.category() == zryna_layout::TypeCategory::FixedArray
+                && ty.array_length() == Some(2)
+                && ty.referenced_type().is_some_and(|element| element.index() == inner.0)
+        })
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("inner array type");
+    (sources, linear, linux, inner, outer, array)
+}
+
 fn mixed_aggregate_authorities() -> (
     SourceMap,
     zryna_layout::VerifiedLayouts,
@@ -500,6 +594,99 @@ fn program(
             }],
         }],
     }
+}
+
+#[derive(Clone, Copy)]
+enum SubobjectMoveShape {
+    Struct,
+    FixedArray,
+}
+
+fn aggregate_subobject_move_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    inner: raw::TypeId,
+    outer: raw::TypeId,
+    array: raw::TypeId,
+    shape: SubobjectMoveShape,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    let root_ty = match shape {
+        SubobjectMoveShape::Struct => outer,
+        SubobjectMoveShape::FixedArray => array,
+    };
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: root_ty, span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+    ];
+    function.result = raw::TypeId(1);
+    function.places = vec![
+        raw::Place { id: raw::PlaceId(0), ty: root_ty, span, kind: raw::PlaceKind::Parameter(0) },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: inner,
+            span,
+            kind: match shape {
+                SubobjectMoveShape::Struct => {
+                    raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 0 }
+                }
+                SubobjectMoveShape::FixedArray => {
+                    raw::PlaceKind::FixedArrayConstant { base: raw::PlaceId(0), index: 0 }
+                }
+            },
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(1), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: inner,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(3), ordinal: 0 },
+        },
+        raw::Place { id: raw::PlaceId(5), ty: inner, span, kind: raw::PlaceKind::Local(0) },
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(5), ordinal: 0 },
+        },
+    ];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: inner, span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(5),
+                value: raw::ValueId(2),
+            },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![
+        raw::DropAction::DropPlace(raw::PlaceId(5)),
+        raw::DropAction::DropPlace(raw::PlaceId(0)),
+    ];
+    raw
 }
 
 fn string_literal_program(
@@ -3460,6 +3647,458 @@ fn partial_move_cleanup_keeps_parent_obligation() {
                 .message()
                 .contains("partial owner rename requires exact matching projection metadata")
     }));
+}
+
+#[test]
+fn aggregate_subobject_move_renames_into_an_exact_local_with_masked_parent_cleanup() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    for shape in [SubobjectMoveShape::Struct, SubobjectMoveShape::FixedArray] {
+        let raw =
+            aggregate_subobject_move_program(&sources, &linear, &linux, inner, outer, array, shape);
+        let verified = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect("aggregate subobject move into exact local");
+        let function =
+            verified.modules().next().expect("module").functions().next().expect("function");
+        let block = function.blocks().next().expect("block");
+        assert_eq!(
+            block.instructions().map(super::VerifiedInstruction::kind).collect::<Vec<_>>(),
+            [VerifiedInstructionKind::MoveFromPlace, VerifiedInstructionKind::InitializePlace]
+        );
+        let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+        assert_eq!(cleanup.iter().map(|action| action.root().index()).collect::<Vec<_>>(), [5, 0]);
+        assert_eq!(cleanup[0].moved_projections().count(), 0);
+        assert_eq!(
+            cleanup[1].moved_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+            [1, 2]
+        );
+    }
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_forged_cleanup_claims() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = aggregate_subobject_move_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+    let cases = [
+        (
+            vec![
+                raw::DropAction::DropPlace(raw::PlaceId(5)),
+                raw::DropAction::DropPlace(raw::PlaceId(1)),
+                raw::DropAction::DropPlace(raw::PlaceId(0)),
+            ],
+            "moved subobject listed separately",
+        ),
+        (vec![raw::DropAction::DropPlace(raw::PlaceId(0))], "new local omitted"),
+        (
+            vec![
+                raw::DropAction::DropPlace(raw::PlaceId(5)),
+                raw::DropAction::DropPlace(raw::PlaceId(5)),
+                raw::DropAction::DropPlace(raw::PlaceId(0)),
+            ],
+            "new local duplicated",
+        ),
+    ];
+    for (actions, reason) in cases {
+        let mut forged = raw.clone();
+        forged.modules[0].functions[0].cleanup_plans[0].actions = actions;
+        let diagnostics =
+            verify(forged, &sources, entry, linear.clone(), linux.clone()).expect_err(reason);
+        assert!(
+            diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3012"),
+            "{reason}: {diagnostics:?}"
+        );
+    }
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_forged_projection_type_and_base() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    for shape in [SubobjectMoveShape::Struct, SubobjectMoveShape::FixedArray] {
+        let raw =
+            aggregate_subobject_move_program(&sources, &linear, &linux, inner, outer, array, shape);
+
+        let mut wrong_type = raw.clone();
+        wrong_type.modules[0].functions[0].places[1].ty = raw::TypeId(2);
+        let diagnostics = verify(wrong_type, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("wrong aggregate projection type");
+        assert!(
+            diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3006"),
+            "{diagnostics:?}"
+        );
+
+        let mut wrong_base = raw;
+        wrong_base.modules[0].functions[0].places[1].kind =
+            raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 1 };
+        let diagnostics = verify(wrong_base, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("wrong aggregate projection base selector");
+        assert!(
+            diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3006"),
+            "{diagnostics:?}"
+        );
+    }
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_direct_return_and_projected_initialize_contexts() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = aggregate_subobject_move_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+
+    let mut direct_return = raw.clone();
+    let function = &mut direct_return.modules[0].functions[0];
+    function.result = inner;
+    function.blocks[0].instructions.truncate(1);
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(0))];
+    let diagnostics = verify(direct_return, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("aggregate projection move returned without direct local");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut projected_initialize = raw.clone();
+    let function = &mut projected_initialize.modules[0].functions[0];
+    let span = function.span;
+    function.places[5] =
+        raw::Place { id: raw::PlaceId(5), ty: outer, span, kind: raw::PlaceKind::Local(0) };
+    function.places[6] = raw::Place {
+        id: raw::PlaceId(6),
+        ty: inner,
+        span,
+        kind: raw::PlaceKind::StructField { base: raw::PlaceId(5), ordinal: 0 },
+    };
+    function.places.push(raw::Place {
+        id: raw::PlaceId(7),
+        ty: raw::TypeId(2),
+        span,
+        kind: raw::PlaceKind::StructField { base: raw::PlaceId(6), ordinal: 0 },
+    });
+    function.blocks[0].instructions[1].kind =
+        raw::InstructionKind::InitializePlace { place: raw::PlaceId(6), value: raw::ValueId(2) };
+    function.cleanup_plans[0].actions = vec![
+        raw::DropAction::DropPlace(raw::PlaceId(5)),
+        raw::DropAction::DropPlace(raw::PlaceId(0)),
+    ];
+    let diagnostics = verify(projected_initialize, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("aggregate projection move initialized another projection");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_direct_call_context() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut direct_call = aggregate_subobject_move_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+    let caller = &mut direct_call.modules[0].functions[0];
+    let span = caller.span;
+    caller.blocks[0].instructions[1] = raw::Instruction {
+        result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: raw::TypeId(1), span }),
+        span,
+        kind: raw::InstructionKind::DirectCall {
+            callee: raw::FunctionId { module: raw::ModuleId(0), declaration: 1 },
+            arguments: vec![
+                raw::CallArgument::Value(raw::ValueId(2)),
+                raw::CallArgument::Value(raw::ValueId(1)),
+            ],
+            cleanup: raw::CleanupPlanId(0),
+        },
+    };
+    caller.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(3), cleanup: raw::CleanupPlanId(1) };
+    caller.cleanup_plans = vec![
+        raw::CleanupPlan {
+            id: raw::CleanupPlanId(0),
+            span,
+            actions: vec![raw::DropAction::DropPlace(raw::PlaceId(0))],
+        },
+        raw::CleanupPlan {
+            id: raw::CleanupPlanId(1),
+            span,
+            actions: vec![raw::DropAction::DropPlace(raw::PlaceId(0))],
+        },
+    ];
+    direct_call.modules[0].functions.push(raw::Function {
+        id: raw::FunctionId { module: raw::ModuleId(0), declaration: 1 },
+        entry_export: None,
+        span,
+        parameters: vec![
+            raw::ValueDefinition { id: raw::ValueId(0), ty: inner, span },
+            raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+        ],
+        borrow_parameters: vec![],
+        result: raw::TypeId(1),
+        places: vec![
+            raw::Place { id: raw::PlaceId(0), ty: inner, span, kind: raw::PlaceKind::Parameter(0) },
+            raw::Place {
+                id: raw::PlaceId(1),
+                ty: raw::TypeId(2),
+                span,
+                kind: raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 0 },
+            },
+        ],
+        blocks: vec![raw::Block {
+            id: raw::BlockId(0),
+            parameters: vec![],
+            instructions: vec![],
+            terminators: vec![raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::Return {
+                    value: raw::ValueId(1),
+                    cleanup: raw::CleanupPlanId(0),
+                },
+            }],
+        }],
+        cleanup_plans: vec![raw::CleanupPlan {
+            id: raw::CleanupPlanId(0),
+            span,
+            actions: vec![raw::DropAction::DropPlace(raw::PlaceId(0))],
+        }],
+    });
+    let diagnostics = verify(direct_call, &sources, entry, linear, linux)
+        .expect_err("aggregate projection move consumed by direct call");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_cfg_context() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut raw = aggregate_subobject_move_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Jump(raw::Edge { target: raw::BlockId(1), arguments: vec![] });
+    function.blocks.push(raw::Block {
+        id: raw::BlockId(1),
+        parameters: vec![],
+        instructions: vec![],
+        terminators: vec![raw::SpannedTerminator {
+            span,
+            kind: raw::Terminator::Return {
+                value: raw::ValueId(1),
+                cleanup: raw::CleanupPlanId(0),
+            },
+        }],
+    });
+    let diagnostics =
+        verify(raw, &sources, entry, linear, linux).expect_err("aggregate move crossed CFG");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_second_disjoint_site() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut raw = aggregate_subobject_move_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::FixedArray,
+    );
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.places.extend([
+        raw::Place {
+            id: raw::PlaceId(7),
+            ty: inner,
+            span,
+            kind: raw::PlaceKind::FixedArrayConstant { base: raw::PlaceId(0), index: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(8),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(7), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(9),
+            ty: inner,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+        },
+        raw::Place {
+            id: raw::PlaceId(10),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(9), ordinal: 0 },
+        },
+        raw::Place { id: raw::PlaceId(11), ty: inner, span, kind: raw::PlaceKind::Local(1) },
+        raw::Place {
+            id: raw::PlaceId(12),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(11), ordinal: 0 },
+        },
+    ]);
+    function.blocks[0].instructions.extend([
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: inner, span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(7) },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(11),
+                value: raw::ValueId(3),
+            },
+        },
+    ]);
+    function.cleanup_plans[0].actions = vec![
+        raw::DropAction::DropPlace(raw::PlaceId(11)),
+        raw::DropAction::DropPlace(raw::PlaceId(5)),
+        raw::DropAction::DropPlace(raw::PlaceId(0)),
+    ];
+    let diagnostics =
+        verify(raw, &sources, entry, linear, linux).expect_err("second disjoint subobject move");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_duplicate_and_overlapping_moves() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let raw = aggregate_subobject_move_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+
+    let mut duplicate = raw.clone();
+    let function = &mut duplicate.modules[0].functions[0];
+    let span = function.span;
+    function.places.push(raw::Place {
+        id: raw::PlaceId(7),
+        ty: inner,
+        span,
+        kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+    });
+    function.blocks[0].instructions.insert(
+        1,
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: inner, span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+    );
+    let diagnostics = verify(duplicate, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("duplicate aggregate projection move");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut child_after_parent = raw.clone();
+    let function = &mut child_after_parent.modules[0].functions[0];
+    let span = function.span;
+    function.places.push(raw::Place {
+        id: raw::PlaceId(7),
+        ty: raw::TypeId(2),
+        span,
+        kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+    });
+    function.blocks[0].instructions.insert(
+        1,
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(2) },
+        },
+    );
+    let diagnostics = verify(child_after_parent, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("child move after aggregate parent move");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+
+    let mut parent_after_child = raw;
+    let function = &mut parent_after_child.modules[0].functions[0];
+    let span = function.span;
+    function.blocks[0].instructions[0].result =
+        Some(raw::ValueDefinition { id: raw::ValueId(3), ty: inner, span });
+    function.places[3].kind = raw::PlaceKind::Temporary(raw::ValueId(3));
+    if let raw::InstructionKind::InitializePlace { value, .. } =
+        &mut function.blocks[0].instructions[1].kind
+    {
+        *value = raw::ValueId(3);
+    }
+    function.places.push(raw::Place {
+        id: raw::PlaceId(7),
+        ty: raw::TypeId(2),
+        span,
+        kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+    });
+    function.blocks[0].instructions.insert(
+        0,
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(2) },
+        },
+    );
+    let diagnostics = verify(parent_after_child, &sources, entry, linear, linux)
+        .expect_err("aggregate parent move after child move");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
 }
 
 #[test]
