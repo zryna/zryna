@@ -237,8 +237,11 @@ state into an exact-topology temporary before survivor cleanup, with independent
 forged or unsupported topology. One distinct mutable initialized same-type whole-root assignment
 destination now accepts that partial Struct or FixedArray after complete source, temporary, and
 destination topology plus resource preflight; replacement drops the old destination once and
-installs the exact mask. Enum partial-root transfer, aggregate-subobject moves outside that at-most-one
-direct-local form, and enum-payload moves,
+installs the exact mask. One exact private single-variant enum `match` now moves its complete
+supported Struct/FixedArray payload into a direct local, drops the emptied enum root, and reaches a
+final local return through a zero-argument continuation with exact `D + 5` place amplification.
+Enum partial-root transfer, aggregate-subobject moves outside that at-most-one direct-local form or
+that one match-local payload extraction, and broader enum-payload moves,
 transfer in call/CFG contexts, projected assignment, or non-final/non-reference returns, dynamic projections,
 direct projected returns, public contexts, and general non-String projected clone and assignment remain open, alongside
 general owned joins,

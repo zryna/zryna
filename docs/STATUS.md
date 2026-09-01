@@ -165,6 +165,12 @@ One distinct mutable fully initialized same-type whole-root destination now acce
 Struct or FixedArray from an exact-reference source. Complete source, temporary, and destination
 topology plus value/place/transition capacity are preflighted before mutation; `ReplacePlace` drops
 the old destination once, installs the exact mask, and invalidates source and temporary.
+One canonical private one-parameter route additionally accepts a single-variant enum whose complete
+non-Copy Struct/FixedArray payload is bound by an exhaustive one-arm `match`. The arm moves the
+active payload into an exact direct local, drops the emptied enum root, and jumps without owner
+arguments to the final local return. Its checked model is three blocks, two edges, three values,
+four ownership transitions, one zero-action cleanup plan, and `D + 5` places for `D` payload
+descendants.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
@@ -175,7 +181,8 @@ separate checked Vec bounds trap; it authenticates status disposition/trap ident
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject moves outside that direct-local exception, enum-payload moves, dynamic or Vec-element projections, general non-String
+aggregate-subobject moves outside that direct-local exception or the single-variant match-local enum
+payload extraction, broader enum-payload moves, dynamic or Vec-element projections, general non-String
 projected clone and assignment, partial Enum transfer or partial-root transfer in
 call/CFG contexts, projected assignment or clone, direct projected returns, public contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain

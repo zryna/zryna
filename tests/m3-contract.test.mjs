@@ -341,8 +341,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /one-plan\/one-site cleanup roles/);
   assert.match(document, /cumulative String-literal preflight at 8 MiB/);
   assert.match(document, /sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the\s+exact verified ownership-runtime ABI authority/);
-  assert.match(document, /General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,\s+Vec, Shared, or Weak values, aggregate-subobject moves outside one exact direct local, enum-payload moves, dynamic or Vec-element\s+projections, general non-String projected clone and assignment, partial-root transfer for Enum or\s+outside one exact-type direct local declaration, final exact-reference return, or distinct\s+whole-root assignment, general owned phi joins/);
-  assert.match(document, /projected assignment or clone, calls, direct\s+returns, CFG transfer, public functions/);
+  assert.match(document, /aggregate-subobject moves outside one exact direct local or the exact\s+single-variant match-local enum extraction, broader enum-payload moves, dynamic or Vec-element\s+projections/);
+  assert.match(document, /projected assignment or clone, direct payload returns, owner-carrying CFG transfer,\s+public functions, and broader aggregate match/);
   assert.match(document, /Owned String\/Vec signatures remain bounded\s+to zero arguments or one exact owned\/bool argument/);
   assert.match(document, /## Issue #81 implementation ledger/);
   assert.match(document, /no-carried-owner loop\/backedge cleanup \| complete/);
@@ -353,6 +353,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /static owned projection reads, String-leaf moves, clone, and assignment \| complete/);
   assert.match(document, /direct-local static Struct\/FixedArray subobject move \| complete/);
   assert.match(document, /whole-subtree parent mask, distinct local owner/);
+  assert.match(document, /single-variant Enum payload move through a match-local \| complete/);
+  assert.match(document, /active ordinal proof, complete Struct\/FixedArray payload topology/);
   assert.match(document, /direct local transfer of a partial Struct\/FixedArray root \| complete/);
   assert.match(document, /source-to-temporary-to-local owner\/mask migration/);
   assert.match(document, /final return transfer of a partial Struct\/FixedArray root \| complete/);
@@ -362,10 +364,12 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /`3N - E_source - E_target \+ 1` places/);
   assert.match(document, /general structural Vec clone, nested aggregate clone, broader aggregate\/Enum subobject moves, and non-String projected clone\/assignment \| pending/);
   assert.match(document, /`D \+ 1`\s+places/);
+  assert.match(document, /three blocks, two edges, three values, `D \+ 5` places, four\s+ownership transitions, one cleanup plan, and zero cleanup actions/);
   assert.match(architecture, /Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`/);
   assert.match(architecture, /General structural Vec clone beyond\s+String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values/);
   assert.match(architecture, /complete static\s+topology for all three roots, then migrates the exact root-relative mask at both owner renames/);
   assert.match(architecture, /final exact-reference return uses the same sealed topology/);
+  assert.match(architecture, /single-\s+variant enum is exhaustively matched into an exact direct local/);
   assert.match(architecture, /distinct mutable fully initialized same-type whole-root assignment destination/);
   assert.match(architecture, /supported acyclic Struct or FixedArray subobject/);
   assert.match(architecture, /marks that projection and every descendant moved under the enclosing root/);

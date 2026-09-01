@@ -118,14 +118,19 @@ preflight. `ReplacePlace` drops the old destination exactly once and installs th
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
+One separate private exception accepts an exact one-parameter, one-variant Enum whose supported
+non-Copy Struct/FixedArray payload is returned from its sole exhaustive `match` arm into an
+immutable same-type local. Lowering moves the complete active payload, initializes that local,
+drops the emptied Enum root, and jumps without owner arguments to the final local return.
+
 This checkpoint does not enable general owned values: aggregate-subobject moves outside that at-most-one
-exact direct-local form, enum-payload moves, partial Enum
+exact direct-local form or the exact match-local exception above, broader enum-payload moves, partial Enum
 transfer or partial-root transfer outside the exact direct-local, final-return, or whole-root
 assignment forms, dynamic or Vec-element projections, or general non-String projected
 clone and assignment,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
-The subobject exception also excludes projected assignment or clone, direct return, and public
-owned contexts.
+The exceptions also exclude projected assignment or clone, direct payload return, owner-carrying
+CFG transfer, multi-variant extraction, and public owned contexts.
 Public owned results remain rejected by scalar ABI v1.
 `Shared`, `Weak`, shared or exclusive borrows, and their
 operations also remain unavailable. The boundary still rejects recursive by-value layouts,
