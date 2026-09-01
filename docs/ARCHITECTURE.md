@@ -384,7 +384,11 @@ place for each non-Copy value while allowing addressable Copy storage without a 
 and site-bound cleanup authority. Every cleanup plan belongs to one exact block instruction or
 terminator and one closed `PrepareFailure`, `VecCloneElementFailure`,
 `AggregateCloneElementFailure`, `CallTrap`, `Return`, or `ControlledTrap` role;
-`ReplacePlace` is the infallible commit after preparation and carries no cleanup plan.
+`ReplacePlace` is the infallible commit after preparation and carries no cleanup plan. The verified
+instruction nevertheless derives one exact pre-commit recursive drop action for the old root or
+static-projection destination. Projection replay transplants the prepared source subtree's state
+and active enum variants while retaining the enclosing owner's pending obligation and sibling
+masks. Semantic projected assignment remains a later checkpoint.
 The separate [`ownership-runtime ABI authority`](M3_OWNERSHIP_RUNTIME_ABI.md) now verifies the exact
 17-operation declaration vocabulary, target symbols and signatures, authenticated layout-derived
 records, checked header evidence, and pure transition evidence behind opaque immutable views. It is

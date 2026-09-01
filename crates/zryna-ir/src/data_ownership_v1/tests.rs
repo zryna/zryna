@@ -4979,7 +4979,13 @@ fn projection_replace_preserves_a_moved_sibling_in_derived_cleanup() {
         .nth(1)
         .expect("replacement");
     assert_eq!(replacement.kind(), VerifiedInstructionKind::ReplacePlace);
-    assert_eq!(replacement.derived_drop_actions().count(), 0);
+    let replaced_field =
+        replacement.derived_drop_actions().next().expect("old projected destination action");
+    assert_eq!(replaced_field.root().index(), 2);
+    assert_eq!(replaced_field.kind(), VerifiedDropActionKind::Place);
+    assert_eq!(replaced_field.initialized_projections().count(), 0);
+    assert_eq!(replaced_field.moved_projections().count(), 0);
+    assert_eq!(replaced_field.active_variant(), None);
     let action = verified
         .modules()
         .next()
@@ -5001,6 +5007,212 @@ fn projection_replace_preserves_a_moved_sibling_in_derived_cleanup() {
     assert_eq!(
         action.initialized_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
         [2]
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn projected_enum_replace_transplants_the_replacement_variant() {
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "main.zry".into(),
+        text: "export function id(value: i32): i32 { return value; }".into(),
+    }])
+    .expect("source map");
+    let file = sources.verify_file_id(0).expect("source file");
+    let span = sources.span(file, 0, 6).expect("span");
+    let graph = raw_layout::Graph {
+        modules: vec![raw_layout::Module {
+            id: raw_layout::ModuleId(0),
+            source_file: file,
+            data_declarations: 2,
+        }],
+        types: vec![
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(0),
+                span: None,
+                kind: raw_layout::TypeKind::Bool,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(1),
+                span: None,
+                kind: raw_layout::TypeKind::I32,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(2),
+                span: None,
+                kind: raw_layout::TypeKind::String,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(3),
+                span: Some(span),
+                kind: raw_layout::TypeKind::Enum {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 0,
+                    variants: vec![
+                        raw_layout::Variant { ordinal: 0, payload: None },
+                        raw_layout::Variant { ordinal: 1, payload: Some(raw_layout::NodeId(2)) },
+                    ],
+                },
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(4),
+                span: Some(span),
+                kind: raw_layout::TypeKind::Struct {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 1,
+                    fields: vec![raw_layout::Field { ordinal: 0, ty: raw_layout::NodeId(3) }],
+                },
+            },
+        ],
+        program_roots: vec![raw_layout::NodeId(4)],
+    };
+    let linear =
+        zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
+    let linux = zryna_layout::verify(&graph, &sources, StorageTarget::LinuxX8664V1)
+        .expect("native layouts");
+    let enum_ty = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 0)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("enum type");
+    let wrapper_ty = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 1)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("wrapper type");
+    let mut raw = program(&sources, &linear, &linux);
+    raw.modules[0].data_declarations = 2;
+    let function = &mut raw.modules[0].functions[0];
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: raw::TypeId(2), span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+    ];
+    function.result = raw::TypeId(1);
+    function.places = vec![
+        raw::Place { id: raw::PlaceId(0), ty: wrapper_ty, span, kind: raw::PlaceKind::Local(0) },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: enum_ty,
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(1), variant: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Parameter(0),
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
+            ty: enum_ty,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+        raw::Place {
+            id: raw::PlaceId(5),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(4), variant: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: enum_ty,
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+        },
+        raw::Place {
+            id: raw::PlaceId(7),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(6), variant: 1 },
+        },
+    ];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: enum_ty, span }),
+            span,
+            kind: raw::InstructionKind::EnumConstruct { variant: 0, payload: None, cleanup: None },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(1),
+                value: raw::ValueId(2),
+            },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: enum_ty, span }),
+            span,
+            kind: raw::InstructionKind::EnumConstruct {
+                variant: 1,
+                payload: Some(raw::ValueId(0)),
+                cleanup: None,
+            },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::ReplacePlace {
+                place: raw::PlaceId(1),
+                value: raw::ValueId(3),
+            },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(0))];
+
+    let entry = sources.verify_file_id(0).expect("entry");
+    let verified = verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("projected enum replacement");
+    let function = verified.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let replacement = block.instructions().nth(3).expect("replacement");
+    let old_value = replacement.derived_drop_actions().next().expect("old projected enum action");
+    assert_eq!(old_value.root().index(), 1);
+    assert_eq!(old_value.active_variant(), Some(0));
+    let final_owner = block.terminator().derived_drop_actions().next().expect("wrapper drop");
+    assert_eq!(
+        final_owner
+            .active_variants()
+            .map(|active| (active.place().index(), active.variant()))
+            .collect::<Vec<_>>(),
+        [(1, 1)]
+    );
+    assert_eq!(
+        final_owner.initialized_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+        [1, 2]
+    );
+
+    let mut partial_source = raw;
+    let function = &mut partial_source.modules[0].functions[0];
+    function.places.push(raw::Place {
+        id: raw::PlaceId(8),
+        ty: raw::TypeId(2),
+        span,
+        kind: raw::PlaceKind::Temporary(raw::ValueId(4)),
+    });
+    function.blocks[0].instructions.insert(
+        3,
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(4), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(7) },
+        },
+    );
+    assert!(
+        verify(partial_source, &sources, entry, linear, linux)
+            .expect_err("partial projected replacement source")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3010")
     );
 }
 

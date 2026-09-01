@@ -220,7 +220,10 @@ and uses prefix-safe failure cleanup. Mutable whole-root assignment for those gr
 distinct replacement before `ReplacePlace` commits the sealed recursive old-value drop. The private String and
 aggregate/enum routes retain their distinct M3011 and M3014 moved-owner diagnostics, and unresolved
 bindings use M3002. General structural Vec clone beyond String elements, nested aggregate clone
-graphs containing Enum, Vec, Shared, or Weak values, owned projections, projected assignment, and partial moves,
+graphs containing Enum, Vec, Shared, or Weak values remain open. The verified IR prerequisite for
+projected replacement now seals the exact old-subobject traversal and preserves replacement
+subtree masks, enum refinement, and siblings; owned semantic projections, projected assignment,
+and partial moves remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits remain closure
 work. Issue #81 is

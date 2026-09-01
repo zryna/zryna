@@ -129,9 +129,12 @@ The Issue #81 verifier foundations additionally admit bounded immutable UTF-8 by
 `StringFromUtf8`, derive exactly one non-Copy owner place per owned value, preserve Copy
 parameter/local/temporary storage without adding Copy cleanup obligations, and transfer pending
 drop order across calls, returns, and CFG edges. `ReplacePlace` is an infallible commit and carries
-no prepare-failure cleanup identity. The current semantic producer uses that instruction for
-private root-local String and supported Vec replacement; projection, call, and CFG replacement are
-not part of the current semantic checkpoint.
+no prepare-failure cleanup identity. Its verified view derives the old destination's exact
+recursive drop traversal from the pre-commit state for either a canonical root or a static
+projection, and ownership replay transfers the prepared source subtree's state and active enum
+variants without changing enclosing siblings. The current semantic producer uses that instruction
+for private root-local String, supported Vec, and supported whole-root aggregate replacement;
+projected, call, and CFG replacement are not part of the current semantic checkpoint.
 
 `VecClone` currently admits only exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>` sources, preserves
 the source owner, and requires one distinct temporary result owner. Every clone binds allocation

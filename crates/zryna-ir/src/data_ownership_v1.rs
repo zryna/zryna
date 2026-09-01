@@ -1156,9 +1156,17 @@ impl<'a> VerifiedInstruction<'a> {
         let actions = state
             .map(|(states, variants)| match self.instruction.kind {
                 raw::InstructionKind::DropPlace { place }
-                | raw::InstructionKind::ReplacePlace { place, .. }
                     if root_place(place, self.function.function) == place =>
                 {
+                    vec![sealed_drop_action(
+                        self.function.id(),
+                        self.function.function,
+                        place,
+                        &states,
+                        &variants,
+                    )]
+                }
+                raw::InstructionKind::ReplacePlace { place, .. } => {
                     vec![sealed_drop_action(
                         self.function.id(),
                         self.function.function,
@@ -3276,6 +3284,67 @@ fn rename_pending_owner(
     }
 }
 
+fn consume_owner_into_projection(
+    source: raw::PlaceId,
+    target: raw::PlaceId,
+    target_root: raw::PlaceId,
+    function: &raw::Function,
+    flow: &mut OwnershipFlow,
+    span: Span,
+    errors: &mut Errors,
+) {
+    if places_overlap(source, target_root, &function.places) {
+        ownership_error(span, "projection transfer source overlaps its destination owner", errors);
+        return;
+    }
+    let Some(slot) = pending_slot(flow, source) else {
+        ownership_error(span, "projection transfer source is unavailable", errors);
+        return;
+    };
+    let source_kind = flow.states[source.0 as usize].kind;
+    let source_variant = flow.variants[source.0 as usize];
+    let source_projections = function
+        .places
+        .iter()
+        .filter_map(|place| {
+            projection_path(place.id, source, &function.places).map(|path| {
+                (path, flow.states[place.id.0 as usize], flow.variants[place.id.0 as usize])
+            })
+        })
+        .collect::<Vec<_>>();
+
+    if pending_slot(flow, target_root).is_none() {
+        flow.pending[slot] = target_root;
+    } else {
+        flow.pending.remove(slot);
+    }
+    flow.states[source.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+    flow.variants[source.0 as usize] = None;
+    for place in &function.places {
+        if is_projection_below(place.id, source, &function.places) {
+            flow.states[place.id.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
+            flow.variants[place.id.0 as usize] = None;
+        }
+    }
+
+    flow.states[target.0 as usize] = PlaceState { kind: source_kind };
+    flow.variants[target.0 as usize] = source_variant;
+    for place in &function.places {
+        let Some(path) = projection_path(place.id, target, &function.places) else { continue };
+        if let Some((_, state, variant)) =
+            source_projections.iter().find(|(source_path, _, _)| *source_path == path)
+        {
+            flow.states[place.id.0 as usize] = *state;
+            flow.variants[place.id.0 as usize] = *variant;
+        } else if source_kind == PlaceStateKind::Initialized {
+            flow.states[place.id.0 as usize] = PlaceState { kind: PlaceStateKind::Initialized };
+            flow.variants[place.id.0 as usize] = None;
+        } else {
+            ownership_error(span, "projection transfer lacks matching projection metadata", errors);
+        }
+    }
+}
+
 fn projection_path(
     mut place: raw::PlaceId,
     root: raw::PlaceId,
@@ -3367,27 +3436,16 @@ fn apply_value_transfers(
                 }
                 if target == *place {
                     rename_pending_owner(source, target, function, flow, instruction.span, errors);
-                } else if pending_slot(flow, target).is_none() {
-                    let Some(slot) = pending_slot(flow, source) else {
-                        ownership_error(
-                            instruction.span,
-                            "initialization source is unavailable",
-                            errors,
-                        );
-                        return;
-                    };
-                    flow.pending[slot] = target;
-                    flow.states[source.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
-                    flow.variants[source.0 as usize] = None;
-                    for source_projection in &function.places {
-                        if is_projection_below(source_projection.id, source, &function.places) {
-                            flow.states[source_projection.id.0 as usize] =
-                                PlaceState { kind: PlaceStateKind::Moved };
-                            flow.variants[source_projection.id.0 as usize] = None;
-                        }
-                    }
                 } else {
-                    remove_pending_owner(source, function, flow, instruction.span, errors);
+                    consume_owner_into_projection(
+                        source,
+                        *place,
+                        target,
+                        function,
+                        flow,
+                        instruction.span,
+                        errors,
+                    );
                 }
             } else if target != *place
                 && !place_is_copy(target, function, layouts)
@@ -3418,7 +3476,15 @@ fn apply_value_transfers(
                     );
                     return;
                 }
-                remove_pending_owner(source, function, flow, instruction.span, errors);
+                consume_owner_into_projection(
+                    source,
+                    *place,
+                    target,
+                    function,
+                    flow,
+                    instruction.span,
+                    errors,
+                );
                 return;
             }
             let Some(target_slot) = pending_slot(flow, target) else {

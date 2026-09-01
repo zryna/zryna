@@ -303,6 +303,12 @@ The current semantic checkpoint emits `ReplacePlace` for private root-local Stri
 Vec roots, and supported String-bearing Struct, FixedArray, and root Enum values. Projected
 destinations, owned calls, and CFG replacement remain outside that checkpoint.
 
+The verified IR prerequisite for projected replacement is already sealed: a static projection
+commit exposes the old subobject's exact pre-state recursive drop action and transplants only the
+prepared source subtree's state and active enum variants. The enclosing owner remains pending and
+sibling masks are unchanged. The semantic producer remains root-only until canonical projection
+resolution, overlap rejection, and projection-aware owner-state tracking are added.
+
 The retained runtime ABI authority also closes contextual transition evidence: atomic failure is
 validated against one exact `LogicalOperation`, and Vec allocation/reserve validation consumes a
 sealed verified element layout whose positive stride is used for checked `capacity * stride` byte

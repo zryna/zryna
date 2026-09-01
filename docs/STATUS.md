@@ -143,6 +143,9 @@ source, creates a distinct owner, derives its fallible String-leaf count and roo
 from sealed authorities, and reverse-drops only the initialized result prefix on element failure.
 Whole-root assignment for the same graphs is prepare-before-commit, rejects direct
 self-consumption, and preserves sealed recursive cleanup for the old destination.
+The verified IR now also seals projected replacement's old-subobject traversal and transfers the
+prepared subtree's masks and enum refinement without disturbing siblings; semantic projected
+assignment remains unfinished.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative

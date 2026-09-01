@@ -321,6 +321,7 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /fallible-leaf count and root-enum active variant from sealed authorities/);
   assert.match(document, /mutable whole-root assignment for the same supported Struct, FixedArray, and root Enum graphs/);
   assert.match(document, /direct\s+self-consumption is rejected, and `ReplacePlace` commits the prepared owner/);
+  assert.match(document, /static projection\s+commit exposes the old subobject's exact pre-state recursive drop action/);
   assert.match(document, /private String use-after-move rejected as `ZRYNA-M3011`, aggregate\/enum moved-owner violations as\s+`ZRYNA-M3014`/);
   assert.match(document, /unresolved binding names as `ZRYNA-M3002`/);
   assert.match(document, /`InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace`/);

@@ -174,8 +174,12 @@ closed.
 Every reachable join requires exact state equality for every live place. Loop backedges restore
 the exact header state. Passing or returning a non-`Copy` value transfers its one pending drop
 obligation. Replacement evaluation and allocation happen before `ReplacePlace`; the instruction
-itself commits by dropping the old destination and installing the already prepared value. A trap
-during preparation occurs at that producer's cleanup site and leaves the old destination live.
+itself commits by dropping the old destination and installing the already prepared value. Like an
+explicit `DropPlace`, its verified view derives a planless recursive old-value action from the
+pre-commit state. That action's traversal root may be a canonical owner or an exact static
+projection. Projected replacement replay transfers only the prepared source subtree's state and
+active enum variants, preserving the enclosing owner and every sibling mask. A trap during
+preparation occurs at that producer's cleanup site and leaves the old destination live.
 
 Raw cleanup plans are claims, not authority. Each plan must be referenced by exactly one program
 point. Verification binds that point to one closed `VerifiedCleanupRole`: `PrepareFailure`,
@@ -193,14 +197,19 @@ after its contents. Copy, uninitialized, moved, and already dropped places have 
 Missing, duplicate, extra, reordered, unreachable, or wrong-exit cleanup fails verification.
 
 Every verified instruction or terminator that names cleanup exposes `derived_drop_actions()` for
-that exact program point. An explicit `DropPlace` also exposes its derived recursive state from the
-instruction's pre-drop point even though it does not name a cleanup plan. Each returned
+that exact program point. An explicit `DropPlace` and an infallible `ReplacePlace` commit also
+expose their derived recursive old-value state from the instruction's pre-commit point even though
+neither names a cleanup plan. Each returned
 `VerifiedDropAction` seals:
 
-- `root`, the owned root place released by the action;
+- `root`, the exact recursive traversal root released by the action, which may be a canonical
+  owner or a static owned subobject;
 - `moved_projections()`, the descendants already moved or dropped and therefore excluded;
 - `initialized_projections()`, the descendants whose initialization completed and remain live; and
-- `active_variant()`, the exact active enum variant when the root is an enum.
+- `active_variant()`, the statically refined active enum variant when one is required or known.
+
+A fully initialized enum without static refinement remains self-describing through its stored
+runtime tag. Partial enum cleanup is admitted only when the verifier seals an exact active variant.
 
 These values are derived inside the verifier from the retained verified CFG and ownership state;
 they are not copied from the raw cleanup list. A backend combines this sealed state with the
