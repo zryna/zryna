@@ -103,7 +103,12 @@ operands are evaluated in sealed declaration or index order, whole-value moves t
 and return cleanup drops surviving roots in reverse successful-completion order. Canonical static
 struct-field and constant fixed-array projections additionally admit Copy reads, exact String-leaf
 moves, and at most one exact supported Struct/FixedArray subobject move into a directly initialized
-same-type local, plus prepare-before-commit assignment to one mutable available String leaf. The
+same-type local, at most one explicit clone of an initialized available non-Copy
+Struct/FixedArray projection into the immediately following exact same-type local, plus
+prepare-before-commit assignment to one mutable available String leaf. Projected aggregate clone
+retains the enclosing root and its partial-state mask, uses the same layout-derived recursive
+String-leaf failure cleanup as whole-root aggregate clone, and creates a distinct temporary owner.
+The
 subobject route materializes its complete static descendant topology before the move; the enclosing
 root keeps one masked cleanup obligation while the new local owns the moved subtree.
 One additional canonical private route extracts the complete non-Copy Struct or FixedArray payload
@@ -135,16 +140,16 @@ accepted from the fault injector.
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside one exact direct local or the one single-variant match-local enum
-payload extraction, dynamic or Vec-element projections, general non-String
-projected clone and assignment, whole-partial-owner transfer outside the exact-type direct-local,
+payload extraction, dynamic or Vec-element projections, projected aggregate clone outside its one
+exact direct-local form, general non-String projected assignment, whole-partial-owner transfer outside the exact-type direct-local,
 final-return, or whole-root assignment Struct/FixedArray exceptions, general owned phi joins,
 owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
 its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, one
-direct-local supported Struct/FixedArray subobject move, String-leaf clone, and String-leaf
-assignment. A partially moved Struct or FixedArray root may move
+direct-local supported Struct/FixedArray subobject move, String-leaf clone, one direct-local
+supported Struct/FixedArray clone, and String-leaf assignment. A partially moved Struct or FixedArray root may move
 through one exact direct-reference initializer into a same-type local, through one final exact
 direct-reference return, or into one distinct mutable fully initialized same-type whole-root
 assignment destination. Assignment prepares the source without touching the destination, then an
@@ -152,10 +157,9 @@ infallible `ReplacePlace` drops the old destination and installs the exact parti
 preserves the complete recursive static topology, migrates the moved mask through every
 temporary/local owner, excludes a returned owner from survivor cleanup, and invalidates old
 owners. Enum-payload moves outside that exact one-arm direct-local form, dynamic or Vec-element
-moves, and aggregate-subobject use in projected
-assignment or clone, calls, direct returns, CFG transfer, or public functions remain outside the
-narrow subobject route. Projected clone retains the enclosing root and
-its partial-state masks while creating one distinct temporary String owner.
+moves, projected aggregate assignment, calls, direct projected-clone returns, CFG transfer, or
+public functions remain outside the narrow subobject route. Admitted projected clones retain the
+enclosing root and its partial-state masks while creating one distinct temporary owner.
 Dynamic bounds execution, borrows, shared or weak references,
 and public owned parameters or results also remain unavailable. The Pair scalar oracle
 is observed only by a test evaluator over opaque verified views. Enum matching is limited to an

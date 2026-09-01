@@ -229,7 +229,10 @@ The subobject path materializes all source descendants, masks that whole subtree
 cleanup obligation, and preserves disjoint siblings. It also prepares and commits
 replacement of mutable available String leaves without disturbing sibling masks, and explicitly
 clones initialized available String leaves into distinct temporary owners while retaining the
-source root and its partial-state masks. An exact-type direct local declaration can now transfer a
+source root and its partial-state masks. One initialized available non-Copy Struct or FixedArray
+projection may now likewise be cloned into the immediately following exact same-type local, with
+one source-retaining private straight-line site and layout-derived aggregate-prefix failure cleanup.
+An exact-type direct local declaration can now transfer a
 partially moved supported Struct or FixedArray root through its move-result temporary into one new
 local; the producer materializes the complete static topology and migrates the exact root-relative
 mask at both owner renames. One final exact-reference return also transfers that complete partial
@@ -243,7 +246,8 @@ final local return through a zero-argument continuation with exact `D + 5` place
 Enum partial-root transfer, aggregate-subobject moves outside that at-most-one direct-local form or
 that one match-local payload extraction, and broader enum-payload moves,
 transfer in call/CFG contexts, projected assignment, or non-final/non-reference returns, dynamic projections,
-direct projected returns, public contexts, and general non-String projected clone and assignment remain open, alongside
+direct projected-clone returns, public contexts, projected aggregate clone outside that exact
+direct-local form, and general non-String projected assignment remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is

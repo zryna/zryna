@@ -150,6 +150,12 @@ String-leaf failure to a separately site-bound `AggregateCloneElementFailure` pl
 with the typed `AggregateInitializedPrefix` action and then lists every pre-existing live root in
 reverse order. The verifier derives the fallible-leaf count from retained Linear32 layout and the
 root Enum's active variant from source ownership state; neither fact is accepted from a caller.
+One non-root `ClonePlace` exception is independently sealed to at most one initialized non-Copy
+Struct or FixedArray source reached only by `StructField`/`FixedArrayConstant`, in one private
+straight-line function, immediately followed by exact same-type `InitializePlace` into a root
+local. The result has one unique temporary owner and one use. Root clones remain unchanged;
+Enum-payload, public, CFG, direct-return, alternate-use, and second projected-clone contexts fail
+closed.
 Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain outside this checkpoint.
 
 Every raw cleanup plan is bound to exactly one verified site and one closed role:

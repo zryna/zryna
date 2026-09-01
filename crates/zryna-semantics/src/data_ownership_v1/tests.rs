@@ -17,10 +17,10 @@ use super::{
     partial_transfer_place_delta, preflight_aggregate_operand_total, preflight_owned_loop_body,
     preflight_owned_loop_exit, preflight_owned_place_capacity,
     preflight_owned_place_capacity_with_reserved, preflight_owned_string_preparation,
-    projected_string_clone_budget_violation, projected_subobject_move_budget_violation,
-    raw_function_value_count, raw_terminator_edge_count, resource_budget_violation,
-    semantic_preflight, span, string_byte_budget_violation, terminal_owned_if,
-    value_budget_violation, vec_push_target_invalid,
+    projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
+    projected_subobject_move_budget_violation, raw_function_value_count, raw_terminator_edge_count,
+    resource_budget_violation, semantic_preflight, span, string_byte_budget_violation,
+    terminal_owned_if, value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -253,6 +253,136 @@ fn clone_final_return_snapshot(source: &str, response: &str) -> (String, RawProj
         },
     });
     (updated_source, raw)
+}
+
+fn exclude_inserted_close(value: &mut serde_json::Value, close: u32) {
+    match value {
+        serde_json::Value::Object(object)
+            if object.contains_key("file")
+                && object.contains_key("start")
+                && object.contains_key("end") =>
+        {
+            let from = object["start"].as_u64().expect("span start");
+            let to = object["end"].as_u64().expect("span end");
+            if from < u64::from(close) && to == u64::from(close + 1) {
+                object.insert("end".to_owned(), serde_json::Value::from(close));
+            }
+        }
+        serde_json::Value::Object(object) => {
+            for child in object.values_mut() {
+                exclude_inserted_close(child, close);
+            }
+        }
+        serde_json::Value::Array(values) => {
+            for child in values {
+                exclude_inserted_close(child, close);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn projected_aggregate_clone_local_snapshot(
+    source: &str,
+    response: &str,
+) -> (String, RawProjectSyntaxSnapshot) {
+    let raw = response_snapshot(response);
+    let body = &raw.files[0].functions[0].body;
+    let RawStatementKind::LocalDeclaration { initializer: operand_id, .. } =
+        body.statements[1].kind
+    else {
+        panic!("projected aggregate local")
+    };
+    let operand = body.expressions[operand_id as usize].clone();
+    let start = operand.span.start;
+    let end = operand.span.end;
+    let mut updated_source = source.to_owned();
+    let spelling = updated_source
+        .get(
+            usize::try_from(start).expect("operand start")
+                ..usize::try_from(end).expect("operand end"),
+        )
+        .expect("projected operand")
+        .to_owned();
+    updated_source.replace_range(
+        usize::try_from(start).expect("operand start")..usize::try_from(end).expect("operand end"),
+        &format!("clone({spelling})"),
+    );
+    let raw = shift_snapshot(raw, start, 6);
+    let mut raw = shift_snapshot(raw, end + 6, 1);
+    let mut value = serde_json::to_value(raw).expect("snapshot value");
+    exclude_inserted_close(&mut value, end + 6);
+    raw = serde_json::from_value(value).expect("clone operand snapshot");
+    let body = &mut raw.files[0].functions[0].body;
+    let clone = u32::try_from(body.expressions.len()).expect("clone expression id");
+    let RawStatementKind::LocalDeclaration { initializer, .. } = &mut body.statements[1].kind
+    else {
+        panic!("projected aggregate local")
+    };
+    *initializer = clone;
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: end + 7 },
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: zryna_source::UntrustedSpan { file: 0, start, end: start + 5 },
+            open_paren_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: start + 5,
+                end: start + 6,
+            },
+            value: operand_id,
+            close_paren_span: zryna_source::UntrustedSpan { file: 0, start: end + 6, end: end + 7 },
+        },
+    });
+    (updated_source, raw)
+}
+
+fn projected_aggregate_clone_direct_return_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let mut raw = response_snapshot(PROJECTED_INNER_DIRECT_RETURN_RESPONSE);
+    let RawStatementKind::Return { value: operand_id, .. } =
+        raw.files[0].functions[0].body.statements[1].kind
+    else {
+        panic!("projected aggregate return")
+    };
+    let operand = raw.files[0].functions[0].body.expressions[operand_id as usize].clone();
+    let start = operand.span.start;
+    let end = operand.span.end;
+    let mut source = PROJECTED_INNER_DIRECT_RETURN_SOURCE.to_owned();
+    let spelling = source
+        .get(
+            usize::try_from(start).expect("return start")
+                ..usize::try_from(end).expect("return end"),
+        )
+        .expect("projected return operand")
+        .to_owned();
+    source.replace_range(
+        usize::try_from(start).expect("return start")..usize::try_from(end).expect("return end"),
+        &format!("clone({spelling})"),
+    );
+    raw = shift_snapshot(raw, start, 6);
+    raw = shift_snapshot(raw, end + 6, 1);
+    let mut value = serde_json::to_value(raw).expect("snapshot value");
+    exclude_inserted_close(&mut value, end + 6);
+    raw = serde_json::from_value(value).expect("direct clone snapshot");
+    let body = &mut raw.files[0].functions[0].body;
+    let clone = u32::try_from(body.expressions.len()).expect("clone expression id");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: end + 7 },
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: zryna_source::UntrustedSpan { file: 0, start, end: start + 5 },
+            open_paren_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: start + 5,
+                end: start + 6,
+            },
+            value: operand_id,
+            close_paren_span: zryna_source::UntrustedSpan { file: 0, start: end + 6, end: end + 7 },
+        },
+    });
+    let RawStatementKind::Return { value, .. } = &mut body.statements[1].kind else {
+        panic!("projected aggregate return")
+    };
+    *value = clone;
+    (source, raw)
 }
 
 #[derive(Clone, Copy)]
@@ -8121,6 +8251,129 @@ fn static_fixed_array_subobject_move_preserves_the_disjoint_element() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
+fn static_projected_aggregate_clone_initializes_one_exact_local_and_retains_source() {
+    for (source, response, label) in [
+        (PROJECTED_INNER_MOVE_SOURCE, PROJECTED_INNER_MOVE_RESPONSE, "StructField"),
+        (
+            PROJECTED_ARRAY_ELEMENT_MOVE_SOURCE,
+            PROJECTED_ARRAY_ELEMENT_MOVE_RESPONSE,
+            "FixedArrayConstant",
+        ),
+    ] {
+        let (source, raw) = projected_aggregate_clone_local_snapshot(source, response);
+        let sources = sources_for(&source);
+        let syntax = verify_snapshot(raw, &sources).expect("source-faithful projected clone");
+        let program = lower(pair_input(&syntax, &sources)).expect(label);
+        let abi = program.runtime_abi();
+        let function =
+            program.modules().next().expect("module").functions().next().expect("function");
+        let roots = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let source_root = roots[&0];
+        let cloned_local = roots[&1];
+        let block = function.blocks().next().expect("block");
+        let instructions = block.instructions().collect::<Vec<_>>();
+        let clone_index = instructions
+            .iter()
+            .position(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+            .expect("projected aggregate clone");
+        let clone = instructions[clone_index];
+        let projected = clone.place_operands().next().expect("projected source");
+        let source_kind = function
+            .places()
+            .find(|place| place.id() == projected)
+            .expect("projected place")
+            .kind();
+        assert!(
+            matches!(
+                (label, source_kind),
+                ("StructField", VerifiedPlaceKind::StructField { base, ordinal: 0 })
+                    if base == source_root
+            ) || matches!(
+                (label, source_kind),
+                (
+                    "FixedArrayConstant",
+                    VerifiedPlaceKind::FixedArrayConstant { base, index: 0 }
+                ) if base == source_root
+            )
+        );
+        let result = clone.result().expect("clone result");
+        let temporary = function
+            .places()
+            .find(|place| {
+                matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == result)
+            })
+            .expect("clone temporary")
+            .id();
+        let initialize = instructions.get(clone_index + 1).expect("immediate local initialization");
+        assert_eq!(initialize.kind(), VerifiedInstructionKind::InitializePlace);
+        assert_eq!(initialize.place_operands().next(), Some(cloned_local));
+        assert_eq!(initialize.value_operands().next(), Some(result));
+        assert_eq!(clone.aggregate_clone_fallible_leaf_count(), Some(1));
+        assert_eq!(
+            clone.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+            [source_root],
+        );
+        let element_failure =
+            clone.aggregate_clone_element_failure_drop_actions().collect::<Vec<_>>();
+        assert_eq!(element_failure[0].kind(), VerifiedDropActionKind::AggregateInitializedPrefix);
+        assert_eq!(element_failure[0].root(), temporary);
+        assert_eq!(element_failure[1].kind(), VerifiedDropActionKind::Place);
+        assert_eq!(element_failure[1].root(), source_root);
+        let first = owned_fault_trace(
+            abi,
+            function,
+            clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 0,
+            },
+            0,
+            1,
+        )
+        .expect("projected aggregate clone fault");
+        let replay = owned_fault_trace(
+            abi,
+            function,
+            clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 0,
+            },
+            0,
+            1,
+        )
+        .expect("deterministic projected aggregate clone fault");
+        assert_eq!(first, replay);
+        assert!(!first.result_committed);
+        assert_eq!(first.prefix_owner, Some(temporary));
+        assert_eq!(first.retained_roots, [source_root]);
+        assert_eq!(first.reverse_cleanup, [source_root]);
+    }
+}
+
+#[test]
+fn projected_aggregate_clone_stays_excluded_from_direct_return() {
+    let (source, raw) = projected_aggregate_clone_direct_return_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful direct projected clone");
+    let diagnostics =
+        lower(pair_input(&syntax, &sources)).expect_err("direct projected clone return");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3013");
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(&sources, nth_untrusted_span(&source, "o.inner", 0),)),
+    );
+}
+
+#[test]
 fn static_subobject_move_rejects_the_wrong_exact_contextual_type() {
     let mut source = PROJECTED_INNER_MOVE_SOURCE.to_owned();
     let type_start =
@@ -9139,6 +9392,47 @@ fn structural_clone_resource_preflight_accepts_exact_limits_and_rejects_excess_o
     ));
     assert!(aggregate_clone_budget_violation(0, 0, 0, 0, usize::MAX, 0));
     assert!(aggregate_clone_budget_violation(0, 0, 0, 0, 0, usize::MAX));
+}
+
+#[test]
+fn projected_aggregate_clone_resource_preflight_is_exact_plus_one_and_overflow_checked() {
+    use zryna_ir::data_ownership_v1::{
+        MAX_CLEANUP_PLANS_PER_FUNCTION, MAX_DROP_ACTIONS_PER_FUNCTION,
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, MAX_PLACES_PER_FUNCTION, MAX_VALUES_PER_FUNCTION,
+    };
+
+    assert!(!projected_aggregate_clone_budget_violation(
+        MAX_VALUES_PER_FUNCTION - 1,
+        MAX_PLACES_PER_FUNCTION - 5,
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 3,
+        1,
+        MAX_CLEANUP_PLANS_PER_FUNCTION - 2,
+        MAX_DROP_ACTIONS_PER_FUNCTION - 5,
+        2,
+        3,
+    ));
+    for (values, places, transitions, reserved, plans, actions, pending, missing) in [
+        (MAX_VALUES_PER_FUNCTION, 0, 0, 0, 0, 0, 0, 0),
+        (0, MAX_PLACES_PER_FUNCTION - 4, 0, 0, 0, 0, 0, 3),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1, 0, 0, 0, 0, 0),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 2, 1, 0, 0, 0, 0),
+        (0, 0, 0, 0, MAX_CLEANUP_PLANS_PER_FUNCTION - 1, 0, 0, 0),
+        (0, 0, 0, 0, 0, MAX_DROP_ACTIONS_PER_FUNCTION - 4, 2, 0),
+        (0, usize::MAX, 0, 0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0, 0, 0, usize::MAX),
+        (0, 0, 0, 0, 0, 0, usize::MAX, 0),
+    ] {
+        assert!(projected_aggregate_clone_budget_violation(
+            values,
+            places,
+            transitions,
+            reserved,
+            plans,
+            actions,
+            pending,
+            missing,
+        ));
+    }
 }
 
 #[test]
