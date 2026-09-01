@@ -3253,6 +3253,23 @@ fn rename_pending_owner(
             })
         })
         .collect::<Vec<_>>();
+    if source_kind != PlaceStateKind::Initialized {
+        let source_paths =
+            source_projections.iter().map(|(path, _, _)| path.clone()).collect::<BTreeSet<_>>();
+        let target_paths = function
+            .places
+            .iter()
+            .filter_map(|place| projection_path(place.id, target, &function.places))
+            .collect::<BTreeSet<_>>();
+        if source_paths != target_paths {
+            ownership_error(
+                span,
+                "partial owner rename requires exact matching projection metadata",
+                errors,
+            );
+            return;
+        }
+    }
     flow.pending[slot] = target;
     flow.states[source.0 as usize] = PlaceState { kind: PlaceStateKind::Moved };
     flow.variants[source.0 as usize] = None;
@@ -3426,17 +3443,17 @@ fn apply_value_transfers(
         I::InitializePlace { place, value } => {
             let target = root_place(*place, function);
             if let Some(source) = value_owners.get(value.0 as usize).copied().flatten() {
-                if flow.states[source.0 as usize].kind != PlaceStateKind::Initialized {
-                    ownership_error(
-                        instruction.span,
-                        "partial owner cannot initialize a projection without exact mask transfer",
-                        errors,
-                    );
-                    return;
-                }
                 if target == *place {
                     rename_pending_owner(source, target, function, flow, instruction.span, errors);
                 } else {
+                    if flow.states[source.0 as usize].kind != PlaceStateKind::Initialized {
+                        ownership_error(
+                            instruction.span,
+                            "partial owner cannot initialize a projection without exact mask transfer",
+                            errors,
+                        );
+                        return;
+                    }
                     consume_owner_into_projection(
                         source,
                         *place,

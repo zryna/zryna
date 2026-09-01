@@ -173,7 +173,14 @@ closed.
 
 Every reachable join requires exact state equality for every live place. Loop backedges restore
 the exact header state. Passing or returning a non-`Copy` value transfers its one pending drop
-obligation. Replacement evaluation and allocation happen before `ReplacePlace`; the instruction
+obligation. Renaming a partially initialized or partially moved aggregate owner requires exact,
+bidirectional equality of the source and destination relative projection paths. Verification
+rejects a missing or extra path before changing ownership state, so no partial mask or active
+variant metadata can be silently discarded. This rule admits a whole-root `InitializePlace`
+rename from a partial temporary into an exact-topology local; initializing a projection from a
+partial owner remains rejected because that route has no subtree-mask transfer contract.
+Replacement evaluation and allocation happen before
+`ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an
 explicit `DropPlace`, its verified view derives a planless recursive old-value action from the
 pre-commit state. That action's traversal root may be a canonical owner or an exact static
