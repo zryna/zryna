@@ -51,6 +51,9 @@ document. Its private owned String/Vec route currently proves:
   and exact String leaves moved once while the enclosing root keeps its masked cleanup obligation;
 - explicit clone of initialized available String leaves under those canonical paths, retaining the
   enclosing root and its existing partial-state masks while creating one distinct temporary owner;
+- exact-type direct local transfer of one partially moved supported Struct or FixedArray root,
+  materializing its complete static projection topology and migrating its exact mask from source
+  through the move-result temporary to the new local;
 - `InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace` lowering, with
   private String use-after-move rejected as `ZRYNA-M3011`, aggregate/enum moved-owner violations as
   `ZRYNA-M3014`, unresolved binding names as `ZRYNA-M3002`, and excluded private String shapes as
@@ -67,7 +70,8 @@ document. Its private owned String/Vec route currently proves:
 
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
 Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element
-projections, general non-String projected clone and assignment, whole-partial-owner transfer, general owned phi joins,
+projections, general non-String projected clone and assignment, partial-root transfer for Enum or
+outside one exact-type direct local declaration, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -97,7 +101,8 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | supported String-bearing aggregate clone | complete | distinct result owner, retained source, sealed layout/variant-derived fallible leaves, authenticated prefix-safe recursive failure cleanup, and atomic resource rollback |
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
 | static owned projection reads, String-leaf moves, clone, and assignment | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, source-retaining clone, prepare-before-commit replacement, root-relative cleanup masks, and precise repeat/overlap rejection |
-| general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and non-String projected clone/assignment | pending | recursive Vec/Enum/Shared/Weak clone, whole-partial-owner transfer, dynamic projection, and broader clone/replacement capability |
+| direct local transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-temporary-to-local owner/mask migration, deterministic rejection of old-owner reuse, and checked amplification |
+| general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and non-String projected clone/assignment | pending | recursive Vec/Enum/Shared/Weak clone, partial Enum or non-local transfer, dynamic projection, and broader clone/replacement capability |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
@@ -321,7 +326,15 @@ sibling masks are unchanged. The semantic producer supplies canonical static pro
 overlap rejection, and projection-aware owner-state tracking for Copy reads, String-leaf moves, and
 prepare-before-commit String-leaf replacement. Replacement preparation retains the enclosing root;
 commit drops only the exact old leaf and leaves sibling masks unchanged. It does not yet replace
-non-String projections or transfer a whole partially moved aggregate.
+non-String projections.
+
+One exact-type direct local declaration may transfer a partially moved supported Struct or
+FixedArray root. Before mutation, the producer derives the complete recursive static topology from
+sealed layouts and preflights its checked place, value, transition, and local-identity cost. Commit
+moves the root into one temporary, materializes the same topology under source, temporary, and new
+local, and migrates the root-relative moved mask at each owner rename. The old source and temporary
+have no remaining cleanup authority. This admission does not cover Enum roots, projection
+initializers, return, clone, call, assignment, or CFG transfer contexts.
 
 Explicit clone is admitted for an initialized available String leaf under the same canonical
 StructField or FixedArrayConstant paths. It emits the existing verified `StringClone` operation,
@@ -392,9 +405,10 @@ Moving a whole aggregate transfers its complete partial state and pending obliga
 allowed static projection removes only that subobject from later recursive cleanup while retaining
 the parent root's remaining obligation. Overlapping, dynamic, or vector-element partial moves are
 not admitted in this slice. The current semantic producer implements the latter rule only for
-String leaves under canonical static Struct/FixedArray paths; whole partial-owner transfer and
-aggregate/enum subobject moves remain closure work even though verified IR can represent their
-cleanup masks.
+String leaves under canonical static Struct/FixedArray paths. It additionally implements the
+bounded direct-local whole transfer described above for partial Struct/FixedArray roots;
+aggregate/enum subobject moves and all broader partial-owner transfer contexts remain closure work
+even though verified IR can represent their cleanup masks.
 
 Cloning a disjoint available String leaf does not alter that state: existing moved projections stay
 moved, initialized siblings stay initialized, and the clone's prepare-failure cleanup remains
@@ -489,6 +503,11 @@ accounting is the checked sum across all sites, not merely the length of distinc
 bodies. Edge-transfer work is included in the existing checked edge, block-parameter, value, place,
 and ownership-transition totals. Exact-limit and first-extra cases are required for every newly
 enforced counter.
+
+For a direct partial-root local transfer with `N` complete non-root static topology places and `E`
+already materialized source places, semantic amplification is exactly one value, two ownership
+transitions, and `3N - E + 2` places. It adds no cleanup plan, cleanup action, or aggregate operand.
+All arithmetic and capacity checks occur before topology or ownership mutation.
 
 Runtime String and Vec lengths, capacities, element byte sizes, and allocation sizes remain bound
 by the sealed ownership-runtime ABI rules and checked target layouts. Semantics proves representable

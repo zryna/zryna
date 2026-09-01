@@ -424,13 +424,18 @@ infallible `ReplacePlace` commit after right-hand-side preparation.
 Canonical static `StructField` and `FixedArrayConstant` places also carry Copy reads and exact
 String-leaf moves from source syntax through verified IR. Projection identity is root-relative and
 stable, moved leaves refine the enclosing root's cleanup mask, and disjoint siblings remain
-available; repeated, overlapping, or later whole-root consumption is rejected.
+available; repeated and overlapping consumption is rejected. For one exact-type direct local
+declaration, a partially moved supported Struct or FixedArray root now transfers through its
+move-result temporary into the new local. The producer derives and materializes one complete static
+topology for all three roots, then migrates the exact root-relative mask at both owner renames; the
+old source and temporary retain no cleanup authority.
 The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
-projected clone and assignment, whole-partial-owner transfer, general nested or repeated owned control flow, loop-carried owned
+projected clone and assignment, partial Enum transfer or partial-root transfer outside the exact
+direct-local form, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
 admitted. Its sealed semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no

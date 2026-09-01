@@ -1,8 +1,8 @@
 use super::{
     Errors, FunctionCatalog, FunctionSignature, MAX_SEMANTIC_DIAGNOSTICS, OwnedCfgBudgetLimit,
     OwnedCfgState, OwnedStringBranchState, OwnedStringEstimateContext,
-    OwnedStringPreparationBudget, OwnerState, PrivateStringLowerer, ProgramCfgBudgetLimit,
-    SemanticInput, ValueBudgetLimit, accumulate_generated_cfg_function,
+    OwnedStringPreparationBudget, OwnerState, PartialTransferBudgetViolation, PrivateStringLowerer,
+    ProgramCfgBudgetLimit, SemanticInput, ValueBudgetLimit, accumulate_generated_cfg_function,
     accumulate_generated_value_function, aggregate_clone_budget_violation,
     aggregate_operand_budget_violation, aggregate_transition_budget_violation,
     authenticated_type_capabilities, checked_string_concat_bytes, cleanup_action_budget_violation,
@@ -11,6 +11,7 @@ use super::{
     estimate_owned_string_expression, generated_cfg_budget_violation,
     is_terminal_owned_phi_candidate, lower, owned_call_cleanup_budget_violation,
     owned_cfg_budget_violation, owned_place_budget_violation, owned_value_budget_violation,
+    partial_transfer_budget_preflight, partial_transfer_place_delta,
     preflight_aggregate_operand_total, preflight_owned_loop_body, preflight_owned_loop_exit,
     preflight_owned_place_capacity, preflight_owned_place_capacity_with_reserved,
     preflight_owned_string_preparation, projected_string_clone_budget_violation,
@@ -1382,6 +1383,174 @@ fn owned_array_projected_clone_return_snapshot(
     (source, raw)
 }
 
+#[allow(clippy::too_many_lines)]
+fn owned_array_partial_local_transfer_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const LOCALS: &str = "const text: String = a[0]; const b: FixedArray<String, 2> = a; ";
+    let (mut source, mut raw) =
+        owned_array_projected_clone_return_snapshot(OwnedArrayProjectionCase::Disjoint, 1);
+    let insertion = source.find("return FixedArray").expect("array transfer insertion");
+    source.insert_str(insertion, LOCALS);
+    let insertion = u32::try_from(insertion).expect("array transfer offset");
+    raw = shift_snapshot(
+        raw,
+        insertion,
+        u32::try_from(LOCALS.len()).expect("array transfer locals length"),
+    );
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let string_type = u32::try_from(raw.files[0].type_syntax.len()).expect("String type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(insertion + 12, insertion + 18),
+        kind: RawTypeSyntaxKind::String { keyword_span: s(insertion + 12, insertion + 18) },
+    });
+    let element_type = u32::try_from(raw.files[0].type_syntax.len()).expect("element type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(insertion + 47, insertion + 53),
+        kind: RawTypeSyntaxKind::String { keyword_span: s(insertion + 47, insertion + 53) },
+    });
+    let array_type = u32::try_from(raw.files[0].type_syntax.len()).expect("array type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(insertion + 36, insertion + 57),
+        kind: RawTypeSyntaxKind::FixedArray {
+            keyword_span: s(insertion + 36, insertion + 46),
+            less_than_span: s(insertion + 46, insertion + 47),
+            element: element_type,
+            comma_span: s(insertion + 53, insertion + 54),
+            length_span: s(insertion + 55, insertion + 56),
+            length_spelling: "2".to_owned(),
+            length: 2,
+            greater_than_span: s(insertion + 56, insertion + 57),
+        },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::Return { value: result, .. } = body.statements[1].kind else {
+        panic!("array transfer return")
+    };
+    assert_eq!(result as usize + 1, body.expressions.len());
+    let mut construction = body.expressions.pop().expect("array transfer construction");
+    let (first_result, second_clone) = match &construction.kind {
+        zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction { elements, .. } => {
+            (elements[0], elements[1])
+        }
+        _ => panic!("array transfer result"),
+    };
+    let zryna_syntax::v4::RawExpressionKind::Index { base: old_base, index: old_index, .. } =
+        body.expressions[first_result as usize].kind
+    else {
+        panic!("first array result projection")
+    };
+    let first_result_span = body.expressions[first_result as usize].span;
+    body.expressions[old_base as usize] = RawExpressionSyntax {
+        span: s(insertion + 21, insertion + 22),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: s(insertion + 21, insertion + 22),
+            },
+        },
+    };
+    body.expressions[old_index as usize] = RawExpressionSyntax {
+        span: s(insertion + 23, insertion + 24),
+        kind: zryna_syntax::v4::RawExpressionKind::I32Literal { spelling: "0".to_owned() },
+    };
+    body.expressions[first_result as usize] = RawExpressionSyntax {
+        span: s(insertion + 21, insertion + 25),
+        kind: zryna_syntax::v4::RawExpressionKind::Index {
+            base: old_base,
+            open_bracket_span: s(insertion + 22, insertion + 23),
+            index: old_index,
+            close_bracket_span: s(insertion + 24, insertion + 25),
+        },
+    };
+    let first_start = usize::try_from(first_result_span.start).expect("first result offset");
+    source.replace_range(first_start..first_start + 4, "text");
+    let return_text = u32::try_from(body.expressions.len()).expect("return text id");
+    body.expressions.push(RawExpressionSyntax {
+        span: first_result_span,
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "text".to_owned(), span: first_result_span },
+        },
+    });
+    let zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction { elements, .. } =
+        &mut construction.kind
+    else {
+        unreachable!("array transfer result already matched")
+    };
+    elements[0] = return_text;
+    let transfer_source = u32::try_from(body.expressions.len()).expect("transfer source id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 60, insertion + 61),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: s(insertion + 60, insertion + 61),
+            },
+        },
+    });
+    body.statements.insert(
+        1,
+        RawStatementSyntax {
+            span: s(insertion, insertion + 26),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(insertion, insertion + 5),
+                mutable: false,
+                name: RawIdentifierSyntax {
+                    text: "text".to_owned(),
+                    span: s(insertion + 6, insertion + 10),
+                },
+                type_syntax: string_type,
+                equals_span: s(insertion + 19, insertion + 20),
+                initializer: first_result,
+                semicolon_span: s(insertion + 25, insertion + 26),
+            },
+        },
+    );
+    body.statements.insert(
+        2,
+        RawStatementSyntax {
+            span: s(insertion + 27, insertion + 62),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(insertion + 27, insertion + 32),
+                mutable: false,
+                name: RawIdentifierSyntax {
+                    text: "b".to_owned(),
+                    span: s(insertion + 33, insertion + 34),
+                },
+                type_syntax: array_type,
+                equals_span: s(insertion + 58, insertion + 59),
+                initializer: transfer_source,
+                semicolon_span: s(insertion + 61, insertion + 62),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2, 3];
+    let zryna_syntax::v4::RawExpressionKind::Clone { value: cloned, .. } =
+        body.expressions[second_clone as usize].kind
+    else {
+        panic!("second array result clone")
+    };
+    let zryna_syntax::v4::RawExpressionKind::Index { base: second_base, .. } =
+        body.expressions[cloned as usize].kind
+    else {
+        panic!("second array result projection")
+    };
+    let second_span = body.expressions[second_base as usize].span;
+    let second_start = usize::try_from(second_span.start).expect("second result offset");
+    source.replace_range(second_start..=second_start, "b");
+    let zryna_syntax::v4::RawExpressionKind::Reference { name } =
+        &mut body.expressions[second_base as usize].kind
+    else {
+        panic!("second array result base")
+    };
+    name.text = "b".to_owned();
+    let rebuilt = u32::try_from(body.expressions.len()).expect("rebuilt array transfer result");
+    body.expressions.push(construction);
+    let RawStatementKind::Return { value, .. } = &mut body.statements[3].kind else {
+        panic!("array transfer return")
+    };
+    *value = rebuilt;
+    (source, raw)
+}
+
 fn owned_pair_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot) {
     const LOCAL: &str = "const text: String = p.first; ";
     let mut source = OWNED_PAIR_SOURCE.to_owned();
@@ -1441,6 +1610,539 @@ fn owned_pair_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot)
         },
     );
     body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+#[allow(clippy::too_many_lines)]
+fn owned_pair_partial_local_transfer_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const LOCAL: &str = "const q: OwnedPair = p; ";
+    const PREFIX: &str = "OwnedPair({ flag: ";
+    const SUFFIX: &str = ".flag, first: text })";
+    let (mut source, mut raw) = owned_pair_partial_then_root_snapshot();
+    let insertion = source.find("return p;").expect("partial transfer insertion");
+    source.insert_str(insertion, LOCAL);
+    let insertion = u32::try_from(insertion).expect("partial transfer offset");
+    raw = shift_snapshot(
+        raw,
+        insertion,
+        u32::try_from(LOCAL.len()).expect("partial transfer local length"),
+    );
+
+    let return_start = source.find("return p;").expect("shifted Pair return");
+    let expression_start = return_start + "return ".len();
+    source.insert_str(expression_start, PREFIX);
+    raw = shift_snapshot(
+        raw,
+        u32::try_from(expression_start).expect("return expression start"),
+        u32::try_from(PREFIX.len()).expect("return prefix length"),
+    );
+    let q_start = expression_start + PREFIX.len();
+    source.replace_range(q_start..=q_start, "q");
+    source.insert_str(q_start + 1, SUFFIX);
+    raw = shift_snapshot(
+        raw,
+        u32::try_from(q_start + 1).expect("return suffix start"),
+        u32::try_from(SUFFIX.len()).expect("return suffix length"),
+    );
+
+    let s = |start: usize, end: usize| zryna_source::UntrustedSpan {
+        file: 0,
+        start: u32::try_from(start).expect("span start"),
+        end: u32::try_from(end).expect("span end"),
+    };
+    let pair_type = u32::try_from(raw.files[0].type_syntax.len()).expect("Pair type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(insertion as usize + 9, insertion as usize + 18),
+        kind: RawTypeSyntaxKind::Named {
+            name: RawIdentifierSyntax {
+                text: "OwnedPair".to_owned(),
+                span: s(insertion as usize + 9, insertion as usize + 18),
+            },
+        },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let source_value = u32::try_from(body.expressions.len()).expect("partial source value");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion as usize + 21, insertion as usize + 22),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "p".to_owned(),
+                span: s(insertion as usize + 21, insertion as usize + 22),
+            },
+        },
+    });
+    body.statements.insert(
+        2,
+        RawStatementSyntax {
+            span: s(insertion as usize, insertion as usize + 23),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(insertion as usize, insertion as usize + 5),
+                mutable: false,
+                name: RawIdentifierSyntax {
+                    text: "q".to_owned(),
+                    span: s(insertion as usize + 6, insertion as usize + 7),
+                },
+                type_syntax: pair_type,
+                equals_span: s(insertion as usize + 19, insertion as usize + 20),
+                initializer: source_value,
+                semicolon_span: s(insertion as usize + 22, insertion as usize + 23),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2, 3];
+
+    let RawStatementKind::Return { value: old_return, .. } = body.statements[3].kind else {
+        panic!("partial transfer return")
+    };
+    body.expressions[old_return as usize] = RawExpressionSyntax {
+        span: s(q_start, q_start + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "q".to_owned(), span: s(q_start, q_start + 1) },
+        },
+    };
+    let flag = u32::try_from(body.expressions.len()).expect("q.flag expression");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(q_start, q_start + 6),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: old_return,
+            dot_span: s(q_start + 1, q_start + 2),
+            field: RawIdentifierSyntax {
+                text: "flag".to_owned(),
+                span: s(q_start + 2, q_start + 6),
+            },
+        },
+    });
+    let text_start = q_start + 15;
+    let text = u32::try_from(body.expressions.len()).expect("text expression");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(text_start, text_start + 4),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "text".to_owned(),
+                span: s(text_start, text_start + 4),
+            },
+        },
+    });
+    let expression_end = q_start + 1 + SUFFIX.len();
+    let result = u32::try_from(body.expressions.len()).expect("rebuilt Pair expression");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(expression_start, expression_end),
+        kind: zryna_syntax::v4::RawExpressionKind::StructConstruction {
+            type_name: RawIdentifierSyntax {
+                text: "OwnedPair".to_owned(),
+                span: s(expression_start, expression_start + 9),
+            },
+            open_paren_span: s(expression_start + 9, expression_start + 10),
+            open_brace_span: s(expression_start + 10, expression_start + 11),
+            fields: vec![
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(expression_start + 12, q_start + 6),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax {
+                            text: "flag".to_owned(),
+                            span: s(expression_start + 12, expression_start + 16),
+                        },
+                        colon_span: s(expression_start + 16, expression_start + 17),
+                        value: flag,
+                    },
+                },
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(q_start + 8, text_start + 4),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax {
+                            text: "first".to_owned(),
+                            span: s(q_start + 8, q_start + 13),
+                        },
+                        colon_span: s(q_start + 13, q_start + 14),
+                        value: text,
+                    },
+                },
+            ],
+            close_brace_span: s(expression_end - 2, expression_end - 1),
+            close_paren_span: s(expression_end - 1, expression_end),
+        },
+    });
+    let RawStatementKind::Return { value, .. } = &mut body.statements[3].kind else {
+        panic!("partial transfer return")
+    };
+    *value = result;
+    (source, raw)
+}
+
+fn owned_pair_partial_transfer_then_use_source_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, mut raw) = owned_pair_partial_local_transfer_snapshot();
+    let q_start = source.find("flag: q.flag").expect("transferred return owner") + "flag: ".len();
+    source.replace_range(q_start..=q_start, "p");
+    let q_start = u32::try_from(q_start).expect("return owner offset");
+    let expression = raw.files[0].functions[0]
+        .body
+        .expressions
+        .iter_mut()
+        .find(|expression| {
+            expression.span.start == q_start
+                && matches!(
+                    &expression.kind,
+                    zryna_syntax::v4::RawExpressionKind::Reference { name }
+                        if name.text == "q"
+                )
+        })
+        .expect("transferred return owner expression");
+    let zryna_syntax::v4::RawExpressionKind::Reference { name } = &mut expression.kind else {
+        unreachable!("filtered return owner expression")
+    };
+    name.text = "p".to_owned();
+    (source, raw)
+}
+
+fn owned_pair_repeated_partial_local_transfer_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const LOCAL: &str = "const r: OwnedPair = q; ";
+    let (mut source, mut raw) = owned_pair_partial_local_transfer_snapshot();
+    let insertion = source.find("return OwnedPair").expect("repeated transfer insertion");
+    source.insert_str(insertion, LOCAL);
+    let insertion = u32::try_from(insertion).expect("repeated transfer offset");
+    raw = shift_snapshot(
+        raw,
+        insertion,
+        u32::try_from(LOCAL.len()).expect("repeated transfer local length"),
+    );
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let pair_type = u32::try_from(raw.files[0].type_syntax.len()).expect("Pair type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(insertion + 9, insertion + 18),
+        kind: RawTypeSyntaxKind::Named {
+            name: RawIdentifierSyntax {
+                text: "OwnedPair".to_owned(),
+                span: s(insertion + 9, insertion + 18),
+            },
+        },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let source_value = u32::try_from(body.expressions.len()).expect("repeated source value");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 21, insertion + 22),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "q".to_owned(),
+                span: s(insertion + 21, insertion + 22),
+            },
+        },
+    });
+    body.statements.insert(
+        3,
+        RawStatementSyntax {
+            span: s(insertion, insertion + 23),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(insertion, insertion + 5),
+                mutable: false,
+                name: RawIdentifierSyntax {
+                    text: "r".to_owned(),
+                    span: s(insertion + 6, insertion + 7),
+                },
+                type_syntax: pair_type,
+                equals_span: s(insertion + 19, insertion + 20),
+                initializer: source_value,
+                semicolon_span: s(insertion + 22, insertion + 23),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2, 3, 4];
+    let q_start = source.find("flag: q.flag").expect("repeated return owner") + "flag: ".len();
+    source.replace_range(q_start..=q_start, "r");
+    let q_start = u32::try_from(q_start).expect("repeated return owner offset");
+    let expression = body
+        .expressions
+        .iter_mut()
+        .find(|expression| {
+            expression.span.start == q_start
+                && matches!(
+                    &expression.kind,
+                    zryna_syntax::v4::RawExpressionKind::Reference { name }
+                        if name.text == "q"
+                )
+        })
+        .expect("repeated return owner expression");
+    let zryna_syntax::v4::RawExpressionKind::Reference { name } = &mut expression.kind else {
+        unreachable!("filtered repeated owner expression")
+    };
+    name.text = "r".to_owned();
+    (source, raw)
+}
+
+#[allow(clippy::too_many_lines)]
+fn nested_owned_partial_local_transfer_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const LOCAL_PREFIX: &str = "const o: Outer = ";
+    const SUFFIX: &str = "const text: String = o.inner.text; const q: Outer = o; return Outer({ tail: \"c\", inner: Inner({ text: \"d\" }) }); ";
+    let mut source = NESTED_OWNED_SOURCE.to_owned();
+    let return_start = source.find("return Outer").expect("nested return");
+    let initializer_start = return_start + "return ".len();
+    source.replace_range(return_start..initializer_start, LOCAL_PREFIX);
+    let prefix_growth =
+        u32::try_from(LOCAL_PREFIX.len() - "return ".len()).expect("nested local prefix growth");
+    let mut raw = shift_snapshot(
+        response_snapshot(NESTED_OWNED_RESPONSE),
+        u32::try_from(initializer_start).expect("nested initializer start"),
+        prefix_growth,
+    );
+    let insertion = source.rfind('}').expect("nested function close");
+    source.insert_str(insertion, SUFFIX);
+    raw = shift_snapshot(
+        raw,
+        u32::try_from(insertion).expect("nested suffix insertion"),
+        u32::try_from(SUFFIX.len()).expect("nested suffix length"),
+    );
+    let s = |start: usize, end: usize| zryna_source::UntrustedSpan {
+        file: 0,
+        start: u32::try_from(start).expect("nested span start"),
+        end: u32::try_from(end).expect("nested span end"),
+    };
+    let local_outer_start = return_start + "const o: ".len();
+    let local_outer_type =
+        u32::try_from(raw.files[0].type_syntax.len()).expect("nested local Outer type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(local_outer_start, local_outer_start + "Outer".len()),
+        kind: RawTypeSyntaxKind::Named {
+            name: RawIdentifierSyntax {
+                text: "Outer".to_owned(),
+                span: s(local_outer_start, local_outer_start + "Outer".len()),
+            },
+        },
+    });
+    let text_statement = insertion;
+    let string_start = text_statement + "const text: ".len();
+    let string_type =
+        u32::try_from(raw.files[0].type_syntax.len()).expect("nested local String type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(string_start, string_start + "String".len()),
+        kind: RawTypeSyntaxKind::String {
+            keyword_span: s(string_start, string_start + "String".len()),
+        },
+    });
+    let q_statement = source[text_statement..]
+        .find("const q:")
+        .map(|offset| text_statement + offset)
+        .expect("nested q statement");
+    let q_type_start = q_statement + "const q: ".len();
+    let q_type = u32::try_from(raw.files[0].type_syntax.len()).expect("nested q type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(q_type_start, q_type_start + "Outer".len()),
+        kind: RawTypeSyntaxKind::Named {
+            name: RawIdentifierSyntax {
+                text: "Outer".to_owned(),
+                span: s(q_type_start, q_type_start + "Outer".len()),
+            },
+        },
+    });
+
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::Return { value: initializer, semicolon_span, .. } =
+        body.statements[0].kind
+    else {
+        panic!("nested original return")
+    };
+    body.statements[0] = RawStatementSyntax {
+        span: s(return_start, usize::try_from(semicolon_span.end).expect("nested local end")),
+        kind: RawStatementKind::LocalDeclaration {
+            keyword_span: s(return_start, return_start + "const".len()),
+            mutable: false,
+            name: RawIdentifierSyntax {
+                text: "o".to_owned(),
+                span: s(return_start + "const ".len(), return_start + "const o".len()),
+            },
+            type_syntax: local_outer_type,
+            equals_span: s(
+                return_start + "const o: Outer ".len(),
+                return_start + "const o: Outer =".len(),
+            ),
+            initializer,
+            semicolon_span,
+        },
+    };
+
+    let projection_start = text_statement + "const text: String = ".len();
+    let outer_base = u32::try_from(body.expressions.len()).expect("nested outer base id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(projection_start, projection_start + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "o".to_owned(),
+                span: s(projection_start, projection_start + 1),
+            },
+        },
+    });
+    let inner = u32::try_from(body.expressions.len()).expect("nested inner projection id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(projection_start, projection_start + "o.inner".len()),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: outer_base,
+            dot_span: s(projection_start + 1, projection_start + 2),
+            field: RawIdentifierSyntax {
+                text: "inner".to_owned(),
+                span: s(projection_start + 2, projection_start + "o.inner".len()),
+            },
+        },
+    });
+    let nested_text = u32::try_from(body.expressions.len()).expect("nested text projection id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(projection_start, projection_start + "o.inner.text".len()),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: inner,
+            dot_span: s(projection_start + "o.inner".len(), projection_start + "o.inner.".len()),
+            field: RawIdentifierSyntax {
+                text: "text".to_owned(),
+                span: s(
+                    projection_start + "o.inner.".len(),
+                    projection_start + "o.inner.text".len(),
+                ),
+            },
+        },
+    });
+    let text_semicolon = projection_start + "o.inner.text".len();
+    body.statements.push(RawStatementSyntax {
+        span: s(text_statement, text_semicolon + 1),
+        kind: RawStatementKind::LocalDeclaration {
+            keyword_span: s(text_statement, text_statement + "const".len()),
+            mutable: false,
+            name: RawIdentifierSyntax {
+                text: "text".to_owned(),
+                span: s(text_statement + "const ".len(), text_statement + "const text".len()),
+            },
+            type_syntax: string_type,
+            equals_span: s(projection_start - 2, projection_start - 1),
+            initializer: nested_text,
+            semicolon_span: s(text_semicolon, text_semicolon + 1),
+        },
+    });
+    let q_source_start = q_statement + "const q: Outer = ".len();
+    let q_source = u32::try_from(body.expressions.len()).expect("nested transfer source id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(q_source_start, q_source_start + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "o".to_owned(),
+                span: s(q_source_start, q_source_start + 1),
+            },
+        },
+    });
+    body.statements.push(RawStatementSyntax {
+        span: s(q_statement, q_source_start + 2),
+        kind: RawStatementKind::LocalDeclaration {
+            keyword_span: s(q_statement, q_statement + "const".len()),
+            mutable: false,
+            name: RawIdentifierSyntax {
+                text: "q".to_owned(),
+                span: s(q_statement + "const ".len(), q_statement + "const q".len()),
+            },
+            type_syntax: q_type,
+            equals_span: s(q_source_start - 2, q_source_start - 1),
+            initializer: q_source,
+            semicolon_span: s(q_source_start + 1, q_source_start + 2),
+        },
+    });
+
+    let return_statement = source[q_source_start..]
+        .find("return Outer")
+        .map(|offset| q_source_start + offset)
+        .expect("nested rebuilt return");
+    let result_start = return_statement + "return ".len();
+    let tail_start = source[result_start..]
+        .find("\"c\"")
+        .map(|offset| result_start + offset)
+        .expect("nested rebuilt tail");
+    let text_literal_start = source[tail_start + 3..]
+        .find("\"d\"")
+        .map(|offset| tail_start + 3 + offset)
+        .expect("nested rebuilt text");
+    let inner_start = source[result_start..]
+        .find("Inner({")
+        .map(|offset| result_start + offset)
+        .expect("nested rebuilt Inner");
+    let result_end = source[result_start..]
+        .find(" });")
+        .map(|offset| result_start + offset + " })".len())
+        .expect("nested rebuilt result end");
+    let tail = u32::try_from(body.expressions.len()).expect("nested rebuilt tail id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(tail_start, tail_start + 3),
+        kind: zryna_syntax::v4::RawExpressionKind::StringLiteral { spelling: "\"c\"".to_owned() },
+    });
+    let rebuilt_text = u32::try_from(body.expressions.len()).expect("nested rebuilt text id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(text_literal_start, text_literal_start + 3),
+        kind: zryna_syntax::v4::RawExpressionKind::StringLiteral { spelling: "\"d\"".to_owned() },
+    });
+    let rebuilt_inner = u32::try_from(body.expressions.len()).expect("nested rebuilt Inner id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(inner_start, inner_start + "Inner({ text: \"d\" })".len()),
+        kind: zryna_syntax::v4::RawExpressionKind::StructConstruction {
+            type_name: RawIdentifierSyntax {
+                text: "Inner".to_owned(),
+                span: s(inner_start, inner_start + "Inner".len()),
+            },
+            open_paren_span: s(inner_start + 5, inner_start + 6),
+            open_brace_span: s(inner_start + 6, inner_start + 7),
+            fields: vec![zryna_syntax::v4::RawFieldInitializer {
+                span: s(inner_start + 8, text_literal_start + 3),
+                kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                    name: RawIdentifierSyntax {
+                        text: "text".to_owned(),
+                        span: s(inner_start + 8, inner_start + 12),
+                    },
+                    colon_span: s(inner_start + 12, inner_start + 13),
+                    value: rebuilt_text,
+                },
+            }],
+            close_brace_span: s(inner_start + 18, inner_start + 19),
+            close_paren_span: s(inner_start + 19, inner_start + 20),
+        },
+    });
+    let rebuilt_outer = u32::try_from(body.expressions.len()).expect("nested rebuilt Outer id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(result_start, result_end),
+        kind: zryna_syntax::v4::RawExpressionKind::StructConstruction {
+            type_name: RawIdentifierSyntax {
+                text: "Outer".to_owned(),
+                span: s(result_start, result_start + "Outer".len()),
+            },
+            open_paren_span: s(result_start + 5, result_start + 6),
+            open_brace_span: s(result_start + 6, result_start + 7),
+            fields: vec![
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(result_start + 8, tail_start + 3),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax {
+                            text: "tail".to_owned(),
+                            span: s(result_start + 8, result_start + 12),
+                        },
+                        colon_span: s(result_start + 12, result_start + 13),
+                        value: tail,
+                    },
+                },
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(result_start + 19, inner_start + 20),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax {
+                            text: "inner".to_owned(),
+                            span: s(result_start + 19, result_start + 24),
+                        },
+                        colon_span: s(result_start + 24, result_start + 25),
+                        value: rebuilt_inner,
+                    },
+                },
+            ],
+            close_brace_span: s(result_end - 2, result_end - 1),
+            close_paren_span: s(result_end - 1, result_end),
+        },
+    });
+    let return_semicolon = result_end;
+    body.statements.push(RawStatementSyntax {
+        span: s(return_statement, return_semicolon + 1),
+        kind: RawStatementKind::Return {
+            keyword_span: s(return_statement, return_statement + "return".len()),
+            value: rebuilt_outer,
+            semicolon_span: s(return_semicolon, return_semicolon + 1),
+        },
+    });
+    body.blocks[0].statements = vec![0, 1, 2, 3];
     (source, raw)
 }
 
@@ -6107,6 +6809,296 @@ fn owned_struct_projections_copy_and_move_with_a_root_relative_cleanup_mask() {
 }
 
 #[test]
+fn partial_struct_owner_transfers_through_temporary_into_one_local() {
+    let (source, raw) = owned_pair_partial_local_transfer_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful partial local transfer");
+    let program = lower(pair_input(&syntax, &sources)).expect("partial Struct local transfer");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let target_root = roots[&2];
+    let source_first = function
+        .places()
+        .find(|place| {
+            matches!(
+                place.kind(),
+                VerifiedPlaceKind::StructField { base, ordinal }
+                    if base == source_root && ordinal == 0
+            )
+        })
+        .expect("source first field")
+        .id();
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let projected_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_first)
+        })
+        .expect("projected String move");
+    let whole_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("partial whole-root move");
+    let initialize = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::InitializePlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("partial target initialization");
+    assert!(projected_move < whole_move && whole_move < initialize);
+    let transfer_value = instructions[whole_move].result().expect("whole transfer value");
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == transfer_value)
+        })
+        .expect("partial transfer temporary")
+        .id();
+    for root in [source_root, temporary, target_root] {
+        let fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => Some(ordinal),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(fields, [0, 1], "complete exact topology for root {root:?}");
+    }
+    let target_fields = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::StructField { base, ordinal } if base == target_root => {
+                Some((ordinal, place.id()))
+            }
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let cleanup = block
+        .terminator()
+        .derived_drop_actions()
+        .find(|action| action.root() == target_root)
+        .expect("transferred partial target cleanup");
+    assert_eq!(cleanup.moved_projections().collect::<Vec<_>>(), [target_fields[&0]]);
+    assert_eq!(cleanup.initialized_projections().collect::<Vec<_>>(), [target_fields[&1]]);
+    assert!(
+        block
+            .terminator()
+            .derived_drop_actions()
+            .all(|action| { action.root() != source_root && action.root() != temporary })
+    );
+}
+
+#[test]
+fn partial_struct_transfer_invalidates_the_old_source_owner() {
+    let (source, raw) = owned_pair_partial_transfer_then_use_source_snapshot();
+    let use_start = source.find("flag: p.flag").expect("old source use") + "flag: ".len();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful old source use");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("old source must be moved");
+    let replay = lower(pair_input(&syntax, &sources)).expect_err("old source replay must be moved");
+    assert_eq!(diagnostics, replay);
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
+    assert_eq!(
+        diagnostics[0].message(),
+        "owned projection is unavailable or overlaps an already moved subobject"
+    );
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(
+            &sources,
+            zryna_source::UntrustedSpan {
+                file: 0,
+                start: u32::try_from(use_start).expect("old source offset"),
+                end: u32::try_from(use_start + 6).expect("old source end"),
+            },
+        ))
+    );
+}
+
+#[test]
+fn partial_struct_owner_can_transfer_repeatedly_without_mask_drift() {
+    let (source, raw) = owned_pair_repeated_partial_local_transfer_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful repeated partial transfer");
+    let program = lower(pair_input(&syntax, &sources)).expect("repeated partial transfer");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let final_root = roots[&3];
+    let final_fields = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::StructField { base, ordinal } if base == final_root => {
+                Some((ordinal, place.id()))
+            }
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let block = function.blocks().next().expect("block");
+    assert_eq!(
+        block
+            .instructions()
+            .filter(|instruction| {
+                instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                    && instruction
+                        .place_operands()
+                        .next()
+                        .is_some_and(|place| place == roots[&0] || place == roots[&2])
+            })
+            .count(),
+        2
+    );
+    let cleanup = block
+        .terminator()
+        .derived_drop_actions()
+        .find(|action| action.root() == final_root)
+        .expect("final repeated-transfer cleanup");
+    assert_eq!(cleanup.moved_projections().collect::<Vec<_>>(), [final_fields[&0]]);
+    assert_eq!(cleanup.initialized_projections().collect::<Vec<_>>(), [final_fields[&1]]);
+    assert!(block.terminator().derived_drop_actions().all(|action| action.root() == final_root));
+}
+
+#[test]
+fn nested_partial_struct_transfer_preserves_recursive_topology_and_mask() {
+    let (source, raw) = nested_owned_partial_local_transfer_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful nested partial transfer");
+    let program = lower(pair_input(&syntax, &sources)).expect("nested partial Struct transfer");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let target_root = roots[&2];
+    let block = function.blocks().next().expect("block");
+    let whole_move = block
+        .instructions()
+        .find(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("nested partial whole-root move");
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(
+                place.kind(),
+                VerifiedPlaceKind::Temporary(value) if Some(value) == whole_move.result()
+            )
+        })
+        .expect("nested partial transfer temporary")
+        .id();
+    let topology = |root| {
+        let fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+        let inner = fields[&0];
+        let tail = fields[&1];
+        let inner_fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == inner => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(inner_fields.keys().copied().collect::<Vec<_>>(), [0]);
+        let text = inner_fields[&0];
+        (inner, text, tail)
+    };
+    let source_topology = topology(source_root);
+    let temporary_topology = topology(temporary);
+    let target_topology = topology(target_root);
+    assert_ne!(source_topology, temporary_topology);
+    assert_ne!(temporary_topology, target_topology);
+    let cleanup_actions = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+    let cleanup = cleanup_actions
+        .iter()
+        .find(|action| action.root() == target_root)
+        .expect("nested transferred-root cleanup");
+    assert_eq!(cleanup.moved_projections().collect::<Vec<_>>(), [target_topology.1]);
+    assert_eq!(cleanup.initialized_projections().collect::<Vec<_>>(), [target_topology.2]);
+    assert!(
+        cleanup_actions
+            .iter()
+            .all(|action| action.root() != source_root && action.root() != temporary)
+    );
+}
+
+#[test]
+fn partial_transfer_place_accounting_is_exact_and_checked() {
+    assert_eq!(partial_transfer_place_delta(0, 0), Some(2));
+    assert_eq!(partial_transfer_place_delta(2, 0), Some(8));
+    assert_eq!(partial_transfer_place_delta(2, 1), Some(7));
+    assert_eq!(partial_transfer_place_delta(2, 2), Some(6));
+    assert_eq!(partial_transfer_place_delta(1, 2), None);
+    assert_eq!(partial_transfer_place_delta(usize::MAX, 0), None);
+
+    let values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION;
+    let places = zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION;
+    let transitions = zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION;
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 7, transitions - 2, 0, 2, 1),
+        Ok(7),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values, places - 7, transitions - 2, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 6, transitions - 2, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Places),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 7, transitions - 1, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 7, transitions - 2, 1, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(0, 0, 0, 0, usize::MAX, 0),
+        Err(PartialTransferBudgetViolation::PlaceAccounting),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(usize::MAX, 0, 0, 0, 0, 0),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+}
+
+#[test]
 fn owned_fixed_array_accepts_disjoint_string_projection_moves() {
     let (source, raw) = owned_array_projected_return_snapshot(OwnedArrayProjectionCase::Disjoint);
     let sources = sources_for(&source);
@@ -6203,6 +7195,117 @@ fn projected_string_clone_preserves_a_disjoint_partial_root_mask() {
         .expect("partially moved source root exit cleanup");
     assert_eq!(exit.moved_projections().collect::<Vec<_>>(), [moved]);
     assert_eq!(exit.initialized_projections().collect::<Vec<_>>(), [cloned]);
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn partial_fixed_array_owner_transfers_with_exact_topology_and_mask() {
+    let (source, raw) = owned_array_partial_local_transfer_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful array transfer");
+    let program = lower(pair_input(&syntax, &sources)).expect("partial FixedArray transfer");
+    let abi = program.runtime_abi();
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let target_root = roots[&2];
+    let elements = |root| {
+        function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::FixedArrayConstant { base, index } if base == root => {
+                    Some((index, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>()
+    };
+    let source_elements = elements(source_root);
+    let target_elements = elements(target_root);
+    assert_eq!(source_elements.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    assert_eq!(target_elements.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let projected_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_elements[&0])
+        })
+        .expect("first element move");
+    let whole_move = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("partial array whole move");
+    let initialize = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::InitializePlace
+                && instruction.place_operands().next() == Some(target_root)
+        })
+        .expect("partial array target initialization");
+    let clone = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::StringClone
+                && instruction.place_operands().next() == Some(target_elements[&1])
+        })
+        .expect("target second element clone");
+    let construct = instructions
+        .iter()
+        .rposition(|instruction| instruction.kind() == VerifiedInstructionKind::FixedArrayConstruct)
+        .expect("result array construction");
+    assert!(projected_move < whole_move && whole_move < initialize);
+    assert!(initialize < clone && clone < construct);
+    let transfer_value = instructions[whole_move].result().expect("array transfer value");
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == transfer_value)
+        })
+        .expect("array transfer temporary")
+        .id();
+    assert_eq!(elements(temporary).keys().copied().collect::<Vec<_>>(), [0, 1]);
+    for actions in [
+        instructions[clone].derived_drop_actions().collect::<Vec<_>>(),
+        block.terminator().derived_drop_actions().collect::<Vec<_>>(),
+    ] {
+        let cleanup = actions
+            .iter()
+            .find(|action| action.root() == target_root)
+            .expect("transferred array cleanup");
+        assert_eq!(cleanup.moved_projections().collect::<Vec<_>>(), [target_elements[&0]]);
+        assert_eq!(cleanup.initialized_projections().collect::<Vec<_>>(), [target_elements[&1]]);
+        assert!(
+            actions.iter().all(|action| action.root() != source_root && action.root() != temporary)
+        );
+    }
+    let clone_instruction = instructions[clone];
+    for status in [RuntimeStatus::Allocation, RuntimeStatus::Capacity, RuntimeStatus::AbiViolation]
+    {
+        let injection =
+            OwnedFaultInjection::Runtime { operation: LogicalOperation::StringClone, status };
+        let first = owned_fault_trace(abi, function, clone_instruction, injection, 0, 1)
+            .expect("transferred array clone fault");
+        let replay = owned_fault_trace(abi, function, clone_instruction, injection, 0, 1)
+            .expect("deterministic transferred array clone fault");
+        assert_eq!(first, replay);
+        assert!(!first.result_committed);
+        assert_eq!(first.uncommitted_result, clone_instruction.result());
+        assert!(first.retained_roots.contains(&target_root));
+        assert!(first.reverse_cleanup.contains(&target_root));
+        assert!(!first.retained_roots.contains(&source_root));
+        assert!(!first.retained_roots.contains(&temporary));
+    }
 }
 
 #[test]
