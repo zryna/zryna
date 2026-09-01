@@ -145,7 +145,9 @@ Whole-root assignment for the same graphs is prepare-before-commit, rejects dire
 self-consumption, and preserves sealed recursive cleanup for the old destination.
 The verified IR now also seals projected replacement's old-subobject traversal and transfers the
 prepared subtree's masks and enum refinement without disturbing siblings; semantic projected
-assignment remains unfinished.
+assignment remains unfinished. The semantic producer resolves canonical static StructField and
+FixedArrayConstant source places for Copy reads and exact String-leaf moves, preserves the enclosing
+root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
@@ -156,7 +158,8 @@ separate checked Vec bounds trap; it authenticates status disposition/trap ident
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-owned projections, projected assignment, and partial moves, general owned phi joins,
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone and
+assignment, whole-partial-owner transfer, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.

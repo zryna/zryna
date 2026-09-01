@@ -97,12 +97,18 @@ supported nested Struct or FixedArray values. Enum variants are payloadless or c
 Copy, String, Struct, or FixedArray payload; nested enum and Vec payload graphs remain excluded.
 The route evaluates constructors in sealed declaration or index order, transfers whole values on
 move, returns one exact owner, and drops surviving roots in reverse successful-completion order.
+It also admits explicit clone for exact Copy/String Vec and supported String-bearing aggregates,
+prepare-before-commit whole-root assignment, and canonical static StructField or
+FixedArrayConstant source projections. Copy projections retain their source; exact String leaves
+move once and refine the enclosing root's recursive cleanup mask while disjoint siblings remain
+available.
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
-This checkpoint does not enable general owned values: Vec clone, owned aggregate clone,
-owned projections or assignment, owned parameters or calls, branching/loops, and general lexical
-scope-drop insertion remain unavailable. Public owned results remain rejected by scalar ABI v1.
+This checkpoint does not enable general owned values: aggregate/enum subobject moves,
+whole-partial-owner transfer, dynamic or Vec-element projections, projected clone or assignment,
+general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
+Public owned results remain rejected by scalar ABI v1.
 `Shared`, `Weak`, shared or exclusive borrows, and their
 operations also remain unavailable. The boundary still rejects recursive by-value layouts,
 unresolved names or types, invalid projections, duplicate declarations or members, and

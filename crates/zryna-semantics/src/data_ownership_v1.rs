@@ -1895,8 +1895,8 @@ fn lower_function<'a>(
         catalog,
         errors,
         bindings: BTreeMap::new(),
-        places: Vec::new(),
         projections: BTreeMap::new(),
+        places: Vec::new(),
         instructions: Vec::new(),
         cleanup_plans: Vec::new(),
         values: 0,
@@ -4972,6 +4972,9 @@ struct PrivateOwnedAggregateLowerer<'a, 'e> {
     layouts: &'a layout::VerifiedLayouts,
     errors: &'e mut Errors<'a>,
     bindings: BTreeMap<String, Binding>,
+    projections: BTreeMap<(u32, u8, u32), raw::PlaceId>,
+    moved_projections: BTreeSet<raw::PlaceId>,
+    partial_roots: BTreeSet<raw::PlaceId>,
     places: Vec<raw::Place>,
     instructions: Vec<raw::Instruction>,
     cleanup_plans: Vec<raw::CleanupPlan>,
@@ -4981,6 +4984,15 @@ struct PrivateOwnedAggregateLowerer<'a, 'e> {
     owners: OwnerState,
     next_value: u32,
     next_local: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct OwnedAggregatePlace {
+    ty: Ty,
+    place: raw::PlaceId,
+    root: raw::PlaceId,
+    mutable: bool,
+    is_root: bool,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_> {
@@ -4993,6 +5005,306 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             owned_enum_graph_is_supported(ty, self.layouts)
         } else {
             aggregate_graph_is_supported(ty, self.layouts, &mut BTreeSet::new())
+        }
+    }
+
+    fn place_parent(&self, place: raw::PlaceId) -> Option<raw::PlaceId> {
+        match self.places.get(place.0 as usize)?.kind {
+            raw::PlaceKind::StructField { base, .. }
+            | raw::PlaceKind::EnumPayload { base, .. }
+            | raw::PlaceKind::FixedArrayConstant { base, .. } => Some(base),
+            raw::PlaceKind::Parameter(_)
+            | raw::PlaceKind::Local(_)
+            | raw::PlaceKind::Temporary(_) => None,
+        }
+    }
+
+    fn place_is_at_or_below(&self, mut place: raw::PlaceId, root: raw::PlaceId) -> bool {
+        let mut visited = BTreeSet::new();
+        while visited.insert(place) {
+            if place == root {
+                return true;
+            }
+            let Some(parent) = self.place_parent(place) else { return false };
+            place = parent;
+        }
+        false
+    }
+
+    fn places_overlap(&self, left: raw::PlaceId, right: raw::PlaceId) -> bool {
+        self.place_is_at_or_below(left, right) || self.place_is_at_or_below(right, left)
+    }
+
+    fn whole_root_available(&self, root: raw::PlaceId) -> bool {
+        self.owners.contains(root) && !self.partial_roots.contains(&root)
+    }
+
+    fn projection_available(&self, projection: raw::PlaceId, root: raw::PlaceId) -> bool {
+        self.owners.contains(root)
+            && !self.moved_projections.iter().any(|moved| self.places_overlap(*moved, projection))
+    }
+
+    fn push_projection(
+        &mut self,
+        ty: Ty,
+        at: Span,
+        key: (u32, u8, u32),
+        kind: raw::PlaceKind,
+    ) -> Option<raw::PlaceId> {
+        if let Some(place) = self.projections.get(&key).copied() {
+            return Some(place);
+        }
+        if self.places.len() >= ir::MAX_PLACES_PER_FUNCTION {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "derived owned projection places exceed the per-function M3 limit",
+                "reduce distinct private aggregate field and fixed-array projections",
+            );
+            return None;
+        }
+        let place = raw::PlaceId(u32::try_from(self.places.len()).ok()?);
+        self.places.push(raw::Place { id: place, ty: ty.ir, span: at, kind });
+        self.projections.insert(key, place);
+        Some(place)
+    }
+
+    fn field_projection_type(
+        &mut self,
+        base: Ty,
+        name: &syntax::RawIdentifierSyntax,
+    ) -> Option<(u32, Ty)> {
+        let use_span = span(self.input.sources(), name.span);
+        let Some(nominal) =
+            self.layouts.type_by_id(base.layout).and_then(layout::VerifiedType::nominal_identity)
+        else {
+            self.errors.at(
+                "ZRYNA-M3006",
+                use_span,
+                "owned field projection requires an exact struct place",
+                "project one declared field from a supported private struct",
+            );
+            return None;
+        };
+        let Some(decl) = self.declarations.iter().find(|decl| {
+            (u32::try_from(decl.module).ok(), u32::try_from(decl.declaration).ok())
+                == (Some(nominal.0), Some(nominal.1))
+        }) else {
+            self.errors.at(
+                "ZRYNA-M3006",
+                use_span,
+                "owned field projection has no authenticated declaration",
+                "project one declared field from a supported private struct",
+            );
+            return None;
+        };
+        let RawDataDeclarationKind::Struct { fields, .. } =
+            &self.file.data_declarations()[decl.declaration].kind
+        else {
+            self.errors.at(
+                "ZRYNA-M3006",
+                use_span,
+                "owned field projection requires a struct, not an enum",
+                "project one declared field from a supported private struct",
+            );
+            return None;
+        };
+        fields
+            .iter()
+            .enumerate()
+            .find(|(_, field)| field.name.text == name.text)
+            .and_then(|(ordinal, field)| {
+                u32::try_from(ordinal).ok().zip(semantic_type(
+                    self.file,
+                    field.type_syntax,
+                    self.module,
+                    self.declarations,
+                    self.graph,
+                    self.node_types,
+                    self.errors,
+                ))
+            })
+            .or_else(|| {
+                self.errors.at(
+                    "ZRYNA-M3006",
+                    use_span,
+                    format!("struct '{}' has no field '{}'", decl.name, name.text),
+                    "use one exact declared field name",
+                );
+                None
+            })
+    }
+
+    fn constant_projection_type(&mut self, base: Ty, index_id: u32) -> Option<(u32, Ty)> {
+        let expression = self.expression(index_id)?.clone();
+        let at = span(self.input.sources(), expression.span);
+        if base.category != TypeCategory::FixedArray {
+            self.errors.at(
+                "ZRYNA-M3006",
+                at,
+                "owned indexing currently admits only fixed-array projections",
+                "use one constant index into a supported private fixed array",
+            );
+            return None;
+        }
+        let RawExpressionKind::I32Literal { spelling } = expression.kind else {
+            self.errors.at(
+                "ZRYNA-M3006",
+                at,
+                "owned fixed-array indices must be compile-time i32 literals",
+                "use a nonnegative literal within the fixed-array length",
+            );
+            return None;
+        };
+        let index = spelling.parse::<u32>().ok().or_else(|| {
+            self.errors.at(
+                "ZRYNA-M3006",
+                at,
+                "owned fixed-array index is negative or outside u32",
+                "use a nonnegative constant index",
+            );
+            None
+        })?;
+        let record = self.layouts.type_by_id(base.layout)?;
+        let length = record.array_length()?;
+        if u64::from(index) >= length {
+            self.errors.at(
+                "ZRYNA-M3006",
+                at,
+                format!("owned fixed-array index {index} is outside length {length}"),
+                "use an index less than the exact fixed-array length",
+            );
+            return None;
+        }
+        let element = record.referenced_type()?;
+        let ty = self.node_types.iter().flatten().find(|ty| ty.layout == element).copied()?;
+        Some((index, ty))
+    }
+
+    fn projection_expression_type(&self, id: u32) -> Option<Ty> {
+        let expression = self.expression(id)?;
+        match &expression.kind {
+            RawExpressionKind::Reference { name } => {
+                self.bindings.get(&name.text).map(|binding| binding.ty)
+            }
+            RawExpressionKind::FieldAccess { base, field, .. } => {
+                let base = self.projection_expression_type(*base)?;
+                let nominal = self.layouts.type_by_id(base.layout)?.nominal_identity()?;
+                let declaration = self.declarations.iter().find(|declaration| {
+                    (
+                        u32::try_from(declaration.module).ok(),
+                        u32::try_from(declaration.declaration).ok(),
+                    ) == (Some(nominal.0), Some(nominal.1))
+                })?;
+                let RawDataDeclarationKind::Struct { fields, .. } =
+                    &self.file.data_declarations()[declaration.declaration].kind
+                else {
+                    return None;
+                };
+                let ordinal =
+                    fields.iter().position(|candidate| candidate.name.text == field.text)?;
+                let field_ty = self.layouts.type_by_id(base.layout)?.fields().get(ordinal)?.ty();
+                self.node_types.iter().flatten().find(|ty| ty.layout == field_ty).copied()
+            }
+            RawExpressionKind::Index { base, index, .. } => {
+                let base = self.projection_expression_type(*base)?;
+                if base.category != TypeCategory::FixedArray {
+                    return None;
+                }
+                let index_expression = self.expression(*index)?;
+                let RawExpressionKind::I32Literal { spelling } = &index_expression.kind else {
+                    return None;
+                };
+                let index = spelling.parse::<u32>().ok()?;
+                let record = self.layouts.type_by_id(base.layout)?;
+                if u64::from(index) >= record.array_length()? {
+                    return None;
+                }
+                let element = record.referenced_type()?;
+                self.node_types.iter().flatten().find(|ty| ty.layout == element).copied()
+            }
+            _ => None,
+        }
+    }
+
+    fn owned_place(&mut self, id: u32) -> Option<OwnedAggregatePlace> {
+        let expression = self.expression(id)?.clone();
+        let at = span(self.input.sources(), expression.span);
+        match expression.kind {
+            RawExpressionKind::Reference { name } => self
+                .bindings
+                .get(&name.text)
+                .cloned()
+                .map(|binding| OwnedAggregatePlace {
+                    ty: binding.ty,
+                    place: binding.place,
+                    root: binding.place,
+                    mutable: binding.mutable,
+                    is_root: true,
+                })
+                .or_else(|| {
+                    let wrong_case =
+                        self.bindings.keys().any(|key| key.eq_ignore_ascii_case(&name.text));
+                    self.errors.at(
+                        "ZRYNA-M3002",
+                        span(self.input.sources(), name.span),
+                        if wrong_case {
+                            format!(
+                                "aggregate value '{}' has the wrong portable ASCII case",
+                                name.text
+                            )
+                        } else {
+                            format!("aggregate value '{}' is not declared", name.text)
+                        },
+                        "reference one exact preceding local using its declared spelling",
+                    );
+                    None
+                }),
+            RawExpressionKind::FieldAccess { base, field, .. } => {
+                let base = self.owned_place(base)?;
+                let (ordinal, ty) = self.field_projection_type(base.ty, &field)?;
+                let key = (base.place.0, 0, ordinal);
+                let place = self.push_projection(
+                    ty,
+                    at,
+                    key,
+                    raw::PlaceKind::StructField { base: base.place, ordinal },
+                )?;
+                Some(OwnedAggregatePlace {
+                    ty,
+                    place,
+                    root: base.root,
+                    mutable: base.mutable,
+                    is_root: false,
+                })
+            }
+            RawExpressionKind::Index { base, index, .. } => {
+                let base = self.owned_place(base)?;
+                let (index, ty) = self.constant_projection_type(base.ty, index)?;
+                let key = (base.place.0, 1, index);
+                let place = self.push_projection(
+                    ty,
+                    at,
+                    key,
+                    raw::PlaceKind::FixedArrayConstant { base: base.place, index },
+                )?;
+                Some(OwnedAggregatePlace {
+                    ty,
+                    place,
+                    root: base.root,
+                    mutable: base.mutable,
+                    is_root: false,
+                })
+            }
+            _ => {
+                self.errors.at(
+                    "ZRYNA-M3016",
+                    at,
+                    "owned projection base is outside the static place checkpoint",
+                    "project from a named private Struct or fixed-array local",
+                );
+                None
+            }
         }
     }
 
@@ -5166,6 +5478,31 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             RawExpressionKind::EnumConstruction { payload: Some(payload), .. } => {
                 self.target_consumption_span(*payload, target, true)
             }
+            RawExpressionKind::FieldAccess { base, .. } | RawExpressionKind::Index { base, .. }
+                if consumes_reference
+                    && self.projection_expression_type(id).is_some_and(|ty| !ty.is_copy()) =>
+            {
+                self.projection_root_reference_span(*base, target)
+            }
+            _ => None,
+        }
+    }
+
+    fn projection_root_reference_span(
+        &self,
+        id: u32,
+        target: raw::PlaceId,
+    ) -> Option<UntrustedSpan> {
+        let expression = self.expression(id)?;
+        match &expression.kind {
+            RawExpressionKind::Reference { name }
+                if self.bindings.get(&name.text).is_some_and(|binding| binding.place == target) =>
+            {
+                Some(name.span)
+            }
+            RawExpressionKind::FieldAccess { base, .. } | RawExpressionKind::Index { base, .. } => {
+                self.projection_root_reference_span(*base, target)
+            }
             _ => None,
         }
     }
@@ -5290,18 +5627,66 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 raw::InstructionKind::CopyFromPlace { place: binding.place },
             );
         }
-        if !self.owners.contains(binding.place) {
+        if !self.whole_root_available(binding.place) {
             self.errors.at(
                 "ZRYNA-M3014",
                 span(self.input.sources(), name.span),
-                format!("aggregate value '{}' was already moved", name.text),
-                "move each owned aggregate or String exactly once",
+                format!("aggregate value '{}' is moved or only partially available", name.text),
+                "move a whole owned aggregate only before moving any of its projections",
             );
             return None;
         }
         let value =
             self.emit(expected, at, raw::InstructionKind::MoveFromPlace { place: binding.place })?;
         self.owners.rehome_move_result(value, binding.place)?;
+        Some(value)
+    }
+
+    fn projected_value(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
+        let expression = self.expression(id)?.clone();
+        let at = span(self.input.sources(), expression.span);
+        let projection = self.owned_place(id)?;
+        if projection.is_root || projection.ty != expected {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "owned projection has the wrong exact contextual type",
+                "use one exact supported Struct field or fixed-array element",
+            );
+            return None;
+        }
+        if !self.projection_available(projection.place, projection.root) {
+            self.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "owned projection is unavailable or overlaps an already moved subobject",
+                "move each owned field or fixed-array element at most once",
+            );
+            return None;
+        }
+        if expected.is_copy() {
+            return self.emit(
+                expected,
+                at,
+                raw::InstructionKind::CopyFromPlace { place: projection.place },
+            );
+        }
+        if expected.category != TypeCategory::String {
+            self.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "this checkpoint moves only owned String projections",
+                "move a String field or constant String fixed-array element",
+            );
+            return None;
+        }
+        let value = self.emit(
+            expected,
+            at,
+            raw::InstructionKind::MoveFromPlace { place: projection.place },
+        )?;
+        self.moved_projections.insert(projection.place);
+        self.partial_roots.insert(projection.root);
         Some(value)
     }
 
@@ -5349,12 +5734,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             );
             return None;
         }
-        if !self.owners.contains(binding.place) {
+        if !self.whole_root_available(binding.place) {
             self.errors.at(
                 "ZRYNA-M3014",
                 span(self.input.sources(), name.span),
-                format!("aggregate value '{}' was already moved", name.text),
-                "clone the aggregate only while its owner remains available",
+                format!("aggregate value '{}' is moved or only partially available", name.text),
+                "clone the aggregate only before moving any owned projection",
             );
             return None;
         }
@@ -5454,6 +5839,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 self.emit(expected, at, raw::InstructionKind::StringFromUtf8 { bytes, cleanup })
             }
             RawExpressionKind::Reference { name } => self.reference_value(&name, expected, at),
+            RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
+                self.projected_value(id, expected)
+            }
             RawExpressionKind::Clone { value, .. } => self.clone_aggregate(value, expected, at),
             RawExpressionKind::StructConstruction { type_name, fields, .. }
                 if expected.category == TypeCategory::Struct =>
@@ -5798,6 +6186,9 @@ fn lower_private_owned_aggregate_function<'a>(
         layouts,
         errors,
         bindings: BTreeMap::new(),
+        projections: BTreeMap::new(),
+        moved_projections: BTreeSet::new(),
+        partial_roots: BTreeSet::new(),
         places: Vec::new(),
         instructions: Vec::new(),
         cleanup_plans: Vec::new(),
@@ -5982,12 +6373,12 @@ fn lower_private_owned_aggregate_function<'a>(
                     );
                     return None;
                 }
-                if !binding.mutable || !lowerer.owners.contains(binding.place) {
+                if !binding.mutable || !lowerer.whole_root_available(binding.place) {
                     lowerer.errors.at(
                         "ZRYNA-M3014",
                         span(input.sources(), name.span),
-                        "owned aggregate assignment target is immutable, uninitialized, or already moved",
-                        "assign only to an initialized mutable available aggregate root",
+                        "owned aggregate assignment target is immutable, moved, or only partially available",
+                        "assign only to an initialized mutable aggregate root before moving any projection",
                     );
                     return None;
                 }

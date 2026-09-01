@@ -80,7 +80,10 @@ The repository currently establishes and tests:
   root-enum variant from sealed layout and verifier state, retains its source, and reverse-drops only
   the initialized result prefix before pre-existing roots. Mutable whole-root assignment for those
   supported aggregates prepares a distinct replacement while preserving the old root, then commits
-  with sealed recursive old-value cleanup. It proves one exact non-Copy owner while
+  with sealed recursive old-value cleanup. Canonical static struct-field and constant fixed-array
+  projections support Copy reads and exact String-leaf moves; disjoint leaves remain available,
+  the enclosing root retains its cleanup obligation, and repeated, overlapping, or subsequent
+  whole-root consumption fails closed. It proves one exact non-Copy owner while
   preserving addressable Copy storage and binds every cleanup plan to one exact site and role. The
   private String route reports moved
   bindings as M3011; the bounded aggregate and enum route reports moved owners as M3014;
@@ -89,8 +92,9 @@ The repository currently establishes and tests:
   authenticates every admitted implemented String/Vec/aggregate-clone failure disposition and trap identity,
   preserves pre-commit owners, excludes uncommitted results, and pins reverse cleanup without
   executing an allocator or target runtime. General structural Vec clone beyond String elements,
-  nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, owned projections,
-  projected assignment, partial moves, general owned phi joins, owned loop-carried phi joins,
+  nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, aggregate-subobject
+  and enum-payload moves, dynamic or Vec-element projections, projected clone and assignment,
+  whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
   and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
   loop-body return, and post-loop effects remain excluded;
@@ -226,8 +230,10 @@ DataOwnershipV1 IR and semantic tests plus both modules' opacity doctests, inclu
 String creation, clone and checked concatenation, Vec construction/exact Copy- or String-element
 clone/push/Copy indexing, owner
 transfer, private root-local replacement, site-bound cleanup roles, partial drop metadata, and the
-retained runtime-ABI authority. It does not claim projections, owned calls/CFG, general scope
-exits, a runtime, a backend, a CLI route, or a public profile. The full `pnpm preflight` gate
+retained runtime-ABI authority. It also covers canonical static Struct/FixedArray Copy projection
+reads and String-leaf moves. It does not claim projected assignment, dynamic or Vec-element
+projection, aggregate/enum subobject moves, owned calls/CFG, general scope exits, a runtime, a
+backend, a CLI route, or a public profile. The full `pnpm preflight` gate
 retains ignored proportional boundaries and the complete repository regression surface.
 
 `pnpm m3:runtime-abi:quick` is the focused Issue #80 declaration-authority check. It verifies the

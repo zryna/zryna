@@ -416,11 +416,17 @@ reverse-drops only the initialized result prefix on element failure. Mutable who
 for these supported aggregate graphs prepares a distinct replacement before committing it and
 retains the old root across preparation failure. These operations use
 `InitializePlace`, `MoveFromPlace`, and `ClonePlace`; String/Vec/aggregate replacement uses the
-infallible `ReplacePlace` commit after right-hand-side preparation. The boundary reports moved
+infallible `ReplacePlace` commit after right-hand-side preparation.
+Canonical static `StructField` and `FixedArrayConstant` places also carry Copy reads and exact
+String-leaf moves from source syntax through verified IR. Projection identity is root-relative and
+stable, moved leaves refine the enclosing root's cleanup mask, and disjoint siblings remain
+available; repeated, overlapping, or later whole-root consumption is rejected.
+The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-owned projections, projected assignment, and partial moves, general nested or repeated owned control flow, loop-carried owned
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone
+and assignment, whole-partial-owner transfer, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
 admitted. Its sealed semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no

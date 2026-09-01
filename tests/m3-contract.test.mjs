@@ -321,6 +321,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /fallible-leaf count and root-enum active variant from sealed authorities/);
   assert.match(document, /mutable whole-root assignment for the same supported Struct, FixedArray, and root Enum graphs/);
   assert.match(document, /direct\s+self-consumption is rejected, and `ReplacePlace` commits the prepared owner/);
+  assert.match(document, /canonical static struct-field and constant fixed-array projection reads/);
+  assert.match(document, /exact String leaves moved once while the enclosing root keeps its masked cleanup obligation/);
   assert.match(document, /static projection\s+commit exposes the old subobject's exact pre-state recursive drop action/);
   assert.match(document, /private String use-after-move rejected as `ZRYNA-M3011`, aggregate\/enum moved-owner violations as\s+`ZRYNA-M3014`/);
   assert.match(document, /unresolved binding names as `ZRYNA-M3002`/);
@@ -328,7 +330,7 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /one-plan\/one-site cleanup roles/);
   assert.match(document, /cumulative String-literal preflight at 8 MiB/);
   assert.match(document, /sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the\s+exact verified ownership-runtime ABI authority/);
-  assert.match(document, /General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,\s+Vec, Shared, or Weak values, owned place projections, projected assignment, and partial moves, general owned phi joins/);
+  assert.match(document, /General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,\s+Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element\s+projections, projected clone and assignment, whole-partial-owner transfer, general owned phi joins/);
   assert.match(document, /Owned String\/Vec signatures remain bounded\s+to zero arguments or one exact owned\/bool argument/);
   assert.match(document, /## Issue #81 implementation ledger/);
   assert.match(document, /no-carried-owner loop\/backedge cleanup \| complete/);
@@ -336,7 +338,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /authenticated allocation and element-clone failures, prefix-safe reverse cleanup/);
   assert.match(document, /supported String-bearing aggregate clone \| complete/);
   assert.match(document, /supported whole-root owned aggregate assignment \| complete/);
-  assert.match(document, /general structural Vec clone, nested aggregate clone, projections, projected assignment, and partial moves \| pending/);
+  assert.match(document, /static owned projection reads and String-leaf moves \| complete/);
+  assert.match(document, /general structural Vec clone, nested aggregate clone, aggregate\/enum subobject moves, and projected assignment \| pending/);
   assert.match(architecture, /Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`/);
   assert.match(architecture, /General structural Vec clone beyond\s+String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values/);
   assert.match(document, /controlled allocation\/capacity\/bounds\/UTF-8 fault closure \| in progress/);

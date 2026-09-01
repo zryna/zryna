@@ -47,6 +47,8 @@ document. Its private owned String/Vec route currently proves:
   the complete right-hand side is prepared while the old destination remains live, direct
   self-consumption is rejected, and `ReplacePlace` commits the prepared owner with the sealed
   recursive old-value drop shape;
+- canonical static struct-field and constant fixed-array projection reads, with Copy leaves retained
+  and exact String leaves moved once while the enclosing root keeps its masked cleanup obligation;
 - `InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace` lowering, with
   private String use-after-move rejected as `ZRYNA-M3011`, aggregate/enum moved-owner violations as
   `ZRYNA-M3014`, unresolved binding names as `ZRYNA-M3002`, and excluded private String shapes as
@@ -62,7 +64,8 @@ document. Its private owned String/Vec route currently proves:
   exact verified ownership-runtime ABI authority.
 
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
-Vec, Shared, or Weak values, owned place projections, projected assignment, and partial moves, general owned phi joins,
+Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element
+projections, projected clone and assignment, whole-partial-owner transfer, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -71,8 +74,10 @@ unchanged, while the terminal owned join accepts only one owned-producing return
 arm. The bounded loop preserves the exact incoming owner stack. Its stable-place String replacement
 and Copy-element Vec push retain the same outer place identity across the backedge; all other
 incoming owners remain unchanged. Vec replacement, `Vec<String>` push, `break`, `continue`, body
-returns, and effects after the loop remain excluded. The aggregate route remains parameter-free, private, straight-line, and
-whole-value-only. Nested enums, Vec members, recursive graphs, partial moves, and aggregate match
+returns, and effects after the loop remain excluded. The aggregate route remains parameter-free,
+private, and straight-line. Its partial-move subset is limited to exact String leaves reached
+through static StructField or FixedArrayConstant paths. Nested enums, Vec members, recursive graphs,
+aggregate-subobject moves, and aggregate match
 are also excluded. Those are closure work, not properties of the current checkpoint.
 
 ## Issue #81 implementation ledger
@@ -89,7 +94,8 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | exact `Vec<bool>`/`Vec<i32>`/`Vec<String>` clone | complete | distinct result owner, retained source, authenticated allocation and element-clone failures, prefix-safe reverse cleanup, and exact resource rollback |
 | supported String-bearing aggregate clone | complete | distinct result owner, retained source, sealed layout/variant-derived fallible leaves, authenticated prefix-safe recursive failure cleanup, and atomic resource rollback |
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
-| general structural Vec clone, nested aggregate clone, projections, projected assignment, and partial moves | pending | recursive Vec/Enum/Shared/Weak clone capability and moved-subobject masks |
+| static owned projection reads and String-leaf moves | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, root-relative cleanup masks, and precise repeat/overlap rejection |
+| general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and projected assignment | pending | recursive Vec/Enum/Shared/Weak clone, whole-partial-owner transfer, dynamic projection, and replacement capability |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
@@ -301,13 +307,16 @@ struct, enum, and fixed-array construction commits already prepared operands wit
 plan. Allocation-bearing Vec construction and clone steps retain their exact prepare-failure sites.
 The current semantic checkpoint emits `ReplacePlace` for private root-local String, supported exact
 Vec roots, and supported String-bearing Struct, FixedArray, and root Enum values. Projected
-destinations, owned calls, and CFG replacement remain outside that checkpoint.
+destinations, owned calls, and CFG replacement remain outside that checkpoint. It resolves
+canonical static StructField and FixedArrayConstant source places for Copy reads and exact
+String-leaf moves, preserving the enclosing owner's masked pending cleanup.
 
 The verified IR prerequisite for projected replacement is already sealed: a static projection
 commit exposes the old subobject's exact pre-state recursive drop action and transplants only the
 prepared source subtree's state and active enum variants. The enclosing owner remains pending and
-sibling masks are unchanged. The semantic producer remains root-only until canonical projection
-resolution, overlap rejection, and projection-aware owner-state tracking are added.
+sibling masks are unchanged. The semantic producer supplies canonical static projection resolution,
+overlap rejection, and projection-aware owner-state tracking for Copy reads and String-leaf moves.
+It does not yet produce projected replacement or transfer a whole partially moved aggregate.
 
 The retained runtime ABI authority also closes contextual transition evidence: atomic failure is
 validated against one exact `LogicalOperation`, and Vec allocation/reserve validation consumes a
@@ -370,7 +379,10 @@ required because vector length can exceed the per-function place budget.
 Moving a whole aggregate transfers its complete partial state and pending obligation. Moving an
 allowed static projection removes only that subobject from later recursive cleanup while retaining
 the parent root's remaining obligation. Overlapping, dynamic, or vector-element partial moves are
-not admitted in this slice.
+not admitted in this slice. The current semantic producer implements the latter rule only for
+String leaves under canonical static Struct/FixedArray paths; whole partial-owner transfer and
+aggregate/enum subobject moves remain closure work even though verified IR can represent their
+cleanup masks.
 
 ## Issue #81 closure target
 

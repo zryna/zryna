@@ -437,6 +437,113 @@ fn owned_pair_assignment_snapshot(
     (source, raw)
 }
 
+#[derive(Clone, Copy)]
+enum OwnedPairProjectionAssignmentRhs {
+    CopyField,
+    MoveField,
+}
+
+fn owned_pair_projection_assignment_snapshot(
+    rhs: OwnedPairProjectionAssignmentRhs,
+) -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, raw) = owned_pair_assignment_snapshot(OwnedPairAssignmentRhs::Fresh, true);
+    let (old, replacement) = match rhs {
+        OwnedPairProjectionAssignmentRhs::CopyField => ("false", "p.flag"),
+        OwnedPairProjectionAssignmentRhs::MoveField => ("\"b\"", "p.first"),
+    };
+    let start = source.find(old).expect("projected assignment operand");
+    source.replace_range(start..start + old.len(), replacement);
+    let start = u32::try_from(start).expect("projected operand offset");
+    let delta = i32::try_from(replacement.len()).expect("replacement length")
+        - i32::try_from(old.len()).expect("old length");
+    let mut raw = shift_snapshot_signed(
+        raw,
+        start + u32::try_from(old.len()).expect("old operand end"),
+        delta,
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    match rhs {
+        OwnedPairProjectionAssignmentRhs::CopyField => {
+            body.expressions[5] = RawExpressionSyntax {
+                span: s(start, start + 1),
+                kind: zryna_syntax::v4::RawExpressionKind::Reference {
+                    name: RawIdentifierSyntax { text: "p".to_owned(), span: s(start, start + 1) },
+                },
+            };
+            body.expressions.insert(
+                6,
+                RawExpressionSyntax {
+                    span: s(start, start + 6),
+                    kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+                        base: 5,
+                        dot_span: s(start + 1, start + 2),
+                        field: RawIdentifierSyntax {
+                            text: "flag".to_owned(),
+                            span: s(start + 2, start + 6),
+                        },
+                    },
+                },
+            );
+            let zryna_syntax::v4::RawExpressionKind::StructConstruction { fields, .. } =
+                &mut body.expressions[8].kind
+            else {
+                panic!("projected assignment Struct")
+            };
+            let zryna_syntax::v4::RawFieldInitializerKind::Explicit { value, .. } =
+                &mut fields[0].kind
+            else {
+                panic!("flag initializer")
+            };
+            *value = 6;
+            let zryna_syntax::v4::RawFieldInitializerKind::Explicit { value, .. } =
+                &mut fields[1].kind
+            else {
+                panic!("first initializer")
+            };
+            *value = 7;
+        }
+        OwnedPairProjectionAssignmentRhs::MoveField => {
+            body.expressions[6] = RawExpressionSyntax {
+                span: s(start, start + 1),
+                kind: zryna_syntax::v4::RawExpressionKind::Reference {
+                    name: RawIdentifierSyntax { text: "p".to_owned(), span: s(start, start + 1) },
+                },
+            };
+            body.expressions.insert(
+                7,
+                RawExpressionSyntax {
+                    span: s(start, start + 7),
+                    kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+                        base: 6,
+                        dot_span: s(start + 1, start + 2),
+                        field: RawIdentifierSyntax {
+                            text: "first".to_owned(),
+                            span: s(start + 2, start + 7),
+                        },
+                    },
+                },
+            );
+            let zryna_syntax::v4::RawExpressionKind::StructConstruction { fields, .. } =
+                &mut body.expressions[8].kind
+            else {
+                panic!("projected assignment Struct")
+            };
+            let zryna_syntax::v4::RawFieldInitializerKind::Explicit { value, .. } =
+                &mut fields[1].kind
+            else {
+                panic!("first initializer")
+            };
+            *value = 7;
+        }
+    }
+    let RawStatementKind::Assignment { value, .. } = &mut body.statements[1].kind else {
+        panic!("projected aggregate assignment")
+    };
+    *value = 8;
+    (source, raw)
+}
+
 fn owned_enum_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
     let source = OWNED_ENUM_STRING_SOURCE
         .replacen("const x", "let   x", 1)
@@ -617,6 +724,493 @@ fn owned_fixed_array_clone_assignment_snapshot() -> (String, RawProjectSyntaxSna
             },
         },
     );
+    body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+fn owned_pair_projected_return_snapshot(field: &str) -> (String, RawProjectSyntaxSnapshot) {
+    let replacement = format!("OwnedPair({{ flag: p.flag, first: p.{field} }})");
+    let mut source = OWNED_PAIR_SOURCE.to_owned();
+    let start = source.rfind("p;").expect("Pair return value");
+    source.replace_range(start..=start, &replacement);
+    let start = u32::try_from(start).expect("Pair return offset");
+    let mut raw = shift_snapshot(
+        response_snapshot(OWNED_PAIR_RESPONSE),
+        start + 1,
+        u32::try_from(replacement.len() - 1).expect("Pair replacement length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    body.expressions[3] = RawExpressionSyntax {
+        span: s(start + 18, start + 19),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "p".to_owned(), span: s(start + 18, start + 19) },
+        },
+    };
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start + 18, start + 24),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: 3,
+            dot_span: s(start + 19, start + 20),
+            field: RawIdentifierSyntax { text: "flag".to_owned(), span: s(start + 20, start + 24) },
+        },
+    });
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start + 33, start + 34),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "p".to_owned(), span: s(start + 33, start + 34) },
+        },
+    });
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start + 33, start + 34 + u32::try_from(field.len()).expect("field length") + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: 5,
+            dot_span: s(start + 34, start + 35),
+            field: RawIdentifierSyntax {
+                text: field.to_owned(),
+                span: s(start + 35, start + 35 + u32::try_from(field.len()).expect("field length")),
+            },
+        },
+    });
+    let end = start + u32::try_from(replacement.len()).expect("Pair replacement end");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start, end),
+        kind: zryna_syntax::v4::RawExpressionKind::StructConstruction {
+            type_name: RawIdentifierSyntax {
+                text: "OwnedPair".to_owned(),
+                span: s(start, start + 9),
+            },
+            open_paren_span: s(start + 9, start + 10),
+            open_brace_span: s(start + 10, start + 11),
+            fields: vec![
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(start + 12, start + 24),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax {
+                            text: "flag".to_owned(),
+                            span: s(start + 12, start + 16),
+                        },
+                        colon_span: s(start + 16, start + 17),
+                        value: 4,
+                    },
+                },
+                zryna_syntax::v4::RawFieldInitializer {
+                    span: s(start + 26, end - 3),
+                    kind: zryna_syntax::v4::RawFieldInitializerKind::Explicit {
+                        name: RawIdentifierSyntax {
+                            text: "first".to_owned(),
+                            span: s(start + 26, start + 31),
+                        },
+                        colon_span: s(start + 31, start + 32),
+                        value: 6,
+                    },
+                },
+            ],
+            close_brace_span: s(end - 2, end - 1),
+            close_paren_span: s(end - 1, end),
+        },
+    });
+    let RawStatementKind::Return { value, .. } = &mut body.statements[1].kind else {
+        panic!("Pair return")
+    };
+    *value = 7;
+    (source, raw)
+}
+
+#[derive(Clone, Copy)]
+enum OwnedArrayProjectionCase {
+    Disjoint,
+    Repeat,
+    Dynamic,
+    Negative,
+    OutOfBounds,
+}
+
+#[allow(clippy::too_many_lines)]
+fn owned_array_projected_return_snapshot(
+    case: OwnedArrayProjectionCase,
+) -> (String, RawProjectSyntaxSnapshot) {
+    let indexes = match case {
+        OwnedArrayProjectionCase::Disjoint => ("0", "1"),
+        OwnedArrayProjectionCase::Repeat => ("0", "0"),
+        OwnedArrayProjectionCase::Dynamic => ("a", "1"),
+        OwnedArrayProjectionCase::Negative => ("-1", "1"),
+        OwnedArrayProjectionCase::OutOfBounds => ("2", "1"),
+    };
+    let replacement = format!("FixedArray<String, 2>([a[{}], a[{}]])", indexes.0, indexes.1);
+    let mut source = OWNED_ARRAY_SOURCE.to_owned();
+    let start = source.rfind("a;").expect("array return value");
+    source.replace_range(start..=start, &replacement);
+    let start = u32::try_from(start).expect("array return offset");
+    let mut raw = shift_snapshot(
+        response_snapshot(OWNED_ARRAY_RESPONSE),
+        start + 1,
+        u32::try_from(replacement.len() - 1).expect("array replacement length"),
+    );
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let string_type = u32::try_from(raw.files[0].type_syntax.len()).expect("String type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(start + 11, start + 17),
+        kind: RawTypeSyntaxKind::String { keyword_span: s(start + 11, start + 17) },
+    });
+    let array_type = u32::try_from(raw.files[0].type_syntax.len()).expect("array type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(start, start + 21),
+        kind: RawTypeSyntaxKind::FixedArray {
+            keyword_span: s(start, start + 10),
+            less_than_span: s(start + 10, start + 11),
+            element: string_type,
+            comma_span: s(start + 17, start + 18),
+            length_span: s(start + 19, start + 20),
+            length_spelling: "2".to_owned(),
+            length: 2,
+            greater_than_span: s(start + 20, start + 21),
+        },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let first_base_start = start + 23;
+    body.expressions[3] = RawExpressionSyntax {
+        span: s(first_base_start, first_base_start + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: s(first_base_start, first_base_start + 1),
+            },
+        },
+    };
+    let first_index_start = first_base_start + 2;
+    let first_index = match case {
+        OwnedArrayProjectionCase::Dynamic => {
+            let id = u32::try_from(body.expressions.len()).expect("dynamic index id");
+            body.expressions.push(RawExpressionSyntax {
+                span: s(first_index_start, first_index_start + 1),
+                kind: zryna_syntax::v4::RawExpressionKind::Reference {
+                    name: RawIdentifierSyntax {
+                        text: "a".to_owned(),
+                        span: s(first_index_start, first_index_start + 1),
+                    },
+                },
+            });
+            id
+        }
+        OwnedArrayProjectionCase::Negative => {
+            let literal = u32::try_from(body.expressions.len()).expect("negative literal id");
+            body.expressions.push(RawExpressionSyntax {
+                span: s(first_index_start + 1, first_index_start + 2),
+                kind: zryna_syntax::v4::RawExpressionKind::I32Literal { spelling: "1".to_owned() },
+            });
+            let id = u32::try_from(body.expressions.len()).expect("negative index id");
+            body.expressions.push(RawExpressionSyntax {
+                span: s(first_index_start, first_index_start + 2),
+                kind: zryna_syntax::v4::RawExpressionKind::Negation {
+                    operator_span: s(first_index_start, first_index_start + 1),
+                    operand: literal,
+                },
+            });
+            id
+        }
+        _ => {
+            let id = u32::try_from(body.expressions.len()).expect("constant index id");
+            body.expressions.push(RawExpressionSyntax {
+                span: s(first_index_start, first_index_start + 1),
+                kind: zryna_syntax::v4::RawExpressionKind::I32Literal {
+                    spelling: indexes.0.to_owned(),
+                },
+            });
+            id
+        }
+    };
+    let first_index_len = u32::try_from(indexes.0.len()).expect("first index length");
+    let first_projection = u32::try_from(body.expressions.len()).expect("first projection id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(first_base_start, first_index_start + first_index_len + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Index {
+            base: 3,
+            open_bracket_span: s(first_base_start + 1, first_base_start + 2),
+            index: first_index,
+            close_bracket_span: s(
+                first_index_start + first_index_len,
+                first_index_start + first_index_len + 1,
+            ),
+        },
+    });
+    let second_base_start = first_index_start + first_index_len + 3;
+    let second_base = u32::try_from(body.expressions.len()).expect("second base id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(second_base_start, second_base_start + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: s(second_base_start, second_base_start + 1),
+            },
+        },
+    });
+    let second_index = u32::try_from(body.expressions.len()).expect("second index id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(second_base_start + 2, second_base_start + 3),
+        kind: zryna_syntax::v4::RawExpressionKind::I32Literal { spelling: indexes.1.to_owned() },
+    });
+    let second_projection = u32::try_from(body.expressions.len()).expect("second projection id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(second_base_start, second_base_start + 4),
+        kind: zryna_syntax::v4::RawExpressionKind::Index {
+            base: second_base,
+            open_bracket_span: s(second_base_start + 1, second_base_start + 2),
+            index: second_index,
+            close_bracket_span: s(second_base_start + 3, second_base_start + 4),
+        },
+    });
+    let end = start + u32::try_from(replacement.len()).expect("array replacement end");
+    let result = u32::try_from(body.expressions.len()).expect("array result id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start, end),
+        kind: zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction {
+            type_syntax: array_type,
+            open_paren_span: s(start + 21, start + 22),
+            open_bracket_span: s(start + 22, start + 23),
+            elements: vec![first_projection, second_projection],
+            close_bracket_span: s(end - 2, end - 1),
+            close_paren_span: s(end - 1, end),
+        },
+    });
+    let RawStatementKind::Return { value, .. } = &mut body.statements[1].kind else {
+        panic!("array return")
+    };
+    *value = result;
+    (source, raw)
+}
+
+fn owned_pair_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const LOCAL: &str = "const text: String = p.first; ";
+    let mut source = OWNED_PAIR_SOURCE.to_owned();
+    let insertion = source.find("return p;").expect("Pair return insertion");
+    source.insert_str(insertion, LOCAL);
+    let insertion = u32::try_from(insertion).expect("Pair insertion offset");
+    let mut raw = shift_snapshot(
+        response_snapshot(OWNED_PAIR_RESPONSE),
+        insertion,
+        u32::try_from(LOCAL.len()).expect("projected local length"),
+    );
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let string_type = u32::try_from(raw.files[0].type_syntax.len()).expect("String type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(insertion + 12, insertion + 18),
+        kind: RawTypeSyntaxKind::String { keyword_span: s(insertion + 12, insertion + 18) },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let base = u32::try_from(body.expressions.len()).expect("projected base id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 21, insertion + 22),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "p".to_owned(),
+                span: s(insertion + 21, insertion + 22),
+            },
+        },
+    });
+    let projected = u32::try_from(body.expressions.len()).expect("projected value id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 21, insertion + 28),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base,
+            dot_span: s(insertion + 22, insertion + 23),
+            field: RawIdentifierSyntax {
+                text: "first".to_owned(),
+                span: s(insertion + 23, insertion + 28),
+            },
+        },
+    });
+    body.statements.insert(
+        1,
+        RawStatementSyntax {
+            span: s(insertion, insertion + 29),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(insertion, insertion + 5),
+                mutable: false,
+                name: RawIdentifierSyntax {
+                    text: "text".to_owned(),
+                    span: s(insertion + 6, insertion + 10),
+                },
+                type_syntax: string_type,
+                equals_span: s(insertion + 19, insertion + 20),
+                initializer: projected,
+                semicolon_span: s(insertion + 28, insertion + 29),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+fn struct_index_wrong_base_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, raw) = owned_pair_projected_return_snapshot("first");
+    let start = source.rfind("p.first").expect("Struct wrong-base projection");
+    source.replace_range(start..start + 7, "p[0]");
+    let start = u32::try_from(start).expect("Struct projection offset");
+    let mut raw = shift_snapshot_signed(raw, start + 7, -3);
+    let body = &mut raw.files[0].functions[0].body;
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    body.expressions[6] = RawExpressionSyntax {
+        span: s(start + 2, start + 3),
+        kind: zryna_syntax::v4::RawExpressionKind::I32Literal { spelling: "0".to_owned() },
+    };
+    body.expressions.insert(
+        7,
+        RawExpressionSyntax {
+            span: s(start, start + 4),
+            kind: zryna_syntax::v4::RawExpressionKind::Index {
+                base: 5,
+                open_bracket_span: s(start + 1, start + 2),
+                index: 6,
+                close_bracket_span: s(start + 3, start + 4),
+            },
+        },
+    );
+    let zryna_syntax::v4::RawExpressionKind::StructConstruction { fields, .. } =
+        &mut body.expressions[8].kind
+    else {
+        panic!("Struct wrong-base result")
+    };
+    let zryna_syntax::v4::RawFieldInitializerKind::Explicit { value, .. } = &mut fields[1].kind
+    else {
+        panic!("Struct wrong-base initializer")
+    };
+    *value = 7;
+    let RawStatementKind::Return { value, .. } = &mut body.statements[1].kind else {
+        panic!("Struct wrong-base return")
+    };
+    *value = 8;
+    (source, raw)
+}
+
+fn fixed_array_field_wrong_base_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, raw) =
+        owned_array_projected_return_snapshot(OwnedArrayProjectionCase::Disjoint);
+    let start = source.rfind("a[0]").expect("array wrong-base projection");
+    source.replace_range(start..start + 4, "a.foo");
+    let start = u32::try_from(start).expect("array projection offset");
+    let mut raw = shift_snapshot(raw, start + 4, 1);
+    let body = &mut raw.files[0].functions[0].body;
+    body.expressions.remove(4);
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    body.expressions[4] = RawExpressionSyntax {
+        span: s(start, start + 5),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: 3,
+            dot_span: s(start + 1, start + 2),
+            field: RawIdentifierSyntax { text: "foo".to_owned(), span: s(start + 2, start + 5) },
+        },
+    };
+    let zryna_syntax::v4::RawExpressionKind::Index { base, index, .. } =
+        &mut body.expressions[7].kind
+    else {
+        panic!("second array projection")
+    };
+    *base = 5;
+    *index = 6;
+    let zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction { elements, .. } =
+        &mut body.expressions[8].kind
+    else {
+        panic!("array wrong-base result")
+    };
+    *elements = vec![4, 7];
+    let RawStatementKind::Return { value, .. } = &mut body.statements[1].kind else {
+        panic!("array wrong-base return")
+    };
+    *value = 8;
+    (source, raw)
+}
+
+fn fixed_array_oob_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const FINAL_RETURN: &str = "return a; ";
+    let (mut source, mut raw) =
+        owned_array_projected_return_snapshot(OwnedArrayProjectionCase::OutOfBounds);
+    let fresh = source.rfind("a[1]").expect("fresh array assignment element");
+    source.replace_range(fresh..fresh + 4, "\"b\"");
+    let fresh = u32::try_from(fresh).expect("fresh element offset");
+    raw = shift_snapshot_signed(raw, fresh + 4, -1);
+    {
+        let body = &mut raw.files[0].functions[0].body;
+        body.expressions.remove(6);
+        body.expressions.remove(6);
+        body.expressions[6] = RawExpressionSyntax {
+            span: zryna_source::UntrustedSpan { file: 0, start: fresh, end: fresh + 3 },
+            kind: zryna_syntax::v4::RawExpressionKind::StringLiteral {
+                spelling: "\"b\"".to_owned(),
+            },
+        };
+        let zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction { elements, .. } =
+            &mut body.expressions[7].kind
+        else {
+            panic!("fresh array assignment result")
+        };
+        *elements = vec![5, 6];
+        let RawStatementKind::Return { value, .. } = &mut body.statements[1].kind else {
+            panic!("fresh array assignment return")
+        };
+        *value = 7;
+    }
+    source.replace_range(41..46, "let  ");
+    let assignment = source.find("return FixedArray").expect("array assignment return");
+    source.replace_range(assignment..assignment + 7, "a = ");
+    let assignment = u32::try_from(assignment).expect("array assignment offset");
+    let mut raw = shift_snapshot_signed(raw, assignment + 7, -3);
+    let insertion = source.rfind('}').expect("array function close");
+    source.insert_str(insertion, FINAL_RETURN);
+    let insertion = u32::try_from(insertion).expect("final return offset");
+    raw = shift_snapshot(
+        raw,
+        insertion,
+        u32::try_from(FINAL_RETURN.len()).expect("final return length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::LocalDeclaration { keyword_span, mutable, .. } =
+        &mut body.statements[0].kind
+    else {
+        panic!("array assignment local")
+    };
+    keyword_span.end = keyword_span.start + 3;
+    *mutable = true;
+    let RawStatementKind::Return { value: replacement, semicolon_span, .. } =
+        body.statements[1].kind
+    else {
+        panic!("array replacement expression")
+    };
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let target = u32::try_from(body.expressions.len()).expect("array assignment target");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(assignment, assignment + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "a".to_owned(), span: s(assignment, assignment + 1) },
+        },
+    });
+    body.statements[1] = RawStatementSyntax {
+        span: s(assignment, semicolon_span.end),
+        kind: RawStatementKind::Assignment {
+            target,
+            equals_span: s(assignment + 2, assignment + 3),
+            value: replacement,
+            semicolon_span,
+        },
+    };
+    let returned = u32::try_from(body.expressions.len()).expect("array final return");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 7, insertion + 8),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: s(insertion + 7, insertion + 8),
+            },
+        },
+    });
+    body.statements.push(RawStatementSyntax {
+        span: s(insertion, insertion + 9),
+        kind: RawStatementKind::Return {
+            keyword_span: s(insertion, insertion + 6),
+            value: returned,
+            semicolon_span: s(insertion + 8, insertion + 9),
+        },
+    });
     body.blocks[0].statements = vec![0, 1, 2];
     (source, raw)
 }
@@ -4697,6 +5291,185 @@ fn string_fixed_array_clone_assignment_replaces_one_mutable_whole_root() {
 }
 
 #[test]
+fn owned_struct_projections_copy_and_move_with_a_root_relative_cleanup_mask() {
+    let (source, raw) = owned_pair_projected_return_snapshot("first");
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful owned Struct projections");
+    let program = lower(pair_input(&syntax, &sources)).expect("owned Struct projections");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned Pair root")
+        .id();
+    let first = function
+        .places()
+        .find(|place| {
+            matches!(
+                place.kind(),
+                VerifiedPlaceKind::StructField { base, ordinal: 0 } if base == root
+            )
+        })
+        .expect("String field projection")
+        .id();
+    let flag = function
+        .places()
+        .find(|place| {
+            matches!(
+                place.kind(),
+                VerifiedPlaceKind::StructField { base, ordinal: 1 } if base == root
+            )
+        })
+        .expect("Copy field projection")
+        .id();
+    let block = function.blocks().next().expect("block");
+    assert!(block.instructions().any(|instruction| {
+        instruction.kind() == VerifiedInstructionKind::CopyFromPlace
+            && instruction.place_operands().next() == Some(flag)
+    }));
+    assert!(block.instructions().any(|instruction| {
+        instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+            && instruction.place_operands().next() == Some(first)
+    }));
+    let cleanup = block
+        .terminator()
+        .derived_drop_actions()
+        .find(|action| action.root() == root)
+        .expect("partially moved root cleanup");
+    assert_eq!(
+        cleanup.moved_projections().map(FaultPlaceIdentity::index).collect::<Vec<_>>(),
+        vec![first.index()],
+    );
+    assert_eq!(
+        cleanup.initialized_projections().map(FaultPlaceIdentity::index).collect::<Vec<_>>(),
+        vec![flag.index()],
+    );
+}
+
+#[test]
+fn owned_fixed_array_accepts_disjoint_string_projection_moves() {
+    let (source, raw) = owned_array_projected_return_snapshot(OwnedArrayProjectionCase::Disjoint);
+    let sources = sources_for(&source);
+    let syntax =
+        verify_snapshot(raw, &sources).expect("source-faithful disjoint array projections");
+    let program = lower(pair_input(&syntax, &sources)).expect("disjoint array projection moves");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned array root")
+        .id();
+    let projected = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::FixedArrayConstant { base, index } if base == root => {
+                Some((index, place.id()))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(projected.iter().map(|(index, _)| *index).collect::<Vec<_>>(), vec![0, 1]);
+    let moved = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .filter(|instruction| instruction.kind() == VerifiedInstructionKind::MoveFromPlace)
+        .filter_map(|instruction| instruction.place_operands().next())
+        .filter(|place| projected.iter().any(|(_, projected)| projected == place))
+        .count();
+    assert_eq!(moved, 2);
+}
+
+#[test]
+fn owned_projection_repeat_and_whole_root_after_partial_move_are_m3014() {
+    let (repeat_source, repeat_raw) =
+        owned_array_projected_return_snapshot(OwnedArrayProjectionCase::Repeat);
+    let repeat_sources = sources_for(&repeat_source);
+    let repeat_syntax = verify_snapshot(repeat_raw, &repeat_sources)
+        .expect("source-faithful repeated array projection");
+    let repeat =
+        lower(pair_input(&repeat_syntax, &repeat_sources)).expect_err("repeated projection move");
+    assert_eq!(repeat[0].code(), "ZRYNA-M3014");
+    assert_eq!(
+        repeat[0].primary_span(),
+        Some(span(&repeat_sources, nth_untrusted_span(&repeat_source, "a[0]", 1))),
+    );
+
+    let (root_source, root_raw) = owned_pair_partial_then_root_snapshot();
+    let root_sources = sources_for(&root_source);
+    let root_syntax = verify_snapshot(root_raw, &root_sources)
+        .expect("source-faithful whole root after projected move");
+    let root = lower(pair_input(&root_syntax, &root_sources))
+        .expect_err("whole root after projected move");
+    assert_eq!(root[0].code(), "ZRYNA-M3014");
+    assert_eq!(
+        root[0].primary_span(),
+        Some(span(&root_sources, nth_untrusted_span(&root_source, "p", 2))),
+    );
+}
+
+#[test]
+fn owned_projection_invalid_field_and_index_diagnostics_use_the_projection_child() {
+    let (field_source, field_raw) = owned_pair_projected_return_snapshot("nope");
+    let field_sources = sources_for(&field_source);
+    let field_syntax =
+        verify_snapshot(field_raw, &field_sources).expect("source-faithful invalid owned field");
+    let field = lower(pair_input(&field_syntax, &field_sources)).expect_err("invalid owned field");
+    assert_eq!(field[0].code(), "ZRYNA-M3006");
+    assert_eq!(
+        field[0].primary_span(),
+        Some(span(&field_sources, nth_untrusted_span(&field_source, "nope", 0))),
+    );
+
+    for (case, needle, label) in [
+        (OwnedArrayProjectionCase::Dynamic, "a[a]", "dynamic"),
+        (OwnedArrayProjectionCase::Negative, "a[-1]", "negative"),
+        (OwnedArrayProjectionCase::OutOfBounds, "a[2]", "out of bounds"),
+    ] {
+        let (source, raw) = owned_array_projected_return_snapshot(case);
+        let sources = sources_for(&source);
+        let syntax = verify_snapshot(raw, &sources).expect("source-faithful invalid owned index");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(label);
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3006", "{label}");
+        let projection = nth_untrusted_span(&source, needle, 0);
+        let expected = zryna_source::UntrustedSpan {
+            file: projection.file,
+            start: projection.start + 2,
+            end: projection.end - 1,
+        };
+        assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, expected)), "{label}");
+    }
+}
+
+#[test]
+fn aggregate_projection_wrong_base_kinds_are_symmetric_m3006() {
+    for (source, raw, needle, label) in [
+        {
+            let (source, raw) = struct_index_wrong_base_snapshot();
+            (source, raw, "p[0]", "Struct indexed as FixedArray")
+        },
+        {
+            let (source, raw) = fixed_array_field_wrong_base_snapshot();
+            (source, raw, "a.foo", "FixedArray accessed as Struct")
+        },
+    ] {
+        let sources = sources_for(&source);
+        let syntax = verify_snapshot(raw, &sources).expect("source-faithful wrong-base projection");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(label);
+        assert_eq!(diagnostics.len(), 1, "{label}");
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3006", "{label}");
+        let projection = nth_untrusted_span(&source, needle, 0);
+        let child = zryna_source::UntrustedSpan {
+            file: projection.file,
+            start: projection.start + 2,
+            end: if needle == "p[0]" { projection.start + 3 } else { projection.end },
+        };
+        assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, child)), "{label}");
+    }
+}
+
+#[test]
 fn aggregate_assignment_rejects_direct_self_move_and_immutable_target() {
     for (rhs, mutable, reference_ordinal, label) in [
         (OwnedPairAssignmentRhs::SelfMove, true, 2, "direct self move"),
@@ -4717,6 +5490,83 @@ fn aggregate_assignment_rejects_direct_self_move_and_immutable_target() {
         assert_eq!(first[0].message(), second[0].message(), "{label}");
         assert_eq!(first[0].primary_span(), second[0].primary_span(), "{label}");
     }
+}
+
+#[test]
+fn aggregate_assignment_may_copy_project_from_its_preserved_destination() {
+    let (source, raw) =
+        owned_pair_projection_assignment_snapshot(OwnedPairProjectionAssignmentRhs::CopyField);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources)
+        .expect("source-faithful Copy projection aggregate assignment");
+    let program = lower(pair_input(&syntax, &sources))
+        .expect("Copy projection must not consume the preserved assignment destination");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let copy_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::CopyFromPlace)
+        .expect("CopyFromPlace");
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("ReplacePlace");
+    assert!(copy_index < replace_index);
+    let projected = instructions[copy_index].place_operands().next().expect("Copy projection");
+    assert!(matches!(
+        function.places().find(|place| place.id() == projected).expect("projected place").kind(),
+        VerifiedPlaceKind::StructField { ordinal: 1, .. }
+    ));
+}
+
+#[test]
+fn aggregate_assignment_rejects_owned_projection_consumption_from_destination() {
+    let (source, raw) =
+        owned_pair_projection_assignment_snapshot(OwnedPairProjectionAssignmentRhs::MoveField);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources)
+        .expect("source-faithful consuming projection aggregate assignment");
+    let diagnostics =
+        lower(pair_input(&syntax, &sources)).expect_err("destination projection consumption");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
+    let projection = nth_untrusted_span(&source, "p.first", 0);
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(
+            &sources,
+            zryna_source::UntrustedSpan {
+                file: projection.file,
+                start: projection.start,
+                end: projection.start + 1,
+            },
+        )),
+    );
+}
+
+#[test]
+fn fixed_array_assignment_reports_invalid_projection_before_consumption() {
+    let (source, raw) = fixed_array_oob_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources)
+        .expect("source-faithful out-of-bounds projection assignment");
+    let diagnostics =
+        lower(pair_input(&syntax, &sources)).expect_err("out-of-bounds assignment projection");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3006");
+    let projection = nth_untrusted_span(&source, "a[2]", 0);
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(
+            &sources,
+            zryna_source::UntrustedSpan {
+                file: projection.file,
+                start: projection.start + 2,
+                end: projection.start + 3,
+            },
+        )),
+    );
 }
 
 #[test]

@@ -222,10 +222,12 @@ aggregate/enum routes retain their distinct M3011 and M3014 moved-owner diagnost
 bindings use M3002. General structural Vec clone beyond String elements, nested aggregate clone
 graphs containing Enum, Vec, Shared, or Weak values remain open. The verified IR prerequisite for
 projected replacement now seals the exact old-subobject traversal and preserves replacement
-subtree masks, enum refinement, and siblings; owned semantic projections, projected assignment,
-and partial moves remain open, alongside
+subtree masks, enum refinement, and siblings. The semantic producer now resolves canonical static
+StructField and FixedArrayConstant projections, retains Copy leaves, moves exact String leaves,
+and preserves disjoint siblings plus the enclosing cleanup obligation. Aggregate/enum subobject
+moves, whole-partial-owner transfer, dynamic projections, and projected assignment remain open, alongside
 general owned joins,
-owned loop-carried joins, repeated or nested control flow, and general scope exits remain closure
+owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is
 not complete, so #82 remains planned and is not ready to start.
 
