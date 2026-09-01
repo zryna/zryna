@@ -809,6 +809,28 @@ fn projected_aggregate_assignment_budget_violation(
 }
 
 #[allow(clippy::too_many_arguments)]
+fn projected_subobject_assignment_budget_violation(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    source_missing_path_places: usize,
+    source_missing_descendant_places: usize,
+    target_missing_path_places: usize,
+) -> bool {
+    let Some(additional_places) = source_missing_path_places
+        .checked_add(source_missing_descendant_places)
+        .and_then(|total| total.checked_add(target_missing_path_places))
+        .and_then(|total| total.checked_add(1))
+    else {
+        return true;
+    };
+    owned_value_budget_violation(values, 1)
+        || owned_place_budget_violation(places, additional_places)
+        || aggregate_transition_budget_violation(transitions, reserved_transitions, 2)
+}
+
+#[allow(clippy::too_many_arguments)]
 fn projected_aggregate_clone_assignment_budget_violation(
     values: usize,
     places: usize,
@@ -1899,7 +1921,8 @@ struct Binding {
 }
 
 enum ProjectedAggregateAssignmentSource {
-    Move { name: syntax::RawIdentifierSyntax, at: Span },
+    MoveRoot { name: syntax::RawIdentifierSyntax, at: Span },
+    MoveProjection { expression: u32, missing_path_places: usize, missing_descendant_places: usize },
     Clone { binding: Binding, at: Span },
 }
 
@@ -6658,17 +6681,33 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         value: u32,
         expected: Ty,
         target_root: raw::PlaceId,
-    ) -> Option<(Binding, syntax::RawIdentifierSyntax, Span)> {
+    ) -> Option<ProjectedAggregateAssignmentSource> {
         let expression = self.expression(value).cloned()?;
-        let RawExpressionKind::Reference { name } = expression.kind else {
-            self.errors.at(
-                "ZRYNA-M3013",
-                span(self.input.sources(), expression.span),
-                "projected aggregate assignment requires one whole-root direct reference source",
-                "move one distinct fully initialized exact aggregate local into the projection",
+        let expression_at = span(self.input.sources(), expression.span);
+        if let RawExpressionKind::Reference { name } = expression.kind {
+            return self.projected_aggregate_assignment_root_source(
+                name,
+                expression_at,
+                expected,
+                target_root,
             );
-            return None;
-        };
+        }
+
+        self.projected_aggregate_assignment_projection_source(
+            value,
+            expression_at,
+            expected,
+            target_root,
+        )
+    }
+
+    fn projected_aggregate_assignment_root_source(
+        &mut self,
+        name: syntax::RawIdentifierSyntax,
+        expression_at: Span,
+        expected: Ty,
+        target_root: raw::PlaceId,
+    ) -> Option<ProjectedAggregateAssignmentSource> {
         let Some(source) = self.bindings.get(&name.text).cloned() else {
             self.errors.at(
                 "ZRYNA-M3002",
@@ -6683,7 +6722,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 "ZRYNA-M3016",
                 span(self.input.sources(), name.span),
                 "projected aggregate assignment source has the wrong exact type",
-                "move a whole root with the exact target projection type",
+                "move a whole root or static subobject with the exact target projection type",
             );
             return None;
         }
@@ -6692,7 +6731,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 "ZRYNA-M3014",
                 span(self.input.sources(), name.span),
                 "projected aggregate assignment cannot consume its enclosing root",
-                "move one distinct aggregate root into the projection",
+                "move one aggregate root under a distinct enclosing root into the projection",
             );
             return None;
         }
@@ -6705,8 +6744,84 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             );
             return None;
         }
-        let expression_span = span(self.input.sources(), expression.span);
-        Some((source, name, expression_span))
+        Some(ProjectedAggregateAssignmentSource::MoveRoot { name, at: expression_at })
+    }
+
+    fn projected_aggregate_assignment_projection_source(
+        &mut self,
+        value: u32,
+        expression_at: Span,
+        expected: Ty,
+        target_root: raw::PlaceId,
+    ) -> Option<ProjectedAggregateAssignmentSource> {
+        let Some(source) = self.owned_place_preflight(value) else {
+            self.errors.at(
+                "ZRYNA-M3013",
+                expression_at,
+                "projected aggregate assignment requires one whole root or static aggregate subobject source",
+                "move one distinct fully initialized exact aggregate root or canonical Struct field or constant fixed-array element into the projection",
+            );
+            return None;
+        };
+        if source.place.is_root
+            || source.place.ty.is_copy()
+            || !matches!(source.place.ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
+            || !self.supported(source.place.ty)
+        {
+            self.errors.at(
+                "ZRYNA-M3013",
+                expression_at,
+                "projected aggregate assignment source is outside the static non-Copy subobject checkpoint",
+                "move one supported Struct field or constant fixed-array aggregate element",
+            );
+            return None;
+        }
+        if source.place.ty != expected {
+            self.errors.at(
+                "ZRYNA-M3016",
+                expression_at,
+                "projected aggregate assignment source has the wrong exact type",
+                "move a static subobject with the exact target projection type",
+            );
+            return None;
+        }
+        if source.place.root == target_root {
+            self.errors.at(
+                "ZRYNA-M3014",
+                expression_at,
+                "projected aggregate assignment source and target require distinct enclosing roots",
+                "move a static aggregate subobject between two distinct local owners",
+            );
+            return None;
+        }
+        if !self.preflight_projection_available(&source) {
+            self.errors.at(
+                "ZRYNA-M3014",
+                expression_at,
+                "projected aggregate assignment source subobject is moved or overlaps a moved projection",
+                "move one initialized available static aggregate subobject",
+            );
+            return None;
+        }
+        if !self.preflight_aggregate_subobject_move_site(expression_at) {
+            return None;
+        }
+        let Some(shape) = self.complete_projection_shape(expected) else {
+            self.errors.at(
+                "ZRYNA-M3016",
+                expression_at,
+                "projected aggregate assignment source has no finite static topology",
+                "move an acyclic supported Struct or fixed-array subobject",
+            );
+            return None;
+        };
+        let existing = self.existing_projection_shape(source.place.place, &shape);
+        let missing_descendant_places = existing.iter().filter(|place| place.is_none()).count();
+        Some(ProjectedAggregateAssignmentSource::MoveProjection {
+            expression: value,
+            missing_path_places: source.missing,
+            missing_descendant_places,
+        })
     }
 
     fn projected_aggregate_clone_assignment_source(
@@ -6782,9 +6897,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             )?;
             Some(ProjectedAggregateAssignmentSource::Clone { binding, at })
         } else {
-            let (_binding, name, at) =
-                self.projected_aggregate_assignment_source(value, expected, target_root)?;
-            Some(ProjectedAggregateAssignmentSource::Move { name, at })
+            self.projected_aggregate_assignment_source(value, expected, target_root)
         }
     }
 
@@ -6794,7 +6907,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         missing_path_places: usize,
     ) -> bool {
         match source {
-            ProjectedAggregateAssignmentSource::Move { .. } => {
+            ProjectedAggregateAssignmentSource::MoveRoot { .. } => {
                 projected_aggregate_assignment_budget_violation(
                     self.next_value as usize,
                     self.places.len(),
@@ -6803,6 +6916,19 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                     missing_path_places,
                 )
             }
+            ProjectedAggregateAssignmentSource::MoveProjection {
+                missing_path_places: source_missing_path_places,
+                missing_descendant_places,
+                ..
+            } => projected_subobject_assignment_budget_violation(
+                self.next_value as usize,
+                self.places.len(),
+                self.instructions.len(),
+                self.reserved_transitions,
+                *source_missing_path_places,
+                *missing_descendant_places,
+                missing_path_places,
+            ),
             ProjectedAggregateAssignmentSource::Clone { .. } => {
                 projected_aggregate_clone_assignment_budget_violation(
                     self.next_value as usize,
@@ -6829,7 +6955,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 "ZRYNA-M3016",
                 at,
                 "this checkpoint admits only one projected aggregate assignment per function",
-                "move or clone one complete Struct or fixed-array root into one static aggregate projection",
+                "move one complete static aggregate subobject, or move or clone one complete root, into one static aggregate projection",
             );
             return None;
         }
@@ -6847,7 +6973,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 "ZRYNA-M3013",
                 at,
                 "projected aggregate assignment requires one exact non-Copy static Struct or fixed-array target",
-                "assign one complete exact aggregate root to a static Struct field or constant fixed-array element",
+                "assign one complete exact aggregate root or distinct static aggregate subobject to a static Struct field or constant fixed-array element",
             );
             return None;
         }
@@ -6884,8 +7010,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             return None;
         }
         let prepared = match &source {
-            ProjectedAggregateAssignmentSource::Move { name, at } => {
+            ProjectedAggregateAssignmentSource::MoveRoot { name, at } => {
                 self.reference_value(name, target_ty, *at)
+            }
+            ProjectedAggregateAssignmentSource::MoveProjection { expression, .. } => {
+                self.projected_value(*expression, target_ty, true)
             }
             ProjectedAggregateAssignmentSource::Clone { binding, at } => {
                 self.emit_aggregate_clone(binding, target_ty, *at)
@@ -6904,7 +7033,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 "ZRYNA-M3014",
                 at,
                 "projected aggregate assignment has no distinct prepared owner",
-                "move or clone one available independently owned aggregate root into the projection",
+                "move one available static aggregate subobject, or move or clone one independently owned root, into the projection",
             );
             return None;
         }

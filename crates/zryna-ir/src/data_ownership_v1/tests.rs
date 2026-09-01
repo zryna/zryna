@@ -942,6 +942,189 @@ fn projected_aggregate_assignment_program(
     raw
 }
 
+#[allow(clippy::too_many_lines)]
+fn projected_subobject_assignment_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    inner: raw::TypeId,
+    outer: raw::TypeId,
+    array: raw::TypeId,
+    shape: SubobjectMoveShape,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    let root_ty = match shape {
+        SubobjectMoveShape::Struct => outer,
+        SubobjectMoveShape::FixedArray => array,
+    };
+    let projection = |base| match shape {
+        SubobjectMoveShape::Struct => raw::PlaceKind::StructField { base, ordinal: 0 },
+        SubobjectMoveShape::FixedArray => raw::PlaceKind::FixedArrayConstant { base, index: 0 },
+    };
+    function.entry_export = None;
+    function.parameters.clear();
+    function.borrow_parameters.clear();
+    function.result = raw::TypeId(1);
+    function.places.clear();
+    function.blocks[0].instructions.clear();
+    function.cleanup_plans.clear();
+
+    let mut next_value = 0u32;
+    let mut next_place = 0u32;
+    let mut next_cleanup = 0u32;
+    let mut roots = Vec::with_capacity(2);
+    for (ordinal, labels) in [(0, *b"od"), (1, *b"ns")] {
+        let inherited = roots.last().copied();
+        let mut elements = Vec::with_capacity(2);
+        let mut first_inner = None;
+        for (index, byte) in labels.into_iter().enumerate() {
+            let string_value = raw::ValueId(next_value);
+            next_value += 1;
+            let string_place = raw::PlaceId(next_place);
+            next_place += 1;
+            function.places.push(raw::Place {
+                id: string_place,
+                ty: raw::TypeId(2),
+                span,
+                kind: raw::PlaceKind::Temporary(string_value),
+            });
+            let cleanup = raw::CleanupPlanId(next_cleanup);
+            next_cleanup += 1;
+            let mut actions = Vec::new();
+            if let Some(inner_place) = first_inner {
+                actions.push(raw::DropAction::DropPlace(inner_place));
+            }
+            if let Some(root) = inherited {
+                actions.push(raw::DropAction::DropPlace(root));
+            }
+            function.cleanup_plans.push(raw::CleanupPlan { id: cleanup, span, actions });
+            function.blocks[0].instructions.push(raw::Instruction {
+                result: Some(raw::ValueDefinition { id: string_value, ty: raw::TypeId(2), span }),
+                span,
+                kind: raw::InstructionKind::StringFromUtf8 { bytes: vec![byte], cleanup },
+            });
+            if index == 0 || matches!(shape, SubobjectMoveShape::FixedArray) {
+                let inner_value = raw::ValueId(next_value);
+                next_value += 1;
+                let inner_place = raw::PlaceId(next_place);
+                next_place += 1;
+                function.places.push(raw::Place {
+                    id: inner_place,
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::Temporary(inner_value),
+                });
+                function.blocks[0].instructions.push(raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: inner_value, ty: inner, span }),
+                    span,
+                    kind: raw::InstructionKind::StructConstruct {
+                        fields: vec![string_value],
+                        cleanup: None,
+                    },
+                });
+                first_inner.get_or_insert(inner_place);
+                elements.push(inner_value);
+            } else {
+                elements.push(string_value);
+            }
+        }
+        let root_value = raw::ValueId(next_value);
+        next_value += 1;
+        let root_temporary = raw::PlaceId(next_place);
+        next_place += 1;
+        function.places.push(raw::Place {
+            id: root_temporary,
+            ty: root_ty,
+            span,
+            kind: raw::PlaceKind::Temporary(root_value),
+        });
+        let construct = match shape {
+            SubobjectMoveShape::Struct => {
+                raw::InstructionKind::StructConstruct { fields: elements, cleanup: None }
+            }
+            SubobjectMoveShape::FixedArray => {
+                raw::InstructionKind::FixedArrayConstruct { elements, cleanup: None }
+            }
+        };
+        function.blocks[0].instructions.push(raw::Instruction {
+            result: Some(raw::ValueDefinition { id: root_value, ty: root_ty, span }),
+            span,
+            kind: construct,
+        });
+        let root = raw::PlaceId(next_place);
+        next_place += 1;
+        function.places.push(raw::Place {
+            id: root,
+            ty: root_ty,
+            span,
+            kind: raw::PlaceKind::Local(ordinal),
+        });
+        function.blocks[0].instructions.push(raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace { place: root, value: root_value },
+        });
+        roots.push(root);
+    }
+
+    let target_root = roots[0];
+    let source_root = roots[1];
+    let target = raw::PlaceId(next_place);
+    next_place += 1;
+    function.places.push(raw::Place { id: target, ty: inner, span, kind: projection(target_root) });
+    let source = raw::PlaceId(next_place);
+    next_place += 1;
+    function.places.push(raw::Place { id: source, ty: inner, span, kind: projection(source_root) });
+    let source_leaf = raw::PlaceId(next_place);
+    next_place += 1;
+    function.places.push(raw::Place {
+        id: source_leaf,
+        ty: raw::TypeId(2),
+        span,
+        kind: raw::PlaceKind::StructField { base: source, ordinal: 0 },
+    });
+    let moved = raw::ValueId(next_value);
+    next_value += 1;
+    let moved_temporary = raw::PlaceId(next_place);
+    function.places.push(raw::Place {
+        id: moved_temporary,
+        ty: inner,
+        span,
+        kind: raw::PlaceKind::Temporary(moved),
+    });
+    function.blocks[0].instructions.extend([
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: moved, ty: inner, span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: source },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::ReplacePlace { place: target, value: moved },
+        },
+    ]);
+    let result = raw::ValueId(next_value);
+    function.blocks[0].instructions.push(raw::Instruction {
+        result: Some(raw::ValueDefinition { id: result, ty: raw::TypeId(1), span }),
+        span,
+        kind: raw::InstructionKind::I32Literal(0),
+    });
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: result, cleanup: raw::CleanupPlanId(next_cleanup) };
+    function.cleanup_plans.push(raw::CleanupPlan {
+        id: raw::CleanupPlanId(next_cleanup),
+        span,
+        actions: vec![
+            raw::DropAction::DropPlace(source_root),
+            raw::DropAction::DropPlace(target_root),
+        ],
+    });
+    raw
+}
+
 fn projected_aggregate_clone_assignment_program(
     sources: &SourceMap,
     linear: &zryna_layout::VerifiedLayouts,
@@ -4247,6 +4430,202 @@ fn projected_aggregate_assignment_is_sealed_to_one_root_to_static_projection_mov
                 .map(|action| action.root().index())
                 .collect::<Vec<_>>(),
             [3],
+        );
+    }
+}
+
+#[test]
+fn projected_subobject_assignment_moves_one_complete_static_subobject() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    for shape in [SubobjectMoveShape::Struct, SubobjectMoveShape::FixedArray] {
+        let raw = projected_subobject_assignment_program(
+            &sources, &linear, &linux, inner, outer, array, shape,
+        );
+        let raw_function = &raw.modules[0].functions[0];
+        let move_index = raw_function.blocks[0]
+            .instructions
+            .iter()
+            .position(|instruction| {
+                matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. })
+            })
+            .expect("projected move");
+        let raw::InstructionKind::MoveFromPlace { place: source } =
+            raw_function.blocks[0].instructions[move_index].kind
+        else {
+            unreachable!()
+        };
+        let raw::InstructionKind::ReplacePlace { place: target, .. } =
+            raw_function.blocks[0].instructions[move_index + 1].kind
+        else {
+            unreachable!()
+        };
+        let source_root = super::projection_base(&raw_function.places[source.0 as usize].kind)
+            .expect("source root");
+        let target_root = super::projection_base(&raw_function.places[target.0 as usize].kind)
+            .expect("target root");
+        let verified = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect("projected subobject assignment");
+        let function =
+            verified.modules().next().expect("module").functions().next().expect("function");
+        let block = function.blocks().next().expect("block");
+        let instructions = block.instructions().collect::<Vec<_>>();
+        assert_eq!(instructions[move_index].kind(), VerifiedInstructionKind::MoveFromPlace);
+        assert_eq!(
+            instructions[move_index].place_operands().next().expect("source").index(),
+            source.0
+        );
+        assert_eq!(instructions[move_index + 1].kind(), VerifiedInstructionKind::ReplacePlace);
+        assert_eq!(
+            instructions[move_index + 1].place_operands().next().expect("target").index(),
+            target.0
+        );
+        assert_eq!(
+            instructions[move_index + 1].value_operands().next(),
+            instructions[move_index].result()
+        );
+        assert_eq!(
+            instructions[move_index + 1]
+                .derived_drop_actions()
+                .map(|action| action.root().index())
+                .collect::<Vec<_>>(),
+            [target.0],
+        );
+        let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+        assert_eq!(
+            cleanup.iter().map(|action| action.root().index()).collect::<Vec<_>>(),
+            [source_root.0, target_root.0]
+        );
+        assert_eq!(
+            cleanup[0].moved_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+            [source.0, source.0 + 1],
+        );
+        assert_eq!(cleanup[1].moved_projections().count(), 0);
+    }
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn projected_subobject_assignment_rejects_hostile_contexts() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let baseline = projected_subobject_assignment_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::FixedArray,
+    );
+    let span = baseline.modules[0].functions[0].span;
+    let baseline_function = &baseline.modules[0].functions[0];
+    let move_index = baseline_function.blocks[0]
+        .instructions
+        .iter()
+        .position(|instruction| {
+            matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. })
+        })
+        .expect("projected move");
+    let raw::InstructionKind::MoveFromPlace { place: source } =
+        baseline_function.blocks[0].instructions[move_index].kind
+    else {
+        unreachable!()
+    };
+    let moved =
+        baseline_function.blocks[0].instructions[move_index].result.expect("moved value").id;
+    let raw::InstructionKind::ReplacePlace { place: target, .. } =
+        baseline_function.blocks[0].instructions[move_index + 1].kind
+    else {
+        unreachable!()
+    };
+    let source_root = super::projection_base(&baseline_function.places[source.0 as usize].kind)
+        .expect("source root");
+    let target_root = super::projection_base(&baseline_function.places[target.0 as usize].kind)
+        .expect("target root");
+    let source_leaf = baseline_function
+        .places
+        .iter()
+        .find(|place| super::projection_base(&place.kind) == Some(source))
+        .expect("source leaf")
+        .id;
+    let moved_temporary = baseline_function
+        .places
+        .iter()
+        .find(|place| matches!(place.kind, raw::PlaceKind::Temporary(owner) if owner == moved))
+        .expect("moved temporary")
+        .id;
+    let mut mutations = Vec::new();
+
+    let mut same_root = baseline.clone();
+    same_root.modules[0].functions[0].places[source.0 as usize].kind =
+        raw::PlaceKind::FixedArrayConstant { base: target_root, index: 1 };
+    mutations.push(("same root", same_root));
+
+    for hostile_root in
+        [raw::PlaceKind::Parameter(0), raw::PlaceKind::Temporary(raw::ValueId(u32::MAX))]
+    {
+        let mut hostile = baseline.clone();
+        hostile.modules[0].functions[0].places[source_root.0 as usize].kind = hostile_root;
+        let function = &hostile.modules[0].functions[0];
+        let result = function.blocks[0].instructions[move_index].result.expect("move result");
+        assert!(!super::admitted_projected_assignment_source(
+            source,
+            result,
+            false,
+            target,
+            Some(moved_temporary),
+            function,
+            &linear,
+        ));
+        assert!(!super::is_complete_projected_move_replacement(
+            &function.blocks[0].instructions[move_index + 1],
+            source,
+            result,
+            Some(moved_temporary),
+            function,
+        ));
+    }
+    assert!(!super::admitted_projected_assignment_source(
+        source,
+        baseline_function.blocks[0].instructions[move_index].result.expect("move result"),
+        true,
+        target,
+        Some(moved_temporary),
+        baseline_function,
+        &linear,
+    ));
+
+    let mut nonadjacent = baseline.clone();
+    nonadjacent.modules[0].functions[0].blocks[0].instructions.insert(
+        move_index + 1,
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::DropPlace { place: target_root },
+        },
+    );
+    mutations.push(("nonadjacent replacement", nonadjacent));
+
+    let mut alternate_use = baseline.clone();
+    alternate_use.modules[0].functions[0].blocks[0].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::InitializePlace { place: moved_temporary, value: moved },
+    });
+    mutations.push(("alternate temporary use", alternate_use));
+
+    let mut incomplete_topology = baseline.clone();
+    incomplete_topology.modules[0].functions[0].places[source_leaf.0 as usize].kind =
+        raw::PlaceKind::Local(99);
+    mutations.push(("incomplete source topology", incomplete_topology));
+
+    for (label, raw) in mutations {
+        let diagnostics =
+            verify(raw, &sources, entry, linear.clone(), linux.clone()).expect_err(label);
+        assert!(
+            diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+            "{label}: {diagnostics:?}",
         );
     }
 }

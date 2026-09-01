@@ -158,12 +158,18 @@ Enum-payload, public, CFG, direct-return, alternate-use, and second projected-cl
 closed.
 One projected aggregate `ReplacePlace` exception is independently sealed to at most one combined
 private straight-line site. The target is a `StructField` or `FixedArrayConstant` path rooted in a
-local. The immediately preceding producer is either `MoveFromPlace`, which consumes one distinct
-fully initialized exact same-type non-Copy Struct or FixedArray whole local, or explicit root
-`ClonePlace`, which retains that source and carries exact prepare and initialized-prefix cleanup.
-Both forms use one unique temporary exactly once. Commit recursively drops the exact old target and
-retains the destination root and sibling masks. Fresh, projected, or partial sources,
-Enum/Vec/dynamic paths, public or CFG use, alternate ordering, and second sites fail closed.
+local. The immediately preceding producer may be `MoveFromPlace` for one complete same-type static
+Struct/FixedArray subobject rooted in a distinct local, `MoveFromPlace` for one distinct fully
+initialized same-type whole local, or explicit root `ClonePlace`, which retains that whole-root
+source and carries exact prepare and initialized-prefix cleanup. Every form uses one unique typed
+temporary exactly once, immediately at `ReplacePlace`. Projected move requires the source's exact
+static descendant topology; replay masks that whole source subtree beneath its still-pending root.
+Commit recursively drops only the exact old target subtree. Projected-subobject move retains both
+local roots, pending order, and sibling masks; whole-root clone retains source and destination;
+whole-root move consumes its source and retains the destination. Same-root or overlapping paths,
+incomplete/partial/moved projected
+sources, projected clone, Enum/Vec/dynamic paths, public or CFG use, alternate ordering/use, and
+second sites fail closed.
 Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain outside this checkpoint.
 
 Every raw cleanup plan is bound to exactly one verified site and one closed role:

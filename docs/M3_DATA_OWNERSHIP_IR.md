@@ -219,14 +219,23 @@ descendant place expansion is required. Enum-payload, public, CFG, alternate-use
 and second projected-clone contexts fail closed.
 At most one combined projected aggregate `ReplacePlace` site is separately admitted in a private
 one-block function. Its target is a canonical `StructField` or `FixedArrayConstant` path rooted in
-a local. The immediately preceding producer must either move or explicitly clone one distinct
-fully initialized exact same-type supported non-Copy Struct or FixedArray whole local, produce one
-unique temporary, and have the replacement as its only use. Move consumes the source. Root clone
-retains it and carries independently verified prepare plus initialized-prefix cleanup that retain
-both source and destination on failure. Ownership flow recursively drops the exact old target at
-commit, leaves the destination root pending, and preserves all sibling masks. Fresh,
-projected/partial sources, Enum/Vec/dynamic targets, overlap, alternate ordering/use, public or CFG
-contexts, and a second move-or-clone site fail closed.
+a local. The immediately preceding producer may move one complete same-type static
+Struct/FixedArray subobject rooted in a distinct local, move one distinct fully initialized
+same-type whole local, or explicitly clone such a whole root. The result has one unique typed
+temporary and the replacement is its sole immediate use. Projected move requires exact source
+projection topology, masks that entire subtree under the still-pending source root, and admits no
+projected clone. Root clone retains its source and carries independently verified prepare plus
+initialized-prefix cleanup that retain source and destination on failure. Ownership flow
+recursively drops only the old target subtree at commit. Projected-subobject move keeps both
+enclosing roots pending in the same order and preserves all sibling masks; whole-root clone retains
+source and destination; whole-root move consumes its source and retains the destination. Fresh
+sources, same-root/overlapping paths,
+incomplete/partial/moved projected sources, Enum/Vec/dynamic targets, alternate ordering/use,
+public or CFG contexts, and a second site fail closed.
+Before semantic mutation, the producer preflights exact projected-move amplification: one value,
+`S + D + T + 1` places, and two transitions, where `S` is the missing source path, `D` the missing
+source descendants, and `T` the missing target path. The verified IR then independently rejects
+missing or extra source topology and any non-canonical producer/consumer sequence.
 Replacement evaluation and allocation happen before
 `ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an
