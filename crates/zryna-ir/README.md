@@ -156,6 +156,13 @@ straight-line function, immediately followed by exact same-type `InitializePlace
 local. The result has one unique temporary owner and one use. Root clones remain unchanged;
 Enum-payload, public, CFG, direct-return, alternate-use, and second projected-clone contexts fail
 closed.
+One projected aggregate `ReplacePlace` exception is independently sealed to at most one private
+straight-line site. The target is a `StructField` or `FixedArrayConstant` path rooted in a local,
+while the immediately preceding `MoveFromPlace` consumes one distinct fully initialized exact
+same-type non-Copy Struct or FixedArray local through one unique temporary and one use. Commit
+recursively drops the exact old target, retains the destination root and sibling masks, and
+transfers the whole source into that projection. Projected sources, Enum/Vec/dynamic paths, public
+or CFG use, alternate ordering, and second sites fail closed.
 Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain outside this checkpoint.
 
 Every raw cleanup plan is bound to exactly one verified site and one closed role:

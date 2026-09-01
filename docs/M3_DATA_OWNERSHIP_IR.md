@@ -205,7 +205,7 @@ private three-block single-variant `EnumMatch`: the refined arm immediately init
 direct local, drops the Enum root, and jumps with no owner arguments to the sole final local return.
 The source payload has complete static topology, the move result has one temporary owner and one
 use, the return cleanup has zero actions, and a second site or alternate CFG fails closed. This does
-not admit broader Enum-payload, dynamic, or Vec-element moves, nor projected
+not admit broader Enum-payload, dynamic, or Vec-element moves, nor broader projected
 assignment/clone, call, direct-return, CFG-edge, or public transfer contexts. At most one such
 aggregate-subobject move site is admitted per function.
 Separately, at most one non-root `ClonePlace` may read an initialized non-Copy Struct or FixedArray
@@ -217,6 +217,14 @@ unchanged. Its prepare cleanup contains the pre-existing live roots, while its
 then those roots in reverse order. Recursive fallible leaves come from sealed layout, so no
 descendant place expansion is required. Enum-payload, public, CFG, alternate-use, direct-return,
 and second projected-clone contexts fail closed.
+At most one projected aggregate `ReplacePlace` site is separately admitted in a private one-block
+function. Its target is a canonical `StructField` or `FixedArrayConstant` path rooted in a local.
+The immediately preceding `MoveFromPlace` must consume one distinct fully initialized exact
+same-type supported non-Copy Struct or FixedArray whole local, produce one unique temporary, and
+have the replacement as its only use. Ownership flow recursively drops the exact old target at
+commit, consumes the source, leaves the destination root pending, and preserves all sibling masks.
+Projected or partial sources, Enum/Vec/dynamic targets, overlap, alternate ordering/use, public or
+CFG contexts, and a second site fail closed.
 Replacement evaluation and allocation happen before
 `ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an
