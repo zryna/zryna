@@ -225,8 +225,10 @@ projected replacement now seals the exact old-subobject traversal and preserves 
 subtree masks, enum refinement, and siblings. The semantic producer now resolves canonical static
 StructField and FixedArrayConstant projections, retains Copy leaves, moves exact String leaves,
 and preserves disjoint siblings plus the enclosing cleanup obligation. It also prepares and commits
-replacement of mutable available String leaves without disturbing sibling masks. Aggregate/enum subobject
-moves, whole-partial-owner transfer, dynamic projections, and general non-String projected assignment remain open, alongside
+replacement of mutable available String leaves without disturbing sibling masks, and explicitly
+clones initialized available String leaves into distinct temporary owners while retaining the
+source root and its partial-state masks. Aggregate/enum subobject
+moves, whole-partial-owner transfer, dynamic projections, and general non-String projected clone and assignment remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is

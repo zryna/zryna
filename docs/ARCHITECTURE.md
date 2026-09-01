@@ -389,7 +389,10 @@ instruction nevertheless derives one exact pre-commit recursive drop action for 
 static-projection destination. Projection replay transplants the prepared source subtree's state
 and active enum variants while retaining the enclosing owner's pending obligation and sibling
 masks. The semantic producer now uses that authority for mutable available static String leaves;
-general non-String projected assignment remains a later checkpoint.
+general non-String projected clone and assignment remain later checkpoints.
+Those same initialized available static String leaves admit explicit clone. Its fallible
+preparation reads without consuming the leaf, retains the enclosing root with its current
+partial-state masks, and creates one distinct temporary owner before any later assignment commit.
 The separate [`ownership-runtime ABI authority`](M3_OWNERSHIP_RUNTIME_ABI.md) now verifies the exact
 17-operation declaration vocabulary, target symbols and signatures, authenticated layout-derived
 records, checked header evidence, and pure transition evidence behind opaque immutable views. It is
@@ -426,8 +429,8 @@ The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone
-and assignment, whole-partial-owner transfer, general nested or repeated owned control flow, loop-carried owned
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
+projected clone and assignment, whole-partial-owner transfer, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
 admitted. Its sealed semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no

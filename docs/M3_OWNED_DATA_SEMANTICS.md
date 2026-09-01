@@ -49,6 +49,8 @@ document. Its private owned String/Vec route currently proves:
   recursive old-value drop shape;
 - canonical static struct-field and constant fixed-array projection reads, with Copy leaves retained
   and exact String leaves moved once while the enclosing root keeps its masked cleanup obligation;
+- explicit clone of initialized available String leaves under those canonical paths, retaining the
+  enclosing root and its existing partial-state masks while creating one distinct temporary owner;
 - `InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace` lowering, with
   private String use-after-move rejected as `ZRYNA-M3011`, aggregate/enum moved-owner violations as
   `ZRYNA-M3014`, unresolved binding names as `ZRYNA-M3002`, and excluded private String shapes as
@@ -65,7 +67,7 @@ document. Its private owned String/Vec route currently proves:
 
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
 Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element
-projections, projected clone and general non-String projected assignment, whole-partial-owner transfer, general owned phi joins,
+projections, general non-String projected clone and assignment, whole-partial-owner transfer, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -94,8 +96,8 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | exact `Vec<bool>`/`Vec<i32>`/`Vec<String>` clone | complete | distinct result owner, retained source, authenticated allocation and element-clone failures, prefix-safe reverse cleanup, and exact resource rollback |
 | supported String-bearing aggregate clone | complete | distinct result owner, retained source, sealed layout/variant-derived fallible leaves, authenticated prefix-safe recursive failure cleanup, and atomic resource rollback |
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
-| static owned projection reads and String-leaf moves | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, root-relative cleanup masks, and precise repeat/overlap rejection |
-| general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and non-String projected assignment | pending | recursive Vec/Enum/Shared/Weak clone, whole-partial-owner transfer, dynamic projection, and broader replacement capability |
+| static owned projection reads, String-leaf moves, clone, and assignment | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, source-retaining clone, prepare-before-commit replacement, root-relative cleanup masks, and precise repeat/overlap rejection |
+| general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and non-String projected clone/assignment | pending | recursive Vec/Enum/Shared/Weak clone, whole-partial-owner transfer, dynamic projection, and broader clone/replacement capability |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
@@ -321,6 +323,13 @@ prepare-before-commit String-leaf replacement. Replacement preparation retains t
 commit drops only the exact old leaf and leaves sibling masks unchanged. It does not yet replace
 non-String projections or transfer a whole partially moved aggregate.
 
+Explicit clone is admitted for an initialized available String leaf under the same canonical
+StructField or FixedArrayConstant paths. It emits the existing verified `StringClone` operation,
+retains the source leaf and enclosing root, derives failure cleanup from the root's current moved
+and initialized projection masks, and creates one distinct temporary owner. A moved or overlapping
+leaf is rejected as `ZRYNA-M3014`; Copy leaves and non-static indexes remain outside this clone
+route.
+
 The retained runtime ABI authority also closes contextual transition evidence: atomic failure is
 validated against one exact `LogicalOperation`, and Vec allocation/reserve validation consumes a
 sealed verified element layout whose positive stride is used for checked `capacity * stride` byte
@@ -386,6 +395,10 @@ not admitted in this slice. The current semantic producer implements the latter 
 String leaves under canonical static Struct/FixedArray paths; whole partial-owner transfer and
 aggregate/enum subobject moves remain closure work even though verified IR can represent their
 cleanup masks.
+
+Cloning a disjoint available String leaf does not alter that state: existing moved projections stay
+moved, initialized siblings stay initialized, and the clone's prepare-failure cleanup remains
+root-authoritative. Cloning the same or an overlapping moved leaf fails before emitting the clone.
 
 Mutable available String leaves under those same canonical paths also admit assignment. The right
 hand side is fully prepared before mutation, failure cleanup retains the enclosing root, and the

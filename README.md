@@ -85,7 +85,10 @@ The repository currently establishes and tests:
   the enclosing root retains its cleanup obligation, and repeated, overlapping, or subsequent
   whole-root consumption fails closed. Mutable available String projections additionally support
   prepare-before-commit assignment: preparation retains the enclosing root and commit drops only
-  the exact old leaf without disturbing sibling masks. It proves one exact non-Copy owner while
+  the exact old leaf without disturbing sibling masks. Initialized available String leaves under
+  those same paths also support explicit clone: clone preparation retains the enclosing root,
+  creates a distinct temporary owner, and preserves existing moved/initialized sibling masks.
+  It proves one exact non-Copy owner while
   preserving addressable Copy storage and binds every cleanup plan to one exact site and role. The
   private String route reports moved
   bindings as M3011; the bounded aggregate and enum route reports moved owners as M3014;
@@ -95,8 +98,8 @@ The repository currently establishes and tests:
   preserves pre-commit owners, excludes uncommitted results, and pins reverse cleanup without
   executing an allocator or target runtime. General structural Vec clone beyond String elements,
   nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, aggregate-subobject
-  and enum-payload moves, dynamic or Vec-element projections, projected clone and general
-  non-String projected assignment,
+  and enum-payload moves, dynamic or Vec-element projections, and general non-String projected
+  clone and assignment,
   whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
   and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
@@ -234,8 +237,9 @@ String creation, clone and checked concatenation, Vec construction/exact Copy- o
 clone/push/Copy indexing, owner
 transfer, private root-local replacement, site-bound cleanup roles, partial drop metadata, and the
 retained runtime-ABI authority. It also covers canonical static Struct/FixedArray Copy projection
-reads, String-leaf moves, and prepare-before-commit String-leaf assignment. It does not claim
-general non-String projected assignment, dynamic or Vec-element
+reads, String-leaf moves, initialized String-leaf clone, and prepare-before-commit String-leaf
+assignment. It does not claim
+general non-String projected clone or assignment, dynamic or Vec-element
 projection, aggregate/enum subobject moves, owned calls/CFG, general scope exits, a runtime, a
 backend, a CLI route, or a public profile. The full `pnpm preflight` gate
 retains ignored proportional boundaries and the complete repository regression surface.

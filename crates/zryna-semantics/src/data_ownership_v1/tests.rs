@@ -13,9 +13,10 @@ use super::{
     owned_cfg_budget_violation, owned_place_budget_violation, owned_value_budget_violation,
     preflight_aggregate_operand_total, preflight_owned_loop_body, preflight_owned_loop_exit,
     preflight_owned_place_capacity, preflight_owned_place_capacity_with_reserved,
-    preflight_owned_string_preparation, raw_function_value_count, raw_terminator_edge_count,
-    resource_budget_violation, semantic_preflight, span, string_byte_budget_violation,
-    terminal_owned_if, value_budget_violation, vec_push_target_invalid,
+    preflight_owned_string_preparation, projected_string_clone_budget_violation,
+    raw_function_value_count, raw_terminator_edge_count, resource_budget_violation,
+    semantic_preflight, span, string_byte_budget_violation, terminal_owned_if,
+    value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -547,6 +548,78 @@ fn owned_pair_projected_string_assignment_snapshot(
     (source, raw)
 }
 
+fn owned_pair_projected_string_clone_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, mut raw) = owned_pair_projected_string_assignment_snapshot(
+        OwnedPairProjectedStringAssignmentRhs::Fresh,
+        true,
+    );
+    let start = source.find("\"b\"").expect("projected clone operand");
+    let replacement = "clone(p.first)";
+    source.replace_range(start..start + 3, replacement);
+    let start = u32::try_from(start).expect("projected clone offset");
+    raw = shift_snapshot(raw, start + 3, 11);
+    let body = &mut raw.files[0].functions[0].body;
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let RawStatementKind::Assignment { value, .. } = body.statements[1].kind else {
+        panic!("projected clone assignment")
+    };
+    body.expressions[value as usize] = RawExpressionSyntax {
+        span: s(start + 6, start + 7),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "p".to_owned(), span: s(start + 6, start + 7) },
+        },
+    };
+    let projection = u32::try_from(body.expressions.len()).expect("clone projection");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start + 6, start + 13),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: value,
+            dot_span: s(start + 7, start + 8),
+            field: RawIdentifierSyntax { text: "first".to_owned(), span: s(start + 8, start + 13) },
+        },
+    });
+    let cloned = u32::try_from(body.expressions.len()).expect("projected clone");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start, start + 14),
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: s(start, start + 5),
+            open_paren_span: s(start + 5, start + 6),
+            value: projection,
+            close_paren_span: s(start + 13, start + 14),
+        },
+    });
+    let RawStatementKind::Assignment { value, .. } = &mut body.statements[1].kind else {
+        panic!("projected clone assignment")
+    };
+    *value = cloned;
+    (source, raw)
+}
+
+fn owned_pair_copy_projection_clone_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, raw) = owned_pair_projected_string_clone_assignment_snapshot();
+    let clone_start = source.find("clone(p.first)").expect("copy clone expression");
+    let field_start = clone_start + 8;
+    let field_end = field_start + 5;
+    source.replace_range(field_start..field_end, "flag");
+    let mut raw = shift_snapshot_signed(raw, u32::try_from(field_end).expect("copy field end"), -1);
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::Assignment { value: cloned, .. } = body.statements[1].kind else {
+        panic!("copy clone assignment")
+    };
+    let zryna_syntax::v4::RawExpressionKind::Clone { value: projection, .. } =
+        body.expressions[cloned as usize].kind
+    else {
+        panic!("copy clone expression")
+    };
+    let zryna_syntax::v4::RawExpressionKind::FieldAccess { field, .. } =
+        &mut body.expressions[projection as usize].kind
+    else {
+        panic!("copy clone projection")
+    };
+    field.text = "flag".to_owned();
+    (source, raw)
+}
+
 fn owned_pair_copy_projection_assignment_target_snapshot() -> (String, RawProjectSyntaxSnapshot) {
     let (mut source, mut raw) = owned_pair_projected_string_assignment_snapshot(
         OwnedPairProjectedStringAssignmentRhs::Fresh,
@@ -646,6 +719,56 @@ fn owned_array_projected_string_assignment_snapshot() -> (String, RawProjectSynt
         },
     );
     body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+fn owned_array_projected_string_clone_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, mut raw) = owned_array_projected_string_assignment_snapshot();
+    let start = source.find("\"c\"").expect("array clone operand");
+    let replacement = "clone(a[0])";
+    source.replace_range(start..start + 3, replacement);
+    let start = u32::try_from(start).expect("array clone offset");
+    raw = shift_snapshot(raw, start + 3, 8);
+    let body = &mut raw.files[0].functions[0].body;
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let RawStatementKind::Assignment { value, .. } = body.statements[1].kind else {
+        panic!("array clone assignment")
+    };
+    body.expressions[value as usize] = RawExpressionSyntax {
+        span: s(start + 6, start + 7),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "a".to_owned(), span: s(start + 6, start + 7) },
+        },
+    };
+    let index = u32::try_from(body.expressions.len()).expect("clone array index");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start + 8, start + 9),
+        kind: zryna_syntax::v4::RawExpressionKind::I32Literal { spelling: "0".to_owned() },
+    });
+    let projection = u32::try_from(body.expressions.len()).expect("clone array projection");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start + 6, start + 10),
+        kind: zryna_syntax::v4::RawExpressionKind::Index {
+            base: value,
+            open_bracket_span: s(start + 7, start + 8),
+            index,
+            close_bracket_span: s(start + 9, start + 10),
+        },
+    });
+    let cloned = u32::try_from(body.expressions.len()).expect("projected array clone");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(start, start + 11),
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: s(start, start + 5),
+            open_paren_span: s(start + 5, start + 6),
+            value: projection,
+            close_paren_span: s(start + 10, start + 11),
+        },
+    });
+    let RawStatementKind::Assignment { value, .. } = &mut body.statements[1].kind else {
+        panic!("array clone assignment")
+    };
+    *value = cloned;
     (source, raw)
 }
 
@@ -1189,6 +1312,73 @@ fn owned_array_projected_return_snapshot(
         panic!("array return")
     };
     *value = result;
+    (source, raw)
+}
+
+fn owned_array_projected_clone_return_snapshot(
+    case: OwnedArrayProjectionCase,
+    ordinal: usize,
+) -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, raw) = owned_array_projected_return_snapshot(case);
+    let body = &raw.files[0].functions[0].body;
+    let RawStatementKind::Return { value: result, .. } = body.statements[1].kind else {
+        panic!("array clone return")
+    };
+    let zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction { elements, .. } =
+        &body.expressions[result as usize].kind
+    else {
+        panic!("array clone construction")
+    };
+    let projection = elements[ordinal];
+    let projection_span = body.expressions[projection as usize].span;
+    let start = projection_span.start;
+    let end = projection_span.end;
+    source.insert_str(usize::try_from(start).expect("clone start"), "clone(");
+    source.insert(usize::try_from(end + 6).expect("clone end"), ')');
+    let raw = shift_snapshot(raw, start, 6);
+    let mut raw = shift_snapshot(raw, end + 6, 1);
+    let body = &mut raw.files[0].functions[0].body;
+    let projected = &mut body.expressions[projection as usize];
+    projected.span.end -= 1;
+    let zryna_syntax::v4::RawExpressionKind::Index { close_bracket_span, .. } = &mut projected.kind
+    else {
+        panic!("array clone projection")
+    };
+    close_bracket_span.end -= 1;
+    assert_eq!(result as usize + 1, body.expressions.len());
+    let mut construction = body.expressions.pop().expect("array clone construction");
+    let cloned = u32::try_from(body.expressions.len()).expect("array clone expression");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: end + 7 },
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: zryna_source::UntrustedSpan { file: 0, start, end: start + 5 },
+            open_paren_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: start + 5,
+                end: start + 6,
+            },
+            value: projection,
+            close_paren_span: zryna_source::UntrustedSpan { file: 0, start: end + 6, end: end + 7 },
+        },
+    });
+    let zryna_syntax::v4::RawExpressionKind::FixedArrayConstruction {
+        open_bracket_span,
+        elements,
+        ..
+    } = &mut construction.kind
+    else {
+        panic!("array clone construction")
+    };
+    if ordinal == 0 {
+        open_bracket_span.end -= 6;
+    }
+    elements[ordinal] = cloned;
+    let rebuilt = u32::try_from(body.expressions.len()).expect("rebuilt array construction");
+    body.expressions.push(construction);
+    let RawStatementKind::Return { value, .. } = &mut body.statements[1].kind else {
+        panic!("array clone return")
+    };
+    *value = rebuilt;
     (source, raw)
 }
 
@@ -5064,6 +5254,28 @@ fn runtime_fault_disposition(
     }
 }
 
+fn owned_fault_root(
+    function: VerifiedFunction<'_>,
+    mut place: FaultPlaceIdentity,
+) -> Result<FaultPlaceIdentity, OwnedFaultOracleError> {
+    let limit = function.places().count();
+    for _ in 0..=limit {
+        let verified = function
+            .places()
+            .find(|candidate| candidate.id() == place)
+            .ok_or(OwnedFaultOracleError::AtomicityMismatch)?;
+        place = match verified.kind() {
+            VerifiedPlaceKind::StructField { base, .. }
+            | VerifiedPlaceKind::EnumPayload { base, .. }
+            | VerifiedPlaceKind::FixedArrayConstant { base, .. } => base,
+            VerifiedPlaceKind::Parameter(_)
+            | VerifiedPlaceKind::Local(_)
+            | VerifiedPlaceKind::Temporary(_) => return Ok(place),
+        };
+    }
+    Err(OwnedFaultOracleError::AtomicityMismatch)
+}
+
 #[allow(clippy::too_many_lines)]
 fn owned_fault_trace(
     abi: &VerifiedOwnershipRuntimeAbi,
@@ -5208,7 +5420,13 @@ fn owned_fault_trace(
                 .collect::<Vec<_>>(),
         )
     };
-    let mut retained_roots = instruction.place_operands().collect::<Vec<_>>();
+    let mut retained_roots = Vec::new();
+    for place in instruction.place_operands() {
+        let owner = owned_fault_root(function, place)?;
+        if !retained_roots.contains(&owner) {
+            retained_roots.push(owner);
+        }
+    }
     for value in instruction.value_operands() {
         let candidates = function
             .places()
@@ -5539,6 +5757,104 @@ fn projected_string_assignment_prepares_before_replacing_the_exact_leaf() {
 }
 
 #[test]
+fn projected_string_clone_assignment_prepares_before_replacing_the_exact_leaf() {
+    let (source, raw) = owned_pair_projected_string_clone_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax =
+        verify_snapshot(raw, &sources).expect("source-faithful projected clone assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("projected String clone assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned Pair root")
+        .id();
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let clone_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::StringClone)
+        .expect("projected StringClone");
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("projected ReplacePlace");
+    assert!(clone_index < replace_index, "clone preparation precedes assignment commit");
+    let clone = instructions[clone_index];
+    let replace = instructions[replace_index];
+    let source = clone.place_operands().next().expect("projected clone source");
+    let target = replace.place_operands().next().expect("projected replacement target");
+    assert_eq!(source, target, "self-clone reads the exact leaf replaced at commit");
+    assert!(matches!(
+        function.places().find(|place| place.id() == target).expect("target place").kind(),
+        VerifiedPlaceKind::StructField { base, ordinal: 0 } if base == root
+    ));
+    assert_eq!(
+        clone.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [root],
+        "fallible clone preparation retains the enclosing root",
+    );
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+        "commit drops only the exact old leaf",
+    );
+    assert_eq!(instructions[replace_index + 1].kind(), VerifiedInstructionKind::MoveFromPlace);
+    assert_eq!(block.terminator().derived_drop_actions().count(), 0);
+}
+
+#[test]
+fn projected_string_clone_fault_trace_retains_the_enclosing_root() {
+    let (source, raw) = owned_pair_projected_string_clone_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful projected clone fault");
+    let program = lower(pair_input(&syntax, &sources)).expect("projected String clone");
+    let abi = program.runtime_abi();
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned Pair root")
+        .id();
+    let clone = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::StringClone)
+        .expect("projected StringClone");
+    let first = owned_fault_trace(
+        abi,
+        function,
+        clone,
+        OwnedFaultInjection::Runtime {
+            operation: LogicalOperation::StringClone,
+            status: RuntimeStatus::Allocation,
+        },
+        0,
+        1,
+    )
+    .expect("authenticated projected clone fault");
+    let replay = owned_fault_trace(
+        abi,
+        function,
+        clone,
+        OwnedFaultInjection::Runtime {
+            operation: LogicalOperation::StringClone,
+            status: RuntimeStatus::Allocation,
+        },
+        0,
+        1,
+    )
+    .expect("deterministic projected clone fault");
+    assert_eq!(first, replay);
+    assert!(!first.result_committed);
+    assert_eq!(first.uncommitted_result, clone.result());
+    assert_eq!(first.retained_roots, [root]);
+    assert_eq!(first.reverse_cleanup, [root]);
+}
+
+#[test]
 fn fixed_array_projected_string_assignment_uses_the_same_exact_leaf_commit() {
     let (source, raw) = owned_array_projected_string_assignment_snapshot();
     let sources = sources_for(&source);
@@ -5562,6 +5878,47 @@ fn fixed_array_projected_string_assignment_uses_the_same_exact_leaf_commit() {
         function.places().find(|place| place.id() == target).expect("target place").kind(),
         VerifiedPlaceKind::FixedArrayConstant { base, index: 0 } if base == root
     ));
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+    );
+}
+
+#[test]
+fn fixed_array_projected_string_clone_reads_and_replaces_the_exact_element() {
+    let (source, raw) = owned_array_projected_string_clone_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful array clone assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("array String clone assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned array root")
+        .id();
+    let instructions = function.blocks().next().expect("block").instructions().collect::<Vec<_>>();
+    let clone_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::StringClone)
+        .expect("projected array StringClone");
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("array projected ReplacePlace");
+    assert!(clone_index < replace_index);
+    let clone = instructions[clone_index];
+    let replace = instructions[replace_index];
+    let source = clone.place_operands().next().expect("array clone source");
+    let target = replace.place_operands().next().expect("array replacement target");
+    assert_eq!(source, target);
+    assert!(matches!(
+        function.places().find(|place| place.id() == target).expect("target place").kind(),
+        VerifiedPlaceKind::FixedArrayConstant { base, index: 0 } if base == root
+    ));
+    assert_eq!(
+        clone.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [root],
+    );
     assert_eq!(
         replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
         [target],
@@ -5782,6 +6139,123 @@ fn owned_fixed_array_accepts_disjoint_string_projection_moves() {
         .filter(|place| projected.iter().any(|(_, projected)| projected == place))
         .count();
     assert_eq!(moved, 2);
+}
+
+#[test]
+fn projected_string_clone_preserves_a_disjoint_partial_root_mask() {
+    let (source, raw) =
+        owned_array_projected_clone_return_snapshot(OwnedArrayProjectionCase::Disjoint, 1);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful disjoint projected clone");
+    let program = lower(pair_input(&syntax, &sources)).expect("disjoint projected String clone");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned array root")
+        .id();
+    let projected = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::FixedArrayConstant { base, index } if base == root => {
+                Some((index, place.id()))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let moved = projected.iter().find(|(index, _)| *index == 0).expect("moved element").1;
+    let cloned = projected.iter().find(|(index, _)| *index == 1).expect("cloned element").1;
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let move_index = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(moved)
+        })
+        .expect("first element move");
+    let clone_index = instructions
+        .iter()
+        .position(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::StringClone
+                && instruction.place_operands().next() == Some(cloned)
+        })
+        .expect("second element clone");
+    let construct_index = instructions
+        .iter()
+        .rposition(|instruction| instruction.kind() == VerifiedInstructionKind::FixedArrayConstruct)
+        .expect("result array construction");
+    assert!(
+        move_index < clone_index && clone_index < construct_index,
+        "move={move_index}, clone={clone_index}, construct={construct_index}, kinds={:?}",
+        instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
+    );
+    let cleanup = instructions[clone_index]
+        .derived_drop_actions()
+        .find(|action| action.root() == root)
+        .expect("partially moved root clone cleanup");
+    assert_eq!(cleanup.moved_projections().collect::<Vec<_>>(), [moved]);
+    assert_eq!(cleanup.initialized_projections().collect::<Vec<_>>(), [cloned]);
+    let exit = block
+        .terminator()
+        .derived_drop_actions()
+        .find(|action| action.root() == root)
+        .expect("partially moved source root exit cleanup");
+    assert_eq!(exit.moved_projections().collect::<Vec<_>>(), [moved]);
+    assert_eq!(exit.initialized_projections().collect::<Vec<_>>(), [cloned]);
+}
+
+#[test]
+fn projected_string_clone_rejects_a_moved_overlapping_leaf() {
+    let (source, raw) =
+        owned_array_projected_clone_return_snapshot(OwnedArrayProjectionCase::Repeat, 1);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful repeated projected clone");
+    let diagnostics =
+        lower(pair_input(&syntax, &sources)).expect_err("clone of moved projection must fail");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(&sources, nth_untrusted_span(&source, "clone(a[0])", 0))),
+    );
+}
+
+#[test]
+fn projected_string_clone_rejects_copy_and_nonconstant_array_leaves() {
+    let (copy_source, copy_raw) = owned_pair_copy_projection_clone_snapshot();
+    let copy_sources = sources_for(&copy_source);
+    let copy_syntax =
+        verify_snapshot(copy_raw, &copy_sources).expect("source-faithful Copy projection clone");
+    let copy = lower(pair_input(&copy_syntax, &copy_sources))
+        .expect_err("Copy projection is not a String clone source");
+    assert_eq!(copy.len(), 1);
+    assert_eq!(copy[0].code(), "ZRYNA-M3012");
+    assert_eq!(
+        copy[0].primary_span(),
+        Some(span(&copy_sources, nth_untrusted_span(&copy_source, "clone(p.flag)", 0),)),
+    );
+
+    for (case, needle, label) in [
+        (OwnedArrayProjectionCase::Dynamic, "a[a]", "dynamic"),
+        (OwnedArrayProjectionCase::Negative, "a[-1]", "negative"),
+        (OwnedArrayProjectionCase::OutOfBounds, "a[2]", "out of bounds"),
+    ] {
+        let (source, raw) = owned_array_projected_clone_return_snapshot(case, 0);
+        let sources = sources_for(&source);
+        let syntax =
+            verify_snapshot(raw, &sources).expect("source-faithful invalid projected clone");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(label);
+        assert_eq!(diagnostics.len(), 1, "{label}");
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3006", "{label}");
+        let projection = nth_untrusted_span(&source, needle, 0);
+        let child = zryna_source::UntrustedSpan {
+            file: projection.file,
+            start: projection.start + 2,
+            end: projection.end - 1,
+        };
+        assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, child)), "{label}");
+    }
 }
 
 #[test]
@@ -6181,6 +6655,49 @@ fn structural_clone_resource_preflight_accepts_exact_limits_and_rejects_excess_o
     ));
     assert!(aggregate_clone_budget_violation(0, 0, 0, 0, usize::MAX, 0));
     assert!(aggregate_clone_budget_violation(0, 0, 0, 0, 0, usize::MAX));
+}
+
+#[test]
+fn projected_string_clone_resource_preflight_is_exact_plus_one_and_overflow_checked() {
+    use zryna_ir::data_ownership_v1::{
+        MAX_CLEANUP_PLANS_PER_FUNCTION, MAX_DROP_ACTIONS_PER_FUNCTION,
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, MAX_PLACES_PER_FUNCTION, MAX_VALUES_PER_FUNCTION,
+    };
+
+    assert!(!projected_string_clone_budget_violation(
+        MAX_VALUES_PER_FUNCTION - 1,
+        MAX_PLACES_PER_FUNCTION - 1,
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 2,
+        1,
+        MAX_CLEANUP_PLANS_PER_FUNCTION - 1,
+        MAX_DROP_ACTIONS_PER_FUNCTION - 2,
+        2,
+    ));
+    for (values, places, transitions, reserved, plans, actions, pending) in [
+        (MAX_VALUES_PER_FUNCTION, 0, 0, 0, 0, 0, 0),
+        (0, MAX_PLACES_PER_FUNCTION, 0, 0, 0, 0, 0),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, 0, 0, 0, 0),
+        (0, 0, MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1, 1, 0, 0, 0),
+        (0, 0, 0, 0, MAX_CLEANUP_PLANS_PER_FUNCTION, 0, 0),
+        (0, 0, 0, 0, 0, MAX_DROP_ACTIONS_PER_FUNCTION - 1, 2),
+        (usize::MAX, 0, 0, 0, 0, 0, 0),
+        (0, usize::MAX, 0, 0, 0, 0, 0),
+        (0, 0, usize::MAX, 0, 0, 0, 0),
+        (0, 0, 0, usize::MAX, 0, 0, 0),
+        (0, 0, 0, 0, usize::MAX, 0, 0),
+        (0, 0, 0, 0, 0, usize::MAX, 1),
+        (0, 0, 0, 0, 0, 1, usize::MAX),
+    ] {
+        assert!(projected_string_clone_budget_violation(
+            values,
+            places,
+            transitions,
+            reserved,
+            plans,
+            actions,
+            pending,
+        ));
+    }
 }
 
 #[test]

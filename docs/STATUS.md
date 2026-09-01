@@ -150,6 +150,9 @@ retains the enclosing root and commit drops only the exact old leaf. General non
 assignment remains unfinished. The producer also resolves canonical static StructField and
 FixedArrayConstant source places for Copy reads and exact String-leaf moves, preserves the enclosing
 root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption.
+Initialized available String leaves under those same paths now admit explicit clone into a distinct
+temporary owner; failure cleanup retains the enclosing root's exact partial-state masks, and cloning
+a moved or overlapping leaf fails closed.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
 as M3014, and unresolved
 binding names report M3002. The gate enforces one-plan/one-site cleanup roles and the cumulative
@@ -160,8 +163,8 @@ separate checked Vec bounds trap; it authenticates status disposition/trap ident
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone and
-general non-String projected assignment, whole-partial-owner transfer, general owned phi joins,
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
+projected clone and assignment, whole-partial-owner transfer, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.
