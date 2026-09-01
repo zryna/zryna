@@ -12,6 +12,7 @@ members = [
   "crates/zryna-frontend",
   "crates/zryna-ir",
   "crates/zryna-layout",
+  "crates/zryna-ownership-runtime-abi",
   "crates/zryna-native-mir",
   "crates/zryna-semantics",
   "crates/zryna-source",
@@ -52,6 +53,7 @@ windows-spawn = "=0.1.0"
 wasm-encoder = { version = "=0.258.0", default-features = false, features = ["std"] }
 wasmparser = { version = "=0.258.0", default-features = false, features = ["features", "std", "validate"] }
 zryna-abi = { path = "crates/zryna-abi" }
+zryna-ownership-runtime-abi = { path = "crates/zryna-ownership-runtime-abi" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

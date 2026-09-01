@@ -1,8 +1,9 @@
 # Ownership runtime ABI v1
 
-Status: normative planning contract for the memory-bearing portion of `DataOwnershipV1`. No
-runtime crate, allocator, helper import, public profile, or host capability is implemented by this
-document.
+Status: normative contract for the memory-bearing portion of `DataOwnershipV1`. Issue #80
+implements an internal verifier for its exact declarations, authenticated layout-derived records,
+checked header evidence, and pure transitions. Neither this document nor that declaration authority
+implements an allocator, runtime helper, backend, artifact, public profile, or host capability.
 
 ## 1. Authority and separation
 

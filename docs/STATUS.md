@@ -75,7 +75,7 @@ profile is intentionally narrow.
 - Issue #57 records the separate authenticated website import, deployment, and live commit/digest
   evidence. This compiler status does not assert that an external website deployment has occurred.
 
-## Specified M3 profile with internal syntax, layout, IR, and Copy aggregate semantics
+## Specified M3 profile with internal syntax, layout, IR, semantics, and runtime ABI declarations
 
 Issue #75 specifies the separate future `DataOwnershipV1` profile and exact CLI spelling
 `data-ownership-v1`. The normative data/ownership, aggregate-layout, and ownership-runtime-ABI
@@ -104,8 +104,7 @@ the exact final source map, independently selected entry file, and verified `Lin
 `LinuxX8664V1` layout snapshots. It proves the complete source and CFG structure, branded layout
 types and projections, ownership transitions, borrow state, and exact cleanup plans before
 constructing opaque immutable views. The verified program retains both layout authorities, scalar
-ABI v1 for entry-module scalar exports, and only the enum identity of the planned
-`OwnershipRuntimeV1` contract. It does not implement or seal the runtime ABI planned by issue #80.
+ABI v1 for entry-module scalar exports, and the closed `OwnershipRuntimeV1` contract identity.
 
 The internal `zryna-semantics::data_ownership_v1` boundary now consumes an exact verified
 protocol-v4 source authority, owns nominal and exact type resolution, verifies the semantic type
@@ -113,6 +112,12 @@ graph for both admitted layout targets, and lowers recursively Copy structs, enu
 arrays into that sealed IR. Fixed-array projection is constant-only and checked statically. The
 Pair results are observed by a test-only scalar evaluator over opaque verified views; this is not
 a production interpreter or target execution path.
+
+The separate internal ownership-runtime ABI v1 authority now verifies the exact 17-operation
+declaration set, target symbols and signatures, authenticated `Linear32V1` and `LinuxX8664V1`
+layout-derived records, checked C-header evidence, and pure logical transitions before exposing
+opaque immutable views. It does not allocate, mutate runtime state, implement a helper, compile or
+link an object, lower a backend, or activate a driver or CLI route.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
@@ -163,6 +168,7 @@ data profiles.
 - [M2 verified native MIR](M2_NATIVE_MIR.md)
 - [M3 Copy aggregate semantics](M3_COPY_AGGREGATE_SEMANTICS.md)
 - [M3 verified data and ownership IR](M3_DATA_OWNERSHIP_IR.md)
+- [M3 ownership runtime ABI authority](M3_OWNERSHIP_RUNTIME_ABI.md)
 - [Roadmap](ROADMAP.md)
 - [Aggregate layout v1](../spec/memory-model/AGGREGATE_LAYOUT_V1.md)
 - [Syntax protocol v4](SYNTAX_PROTOCOL_V4.md)

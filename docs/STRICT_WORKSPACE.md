@@ -111,11 +111,16 @@ zryna-diagnostics ──────────┼→ zryna-semantics (compiler
 zryna-syntax ───────────────┤
 zryna-ir ───────────────────┤
 zryna-abi ──────────────────┘
+
+zryna-layout ───────────────┐
+zryna-source ───────────────┴→ zryna-ownership-runtime-abi (compiler)
 ```
 
 This graph lets providers construct untrusted DTOs while preventing semantic lowering from
 depending on provider code. Compiler-to-frontend and backend-to-frontend edges are rejected by
-the architecture validator.
+the architecture validator. The ownership-runtime ABI authority remains in the compiler layer
+because it consumes sealed compiler-owned layouts; the dependency-free scalar `zryna-abi`
+foundation remains unchanged.
 
 ## Stable architecture diagnostics
 

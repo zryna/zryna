@@ -117,6 +117,12 @@
       "title": "M3 verified data and ownership IR"
     },
     {
+      "id": "reference/m3-ownership-runtime-abi",
+      "source": "docs/M3_OWNERSHIP_RUNTIME_ABI.md",
+      "path": "documents/reference/m3-ownership-runtime-abi.md",
+      "title": "M3 ownership runtime ABI authority"
+    },
+    {
       "id": "reference/memory-model",
       "source": "spec/memory-model/OVERVIEW.md",
       "path": "documents/reference/memory-model.md",

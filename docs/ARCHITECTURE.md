@@ -359,7 +359,7 @@ verified protocol-v4 syntax
 compiler-owned nominal/type/ownership semantics
     ├── implemented Copy-only aggregate lowering
     ├── verified aggregate-layout authority
-    └── sealed ownership-runtime ABI authority (planned in #80)
+    └── implemented sealed ownership-runtime ABI declaration authority
     ↓
 raw DataOwnershipV1 IR
     ↓ independent exhaustive verifier
@@ -375,8 +375,12 @@ against an independently supplied final `SourceMap`, expected entry file, and ow
 same source-map and type-universe identities, and fingerprints claimed by the raw authority tuple.
 Success retains both sealed layout authorities and scalar ABI v1 while exposing only opaque
 module, function, block, value, place, projection, ownership, borrow, and cleanup views. Its
-`OwnershipRuntimeV1` value is only a closed contract-identity enum; the sealed runtime ABI and its
-implementation remain issue #80 work.
+`OwnershipRuntimeV1` value is a closed contract-identity enum that later authorities bind exactly.
+The separate [`ownership-runtime ABI authority`](M3_OWNERSHIP_RUNTIME_ABI.md) now verifies the exact
+17-operation declaration vocabulary, target symbols and signatures, authenticated layout-derived
+records, checked header evidence, and pure transition evidence behind opaque immutable views. It is
+not an allocator or runtime implementation and supplies no target object, backend, driver, CLI, or
+public aggregate ABI.
 
 The internal [`M3 Copy aggregate semantic boundary`](M3_COPY_AGGREGATE_SEMANTICS.md) consumes the
 exact source-map-bound protocol-v4 authority, resolves canonical nominal identities and exact
@@ -411,7 +415,7 @@ paths, addresses, allocation state, or compiler version text enters a layout doc
 machine-readable `crates/zryna-layout/src/fixtures/layout-v1.json` oracle is shared with later IR, backend,
 runtime, and conformance work.
 
-Issues #75 through #79 add no executable capability. Later components must keep syntax providers
+Issues #75 through #80 add no executable capability. Later components must keep syntax providers
 free of semantics, make every backend consume these opaque verified views, depend on ABI
 declarations rather than runtime implementations, and never recompute host layouts. The driver
 alone may compose audited target runtimes and publish the future explicit `data-ownership-v1`

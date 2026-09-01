@@ -26,6 +26,7 @@ test('preflight has one frozen portable command order', () => {
       ['rust-format', 'cargo'],
       ['m2-semantic-driver-tests', 'cargo'],
       ['m3-layout-tests', 'cargo'],
+      ['m3-ownership-runtime-abi-tests', 'cargo'],
       ['m3-data-ir-tests', 'cargo'],
       ['m3-aggregate-semantics-tests', 'cargo'],
       ['rust-workspace-check', 'cargo'],
@@ -34,7 +35,7 @@ test('preflight has one frozen portable command order', () => {
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), '9f546e43c21bd9cec716bf440e057d66dc01afaf6ddda8cbaa77aa41a0d82cc1');
+  assert.equal(preflightCommandDigest(), '333e0f2538ce879c5399dfde520baa2be025cd3671cedb628d33d33bf3b6a866');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [
@@ -46,6 +47,7 @@ test('preflight has one frozen portable command order', () => {
     (commands) => commands[5].args.pop(),
     (commands) => commands[6].args.pop(),
     (commands) => commands[7].args.pop(),
+    (commands) => commands[8].args.pop(),
   ]) {
     const changed = structuredClone(PREFLIGHT_COMMANDS);
     mutate(changed);
@@ -126,5 +128,9 @@ test('package exposes the exact documented preflight entrypoint', async () => {
   assert.equal(
     packageDocument.scripts['m3:data:quick'],
     'cargo test --locked -p zryna-semantics data_ownership_v1 -- --skip authenticated_v4_derived_value_budget_is_exact_and_plus_one_fails_m3201',
+  );
+  assert.equal(
+    packageDocument.scripts['m3:runtime-abi:quick'],
+    'cargo test --locked -p zryna-ownership-runtime-abi',
   );
 });

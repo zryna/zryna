@@ -60,8 +60,13 @@ The repository currently establishes and tests:
   a separate `DataOwnershipV1` Universal IR verifier that bind one exact source, target-neutral
   type universe, both admitted storage layouts, scalar ABI, and the declared ownership-runtime
   contract identity behind opaque read-only views; constant fixed-array projections and the
-  scalar-observed Pair oracle remain internal, and no M3 runtime, backend, driver, CLI, or public
-  aggregate ABI is enabled;
+  scalar-observed Pair oracle remain internal;
+- an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
+  set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
+  Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
+  immutable views; raw-storage and String behavior remain sealed declarations rather than executed
+  state models, and it supplies no allocator, runtime, backend, artifact, driver route, CLI selector,
+  or public aggregate ABI;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and
@@ -168,6 +173,7 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm m3:runtime-abi:quick
 pnpm m3:data:quick
 pnpm m3:syntax:quick
 pnpm m2:quick
@@ -180,6 +186,13 @@ fixtures, derives both aggregate layouts, verifies the Copy-only data IR, and ru
 Pair oracle without building public backends or waiting for remote CI. It skips only the large
 exact/first-extra authenticated value-budget proof; `pnpm preflight` retains that boundary test for
 the final local gate.
+
+`pnpm m3:runtime-abi:quick` is the focused Issue #80 declaration-authority check. It verifies the
+exact operation vocabulary, canonical JSON fixture, target declarations, layout binding, checked
+header evidence, Vec and Shared/Weak transitions, opacity, and ordinary negative cases without
+claiming or executing a runtime. It runs 17 unit tests and two compile-fail doctests while leaving
+three proportional boundary tests ignored. The full `pnpm preflight` gate includes all 20 unit tests
+and both compile-fail doctests.
 
 `pnpm m2:quick` is the narrowest edit-loop check for deterministic M2 JavaScript, WebAssembly, and
 native objects; native MIR; module closure; retained workspace and native-stage security; and
@@ -219,6 +232,7 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M2 control-flow semantics](docs/M2_CONTROL_FLOW_SEMANTICS.md),
 [M2 deterministic JavaScript backend](docs/M2_JAVASCRIPT_BACKEND.md),
 [M2 direct core WebAssembly backend](docs/M2_WEBASSEMBLY_BACKEND.md), [Roadmap](docs/ROADMAP.md),
+[M3 ownership runtime ABI authority](docs/M3_OWNERSHIP_RUNTIME_ABI.md),
 [M3 Copy aggregate semantics](docs/M3_COPY_AGGREGATE_SEMANTICS.md),
 [M0 conformance](docs/M0_CONFORMANCE.md), and
 [compiler documentation bundles](docs/DOCUMENTATION_BUNDLES.md).

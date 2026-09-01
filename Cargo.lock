@@ -1257,6 +1257,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "zryna-ownership-runtime-abi"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "zryna-layout",
+ "zryna-source",
+]
+
+[[package]]
 name = "zryna-semantics"
 version = "0.1.0"
 dependencies = [

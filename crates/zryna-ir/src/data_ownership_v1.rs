@@ -65,7 +65,8 @@ pub const MAX_DIAGNOSTICS: usize = 256;
 /// Exact non-executable runtime contract identity retained by this IR boundary.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum RuntimeContractIdentity {
-    /// The frozen ownership runtime ABI v1 contract. Issue #80 supplies executable authority.
+    /// The frozen ownership runtime ABI v1 contract. Issue #80 supplies a separate sealed,
+    /// non-executable declaration authority.
     OwnershipRuntimeV1,
 }
 

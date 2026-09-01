@@ -174,9 +174,10 @@ implement target cleanup or a runtime.
 ## Runtime contract identity only
 
 `RuntimeContractIdentity` is a closed enum whose only admitted value is `OwnershipRuntimeV1`.
-It pins the declaration name `zryna-ownership-runtime-v1` and lets later issues reject a program
-claiming another contract. It is not the sealed ownership-runtime ABI authority planned by issue
-#80. This IR does not define target helper symbols, status-number encodings, imports, allocator
+It pins the declaration name `zryna-ownership-runtime-v1` and lets later authorities reject a
+program claiming another contract. The separate issue #80 authority now seals the exact runtime
+declarations, authenticated layout-derived records, header evidence, and pure transitions. This IR
+does not define target helper symbols, status-number encodings, imports, allocator
 capabilities, runtime object bytes, or an implementation of allocate, release, String, Vec,
 Shared, or Weak operations. Those later authorities must validate their own raw claims and bind
 back to this retained identity.
