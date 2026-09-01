@@ -217,14 +217,16 @@ unchanged. Its prepare cleanup contains the pre-existing live roots, while its
 then those roots in reverse order. Recursive fallible leaves come from sealed layout, so no
 descendant place expansion is required. Enum-payload, public, CFG, alternate-use, direct-return,
 and second projected-clone contexts fail closed.
-At most one projected aggregate `ReplacePlace` site is separately admitted in a private one-block
-function. Its target is a canonical `StructField` or `FixedArrayConstant` path rooted in a local.
-The immediately preceding `MoveFromPlace` must consume one distinct fully initialized exact
-same-type supported non-Copy Struct or FixedArray whole local, produce one unique temporary, and
-have the replacement as its only use. Ownership flow recursively drops the exact old target at
-commit, consumes the source, leaves the destination root pending, and preserves all sibling masks.
-Projected or partial sources, Enum/Vec/dynamic targets, overlap, alternate ordering/use, public or
-CFG contexts, and a second site fail closed.
+At most one combined projected aggregate `ReplacePlace` site is separately admitted in a private
+one-block function. Its target is a canonical `StructField` or `FixedArrayConstant` path rooted in
+a local. The immediately preceding producer must either move or explicitly clone one distinct
+fully initialized exact same-type supported non-Copy Struct or FixedArray whole local, produce one
+unique temporary, and have the replacement as its only use. Move consumes the source. Root clone
+retains it and carries independently verified prepare plus initialized-prefix cleanup that retain
+both source and destination on failure. Ownership flow recursively drops the exact old target at
+commit, leaves the destination root pending, and preserves all sibling masks. Fresh,
+projected/partial sources, Enum/Vec/dynamic targets, overlap, alternate ordering/use, public or CFG
+contexts, and a second move-or-clone site fail closed.
 Replacement evaluation and allocation happen before
 `ReplacePlace`; the instruction
 itself commits by dropping the old destination and installing the already prepared value. Like an

@@ -141,8 +141,8 @@ This checkpoint does not complete general owned lowering. General structural Vec
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside one exact direct local or the one single-variant match-local enum
 payload extraction, dynamic or Vec-element projections, projected aggregate clone outside its one
-exact direct-local form, projected aggregate assignment outside one whole-root-to-static-projection
-site, whole-partial-owner transfer outside the exact-type direct-local,
+exact direct-local form, projected aggregate assignment outside one whole-root-move-or-clone-to-
+static-projection site, whole-partial-owner transfer outside the exact-type direct-local,
 final-return, or whole-root assignment Struct/FixedArray exceptions, general owned phi joins,
 owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
@@ -151,10 +151,11 @@ exact owned/bool argument. The owned aggregate route is parameter-free, private,
 its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, one
 direct-local supported Struct/FixedArray subobject move, String-leaf clone, one direct-local
 supported Struct/FixedArray clone, String-leaf assignment, and at most one private straight-line
-assignment that moves a distinct fully initialized exact same-type supported non-Copy Struct or
-FixedArray whole root into a mutable available `StructField`/`FixedArrayConstant` projection. That
-commit recursively drops the exact old target, consumes the source, and retains the destination root
-and sibling masks. A partially moved Struct or FixedArray root may move
+assignment that either moves or explicitly clones a distinct fully initialized exact same-type
+supported non-Copy Struct or FixedArray whole root into a mutable available
+`StructField`/`FixedArrayConstant` projection. Move consumes the source; clone retains it, and both
+clone prepare/prefix failure paths retain source and destination. Commit recursively drops the exact
+old target and retains the destination root and sibling masks. A partially moved Struct or FixedArray root may move
 through one exact direct-reference initializer into a same-type local, through one final exact
 direct-reference return, or into one distinct mutable fully initialized same-type whole-root
 assignment destination. Assignment prepares the source without touching the destination, then an
@@ -162,7 +163,7 @@ infallible `ReplacePlace` drops the old destination and installs the exact parti
 preserves the complete recursive static topology, migrates the moved mask through every
 temporary/local owner, excludes a returned owner from survivor cleanup, and invalidates old
 owners. Enum-payload moves outside that exact one-arm direct-local form, dynamic or Vec-element
-moves, broader/projected-source/multi-site aggregate assignment, calls, direct projected-clone
+moves, fresh/projected/partial-source or multi-site aggregate assignment, calls, direct projected-clone
 returns, CFG transfer, or public functions remain outside the narrow subobject route. Admitted projected clones retain the
 enclosing root and its partial-state masks while creating one distinct temporary owner.
 Dynamic bounds execution, borrows, shared or weak references,

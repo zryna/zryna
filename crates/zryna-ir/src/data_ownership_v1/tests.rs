@@ -942,6 +942,50 @@ fn projected_aggregate_assignment_program(
     raw
 }
 
+fn projected_aggregate_clone_assignment_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    inner: raw::TypeId,
+    outer: raw::TypeId,
+    array: raw::TypeId,
+    shape: SubobjectMoveShape,
+) -> raw::Program {
+    let mut raw =
+        projected_aggregate_assignment_program(sources, linear, linux, inner, outer, array, shape);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.blocks[0].instructions[2].kind = raw::InstructionKind::ClonePlace {
+        place: raw::PlaceId(4),
+        cleanup: raw::CleanupPlanId(1),
+        element_cleanup: Some(raw::CleanupPlanId(2)),
+    };
+    function.cleanup_plans[0].actions = vec![
+        raw::DropAction::DropPlace(raw::PlaceId(4)),
+        raw::DropAction::DropPlace(raw::PlaceId(2)),
+    ];
+    function.cleanup_plans.extend([
+        raw::CleanupPlan {
+            id: raw::CleanupPlanId(1),
+            span,
+            actions: vec![
+                raw::DropAction::DropPlace(raw::PlaceId(4)),
+                raw::DropAction::DropPlace(raw::PlaceId(2)),
+            ],
+        },
+        raw::CleanupPlan {
+            id: raw::CleanupPlanId(2),
+            span,
+            actions: vec![
+                raw::DropAction::DropAggregateInitializedPrefix(raw::PlaceId(5)),
+                raw::DropAction::DropPlace(raw::PlaceId(4)),
+                raw::DropAction::DropPlace(raw::PlaceId(2)),
+            ],
+        },
+    ]);
+    raw
+}
+
 #[allow(clippy::too_many_lines)]
 fn enum_payload_move_program(
     sources: &SourceMap,
@@ -4208,6 +4252,108 @@ fn projected_aggregate_assignment_is_sealed_to_one_root_to_static_projection_mov
 }
 
 #[test]
+fn projected_aggregate_assignment_accepts_one_root_clone_into_a_static_projection() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    for shape in [SubobjectMoveShape::Struct, SubobjectMoveShape::FixedArray] {
+        let raw = projected_aggregate_clone_assignment_program(
+            &sources, &linear, &linux, inner, outer, array, shape,
+        );
+        let verified = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect("projected aggregate clone assignment");
+        let function =
+            verified.modules().next().expect("module").functions().next().expect("function");
+        let block = function.blocks().next().expect("block");
+        let instructions = block.instructions().collect::<Vec<_>>();
+        assert_eq!(instructions[2].kind(), VerifiedInstructionKind::ClonePlace);
+        assert_eq!(instructions[2].place_operands().next().expect("source").index(), 4);
+        assert_eq!(instructions[3].kind(), VerifiedInstructionKind::ReplacePlace);
+        assert_eq!(instructions[3].place_operands().next().expect("target").index(), 3);
+        assert_eq!(instructions[3].value_operands().next(), instructions[2].result());
+        assert_eq!(
+            instructions[2]
+                .derived_drop_actions()
+                .map(|action| action.root().index())
+                .collect::<Vec<_>>(),
+            [4, 2],
+        );
+        assert_eq!(
+            instructions[3]
+                .derived_drop_actions()
+                .map(|action| action.root().index())
+                .collect::<Vec<_>>(),
+            [3],
+        );
+        assert_eq!(
+            block
+                .terminator()
+                .derived_drop_actions()
+                .map(|action| action.root().index())
+                .collect::<Vec<_>>(),
+            [4, 2],
+            "successful clone retains its source",
+        );
+    }
+}
+
+#[test]
+fn projected_aggregate_clone_assignment_rejects_forged_source_order_and_uses() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let baseline = projected_aggregate_clone_assignment_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+    let span = baseline.modules[0].functions[0].span;
+    let mut mutations = Vec::new();
+
+    let mut projected_source = baseline.clone();
+    let raw::InstructionKind::ClonePlace { place, .. } =
+        &mut projected_source.modules[0].functions[0].blocks[0].instructions[2].kind
+    else {
+        panic!("clone")
+    };
+    *place = raw::PlaceId(3);
+    mutations.push(("projected source", projected_source));
+
+    let mut nonadjacent = baseline.clone();
+    nonadjacent.modules[0].functions[0].blocks[0].instructions.insert(
+        3,
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::DropPlace { place: raw::PlaceId(0) },
+        },
+    );
+    mutations.push(("nonadjacent clone", nonadjacent));
+
+    let mut alternate_use = baseline;
+    alternate_use.modules[0].functions[0].blocks[0].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::InitializePlace {
+            place: raw::PlaceId(4),
+            value: raw::ValueId(3),
+        },
+    });
+    mutations.push(("alternate clone result use", alternate_use));
+
+    for (label, raw) in mutations {
+        let diagnostics =
+            verify(raw, &sources, entry, linear.clone(), linux.clone()).expect_err(label);
+        assert!(
+            diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+            "{label}: {diagnostics:?}",
+        );
+    }
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn projected_aggregate_assignment_rejects_forged_contexts_and_second_sites() {
     let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
@@ -4318,6 +4464,39 @@ fn projected_aggregate_assignment_rejects_forged_contexts_and_second_sites() {
         },
     ]);
     mutations.push(("second site", "ZRYNA-I3010", second_site));
+
+    let mut mixed_second_site = projected_aggregate_clone_assignment_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+    let function = &mut mixed_second_site.modules[0].functions[0];
+    function.places.push(raw::Place {
+        id: raw::PlaceId(6),
+        ty: inner,
+        span,
+        kind: raw::PlaceKind::Temporary(raw::ValueId(4)),
+    });
+    function.blocks[0].instructions.extend([
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(4), ty: inner, span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(5) },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::ReplacePlace {
+                place: raw::PlaceId(3),
+                value: raw::ValueId(4),
+            },
+        },
+    ]);
+    mutations.push(("mixed clone and move second site", "ZRYNA-I3010", mixed_second_site));
 
     for (label, expected, raw) in mutations {
         let diagnostics =

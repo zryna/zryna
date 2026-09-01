@@ -248,9 +248,9 @@ that one match-local payload extraction, and broader enum-payload moves,
 transfer in call/CFG contexts, projected assignment outside the narrow site below, or
 non-final/non-reference returns, dynamic projections,
 direct projected-clone returns, public contexts, projected aggregate clone outside that exact
-direct-local form, and projected aggregate assignment outside one private straight-line move from
-a distinct fully initialized exact same-type whole Struct/FixedArray root into a mutable available
-static `StructField`/`FixedArrayConstant` projection remain open, alongside
+direct-local form, and projected aggregate assignment outside one private straight-line move or
+explicit clone from a distinct fully initialized exact same-type whole Struct/FixedArray root into
+a mutable available static `StructField`/`FixedArrayConstant` projection remain open, alongside
 general owned joins,
 owned loop-carried joins, repeated or nested control flow, and general scope exits as closure
 work. Issue #81 is

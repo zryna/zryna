@@ -92,6 +92,11 @@ The repository currently establishes and tests:
   paths may likewise be cloned into the immediately following exact same-type direct local. The
   source remains owned by its enclosing root, recursive String-leaf failure cleanup is derived
   from sealed layout, and the verifier rejects alternate, public, CFG, or second-site contexts.
+  At most one projected aggregate assignment site may either move such a distinct whole root or
+  explicitly clone it into a mutable available exact same-type static projection. The clone form
+  retains its fully initialized source; prepare and initialized-prefix failure cleanup retain both
+  source and destination, while successful commit recursively drops only the exact old target and
+  preserves the destination root and sibling masks.
   One canonical private one-parameter function may additionally extract the complete supported
   Struct/FixedArray payload of a single-variant Enum through an exhaustive one-arm `match`, move it
   into an exact direct local, drop the emptied Enum root, and return that local through a
@@ -108,7 +113,7 @@ The repository currently establishes and tests:
   nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, aggregate-subobject
   moves outside the exact direct-local forms, broader enum-payload moves, dynamic or Vec-element
   projections, projected aggregate clone outside the exact direct-local form, and projected
-  aggregate assignment outside the one whole-root-to-static-projection checkpoint,
+  aggregate assignment outside the one whole-root-move-or-clone-to-static-projection checkpoint,
   whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
   and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
@@ -247,11 +252,12 @@ clone/push/Copy indexing, owner
 transfer, private root-local replacement, site-bound cleanup roles, partial drop metadata, and the
 retained runtime-ABI authority. It also covers canonical static Struct/FixedArray Copy projection
 reads, String-leaf moves, initialized String-leaf clone, exact direct-local static aggregate clone,
-prepare-before-commit String-leaf assignment, and one private straight-line whole-root move into a
-mutable available same-type static aggregate projection. That aggregate commit consumes the distinct
-fully initialized source, recursively drops only the old target, and retains the destination root
-and sibling masks. It does not claim projected aggregate clone outside that direct-local form,
-broader or projected-source aggregate assignment, dynamic or Vec-element
+prepare-before-commit String-leaf assignment, and one private straight-line whole-root move or
+explicit clone into a mutable available same-type static aggregate projection. Move consumes the
+distinct fully initialized source; clone retains it and both clone failure paths retain the source
+and old destination. Successful commit recursively drops only the old target and preserves the
+destination root and sibling masks. It does not claim projected aggregate clone outside that
+direct-local form, fresh/projected/partial-source aggregate assignment, dynamic or Vec-element
 projection, aggregate/enum subobject moves, owned calls/CFG, general scope exits, a runtime, a
 backend, a CLI route, or a public profile. The full `pnpm preflight` gate
 retains ignored proportional boundaries and the complete repository regression surface.
