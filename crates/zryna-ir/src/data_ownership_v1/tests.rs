@@ -5593,6 +5593,249 @@ fn partial_aggregate_cannot_be_consumed_by_a_direct_call() {
     }));
 }
 
+fn partial_pair_return_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    raw.modules[0].data_declarations = 1;
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: raw::TypeId(3), span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+    ];
+    function.result = raw::TypeId(3);
+    function.places = vec![
+        raw::Place {
+            id: raw::PlaceId(0),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Parameter(0),
+        },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+        },
+        raw::Place {
+            id: raw::PlaceId(5),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 1 },
+        },
+    ];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(0) },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(3), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(3))];
+    raw
+}
+
+#[test]
+fn partial_temporary_return_requires_exact_topology_and_post_transfer_cleanup() {
+    let (sources, linear, linux) = pair_authorities();
+    let raw = partial_pair_return_program(&sources, &linear, &linux);
+    let entry = sources.verify_file_id(0).expect("entry");
+    let verified = verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("exact-topology partial temporary return");
+    let cleanup = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .terminator()
+        .derived_drop_actions()
+        .map(|action| action.root().index())
+        .collect::<Vec<_>>();
+    assert_eq!(cleanup, [3]);
+
+    let mut missing = raw.clone();
+    let function = &mut missing.modules[0].functions[0];
+    function.places.remove(6);
+    function.places.remove(2);
+    for (index, place) in function.places.iter_mut().enumerate() {
+        place.id = raw::PlaceId(u32::try_from(index).expect("bounded place"));
+        if let raw::PlaceKind::StructField { base, .. } = &mut place.kind
+            && *base == raw::PlaceId(4)
+        {
+            *base = raw::PlaceId(3);
+        }
+    }
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(2))];
+    let diagnostics = verify(missing, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("missing return topology");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3010"
+            && diagnostic.message().contains("exact sealed projection topology")
+    }));
+
+    let mut extra = raw.clone();
+    let function = &mut extra.modules[0].functions[0];
+    function.places.push(raw::Place {
+        id: raw::PlaceId(7),
+        ty: raw::TypeId(2),
+        span: function.span,
+        kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 2 },
+    });
+    assert!(
+        verify(extra, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("extra return topology")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3006")
+    );
+
+    let mut wrong = raw.clone();
+    let function = &mut wrong.modules[0].functions[0];
+    let raw::PlaceKind::StructField { ordinal, .. } = &mut function.places[6].kind else {
+        panic!("field projection")
+    };
+    *ordinal = 2;
+    assert!(
+        verify(wrong, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("wrong return topology path")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3006")
+    );
+
+    let mut returned_owner_cleanup = raw.clone();
+    returned_owner_cleanup.modules[0].functions[0].cleanup_plans[0]
+        .actions
+        .insert(0, raw::DropAction::DropPlace(raw::PlaceId(4)));
+    assert!(
+        verify(returned_owner_cleanup, &sources, entry, linear.clone(), linux.clone(),)
+            .expect_err("cleanup drops returned owner")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3012")
+    );
+
+    let mut double_drop = raw;
+    let function = &mut double_drop.modules[0].functions[0];
+    function.blocks[0].instructions.push(raw::Instruction {
+        result: None,
+        span: function.span,
+        kind: raw::InstructionKind::DropPlace { place: raw::PlaceId(4) },
+    });
+    assert!(
+        verify(double_drop, &sources, entry, linear, linux)
+            .expect_err("returned owner was already dropped")
+            .iter()
+            .any(|diagnostic| diagnostic.code() == "ZRYNA-I3010")
+    );
+}
+
+#[test]
+fn partial_enum_temporary_cannot_be_returned() {
+    let (sources, linear, linux) = payloadless_enum_authorities();
+    let mut raw = program(&sources, &linear, &linux);
+    raw.modules[0].data_declarations = 1;
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: raw::TypeId(3), span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+    ];
+    function.result = raw::TypeId(3);
+    function.places = vec![
+        raw::Place {
+            id: raw::PlaceId(0),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Parameter(0),
+        },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(0), variant: 1 },
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: raw::TypeId(3),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::EnumPayload { base: raw::PlaceId(3), variant: 1 },
+        },
+    ];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: raw::TypeId(3), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(0) },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(3), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(2))];
+
+    let entry = sources.verify_file_id(0).expect("entry");
+    let diagnostics = verify(raw, &sources, entry, linear, linux).expect_err("partial enum return");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3010"
+            && diagnostic.message().contains("exact sealed projection topology")
+    }));
+}
+
 #[test]
 fn direct_call_rejects_cleanup_that_drops_a_transferred_argument() {
     let (sources, linear, linux) = authorities();

@@ -54,6 +54,9 @@ document. Its private owned String/Vec route currently proves:
 - exact-type direct local transfer of one partially moved supported Struct or FixedArray root,
   materializing its complete static projection topology and migrating its exact mask from source
   through the move-result temporary to the new local;
+- final exact-reference return of one partially moved supported Struct or FixedArray root,
+  migrating the same complete topology and mask into the returned temporary before reverse cleanup
+  excludes it and drops every remaining owner;
 - `InitializePlace`, `MoveFromPlace`, and prepare-then-commit `ReplacePlace` lowering, with
   private String use-after-move rejected as `ZRYNA-M3011`, aggregate/enum moved-owner violations as
   `ZRYNA-M3014`, unresolved binding names as `ZRYNA-M3002`, and excluded private String shapes as
@@ -71,7 +74,7 @@ document. Its private owned String/Vec route currently proves:
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
 Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element
 projections, general non-String projected clone and assignment, partial-root transfer for Enum or
-outside one exact-type direct local declaration, general owned phi joins,
+outside one exact-type direct local declaration or final exact-reference return, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -102,6 +105,7 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
 | static owned projection reads, String-leaf moves, clone, and assignment | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, source-retaining clone, prepare-before-commit replacement, root-relative cleanup masks, and precise repeat/overlap rejection |
 | direct local transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-temporary-to-local owner/mask migration, deterministic rejection of old-owner reuse, and checked amplification |
+| final return transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-return-temporary mask migration, returned-owner exclusion, reverse survivor cleanup, and checked amplification |
 | general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and non-String projected clone/assignment | pending | recursive Vec/Enum/Shared/Weak clone, partial Enum or non-local transfer, dynamic projection, and broader clone/replacement capability |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
@@ -333,8 +337,16 @@ FixedArray root. Before mutation, the producer derives the complete recursive st
 sealed layouts and preflights its checked place, value, transition, and local-identity cost. Commit
 moves the root into one temporary, materializes the same topology under source, temporary, and new
 local, and migrates the root-relative moved mask at each owner rename. The old source and temporary
-have no remaining cleanup authority. This admission does not cover Enum roots, projection
-initializers, return, clone, call, assignment, or CFG transfer contexts.
+have no remaining cleanup authority.
+
+One final exact-reference return may transfer the same supported partial root. It materializes the
+complete source and return-temporary topology, migrates the exact mask once, transfers that
+temporary out before cleanup, and reverse-drops every survivor without dropping the returned root
+or a moved leaf. The IR verifier independently admits only an exact-topology partial temporary with
+an acyclic Struct/FixedArray graph containing Bool, i32, or String leaves. Missing, extra, or wrong
+projection paths, partial Enum/Vec/Shared/Weak graphs, a returned-owner cleanup action, and the
+generic call/operand path fail closed. These admissions do not cover projection initializers,
+clone, call, assignment, Enum roots, or CFG transfer contexts.
 
 Explicit clone is admitted for an initialized available String leaf under the same canonical
 StructField or FixedArrayConstant paths. It emits the existing verified `StringClone` operation,
@@ -406,7 +418,8 @@ allowed static projection removes only that subobject from later recursive clean
 the parent root's remaining obligation. Overlapping, dynamic, or vector-element partial moves are
 not admitted in this slice. The current semantic producer implements the latter rule only for
 String leaves under canonical static Struct/FixedArray paths. It additionally implements the
-bounded direct-local whole transfer described above for partial Struct/FixedArray roots;
+bounded direct-local and final-return whole transfers described above for partial Struct/FixedArray
+roots;
 aggregate/enum subobject moves and all broader partial-owner transfer contexts remain closure work
 even though verified IR can represent their cleanup masks.
 
@@ -508,6 +521,11 @@ For a direct partial-root local transfer with `N` complete non-root static topol
 already materialized source places, semantic amplification is exactly one value, two ownership
 transitions, and `3N - E + 2` places. It adds no cleanup plan, cleanup action, or aggregate operand.
 All arithmetic and capacity checks occur before topology or ownership mutation.
+
+For a final partial-root return with the same `N` and `E`, amplification is exactly one value, one
+ownership transition, and `2N - E + 1` places. Existing return cleanup accounting still covers only
+surviving owners; the returned partial temporary contributes no cleanup action. All topology,
+value, place, and transition checks likewise occur before mutation.
 
 Runtime String and Vec lengths, capacities, element byte sizes, and allocation sizes remain bound
 by the sealed ownership-runtime ABI rules and checked target layouts. Semantics proves representable

@@ -684,6 +684,13 @@ fn partial_transfer_place_delta(topology: usize, existing: usize) -> Option<usiz
     topology.checked_mul(3)?.checked_sub(existing)?.checked_add(2)
 }
 
+fn partial_return_place_delta(topology: usize, existing: usize) -> Option<usize> {
+    if existing > topology {
+        return None;
+    }
+    topology.checked_mul(2)?.checked_sub(existing)?.checked_add(1)
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum PartialTransferBudgetViolation {
     PlaceAccounting,
@@ -709,6 +716,28 @@ fn partial_transfer_budget_preflight(
         return Err(PartialTransferBudgetViolation::Places);
     }
     if aggregate_transition_budget_violation(transitions, reserved_transitions, 2) {
+        return Err(PartialTransferBudgetViolation::Transitions);
+    }
+    Ok(additional_places)
+}
+
+fn partial_return_budget_preflight(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    topology: usize,
+    existing: usize,
+) -> Result<usize, PartialTransferBudgetViolation> {
+    let additional_places = partial_return_place_delta(topology, existing)
+        .ok_or(PartialTransferBudgetViolation::PlaceAccounting)?;
+    if owned_value_budget_violation(values, 1) {
+        return Err(PartialTransferBudgetViolation::Values);
+    }
+    if owned_place_budget_violation(places, additional_places) {
+        return Err(PartialTransferBudgetViolation::Places);
+    }
+    if aggregate_transition_budget_violation(transitions, reserved_transitions, 1) {
         return Err(PartialTransferBudgetViolation::Transitions);
     }
     Ok(additional_places)
@@ -5810,6 +5839,20 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         .then_some(binding.place)
     }
 
+    fn partial_return_transfer_source(&self, value: u32, expected: Ty) -> Option<raw::PlaceId> {
+        if !matches!(expected.category, TypeCategory::Struct | TypeCategory::FixedArray) {
+            return None;
+        }
+        let RawExpressionKind::Reference { name } = &self.expression(value)?.kind else {
+            return None;
+        };
+        let binding = self.bindings.get(&name.text)?;
+        (binding.ty == expected
+            && self.owners.contains(binding.place)
+            && self.partial_roots.contains(&binding.place))
+        .then_some(binding.place)
+    }
+
     fn report_partial_transfer_budget(
         &mut self,
         violation: PartialTransferBudgetViolation,
@@ -5926,6 +5969,61 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         self.owners.rename(value, local).expect("partial transfer temporary owner available");
         self.migrate_partial_mask(temporary, local, &temporary_places, &local_places);
         Some(local)
+    }
+
+    fn lower_partial_return_transfer(
+        &mut self,
+        source: raw::PlaceId,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        let Some(shape) = self.complete_projection_shape(ty) else {
+            self.errors.at(
+                "ZRYNA-M3201",
+                at,
+                "partial aggregate return topology exceeds a deterministic resource limit",
+                "reduce nested Struct fields, fixed-array lengths, and return transfers",
+            );
+            return None;
+        };
+        let existing = self.existing_projection_shape(source, &shape);
+        let existing_count = existing.iter().filter(|place| place.is_some()).count();
+        if let Err(violation) = partial_return_budget_preflight(
+            self.next_value as usize,
+            self.places.len(),
+            self.instructions.len(),
+            self.reserved_transitions,
+            shape.len(),
+            existing_count,
+        ) {
+            self.report_partial_transfer_budget(violation, at);
+            return None;
+        }
+
+        let source_places = self.materialize_projection_shape(source, &shape, at);
+        let value = raw::ValueId(self.next_value);
+        self.next_value = self.next_value.checked_add(1).expect("value capacity preflighted");
+        self.instructions.push(raw::Instruction {
+            result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+            span: at,
+            kind: raw::InstructionKind::MoveFromPlace { place: source },
+        });
+        let temporary = raw::PlaceId(
+            u32::try_from(self.places.len()).expect("partial return place capacity preflighted"),
+        );
+        self.places.push(raw::Place {
+            id: temporary,
+            ty: ty.ir,
+            span: at,
+            kind: raw::PlaceKind::Temporary(value),
+        });
+        self.owners.register(value, temporary).expect("fresh partial return temporary owner");
+        let temporary_places = self.materialize_projection_shape(temporary, &shape, at);
+        self.owners
+            .rehome_move_result(value, source)
+            .expect("partial return source owner available");
+        self.migrate_partial_mask(source, temporary, &source_places, &temporary_places);
+        Some(value)
     }
 
     fn reference_value(
@@ -6737,8 +6835,14 @@ fn lower_private_owned_aggregate_function<'a>(
                     .insert(name.text.clone(), Binding { ty, place, mutable: *mutable });
             }
             RawStatementKind::Return { value, .. } => {
-                returned =
-                    Some((lowerer.value(*value, result)?, span(input.sources(), statement.span)));
+                let return_span = span(input.sources(), statement.span);
+                let value =
+                    if let Some(source) = lowerer.partial_return_transfer_source(*value, result) {
+                        lowerer.lower_partial_return_transfer(source, result, return_span)?
+                    } else {
+                        lowerer.value(*value, result)?
+                    };
+                returned = Some((value, return_span));
             }
             RawStatementKind::Assignment { target, value, .. } => {
                 let target_expression = lowerer.expression(*target)?.clone();

@@ -2710,10 +2710,11 @@ fn derive_state_before(
                 span,
             }) = block.terminators.first()
             {
-                transfer_consumed_values(
-                    &[*value],
+                transfer_return_value(
+                    *value,
                     &owners,
                     function,
+                    layouts,
                     &mut flow,
                     *span,
                     &mut replay_errors,
@@ -3020,10 +3021,11 @@ fn verify_ownership_dataflow(
             }
             match &terminator.kind {
                 raw::Terminator::Return { value, cleanup } => {
-                    transfer_consumed_values(
-                        &[*value],
+                    transfer_return_value(
+                        *value,
                         value_owners,
                         function,
+                        layouts,
                         &mut flow,
                         terminator.span,
                         errors,
@@ -3411,6 +3413,116 @@ fn transfer_consumed_values(
             remove_pending_owner(owner, function, flow, span, errors);
         }
     }
+}
+
+fn transfer_return_value(
+    value: raw::ValueId,
+    value_owners: &[Option<raw::PlaceId>],
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    flow: &mut OwnershipFlow,
+    span: Span,
+    errors: &mut Errors,
+) {
+    let Some(owner) = value_owners.get(value.0 as usize).copied().flatten() else { return };
+    if flow.states[owner.0 as usize].kind == PlaceStateKind::Initialized {
+        remove_pending_owner(owner, function, flow, span, errors);
+        return;
+    }
+    let partial = matches!(
+        flow.states[owner.0 as usize].kind,
+        PlaceStateKind::PartiallyInitialized | PlaceStateKind::PartiallyMoved
+    );
+    let temporary = function.places.get(owner.0 as usize).is_some_and(
+        |place| matches!(place.kind, raw::PlaceKind::Temporary(candidate) if candidate == value),
+    );
+    if partial && temporary && has_exact_projection_topology(owner, function, layouts) {
+        remove_pending_owner(owner, function, flow, span, errors);
+    } else if partial && temporary {
+        ownership_error(
+            span,
+            "partial return owner lacks exact sealed projection topology",
+            errors,
+        );
+    } else {
+        ownership_error(
+            span,
+            "partial non-Copy owner cannot enter a context without mask transfer",
+            errors,
+        );
+    }
+}
+
+fn has_exact_projection_topology(
+    root: raw::PlaceId,
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+) -> bool {
+    fn collect(
+        ty: zryna_layout::TypeId,
+        layouts: &VerifiedLayouts,
+        path: &mut Vec<(u8, u32)>,
+        active: &mut BTreeSet<u32>,
+        expected: &mut BTreeSet<Vec<(u8, u32)>>,
+    ) -> bool {
+        if !active.insert(ty.index()) {
+            return false;
+        }
+        let Some(record) = layouts.type_by_id(ty) else { return false };
+        let valid = match record.category() {
+            TypeCategory::Struct => record.fields().iter().all(|field| {
+                path.push((0, field.ordinal()));
+                expected.insert(path.clone());
+                let valid = collect(field.ty(), layouts, path, active, expected);
+                path.pop();
+                valid
+            }),
+            TypeCategory::FixedArray => record.referenced_type().is_some_and(|element| {
+                let Some(length) =
+                    record.array_length().and_then(|length| u32::try_from(length).ok())
+                else {
+                    return false;
+                };
+                (0..length).all(|index| {
+                    path.push((2, index));
+                    expected.insert(path.clone());
+                    let valid = collect(element, layouts, path, active, expected);
+                    path.pop();
+                    valid
+                })
+            }),
+            TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String => true,
+            TypeCategory::Enum | TypeCategory::Vec | TypeCategory::Shared | TypeCategory::Weak => {
+                false
+            }
+        };
+        active.remove(&ty.index());
+        valid
+    }
+
+    let Some(ty) = function
+        .places
+        .get(root.0 as usize)
+        .and_then(|place| layout_type(layouts, place.ty))
+        .map(zryna_layout::VerifiedType::id)
+    else {
+        return false;
+    };
+    if !layouts.type_by_id(ty).is_some_and(|record| {
+        matches!(record.category(), TypeCategory::Struct | TypeCategory::FixedArray)
+    }) {
+        return false;
+    }
+    let mut expected = BTreeSet::new();
+    if !collect(ty, layouts, &mut Vec::new(), &mut BTreeSet::new(), &mut expected) {
+        return false;
+    }
+    let actual = function
+        .places
+        .iter()
+        .filter_map(|place| projection_path(place.id, root, &function.places))
+        .collect::<BTreeSet<_>>();
+    actual == expected
 }
 
 #[allow(clippy::too_many_lines)]

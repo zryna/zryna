@@ -11,13 +11,13 @@ use super::{
     estimate_owned_string_expression, generated_cfg_budget_violation,
     is_terminal_owned_phi_candidate, lower, owned_call_cleanup_budget_violation,
     owned_cfg_budget_violation, owned_place_budget_violation, owned_value_budget_violation,
-    partial_transfer_budget_preflight, partial_transfer_place_delta,
-    preflight_aggregate_operand_total, preflight_owned_loop_body, preflight_owned_loop_exit,
-    preflight_owned_place_capacity, preflight_owned_place_capacity_with_reserved,
-    preflight_owned_string_preparation, projected_string_clone_budget_violation,
-    raw_function_value_count, raw_terminator_edge_count, resource_budget_violation,
-    semantic_preflight, span, string_byte_budget_violation, terminal_owned_if,
-    value_budget_violation, vec_push_target_invalid,
+    partial_return_budget_preflight, partial_return_place_delta, partial_transfer_budget_preflight,
+    partial_transfer_place_delta, preflight_aggregate_operand_total, preflight_owned_loop_body,
+    preflight_owned_loop_exit, preflight_owned_place_capacity,
+    preflight_owned_place_capacity_with_reserved, preflight_owned_string_preparation,
+    projected_string_clone_budget_violation, raw_function_value_count, raw_terminator_edge_count,
+    resource_budget_violation, semantic_preflight, span, string_byte_budget_violation,
+    terminal_owned_if, value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -1613,6 +1613,71 @@ fn owned_pair_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot)
     (source, raw)
 }
 
+fn owned_array_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const LOCAL: &str = "const text: String = a[0]; ";
+    let mut source = OWNED_ARRAY_SOURCE.to_owned();
+    let insertion = source.find("return a;").expect("array return insertion");
+    source.insert_str(insertion, LOCAL);
+    let insertion = u32::try_from(insertion).expect("array insertion offset");
+    let mut raw = shift_snapshot(
+        response_snapshot(OWNED_ARRAY_RESPONSE),
+        insertion,
+        u32::try_from(LOCAL.len()).expect("array projected local length"),
+    );
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let string_type = u32::try_from(raw.files[0].type_syntax.len()).expect("String type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(insertion + 12, insertion + 18),
+        kind: RawTypeSyntaxKind::String { keyword_span: s(insertion + 12, insertion + 18) },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let base = u32::try_from(body.expressions.len()).expect("array projected base id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 21, insertion + 22),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: s(insertion + 21, insertion + 22),
+            },
+        },
+    });
+    let index = u32::try_from(body.expressions.len()).expect("array projected index id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 23, insertion + 24),
+        kind: zryna_syntax::v4::RawExpressionKind::I32Literal { spelling: "0".to_owned() },
+    });
+    let projected = u32::try_from(body.expressions.len()).expect("array projected value id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 21, insertion + 25),
+        kind: zryna_syntax::v4::RawExpressionKind::Index {
+            base,
+            open_bracket_span: s(insertion + 22, insertion + 23),
+            index,
+            close_bracket_span: s(insertion + 24, insertion + 25),
+        },
+    });
+    body.statements.insert(
+        1,
+        RawStatementSyntax {
+            span: s(insertion, insertion + 26),
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: s(insertion, insertion + 5),
+                mutable: false,
+                name: RawIdentifierSyntax {
+                    text: "text".to_owned(),
+                    span: s(insertion + 6, insertion + 10),
+                },
+                type_syntax: string_type,
+                equals_span: s(insertion + 19, insertion + 20),
+                initializer: projected,
+                semicolon_span: s(insertion + 25, insertion + 26),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
 #[allow(clippy::too_many_lines)]
 fn owned_pair_partial_local_transfer_snapshot() -> (String, RawProjectSyntaxSnapshot) {
     const LOCAL: &str = "const q: OwnedPair = p; ";
@@ -2143,6 +2208,96 @@ fn nested_owned_partial_local_transfer_snapshot() -> (String, RawProjectSyntaxSn
         },
     });
     body.blocks[0].statements = vec![0, 1, 2, 3];
+    (source, raw)
+}
+
+fn nested_owned_partial_return_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const LOCAL_PREFIX: &str = "const unused: Outer = ";
+    const RETURN: &str = "return q; ";
+    let (mut source, mut raw) = nested_owned_partial_local_transfer_snapshot();
+    let return_start = source.rfind("return Outer").expect("nested partial return source");
+    let initializer_start = return_start + "return ".len();
+    source.replace_range(return_start..initializer_start, LOCAL_PREFIX);
+    raw = shift_snapshot(
+        raw,
+        u32::try_from(initializer_start).expect("nested partial initializer start"),
+        u32::try_from(LOCAL_PREFIX.len() - "return ".len()).expect("nested partial local growth"),
+    );
+    let s = |start: usize, end: usize| zryna_source::UntrustedSpan {
+        file: 0,
+        start: u32::try_from(start).expect("nested partial span start"),
+        end: u32::try_from(end).expect("nested partial span end"),
+    };
+    let type_start = return_start + "const unused: ".len();
+    let outer_type =
+        u32::try_from(raw.files[0].type_syntax.len()).expect("nested partial unused Outer type id");
+    raw.files[0].type_syntax.push(RawTypeSyntax {
+        span: s(type_start, type_start + "Outer".len()),
+        kind: RawTypeSyntaxKind::Named {
+            name: RawIdentifierSyntax {
+                text: "Outer".to_owned(),
+                span: s(type_start, type_start + "Outer".len()),
+            },
+        },
+    });
+    let body = &mut raw.files[0].functions[0].body;
+    let last = body.statements.len() - 1;
+    let RawStatementKind::Return { value: initializer, semicolon_span, .. } =
+        body.statements[last].kind
+    else {
+        panic!("nested partial original return")
+    };
+    body.statements[last] = RawStatementSyntax {
+        span: s(
+            return_start,
+            usize::try_from(semicolon_span.end).expect("nested partial local end"),
+        ),
+        kind: RawStatementKind::LocalDeclaration {
+            keyword_span: s(return_start, return_start + "const".len()),
+            mutable: false,
+            name: RawIdentifierSyntax {
+                text: "unused".to_owned(),
+                span: s(return_start + "const ".len(), return_start + "const unused".len()),
+            },
+            type_syntax: outer_type,
+            equals_span: s(
+                initializer_start + LOCAL_PREFIX.len() - "return ".len() - 2,
+                initializer_start + LOCAL_PREFIX.len() - "return ".len() - 1,
+            ),
+            initializer,
+            semicolon_span,
+        },
+    };
+
+    let insertion = source.rfind('}').expect("nested partial function close");
+    source.insert_str(insertion, RETURN);
+    raw = shift_snapshot(
+        raw,
+        u32::try_from(insertion).expect("nested partial return insertion"),
+        u32::try_from(RETURN.len()).expect("nested partial return length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let returned = u32::try_from(body.expressions.len()).expect("nested partial q value id");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + "return ".len(), insertion + "return q".len()),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "q".to_owned(),
+                span: s(insertion + "return ".len(), insertion + "return q".len()),
+            },
+        },
+    });
+    let return_id =
+        u32::try_from(body.statements.len()).expect("nested partial return statement id");
+    body.statements.push(RawStatementSyntax {
+        span: s(insertion, insertion + "return q;".len()),
+        kind: RawStatementKind::Return {
+            keyword_span: s(insertion, insertion + "return".len()),
+            value: returned,
+            semicolon_span: s(insertion + "return q".len(), insertion + "return q;".len()),
+        },
+    });
+    body.blocks[0].statements.push(return_id);
     (source, raw)
 }
 
@@ -7057,6 +7212,77 @@ fn nested_partial_struct_transfer_preserves_recursive_topology_and_mask() {
 }
 
 #[test]
+fn nested_partial_struct_return_preserves_recursive_topology_and_reverse_survivors() {
+    let (source, raw) = nested_owned_partial_return_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful nested partial return");
+    let program = lower(pair_input(&syntax, &sources)).expect("nested partial Struct return");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let moved_leaf_owner = roots[&1];
+    let transferred_root = roots[&2];
+    let survivor_root = roots[&3];
+    let block = function.blocks().next().expect("block");
+    let returned = block.terminator().value_operands().next().expect("returned value");
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == returned)
+        })
+        .expect("nested partial return temporary")
+        .id();
+    let topology = |root| {
+        let fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+        let inner_fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == fields[&0] => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(inner_fields.keys().copied().collect::<Vec<_>>(), [0]);
+        (inner_fields[&0], fields[&1])
+    };
+    let source_topology = topology(source_root);
+    let transferred_topology = topology(transferred_root);
+    let returned_topology = topology(temporary);
+    assert_ne!(source_topology, transferred_topology);
+    assert_ne!(transferred_topology, returned_topology);
+    let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+    assert_eq!(
+        cleanup
+            .iter()
+            .map(zryna_ir::data_ownership_v1::VerifiedDropAction::root)
+            .collect::<Vec<_>>(),
+        [survivor_root, moved_leaf_owner,]
+    );
+    assert!(cleanup.iter().all(|action| {
+        action.root() != source_root
+            && action.root() != transferred_root
+            && action.root() != temporary
+            && action.root() != returned_topology.0
+    }));
+}
+
+#[test]
 fn partial_transfer_place_accounting_is_exact_and_checked() {
     assert_eq!(partial_transfer_place_delta(0, 0), Some(2));
     assert_eq!(partial_transfer_place_delta(2, 0), Some(8));
@@ -7094,6 +7320,48 @@ fn partial_transfer_place_accounting_is_exact_and_checked() {
     );
     assert_eq!(
         partial_transfer_budget_preflight(usize::MAX, 0, 0, 0, 0, 0),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+}
+
+#[test]
+fn partial_return_place_accounting_is_exact_and_checked() {
+    assert_eq!(partial_return_place_delta(0, 0), Some(1));
+    assert_eq!(partial_return_place_delta(2, 0), Some(5));
+    assert_eq!(partial_return_place_delta(2, 1), Some(4));
+    assert_eq!(partial_return_place_delta(2, 2), Some(3));
+    assert_eq!(partial_return_place_delta(1, 2), None);
+    assert_eq!(partial_return_place_delta(usize::MAX, 0), None);
+
+    let values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION;
+    let places = zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION;
+    let transitions = zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION;
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 4, transitions - 1, 0, 2, 1),
+        Ok(4),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values, places - 4, transitions - 1, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 3, transitions - 1, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Places),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 4, transitions, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 4, transitions - 1, 1, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(0, 0, 0, 0, usize::MAX, 0),
+        Err(PartialTransferBudgetViolation::PlaceAccounting),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(usize::MAX, 0, 0, 0, 0, 0),
         Err(PartialTransferBudgetViolation::Values),
     );
 }
@@ -7362,7 +7630,7 @@ fn projected_string_clone_rejects_copy_and_nonconstant_array_leaves() {
 }
 
 #[test]
-fn owned_projection_repeat_and_whole_root_after_partial_move_are_m3014() {
+fn owned_projection_repeat_is_m3014() {
     let (repeat_source, repeat_raw) =
         owned_array_projected_return_snapshot(OwnedArrayProjectionCase::Repeat);
     let repeat_sources = sources_for(&repeat_source);
@@ -7375,18 +7643,122 @@ fn owned_projection_repeat_and_whole_root_after_partial_move_are_m3014() {
         repeat[0].primary_span(),
         Some(span(&repeat_sources, nth_untrusted_span(&repeat_source, "a[0]", 1))),
     );
+}
 
-    let (root_source, root_raw) = owned_pair_partial_then_root_snapshot();
-    let root_sources = sources_for(&root_source);
-    let root_syntax = verify_snapshot(root_raw, &root_sources)
-        .expect("source-faithful whole root after projected move");
-    let root = lower(pair_input(&root_syntax, &root_sources))
-        .expect_err("whole root after projected move");
-    assert_eq!(root[0].code(), "ZRYNA-M3014");
-    assert_eq!(
-        root[0].primary_span(),
-        Some(span(&root_sources, nth_untrusted_span(&root_source, "p", 2))),
-    );
+#[test]
+fn partial_struct_owner_returns_with_exact_topology_mask_and_survivor_cleanup() {
+    let (source, raw) = owned_pair_partial_then_root_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful partial Struct return");
+    let program = lower(pair_input(&syntax, &sources)).expect("partial Struct return");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let moved_leaf_owner = roots[&1];
+    let block = function.blocks().next().expect("block");
+    let whole_move = block
+        .instructions()
+        .find(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("partial root return move");
+    let returned = block.terminator().value_operands().next().expect("returned value");
+    assert_eq!(whole_move.result(), Some(returned));
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == returned)
+        })
+        .expect("partial return temporary")
+        .id();
+    let fields = |root| {
+        function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>()
+    };
+    let source_fields = fields(source_root);
+    let returned_fields = fields(temporary);
+    assert_eq!(source_fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    assert_eq!(returned_fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+    assert_eq!(cleanup.len(), 1);
+    assert_eq!(cleanup[0].root(), moved_leaf_owner);
+    assert!(cleanup.iter().all(|action| {
+        action.root() != source_root
+            && action.root() != temporary
+            && action.root() != returned_fields[&0]
+    }));
+}
+
+#[test]
+fn partial_fixed_array_owner_returns_with_exact_topology_and_survivor_cleanup() {
+    let (source, raw) = owned_array_partial_then_root_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful partial array return");
+    let program = lower(pair_input(&syntax, &sources)).expect("partial FixedArray return");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let moved_leaf_owner = roots[&1];
+    let block = function.blocks().next().expect("block");
+    let whole_move = block
+        .instructions()
+        .find(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("partial array return move");
+    let returned = block.terminator().value_operands().next().expect("returned value");
+    assert_eq!(whole_move.result(), Some(returned));
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == returned)
+        })
+        .expect("partial array return temporary")
+        .id();
+    let elements = |root| {
+        function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::FixedArrayConstant { base, index } if base == root => {
+                    Some((index, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>()
+    };
+    let source_elements = elements(source_root);
+    let returned_elements = elements(temporary);
+    assert_eq!(source_elements.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    assert_eq!(returned_elements.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+    assert_eq!(cleanup.len(), 1);
+    assert_eq!(cleanup[0].root(), moved_leaf_owner);
+    assert!(cleanup.iter().all(|action| {
+        action.root() != source_root
+            && action.root() != temporary
+            && action.root() != returned_elements[&0]
+    }));
 }
 
 #[test]

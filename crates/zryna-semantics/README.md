@@ -127,17 +127,18 @@ accepted from the fault injector.
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
-projected clone and assignment, whole-partial-owner transfer outside the exact-type direct-local
-Struct/FixedArray exception, general owned phi joins, owned loop-carried phi joins,
+projected clone and assignment, whole-partial-owner transfer outside the exact-type direct-local or
+final-return Struct/FixedArray exceptions, general owned phi joins, owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
 its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves,
 String-leaf clone, and String-leaf assignment. A partially moved Struct or FixedArray root may move
-only through one exact direct-reference initializer into a same-type local; lowering preserves the
-complete recursive static topology, migrates the moved mask through the temporary, and invalidates
-the old owners. Calls, returns, assignments, projected initializers, Enum roots, and control-flow
-contexts remain outside that narrow transfer route. Projected clone retains the enclosing root and
+through one exact direct-reference initializer into a same-type local or through one final exact
+direct-reference return. Lowering preserves the complete recursive static topology, migrates the
+moved mask through every temporary/local owner, excludes a returned owner from survivor cleanup,
+and invalidates old owners. Calls, assignments, projected initializers, Enum roots, and control-flow
+contexts remain outside those narrow transfer routes. Projected clone retains the enclosing root and
 its partial-state masks while creating one distinct temporary String owner.
 Dynamic bounds execution, borrows, shared or weak references,
 and public owned parameters or results also remain unavailable. The Pair scalar oracle

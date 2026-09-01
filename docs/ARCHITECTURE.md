@@ -429,13 +429,17 @@ declaration, a partially moved supported Struct or FixedArray root now transfers
 move-result temporary into the new local. The producer derives and materializes one complete static
 topology for all three roots, then migrates the exact root-relative mask at both owner renames; the
 old source and temporary retain no cleanup authority.
+A final exact-reference return uses the same sealed topology to migrate a partial Struct/FixedArray
+mask into the returned temporary before cleanup. The verifier transfers that temporary out, then
+requires exact reverse cleanup of only the surviving owners; forged paths, unsupported graphs, or
+a returned-owner drop are rejected.
 The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, general non-String
 projected clone and assignment, partial Enum transfer or partial-root transfer outside the exact
-direct-local form, general nested or repeated owned control flow, loop-carried owned
+direct-local or final-return forms, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
 admitted. Its sealed semantic result retains both the verified IR and the exact verified
 ownership-runtime declaration authority without exposing either raw input. This creates no
