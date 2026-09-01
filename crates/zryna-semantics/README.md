@@ -102,7 +102,9 @@ self-consumption, and exposes the old destination's recursive drop shape. Constr
 operands are evaluated in sealed declaration or index order, whole-value moves transfer one owner,
 and return cleanup drops surviving roots in reverse successful-completion order. Canonical static
 struct-field and constant fixed-array projections additionally admit Copy reads and exact
-String-leaf moves. A moved leaf is excluded from the enclosing root's recursive return cleanup;
+String-leaf moves plus prepare-before-commit assignment to one mutable available String leaf.
+Assignment preparation retains the enclosing root and commit drops only the exact old leaf while
+leaving sibling masks unchanged. A moved leaf is excluded from the enclosing root's recursive return cleanup;
 disjoint leaves stay available, while a repeated or overlapping move and later whole-root
 consumption are rejected. The private
 String route reports use-after-move as `ZRYNA-M3011`; the bounded owned aggregate and enum route
@@ -124,12 +126,13 @@ accepted from the fault injector.
 
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone
-and assignment, whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
+aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone,
+general non-String projected assignment, whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
 repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
-its projection subset is limited to static Struct/FixedArray Copy reads and String-leaf moves.
+its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, and
+String-leaf assignment.
 Dynamic bounds execution, borrows, shared or weak references,
 and public owned parameters or results also remain unavailable. The Pair scalar oracle
 is observed only by a test evaluator over opaque verified views. Enum matching is limited to an

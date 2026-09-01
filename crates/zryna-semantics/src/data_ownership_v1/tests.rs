@@ -438,6 +438,218 @@ fn owned_pair_assignment_snapshot(
 }
 
 #[derive(Clone, Copy)]
+enum OwnedPairProjectedStringAssignmentRhs {
+    Fresh,
+    TargetMove,
+}
+
+fn owned_pair_projected_string_assignment_snapshot(
+    rhs: OwnedPairProjectedStringAssignmentRhs,
+    mutable: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    let assignment = match rhs {
+        OwnedPairProjectedStringAssignmentRhs::Fresh => "p.first = \"b\"; ",
+        OwnedPairProjectedStringAssignmentRhs::TargetMove => "p.first = p.first; ",
+    };
+    let mut source = OWNED_PAIR_SOURCE.to_owned();
+    if mutable {
+        source.replace_range(100..105, "let  ");
+    }
+    let insertion = source.find("return p;").expect("projected assignment insertion");
+    source.insert_str(insertion, assignment);
+    let insertion = u32::try_from(insertion).expect("projected assignment offset");
+    let mut raw = shift_snapshot(
+        response_snapshot(OWNED_PAIR_RESPONSE),
+        insertion,
+        u32::try_from(assignment.len()).expect("projected assignment length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::LocalDeclaration { keyword_span, mutable: is_mutable, .. } =
+        &mut body.statements[0].kind
+    else {
+        panic!("owned Pair local")
+    };
+    if mutable {
+        keyword_span.end = keyword_span.start + 3;
+        *is_mutable = true;
+    }
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let target_base = u32::try_from(body.expressions.len()).expect("target base");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion, insertion + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "p".to_owned(), span: s(insertion, insertion + 1) },
+        },
+    });
+    let target = u32::try_from(body.expressions.len()).expect("target projection");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion, insertion + 7),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: target_base,
+            dot_span: s(insertion + 1, insertion + 2),
+            field: RawIdentifierSyntax {
+                text: "first".to_owned(),
+                span: s(insertion + 2, insertion + 7),
+            },
+        },
+    });
+    let value = match rhs {
+        OwnedPairProjectedStringAssignmentRhs::Fresh => {
+            let value = u32::try_from(body.expressions.len()).expect("fresh String value");
+            body.expressions.push(RawExpressionSyntax {
+                span: s(insertion + 10, insertion + 13),
+                kind: zryna_syntax::v4::RawExpressionKind::StringLiteral {
+                    spelling: "\"b\"".to_owned(),
+                },
+            });
+            value
+        }
+        OwnedPairProjectedStringAssignmentRhs::TargetMove => {
+            let base = u32::try_from(body.expressions.len()).expect("RHS projection base");
+            body.expressions.push(RawExpressionSyntax {
+                span: s(insertion + 10, insertion + 11),
+                kind: zryna_syntax::v4::RawExpressionKind::Reference {
+                    name: RawIdentifierSyntax {
+                        text: "p".to_owned(),
+                        span: s(insertion + 10, insertion + 11),
+                    },
+                },
+            });
+            let value = u32::try_from(body.expressions.len()).expect("RHS projection");
+            body.expressions.push(RawExpressionSyntax {
+                span: s(insertion + 10, insertion + 17),
+                kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+                    base,
+                    dot_span: s(insertion + 11, insertion + 12),
+                    field: RawIdentifierSyntax {
+                        text: "first".to_owned(),
+                        span: s(insertion + 12, insertion + 17),
+                    },
+                },
+            });
+            value
+        }
+    };
+    let statement_end = insertion + u32::try_from(assignment.trim_end().len()).expect("statement");
+    body.statements.insert(
+        1,
+        RawStatementSyntax {
+            span: s(insertion, statement_end),
+            kind: RawStatementKind::Assignment {
+                target,
+                equals_span: s(insertion + 8, insertion + 9),
+                value,
+                semicolon_span: s(statement_end - 1, statement_end),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+fn owned_pair_copy_projection_assignment_target_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    let (mut source, mut raw) = owned_pair_projected_string_assignment_snapshot(
+        OwnedPairProjectedStringAssignmentRhs::Fresh,
+        true,
+    );
+    let start = source.find("p.first =").expect("projected assignment target");
+    let replacement = "p.flag";
+    source.replace_range(start..start + 7, replacement);
+    let start = u32::try_from(start).expect("invalid target offset");
+    raw = shift_snapshot_signed(
+        raw,
+        start + 7,
+        i32::try_from(replacement.len()).expect("small target") - 7,
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::Assignment { target, .. } = body.statements[1].kind else {
+        panic!("projected assignment")
+    };
+    let zryna_syntax::v4::RawExpressionKind::FieldAccess { base, .. } =
+        body.expressions[target as usize].kind
+    else {
+        panic!("projected target")
+    };
+    body.expressions[target as usize] = RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start, end: start + 6 },
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base,
+            dot_span: zryna_source::UntrustedSpan { file: 0, start: start + 1, end: start + 2 },
+            field: RawIdentifierSyntax {
+                text: "flag".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start: start + 2, end: start + 6 },
+            },
+        },
+    };
+    (source, raw)
+}
+
+fn owned_array_projected_string_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const ASSIGNMENT: &str = "a[0] = \"c\"; ";
+    let mut source = OWNED_ARRAY_SOURCE.to_owned();
+    let mutable = source.find("const a").expect("owned array local");
+    source.replace_range(mutable..mutable + 5, "let  ");
+    let insertion = source.find("return a;").expect("array assignment insertion");
+    source.insert_str(insertion, ASSIGNMENT);
+    let insertion = u32::try_from(insertion).expect("array assignment offset");
+    let mut raw = shift_snapshot(
+        response_snapshot(OWNED_ARRAY_RESPONSE),
+        insertion,
+        u32::try_from(ASSIGNMENT.len()).expect("array assignment length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::LocalDeclaration { keyword_span, mutable, .. } =
+        &mut body.statements[0].kind
+    else {
+        panic!("owned array local")
+    };
+    keyword_span.end = keyword_span.start + 3;
+    *mutable = true;
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let base = u32::try_from(body.expressions.len()).expect("array target base");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion, insertion + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "a".to_owned(), span: s(insertion, insertion + 1) },
+        },
+    });
+    let index = u32::try_from(body.expressions.len()).expect("array target index");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 2, insertion + 3),
+        kind: zryna_syntax::v4::RawExpressionKind::I32Literal { spelling: "0".to_owned() },
+    });
+    let target = u32::try_from(body.expressions.len()).expect("array target projection");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion, insertion + 4),
+        kind: zryna_syntax::v4::RawExpressionKind::Index {
+            base,
+            open_bracket_span: s(insertion + 1, insertion + 2),
+            index,
+            close_bracket_span: s(insertion + 3, insertion + 4),
+        },
+    });
+    let value = u32::try_from(body.expressions.len()).expect("array replacement String");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 7, insertion + 10),
+        kind: zryna_syntax::v4::RawExpressionKind::StringLiteral { spelling: "\"c\"".to_owned() },
+    });
+    body.statements.insert(
+        1,
+        RawStatementSyntax {
+            span: s(insertion, insertion + 11),
+            kind: RawStatementKind::Assignment {
+                target,
+                equals_span: s(insertion + 5, insertion + 6),
+                value,
+                semicolon_span: s(insertion + 10, insertion + 11),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+#[derive(Clone, Copy)]
 enum OwnedPairProjectionAssignmentRhs {
     CopyField,
     MoveField,
@@ -1039,6 +1251,68 @@ fn owned_pair_partial_then_root_snapshot() -> (String, RawProjectSyntaxSnapshot)
         },
     );
     body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+fn owned_pair_moved_projection_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const ASSIGNMENT: &str = "p.first = \"b\"; ";
+    let (mut source, mut raw) = owned_pair_partial_then_root_snapshot();
+    let mutable = source.find("const p").expect("owned Pair local");
+    source.replace_range(mutable..mutable + 5, "let  ");
+    let insertion = source.find("return p;").expect("moved projection assignment insertion");
+    source.insert_str(insertion, ASSIGNMENT);
+    let insertion = u32::try_from(insertion).expect("moved projection assignment offset");
+    raw = shift_snapshot(
+        raw,
+        insertion,
+        u32::try_from(ASSIGNMENT.len()).expect("moved projection assignment length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::LocalDeclaration { keyword_span, mutable, .. } =
+        &mut body.statements[0].kind
+    else {
+        panic!("owned Pair local")
+    };
+    keyword_span.end = keyword_span.start + 3;
+    *mutable = true;
+    let s = |start, end| zryna_source::UntrustedSpan { file: 0, start, end };
+    let base = u32::try_from(body.expressions.len()).expect("moved target base");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion, insertion + 1),
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "p".to_owned(), span: s(insertion, insertion + 1) },
+        },
+    });
+    let target = u32::try_from(body.expressions.len()).expect("moved target projection");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion, insertion + 7),
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base,
+            dot_span: s(insertion + 1, insertion + 2),
+            field: RawIdentifierSyntax {
+                text: "first".to_owned(),
+                span: s(insertion + 2, insertion + 7),
+            },
+        },
+    });
+    let value = u32::try_from(body.expressions.len()).expect("moved target replacement");
+    body.expressions.push(RawExpressionSyntax {
+        span: s(insertion + 10, insertion + 13),
+        kind: zryna_syntax::v4::RawExpressionKind::StringLiteral { spelling: "\"b\"".to_owned() },
+    });
+    body.statements.insert(
+        2,
+        RawStatementSyntax {
+            span: s(insertion, insertion + 14),
+            kind: RawStatementKind::Assignment {
+                target,
+                equals_span: s(insertion + 8, insertion + 9),
+                value,
+                semicolon_span: s(insertion + 13, insertion + 14),
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2, 3];
     (source, raw)
 }
 
@@ -5217,6 +5491,135 @@ fn string_bearing_struct_assignment_prepares_before_replacing_the_exact_root() {
     assert_eq!(replace_index + 2, instructions.len(), "commit precedes only the final return move");
     assert_eq!(instructions[replace_index + 1].kind(), VerifiedInstructionKind::MoveFromPlace);
     assert_eq!(block.terminator().derived_drop_actions().count(), 0);
+}
+
+#[test]
+fn projected_string_assignment_prepares_before_replacing_the_exact_leaf() {
+    let (source, raw) = owned_pair_projected_string_assignment_snapshot(
+        OwnedPairProjectedStringAssignmentRhs::Fresh,
+        true,
+    );
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful projected assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("projected String assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned Pair root")
+        .id();
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("projected ReplacePlace");
+    let replace = instructions[replace_index];
+    let target = replace.place_operands().next().expect("projected replacement target");
+    assert!(matches!(
+        function.places().find(|place| place.id() == target).expect("target place").kind(),
+        VerifiedPlaceKind::StructField { base, ordinal: 0 } if base == root
+    ));
+    let prepared = instructions[..replace_index]
+        .iter()
+        .rev()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::StringFromUtf8)
+        .expect("prepared replacement String");
+    assert!(
+        prepared.derived_drop_actions().any(|action| action.root() == root),
+        "fallible preparation retains the enclosing aggregate root",
+    );
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+        "commit drops only the replaced String leaf",
+    );
+    assert_eq!(instructions[replace_index + 1].kind(), VerifiedInstructionKind::MoveFromPlace);
+    assert_eq!(block.terminator().derived_drop_actions().count(), 0);
+}
+
+#[test]
+fn fixed_array_projected_string_assignment_uses_the_same_exact_leaf_commit() {
+    let (source, raw) = owned_array_projected_string_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful array assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("array String-leaf assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let root = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+        .expect("owned array root")
+        .id();
+    let replace = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("array projected ReplacePlace");
+    let target = replace.place_operands().next().expect("array replacement target");
+    assert!(matches!(
+        function.places().find(|place| place.id() == target).expect("target place").kind(),
+        VerifiedPlaceKind::FixedArrayConstant { base, index: 0 } if base == root
+    ));
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+    );
+}
+
+#[test]
+fn projected_string_assignment_rejects_immutable_and_self_consuming_targets() {
+    for (rhs, mutable, needle, reference_ordinal, label) in [
+        (OwnedPairProjectedStringAssignmentRhs::Fresh, false, "p.first", 0, "immutable projection"),
+        (
+            OwnedPairProjectedStringAssignmentRhs::TargetMove,
+            true,
+            "p",
+            2,
+            "self-consuming projection",
+        ),
+    ] {
+        let (source, raw) = owned_pair_projected_string_assignment_snapshot(rhs, mutable);
+        let sources = sources_for(&source);
+        let syntax = verify_snapshot(raw, &sources).expect("source-faithful rejected projection");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(label);
+        assert_eq!(diagnostics.len(), 1, "{label}");
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3014", "{label}");
+        assert_eq!(
+            diagnostics[0].primary_span(),
+            Some(span(&sources, nth_untrusted_span(&source, needle, reference_ordinal))),
+            "{label}",
+        );
+    }
+}
+
+#[test]
+fn projected_string_assignment_does_not_reinitialize_a_moved_leaf() {
+    let (source, raw) = owned_pair_moved_projection_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful moved projection");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("moved projection target");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(&sources, nth_untrusted_span(&source, "p.first", 1))),
+    );
+}
+
+#[test]
+fn projected_string_assignment_rejects_a_copy_leaf_target_as_m3013() {
+    let (source, raw) = owned_pair_copy_projection_assignment_target_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful Copy target");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("Copy target shape");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3013");
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(&sources, nth_untrusted_span(&source, "p.flag", 0))),
+    );
 }
 
 #[test]

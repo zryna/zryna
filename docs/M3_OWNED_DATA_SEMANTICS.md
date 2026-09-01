@@ -65,7 +65,7 @@ document. Its private owned String/Vec route currently proves:
 
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
 Vec, Shared, or Weak values, aggregate-subobject and enum-payload moves, dynamic or Vec-element
-projections, projected clone and assignment, whole-partial-owner transfer, general owned phi joins,
+projections, projected clone and general non-String projected assignment, whole-partial-owner transfer, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
 runtime/backend lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
@@ -95,7 +95,7 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | supported String-bearing aggregate clone | complete | distinct result owner, retained source, sealed layout/variant-derived fallible leaves, authenticated prefix-safe recursive failure cleanup, and atomic resource rollback |
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
 | static owned projection reads and String-leaf moves | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, root-relative cleanup masks, and precise repeat/overlap rejection |
-| general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and projected assignment | pending | recursive Vec/Enum/Shared/Weak clone, whole-partial-owner transfer, dynamic projection, and replacement capability |
+| general structural Vec clone, nested aggregate clone, aggregate/enum subobject moves, and non-String projected assignment | pending | recursive Vec/Enum/Shared/Weak clone, whole-partial-owner transfer, dynamic projection, and broader replacement capability |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
@@ -306,8 +306,9 @@ carries no prepare-failure plan and exposes the derived drop shape of the old de
 struct, enum, and fixed-array construction commits already prepared operands without a failure
 plan. Allocation-bearing Vec construction and clone steps retain their exact prepare-failure sites.
 The current semantic checkpoint emits `ReplacePlace` for private root-local String, supported exact
-Vec roots, and supported String-bearing Struct, FixedArray, and root Enum values. Projected
-destinations, owned calls, and CFG replacement remain outside that checkpoint. It resolves
+Vec roots, supported String-bearing Struct, FixedArray, and root Enum values, and mutable available
+static StructField or FixedArrayConstant String leaves. Other projected destinations, owned calls,
+and CFG replacement remain outside that checkpoint. It resolves
 canonical static StructField and FixedArrayConstant source places for Copy reads and exact
 String-leaf moves, preserving the enclosing owner's masked pending cleanup.
 
@@ -315,8 +316,10 @@ The verified IR prerequisite for projected replacement is already sealed: a stat
 commit exposes the old subobject's exact pre-state recursive drop action and transplants only the
 prepared source subtree's state and active enum variants. The enclosing owner remains pending and
 sibling masks are unchanged. The semantic producer supplies canonical static projection resolution,
-overlap rejection, and projection-aware owner-state tracking for Copy reads and String-leaf moves.
-It does not yet produce projected replacement or transfer a whole partially moved aggregate.
+overlap rejection, and projection-aware owner-state tracking for Copy reads, String-leaf moves, and
+prepare-before-commit String-leaf replacement. Replacement preparation retains the enclosing root;
+commit drops only the exact old leaf and leaves sibling masks unchanged. It does not yet replace
+non-String projections or transfer a whole partially moved aggregate.
 
 The retained runtime ABI authority also closes contextual transition evidence: atomic failure is
 validated against one exact `LogicalOperation`, and Vec allocation/reserve validation consumes a
@@ -384,6 +387,12 @@ String leaves under canonical static Struct/FixedArray paths; whole partial-owne
 aggregate/enum subobject moves remain closure work even though verified IR can represent their
 cleanup masks.
 
+Mutable available String leaves under those same canonical paths also admit assignment. The right
+hand side is fully prepared before mutation, failure cleanup retains the enclosing root, and the
+infallible `ReplacePlace` commit drops only the exact old leaf. Consuming the destination root while
+preparing its replacement, assigning through an immutable or moved projection, and reinitializing
+an already moved leaf remain rejected.
+
 ## Issue #81 closure target
 
 The complete Issue #81 target admits uniquely owned `String`, `Vec<T>`, and structs, enums, and
@@ -427,7 +436,7 @@ The Issue #81 semantic allocation is:
 | `ZRYNA-M3002` | unresolved, wrong-case, duplicate, or colliding module-local binding name |
 | `ZRYNA-M3011` | unavailable or already moved binding in the private String route |
 | `ZRYNA-M3012` | invalid String construction, clone, concatenation, UTF-8, or excluded String operation |
-| `ZRYNA-M3013` | invalid Vec construction, clone, push, index, element type, length, or capacity operation |
+| `ZRYNA-M3013` | invalid Vec construction, clone, push, index, element type, length, or capacity operation; invalid aggregate assignment target shape |
 | `ZRYNA-M3014` | unavailable, duplicate, or already moved aggregate/enum owner; invalid initialization, assignment, or replacement |
 | `ZRYNA-M3015` | incompatible branch join, loop-carried state, scope exit, or return ownership |
 | `ZRYNA-M3016` | ownership-bearing operation deliberately outside the Issue #81 slice |

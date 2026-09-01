@@ -144,8 +144,10 @@ from sealed authorities, and reverse-drops only the initialized result prefix on
 Whole-root assignment for the same graphs is prepare-before-commit, rejects direct
 self-consumption, and preserves sealed recursive cleanup for the old destination.
 The verified IR now also seals projected replacement's old-subobject traversal and transfers the
-prepared subtree's masks and enum refinement without disturbing siblings; semantic projected
-assignment remains unfinished. The semantic producer resolves canonical static StructField and
+prepared subtree's masks and enum refinement without disturbing siblings. The semantic producer
+uses it for prepare-before-commit replacement of mutable available static String leaves; preparation
+retains the enclosing root and commit drops only the exact old leaf. General non-String projected
+assignment remains unfinished. The producer also resolves canonical static StructField and
 FixedArrayConstant source places for Copy reads and exact String-leaf moves, preserves the enclosing
 root's cleanup obligation, and rejects repeated, overlapping, or later whole-root consumption.
 The private String route reports moved uses as M3011, the aggregate/enum route reports them
@@ -159,7 +161,7 @@ uncommitted-result exclusion, reverse cleanup, deterministic replay, and event l
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject and enum-payload moves, dynamic or Vec-element projections, projected clone and
-assignment, whole-partial-owner transfer, general owned phi joins,
+general non-String projected assignment, whole-partial-owner transfer, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
 complete and Issue #82 is not ready.
