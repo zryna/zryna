@@ -2551,7 +2551,7 @@ fn verify_aggregate_subobject_move_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "function contains more than one aggregate projection move",
-            "move at most one complete static Struct or fixed-array subobject into one exact direct local",
+            "move at most one complete static Struct or fixed-array subobject into one exact direct local or static replacement under a distinct local root",
         ));
         return;
     }
@@ -2559,15 +2559,7 @@ fn verify_aggregate_subobject_move_contexts(
     else {
         return;
     };
-    let temporary_owner = function
-        .places
-        .iter()
-        .filter(|candidate| {
-            candidate.ty == result.ty
-                && matches!(candidate.kind, raw::PlaceKind::Temporary(value) if value == result.id)
-        })
-        .count()
-        == 1;
+    let temporary_owner = unique_temporary_owner(function, result.id, result.ty);
     let direct_local = block.instructions.get(instruction_index + 1).is_some_and(|next| {
         matches!(
             next.kind,
@@ -2577,6 +2569,9 @@ fn verify_aggregate_subobject_move_contexts(
                         target.ty == result.ty && matches!(target.kind, raw::PlaceKind::Local(_))
                     })
         )
+    });
+    let projected_replacement = block.instructions.get(instruction_index + 1).is_some_and(|next| {
+        is_complete_projected_move_replacement(next, place, result, temporary_owner, function)
     });
     let uses = function
         .blocks
@@ -2598,15 +2593,15 @@ fn verify_aggregate_subobject_move_contexts(
     if !private_straight_line
         || !static_projection_path(place, function)
         || !has_exact_projection_topology(place, function, layouts)
-        || !temporary_owner
-        || !direct_local
+        || temporary_owner.is_none()
+        || !(direct_local || projected_replacement)
         || uses != 1
     {
         errors.push(error_at(
             "ZRYNA-I3010",
             instruction.span,
-            "aggregate projection move escapes its exact direct-local context",
-            "move one complete static Struct or fixed-array subobject into the immediately following same-type local initialization",
+            "aggregate projection move escapes its exact direct-local or projected-assignment context",
+            "move one complete static Struct or fixed-array subobject immediately into one same-type local initialization or static replacement under a distinct local root",
         ));
     }
 }
@@ -2629,6 +2624,81 @@ fn value_use_count(function: &raw::Function, value: raw::ValueId) -> usize {
         })
         .filter(|candidate| *candidate == value)
         .count()
+}
+
+fn unique_temporary_owner(
+    function: &raw::Function,
+    value: raw::ValueId,
+    ty: raw::TypeId,
+) -> Option<raw::PlaceId> {
+    let mut owners = function.places.iter().filter(|candidate| {
+        candidate.ty == ty
+            && matches!(candidate.kind, raw::PlaceKind::Temporary(owner) if owner == value)
+    });
+    let owner = owners.next()?.id;
+    owners.next().is_none().then_some(owner)
+}
+
+fn is_complete_projected_move_replacement(
+    instruction: &raw::Instruction,
+    source: raw::PlaceId,
+    result: raw::ValueDefinition,
+    temporary_owner: Option<raw::PlaceId>,
+    function: &raw::Function,
+) -> bool {
+    let raw::InstructionKind::ReplacePlace { place: target, value, .. } = instruction.kind else {
+        return false;
+    };
+    let source_root = root_place(source, function);
+    let target_root = root_place(target, function);
+    value == result.id
+        && function.parameters.is_empty()
+        && function.borrow_parameters.is_empty()
+        && source_root != target_root
+        && function
+            .places
+            .get(source_root.0 as usize)
+            .is_some_and(|source_root| matches!(source_root.kind, raw::PlaceKind::Local(_)))
+        && function
+            .places
+            .get(target_root.0 as usize)
+            .is_some_and(|target_root| matches!(target_root.kind, raw::PlaceKind::Local(_)))
+        && function.places.get(target.0 as usize).is_some_and(|target| target.ty == result.ty)
+        && static_projection_path(target, function)
+        && temporary_owner.is_some()
+}
+
+fn admitted_projected_assignment_source(
+    source: raw::PlaceId,
+    result: raw::ValueDefinition,
+    cloned: bool,
+    target: raw::PlaceId,
+    temporary_owner: Option<raw::PlaceId>,
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+) -> bool {
+    let source_root = root_place(source, function);
+    let target_root = root_place(target, function);
+    let same_type =
+        function.places.get(source.0 as usize).is_some_and(|place| place.ty == result.ty)
+            && function.places.get(target.0 as usize).is_some_and(|place| place.ty == result.ty);
+    let direct_root = source == source_root
+        && function
+            .places
+            .get(source.0 as usize)
+            .is_some_and(|place| matches!(place.kind, raw::PlaceKind::Local(_)));
+    let complete_projected_move = !cloned
+        && source != source_root
+        && function.parameters.is_empty()
+        && function.borrow_parameters.is_empty()
+        && function
+            .places
+            .get(source_root.0 as usize)
+            .is_some_and(|source_root| matches!(source_root.kind, raw::PlaceKind::Local(_)))
+        && static_projection_path(source, function)
+        && has_exact_projection_topology(source, function, layouts)
+        && temporary_owner.is_some();
+    source_root != target_root && same_type && (direct_root || complete_projected_move)
 }
 
 fn verify_projected_aggregate_clone_contexts(
@@ -2748,7 +2818,7 @@ fn verify_projected_aggregate_assignment_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "function contains more than one projected aggregate assignment",
-            "move or clone at most one complete aggregate root into one static Struct or fixed-array projection",
+            "move at most one complete static aggregate subobject, or move or clone one complete aggregate root, into one static Struct or fixed-array projection",
         ));
         return;
     }
@@ -2770,40 +2840,41 @@ fn verify_projected_aggregate_assignment_contexts(
     });
     let preceding_source = instruction_index.checked_sub(1).and_then(|index| {
         let preceding = block.instructions.get(index)?;
-        let (raw::InstructionKind::MoveFromPlace { place: source }
-        | raw::InstructionKind::ClonePlace { place: source, .. }) = preceding.kind
-        else {
-            return None;
+        let (source, cloned) = match preceding.kind {
+            raw::InstructionKind::MoveFromPlace { place: source } => (source, false),
+            raw::InstructionKind::ClonePlace { place: source, .. } => (source, true),
+            _ => return None,
         };
         let result = preceding.result?;
-        (result.id == value).then_some((source, result))
+        (result.id == value).then_some((source, result, cloned))
     });
-    let source_is_distinct_root = preceding_source.is_some_and(|(source, result)| {
-        source != target_root
-            && root_place(source, function) == source
-            && function.places.get(source.0 as usize).is_some_and(|place| {
-                place.ty == result.ty && matches!(place.kind, raw::PlaceKind::Local(_))
-            })
-            && function.places.get(target.0 as usize).is_some_and(|place| place.ty == result.ty)
+    let target_ty = function.places.get(target.0 as usize).map(|place| place.ty);
+    let temporary_owner = target_ty.and_then(|ty| unique_temporary_owner(function, value, ty));
+    let source_is_admitted = preceding_source.is_some_and(|(source, result, cloned)| {
+        admitted_projected_assignment_source(
+            source,
+            result,
+            cloned,
+            target,
+            temporary_owner,
+            function,
+            layouts,
+        )
     });
-    let temporary_owner = function.places.iter().filter(|candidate| {
-        matches!(candidate.kind, raw::PlaceKind::Temporary(owner) if owner == value)
-    }).count()
-        == 1;
     let uses = value_use_count(function, value);
     if !private_straight_line
         || !valid_type
         || !target_is_local
         || !static_projection_path(target, function)
-        || !source_is_distinct_root
-        || !temporary_owner
+        || !source_is_admitted
+        || temporary_owner.is_none()
         || uses != 1
     {
         errors.push(error_at(
             "ZRYNA-I3010",
             instruction.span,
-            "projected aggregate assignment escapes its exact root-to-static-projection context",
-            "move or clone one distinct complete Struct or fixed-array local immediately into one same-type static projection",
+            "projected aggregate assignment escapes its exact source-to-static-projection context",
+            "move one distinct complete static Struct or fixed-array subobject, or move or clone one distinct complete local root, immediately into one same-type static projection",
         ));
     }
 }

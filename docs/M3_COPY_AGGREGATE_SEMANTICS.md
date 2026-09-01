@@ -119,13 +119,16 @@ into an exact-topology temporary, excludes that result from cleanup, and reverse
 One distinct mutable fully initialized same-type whole-root assignment destination also admits the
 partial Struct or FixedArray source after complete source, temporary, and destination topology
 preflight. `ReplacePlace` drops the old destination exactly once and installs the transferred mask.
-At most one combined private straight-line projected assignment moves or explicitly clones a
-distinct, fully initialized exact same-type supported non-Copy Struct or FixedArray whole root into
-one mutable available static `StructField` or `FixedArrayConstant` projection. Move consumes the
-source; clone retains it, and prepare/prefix failure cleanup retains source plus destination. Commit
-recursively drops the exact old target while retaining the destination root and every sibling mask.
-Both forms add one value, `M + 1` places, and two transitions. Move adds no cleanup plan; with `P`
-pending roots, clone adds two plans and `2P + 1` actions.
+At most one combined private straight-line projected assignment moves a complete static supported
+Struct/FixedArray subobject between distinct local roots, moves a distinct fully initialized whole
+root, or explicitly clones such a whole root into one mutable available same-type static
+`StructField` or `FixedArrayConstant` projection. Projected move has the immediate
+`MoveFromPlace` -> sole-use typed temporary -> `ReplacePlace` shape: it masks the complete source
+subtree beneath the still-pending source root, while commit recursively drops only the exact old
+target and retains both roots, pending order, and every sibling mask. With `S` missing source-path
+places, `D` missing source descendants, and `T` missing target-path places, it adds one value,
+`S + D + T + 1` places, and two transitions with no cleanup plan or action. Whole-root move uses
+`M + 1` places and no cleanup; with `P` pending roots, clone adds two plans and `2P + 1` actions.
 Unresolved binding names report `ZRYNA-M3002`, while unavailable or already moved owned aggregate
 and enum bindings report `ZRYNA-M3014`.
 
@@ -138,10 +141,11 @@ This checkpoint does not enable general owned values: aggregate-subobject moves 
 exact direct-local form or the exact match-local exception above, broader enum-payload moves, partial Enum
 transfer or partial-root transfer outside the exact direct-local, final-return, or whole-root
 assignment forms, dynamic or Vec-element projections, projected aggregate clone outside the exact
-direct-local form, or projected aggregate assignment outside the exact whole-root-move-or-clone-to-
-static-projection form,
+direct-local form, or projected aggregate assignment outside the exact static-subobject-move-or-
+whole-root-move-or-clone-to-static-projection form,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
-The exceptions also exclude fresh/projected/partial assignment sources, dynamic/Vec/Enum targets,
+The exceptions also exclude fresh sources, same-root/overlapping or partial/moved projected
+sources, projected clone, dynamic/Vec/Enum targets,
 second move-or-clone assignment sites, direct projected-clone or payload return, owner-carrying CFG transfer,
 multi-variant extraction, and public owned contexts.
 Public owned results remain rejected by scalar ABI v1.

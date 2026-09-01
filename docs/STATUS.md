@@ -173,6 +173,12 @@ One distinct mutable fully initialized same-type whole-root destination now acce
 Struct or FixedArray from an exact-reference source. Complete source, temporary, and destination
 topology plus value/place/transition capacity are preflighted before mutation; `ReplacePlace` drops
 the old destination once, installs the exact mask, and invalidates source and temporary.
+One combined private straight-line projected-assignment site now also moves a complete static
+Struct/FixedArray subobject between distinct local roots. The immediate `MoveFromPlace` -> sole-use
+typed temporary -> `ReplacePlace` shape masks the complete source subtree, drops only the old target
+subtree, and preserves both pending roots and their sibling masks. With `S` missing source-path
+places, `D` missing source descendants, and `T` missing target-path places, lowering atomically
+preflights one value, `S + D + T + 1` places, and two transitions before any mutation.
 One canonical private one-parameter route additionally accepts a single-variant enum whose complete
 non-Copy Struct/FixedArray payload is bound by an exhaustive one-arm `match`. The arm moves the
 active payload into an exact direct local, drops the emptied enum root, and jumps without owner
@@ -189,9 +195,10 @@ separate checked Vec bounds trap; it authenticates status disposition/trap ident
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject moves outside that direct-local exception or the single-variant match-local enum
-payload extraction, broader enum-payload moves, dynamic or Vec-element projections, projected
-aggregate assignment outside the exact whole-root-move-or-clone-to-static-projection site, projected aggregate
+aggregate-subobject moves outside that direct-local exception, the one distinct-root static
+projection replacement, or the single-variant match-local enum payload extraction, broader
+enum-payload moves, dynamic or Vec-element projections, projected aggregate assignment outside the
+exact static-subobject-move-or-whole-root-move-or-clone-to-static-projection site, projected aggregate
 clone outside the direct-local exception, partial Enum
 transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
 contexts, or non-final/non-reference returns, general owned phi joins,
