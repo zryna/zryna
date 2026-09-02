@@ -1,0 +1,195 @@
+use super::*;
+
+fn owned_fixed_array_clone_assignment_snapshot() -> (String, RawProjectSyntaxSnapshot) {
+    const ASSIGNMENT: &str = "a = clone(a); ";
+    let mut source = OWNED_ARRAY_SOURCE.to_owned();
+    source.replace_range(41..46, "let  ");
+    let insertion = source.find("return a;").expect("array return insertion");
+    source.insert_str(insertion, ASSIGNMENT);
+    let insertion = u32::try_from(insertion).expect("array insertion");
+    let mut raw = shift_snapshot(
+        response_snapshot(OWNED_ARRAY_RESPONSE),
+        insertion,
+        u32::try_from(ASSIGNMENT.len()).expect("array assignment length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let RawStatementKind::LocalDeclaration { keyword_span, mutable, .. } =
+        &mut body.statements[0].kind
+    else {
+        panic!("owned array local")
+    };
+    keyword_span.end = keyword_span.start + 3;
+    *mutable = true;
+    let target = u32::try_from(body.expressions.len()).expect("array target");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: insertion, end: insertion + 1 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start: insertion, end: insertion + 1 },
+            },
+        },
+    });
+    let source_value = u32::try_from(body.expressions.len()).expect("array clone source");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: insertion + 10, end: insertion + 11 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "a".to_owned(),
+                span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: insertion + 10,
+                    end: insertion + 11,
+                },
+            },
+        },
+    });
+    let cloned = u32::try_from(body.expressions.len()).expect("array clone");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: insertion + 4, end: insertion + 12 },
+        kind: zryna_syntax::v4::RawExpressionKind::Clone {
+            keyword_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: insertion + 4,
+                end: insertion + 9,
+            },
+            open_paren_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: insertion + 9,
+                end: insertion + 10,
+            },
+            value: source_value,
+            close_paren_span: zryna_source::UntrustedSpan {
+                file: 0,
+                start: insertion + 11,
+                end: insertion + 12,
+            },
+        },
+    });
+    body.statements.insert(
+        1,
+        RawStatementSyntax {
+            span: zryna_source::UntrustedSpan { file: 0, start: insertion, end: insertion + 13 },
+            kind: RawStatementKind::Assignment {
+                target,
+                equals_span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: insertion + 2,
+                    end: insertion + 3,
+                },
+                value: cloned,
+                semicolon_span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: insertion + 12,
+                    end: insertion + 13,
+                },
+            },
+        },
+    );
+    body.blocks[0].statements = vec![0, 1, 2];
+    (source, raw)
+}
+
+#[test]
+fn string_bearing_struct_assignment_prepares_before_replacing_the_exact_root() {
+    let (source, raw) = owned_pair_assignment_snapshot(OwnedPairAssignmentRhs::Fresh, true);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful aggregate assignment v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("owned Struct assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("ReplacePlace");
+    let replace = instructions[replace_index];
+    let target = replace.place_operands().next().expect("replacement target");
+    let prepared_string = instructions[..replace_index]
+        .iter()
+        .rev()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::StringFromUtf8)
+        .expect("prepared String leaf");
+    assert!(
+        prepared_string.derived_drop_actions().any(|action| action.root() == target),
+        "fallible RHS preparation retains the old aggregate root",
+    );
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+    );
+    assert_eq!(replace_index + 2, instructions.len(), "commit precedes only the final return move");
+    assert_eq!(instructions[replace_index + 1].kind(), VerifiedInstructionKind::MoveFromPlace);
+    assert_eq!(block.terminator().derived_drop_actions().count(), 0);
+}
+
+#[test]
+fn aggregate_clone_target_assignment_retains_source_until_replace_commit() {
+    let (source, raw) = owned_pair_assignment_snapshot(OwnedPairAssignmentRhs::CloneTarget, true);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful clone-target assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("owned Struct clone assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let clone_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+        .expect("ClonePlace");
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("ReplacePlace");
+    assert!(clone_index < replace_index, "clone preparation must precede commit");
+    let clone = instructions[clone_index];
+    let replace = instructions[replace_index];
+    let source_owner = clone.place_operands().next().expect("clone source");
+    assert_eq!(replace.place_operands().next(), Some(source_owner));
+    assert!(clone.derived_drop_actions().any(|action| action.root() == source_owner));
+    assert!(
+        clone
+            .aggregate_clone_element_failure_drop_actions()
+            .any(|action| action.root() == source_owner),
+        "recursive clone failure retains the assignment target",
+    );
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [source_owner],
+        "the old source is dropped only by the replacement commit",
+    );
+}
+
+#[test]
+fn string_fixed_array_clone_assignment_replaces_one_mutable_whole_root() {
+    let (source, raw) = owned_fixed_array_clone_assignment_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful FixedArray assignment");
+    let program = lower(pair_input(&syntax, &sources)).expect("owned FixedArray assignment");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let instructions = block.instructions().collect::<Vec<_>>();
+    let clone_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+        .expect("ClonePlace");
+    let replace_index = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::ReplacePlace)
+        .expect("ReplacePlace");
+    assert!(clone_index < replace_index);
+    let clone = instructions[clone_index];
+    let replace = instructions[replace_index];
+    let target = clone.place_operands().next().expect("array source root");
+    assert_eq!(replace.place_operands().next(), Some(target));
+    assert_eq!(clone.aggregate_clone_fallible_leaf_count(), Some(2));
+    assert!(clone.derived_drop_actions().any(|action| action.root() == target));
+    assert!(
+        clone.aggregate_clone_element_failure_drop_actions().any(|action| action.root() == target),
+    );
+    assert_eq!(
+        replace.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [target],
+    );
+    assert_eq!(instructions[replace_index + 1].kind(), VerifiedInstructionKind::MoveFromPlace);
+    assert_eq!(block.terminator().derived_drop_actions().count(), 0);
+}
