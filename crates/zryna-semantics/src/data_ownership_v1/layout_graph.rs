@@ -25,6 +25,20 @@ struct TypeInterners {
     vectors: BTreeMap<u32, raw_layout::NodeId>,
 }
 
+fn storage_type_syntax(file: &syntax::SourceUnit, mut id: u32) -> u32 {
+    loop {
+        let Some(ty) = usize::try_from(id).ok().and_then(|index| file.type_syntax().get(index))
+        else {
+            return id;
+        };
+        match ty.kind {
+            RawTypeSyntaxKind::Borrow { argument, .. }
+            | RawTypeSyntaxKind::BorrowMut { argument, .. } => id = argument,
+            _ => return id,
+        }
+    }
+}
+
 #[allow(clippy::too_many_lines)]
 pub(super) fn build_graph(
     input: SemanticInput<'_>,
@@ -179,7 +193,7 @@ pub(super) fn build_graph(
             for parameter in &function.parameters {
                 add_root(
                     file,
-                    parameter.type_syntax,
+                    storage_type_syntax(file, parameter.type_syntax),
                     module,
                     &declarations,
                     &mut graph,
@@ -189,7 +203,7 @@ pub(super) fn build_graph(
             }
             add_root(
                 file,
-                function.result_type,
+                storage_type_syntax(file, function.result_type),
                 module,
                 &declarations,
                 &mut graph,

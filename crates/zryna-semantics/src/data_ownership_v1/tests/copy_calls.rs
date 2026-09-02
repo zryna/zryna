@@ -199,6 +199,79 @@ fn private_copy_call_rejects_argument_and_result_type_mismatches_at_source() {
 }
 
 #[test]
+fn private_copy_call_rejects_borrow_signature_before_arity_or_value_evaluation() {
+    let sources = sources_for(COPY_CALL_SOURCE);
+    let syntax = verify_snapshot(response_snapshot(COPY_CALL_RESPONSE), &sources)
+        .expect("source-faithful Copy call v4");
+    let input = pair_input(&syntax, &sources);
+    let mut setup_errors = Errors::new(&sources);
+    semantic_preflight(input, &mut setup_errors);
+    let (graph, declarations) = super::super::build_graph(input, &mut setup_errors);
+    let layouts = zryna_layout::verify(&graph, &sources, zryna_layout::StorageTarget::Linear32V1)
+        .expect("verified Copy layouts");
+    let node_types = super::super::map_node_types(&graph, &layouts, &mut setup_errors);
+    assert!(setup_errors.finish().is_empty());
+    let ty = authenticated_type_capabilities(input, 0, 0).expect("i32 type");
+    let function = &syntax.files()[0].functions()[0];
+    let expression = &function.body.expressions[2];
+    let zryna_syntax::v4::RawExpressionKind::Call { callee, .. } = &expression.kind else {
+        panic!("Copy call")
+    };
+    let call_span = span(&sources, expression.span);
+    let callee_span = span(&sources, callee.span);
+    let catalog = FunctionCatalog {
+        modules: vec![vec![
+            None,
+            Some(FunctionSignature {
+                id: raw::FunctionId { module: raw::ModuleId(0), declaration: 1 },
+                name: "add".to_owned(),
+                parameters: Vec::new(),
+                borrow_parameters: vec![FunctionBorrowParameter {
+                    referent: ty,
+                    access: raw::BorrowAccess::Shared,
+                    span: callee_span,
+                }],
+                parameter_order: vec![FunctionParameterOrder::Borrow(0)],
+                result: ty,
+                private: true,
+            }),
+        ]],
+    };
+    let mut errors = Errors::new(&sources);
+    let mut lowerer = super::super::FunctionLowerer {
+        input,
+        file: &syntax.files()[0],
+        function,
+        module: 0,
+        declarations: &declarations,
+        graph: &graph,
+        node_types: &node_types,
+        layouts: &layouts,
+        catalog: &catalog,
+        errors: &mut errors,
+        bindings: std::collections::BTreeMap::new(),
+        projections: std::collections::BTreeMap::new(),
+        places: Vec::new(),
+        instructions: Vec::new(),
+        cleanup_plans: Vec::new(),
+        values: 0,
+    };
+    assert!(lowerer.direct_call(callee, &[u32::MAX, u32::MAX], call_span).is_none());
+    assert_eq!(lowerer.values, 0);
+    assert!(lowerer.instructions.is_empty());
+    assert!(lowerer.cleanup_plans.is_empty());
+    drop(lowerer);
+    let diagnostics = errors.finish();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3016");
+    assert_eq!(
+        diagnostics[0].message(),
+        "owned direct-call transfer is outside the current Copy-call checkpoint"
+    );
+    assert_eq!(diagnostics[0].primary_span(), Some(callee_span));
+}
+
+#[test]
 fn source_faithful_copy_call_cycles_fail_closed_in_ir_authority() {
     for (replacement, callee, arguments) in
         [("add(x, y)", "add", vec![0, 1]), ("caller(x)", "caller", vec![0])]

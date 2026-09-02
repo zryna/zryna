@@ -217,12 +217,21 @@ fn nested_vec_direct_call_cleanup_is_exact_and_atomic_before_argument_lowering()
     let string_ty = authenticated_type_capabilities(input, 0, 0).expect("String");
     let file = &syntax.files()[0];
     let function = &file.functions()[0];
-    let signature = |declaration, name: &str, parameters| FunctionSignature {
-        id: raw::FunctionId { module: raw::ModuleId(0), declaration },
-        name: name.to_owned(),
-        parameters,
-        result: vec_ty,
-        private: true,
+    let signature = |declaration, name: &str, parameters: Vec<super::super::Ty>| {
+        let parameter_order = (0..parameters.len())
+            .map(|index| {
+                FunctionParameterOrder::Value(u32::try_from(index).expect("parameter index"))
+            })
+            .collect();
+        FunctionSignature {
+            id: raw::FunctionId { module: raw::ModuleId(0), declaration },
+            name: name.to_owned(),
+            parameters,
+            borrow_parameters: Vec::new(),
+            parameter_order,
+            result: vec_ty,
+            private: true,
+        }
     };
     let catalog = FunctionCatalog {
         modules: vec![vec![
