@@ -349,7 +349,16 @@ pub(super) fn plan_root_borrow_arm<'a>(
                     allow_call,
                     errors,
                 )?;
-                call_values = call.argument_value_count();
+                let Some(estimated_values) = call.checked_argument_value_count() else {
+                    errors.at(
+                        "ZRYNA-M3201",
+                        span(input.sources(), initializer.span),
+                        "lexical borrow-call preparation overflows its checked resource estimate",
+                        "reduce nested Copy aggregate call arguments",
+                    );
+                    return None;
+                };
+                call_values = estimated_values;
                 for alias in aliases.values_mut().filter(|alias| used.contains(&alias.id)) {
                     alias.used = true;
                 }

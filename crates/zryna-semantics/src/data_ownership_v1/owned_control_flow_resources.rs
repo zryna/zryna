@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 
+use super::borrow_call_resources::checked_projected_borrow_call_resources;
 use super::diagnostics::Errors;
 use super::global_resource_limits::resource_budget_violation;
 use super::type_model::{
@@ -180,6 +181,29 @@ fn root_borrow_write_value_count(steps: &[RootBorrowStep]) -> usize {
             _ => None,
         })
         .fold(0_usize, usize::saturating_add)
+}
+
+fn checked_root_borrow_write_value_count(steps: &[RootBorrowStep]) -> Option<usize> {
+    steps.iter().try_fold(0_usize, |count, step| match step {
+        RootBorrowStep::Write { value, .. } => count.checked_add(value.checked_value_count()?),
+        _ => Some(count),
+    })
+}
+
+pub(super) fn checked_projected_root_borrow_call_resources(
+    initializer: &RootBorrowInitializer,
+    arm: &RootBorrowArmPlan,
+) -> Option<RootBorrowResources> {
+    checked_projected_borrow_call_resources(
+        initializer.checked_value_count()?,
+        arm.aliases,
+        arm.reads,
+        arm.writes,
+        checked_root_borrow_write_value_count(&arm.steps)?,
+        root_borrow_projection_place_count(&arm.steps),
+        arm.calls,
+        arm.call_values,
+    )
 }
 
 pub(super) fn projected_root_borrow_resources(
