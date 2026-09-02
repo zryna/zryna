@@ -16,6 +16,8 @@ use zryna_syntax::v4::{
 };
 
 mod aggregate_resource_formulas;
+mod borrow_call_preflight;
+mod borrow_call_resources;
 mod borrow_forwarding;
 mod diagnostics;
 mod function_catalog;
@@ -43,7 +45,12 @@ use aggregate_resource_formulas::{
 use aggregate_resource_formulas::{
     partial_assignment_place_delta, partial_return_place_delta, partial_transfer_place_delta,
 };
-use borrow_forwarding::plan_forwarded_borrow_arguments;
+use borrow_call_resources::preflight_program_borrow_calls;
+#[cfg(test)]
+use borrow_call_resources::{
+    BorrowCallPreflightError, BorrowCallProgramBudgetLimit, borrow_call_program_budget_violation,
+    checked_add_resources, checked_call_delta, checked_straight_borrow_call_resources,
+};
 use diagnostics::Errors;
 #[cfg(test)]
 use function_catalog::FunctionBorrowParameter;
@@ -255,7 +262,6 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
     if !errors.is_empty() {
         return Err(errors.finish());
     }
-
     let mut modules = Vec::with_capacity(input.syntax().files().len());
     let mut generated_values = 0_usize;
     let mut generated_blocks = 0_usize;
@@ -318,6 +324,10 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
             functions,
         });
     }
+    if !errors.is_empty() {
+        return Err(errors.finish());
+    }
+    preflight_program_borrow_calls(input, &catalog, &mut errors);
     if !errors.is_empty() {
         return Err(errors.finish());
     }
@@ -11339,18 +11349,9 @@ impl FunctionLowerer<'_, '_, '_> {
         &mut self,
         signature: &FunctionSignature,
         arguments: &[u32],
+        borrows: Vec<Option<raw::BorrowId>>,
     ) -> Option<Vec<raw::CallArgument>> {
         let mut values = vec![None; signature.parameters.len()];
-        // Borrow authority is sealed before value lowering. A later invalid borrow argument must
-        // not leave literal, call, cleanup, value-id, or instruction state behind in this lowerer.
-        let borrows = plan_forwarded_borrow_arguments(
-            self.input.sources(),
-            self.function,
-            signature,
-            arguments,
-            &self.borrow_bindings,
-            self.errors,
-        )?;
         for (argument, order) in arguments.iter().zip(&signature.parameter_order) {
             let argument_span =
                 span(self.input.sources(), self.function.body.expressions[*argument as usize].span);
@@ -11380,60 +11381,15 @@ impl FunctionLowerer<'_, '_, '_> {
         arguments: &[u32],
         at: Span,
     ) -> Option<(Ty, raw::ValueId)> {
-        let signature = match self.catalog.resolve(self.module, &callee.text) {
-            FunctionResolution::Exact(signature) => signature.clone(),
-            FunctionResolution::WrongCase => {
-                self.errors.at(
-                    "ZRYNA-M3002",
-                    span(self.input.sources(), callee.span),
-                    format!("call name '{}' has the wrong portable ASCII case", callee.text),
-                    "use the callee's exact declared spelling",
-                );
-                return None;
-            }
-            FunctionResolution::Missing => {
-                self.errors.at(
-                    "ZRYNA-M3002",
-                    span(self.input.sources(), callee.span),
-                    format!("function '{}' is not declared in this module", callee.text),
-                    "call one exact private same-module function",
-                );
-                return None;
-            }
+        let signature = self.resolve_copy_call(callee, arguments, at)?;
+        let borrows = self.preflight_copy_borrow_call(&signature, arguments, at)?;
+        let snapshot = self.mutation_snapshot();
+        let expected_after_rollback = snapshot.clone();
+        let Some(lowered) = self.lower_direct_call_arguments(&signature, arguments, borrows) else {
+            self.restore_mutation_snapshot(snapshot);
+            debug_assert_eq!(self.mutation_snapshot(), expected_after_rollback);
+            return None;
         };
-        if !signature.private {
-            self.errors.at(
-                "ZRYNA-M3008",
-                span(self.input.sources(), callee.span),
-                "this checkpoint admits calls only to private same-module functions",
-                "keep the called function internal",
-            );
-            return None;
-        }
-        if !signature.result.is_copy() || signature.parameters.iter().any(|ty| !ty.is_copy()) {
-            self.errors.at(
-                "ZRYNA-M3016",
-                span(self.input.sources(), callee.span),
-                "owned direct-call transfer is outside the current Copy-call checkpoint",
-                "call only exact bool, i32, or Copy aggregate signatures",
-            );
-            return None;
-        }
-        if arguments.len() != signature.parameter_order.len() {
-            self.errors.at(
-                "ZRYNA-M3008",
-                at,
-                format!(
-                    "call to '{}' has {} arguments but its signature requires {}",
-                    signature.name,
-                    arguments.len(),
-                    signature.parameter_order.len()
-                ),
-                "pass one argument for every exact declared parameter",
-            );
-            return None;
-        }
-        let lowered = self.lower_direct_call_arguments(&signature, arguments)?;
         let cleanup = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).ok()?);
         self.cleanup_plans.push(raw::CleanupPlan { id: cleanup, span: at, actions: Vec::new() });
         let value = self.emit(

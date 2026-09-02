@@ -162,6 +162,20 @@ pub(super) enum RootBorrowInitializer {
 }
 
 impl RootBorrowInitializer {
+    pub(super) fn checked_value_count(&self) -> Option<usize> {
+        match self {
+            Self::Literal { .. } => Some(1),
+            Self::Struct { fields, .. } => fields
+                .iter()
+                .try_fold(1_usize, |count, field| count.checked_add(field.checked_value_count()?)),
+            Self::FixedArray { elements, .. } => {
+                elements.iter().try_fold(1_usize, |count, element| {
+                    count.checked_add(element.checked_value_count()?)
+                })
+            }
+        }
+    }
+
     pub(super) fn value_count(&self) -> usize {
         match self {
             Self::Literal { .. } => 1,
@@ -226,14 +240,13 @@ pub(super) struct RootBorrowCallPlan {
 }
 
 impl RootBorrowCallPlan {
-    pub(super) fn argument_value_count(&self) -> usize {
-        self.arguments
-            .iter()
-            .filter_map(|argument| match argument {
-                RootBorrowCallArgumentPlan::Value { value, .. } => Some(value.value_count()),
-                RootBorrowCallArgumentPlan::Borrow { .. } => None,
-            })
-            .fold(0_usize, usize::saturating_add)
+    pub(super) fn checked_argument_value_count(&self) -> Option<usize> {
+        self.arguments.iter().try_fold(0_usize, |count, argument| match argument {
+            RootBorrowCallArgumentPlan::Value { value, .. } => {
+                count.checked_add(value.checked_value_count()?)
+            }
+            RootBorrowCallArgumentPlan::Borrow { .. } => Some(count),
+        })
     }
 }
 

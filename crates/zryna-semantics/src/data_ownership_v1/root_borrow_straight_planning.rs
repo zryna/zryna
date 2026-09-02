@@ -2,11 +2,13 @@ use zryna_layout::{self as layout, TypeCategory, raw as raw_layout};
 use zryna_source::SourceMap;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawStatementKind};
 
+use super::borrow_call_resources::checked_straight_borrow_call_resources;
 use super::diagnostics::Errors;
 use super::function_catalog::FunctionCatalog;
 use super::layout_graph::{Decl, semantic_type};
 use super::owned_control_flow_resources::{
-    projected_root_borrow_resources, root_borrow_resource_violation, straight_root_borrow_resources,
+    checked_projected_root_borrow_call_resources, projected_root_borrow_resources,
+    root_borrow_resource_violation, straight_root_borrow_resources,
 };
 use super::root_borrow_arm_planning::plan_root_borrow_arm;
 use super::root_borrow_value_planning::plan_root_borrow_initializer;
@@ -187,9 +189,24 @@ pub(super) fn plan_private_straight_root_borrow_function<'a>(
         return None;
     }
     let resources = if matches!(root_ty.category, TypeCategory::Bool | TypeCategory::I32) {
-        straight_root_borrow_resources(aliases, reads, writes, calls, call_values)
+        if calls == 0 {
+            Some(straight_root_borrow_resources(aliases, reads, writes, calls, call_values))
+        } else {
+            checked_straight_borrow_call_resources(aliases, reads, writes, calls, call_values)
+        }
+    } else if calls == 0 {
+        Some(projected_root_borrow_resources(&root_initializer, &arm))
     } else {
-        projected_root_borrow_resources(&root_initializer, &arm)
+        checked_projected_root_borrow_call_resources(&root_initializer, &arm)
+    };
+    let Some(resources) = resources else {
+        errors.at(
+            "ZRYNA-M3201",
+            span(input.sources(), nested.span),
+            "lexical borrow-call resource planning overflows checked arithmetic",
+            "reduce nested Copy aggregate call arguments or lexical borrow operations",
+        );
+        return None;
     };
     if let Some(limit) =
         enforce_straight_budget.then(|| root_borrow_resource_violation(resources)).flatten()

@@ -175,6 +175,131 @@ fn lexical_borrow_call_resource_formula_is_exact_and_saturating() {
 }
 
 #[test]
+fn borrow_call_resource_preflight_accepts_exact_limits_and_rejects_first_extra_in_order() {
+    let additional = RootBorrowResources {
+        values: 1,
+        places: 1,
+        transitions: 1,
+        blocks: 1,
+        edges: 1,
+        active_peak: 1,
+        cleanup_plans: 1,
+    };
+    let exact = RootBorrowResources {
+        values: zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION - 1,
+        places: zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION - 1,
+        transitions: zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1,
+        blocks: zryna_ir::data_ownership_v1::MAX_BLOCKS_PER_FUNCTION - 1,
+        edges: zryna_ir::data_ownership_v1::MAX_CFG_EDGES_PER_FUNCTION - 1,
+        active_peak: zryna_ir::data_ownership_v1::MAX_ACTIVE_BORROWS_PER_FUNCTION - 1,
+        cleanup_plans: zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION - 1,
+    };
+    let reserved = checked_add_resources(exact, additional).expect("exact borrow-call boundary");
+    assert_eq!(reserved.values, zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION);
+    assert_eq!(reserved.places, zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION);
+    assert_eq!(
+        reserved.transitions,
+        zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
+    );
+    assert_eq!(reserved.blocks, zryna_ir::data_ownership_v1::MAX_BLOCKS_PER_FUNCTION);
+    assert_eq!(reserved.edges, zryna_ir::data_ownership_v1::MAX_CFG_EDGES_PER_FUNCTION);
+    assert_eq!(reserved.active_peak, zryna_ir::data_ownership_v1::MAX_ACTIVE_BORROWS_PER_FUNCTION);
+    assert_eq!(reserved.cleanup_plans, zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION);
+
+    let cases = [
+        (RootBorrowResources { values: exact.values + 1, ..exact }, RootBorrowBudgetLimit::Values),
+        (RootBorrowResources { places: exact.places + 1, ..exact }, RootBorrowBudgetLimit::Places),
+        (
+            RootBorrowResources { transitions: exact.transitions + 1, ..exact },
+            RootBorrowBudgetLimit::Transitions,
+        ),
+        (RootBorrowResources { blocks: exact.blocks + 1, ..exact }, RootBorrowBudgetLimit::Blocks),
+        (RootBorrowResources { edges: exact.edges + 1, ..exact }, RootBorrowBudgetLimit::Edges),
+        (
+            RootBorrowResources { active_peak: exact.active_peak + 1, ..exact },
+            RootBorrowBudgetLimit::ActiveBorrows,
+        ),
+        (
+            RootBorrowResources { cleanup_plans: exact.cleanup_plans + 1, ..exact },
+            RootBorrowBudgetLimit::CleanupPlans,
+        ),
+    ];
+    for (current, expected) in cases {
+        let before = current;
+        assert!(matches!(
+            checked_add_resources(current, additional),
+            Err(BorrowCallPreflightError::Limit(actual)) if actual == expected
+        ));
+        assert_eq!(current.values, before.values);
+        assert_eq!(current.places, before.places);
+        assert_eq!(current.transitions, before.transitions);
+        assert_eq!(current.blocks, before.blocks);
+        assert_eq!(current.edges, before.edges);
+        assert_eq!(current.active_peak, before.active_peak);
+        assert_eq!(current.cleanup_plans, before.cleanup_plans);
+    }
+}
+
+#[test]
+fn borrow_call_resource_overflow_precedes_limit_selection_and_preserves_authority_cost() {
+    let current = RootBorrowResources {
+        values: usize::MAX,
+        places: zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION,
+        ..RootBorrowResources::default()
+    };
+    assert!(matches!(
+        checked_add_resources(current, RootBorrowResources { values: 1, ..Default::default() }),
+        Err(BorrowCallPreflightError::Overflow)
+    ));
+    assert!(
+        checked_straight_borrow_call_resources(
+            usize::MAX,
+            usize::MAX,
+            usize::MAX,
+            usize::MAX,
+            usize::MAX
+        )
+        .is_none()
+    );
+
+    let forwarded = checked_call_delta(RootBorrowResources::default(), false)
+        .expect("forwarded borrow call delta");
+    assert_eq!(forwarded.values, 1);
+    assert_eq!(forwarded.places, 0);
+    assert_eq!(forwarded.transitions, 1);
+    assert_eq!(forwarded.active_peak, 0);
+    assert_eq!(forwarded.cleanup_plans, 1);
+    let lexical = checked_straight_borrow_call_resources(1, 0, 0, 1, 0)
+        .expect("lexical borrow-call resources");
+    assert_eq!(lexical.active_peak, 1);
+}
+
+#[test]
+fn borrow_call_program_edge_and_depth_boundaries_are_exact() {
+    assert_eq!(
+        borrow_call_program_budget_violation(
+            zryna_ir::data_ownership_v1::MAX_CALL_EDGES,
+            zryna_ir::data_ownership_v1::MAX_STATIC_CALL_DEPTH,
+        ),
+        None
+    );
+    assert_eq!(
+        borrow_call_program_budget_violation(
+            zryna_ir::data_ownership_v1::MAX_CALL_EDGES + 1,
+            zryna_ir::data_ownership_v1::MAX_STATIC_CALL_DEPTH + 1,
+        ),
+        Some(BorrowCallProgramBudgetLimit::CallEdges)
+    );
+    assert_eq!(
+        borrow_call_program_budget_violation(
+            zryna_ir::data_ownership_v1::MAX_CALL_EDGES,
+            zryna_ir::data_ownership_v1::MAX_STATIC_CALL_DEPTH + 1,
+        ),
+        Some(BorrowCallProgramBudgetLimit::CallDepth)
+    );
+}
+
+#[test]
 fn exclusive_lexical_borrow_call_preserves_exact_authority_and_caller_end() {
     assert_lexical_call(EXCLUSIVE_SOURCE, EXCLUSIVE_JSON, VerifiedBorrowAccess::Exclusive);
 }
