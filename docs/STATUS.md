@@ -211,8 +211,10 @@ transfer or partial-root transfer in call/CFG contexts, direct projected-clone r
 contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
-effects remain excluded. Issue #82 is dependency-ready but remains planned until its child-issue
-acceptance plan is published.
+effects remain excluded. Issue #82 is now active through its checked child-issue dependency graph.
+Issue #113 freezes the bounded borrowing implementation contract and tightens the existing
+verified-IR prerequisite so borrow parameters must perform a real read, write, or exact call use.
+It does not admit source-level borrow syntax; semantic lowering begins in #114.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3

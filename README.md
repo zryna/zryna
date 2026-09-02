@@ -324,6 +324,7 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M2 deterministic JavaScript backend](docs/M2_JAVASCRIPT_BACKEND.md),
 [M2 direct core WebAssembly backend](docs/M2_WEBASSEMBLY_BACKEND.md), [Roadmap](docs/ROADMAP.md),
 [M3 ownership runtime ABI authority](docs/M3_OWNERSHIP_RUNTIME_ABI.md),
+[M3 bounded borrowing implementation contract](docs/M3_BORROWING_SEMANTICS.md),
 [M3 Copy aggregate semantics](docs/M3_COPY_AGGREGATE_SEMANTICS.md),
 [M3 owned-data semantic design contract](docs/M3_OWNED_DATA_SEMANTICS.md),
 [M0 conformance](docs/M0_CONFORMANCE.md), and

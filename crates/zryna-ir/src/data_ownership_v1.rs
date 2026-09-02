@@ -2081,6 +2081,7 @@ fn verify_structure(
                     "create one dense cleanup plan for each exact prepare, call, return, or trap site",
                 ));
             }
+            verify_borrow_parameter_usage(function, errors);
             if !errors.is_empty() {
                 return;
             }
@@ -2088,6 +2089,46 @@ fn verify_structure(
             if !errors.is_empty() {
                 return;
             }
+        }
+    }
+}
+
+fn verify_borrow_parameter_usage(function: &raw::Function, errors: &mut Errors) {
+    let mut used = vec![
+        false;
+        function.borrow_parameters.len().saturating_add(
+            function.blocks.iter().map(|block| block.instructions.len()).sum::<usize>(),
+        )
+    ];
+    for instruction in function.blocks.iter().flat_map(|block| &block.instructions) {
+        match &instruction.kind {
+            raw::InstructionKind::BorrowRead { borrow }
+            | raw::InstructionKind::BorrowWrite { borrow, .. } => {
+                if let Some(slot) = used.get_mut(borrow.0 as usize) {
+                    *slot = true;
+                }
+            }
+            raw::InstructionKind::DirectCall { arguments, .. } => {
+                for borrow in arguments.iter().filter_map(|argument| match argument {
+                    raw::CallArgument::Borrow(borrow) => Some(*borrow),
+                    raw::CallArgument::Value(_) => None,
+                }) {
+                    if let Some(slot) = used.get_mut(borrow.0 as usize) {
+                        *slot = true;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    for parameter in &function.borrow_parameters {
+        if !used.get(parameter.id.0 as usize).copied().unwrap_or(false) {
+            errors.push(error_at(
+                "ZRYNA-I3011",
+                parameter.span,
+                "borrow parameter is not used by an access or direct call",
+                "use every borrow authority through BorrowRead, BorrowWrite, or one exact borrow argument",
+            ));
         }
     }
 }

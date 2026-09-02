@@ -105,6 +105,12 @@
       "title": "M2 direct core WebAssembly backend"
     },
     {
+      "id": "reference/m3-borrowing-semantics",
+      "source": "docs/M3_BORROWING_SEMANTICS.md",
+      "path": "documents/reference/m3-borrowing-semantics.md",
+      "title": "M3 bounded borrowing semantics"
+    },
+    {
       "id": "reference/m3-copy-aggregate-semantics",
       "source": "docs/M3_COPY_AGGREGATE_SEMANTICS.md",
       "path": "documents/reference/m3-copy-aggregate-semantics.md",

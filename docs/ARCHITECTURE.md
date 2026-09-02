@@ -509,6 +509,13 @@ The normative planning authorities are
 `tests/m3-contract-v1.json` registry binds the real Issues #75–#90 and requires M0, M1, and M2 as
 unchanged regression authorities.
 
+The [bounded borrowing implementation contract](M3_BORROWING_SEMANTICS.md) freezes Issue #82 as
+`#113 -> #114 -> #115 -> {#116, #117, #119, #120, #121} -> #122`. Issue #113 audits and tightens
+the existing verified-IR prerequisite only: dense shared/exclusive authority, real parameter use,
+exact lexical end, overlap, direct-call matching, edge nonescape, and the 16,384-active-borrow
+limit. It does not yet make protocol-v4 borrow syntax semantically admissible; source lowering
+begins in #114, and aggregate closure remains #122.
+
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve
 source-faithful declarations and operations in canonical arenas. The verifier authenticates every
