@@ -147,9 +147,10 @@ The verified IR now also seals projected replacement's old-subobject traversal a
 prepared subtree's masks and enum refinement without disturbing siblings. The semantic producer
 uses it for prepare-before-commit replacement of mutable available static String leaves and for at
 most one combined private straight-line aggregate site. That aggregate site moves or explicitly
-clones a distinct fully initialized exact same-type supported non-Copy Struct or FixedArray whole
-root into a mutable available `StructField`/`FixedArrayConstant` projection. Move consumes the
-source; clone retains it, and both clone failure paths retain source and destination. Commit
+clones either a complete static Struct/FixedArray subobject rooted in a distinct local or a distinct
+fully initialized exact same-type supported non-Copy whole root into a mutable available
+`StructField`/`FixedArrayConstant` projection. Move consumes the selected source; clone retains it,
+and both clone failure paths retain source and destination. Commit
 recursively drops only the old target and retains the destination root and sibling masks. The producer also
 resolves canonical static StructField and
 FixedArrayConstant source places for Copy reads, exact String-leaf moves, and at most one supported
@@ -173,12 +174,13 @@ One distinct mutable fully initialized same-type whole-root destination now acce
 Struct or FixedArray from an exact-reference source. Complete source, temporary, and destination
 topology plus value/place/transition capacity are preflighted before mutation; `ReplacePlace` drops
 the old destination once, installs the exact mask, and invalidates source and temporary.
-One combined private straight-line projected-assignment site now also moves a complete static
-Struct/FixedArray subobject between distinct local roots. The immediate `MoveFromPlace` -> sole-use
-typed temporary -> `ReplacePlace` shape masks the complete source subtree, drops only the old target
-subtree, and preserves both pending roots and their sibling masks. With `S` missing source-path
-places, `D` missing source descendants, and `T` missing target-path places, lowering atomically
-preflights one value, `S + D + T + 1` places, and two transitions before any mutation.
+One combined private straight-line projected-assignment site now also moves or explicitly clones a
+complete static Struct/FixedArray subobject between distinct local roots. The immediate source
+operation -> sole-use typed temporary -> `ReplacePlace` shape drops only the old target subtree and
+preserves both pending roots and sibling masks. Move materializes and masks the source subtree and
+preflights one value, `S + D + T + 1` places, and two transitions. Clone retains the source without
+descendant places and preflights one value, `S + T + 1` places, two transitions, two cleanup plans,
+and `2P + 1` cleanup actions before any mutation.
 One canonical private one-parameter route additionally accepts a single-variant enum whose complete
 non-Copy Struct/FixedArray payload is bound by an exhaustive one-arm `match`. The arm moves the
 active payload into an exact direct local, drops the emptied enum root, and jumps without owner
@@ -198,8 +200,8 @@ nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside that direct-local exception, the one distinct-root static
 projection replacement, or the single-variant match-local enum payload extraction, broader
 enum-payload moves, dynamic or Vec-element projections, projected aggregate assignment outside the
-exact static-subobject-move-or-whole-root-move-or-clone-to-static-projection site, projected aggregate
-clone outside the direct-local exception, partial Enum
+exact static-subobject-move-or-clone-or-whole-root-move-or-clone-to-static-projection site, projected aggregate
+clone outside the direct-local or distinct-root static-replacement exceptions, partial Enum
 transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
 contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain

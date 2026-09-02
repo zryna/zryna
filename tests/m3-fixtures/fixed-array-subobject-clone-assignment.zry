@@ -1,0 +1,2 @@
+interface Inner extends ZrynaStruct { text: String; }
+function transplant(): FixedArray<Inner, 2> { let dst: FixedArray<Inner, 2> = FixedArray<Inner, 2>([Inner({ text: "old0" }), Inner({ text: "old1" })]); const src: FixedArray<Inner, 2> = FixedArray<Inner, 2>([Inner({ text: "new0" }), Inner({ text: "new1" })]); dst[0] = clone(src[1]); return dst; }

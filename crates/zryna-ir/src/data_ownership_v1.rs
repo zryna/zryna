@@ -2571,7 +2571,7 @@ fn verify_aggregate_subobject_move_contexts(
         )
     });
     let projected_replacement = block.instructions.get(instruction_index + 1).is_some_and(|next| {
-        is_complete_projected_move_replacement(next, place, result, temporary_owner, function)
+        is_complete_projected_subobject_replacement(next, place, result, temporary_owner, function)
     });
     let uses = function
         .blocks
@@ -2639,7 +2639,7 @@ fn unique_temporary_owner(
     owners.next().is_none().then_some(owner)
 }
 
-fn is_complete_projected_move_replacement(
+fn is_complete_projected_subobject_replacement(
     instruction: &raw::Instruction,
     source: raw::PlaceId,
     result: raw::ValueDefinition,
@@ -2698,7 +2698,19 @@ fn admitted_projected_assignment_source(
         && static_projection_path(source, function)
         && has_exact_projection_topology(source, function, layouts)
         && temporary_owner.is_some();
-    source_root != target_root && same_type && (direct_root || complete_projected_move)
+    let complete_projected_clone = cloned
+        && source != source_root
+        && function.parameters.is_empty()
+        && function.borrow_parameters.is_empty()
+        && function
+            .places
+            .get(source_root.0 as usize)
+            .is_some_and(|source_root| matches!(source_root.kind, raw::PlaceKind::Local(_)))
+        && static_projection_path(source, function)
+        && temporary_owner.is_some();
+    source_root != target_root
+        && same_type
+        && (direct_root || complete_projected_move || complete_projected_clone)
 }
 
 fn verify_projected_aggregate_clone_contexts(
@@ -2734,7 +2746,7 @@ fn verify_projected_aggregate_clone_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "function contains more than one projected aggregate clone",
-            "clone at most one static Struct or fixed-array subobject into one exact direct local",
+            "clone at most one static Struct or fixed-array subobject into one exact direct local or static replacement under a distinct local root",
         ));
         return;
     }
@@ -2746,15 +2758,7 @@ fn verify_projected_aggregate_clone_contexts(
         ty.drop_kind() != 0
             && matches!(ty.category(), TypeCategory::Struct | TypeCategory::FixedArray)
     });
-    let temporary_owner = function
-        .places
-        .iter()
-        .filter(|candidate| {
-            candidate.ty == result.ty
-                && matches!(candidate.kind, raw::PlaceKind::Temporary(value) if value == result.id)
-        })
-        .count()
-        == 1;
+    let temporary_owner = unique_temporary_owner(function, result.id, result.ty);
     let direct_local = block.instructions.get(instruction_index + 1).is_some_and(|next| {
         matches!(
             next.kind,
@@ -2765,19 +2769,22 @@ fn verify_projected_aggregate_clone_contexts(
                     })
         )
     });
+    let projected_replacement = block.instructions.get(instruction_index + 1).is_some_and(|next| {
+        is_complete_projected_subobject_replacement(next, place, result, temporary_owner, function)
+    });
     let uses = value_use_count(function, result.id);
     if !private_straight_line
         || !valid_type
         || !static_projection_path(place, function)
-        || !temporary_owner
-        || !direct_local
+        || temporary_owner.is_none()
+        || !(direct_local || projected_replacement)
         || uses != 1
     {
         errors.push(error_at(
             "ZRYNA-I3010",
             instruction.span,
-            "projected aggregate clone escapes its exact direct-local context",
-            "clone one initialized static Struct or fixed-array subobject into the immediately following same-type local initialization",
+            "projected aggregate clone escapes its exact direct-local or projected-assignment context",
+            "clone one initialized static Struct or fixed-array subobject immediately into one same-type local initialization or static replacement under a distinct local root",
         ));
     }
 }
@@ -2818,7 +2825,7 @@ fn verify_projected_aggregate_assignment_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "function contains more than one projected aggregate assignment",
-            "move at most one complete static aggregate subobject, or move or clone one complete aggregate root, into one static Struct or fixed-array projection",
+            "move or clone at most one complete static aggregate subobject, or move or clone one complete aggregate root, into one static Struct or fixed-array projection",
         ));
         return;
     }
@@ -2874,7 +2881,7 @@ fn verify_projected_aggregate_assignment_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "projected aggregate assignment escapes its exact source-to-static-projection context",
-            "move one distinct complete static Struct or fixed-array subobject, or move or clone one distinct complete local root, immediately into one same-type static projection",
+            "move or clone one distinct complete static Struct or fixed-array subobject, or move or clone one distinct complete local root, immediately into one same-type static projection",
         ));
     }
 }

@@ -244,19 +244,21 @@ installs the exact mask. One exact private single-variant enum `match` now moves
 supported Struct/FixedArray payload into a direct local, drops the emptied enum root, and reaches a
 final local return through a zero-argument continuation with exact `D + 5` place amplification.
 The combined projected-assignment checkpoint now additionally admits one complete static
-Struct/FixedArray subobject move between distinct local roots. It requires immediate
-`MoveFromPlace` -> sole-use typed temporary -> `ReplacePlace`, masks the complete selected source
-subtree, drops only the old target subtree, and preserves both roots' pending order and disjoint
-sibling masks. Exact atomic amplification is one value, `S + D + T + 1` places, and two ownership
-transitions, where `S`, `D`, and `T` are missing source-path, source-descendant, and target-path
-places respectively.
+Struct/FixedArray subobject move or explicit clone between distinct local roots. It requires an
+immediate source operation -> sole-use typed temporary -> `ReplacePlace`. Move materializes and
+masks the complete selected source subtree; clone retains its available source without descendant
+places and seals layout-derived prepare/prefix failure cleanup. Both drop only the old target
+subtree and preserve roots, sibling masks, and pending order. Move amplification is one value,
+`S + D + T + 1` places, and two transitions. Clone amplification is one value, `S + T + 1` places,
+two transitions, two cleanup plans, and `2P + 1` actions for pending-root count `P`.
 Enum partial-root transfer, aggregate-subobject moves outside that at-most-one direct-local form or
 that one match-local payload extraction, and broader enum-payload moves,
 transfer in call/CFG contexts, projected assignment outside the narrow site below, or
 non-final/non-reference returns, dynamic projections,
-direct projected-clone returns, public contexts, projected aggregate clone outside that exact
-direct-local form, and projected aggregate assignment outside one private straight-line complete
-static subobject move between distinct local roots or move/explicit clone from a distinct fully
+direct projected-clone returns, public contexts, projected aggregate clone outside the exact
+direct-local or distinct-root static-replacement forms, and projected aggregate assignment outside
+one private straight-line complete static subobject move/clone between distinct local roots or
+move/explicit clone from a distinct fully
 initialized exact same-type whole Struct/FixedArray root into a mutable available static
 `StructField`/`FixedArrayConstant` projection remain open, alongside
 general owned joins,

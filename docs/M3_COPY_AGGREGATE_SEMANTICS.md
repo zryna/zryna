@@ -141,11 +141,11 @@ This checkpoint does not enable general owned values: aggregate-subobject moves 
 exact direct-local form or the exact match-local exception above, broader enum-payload moves, partial Enum
 transfer or partial-root transfer outside the exact direct-local, final-return, or whole-root
 assignment forms, dynamic or Vec-element projections, projected aggregate clone outside the exact
-direct-local form, or projected aggregate assignment outside the exact static-subobject-move-or-
-whole-root-move-or-clone-to-static-projection form,
+direct-local or distinct-root static-replacement forms, or projected aggregate assignment outside
+the exact static-subobject-move-or-clone-or-whole-root-move-or-clone-to-static-projection form,
 general owned parameters/calls/CFG, and general lexical scope-drop insertion remain unavailable.
 The exceptions also exclude fresh sources, same-root/overlapping or partial/moved projected
-sources, projected clone, dynamic/Vec/Enum targets,
+sources, broader projected clone contexts, dynamic/Vec/Enum targets,
 second move-or-clone assignment sites, direct projected-clone or payload return, owner-carrying CFG transfer,
 multi-variant extraction, and public owned contexts.
 Public owned results remain rejected by scalar ABI v1.
