@@ -295,7 +295,7 @@ test("implemented Copy aggregate semantics remain internal and runtime-free", as
   assert.match(document, /implements no allocator or runtime\. No runtime import, heap helper body, target artifact/);
 });
 
-test("in-progress owned-data semantics separate the implemented checkpoint from closure", async () => {
+test("completed owned-data semantics preserve the bounded internal boundary", async () => {
   const document = await readFile(
     new URL("../docs/M3_OWNED_DATA_SEMANTICS.md", import.meta.url),
     "utf8",
@@ -304,7 +304,22 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
     new URL("../docs/ARCHITECTURE.md", import.meta.url),
     "utf8",
   );
-  assert.match(document, /Status: implementation in progress for Issue #81/);
+  const status = await readFile(new URL("../docs/STATUS.md", import.meta.url), "utf8");
+  const roadmap = await readFile(new URL("../docs/ROADMAP.md", import.meta.url), "utf8");
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const semanticsReadme = await readFile(
+    new URL("../crates/zryna-semantics/README.md", import.meta.url),
+    "utf8",
+  );
+  assert.match(document, /Status: bounded compiler-boundary implementation complete for Issue #81/);
+  assert.match(status, /Issue #81 is complete at its bounded internal private compiler boundary/);
+  assert.match(status, /Issue #82 is dependency-ready but remains planned/);
+  assert.match(roadmap, /\|\s+#81 \| owned String\/Vec, move checking, and deterministic drop\s+\| #78, #79, #80\s+\| complete\s+\|/);
+  assert.match(roadmap, /Issue #82 is dependency-ready but remains planned/);
+  assert.match(readme, /completed internal Issue #81 boundary/);
+  assert.match(semanticsReadme, /completed internal Issue #81 boundary/);
+  assert.doesNotMatch(status, /Issue #81 is (?:in progress|not complete)/);
+  assert.doesNotMatch(roadmap, /Issue #81 is (?:in progress|not complete)/);
   assert.match(document, /## Current implementation checkpoint/);
   assert.match(document, /String creation from UTF-8 literals, explicit clone, checked concatenation/);
   assert.match(document, /canonical Vec construction, explicit clone of exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`,\s+local moves, return, push, checked indexing that yields a Copy element/);
@@ -378,7 +393,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /whole-root assignment transfer of a partial Struct\/FixedArray root \| complete/);
   assert.match(document, /source-to-temporary-to-destination mask migration, old-destination recursive drop at commit/);
   assert.match(document, /`3N - E_source - E_target \+ 1` places/);
-  assert.match(document, /general structural Vec clone, nested aggregate clone, broader aggregate\/Enum subobject moves, projected aggregate clone outside the exact direct-local or distinct-root static-replacement forms, and broader projected aggregate assignment \| pending/);
+  assert.match(document, /## Future extensions/);
+  assert.match(document, /These extensions require their own dependency-ordered child issues and acceptance evidence/);
   assert.match(document, /`D \+ 1`\s+places/);
   assert.match(document, /projected aggregate clone with `M` missing source-path places and `P` pending owners/);
   assert.match(document, /final-return form of that static subobject move/);
@@ -414,8 +430,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(architecture, /Projected move masks the\s+complete source subtree/);
   assert.match(architecture, /projected clone retains its source without descendant place expansion/);
   assert.match(architecture, /Commit recursively drops only the exact old target\.\s+Projected-subobject move or clone retains both pending roots plus every sibling mask; whole-root clone\s+retains source and destination; whole-root move consumes its source and retains the destination/);
-  assert.match(document, /controlled allocation\/capacity\/bounds\/UTF-8 fault closure \| in progress/);
-  assert.match(document, /authenticated internal fault\/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete.*executable target fault injection remains pending/);
+  assert.match(document, /controlled allocation\/capacity\/bounds\/UTF-8 fault closure \| complete/);
+  assert.match(document, /authenticated internal fault\/drop traces, including Vec<String> and aggregate-clone partial initialization, cover every admitted operation.*executable target fault injection is outside this compiler boundary/);
   assert.match(document, /test-only fault oracle additionally consumes the ABI authority's sealed status\s+declarations/);
   assert.match(document, /`VecCloneElementFailure`, for the separately authenticated failure of one exact String element\s+clone after a runtime-recorded destination prefix has initialized/);
   assert.match(document, /`AggregateCloneElementFailure`, for the separately authenticated failure of one exact String leaf\s+after a verifier-derived aggregate destination prefix has initialized/);
@@ -426,8 +442,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /Bounds failure is modeled separately as the verified\s+IR's `BoundsV1` trap/);
   assert.match(document, /does not inject a failure into an allocator or execute a\s+target runtime/);
   assert.match(document, /This ledger records implementation evidence, not public language availability/);
-  assert.match(document, /## Issue #81 closure target/);
-  assert.match(document, /inventory is the closure target, not a claim about the narrower current checkpoint/);
+  assert.match(document, /## Issue #81 completed boundary/);
+  assert.match(document, /inventory summarizes\s+that compiler-internal boundary; the exclusions in this document remain normative/);
   assert.match(document, /atomic failure is\s+validated against one exact `LogicalOperation`/);
   assert.match(document, /sealed verified element layout whose positive stride is used for checked `capacity \* stride` byte\s+amplification/);
   assert.match(document, /No runtime, backend, driver route, CLI selector, manifest profile,\s+or public aggregate ABI is activated here/);

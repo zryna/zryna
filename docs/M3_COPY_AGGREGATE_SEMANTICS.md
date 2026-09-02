@@ -82,8 +82,8 @@ distinct. Copy parameters, locals, and temporaries may still have addressable pl
 storage and projection identity; the IR verifier excludes those values from its non-Copy owner map
 and pending-drop stack.
 
-The gate rejects imported aggregate-name lookup and direct calls. The in-progress Issue #81
-checkpoint extends the same private boundary to canonical String and `Vec<T>` type graphs in
+The gate rejects imported aggregate-name lookup and direct calls. The completed internal Issue #81
+boundary extends the same private gate to canonical String and `Vec<T>` type graphs in
 parameter-free straight-line functions. String supports UTF-8 literals, explicit clone, checked
 concatenation, moves, return cleanup, and mutable root-local replacement. Vec supports
 construction, moves, return, push, checked Copy-element indexing, and replacement of supported

@@ -1,14 +1,14 @@
 # M3 owned data semantics design contract
 
-Status: implementation in progress for Issue #81. This document freezes the internal semantic and
-verified-IR contract for uniquely owned `String` and `Vec<T>` values. The bounded checkpoint below
-is implemented, but the complete closure target is not. Nothing here is executable or reachable
+Status: bounded compiler-boundary implementation complete for Issue #81. This document freezes the
+internal semantic and verified-IR contract for uniquely owned `String` and `Vec<T>` values. The
+admitted boundary below is implemented and verified. Nothing here is executable or reachable
 from a public compiler profile. No runtime, backend, driver route, CLI selector, manifest profile,
 or public aggregate ABI is activated here.
 
 The normative language behavior remains defined by
 [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md). This document fixes the smaller
-implementation boundary that Issue #81 must prove before later target work may consume it.
+implementation boundary that Issue #81 proved before later target work may consume it.
 
 ## Current implementation checkpoint
 
@@ -122,7 +122,8 @@ exception, fresh sources, same-root/overlapping or partial/moved projected sourc
 dynamic/Vec/Enum targets, projected clone outside one immediate exact same-type local or the one
 distinct-root static-projection replacement, Enum and other payload returns, owner-carrying CFG transfer, public
 functions, second move-or-clone assignment sites, and broader aggregate match
-are also excluded. Those are closure work, not properties of the current checkpoint.
+are also excluded. Those are deliberately unavailable future extensions, not unfinished Issue #81
+work.
 
 ## Issue #81 implementation ledger
 
@@ -134,7 +135,6 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | no-phi branches and terminal owned block-parameter join | complete | canonical bounded String/exact-Vec CFGs |
 | no-carried-owner loop/backedge cleanup | complete | one top-level loop with exact incoming-state restoration |
 | stable-place loop mutation | complete | String replacement and Copy-element Vec push retain one exact outer place across repeated execution |
-| general loop-carried values and scope exits | pending | owned header phi, Vec replacement/owned-element push, and arbitrary exits remain excluded |
 | exact `Vec<bool>`/`Vec<i32>`/`Vec<String>` clone | complete | distinct result owner, retained source, authenticated allocation and element-clone failures, prefix-safe reverse cleanup, and exact resource rollback |
 | supported String-bearing aggregate clone | complete | distinct result owner, retained source, sealed layout/variant-derived fallible leaves, authenticated prefix-safe recursive failure cleanup, and atomic resource rollback |
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
@@ -147,13 +147,22 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | direct local transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-temporary-to-local owner/mask migration, deterministic rejection of old-owner reuse, and checked amplification |
 | final return transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-return-temporary mask migration, returned-owner exclusion, reverse survivor cleanup, and checked amplification |
 | whole-root assignment transfer of a partial Struct/FixedArray root | complete | distinct mutable initialized exact-type destination, source-to-temporary-to-destination mask migration, old-destination recursive drop at commit, and checked amplification |
-| general structural Vec clone, nested aggregate clone, broader aggregate/Enum subobject moves, projected aggregate clone outside the exact direct-local or distinct-root static-replacement forms, and broader projected aggregate assignment | pending | recursive Vec/Enum/Shared/Weak clone, multi-variant or non-local Enum payload transfer, fresh/same-root/partial or moved projected sources, dynamic/Vec/Enum targets, parameterized/call/CFG/public or multi-site contexts, and broader clone/replacement capability |
-| controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
-| full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
+| controlled allocation/capacity/bounds/UTF-8 fault closure | complete | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, cover every admitted operation; executable target fault injection is outside this compiler boundary |
+| full Issue #81 limits, regressions, and cross-platform CI | complete | complete preflight plus focused Linux and Windows required checks |
 
 This ledger records implementation evidence, not public language availability. Every row remains
-inside the private internal gate until the complete issue closes and later milestones authorize a
-runtime, backend, driver, and CLI profile.
+inside the private internal gate. Later milestones must separately authorize a runtime, backend,
+driver, and CLI profile.
+
+## Future extensions
+
+Issue #81 deliberately does not generalize owned header phi values, arbitrary or nested control
+flow and lexical exits, Vec replacement or owned-element push in loops, general structural
+`Vec<T>` clone, recursive aggregate graphs containing Vec/Enum/Shared/Weak, multi-variant or
+non-local enum payload transfer, dynamic projections, parameterized or public aggregate routes,
+or broader projected clone and replacement contexts. Borrowing and shared ownership remain owned
+by Issues #82 and #83. Executable allocator/runtime fault injection belongs to later target work.
+These extensions require their own dependency-ordered child issues and acceptance evidence.
 
 ## Authority boundary
 
@@ -337,8 +346,8 @@ The operation-specific consequences are:
   sum before emission. Elements clone in ascending order; failure reverse-drops only the completed
   destination prefix, releases its storage, then cleans pre-existing roots while retaining the
   source and excluding the uncommitted result.
-- General structural Vec clone beyond String elements remains a closure target with the same
-  prefix-safe rule derived recursively from the element clone capability.
+- General structural Vec clone beyond String elements remains a future extension; it must preserve
+  the same prefix-safe rule derived recursively from the element clone capability.
 - Supported String-bearing Struct, FixedArray, and root Enum clone reserves a distinct result owner
   and a separate aggregate-element failure plan before emission. The verifier derives the exact
   fallible String-leaf count from retained Linear32 layout and derives a root Enum's active variant
@@ -500,7 +509,7 @@ local under canonical static Struct/FixedArray paths. It additionally implements
 bounded direct-local and final-return whole transfers described above for partial Struct/FixedArray
 roots;
 Enum-payload moves outside the exact single-variant match-local route and all broader aggregate-
-subobject or partial-owner transfer contexts remain closure work
+subobject or partial-owner transfer contexts remain future extension work
 even though verified IR can represent their cleanup masks.
 
 Cloning a disjoint available String leaf does not alter that state: existing moved projections stay
@@ -513,21 +522,23 @@ infallible `ReplacePlace` commit drops only the exact old leaf. Consuming the de
 preparing its replacement, assigning through an immutable or moved projection, and reinitializing
 an already moved leaf remain rejected.
 
-## Issue #81 closure target
+## Issue #81 completed boundary
 
-The complete Issue #81 target admits uniquely owned `String`, `Vec<T>`, and structs, enums, and
-fixed arrays containing them when their complete type graph is otherwise admitted. The following
-inventory is the closure target, not a claim about the narrower current checkpoint:
+The completed Issue #81 boundary admits uniquely owned `String`, `Vec<T>`, and selected structs,
+enums, and fixed arrays containing them when their complete type graph and surrounding source shape
+are admitted by the bounded implementation checkpoint above. The following inventory summarizes
+that compiler-internal boundary; the exclusions in this document remain normative:
 
 - UTF-8 String literals, explicit String clone, checked concatenation, moves, assignment, internal
   by-value parameters and results, and deterministic release;
-- Vec construction, explicit structural clone when `T: Clone`, push, checked indexing that returns
-  `Copy` elements, moves, assignment, internal by-value parameters and results, and deterministic
-  element/storage release;
+- Vec construction, explicit structural clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`,
+  Copy-element push and checked indexing, moves, bounded root assignment and internal by-value
+  transfer, and deterministic element/storage release;
 - non-`Copy` aggregate construction, active enum payloads, prefix-safe aggregate clone and cleanup,
   statically resolved place projections, and fixed-array checked indexing;
-- local declarations, mutable assignment, internal direct calls, structured blocks, `if`/`else`,
-  `while`, exhaustive enum match, return, and controlled bounds/allocation/capacity/UTF-8 traps; and
+- local declarations, mutable assignment, bounded internal direct calls, one admitted no-phi or
+  terminal-join `if`/`else`, one admitted no-carried-owner `while`, one admitted single-variant enum
+  match-local transfer, return, and controlled bounds/allocation/capacity/UTF-8 traps; and
 - existing scalar and Copy aggregate behavior without an ownership obligation.
 
 There is no implicit clone at assignment, call, return, branch, loop, construction, or push.
@@ -715,8 +726,8 @@ not production interpreters, allocators, runtimes, backends, or public execution
 
 ## Deliberately unavailable
 
-Implementation of this document is still in progress. The present repository must not advertise
-an executable owned-data profile based on this design alone.
+Implementation of this bounded compiler boundary is complete. The present repository must not
+advertise an executable owned-data profile based on this design alone.
 
 No JavaScript helper, WebAssembly import, native symbol body, allocator, runtime object, linked
 artifact, backend lowering, driver dispatch, CLI flag, manifest selector, host invocation, or

@@ -120,7 +120,7 @@ element-layout Vec stride and checked byte amplification, and pure logical trans
 exposing opaque immutable views. It does not allocate, mutate runtime state, implement a helper,
 compile or link an object, lower a backend, or activate a driver or CLI route.
 
-Issue #81 is in progress. Its current internal bounded private checkpoint
+Issue #81 is complete at its bounded internal private compiler boundary. That boundary
 supports String literals, explicit clone, checked concatenation, moves, return cleanup, and
 root-local replacement, plus Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`,
 and `Vec<String>`, moves, return, push, checked Copy-element indexing,
@@ -210,8 +210,9 @@ clone outside the direct-local or distinct-root static-replacement exceptions, p
 transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
 contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
-unfinished; `break`, `continue`, loop-body return, and post-loop effects remain excluded. Issue #81 is not
-complete and Issue #82 is not ready.
+deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
+effects remain excluded. Issue #82 is dependency-ready but remains planned until its child-issue
+acceptance plan is published.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
@@ -220,7 +221,7 @@ explicit `control-flow-v1` M2 remain the only public profiles.
 
 The first planned executable slice remains an internal scalarizable `Pair` struct observed through
 a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. The
-in-progress owned String/Vec work remains compiler-internal; later dependency-ready issues add
+completed bounded owned String/Vec compiler boundary remains internal; later dependency-ready issues add
 bounded lexical borrows, explicit shared/weak references, three target implementations, an atomic
 manifest v3 CLI, fixed-oracle conformance, and authenticated website publication. Tracing GC,
 public aggregate ABI,

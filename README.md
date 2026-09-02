@@ -59,7 +59,7 @@ The repository currently establishes and tests:
 - an internal aggregate-layout authority, a Copy struct/enum/fixed-array semantic lowerer, and a
   separate `DataOwnershipV1` Universal IR verifier that bind one exact source, target-neutral type
   universe, both admitted storage layouts, scalar ABI, and the declared ownership-runtime contract
-  identity behind opaque read-only views; the in-progress Issue #81 checkpoint additionally lowers
+  identity behind opaque read-only views; the completed internal Issue #81 boundary additionally lowers
   bounded private functions with String literals, explicit clone, checked
   concatenation, moves, return cleanup, and mutable root-local replacement, plus canonical Vec
   construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves, return,
@@ -124,9 +124,9 @@ The repository currently establishes and tests:
   static-projection forms, and projected aggregate assignment outside the one static-subobject-
   move-or-clone-or-whole-root-move-or-clone-to-static-projection checkpoint,
   whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
-  repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
-  and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
-  loop-body return, and post-loop effects remain excluded;
+  repeated/nested branches or loops, general scope exits, and public owned values remain
+  deliberately unavailable future extensions; Vec loop replacement, owned-element Vec loop push,
+  `break`, `continue`, loop-body return, and post-loop effects remain excluded;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
