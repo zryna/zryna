@@ -95,9 +95,10 @@ function readStableFile(filePath, label) {
 export function borrowCallFixtureInventory(
   directory = path.join(workspaceRoot, "tests", "m3-fixtures"),
   prefix = "tests/m3-fixtures",
+  readDirectory = readdirSync,
 ) {
   const identities = new Set();
-  const entries = readdirSync(directory, { withFileTypes: true }).filter((entry) =>
+  const entries = readDirectory(directory, { withFileTypes: true }).filter((entry) =>
     fixturePrefixes.some((fixturePrefix) => entry.name.toLowerCase().startsWith(fixturePrefix)),
   );
   for (const entry of entries) {

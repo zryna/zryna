@@ -283,19 +283,15 @@ test("rejects unlisted, missing, reordered, and case-colliding borrow-call files
     );
   }
 
-  const directory = await mkdtemp(
-    path.join(os.tmpdir(), "zryna-borrow-call-inventory-"),
+  const caseCollidingEntries = [
+    { name: "borrow-call-case.zry" },
+    { name: "Borrow-call-case.zry" },
+  ];
+  assert.throws(
+    () =>
+      borrowCallFixtureInventory("unused", "fixtures", () => caseCollidingEntries),
+    /ASCII case collision/,
   );
-  try {
-    await writeFile(path.join(directory, "borrow-call-case.zry"), "");
-    await writeFile(path.join(directory, "Borrow-call-case.zry"), "");
-    assert.throws(
-      () => borrowCallFixtureInventory(directory, "fixtures"),
-      /ASCII case collision/,
-    );
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-  }
 });
 
 test("bounds canonical registry reads and separates structure from digest authentication", async () => {
