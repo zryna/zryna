@@ -390,16 +390,17 @@ static-projection destination. Projection replay transplants the prepared source
 and active enum variants while retaining the enclosing owner's pending obligation and sibling
 masks. The semantic producer now uses that authority for mutable available static String leaves and
 for at most one combined private straight-line aggregate site. That narrow site immediately moves
-one complete same-type static Struct/FixedArray subobject between distinct local roots, moves one
+or clones one complete same-type static Struct/FixedArray subobject between distinct local roots, moves one
 distinct fully initialized same-type supported non-Copy whole local, or explicitly clones such a
 whole root into a mutable available `StructField` or `FixedArrayConstant` projection. Each form is
 immediately consumed from one unique typed temporary by `ReplacePlace`. Projected move masks the
-complete source subtree; whole-root clone retains its source and its prepare and initialized-prefix
+complete source subtree; projected clone retains its source without descendant place expansion and
+seals layout-derived prepare/prefix failure cleanup; whole-root clone retains its source and its prepare and initialized-prefix
 failure cleanup retain source plus destination. Commit recursively drops only the exact old target.
-Projected-subobject move retains both pending roots plus every sibling mask; whole-root clone
+Projected-subobject move or clone retains both pending roots plus every sibling mask; whole-root clone
 retains source and destination; whole-root move consumes its source and retains the destination.
 Fresh, same-root/overlapping,
-partial/moved projected sources, projected clone, dynamic/Vec/Enum targets, calls, CFG/public
+partial/moved projected sources, broader projected clone contexts, dynamic/Vec/Enum targets, calls, CFG/public
 contexts, and second sites remain later checkpoints.
 Those same initialized available static String leaves admit explicit clone. Its fallible
 preparation reads without consuming the leaf, retains the enclosing root with its current
@@ -459,12 +460,14 @@ destination topology before mutation; `ReplacePlace` drops the old destination e
 installs the transferred mask. The verifier rejects incomplete or forged topology, a partial
 destination, and any partial owner on a CFG edge.
 The same projected-replacement boundary now admits one complete static Struct/FixedArray subobject
-move between distinct local aggregate roots. It seals the immediate `MoveFromPlace` -> sole-use
-typed temporary -> `ReplacePlace` sequence, requires complete source projection topology and a
-canonical target path, masks the moved source subtree beneath its still-pending root, and derives a
-target-only recursive old-subtree drop at commit. Both enclosing roots, all disjoint sibling masks,
-and pending-root order are preserved. Same-root overlap, partial or already-moved source subtrees,
-projected clone, alternate uses/order, CFG/public functions, and a second site fail closed.
+move or clone between distinct local aggregate roots. It seals the immediate `MoveFromPlace` or
+`ClonePlace` -> sole-use typed temporary -> `ReplacePlace` sequence and a canonical target path.
+Move requires complete source projection topology and masks that subtree beneath its still-pending
+root. Clone retains its available source, needs no descendant places, and authenticates layout-
+derived prepare and initialized-prefix cleanup. Commit derives a target-only recursive old-subtree
+drop. Both enclosing roots, all disjoint sibling masks, and pending-root order are preserved.
+Same-root overlap, partial or already-moved source subtrees, alternate uses/order, CFG/public
+functions, and a second move/clone or shared projected-clone site fail closed.
 One separate source-faithful exception accepts a private one-parameter function whose single-
 variant enum is exhaustively matched into an exact direct local. The refined arm moves the complete
 supported Struct/FixedArray payload, initializes the local, drops the emptied enum root, and jumps
@@ -478,13 +481,13 @@ String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or 
 aggregate-subobject moves outside at most one exact direct local, one distinct-root static
 projection replacement, or the single-variant match-local enum-payload exception, dynamic or
 Vec-element projections, projected aggregate assignment outside the exact static-subobject-move-
-or-whole-root-move-or-clone-to-static-projection exception, projected aggregate clone outside the exact
-direct-local exception, partial
+or-clone-or-whole-root-move-or-clone-to-static-projection exception, projected aggregate clone outside the exact
+direct-local or distinct-root static-replacement exceptions, partial
 Enum transfer or partial-root transfer outside the exact
 direct-local, final-return, or whole-root assignment forms, general nested or repeated owned control flow, loop-carried owned
 phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
 admitted. The assignment exception does not extend to fresh sources, partial/moved projected
-subtrees, projected clone, same-root/overlapping paths, or dynamic/Vec/Enum targets,
+subtrees, broader projected clone contexts, same-root/overlapping paths, or dynamic/Vec/Enum targets,
 calls,
 direct projected-clone or payload returns, owner-carrying CFG transfer, public functions,
 multi-variant Enum payloads,

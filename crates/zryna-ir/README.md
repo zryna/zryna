@@ -164,12 +164,13 @@ initialized same-type whole local, or explicit root `ClonePlace`, which retains 
 source and carries exact prepare and initialized-prefix cleanup. Every form uses one unique typed
 temporary exactly once, immediately at `ReplacePlace`. Projected move requires the source's exact
 static descendant topology; replay masks that whole source subtree beneath its still-pending root.
-Commit recursively drops only the exact old target subtree. Projected-subobject move retains both
-local roots, pending order, and sibling masks; whole-root clone retains source and destination;
-whole-root move consumes its source and retains the destination. Same-root or overlapping paths,
-incomplete/partial/moved projected
-sources, projected clone, Enum/Vec/dynamic paths, public or CFG use, alternate ordering/use, and
-second sites fail closed.
+Commit recursively drops only the exact old target subtree. A projected-subobject clone uses the
+same immediate sole-use replacement shape, retains its source without requiring descendant place
+topology, and authenticates layout-derived prepare and initialized-prefix failure cleanup. Projected
+subobject move or clone retains both local roots, pending order, and sibling masks; whole-root clone
+retains source and destination; whole-root move consumes its source and retains the destination.
+Same-root or overlapping paths, incomplete/partial/moved projected sources, Enum/Vec/dynamic paths,
+public or CFG use, alternate ordering/use, and second sites fail closed.
 Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain outside this checkpoint.
 
 Every raw cleanup plan is bound to exactly one verified site and one closed role:

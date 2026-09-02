@@ -92,14 +92,15 @@ The repository currently establishes and tests:
   paths may likewise be cloned into the immediately following exact same-type direct local. The
   source remains owned by its enclosing root, recursive String-leaf failure cleanup is derived
   from sealed layout, and the verifier rejects alternate, public, CFG, or second-site contexts.
-  At most one projected aggregate assignment site may move a complete static Struct/FixedArray
-  subobject between distinct local aggregate roots, move a distinct whole root, or explicitly
-  clone that whole root into a mutable available exact same-type static projection. The subobject
-  form is the immediate `MoveFromPlace` -> sole-use typed temporary -> `ReplacePlace` sequence: it
-  masks the complete source subtree beneath the still-pending source root, recursively drops only
-  the old target subtree, and preserves both roots' sibling masks and pending order. The clone form
-  retains its fully initialized source; prepare and initialized-prefix failure cleanup retain both
-  source and destination.
+  At most one projected aggregate assignment site may move or explicitly clone a complete static
+  Struct/FixedArray subobject between distinct local aggregate roots, move a distinct whole root,
+  or explicitly clone that whole root into a mutable available exact same-type static projection.
+  Each subobject form is an immediate source operation -> sole-use typed temporary ->
+  `ReplacePlace` sequence. Move masks the complete source subtree beneath the still-pending source
+  root. Clone retains the source subtree without requiring materialized descendant places and
+  derives recursive failure cleanup from sealed layout. Both forms recursively drop only the old
+  target subtree and preserve both roots' sibling masks and pending order; clone prepare and
+  initialized-prefix failure cleanup retain both source and destination.
   One canonical private one-parameter function may additionally extract the complete supported
   Struct/FixedArray payload of a single-variant Enum through an exhaustive one-arm `match`, move it
   into an exact direct local, drop the emptied Enum root, and return that local through a
@@ -115,9 +116,9 @@ The repository currently establishes and tests:
   executing an allocator or target runtime. General structural Vec clone beyond String elements,
   nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values, aggregate-subobject
   moves outside the exact direct-local forms, broader enum-payload moves, dynamic or Vec-element
-  projections, projected aggregate clone outside the exact direct-local form, and projected
-  aggregate assignment outside the one static-subobject-move-or-whole-root-move-or-clone-to-
-  static-projection checkpoint,
+  projections, projected aggregate clone outside the exact direct-local or distinct-root
+  static-projection forms, and projected aggregate assignment outside the one static-subobject-
+  move-or-clone-or-whole-root-move-or-clone-to-static-projection checkpoint,
   whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
   repeated/nested branches or loops, general scope exits, and public owned values remain unfinished
   and unavailable; Vec loop replacement, owned-element Vec loop push, `break`, `continue`,
@@ -257,13 +258,14 @@ transfer, private root-local replacement, site-bound cleanup roles, partial drop
 retained runtime-ABI authority. It also covers canonical static Struct/FixedArray Copy projection
 reads, String-leaf moves, initialized String-leaf clone, exact direct-local static aggregate clone,
 prepare-before-commit String-leaf assignment, and one private straight-line complete static
-Struct/FixedArray subobject move between distinct local roots, whole-root move, or explicit
-whole-root clone into a mutable available same-type static aggregate projection. The subobject
-move masks its source subtree, recursively drops only the old target subtree, and preserves both
-roots' pending obligations and sibling masks; whole-root clone retains its source and both clone
+Struct/FixedArray subobject move or clone between distinct local roots, whole-root move, or explicit
+whole-root clone into a mutable available same-type static aggregate projection. Subobject move
+masks its source subtree; subobject clone retains its source without descendant place expansion and
+seals layout-derived prefix failure cleanup. Both recursively drop only the old target subtree and
+preserve roots, pending order, and sibling masks; whole-root clone retains its source and both clone
 failure paths retain source plus destination; whole-root move consumes its source and retains the
 destination. It does not claim projected aggregate clone outside
-that direct-local form, same-root/overlapping, partial or already-moved subobject sources, dynamic
+the direct-local or distinct-root static-replacement forms, same-root/overlapping, partial or already-moved subobject sources, dynamic
 or Vec/Enum projections, broader aggregate/enum subobject moves, owned calls/CFG, general scope
 exits, a runtime, a
 backend, a CLI route, or a public profile. The full `pnpm preflight` gate

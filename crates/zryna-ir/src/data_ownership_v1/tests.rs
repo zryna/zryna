@@ -1125,6 +1125,89 @@ fn projected_subobject_assignment_program(
     raw
 }
 
+fn projected_subobject_clone_assignment_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    inner: raw::TypeId,
+    outer: raw::TypeId,
+    array: raw::TypeId,
+    shape: SubobjectMoveShape,
+) -> raw::Program {
+    let mut raw =
+        projected_subobject_assignment_program(sources, linear, linux, inner, outer, array, shape);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    let move_index = function.blocks[0]
+        .instructions
+        .iter()
+        .position(|instruction| {
+            matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. })
+        })
+        .expect("projected move");
+    let raw::InstructionKind::MoveFromPlace { place: source } =
+        function.blocks[0].instructions[move_index].kind
+    else {
+        unreachable!()
+    };
+    let result = function.blocks[0].instructions[move_index].result.expect("clone result");
+    let raw::InstructionKind::ReplacePlace { place: target, .. } =
+        function.blocks[0].instructions[move_index + 1].kind
+    else {
+        unreachable!()
+    };
+    let source_root =
+        super::projection_base(&function.places[source.0 as usize].kind).expect("source root");
+    let target_root =
+        super::projection_base(&function.places[target.0 as usize].kind).expect("target root");
+    let source_leaf = function
+        .places
+        .iter()
+        .find(|place| super::projection_base(&place.kind) == Some(source))
+        .expect("source leaf")
+        .id;
+    let result_temporary = function
+        .places
+        .iter()
+        .find(|place| matches!(place.kind, raw::PlaceKind::Temporary(owner) if owner == result.id))
+        .expect("clone temporary")
+        .id;
+    assert_eq!(result_temporary.0, source_leaf.0 + 1);
+    assert_eq!(result_temporary.0 as usize + 1, function.places.len());
+    function.places.remove(source_leaf.0 as usize);
+    function.places[source_leaf.0 as usize].id = source_leaf;
+
+    let cleanup = raw::CleanupPlanId(
+        function.cleanup_plans.len().try_into().expect("bounded cleanup plan count"),
+    );
+    let element_cleanup = raw::CleanupPlanId(cleanup.0 + 1);
+    function.cleanup_plans.extend([
+        raw::CleanupPlan {
+            id: cleanup,
+            span,
+            actions: vec![
+                raw::DropAction::DropPlace(source_root),
+                raw::DropAction::DropPlace(target_root),
+            ],
+        },
+        raw::CleanupPlan {
+            id: element_cleanup,
+            span,
+            actions: vec![
+                raw::DropAction::DropAggregateInitializedPrefix(source_leaf),
+                raw::DropAction::DropPlace(source_root),
+                raw::DropAction::DropPlace(target_root),
+            ],
+        },
+    ]);
+    function.blocks[0].instructions[move_index].kind = raw::InstructionKind::ClonePlace {
+        place: source,
+        cleanup,
+        element_cleanup: Some(element_cleanup),
+    };
+    raw
+}
+
 fn projected_aggregate_clone_assignment_program(
     sources: &SourceMap,
     linear: &zryna_layout::VerifiedLayouts,
@@ -4505,6 +4588,156 @@ fn projected_subobject_assignment_moves_one_complete_static_subobject() {
 }
 
 #[test]
+fn projected_subobject_assignment_clones_one_static_subobject_without_descendant_places() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    for shape in [SubobjectMoveShape::Struct, SubobjectMoveShape::FixedArray] {
+        let raw = projected_subobject_clone_assignment_program(
+            &sources, &linear, &linux, inner, outer, array, shape,
+        );
+        let raw_function = &raw.modules[0].functions[0];
+        let clone_index = raw_function.blocks[0]
+            .instructions
+            .iter()
+            .position(|instruction| {
+                matches!(instruction.kind, raw::InstructionKind::ClonePlace { .. })
+            })
+            .expect("projected clone");
+        let raw::InstructionKind::ClonePlace { place: source, .. } =
+            raw_function.blocks[0].instructions[clone_index].kind
+        else {
+            unreachable!()
+        };
+        let raw::InstructionKind::ReplacePlace { place: target, .. } =
+            raw_function.blocks[0].instructions[clone_index + 1].kind
+        else {
+            unreachable!()
+        };
+        let source_root = super::projection_base(&raw_function.places[source.0 as usize].kind)
+            .expect("source root");
+        let target_root = super::projection_base(&raw_function.places[target.0 as usize].kind)
+            .expect("target root");
+        assert!(
+            raw_function
+                .places
+                .iter()
+                .all(|place| super::projection_base(&place.kind) != Some(source))
+        );
+
+        let verified = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect("projected subobject clone assignment");
+        let function =
+            verified.modules().next().expect("module").functions().next().expect("function");
+        let block = function.blocks().next().expect("block");
+        let instructions = block.instructions().collect::<Vec<_>>();
+        let clone = instructions[clone_index];
+        assert_eq!(clone.kind(), VerifiedInstructionKind::ClonePlace);
+        assert_eq!(clone.place_operands().next().expect("source").index(), source.0);
+        assert_eq!(clone.aggregate_clone_fallible_leaf_count(), Some(1));
+        assert_eq!(
+            clone.derived_drop_actions().map(|action| action.root().index()).collect::<Vec<_>>(),
+            [source_root.0, target_root.0],
+        );
+        let prefix_cleanup =
+            clone.aggregate_clone_element_failure_drop_actions().collect::<Vec<_>>();
+        assert_eq!(prefix_cleanup[0].kind(), VerifiedDropActionKind::AggregateInitializedPrefix);
+        assert_eq!(
+            prefix_cleanup[1..].iter().map(|action| action.root().index()).collect::<Vec<_>>(),
+            [source_root.0, target_root.0],
+        );
+        let replace = instructions[clone_index + 1];
+        assert_eq!(replace.kind(), VerifiedInstructionKind::ReplacePlace);
+        assert_eq!(replace.place_operands().next().expect("target").index(), target.0);
+        assert_eq!(replace.value_operands().next(), clone.result());
+        assert_eq!(
+            replace.derived_drop_actions().map(|action| action.root().index()).collect::<Vec<_>>(),
+            [target.0],
+        );
+        let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+        assert_eq!(
+            cleanup.iter().map(|action| action.root().index()).collect::<Vec<_>>(),
+            [source_root.0, target_root.0],
+        );
+        assert!(cleanup.iter().all(|action| action.moved_projections().count() == 0));
+    }
+}
+
+#[test]
+fn projected_subobject_clone_assignment_rejects_overlap_order_and_alternate_use() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let baseline = projected_subobject_clone_assignment_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::FixedArray,
+    );
+    let function = &baseline.modules[0].functions[0];
+    let span = function.span;
+    let clone_index = function.blocks[0]
+        .instructions
+        .iter()
+        .position(|instruction| matches!(instruction.kind, raw::InstructionKind::ClonePlace { .. }))
+        .expect("projected clone");
+    let raw::InstructionKind::ClonePlace { place: source, .. } =
+        function.blocks[0].instructions[clone_index].kind
+    else {
+        unreachable!()
+    };
+    let result = function.blocks[0].instructions[clone_index].result.expect("clone result");
+    let raw::InstructionKind::ReplacePlace { place: target, .. } =
+        function.blocks[0].instructions[clone_index + 1].kind
+    else {
+        unreachable!()
+    };
+    let target_root =
+        super::projection_base(&function.places[target.0 as usize].kind).expect("target root");
+    let result_temporary = function
+        .places
+        .iter()
+        .find(|place| matches!(place.kind, raw::PlaceKind::Temporary(owner) if owner == result.id))
+        .expect("clone temporary")
+        .id;
+    let mut mutations = Vec::new();
+
+    let mut same_root = baseline.clone();
+    same_root.modules[0].functions[0].places[source.0 as usize].kind =
+        raw::PlaceKind::FixedArrayConstant { base: target_root, index: 1 };
+    mutations.push(("same root", same_root));
+
+    let mut nonadjacent = baseline.clone();
+    nonadjacent.modules[0].functions[0].blocks[0].instructions.insert(
+        clone_index + 1,
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::DropPlace { place: target_root },
+        },
+    );
+    mutations.push(("nonadjacent replacement", nonadjacent));
+
+    let mut alternate_use = baseline;
+    alternate_use.modules[0].functions[0].blocks[0].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::InitializePlace { place: result_temporary, value: result.id },
+    });
+    mutations.push(("alternate clone result use", alternate_use));
+
+    for (label, raw) in mutations {
+        let diagnostics =
+            verify(raw, &sources, entry, linear.clone(), linux.clone()).expect_err(label);
+        assert!(
+            diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+            "{label}: {diagnostics:?}",
+        );
+    }
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn projected_subobject_assignment_rejects_hostile_contexts() {
     let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
@@ -4578,7 +4811,7 @@ fn projected_subobject_assignment_rejects_hostile_contexts() {
             function,
             &linear,
         ));
-        assert!(!super::is_complete_projected_move_replacement(
+        assert!(!super::is_complete_projected_subobject_replacement(
             &function.blocks[0].instructions[move_index + 1],
             source,
             result,
@@ -4586,7 +4819,7 @@ fn projected_subobject_assignment_rejects_hostile_contexts() {
             function,
         ));
     }
-    assert!(!super::admitted_projected_assignment_source(
+    assert!(super::admitted_projected_assignment_source(
         source,
         baseline_function.blocks[0].instructions[move_index].result.expect("move result"),
         true,

@@ -1,0 +1,3 @@
+interface Inner extends ZrynaStruct { text: String; }
+interface Outer extends ZrynaStruct { inner: Inner; tail: String; }
+function transplant(): Outer { let dst: Outer = Outer({ inner: Inner({ text: "old" }), tail: "d" }); const src: Outer = Outer({ inner: Inner({ text: "new" }), tail: "s" }); const taken: Inner = src.inner; dst.inner = clone(src.inner); return dst; }
