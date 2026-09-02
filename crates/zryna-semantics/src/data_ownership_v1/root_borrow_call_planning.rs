@@ -6,6 +6,7 @@ use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 use super::diagnostics::Errors;
 use super::function_catalog::{FunctionCatalog, FunctionParameterOrder, FunctionResolution};
 use super::layout_graph::Decl;
+use super::root_borrow_arm_planning::root_borrow_paths_overlap;
 use super::root_borrow_value_planning::plan_root_borrow_initializer;
 use super::type_model::{RootBorrowAlias, RootBorrowCallArgumentPlan, RootBorrowCallPlan, Ty};
 use super::{SemanticInput, span};
@@ -112,6 +113,7 @@ pub(super) fn plan_root_borrow_call<'a>(
     let mut planned = Vec::with_capacity(arguments.len());
     let mut used = Vec::with_capacity(signature.borrow_parameters.len());
     let mut seen = BTreeSet::new();
+    let mut borrow_arguments = Vec::<RootBorrowAlias>::new();
     for (argument_id, order) in arguments.iter().zip(&signature.parameter_order) {
         let argument = usize::try_from(*argument_id)
             .ok()
@@ -193,6 +195,22 @@ pub(super) fn plan_root_borrow_call<'a>(
                     );
                     return None;
                 }
+                if borrow_arguments.iter().any(|prior| {
+                    root_borrow_paths_overlap(&prior.place, &actual.place)
+                        && (prior.access
+                            == zryna_ir::data_ownership_v1::raw::BorrowAccess::Exclusive
+                            || actual.access
+                                == zryna_ir::data_ownership_v1::raw::BorrowAccess::Exclusive)
+                }) {
+                    errors.at(
+                        "ZRYNA-M3016",
+                        argument_at,
+                        "overlapping lexical places cannot carry exclusive call authority",
+                        "pass disjoint roots or static siblings, or use only shared authority",
+                    );
+                    return None;
+                }
+                borrow_arguments.push(actual.clone());
                 used.push(actual.id);
                 planned.push(RootBorrowCallArgumentPlan::Borrow { index, id: actual.id });
             }

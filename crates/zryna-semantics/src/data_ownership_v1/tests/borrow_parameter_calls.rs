@@ -65,7 +65,11 @@ fn reference(name: &str, span: zryna_source::UntrustedSpan) -> RawExpressionSynt
     }
 }
 
-fn mixed_source(write_target: &str, call_arguments: &[&str; 4], first_exclusive: bool) -> String {
+pub(super) fn mixed_source(
+    write_target: &str,
+    call_arguments: &[&str; 4],
+    first_exclusive: bool,
+) -> String {
     let first_borrow = if first_exclusive { "BorrowMut<i32>" } else { "Borrow<i32>" };
     format!(
         "function relay(left: i32, shared: {first_borrow}, right: bool, exclusive: BorrowMut<i32>): i32 {{ {write_target} = left; return shared; }} function caller(left: i32, shared: {first_borrow}, right: bool, exclusive: BorrowMut<i32>): i32 {{ return relay({}); }}",
@@ -225,7 +229,7 @@ fn caller_body(source: &str, call_arguments: &[&str; 4]) -> RawFunctionBodySynta
     }
 }
 
-fn mixed_snapshot(
+pub(super) fn mixed_snapshot(
     source: &str,
     write_target: &str,
     call_arguments: &[&str; 4],
