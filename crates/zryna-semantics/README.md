@@ -67,7 +67,7 @@ arrays. The sealed semantic `VerifiedProgram` retains both mandatory-verifier-ap
 declaration authority; neither raw IR nor raw runtime declarations can be recovered.
 
 Fixed-array access in this internal gate is limited to a compile-time in-range constant. The
-in-progress Issue #81 checkpoint recognizes canonical String and `Vec<T>` type graphs and lowers
+completed internal Issue #81 boundary recognizes canonical String and `Vec<T>` type graphs and lowers
 bounded private functions. String supports UTF-8 literals through
 `StringFromUtf8`, explicit clone, checked concatenation, local moves, return with reverse-order
 cleanup, and mutable root-local replacement. Vec supports construction, explicit clone for exact
@@ -145,7 +145,7 @@ Supported aggregate clone uses its own `AggregateCloneElementFailure` role and t
 prefix action under the same rule; neither its fallible-leaf count nor root-enum active variant is
 accepted from the fault injector.
 
-This checkpoint does not complete general owned lowering. General structural Vec clone beyond
+The completed bounded boundary deliberately does not provide general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
 aggregate-subobject moves outside one exact direct local, one parameter-free exact final return, or the one single-variant match-local enum
 payload extraction, dynamic or Vec-element projections, projected aggregate clone outside its exact
