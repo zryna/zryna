@@ -400,6 +400,668 @@
       "ownerIssue": 77
     }
   ],
+  "borrowCallConformance": {
+    "schemaVersion": 1,
+    "protocolVersion": 4,
+    "fixturePrefixes": [
+      "borrow-call-",
+      "borrow-forwarding-",
+      "borrow-parameter-",
+      "lexical-borrow-call-"
+    ],
+    "fixtureFiles": [
+      {
+        "path": "tests/m3-fixtures/borrow-call-owned-shape.json",
+        "sha256": "4ac5b4e9e6bec72834899f58f4339c5ec5da24b589814ca442c902bef44cc62f"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-call-owned-shape.zry",
+        "sha256": "8e4f681d5fea4a740cbe844c0351dfef2bbbd8daff922e35ba693f3cbbfbe2fd"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-call-public-abi.json",
+        "sha256": "1672d2c5da89a1d6cb28fe7bd2d97a01fd9636bab990c9f32ec910f07e34dace"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-call-public-abi.zry",
+        "sha256": "c670649258ef392062ac5a4892bdc319bafdf0b1cec3af02349dcae1dfab75be"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-call-repeated-exclusive.json",
+        "sha256": "a3ca147f044395329ef08c1627525b3f3af93ae7be995a7349a9871612dfc906"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-call-repeated-exclusive.zry",
+        "sha256": "5206482b78b7646222fa1f545d70ab48d4ab0ddedddb3148539da7560e2565da"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-call-result-escape.json",
+        "sha256": "1d07036ea0bd3a91f5021956ef00323917d768b70d043eecfdbf762952322bb0"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-call-result-escape.zry",
+        "sha256": "acf1c64728ba1601ba3d62de175fd12d6898eb57ad2b7122e663a772b86b605a"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-forwarding-exclusive.json",
+        "sha256": "5792cc64349128c5e52ca610e57810147bfab2e8574c47a18f6b881f371c5f9e"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-forwarding-exclusive.zry",
+        "sha256": "88c940161a9812a697eeb571233e4d2be83c48d5ccec0c6ee3a879cb8a9afa47"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-forwarding-shared.json",
+        "sha256": "396b676ee6f6302097f383873ad5b92d6772ce8f549ec029d6a823340b3ebb43"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-forwarding-shared.zry",
+        "sha256": "fe03daa8af7cc43bd58fa14fbed9caa413ee85bfdb9931139b1da4cf3a02ddb4"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-parameter-mixed-order.json",
+        "sha256": "46c4039f195b885de86f26175529cd56d3343b24ed4c98afbb93dbad51ba0354"
+      },
+      {
+        "path": "tests/m3-fixtures/borrow-parameter-mixed-order.zry",
+        "sha256": "01668387d692f63687f5026846ccbf5616df5b751d596b0585d1755aa5ce3490"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-cfg.json",
+        "sha256": "cb71ae19293c5cec4971fa0ac6603557751d90fb7cf24692718df6ce2e674f0f"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-cfg.zry",
+        "sha256": "cd7a5791758fe5d9f39196d5ef1e674dc734868accb34430599334e84cad5127"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-exclusive.json",
+        "sha256": "72b293d1d6fbd9c8472f1f5b31272c94b0c9395357d0f172f3f7dd80f6e88879"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-exclusive.zry",
+        "sha256": "9c836f6147f4fe2e68e095508e3fe1a04cf27a0ceceaf82b976d716f35ef5949"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-inactive.json",
+        "sha256": "af244af769f3226cd5500c6256bc3e6a3746694afe098189ac9c40e0dfa38580"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-inactive.zry",
+        "sha256": "7dc15dec2f83cc29331111b088960115d5feb8dda6d596be9d2322a73feb908f"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-projected.json",
+        "sha256": "837c51934fe652d1d3c0fe3365dd6675b30d41026156efb24d5517fa751c542e"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-projected.zry",
+        "sha256": "8a00827336447c84c5d2d96f57364f7d05fd84f2f2c75af2b3565e8a5dc84c00"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-repeated.json",
+        "sha256": "5ccd6d7d2c5850d74f4bd499a05a0975a4efbc3df41b8811068c92dfa0892967"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-repeated.zry",
+        "sha256": "273ee9b3acbd548eb46fcb643c7839ec3b23d8e91342f358e0ca8d5847ecc2c3"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-shared.json",
+        "sha256": "d5c58308604b2033d0455a55b3a69d18a3b313b7f06ee0d4040ac158b49ae123"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-shared.zry",
+        "sha256": "9c32e727af98b87d18a30115a813ebd4a91ca0664c5df782efeadb1bdc8fd893"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-access.json",
+        "sha256": "818704022f6ae721dcfcb1410a6d884a0e4d03bb9d9b6d4b6690a944bd1642bb"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-access.zry",
+        "sha256": "1f159491e902ba4887a7dc7b08402bb2d55db5c00a8ef8f43e81b68489b20462"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-arity.json",
+        "sha256": "7486de204dd3f8f4da5866eba34a857b7a31329e7992a37f057c11db84db887b"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-arity.zry",
+        "sha256": "647dd84ed95b8489a9c29e35314942c28320511708ed140bd6a80a6149dbe34e"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-borrow-kind.json",
+        "sha256": "37e5394aa2e93d67d12c4253b2a65768afb4dce8c5e09eda86e34d419912fdaf"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-borrow-kind.zry",
+        "sha256": "e322b04eefc2fd66785253cb867e1bc32ec283164f341b0d4f75c54e2011dc75"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-referent.json",
+        "sha256": "1f1e8aeaa650a1b75d2cfbf0d242436e36c25ce90a1a58df1661adf182082258"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-referent.zry",
+        "sha256": "104ed569db20ba1991993de7d02f1b97f678833adcfaa4a37334a5d6d6009e51"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-value-kind.json",
+        "sha256": "e408e5e8cecd578a04685286cb14980151c0460880d71db665b9f93a6df46dca"
+      },
+      {
+        "path": "tests/m3-fixtures/lexical-borrow-call-wrong-value-kind.zry",
+        "sha256": "3ea44fbe2e4dc799c75e9c208777b725f411ab5b75ae1f56512ef2441fe0a140"
+      }
+    ],
+    "acceptedCases": [
+      {
+        "id": "borrow-forwarding-exclusive",
+        "source": "tests/m3-fixtures/borrow-forwarding-exclusive.zry",
+        "snapshot": "tests/m3-fixtures/borrow-forwarding-exclusive.json",
+        "coverage": [
+          "exclusive-forwarding",
+          "caller-owned-end"
+        ],
+        "rustTest": "data_ownership_v1::tests::borrow_call_conformance::accepted_borrow_call_fixture_snapshots_authenticate_and_lower"
+      },
+      {
+        "id": "borrow-forwarding-shared",
+        "source": "tests/m3-fixtures/borrow-forwarding-shared.zry",
+        "snapshot": "tests/m3-fixtures/borrow-forwarding-shared.json",
+        "coverage": [
+          "shared-forwarding",
+          "caller-owned-end"
+        ],
+        "rustTest": "data_ownership_v1::tests::borrow_call_conformance::accepted_borrow_call_fixture_snapshots_authenticate_and_lower"
+      },
+      {
+        "id": "borrow-parameter-mixed-order",
+        "source": "tests/m3-fixtures/borrow-parameter-mixed-order.zry",
+        "snapshot": "tests/m3-fixtures/borrow-parameter-mixed-order.json",
+        "coverage": [
+          "mixed-value-borrow-order",
+          "forwarded-authority"
+        ],
+        "rustTest": "data_ownership_v1::tests::borrow_call_conformance::accepted_borrow_call_fixture_snapshots_authenticate_and_lower"
+      },
+      {
+        "id": "lexical-borrow-call-exclusive",
+        "source": "tests/m3-fixtures/lexical-borrow-call-exclusive.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-exclusive.json",
+        "coverage": [
+          "exclusive-root-call",
+          "caller-owned-end"
+        ],
+        "rustTest": "data_ownership_v1::tests::borrow_call_conformance::accepted_borrow_call_fixture_snapshots_authenticate_and_lower"
+      },
+      {
+        "id": "lexical-borrow-call-shared",
+        "source": "tests/m3-fixtures/lexical-borrow-call-shared.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-shared.json",
+        "coverage": [
+          "shared-root-call",
+          "left-to-right-value-order",
+          "call-trap-cleanup"
+        ],
+        "rustTest": "data_ownership_v1::tests::borrow_call_conformance::accepted_borrow_call_fixture_snapshots_authenticate_and_lower"
+      }
+    ],
+    "exclusions": [
+      {
+        "id": "borrow-call-owned-shape",
+        "category": "unsupported-owned-call-shape",
+        "source": "tests/m3-fixtures/borrow-call-owned-shape.zry",
+        "snapshot": "tests/m3-fixtures/borrow-call-owned-shape.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3003",
+            "message": "owned String and Vec operations are not yet admitted by this lowering slice",
+            "guidance": "use the authenticated owned type only after owned-operation lowering is enabled",
+            "span": {
+              "path": "src/main.zry",
+              "start": 68,
+              "end": 78
+            }
+          },
+          {
+            "code": "ZRYNA-M3016",
+            "message": "lexical borrow calls require a Copy signature with borrow authority",
+            "guidance": "call a private Copy-result function with at least one Borrow or BorrowMut parameter",
+            "span": {
+              "path": "src/main.zry",
+              "start": 229,
+              "end": 234
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "borrow-call value parameters remain recursively Copy-only"
+      },
+      {
+        "id": "borrow-call-public-abi",
+        "category": "public-abi",
+        "source": "tests/m3-fixtures/borrow-call-public-abi.zry",
+        "snapshot": "tests/m3-fixtures/borrow-call-public-abi.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "borrow-parameter functions must remain private",
+            "guidance": "remove export because borrow authority cannot cross the public ABI",
+            "span": {
+              "path": "src/main.zry",
+              "start": 0,
+              "end": 6
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "borrow authority remains compiler-internal and cannot enter an exported signature"
+      },
+      {
+        "id": "borrow-call-repeated-exclusive",
+        "category": "exclusive-overlap",
+        "source": "tests/m3-fixtures/borrow-call-repeated-exclusive.zry",
+        "snapshot": "tests/m3-fixtures/borrow-call-repeated-exclusive.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "one lexical borrow authority cannot be repeated in a call",
+            "guidance": "pass each active lexical alias at most once",
+            "span": {
+              "path": "src/main.zry",
+              "start": 209,
+              "end": 213
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "one exclusive authority cannot occupy two call slots"
+      },
+      {
+        "id": "borrow-call-result-escape",
+        "category": "borrow-escape",
+        "source": "tests/m3-fixtures/borrow-call-result-escape.zry",
+        "snapshot": "tests/m3-fixtures/borrow-call-result-escape.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "borrow results are outside the nonescaping ownership profile",
+            "guidance": "return an exact Copy value read through the borrow instead",
+            "span": {
+              "path": "src/main.zry",
+              "start": 35,
+              "end": 46
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "borrow authority cannot be returned, retained, stored, or captured"
+      },
+      {
+        "id": "lexical-borrow-call-cfg",
+        "category": "cfg-nonescape",
+        "source": "tests/m3-fixtures/lexical-borrow-call-cfg.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-cfg.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "lexical borrow calls cannot cross a control-flow edge",
+            "guidance": "keep the single borrow call in one straight-line lexical block",
+            "span": {
+              "path": "src/main.zry",
+              "start": 189,
+              "end": 204
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "branch- and loop-crossing call authority is not admitted"
+      },
+      {
+        "id": "lexical-borrow-call-inactive",
+        "category": "inactive-authority",
+        "source": "tests/m3-fixtures/lexical-borrow-call-inactive.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-inactive.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "borrow alias 'loan' is not active at this call",
+            "guidance": "declare the lexical alias before the call and keep it in the same block",
+            "span": {
+              "path": "src/main.zry",
+              "start": 157,
+              "end": 161
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "a call may use only authority active at its exact lexical site"
+      },
+      {
+        "id": "lexical-borrow-call-projected",
+        "category": "projected-authority",
+        "source": "tests/m3-fixtures/lexical-borrow-call-projected.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-projected.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "projected lexical borrows cannot be passed to calls",
+            "guidance": "pass one whole-root lexical Borrow or BorrowMut alias",
+            "span": {
+              "path": "src/main.zry",
+              "start": 225,
+              "end": 229
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "source-level forwarding is limited to whole-root authority"
+      },
+      {
+        "id": "lexical-borrow-call-repeated",
+        "category": "repeated-call",
+        "source": "tests/m3-fixtures/lexical-borrow-call-repeated.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-repeated.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "a lexical borrow block admits only one direct call",
+            "guidance": "keep one bounded borrow call in the straight-line lexical block",
+            "span": {
+              "path": "src/main.zry",
+              "start": 227,
+              "end": 246
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "one lexical borrow block admits one bounded direct call"
+      },
+      {
+        "id": "lexical-borrow-call-wrong-access",
+        "category": "access-mismatch",
+        "source": "tests/m3-fixtures/lexical-borrow-call-wrong-access.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-wrong-access.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "lexical borrow argument does not match the callee referent and access",
+            "guidance": "pass exact referent and shared or exclusive authority",
+            "span": {
+              "path": "src/main.zry",
+              "start": 200,
+              "end": 204
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "shared and exclusive authority are not interchangeable"
+      },
+      {
+        "id": "lexical-borrow-call-wrong-arity",
+        "category": "arity-mismatch",
+        "source": "tests/m3-fixtures/lexical-borrow-call-wrong-arity.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-wrong-arity.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "call to 'relay' has 2 arguments but its signature requires 3",
+            "guidance": "pass one source argument for every exact declared parameter",
+            "span": {
+              "path": "src/main.zry",
+              "start": 187,
+              "end": 202
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "source arguments must match the complete mixed signature"
+      },
+      {
+        "id": "lexical-borrow-call-wrong-borrow-kind",
+        "category": "borrow-argument-shape",
+        "source": "tests/m3-fixtures/lexical-borrow-call-wrong-borrow-kind.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-wrong-borrow-kind.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "borrow call arguments must name one active lexical alias",
+            "guidance": "pass an exact in-scope Borrow or BorrowMut alias",
+            "span": {
+              "path": "src/main.zry",
+              "start": 197,
+              "end": 199
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "a direct Copy value cannot synthesize call authority"
+      },
+      {
+        "id": "lexical-borrow-call-wrong-referent",
+        "category": "referent-mismatch",
+        "source": "tests/m3-fixtures/lexical-borrow-call-wrong-referent.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-wrong-referent.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "lexical borrow argument does not match the callee referent and access",
+            "guidance": "pass exact referent and shared or exclusive authority",
+            "span": {
+              "path": "src/main.zry",
+              "start": 173,
+              "end": 177
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "borrow referents require exact target-neutral type identity"
+      },
+      {
+        "id": "lexical-borrow-call-wrong-value-kind",
+        "category": "value-argument-shape",
+        "source": "tests/m3-fixtures/lexical-borrow-call-wrong-value-kind.zry",
+        "snapshot": "tests/m3-fixtures/lexical-borrow-call-wrong-value-kind.json",
+        "diagnostics": [
+          {
+            "code": "ZRYNA-M3016",
+            "message": "borrow authority cannot satisfy a by-value call parameter",
+            "guidance": "pass a direct Copy value for this parameter",
+            "span": {
+              "path": "src/main.zry",
+              "start": 193,
+              "end": 197
+            }
+          }
+        ],
+        "recovery": {
+          "acceptedFixture": "borrow-forwarding-shared",
+          "expectation": "same-verified-program",
+          "rustTest": "data_ownership_v1::tests::borrow_call_conformance::rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery"
+        },
+        "ownerIssue": 119,
+        "rationale": "borrow authority cannot occupy a by-value parameter slot"
+      }
+    ],
+    "verifierEvidence": [
+      {
+        "id": "disjoint-projected-authority-remains-ir-verified",
+        "rustTest": "data_ownership_v1::tests::direct_call_accepts_two_exclusive_disjoint_projected_authorities",
+        "expectation": "accept"
+      },
+      {
+        "id": "mutual-recursion",
+        "rustTest": "data_ownership_v1::tests::mutual_call_cycle_and_static_depth_boundary_are_rejected_exactly",
+        "expectation": "ZRYNA-I3009"
+      },
+      {
+        "id": "static-depth-exact-and-first-extra",
+        "rustTest": "data_ownership_v1::tests::mutual_call_cycle_and_static_depth_boundary_are_rejected_exactly",
+        "expectation": "128-accepts-129-rejects-ZRYNA-I3009"
+      },
+      {
+        "id": "wrong-access",
+        "rustTest": "data_ownership_v1::tests::direct_call_rejects_borrow_authority_with_wrong_access",
+        "expectation": "ZRYNA-I3009"
+      },
+      {
+        "id": "repeated-exclusive",
+        "rustTest": "data_ownership_v1::tests::direct_call_rejects_repeated_exclusive_borrow_authority",
+        "expectation": "ZRYNA-I3009"
+      }
+    ],
+    "resourceEvidence": [
+      {
+        "id": "derived-call-resources",
+        "rustTest": "data_ownership_v1::tests::lexical_borrow_calls::lexical_borrow_call_resource_formula_is_exact_and_saturating",
+        "dimensions": [
+          "values",
+          "places",
+          "transitions",
+          "active-borrows",
+          "cleanup-plans"
+        ],
+        "boundary": "exact-derived-and-checked-overflow"
+      },
+      {
+        "id": "function-resource-limits",
+        "rustTest": "data_ownership_v1::tests::lexical_borrow_calls::borrow_call_resource_preflight_accepts_exact_limits_and_rejects_first_extra_in_order",
+        "dimensions": [
+          "values",
+          "places",
+          "transitions",
+          "blocks",
+          "edges",
+          "active-borrows",
+          "cleanup-plans"
+        ],
+        "boundary": "exact-accepts-first-extra-rejects-in-canonical-order"
+      },
+      {
+        "id": "overflow-before-limit-selection",
+        "rustTest": "data_ownership_v1::tests::lexical_borrow_calls::borrow_call_resource_overflow_precedes_limit_selection_and_preserves_authority_cost",
+        "dimensions": [
+          "checked-arithmetic",
+          "forwarded-authority",
+          "lexical-authority"
+        ],
+        "boundary": "overflow-fails-before-limit-selection"
+      },
+      {
+        "id": "program-call-graph",
+        "rustTest": "data_ownership_v1::tests::lexical_borrow_calls::borrow_call_program_edge_and_depth_boundaries_are_exact",
+        "dimensions": [
+          "call-edges",
+          "static-call-depth"
+        ],
+        "boundary": "exact-accepts-first-extra-rejects"
+      }
+    ],
+    "nonCapabilities": [
+      {
+        "id": "syntax-extension",
+        "ownerIssue": 119,
+        "rationale": "protocol v4 is consumed unchanged"
+      },
+      {
+        "id": "public-borrow-abi",
+        "ownerIssue": 119,
+        "rationale": "borrow parameters and results remain private and nonescaping"
+      },
+      {
+        "id": "backend-activation",
+        "ownerIssue": 119,
+        "rationale": "no JavaScript, WebAssembly, or native backend consumes borrow calls"
+      },
+      {
+        "id": "runtime-lifetime-state",
+        "ownerIssue": 119,
+        "rationale": "no runtime borrow tracking or lifetime state is introduced"
+      },
+      {
+        "id": "projected-derived-forwarding",
+        "ownerIssue": 119,
+        "rationale": "source-level forwarding admits only whole-root lexical authority"
+      },
+      {
+        "id": "borrow-return-retention",
+        "ownerIssue": 119,
+        "rationale": "returning, storing, or capturing borrow authority remains rejected"
+      },
+      {
+        "id": "branch-loop-crossing",
+        "ownerIssue": 119,
+        "rationale": "call authority cannot cross a control-flow edge"
+      },
+      {
+        "id": "owned-aggregate-call-shapes",
+        "ownerIssue": 119,
+        "rationale": "borrow calls retain recursively Copy value parameters"
+      }
+    ]
+  },
   "unsupported": [
     "public-aggregate-abi",
     "tracing-gc",

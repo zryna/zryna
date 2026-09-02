@@ -9,6 +9,10 @@ import {
   loadAndValidateM3Contract,
   validateM3Contract,
 } from "../scripts/check-m3-contract.mjs";
+import {
+  borrowCallFixtureInventory,
+  validateM3BorrowCallConformance,
+} from "../scripts/lib/check-m3-borrow-call-conformance.mjs";
 
 function clonedContract() {
   return structuredClone(loadAndValidateM3Contract());
@@ -178,6 +182,116 @@ test("rejects every authority class when the canonical contract drifts", () => {
     mutate(contract);
     assert.throws(() => validateM3Contract(contract), /invalid M3 contract/);
   }
+});
+
+test("authenticates the complete borrow-call fixture and exclusion inventory", () => {
+  const section = clonedContract().borrowCallConformance;
+  assert.equal(section.protocolVersion, 4);
+  assert.equal(section.fixtureFiles.length, 36);
+  assert.equal(section.acceptedCases.length, 5);
+  assert.equal(section.exclusions.length, 13);
+  assert.deepEqual(
+    section.fixtureFiles.map(({ path: fixturePath }) => fixturePath),
+    borrowCallFixtureInventory(),
+  );
+  assert.doesNotThrow(() => validateM3BorrowCallConformance(section));
+  assert.deepEqual(section.verifierEvidence.map(({ id }) => id), [
+    "disjoint-projected-authority-remains-ir-verified",
+    "mutual-recursion",
+    "static-depth-exact-and-first-extra",
+    "wrong-access",
+    "repeated-exclusive",
+  ]);
+  assert.deepEqual(section.nonCapabilities.map(({ id }) => id), [
+    "syntax-extension",
+    "public-borrow-abi",
+    "backend-activation",
+    "runtime-lifetime-state",
+    "projected-derived-forwarding",
+    "borrow-return-retention",
+    "branch-loop-crossing",
+    "owned-aggregate-call-shapes",
+  ]);
+});
+
+test("rejects borrow-call schema, inventory, hash, diagnostic, recovery, and exclusion drift", () => {
+  const fixturePaths = borrowCallFixtureInventory();
+  for (const mutate of [
+    (section) => {
+      section.unknown = true;
+    },
+    (section) => {
+      section.fixtureFiles.shift();
+    },
+    (section) => {
+      section.fixtureFiles.push(structuredClone(section.fixtureFiles[0]));
+    },
+    (section) => {
+      section.fixtureFiles.reverse();
+    },
+    (section) => {
+      section.fixtureFiles[0].path = section.fixtureFiles[0].path.toUpperCase();
+    },
+    (section) => {
+      section.fixtureFiles[0].sha256 = "0".repeat(64);
+    },
+    (section) => {
+      section.acceptedCases[0].coverage.pop();
+    },
+    (section) => {
+      section.exclusions[0].diagnostics[0].message = "changed";
+    },
+    (section) => {
+      section.exclusions[0].diagnostics[0].span.end += 1;
+    },
+    (section) => {
+      section.exclusions[0].recovery.expectation = "changed";
+    },
+    (section) => {
+      section.exclusions[0].ownerIssue = 176;
+    },
+    (section) => {
+      section.verifierEvidence[0].rustTest = "missing_test";
+    },
+    (section) => {
+      section.resourceEvidence[0].dimensions.pop();
+    },
+    (section) => {
+      section.nonCapabilities.pop();
+    },
+  ]) {
+    const section = structuredClone(clonedContract().borrowCallConformance);
+    mutate(section);
+    assert.throws(
+      () => validateM3BorrowCallConformance(section, fixturePaths),
+      /invalid M3 contract/,
+    );
+  }
+});
+
+test("rejects unlisted, missing, reordered, and case-colliding borrow-call files", async () => {
+  const fixturePaths = borrowCallFixtureInventory();
+  const section = clonedContract().borrowCallConformance;
+  for (const paths of [
+    fixturePaths.slice(1),
+    [...fixturePaths, "tests/m3-fixtures/borrow-call-unlisted.zry"],
+    [...fixturePaths].reverse(),
+  ]) {
+    assert.throws(
+      () => validateM3BorrowCallConformance(section, paths),
+      /borrow-call fixture inventory drifted/,
+    );
+  }
+
+  const caseCollidingEntries = [
+    { name: "borrow-call-case.zry" },
+    { name: "Borrow-call-case.zry" },
+  ];
+  assert.throws(
+    () =>
+      borrowCallFixtureInventory("unused", "fixtures", () => caseCollidingEntries),
+    /ASCII case collision/,
+  );
 });
 
 test("bounds canonical registry reads and separates structure from digest authentication", async () => {
