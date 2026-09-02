@@ -130,6 +130,38 @@ test('v4 preserves const BorrowMut assignment as syntax without assigning write-
   assert.ok(response.result.files[0].type_syntax.some((type) => type.kind.kind === 'borrow-mut'));
 });
 
+test('v4 preserves whole owned-root shared read syntax without assigning semantics', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/owned-root-borrow-reads.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/owned-root-borrow-reads.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(32, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  assert.deepEqual(
+    response.result.files[0].functions.map((fn) => fn.body.statements[1].kind.kind),
+    ['block', 'block', 'block', 'block', 'block', 'block'],
+  );
+
+  const excludedText = await readFile(
+    new URL('../../../tests/m3-fixtures/owned-root-borrow-exclusions.zry', import.meta.url),
+    'utf8',
+  );
+  const excludedExpected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/owned-root-borrow-exclusions.json', import.meta.url),
+    'utf8',
+  ));
+  const [excluded] = await exchange([analyze(33, excludedText)]);
+  assert.equal(excluded.error, undefined, JSON.stringify(excluded.error));
+  assert.deepEqual(excluded.result, excludedExpected);
+  assert.equal(validateSnapshot(excluded.result), true, JSON.stringify(validateSnapshot.errors));
+});
+
 test('v4 preserves conditional arm-local borrow scopes without assigning edge semantics', async () => {
   const text = await readFile(
     new URL('../../../tests/m3-fixtures/conditional-root-borrow.zry', import.meta.url),

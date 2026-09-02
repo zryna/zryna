@@ -1,0 +1,48 @@
+interface TextBox extends ZrynaStruct {
+  text: String;
+}
+
+function mutableAlias(): String {
+  let root: String = "value";
+  {
+    const alias: BorrowMut<String> = borrowMut(root);
+    const copied: String = clone(alias);
+  }
+  return root;
+}
+
+function projectedAlias(): TextBox {
+  const root: TextBox = TextBox({ text: "value" });
+  {
+    const alias: Borrow<String> = borrow(root.text);
+    const copied: String = clone(alias);
+  }
+  return root;
+}
+
+function moveThroughAlias(): String {
+  const root: String = "value";
+  {
+    const alias: Borrow<String> = borrow(root);
+    const moved: String = alias;
+  }
+  return root;
+}
+
+function replaceWhileBorrowed(): String {
+  let root: String = "value";
+  {
+    const alias: Borrow<String> = borrow(root);
+    root = "replacement";
+  }
+  return root;
+}
+
+function nonCopyVecIndex(): Vec<String> {
+  const root: Vec<String> = Vec<String>(["value"]);
+  {
+    const alias: Borrow<Vec<String>> = borrow(root);
+    const copied: String = alias[0];
+  }
+  return root;
+}

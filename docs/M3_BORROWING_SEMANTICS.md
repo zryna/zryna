@@ -1,11 +1,14 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, #115, #117, #120, and #121 complete. The internal semantic producer admits bounded
+Status: Issues #113, #114, #115, #117, #120, and #121 complete. The current Issue #116
+implementation checkpoint additionally admits one bounded shared-read shape for a whole owned
+root; Issue #116 is not recorded as complete here until its independent verification and merge
+gates succeed. The internal semantic producer admits bounded
 shared and exclusive Copy-root source shapes, one shared-from-shared reborrow, and one canonical
 conditional plus one canonical bool-root loop whose local lexical authorities are completely
 discharged before every edge. It also admits static recursively Copy Struct-field and constant
-fixed-array projected borrows with exact prefix overlap. Call-based, nested/repeated control-flow, and owned-root
-borrowing remain dependency-ordered later checkpoints.
+fixed-array projected borrows with exact prefix overlap. Call-based and nested/repeated
+control-flow borrowing remain dependency-ordered later checkpoints.
 
 This document freezes the dependency-ordered implementation boundary for Issue #82. It refines the
 normative borrowing rules in [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md) without
@@ -193,6 +196,45 @@ both read and write counts before materialization. It does not shorten a lifetim
 all admitted aliases remain active until the reverse lexical end at the block close. This slice
 adds no mutable-from-shared reborrow, reborrow from exclusive, projections, calls, CFG, nested
 blocks, non-Copy referents, runtime borrow flag, ABI, backend, driver, CLI, or public profile.
+
+## Issue #116 current implementation checkpoint
+
+One private parameter-free straight-line function may declare one initialized non-Copy root,
+enter one explicit nested lexical block, declare exactly one const shared alias initialized as
+`borrow(root)`, perform one or more admitted read-only operations through that alias, end the
+authority at the block close, and finally return the original root. The alias must name the exact
+whole root; projected referents and reborrows are not admitted.
+
+The admitted operations are deliberately closed:
+
+| Whole-root type | Read through the shared alias | Result authority |
+| --- | --- | --- |
+| `String` | explicit clone or checked concatenation of the alias with itself | a distinct owned `String` result |
+| exact `Vec<bool>` or `Vec<i32>` | checked constant indexing | a `Copy` element result |
+| supported non-Copy Struct, root Enum, or fixed array | explicit whole-aggregate clone | a distinct owned aggregate result |
+
+The owner remains initialized and pending throughout the lexical block. Each owned clone or
+concatenation result has its own temporary owner; none consumes or aliases the source owner. The
+final return therefore transfers the original root only after `EndBorrow`. Lowering reuses the
+existing String, Vec-index, aggregate-clone, cleanup-plan, initialized-prefix cleanup, and fault
+authorities. It adds only one dense `BeginBorrow(Shared)`/`EndBorrow` authority around those
+existing operations. Owned read-result locals are explicitly dropped in reverse declaration order
+before `EndBorrow`; they are removed from final-return cleanup. After the existing owned producer
+has built its sealed straight-line candidate, the wrapper checks the combined instruction count,
+the added lexical drops, the two authority transitions, and one active authority before applying
+the scope rewrite and submitting the final raw function to verification.
+
+This does not widen the IR `BorrowRead` instruction: `BorrowRead` remains Copy-only. The producer
+resolves each admitted owned read to the borrowed root and emits the already verified owned
+operation while shared authority is active. No owned value, cleanup obligation, stored reference,
+or return authority is transferred through the borrow itself.
+
+The checkpoint excludes multiple aliases, mutable or exclusive access, projections, mutation,
+moves, replacement, explicit drops, calls, parameters, public functions, CFG, stored or returned
+aliases, alternate return values, new runtime operations, ABI changes, backend lowering, driver or
+CLI routes, artifacts, and public-profile activation. Unsupported shapes fail before raw-IR
+construction; the mandatory existing verifier remains the final authority for owner exclusion,
+distinct result ownership, cleanup, and lexical end.
 
 ## Issue #117 conditional-edge checkpoint
 
