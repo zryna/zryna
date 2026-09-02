@@ -247,3 +247,213 @@ fn nested_partial_struct_transfer_preserves_recursive_topology_and_mask() {
             .all(|action| action.root() != source_root && action.root() != temporary)
     );
 }
+
+#[test]
+fn nested_partial_struct_return_preserves_recursive_topology_and_reverse_survivors() {
+    let (source, raw) = nested_owned_partial_return_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful nested partial return");
+    let program = lower(pair_input(&syntax, &sources)).expect("nested partial Struct return");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let moved_leaf_owner = roots[&1];
+    let transferred_root = roots[&2];
+    let survivor_root = roots[&3];
+    let block = function.blocks().next().expect("block");
+    let returned = block.terminator().value_operands().next().expect("returned value");
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == returned)
+        })
+        .expect("nested partial return temporary")
+        .id();
+    let topology = |root| {
+        let fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+        let inner_fields = function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == fields[&0] => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(inner_fields.keys().copied().collect::<Vec<_>>(), [0]);
+        (inner_fields[&0], fields[&1])
+    };
+    let source_topology = topology(source_root);
+    let transferred_topology = topology(transferred_root);
+    let returned_topology = topology(temporary);
+    assert_ne!(source_topology, transferred_topology);
+    assert_ne!(transferred_topology, returned_topology);
+    let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+    assert_eq!(
+        cleanup
+            .iter()
+            .map(zryna_ir::data_ownership_v1::VerifiedDropAction::root)
+            .collect::<Vec<_>>(),
+        [survivor_root, moved_leaf_owner,]
+    );
+    assert!(cleanup.iter().all(|action| {
+        action.root() != source_root
+            && action.root() != transferred_root
+            && action.root() != temporary
+            && action.root() != returned_topology.0
+    }));
+}
+#[test]
+fn partial_transfer_place_accounting_is_exact_and_checked() {
+    assert_eq!(partial_transfer_place_delta(0, 0), Some(2));
+    assert_eq!(partial_transfer_place_delta(2, 0), Some(8));
+    assert_eq!(partial_transfer_place_delta(2, 1), Some(7));
+    assert_eq!(partial_transfer_place_delta(2, 2), Some(6));
+    assert_eq!(partial_transfer_place_delta(1, 2), None);
+    assert_eq!(partial_transfer_place_delta(usize::MAX, 0), None);
+
+    let values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION;
+    let places = zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION;
+    let transitions = zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION;
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 7, transitions - 2, 0, 2, 1),
+        Ok(7),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values, places - 7, transitions - 2, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 6, transitions - 2, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Places),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 7, transitions - 1, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(values - 1, places - 7, transitions - 2, 1, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(0, 0, 0, 0, usize::MAX, 0),
+        Err(PartialTransferBudgetViolation::PlaceAccounting),
+    );
+    assert_eq!(
+        partial_transfer_budget_preflight(usize::MAX, 0, 0, 0, 0, 0),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+}
+#[test]
+fn partial_return_place_accounting_is_exact_and_checked() {
+    assert_eq!(partial_return_place_delta(0, 0), Some(1));
+    assert_eq!(partial_return_place_delta(2, 0), Some(5));
+    assert_eq!(partial_return_place_delta(2, 1), Some(4));
+    assert_eq!(partial_return_place_delta(2, 2), Some(3));
+    assert_eq!(partial_return_place_delta(1, 2), None);
+    assert_eq!(partial_return_place_delta(usize::MAX, 0), None);
+
+    let values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION;
+    let places = zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION;
+    let transitions = zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION;
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 4, transitions - 1, 0, 2, 1),
+        Ok(4),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values, places - 4, transitions - 1, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 3, transitions - 1, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Places),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 4, transitions, 0, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(values - 1, places - 4, transitions - 1, 1, 2, 1),
+        Err(PartialTransferBudgetViolation::Transitions),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(0, 0, 0, 0, usize::MAX, 0),
+        Err(PartialTransferBudgetViolation::PlaceAccounting),
+    );
+    assert_eq!(
+        partial_return_budget_preflight(usize::MAX, 0, 0, 0, 0, 0),
+        Err(PartialTransferBudgetViolation::Values),
+    );
+}
+#[test]
+fn partial_struct_owner_returns_with_exact_topology_mask_and_survivor_cleanup() {
+    let (source, raw) = owned_pair_partial_then_root_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful partial Struct return");
+    let program = lower(pair_input(&syntax, &sources)).expect("partial Struct return");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let roots = function
+        .places()
+        .filter_map(|place| match place.kind() {
+            VerifiedPlaceKind::Local(ordinal) => Some((ordinal, place.id())),
+            _ => None,
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let source_root = roots[&0];
+    let moved_leaf_owner = roots[&1];
+    let block = function.blocks().next().expect("block");
+    let whole_move = block
+        .instructions()
+        .find(|instruction| {
+            instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                && instruction.place_operands().next() == Some(source_root)
+        })
+        .expect("partial root return move");
+    let returned = block.terminator().value_operands().next().expect("returned value");
+    assert_eq!(whole_move.result(), Some(returned));
+    let temporary = function
+        .places()
+        .find(|place| {
+            matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == returned)
+        })
+        .expect("partial return temporary")
+        .id();
+    let fields = |root| {
+        function
+            .places()
+            .filter_map(|place| match place.kind() {
+                VerifiedPlaceKind::StructField { base, ordinal } if base == root => {
+                    Some((ordinal, place.id()))
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeMap<_, _>>()
+    };
+    let source_fields = fields(source_root);
+    let returned_fields = fields(temporary);
+    assert_eq!(source_fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    assert_eq!(returned_fields.keys().copied().collect::<Vec<_>>(), [0, 1]);
+    let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+    assert_eq!(cleanup.len(), 1);
+    assert_eq!(cleanup[0].root(), moved_leaf_owner);
+    assert!(cleanup.iter().all(|action| {
+        action.root() != source_root
+            && action.root() != temporary
+            && action.root() != returned_fields[&0]
+    }));
+}
