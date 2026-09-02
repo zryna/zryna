@@ -327,6 +327,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /exact String leaves moved once while the enclosing root keeps its masked cleanup obligation/);
   assert.match(document, /one exact direct-local move of a supported acyclic Struct or FixedArray subobject/);
   assert.match(document, /materializing all descendants, masking the whole subtree/);
+  assert.match(document, /one exact final return of a supported acyclic Struct or FixedArray subobject/);
+  assert.match(document, /parameter-free local root[\s\S]*excluding\s+that returned owner from reverse survivor cleanup/);
   assert.match(document, /explicit clone of initialized available String leaves under those canonical paths/);
   assert.match(document, /explicit clone of at most one initialized available non-Copy Struct or FixedArray subobject/);
   assert.match(document, /immediately following exact same-type local/);
@@ -347,7 +349,7 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /one-plan\/one-site cleanup roles/);
   assert.match(document, /cumulative String-literal preflight at 8 MiB/);
   assert.match(document, /sealed semantic `VerifiedProgram` retaining mandatory-verifier-approved IR together with the\s+exact verified ownership-runtime ABI authority/);
-  assert.match(document, /aggregate-subobject moves outside one exact direct local or the exact\s+single-variant match-local enum extraction, broader enum-payload moves, dynamic or Vec-element\s+projections/);
+  assert.match(document, /aggregate-subobject moves outside one exact direct local, one exact\s+parameter-free final return, or the exact\s+single-variant match-local enum extraction/);
   assert.match(document, /fresh sources, same-root\/overlapping or partial\/moved projected sources,\s+dynamic\/Vec\/Enum targets, projected clone outside one\s+immediate exact same-type local/);
   assert.match(document, /public\s+functions, second move-or-clone assignment sites, and broader aggregate match/);
   assert.match(document, /Owned String\/Vec signatures remain bounded\s+to zero arguments or one exact owned\/bool argument/);
@@ -360,6 +362,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /static owned projection reads, String-leaf moves, clone, and assignment \| complete/);
   assert.match(document, /direct-local static Struct\/FixedArray subobject move \| complete/);
   assert.match(document, /whole-subtree parent mask, distinct local owner/);
+  assert.match(document, /final-return static Struct\/FixedArray subobject move \| complete/);
+  assert.match(document, /returned-owner cleanup exclusion, one-site sealing, and atomic value\/place\/transition\/cleanup preflight/);
   assert.match(document, /direct-local static Struct\/FixedArray subobject clone \| complete/);
   assert.match(document, /layout-derived prefix failure cleanup, one-site private straight-line verifier/);
   assert.match(document, /static Struct\/FixedArray subobject move\/clone or whole-root move\/clone into a static projection \| complete/);
@@ -377,6 +381,8 @@ test("in-progress owned-data semantics separate the implemented checkpoint from 
   assert.match(document, /general structural Vec clone, nested aggregate clone, broader aggregate\/Enum subobject moves, projected aggregate clone outside the exact direct-local or distinct-root static-replacement forms, and broader projected aggregate assignment \| pending/);
   assert.match(document, /`D \+ 1`\s+places/);
   assert.match(document, /projected aggregate clone with `M` missing source-path places and `P` pending owners/);
+  assert.match(document, /final-return form of that static subobject move/);
+  assert.match(document, /one return cleanup\s+plan and exactly `P` cleanup actions/);
   assert.match(document, /`M \+ 2` places.*two\s+ownership transitions, two cleanup plans, and `2P \+ 1` cleanup actions/);
   assert.match(document, /projected aggregate assignment with `M` missing target-path places/);
   assert.match(document, /`M \+ 1` places[\s\S]*two ownership transitions/);

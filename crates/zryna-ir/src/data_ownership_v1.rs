@@ -2512,6 +2512,7 @@ fn verify_enum_payload_move_contexts(
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn verify_aggregate_subobject_move_contexts(
     function: &raw::Function,
     layouts: &VerifiedLayouts,
@@ -2551,7 +2552,7 @@ fn verify_aggregate_subobject_move_contexts(
             "ZRYNA-I3010",
             instruction.span,
             "function contains more than one aggregate projection move",
-            "move at most one complete static Struct or fixed-array subobject into one exact direct local or static replacement under a distinct local root",
+            "move at most one complete static Struct or fixed-array subobject into one exact direct local, final return, or static replacement under a distinct local root",
         ));
         return;
     }
@@ -2573,6 +2574,26 @@ fn verify_aggregate_subobject_move_contexts(
     let projected_replacement = block.instructions.get(instruction_index + 1).is_some_and(|next| {
         is_complete_projected_subobject_replacement(next, place, result, temporary_owner, function)
     });
+    let direct_return = instruction_index + 1 == block.instructions.len()
+        && block.terminators.len() == 1
+        && block.terminators.first().is_some_and(|terminator| {
+            matches!(
+                &terminator.kind,
+                raw::Terminator::Return { value, .. }
+                    if *value == result.id && function.result == result.ty
+            )
+        });
+    let source_root = root_place(place, function);
+    let local_source = function
+        .places
+        .get(source_root.0 as usize)
+        .is_some_and(|source| matches!(source.kind, raw::PlaceKind::Local(_)));
+    let exact_consumer = direct_local
+        || projected_replacement
+        || (direct_return
+            && function.parameters.is_empty()
+            && function.borrow_parameters.is_empty()
+            && local_source);
     let uses = function
         .blocks
         .iter()
@@ -2594,14 +2615,14 @@ fn verify_aggregate_subobject_move_contexts(
         || !static_projection_path(place, function)
         || !has_exact_projection_topology(place, function, layouts)
         || temporary_owner.is_none()
-        || !(direct_local || projected_replacement)
+        || !exact_consumer
         || uses != 1
     {
         errors.push(error_at(
             "ZRYNA-I3010",
             instruction.span,
-            "aggregate projection move escapes its exact direct-local or projected-assignment context",
-            "move one complete static Struct or fixed-array subobject immediately into one same-type local initialization or static replacement under a distinct local root",
+            "aggregate projection move escapes its exact direct-local, final-return, or projected-assignment context",
+            "move one complete static Struct or fixed-array subobject immediately into one same-type local initialization, final return, or static replacement under a distinct local root",
         ));
     }
 }

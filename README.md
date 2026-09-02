@@ -92,6 +92,10 @@ The repository currently establishes and tests:
   paths may likewise be cloned into the immediately following exact same-type direct local. The
   source remains owned by its enclosing root, recursive String-leaf failure cleanup is derived
   from sealed layout, and the verifier rejects alternate, public, CFG, or second-site contexts.
+  At most one complete available non-Copy Struct or FixedArray projection under those same paths
+  may instead move into the final exact-type return of a parameter-free private straight-line
+  function. The producer materializes and masks the complete source subtree, returns its unique
+  temporary owner, and atomically reserves return cleanup before any source mutation.
   At most one projected aggregate assignment site may move or explicitly clone a complete static
   Struct/FixedArray subobject between distinct local aggregate roots, move a distinct whole root,
   or explicitly clone that whole root into a mutable available exact same-type static projection.
@@ -257,7 +261,8 @@ clone/push/Copy indexing, owner
 transfer, private root-local replacement, site-bound cleanup roles, partial drop metadata, and the
 retained runtime-ABI authority. It also covers canonical static Struct/FixedArray Copy projection
 reads, String-leaf moves, initialized String-leaf clone, exact direct-local static aggregate clone,
-prepare-before-commit String-leaf assignment, and one private straight-line complete static
+one parameter-free final-return static aggregate move, prepare-before-commit String-leaf
+assignment, and one private straight-line complete static
 Struct/FixedArray subobject move or clone between distinct local roots, whole-root move, or explicit
 whole-root clone into a mutable available same-type static aggregate projection. Subobject move
 masks its source subtree; subobject clone retains its source without descendant place expansion and
@@ -266,7 +271,8 @@ preserve roots, pending order, and sibling masks; whole-root clone retains its s
 failure paths retain source plus destination; whole-root move consumes its source and retains the
 destination. It does not claim projected aggregate clone outside
 the direct-local or distinct-root static-replacement forms, same-root/overlapping, partial or already-moved subobject sources, dynamic
-or Vec/Enum projections, broader aggregate/enum subobject moves, owned calls/CFG, general scope
+or Vec/Enum projections, broader aggregate/enum subobject moves, parameterized projected returns,
+owned calls/CFG, general scope
 exits, a runtime, a
 backend, a CLI route, or a public profile. The full `pnpm preflight` gate
 retains ignored proportional boundaries and the complete repository regression surface.

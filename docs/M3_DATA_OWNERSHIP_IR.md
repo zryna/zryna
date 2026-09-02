@@ -200,13 +200,18 @@ result receives one distinct initialized owner, so initializing one exact same-t
 renames that complete owner without transferring a partial mask. Derived cleanup therefore excludes
 the entire moved subtree from the parent and drops the new local exactly once. Projection typing,
 base/selector identity, duplicate or overlapping consumption, and cleanup claims are independently
-verified. A separate exact exception admits one complete Struct/FixedArray `EnumPayload` move in a
+verified. The same complete static subobject may instead move in the final instruction of one
+parameter-free private one-block function and be the sole returned exact-type value. Its source
+must have a local root and complete descendant topology, the returned temporary has one use, and
+return cleanup masks the complete subtree while excluding that temporary. Parameterized, public,
+CFG, alternate-use, missing-topology, and second-site contexts fail closed. A separate exact
+exception admits one complete Struct/FixedArray `EnumPayload` move in a
 private three-block single-variant `EnumMatch`: the refined arm immediately initializes a same-type
 direct local, drops the Enum root, and jumps with no owner arguments to the sole final local return.
 The source payload has complete static topology, the move result has one temporary owner and one
 use, the return cleanup has zero actions, and a second site or alternate CFG fails closed. This does
 not admit broader Enum-payload, dynamic, or Vec-element moves, nor broader projected
-assignment/clone, call, direct-return, CFG-edge, or public transfer contexts. At most one such
+assignment/clone, call, other direct-return, CFG-edge, or public transfer contexts. At most one such
 aggregate-subobject move site is admitted per function.
 Separately, at most one non-root `ClonePlace` may read an initialized non-Copy Struct or FixedArray
 through a canonical `StructField`/`FixedArrayConstant` path in a private one-block function. It must

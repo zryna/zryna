@@ -21,9 +21,10 @@ use super::{
     projected_aggregate_clone_assignment_budget_violation,
     projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
     projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
-    raw_function_value_count, raw_terminator_edge_count, resource_budget_violation,
-    semantic_preflight, span, string_byte_budget_violation, terminal_owned_if,
-    value_budget_violation, vec_push_target_invalid,
+    projected_subobject_return_budget_violation, raw_function_value_count,
+    raw_terminator_edge_count, resource_budget_violation, semantic_preflight, span,
+    string_byte_budget_violation, terminal_owned_if, value_budget_violation,
+    vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -141,6 +142,10 @@ const OWNED_ENUM_LOCAL_AFTER_RETURN_RESPONSE: &str = r#"{"id":21,"result":{"sche
 
 const PROJECTED_INNER_DIRECT_RETURN_SOURCE: &str = "interface Inner extends ZrynaStruct { text: String; }\ninterface Outer extends ZrynaStruct { inner: Inner; tail: String; }\nfunction make(): Inner { const o: Outer = Outer({ tail: \"b\", inner: Inner({ text: \"a\" }) }); return o.inner; }";
 const PROJECTED_INNER_DIRECT_RETURN_RESPONSE: &str = r#"{"id":813,"result":{"schema_version":4,"files":[{"id":0,"path":"src/main.zry","imports":[],"type_syntax":[{"span":{"file":0,"start":44,"end":50},"kind":{"kind":"string","keyword_span":{"file":0,"start":44,"end":50}}},{"span":{"file":0,"start":99,"end":104},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":99,"end":104}}}},{"span":{"file":0,"start":112,"end":118},"kind":{"kind":"string","keyword_span":{"file":0,"start":112,"end":118}}},{"span":{"file":0,"start":139,"end":144},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":139,"end":144}}}},{"span":{"file":0,"start":156,"end":161},"kind":{"kind":"named","name":{"text":"Outer","span":{"file":0,"start":156,"end":161}}}}],"data_declarations":[{"span":{"file":0,"start":0,"end":53},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":0,"end":9},"name":{"text":"Inner","span":{"file":0,"start":10,"end":15}},"extends_span":{"file":0,"start":16,"end":23},"marker_span":{"file":0,"start":24,"end":35},"open_brace_span":{"file":0,"start":36,"end":37},"close_brace_span":{"file":0,"start":52,"end":53},"fields":[{"span":{"file":0,"start":38,"end":51},"name":{"text":"text","span":{"file":0,"start":38,"end":42}},"colon_span":{"file":0,"start":42,"end":43},"semicolon_span":{"file":0,"start":50,"end":51},"type_syntax":0}]}},{"span":{"file":0,"start":54,"end":121},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":54,"end":63},"name":{"text":"Outer","span":{"file":0,"start":64,"end":69}},"extends_span":{"file":0,"start":70,"end":77},"marker_span":{"file":0,"start":78,"end":89},"open_brace_span":{"file":0,"start":90,"end":91},"close_brace_span":{"file":0,"start":120,"end":121},"fields":[{"span":{"file":0,"start":92,"end":105},"name":{"text":"inner","span":{"file":0,"start":92,"end":97}},"colon_span":{"file":0,"start":97,"end":98},"semicolon_span":{"file":0,"start":104,"end":105},"type_syntax":1},{"span":{"file":0,"start":106,"end":119},"name":{"text":"tail","span":{"file":0,"start":106,"end":110}},"colon_span":{"file":0,"start":110,"end":111},"semicolon_span":{"file":0,"start":118,"end":119},"type_syntax":2}]}}],"functions":[{"span":{"file":0,"start":122,"end":232},"export_span":null,"function_span":{"file":0,"start":122,"end":130},"name":{"text":"make","span":{"file":0,"start":131,"end":135}},"parameters":[],"result_type":3,"body":{"span":{"file":0,"start":145,"end":232},"root_block":0,"blocks":[{"span":{"file":0,"start":145,"end":232},"open_brace_span":{"file":0,"start":145,"end":146},"statements":[0,1],"close_brace_span":{"file":0,"start":231,"end":232}}],"statements":[{"span":{"file":0,"start":147,"end":214},"kind":{"kind":"local-declaration","keyword_span":{"file":0,"start":147,"end":152},"mutable":false,"name":{"text":"o","span":{"file":0,"start":153,"end":154}},"type_syntax":4,"equals_span":{"file":0,"start":162,"end":163},"initializer":3,"semicolon_span":{"file":0,"start":213,"end":214}}},{"span":{"file":0,"start":215,"end":230},"kind":{"kind":"return","keyword_span":{"file":0,"start":215,"end":221},"value":5,"semicolon_span":{"file":0,"start":229,"end":230}}}],"expressions":[{"span":{"file":0,"start":178,"end":181},"kind":{"kind":"string-literal","spelling":"\"b\""}},{"span":{"file":0,"start":204,"end":207},"kind":{"kind":"string-literal","spelling":"\"a\""}},{"span":{"file":0,"start":190,"end":210},"kind":{"kind":"struct-construction","type_name":{"text":"Inner","span":{"file":0,"start":190,"end":195}},"open_paren_span":{"file":0,"start":195,"end":196},"open_brace_span":{"file":0,"start":196,"end":197},"fields":[{"span":{"file":0,"start":198,"end":207},"kind":{"kind":"explicit","name":{"text":"text","span":{"file":0,"start":198,"end":202}},"colon_span":{"file":0,"start":202,"end":203},"value":1}}],"close_brace_span":{"file":0,"start":208,"end":209},"close_paren_span":{"file":0,"start":209,"end":210}}},{"span":{"file":0,"start":164,"end":213},"kind":{"kind":"struct-construction","type_name":{"text":"Outer","span":{"file":0,"start":164,"end":169}},"open_paren_span":{"file":0,"start":169,"end":170},"open_brace_span":{"file":0,"start":170,"end":171},"fields":[{"span":{"file":0,"start":172,"end":181},"kind":{"kind":"explicit","name":{"text":"tail","span":{"file":0,"start":172,"end":176}},"colon_span":{"file":0,"start":176,"end":177},"value":0}},{"span":{"file":0,"start":183,"end":210},"kind":{"kind":"explicit","name":{"text":"inner","span":{"file":0,"start":183,"end":188}},"colon_span":{"file":0,"start":188,"end":189},"value":2}}],"close_brace_span":{"file":0,"start":211,"end":212},"close_paren_span":{"file":0,"start":212,"end":213}}},{"span":{"file":0,"start":222,"end":223},"kind":{"kind":"reference","name":{"text":"o","span":{"file":0,"start":222,"end":223}}}},{"span":{"file":0,"start":222,"end":229},"kind":{"kind":"field-access","base":4,"dot_span":{"file":0,"start":223,"end":224},"field":{"text":"inner","span":{"file":0,"start":224,"end":229}}}}]}}]}],"diagnostics":[]}}"#;
+const FIXED_ARRAY_SUBOBJECT_RETURN_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/fixed-array-subobject-return.zry");
+const FIXED_ARRAY_SUBOBJECT_RETURN_RESPONSE: &str =
+    include_str!("../../../../tests/m3-fixtures/fixed-array-subobject-return.json");
 const PROJECTED_AGGREGATE_ASSIGNMENT_SOURCE: &str = "interface Inner extends ZrynaStruct { text: String; }\ninterface Outer extends ZrynaStruct { inner: Inner; tail: String; }\nfunction make(): Outer { let o: Outer = Outer({ tail: \"b\", inner: Inner({ text: \"a\" }) }); const replacement: Inner = Inner({ text: \"c\" }); o.inner = replacement; return o; }";
 const PROJECTED_AGGREGATE_ASSIGNMENT_RESPONSE: &str = r#"{"id":814,"result":{"schema_version":4,"files":[{"id":0,"path":"src/main.zry","imports":[],"type_syntax":[{"span":{"file":0,"start":44,"end":50},"kind":{"kind":"string","keyword_span":{"file":0,"start":44,"end":50}}},{"span":{"file":0,"start":99,"end":104},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":99,"end":104}}}},{"span":{"file":0,"start":112,"end":118},"kind":{"kind":"string","keyword_span":{"file":0,"start":112,"end":118}}},{"span":{"file":0,"start":139,"end":144},"kind":{"kind":"named","name":{"text":"Outer","span":{"file":0,"start":139,"end":144}}}},{"span":{"file":0,"start":154,"end":159},"kind":{"kind":"named","name":{"text":"Outer","span":{"file":0,"start":154,"end":159}}}},{"span":{"file":0,"start":232,"end":237},"kind":{"kind":"named","name":{"text":"Inner","span":{"file":0,"start":232,"end":237}}}}],"data_declarations":[{"span":{"file":0,"start":0,"end":53},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":0,"end":9},"name":{"text":"Inner","span":{"file":0,"start":10,"end":15}},"extends_span":{"file":0,"start":16,"end":23},"marker_span":{"file":0,"start":24,"end":35},"open_brace_span":{"file":0,"start":36,"end":37},"close_brace_span":{"file":0,"start":52,"end":53},"fields":[{"span":{"file":0,"start":38,"end":51},"name":{"text":"text","span":{"file":0,"start":38,"end":42}},"colon_span":{"file":0,"start":42,"end":43},"semicolon_span":{"file":0,"start":50,"end":51},"type_syntax":0}]}},{"span":{"file":0,"start":54,"end":121},"export_span":null,"kind":{"kind":"struct","interface_span":{"file":0,"start":54,"end":63},"name":{"text":"Outer","span":{"file":0,"start":64,"end":69}},"extends_span":{"file":0,"start":70,"end":77},"marker_span":{"file":0,"start":78,"end":89},"open_brace_span":{"file":0,"start":90,"end":91},"close_brace_span":{"file":0,"start":120,"end":121},"fields":[{"span":{"file":0,"start":92,"end":105},"name":{"text":"inner","span":{"file":0,"start":92,"end":97}},"colon_span":{"file":0,"start":97,"end":98},"semicolon_span":{"file":0,"start":104,"end":105},"type_syntax":1},{"span":{"file":0,"start":106,"end":119},"name":{"text":"tail","span":{"file":0,"start":106,"end":110}},"colon_span":{"file":0,"start":110,"end":111},"semicolon_span":{"file":0,"start":118,"end":119},"type_syntax":2}]}}],"functions":[{"span":{"file":0,"start":122,"end":296},"export_span":null,"function_span":{"file":0,"start":122,"end":130},"name":{"text":"make","span":{"file":0,"start":131,"end":135}},"parameters":[],"result_type":3,"body":{"span":{"file":0,"start":145,"end":296},"root_block":0,"blocks":[{"span":{"file":0,"start":145,"end":296},"open_brace_span":{"file":0,"start":145,"end":146},"statements":[0,1,2,3],"close_brace_span":{"file":0,"start":295,"end":296}}],"statements":[{"span":{"file":0,"start":147,"end":212},"kind":{"kind":"local-declaration","keyword_span":{"file":0,"start":147,"end":150},"mutable":true,"name":{"text":"o","span":{"file":0,"start":151,"end":152}},"type_syntax":4,"equals_span":{"file":0,"start":160,"end":161},"initializer":3,"semicolon_span":{"file":0,"start":211,"end":212}}},{"span":{"file":0,"start":213,"end":261},"kind":{"kind":"local-declaration","keyword_span":{"file":0,"start":213,"end":218},"mutable":false,"name":{"text":"replacement","span":{"file":0,"start":219,"end":230}},"type_syntax":5,"equals_span":{"file":0,"start":238,"end":239},"initializer":5,"semicolon_span":{"file":0,"start":260,"end":261}}},{"span":{"file":0,"start":262,"end":284},"kind":{"kind":"assignment","target":7,"equals_span":{"file":0,"start":270,"end":271},"value":8,"semicolon_span":{"file":0,"start":283,"end":284}}},{"span":{"file":0,"start":285,"end":294},"kind":{"kind":"return","keyword_span":{"file":0,"start":285,"end":291},"value":9,"semicolon_span":{"file":0,"start":293,"end":294}}}],"expressions":[{"span":{"file":0,"start":176,"end":179},"kind":{"kind":"string-literal","spelling":"\"b\""}},{"span":{"file":0,"start":202,"end":205},"kind":{"kind":"string-literal","spelling":"\"a\""}},{"span":{"file":0,"start":188,"end":208},"kind":{"kind":"struct-construction","type_name":{"text":"Inner","span":{"file":0,"start":188,"end":193}},"open_paren_span":{"file":0,"start":193,"end":194},"open_brace_span":{"file":0,"start":194,"end":195},"fields":[{"span":{"file":0,"start":196,"end":205},"kind":{"kind":"explicit","name":{"text":"text","span":{"file":0,"start":196,"end":200}},"colon_span":{"file":0,"start":200,"end":201},"value":1}}],"close_brace_span":{"file":0,"start":206,"end":207},"close_paren_span":{"file":0,"start":207,"end":208}}},{"span":{"file":0,"start":162,"end":211},"kind":{"kind":"struct-construction","type_name":{"text":"Outer","span":{"file":0,"start":162,"end":167}},"open_paren_span":{"file":0,"start":167,"end":168},"open_brace_span":{"file":0,"start":168,"end":169},"fields":[{"span":{"file":0,"start":170,"end":179},"kind":{"kind":"explicit","name":{"text":"tail","span":{"file":0,"start":170,"end":174}},"colon_span":{"file":0,"start":174,"end":175},"value":0}},{"span":{"file":0,"start":181,"end":208},"kind":{"kind":"explicit","name":{"text":"inner","span":{"file":0,"start":181,"end":186}},"colon_span":{"file":0,"start":186,"end":187},"value":2}}],"close_brace_span":{"file":0,"start":209,"end":210},"close_paren_span":{"file":0,"start":210,"end":211}}},{"span":{"file":0,"start":254,"end":257},"kind":{"kind":"string-literal","spelling":"\"c\""}},{"span":{"file":0,"start":240,"end":260},"kind":{"kind":"struct-construction","type_name":{"text":"Inner","span":{"file":0,"start":240,"end":245}},"open_paren_span":{"file":0,"start":245,"end":246},"open_brace_span":{"file":0,"start":246,"end":247},"fields":[{"span":{"file":0,"start":248,"end":257},"kind":{"kind":"explicit","name":{"text":"text","span":{"file":0,"start":248,"end":252}},"colon_span":{"file":0,"start":252,"end":253},"value":4}}],"close_brace_span":{"file":0,"start":258,"end":259},"close_paren_span":{"file":0,"start":259,"end":260}}},{"span":{"file":0,"start":262,"end":263},"kind":{"kind":"reference","name":{"text":"o","span":{"file":0,"start":262,"end":263}}}},{"span":{"file":0,"start":262,"end":269},"kind":{"kind":"field-access","base":6,"dot_span":{"file":0,"start":263,"end":264},"field":{"text":"inner","span":{"file":0,"start":264,"end":269}}}},{"span":{"file":0,"start":272,"end":283},"kind":{"kind":"reference","name":{"text":"replacement","span":{"file":0,"start":272,"end":283}}}},{"span":{"file":0,"start":292,"end":293},"kind":{"kind":"reference","name":{"text":"o","span":{"file":0,"start":292,"end":293}}}}]}}]}],"diagnostics":[]}}"#;
 const PROJECTED_SUBOBJECT_ASSIGNMENT_SOURCE: &str =
@@ -535,6 +540,50 @@ fn projected_aggregate_clone_direct_return_snapshot() -> (String, RawProjectSynt
         panic!("projected aggregate return")
     };
     *value = clone;
+    (source, raw)
+}
+
+fn projected_aggregate_direct_return_with_parameter_snapshot() -> (String, RawProjectSyntaxSnapshot)
+{
+    let mut source = PROJECTED_INNER_DIRECT_RETURN_SOURCE.to_owned();
+    let insertion = u32::try_from(source.find("()").expect("empty parameter list") + 1)
+        .expect("parameter insertion");
+    source.insert_str(usize::try_from(insertion).expect("parameter insertion"), "flag: i32");
+    let mut raw =
+        shift_snapshot(response_snapshot(PROJECTED_INNER_DIRECT_RETURN_RESPONSE), insertion, 9);
+    let file = &mut raw.files[0];
+    file.type_syntax.insert(
+        3,
+        RawTypeSyntax {
+            span: zryna_source::UntrustedSpan { file: 0, start: insertion + 6, end: insertion + 9 },
+            kind: RawTypeSyntaxKind::Named {
+                name: RawIdentifierSyntax {
+                    text: "i32".to_owned(),
+                    span: zryna_source::UntrustedSpan {
+                        file: 0,
+                        start: insertion + 6,
+                        end: insertion + 9,
+                    },
+                },
+            },
+        },
+    );
+    let function = &mut file.functions[0];
+    function.result_type += 1;
+    function.parameters.push(RawParameterSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: insertion, end: insertion + 9 },
+        name: RawIdentifierSyntax {
+            text: "flag".to_owned(),
+            span: zryna_source::UntrustedSpan { file: 0, start: insertion, end: insertion + 4 },
+        },
+        type_syntax: 3,
+    });
+    let RawStatementKind::LocalDeclaration { type_syntax, .. } =
+        &mut function.body.statements[0].kind
+    else {
+        panic!("outer local")
+    };
+    *type_syntax += 1;
     (source, raw)
 }
 
@@ -9135,13 +9184,232 @@ fn static_subobject_move_rejects_child_reuse_after_parent_transfer() {
 }
 
 #[test]
-fn static_subobject_move_stays_excluded_from_direct_return() {
-    let sources = sources_for(PROJECTED_INNER_DIRECT_RETURN_SOURCE);
-    let syntax =
-        verify_snapshot(response_snapshot(PROJECTED_INNER_DIRECT_RETURN_RESPONSE), &sources)
+fn complete_static_subobject_moves_directly_into_the_final_return() {
+    for (source, response, label) in [
+        (
+            PROJECTED_INNER_DIRECT_RETURN_SOURCE,
+            PROJECTED_INNER_DIRECT_RETURN_RESPONSE,
+            "StructField",
+        ),
+        (
+            FIXED_ARRAY_SUBOBJECT_RETURN_SOURCE.trim_end(),
+            FIXED_ARRAY_SUBOBJECT_RETURN_RESPONSE,
+            "FixedArrayConstant",
+        ),
+    ] {
+        let sources = sources_for(source);
+        let syntax = verify_snapshot(response_snapshot(response), &sources)
             .expect("source-faithful direct projected return");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("direct projected return");
+        let program = lower(pair_input(&syntax, &sources)).expect(label);
+        let function =
+            program.modules().next().expect("module").functions().next().expect("function");
+        let source_root = function
+            .places()
+            .find(|place| matches!(place.kind(), VerifiedPlaceKind::Local(0)))
+            .expect("source root")
+            .id();
+        let block = function.blocks().next().expect("block");
+        let projection_move = block
+            .instructions()
+            .find(|instruction| {
+                instruction.kind() == VerifiedInstructionKind::MoveFromPlace
+                    && instruction.place_operands().next().is_some_and(|place| {
+                        function.places().find(|candidate| candidate.id() == place).is_some_and(
+                            |source| match (label, source.kind()) {
+                                (
+                                    "StructField",
+                                    VerifiedPlaceKind::StructField { base, ordinal },
+                                ) => base == source_root && ordinal == 0,
+                                (
+                                    "FixedArrayConstant",
+                                    VerifiedPlaceKind::FixedArrayConstant { base, index },
+                                ) => base == source_root && index == 0,
+                                _ => false,
+                            },
+                        )
+                    })
+            })
+            .expect("projected aggregate move");
+        let returned = block.terminator().value_operands().next().expect("returned value");
+        assert_eq!(projection_move.result(), Some(returned));
+        let returned_owner = function
+            .places()
+            .find(|place| {
+                matches!(place.kind(), VerifiedPlaceKind::Temporary(owner) if owner == returned)
+            })
+            .expect("returned temporary")
+            .id();
+        let source_cleanup = block
+            .terminator()
+            .derived_drop_actions()
+            .find(|action| action.root() == source_root)
+            .expect("masked source cleanup");
+        let moved = source_cleanup.moved_projections().collect::<Vec<_>>();
+        assert_eq!(moved.len(), 2, "{label}");
+        assert!(
+            block.terminator().derived_drop_actions().all(|action| action.root() != returned_owner)
+        );
+    }
+}
+
+#[test]
+fn direct_static_subobject_return_rejects_parameters_before_lowering_the_move() {
+    let (source, raw) = projected_aggregate_direct_return_with_parameter_snapshot();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful parameterized return");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("parameterized return");
+    assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].code(), "ZRYNA-M3016");
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(&sources, nth_untrusted_span(&source, "return o.inner;", 0)))
+    );
+}
+
+#[test]
+fn direct_static_subobject_return_rejects_a_nonfinal_first_site_before_lowering() {
+    const INSERTION: u32 = 231;
+    const SUFFIX: &str = " return o.inner;";
+    let mut source = PROJECTED_INNER_DIRECT_RETURN_SOURCE.to_owned();
+    source.insert_str(usize::try_from(INSERTION).expect("insertion"), SUFFIX);
+    let mut raw = shift_snapshot(
+        response_snapshot(PROJECTED_INNER_DIRECT_RETURN_RESPONSE),
+        INSERTION,
+        u32::try_from(SUFFIX.len()).expect("suffix length"),
+    );
+    let body = &mut raw.files[0].functions[0].body;
+    let reference = u32::try_from(body.expressions.len()).expect("reference id");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: 239, end: 240 },
+        kind: zryna_syntax::v4::RawExpressionKind::Reference {
+            name: RawIdentifierSyntax {
+                text: "o".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start: 239, end: 240 },
+            },
+        },
+    });
+    let projection = u32::try_from(body.expressions.len()).expect("projection id");
+    body.expressions.push(RawExpressionSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: 239, end: 246 },
+        kind: zryna_syntax::v4::RawExpressionKind::FieldAccess {
+            base: reference,
+            dot_span: zryna_source::UntrustedSpan { file: 0, start: 240, end: 241 },
+            field: RawIdentifierSyntax {
+                text: "inner".to_owned(),
+                span: zryna_source::UntrustedSpan { file: 0, start: 241, end: 246 },
+            },
+        },
+    });
+    let statement = u32::try_from(body.statements.len()).expect("statement id");
+    body.statements.push(RawStatementSyntax {
+        span: zryna_source::UntrustedSpan { file: 0, start: 232, end: 247 },
+        kind: RawStatementKind::Return {
+            keyword_span: zryna_source::UntrustedSpan { file: 0, start: 232, end: 238 },
+            value: projection,
+            semicolon_span: zryna_source::UntrustedSpan { file: 0, start: 246, end: 247 },
+        },
+    });
+    body.blocks[0].statements.push(statement);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful nonfinal return");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("nonfinal projected return");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3010");
+    assert_eq!(
+        diagnostics[0].primary_span(),
+        Some(span(&sources, nth_untrusted_span(&source, "return o.inner;", 1)))
+    );
+}
+
+#[test]
+fn direct_static_subobject_return_resource_preflight_is_exact_and_checked() {
+    let values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION;
+    let places = zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION;
+    let transitions = zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION;
+    let plans = zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION;
+    let actions = zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION;
+    assert!(!projected_subobject_return_budget_violation(
+        values - 1,
+        places - 3,
+        transitions - 1,
+        0,
+        plans - 1,
+        actions - 2,
+        2,
+        0,
+        2,
+    ));
+    assert!(!projected_subobject_return_budget_violation(
+        values - 1,
+        places - 3,
+        transitions - 1,
+        0,
+        plans - 1,
+        actions - 2,
+        2,
+        1,
+        1,
+    ));
+    for violation in [
+        projected_subobject_return_budget_violation(
+            values,
+            places - 3,
+            transitions - 1,
+            0,
+            plans - 1,
+            actions - 2,
+            2,
+            0,
+            2,
+        ),
+        projected_subobject_return_budget_violation(
+            values - 1,
+            places - 2,
+            transitions - 1,
+            0,
+            plans - 1,
+            actions - 2,
+            2,
+            0,
+            2,
+        ),
+        projected_subobject_return_budget_violation(
+            values - 1,
+            places - 3,
+            transitions,
+            0,
+            plans - 1,
+            actions - 2,
+            2,
+            0,
+            2,
+        ),
+        projected_subobject_return_budget_violation(
+            values - 1,
+            places - 3,
+            transitions - 1,
+            0,
+            plans,
+            actions - 2,
+            2,
+            0,
+            2,
+        ),
+        projected_subobject_return_budget_violation(
+            values - 1,
+            places - 3,
+            transitions - 1,
+            0,
+            plans - 1,
+            actions - 1,
+            2,
+            0,
+            2,
+        ),
+        projected_subobject_return_budget_violation(0, 0, 0, 0, 0, 0, 0, usize::MAX, usize::MAX),
+    ] {
+        assert!(violation);
+    }
 }
 
 #[test]

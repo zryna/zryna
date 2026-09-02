@@ -156,6 +156,12 @@ straight-line function, immediately followed by exact same-type `InitializePlace
 local. The result has one unique temporary owner and one use. Root clones remain unchanged;
 Enum-payload, public, CFG, direct-return, alternate-use, and second projected-clone contexts fail
 closed.
+One static Struct/FixedArray projection move may instead be the final instruction and sole returned
+value of a parameter-free private straight-line function. Its source must have one local root and
+complete exact descendant topology, its result must have one unique temporary owner and one use,
+and return cleanup must mask the complete source subtree while excluding the returned owner.
+Parameters, public/CFG contexts, alternate consumers, missing topology, and second projected-move
+sites fail closed.
 One projected aggregate `ReplacePlace` exception is independently sealed to at most one combined
 private straight-line site. The target is a `StructField` or `FixedArrayConstant` path rooted in a
 local. The immediately preceding producer may be `MoveFromPlace` for one complete same-type static

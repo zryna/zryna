@@ -12,7 +12,7 @@ use super::{
     MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION, MAX_PARAMETERS_PER_FUNCTION, MAX_PLACES_PER_FUNCTION,
     MAX_STATIC_CALL_DEPTH, MAX_STRING_LITERAL_BYTES, MAX_VALUES_PER_FUNCTION,
     RuntimeContractIdentity, VerifiedActiveVariant, VerifiedCleanupRole, VerifiedDropActionKind,
-    VerifiedInstructionKind, raw, verify, verify_reducible_loops,
+    VerifiedInstructionKind, VerifiedTerminatorKind, raw, verify, verify_reducible_loops,
 };
 
 fn authorities() -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::VerifiedLayouts) {
@@ -763,6 +763,284 @@ fn aggregate_subobject_move_program(
         raw::DropAction::DropPlace(raw::PlaceId(0)),
     ];
     raw
+}
+
+#[allow(clippy::too_many_lines)]
+fn aggregate_subobject_return_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    inner: raw::TypeId,
+    outer: raw::TypeId,
+    array: raw::TypeId,
+    shape: SubobjectMoveShape,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    let (source, returned, places, instructions, prepare_plans) = match shape {
+        SubobjectMoveShape::Struct => (
+            raw::PlaceId(5),
+            raw::ValueId(4),
+            vec![
+                raw::Place {
+                    id: raw::PlaceId(0),
+                    ty: raw::TypeId(2),
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(0)),
+                },
+                raw::Place {
+                    id: raw::PlaceId(1),
+                    ty: raw::TypeId(2),
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(1)),
+                },
+                raw::Place {
+                    id: raw::PlaceId(2),
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+                },
+                raw::Place {
+                    id: raw::PlaceId(3),
+                    ty: outer,
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+                },
+                raw::Place { id: raw::PlaceId(4), ty: outer, span, kind: raw::PlaceKind::Local(0) },
+                raw::Place {
+                    id: raw::PlaceId(5),
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 0 },
+                },
+                raw::Place {
+                    id: raw::PlaceId(6),
+                    ty: raw::TypeId(2),
+                    span,
+                    kind: raw::PlaceKind::StructField { base: raw::PlaceId(5), ordinal: 0 },
+                },
+                raw::Place {
+                    id: raw::PlaceId(7),
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(4)),
+                },
+            ],
+            vec![
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(0),
+                        ty: raw::TypeId(2),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::StringFromUtf8 {
+                        bytes: b"tail".to_vec(),
+                        cleanup: raw::CleanupPlanId(0),
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(1),
+                        ty: raw::TypeId(2),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::StringFromUtf8 {
+                        bytes: b"inner".to_vec(),
+                        cleanup: raw::CleanupPlanId(1),
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: inner, span }),
+                    span,
+                    kind: raw::InstructionKind::StructConstruct {
+                        fields: vec![raw::ValueId(1)],
+                        cleanup: None,
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: outer, span }),
+                    span,
+                    kind: raw::InstructionKind::StructConstruct {
+                        fields: vec![raw::ValueId(2), raw::ValueId(0)],
+                        cleanup: None,
+                    },
+                },
+                raw::Instruction {
+                    result: None,
+                    span,
+                    kind: raw::InstructionKind::InitializePlace {
+                        place: raw::PlaceId(4),
+                        value: raw::ValueId(3),
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(4), ty: inner, span }),
+                    span,
+                    kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(5) },
+                },
+            ],
+            vec![vec![], vec![raw::DropAction::DropPlace(raw::PlaceId(0))]],
+        ),
+        SubobjectMoveShape::FixedArray => (
+            raw::PlaceId(6),
+            raw::ValueId(5),
+            vec![
+                raw::Place {
+                    id: raw::PlaceId(0),
+                    ty: raw::TypeId(2),
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(0)),
+                },
+                raw::Place {
+                    id: raw::PlaceId(1),
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(1)),
+                },
+                raw::Place {
+                    id: raw::PlaceId(2),
+                    ty: raw::TypeId(2),
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+                },
+                raw::Place {
+                    id: raw::PlaceId(3),
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(3)),
+                },
+                raw::Place {
+                    id: raw::PlaceId(4),
+                    ty: array,
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(4)),
+                },
+                raw::Place { id: raw::PlaceId(5), ty: array, span, kind: raw::PlaceKind::Local(0) },
+                raw::Place {
+                    id: raw::PlaceId(6),
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::FixedArrayConstant { base: raw::PlaceId(5), index: 0 },
+                },
+                raw::Place {
+                    id: raw::PlaceId(7),
+                    ty: raw::TypeId(2),
+                    span,
+                    kind: raw::PlaceKind::StructField { base: raw::PlaceId(6), ordinal: 0 },
+                },
+                raw::Place {
+                    id: raw::PlaceId(8),
+                    ty: inner,
+                    span,
+                    kind: raw::PlaceKind::Temporary(raw::ValueId(5)),
+                },
+            ],
+            vec![
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(0),
+                        ty: raw::TypeId(2),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::StringFromUtf8 {
+                        bytes: b"left".to_vec(),
+                        cleanup: raw::CleanupPlanId(0),
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: inner, span }),
+                    span,
+                    kind: raw::InstructionKind::StructConstruct {
+                        fields: vec![raw::ValueId(0)],
+                        cleanup: None,
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(2),
+                        ty: raw::TypeId(2),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::StringFromUtf8 {
+                        bytes: b"right".to_vec(),
+                        cleanup: raw::CleanupPlanId(1),
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(3), ty: inner, span }),
+                    span,
+                    kind: raw::InstructionKind::StructConstruct {
+                        fields: vec![raw::ValueId(2)],
+                        cleanup: None,
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(4), ty: array, span }),
+                    span,
+                    kind: raw::InstructionKind::FixedArrayConstruct {
+                        elements: vec![raw::ValueId(1), raw::ValueId(3)],
+                        cleanup: None,
+                    },
+                },
+                raw::Instruction {
+                    result: None,
+                    span,
+                    kind: raw::InstructionKind::InitializePlace {
+                        place: raw::PlaceId(5),
+                        value: raw::ValueId(4),
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: raw::ValueId(5), ty: inner, span }),
+                    span,
+                    kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(6) },
+                },
+            ],
+            vec![vec![], vec![raw::DropAction::DropPlace(raw::PlaceId(1))]],
+        ),
+    };
+    function.entry_export = None;
+    function.parameters.clear();
+    function.result = inner;
+    function.places = places;
+    function.blocks[0].instructions = instructions;
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: returned, cleanup: raw::CleanupPlanId(2) };
+    function.cleanup_plans = prepare_plans
+        .into_iter()
+        .enumerate()
+        .map(|(index, actions)| raw::CleanupPlan {
+            id: raw::CleanupPlanId(u32::try_from(index).expect("plan id")),
+            span,
+            actions,
+        })
+        .chain(std::iter::once(raw::CleanupPlan {
+            id: raw::CleanupPlanId(2),
+            span,
+            actions: vec![raw::DropAction::DropPlace(root_place_for_test(
+                source,
+                &function.places,
+            ))],
+        }))
+        .collect();
+    raw
+}
+
+fn root_place_for_test(mut place: raw::PlaceId, places: &[raw::Place]) -> raw::PlaceId {
+    while let Some(base) = places.get(place.0 as usize).and_then(|place| match place.kind {
+        raw::PlaceKind::StructField { base, .. }
+        | raw::PlaceKind::EnumPayload { base, .. }
+        | raw::PlaceKind::FixedArrayConstant { base, .. } => Some(base),
+        _ => None,
+    }) {
+        place = base;
+    }
+    place
 }
 
 fn projected_aggregate_clone_program(
@@ -5194,7 +5472,104 @@ fn aggregate_subobject_move_rejects_forged_projection_type_and_base() {
 }
 
 #[test]
-fn aggregate_subobject_move_rejects_direct_return_and_projected_initialize_contexts() {
+fn aggregate_subobject_move_is_sealed_to_one_exact_final_return() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    for shape in [SubobjectMoveShape::Struct, SubobjectMoveShape::FixedArray] {
+        let direct_return = aggregate_subobject_return_program(
+            &sources, &linear, &linux, inner, outer, array, shape,
+        );
+        let verified = verify(direct_return, &sources, entry, linear.clone(), linux.clone())
+            .expect("aggregate projection move final return");
+        let function =
+            verified.modules().next().expect("module").functions().next().expect("function");
+        let block = function.blocks().next().expect("block");
+        let instructions = block.instructions().collect::<Vec<_>>();
+        let moved = instructions.last().expect("final projected move");
+        assert_eq!(moved.kind(), VerifiedInstructionKind::MoveFromPlace);
+        assert_eq!(block.terminator().kind(), VerifiedTerminatorKind::Return);
+        assert_eq!(block.terminator().value_operands().next(), moved.result());
+        let cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
+        assert_eq!(cleanup.len(), 1);
+        assert_eq!(
+            cleanup[0].root().index(),
+            match shape {
+                SubobjectMoveShape::Struct => 4,
+                SubobjectMoveShape::FixedArray => 5,
+            }
+        );
+        assert_eq!(cleanup[0].moved_projections().count(), 2);
+    }
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_hostile_final_return_contexts() {
+    let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let baseline = aggregate_subobject_return_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+
+    let mut public = baseline.clone();
+    public.modules[0].functions[0].entry_export = Some("forged".into());
+
+    let mut nonterminal = baseline.clone();
+    let function = &mut nonterminal.modules[0].functions[0];
+    let span = function.span;
+    function.blocks[0].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::DropPlace { place: raw::PlaceId(7) },
+    });
+
+    let mut missing_topology = baseline;
+    missing_topology.modules[0].functions[0].places.remove(6);
+    for (label, raw) in [
+        ("public final return", public),
+        ("nonterminal final return", nonterminal),
+        ("missing source topology", missing_topology),
+    ] {
+        let diagnostics =
+            verify(raw, &sources, entry, linear.clone(), linux.clone()).expect_err(label);
+        assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| { matches!(diagnostic.code(), "ZRYNA-I3006" | "ZRYNA-I3010") }),
+            "{label}: {diagnostics:?}"
+        );
+    }
+
+    let mut parameter_root = aggregate_subobject_move_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        array,
+        SubobjectMoveShape::Struct,
+    );
+    let function = &mut parameter_root.modules[0].functions[0];
+    function.result = inner;
+    function.blocks[0].instructions.truncate(1);
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(0))];
+    let diagnostics = verify(parameter_root, &sources, entry, linear, linux)
+        .expect_err("parameter-root final return");
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn aggregate_subobject_move_rejects_projected_initialize_context() {
     let (sources, linear, linux, inner, outer, array) = subobject_move_authorities();
     let entry = sources.verify_file_id(0).expect("entry");
     let raw = aggregate_subobject_move_program(
@@ -5205,20 +5580,6 @@ fn aggregate_subobject_move_rejects_direct_return_and_projected_initialize_conte
         outer,
         array,
         SubobjectMoveShape::Struct,
-    );
-
-    let mut direct_return = raw.clone();
-    let function = &mut direct_return.modules[0].functions[0];
-    function.result = inner;
-    function.blocks[0].instructions.truncate(1);
-    function.blocks[0].terminators[0].kind =
-        raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(0) };
-    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(0))];
-    let diagnostics = verify(direct_return, &sources, entry, linear.clone(), linux.clone())
-        .expect_err("aggregate projection move returned without direct local");
-    assert!(
-        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
-        "{diagnostics:?}"
     );
 
     let mut projected_initialize = raw.clone();

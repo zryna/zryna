@@ -52,6 +52,10 @@ document. Its private owned String/Vec route currently proves:
 - one exact direct-local move of a supported acyclic Struct or FixedArray subobject from a canonical
   static field or constant array element, materializing all descendants, masking the whole subtree
   under its enclosing root, and giving the same-type local one complete owner;
+- one exact final return of a supported acyclic Struct or FixedArray subobject from a canonical
+  static field or constant array element under a parameter-free local root, materializing all
+  descendants, masking the whole subtree, returning the unique same-type temporary, and excluding
+  that returned owner from reverse survivor cleanup;
 - explicit clone of initialized available String leaves under those canonical paths, retaining the
   enclosing root and its existing partial-state masks while creating one distinct temporary owner;
 - explicit clone of at most one initialized available non-Copy Struct or FixedArray subobject under
@@ -91,7 +95,8 @@ document. Its private owned String/Vec route currently proves:
   exact verified ownership-runtime ABI authority.
 
 General structural Vec clone beyond String elements, nested aggregate clone graphs containing Enum,
-Vec, Shared, or Weak values, aggregate-subobject moves outside one exact direct local or the exact
+Vec, Shared, or Weak values, aggregate-subobject moves outside one exact direct local, one exact
+parameter-free final return, or the exact
 single-variant match-local enum extraction, broader enum-payload moves, dynamic or Vec-element
 projections, projected aggregate clone outside the exact direct-local or distinct-root static-
 replacement forms, projected aggregate assignment outside the exact static-subobject-move-or-
@@ -109,12 +114,13 @@ incoming owners remain unchanged. Vec replacement, `Vec<String>` push, `break`, 
 returns, and effects after the loop remain excluded. The aggregate route remains parameter-free,
 private, and straight-line. Its partial-move subset is limited to exact String leaves and supported
 Struct/FixedArray subobjects reached through static StructField or FixedArrayConstant paths; an
-aggregate subobject may move into one exact directly initialized same-type local or may move or
-clone into one exact same-type static projection rooted in a distinct local. Nested enums,
+aggregate subobject may move into one exact directly initialized same-type local, move into one
+exact final return from a parameter-free local root, or move or clone into one exact same-type
+static projection rooted in a distinct local. Nested enums,
 Vec members, recursive graphs, Enum-payload moves outside the exact single-variant match-local
 exception, fresh sources, same-root/overlapping or partial/moved projected sources,
 dynamic/Vec/Enum targets, projected clone outside one immediate exact same-type local or the one
-distinct-root static-projection replacement, direct payload returns, owner-carrying CFG transfer, public
+distinct-root static-projection replacement, Enum and other payload returns, owner-carrying CFG transfer, public
 functions, second move-or-clone assignment sites, and broader aggregate match
 are also excluded. Those are closure work, not properties of the current checkpoint.
 
@@ -134,13 +140,14 @@ are also excluded. Those are closure work, not properties of the current checkpo
 | supported whole-root owned aggregate assignment | complete | prepare-before-commit replacement with direct self-consumption rejection, recursive old-value drop authority, and exact transition reservation |
 | static owned projection reads, String-leaf moves, clone, and assignment | complete | canonical StructField/FixedArrayConstant places, disjoint leaf moves, source-retaining clone, prepare-before-commit replacement, root-relative cleanup masks, and precise repeat/overlap rejection |
 | direct-local static Struct/FixedArray subobject move | complete | exact contextual type, complete source descendant topology, whole-subtree parent mask, distinct local owner, overlap/reuse rejection, and checked preparation amplification |
+| final-return static Struct/FixedArray subobject move | complete | one parameter-free local-root static projection, exact result type, complete source descendant topology, sole returned temporary, returned-owner cleanup exclusion, one-site sealing, and atomic value/place/transition/cleanup preflight |
 | direct-local static Struct/FixedArray subobject clone | complete | one initialized available static projection, retained source and masks, distinct temporary/local owner, layout-derived prefix failure cleanup, one-site private straight-line verifier, and exact checked resource amplification |
 | static Struct/FixedArray subobject move/clone or whole-root move/clone into a static projection | complete | one combined private straight-line site; distinct-root complete projected move with source-subtree masking and atomic `S + D + T + 1` places, distinct-root projected clone with layout-derived failure cleanup and atomic `S + T + 1` places, or distinct fully initialized whole-root move/clone with exact old-target recursive drop and retained roots/sibling masks |
 | single-variant Enum payload move through a match-local | complete | active ordinal proof, complete Struct/FixedArray payload topology, direct local owner, explicit emptied-root drop, zero-argument continuation, zero-action return cleanup, and exact `D + 5` place amplification |
 | direct local transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-temporary-to-local owner/mask migration, deterministic rejection of old-owner reuse, and checked amplification |
 | final return transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-return-temporary mask migration, returned-owner exclusion, reverse survivor cleanup, and checked amplification |
 | whole-root assignment transfer of a partial Struct/FixedArray root | complete | distinct mutable initialized exact-type destination, source-to-temporary-to-destination mask migration, old-destination recursive drop at commit, and checked amplification |
-| general structural Vec clone, nested aggregate clone, broader aggregate/Enum subobject moves, projected aggregate clone outside the exact direct-local or distinct-root static-replacement forms, and broader projected aggregate assignment | pending | recursive Vec/Enum/Shared/Weak clone, multi-variant or non-local Enum payload transfer, fresh/same-root/partial or moved projected sources, dynamic/Vec/Enum targets, call/CFG/public or multi-site contexts, and broader clone/replacement capability |
+| general structural Vec clone, nested aggregate clone, broader aggregate/Enum subobject moves, projected aggregate clone outside the exact direct-local or distinct-root static-replacement forms, and broader projected aggregate assignment | pending | recursive Vec/Enum/Shared/Weak clone, multi-variant or non-local Enum payload transfer, fresh/same-root/partial or moved projected sources, dynamic/Vec/Enum targets, parameterized/call/CFG/public or multi-site contexts, and broader clone/replacement capability |
 | controlled allocation/capacity/bounds/UTF-8 fault closure | in progress | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, are complete for admitted operations; executable target fault injection remains pending |
 | full Issue #81 limits, regressions, cross-platform CI, and merge | pending | complete preflight plus Linux and Windows required checks |
 
@@ -613,6 +620,12 @@ places: the missing source descendants plus the move-result temporary owner. The
 local then uses the existing separately checked local root and `InitializePlace` transition. Checked
 addition and value/place/transition limits reject the preparation before it can return any partial
 semantic program.
+
+For the final-return form of that static subobject move, with `M` missing canonical source-path
+places, amplification is one value, one transition, and `M + D + 1` places, plus one return cleanup
+plan and exactly `P` cleanup actions for the pending survivor roots. Checked addition and every value/place/transition/plan/action limit are
+validated before descendant materialization, source masking, site-count mutation, or instruction
+emission.
 
 For a projected aggregate clone with `M` missing source-path places and `P` pending owners, exact
 site amplification is one value, `M + 2` places for the path, temporary, and direct local, two

@@ -402,6 +402,11 @@ retains source and destination; whole-root move consumes its source and retains 
 Fresh, same-root/overlapping,
 partial/moved projected sources, broader projected clone contexts, dynamic/Vec/Enum targets, calls, CFG/public
 contexts, and second sites remain later checkpoints.
+The same ownership replay admits one separate final-return move of a complete static
+Struct/FixedArray subobject. It is sealed to a parameter-free private one-block function, one local
+source root with exact descendant topology, a final `MoveFromPlace`, and that unique temporary as
+the sole returned value. Return cleanup masks the complete source subtree, excludes the returned
+owner, and is capacity-checked before semantic materialization or mutation.
 Those same initialized available static String leaves admit explicit clone. Its fallible
 preparation reads without consuming the leaf, retains the enclosing root with its current
 partial-state masks, and creates one distinct temporary owner before any later assignment commit.
@@ -478,7 +483,8 @@ The boundary reports moved
 bindings in the private String route as M3011, moved aggregate/enum bindings as M3014, unresolved binding names as
 M3002, and preflights cumulative String-literal bytes at 8 MiB. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject moves outside at most one exact direct local, one distinct-root static
+aggregate-subobject moves outside at most one exact direct local, one parameter-free exact final
+return, one distinct-root static
 projection replacement, or the single-variant match-local enum-payload exception, dynamic or
 Vec-element projections, projected aggregate assignment outside the exact static-subobject-move-
 or-clone-or-whole-root-move-or-clone-to-static-projection exception, projected aggregate clone outside the exact

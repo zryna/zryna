@@ -103,14 +103,16 @@ operands are evaluated in sealed declaration or index order, whole-value moves t
 and return cleanup drops surviving roots in reverse successful-completion order. Canonical static
 struct-field and constant fixed-array projections additionally admit Copy reads, exact String-leaf
 moves, and at most one exact supported Struct/FixedArray subobject move into a directly initialized
-same-type local, at most one explicit clone of an initialized available non-Copy
+same-type local, at most one exact supported Struct/FixedArray subobject move into the final
+same-type return of a parameter-free local-root function, at most one explicit clone of an initialized available non-Copy
 Struct/FixedArray projection into the immediately following exact same-type local, plus
 prepare-before-commit assignment to one mutable available String leaf. Projected aggregate clone
 retains the enclosing root and its partial-state mask, uses the same layout-derived recursive
 String-leaf failure cleanup as whole-root aggregate clone, and creates a distinct temporary owner.
-The direct-local subobject route materializes its complete static descendant topology before the
-move; the enclosing root keeps one masked cleanup obligation while the new local owns the moved
-subtree. The projected-assignment gate also admits one complete supported static subobject move or
+The direct-local and final-return subobject routes materialize complete static descendant topology
+before the move; the enclosing root keeps one masked cleanup obligation while the new local or
+returned temporary owns the moved subtree. Final return preflights its cleanup plan and all pending
+survivor actions before source materialization or masking. The projected-assignment gate also admits one complete supported static subobject move or
 explicit clone between distinct local roots. Its exact producer/consumer shape is an immediate
 `MoveFromPlace` or `ClonePlace` into one sole-use same-type temporary followed by `ReplacePlace`.
 Move materializes and masks the complete source subtree. Clone retains the source without
@@ -145,7 +147,7 @@ accepted from the fault injector.
 
 This checkpoint does not complete general owned lowering. General structural Vec clone beyond
 String elements, nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject moves outside one exact direct local or the one single-variant match-local enum
+aggregate-subobject moves outside one exact direct local, one parameter-free exact final return, or the one single-variant match-local enum
 payload extraction, dynamic or Vec-element projections, projected aggregate clone outside its exact
 direct-local or distinct-root static-projection forms, projected aggregate assignment outside one
 complete-static-subobject-move-or-clone-or-whole-root-move-or-clone-to-static-projection site,
@@ -157,7 +159,8 @@ repeated/nested branches or loops, and general scope-drop insertion remain unava
 `continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
 its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, one
-direct-local supported Struct/FixedArray subobject move, String-leaf clone, one direct-local
+direct-local supported Struct/FixedArray subobject move, one final-return supported
+Struct/FixedArray subobject move, String-leaf clone, one direct-local
 supported Struct/FixedArray clone, String-leaf assignment, and at most one private straight-line
 assignment that moves or clones a complete available same-type static Struct/FixedArray subobject
 between distinct local roots, or moves or explicitly clones a distinct fully initialized exact same-type
