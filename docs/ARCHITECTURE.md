@@ -518,8 +518,12 @@ initialized `bool`/`i32`: const aliases lower to dense shared begin/read authori
 owner reads lower directly from the still-initialized root, aliases end in reverse at the exact
 nested-block exit, and the root remains readable afterward. It preflights all derived resources
 before raw-IR construction and adds no runtime, ABI, backend, driver, CLI, or public profile
-capability. Exclusive, projected, call, branch, and loop borrowing remain later slices; aggregate
-closure remains #122.
+capability. Issue #115 generalizes that same root-only plan to exclusive Copy read/write authority
+and one shared-from-shared reborrow. Assignment to a const `BorrowMut<T>` alias is write-through,
+not rebinding; the syntax worker remains syntax-only. The full root conflict matrix, exact literal
+write type, owner exclusion, reverse restoration, and all read/write resource counts are checked
+before raw-IR construction. Mutable-from-shared, reborrow from exclusive, projected, call, branch,
+and loop borrowing remain later slices; aggregate closure remains #122.
 
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve

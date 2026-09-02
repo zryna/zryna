@@ -1,0 +1,8 @@
+function bad(): i32 {
+  let root: i32 = 7;
+  {
+    const alias: BorrowMut<i32> = borrowMut(9);
+    alias = 8;
+  }
+  return root;
+}

@@ -1,0 +1,9 @@
+function write(): bool {
+  let root: bool = false;
+  {
+    const alias: BorrowMut<bool> = borrowMut(root);
+    alias = true;
+    const after: bool = alias;
+  }
+  return root;
+}

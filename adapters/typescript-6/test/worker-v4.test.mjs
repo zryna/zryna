@@ -111,6 +111,25 @@ test('v4 shorthand construction fixture is accepted unchanged by the Rust contra
   assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
 });
 
+test('v4 preserves const BorrowMut assignment as syntax without assigning write-through semantics', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/exclusive-root-borrow.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/exclusive-root-borrow.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(31, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  const statements = response.result.files[0].functions[0].body.statements;
+  assert.equal(statements[1].kind.kind, 'block');
+  assert.ok(statements.some((statement) => statement.kind.kind === 'assignment'));
+  assert.ok(response.result.files[0].type_syntax.some((type) => type.kind.kind === 'borrow-mut'));
+});
+
 test('v4 reserves only the frozen prototype-sensitive names', async () => {
   const text = 'interface then extends ZrynaStruct { arguments: i32; eval: i32; }';
   const [response] = await exchange([analyze(4, text)]);

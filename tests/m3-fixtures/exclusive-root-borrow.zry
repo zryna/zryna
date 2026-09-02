@@ -1,0 +1,10 @@
+function write(): i32 {
+  let root: i32 = 7;
+  {
+    const alias: BorrowMut<i32> = borrowMut(root);
+    const before: i32 = alias;
+    alias = 9;
+    const after: i32 = alias;
+  }
+  return root;
+}
