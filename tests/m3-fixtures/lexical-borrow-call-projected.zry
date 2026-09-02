@@ -1,0 +1,1 @@
+function relay(loan: Borrow<i32>): i32 { return loan; } function caller(): FixedArray<i32, 1> { const root: FixedArray<i32, 1> = FixedArray<i32, 1>([7]); { const loan: Borrow<i32> = borrow(root[0]); const called: i32 = relay(loan); } return root; }

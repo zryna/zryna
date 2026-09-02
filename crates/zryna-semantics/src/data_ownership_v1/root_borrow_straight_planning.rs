@@ -3,15 +3,15 @@ use zryna_source::SourceMap;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawStatementKind};
 
 use super::diagnostics::Errors;
+use super::function_catalog::FunctionCatalog;
 use super::layout_graph::{Decl, semantic_type};
 use super::owned_control_flow_resources::{
-    projected_root_borrow_resources, root_borrow_resource_violation,
+    projected_root_borrow_resources, root_borrow_resource_violation, straight_root_borrow_resources,
 };
 use super::root_borrow_arm_planning::plan_root_borrow_arm;
 use super::root_borrow_value_planning::plan_root_borrow_initializer;
 use super::type_model::{
-    RootBorrowArmPlan, RootBorrowBudgetLimit, RootBorrowPlan, RootBorrowResources, RootBorrowShape,
-    RootBorrowStep, Ty,
+    RootBorrowArmPlan, RootBorrowBudgetLimit, RootBorrowPlan, RootBorrowShape, RootBorrowStep, Ty,
 };
 use super::{SemanticInput, span};
 
@@ -24,6 +24,7 @@ pub(super) fn plan_private_straight_root_borrow_function<'a>(
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a FunctionCatalog,
     result: Ty,
     enforce_straight_budget: bool,
     errors: &mut Errors<'a>,
@@ -141,15 +142,19 @@ pub(super) fn plan_private_straight_root_borrow_function<'a>(
         graph,
         node_types,
         layouts,
+        catalog,
         *root_mutable,
         root_name,
         root_ty,
         nested,
+        enforce_straight_budget,
         errors,
     )?;
     let aliases = arm.aliases;
     let reads = arm.reads;
     let writes = arm.writes;
+    let calls = arm.calls;
+    let call_values = arm.call_values;
     let return_statement =
         usize::try_from(*return_id).ok().and_then(|index| function.body.statements.get(index))?;
     let RawStatementKind::Return { value: returned, .. } = return_statement.kind else {
@@ -182,19 +187,7 @@ pub(super) fn plan_private_straight_root_borrow_function<'a>(
         return None;
     }
     let resources = if matches!(root_ty.category, TypeCategory::Bool | TypeCategory::I32) {
-        RootBorrowResources {
-            values: reads.saturating_add(writes).saturating_add(2),
-            places: reads.saturating_add(1),
-            transitions: aliases
-                .saturating_mul(2)
-                .saturating_add(reads.saturating_mul(2))
-                .saturating_add(writes.saturating_mul(2))
-                .saturating_add(3),
-            blocks: 1,
-            edges: 0,
-            active_peak: aliases,
-            cleanup_plans: 1,
-        }
+        straight_root_borrow_resources(aliases, reads, writes, calls, call_values)
     } else {
         projected_root_borrow_resources(&root_initializer, &arm)
     };
@@ -226,6 +219,8 @@ pub(super) fn plan_private_straight_root_borrow_function<'a>(
         aliases,
         reads,
         writes,
+        calls,
+        call_values,
         return_at: span(input.sources(), return_statement.span),
     })
 }
@@ -237,7 +232,7 @@ pub(super) fn shift_root_borrow_arm_ids(arm: &mut RootBorrowArmPlan, offset: usi
             RootBorrowStep::Begin { id, .. }
             | RootBorrowStep::Read { id, .. }
             | RootBorrowStep::Write { id, .. } => id,
-            RootBorrowStep::OwnerRead { .. } => continue,
+            RootBorrowStep::OwnerRead { .. } | RootBorrowStep::Call(_) => continue,
         };
         id.0 = id.0.checked_add(offset)?;
     }

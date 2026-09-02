@@ -6,7 +6,9 @@ use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawStatementKind, RawTypeSyntaxKind};
 
 use super::diagnostics::Errors;
+use super::function_catalog::{FunctionCatalog, FunctionResolution};
 use super::layout_graph::{Decl, semantic_type};
+use super::root_borrow_call_planning::plan_root_borrow_call;
 use super::root_borrow_value_planning::{plan_root_borrow_initializer, plan_root_borrow_place};
 use super::type_model::{
     RootBorrowAlias, RootBorrowArmPlan, RootBorrowPlacePlan, RootBorrowStep, Ty,
@@ -30,10 +32,12 @@ pub(super) fn plan_root_borrow_arm<'a>(
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a FunctionCatalog,
     root_mutable: bool,
     root_name: &syntax::RawIdentifierSyntax,
     root_ty: Ty,
     nested: &syntax::RawBlockSyntax,
+    allow_call: bool,
     errors: &mut Errors<'a>,
 ) -> Option<RootBorrowArmPlan> {
     let mut aliases = BTreeMap::<String, RootBorrowAlias>::new();
@@ -42,6 +46,8 @@ pub(super) fn plan_root_borrow_arm<'a>(
     let mut steps = Vec::with_capacity(nested.statements.len());
     let mut reads = 0_usize;
     let mut writes = 0_usize;
+    let mut calls = 0_usize;
+    let mut call_values = 0_usize;
     for statement_id in &nested.statements {
         let statement = usize::try_from(*statement_id)
             .ok()
@@ -133,11 +139,11 @@ pub(super) fn plan_root_borrow_arm<'a>(
             }
             _ => {
                 errors.at(
-                "ZRYNA-M3017",
-                span(input.sources(), statement.span),
-                "root-borrow blocks admit only const aliases, const Copy reads, and BorrowMut writes",
-                "remove calls, control flow, effects, nested blocks, and ordinary assignment",
-            );
+                    "ZRYNA-M3017",
+                    span(input.sources(), statement.span),
+                    "root-borrow blocks admit only const aliases, const Copy reads, and BorrowMut writes",
+                    "remove calls, control flow, effects, nested blocks, and ordinary assignment",
+                );
                 return None;
             }
         };
@@ -305,6 +311,49 @@ pub(super) fn plan_root_borrow_arm<'a>(
             let initializer = usize::try_from(initializer_id)
                 .ok()
                 .and_then(|index| function.body.expressions.get(index))?;
+            let lexical_call = if let RawExpressionKind::Call { callee, .. } = &initializer.kind {
+                matches!(
+                    catalog.resolve(module, &callee.text),
+                    FunctionResolution::Exact(signature)
+                        if signature.private && signature.has_borrow_parameters()
+                )
+            } else {
+                false
+            };
+            if lexical_call {
+                if calls != 0 {
+                    errors.at(
+                        "ZRYNA-M3016",
+                        span(input.sources(), initializer.span),
+                        "a lexical borrow block admits only one direct call",
+                        "keep one bounded borrow call in the straight-line lexical block",
+                    );
+                    return None;
+                }
+                let (call, used) = plan_root_borrow_call(
+                    input,
+                    module,
+                    function,
+                    file,
+                    declarations,
+                    graph,
+                    node_types,
+                    layouts,
+                    catalog,
+                    &aliases,
+                    initializer_id,
+                    read_ty,
+                    allow_call,
+                    errors,
+                )?;
+                call_values = call.argument_value_count();
+                for alias in aliases.values_mut().filter(|alias| used.contains(&alias.id)) {
+                    alias.used = true;
+                }
+                calls = 1;
+                steps.push(RootBorrowStep::Call(call));
+                continue;
+            }
             if let RawExpressionKind::Reference { name: alias_name } = &initializer.kind
                 && let Some(alias) = aliases.get_mut(&alias_name.text)
             {
@@ -423,6 +472,8 @@ pub(super) fn plan_root_borrow_arm<'a>(
         aliases: aliases.len(),
         reads,
         writes,
+        calls,
+        call_values,
         block_exit: span(input.sources(), nested.close_brace_span),
     })
 }

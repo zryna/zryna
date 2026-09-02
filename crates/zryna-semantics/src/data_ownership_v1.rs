@@ -22,6 +22,7 @@ mod global_resource_limits;
 mod layout_graph;
 mod owned_control_flow_resources;
 mod root_borrow_arm_planning;
+mod root_borrow_call_planning;
 mod root_borrow_straight_planning;
 mod root_borrow_value_planning;
 mod string_vec_resource_estimates;
@@ -65,6 +66,7 @@ use owned_control_flow_resources::{
     EnumPayloadMoveResourceEstimate, conditional_root_borrow_resources,
     enum_payload_move_resource_estimate, owned_place_budget_violation,
     projected_root_borrow_resource_counts, straight_root_borrow_budget_violation,
+    straight_root_borrow_resources,
 };
 use owned_control_flow_resources::{
     OwnedCfgBudgetLimit, conditional_root_borrow_budget_violation, dense_owned_value_id,
@@ -93,9 +95,10 @@ use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
     OwnedRootBorrowSyntax, OwnedStaticProjectionKind, OwnedStringBranchState, OwnedVecBranchState,
     OwnerDelta, OwnerState, ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext,
-    RootBorrowArmPlan, RootBorrowBudgetLimit, RootBorrowInitializer, RootBorrowLiteral,
-    RootBorrowPlacePlan, RootBorrowPlan, RootBorrowProjectionKey, RootBorrowShape, RootBorrowStep,
-    TerminalOwnedIf, Ty, apply_owner_delta, map_node_types,
+    RootBorrowArmPlan, RootBorrowBudgetLimit, RootBorrowCallArgumentPlan, RootBorrowCallPlan,
+    RootBorrowInitializer, RootBorrowLiteral, RootBorrowPlacePlan, RootBorrowPlan,
+    RootBorrowProjectionKey, RootBorrowShape, RootBorrowStep, TerminalOwnedIf, Ty,
+    apply_owner_delta, map_node_types,
 };
 
 /// Maximum retained semantic diagnostics, including the terminal budget diagnostic.
@@ -464,6 +467,7 @@ fn plan_private_root_borrow_function<'a>(
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a FunctionCatalog,
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<RootBorrowPlan> {
@@ -479,6 +483,7 @@ fn plan_private_root_borrow_function<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             true,
             errors,
@@ -537,6 +542,7 @@ fn plan_private_root_borrow_function<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             false,
             errors,
@@ -549,6 +555,8 @@ fn plan_private_root_borrow_function<'a>(
             aliases,
             reads,
             writes,
+            calls,
+            call_values,
             return_at,
         } = plan
         else {
@@ -595,6 +603,8 @@ fn plan_private_root_borrow_function<'a>(
             aliases,
             reads,
             writes,
+            calls,
+            call_values,
             return_at,
         });
     }
@@ -607,6 +617,7 @@ fn plan_private_root_borrow_function<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             true,
             errors,
@@ -677,6 +688,7 @@ fn plan_private_root_borrow_function<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             false,
             errors,
@@ -710,6 +722,8 @@ fn plan_private_root_borrow_function<'a>(
             aliases: 0,
             reads: 0,
             writes: 0,
+            calls: 0,
+            call_values: 0,
             block_exit: span(input.sources(), block.close_brace_span),
         })
     };
@@ -765,6 +779,8 @@ fn plan_private_root_borrow_function<'a>(
         aliases,
         reads,
         writes,
+        calls: 0,
+        call_values: 0,
         return_at: common_return_at,
     })
 }
@@ -837,6 +853,53 @@ fn materialize_root_borrow_place(
     Some(parent)
 }
 
+fn emit_root_borrow_call(
+    call: RootBorrowCallPlan,
+    cleanup: raw::CleanupPlanId,
+    values: &mut u32,
+    places: &mut Vec<raw::Place>,
+    instructions: &mut Vec<raw::Instruction>,
+) -> Option<()> {
+    let mut value_arguments = vec![None; call.value_parameters];
+    let mut borrow_arguments = vec![None; call.borrow_parameters];
+    for argument in call.arguments {
+        match argument {
+            RootBorrowCallArgumentPlan::Value { index, value } => {
+                let value = emit_root_borrow_initializer(value, values, instructions)?;
+                *value_arguments.get_mut(usize::try_from(index).ok()?)? = Some(value);
+            }
+            RootBorrowCallArgumentPlan::Borrow { index, id } => {
+                *borrow_arguments.get_mut(usize::try_from(index).ok()?)? = Some(id);
+            }
+        }
+    }
+    let arguments = value_arguments
+        .into_iter()
+        .map(|value| value.map(raw::CallArgument::Value))
+        .chain(borrow_arguments.into_iter().map(|borrow| borrow.map(raw::CallArgument::Borrow)))
+        .collect::<Option<Vec<_>>>()?;
+    let result = raw::ValueId(*values);
+    *values = values.checked_add(1)?;
+    instructions.push(raw::Instruction {
+        result: Some(raw::ValueDefinition { id: result, ty: call.result.ir, span: call.at }),
+        span: call.at,
+        kind: raw::InstructionKind::DirectCall { callee: call.callee, arguments, cleanup },
+    });
+    let place = raw::PlaceId(u32::try_from(places.len()).ok()?);
+    places.push(raw::Place {
+        id: place,
+        ty: call.result.ir,
+        span: call.at,
+        kind: raw::PlaceKind::Local(place.0),
+    });
+    instructions.push(raw::Instruction {
+        result: None,
+        span: call.at,
+        kind: raw::InstructionKind::InitializePlace { place, value: result },
+    });
+    Some(())
+}
+
 fn emit_root_borrow_arm(
     arm: RootBorrowArmPlan,
     root_place: raw::PlaceId,
@@ -844,6 +907,7 @@ fn emit_root_borrow_arm(
     values: &mut u32,
     places: &mut Vec<raw::Place>,
     instructions: &mut Vec<raw::Instruction>,
+    call_cleanup: &mut Option<raw::CleanupPlanId>,
 ) -> Option<()> {
     let mut begun = Vec::with_capacity(arm.aliases);
     let mut projected = BTreeMap::new();
@@ -921,6 +985,9 @@ fn emit_root_borrow_arm(
                     kind: raw::InstructionKind::BorrowWrite { borrow: id, value },
                 });
             }
+            RootBorrowStep::Call(call) => {
+                emit_root_borrow_call(call, call_cleanup.take()?, values, places, instructions)?;
+            }
         }
     }
     for borrow in begun.into_iter().rev() {
@@ -943,6 +1010,7 @@ fn lower_private_root_borrow_function<'a>(
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a FunctionCatalog,
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<raw::Function> {
@@ -954,6 +1022,7 @@ fn lower_private_root_borrow_function<'a>(
         graph,
         node_types,
         layouts,
+        catalog,
         result,
         errors,
     )?;
@@ -965,6 +1034,8 @@ fn lower_private_root_borrow_function<'a>(
         aliases,
         reads,
         writes,
+        calls,
+        call_values,
         return_at,
     } = plan;
     let mut values = 0_u32;
@@ -973,6 +1044,8 @@ fn lower_private_root_borrow_function<'a>(
         .checked_mul(2)?
         .checked_add(reads.checked_mul(2)?)?
         .checked_add(writes.checked_mul(2)?)?
+        .checked_add(call_values)?
+        .checked_add(calls.checked_mul(2)?)?
         .checked_add(4)?;
     let mut root_initialization = Vec::new();
     let root_value =
@@ -982,7 +1055,7 @@ fn lower_private_root_borrow_function<'a>(
         span: root_at,
         kind: raw::InstructionKind::InitializePlace { place: root_place, value: root_value },
     });
-    let mut places = Vec::with_capacity(reads + 1);
+    let mut places = Vec::with_capacity(reads.saturating_add(calls).saturating_add(1));
     places.push(raw::Place {
         id: root_place,
         ty: root_ty.ir,
@@ -990,10 +1063,19 @@ fn lower_private_root_borrow_function<'a>(
         kind: raw::PlaceKind::Local(0),
     });
     let cleanup = raw::CleanupPlanId(0);
+    let call_at = match &shape {
+        RootBorrowShape::Straight(arm) => arm.steps.iter().find_map(|step| match step {
+            RootBorrowStep::Call(call) => Some(call.at),
+            _ => None,
+        }),
+        RootBorrowShape::Loop { .. } | RootBorrowShape::Conditional { .. } => None,
+    };
+    debug_assert_eq!(call_at.is_some(), calls == 1);
     let blocks = match shape {
         RootBorrowShape::Straight(arm) => {
             let mut instructions = Vec::with_capacity(instruction_capacity);
             instructions.append(&mut root_initialization);
+            let mut call_cleanup = (calls == 1).then_some(raw::CleanupPlanId(1));
             emit_root_borrow_arm(
                 arm,
                 root_place,
@@ -1001,7 +1083,9 @@ fn lower_private_root_borrow_function<'a>(
                 &mut values,
                 &mut places,
                 &mut instructions,
+                &mut call_cleanup,
             )?;
+            debug_assert!(call_cleanup.is_none());
             let returned = raw::ValueId(values);
             instructions.push(raw::Instruction {
                 result: Some(raw::ValueDefinition {
@@ -1037,6 +1121,7 @@ fn lower_private_root_borrow_function<'a>(
                 kind: raw::InstructionKind::CopyFromPlace { place: root_place },
             });
             let mut then_instructions = Vec::with_capacity(instruction_capacity);
+            let mut no_call_cleanup = None;
             emit_root_borrow_arm(
                 then_arm,
                 root_place,
@@ -1044,6 +1129,7 @@ fn lower_private_root_borrow_function<'a>(
                 &mut values,
                 &mut places,
                 &mut then_instructions,
+                &mut no_call_cleanup,
             )?;
             let mut else_instructions = Vec::with_capacity(instruction_capacity);
             emit_root_borrow_arm(
@@ -1053,6 +1139,7 @@ fn lower_private_root_borrow_function<'a>(
                 &mut values,
                 &mut places,
                 &mut else_instructions,
+                &mut no_call_cleanup,
             )?;
             let returned = raw::ValueId(values);
             let join_instructions = vec![raw::Instruction {
@@ -1130,6 +1217,7 @@ fn lower_private_root_borrow_function<'a>(
                 kind: raw::InstructionKind::CopyFromPlace { place: root_place },
             }];
             let mut body_instructions = Vec::with_capacity(instruction_capacity);
+            let mut no_call_cleanup = None;
             emit_root_borrow_arm(
                 body,
                 root_place,
@@ -1137,6 +1225,7 @@ fn lower_private_root_borrow_function<'a>(
                 &mut values,
                 &mut places,
                 &mut body_instructions,
+                &mut no_call_cleanup,
             )?;
             let returned = raw::ValueId(values);
             let exit = vec![raw::Instruction {
@@ -1201,7 +1290,19 @@ fn lower_private_root_borrow_function<'a>(
             ]
         }
     };
-    let _ = (aliases, reads, writes);
+    let _ = (aliases, reads, writes, call_values);
+    let mut cleanup_plans = vec![raw::CleanupPlan {
+        id: cleanup,
+        span: span(input.sources(), function.body.span),
+        actions: Vec::new(),
+    }];
+    if calls == 1 {
+        cleanup_plans.push(raw::CleanupPlan {
+            id: raw::CleanupPlanId(1),
+            span: call_at?,
+            actions: Vec::new(),
+        });
+    }
     Some(raw::Function {
         id: raw::FunctionId {
             module: raw::ModuleId(u32::try_from(module).ok()?),
@@ -1214,11 +1315,7 @@ fn lower_private_root_borrow_function<'a>(
         result: root_ty.ir,
         places,
         blocks,
-        cleanup_plans: vec![raw::CleanupPlan {
-            id: cleanup,
-            span: span(input.sources(), function.body.span),
-            actions: Vec::new(),
-        }],
+        cleanup_plans,
     })
 }
 
@@ -1753,6 +1850,7 @@ fn lower_function<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             errors,
         );

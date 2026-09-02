@@ -1,0 +1,1 @@
+function relay(loan: Borrow<bool>): bool { return loan; } function caller(): bool { const root: bool = true; if (root) { { const thenLoan: Borrow<bool> = borrow(root); const called: bool = relay(thenLoan); } } else { { const elseLoan: Borrow<bool> = borrow(root); const read: bool = elseLoan; } } return root; }

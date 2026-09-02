@@ -206,6 +206,35 @@ pub(super) enum RootBorrowStep {
     Read { id: raw::BorrowId, ty: Ty, at: Span },
     Write { id: raw::BorrowId, value: RootBorrowInitializer, at: Span },
     OwnerRead { place: RootBorrowPlacePlan, at: Span },
+    Call(RootBorrowCallPlan),
+}
+
+#[derive(Clone)]
+pub(super) enum RootBorrowCallArgumentPlan {
+    Value { index: u32, value: RootBorrowInitializer },
+    Borrow { index: u32, id: raw::BorrowId },
+}
+
+#[derive(Clone)]
+pub(super) struct RootBorrowCallPlan {
+    pub(super) callee: raw::FunctionId,
+    pub(super) arguments: Vec<RootBorrowCallArgumentPlan>,
+    pub(super) value_parameters: usize,
+    pub(super) borrow_parameters: usize,
+    pub(super) result: Ty,
+    pub(super) at: Span,
+}
+
+impl RootBorrowCallPlan {
+    pub(super) fn argument_value_count(&self) -> usize {
+        self.arguments
+            .iter()
+            .filter_map(|argument| match argument {
+                RootBorrowCallArgumentPlan::Value { value, .. } => Some(value.value_count()),
+                RootBorrowCallArgumentPlan::Borrow { .. } => None,
+            })
+            .fold(0_usize, usize::saturating_add)
+    }
 }
 
 #[derive(Clone)]
@@ -225,6 +254,8 @@ pub(super) struct RootBorrowPlan {
     pub(super) aliases: usize,
     pub(super) reads: usize,
     pub(super) writes: usize,
+    pub(super) calls: usize,
+    pub(super) call_values: usize,
     pub(super) return_at: Span,
 }
 
@@ -233,6 +264,8 @@ pub(super) struct RootBorrowArmPlan {
     pub(super) aliases: usize,
     pub(super) reads: usize,
     pub(super) writes: usize,
+    pub(super) calls: usize,
+    pub(super) call_values: usize,
     pub(super) block_exit: Span,
 }
 
