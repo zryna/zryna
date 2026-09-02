@@ -439,3 +439,7 @@ pub(super) fn private_vec_nested_string_call_fixture() -> (String, RawProjectSyn
     *value = 6;
     (source, raw)
 }
+
+fn survivor_construct_type_span(types: &[RawTypeSyntax], id: u32) -> zryna_source::UntrustedSpan {
+    types[usize::try_from(id).expect("type")].span
+}
