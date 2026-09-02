@@ -1,0 +1,1 @@
+function sink(left: i32, loan: BorrowMut<i32>, right: i32): i32 { loan = left; return loan; } function relay(left: i32, loan: BorrowMut<i32>, right: i32): i32 { return sink(left, loan, right); } function caller(): i32 { let root: i32 = 7; { const loan: BorrowMut<i32> = borrowMut(root); const called: i32 = relay(11, loan, 22); } return root; }

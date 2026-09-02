@@ -1,0 +1,1 @@
+function relay(left: i32, shared: Borrow<i32>, right: bool, exclusive: BorrowMut<i32>): i32 { exclusive = left; return shared; } function caller(left: i32, shared: Borrow<i32>, right: bool, exclusive: BorrowMut<i32>): i32 { return relay(left, shared, right, exclusive); }

@@ -10,8 +10,13 @@ import {
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import {
+  borrowCallFixtureInventory,
+  validateM3BorrowCallConformance,
+} from "./lib/check-m3-borrow-call-conformance.mjs";
+
 export const expectedRegistrySha256 =
-  "09cc5ea0ee7b4e61a5a038109a61330558dbf00d621fc0507b2e0e2b79dfb7b0";
+  "d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f";
 const registryPath = fileURLToPath(
   new URL("../tests/m3-contract-v1.json", import.meta.url),
 );
@@ -37,6 +42,7 @@ const ROOT_KEYS = [
   "contractFixtures",
   "plannedCases",
   "plannedInvalidCases",
+  "borrowCallConformance",
   "unsupported",
 ];
 
@@ -129,7 +135,10 @@ function validExpected(expected) {
   );
 }
 
-export function validateM3Contract(contract) {
+export function validateM3Contract(
+  contract,
+  fixturePaths = borrowCallFixtureInventory(),
+) {
   exactKeys(contract, ROOT_KEYS, "root");
   if (contract.schemaVersion !== 1) fail("schemaVersion drifted");
   if (contract.profile !== "zryna-data-ownership-v1") fail("profile drifted");
@@ -567,6 +576,7 @@ export function validateM3Contract(contract) {
     ],
     "planned invalid cases",
   );
+  validateM3BorrowCallConformance(contract.borrowCallConformance, fixturePaths);
   exactArray(
     contract.unsupported,
     [
@@ -601,10 +611,10 @@ function sameState(left, right) {
   );
 }
 
-function readCanonicalRegistry(filePath) {
+function readStableFile(filePath, maximumBytes, label) {
   const pathState = lstatSync(filePath, { bigint: true });
   if (pathState.isSymbolicLink() || !pathState.isFile())
-    fail("registry is not a regular file");
+    fail(`${label} is not a regular file`);
   let descriptor;
   try {
     descriptor = openSync(
@@ -613,9 +623,9 @@ function readCanonicalRegistry(filePath) {
     );
     const opened = fstatSync(descriptor, { bigint: true });
     if (!opened.isFile() || !sameIdentity(pathState, opened))
-      fail("registry identity changed while opening");
-    if (opened.size > BigInt(MAXIMUM_BYTES)) fail("registry exceeds one MiB");
-    const bounded = Buffer.alloc(MAXIMUM_BYTES + 1);
+      fail(`${label} identity changed while opening`);
+    if (opened.size > BigInt(maximumBytes)) fail(`${label} exceeds one MiB`);
+    const bounded = Buffer.alloc(maximumBytes + 1);
     let length = 0;
     while (length < bounded.length) {
       const count = readSync(
@@ -628,7 +638,7 @@ function readCanonicalRegistry(filePath) {
       if (count === 0) break;
       length += count;
     }
-    if (length > MAXIMUM_BYTES) fail("registry exceeds one MiB");
+    if (length > maximumBytes) fail(`${label} exceeds one MiB`);
     const final = fstatSync(descriptor, { bigint: true });
     const finalPath = lstatSync(filePath, { bigint: true });
     if (
@@ -637,22 +647,26 @@ function readCanonicalRegistry(filePath) {
       finalPath.isSymbolicLink() ||
       !sameState(final, finalPath)
     )
-      fail("registry changed while reading");
-    const bytes = bounded.subarray(0, length);
-    let document;
-    try {
-      document = JSON.parse(
-        new TextDecoder("utf-8", { fatal: true }).decode(bytes),
-      );
-    } catch (error) {
-      fail(`registry is not strict UTF-8 JSON: ${error.message}`);
-    }
-    if (!bytes.equals(Buffer.from(`${JSON.stringify(document, null, 2)}\n`)))
-      fail("registry bytes are not canonical JSON");
-    return { bytes, document };
+      fail(`${label} changed while reading`);
+    return bounded.subarray(0, length);
   } finally {
     if (descriptor !== undefined) closeSync(descriptor);
   }
+}
+
+function readCanonicalRegistry(filePath) {
+  const bytes = readStableFile(filePath, MAXIMUM_BYTES, "registry");
+  let document;
+  try {
+    document = JSON.parse(
+      new TextDecoder("utf-8", { fatal: true }).decode(bytes),
+    );
+  } catch (error) {
+    fail(`registry is not strict UTF-8 JSON: ${error.message}`);
+  }
+  if (!bytes.equals(Buffer.from(`${JSON.stringify(document, null, 2)}\n`)))
+    fail("registry bytes are not canonical JSON");
+  return { bytes, document };
 }
 
 export function loadAndValidateM3Contract(
