@@ -43,9 +43,10 @@ use aggregate_resource_formulas::{
 };
 use diagnostics::Errors;
 #[cfg(test)]
-use function_catalog::{FunctionBorrowParameter, FunctionParameterOrder};
+use function_catalog::FunctionBorrowParameter;
 use function_catalog::{
-    FunctionCatalog, FunctionResolution, FunctionSignature, build_function_catalog,
+    FunctionCatalog, FunctionParameterOrder, FunctionResolution, FunctionSignature,
+    build_function_catalog,
 };
 #[cfg(test)]
 use global_resource_limits::{
@@ -439,11 +440,19 @@ struct FunctionLowerer<'a, 'f, 'e> {
     catalog: &'a FunctionCatalog,
     errors: &'e mut Errors<'a>,
     bindings: BTreeMap<String, Binding>,
+    borrow_bindings: BTreeMap<String, BorrowBinding>,
     places: Vec<raw::Place>,
     projections: BTreeMap<(u32, u8, u32), raw::PlaceId>,
     instructions: Vec<raw::Instruction>,
     cleanup_plans: Vec<raw::CleanupPlan>,
     values: u32,
+}
+
+#[derive(Clone, Copy)]
+struct BorrowBinding {
+    ty: Ty,
+    borrow: raw::BorrowId,
+    access: raw::BorrowAccess,
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
@@ -1969,52 +1978,71 @@ fn lower_function_impl<'a>(
         catalog,
         errors,
         bindings: BTreeMap::new(),
+        borrow_bindings: BTreeMap::new(),
         projections: BTreeMap::new(),
         places: Vec::new(),
         instructions: Vec::new(),
         cleanup_plans: Vec::new(),
         values: 0,
     };
-    let mut parameters = Vec::new();
-    for (index, parameter) in function.parameters.iter().enumerate() {
-        let ty = semantic_type(
-            file,
-            parameter.type_syntax,
-            module,
-            declarations,
-            graph,
-            node_types,
-            lowerer.errors,
-        )?;
-        require_current_type_only_boundary(
-            ty,
-            span(input.sources(), parameter.span),
-            function.export_span.is_some(),
-            lowerer.errors,
-        )?;
-        let value = raw::ValueId(lowerer.values);
-        lowerer.values += 1;
-        parameters.push(raw::ValueDefinition {
-            id: value,
-            ty: ty.ir,
-            span: span(input.sources(), parameter.span),
-        });
-        let place = lowerer.push_place(
-            ty,
-            span(input.sources(), parameter.span),
-            raw::PlaceKind::Parameter(u32::try_from(index).ok()?),
-        );
-        if lowerer.bindings.keys().any(|name| name.eq_ignore_ascii_case(&parameter.name.text)) {
+    let signature = catalog
+        .modules
+        .get(module)
+        .and_then(|signatures| signatures.get(declaration))
+        .and_then(Option::as_ref)?;
+    debug_assert_eq!(signature.result, result);
+    debug_assert_eq!(signature.parameter_order.len(), function.parameters.len());
+    let mut parameters = Vec::with_capacity(signature.parameters.len());
+    let mut borrow_parameters = Vec::with_capacity(signature.borrow_parameters.len());
+    for (parameter, order) in function.parameters.iter().zip(&signature.parameter_order) {
+        let parameter_span = span(input.sources(), parameter.span);
+        if lowerer.binding_name_exists(&parameter.name.text) {
             lowerer.errors.at(
                 "ZRYNA-M3002",
                 span(input.sources(), parameter.name.span),
                 format!("parameter '{}' is declared more than once", parameter.name.text),
                 "give each parameter one exact name",
             );
-        } else {
-            lowerer
-                .bindings
-                .insert(parameter.name.text.clone(), Binding { ty, place, mutable: false });
+            continue;
+        }
+        match *order {
+            FunctionParameterOrder::Value(index) => {
+                let ty = *signature.parameters.get(usize::try_from(index).ok()?)?;
+                require_current_type_only_boundary(
+                    ty,
+                    parameter_span,
+                    function.export_span.is_some(),
+                    lowerer.errors,
+                )?;
+                debug_assert_eq!(usize::try_from(index).ok(), Some(parameters.len()));
+                let value = raw::ValueId(lowerer.values);
+                lowerer.values += 1;
+                parameters.push(raw::ValueDefinition {
+                    id: value,
+                    ty: ty.ir,
+                    span: parameter_span,
+                });
+                let place =
+                    lowerer.push_place(ty, parameter_span, raw::PlaceKind::Parameter(index));
+                lowerer
+                    .bindings
+                    .insert(parameter.name.text.clone(), Binding { ty, place, mutable: false });
+            }
+            FunctionParameterOrder::Borrow(index) => {
+                let descriptor = *signature.borrow_parameters.get(usize::try_from(index).ok()?)?;
+                debug_assert_eq!(usize::try_from(index).ok(), Some(borrow_parameters.len()));
+                let borrow = raw::BorrowId(index);
+                borrow_parameters.push(raw::BorrowParameter {
+                    id: borrow,
+                    referent: descriptor.referent.ir,
+                    access: descriptor.access,
+                    span: descriptor.span,
+                });
+                lowerer.borrow_bindings.insert(
+                    parameter.name.text.clone(),
+                    BorrowBinding { ty: descriptor.referent, borrow, access: descriptor.access },
+                );
+            }
         }
     }
     let root =
@@ -2063,8 +2091,7 @@ fn lower_function_impl<'a>(
                     span(input.sources(), statement.span),
                     raw::InstructionKind::InitializePlace { place, value: value.1 },
                 );
-                if lowerer.bindings.keys().any(|existing| existing.eq_ignore_ascii_case(&name.text))
-                {
+                if lowerer.binding_name_exists(&name.text) {
                     lowerer.errors.at(
                         "ZRYNA-M3002",
                         span(input.sources(), name.span),
@@ -2081,6 +2108,33 @@ fn lower_function_impl<'a>(
                 }
             }
             RawStatementKind::Assignment { target, value, .. } => {
+                if let Some(binding) = lowerer.borrow_reference(*target) {
+                    if binding.access != raw::BorrowAccess::Exclusive {
+                        lowerer.errors.at(
+                            "ZRYNA-M3016",
+                            span(input.sources(), function.body.expressions[*target as usize].span),
+                            "shared borrow parameters are read-only",
+                            "write only through an exact BorrowMut parameter",
+                        );
+                        return None;
+                    }
+                    let value = lowerer.value(*value)?;
+                    lowerer.require_type(
+                        binding.ty,
+                        value.0,
+                        span(input.sources(), statement.span),
+                        "borrow write",
+                    )?;
+                    lowerer.emit(
+                        None,
+                        span(input.sources(), statement.span),
+                        raw::InstructionKind::BorrowWrite {
+                            borrow: binding.borrow,
+                            value: value.1,
+                        },
+                    );
+                    continue;
+                }
                 let (target_ty, place, mutable) = lowerer.place(*target)?;
                 if !mutable {
                     lowerer.errors.at(
@@ -2177,7 +2231,7 @@ fn lower_function_impl<'a>(
         entry_export,
         span: span(input.sources(), function.span),
         parameters,
-        borrow_parameters: Vec::new(),
+        borrow_parameters,
         result: result.ir,
         places: lowerer.places,
         blocks: vec![block],
@@ -11041,6 +11095,22 @@ fn lower_enum_match_function<'a>(
 }
 
 impl FunctionLowerer<'_, '_, '_> {
+    fn binding_name_exists(&self, candidate: &str) -> bool {
+        self.bindings
+            .keys()
+            .chain(self.borrow_bindings.keys())
+            .any(|name| name.eq_ignore_ascii_case(candidate))
+    }
+
+    fn borrow_reference(&self, id: u32) -> Option<BorrowBinding> {
+        let expression =
+            usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))?;
+        let RawExpressionKind::Reference { name } = &expression.kind else {
+            return None;
+        };
+        self.borrow_bindings.get(&name.text).copied()
+    }
+
     fn push_place(&mut self, ty: Ty, span: Span, kind: raw::PlaceKind) -> raw::PlaceId {
         let id = raw::PlaceId(u32::try_from(self.places.len()).unwrap_or(u32::MAX));
         self.places.push(raw::Place { id, ty: ty.ir, span, kind });
@@ -11078,9 +11148,21 @@ impl FunctionLowerer<'_, '_, '_> {
         let expr = usize::try_from(id).ok().and_then(|i| self.function.body.expressions.get(i))?;
         let at = span(self.input.sources(), expr.span);
         match &expr.kind {
-            RawExpressionKind::Reference { .. }
-            | RawExpressionKind::FieldAccess { .. }
-            | RawExpressionKind::Index { .. } => {
+            RawExpressionKind::Reference { name } => {
+                if let Some(binding) = self.borrow_bindings.get(&name.text).copied() {
+                    let value = self.emit(
+                        Some(binding.ty),
+                        at,
+                        raw::InstructionKind::BorrowRead { borrow: binding.borrow },
+                    )?;
+                    return Some((binding.ty, value));
+                }
+                let (ty, place, _) = self.place(id)?;
+                let value =
+                    self.emit(Some(ty), at, raw::InstructionKind::CopyFromPlace { place })?;
+                Some((ty, value))
+            }
+            RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
                 let (ty, place, _) = self.place(id)?;
                 let value =
                     self.emit(Some(ty), at, raw::InstructionKind::CopyFromPlace { place })?;
@@ -11153,6 +11235,75 @@ impl FunctionLowerer<'_, '_, '_> {
             }
         }
     }
+    fn lower_direct_call_arguments(
+        &mut self,
+        signature: &FunctionSignature,
+        arguments: &[u32],
+    ) -> Option<Vec<raw::CallArgument>> {
+        let mut values = vec![None; signature.parameters.len()];
+        let mut borrows = vec![None; signature.borrow_parameters.len()];
+        let mut exclusive_arguments = Vec::new();
+        for (argument, order) in arguments.iter().zip(&signature.parameter_order) {
+            let argument_span =
+                span(self.input.sources(), self.function.body.expressions[*argument as usize].span);
+            match *order {
+                FunctionParameterOrder::Value(index) => {
+                    let expected = *signature.parameters.get(usize::try_from(index).ok()?)?;
+                    let (actual, value) = self.value(*argument)?;
+                    self.require_type(expected, actual, argument_span, "call argument")?;
+                    *values.get_mut(usize::try_from(index).ok()?)? = Some(value);
+                }
+                FunctionParameterOrder::Borrow(index) => {
+                    let expected =
+                        *signature.borrow_parameters.get(usize::try_from(index).ok()?)?;
+                    let Some(actual) = self.borrow_reference(*argument) else {
+                        self.errors.at(
+                            "ZRYNA-M3016",
+                            argument_span,
+                            "borrow arguments must forward an in-scope borrow parameter",
+                            "pass an exact Borrow or BorrowMut parameter; lexical call borrows are not enabled",
+                        );
+                        return None;
+                    };
+                    if actual.ty.layout != expected.referent.layout
+                        || actual.access != expected.access
+                    {
+                        self.errors.at(
+                            "ZRYNA-M3016",
+                            argument_span,
+                            "borrow argument does not match the callee referent and access",
+                            "pass an exact borrow parameter with the declared referent and shared or exclusive access",
+                        );
+                        return None;
+                    }
+                    if expected.access == raw::BorrowAccess::Exclusive
+                        && exclusive_arguments.contains(&actual.borrow)
+                    {
+                        self.errors.at(
+                            "ZRYNA-M3016",
+                            argument_span,
+                            "exclusive borrow arguments cannot reuse the same authority",
+                            "pass distinct nonoverlapping exclusive borrow parameters",
+                        );
+                        return None;
+                    }
+                    if expected.access == raw::BorrowAccess::Exclusive {
+                        exclusive_arguments.push(actual.borrow);
+                    }
+                    *borrows.get_mut(usize::try_from(index).ok()?)? = Some(actual.borrow);
+                }
+            }
+        }
+        let mut lowered = Vec::with_capacity(arguments.len());
+        for value in values {
+            lowered.push(raw::CallArgument::Value(value?));
+        }
+        for borrow in borrows {
+            lowered.push(raw::CallArgument::Borrow(borrow?));
+        }
+        Some(lowered)
+    }
+
     fn direct_call(
         &mut self,
         callee: &syntax::RawIdentifierSyntax,
@@ -11189,10 +11340,7 @@ impl FunctionLowerer<'_, '_, '_> {
             );
             return None;
         }
-        if !signature.result.is_copy()
-            || signature.has_borrow_parameters()
-            || signature.parameters.iter().any(|ty| !ty.is_copy())
-        {
+        if !signature.result.is_copy() || signature.parameters.iter().any(|ty| !ty.is_copy()) {
             self.errors.at(
                 "ZRYNA-M3016",
                 span(self.input.sources(), callee.span),
@@ -11201,7 +11349,7 @@ impl FunctionLowerer<'_, '_, '_> {
             );
             return None;
         }
-        if arguments.len() != signature.parameters.len() {
+        if arguments.len() != signature.parameter_order.len() {
             self.errors.at(
                 "ZRYNA-M3008",
                 at,
@@ -11209,23 +11357,13 @@ impl FunctionLowerer<'_, '_, '_> {
                     "call to '{}' has {} arguments but its signature requires {}",
                     signature.name,
                     arguments.len(),
-                    signature.parameters.len()
+                    signature.parameter_order.len()
                 ),
                 "pass one argument for every exact declared parameter",
             );
             return None;
         }
-        let mut lowered = Vec::with_capacity(arguments.len());
-        for (argument, expected) in arguments.iter().zip(&signature.parameters) {
-            let (actual, value) = self.value(*argument)?;
-            self.require_type(
-                *expected,
-                actual,
-                span(self.input.sources(), self.function.body.expressions[*argument as usize].span),
-                "call argument",
-            )?;
-            lowered.push(raw::CallArgument::Value(value));
-        }
+        let lowered = self.lower_direct_call_arguments(&signature, arguments)?;
         let cleanup = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).ok()?);
         self.cleanup_plans.push(raw::CleanupPlan { id: cleanup, span: at, actions: Vec::new() });
         let value = self.emit(
