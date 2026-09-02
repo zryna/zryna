@@ -183,8 +183,12 @@ moves, same-root/overlapping, partial or already-moved projected sources, fresh 
 multi-site aggregate assignment, calls, direct projected-clone
 returns, CFG transfer, or public functions remain outside the narrow subobject route. Admitted projected clones retain the
 enclosing root and its partial-state masks while creating one distinct temporary owner.
-Dynamic bounds execution, borrows, shared or weak references,
-and public owned parameters or results also remain unavailable. The Pair scalar oracle
+The separate bounded-borrow producer admits private Copy roots, exact shared/exclusive authority,
+one shared reborrow, canonical conditional/loop scopes, and static recursively Copy Struct-field
+or constant fixed-array paths. Static siblings are disjoint; same/ancestor/descendant paths
+overlap. Dynamic/Vec/enum/non-Copy projected borrowing, calls, general control flow, stored
+references, shared or weak references, and public owned parameters or results remain unavailable.
+The Pair scalar oracle
 is observed only by a test evaluator over opaque verified views. Enum matching is limited to an
 internal single-return function with scalar literal, parameter, or active-payload arms; this is not
 a general expression-level match implementation. No runtime, backend, driver, CLI, or public

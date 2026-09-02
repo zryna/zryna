@@ -1,0 +1,15 @@
+interface Pair extends ZrynaStruct {
+  x: i32;
+  y: i32;
+}
+
+function sharedOverlap(): Pair {
+  let root: Pair = Pair({ x: 1, y: 2 });
+  {
+    const parent: Borrow<Pair> = borrow(root);
+    const child: Borrow<i32> = borrow(root.x);
+    const parentValue: Pair = parent;
+    const childValue: i32 = child;
+  }
+  return root;
+}

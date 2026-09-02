@@ -1,9 +1,10 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, #115, #117, and #121 complete. The internal semantic producer admits bounded
+Status: Issues #113, #114, #115, #117, #120, and #121 complete. The internal semantic producer admits bounded
 shared and exclusive Copy-root source shapes, one shared-from-shared reborrow, and one canonical
 conditional plus one canonical bool-root loop whose local lexical authorities are completely
-discharged before every edge. Projected, call-based, nested/repeated control-flow, and owned-root
+discharged before every edge. It also admits static recursively Copy Struct-field and constant
+fixed-array projected borrows with exact prefix overlap. Call-based, nested/repeated control-flow, and owned-root
 borrowing remain dependency-ordered later checkpoints.
 
 This document freezes the dependency-ordered implementation boundary for Issue #82. It refines the
@@ -239,6 +240,45 @@ functions, projections, owned roots, borrow-carrying block parameters, edge argu
 shortening, runtime flags, ABI changes, backends, drivers, CLI selectors, artifacts, and public
 profiles.
 
+## Issue #120 projected-disjointness checkpoint
+
+The private parameter-free straight-line producer now also accepts one literal-initialized,
+recursively Copy Struct or fixed-array root. A borrow place is canonicalized as the root followed
+by a finite sequence of `StructField` ordinals and `FixedArrayConstant` indices. Every prefix is
+materialized once, identities remain dense, and `BeginBorrow` names the exact final place rather
+than collapsing static siblings to their common root.
+
+Overlap is exactly prefix-based: the same path and every ancestor/descendant pair overlap, while
+distinct static siblings are disjoint. Consequently overlapping shared/shared parent and child
+authorities may coexist; shared/exclusive, exclusive/shared, and exclusive/exclusive overlaps are
+rejected; disjoint exclusive struct fields or fixed-array elements may coexist. An overlapping
+exclusive alias hides only overlapping owner reads, so a Copy owner read of a disjoint sibling
+remains valid. Shared-from-shared reborrow retains the same canonical place.
+
+| Projection form | Issue #120 result |
+| --- | --- |
+| declared recursively Copy Struct field | exact static place |
+| in-range nonnegative fixed-array literal index | exact static place |
+| same, ancestor, or descendant path | overlapping |
+| distinct static Struct fields or fixed-array constants | disjoint |
+| dynamic or negative/out-of-range fixed-array index | deterministic fail-closed diagnostic |
+| Vec element, enum root/payload, non-Copy root, or non-Struct field continuation | rejected before raw IR construction |
+
+The complete plan preflights constructor values, Copy reads, write RHS values, unique projection
+prefixes, ownership transitions, cleanup plans, and peak active authorities. Borrow syntax itself
+produces no IR value; the global value preflight and the projected exact formula both count only
+emitted definitions. The positive formula yields 19 values, 14 places, and 38 transitions; the
+fixture freezes 14 materialized places, five active authorities, reverse lexical ends, zero return
+cleanup actions, and deterministic ordered place/authority replay. Hostile fixtures freeze ordered source spans and diagnostics
+for every overlap direction, invalid fields and indices, conservative dynamic access, Vec/enum/
+non-Copy roots, and unsupported projection continuation. The independent IR corpus separately
+proves projected move, replace, drop, direct-call, and hostile replay behavior.
+
+This checkpoint adds no runtime address, pointer, lifetime token, garbage collection, ABI,
+backend, driver route, CLI selection, target artifact, or public profile. Dynamic index reasoning,
+Vec/enum projected borrowing, non-Copy referents, stored references, and lifetime shortening remain
+unavailable.
+
 ## Issue #121 loop-edge checkpoint
 
 One private parameter-free function may instead use a literal-initialized `bool` root as the
@@ -272,8 +312,8 @@ begin/end sites as simultaneously live.
 
 The borrow edit loop runs `cargo test --locked -p zryna-ir borrow` plus the focused conditional
 join/edge tests for the retained verifier, and focused `borrow`, `exclusive_`, `conflict_matrix`,
-`reborrow`, `conditional_`, and `loop_root_borrow` semantic filters for the
-#114/#115/#117/#121 producer. The checked gate
+`reborrow`, `conditional_`, `projected_borrow`, and `loop_root_borrow` semantic filters for the
+#114/#115/#117/#120/#121 producer. The checked gate
 additionally requires the complete DataOwnershipV1 IR and semantic suites plus doctests, M3
 contract/documentation tests, formatting and strict Clippy, `pnpm preflight`, and `pnpm m0:check`.
 A quick lane cannot substitute for proportional exact/+1 or cross-platform merge evidence.

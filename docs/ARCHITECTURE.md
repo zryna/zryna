@@ -528,8 +528,12 @@ before its jump, and joins with no borrow block parameter, edge argument, or own
 Both arms are planned before materialization; identities follow then/else source order, arm-local
 value and transition costs sum, and peak active authority is the larger arm. The independent verifier uses canonical
 dense block order for join diagnostics without changing edge-indexed enum refinement. Mutable-from-
-shared, reborrow from exclusive, projected, call, and nested/repeated conditional borrowing
-remain later slices. Issue #121 adds one fixed preheader/header/body/exit bool-root loop whose body
+shared, reborrow from exclusive, call, and nested/repeated conditional borrowing
+remain later slices. Issue #120 adds recursively Copy Struct/fixed-array projection plans whose
+canonical static prefixes are materialized once: same/ancestor/descendant paths overlap, distinct
+static siblings are disjoint, and dynamic/Vec/enum/non-Copy cases fail before raw IR construction.
+The independent verifier rechecks exact projected authority and owner move/replace/drop/call use.
+Issue #121 adds one fixed preheader/header/body/exit bool-root loop whose body
 reverse-ends one static dense authority plan before every backedge, restores the exact root
 owner/initialization state at the header, and carries no borrow authority, value block parameter,
 or edge argument; aggregate closure remains #122.

@@ -203,6 +203,103 @@ fn pair_authorities() -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout
     (sources, linear, linux)
 }
 
+fn projected_copy_borrow_authorities() -> (
+    SourceMap,
+    zryna_layout::VerifiedLayouts,
+    zryna_layout::VerifiedLayouts,
+    raw::TypeId,
+    raw::TypeId,
+    raw::TypeId,
+) {
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "main.zry".into(),
+        text: "export function id(value: i32): i32 { return value; }".into(),
+    }])
+    .expect("source map");
+    let file = sources.verify_file_id(0).expect("source file");
+    let graph = raw_layout::Graph {
+        modules: vec![raw_layout::Module {
+            id: raw_layout::ModuleId(0),
+            source_file: file,
+            data_declarations: 2,
+        }],
+        types: vec![
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(0),
+                span: None,
+                kind: raw_layout::TypeKind::Bool,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(1),
+                span: None,
+                kind: raw_layout::TypeKind::I32,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(2),
+                span: None,
+                kind: raw_layout::TypeKind::String,
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(3),
+                span: Some(sources.span(file, 0, 6).expect("inner span")),
+                kind: raw_layout::TypeKind::Struct {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 0,
+                    fields: vec![
+                        raw_layout::Field { ordinal: 0, ty: raw_layout::NodeId(1) },
+                        raw_layout::Field { ordinal: 1, ty: raw_layout::NodeId(1) },
+                    ],
+                },
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(4),
+                span: Some(sources.span(file, 7, 13).expect("outer span")),
+                kind: raw_layout::TypeKind::Struct {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 1,
+                    fields: vec![
+                        raw_layout::Field { ordinal: 0, ty: raw_layout::NodeId(3) },
+                        raw_layout::Field { ordinal: 1, ty: raw_layout::NodeId(3) },
+                    ],
+                },
+            },
+            raw_layout::TypeNode {
+                id: raw_layout::NodeId(5),
+                span: None,
+                kind: raw_layout::TypeKind::FixedArray {
+                    element: raw_layout::NodeId(3),
+                    length: 2,
+                },
+            },
+        ],
+        program_roots: vec![raw_layout::NodeId(4), raw_layout::NodeId(5)],
+    };
+    let linear =
+        zryna_layout::verify(&graph, &sources, StorageTarget::Linear32V1).expect("linear layouts");
+    let linux = zryna_layout::verify(&graph, &sources, StorageTarget::LinuxX8664V1)
+        .expect("native layouts");
+    let inner = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 0)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("inner type");
+    let outer = linear
+        .types()
+        .find(|ty| ty.nominal_identity() == Some((0, 1)))
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("outer type");
+    let array = linear
+        .types()
+        .find(|ty| {
+            ty.category() == zryna_layout::TypeCategory::FixedArray
+                && ty.array_length() == Some(2)
+                && ty.referenced_type().is_some_and(|element| element.index() == inner.0)
+        })
+        .map(|ty| raw::TypeId(ty.id().index()))
+        .expect("inner array type");
+    (sources, linear, linux, inner, outer, array)
+}
+
 fn subobject_move_authorities() -> (
     SourceMap,
     zryna_layout::VerifiedLayouts,
@@ -670,6 +767,171 @@ fn program(
             }],
         }],
     }
+}
+
+#[derive(Clone, Copy)]
+enum ProjectedBorrowShape {
+    Struct,
+    FixedArray,
+}
+
+fn projected_copy_borrow_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    inner: raw::TypeId,
+    root: raw::TypeId,
+    shape: ProjectedBorrowShape,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    raw.modules[0].data_declarations = 2;
+    let span = raw.modules[0].functions[0].span;
+    let function = &mut raw.modules[0].functions[0];
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: root, span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+    ];
+    function.result = raw::TypeId(1);
+    let child = |base, index| match shape {
+        ProjectedBorrowShape::Struct => {
+            raw::PlaceKind::StructField { base: raw::PlaceId(base), ordinal: index }
+        }
+        ProjectedBorrowShape::FixedArray => {
+            raw::PlaceKind::FixedArrayConstant { base: raw::PlaceId(base), index }
+        }
+    };
+    function.places = vec![
+        raw::Place { id: raw::PlaceId(0), ty: root, span, kind: raw::PlaceKind::Parameter(0) },
+        raw::Place { id: raw::PlaceId(1), ty: inner, span, kind: child(0, 0) },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(1),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(1), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: raw::TypeId(1),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(1), ordinal: 1 },
+        },
+        raw::Place { id: raw::PlaceId(4), ty: inner, span, kind: child(0, 1) },
+        raw::Place {
+            id: raw::PlaceId(5),
+            ty: raw::TypeId(1),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(6),
+            ty: raw::TypeId(1),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(4), ordinal: 1 },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
+    raw
+}
+
+fn mixed_projected_borrow_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+    struct_ty: raw::TypeId,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    raw.modules[0].data_declarations = 2;
+    let span = raw.modules[0].functions[0].span;
+    let function = &mut raw.modules[0].functions[0];
+    function.entry_export = None;
+    function.parameters = vec![
+        raw::ValueDefinition { id: raw::ValueId(0), ty: struct_ty, span },
+        raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span },
+    ];
+    function.places = vec![
+        raw::Place { id: raw::PlaceId(0), ty: struct_ty, span, kind: raw::PlaceKind::Parameter(0) },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: raw::TypeId(1),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 0 },
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::StructField { base: raw::PlaceId(0), ordinal: 1 },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
+    function.cleanup_plans[0].actions = vec![raw::DropAction::DropPlace(raw::PlaceId(0))];
+    raw
+}
+
+fn begin_borrow(
+    id: u32,
+    place: u32,
+    access: raw::BorrowAccess,
+    span: zryna_source::Span,
+) -> raw::Instruction {
+    raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+            id: raw::BorrowId(id),
+            place: raw::PlaceId(place),
+            access,
+            span,
+        }),
+    }
+}
+
+fn end_borrow(id: u32, span: zryna_source::Span) -> raw::Instruction {
+    raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(id) },
+    }
+}
+
+fn projected_borrow_pair(
+    mut raw: raw::Program,
+    sources: &SourceMap,
+    left: (u32, raw::BorrowAccess),
+    right: (u32, raw::BorrowAccess),
+    close_right: bool,
+) -> raw::Program {
+    let file = sources.verify_file_id(0).expect("entry file");
+    let first = sources.span(file, 10, 11).expect("first borrow span");
+    let second = sources.span(file, 20, 21).expect("second borrow span");
+    let first_end = sources.span(file, 40, 41).expect("first end span");
+    let second_end = sources.span(file, 50, 51).expect("second end span");
+    let instructions = &mut raw.modules[0].functions[0].blocks[0].instructions;
+    instructions.push(begin_borrow(0, left.0, left.1, first));
+    instructions.push(begin_borrow(1, right.0, right.1, second));
+    if close_right {
+        instructions.push(end_borrow(1, second_end));
+    }
+    instructions.push(end_borrow(0, first_end));
+    raw
+}
+
+type DiagnosticTrace = Vec<(String, String, Option<(u32, u32)>)>;
+
+fn diagnostic_trace(diagnostics: Vec<zryna_diagnostics::Diagnostic>) -> DiagnosticTrace {
+    diagnostics
+        .into_iter()
+        .map(|diagnostic| {
+            let primary = match diagnostic.primary() {
+                PrimaryLocation::Source { span } => Some((span.start(), span.end())),
+                _ => None,
+            };
+            (diagnostic.code().to_owned(), diagnostic.message().to_owned(), primary)
+        })
+        .collect()
 }
 
 fn shared_borrow_read_program(
@@ -4598,6 +4860,544 @@ fn same_root_begin_borrow_conflict_matrix_is_verified_independently() {
                     && diagnostic.message() == "borrow identity, owner state, or overlap is invalid"
             }),
             "{diagnostics:?}"
+        );
+    }
+}
+
+#[test]
+fn projected_borrow_siblings_are_disjoint_for_every_access_pair() {
+    let (sources, linear, linux, inner, outer, array) = projected_copy_borrow_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let access_pairs = [
+        (raw::BorrowAccess::Shared, raw::BorrowAccess::Shared),
+        (raw::BorrowAccess::Shared, raw::BorrowAccess::Exclusive),
+        (raw::BorrowAccess::Exclusive, raw::BorrowAccess::Shared),
+        (raw::BorrowAccess::Exclusive, raw::BorrowAccess::Exclusive),
+    ];
+    for (shape, root) in
+        [(ProjectedBorrowShape::Struct, outer), (ProjectedBorrowShape::FixedArray, array)]
+    {
+        let seed = projected_copy_borrow_program(&sources, &linear, &linux, inner, root, shape);
+        for places in [(2, 3), (2, 5), (1, 4)] {
+            for (left, right) in access_pairs {
+                let raw = projected_borrow_pair(
+                    seed.clone(),
+                    &sources,
+                    (places.0, left),
+                    (places.1, right),
+                    true,
+                );
+                verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+                    .expect("static sibling borrows are disjoint");
+                verify(raw, &sources, entry, linear.clone(), linux.clone())
+                    .expect("repeated verification is deterministic");
+            }
+        }
+    }
+}
+
+#[test]
+fn projected_borrow_overlap_conflicts_are_precise_and_ordered() {
+    let (sources, linear, linux, inner, outer, _) = projected_copy_borrow_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let seed = projected_copy_borrow_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        ProjectedBorrowShape::Struct,
+    );
+    let conflicts = [
+        (raw::BorrowAccess::Shared, raw::BorrowAccess::Exclusive),
+        (raw::BorrowAccess::Exclusive, raw::BorrowAccess::Shared),
+        (raw::BorrowAccess::Exclusive, raw::BorrowAccess::Exclusive),
+    ];
+    for places in [(2, 2), (1, 2), (2, 1), (0, 5), (5, 0)] {
+        let shared = projected_borrow_pair(
+            seed.clone(),
+            &sources,
+            (places.0, raw::BorrowAccess::Shared),
+            (places.1, raw::BorrowAccess::Shared),
+            true,
+        );
+        verify(shared, &sources, entry, linear.clone(), linux.clone())
+            .expect("overlapping shared borrows may coexist");
+        for (left, right) in conflicts {
+            let raw = projected_borrow_pair(
+                seed.clone(),
+                &sources,
+                (places.0, left),
+                (places.1, right),
+                false,
+            );
+            let first = diagnostic_trace(
+                verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+                    .expect_err("overlapping exclusive authority must fail"),
+            );
+            let second = diagnostic_trace(
+                verify(raw, &sources, entry, linear.clone(), linux.clone())
+                    .expect_err("repeated overlapping authority must fail"),
+            );
+            assert_eq!(first, second);
+            assert_eq!(
+                first,
+                [(
+                    "ZRYNA-I3011".to_owned(),
+                    "borrow identity, owner state, or overlap is invalid".to_owned(),
+                    Some((20, 21)),
+                )]
+            );
+        }
+    }
+}
+
+#[test]
+fn projected_owner_access_uses_the_same_overlap_relation() {
+    let (sources, linear, linux, inner, outer, _) = projected_copy_borrow_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let seed = projected_copy_borrow_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        ProjectedBorrowShape::Struct,
+    );
+    let file = sources.verify_file_id(0).expect("entry file");
+    let begin = sources.span(file, 10, 11).expect("borrow span");
+    let operation = sources.span(file, 30, 31).expect("operation span");
+    let end = sources.span(file, 40, 41).expect("end span");
+    for place in [2, 1, 0] {
+        let mut raw = seed.clone();
+        let ty = raw.modules[0].functions[0].places[place].ty;
+        raw.modules[0].functions[0].blocks[0].instructions = vec![
+            begin_borrow(0, 2, raw::BorrowAccess::Exclusive, begin),
+            raw::Instruction {
+                result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty, span: operation }),
+                span: operation,
+                kind: raw::InstructionKind::CopyFromPlace {
+                    place: raw::PlaceId(u32::try_from(place).expect("bounded place")),
+                },
+            },
+            end_borrow(0, end),
+        ];
+        let diagnostics = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("exclusive descendant authority hides overlapping owner reads");
+        assert_eq!(
+            diagnostic_trace(diagnostics),
+            [(
+                "ZRYNA-I3010".to_owned(),
+                "copy from a non-Copy or non-initialized place".to_owned(),
+                Some((30, 31)),
+            )]
+        );
+    }
+
+    let mut disjoint = seed.clone();
+    disjoint.modules[0].functions[0].blocks[0].instructions = vec![
+        begin_borrow(0, 2, raw::BorrowAccess::Exclusive, begin),
+        raw::Instruction {
+            result: Some(raw::ValueDefinition {
+                id: raw::ValueId(2),
+                ty: raw::TypeId(1),
+                span: operation,
+            }),
+            span: operation,
+            kind: raw::InstructionKind::CopyFromPlace { place: raw::PlaceId(5) },
+        },
+        end_borrow(0, end),
+    ];
+    verify(disjoint, &sources, entry, linear.clone(), linux.clone())
+        .expect("exclusive projected borrow leaves a sibling readable");
+
+    for access in [raw::BorrowAccess::Shared, raw::BorrowAccess::Exclusive] {
+        let mut replaced = seed.clone();
+        replaced.modules[0].functions[0].blocks[0].instructions = vec![
+            begin_borrow(0, 2, access, begin),
+            raw::Instruction {
+                result: None,
+                span: operation,
+                kind: raw::InstructionKind::ReplacePlace {
+                    place: raw::PlaceId(2),
+                    value: raw::ValueId(1),
+                },
+            },
+            end_borrow(0, end),
+        ];
+        let diagnostics = verify(replaced, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("owner mutation cannot overlap a borrow");
+        assert_eq!(
+            diagnostic_trace(diagnostics),
+            [(
+                "ZRYNA-I3010".to_owned(),
+                "replacement targets an unavailable or borrowed place".to_owned(),
+                Some((30, 31)),
+            )]
+        );
+    }
+
+    let mut through_authority = seed;
+    through_authority.modules[0].functions[0].blocks[0].instructions = vec![
+        begin_borrow(0, 2, raw::BorrowAccess::Exclusive, begin),
+        raw::Instruction {
+            result: None,
+            span: operation,
+            kind: raw::InstructionKind::BorrowWrite {
+                borrow: raw::BorrowId(0),
+                value: raw::ValueId(1),
+            },
+        },
+        end_borrow(0, end),
+    ];
+    verify(through_authority, &sources, entry, linear, linux)
+        .expect("exclusive authority remains the admitted write path");
+}
+
+#[test]
+fn projected_owner_moves_and_parent_replacements_follow_overlap() {
+    let (sources, linear, linux, inner, outer, _) = projected_copy_borrow_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let seed = projected_copy_borrow_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        ProjectedBorrowShape::Struct,
+    );
+    let file = sources.verify_file_id(0).expect("entry file");
+    let begin = sources.span(file, 10, 11).expect("borrow span");
+    let operation = sources.span(file, 30, 31).expect("operation span");
+    let end = sources.span(file, 40, 41).expect("end span");
+    {
+        let place = 2;
+        let mut raw = seed.clone();
+        let ty = raw.modules[0].functions[0].places[place].ty;
+        raw.modules[0].functions[0].blocks[0].instructions = vec![
+            begin_borrow(0, 2, raw::BorrowAccess::Shared, begin),
+            raw::Instruction {
+                result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty, span: operation }),
+                span: operation,
+                kind: raw::InstructionKind::MoveFromPlace {
+                    place: raw::PlaceId(u32::try_from(place).expect("bounded place")),
+                },
+            },
+            end_borrow(0, end),
+        ];
+        let diagnostics = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("owner move cannot overlap an active child borrow");
+        assert_eq!(
+            diagnostic_trace(diagnostics),
+            [(
+                "ZRYNA-I3010".to_owned(),
+                "move from an unavailable or borrowed place".to_owned(),
+                Some((30, 31)),
+            )]
+        );
+    }
+
+    let mut disjoint_move = seed.clone();
+    disjoint_move.modules[0].functions[0].blocks[0].instructions = vec![
+        begin_borrow(0, 2, raw::BorrowAccess::Shared, begin),
+        raw::Instruction {
+            result: Some(raw::ValueDefinition {
+                id: raw::ValueId(2),
+                ty: raw::TypeId(1),
+                span: operation,
+            }),
+            span: operation,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(5) },
+        },
+        end_borrow(0, end),
+    ];
+    verify(disjoint_move, &sources, entry, linear.clone(), linux.clone())
+        .expect("disjoint sibling owner move remains available");
+
+    let mut root_replace = seed.clone();
+    root_replace.modules[0].functions[0].blocks[0].instructions = vec![
+        begin_borrow(0, 2, raw::BorrowAccess::Shared, begin),
+        raw::Instruction {
+            result: None,
+            span: operation,
+            kind: raw::InstructionKind::ReplacePlace {
+                place: raw::PlaceId(0),
+                value: raw::ValueId(0),
+            },
+        },
+        end_borrow(0, end),
+    ];
+    let diagnostics = verify(root_replace, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("root replacement cannot overlap an active child borrow");
+    assert_eq!(
+        diagnostic_trace(diagnostics),
+        [(
+            "ZRYNA-I3010".to_owned(),
+            "replacement targets an unavailable or borrowed place".to_owned(),
+            Some((30, 31)),
+        )]
+    );
+
+    let mut disjoint_replace = seed;
+    disjoint_replace.modules[0].functions[0].blocks[0].instructions = vec![
+        begin_borrow(0, 2, raw::BorrowAccess::Shared, begin),
+        raw::Instruction {
+            result: None,
+            span: operation,
+            kind: raw::InstructionKind::ReplacePlace {
+                place: raw::PlaceId(5),
+                value: raw::ValueId(1),
+            },
+        },
+        end_borrow(0, end),
+    ];
+    verify(disjoint_replace, &sources, entry, linear, linux)
+        .expect("disjoint sibling replacement remains available");
+}
+
+#[test]
+fn projected_child_borrow_blocks_root_drop_but_not_a_sibling_drop() {
+    let (sources, linear, linux, struct_ty, _, _) = mixed_aggregate_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let seed = mixed_projected_borrow_program(&sources, &linear, &linux, struct_ty);
+    let file = sources.verify_file_id(0).expect("entry file");
+    let begin = sources.span(file, 10, 11).expect("borrow span");
+    let operation = sources.span(file, 30, 31).expect("operation span");
+    let end = sources.span(file, 40, 41).expect("end span");
+    let drop_with_active_child = |place| {
+        let mut raw = seed.clone();
+        raw.modules[0].functions[0].blocks[0].instructions = vec![
+            begin_borrow(0, 1, raw::BorrowAccess::Shared, begin),
+            raw::Instruction {
+                result: None,
+                span: operation,
+                kind: raw::InstructionKind::DropPlace { place: raw::PlaceId(place) },
+            },
+            end_borrow(0, end),
+        ];
+        raw
+    };
+    let diagnostics =
+        verify(drop_with_active_child(0), &sources, entry, linear.clone(), linux.clone())
+            .expect_err("root drop cannot overlap an active child borrow");
+    assert_eq!(
+        diagnostic_trace(diagnostics),
+        [
+            (
+                "ZRYNA-I3010".to_owned(),
+                "drop targets a Copy, unavailable, or borrowed place".to_owned(),
+                Some((30, 31)),
+            ),
+            (
+                "ZRYNA-I3012".to_owned(),
+                "cleanup plan is incomplete, duplicated, or out of reverse-completion order"
+                    .to_owned(),
+                Some((0, 53)),
+            ),
+        ]
+    );
+    verify(drop_with_active_child(2), &sources, entry, linear, linux)
+        .expect("a disjoint non-Copy sibling may be dropped");
+}
+
+#[test]
+fn direct_call_accepts_two_exclusive_disjoint_projected_authorities() {
+    let (sources, linear, linux, inner, outer, _) = projected_copy_borrow_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut raw = projected_copy_borrow_program(
+        &sources,
+        &linear,
+        &linux,
+        inner,
+        outer,
+        ProjectedBorrowShape::Struct,
+    );
+    let span = raw.modules[0].functions[0].span;
+    let caller = &mut raw.modules[0].functions[0];
+    caller.blocks[0].instructions = vec![
+        begin_borrow(0, 2, raw::BorrowAccess::Exclusive, span),
+        begin_borrow(1, 5, raw::BorrowAccess::Exclusive, span),
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(1), span }),
+            span,
+            kind: raw::InstructionKind::DirectCall {
+                callee: raw::FunctionId { module: raw::ModuleId(0), declaration: 1 },
+                arguments: vec![
+                    raw::CallArgument::Borrow(raw::BorrowId(0)),
+                    raw::CallArgument::Borrow(raw::BorrowId(1)),
+                ],
+                cleanup: raw::CleanupPlanId(0),
+            },
+        },
+        end_borrow(1, span),
+        end_borrow(0, span),
+    ];
+    caller.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(1) };
+    caller.cleanup_plans.push(raw::CleanupPlan {
+        id: raw::CleanupPlanId(1),
+        span,
+        actions: vec![],
+    });
+    raw.modules[0].functions.push(raw::Function {
+        id: raw::FunctionId { module: raw::ModuleId(0), declaration: 1 },
+        entry_export: None,
+        span,
+        parameters: vec![],
+        borrow_parameters: vec![
+            raw::BorrowParameter {
+                id: raw::BorrowId(0),
+                referent: raw::TypeId(1),
+                access: raw::BorrowAccess::Exclusive,
+                span,
+            },
+            raw::BorrowParameter {
+                id: raw::BorrowId(1),
+                referent: raw::TypeId(1),
+                access: raw::BorrowAccess::Exclusive,
+                span,
+            },
+        ],
+        result: raw::TypeId(1),
+        places: vec![],
+        blocks: vec![raw::Block {
+            id: raw::BlockId(0),
+            parameters: vec![],
+            instructions: vec![
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(0),
+                        ty: raw::TypeId(1),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(0) },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(1),
+                        ty: raw::TypeId(1),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(1) },
+                },
+            ],
+            terminators: vec![raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::Return {
+                    value: raw::ValueId(1),
+                    cleanup: raw::CleanupPlanId(0),
+                },
+            }],
+        }],
+        cleanup_plans: vec![raw::CleanupPlan { id: raw::CleanupPlanId(0), span, actions: vec![] }],
+    });
+    verify(raw, &sources, entry, linear, linux)
+        .expect("disjoint exclusive projected authorities may share one direct call");
+}
+
+#[test]
+fn projected_borrow_does_not_change_owner_masks_or_cleanup() {
+    let (sources, linear, linux, struct_ty, _, _) = mixed_aggregate_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let baseline = mixed_projected_borrow_program(&sources, &linear, &linux, struct_ty);
+    let span = baseline.modules[0].functions[0].span;
+
+    let mut borrowed = baseline.clone();
+    borrowed.modules[0].functions[0].blocks[0].instructions = vec![
+        begin_borrow(0, 1, raw::BorrowAccess::Exclusive, span),
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BorrowWrite {
+                borrow: raw::BorrowId(0),
+                value: raw::ValueId(1),
+            },
+        },
+        end_borrow(0, span),
+    ];
+    let drop_trace = |raw| {
+        let verified = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect("verified aggregate parameter cleanup");
+        let action = verified
+            .modules()
+            .next()
+            .expect("module")
+            .functions()
+            .next()
+            .expect("function")
+            .blocks()
+            .next()
+            .expect("block")
+            .terminator()
+            .derived_drop_actions()
+            .next()
+            .expect("root cleanup");
+        (
+            action.root().index(),
+            action.initialized_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+            action.moved_projections().map(super::PlaceIdentity::index).collect::<Vec<_>>(),
+            action.active_variant(),
+        )
+    };
+    assert_eq!(drop_trace(baseline), drop_trace(borrowed));
+}
+
+#[test]
+fn invalid_projected_borrow_places_fail_before_overlap_flow() {
+    let (sources, linear, linux, inner, outer, array) = projected_copy_borrow_authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let file = sources.verify_file_id(0).expect("entry file");
+    let invalid = sources.span(file, 5, 6).expect("invalid place span");
+    let make = |shape, root| {
+        let raw = projected_copy_borrow_program(&sources, &linear, &linux, inner, root, shape);
+        projected_borrow_pair(
+            raw,
+            &sources,
+            (2, raw::BorrowAccess::Exclusive),
+            (5, raw::BorrowAccess::Exclusive),
+            true,
+        )
+    };
+    let mut mutations = Vec::new();
+    let mut ordinal = make(ProjectedBorrowShape::Struct, outer);
+    ordinal.modules[0].functions[0].places[2].span = invalid;
+    ordinal.modules[0].functions[0].places[2].kind =
+        raw::PlaceKind::StructField { base: raw::PlaceId(1), ordinal: 2 };
+    mutations.push(ordinal);
+    let mut index = make(ProjectedBorrowShape::FixedArray, array);
+    index.modules[0].functions[0].places[4].span = invalid;
+    index.modules[0].functions[0].places[4].kind =
+        raw::PlaceKind::FixedArrayConstant { base: raw::PlaceId(0), index: 2 };
+    mutations.push(index);
+    let mut wrong_type = make(ProjectedBorrowShape::Struct, outer);
+    wrong_type.modules[0].functions[0].places[2].span = invalid;
+    wrong_type.modules[0].functions[0].places[2].ty = inner;
+    mutations.push(wrong_type);
+    let mut forward = make(ProjectedBorrowShape::Struct, outer);
+    forward.modules[0].functions[0].places[2].span = invalid;
+    forward.modules[0].functions[0].places[2].kind =
+        raw::PlaceKind::StructField { base: raw::PlaceId(6), ordinal: 0 };
+    mutations.push(forward);
+
+    for raw in mutations {
+        let first = diagnostic_trace(
+            verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+                .expect_err("invalid projected borrow place"),
+        );
+        let second = diagnostic_trace(
+            verify(raw, &sources, entry, linear.clone(), linux.clone())
+                .expect_err("repeated invalid projected borrow place"),
+        );
+        assert_eq!(first, second);
+        assert_eq!(
+            first,
+            [(
+                "ZRYNA-I3006".to_owned(),
+                "place projection does not match its sealed layout".to_owned(),
+                Some((5, 6)),
+            )]
         );
     }
 }
