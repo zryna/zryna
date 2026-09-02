@@ -1639,7 +1639,8 @@ fn build_graph(
                         .ok()
                         .and_then(|index| file.type_syntax().get(index))
                         .and_then(|ty| match ty.kind {
-                            RawTypeSyntaxKind::Borrow { argument, .. } => Some(argument),
+                            RawTypeSyntaxKind::Borrow { argument, .. }
+                            | RawTypeSyntaxKind::BorrowMut { argument, .. } => Some(argument),
                             _ => None,
                         });
                     add_root(
@@ -1984,31 +1985,41 @@ struct FunctionLowerer<'a, 'e> {
 }
 
 #[derive(Clone, Copy)]
-enum SharedRootLiteral {
+enum RootBorrowLiteral {
     Bool(bool),
     I32(i32),
 }
 
 #[derive(Clone)]
-enum SharedRootBorrowStep {
-    Begin { id: raw::BorrowId, at: Span },
+enum RootBorrowStep {
+    Begin { id: raw::BorrowId, access: raw::BorrowAccess, at: Span },
     Read { id: raw::BorrowId, ty: Ty, at: Span },
+    Write { id: raw::BorrowId, literal: RootBorrowLiteral, ty: Ty, at: Span },
     OwnerRead { ty: Ty, at: Span },
 }
 
-struct SharedRootBorrowPlan {
+#[derive(Clone)]
+struct RootBorrowAlias {
+    id: raw::BorrowId,
+    ty: Ty,
+    access: raw::BorrowAccess,
+    used: bool,
+}
+
+struct RootBorrowPlan {
     root_ty: Ty,
-    root_literal: SharedRootLiteral,
+    root_literal: RootBorrowLiteral,
     root_at: Span,
-    steps: Vec<SharedRootBorrowStep>,
+    steps: Vec<RootBorrowStep>,
     aliases: usize,
     reads: usize,
+    writes: usize,
     block_exit: Span,
     return_at: Span,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum SharedRootBorrowBudgetLimit {
+enum RootBorrowBudgetLimit {
     Values,
     Places,
     Transitions,
@@ -2016,31 +2027,35 @@ enum SharedRootBorrowBudgetLimit {
     CleanupPlans,
 }
 
-fn shared_root_borrow_budget_violation(
+fn root_borrow_budget_violation(
     aliases: usize,
     reads: usize,
-) -> Option<SharedRootBorrowBudgetLimit> {
-    let values = reads.saturating_add(2);
+    writes: usize,
+) -> Option<RootBorrowBudgetLimit> {
+    let values = reads.saturating_add(writes).saturating_add(2);
     let places = reads.saturating_add(1);
-    let transitions =
-        aliases.saturating_mul(2).saturating_add(reads.saturating_mul(2)).saturating_add(3);
+    let transitions = aliases
+        .saturating_mul(2)
+        .saturating_add(reads.saturating_mul(2))
+        .saturating_add(writes.saturating_mul(2))
+        .saturating_add(3);
     if values > ir::MAX_VALUES_PER_FUNCTION {
-        Some(SharedRootBorrowBudgetLimit::Values)
+        Some(RootBorrowBudgetLimit::Values)
     } else if places > ir::MAX_PLACES_PER_FUNCTION {
-        Some(SharedRootBorrowBudgetLimit::Places)
+        Some(RootBorrowBudgetLimit::Places)
     } else if transitions > ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION {
-        Some(SharedRootBorrowBudgetLimit::Transitions)
+        Some(RootBorrowBudgetLimit::Transitions)
     } else if aliases > ir::MAX_ACTIVE_BORROWS_PER_FUNCTION {
-        Some(SharedRootBorrowBudgetLimit::ActiveBorrows)
+        Some(RootBorrowBudgetLimit::ActiveBorrows)
     } else if 1 > ir::MAX_CLEANUP_PLANS_PER_FUNCTION {
-        Some(SharedRootBorrowBudgetLimit::CleanupPlans)
+        Some(RootBorrowBudgetLimit::CleanupPlans)
     } else {
         None
     }
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-fn plan_private_shared_root_borrow_function<'a>(
+fn plan_private_root_borrow_function<'a>(
     input: SemanticInput<'a>,
     module: usize,
     function: &'a syntax::RawFunctionSyntax,
@@ -2049,7 +2064,7 @@ fn plan_private_shared_root_borrow_function<'a>(
     node_types: &'a [Option<Ty>],
     result: Ty,
     errors: &mut Errors<'a>,
-) -> Option<SharedRootBorrowPlan> {
+) -> Option<RootBorrowPlan> {
     let at = span(input.sources(), function.span);
     if function.export_span.is_some() || !function.parameters.is_empty() {
         errors.at(
@@ -2086,6 +2101,7 @@ fn plan_private_shared_root_borrow_function<'a>(
         .ok()
         .and_then(|index| function.body.statements.get(index))?;
     let RawStatementKind::LocalDeclaration {
+        mutable: root_mutable,
         name: root_name,
         type_syntax: root_type,
         initializer: root_initializer,
@@ -2115,7 +2131,7 @@ fn plan_private_shared_root_borrow_function<'a>(
         .and_then(|index| function.body.expressions.get(index))?;
     let root_literal = match (&root_ty.category, &root_expression.kind) {
         (TypeCategory::Bool, RawExpressionKind::BoolLiteral { value }) => {
-            SharedRootLiteral::Bool(*value)
+            RootBorrowLiteral::Bool(*value)
         }
         (TypeCategory::I32, RawExpressionKind::I32Literal { spelling }) => {
             let Some(value) = spelling.parse::<i32>().ok() else {
@@ -2127,7 +2143,7 @@ fn plan_private_shared_root_borrow_function<'a>(
                 );
                 return None;
             };
-            SharedRootLiteral::I32(value)
+            RootBorrowLiteral::I32(value)
         }
         _ => {
             errors.at(
@@ -2152,31 +2168,105 @@ fn plan_private_shared_root_borrow_function<'a>(
     };
     let nested =
         usize::try_from(nested_block_id).ok().and_then(|index| function.body.blocks.get(index))?;
-    let mut aliases = BTreeMap::<String, (raw::BorrowId, Ty, bool)>::new();
+    let mut aliases = BTreeMap::<String, RootBorrowAlias>::new();
     let mut names = BTreeMap::<String, Span>::new();
     names.insert(root_name.text.to_ascii_lowercase(), span(input.sources(), root_name.span));
     let mut steps = Vec::with_capacity(nested.statements.len());
     let mut reads = 0_usize;
+    let mut writes = 0_usize;
     for statement_id in &nested.statements {
         let statement = usize::try_from(*statement_id)
             .ok()
             .and_then(|index| function.body.statements.get(index))?;
-        let RawStatementKind::LocalDeclaration { mutable, name, type_syntax, initializer, .. } =
-            &statement.kind
-        else {
-            errors.at(
+        let (mutable, name, type_syntax, initializer) = match &statement.kind {
+            RawStatementKind::LocalDeclaration {
+                mutable, name, type_syntax, initializer, ..
+            } => (mutable, name, type_syntax, initializer),
+            RawStatementKind::Assignment { target, value, .. } => {
+                let target = usize::try_from(*target)
+                    .ok()
+                    .and_then(|index| function.body.expressions.get(index))?;
+                let RawExpressionKind::Reference { name: target_name } = &target.kind else {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), target.span),
+                        "exclusive-borrow writes require one direct alias target",
+                        "assign a bool or i32 literal directly through the BorrowMut alias",
+                    );
+                    return None;
+                };
+                let Some(alias) = aliases.get_mut(&target_name.text) else {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), target_name.span),
+                        "borrow blocks cannot replace the root or an ordinary local",
+                        "write only through one active BorrowMut alias",
+                    );
+                    return None;
+                };
+                if alias.access != raw::BorrowAccess::Exclusive {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), target_name.span),
+                        "shared aliases do not grant write authority",
+                        "use a BorrowMut alias for an exact Copy write",
+                    );
+                    return None;
+                }
+                let value = usize::try_from(*value)
+                    .ok()
+                    .and_then(|index| function.body.expressions.get(index))?;
+                let literal = match (&alias.ty.category, &value.kind) {
+                    (TypeCategory::Bool, RawExpressionKind::BoolLiteral { value }) => {
+                        RootBorrowLiteral::Bool(*value)
+                    }
+                    (TypeCategory::I32, RawExpressionKind::I32Literal { spelling }) => {
+                        let Some(value) = spelling.parse::<i32>().ok() else {
+                            errors.at(
+                                "ZRYNA-M3008",
+                                span(input.sources(), value.span),
+                                format!("integer literal '{spelling}' is outside i32"),
+                                "use a decimal i32 literal",
+                            );
+                            return None;
+                        };
+                        RootBorrowLiteral::I32(value)
+                    }
+                    _ => {
+                        errors.at(
+                            "ZRYNA-M3017",
+                            span(input.sources(), value.span),
+                            "exclusive-borrow writes require an exact referent-typed literal",
+                            "write a bool or i32 literal matching the BorrowMut referent",
+                        );
+                        return None;
+                    }
+                };
+                alias.used = true;
+                steps.push(RootBorrowStep::Write {
+                    id: alias.id,
+                    literal,
+                    ty: alias.ty,
+                    at: span(input.sources(), statement.span),
+                });
+                writes = writes.checked_add(1)?;
+                continue;
+            }
+            _ => {
+                errors.at(
                 "ZRYNA-M3017",
                 span(input.sources(), statement.span),
-                "shared-borrow blocks admit only const aliases and const Copy reads",
-                "remove assignment, calls, control flow, effects, and nested blocks",
+                "root-borrow blocks admit only const aliases, const Copy reads, and BorrowMut writes",
+                "remove calls, control flow, effects, nested blocks, and ordinary assignment",
             );
-            return None;
+                return None;
+            }
         };
         if *mutable {
             errors.at(
                 "ZRYNA-M3017",
                 span(input.sources(), statement.span),
-                "shared-borrow block bindings must be const",
+                "borrow block bindings must be const",
                 "declare the alias or Copy read with const",
             );
             return None;
@@ -2193,30 +2283,53 @@ fn plan_private_shared_root_borrow_function<'a>(
         }
         let declared =
             usize::try_from(*type_syntax).ok().and_then(|index| file.type_syntax().get(index))?;
-        if let RawTypeSyntaxKind::Borrow { argument, .. } = declared.kind {
+        if matches!(
+            declared.kind,
+            RawTypeSyntaxKind::Borrow { .. } | RawTypeSyntaxKind::BorrowMut { .. }
+        ) {
+            let (argument, access) = match declared.kind {
+                RawTypeSyntaxKind::Borrow { argument, .. } => (argument, raw::BorrowAccess::Shared),
+                RawTypeSyntaxKind::BorrowMut { argument, .. } => {
+                    (argument, raw::BorrowAccess::Exclusive)
+                }
+                _ => unreachable!(),
+            };
             let referent =
                 semantic_type(file, argument, module, declarations, graph, node_types, errors)?;
             if referent != root_ty {
                 errors.at(
                     "ZRYNA-M3017",
                     span(input.sources(), declared.span),
-                    "shared alias referent does not match the root's exact scalar type",
-                    "declare Borrow<bool> or Borrow<i32> matching the borrowed root",
+                    "borrow alias referent does not match the root's exact scalar type",
+                    "declare Borrow or BorrowMut matching the bool or i32 root",
                 );
                 return None;
             }
             let initializer = usize::try_from(*initializer)
                 .ok()
                 .and_then(|index| function.body.expressions.get(index))?;
-            let RawExpressionKind::Borrow { value, .. } = initializer.kind else {
+            let (value, initializer_access) = match initializer.kind {
+                RawExpressionKind::Borrow { value, .. } => (value, raw::BorrowAccess::Shared),
+                RawExpressionKind::BorrowMut { value, .. } => (value, raw::BorrowAccess::Exclusive),
+                _ => {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), initializer.span),
+                        "borrow alias type and initializer must use the same access mode",
+                        "initialize Borrow with borrow and BorrowMut with borrowMut",
+                    );
+                    return None;
+                }
+            };
+            if initializer_access != access {
                 errors.at(
                     "ZRYNA-M3017",
                     span(input.sources(), initializer.span),
-                    "shared alias must be initialized directly by borrow(root)",
-                    "initialize the const Borrow alias from the exact local root",
+                    "borrow alias type and initializer access modes do not match",
+                    "initialize Borrow with borrow and BorrowMut with borrowMut",
                 );
                 return None;
-            };
+            }
             let borrowed = usize::try_from(value)
                 .ok()
                 .and_then(|index| function.body.expressions.get(index))?;
@@ -2224,24 +2337,64 @@ fn plan_private_shared_root_borrow_function<'a>(
                 errors.at(
                     "ZRYNA-M3017",
                     span(input.sources(), borrowed.span),
-                    "shared borrowing currently admits only one local root reference",
-                    "borrow the exact preceding bool or i32 local without projection",
+                    "root borrowing requires one direct root or lexical alias reference",
+                    "borrow the exact preceding bool or i32 root or an admitted shared alias",
                 );
                 return None;
             };
-            if borrowed_name.text != root_name.text {
+            if borrowed_name.text == root_name.text {
+                if access == raw::BorrowAccess::Exclusive && !*root_mutable {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), borrowed_name.span),
+                        "exclusive borrowing requires a mutable root local",
+                        "declare the bool or i32 root with let before borrowMut",
+                    );
+                    return None;
+                }
+            } else if let Some(parent_access) =
+                aliases.get(&borrowed_name.text).map(|parent| parent.access)
+            {
+                if access != raw::BorrowAccess::Shared || parent_access != raw::BorrowAccess::Shared
+                {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), borrowed_name.span),
+                        "only shared-from-shared reborrowing is admitted",
+                        "reborrow an active Borrow alias with borrow, or borrow the root directly",
+                    );
+                    return None;
+                }
+                aliases.get_mut(&borrowed_name.text).expect("resolved shared parent").used = true;
+            } else {
                 errors.at(
                     "ZRYNA-M3017",
                     span(input.sources(), borrowed_name.span),
-                    "shared alias does not borrow the initialized root",
-                    "borrow the exact preceding local root",
+                    "borrow alias does not resolve to the root or an active shared alias",
+                    "borrow the exact root or reborrow one preceding Borrow alias",
+                );
+                return None;
+            }
+            if access == raw::BorrowAccess::Exclusive && !aliases.is_empty()
+                || access == raw::BorrowAccess::Shared
+                    && aliases.values().any(|alias| alias.access == raw::BorrowAccess::Exclusive)
+            {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), statement.span),
+                    "borrow access conflicts with an active alias of the same root",
+                    "keep shared aliases together or use one exclusive alias by itself",
                 );
                 return None;
             }
             let id = raw::BorrowId(u32::try_from(aliases.len()).ok()?);
-            aliases.insert(name.text.clone(), (id, referent, false));
-            steps.push(SharedRootBorrowStep::Begin {
+            aliases.insert(
+                name.text.clone(),
+                RootBorrowAlias { id, ty: referent, access, used: false },
+            );
+            steps.push(RootBorrowStep::Begin {
                 id,
+                access,
                 at: span(input.sources(), statement.span),
             });
         } else {
@@ -2278,14 +2431,23 @@ fn plan_private_shared_root_borrow_function<'a>(
                     );
                     return None;
                 }
-                steps.push(SharedRootBorrowStep::OwnerRead {
+                if aliases.values().any(|alias| alias.access == raw::BorrowAccess::Exclusive) {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), alias_name.span),
+                        "owner reads are hidden while an exclusive alias is active",
+                        "read through BorrowMut or wait until the lexical block ends",
+                    );
+                    return None;
+                }
+                steps.push(RootBorrowStep::OwnerRead {
                     ty: read_ty,
                     at: span(input.sources(), statement.span),
                 });
                 reads = reads.checked_add(1)?;
                 continue;
             }
-            let Some((id, alias_ty, used)) = aliases.get_mut(&alias_name.text) else {
+            let Some(alias) = aliases.get_mut(&alias_name.text) else {
                 errors.at(
                     "ZRYNA-M3002",
                     span(input.sources(), alias_name.span),
@@ -2294,24 +2456,24 @@ fn plan_private_shared_root_borrow_function<'a>(
                 );
                 return None;
             };
-            if *alias_ty != read_ty {
+            if alias.ty != read_ty {
                 return None;
             }
-            *used = true;
-            steps.push(SharedRootBorrowStep::Read {
-                id: *id,
+            alias.used = true;
+            steps.push(RootBorrowStep::Read {
+                id: alias.id,
                 ty: read_ty,
                 at: span(input.sources(), statement.span),
             });
             reads = reads.checked_add(1)?;
         }
     }
-    if aliases.is_empty() || aliases.values().any(|(_, _, used)| !used) {
+    if aliases.is_empty() || aliases.values().any(|alias| !alias.used) {
         errors.at(
             "ZRYNA-M3017",
             span(input.sources(), nested.span),
-            "each lexical shared alias must be declared and read at least once",
-            "read every const Borrow alias into one exact Copy local before block exit",
+            "each lexical borrow alias must be used by an exact Copy read or write",
+            "read every Borrow alias and read or write every BorrowMut alias before block exit",
         );
         return None;
     }
@@ -2346,13 +2508,13 @@ fn plan_private_shared_root_borrow_function<'a>(
         );
         return None;
     }
-    if let Some(limit) = shared_root_borrow_budget_violation(aliases.len(), reads) {
+    if let Some(limit) = root_borrow_budget_violation(aliases.len(), reads, writes) {
         let label = match limit {
-            SharedRootBorrowBudgetLimit::Values => "derived values",
-            SharedRootBorrowBudgetLimit::Places => "derived places",
-            SharedRootBorrowBudgetLimit::Transitions => "derived ownership transitions",
-            SharedRootBorrowBudgetLimit::ActiveBorrows => "simultaneously active borrows",
-            SharedRootBorrowBudgetLimit::CleanupPlans => "derived cleanup plans",
+            RootBorrowBudgetLimit::Values => "derived values",
+            RootBorrowBudgetLimit::Places => "derived places",
+            RootBorrowBudgetLimit::Transitions => "derived ownership transitions",
+            RootBorrowBudgetLimit::ActiveBorrows => "simultaneously active borrows",
+            RootBorrowBudgetLimit::CleanupPlans => "derived cleanup plans",
         };
         errors.at(
             "ZRYNA-M3201",
@@ -2362,20 +2524,21 @@ fn plan_private_shared_root_borrow_function<'a>(
         );
         return None;
     }
-    Some(SharedRootBorrowPlan {
+    Some(RootBorrowPlan {
         root_ty,
         root_literal,
         root_at: span(input.sources(), root_local.span),
         steps,
         aliases: aliases.len(),
         reads,
+        writes,
         block_exit: span(input.sources(), nested.close_brace_span),
         return_at: span(input.sources(), return_statement.span),
     })
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-fn lower_private_shared_root_borrow_function<'a>(
+fn lower_private_root_borrow_function<'a>(
     input: SemanticInput<'a>,
     module: usize,
     declaration: usize,
@@ -2386,7 +2549,7 @@ fn lower_private_shared_root_borrow_function<'a>(
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<raw::Function> {
-    let plan = plan_private_shared_root_borrow_function(
+    let plan = plan_private_root_borrow_function(
         input,
         module,
         function,
@@ -2401,11 +2564,15 @@ fn lower_private_shared_root_borrow_function<'a>(
     values += 1;
     let root_place = raw::PlaceId(0);
     let mut instructions = Vec::with_capacity(
-        plan.aliases.checked_mul(2)?.checked_add(plan.reads.checked_mul(2)?)?.checked_add(3)?,
+        plan.aliases
+            .checked_mul(2)?
+            .checked_add(plan.reads.checked_mul(2)?)?
+            .checked_add(plan.writes.checked_mul(2)?)?
+            .checked_add(3)?,
     );
     let literal_kind = match plan.root_literal {
-        SharedRootLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
-        SharedRootLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
+        RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
+        RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
     };
     instructions.push(raw::Instruction {
         result: Some(raw::ValueDefinition {
@@ -2431,20 +2598,20 @@ fn lower_private_shared_root_borrow_function<'a>(
     let mut begun = Vec::with_capacity(plan.aliases);
     for step in plan.steps {
         match step {
-            SharedRootBorrowStep::Begin { id, at } => {
+            RootBorrowStep::Begin { id, access, at } => {
                 instructions.push(raw::Instruction {
                     result: None,
                     span: at,
                     kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
                         id,
                         place: root_place,
-                        access: raw::BorrowAccess::Shared,
+                        access,
                         span: at,
                     }),
                 });
                 begun.push(id);
             }
-            SharedRootBorrowStep::Read { id, ty, at } => {
+            RootBorrowStep::Read { id, ty, at } => {
                 let value = raw::ValueId(values);
                 values += 1;
                 instructions.push(raw::Instruction {
@@ -2465,7 +2632,7 @@ fn lower_private_shared_root_borrow_function<'a>(
                     kind: raw::InstructionKind::InitializePlace { place, value },
                 });
             }
-            SharedRootBorrowStep::OwnerRead { ty, at } => {
+            RootBorrowStep::OwnerRead { ty, at } => {
                 let value = raw::ValueId(values);
                 values += 1;
                 instructions.push(raw::Instruction {
@@ -2484,6 +2651,24 @@ fn lower_private_shared_root_borrow_function<'a>(
                     result: None,
                     span: at,
                     kind: raw::InstructionKind::InitializePlace { place, value },
+                });
+            }
+            RootBorrowStep::Write { id, literal, ty, at } => {
+                let value = raw::ValueId(values);
+                values += 1;
+                let kind = match literal {
+                    RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
+                    RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
+                };
+                instructions.push(raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+                    span: at,
+                    kind,
+                });
+                instructions.push(raw::Instruction {
+                    result: None,
+                    span: at,
+                    kind: raw::InstructionKind::BorrowWrite { borrow: id, value },
                 });
             }
         }
@@ -2550,21 +2735,27 @@ fn lower_function<'a>(
     let file = &input.syntax().files()[module];
     let result =
         semantic_type(file, function.result_type, module, declarations, graph, node_types, errors)?;
-    let has_shared_borrow_syntax = function.body.statements.iter().any(|statement| {
+    let has_root_borrow_syntax = function.body.statements.iter().any(|statement| {
         let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind else {
             return false;
         };
         usize::try_from(type_syntax)
             .ok()
             .and_then(|index| file.type_syntax().get(index))
-            .is_some_and(|ty| matches!(ty.kind, RawTypeSyntaxKind::Borrow { .. }))
-    }) || function
-        .body
-        .expressions
-        .iter()
-        .any(|expression| matches!(expression.kind, RawExpressionKind::Borrow { .. }));
-    if has_shared_borrow_syntax {
-        return lower_private_shared_root_borrow_function(
+            .is_some_and(|ty| {
+                matches!(
+                    ty.kind,
+                    RawTypeSyntaxKind::Borrow { .. } | RawTypeSyntaxKind::BorrowMut { .. }
+                )
+            })
+    }) || function.body.expressions.iter().any(|expression| {
+        matches!(
+            expression.kind,
+            RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
+        )
+    });
+    if has_root_borrow_syntax {
+        return lower_private_root_borrow_function(
             input,
             module,
             declaration,

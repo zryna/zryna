@@ -271,10 +271,11 @@ initialized exact same-type whole Struct/FixedArray root into a mutable availabl
 general owned joins, owned loop-carried joins, repeated or nested control flow, and general scope
 exits are future child-issue work. Issue #82 is active through the checked dependency graph in
 [`M3_BORROWING_SEMANTICS.md`](M3_BORROWING_SEMANTICS.md). Issue #113 freezes the contract and
-existing verified-IR prerequisite. Issue #114 implements only the first internal private
-straight-line shared `bool`/`i32` root shape with compatible Copy owner reads, deterministic reverse
-lexical end, and post-scope owner reuse; the remaining dependency-ordered slices retain all runtime,
-backend, and public-profile work.
+existing verified-IR prerequisite. Issues #114 and #115 implement the internal private straight-line
+`bool`/`i32` root shapes: shared and exclusive Copy access, const-alias write-through, the complete
+root conflict matrix, one shared-from-shared reborrow, deterministic reverse lexical end, and
+post-scope owner reuse. The remaining dependency-ordered slices retain all projected, call,
+control-flow, owned-root, runtime, backend, and public-profile work.
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |

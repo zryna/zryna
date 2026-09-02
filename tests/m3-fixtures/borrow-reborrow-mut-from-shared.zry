@@ -1,0 +1,10 @@
+function bad(): i32 {
+  let root: i32 = 7;
+  {
+    const parent: Borrow<i32> = borrow(root);
+    const child: BorrowMut<i32> = borrowMut(parent);
+    const copy: i32 = parent;
+    child = 9;
+  }
+  return root;
+}

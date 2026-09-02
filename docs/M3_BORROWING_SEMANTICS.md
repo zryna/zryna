@@ -1,8 +1,8 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113 and #114 complete. The internal semantic producer admits the first bounded
-shared-root source shape; exclusive, projected, call, control-flow, and owned-root borrowing remain
-dependency-ordered later checkpoints.
+Status: Issues #113, #114, and #115 complete. The internal semantic producer admits bounded
+shared and exclusive Copy-root source shapes plus one shared-from-shared reborrow. Projected,
+call, control-flow, and owned-root borrowing remain dependency-ordered later checkpoints.
 
 This document freezes the dependency-ordered implementation boundary for Issue #82. It refines the
 normative borrowing rules in [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md) without
@@ -149,6 +149,48 @@ nonliteral roots, owned referents, exclusive borrows, projections, assignment, c
 loops, nested borrow blocks, stored aliases, returned aliases, lifetime inference, runtime
 tracking, ABI changes, backend operations, driver routes, CLI selection, and target artifacts.
 
+## Issue #115 source checkpoint
+
+The same private parameter-free one-root shape now accepts `BorrowMut<bool>` and
+`BorrowMut<i32>` aliases initialized by `borrowMut(root)` when the literal-initialized root was
+declared with `let`. The frozen assignment syntax is deliberately:
+
+```text
+const alias: BorrowMut<i32> = borrowMut(root);
+alias = 9;
+```
+
+The assignment is a write through the exclusive authority, not rebinding of the const alias. The
+TypeScript 6 worker records only the source-faithful const declaration and assignment syntax;
+Zryna semantics alone assigns that write-through meaning. An exact Copy alias read emits
+`BorrowRead`; an exact literal write emits the literal followed by `BorrowWrite`. Reverse
+`EndBorrow` still occurs at the one nested-block exit, after which the owner is readable and its
+written value remains stored.
+
+Each prospective alias is resolved and conflict-checked before receiving its dense planned
+`BorrowId`. No raw function, instruction, or program is materialized until the complete plan and
+resource preflight succeed. The admitted matrix is exact:
+
+| Active authority on the root | requested shared from root | requested exclusive from root | shared from alias | exclusive from alias |
+| --- | --- | --- | --- | --- |
+| none | allowed | allowed for a `let` root | not applicable | not applicable |
+| one or more shared | allowed | rejected | allowed only from a shared alias | rejected |
+| one exclusive | rejected | rejected | rejected | rejected |
+
+Thus shared/shared aliases coexist and a bounded shared-from-shared reborrow resolves to the same
+sealed root. Mutable-from-shared reborrow and every reborrow from an exclusive alias fail as
+`ZRYNA-M3017`. Exclusive access hides owner reads and ordinary owner assignment until the alias
+ends. Shared writes, mismatched alias/initializer modes, wrong literal types, immutable-root
+exclusive creation, conflicting direct aliases, unresolved sources, and unused authorities also
+fail before raw-IR construction. The mandatory verifier independently requires exclusive
+`BorrowWrite` direction and exact Copy operand type as `ZRYNA-I3005` structural evidence.
+
+The producer preflights values, places, transitions, cleanup plans, and peak active borrows using
+both read and write counts before materialization. It does not shorten a lifetime after last use:
+all admitted aliases remain active until the reverse lexical end at the block close. This slice
+adds no mutable-from-shared reborrow, reborrow from exclusive, projections, calls, CFG, nested
+blocks, non-Copy referents, runtime borrow flag, ABI, backend, driver, CLI, or public profile.
+
 ## Resource and verification boundary
 
 The verifier limit remains 16,384 simultaneously active borrows per function. Function borrow
@@ -157,7 +199,8 @@ exact limit, rejects the first extra with `ZRYNA-I3201`, and does not treat repe
 begin/end sites as simultaneously live.
 
 The borrow edit loop runs `cargo test --locked -p zryna-ir borrow` for the retained verifier and
-`cargo test --locked -p zryna-semantics shared_root` for the #114 producer. The checked gate
+focused `borrow`, `exclusive_`, `conflict_matrix`, and `reborrow` semantic filters for the #114/#115
+producer. The checked gate
 additionally requires the complete DataOwnershipV1 IR and semantic suites plus doctests, M3
 contract/documentation tests, formatting and strict Clippy, `pnpm preflight`, and `pnpm m0:check`.
 A quick lane cannot substitute for proportional exact/+1 or cross-platform merge evidence.

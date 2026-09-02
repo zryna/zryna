@@ -2,7 +2,7 @@ use super::{
     Errors, FunctionCatalog, FunctionSignature, MAX_SEMANTIC_DIAGNOSTICS, OwnedCfgBudgetLimit,
     OwnedCfgState, OwnedStringBranchState, OwnedStringEstimateContext,
     OwnedStringPreparationBudget, OwnerState, PartialTransferBudgetViolation, PrivateStringLowerer,
-    ProgramCfgBudgetLimit, SemanticInput, SharedRootBorrowBudgetLimit, ValueBudgetLimit,
+    ProgramCfgBudgetLimit, RootBorrowBudgetLimit, SemanticInput, ValueBudgetLimit,
     accumulate_generated_cfg_function, accumulate_generated_value_function,
     aggregate_clone_budget_violation, aggregate_operand_budget_violation,
     aggregate_transition_budget_violation, authenticated_type_capabilities,
@@ -22,15 +22,15 @@ use super::{
     projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
     projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
     projected_subobject_return_budget_violation, raw_function_value_count,
-    raw_terminator_edge_count, resource_budget_violation, semantic_preflight,
-    shared_root_borrow_budget_violation, span, string_byte_budget_violation, terminal_owned_if,
+    raw_terminator_edge_count, resource_budget_violation, root_borrow_budget_violation,
+    semantic_preflight, span, string_byte_budget_violation, terminal_owned_if,
     value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
-    VerifiedActiveVariant, VerifiedCleanupRole, VerifiedDropActionKind, VerifiedFunction,
-    VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind, VerifiedPlaceKind,
-    VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
+    VerifiedActiveVariant, VerifiedBorrowAccess, VerifiedCleanupRole, VerifiedDropActionKind,
+    VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind,
+    VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
 };
 use zryna_ownership_runtime_abi::{
     LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, VerifiedOwnershipRuntimeAbi,
@@ -82,6 +82,62 @@ const SHARED_ROOT_BORROW_UNUSED_SOURCE: &str =
     include_str!("../../../../tests/m3-fixtures/shared-root-borrow-unused.zry");
 const SHARED_ROOT_BORROW_UNUSED_JSON: &[u8] =
     include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow-unused.json");
+const EXCLUSIVE_ROOT_BORROW_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/exclusive-root-borrow.zry");
+const EXCLUSIVE_ROOT_BORROW_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/exclusive-root-borrow.json");
+const EXCLUSIVE_ROOT_BORROW_BOOL_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/exclusive-root-borrow-bool.zry");
+const EXCLUSIVE_ROOT_BORROW_BOOL_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/exclusive-root-borrow-bool.json");
+const SHARED_ROOT_REBORROW_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-reborrow.zry");
+const SHARED_ROOT_REBORROW_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-reborrow.json");
+const BORROW_CONFLICT_SHARED_EXCLUSIVE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-conflict-shared-exclusive.zry");
+const BORROW_CONFLICT_SHARED_EXCLUSIVE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-conflict-shared-exclusive.json");
+const BORROW_CONFLICT_EXCLUSIVE_SHARED_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-conflict-exclusive-shared.zry");
+const BORROW_CONFLICT_EXCLUSIVE_SHARED_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-conflict-exclusive-shared.json");
+const BORROW_CONFLICT_EXCLUSIVE_EXCLUSIVE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-conflict-exclusive-exclusive.zry");
+const BORROW_CONFLICT_EXCLUSIVE_EXCLUSIVE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-conflict-exclusive-exclusive.json");
+const BORROW_REBORROW_MUT_FROM_SHARED_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-reborrow-mut-from-shared.zry");
+const BORROW_REBORROW_MUT_FROM_SHARED_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-reborrow-mut-from-shared.json");
+const BORROW_REBORROW_SHARED_FROM_EXCLUSIVE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-reborrow-shared-from-exclusive.zry");
+const BORROW_REBORROW_SHARED_FROM_EXCLUSIVE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-reborrow-shared-from-exclusive.json");
+const BORROW_SHARED_WRITE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-shared-write.zry");
+const BORROW_SHARED_WRITE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-shared-write.json");
+const BORROW_EXCLUSIVE_WRONG_WRITE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-exclusive-wrong-write.zry");
+const BORROW_EXCLUSIVE_WRONG_WRITE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-exclusive-wrong-write.json");
+const BORROW_EXCLUSIVE_OWNER_READ_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-exclusive-owner-read.zry");
+const BORROW_EXCLUSIVE_OWNER_READ_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-exclusive-owner-read.json");
+const BORROW_EXCLUSIVE_ROOT_WRITE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-exclusive-root-write.zry");
+const BORROW_EXCLUSIVE_ROOT_WRITE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-exclusive-root-write.json");
+const BORROW_EXCLUSIVE_IMMUTABLE_ROOT_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-exclusive-immutable-root.zry");
+const BORROW_EXCLUSIVE_IMMUTABLE_ROOT_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-exclusive-immutable-root.json");
+const BORROW_EXCLUSIVE_NONREFERENCE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/borrow-exclusive-nonreference.zry");
+const BORROW_EXCLUSIVE_NONREFERENCE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/borrow-exclusive-nonreference.json");
 const STRING_SOURCE: &str = "function bad(): String { return \"x\"; }";
 const STRING_RESPONSE: &str = r#"{"id":1,"result":{"schema_version":4,"files":[{"id":0,"path":"src/main.zry","imports":[],"type_syntax":[{"span":{"file":0,"start":16,"end":22},"kind":{"kind":"string","keyword_span":{"file":0,"start":16,"end":22}}}],"data_declarations":[],"functions":[{"span":{"file":0,"start":0,"end":38},"export_span":null,"function_span":{"file":0,"start":0,"end":8},"name":{"text":"bad","span":{"file":0,"start":9,"end":12}},"parameters":[],"result_type":0,"body":{"span":{"file":0,"start":23,"end":38},"root_block":0,"blocks":[{"span":{"file":0,"start":23,"end":38},"open_brace_span":{"file":0,"start":23,"end":24},"statements":[0],"close_brace_span":{"file":0,"start":37,"end":38}}],"statements":[{"span":{"file":0,"start":25,"end":36},"kind":{"kind":"return","keyword_span":{"file":0,"start":25,"end":31},"value":0,"semicolon_span":{"file":0,"start":35,"end":36}}}],"expressions":[{"span":{"file":0,"start":32,"end":35},"kind":{"kind":"string-literal","spelling":"\"x\""}}]}}]}],"diagnostics":[]}}"#;
 const MULTIBYTE_STRING_SOURCE: &str = "function snow(): String { return \"snowman: ☃\"; }";
@@ -18921,22 +18977,27 @@ fn shared_root_borrow_lowering_is_deterministic() {
 }
 
 #[test]
-fn shared_root_borrow_resources_are_preflighted_at_exact_and_first_extra_limits() {
+fn root_borrow_resources_are_preflighted_at_exact_and_first_extra_limits() {
     let exact = zryna_ir::data_ownership_v1::MAX_ACTIVE_BORROWS_PER_FUNCTION;
-    assert_eq!(shared_root_borrow_budget_violation(exact, 1), None);
+    assert_eq!(root_borrow_budget_violation(exact, 1, 0), None);
     assert_eq!(
-        shared_root_borrow_budget_violation(exact + 1, 1),
-        Some(SharedRootBorrowBudgetLimit::ActiveBorrows)
+        root_borrow_budget_violation(exact + 1, 1, 0),
+        Some(RootBorrowBudgetLimit::ActiveBorrows)
     );
     let exact_values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION - 2;
-    assert_eq!(shared_root_borrow_budget_violation(1, exact_values), None);
+    assert_eq!(root_borrow_budget_violation(1, exact_values, 0), None);
     assert_eq!(
-        shared_root_borrow_budget_violation(1, exact_values + 1),
-        Some(SharedRootBorrowBudgetLimit::Values)
+        root_borrow_budget_violation(1, exact_values + 1, 0),
+        Some(RootBorrowBudgetLimit::Values)
+    );
+    assert_eq!(root_borrow_budget_violation(1, 0, exact_values), None);
+    assert_eq!(
+        root_borrow_budget_violation(1, 0, exact_values + 1),
+        Some(RootBorrowBudgetLimit::Values)
     );
     assert_eq!(
-        shared_root_borrow_budget_violation(usize::MAX, usize::MAX),
-        Some(SharedRootBorrowBudgetLimit::Values)
+        root_borrow_budget_violation(usize::MAX, usize::MAX, usize::MAX),
+        Some(RootBorrowBudgetLimit::Values)
     );
 }
 
@@ -18953,7 +19014,7 @@ fn shared_root_borrow_rejects_owner_replacement_before_ir_construction() {
     assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
     assert_eq!(
         diagnostics[0].message(),
-        "shared-borrow blocks admit only const aliases and const Copy reads"
+        "borrow blocks cannot replace the root or an ordinary local"
     );
 }
 
@@ -19047,17 +19108,17 @@ fn shared_root_borrow_rejects_mutable_wrong_referent_and_unused_aliases() {
         (
             SHARED_ROOT_BORROW_MUTABLE_SOURCE,
             SHARED_ROOT_BORROW_MUTABLE_JSON,
-            "shared-borrow block bindings must be const",
+            "borrow block bindings must be const",
         ),
         (
             SHARED_ROOT_BORROW_WRONG_REFERENT_SOURCE,
             SHARED_ROOT_BORROW_WRONG_REFERENT_JSON,
-            "shared alias referent does not match the root's exact scalar type",
+            "borrow alias referent does not match the root's exact scalar type",
         ),
         (
             SHARED_ROOT_BORROW_UNUSED_SOURCE,
             SHARED_ROOT_BORROW_UNUSED_JSON,
-            "each lexical shared alias must be declared and read at least once",
+            "each lexical borrow alias must be used by an exact Copy read or write",
         ),
     ] {
         let sources = sources_for(source);
@@ -19070,5 +19131,284 @@ fn shared_root_borrow_rejects_mutable_wrong_referent_and_unused_aliases() {
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
         assert_eq!(diagnostics[0].message(), expected);
+    }
+}
+
+#[test]
+fn exclusive_root_borrow_reads_writes_and_restores_owner_access() {
+    let sources = sources_for(EXCLUSIVE_ROOT_BORROW_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(EXCLUSIVE_ROOT_BORROW_JSON).expect("exclusive-root borrow snapshot"),
+        &sources,
+    )
+    .expect("source-faithful exclusive-root borrow v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("exclusive-root borrow lowering");
+    let instructions = program
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .collect::<Vec<_>>();
+    let kinds = instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>();
+    assert_eq!(
+        kinds,
+        vec![
+            VerifiedInstructionKind::I32Literal,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::BeginBorrow,
+            VerifiedInstructionKind::BorrowRead,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::I32Literal,
+            VerifiedInstructionKind::BorrowWrite,
+            VerifiedInstructionKind::BorrowRead,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::EndBorrow,
+            VerifiedInstructionKind::CopyFromPlace,
+        ]
+    );
+    assert_eq!(instructions[2].borrow_access(), Some(VerifiedBorrowAccess::Exclusive));
+    assert_eq!(instructions[6].borrow().expect("write authority").index(), 0);
+    assert_eq!(
+        instructions.last().expect("restored owner read").kind(),
+        VerifiedInstructionKind::CopyFromPlace
+    );
+}
+
+#[test]
+fn exclusive_bool_write_uses_the_same_verified_authority() {
+    let sources = sources_for(EXCLUSIVE_ROOT_BORROW_BOOL_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(EXCLUSIVE_ROOT_BORROW_BOOL_JSON).expect("exclusive bool snapshot"),
+        &sources,
+    )
+    .expect("source-faithful exclusive bool v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("exclusive bool lowering");
+    let kinds = program
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .map(zryna_ir::data_ownership_v1::VerifiedInstruction::kind)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        kinds.iter().filter(|kind| **kind == VerifiedInstructionKind::BoolLiteral).count(),
+        2
+    );
+    assert!(kinds.contains(&VerifiedInstructionKind::BorrowWrite));
+    assert!(kinds.contains(&VerifiedInstructionKind::BorrowRead));
+}
+
+#[test]
+fn shared_from_shared_reborrow_resolves_to_the_same_root() {
+    let sources = sources_for(SHARED_ROOT_REBORROW_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(SHARED_ROOT_REBORROW_JSON).expect("shared reborrow snapshot"),
+        &sources,
+    )
+    .expect("source-faithful shared reborrow v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("shared reborrow lowering");
+    let instructions = program
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .collect::<Vec<_>>();
+    let begins = instructions
+        .iter()
+        .filter(|instruction| instruction.kind() == VerifiedInstructionKind::BeginBorrow)
+        .collect::<Vec<_>>();
+    assert_eq!(begins.len(), 2);
+    assert_eq!(
+        begins
+            .iter()
+            .map(|instruction| instruction.borrow().expect("borrow identity").index())
+            .collect::<Vec<_>>(),
+        vec![0, 1]
+    );
+    assert!(
+        begins
+            .iter()
+            .all(|instruction| instruction.borrow_access() == Some(VerifiedBorrowAccess::Shared))
+    );
+    let ended = instructions
+        .iter()
+        .filter(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
+        .map(|instruction| instruction.borrow().expect("ended borrow").index())
+        .collect::<Vec<_>>();
+    assert_eq!(ended, vec![1, 0]);
+}
+
+#[test]
+fn complete_root_alias_conflict_matrix_fails_before_ir_construction() {
+    for (source, snapshot) in [
+        (BORROW_CONFLICT_SHARED_EXCLUSIVE_SOURCE, BORROW_CONFLICT_SHARED_EXCLUSIVE_JSON),
+        (BORROW_CONFLICT_EXCLUSIVE_SHARED_SOURCE, BORROW_CONFLICT_EXCLUSIVE_SHARED_JSON),
+        (BORROW_CONFLICT_EXCLUSIVE_EXCLUSIVE_SOURCE, BORROW_CONFLICT_EXCLUSIVE_EXCLUSIVE_JSON),
+    ] {
+        let sources = sources_for(source);
+        let syntax =
+            verify_snapshot(decode_snapshot(snapshot).expect("conflict snapshot"), &sources)
+                .expect("source-faithful conflict v4");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("alias conflict");
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
+        assert_eq!(
+            diagnostics[0].message(),
+            "borrow access conflicts with an active alias of the same root"
+        );
+    }
+}
+
+#[test]
+fn unsupported_reborrow_directions_fail_closed() {
+    for (source, snapshot) in [
+        (BORROW_REBORROW_MUT_FROM_SHARED_SOURCE, BORROW_REBORROW_MUT_FROM_SHARED_JSON),
+        (BORROW_REBORROW_SHARED_FROM_EXCLUSIVE_SOURCE, BORROW_REBORROW_SHARED_FROM_EXCLUSIVE_JSON),
+    ] {
+        let sources = sources_for(source);
+        let syntax = verify_snapshot(
+            decode_snapshot(snapshot).expect("unsupported reborrow snapshot"),
+            &sources,
+        )
+        .expect("source-faithful unsupported reborrow v4");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("unsupported reborrow");
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
+        assert_eq!(diagnostics[0].message(), "only shared-from-shared reborrowing is admitted");
+    }
+}
+
+#[test]
+fn exclusive_write_authority_type_and_owner_exclusion_fail_closed() {
+    for (source, snapshot, expected) in [
+        (
+            BORROW_SHARED_WRITE_SOURCE,
+            BORROW_SHARED_WRITE_JSON,
+            "shared aliases do not grant write authority",
+        ),
+        (
+            BORROW_EXCLUSIVE_WRONG_WRITE_SOURCE,
+            BORROW_EXCLUSIVE_WRONG_WRITE_JSON,
+            "exclusive-borrow writes require an exact referent-typed literal",
+        ),
+        (
+            BORROW_EXCLUSIVE_OWNER_READ_SOURCE,
+            BORROW_EXCLUSIVE_OWNER_READ_JSON,
+            "owner reads are hidden while an exclusive alias is active",
+        ),
+        (
+            BORROW_EXCLUSIVE_ROOT_WRITE_SOURCE,
+            BORROW_EXCLUSIVE_ROOT_WRITE_JSON,
+            "borrow blocks cannot replace the root or an ordinary local",
+        ),
+        (
+            BORROW_EXCLUSIVE_IMMUTABLE_ROOT_SOURCE,
+            BORROW_EXCLUSIVE_IMMUTABLE_ROOT_JSON,
+            "exclusive borrowing requires a mutable root local",
+        ),
+    ] {
+        let sources = sources_for(source);
+        let syntax = verify_snapshot(
+            decode_snapshot(snapshot).expect("hostile exclusive snapshot"),
+            &sources,
+        )
+        .expect("source-faithful hostile exclusive v4");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(expected);
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
+        assert_eq!(diagnostics[0].message(), expected);
+    }
+}
+
+#[test]
+fn exclusive_nonreference_operand_is_rejected_by_syntax_authority() {
+    let sources = sources_for(BORROW_EXCLUSIVE_NONREFERENCE_SOURCE);
+    let diagnostics = verify_snapshot(
+        decode_snapshot(BORROW_EXCLUSIVE_NONREFERENCE_JSON).expect("nonreference snapshot"),
+        &sources,
+    )
+    .expect_err("borrowMut literal operand");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-Y4002");
+    assert_eq!(diagnostics[0].message(), "borrow operand is not syntactically a place");
+}
+
+#[test]
+fn exclusive_lowering_and_conflict_diagnostics_are_deterministic() {
+    let sources = sources_for(EXCLUSIVE_ROOT_BORROW_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(EXCLUSIVE_ROOT_BORROW_JSON).expect("exclusive replay snapshot"),
+        &sources,
+    )
+    .expect("source-faithful exclusive replay v4");
+    let trace = || {
+        let program = lower(pair_input(&syntax, &sources)).expect("exclusive replay lowering");
+        program
+            .modules()
+            .next()
+            .expect("module")
+            .functions()
+            .next()
+            .expect("function")
+            .blocks()
+            .next()
+            .expect("block")
+            .instructions()
+            .map(|instruction| {
+                (
+                    instruction.kind(),
+                    instruction.borrow().map(zryna_ir::data_ownership_v1::BorrowIdentity::index),
+                    instruction.borrow_access(),
+                    instruction.i32_literal(),
+                    instruction.bool_literal(),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(trace(), trace());
+
+    for (source, snapshot) in [
+        (BORROW_CONFLICT_SHARED_EXCLUSIVE_SOURCE, BORROW_CONFLICT_SHARED_EXCLUSIVE_JSON),
+        (BORROW_CONFLICT_EXCLUSIVE_SHARED_SOURCE, BORROW_CONFLICT_EXCLUSIVE_SHARED_JSON),
+        (BORROW_CONFLICT_EXCLUSIVE_EXCLUSIVE_SOURCE, BORROW_CONFLICT_EXCLUSIVE_EXCLUSIVE_JSON),
+    ] {
+        let sources = sources_for(source);
+        let syntax =
+            verify_snapshot(decode_snapshot(snapshot).expect("conflict replay snapshot"), &sources)
+                .expect("source-faithful conflict replay v4");
+        let diagnostics = || {
+            lower(pair_input(&syntax, &sources))
+                .expect_err("conflict replay")
+                .into_iter()
+                .map(|diagnostic| {
+                    let primary = diagnostic.primary_span().expect("source diagnostic");
+                    (
+                        diagnostic.code().to_owned(),
+                        diagnostic.message().to_owned(),
+                        primary.start(),
+                        primary.end(),
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(diagnostics(), diagnostics());
     }
 }

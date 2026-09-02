@@ -4274,6 +4274,245 @@ fn dense_shared_borrow_read_and_end_is_accepted() {
 }
 
 #[test]
+fn same_root_begin_borrow_conflict_matrix_is_verified_independently() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let make = |first, second| {
+        let mut raw = program(&sources, &linear, &linux);
+        let span = raw.modules[0].functions[0].span;
+        let function = &mut raw.modules[0].functions[0];
+        function.entry_export = None;
+        function.places = vec![raw::Place {
+            id: raw::PlaceId(0),
+            ty: raw::TypeId(1),
+            span,
+            kind: raw::PlaceKind::Local(0),
+        }];
+        function.blocks[0].instructions = vec![
+            raw::Instruction {
+                result: None,
+                span,
+                kind: raw::InstructionKind::InitializePlace {
+                    place: raw::PlaceId(0),
+                    value: raw::ValueId(0),
+                },
+            },
+            raw::Instruction {
+                result: None,
+                span,
+                kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                    id: raw::BorrowId(0),
+                    place: raw::PlaceId(0),
+                    access: first,
+                    span,
+                }),
+            },
+            raw::Instruction {
+                result: None,
+                span,
+                kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                    id: raw::BorrowId(1),
+                    place: raw::PlaceId(0),
+                    access: second,
+                    span,
+                }),
+            },
+            raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: raw::ValueId(1),
+                    ty: raw::TypeId(1),
+                    span,
+                }),
+                span,
+                kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(0) },
+            },
+            raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: raw::ValueId(2),
+                    ty: raw::TypeId(1),
+                    span,
+                }),
+                span,
+                kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(1) },
+            },
+            raw::Instruction {
+                result: None,
+                span,
+                kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(1) },
+            },
+            raw::Instruction {
+                result: None,
+                span,
+                kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+            },
+        ];
+        function.blocks[0].terminators[0].kind =
+            raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(0) };
+        raw
+    };
+
+    verify(
+        make(raw::BorrowAccess::Shared, raw::BorrowAccess::Shared),
+        &sources,
+        entry,
+        linear.clone(),
+        linux.clone(),
+    )
+    .expect("shared aliases may coexist");
+    for (first, second) in [
+        (raw::BorrowAccess::Shared, raw::BorrowAccess::Exclusive),
+        (raw::BorrowAccess::Exclusive, raw::BorrowAccess::Shared),
+        (raw::BorrowAccess::Exclusive, raw::BorrowAccess::Exclusive),
+    ] {
+        let diagnostics =
+            verify(make(first, second), &sources, entry, linear.clone(), linux.clone())
+                .expect_err("same-root borrow conflict");
+        assert!(
+            diagnostics.iter().any(|diagnostic| {
+                diagnostic.code() == "ZRYNA-I3011"
+                    && diagnostic.message() == "borrow identity, owner state, or overlap is invalid"
+            }),
+            "{diagnostics:?}"
+        );
+    }
+}
+
+#[test]
+fn exclusive_copy_write_ends_before_owner_read_is_accepted() {
+    let (sources, linear, linux) = authorities();
+    let mut raw = program(&sources, &linear, &linux);
+    let span = raw.modules[0].functions[0].span;
+    let function = &mut raw.modules[0].functions[0];
+    function.entry_export = None;
+    function.places = vec![raw::Place {
+        id: raw::PlaceId(0),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(0),
+    }];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(0),
+                value: raw::ValueId(0),
+            },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                id: raw::BorrowId(0),
+                place: raw::PlaceId(0),
+                access: raw::BorrowAccess::Exclusive,
+                span,
+            }),
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span }),
+            span,
+            kind: raw::InstructionKind::I32Literal(9),
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BorrowWrite {
+                borrow: raw::BorrowId(0),
+                value: raw::ValueId(1),
+            },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(1), span }),
+            span,
+            kind: raw::InstructionKind::CopyFromPlace { place: raw::PlaceId(0) },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(0) };
+    let entry = sources.verify_file_id(0).expect("entry");
+    verify(raw, &sources, entry, linear, linux).expect("exclusive write and restored owner read");
+}
+
+#[test]
+fn borrow_write_rejects_shared_direction_and_wrong_value_type() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut seed = program(&sources, &linear, &linux);
+    let span = seed.modules[0].functions[0].span;
+    let function = &mut seed.modules[0].functions[0];
+    function.entry_export = None;
+    function.places = vec![raw::Place {
+        id: raw::PlaceId(0),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(0),
+    }];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(0),
+                value: raw::ValueId(0),
+            },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                id: raw::BorrowId(0),
+                place: raw::PlaceId(0),
+                access: raw::BorrowAccess::Exclusive,
+                span,
+            }),
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span }),
+            span,
+            kind: raw::InstructionKind::I32Literal(9),
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BorrowWrite {
+                borrow: raw::BorrowId(0),
+                value: raw::ValueId(1),
+            },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+        },
+    ];
+
+    let mut shared = seed.clone();
+    if let raw::InstructionKind::BeginBorrow(definition) =
+        &mut shared.modules[0].functions[0].blocks[0].instructions[1].kind
+    {
+        definition.access = raw::BorrowAccess::Shared;
+    }
+    let diagnostics = verify(shared, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("shared write direction");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3005"));
+
+    let function = &mut seed.modules[0].functions[0];
+    function.blocks[0].instructions[2] = raw::Instruction {
+        result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(0), span }),
+        span,
+        kind: raw::InstructionKind::BoolLiteral(true),
+    };
+    let diagnostics = verify(seed, &sources, entry, linear, linux).expect_err("wrong write type");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3005"));
+}
+
+#[test]
 fn unused_borrow_parameter_authority_is_rejected() {
     let (sources, linear, linux) = authorities();
     let mut raw = program(&sources, &linear, &linux);

@@ -272,14 +272,14 @@ test("implemented data IR document freezes the internal authority without runtim
   assert.match(document, /M1 and M2 remain the only public compiler profiles/);
 });
 
-test("bounded borrowing contract freezes the graph and first shared-root producer", async () => {
+test("bounded borrowing contract freezes the graph and root Copy producers", async () => {
   const document = await readFile(
     new URL("../docs/M3_BORROWING_SEMANTICS.md", import.meta.url),
     "utf8",
   );
   const status = await readFile(new URL("../docs/STATUS.md", import.meta.url), "utf8");
   const roadmap = await readFile(new URL("../docs/ROADMAP.md", import.meta.url), "utf8");
-  assert.match(document, /Status: Issues #113 and #114 complete/);
+  assert.match(document, /Status: Issues #113, #114, and #115 complete/);
   assert.match(document, /#113 -> #114 -> #115 -> \{#116, #117, #119, #120, #121\} -> #122/);
   assert.match(document, /BorrowParameter/);
   assert.match(document, /BeginBorrow\(BorrowDefinition\)/);
@@ -293,7 +293,13 @@ test("bounded borrowing contract freezes the graph and first shared-root produce
   assert.match(document, /exact Copy owner reads while shared aliases\s+are active/);
   assert.match(document, /emits `EndBorrow` in reverse declaration\s+order/);
   assert.match(document, /The producer computes the complete values, places, ownership transitions/);
-  assert.match(document, /exclusive borrows, projections, assignment, calls, branches/);
+  assert.match(document, /const alias: BorrowMut<i32> = borrowMut\(root\)/);
+  assert.match(document, /assignment is a write through the exclusive authority, not rebinding/);
+  assert.match(document, /shared-from-shared reborrow resolves to the same\s+sealed root/);
+  assert.match(document, /Each prospective alias is resolved and conflict-checked before receiving its dense planned/);
+  assert.match(document, /No raw function, instruction, or program is materialized until the complete plan/);
+  assert.match(document, /Mutable-from-shared reborrow and every reborrow from an exclusive alias fail/);
+  assert.match(document, /adds no mutable-from-shared reborrow, reborrow from exclusive, projections, calls, CFG/);
   assert.match(document, /M1 and explicit `control-flow-v1` M2 remain the only public profiles/);
   assert.match(status, /Issue #82 is now active through its checked child-issue dependency graph/);
   assert.match(roadmap, /\|\s+#82 \| bounded nonescaping lexical borrowing\s+\| #81\s+\| in progress \|/);

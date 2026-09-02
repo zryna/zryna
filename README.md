@@ -131,7 +131,12 @@ The repository currently establishes and tests:
   initialized `bool` or `i32` root: const aliases in one nested block lower to dense shared begin
   and Copy-read authority, end in reverse lexical order, and leave the root readable afterward.
   The producer preflights exact resources before raw-IR construction, the existing mandatory IR
-  verifier remains authoritative, and exclusive/projected/call/control-flow borrowing plus every
+  verifier remains authoritative. The same root-only gate now admits one exclusive alias over a
+  mutable `bool` or `i32` root: const-alias assignment is write-through, exact Copy reads and
+  writes lower to verified borrow authority, owner access is hidden until reverse lexical end, and
+  shared-from-shared reborrow resolves to the same root. The complete shared/exclusive conflict
+  matrix and resources are preflighted before IR construction. Mutable-from-shared, every
+  reborrow from exclusive, projections, calls, control flow, lifetime shortening, and every
   runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
