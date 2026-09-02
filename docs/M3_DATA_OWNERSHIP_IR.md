@@ -103,6 +103,12 @@ BeginBorrow, BorrowRead, BorrowWrite, EndBorrow
 ```
 
 `BeginBorrow` contains one dense `BorrowDefinition` with `Shared` or `Exclusive` access.
+`BorrowRead` remains restricted to Copy referents and produces the exact Copy type; it does not
+transfer an owned value or cleanup obligation. The current Issue #116 semantic checkpoint brackets
+existing String clone/concat, exact Vec Copy-index, and supported whole-aggregate clone operations
+with shared lexical authority instead of adding a non-Copy `BorrowRead`. The verifier therefore
+continues to retain the source owner and requires a distinct result owner for each owned operation
+under its existing cleanup and fault rules.
 Potentially trapping calls, String construction, allocation-bearing constructions, clones,
 indexing, concatenation, vector growth, shared construction, and reference-count increments name
 the cleanup plan required by their exact raw variant. `StringFromUtf8` carries verifier-checked

@@ -1,0 +1,66 @@
+interface Pair extends ZrynaStruct {
+  text: String;
+  count: i32;
+}
+
+interface MaybeText extends ZrynaEnum {
+  none: ZrynaNone;
+  some: String;
+}
+
+function stringReads(): String {
+  const root: String = "z";
+  {
+    const alias: Borrow<String> = borrow(root);
+    const copied: String = clone(alias);
+    const joined: String = concat(alias, alias);
+  }
+  return root;
+}
+
+function vecReads(): Vec<i32> {
+  const root: Vec<i32> = Vec<i32>([7, 9]);
+  {
+    const alias: Borrow<Vec<i32>> = borrow(root);
+    const first: i32 = alias[0];
+    const second: i32 = alias[1];
+  }
+  return root;
+}
+
+function vecBoolReads(): Vec<bool> {
+  const root: Vec<bool> = Vec<bool>([true, false]);
+  {
+    const alias: Borrow<Vec<bool>> = borrow(root);
+    const first: bool = alias[0];
+    const second: bool = alias[1];
+  }
+  return root;
+}
+
+function aggregateReads(): Pair {
+  const root: Pair = Pair({ text: "value", count: 3 });
+  {
+    const alias: Borrow<Pair> = borrow(root);
+    const copied: Pair = clone(alias);
+  }
+  return root;
+}
+
+function fixedArrayReads(): FixedArray<String, 2> {
+  const root: FixedArray<String, 2> = FixedArray<String, 2>(["left", "right"]);
+  {
+    const alias: Borrow<FixedArray<String, 2>> = borrow(root);
+    const copied: FixedArray<String, 2> = clone(alias);
+  }
+  return root;
+}
+
+function enumReads(): MaybeText {
+  const root: MaybeText = MaybeText.some("value");
+  {
+    const alias: Borrow<MaybeText> = borrow(root);
+    const copied: MaybeText = clone(alias);
+  }
+  return root;
+}

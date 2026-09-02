@@ -125,6 +125,13 @@ implementation. The separate issue #80 authority verifies declarations, authenti
 header evidence, and pure transitions; no helper implementation, target runtime, backend, driver
 route, CLI profile, or public aggregate ABI is supplied here.
 
+`BorrowRead` remains restricted to an exact Copy referent and result. The current semantic
+owned-root shared-read checkpoint does not add a non-Copy borrow transfer instruction: it brackets
+existing verified String clone/concat, Vec Copy-index, or supported aggregate-clone instructions
+with one shared `BeginBorrow`/`EndBorrow`. Existing verifier rules keep the source owner pending,
+require distinct owned result places where applicable, and retain the existing site-bound
+cleanup/fault authority.
+
 The Issue #81 verifier foundations additionally admit bounded immutable UTF-8 bytes through
 `StringFromUtf8`, derive exactly one non-Copy owner place per owned value, preserve Copy
 parameter/local/temporary storage without adding Copy cleanup obligations, and transfer pending

@@ -186,8 +186,15 @@ enclosing root and its partial-state masks while creating one distinct temporary
 The separate bounded-borrow producer admits private Copy roots, exact shared/exclusive authority,
 one shared reborrow, canonical conditional/loop scopes, and static recursively Copy Struct-field
 or constant fixed-array paths. Static siblings are disjoint; same/ancestor/descendant paths
-overlap. Dynamic/Vec/enum/non-Copy projected borrowing, calls, general control flow, stored
+overlap. The current Issue #116 implementation checkpoint separately admits one private
+parameter-free whole non-Copy root, one const shared alias in one lexical block, and only String
+clone/checked concat, exact `Vec<bool>`/`Vec<i32>` Copy indexing, or supported whole
+Struct/root-Enum/fixed-array clone. The source remains initialized and is returned after lexical
+end; owned read results receive distinct owners through existing clone/cleanup/fault authority.
+This does not extend `BorrowRead` beyond Copy or transfer an owner through the alias. Dynamic or
+owned projections, multiple aliases, mutation, moves, calls, general control flow, stored
 references, shared or weak references, and public owned parameters or results remain unavailable.
+Issue #116 completion remains subject to independent verification and merge gates.
 The Pair scalar oracle
 is observed only by a test evaluator over opaque verified views. Enum matching is limited to an
 internal single-return function with scalar literal, parameter, or active-payload arms; this is not
