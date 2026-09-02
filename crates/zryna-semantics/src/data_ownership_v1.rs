@@ -16,8 +16,18 @@ use zryna_syntax::v4::{
 };
 
 mod diagnostics;
+mod type_model;
 
 use diagnostics::Errors;
+use type_model::{
+    Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
+    OwnedRootBorrowSyntax, OwnedStaticProjectionKind, OwnedStringBranchState, OwnedVecBranchState,
+    OwnerDelta, OwnerState, ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext,
+    RootBorrowAlias, RootBorrowArmPlan, RootBorrowBudgetLimit, RootBorrowInitializer,
+    RootBorrowLiteral, RootBorrowPlacePlan, RootBorrowPlan, RootBorrowProjection,
+    RootBorrowProjectionKey, RootBorrowResources, RootBorrowShape, RootBorrowStep, TerminalOwnedIf,
+    Ty, apply_owner_delta, map_node_types,
+};
 
 /// Maximum retained semantic diagnostics, including the terminal budget diagnostic.
 pub const MAX_SEMANTIC_DIAGNOSTICS: usize = 256;
@@ -127,16 +137,6 @@ struct Decl {
     span: Span,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct Ty {
-    layout: layout::TypeId,
-    ir: raw::TypeId,
-    category: TypeCategory,
-    drop_kind: u32,
-    runtime_kind: u32,
-    cloneable: bool,
-}
-
 #[derive(Clone)]
 struct FunctionSignature {
     id: raw::FunctionId,
@@ -171,16 +171,6 @@ impl FunctionCatalog {
         } else {
             FunctionResolution::Missing
         }
-    }
-}
-
-impl Ty {
-    const fn is_copy(self) -> bool {
-        self.drop_kind == 0
-    }
-
-    const fn is_clone(self) -> bool {
-        self.cloneable
     }
 }
 
@@ -1779,113 +1769,6 @@ fn resolve_graph_type(
     }
 }
 
-fn map_node_types(
-    graph: &raw_layout::Graph,
-    layouts: &layout::VerifiedLayouts,
-    errors: &mut Errors<'_>,
-) -> Vec<Option<Ty>> {
-    let mut result: Vec<Option<Ty>> = vec![None; graph.types.len()];
-    for node in &graph.types {
-        let found = match &node.kind {
-            raw_layout::TypeKind::Bool => {
-                layouts.types().find(|t| t.category() == TypeCategory::Bool)
-            }
-            raw_layout::TypeKind::I32 => {
-                layouts.types().find(|t| t.category() == TypeCategory::I32)
-            }
-            raw_layout::TypeKind::String => {
-                layouts.types().find(|t| t.category() == TypeCategory::String)
-            }
-            raw_layout::TypeKind::Struct { module, declaration, .. }
-            | raw_layout::TypeKind::Enum { module, declaration, .. } => {
-                layouts.types().find(|t| t.nominal_identity() == Some((module.0, *declaration)))
-            }
-            raw_layout::TypeKind::FixedArray { element, length } => {
-                let element_index = usize::try_from(element.0).ok();
-                let element_id =
-                    element_index.and_then(|i| result.get(i)).and_then(|v| *v).map(|v| v.layout);
-                layouts.types().find(|t| {
-                    t.category() == TypeCategory::FixedArray
-                        && t.array_length() == Some(*length)
-                        && t.referenced_type() == element_id
-                })
-            }
-            raw_layout::TypeKind::Vec { element } => {
-                let element_index = usize::try_from(element.0).ok();
-                let element_id =
-                    element_index.and_then(|i| result.get(i)).and_then(|v| *v).map(|v| v.layout);
-                layouts.types().find(|ty| {
-                    ty.category() == TypeCategory::Vec && ty.referenced_type() == element_id
-                })
-            }
-            _ => None,
-        };
-        if let Some(found) = found {
-            let index = usize::try_from(node.id.0).expect("bounded node");
-            result[index] = Some(Ty {
-                layout: found.id(),
-                ir: raw::TypeId(found.id().index()),
-                category: found.category(),
-                drop_kind: found.drop_kind(),
-                runtime_kind: found.runtime_kind(),
-                cloneable: false,
-            });
-        } else {
-            errors.global(
-                "ZRYNA-M3004",
-                format!("derived layout type node #{} has no sealed identity", node.id.0),
-                "reduce the aggregate graph and report this deterministic compiler failure",
-            );
-        }
-    }
-    let clone_capabilities = derive_clone_capabilities(graph);
-    for (index, cloneable) in clone_capabilities.into_iter().enumerate() {
-        if let Some(ty) = result[index].as_mut() {
-            ty.cloneable = cloneable;
-        }
-    }
-    result
-}
-
-fn derive_clone_capabilities(graph: &raw_layout::Graph) -> Vec<bool> {
-    let mut capabilities = graph
-        .types
-        .iter()
-        .map(|node| !matches!(node.kind, raw_layout::TypeKind::Borrow { .. }))
-        .collect::<Vec<_>>();
-    loop {
-        let previous = capabilities.clone();
-        for node in &graph.types {
-            let child = |id: raw_layout::NodeId| {
-                usize::try_from(id.0)
-                    .ok()
-                    .and_then(|index| previous.get(index))
-                    .copied()
-                    .unwrap_or(false)
-            };
-            capabilities[node.id.0 as usize] = match &node.kind {
-                raw_layout::TypeKind::Bool
-                | raw_layout::TypeKind::I32
-                | raw_layout::TypeKind::String
-                | raw_layout::TypeKind::Shared { .. }
-                | raw_layout::TypeKind::Weak { .. } => true,
-                raw_layout::TypeKind::Struct { fields, .. } => {
-                    fields.iter().all(|field| child(field.ty))
-                }
-                raw_layout::TypeKind::Enum { variants, .. } => {
-                    variants.iter().all(|variant| variant.payload.is_none_or(child))
-                }
-                raw_layout::TypeKind::FixedArray { element, .. }
-                | raw_layout::TypeKind::Vec { element } => child(*element),
-                raw_layout::TypeKind::Borrow { .. } => false,
-            };
-        }
-        if capabilities == previous {
-            return capabilities;
-        }
-    }
-}
-
 fn declaration_name<'a>(
     value: &'a syntax::RawDataDeclaration,
     sources: &SourceMap,
@@ -1953,20 +1836,6 @@ fn require_current_type_only_boundary(
     None
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct Binding {
-    ty: Ty,
-    place: raw::PlaceId,
-    mutable: bool,
-}
-
-enum ProjectedAggregateAssignmentSource {
-    MoveRoot { name: syntax::RawIdentifierSyntax, at: Span },
-    MoveProjection { expression: u32, missing_path_places: usize, missing_descendant_places: usize },
-    CloneRoot { binding: Binding, at: Span },
-    CloneProjection { expression: u32, at: Span, missing_path_places: usize },
-}
-
 struct FunctionLowerer<'a, 'f, 'e> {
     input: SemanticInput<'a>,
     file: &'a syntax::SourceUnit,
@@ -1984,131 +1853,6 @@ struct FunctionLowerer<'a, 'f, 'e> {
     instructions: Vec<raw::Instruction>,
     cleanup_plans: Vec<raw::CleanupPlan>,
     values: u32,
-}
-
-#[derive(Clone, Copy)]
-enum RootBorrowLiteral {
-    Bool(bool),
-    I32(i32),
-}
-
-#[derive(Clone)]
-enum RootBorrowInitializer {
-    Literal { literal: RootBorrowLiteral, ty: Ty, at: Span },
-    Struct { ty: Ty, fields: Vec<Self>, at: Span },
-    FixedArray { ty: Ty, elements: Vec<Self>, at: Span },
-}
-
-impl RootBorrowInitializer {
-    fn value_count(&self) -> usize {
-        match self {
-            Self::Literal { .. } => 1,
-            Self::Struct { fields, .. } => fields
-                .iter()
-                .fold(1_usize, |count, field| count.saturating_add(field.value_count())),
-            Self::FixedArray { elements, .. } => elements
-                .iter()
-                .fold(1_usize, |count, element| count.saturating_add(element.value_count())),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-enum RootBorrowProjectionKey {
-    StructField(u32),
-    FixedArrayConstant(u32),
-}
-
-#[derive(Clone)]
-struct RootBorrowProjection {
-    key: RootBorrowProjectionKey,
-    ty: Ty,
-    at: Span,
-}
-
-#[derive(Clone)]
-struct RootBorrowPlacePlan {
-    ty: Ty,
-    projections: Vec<RootBorrowProjection>,
-}
-
-impl RootBorrowPlacePlan {
-    fn key(&self) -> Vec<RootBorrowProjectionKey> {
-        self.projections.iter().map(|projection| projection.key).collect()
-    }
-}
-
-#[derive(Clone)]
-enum RootBorrowStep {
-    Begin { id: raw::BorrowId, place: RootBorrowPlacePlan, access: raw::BorrowAccess, at: Span },
-    Read { id: raw::BorrowId, ty: Ty, at: Span },
-    Write { id: raw::BorrowId, value: RootBorrowInitializer, at: Span },
-    OwnerRead { place: RootBorrowPlacePlan, at: Span },
-}
-
-#[derive(Clone)]
-struct RootBorrowAlias {
-    id: raw::BorrowId,
-    ty: Ty,
-    place: RootBorrowPlacePlan,
-    access: raw::BorrowAccess,
-    used: bool,
-}
-
-struct RootBorrowPlan {
-    root_ty: Ty,
-    root_initializer: RootBorrowInitializer,
-    root_at: Span,
-    shape: RootBorrowShape,
-    aliases: usize,
-    reads: usize,
-    writes: usize,
-    return_at: Span,
-}
-
-struct RootBorrowArmPlan {
-    steps: Vec<RootBorrowStep>,
-    aliases: usize,
-    reads: usize,
-    writes: usize,
-    block_exit: Span,
-}
-
-enum RootBorrowShape {
-    Straight(RootBorrowArmPlan),
-    Loop {
-        condition_at: Span,
-        loop_at: Span,
-        body: RootBorrowArmPlan,
-    },
-    Conditional {
-        condition_at: Span,
-        branch_at: Span,
-        then_arm: RootBorrowArmPlan,
-        else_arm: RootBorrowArmPlan,
-    },
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum RootBorrowBudgetLimit {
-    Values,
-    Places,
-    Transitions,
-    Blocks,
-    Edges,
-    ActiveBorrows,
-    CleanupPlans,
-}
-
-#[derive(Clone, Copy, Default)]
-struct RootBorrowResources {
-    values: usize,
-    places: usize,
-    transitions: usize,
-    blocks: usize,
-    edges: usize,
-    active_peak: usize,
-    cleanup_plans: usize,
 }
 
 #[cfg(test)]
@@ -4120,12 +3864,6 @@ fn lower_private_root_borrow_function<'a>(
     })
 }
 
-struct OwnedRootBorrowSyntax {
-    synthetic: syntax::RawFunctionSyntax,
-    borrow_at: Span,
-    end_at: Span,
-}
-
 fn direct_reference_name(function: &syntax::RawFunctionSyntax, expression: u32) -> Option<&str> {
     let expression =
         usize::try_from(expression).ok().and_then(|index| function.body.expressions.get(index))?;
@@ -5213,16 +4951,6 @@ fn preflight_owned_string_loop_skeleton(
         }
     }
     true
-}
-
-#[derive(Clone, Copy)]
-struct TerminalOwnedIf {
-    condition: u32,
-    then_value: u32,
-    then_span: Span,
-    else_value: u32,
-    else_span: Span,
-    span: Span,
 }
 
 fn terminal_owned_if(
@@ -7715,27 +7443,6 @@ fn lower_private_string_function<'a>(
     })
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum OwnerDelta {
-    Registered { owner: raw::PlaceId },
-    Renamed { from: raw::PlaceId, to: raw::PlaceId },
-    Replaced { prepared: raw::PlaceId, target: raw::PlaceId },
-    Transferred { owner: raw::PlaceId },
-}
-
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-struct OwnerState {
-    pending: Vec<raw::PlaceId>,
-    value_owners: BTreeMap<raw::ValueId, raw::PlaceId>,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct OwnedStringBranchState {
-    bindings: BTreeMap<String, Binding>,
-    owners: OwnerState,
-    known_bytes: BTreeMap<raw::PlaceId, Option<u64>>,
-}
-
 fn reserve_owned_commit_transition(
     cfg: &mut OwnedCfgState,
     at: Span,
@@ -7767,118 +7474,6 @@ struct StringBranchTypes<'a> {
     declarations: &'a [Decl],
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
-}
-
-impl OwnerState {
-    fn pending(&self) -> &[raw::PlaceId] {
-        &self.pending
-    }
-
-    fn contains(&self, owner: raw::PlaceId) -> bool {
-        self.pending.contains(&owner)
-    }
-
-    fn owner(&self, value: raw::ValueId) -> Option<raw::PlaceId> {
-        self.value_owners.get(&value).copied()
-    }
-
-    fn register(&mut self, value: raw::ValueId, owner: raw::PlaceId) -> Option<OwnerDelta> {
-        if self.value_owners.contains_key(&value)
-            || self.value_owners.values().any(|candidate| *candidate == owner)
-            || self.pending.contains(&owner)
-        {
-            return None;
-        }
-        self.pending.push(owner);
-        self.value_owners.insert(value, owner);
-        Some(OwnerDelta::Registered { owner })
-    }
-
-    fn register_parameter(&mut self, owner: raw::PlaceId) -> Option<OwnerDelta> {
-        if self.pending.contains(&owner)
-            || self.value_owners.values().any(|candidate| *candidate == owner)
-        {
-            return None;
-        }
-        self.pending.push(owner);
-        Some(OwnerDelta::Registered { owner })
-    }
-
-    fn rehome_move_result(
-        &mut self,
-        value: raw::ValueId,
-        from: raw::PlaceId,
-    ) -> Option<OwnerDelta> {
-        let to = self.owner(value)?;
-        if from == to {
-            return None;
-        }
-        let from_slot = self.pending.iter().position(|place| *place == from)?;
-        let to_slot = self.pending.iter().position(|place| *place == to)?;
-        self.pending.remove(to_slot);
-        let from_slot = from_slot - usize::from(to_slot < from_slot);
-        self.pending[from_slot] = to;
-        Some(OwnerDelta::Renamed { from, to })
-    }
-
-    fn rename(&mut self, value: raw::ValueId, to: raw::PlaceId) -> Option<OwnerDelta> {
-        let from = self.owner(value)?;
-        if from == to || self.pending.contains(&to) {
-            return None;
-        }
-        let slot = self.pending.iter().position(|place| *place == from)?;
-        self.pending[slot] = to;
-        self.value_owners.remove(&value);
-        Some(OwnerDelta::Renamed { from, to })
-    }
-
-    fn replace(&mut self, value: raw::ValueId, target: raw::PlaceId) -> Option<OwnerDelta> {
-        let prepared = self.owner(value)?;
-        if prepared == target {
-            return None;
-        }
-        let target_slot = self.pending.iter().position(|place| *place == target)?;
-        let prepared_slot = self.pending.iter().position(|place| *place == prepared)?;
-        self.pending[prepared_slot] = target;
-        self.pending.remove(target_slot);
-        self.value_owners.remove(&value);
-        Some(OwnerDelta::Replaced { prepared, target })
-    }
-
-    fn transfer(&mut self, value: raw::ValueId) -> Option<OwnerDelta> {
-        let owner = self.owner(value)?;
-        let slot = self.pending.iter().position(|place| *place == owner)?;
-        self.pending.remove(slot);
-        self.value_owners.remove(&value);
-        Some(OwnerDelta::Transferred { owner })
-    }
-
-    fn consume_owner(&mut self, owner: raw::PlaceId) -> Option<OwnerDelta> {
-        let slot = self.pending.iter().position(|place| *place == owner)?;
-        self.pending.remove(slot);
-        self.value_owners.retain(|_, candidate| *candidate != owner);
-        Some(OwnerDelta::Transferred { owner })
-    }
-}
-
-fn apply_owner_delta<T>(known: &mut BTreeMap<raw::PlaceId, T>, delta: OwnerDelta) {
-    match delta {
-        OwnerDelta::Registered { .. } => {}
-        OwnerDelta::Renamed { from, to } => {
-            if let Some(bytes) = known.remove(&from) {
-                known.insert(to, bytes);
-            }
-        }
-        OwnerDelta::Replaced { prepared, target } => {
-            known.remove(&target);
-            if let Some(bytes) = known.remove(&prepared) {
-                known.insert(target, bytes);
-            }
-        }
-        OwnerDelta::Transferred { owner } => {
-            known.remove(&owner);
-        }
-    }
 }
 
 fn aggregate_graph_is_supported(
@@ -7974,42 +7569,6 @@ struct PrivateOwnedAggregateLowerer<'a, 'f, 'e> {
     owners: OwnerState,
     next_value: u32,
     next_local: u32,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ProjectedAggregateMoveContext {
-    DirectLocal,
-    FinalReturn,
-    ProjectedReplacement,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct OwnedAggregatePlace {
-    ty: Ty,
-    place: raw::PlaceId,
-    root: raw::PlaceId,
-    mutable: bool,
-    is_root: bool,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct OwnedAggregatePlacePreflight {
-    place: OwnedAggregatePlace,
-    missing: usize,
-    lineage: Vec<raw::PlaceId>,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum OwnedStaticProjectionKind {
-    StructField { ordinal: u32 },
-    FixedArrayConstant { index: u32 },
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct OwnedProjectionShapeEntry {
-    parent: Option<usize>,
-    ty: Ty,
-    kind: OwnedStaticProjectionKind,
 }
 
 fn append_owned_projection_shape(
@@ -11514,13 +11073,6 @@ struct PrivateVecLowerer<'a, 'f, 'e> {
     known_string_bytes: BTreeMap<raw::PlaceId, u64>,
     next_value: u32,
     next_local: u32,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct OwnedVecBranchState {
-    bindings: BTreeMap<String, Binding>,
-    owners: OwnerState,
-    known_string_bytes: BTreeMap<raw::PlaceId, u64>,
 }
 
 impl PrivateVecLowerer<'_, '_, '_> {
