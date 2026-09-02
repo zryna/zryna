@@ -1,0 +1,9 @@
+function loopBorrow(): bool {
+  const root: bool = true;
+  while (root) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = authority;
+    const ownerObserved: bool = root;
+  }
+  return root;
+}

@@ -2027,6 +2027,11 @@ struct RootBorrowArmPlan {
 
 enum RootBorrowShape {
     Straight(RootBorrowArmPlan),
+    Loop {
+        condition_at: Span,
+        loop_at: Span,
+        body: RootBorrowArmPlan,
+    },
     Conditional {
         condition_at: Span,
         branch_at: Span,
@@ -2137,6 +2142,22 @@ fn conditional_root_borrow_resources(
         blocks: 4,
         edges: 4,
         active_peak: then_aliases.max(else_aliases),
+        cleanup_plans: 1,
+    }
+}
+
+fn loop_root_borrow_resources(aliases: usize, reads: usize, writes: usize) -> RootBorrowResources {
+    RootBorrowResources {
+        values: reads.saturating_add(writes).saturating_add(3),
+        places: 1,
+        transitions: aliases
+            .saturating_mul(2)
+            .saturating_add(reads)
+            .saturating_add(writes.saturating_mul(2))
+            .saturating_add(4),
+        blocks: 4,
+        edges: 4,
+        active_peak: aliases,
         cleanup_plans: 1,
     }
 }
@@ -2728,6 +2749,117 @@ fn plan_private_root_borrow_function<'a>(
     };
     let middle =
         usize::try_from(*middle_id).ok().and_then(|index| function.body.statements.get(index))?;
+    if let RawStatementKind::While { condition, body_block, .. } = &middle.kind {
+        let root_local = usize::try_from(*root_local_id)
+            .ok()
+            .and_then(|index| function.body.statements.get(index))?;
+        let RawStatementKind::LocalDeclaration { name: root_name, .. } = &root_local.kind else {
+            errors.at(
+                "ZRYNA-M3017",
+                span(input.sources(), root_local.span),
+                "loop borrowing requires one literal-initialized bool root",
+                "declare the bool root before the loop",
+            );
+            return None;
+        };
+        let condition_expression = usize::try_from(*condition)
+            .ok()
+            .and_then(|index| function.body.expressions.get(index))?;
+        let RawExpressionKind::Reference { name: condition_name } = &condition_expression.kind
+        else {
+            errors.at(
+                "ZRYNA-M3017",
+                span(input.sources(), condition_expression.span),
+                "loop borrowing requires the exact bool root as its condition",
+                "loop directly on the literal-initialized bool root",
+            );
+            return None;
+        };
+        if condition_name.text != root_name.text {
+            errors.at(
+                "ZRYNA-M3017",
+                span(input.sources(), condition_name.span),
+                "loop borrowing requires the exact bool root as its condition",
+                "loop directly on the literal-initialized bool root",
+            );
+            return None;
+        }
+        let mut synthetic = function.clone();
+        let scope_statement = u32::try_from(synthetic.body.statements.len()).ok()?;
+        synthetic.body.statements.push(syntax::RawStatementSyntax {
+            span: middle.span,
+            kind: RawStatementKind::Block { block: *body_block },
+        });
+        let synthetic =
+            synthetic_straight_arm(&synthetic, *root_local_id, scope_statement, *return_id)?;
+        let plan = plan_private_straight_root_borrow_function(
+            input,
+            module,
+            &synthetic,
+            declarations,
+            graph,
+            node_types,
+            result,
+            false,
+            errors,
+        )?;
+        let RootBorrowPlan {
+            root_ty,
+            root_literal,
+            root_at,
+            shape: RootBorrowShape::Straight(body),
+            aliases,
+            reads,
+            writes,
+            return_at,
+        } = plan
+        else {
+            unreachable!("synthetic loop body is straight-line")
+        };
+        if root_ty.category != TypeCategory::Bool {
+            errors.at(
+                "ZRYNA-M3017",
+                span(input.sources(), root_local.span),
+                "loop borrowing requires one literal-initialized bool root",
+                "use the same bool root for the loop condition, body borrows, and final return",
+            );
+            return None;
+        }
+        if let Some(limit) =
+            root_borrow_resource_violation(loop_root_borrow_resources(aliases, reads, writes))
+        {
+            let label = match limit {
+                RootBorrowBudgetLimit::Values => "derived values",
+                RootBorrowBudgetLimit::Places => "derived places",
+                RootBorrowBudgetLimit::Transitions => "derived ownership transitions",
+                RootBorrowBudgetLimit::Blocks => "derived blocks",
+                RootBorrowBudgetLimit::Edges => "derived control-flow edges",
+                RootBorrowBudgetLimit::ActiveBorrows => "simultaneously active borrows",
+                RootBorrowBudgetLimit::CleanupPlans => "derived cleanup plans",
+            };
+            errors.at(
+                "ZRYNA-M3201",
+                span(input.sources(), middle.span),
+                format!("loop borrowing exceeds the per-function limit for {label}"),
+                "reduce body-local aliases or Copy reads before lowering",
+            );
+            return None;
+        }
+        return Some(RootBorrowPlan {
+            root_ty,
+            root_literal,
+            root_at,
+            shape: RootBorrowShape::Loop {
+                condition_at: span(input.sources(), condition_expression.span),
+                loop_at: span(input.sources(), middle.span),
+                body,
+            },
+            aliases,
+            reads,
+            writes,
+            return_at,
+        });
+    }
     let RawStatementKind::If { condition, then_block, else_clause, .. } = &middle.kind else {
         return plan_private_straight_root_borrow_function(
             input,
@@ -3175,6 +3307,91 @@ fn lower_private_root_borrow_function<'a>(
                     id: raw::BlockId(3),
                     parameters: Vec::new(),
                     instructions: join_instructions,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: return_at,
+                        kind: raw::Terminator::Return { value: returned, cleanup },
+                    }],
+                },
+            ]
+        }
+        RootBorrowShape::Loop { condition_at, loop_at, body } => {
+            let entry = vec![root_literal_instruction, root_initialize_instruction];
+            let condition = raw::ValueId(values);
+            values = values.checked_add(1)?;
+            let header = vec![raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: condition,
+                    ty: root_ty.ir,
+                    span: condition_at,
+                }),
+                span: condition_at,
+                kind: raw::InstructionKind::CopyFromPlace { place: root_place },
+            }];
+            let mut body_instructions = Vec::with_capacity(instruction_capacity);
+            emit_root_borrow_arm(
+                body,
+                root_place,
+                false,
+                &mut values,
+                &mut places,
+                &mut body_instructions,
+            )?;
+            let returned = raw::ValueId(values);
+            values = values.checked_add(1)?;
+            let exit = vec![raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: returned,
+                    ty: root_ty.ir,
+                    span: return_at,
+                }),
+                span: return_at,
+                kind: raw::InstructionKind::CopyFromPlace { place: root_place },
+            }];
+            vec![
+                raw::Block {
+                    id: raw::BlockId(0),
+                    parameters: Vec::new(),
+                    instructions: entry,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: loop_at,
+                        kind: raw::Terminator::Jump(raw::Edge {
+                            target: raw::BlockId(1),
+                            arguments: Vec::new(),
+                        }),
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(1),
+                    parameters: Vec::new(),
+                    instructions: header,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: loop_at,
+                        kind: raw::Terminator::Branch {
+                            condition,
+                            when_true: raw::Edge { target: raw::BlockId(2), arguments: Vec::new() },
+                            when_false: raw::Edge {
+                                target: raw::BlockId(3),
+                                arguments: Vec::new(),
+                            },
+                        },
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(2),
+                    parameters: Vec::new(),
+                    instructions: body_instructions,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: loop_at,
+                        kind: raw::Terminator::Jump(raw::Edge {
+                            target: raw::BlockId(1),
+                            arguments: Vec::new(),
+                        }),
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(3),
+                    parameters: Vec::new(),
+                    instructions: exit,
                     terminators: vec![raw::SpannedTerminator {
                         span: return_at,
                         kind: raw::Terminator::Return { value: returned, cleanup },

@@ -140,8 +140,11 @@ The repository currently establishes and tests:
   four fixed branch/jump edges and rejoins without borrow block parameters or edge arguments. A
   complete borrow in only one arm is valid; arm-local value and transition costs sum while
   active-borrow capacity uses the larger arm. Mutable-from-shared, every reborrow from exclusive, projections,
-  calls, loops, nested/repeated conditionals, lifetime shortening, and every
+  calls, nested/repeated conditionals, lifetime shortening, and every
   runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable;
+  one canonical private bool-root loop additionally reverse-ends its body-local authorities before
+  a fixed backedge, restores the exact root owner/initialization state at the header, and carries
+  no borrow authority, value block parameter, or edge argument;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque

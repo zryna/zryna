@@ -1,0 +1,9 @@
+function loopBorrow(): bool {
+  let root: bool = true;
+  while (root) {
+    const authority: BorrowMut<bool> = borrowMut(root);
+    authority = false;
+    const observed: bool = authority;
+  }
+  return root;
+}

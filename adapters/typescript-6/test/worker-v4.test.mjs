@@ -152,6 +152,45 @@ test('v4 preserves conditional arm-local borrow scopes without assigning edge se
   assert.ok(response.result.files[0].type_syntax.some((type) => type.kind.kind === 'borrow-mut'));
 });
 
+test('v4 preserves a loop body borrow scope without assigning backedge semantics', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/loop-root-borrow.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/loop-root-borrow.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(33, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  const body = response.result.files[0].functions[0].body;
+  const loop = body.statements.find((statement) => statement.kind.kind === 'while');
+  assert.ok(loop);
+  assert.equal(body.blocks[loop.kind.body_block].statements.length, 3);
+  assert.equal(body.statements[body.blocks[loop.kind.body_block].statements[0]].kind.kind, 'local-declaration');
+  assert.ok(response.result.files[0].type_syntax.some((type) => type.kind.kind === 'borrow-mut'));
+});
+
+test('v4 preserves the loop-borrow exclusion matrix without assigning semantic admission', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/loop-root-borrow-exclusions.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/loop-root-borrow-exclusions.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(34, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  assert.equal(response.result.files[0].functions.length, 12);
+  assert.ok(response.result.files[0].functions.some((fn) =>
+    fn.body.statements.filter((statement) => statement.kind.kind === 'while').length === 2));
+});
+
 test('v4 reserves only the frozen prototype-sensitive names', async () => {
   const text = 'interface then extends ZrynaStruct { arguments: i32; eval: i32; }';
   const [response] = await exchange([analyze(4, text)]);

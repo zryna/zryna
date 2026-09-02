@@ -212,18 +212,23 @@ contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
 effects remain excluded. Issue #82 is now active through its checked child-issue dependency graph.
-Issues #113 through #115 and #117 freeze the bounded borrowing contract, retain the independent verified-IR
+Issues #113 through #115, #117, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
 authority, and implement one internal private parameter-free literal-initialized `bool`/`i32` root
-with shared or exclusive aliases in one nested lexical block. Alias reads lower to `BorrowRead`;
+with shared or exclusive aliases. Straight-line aliases use one nested lexical block, conditional
+aliases use one nested lexical scope per arm, and the loop body itself is #121's sole scope. Alias reads lower to `BorrowRead`;
 assignment to const `BorrowMut<T>` is write-through and lowers to `BorrowWrite`; shared-from-shared
 reborrow resolves to the same root. The full root conflict matrix, exclusive owner hiding, reverse
 `EndBorrow` restoration, and exact read/write resources are preflighted before IR construction.
 One canonical bool-root `if`/`else` additionally discharges every arm-local authority before its
 jump and rejoins through four fixed blocks and four edges without borrow parameters, edge
 arguments, or ownership-flow authority. Both arms are preflighted atomically; arm-local value and
-transition costs sum while active capacity is the larger arm, and a complete borrow in only one arm is valid. This adds
-no runtime, ABI, backend, driver, CLI, artifact, or public-profile capability; projected, call,
-loop, nested/repeated conditional, and owned-root borrowing remain later child issues.
+transition costs sum while active capacity is the larger arm, and a complete borrow in only one
+arm is valid. One canonical bool-root loop now uses fixed preheader/header/body/exit blocks and discharges its
+body-local authority before every backedge and restores exact root owner/initialization state at
+the header. It carries no borrow authority, value block parameter, or edge argument. This adds no
+runtime, ABI, backend, driver, CLI, artifact, or public-profile
+capability; projected, call, nested/repeated control flow, and owned-root borrowing remain later
+child issues.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3

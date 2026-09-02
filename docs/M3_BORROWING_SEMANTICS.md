@@ -1,9 +1,10 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, #115, and #117 complete. The internal semantic producer admits bounded
+Status: Issues #113, #114, #115, #117, and #121 complete. The internal semantic producer admits bounded
 shared and exclusive Copy-root source shapes, one shared-from-shared reborrow, and one canonical
-conditional whose arm-local lexical authorities are completely discharged before every edge.
-Projected, call, loop, and owned-root borrowing remain dependency-ordered later checkpoints.
+conditional plus one canonical bool-root loop whose local lexical authorities are completely
+discharged before every edge. Projected, call-based, nested/repeated control-flow, and owned-root
+borrowing remain dependency-ordered later checkpoints.
 
 This document freezes the dependency-ordered implementation boundary for Issue #82. It refines the
 normative borrowing rules in [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md) without
@@ -238,6 +239,30 @@ functions, projections, owned roots, borrow-carrying block parameters, edge argu
 shortening, runtime flags, ABI changes, backends, drivers, CLI selectors, artifacts, and public
 profiles.
 
+## Issue #121 loop-edge checkpoint
+
+One private parameter-free function may instead use a literal-initialized `bool` root as the
+condition of one top-level `while`. The loop body itself is the single lexical borrow scope: it
+contains only the admitted aliases, Copy reads, and exclusive writes, then reverse-ends every
+authority before the backedge. An extra nested block is not this source shape.
+
+Lowering has exactly four dense blocks and four empty-argument edges: preheader initialization,
+header `CopyFromPlace` plus branch, body borrow operations plus reverse `EndBorrow` and backedge,
+and exit root read plus return. No block has parameters and no borrow authority, value block
+parameter, or edge argument is carried; the exact root owner/initialization state is restored at
+the header and backedge. The same static dense borrow identity and resource reservation serve
+zero, one, or many structural body visits. Values are `reads + writes + 3`, places are one,
+transitions are `2 * aliases + reads + 2 * writes + 4`, active capacity is the body alias count,
+and cleanup-plan count is one.
+
+The verifier rejects authority active at the header branch, body backedge, exit return/trap, or
+any other edge, rejects inactive or mismatched ends, and rejects ordinary owner-state mismatch at
+the backedge. Generic branch/jump and return/trap escape tests remain the shared authority for
+those terminators. Public or parameterized functions, nonliteral/non-bool roots, alternate
+conditions, extra nested blocks, nested/repeated loops, `break`, `continue`, body return, calls,
+projections, lifetime shortening, loop-carried authority, runtime flags, ABI/backend/driver/CLI
+changes, artifacts, and public profiles remain excluded.
+
 ## Resource and verification boundary
 
 The verifier limit remains 16,384 simultaneously active borrows per function. Function borrow
@@ -247,7 +272,8 @@ begin/end sites as simultaneously live.
 
 The borrow edit loop runs `cargo test --locked -p zryna-ir borrow` plus the focused conditional
 join/edge tests for the retained verifier, and focused `borrow`, `exclusive_`, `conflict_matrix`,
-`reborrow`, and `conditional_` semantic filters for the #114/#115/#117 producer. The checked gate
+`reborrow`, `conditional_`, and `loop_root_borrow` semantic filters for the
+#114/#115/#117/#121 producer. The checked gate
 additionally requires the complete DataOwnershipV1 IR and semantic suites plus doctests, M3
 contract/documentation tests, formatting and strict Clippy, `pnpm preflight`, and `pnpm m0:check`.
 A quick lane cannot substitute for proportional exact/+1 or cross-platform merge evidence.
