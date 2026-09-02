@@ -212,7 +212,7 @@ contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
 effects remain excluded. Issue #82 is now active through its checked child-issue dependency graph.
-Issues #113 through #115, #117, #120, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
+Issues #113 through #117, #120, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
 authority, and implement one internal private parameter-free literal-initialized `bool`/`i32` root
 with shared or exclusive aliases. Straight-line aliases use one nested lexical block, conditional
 aliases use one nested lexical scope per arm, and the loop body itself is #121's sole scope. Alias reads lower to `BorrowRead`;
@@ -233,14 +233,14 @@ tests retain the verifier as the final authority. One canonical bool-root loop n
 body-local authority before every backedge and restores exact root owner/initialization state at
 the header. It carries no borrow authority, value block parameter, or edge argument. This adds no
 runtime, ABI, backend, driver, CLI, artifact, or public-profile
-capability. The current Issue #116 implementation checkpoint additionally admits exactly one
+capability. The completed Issue #116 implementation additionally admits exactly one
 private parameter-free whole non-Copy root and one const shared alias in one lexical block. Reads
 are limited to String clone/checked concat, exact `Vec<bool>`/`Vec<i32>` Copy indexing, and
 supported whole Struct/root-Enum/fixed-array clone. Existing owned instructions and cleanup/fault
 authorities retain the source and produce distinct owned results where applicable; `BorrowRead`
 remains Copy-only. Projections, mutation, moves, calls, new runtime/backend behavior, and public
-activation remain excluded. Issue #116 is not recorded complete until independent verification
-and merge gates succeed; call and nested/repeated control flow remain later child issues.
+activation remain excluded. Issue #116 passed independent verification and required merge gates;
+call and nested/repeated control flow remain later child issues.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3

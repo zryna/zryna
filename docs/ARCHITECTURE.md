@@ -536,14 +536,14 @@ The independent verifier rechecks exact projected authority and owner move/repla
 Issue #121 adds one fixed preheader/header/body/exit bool-root loop whose body
 reverse-ends one static dense authority plan before every backedge, restores the exact root
 owner/initialization state at the header, and carries no borrow authority, value block parameter,
-or edge argument. The current Issue #116 implementation checkpoint admits one private
+or edge argument. The completed Issue #116 implementation admits one private
 parameter-free whole owned root, one const shared alias in one lexical block, and only String
 clone/checked concat, exact `Vec<bool>`/`Vec<i32>` Copy indexing, or supported whole
 Struct/root-Enum/fixed-array clone. It brackets the existing owned operations with shared lexical
 authority, retains the source, gives each owned result a distinct owner, and reuses existing
 cleanup/fault plans; `BorrowRead` remains Copy-only. It adds no projection, mutation, move,
-runtime, backend, or public capability. Issue #116 remains unclosed pending independent
-verification and merge; aggregate closure remains #122.
+runtime, backend, or public capability. Issue #116 passed independent verification and required
+merge gates; aggregate closure remains #122.
 
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve

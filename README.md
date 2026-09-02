@@ -147,15 +147,14 @@ The repository currently establishes and tests:
   runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable;
   one canonical private bool-root loop additionally reverse-ends its body-local authorities before
   a fixed backedge, restores the exact root owner/initialization state at the header, and carries
-  no borrow authority, value block parameter, or edge argument. The current Issue #116
-  implementation checkpoint also admits one private parameter-free whole non-Copy root with one
+  no borrow authority, value block parameter, or edge argument. The completed Issue #116
+  implementation also admits one private parameter-free whole non-Copy root with one
   const shared alias in one lexical block: String clone/checked concat, exact `Vec<bool>` or
   `Vec<i32>` Copy indexing, and supported whole Struct/root-Enum/fixed-array clone reuse the
   existing owned operations and cleanup/fault authorities. The source remains initialized and is
   returned after lexical end; every owned read result is distinct. `BorrowRead` remains Copy-only,
   and projections, mutation, moves, calls, runtime/backend work, and public activation remain
-  excluded. Issue #116 is not claimed complete until its independent verification and merge gates
-  succeed;
+  excluded. Issue #116 is complete after independent verification and required merge gates;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
