@@ -28,8 +28,9 @@ use super::{
     projected_subobject_move_budget_violation, projected_subobject_return_budget_violation,
     raw_function_value_count, raw_terminator_edge_count, resource_budget_violation,
     root_borrow_resource_violation, semantic_preflight, span,
-    straight_root_borrow_budget_violation, string_byte_budget_violation, terminal_owned_if,
-    value_budget_violation, vec_push_target_invalid,
+    straight_root_borrow_budget_violation, straight_root_borrow_resources,
+    string_byte_budget_violation, terminal_owned_if, value_budget_violation,
+    vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -74,6 +75,7 @@ mod fixed_array_partial_fixture_support;
 mod fixed_arrays;
 mod function_catalog;
 mod generation_budgets;
+mod lexical_borrow_calls;
 mod loop_fixture_support;
 mod loop_root_borrows;
 mod nested_partial_transfer_fixture_support;

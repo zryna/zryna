@@ -15,19 +15,35 @@ pub(super) fn straight_root_borrow_budget_violation(
     reads: usize,
     writes: usize,
 ) -> Option<RootBorrowBudgetLimit> {
-    root_borrow_resource_violation(RootBorrowResources {
-        values: reads.saturating_add(writes).saturating_add(2),
-        places: reads.saturating_add(1),
+    root_borrow_resource_violation(straight_root_borrow_resources(aliases, reads, writes, 0, 0))
+}
+
+pub(super) fn straight_root_borrow_resources(
+    aliases: usize,
+    reads: usize,
+    writes: usize,
+    calls: usize,
+    call_values: usize,
+) -> RootBorrowResources {
+    RootBorrowResources {
+        values: reads
+            .saturating_add(writes)
+            .saturating_add(call_values)
+            .saturating_add(calls)
+            .saturating_add(2),
+        places: reads.saturating_add(calls).saturating_add(1),
         transitions: aliases
             .saturating_mul(2)
             .saturating_add(reads.saturating_mul(2))
             .saturating_add(writes.saturating_mul(2))
+            .saturating_add(call_values)
+            .saturating_add(calls.saturating_mul(2))
             .saturating_add(3),
         blocks: 1,
         edges: 0,
         active_peak: aliases,
-        cleanup_plans: 1,
-    })
+        cleanup_plans: calls.saturating_add(1),
+    }
 }
 
 pub(super) fn root_borrow_resource_violation(
@@ -143,7 +159,9 @@ fn root_borrow_projection_place_count(steps: &[RootBorrowStep]) -> usize {
         RootBorrowStep::Begin { place, .. } | RootBorrowStep::OwnerRead { place, .. } => {
             Some(place)
         }
-        RootBorrowStep::Read { .. } | RootBorrowStep::Write { .. } => None,
+        RootBorrowStep::Read { .. } | RootBorrowStep::Write { .. } | RootBorrowStep::Call(_) => {
+            None
+        }
     }) {
         let mut prefix = Vec::with_capacity(place.projections.len());
         for projection in &place.projections {
@@ -169,14 +187,22 @@ pub(super) fn projected_root_borrow_resources(
     arm: &RootBorrowArmPlan,
 ) -> RootBorrowResources {
     let write_values = root_borrow_write_value_count(&arm.steps);
-    projected_root_borrow_resource_counts(
+    let mut resources = projected_root_borrow_resource_counts(
         initializer.value_count(),
         arm.aliases,
         arm.reads,
         arm.writes,
         write_values,
         root_borrow_projection_place_count(&arm.steps),
-    )
+    );
+    resources.values = resources.values.saturating_add(arm.call_values).saturating_add(arm.calls);
+    resources.places = resources.places.saturating_add(arm.calls);
+    resources.transitions = resources
+        .transitions
+        .saturating_add(arm.call_values)
+        .saturating_add(arm.calls.saturating_mul(2));
+    resources.cleanup_plans = resources.cleanup_plans.saturating_add(arm.calls);
+    resources
 }
 
 pub(super) fn projected_root_borrow_resource_counts(
