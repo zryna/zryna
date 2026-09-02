@@ -1,0 +1,112 @@
+export function publicLoop(): bool {
+  const root: bool = true;
+  while (root) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = authority;
+  }
+  return root;
+}
+
+function parameterLoop(input: bool): bool {
+  const root: bool = true;
+  while (root) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = authority;
+  }
+  return root;
+}
+
+function nestedLoop(): bool {
+  const root: bool = true;
+  while (root) {
+    {
+      const authority: Borrow<bool> = borrow(root);
+      const observed: bool = authority;
+    }
+  }
+  return root;
+}
+
+function alternateCondition(): bool {
+  const root: bool = true;
+  while (other) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = authority;
+  }
+  return root;
+}
+
+function literalCondition(): bool {
+  const root: bool = true;
+  while (true) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = authority;
+  }
+  return root;
+}
+
+function nonBoolRoot(): i32 {
+  const root: i32 = 1;
+  while (root) {
+    const authority: Borrow<i32> = borrow(root);
+    const observed: i32 = authority;
+  }
+  return root;
+}
+
+function nestedWhile(): bool {
+  const root: bool = true;
+  while (root) {
+    while (root) {
+      const authority: Borrow<bool> = borrow(root);
+      const observed: bool = authority;
+    }
+  }
+  return root;
+}
+
+function repeatedWhile(): bool {
+  const root: bool = true;
+  while (root) {
+    const first: Borrow<bool> = borrow(root);
+    const observed: bool = first;
+  }
+  while (root) {
+    const second: Borrow<bool> = borrow(root);
+    const observedAgain: bool = second;
+  }
+  return root;
+}
+
+function bodyReturn(): bool {
+  const root: bool = true;
+  while (root) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = authority;
+    return observed;
+  }
+  return root;
+}
+
+function identity(value: bool): bool {
+  return value;
+}
+
+function bodyCall(): bool {
+  const root: bool = true;
+  while (root) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = identity(authority);
+  }
+  return root;
+}
+
+function postLoopEffect(): bool {
+  const root: bool = true;
+  while (root) {
+    const authority: Borrow<bool> = borrow(root);
+    const observed: bool = authority;
+  }
+  const after: bool = root;
+  return root;
+}

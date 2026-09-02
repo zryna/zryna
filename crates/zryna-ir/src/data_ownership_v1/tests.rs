@@ -820,6 +820,133 @@ fn conditional_borrow_flow_program(
     raw
 }
 
+#[allow(clippy::too_many_lines)]
+fn lexical_borrow_loop_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    let file = sources.verify_file_id(0).expect("entry file");
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    let preheader = sources.span(file, 5, 6).expect("preheader span");
+    let header = sources.span(file, 10, 11).expect("header span");
+    let backedge = sources.span(file, 20, 21).expect("backedge span");
+    let exit = sources.span(file, 30, 31).expect("exit span");
+    function.entry_export = None;
+    function.parameters.clear();
+    function.result = raw::TypeId(0);
+    function.places = vec![raw::Place {
+        id: raw::PlaceId(0),
+        ty: raw::TypeId(0),
+        span,
+        kind: raw::PlaceKind::Local(0),
+    }];
+    function.blocks = vec![
+        raw::Block {
+            id: raw::BlockId(0),
+            parameters: vec![],
+            instructions: vec![
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(0),
+                        ty: raw::TypeId(0),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::BoolLiteral(true),
+                },
+                raw::Instruction {
+                    result: None,
+                    span,
+                    kind: raw::InstructionKind::InitializePlace {
+                        place: raw::PlaceId(0),
+                        value: raw::ValueId(0),
+                    },
+                },
+            ],
+            terminators: vec![raw::SpannedTerminator {
+                span: preheader,
+                kind: raw::Terminator::Jump(raw::Edge {
+                    target: raw::BlockId(1),
+                    arguments: vec![],
+                }),
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(1),
+            parameters: vec![],
+            instructions: vec![raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: raw::ValueId(1),
+                    ty: raw::TypeId(0),
+                    span: header,
+                }),
+                span: header,
+                kind: raw::InstructionKind::CopyFromPlace { place: raw::PlaceId(0) },
+            }],
+            terminators: vec![raw::SpannedTerminator {
+                span: header,
+                kind: raw::Terminator::Branch {
+                    condition: raw::ValueId(1),
+                    when_true: raw::Edge { target: raw::BlockId(2), arguments: vec![] },
+                    when_false: raw::Edge { target: raw::BlockId(3), arguments: vec![] },
+                },
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(2),
+            parameters: vec![],
+            instructions: vec![
+                raw::Instruction {
+                    result: None,
+                    span: backedge,
+                    kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                        id: raw::BorrowId(0),
+                        place: raw::PlaceId(0),
+                        access: raw::BorrowAccess::Shared,
+                        span: backedge,
+                    }),
+                },
+                raw::Instruction {
+                    result: None,
+                    span: backedge,
+                    kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+                },
+            ],
+            terminators: vec![raw::SpannedTerminator {
+                span: backedge,
+                kind: raw::Terminator::Jump(raw::Edge {
+                    target: raw::BlockId(1),
+                    arguments: vec![],
+                }),
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(3),
+            parameters: vec![],
+            instructions: vec![raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: raw::ValueId(2),
+                    ty: raw::TypeId(0),
+                    span: exit,
+                }),
+                span: exit,
+                kind: raw::InstructionKind::CopyFromPlace { place: raw::PlaceId(0) },
+            }],
+            terminators: vec![raw::SpannedTerminator {
+                span: exit,
+                kind: raw::Terminator::Return {
+                    value: raw::ValueId(2),
+                    cleanup: raw::CleanupPlanId(0),
+                },
+            }],
+        },
+    ];
+    raw
+}
+
 #[derive(Clone, Copy)]
 enum SubobjectMoveShape {
     Struct,
@@ -4915,6 +5042,96 @@ fn lexical_borrow_cannot_cross_branch_or_jump_edges() {
         diagnostic.code() == "ZRYNA-I3011"
             && diagnostic.message().contains("borrow end uses an inactive authority")
     }));
+}
+
+#[test]
+fn lexical_borrow_loop_rejects_backedge_escape_inactive_header_end_and_state_mismatch() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let seed = lexical_borrow_loop_program(&sources, &linear, &linux);
+    verify(seed.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("parameter-free four-block lexical loop");
+
+    let mut active = seed.clone();
+    active.modules[0].functions[0].blocks[2].instructions.pop();
+    let diagnostics = verify(active, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("authority crosses backedge");
+    let trace = |diagnostics: Vec<zryna_diagnostics::Diagnostic>| {
+        diagnostics
+            .into_iter()
+            .map(|diagnostic| {
+                let primary = match diagnostic.primary() {
+                    PrimaryLocation::Source { span } => Some((span.start(), span.end())),
+                    _ => None,
+                };
+                (diagnostic.code().to_owned(), diagnostic.message().to_owned(), primary)
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        trace(diagnostics),
+        vec![(
+            "ZRYNA-I3011".to_owned(),
+            "borrow remains active at a control-flow edge".to_owned(),
+            Some((20, 21)),
+        )]
+    );
+
+    let mut header_end = seed.clone();
+    header_end.modules[0].functions[0].blocks[2].instructions.pop();
+    let file = sources.verify_file_id(0).expect("entry");
+    let probe = sources.span(file, 12, 13).expect("end probe");
+    header_end.modules[0].functions[0].blocks[1].instructions.push(raw::Instruction {
+        result: None,
+        span: probe,
+        kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+    });
+    let diagnostics = verify(header_end, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("header cannot discharge body authority");
+    assert_eq!(
+        trace(diagnostics),
+        vec![
+            (
+                "ZRYNA-I3011".to_owned(),
+                "borrow end uses an inactive authority".to_owned(),
+                Some((12, 13)),
+            ),
+            (
+                "ZRYNA-I3011".to_owned(),
+                "borrow remains active at a control-flow edge".to_owned(),
+                Some((20, 21)),
+            ),
+        ]
+    );
+
+    let mut mismatch = seed;
+    let function = &mut mismatch.modules[0].functions[0];
+    let span = function.span;
+    function.places.push(raw::Place {
+        id: raw::PlaceId(1),
+        ty: raw::TypeId(0),
+        span,
+        kind: raw::PlaceKind::Local(1),
+    });
+    function.blocks[2].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::InitializePlace {
+            place: raw::PlaceId(1),
+            value: raw::ValueId(0),
+        },
+    });
+    let diagnostics = verify(mismatch, &sources, entry, linear, linux)
+        .expect_err("ordinary body state differs at backedge");
+    assert_eq!(
+        trace(diagnostics),
+        vec![(
+            "ZRYNA-I3010".to_owned(),
+            "ownership, initialization, or active-enum state differs across a CFG join or backedge"
+                .to_owned(),
+            Some((20, 21)),
+        )]
+    );
 }
 
 #[test]

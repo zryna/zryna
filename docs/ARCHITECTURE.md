@@ -528,8 +528,11 @@ before its jump, and joins with no borrow block parameter, edge argument, or own
 Both arms are planned before materialization; identities follow then/else source order, arm-local
 value and transition costs sum, and peak active authority is the larger arm. The independent verifier uses canonical
 dense block order for join diagnostics without changing edge-indexed enum refinement. Mutable-from-
-shared, reborrow from exclusive, projected, call, loop, and nested/repeated conditional borrowing
-remain later slices; aggregate closure remains #122.
+shared, reborrow from exclusive, projected, call, and nested/repeated conditional borrowing
+remain later slices. Issue #121 adds one fixed preheader/header/body/exit bool-root loop whose body
+reverse-ends one static dense authority plan before every backedge, restores the exact root
+owner/initialization state at the header, and carries no borrow authority, value block parameter,
+or edge argument; aggregate closure remains #122.
 
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve
