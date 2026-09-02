@@ -1,0 +1,8 @@
+function read(): bool {
+  const root: bool = true;
+  {
+    const alias: Borrow<bool> = borrow(root);
+    const copy: bool = alias;
+  }
+  return root;
+}

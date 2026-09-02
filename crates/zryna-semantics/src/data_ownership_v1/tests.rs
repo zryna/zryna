@@ -2,13 +2,13 @@ use super::{
     Errors, FunctionCatalog, FunctionSignature, MAX_SEMANTIC_DIAGNOSTICS, OwnedCfgBudgetLimit,
     OwnedCfgState, OwnedStringBranchState, OwnedStringEstimateContext,
     OwnedStringPreparationBudget, OwnerState, PartialTransferBudgetViolation, PrivateStringLowerer,
-    ProgramCfgBudgetLimit, SemanticInput, ValueBudgetLimit, accumulate_generated_cfg_function,
-    accumulate_generated_value_function, aggregate_clone_budget_violation,
-    aggregate_operand_budget_violation, aggregate_transition_budget_violation,
-    authenticated_type_capabilities, checked_string_concat_bytes, cleanup_action_budget_violation,
-    cleanup_actions_after_additions, cleanup_actions_after_preparation,
-    cleanup_actions_after_transfer, dense_owned_value_id, derived_value_count,
-    enum_payload_move_resource_estimate, enum_payload_move_resource_violation,
+    ProgramCfgBudgetLimit, SemanticInput, SharedRootBorrowBudgetLimit, ValueBudgetLimit,
+    accumulate_generated_cfg_function, accumulate_generated_value_function,
+    aggregate_clone_budget_violation, aggregate_operand_budget_violation,
+    aggregate_transition_budget_violation, authenticated_type_capabilities,
+    checked_string_concat_bytes, cleanup_action_budget_violation, cleanup_actions_after_additions,
+    cleanup_actions_after_preparation, cleanup_actions_after_transfer, dense_owned_value_id,
+    derived_value_count, enum_payload_move_resource_estimate, enum_payload_move_resource_violation,
     estimate_owned_string_expression, generated_cfg_budget_violation,
     is_terminal_owned_phi_candidate, lower, owned_call_cleanup_budget_violation,
     owned_cfg_budget_violation, owned_place_budget_violation, owned_value_budget_violation,
@@ -22,9 +22,9 @@ use super::{
     projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
     projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
     projected_subobject_return_budget_violation, raw_function_value_count,
-    raw_terminator_edge_count, resource_budget_violation, semantic_preflight, span,
-    string_byte_budget_violation, terminal_owned_if, value_budget_violation,
-    vec_push_target_invalid,
+    raw_terminator_edge_count, resource_budget_violation, semantic_preflight,
+    shared_root_borrow_budget_violation, span, string_byte_budget_violation, terminal_owned_if,
+    value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
@@ -50,6 +50,38 @@ const PAIR_JSON: &[u8] = include_bytes!("../../../../tests/m3-fixtures/syntax-v4
 const PAIR_SCORE_SOURCE: &str = include_str!("../../../../tests/m3-fixtures/pair-score-v4.zry");
 const PAIR_SCORE_JSON: &[u8] = include_bytes!("../../../../tests/m3-fixtures/pair-score-v4.json");
 const PAIR_ORACLE: &str = include_str!("../../../../tests/m3-fixtures/pair-oracle-v1.json");
+const SHARED_ROOT_BORROW_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-borrow.zry");
+const SHARED_ROOT_BORROW_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow.json");
+const SHARED_ROOT_BORROW_REPLACE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-borrow-replace.zry");
+const SHARED_ROOT_BORROW_REPLACE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow-replace.json");
+const SHARED_ROOT_BORROW_ESCAPE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-borrow-escape.zry");
+const SHARED_ROOT_BORROW_ESCAPE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow-escape.json");
+const SHARED_ROOT_BORROW_BOOL_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-borrow-bool.zry");
+const SHARED_ROOT_BORROW_BOOL_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow-bool.json");
+const SHARED_ROOT_OWNER_READ_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-owner-read.zry");
+const SHARED_ROOT_OWNER_READ_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-owner-read.json");
+const SHARED_ROOT_BORROW_MUTABLE_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-borrow-mutable.zry");
+const SHARED_ROOT_BORROW_MUTABLE_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow-mutable.json");
+const SHARED_ROOT_BORROW_WRONG_REFERENT_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-borrow-wrong-referent.zry");
+const SHARED_ROOT_BORROW_WRONG_REFERENT_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow-wrong-referent.json");
+const SHARED_ROOT_BORROW_UNUSED_SOURCE: &str =
+    include_str!("../../../../tests/m3-fixtures/shared-root-borrow-unused.zry");
+const SHARED_ROOT_BORROW_UNUSED_JSON: &[u8] =
+    include_bytes!("../../../../tests/m3-fixtures/shared-root-borrow-unused.json");
 const STRING_SOURCE: &str = "function bad(): String { return \"x\"; }";
 const STRING_RESPONSE: &str = r#"{"id":1,"result":{"schema_version":4,"files":[{"id":0,"path":"src/main.zry","imports":[],"type_syntax":[{"span":{"file":0,"start":16,"end":22},"kind":{"kind":"string","keyword_span":{"file":0,"start":16,"end":22}}}],"data_declarations":[],"functions":[{"span":{"file":0,"start":0,"end":38},"export_span":null,"function_span":{"file":0,"start":0,"end":8},"name":{"text":"bad","span":{"file":0,"start":9,"end":12}},"parameters":[],"result_type":0,"body":{"span":{"file":0,"start":23,"end":38},"root_block":0,"blocks":[{"span":{"file":0,"start":23,"end":38},"open_brace_span":{"file":0,"start":23,"end":24},"statements":[0],"close_brace_span":{"file":0,"start":37,"end":38}}],"statements":[{"span":{"file":0,"start":25,"end":36},"kind":{"kind":"return","keyword_span":{"file":0,"start":25,"end":31},"value":0,"semicolon_span":{"file":0,"start":35,"end":36}}}],"expressions":[{"span":{"file":0,"start":32,"end":35},"kind":{"kind":"string-literal","spelling":"\"x\""}}]}}]}],"diagnostics":[]}}"#;
 const MULTIBYTE_STRING_SOURCE: &str = "function snow(): String { return \"snowman: ☃\"; }";
@@ -18817,4 +18849,226 @@ fn authenticated_v4_derived_value_budget_is_exact_and_plus_one_fails_m3201() {
         (primary.start(), primary.end()),
         (0, u32::try_from(plus_text.len()).expect("fixture length"))
     );
+}
+
+#[test]
+fn shared_root_aliases_read_copy_values_end_in_reverse_and_restore_owner_access() {
+    let sources = sources_for(SHARED_ROOT_BORROW_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(SHARED_ROOT_BORROW_JSON).expect("shared-root borrow snapshot"),
+        &sources,
+    )
+    .expect("source-faithful shared-root borrow v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("shared-root borrow lowering");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let instructions = function.blocks().next().expect("block").instructions().collect::<Vec<_>>();
+    assert_eq!(
+        instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
+        vec![
+            VerifiedInstructionKind::I32Literal,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::BeginBorrow,
+            VerifiedInstructionKind::BorrowRead,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::BeginBorrow,
+            VerifiedInstructionKind::BorrowRead,
+            VerifiedInstructionKind::InitializePlace,
+            VerifiedInstructionKind::EndBorrow,
+            VerifiedInstructionKind::EndBorrow,
+            VerifiedInstructionKind::CopyFromPlace,
+        ]
+    );
+    let ended = instructions
+        .iter()
+        .filter(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
+        .map(|instruction| instruction.borrow().expect("ended borrow").index())
+        .collect::<Vec<_>>();
+    assert_eq!(ended, vec![1, 0]);
+    assert_eq!(function.borrow_parameters().count(), 0);
+    assert_eq!(function.cleanup_plans().next().expect("return cleanup").actions().count(), 0);
+}
+
+#[test]
+fn shared_root_borrow_lowering_is_deterministic() {
+    let lower_once = || {
+        let sources = sources_for(SHARED_ROOT_BORROW_SOURCE);
+        let syntax = verify_snapshot(
+            decode_snapshot(SHARED_ROOT_BORROW_JSON).expect("shared-root borrow snapshot"),
+            &sources,
+        )
+        .expect("source-faithful shared-root borrow v4");
+        let program = lower(pair_input(&syntax, &sources)).expect("shared-root borrow lowering");
+        program
+            .modules()
+            .next()
+            .expect("module")
+            .functions()
+            .next()
+            .expect("function")
+            .blocks()
+            .next()
+            .expect("block")
+            .instructions()
+            .map(|instruction| {
+                (
+                    instruction.kind(),
+                    instruction.borrow().map(zryna_ir::data_ownership_v1::BorrowIdentity::index),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(lower_once(), lower_once());
+}
+
+#[test]
+fn shared_root_borrow_resources_are_preflighted_at_exact_and_first_extra_limits() {
+    let exact = zryna_ir::data_ownership_v1::MAX_ACTIVE_BORROWS_PER_FUNCTION;
+    assert_eq!(shared_root_borrow_budget_violation(exact, 1), None);
+    assert_eq!(
+        shared_root_borrow_budget_violation(exact + 1, 1),
+        Some(SharedRootBorrowBudgetLimit::ActiveBorrows)
+    );
+    let exact_values = zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION - 2;
+    assert_eq!(shared_root_borrow_budget_violation(1, exact_values), None);
+    assert_eq!(
+        shared_root_borrow_budget_violation(1, exact_values + 1),
+        Some(SharedRootBorrowBudgetLimit::Values)
+    );
+    assert_eq!(
+        shared_root_borrow_budget_violation(usize::MAX, usize::MAX),
+        Some(SharedRootBorrowBudgetLimit::Values)
+    );
+}
+
+#[test]
+fn shared_root_borrow_rejects_owner_replacement_before_ir_construction() {
+    let sources = sources_for(SHARED_ROOT_BORROW_REPLACE_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(SHARED_ROOT_BORROW_REPLACE_JSON).expect("replacement snapshot"),
+        &sources,
+    )
+    .expect("source-faithful replacement v4");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("borrowed replacement");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
+    assert_eq!(
+        diagnostics[0].message(),
+        "shared-borrow blocks admit only const aliases and const Copy reads"
+    );
+}
+
+#[test]
+fn shared_root_borrow_alias_cannot_escape_its_lexical_block() {
+    let sources = sources_for(SHARED_ROOT_BORROW_ESCAPE_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(SHARED_ROOT_BORROW_ESCAPE_JSON).expect("escape snapshot"),
+        &sources,
+    )
+    .expect("source-faithful escape v4");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("escaping alias");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
+    assert_eq!(
+        diagnostics[0].message(),
+        "a lexical borrow alias or block-local read cannot escape"
+    );
+}
+
+#[test]
+fn shared_root_bool_uses_the_same_verified_borrow_authority() {
+    let sources = sources_for(SHARED_ROOT_BORROW_BOOL_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(SHARED_ROOT_BORROW_BOOL_JSON).expect("bool borrow snapshot"),
+        &sources,
+    )
+    .expect("source-faithful bool borrow v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("bool shared-root borrow");
+    let instructions = program
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .map(zryna_ir::data_ownership_v1::VerifiedInstruction::kind)
+        .collect::<Vec<_>>();
+    assert_eq!(instructions[0], VerifiedInstructionKind::BoolLiteral);
+    assert!(instructions.contains(&VerifiedInstructionKind::BorrowRead));
+    assert_eq!(instructions.last(), Some(&VerifiedInstructionKind::CopyFromPlace));
+}
+
+#[test]
+fn shared_root_owner_copy_read_remains_compatible_while_alias_is_active() {
+    let sources = sources_for(SHARED_ROOT_OWNER_READ_SOURCE);
+    let syntax = verify_snapshot(
+        decode_snapshot(SHARED_ROOT_OWNER_READ_JSON).expect("owner-read snapshot"),
+        &sources,
+    )
+    .expect("source-faithful owner-read v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("shared owner read");
+    let instructions = program
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .map(zryna_ir::data_ownership_v1::VerifiedInstruction::kind)
+        .collect::<Vec<_>>();
+    let begin = instructions
+        .iter()
+        .position(|kind| *kind == VerifiedInstructionKind::BeginBorrow)
+        .expect("begin borrow");
+    let end = instructions
+        .iter()
+        .position(|kind| *kind == VerifiedInstructionKind::EndBorrow)
+        .expect("end borrow");
+    assert_eq!(
+        instructions[begin + 1..end]
+            .iter()
+            .filter(|kind| **kind == VerifiedInstructionKind::CopyFromPlace)
+            .count(),
+        1,
+        "one owner Copy read must remain inside the active shared-borrow interval"
+    );
+}
+
+#[test]
+fn shared_root_borrow_rejects_mutable_wrong_referent_and_unused_aliases() {
+    for (source, snapshot, expected) in [
+        (
+            SHARED_ROOT_BORROW_MUTABLE_SOURCE,
+            SHARED_ROOT_BORROW_MUTABLE_JSON,
+            "shared-borrow block bindings must be const",
+        ),
+        (
+            SHARED_ROOT_BORROW_WRONG_REFERENT_SOURCE,
+            SHARED_ROOT_BORROW_WRONG_REFERENT_JSON,
+            "shared alias referent does not match the root's exact scalar type",
+        ),
+        (
+            SHARED_ROOT_BORROW_UNUSED_SOURCE,
+            SHARED_ROOT_BORROW_UNUSED_JSON,
+            "each lexical shared alias must be declared and read at least once",
+        ),
+    ] {
+        let sources = sources_for(source);
+        let syntax = verify_snapshot(
+            decode_snapshot(snapshot).expect("hostile shared-root snapshot"),
+            &sources,
+        )
+        .expect("source-faithful hostile shared-root v4");
+        let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(expected);
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3017");
+        assert_eq!(diagnostics[0].message(), expected);
+    }
 }

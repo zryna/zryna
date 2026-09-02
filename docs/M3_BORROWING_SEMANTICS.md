@@ -1,7 +1,8 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issue #113 contract and verified-IR prerequisite complete. Source-level semantic borrowing
-is not implemented by this checkpoint.
+Status: Issues #113 and #114 complete. The internal semantic producer admits the first bounded
+shared-root source shape; exclusive, projected, call, control-flow, and owned-root borrowing remain
+dependency-ordered later checkpoints.
 
 This document freezes the dependency-ordered implementation boundary for Issue #82. It refines the
 normative borrowing rules in [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md) without
@@ -119,9 +120,34 @@ The focused `zryna-ir` tests name the current positive and hostile boundary:
 - the existing dense-identity, inactive/end, edge-escape, place-overlap, exact-limit, and
   first-extra verifier corpus remains part of `pnpm m3:owned:quick` and full preflight.
 
-Issue #113 changes no protocol-v4 syntax admission and no `zryna-semantics` producer. Borrow type
-nodes remain rejected by the current aggregate gate and every current semantic function continues
-to emit an empty borrow-parameter inventory. That gap is intentional until #114.
+Issue #113 changed no protocol-v4 syntax admission and no `zryna-semantics` producer. Its hostile
+raw-IR corpus remains the independent authority beneath every later semantic slice.
+
+## Issue #114 source checkpoint
+
+One private parameter-free straight-line function may now declare a literal-initialized `bool` or
+`i32` root, enter one explicit nested block, and declare one or more const
+`Borrow<bool>`/`Borrow<i32>` aliases initialized directly by `borrow(root)`. Each alias must be read
+at least once into an exact const Copy local. The semantic producer assigns dense `BorrowId`s,
+emits `BeginBorrow(Shared)` and `BorrowRead`, and permits exact Copy owner reads while shared aliases
+are active by lowering them to `CopyFromPlace(root)`. It emits `EndBorrow` in reverse declaration
+order at the block's closing brace, and only then emits the final root read and return. The owner
+remains initialized throughout and is reusable both during compatible shared access and after every
+alias ends.
+
+The producer computes the complete values, places, ownership transitions, cleanup-plan count, and
+simultaneously active-borrow peak before constructing raw IR. Exact limits pass; arithmetic
+overflow and the first extra resource fail as `ZRYNA-M3201`. Invalid shape, referent mismatch,
+mutable aliases, wrong referents, unused aliases, owner replacement/effects inside the block, and
+lexical escape fail as `ZRYNA-M3017`. Portable binding collisions retain `ZRYNA-M3002`. The
+mandatory existing IR verifier still independently rejects forged uninitialized, moved, inactive,
+duplicate, sparse, double-end, overlap, and edge-escape claims with stable `ZRYNA-I3011`
+diagnostics.
+
+This is not general reference semantics. The checkpoint excludes parameters, exported functions,
+nonliteral roots, owned referents, exclusive borrows, projections, assignment, calls, branches,
+loops, nested borrow blocks, stored aliases, returned aliases, lifetime inference, runtime
+tracking, ABI changes, backend operations, driver routes, CLI selection, and target artifacts.
 
 ## Resource and verification boundary
 
@@ -130,10 +156,11 @@ parameters count as active on entry. Lexical peak accounting follows instruction
 exact limit, rejects the first extra with `ZRYNA-I3201`, and does not treat repeated sequential
 begin/end sites as simultaneously live.
 
-The edit loop is `cargo test --locked -p zryna-ir borrow`. The checked Issue #113 gate additionally
-requires the complete DataOwnershipV1 IR suite and doctests, M3 contract/documentation tests,
-formatting and strict Clippy, `pnpm preflight`, and `pnpm m0:check`. A quick lane cannot substitute
-for proportional exact/+1 or cross-platform merge evidence.
+The borrow edit loop runs `cargo test --locked -p zryna-ir borrow` for the retained verifier and
+`cargo test --locked -p zryna-semantics shared_root` for the #114 producer. The checked gate
+additionally requires the complete DataOwnershipV1 IR and semantic suites plus doctests, M3
+contract/documentation tests, formatting and strict Clippy, `pnpm preflight`, and `pnpm m0:check`.
+A quick lane cannot substitute for proportional exact/+1 or cross-platform merge evidence.
 
 ## Deliberately unavailable
 

@@ -1,0 +1,9 @@
+function read(): i32 {
+  let root: i32 = 7;
+  {
+    const alias: Borrow<i32> = borrow(root);
+    const copy: i32 = alias;
+    root = 8;
+  }
+  return root;
+}

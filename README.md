@@ -127,6 +127,12 @@ The repository currently establishes and tests:
   repeated/nested branches or loops, general scope exits, and public owned values remain
   deliberately unavailable future extensions; Vec loop replacement, owned-element Vec loop push,
   `break`, `continue`, loop-body return, and post-loop effects remain excluded;
+- a first internal shared-borrow semantic checkpoint for one private parameter-free literal-
+  initialized `bool` or `i32` root: const aliases in one nested block lower to dense shared begin
+  and Copy-read authority, end in reverse lexical order, and leave the root readable afterward.
+  The producer preflights exact resources before raw-IR construction, the existing mandatory IR
+  verifier remains authoritative, and exclusive/projected/call/control-flow borrowing plus every
+  runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
