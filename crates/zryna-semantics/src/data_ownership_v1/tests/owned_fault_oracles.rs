@@ -333,3 +333,123 @@ fn owned_fault_oracle_is_bounded_and_fails_closed_on_mismatch() {
         assert!(owned_fault_trace(abi, function, literal, injection, 0, 1).is_err());
     }
 }
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn structural_clone_fault_oracle_authenticates_recursive_string_leaf_failure() {
+    let (source, raw) = clone_final_return_snapshot(OWNED_PAIR_SOURCE, OWNED_PAIR_RESPONSE);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful aggregate clone v4");
+    let program = lower(pair_input(&syntax, &sources)).expect("owned aggregate clone");
+    let abi = program.runtime_abi();
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let clone = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+        .expect("clone");
+    let source_owner = clone.place_operands().next().expect("source");
+    for status in [RuntimeStatus::Allocation, RuntimeStatus::Capacity, RuntimeStatus::AbiViolation]
+    {
+        let completed_prefix = 0;
+        let injection = OwnedFaultInjection::AggregateCloneElement { status, completed_prefix };
+        let event_limit = usize::try_from(completed_prefix).expect("small prefix") + 1;
+        let first = owned_fault_trace(abi, function, clone, injection, 0, event_limit)
+            .expect("recursive StringClone failure");
+        let replay = owned_fault_trace(abi, function, clone, injection, 0, event_limit)
+            .expect("deterministic recursive failure");
+        assert_eq!(first, replay);
+        assert!(!first.result_committed);
+        assert_eq!(first.uncommitted_result, clone.result());
+        assert!(first.retained_roots.contains(&source_owner));
+        assert!(first.reverse_cleanup.contains(&source_owner));
+        assert_eq!(first.reverse_prefix, (0..completed_prefix).rev().collect::<Vec<_>>());
+    }
+    assert_eq!(
+        owned_fault_trace(
+            abi,
+            function,
+            clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 1,
+            },
+            0,
+            2,
+        ),
+        Err(OwnedFaultOracleError::InvalidAggregateClonePrefix),
+    );
+    assert_eq!(
+        owned_fault_trace(
+            abi,
+            function,
+            clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 0,
+            },
+            0,
+            0,
+        ),
+        Err(OwnedFaultOracleError::EventLimit),
+    );
+
+    let (array_source, array_raw) =
+        clone_final_return_snapshot(OWNED_ARRAY_SOURCE, OWNED_ARRAY_RESPONSE);
+    let array_sources = sources_for(&array_source);
+    let array_syntax =
+        verify_snapshot(array_raw, &array_sources).expect("source-faithful array clone");
+    let array_program =
+        lower(pair_input(&array_syntax, &array_sources)).expect("owned array clone");
+    let array_function =
+        array_program.modules().next().expect("module").functions().next().expect("function");
+    let array_clone = array_function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::ClonePlace)
+        .expect("array clone");
+    let last_valid = OwnedFaultInjection::AggregateCloneElement {
+        status: RuntimeStatus::Allocation,
+        completed_prefix: 1,
+    };
+    assert_eq!(
+        owned_fault_trace(
+            array_program.runtime_abi(),
+            array_function,
+            array_clone,
+            last_valid,
+            0,
+            1,
+        ),
+        Err(OwnedFaultOracleError::EventLimit),
+        "event bound is checked before materializing the recursive prefix trace",
+    );
+    let trace = owned_fault_trace(
+        array_program.runtime_abi(),
+        array_function,
+        array_clone,
+        last_valid,
+        0,
+        2,
+    )
+    .expect("last valid fixed-array String leaf prefix");
+    assert_eq!(trace.reverse_prefix, vec![0]);
+    assert_eq!(
+        owned_fault_trace(
+            array_program.runtime_abi(),
+            array_function,
+            array_clone,
+            OwnedFaultInjection::AggregateCloneElement {
+                status: RuntimeStatus::Allocation,
+                completed_prefix: 2,
+            },
+            0,
+            3,
+        ),
+        Err(OwnedFaultOracleError::InvalidAggregateClonePrefix),
+    );
+}

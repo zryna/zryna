@@ -135,3 +135,171 @@ pub(super) fn private_vec_nested_string_fixture() -> (String, RawProjectSyntaxSn
     *value = 9;
     (source, raw)
 }
+
+#[allow(clippy::too_many_lines)]
+pub(super) fn private_vec_clone_fixture(element: &str) -> (String, RawProjectSyntaxSnapshot) {
+    use zryna_syntax::v4::RawExpressionKind;
+
+    let elements = if element == "String" { "[\"a\", \"b\", \"c\"]" } else { "[]" };
+    let source = format!(
+        "function copy(): Vec<{element}> {{ const source: Vec<{element}> = Vec<{element}>({elements}); return clone(source); }}"
+    );
+    let token = |needle, ordinal| nth_untrusted_span(&source, needle, ordinal);
+    let range = |start, start_ordinal, end, end_ordinal| {
+        untrusted_range(&source, (start, start_ordinal), (end, end_ordinal))
+    };
+    let spelling = format!("Vec<{element}>");
+    let mut types = Vec::new();
+    let mut vec_types = Vec::new();
+    for ordinal in 0..3 {
+        let vec_span = token(&spelling, ordinal);
+        let element_span = zryna_source::UntrustedSpan {
+            file: 0,
+            start: vec_span.start + 4,
+            end: vec_span.end - 1,
+        };
+        let element_type = u32::try_from(types.len()).expect("type id");
+        types.push(RawTypeSyntax {
+            span: element_span,
+            kind: if element == "String" {
+                RawTypeSyntaxKind::String { keyword_span: element_span }
+            } else {
+                RawTypeSyntaxKind::Named {
+                    name: RawIdentifierSyntax { text: element.to_owned(), span: element_span },
+                }
+            },
+        });
+        let vec_type = u32::try_from(types.len()).expect("type id");
+        types.push(RawTypeSyntax {
+            span: vec_span,
+            kind: RawTypeSyntaxKind::Vec {
+                keyword_span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: vec_span.start,
+                    end: vec_span.start + 3,
+                },
+                less_than_span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: vec_span.start + 3,
+                    end: vec_span.start + 4,
+                },
+                argument: element_type,
+                greater_than_span: zryna_source::UntrustedSpan {
+                    file: 0,
+                    start: vec_span.end - 1,
+                    end: vec_span.end,
+                },
+            },
+        });
+        vec_types.push(vec_type);
+    }
+    let root = range("{", 0, "}", 0);
+    let local = range("const", 0, ";", 0);
+    let returned = range("return", 0, ";", 1);
+    let mut expressions = Vec::new();
+    let element_ids = if element == "String" {
+        ["\"a\"", "\"b\"", "\"c\""]
+            .into_iter()
+            .map(|spelling| {
+                let id = u32::try_from(expressions.len()).expect("expression id");
+                expressions.push(RawExpressionSyntax {
+                    span: token(spelling, 0),
+                    kind: RawExpressionKind::StringLiteral { spelling: spelling.to_owned() },
+                });
+                id
+            })
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+    let construct = u32::try_from(expressions.len()).expect("expression id");
+    expressions.push(RawExpressionSyntax {
+        span: range(&spelling, 2, ")", 1),
+        kind: RawExpressionKind::VecConstruction {
+            type_syntax: vec_types[2],
+            open_paren_span: token("(", 1),
+            open_bracket_span: token("[", 0),
+            elements: element_ids,
+            close_bracket_span: token("]", 0),
+            close_paren_span: token(")", 1),
+        },
+    });
+    let reference = u32::try_from(expressions.len()).expect("expression id");
+    expressions.push(RawExpressionSyntax {
+        span: token("source", 1),
+        kind: RawExpressionKind::Reference {
+            name: RawIdentifierSyntax { text: "source".to_owned(), span: token("source", 1) },
+        },
+    });
+    let cloned = u32::try_from(expressions.len()).expect("expression id");
+    expressions.push(RawExpressionSyntax {
+        span: range("clone", 0, ")", 2),
+        kind: RawExpressionKind::Clone {
+            keyword_span: token("clone", 0),
+            open_paren_span: token("(", 2),
+            value: reference,
+            close_paren_span: token(")", 2),
+        },
+    });
+    let statements = vec![
+        RawStatementSyntax {
+            span: local,
+            kind: RawStatementKind::LocalDeclaration {
+                keyword_span: token("const", 0),
+                mutable: false,
+                name: RawIdentifierSyntax { text: "source".to_owned(), span: token("source", 0) },
+                type_syntax: vec_types[1],
+                equals_span: token("=", 0),
+                initializer: construct,
+                semicolon_span: token(";", 0),
+            },
+        },
+        RawStatementSyntax {
+            span: returned,
+            kind: RawStatementKind::Return {
+                keyword_span: token("return", 0),
+                value: cloned,
+                semicolon_span: token(";", 1),
+            },
+        },
+    ];
+    let function = RawFunctionSyntax {
+        span: zryna_source::UntrustedSpan {
+            file: 0,
+            start: 0,
+            end: u32::try_from(source.len()).expect("source length"),
+        },
+        export_span: None,
+        function_span: token("function", 0),
+        name: RawIdentifierSyntax { text: "copy".to_owned(), span: token("copy", 0) },
+        parameters: Vec::new(),
+        result_type: vec_types[0],
+        body: RawFunctionBodySyntax {
+            span: root,
+            root_block: 0,
+            blocks: vec![RawBlockSyntax {
+                span: root,
+                open_brace_span: token("{", 0),
+                statements: vec![0, 1],
+                close_brace_span: token("}", 0),
+            }],
+            statements,
+            expressions,
+        },
+    };
+    (
+        source,
+        RawProjectSyntaxSnapshot {
+            schema_version: PROTOCOL_VERSION,
+            files: vec![RawSourceUnit {
+                id: 0,
+                path: "src/main.zry".to_owned(),
+                imports: Vec::new(),
+                type_syntax: types,
+                data_declarations: Vec::new(),
+                functions: vec![function],
+            }],
+            diagnostics: Vec::new(),
+        },
+    )
+}
