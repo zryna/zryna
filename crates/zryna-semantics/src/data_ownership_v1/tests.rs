@@ -33,9 +33,9 @@ use super::{
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
-    VerifiedActiveVariant, VerifiedBorrowAccess, VerifiedCleanupRole, VerifiedDropActionKind,
-    VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind,
-    VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
+    VerifiedActiveVariant, VerifiedBorrowAccess, VerifiedCallArgument, VerifiedCleanupRole,
+    VerifiedDropActionKind, VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction,
+    VerifiedInstructionKind, VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
 };
 use zryna_ownership_runtime_abi::{
     LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, VerifiedOwnershipRuntimeAbi,
@@ -58,6 +58,7 @@ mod aggregate_projection_budgets;
 mod aggregate_projection_core;
 mod aggregate_root_assignment;
 mod aggregate_root_assignment_fixture_support;
+mod borrow_parameter_calls;
 mod cfg_control_flow_budgets;
 mod cfg_owner_state;
 mod cfg_validation;

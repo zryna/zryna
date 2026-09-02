@@ -199,7 +199,7 @@ fn private_copy_call_rejects_argument_and_result_type_mismatches_at_source() {
 }
 
 #[test]
-fn private_copy_call_rejects_borrow_signature_before_arity_or_value_evaluation() {
+fn private_copy_call_checks_borrow_signature_arity_before_argument_evaluation() {
     let sources = sources_for(COPY_CALL_SOURCE);
     let syntax = verify_snapshot(response_snapshot(COPY_CALL_RESPONSE), &sources)
         .expect("source-faithful Copy call v4");
@@ -250,6 +250,7 @@ fn private_copy_call_rejects_borrow_signature_before_arity_or_value_evaluation()
         catalog: &catalog,
         errors: &mut errors,
         bindings: std::collections::BTreeMap::new(),
+        borrow_bindings: std::collections::BTreeMap::new(),
         projections: std::collections::BTreeMap::new(),
         places: Vec::new(),
         instructions: Vec::new(),
@@ -263,12 +264,12 @@ fn private_copy_call_rejects_borrow_signature_before_arity_or_value_evaluation()
     drop(lowerer);
     let diagnostics = errors.finish();
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3016");
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3008");
     assert_eq!(
         diagnostics[0].message(),
-        "owned direct-call transfer is outside the current Copy-call checkpoint"
+        "call to 'add' has 2 arguments but its signature requires 1"
     );
-    assert_eq!(diagnostics[0].primary_span(), Some(callee_span));
+    assert_eq!(diagnostics[0].primary_span(), Some(call_span));
 }
 
 #[test]
