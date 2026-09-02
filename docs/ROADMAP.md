@@ -283,13 +283,13 @@ resources are preflighted exactly, and dynamic/Vec/enum/non-Copy projections fai
 #121 adds one fixed preheader/header/body/exit bool-root loop whose body
 reuses one static dense authority plan, reverse-ends it before every backedge, restores exact root
 owner/initialization state, and carries no borrow authority, value block parameter, or edge
-argument. The current Issue #116 implementation checkpoint adds one private parameter-free whole
+argument. The completed Issue #116 implementation adds one private parameter-free whole
 owned root with one const shared alias in one lexical block. It admits only String clone/checked
 concat, exact `Vec<bool>`/`Vec<i32>` Copy indexing, and supported whole
 Struct/root-Enum/fixed-array clone; it retains the source, gives owned read results distinct owners,
 reuses existing cleanup/fault authority, and leaves `BorrowRead` Copy-only. Projection, mutation,
-move, runtime, backend, and public activation are excluded. Issue #116 remains pending independent
-verification and merge. The remaining dependency-ordered slices retain call, nested/repeated
+move, runtime, backend, and public activation are excluded. Issue #116 passed independent
+verification and required merge gates. The remaining dependency-ordered slices retain call, nested/repeated
 control flow, runtime, backend, and public-profile work.
 
 | Issue | Gate                                                                 | Depends on              | State       |

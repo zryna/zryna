@@ -283,7 +283,7 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
     new URL("../docs/website-bundle-v1.json", import.meta.url),
     "utf8",
   );
-  assert.match(document, /Status: Issues #113, #114, #115, #117, #120, and #121 complete/);
+  assert.match(document, /Status: Issues #113, #114, #115, #116, #117, #120, and #121 complete/);
   assert.match(document, /#113 -> #114 -> #115 -> \{#116, #117, #119, #120, #121\} -> #122/);
   assert.match(document, /BorrowParameter/);
   assert.match(document, /BeginBorrow\(BorrowDefinition\)/);

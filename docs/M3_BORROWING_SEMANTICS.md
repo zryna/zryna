@@ -1,9 +1,8 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, #115, #117, #120, and #121 complete. The current Issue #116
-implementation checkpoint additionally admits one bounded shared-read shape for a whole owned
-root; Issue #116 is not recorded as complete here until its independent verification and merge
-gates succeed. The internal semantic producer admits bounded
+Status: Issues #113, #114, #115, #116, #117, #120, and #121 complete. Issue #116 adds one bounded
+shared-read shape for a whole owned root after independent verification and required merge gates.
+The internal semantic producer admits bounded
 shared and exclusive Copy-root source shapes, one shared-from-shared reborrow, and one canonical
 conditional plus one canonical bool-root loop whose local lexical authorities are completely
 discharged before every edge. It also admits static recursively Copy Struct-field and constant
@@ -197,7 +196,7 @@ all admitted aliases remain active until the reverse lexical end at the block cl
 adds no mutable-from-shared reborrow, reborrow from exclusive, projections, calls, CFG, nested
 blocks, non-Copy referents, runtime borrow flag, ABI, backend, driver, CLI, or public profile.
 
-## Issue #116 current implementation checkpoint
+## Issue #116 owned-root shared-read checkpoint
 
 One private parameter-free straight-line function may declare one initialized non-Copy root,
 enter one explicit nested lexical block, declare exactly one const shared alias initialized as
