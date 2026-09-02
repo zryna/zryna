@@ -15,6 +15,7 @@ use zryna_syntax::v4::{
     RawStatementKind, RawTypeSyntaxKind,
 };
 
+mod aggregate_resource_formulas;
 mod diagnostics;
 mod function_catalog;
 mod global_resource_limits;
@@ -22,6 +23,20 @@ mod layout_graph;
 mod owned_control_flow_resources;
 mod type_model;
 
+use aggregate_resource_formulas::{
+    PartialTransferBudgetViolation, aggregate_clone_budget_violation,
+    cleanup_action_budget_violation, partial_assignment_budget_preflight,
+    partial_return_budget_preflight, partial_transfer_budget_preflight,
+    projected_aggregate_assignment_budget_violation,
+    projected_aggregate_clone_assignment_budget_violation,
+    projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
+    projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
+    projected_subobject_return_budget_violation,
+};
+#[cfg(test)]
+use aggregate_resource_formulas::{
+    partial_assignment_place_delta, partial_return_place_delta, partial_transfer_place_delta,
+};
 use diagnostics::Errors;
 use function_catalog::{
     FunctionCatalog, FunctionResolution, FunctionSignature, build_function_catalog,
@@ -41,16 +56,15 @@ use layout_graph::{Decl, build_graph, semantic_type};
 #[cfg(test)]
 use owned_control_flow_resources::{
     EnumPayloadMoveResourceEstimate, conditional_root_borrow_resources,
-    enum_payload_move_resource_estimate, projected_root_borrow_resource_counts,
-    straight_root_borrow_budget_violation,
+    enum_payload_move_resource_estimate, owned_place_budget_violation,
+    projected_root_borrow_resource_counts, straight_root_borrow_budget_violation,
 };
 use owned_control_flow_resources::{
     OwnedCfgBudgetLimit, conditional_root_borrow_budget_violation, dense_owned_value_id,
     enum_payload_move_resource_violation, loop_root_borrow_resources, owned_cfg_budget_violation,
-    owned_place_budget_violation, owned_root_borrow_resource_violation,
-    owned_value_budget_violation, preflight_owned_place_capacity,
-    preflight_owned_place_capacity_with_reserved, projected_root_borrow_resources,
-    root_borrow_resource_violation,
+    owned_root_borrow_resource_violation, owned_value_budget_violation,
+    preflight_owned_place_capacity, preflight_owned_place_capacity_with_reserved,
+    projected_root_borrow_resources, root_borrow_resource_violation,
 };
 use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
@@ -298,281 +312,6 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
         linux,
     )?;
     Ok(VerifiedProgram { ir: verified_ir, runtime_abi })
-}
-
-fn partial_transfer_place_delta(topology: usize, existing: usize) -> Option<usize> {
-    if existing > topology {
-        return None;
-    }
-    topology.checked_mul(3)?.checked_sub(existing)?.checked_add(2)
-}
-
-fn partial_return_place_delta(topology: usize, existing: usize) -> Option<usize> {
-    if existing > topology {
-        return None;
-    }
-    topology.checked_mul(2)?.checked_sub(existing)?.checked_add(1)
-}
-
-fn partial_assignment_place_delta(
-    topology: usize,
-    source_existing: usize,
-    target_existing: usize,
-) -> Option<usize> {
-    if source_existing > topology || target_existing > topology {
-        return None;
-    }
-    topology
-        .checked_mul(3)?
-        .checked_sub(source_existing)?
-        .checked_sub(target_existing)?
-        .checked_add(1)
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum PartialTransferBudgetViolation {
-    PlaceAccounting,
-    Values,
-    Places,
-    Transitions,
-}
-
-fn partial_transfer_budget_preflight(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    topology: usize,
-    existing: usize,
-) -> Result<usize, PartialTransferBudgetViolation> {
-    let additional_places = partial_transfer_place_delta(topology, existing)
-        .ok_or(PartialTransferBudgetViolation::PlaceAccounting)?;
-    if owned_value_budget_violation(values, 1) {
-        return Err(PartialTransferBudgetViolation::Values);
-    }
-    if owned_place_budget_violation(places, additional_places) {
-        return Err(PartialTransferBudgetViolation::Places);
-    }
-    if aggregate_transition_budget_violation(transitions, reserved_transitions, 2) {
-        return Err(PartialTransferBudgetViolation::Transitions);
-    }
-    Ok(additional_places)
-}
-
-fn partial_return_budget_preflight(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    topology: usize,
-    existing: usize,
-) -> Result<usize, PartialTransferBudgetViolation> {
-    let additional_places = partial_return_place_delta(topology, existing)
-        .ok_or(PartialTransferBudgetViolation::PlaceAccounting)?;
-    if owned_value_budget_violation(values, 1) {
-        return Err(PartialTransferBudgetViolation::Values);
-    }
-    if owned_place_budget_violation(places, additional_places) {
-        return Err(PartialTransferBudgetViolation::Places);
-    }
-    if aggregate_transition_budget_violation(transitions, reserved_transitions, 1) {
-        return Err(PartialTransferBudgetViolation::Transitions);
-    }
-    Ok(additional_places)
-}
-
-fn partial_assignment_budget_preflight(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    topology: usize,
-    source_existing: usize,
-    target_existing: usize,
-) -> Result<usize, PartialTransferBudgetViolation> {
-    let additional_places =
-        partial_assignment_place_delta(topology, source_existing, target_existing)
-            .ok_or(PartialTransferBudgetViolation::PlaceAccounting)?;
-    if owned_value_budget_violation(values, 1) {
-        return Err(PartialTransferBudgetViolation::Values);
-    }
-    if owned_place_budget_violation(places, additional_places) {
-        return Err(PartialTransferBudgetViolation::Places);
-    }
-    if aggregate_transition_budget_violation(transitions, reserved_transitions, 2) {
-        return Err(PartialTransferBudgetViolation::Transitions);
-    }
-    Ok(additional_places)
-}
-
-fn projected_subobject_move_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    missing_descendants: usize,
-) -> bool {
-    let Some(additional_places) = missing_descendants.checked_add(1) else { return true };
-    owned_value_budget_violation(values, 1)
-        || owned_place_budget_violation(places, additional_places)
-        || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn projected_subobject_return_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    cleanup_plans: usize,
-    cleanup_actions: usize,
-    pending: usize,
-    missing_path: usize,
-    missing_descendants: usize,
-) -> bool {
-    let Some(additional_places) =
-        missing_path.checked_add(missing_descendants).and_then(|count| count.checked_add(1))
-    else {
-        return true;
-    };
-    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
-        || resource_budget_violation(places, additional_places, ir::MAX_PLACES_PER_FUNCTION)
-        || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
-        || resource_budget_violation(cleanup_plans, 1, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
-        || resource_budget_violation(cleanup_actions, pending, ir::MAX_DROP_ACTIONS_PER_FUNCTION)
-}
-
-fn projected_aggregate_assignment_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    missing_path_places: usize,
-) -> bool {
-    let Some(additional_places) = missing_path_places.checked_add(1) else { return true };
-    owned_value_budget_violation(values, 1)
-        || owned_place_budget_violation(places, additional_places)
-        || aggregate_transition_budget_violation(transitions, reserved_transitions, 2)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn projected_subobject_assignment_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    source_missing_path_places: usize,
-    source_missing_descendant_places: usize,
-    target_missing_path_places: usize,
-) -> bool {
-    let Some(additional_places) = source_missing_path_places
-        .checked_add(source_missing_descendant_places)
-        .and_then(|total| total.checked_add(target_missing_path_places))
-        .and_then(|total| total.checked_add(1))
-    else {
-        return true;
-    };
-    owned_value_budget_violation(values, 1)
-        || owned_place_budget_violation(places, additional_places)
-        || aggregate_transition_budget_violation(transitions, reserved_transitions, 2)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn projected_aggregate_clone_assignment_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    cleanup_plans: usize,
-    cleanup_actions: usize,
-    pending: usize,
-    source_missing_path_places: usize,
-    target_missing_path_places: usize,
-) -> bool {
-    let Some(additional_places) = source_missing_path_places
-        .checked_add(target_missing_path_places)
-        .and_then(|total| total.checked_add(1))
-    else {
-        return true;
-    };
-    let Some(prefix_actions) = pending.checked_add(1) else { return true };
-    let Some(additional_actions) = pending.checked_add(prefix_actions) else { return true };
-    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
-        || resource_budget_violation(places, additional_places, ir::MAX_PLACES_PER_FUNCTION)
-        || aggregate_transition_budget_violation(transitions, reserved_transitions, 2)
-        || resource_budget_violation(cleanup_plans, 2, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
-        || resource_budget_violation(
-            cleanup_actions,
-            additional_actions,
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        )
-}
-
-fn aggregate_clone_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    cleanup_plans: usize,
-    cleanup_actions: usize,
-    pending: usize,
-) -> bool {
-    let Some(prefix_actions) = pending.checked_add(1) else { return true };
-    let Some(new_actions) = pending.checked_add(prefix_actions) else { return true };
-    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
-        || resource_budget_violation(places, 1, ir::MAX_PLACES_PER_FUNCTION)
-        || resource_budget_violation(transitions, 1, ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION)
-        || resource_budget_violation(cleanup_plans, 2, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
-        || resource_budget_violation(
-            cleanup_actions,
-            new_actions,
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        )
-}
-
-#[allow(clippy::too_many_arguments)]
-fn projected_aggregate_clone_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    cleanup_plans: usize,
-    cleanup_actions: usize,
-    pending: usize,
-    missing_path_places: usize,
-) -> bool {
-    let Some(additional_places) = missing_path_places.checked_add(2) else { return true };
-    let Some(prefix_actions) = pending.checked_add(1) else { return true };
-    let Some(additional_actions) = pending.checked_add(prefix_actions) else { return true };
-    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
-        || resource_budget_violation(places, additional_places, ir::MAX_PLACES_PER_FUNCTION)
-        || aggregate_transition_budget_violation(transitions, reserved_transitions, 2)
-        || resource_budget_violation(cleanup_plans, 2, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
-        || resource_budget_violation(
-            cleanup_actions,
-            additional_actions,
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        )
-}
-
-fn projected_string_clone_budget_violation(
-    values: usize,
-    places: usize,
-    transitions: usize,
-    reserved_transitions: usize,
-    cleanup_plans: usize,
-    cleanup_actions: usize,
-    pending: usize,
-) -> bool {
-    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
-        || resource_budget_violation(places, 1, ir::MAX_PLACES_PER_FUNCTION)
-        || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
-        || resource_budget_violation(cleanup_plans, 1, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
-        || cleanup_action_budget_violation(cleanup_actions, pending, false)
-}
-
-fn cleanup_action_budget_violation(current: usize, pending: usize, excluded_present: bool) -> bool {
-    let actions = pending.saturating_sub(usize::from(excluded_present));
-    resource_budget_violation(current, actions, ir::MAX_DROP_ACTIONS_PER_FUNCTION)
 }
 
 #[cfg(test)]
