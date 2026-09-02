@@ -15,7 +15,10 @@ use super::type_model::{
 };
 use super::{SemanticInput, span};
 
-fn root_borrow_paths_overlap(left: &RootBorrowPlacePlan, right: &RootBorrowPlacePlan) -> bool {
+pub(super) fn root_borrow_paths_overlap(
+    left: &RootBorrowPlacePlan,
+    right: &RootBorrowPlacePlan,
+) -> bool {
     let left = left.key();
     let right = right.key();
     let common = left.len().min(right.len());

@@ -16,6 +16,7 @@ use zryna_syntax::v4::{
 };
 
 mod aggregate_resource_formulas;
+mod borrow_forwarding;
 mod diagnostics;
 mod function_catalog;
 mod global_resource_limits;
@@ -42,6 +43,7 @@ use aggregate_resource_formulas::{
 use aggregate_resource_formulas::{
     partial_assignment_place_delta, partial_return_place_delta, partial_transfer_place_delta,
 };
+use borrow_forwarding::plan_forwarded_borrow_arguments;
 use diagnostics::Errors;
 #[cfg(test)]
 use function_catalog::FunctionBorrowParameter;
@@ -11339,8 +11341,16 @@ impl FunctionLowerer<'_, '_, '_> {
         arguments: &[u32],
     ) -> Option<Vec<raw::CallArgument>> {
         let mut values = vec![None; signature.parameters.len()];
-        let mut borrows = vec![None; signature.borrow_parameters.len()];
-        let mut exclusive_arguments = Vec::new();
+        // Borrow authority is sealed before value lowering. A later invalid borrow argument must
+        // not leave literal, call, cleanup, value-id, or instruction state behind in this lowerer.
+        let borrows = plan_forwarded_borrow_arguments(
+            self.input.sources(),
+            self.function,
+            signature,
+            arguments,
+            &self.borrow_bindings,
+            self.errors,
+        )?;
         for (argument, order) in arguments.iter().zip(&signature.parameter_order) {
             let argument_span =
                 span(self.input.sources(), self.function.body.expressions[*argument as usize].span);
@@ -11351,45 +11361,7 @@ impl FunctionLowerer<'_, '_, '_> {
                     self.require_type(expected, actual, argument_span, "call argument")?;
                     *values.get_mut(usize::try_from(index).ok()?)? = Some(value);
                 }
-                FunctionParameterOrder::Borrow(index) => {
-                    let expected =
-                        *signature.borrow_parameters.get(usize::try_from(index).ok()?)?;
-                    let Some(actual) = self.borrow_reference(*argument) else {
-                        self.errors.at(
-                            "ZRYNA-M3016",
-                            argument_span,
-                            "borrow arguments must forward an in-scope borrow parameter",
-                            "pass an exact Borrow or BorrowMut parameter; lexical call borrows are not enabled",
-                        );
-                        return None;
-                    };
-                    if actual.ty.layout != expected.referent.layout
-                        || actual.access != expected.access
-                    {
-                        self.errors.at(
-                            "ZRYNA-M3016",
-                            argument_span,
-                            "borrow argument does not match the callee referent and access",
-                            "pass an exact borrow parameter with the declared referent and shared or exclusive access",
-                        );
-                        return None;
-                    }
-                    if expected.access == raw::BorrowAccess::Exclusive
-                        && exclusive_arguments.contains(&actual.borrow)
-                    {
-                        self.errors.at(
-                            "ZRYNA-M3016",
-                            argument_span,
-                            "exclusive borrow arguments cannot reuse the same authority",
-                            "pass distinct nonoverlapping exclusive borrow parameters",
-                        );
-                        return None;
-                    }
-                    if expected.access == raw::BorrowAccess::Exclusive {
-                        exclusive_arguments.push(actual.borrow);
-                    }
-                    *borrows.get_mut(usize::try_from(index).ok()?)? = Some(actual.borrow);
-                }
+                FunctionParameterOrder::Borrow(_) => {}
             }
         }
         let mut lowered = Vec::with_capacity(arguments.len());

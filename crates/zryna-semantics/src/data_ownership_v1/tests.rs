@@ -59,6 +59,7 @@ mod aggregate_projection_budgets;
 mod aggregate_projection_core;
 mod aggregate_root_assignment;
 mod aggregate_root_assignment_fixture_support;
+mod borrow_forwarding_calls;
 mod borrow_parameter_calls;
 mod cfg_control_flow_budgets;
 mod cfg_owner_state;
