@@ -1,0 +1,115 @@
+function missingElse(): bool {
+  const missingRoot: bool = true;
+  if (missingRoot) {
+    {
+      const missingAlias: Borrow<bool> = borrow(missingRoot);
+      const missingValue: bool = missingAlias;
+    }
+  }
+  return missingRoot;
+}
+
+function directArm(): bool {
+  const directRoot: bool = true;
+  if (directRoot) {
+    const directAlias: Borrow<bool> = borrow(directRoot);
+    const directValue: bool = directAlias;
+  } else {
+    {
+    }
+  }
+  return directRoot;
+}
+
+function bothEmpty(): bool {
+  const emptyRoot: bool = true;
+  if (emptyRoot) {
+    {
+    }
+  } else {
+    {
+    }
+  }
+  return emptyRoot;
+}
+
+function nonRootCondition(): bool {
+  const conditionRoot: bool = true;
+  if (false) {
+    {
+      const conditionAlias: Borrow<bool> = borrow(conditionRoot);
+      const conditionValue: bool = conditionAlias;
+    }
+  } else {
+    {
+    }
+  }
+  return conditionRoot;
+}
+
+function integerRoot(): i32 {
+  const numberRoot: i32 = 1;
+  if (numberRoot) {
+    {
+      const numberAlias: Borrow<i32> = borrow(numberRoot);
+      const numberValue: i32 = numberAlias;
+    }
+  } else {
+    {
+    }
+  }
+  return numberRoot;
+}
+
+function nestedConditional(): bool {
+  const nestedRoot: bool = true;
+  if (nestedRoot) {
+    {
+      if (nestedRoot) {
+      } else {
+      }
+    }
+  } else {
+    {
+      const nestedAlias: Borrow<bool> = borrow(nestedRoot);
+      const nestedValue: bool = nestedAlias;
+    }
+  }
+  return nestedRoot;
+}
+
+function repeatedConditional(): bool {
+  const repeatedRoot: bool = true;
+  if (repeatedRoot) {
+    {
+      const repeatedAlias: Borrow<bool> = borrow(repeatedRoot);
+      const repeatedValue: bool = repeatedAlias;
+    }
+  } else {
+    {
+    }
+  }
+  if (repeatedRoot) {
+    {
+    }
+  } else {
+    {
+    }
+  }
+  return repeatedRoot;
+}
+
+function armReturn(): bool {
+  const returnRoot: bool = true;
+  if (returnRoot) {
+    {
+      return returnRoot;
+    }
+  } else {
+    {
+      const returnAlias: Borrow<bool> = borrow(returnRoot);
+      const returnValue: bool = returnAlias;
+    }
+  }
+  return returnRoot;
+}

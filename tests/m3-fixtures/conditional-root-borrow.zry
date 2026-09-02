@@ -1,0 +1,18 @@
+function choose(): bool {
+  let root: bool = true;
+  if (root) {
+    {
+      const first: Borrow<bool> = borrow(root);
+      const a: bool = first;
+      const second: Borrow<bool> = borrow(root);
+      const b: bool = second;
+    }
+  } else {
+    {
+      const alias: BorrowMut<bool> = borrowMut(root);
+      alias = false;
+      const value: bool = alias;
+    }
+  }
+  return root;
+}

@@ -274,8 +274,11 @@ exits are future child-issue work. Issue #82 is active through the checked depen
 existing verified-IR prerequisite. Issues #114 and #115 implement the internal private straight-line
 `bool`/`i32` root shapes: shared and exclusive Copy access, const-alias write-through, the complete
 root conflict matrix, one shared-from-shared reborrow, deterministic reverse lexical end, and
-post-scope owner reuse. The remaining dependency-ordered slices retain all projected, call,
-control-flow, owned-root, runtime, backend, and public-profile work.
+post-scope owner reuse. Issue #117 adds one private bool-root conditional with canonical
+entry/then/else/join blocks, complete reverse arm discharge before each jump, dense source-ordered
+borrow identities, exact summed arm costs, maximum-per-arm active capacity, and no borrow phi or
+edge authority. The remaining dependency-ordered slices retain projected, call, loop, owned-root,
+runtime, backend, and public-profile work.
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |

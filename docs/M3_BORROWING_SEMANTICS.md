@@ -1,8 +1,9 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, and #115 complete. The internal semantic producer admits bounded
-shared and exclusive Copy-root source shapes plus one shared-from-shared reborrow. Projected,
-call, control-flow, and owned-root borrowing remain dependency-ordered later checkpoints.
+Status: Issues #113, #114, #115, and #117 complete. The internal semantic producer admits bounded
+shared and exclusive Copy-root source shapes, one shared-from-shared reborrow, and one canonical
+conditional whose arm-local lexical authorities are completely discharged before every edge.
+Projected, call, loop, and owned-root borrowing remain dependency-ordered later checkpoints.
 
 This document freezes the dependency-ordered implementation boundary for Issue #82. It refines the
 normative borrowing rules in [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md) without
@@ -191,6 +192,52 @@ all admitted aliases remain active until the reverse lexical end at the block cl
 adds no mutable-from-shared reborrow, reborrow from exclusive, projections, calls, CFG, nested
 blocks, non-Copy referents, runtime borrow flag, ABI, backend, driver, CLI, or public profile.
 
+## Issue #117 conditional-edge checkpoint
+
+The same private parameter-free producer now admits one literal-initialized `bool` root, one
+top-level `if`/`else` branching directly on that root, exactly one explicit nested lexical scope
+in each arm, and one final root return. At least one arm must contain a complete admitted borrow;
+the peer arm may contain an empty nested scope. A complete borrow in only one arm is valid.
+
+Lowering is canonical and contains no borrow phi state:
+
+```text
+entry: initialize root; read bool condition
+    Branch ───────────────┐
+      │                   │
+then: Begin/use...        else: Begin/use...
+      EndBorrow reverse         EndBorrow reverse
+      Jump ───────────────┬──── Jump
+                          │
+join:                 read root; Return
+```
+
+| Property | Conditional contract |
+| --- | --- |
+| blocks and edges | exactly four dense blocks and four edges in entry/then/else/join order |
+| block parameters | none; borrow authority is never an `OwnershipFlow` value or edge argument |
+| borrow identities | dense then-arm identities followed by dense else-arm identities |
+| lexical end | every admitted arm emits reverse `EndBorrow` before its `Jump` |
+| mutually exclusive access | shared/shared, exclusive/exclusive, and mixed shared/exclusive arms are valid |
+| join authority | the root has identical ordinary state and zero active lexical authorities |
+| resource accounting | arm-local values and transitions sum; one root place and four blocks/edges are fixed; active peak is `max(then, else)` |
+
+Arm-local Copy read results are ephemeral verifier-visible values because their source bindings
+cannot escape or be referenced after the admitted statement. They do not create branch-only places
+whose initialization would enter join state. The complete two-arm plan, dense identities, exact
+resources, and access conflicts are validated before any raw IR instruction or block is built.
+
+The independent IR verifier rejects a lexical authority active at `Branch`, `Jump`, `Return`, or
+`Trap`; an end in a successor, an end-only arm, and unequal ordinary state at the join. Its
+ownership-flow worklist processes ready blocks by canonical dense block identity, while retaining
+the original edge index for enum refinement, so reversing hostile branch targets cannot select a
+different join-mismatch diagnostic.
+
+This checkpoint excludes nested or repeated conditionals, loops, calls, parameters, public
+functions, projections, owned roots, borrow-carrying block parameters, edge arguments, lifetime
+shortening, runtime flags, ABI changes, backends, drivers, CLI selectors, artifacts, and public
+profiles.
+
 ## Resource and verification boundary
 
 The verifier limit remains 16,384 simultaneously active borrows per function. Function borrow
@@ -198,9 +245,9 @@ parameters count as active on entry. Lexical peak accounting follows instruction
 exact limit, rejects the first extra with `ZRYNA-I3201`, and does not treat repeated sequential
 begin/end sites as simultaneously live.
 
-The borrow edit loop runs `cargo test --locked -p zryna-ir borrow` for the retained verifier and
-focused `borrow`, `exclusive_`, `conflict_matrix`, and `reborrow` semantic filters for the #114/#115
-producer. The checked gate
+The borrow edit loop runs `cargo test --locked -p zryna-ir borrow` plus the focused conditional
+join/edge tests for the retained verifier, and focused `borrow`, `exclusive_`, `conflict_matrix`,
+`reborrow`, and `conditional_` semantic filters for the #114/#115/#117 producer. The checked gate
 additionally requires the complete DataOwnershipV1 IR and semantic suites plus doctests, M3
 contract/documentation tests, formatting and strict Clippy, `pnpm preflight`, and `pnpm m0:check`.
 A quick lane cannot substitute for proportional exact/+1 or cross-platform merge evidence.

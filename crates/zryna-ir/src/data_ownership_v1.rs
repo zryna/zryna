@@ -3600,8 +3600,8 @@ fn verify_ownership_dataflow(
         variants: vec![None; function.places.len()],
         pending,
     });
-    let mut queue = VecDeque::from([0usize]);
-    while let Some(block_index) = queue.pop_front() {
+    let mut queue = BTreeSet::from([0usize]);
+    while let Some(block_index) = queue.pop_first() {
         let Some(mut flow) = entries[block_index].clone() else {
             continue;
         };
@@ -3766,7 +3766,10 @@ fn verify_ownership_dataflow(
             }
             normalize_dead_places(&mut incoming, function, layouts);
             match &entries[*successor] {
-                None => { entries[*successor] = Some(incoming); queue.push_back(*successor); }
+                None => {
+                    entries[*successor] = Some(incoming);
+                    queue.insert(*successor);
+                }
                 Some(existing) if existing != &incoming => errors.push(error_at("ZRYNA-I3010", block.terminators[0].span, "ownership, initialization, or active-enum state differs across a CFG join or backedge", "restore every live place and enum refinement to one exact state on every incoming edge")),
                 Some(_) => {}
             }

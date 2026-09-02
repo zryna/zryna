@@ -522,8 +522,14 @@ capability. Issue #115 generalizes that same root-only plan to exclusive Copy re
 and one shared-from-shared reborrow. Assignment to a const `BorrowMut<T>` alias is write-through,
 not rebinding; the syntax worker remains syntax-only. The full root conflict matrix, exact literal
 write type, owner exclusion, reverse restoration, and all read/write resource counts are checked
-before raw-IR construction. Mutable-from-shared, reborrow from exclusive, projected, call, branch,
-and loop borrowing remain later slices; aggregate closure remains #122.
+before raw-IR construction. Issue #117 adds one fixed four-block/four-edge private bool-root
+conditional: each arm contains one explicit lexical scope, reverse-ends all of its authorities
+before its jump, and joins with no borrow block parameter, edge argument, or ownership-flow state.
+Both arms are planned before materialization; identities follow then/else source order, arm-local
+value and transition costs sum, and peak active authority is the larger arm. The independent verifier uses canonical
+dense block order for join diagnostics without changing edge-indexed enum refinement. Mutable-from-
+shared, reborrow from exclusive, projected, call, loop, and nested/repeated conditional borrowing
+remain later slices; aggregate closure remains #122.
 
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve

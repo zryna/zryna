@@ -1,0 +1,16 @@
+function choose(): bool {
+  let root: bool = true;
+  if (root) {
+    {
+      const sharedAlias: Borrow<bool> = borrow(root);
+      const exclusiveAlias: BorrowMut<bool> = borrowMut(root);
+      const value: bool = sharedAlias;
+    }
+  } else {
+    {
+      const elseAlias: Borrow<bool> = borrow(root);
+      const elseValue: bool = elseAlias;
+    }
+  }
+  return root;
+}
