@@ -251,7 +251,14 @@ places and seals layout-derived prepare/prefix failure cleanup. Both drop only t
 subtree and preserve roots, sibling masks, and pending order. Move amplification is one value,
 `S + D + T + 1` places, and two transitions. Clone amplification is one value, `S + T + 1` places,
 two transitions, two cleanup plans, and `2P + 1` actions for pending-root count `P`.
-Enum partial-root transfer, aggregate-subobject moves outside that at-most-one direct-local form or
+One separate parameter-free private final-return checkpoint moves one complete available static
+Struct/FixedArray subobject from a local root. It materializes and masks the exact source subtree,
+returns the sole-use exact-type temporary, excludes that owner from survivor cleanup, and
+preflights one value, `D + 1` places, one transition, one cleanup plan, and all pending cleanup
+actions before mutation; a missing canonical source path adds its exact `M` places, for
+`M + D + 1` total.
+Enum partial-root transfer, aggregate-subobject moves outside that at-most-one direct-local or
+parameter-free final-return form or
 that one match-local payload extraction, and broader enum-payload moves,
 transfer in call/CFG contexts, projected assignment outside the narrow site below, or
 non-final/non-reference returns, dynamic projections,

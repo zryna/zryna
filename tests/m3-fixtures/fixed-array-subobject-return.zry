@@ -1,0 +1,2 @@
+interface Inner extends ZrynaStruct { text: String; }
+function make(): Inner { const a: FixedArray<Inner, 2> = FixedArray<Inner, 2>([Inner({ text: "a" }), Inner({ text: "b" })]); return a[0]; }

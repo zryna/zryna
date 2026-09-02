@@ -158,6 +158,11 @@ Struct/FixedArray subobject move into an exact directly initialized same-type lo
 the selected subobject's complete descendants, preserves the enclosing root's masked cleanup
 obligation and disjoint siblings, and rejects repeated, overlapping, or later whole-root consumption
 outside the exact direct-local, final-return, and whole-root assignment transfers described below.
+One complete available static Struct/FixedArray subobject may now also move directly into the final
+exact-type return of a parameter-free private straight-line function. The producer materializes
+and masks its complete subtree, returns its unique temporary owner, excludes that owner from
+reverse cleanup, and preflights the return cleanup plan and all pending survivor actions before
+source mutation.
 Initialized available String leaves under those same paths now admit explicit clone into a distinct
 temporary owner; failure cleanup retains the enclosing root's exact partial-state masks, and cloning
 a moved or overlapping leaf fails closed. One initialized available non-Copy Struct or FixedArray
@@ -197,7 +202,7 @@ separate checked Vec bounds trap; it authenticates status disposition/trap ident
 uncommitted-result exclusion, reverse cleanup, deterministic replay, and event limits without
 executing an allocator or target runtime. General structural Vec clone beyond String elements,
 nested aggregate clone graphs containing Enum, Vec, Shared, or Weak values,
-aggregate-subobject moves outside that direct-local exception, the one distinct-root static
+aggregate-subobject moves outside that direct-local or parameter-free final-return exception, the one distinct-root static
 projection replacement, or the single-variant match-local enum payload extraction, broader
 enum-payload moves, dynamic or Vec-element projections, projected aggregate assignment outside the
 exact static-subobject-move-or-clone-or-whole-root-move-or-clone-to-static-projection site, projected aggregate

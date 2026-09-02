@@ -795,6 +795,30 @@ fn projected_subobject_move_budget_violation(
         || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
 }
 
+#[allow(clippy::too_many_arguments)]
+fn projected_subobject_return_budget_violation(
+    values: usize,
+    places: usize,
+    transitions: usize,
+    reserved_transitions: usize,
+    cleanup_plans: usize,
+    cleanup_actions: usize,
+    pending: usize,
+    missing_path: usize,
+    missing_descendants: usize,
+) -> bool {
+    let Some(additional_places) =
+        missing_path.checked_add(missing_descendants).and_then(|count| count.checked_add(1))
+    else {
+        return true;
+    };
+    resource_budget_violation(values, 1, ir::MAX_VALUES_PER_FUNCTION)
+        || resource_budget_violation(places, additional_places, ir::MAX_PLACES_PER_FUNCTION)
+        || aggregate_transition_budget_violation(transitions, reserved_transitions, 1)
+        || resource_budget_violation(cleanup_plans, 1, ir::MAX_CLEANUP_PLANS_PER_FUNCTION)
+        || resource_budget_violation(cleanup_actions, pending, ir::MAX_DROP_ACTIONS_PER_FUNCTION)
+}
+
 fn projected_aggregate_assignment_budget_violation(
     values: usize,
     places: usize,
@@ -5239,6 +5263,13 @@ struct PrivateOwnedAggregateLowerer<'a, 'e> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ProjectedAggregateMoveContext {
+    DirectLocal,
+    FinalReturn,
+    ProjectedReplacement,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct OwnedAggregatePlace {
     ty: Ty,
     place: raw::PlaceId,
@@ -6467,14 +6498,90 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         false
     }
 
+    #[allow(clippy::too_many_lines)]
     fn projected_value(
         &mut self,
         id: u32,
         expected: Ty,
-        allow_aggregate_local: bool,
+        aggregate_context: Option<ProjectedAggregateMoveContext>,
     ) -> Option<raw::ValueId> {
         let expression = self.expression(id)?.clone();
         let at = span(self.input.sources(), expression.span);
+        let final_return_preflight = if aggregate_context
+            == Some(ProjectedAggregateMoveContext::FinalReturn)
+            && matches!(expected.category, TypeCategory::Struct | TypeCategory::FixedArray)
+        {
+            let Some(preflight) = self.owned_place_preflight(id) else {
+                self.errors.at(
+                    "ZRYNA-M3016",
+                    at,
+                    "final aggregate-subobject return has no canonical static source path",
+                    "return one supported Struct field or constant fixed-array element from a local root",
+                );
+                return None;
+            };
+            if preflight.place.is_root || preflight.place.ty != expected {
+                self.errors.at(
+                    "ZRYNA-M3016",
+                    at,
+                    "owned projection has the wrong exact contextual type",
+                    "return one exact supported Struct field or fixed-array element",
+                );
+                return None;
+            }
+            if !self.preflight_projection_available(&preflight) {
+                self.errors.at(
+                    "ZRYNA-M3014",
+                    at,
+                    "owned projection is unavailable or overlaps an already moved subobject",
+                    "move each owned field or fixed-array element at most once",
+                );
+                return None;
+            }
+            if !self.supported(expected) || !self.preflight_aggregate_subobject_move_site(at) {
+                return None;
+            }
+            let Some(shape) = self.complete_projection_shape(expected) else {
+                self.errors.at(
+                    "ZRYNA-M3016",
+                    at,
+                    "owned subobject projection has no finite static topology",
+                    "return an acyclic supported Struct or fixed-array projection",
+                );
+                return None;
+            };
+            let missing_descendants = if self.places.get(preflight.place.place.0 as usize).is_some()
+            {
+                self.existing_projection_shape(preflight.place.place, &shape)
+                    .iter()
+                    .filter(|place| place.is_none())
+                    .count()
+            } else {
+                shape.len()
+            };
+            if projected_subobject_return_budget_violation(
+                self.next_value as usize,
+                self.places.len(),
+                self.instructions.len(),
+                self.reserved_transitions,
+                self.cleanup_plans.len(),
+                self.cleanup_actions,
+                self.owners.pending().len(),
+                preflight.missing,
+                missing_descendants,
+            ) {
+                self.errors.at(
+                    "ZRYNA-M3201",
+                    at,
+                    "static aggregate-subobject return exceeds an M3 resource limit",
+                    "reduce the canonical source path, projected topology, or preceding owned expressions",
+                );
+                return None;
+            }
+            Some(shape)
+        } else {
+            None
+        };
         let projection = self.owned_place(id)?;
         if projection.is_root || projection.ty != expected {
             self.errors.at(
@@ -6503,12 +6610,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         }
         let aggregate_subobject =
             matches!(expected.category, TypeCategory::Struct | TypeCategory::FixedArray);
-        if aggregate_subobject && !allow_aggregate_local {
+        if aggregate_subobject && aggregate_context.is_none() {
             self.errors.at(
                 "ZRYNA-M3016",
                 at,
-                "static aggregate-subobject move requires one exact direct local",
-                "initialize one exact private local from the Struct field or constant fixed-array element",
+                "static aggregate-subobject move requires one exact direct local or final return",
+                "initialize one exact private local or return the exact result type from the Struct field or constant fixed-array element",
             );
             return None;
         }
@@ -6540,13 +6647,20 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             };
             let existing = self.existing_projection_shape(projection.place, &shape);
             let missing = existing.iter().filter(|place| place.is_none()).count();
-            if projected_subobject_move_budget_violation(
-                self.next_value as usize,
-                self.places.len(),
-                self.instructions.len(),
-                self.reserved_transitions,
-                missing,
-            ) {
+            let budget_violation = match aggregate_context {
+                Some(
+                    ProjectedAggregateMoveContext::DirectLocal
+                    | ProjectedAggregateMoveContext::ProjectedReplacement,
+                ) => projected_subobject_move_budget_violation(
+                    self.next_value as usize,
+                    self.places.len(),
+                    self.instructions.len(),
+                    self.reserved_transitions,
+                    missing,
+                ),
+                Some(ProjectedAggregateMoveContext::FinalReturn) | None => false,
+            };
+            if budget_violation {
                 self.errors.at(
                     "ZRYNA-M3201",
                     at,
@@ -6555,7 +6669,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
                 );
                 return None;
             }
-            self.materialize_projection_shape(projection.place, &shape, at);
+            self.materialize_projection_shape(
+                projection.place,
+                final_return_preflight.as_deref().unwrap_or(&shape),
+                at,
+            );
         }
         let value = self.emit(
             expected,
@@ -7074,6 +7192,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
         false
     }
 
+    #[allow(clippy::too_many_lines)]
     fn lower_projected_aggregate_assignment(
         &mut self,
         target: u32,
@@ -7148,9 +7267,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             ProjectedAggregateAssignmentSource::MoveRoot { name, at } => {
                 self.reference_value(name, target_ty, *at)
             }
-            ProjectedAggregateAssignmentSource::MoveProjection { expression, .. } => {
-                self.projected_value(*expression, target_ty, true)
-            }
+            ProjectedAggregateAssignmentSource::MoveProjection { expression, .. } => self
+                .projected_value(
+                    *expression,
+                    target_ty,
+                    Some(ProjectedAggregateMoveContext::ProjectedReplacement),
+                ),
             ProjectedAggregateAssignmentSource::CloneRoot { binding, at } => {
                 self.emit_aggregate_clone(binding, target_ty, *at)
             }
@@ -7365,7 +7487,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_> {
             }
             RawExpressionKind::Reference { name } => self.reference_value(&name, expected, at),
             RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
-                self.projected_value(id, expected, false)
+                self.projected_value(id, expected, None)
             }
             RawExpressionKind::Clone { value, .. } if expected.category == TypeCategory::String => {
                 self.clone_projected_string(value, expected, at)
@@ -8268,6 +8390,17 @@ fn lower_private_owned_aggregate_function<'a>(
         lowerer.bindings.insert(parameter.name.text.clone(), Binding { ty, place, mutable: false });
     }
     let mut returned = None;
+    let final_statement = root.statements.last().copied();
+    let return_count = root
+        .statements
+        .iter()
+        .filter(|statement_id| {
+            usize::try_from(**statement_id)
+                .ok()
+                .and_then(|index| function.body.statements.get(index))
+                .is_some_and(|statement| matches!(statement.kind, RawStatementKind::Return { .. }))
+        })
+        .count();
     for statement_id in &root.statements {
         let statement = usize::try_from(*statement_id)
             .ok()
@@ -8344,7 +8477,11 @@ fn lower_private_owned_aggregate_function<'a>(
                 let value = if let Some((operand, clone_span)) = projected_aggregate_clone_operand {
                     lowerer.clone_projected_aggregate_local(operand, ty, clone_span)?
                 } else if aggregate_projection_local {
-                    lowerer.projected_value(*initializer, ty, true)?
+                    lowerer.projected_value(
+                        *initializer,
+                        ty,
+                        Some(ProjectedAggregateMoveContext::DirectLocal),
+                    )?
                 } else {
                     lowerer.value(*initializer, ty)?
                 };
@@ -8386,12 +8523,40 @@ fn lower_private_owned_aggregate_function<'a>(
             }
             RawStatementKind::Return { value, .. } => {
                 let return_span = span(input.sources(), statement.span);
-                let value =
-                    if let Some(source) = lowerer.partial_return_transfer_source(*value, result) {
-                        lowerer.lower_partial_return_transfer(source, result, return_span)?
-                    } else {
-                        lowerer.value(*value, result)?
-                    };
+                let aggregate_projection_return =
+                    matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
+                        && lowerer.expression(*value).is_some_and(|expression| {
+                            matches!(
+                                expression.kind,
+                                RawExpressionKind::FieldAccess { .. }
+                                    | RawExpressionKind::Index { .. }
+                            )
+                        });
+                let value = if let Some(source) =
+                    lowerer.partial_return_transfer_source(*value, result)
+                {
+                    lowerer.lower_partial_return_transfer(source, result, return_span)?
+                } else if aggregate_projection_return {
+                    if !function.parameters.is_empty()
+                        || Some(*statement_id) != final_statement
+                        || return_count != 1
+                    {
+                        lowerer.errors.at(
+                                "ZRYNA-M3016",
+                                return_span,
+                                "direct aggregate-subobject return requires the sole final return of one parameter-free private function",
+                                "return one complete static Struct or fixed-array subobject from a local root as the sole final return in a parameter-free function",
+                            );
+                        return None;
+                    }
+                    lowerer.projected_value(
+                        *value,
+                        result,
+                        Some(ProjectedAggregateMoveContext::FinalReturn),
+                    )?
+                } else {
+                    lowerer.value(*value, result)?
+                };
                 returned = Some((value, return_span));
             }
             RawStatementKind::Assignment { target, value, .. } => {
