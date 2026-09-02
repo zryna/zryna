@@ -672,6 +672,56 @@ fn program(
     }
 }
 
+fn shared_borrow_read_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    let span = raw.modules[0].functions[0].span;
+    let function = &mut raw.modules[0].functions[0];
+    function.entry_export = None;
+    function.places = vec![raw::Place {
+        id: raw::PlaceId(0),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(0),
+    }];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(0),
+                value: raw::ValueId(0),
+            },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                id: raw::BorrowId(0),
+                place: raw::PlaceId(0),
+                access: raw::BorrowAccess::Shared,
+                span,
+            }),
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span }),
+            span,
+            kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(0) },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+        },
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
+    raw
+}
+
 #[derive(Clone, Copy)]
 enum SubobjectMoveShape {
     Struct,
@@ -4216,45 +4266,174 @@ fn orphan_owned_value_is_rejected() {
 }
 
 #[test]
-fn dense_borrow_begin_and_end_is_accepted() {
+fn dense_shared_borrow_read_and_end_is_accepted() {
+    let (sources, linear, linux) = authorities();
+    let raw = shared_borrow_read_program(&sources, &linear, &linux);
+    let entry = sources.verify_file_id(0).expect("entry");
+    verify(raw, &sources, entry, linear, linux).expect("borrow-balanced program");
+}
+
+#[test]
+fn unused_borrow_parameter_authority_is_rejected() {
     let (sources, linear, linux) = authorities();
     let mut raw = program(&sources, &linear, &linux);
     let span = raw.modules[0].functions[0].span;
     let function = &mut raw.modules[0].functions[0];
     function.entry_export = None;
-    function
-        .parameters
-        .insert(0, raw::ValueDefinition { id: raw::ValueId(0), ty: raw::TypeId(2), span });
-    function.parameters[1].id = raw::ValueId(1);
-    function.places.push(raw::Place {
-        id: raw::PlaceId(0),
-        ty: raw::TypeId(2),
+    function.borrow_parameters = vec![raw::BorrowParameter {
+        id: raw::BorrowId(0),
+        referent: raw::TypeId(1),
+        access: raw::BorrowAccess::Shared,
         span,
-        kind: raw::PlaceKind::Parameter(0),
-    });
-    function.cleanup_plans[0].actions.push(raw::DropAction::DropPlace(raw::PlaceId(0)));
-    function.blocks[0].instructions.extend([
-        raw::Instruction {
-            result: None,
+    }];
+    let entry = sources.verify_file_id(0).expect("entry");
+    let diagnostics = verify(raw, &sources, entry, linear, linux).expect_err("unused borrow");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow parameter is not used")
+    }));
+}
+
+#[test]
+fn sparse_and_duplicate_borrow_parameter_metadata_is_rejected() {
+    let (sources, linear, linux) = authorities();
+    let span = program(&sources, &linear, &linux).modules[0].functions[0].span;
+    let make = |parameters: Vec<raw::BorrowParameter>, borrow: raw::BorrowId| {
+        let mut raw = program(&sources, &linear, &linux);
+        let function = &mut raw.modules[0].functions[0];
+        function.entry_export = None;
+        function.borrow_parameters = parameters;
+        function.blocks[0].instructions = vec![raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span }),
             span,
-            kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
-                id: raw::BorrowId(0),
-                place: raw::PlaceId(0),
-                access: raw::BorrowAccess::Shared,
-                span,
-            }),
+            kind: raw::InstructionKind::BorrowRead { borrow },
+        }];
+        function.blocks[0].terminators[0].kind =
+            raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
+        raw
+    };
+    let parameter = |id| raw::BorrowParameter {
+        id: raw::BorrowId(id),
+        referent: raw::TypeId(1),
+        access: raw::BorrowAccess::Shared,
+        span,
+    };
+    let entry = sources.verify_file_id(0).expect("entry");
+    for raw in [
+        make(vec![parameter(1)], raw::BorrowId(1)),
+        make(vec![parameter(0), parameter(0)], raw::BorrowId(0)),
+    ] {
+        let diagnostics = verify(raw, &sources, entry, linear.clone(), linux.clone())
+            .expect_err("noncanonical borrow parameters");
+        assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3011"));
+    }
+}
+
+#[test]
+fn sparse_duplicate_and_inactive_lexical_borrow_authority_is_rejected() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let seed = shared_borrow_read_program(&sources, &linear, &linux);
+
+    let mut sparse = seed.clone();
+    if let raw::InstructionKind::BeginBorrow(definition) =
+        &mut sparse.modules[0].functions[0].blocks[0].instructions[1].kind
+    {
+        definition.id = raw::BorrowId(1);
+    }
+    for instruction in &mut sparse.modules[0].functions[0].blocks[0].instructions[2..] {
+        match &mut instruction.kind {
+            raw::InstructionKind::BorrowRead { borrow }
+            | raw::InstructionKind::EndBorrow { borrow } => *borrow = raw::BorrowId(1),
+            _ => {}
+        }
+    }
+    let diagnostics = verify(sparse, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("sparse lexical borrow");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3011"));
+
+    let mut duplicate = seed.clone();
+    let begin = duplicate.modules[0].functions[0].blocks[0].instructions[1].clone();
+    duplicate.modules[0].functions[0].blocks[0].instructions.insert(2, begin);
+    let diagnostics = verify(duplicate, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("duplicate lexical borrow");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3011"));
+
+    let mut inactive = seed;
+    inactive.modules[0].functions[0].blocks[0].instructions.swap(2, 3);
+    let diagnostics =
+        verify(inactive, &sources, entry, linear, linux).expect_err("read after lexical end");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow read uses an inactive authority")
+    }));
+}
+
+#[test]
+fn lexical_borrow_cannot_escape_return_or_trap() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut returned = shared_borrow_read_program(&sources, &linear, &linux);
+    returned.modules[0].functions[0].blocks[0].instructions.pop();
+    let diagnostics = verify(returned.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect_err("borrow crossing return");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow remains active at a control-flow edge")
+    }));
+
+    returned.modules[0].functions[0].blocks[0].terminators[0].kind = raw::Terminator::Trap {
+        identity: raw::TrapIdentity::BoundsV1,
+        cleanup: raw::CleanupPlanId(0),
+    };
+    let diagnostics =
+        verify(returned, &sources, entry, linear, linux).expect_err("borrow crossing trap");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow remains active at a control-flow edge")
+    }));
+}
+
+#[test]
+fn borrow_parameter_cannot_be_ended_or_exported() {
+    let (sources, linear, linux) = authorities();
+    let span = program(&sources, &linear, &linux).modules[0].functions[0].span;
+    let mut raw = program(&sources, &linear, &linux);
+    let function = &mut raw.modules[0].functions[0];
+    function.entry_export = None;
+    function.borrow_parameters = vec![raw::BorrowParameter {
+        id: raw::BorrowId(0),
+        referent: raw::TypeId(1),
+        access: raw::BorrowAccess::Shared,
+        span,
+    }];
+    function.blocks[0].instructions = vec![
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(1), span }),
+            span,
+            kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(0) },
         },
         raw::Instruction {
             result: None,
             span,
             kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
         },
-    ]);
-    if let raw::Terminator::Return { value, .. } = &mut function.blocks[0].terminators[0].kind {
-        *value = raw::ValueId(1);
-    }
+    ];
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(1), cleanup: raw::CleanupPlanId(0) };
     let entry = sources.verify_file_id(0).expect("entry");
-    verify(raw, &sources, entry, linear, linux).expect("borrow-balanced program");
+    let diagnostics = verify(raw.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect_err("callee cannot end parameter authority");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow end uses an inactive authority")
+    }));
+
+    raw.modules[0].functions[0].entry_export = Some("id".into());
+    raw.modules[0].functions[0].blocks[0].instructions.pop();
+    let diagnostics =
+        verify(raw, &sources, entry, linear, linux).expect_err("borrowed public export");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3009"));
 }
 
 #[test]
@@ -6004,7 +6183,10 @@ fn enum_payload_move_rejects_extra_parameter_place_value_and_cleanup_metadata() 
     let diagnostics = verify(extra_borrow, &sources, entry, linear.clone(), linux.clone())
         .expect_err("extra unused Copy borrow parameter metadata");
     assert!(
-        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-I3010"),
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic.code() == "ZRYNA-I3011"
+                && diagnostic.message().contains("borrow parameter is not used")
+        }),
         "{diagnostics:?}"
     );
 
@@ -6552,11 +6734,19 @@ fn direct_call_rejects_borrow_authority_with_wrong_access() {
         blocks: vec![raw::Block {
             id: raw::BlockId(0),
             parameters: vec![],
-            instructions: vec![],
+            instructions: vec![raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: raw::ValueId(1),
+                    ty: raw::TypeId(1),
+                    span,
+                }),
+                span,
+                kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(0) },
+            }],
             terminators: vec![raw::SpannedTerminator {
                 span,
                 kind: raw::Terminator::Return {
-                    value: raw::ValueId(0),
+                    value: raw::ValueId(1),
                     cleanup: raw::CleanupPlanId(0),
                 },
             }],
@@ -6569,6 +6759,7 @@ fn direct_call_rejects_borrow_authority_with_wrong_access() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn direct_call_rejects_repeated_exclusive_borrow_authority() {
     let (sources, linear, linux) = authorities();
     let mut raw = program(&sources, &linear, &linux);
@@ -6650,11 +6841,30 @@ fn direct_call_rejects_repeated_exclusive_borrow_authority() {
         blocks: vec![raw::Block {
             id: raw::BlockId(0),
             parameters: vec![],
-            instructions: vec![],
+            instructions: vec![
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(1),
+                        ty: raw::TypeId(1),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(0) },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(2),
+                        ty: raw::TypeId(1),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::BorrowRead { borrow: raw::BorrowId(1) },
+                },
+            ],
             terminators: vec![raw::SpannedTerminator {
                 span,
                 kind: raw::Terminator::Return {
-                    value: raw::ValueId(0),
+                    value: raw::ValueId(2),
                     cleanup: raw::CleanupPlanId(0),
                 },
             }],

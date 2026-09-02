@@ -269,8 +269,9 @@ move/explicit clone from a distinct fully
 initialized exact same-type whole Struct/FixedArray root into a mutable available static
 `StructField`/`FixedArrayConstant` projection remain open, alongside
 general owned joins, owned loop-carried joins, repeated or nested control flow, and general scope
-exits are future child-issue work. Issue #82 is dependency-ready but remains planned until its
-PR-sized child issues and acceptance evidence are published.
+exits are future child-issue work. Issue #82 is active through the checked dependency graph in
+[`M3_BORROWING_SEMANTICS.md`](M3_BORROWING_SEMANTICS.md). Issue #113 freezes the contract and
+existing verified-IR prerequisite without enabling source-level borrowing.
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |
@@ -281,7 +282,7 @@ PR-sized child issues and acceptance evidence are published.
 |   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | complete    |
 |   #80 | versioned ownership runtime ABI authority                            | #75, #77                | complete    |
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | complete    |
-|   #82 | bounded nonescaping lexical borrowing                                | #81                     | planned     |
+|   #82 | bounded nonescaping lexical borrowing                                | #81                     | in progress |
 |   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | planned     |
 |   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | planned     |
 |   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | planned     |

@@ -272,6 +272,29 @@ test("implemented data IR document freezes the internal authority without runtim
   assert.match(document, /M1 and M2 remain the only public compiler profiles/);
 });
 
+test("bounded borrowing contract freezes the dependency graph and IR prerequisite", async () => {
+  const document = await readFile(
+    new URL("../docs/M3_BORROWING_SEMANTICS.md", import.meta.url),
+    "utf8",
+  );
+  const status = await readFile(new URL("../docs/STATUS.md", import.meta.url), "utf8");
+  const roadmap = await readFile(new URL("../docs/ROADMAP.md", import.meta.url), "utf8");
+  assert.match(document, /Status: Issue #113 contract and verified-IR prerequisite complete/);
+  assert.match(document, /#113 -> #114 -> #115 -> \{#116, #117, #119, #120, #121\} -> #122/);
+  assert.match(document, /BorrowParameter/);
+  assert.match(document, /BeginBorrow\(BorrowDefinition\)/);
+  assert.match(document, /BorrowRead/);
+  assert.match(document, /BorrowWrite/);
+  assert.match(document, /EndBorrow/);
+  assert.match(document, /CallArgument::Borrow/);
+  assert.match(document, /16,384 simultaneously active borrows per function/);
+  assert.match(document, /Unused signature metadata\s+is invalid/);
+  assert.match(document, /source-level semantic borrowing\s+is not implemented/i);
+  assert.match(document, /M1 and explicit `control-flow-v1` M2 remain the only public profiles/);
+  assert.match(status, /Issue #82 is now active through its checked child-issue dependency graph/);
+  assert.match(roadmap, /\|\s+#82 \| bounded nonescaping lexical borrowing\s+\| #81\s+\| in progress \|/);
+});
+
 test("implemented Copy aggregate semantics remain internal and runtime-free", async () => {
   const document = await readFile(
     new URL("../docs/M3_COPY_AGGREGATE_SEMANTICS.md", import.meta.url),
@@ -313,9 +336,9 @@ test("completed owned-data semantics preserve the bounded internal boundary", as
   );
   assert.match(document, /Status: bounded compiler-boundary implementation complete for Issue #81/);
   assert.match(status, /Issue #81 is complete at its bounded internal private compiler boundary/);
-  assert.match(status, /Issue #82 is dependency-ready but remains planned/);
+  assert.match(status, /Issue #82 is now active through its checked child-issue dependency graph/);
   assert.match(roadmap, /\|\s+#81 \| owned String\/Vec, move checking, and deterministic drop\s+\| #78, #79, #80\s+\| complete\s+\|/);
-  assert.match(roadmap, /Issue #82 is dependency-ready but remains planned/);
+  assert.match(roadmap, /Issue #82 is active through the checked dependency graph/);
   assert.match(readme, /completed internal Issue #81 boundary/);
   assert.match(semanticsReadme, /completed internal Issue #81 boundary/);
   assert.doesNotMatch(status, /Issue #81 is (?:in progress|not complete)/);
