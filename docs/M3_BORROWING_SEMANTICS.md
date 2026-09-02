@@ -1,13 +1,16 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, #115, #116, #117, #120, and #121 complete. Issue #116 adds one bounded
-shared-read shape for a whole owned root after independent verification and required merge gates.
+Status: Issues #113, #114, #115, #116, #117, #119, #120, and #121 complete. Issue #116 adds one
+bounded shared-read shape for a whole owned root after independent verification and required merge
+gates.
 The internal semantic producer admits bounded
 shared and exclusive Copy-root source shapes, one shared-from-shared reborrow, and one canonical
 conditional plus one canonical bool-root loop whose local lexical authorities are completely
 discharged before every edge. It also admits static recursively Copy Struct-field and constant
-fixed-array projected borrows with exact prefix overlap. Call-based and nested/repeated
-control-flow borrowing remain dependency-ordered later checkpoints.
+fixed-array projected borrows with exact prefix overlap. Issue #119 adds bounded private
+straight-line whole-root direct calls with exact recursively Copy signatures and nonescaping
+borrow authority. Nested/repeated control-flow borrowing remains a dependency-ordered later
+checkpoint.
 
 This document freezes the dependency-ordered implementation boundary for Issue #82. It refines the
 normative borrowing rules in [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md) without
@@ -22,7 +25,7 @@ IR verifier independently proves the authority before constructing opaque verifi
 
 ```text
 verified protocol-v4 syntax
-    ↓ future dependency-ordered semantic slices
+    ↓ dependency-ordered semantic slices
 raw DataOwnershipV1 borrow claims
     ↓ mandatory existing verifier
 opaque verified borrow authority
@@ -281,6 +284,66 @@ functions, projections, owned roots, borrow-carrying block parameters, edge argu
 shortening, runtime flags, ABI changes, backends, drivers, CLI selectors, artifacts, and public
 profiles.
 
+## Issue #119 bounded internal call checkpoint
+
+One private straight-line function may declare a recursively Copy result and an exact signature
+whose recursively Copy value parameters and one or more shared or exclusive borrow parameters are
+interleaved in source order. An admitted caller passes either active whole-root lexical authority
+or the same active borrow-parameter authority to exactly the declared referent and access mode.
+Source arguments evaluate once from left to right; lowering then materializes the verified call's
+value arguments followed by borrow arguments without changing their source evaluation order. A
+borrow-parameter callee may read shared or exclusive authority, write only exclusive authority, or
+forward the same authority through another bounded exact internal call.
+
+Each admitted lexical borrow block contains one direct call. The call graph is private, static,
+acyclic, and bounded. The callee cannot end, return, store, or capture caller authority. The caller
+retains responsibility for reverse lexical `EndBorrow`, and the direct call retains its exact
+`CallTrap` cleanup site. The mandatory existing IR verifier remains final authority for active
+identity, exact referent and access, overlapping exclusive arguments, real parameter use,
+ownership-flow nonescape, recursion, and call depth. Its retained evidence accepts static depth
+128, rejects depth 129 with `ZRYNA-I3009`, and rejects mutual recursion.
+
+The `tests/m3-contract-v1.json` `borrowCallConformance` registry authenticates exactly 36 source and
+protocol-v4 snapshot files, 5 accepted cases, and 13 excluded cases. Implementation plus fixture
+provenance is merged-main commit `32e3f0607389dd1274c21770088456c765ee4fb7` from PR #184. That
+immutable tree has registry SHA-256
+`d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f` and canonical
+`borrowCallConformance` section SHA-256
+`ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20`.
+
+- Accepted: `borrow-forwarding-exclusive`, `borrow-forwarding-shared`,
+  `borrow-parameter-mixed-order`, `lexical-borrow-call-exclusive`, and
+  `lexical-borrow-call-shared`.
+- Excluded: `borrow-call-owned-shape`, `borrow-call-public-abi`,
+  `borrow-call-repeated-exclusive`, `borrow-call-result-escape`, `lexical-borrow-call-cfg`,
+  `lexical-borrow-call-inactive`, `lexical-borrow-call-projected`,
+  `lexical-borrow-call-repeated`, `lexical-borrow-call-wrong-access`,
+  `lexical-borrow-call-wrong-arity`, `lexical-borrow-call-wrong-borrow-kind`,
+  `lexical-borrow-call-wrong-referent`, and `lexical-borrow-call-wrong-value-kind`.
+
+Resource planning uses checked arithmetic before limit selection and reserves values, places,
+ownership transitions, blocks, edges, active borrows, cleanup plans, call edges, and static call
+depth before raw-IR materialization. Exact limits pass and the first extra fails in canonical
+resource order. The required focused and closure evidence is:
+
+```text
+pnpm m3:contract
+cargo test --locked -p zryna-semantics 'data_ownership_v1::tests::borrow_call_conformance::'
+cargo test --locked -p zryna-semantics 'data_ownership_v1::tests::lexical_borrow_calls::'
+cargo test --locked -p zryna-ir 'data_ownership_v1::tests::'
+pnpm m3:syntax:quick
+pnpm m3:owned:quick
+pnpm docs:check
+pnpm preflight
+pnpm m0:check
+```
+
+Protocol v4 is consumed unchanged. This checkpoint adds no syntax contract, runtime lifetime
+state, ABI carrier, JavaScript/WebAssembly/native lowering, driver route, CLI selector, artifact,
+website support claim, or public-profile activation. Projected or derived forwarding, multiple
+calls in one lexical block, CFG crossing, recursion or indirect calls, owned aggregate call shapes,
+non-Copy mutation, public borrow signatures, and retained or escaping authority remain excluded.
+
 ## Issue #120 projected-disjointness checkpoint
 
 The private parameter-free straight-line producer now also accepts one literal-initialized,
@@ -353,8 +416,8 @@ begin/end sites as simultaneously live.
 
 The borrow edit loop runs `cargo test --locked -p zryna-ir borrow` plus the focused conditional
 join/edge tests for the retained verifier, and focused `borrow`, `exclusive_`, `conflict_matrix`,
-`reborrow`, `conditional_`, `projected_borrow`, and `loop_root_borrow` semantic filters for the
-#114/#115/#117/#120/#121 producer. The checked gate
+`reborrow`, `conditional_`, `borrow_call`, `projected_borrow`, and `loop_root_borrow` semantic
+filters for the #114/#115/#117/#119/#120/#121 producer. The checked gate
 additionally requires the complete DataOwnershipV1 IR and semantic suites plus doctests, M3
 contract/documentation tests, formatting and strict Clippy, `pnpm preflight`, and `pnpm m0:check`.
 A quick lane cannot substitute for proportional exact/+1 or cross-platform merge evidence.

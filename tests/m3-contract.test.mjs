@@ -393,11 +393,20 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   );
   const status = await readFile(new URL("../docs/STATUS.md", import.meta.url), "utf8");
   const roadmap = await readFile(new URL("../docs/ROADMAP.md", import.meta.url), "utf8");
+  const architecture = await readFile(
+    new URL("../docs/ARCHITECTURE.md", import.meta.url),
+    "utf8",
+  );
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
   const bundleInventory = await readFile(
     new URL("../docs/website-bundle-v1.json", import.meta.url),
     "utf8",
   );
-  assert.match(document, /Status: Issues #113, #114, #115, #116, #117, #120, and #121 complete/);
+  const borrowCallConformance = clonedContract().borrowCallConformance;
+  assert.match(
+    document,
+    /Status: Issues #113, #114, #115, #116, #117, #119, #120, and #121 complete/,
+  );
   assert.match(document, /#113 -> #114 -> #115 -> \{#116, #117, #119, #120, #121\} -> #122/);
   assert.match(document, /BorrowParameter/);
   assert.match(document, /BeginBorrow\(BorrowDefinition\)/);
@@ -423,6 +432,39 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   assert.match(document, /A complete borrow in only one arm is valid/);
   assert.match(document, /reversing hostile branch targets cannot select a\s+different join-mismatch diagnostic/);
   assert.match(document, /excludes nested or repeated conditionals, loops, calls, parameters/);
+  assert.match(document, /## Issue #119 bounded internal call checkpoint/);
+  assert.match(document, /private straight-line function may declare a recursively Copy result/);
+  assert.match(document, /value parameters and one or more shared or exclusive borrow parameters/);
+  assert.match(document, /Source arguments evaluate once from left to right/);
+  assert.match(document, /caller\s+retains responsibility for reverse lexical `EndBorrow`/);
+  assert.match(document, /accepts static depth\s+128, rejects depth 129/);
+  assert.match(document, /32e3f0607389dd1274c21770088456c765ee4fb7/);
+  assert.match(document, /d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f/);
+  assert.match(document, /ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20/);
+  assert.match(document, /exactly 36 source and\s+protocol-v4 snapshot files, 5 accepted cases, and 13 excluded cases/);
+  for (const { id } of [
+    ...borrowCallConformance.acceptedCases,
+    ...borrowCallConformance.exclusions,
+  ]) {
+    assert(document.includes(`\`${id}\``));
+  }
+  assert.match(
+    document,
+    /values, places,\s+ownership transitions, blocks, edges, active borrows, cleanup plans, call edges, and static call\s+depth/,
+  );
+  assert.match(document, /checked arithmetic before limit selection/);
+  for (const command of [
+    "pnpm m3:contract",
+    "pnpm m3:syntax:quick",
+    "pnpm m3:owned:quick",
+    "pnpm docs:check",
+    "pnpm preflight",
+    "pnpm m0:check",
+  ]) {
+    assert(document.includes(command));
+  }
+  assert.match(document, /Protocol v4 is consumed unchanged/);
+  assert.match(document, /adds no syntax contract, runtime lifetime\s+state, ABI carrier, JavaScript\/WebAssembly\/native lowering/);
   assert.match(document, /## Issue #120 projected-disjointness checkpoint/);
   assert.match(document, /same path and every ancestor\/descendant pair overlap/);
   assert.match(document, /distinct static siblings are disjoint/);
@@ -434,7 +476,34 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   assert.match(document, /exact root owner.initialization state is restored/);
   assert.match(document, /M1 and explicit `control-flow-v1` M2 remain the only public profiles/);
   assert.match(status, /Issue #82 is now active through its checked child-issue dependency graph/);
+  assert.match(status, /Issue #119 is complete at merged-main provenance/);
+  assert.match(status, /exactly 36 source\/snapshot files, 5 accepted\s+cases, and 13 exclusions/);
+  assert.match(status, /d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f/);
+  assert.match(status, /ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20/);
+  assert.match(status, /This adds no runtime,\s+ABI, backend, driver, CLI, artifact, website-support, or public-profile capability/);
+  assert.match(
+    status,
+    /implemented bounded lexical-borrow child\s+slices remain internal; #122 owns aggregate borrowing closure/,
+  );
+  assert.doesNotMatch(
+    status,
+    /later dependency-ready issues add\s+bounded lexical borrows/,
+  );
+  assert.match(roadmap, /Issue #119 completes the bounded private straight-line\s+whole-root call-only nonescape slice/);
   assert.match(roadmap, /\|\s+#82 \| bounded nonescaping lexical borrowing\s+\| #81\s+\| in progress \|/);
+  assert.match(
+    architecture,
+    /Issue #119 adds one bounded private straight-line whole-root direct-call boundary/,
+  );
+  assert.match(
+    architecture,
+    /This adds no\s+runtime lifetime state, ABI, JavaScript\/WebAssembly\/native backend path/,
+  );
+  assert.match(readme, /One bounded private\s+straight-line exception now passes active whole-root shared or exclusive authority/);
+  assert.match(
+    readme,
+    /runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable/,
+  );
   assert.match(bundleInventory, /"source": "docs\/M3_BORROWING_SEMANTICS\.md"/);
 });
 

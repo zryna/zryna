@@ -142,8 +142,14 @@ The repository currently establishes and tests:
   active-borrow capacity uses the larger arm. Static recursively Copy Struct fields and constant
   fixed-array elements now retain exact canonical borrow paths: siblings are disjoint while the
   same path and ancestor/descendant pairs overlap. Projected value/place/transition resources are
-  preflighted exactly; dynamic/Vec/enum/non-Copy projections fail closed. Mutable-from-shared, every reborrow from exclusive,
-  calls, nested/repeated conditionals, lifetime shortening, and every
+  preflighted exactly; dynamic/Vec/enum/non-Copy projections fail closed. One bounded private
+  straight-line exception now passes active whole-root shared or exclusive authority through exact
+  recursively Copy direct-call signatures. Arguments evaluate left to right, borrow parameters
+  retain source signature order, forwarding preserves the same authority, the caller owns lexical
+  end, and the mandatory verifier retains acyclic-call and static-depth authority. Projected
+  forwarding, repeated calls, CFG crossing, recursion, public borrow signatures, and retained or
+  escaping authority remain excluded. Mutable-from-shared, every reborrow from exclusive,
+  nested/repeated conditionals, lifetime shortening, and every
   runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable;
   one canonical private bool-root loop additionally reverse-ends its body-local authorities before
   a fixed backedge, restores the exact root owner/initialization state at the header, and carries
