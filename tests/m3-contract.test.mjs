@@ -272,14 +272,14 @@ test("implemented data IR document freezes the internal authority without runtim
   assert.match(document, /M1 and M2 remain the only public compiler profiles/);
 });
 
-test("bounded borrowing contract freezes the dependency graph and IR prerequisite", async () => {
+test("bounded borrowing contract freezes the graph and first shared-root producer", async () => {
   const document = await readFile(
     new URL("../docs/M3_BORROWING_SEMANTICS.md", import.meta.url),
     "utf8",
   );
   const status = await readFile(new URL("../docs/STATUS.md", import.meta.url), "utf8");
   const roadmap = await readFile(new URL("../docs/ROADMAP.md", import.meta.url), "utf8");
-  assert.match(document, /Status: Issue #113 contract and verified-IR prerequisite complete/);
+  assert.match(document, /Status: Issues #113 and #114 complete/);
   assert.match(document, /#113 -> #114 -> #115 -> \{#116, #117, #119, #120, #121\} -> #122/);
   assert.match(document, /BorrowParameter/);
   assert.match(document, /BeginBorrow\(BorrowDefinition\)/);
@@ -289,7 +289,11 @@ test("bounded borrowing contract freezes the dependency graph and IR prerequisit
   assert.match(document, /CallArgument::Borrow/);
   assert.match(document, /16,384 simultaneously active borrows per function/);
   assert.match(document, /Unused signature metadata\s+is invalid/);
-  assert.match(document, /source-level semantic borrowing\s+is not implemented/i);
+  assert.match(document, /One private parameter-free straight-line function may now declare/);
+  assert.match(document, /exact Copy owner reads while shared aliases\s+are active/);
+  assert.match(document, /emits `EndBorrow` in reverse declaration\s+order/);
+  assert.match(document, /The producer computes the complete values, places, ownership transitions/);
+  assert.match(document, /exclusive borrows, projections, assignment, calls, branches/);
   assert.match(document, /M1 and explicit `control-flow-v1` M2 remain the only public profiles/);
   assert.match(status, /Issue #82 is now active through its checked child-issue dependency graph/);
   assert.match(roadmap, /\|\s+#82 \| bounded nonescaping lexical borrowing\s+\| #81\s+\| in progress \|/);

@@ -513,8 +513,13 @@ The [bounded borrowing implementation contract](M3_BORROWING_SEMANTICS.md) freez
 `#113 -> #114 -> #115 -> {#116, #117, #119, #120, #121} -> #122`. Issue #113 audits and tightens
 the existing verified-IR prerequisite only: dense shared/exclusive authority, real parameter use,
 exact lexical end, overlap, direct-call matching, edge nonescape, and the 16,384-active-borrow
-limit. It does not yet make protocol-v4 borrow syntax semantically admissible; source lowering
-begins in #114, and aggregate closure remains #122.
+limit. Issue #114 adds one internal private straight-line shared-root semantic shape for literal-
+initialized `bool`/`i32`: const aliases lower to dense shared begin/read authority, compatible Copy
+owner reads lower directly from the still-initialized root, aliases end in reverse at the exact
+nested-block exit, and the root remains readable afterward. It preflights all derived resources
+before raw-IR construction and adds no runtime, ABI, backend, driver, CLI, or public profile
+capability. Exclusive, projected, call, branch, and loop borrowing remain later slices; aggregate
+closure remains #122.
 
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve

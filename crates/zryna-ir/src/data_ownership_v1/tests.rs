@@ -4370,6 +4370,123 @@ fn sparse_duplicate_and_inactive_lexical_borrow_authority_is_rejected() {
 }
 
 #[test]
+fn lexical_borrow_rejects_uninitialized_and_moved_roots() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let seed = shared_borrow_read_program(&sources, &linear, &linux);
+
+    let mut uninitialized = seed.clone();
+    uninitialized.modules[0].functions[0].blocks[0].instructions.remove(0);
+    let diagnostics = verify(uninitialized, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("borrow of uninitialized root");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow identity, owner state, or overlap is invalid")
+    }));
+
+    let mut moved = string_literal_program(&sources, &linear, &linux, b"root".to_vec());
+    let function = &mut moved.modules[0].functions[0];
+    let span = function.span;
+    function.places = vec![
+        raw::Place {
+            id: raw::PlaceId(0),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(0)),
+        },
+        raw::Place {
+            id: raw::PlaceId(1),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Local(0),
+        },
+        raw::Place {
+            id: raw::PlaceId(2),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(1)),
+        },
+        raw::Place {
+            id: raw::PlaceId(3),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Local(1),
+        },
+        raw::Place {
+            id: raw::PlaceId(4),
+            ty: raw::TypeId(2),
+            span,
+            kind: raw::PlaceKind::Temporary(raw::ValueId(2)),
+        },
+    ];
+    function.blocks[0].instructions.extend([
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(1),
+                value: raw::ValueId(0),
+            },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(1), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(1) },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::InitializePlace {
+                place: raw::PlaceId(3),
+                value: raw::ValueId(1),
+            },
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                id: raw::BorrowId(0),
+                place: raw::PlaceId(1),
+                access: raw::BorrowAccess::Shared,
+                span,
+            }),
+        },
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+        },
+        raw::Instruction {
+            result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(2), span }),
+            span,
+            kind: raw::InstructionKind::MoveFromPlace { place: raw::PlaceId(3) },
+        },
+    ]);
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(2), cleanup: raw::CleanupPlanId(1) };
+    let diagnostics =
+        verify(moved, &sources, entry, linear, linux).expect_err("borrow of moved root");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow identity, owner state, or overlap is invalid")
+    }));
+}
+
+#[test]
+fn lexical_borrow_rejects_double_end_with_inactive_authority_diagnostic() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut raw = shared_borrow_read_program(&sources, &linear, &linux);
+    let duplicate_end = raw.modules[0].functions[0].blocks[0].instructions[3].clone();
+    raw.modules[0].functions[0].blocks[0].instructions.push(duplicate_end);
+    let diagnostics = verify(raw, &sources, entry, linear, linux).expect_err("double borrow end");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow end uses an inactive authority")
+    }));
+}
+
+#[test]
 fn lexical_borrow_cannot_escape_return_or_trap() {
     let (sources, linear, linux) = authorities();
     let entry = sources.verify_file_id(0).expect("entry");
