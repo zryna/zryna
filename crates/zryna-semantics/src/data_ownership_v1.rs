@@ -42,6 +42,8 @@ use aggregate_resource_formulas::{
     partial_assignment_place_delta, partial_return_place_delta, partial_transfer_place_delta,
 };
 use diagnostics::Errors;
+#[cfg(test)]
+use function_catalog::{FunctionBorrowParameter, FunctionParameterOrder};
 use function_catalog::{
     FunctionCatalog, FunctionResolution, FunctionSignature, build_function_catalog,
 };
@@ -3844,6 +3846,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
             return None;
         }
         if signature.result != self.ty
+            || signature.has_borrow_parameters()
             || signature.parameters.len() > 1
             || signature.parameters.iter().any(|parameter| *parameter != self.ty)
         {
@@ -9807,8 +9810,9 @@ impl PrivateVecLowerer<'_, '_, '_> {
                 return None;
             }
         };
-        let exact_parameters =
-            signature.parameters.is_empty() || signature.parameters.as_slice() == [self.vec_ty];
+        let exact_parameters = !signature.has_borrow_parameters()
+            && (signature.parameters.is_empty()
+                || signature.parameters.as_slice() == [self.vec_ty]);
         if !signature.private
             || signature.result != expected
             || expected != self.vec_ty
@@ -11185,7 +11189,10 @@ impl FunctionLowerer<'_, '_, '_> {
             );
             return None;
         }
-        if !signature.result.is_copy() || signature.parameters.iter().any(|ty| !ty.is_copy()) {
+        if !signature.result.is_copy()
+            || signature.has_borrow_parameters()
+            || signature.parameters.iter().any(|ty| !ty.is_copy())
+        {
             self.errors.at(
                 "ZRYNA-M3016",
                 span(self.input.sources(), callee.span),

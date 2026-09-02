@@ -87,12 +87,21 @@ fn private_string_nested_identity_result_reservation_fails_before_argument_mutat
     let input = pair_input(&syntax, &sources);
     let ty = authenticated_type_capabilities(input, 0, 0).expect("String type");
     let function = &syntax.files()[0].functions()[0];
-    let signature = |declaration, name: &str, parameters| FunctionSignature {
-        id: raw::FunctionId { module: raw::ModuleId(0), declaration },
-        name: name.to_owned(),
-        parameters,
-        result: ty,
-        private: true,
+    let signature = |declaration, name: &str, parameters: Vec<super::super::Ty>| {
+        let parameter_order = (0..parameters.len())
+            .map(|index| {
+                FunctionParameterOrder::Value(u32::try_from(index).expect("parameter index"))
+            })
+            .collect();
+        FunctionSignature {
+            id: raw::FunctionId { module: raw::ModuleId(0), declaration },
+            name: name.to_owned(),
+            parameters,
+            borrow_parameters: Vec::new(),
+            parameter_order,
+            result: ty,
+            private: true,
+        }
     };
     let catalog = FunctionCatalog {
         modules: vec![vec![
@@ -370,12 +379,21 @@ fn nested_direct_call_uses_preflight_credit_without_conservative_double_counting
     let input = pair_input(&syntax, &sources);
     let ty = authenticated_type_capabilities(input, 0, 0).expect("String type");
     let function = &syntax.files()[0].functions()[0];
-    let signature = |declaration, name: &str, parameters| FunctionSignature {
-        id: raw::FunctionId { module: raw::ModuleId(0), declaration },
-        name: name.to_owned(),
-        parameters,
-        result: ty,
-        private: true,
+    let signature = |declaration, name: &str, parameters: Vec<super::super::Ty>| {
+        let parameter_order = (0..parameters.len())
+            .map(|index| {
+                FunctionParameterOrder::Value(u32::try_from(index).expect("parameter index"))
+            })
+            .collect();
+        FunctionSignature {
+            id: raw::FunctionId { module: raw::ModuleId(0), declaration },
+            name: name.to_owned(),
+            parameters,
+            borrow_parameters: Vec::new(),
+            parameter_order,
+            result: ty,
+            private: true,
+        }
     };
     let catalog = FunctionCatalog {
         modules: vec![vec![

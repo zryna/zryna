@@ -1,9 +1,10 @@
 use super::{
-    Errors, FunctionCatalog, FunctionSignature, MAX_SEMANTIC_DIAGNOSTICS, OwnedCfgBudgetLimit,
-    OwnedCfgState, OwnedStringBranchState, OwnedStringEstimateContext,
-    OwnedStringPreparationBudget, OwnerState, PartialTransferBudgetViolation, PrivateStringLowerer,
-    ProgramCfgBudgetLimit, RootBorrowBudgetLimit, RootBorrowResources, SemanticInput,
-    ValueBudgetLimit, accumulate_generated_cfg_function, accumulate_generated_value_function,
+    Errors, FunctionBorrowParameter, FunctionCatalog, FunctionParameterOrder, FunctionSignature,
+    MAX_SEMANTIC_DIAGNOSTICS, OwnedCfgBudgetLimit, OwnedCfgState, OwnedStringBranchState,
+    OwnedStringEstimateContext, OwnedStringPreparationBudget, OwnerState,
+    PartialTransferBudgetViolation, PrivateStringLowerer, ProgramCfgBudgetLimit,
+    RootBorrowBudgetLimit, RootBorrowResources, SemanticInput, ValueBudgetLimit,
+    accumulate_generated_cfg_function, accumulate_generated_value_function,
     aggregate_clone_budget_violation, aggregate_operand_budget_violation,
     aggregate_transition_budget_violation, authenticated_type_capabilities,
     checked_string_concat_bytes, cleanup_action_budget_violation, cleanup_actions_after_additions,
@@ -70,6 +71,7 @@ mod expression_preflight;
 mod fault_oracle_support;
 mod fixed_array_partial_fixture_support;
 mod fixed_arrays;
+mod function_catalog;
 mod generation_budgets;
 mod loop_fixture_support;
 mod loop_root_borrows;

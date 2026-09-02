@@ -29,6 +29,90 @@ fn private_string_call_rejects_exported_owned_callee_at_call_name() {
 }
 
 #[test]
+fn private_string_call_rejects_borrow_signature_before_arity_or_value_evaluation() {
+    let (source, raw) = private_string_call_fixture();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("source-faithful String calls");
+    let input = pair_input(&syntax, &sources);
+    let mut setup_errors = Errors::new(&sources);
+    semantic_preflight(input, &mut setup_errors);
+    let (graph, _) = super::super::build_graph(input, &mut setup_errors);
+    let layouts = zryna_layout::verify(&graph, &sources, zryna_layout::StorageTarget::Linear32V1)
+        .expect("verified String layouts");
+    let node_types = super::super::map_node_types(&graph, &layouts, &mut setup_errors);
+    assert!(setup_errors.finish().is_empty());
+    let ty = authenticated_type_capabilities(input, 0, 0).expect("String type");
+    let referent = node_types
+        .iter()
+        .flatten()
+        .find(|ty| ty.category == zryna_layout::TypeCategory::I32)
+        .copied()
+        .expect("i32 referent");
+    let function = &syntax.files()[0].functions()[0];
+    let expression = &function.body.expressions[2];
+    let zryna_syntax::v4::RawExpressionKind::Call { callee, .. } = &expression.kind else {
+        panic!("String identity call")
+    };
+    let call_span = span(&sources, expression.span);
+    let callee_span = span(&sources, callee.span);
+    let catalog = FunctionCatalog {
+        modules: vec![vec![
+            None,
+            Some(FunctionSignature {
+                id: raw::FunctionId { module: raw::ModuleId(0), declaration: 1 },
+                name: "identity".to_owned(),
+                parameters: Vec::new(),
+                borrow_parameters: vec![FunctionBorrowParameter {
+                    referent,
+                    access: raw::BorrowAccess::Shared,
+                    span: callee_span,
+                }],
+                parameter_order: vec![FunctionParameterOrder::Borrow(0)],
+                result: ty,
+                private: true,
+            }),
+        ]],
+    };
+    let mut errors = Errors::new(&sources);
+    let cfg = OwnedCfgState::single_block(call_span, &mut errors).expect("entry block");
+    let mut lowerer = PrivateStringLowerer {
+        input,
+        function,
+        module: 0,
+        ty,
+        catalog: &catalog,
+        errors: &mut errors,
+        bindings: std::collections::BTreeMap::new(),
+        places: Vec::new(),
+        reserved_places: 0,
+        cfg,
+        cleanup_plans: Vec::new(),
+        cleanup_actions: 0,
+        reserved_cleanup_plans: 0,
+        reserved_cleanup_actions: 0,
+        owners: OwnerState::default(),
+        known_bytes: std::collections::BTreeMap::new(),
+        next_value: 0,
+        next_local: 0,
+    };
+    assert!(lowerer.direct_call(callee, &[u32::MAX, u32::MAX], call_span).is_none());
+    assert_eq!(lowerer.next_value, 0);
+    assert_eq!(lowerer.cfg.transitions, 0);
+    assert!(lowerer.cfg.current_block().expect("entry").instructions.is_empty());
+    assert!(lowerer.places.is_empty());
+    assert!(lowerer.cleanup_plans.is_empty());
+    drop(lowerer);
+    let diagnostics = errors.finish();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3016");
+    assert_eq!(
+        diagnostics[0].message(),
+        "owned call signature is outside the sealed String producer/identity checkpoint"
+    );
+    assert_eq!(diagnostics[0].primary_span(), Some(callee_span));
+}
+
+#[test]
 fn private_string_call_rejects_wrong_arity_before_argument_transfer() {
     let (source, raw) = private_string_call_fixture();
     let removed = raw.files[0].functions[0].body.expressions[1].span;
