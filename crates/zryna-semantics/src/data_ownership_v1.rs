@@ -16,10 +16,14 @@ use zryna_syntax::v4::{
 };
 
 mod diagnostics;
+mod function_catalog;
 mod layout_graph;
 mod type_model;
 
 use diagnostics::Errors;
+use function_catalog::{
+    FunctionCatalog, FunctionResolution, FunctionSignature, build_function_catalog,
+};
 use layout_graph::{Decl, build_graph, semantic_type};
 use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
@@ -129,43 +133,6 @@ impl VerifiedProgram {
 
 /// Successful M3 lowering always carries mandatory IR and runtime-ABI verifier authority.
 pub type SemanticResult = Result<VerifiedProgram, Vec<Diagnostic>>;
-
-#[derive(Clone)]
-struct FunctionSignature {
-    id: raw::FunctionId,
-    name: String,
-    parameters: Vec<Ty>,
-    result: Ty,
-    private: bool,
-}
-
-struct FunctionCatalog {
-    modules: Vec<Vec<Option<FunctionSignature>>>,
-}
-
-enum FunctionResolution<'a> {
-    Exact(&'a FunctionSignature),
-    WrongCase,
-    Missing,
-}
-
-impl FunctionCatalog {
-    fn resolve(&self, module: usize, name: &str) -> FunctionResolution<'_> {
-        let Some(signatures) = self.modules.get(module) else {
-            return FunctionResolution::Missing;
-        };
-        if let Some(signature) =
-            signatures.iter().flatten().find(|signature| signature.name == name)
-        {
-            return FunctionResolution::Exact(signature);
-        }
-        if signatures.iter().flatten().any(|signature| signature.name.eq_ignore_ascii_case(name)) {
-            FunctionResolution::WrongCase
-        } else {
-            FunctionResolution::Missing
-        }
-    }
-}
 
 /// Resolves Copy-only aggregate semantics, derives dual layouts, lowers raw IR deterministically,
 /// and immediately invokes the mandatory ownership verifier.
@@ -492,79 +459,6 @@ fn semantic_preflight(input: SemanticInput<'_>, errors: &mut Errors<'_>) {
             program_values = total;
         }
     }
-}
-
-fn build_function_catalog(
-    input: SemanticInput<'_>,
-    declarations: &[Decl],
-    graph: &raw_layout::Graph,
-    node_types: &[Option<Ty>],
-    errors: &mut Errors<'_>,
-) -> FunctionCatalog {
-    let mut modules = Vec::with_capacity(input.syntax().files().len());
-    for (module, file) in input.syntax().files().iter().enumerate() {
-        let mut names = BTreeMap::<String, Span>::new();
-        let mut signatures = Vec::with_capacity(file.functions().len());
-        for (declaration, function) in file.functions().iter().enumerate() {
-            let name_span = span(input.sources(), function.name.span);
-            let folded = function.name.text.to_ascii_lowercase();
-            if function.name.text.eq_ignore_ascii_case("concat") {
-                errors.at(
-                    "ZRYNA-M3002",
-                    name_span,
-                    "function name 'concat' collides with the sealed String builtin",
-                    "rename the function so ordinary calls remain unambiguous",
-                );
-            }
-            if names.insert(folded, name_span).is_some() {
-                errors.at(
-                    "ZRYNA-M3002",
-                    name_span,
-                    format!(
-                        "function '{}' collides under portable ASCII case folding",
-                        function.name.text
-                    ),
-                    "give every module-local function one portable case-insensitive unique name",
-                );
-            }
-            let parameters = function
-                .parameters
-                .iter()
-                .map(|parameter| {
-                    semantic_type(
-                        file,
-                        parameter.type_syntax,
-                        module,
-                        declarations,
-                        graph,
-                        node_types,
-                        errors,
-                    )
-                })
-                .collect::<Option<Vec<_>>>();
-            let result = semantic_type(
-                file,
-                function.result_type,
-                module,
-                declarations,
-                graph,
-                node_types,
-                errors,
-            );
-            signatures.push(parameters.zip(result).map(|(parameters, result)| FunctionSignature {
-                id: raw::FunctionId {
-                    module: raw::ModuleId(u32::try_from(module).unwrap_or(u32::MAX)),
-                    declaration: u32::try_from(declaration).unwrap_or(u32::MAX),
-                },
-                name: function.name.text.clone(),
-                parameters,
-                result,
-                private: function.export_span.is_none(),
-            }));
-        }
-        modules.push(signatures);
-    }
-    FunctionCatalog { modules }
 }
 
 fn preflight_function_resources(
