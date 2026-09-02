@@ -130,6 +130,28 @@ test('v4 preserves const BorrowMut assignment as syntax without assigning write-
   assert.ok(response.result.files[0].type_syntax.some((type) => type.kind.kind === 'borrow-mut'));
 });
 
+test('v4 preserves conditional arm-local borrow scopes without assigning edge semantics', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/conditional-root-borrow.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/conditional-root-borrow.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(32, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  const body = response.result.files[0].functions[0].body;
+  const conditional = body.statements.find((statement) => statement.kind.kind === 'if');
+  assert.ok(conditional);
+  assert.equal(body.blocks[conditional.kind.then_block].statements.length, 1);
+  assert.equal(body.blocks[conditional.kind.else_clause.block].statements.length, 1);
+  assert.ok(response.result.files[0].type_syntax.some((type) => type.kind.kind === 'borrow'));
+  assert.ok(response.result.files[0].type_syntax.some((type) => type.kind.kind === 'borrow-mut'));
+});
+
 test('v4 reserves only the frozen prototype-sensitive names', async () => {
   const text = 'interface then extends ZrynaStruct { arguments: i32; eval: i32; }';
   const [response] = await exchange([analyze(4, text)]);

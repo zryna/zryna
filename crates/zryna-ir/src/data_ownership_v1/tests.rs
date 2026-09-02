@@ -722,6 +722,104 @@ fn shared_borrow_read_program(
     raw
 }
 
+fn conditional_borrow_flow_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+) -> raw::Program {
+    let mut raw = program(sources, linear, linux);
+    let file = sources.verify_file_id(0).expect("entry file");
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    let then_edge = sources.span(file, 10, 11).expect("then edge span");
+    let else_edge = sources.span(file, 20, 21).expect("else edge span");
+    function.entry_export = None;
+    function.places = vec![raw::Place {
+        id: raw::PlaceId(0),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(0),
+    }];
+    function.blocks = vec![
+        raw::Block {
+            id: raw::BlockId(0),
+            parameters: vec![],
+            instructions: vec![
+                raw::Instruction {
+                    result: None,
+                    span,
+                    kind: raw::InstructionKind::InitializePlace {
+                        place: raw::PlaceId(0),
+                        value: raw::ValueId(0),
+                    },
+                },
+                raw::Instruction {
+                    result: Some(raw::ValueDefinition {
+                        id: raw::ValueId(1),
+                        ty: raw::TypeId(0),
+                        span,
+                    }),
+                    span,
+                    kind: raw::InstructionKind::BoolLiteral(true),
+                },
+            ],
+            terminators: vec![raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::Branch {
+                    condition: raw::ValueId(1),
+                    when_true: raw::Edge { target: raw::BlockId(1), arguments: vec![] },
+                    when_false: raw::Edge { target: raw::BlockId(2), arguments: vec![] },
+                },
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(1),
+            parameters: vec![],
+            instructions: vec![],
+            terminators: vec![raw::SpannedTerminator {
+                span: then_edge,
+                kind: raw::Terminator::Jump(raw::Edge {
+                    target: raw::BlockId(3),
+                    arguments: vec![],
+                }),
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(2),
+            parameters: vec![],
+            instructions: vec![],
+            terminators: vec![raw::SpannedTerminator {
+                span: else_edge,
+                kind: raw::Terminator::Jump(raw::Edge {
+                    target: raw::BlockId(3),
+                    arguments: vec![],
+                }),
+            }],
+        },
+        raw::Block {
+            id: raw::BlockId(3),
+            parameters: vec![],
+            instructions: vec![raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: raw::ValueId(2),
+                    ty: raw::TypeId(1),
+                    span,
+                }),
+                span,
+                kind: raw::InstructionKind::CopyFromPlace { place: raw::PlaceId(0) },
+            }],
+            terminators: vec![raw::SpannedTerminator {
+                span,
+                kind: raw::Terminator::Return {
+                    value: raw::ValueId(2),
+                    cleanup: raw::CleanupPlanId(0),
+                },
+            }],
+        },
+    ];
+    raw
+}
+
 #[derive(Clone, Copy)]
 enum SubobjectMoveShape {
     Struct,
@@ -4747,6 +4845,183 @@ fn lexical_borrow_cannot_escape_return_or_trap() {
     assert!(diagnostics.iter().any(|diagnostic| {
         diagnostic.code() == "ZRYNA-I3011"
             && diagnostic.message().contains("borrow remains active at a control-flow edge")
+    }));
+}
+
+#[test]
+fn lexical_borrow_cannot_cross_branch_or_jump_edges() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let begin = |span| raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+            id: raw::BorrowId(0),
+            place: raw::PlaceId(0),
+            access: raw::BorrowAccess::Shared,
+            span,
+        }),
+    };
+
+    let mut branch = conditional_borrow_flow_program(&sources, &linear, &linux);
+    let span = branch.modules[0].functions[0].span;
+    branch.modules[0].functions[0].blocks[0].instructions.push(begin(span));
+    let diagnostics = verify(branch, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("borrow crossing branch");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow remains active at a control-flow edge")
+    }));
+
+    let mut jump = conditional_borrow_flow_program(&sources, &linear, &linux);
+    jump.modules[0].functions[0].blocks[1].instructions.push(begin(span));
+    let diagnostics = verify(jump, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("borrow crossing jump");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow remains active at a control-flow edge")
+    }));
+
+    let mut successor_end = conditional_borrow_flow_program(&sources, &linear, &linux);
+    successor_end.modules[0].functions[0].blocks[1].instructions.push(begin(span));
+    successor_end.modules[0].functions[0].blocks[3].instructions.insert(
+        0,
+        raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+        },
+    );
+    let diagnostics = verify(successor_end, &sources, entry, linear.clone(), linux.clone())
+        .expect_err("borrow ended only in successor");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow remains active at a control-flow edge")
+    }));
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow end uses an inactive authority")
+    }));
+
+    let mut end_only = conditional_borrow_flow_program(&sources, &linear, &linux);
+    end_only.modules[0].functions[0].blocks[2].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::EndBorrow { borrow: raw::BorrowId(0) },
+    });
+    let diagnostics =
+        verify(end_only, &sources, entry, linear, linux).expect_err("end-only conditional arm");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3011"
+            && diagnostic.message().contains("borrow end uses an inactive authority")
+    }));
+}
+
+#[test]
+fn conditional_join_rejects_unequal_ordinary_state() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let mut raw = conditional_borrow_flow_program(&sources, &linear, &linux);
+    let span = raw.modules[0].functions[0].span;
+    let function = &mut raw.modules[0].functions[0];
+    function.places.push(raw::Place {
+        id: raw::PlaceId(1),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(1),
+    });
+    function.blocks[1].instructions.push(raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::InitializePlace {
+            place: raw::PlaceId(1),
+            value: raw::ValueId(0),
+        },
+    });
+    let diagnostics =
+        verify(raw, &sources, entry, linear, linux).expect_err("unequal conditional state");
+    assert!(diagnostics.iter().any(|diagnostic| {
+        diagnostic.code() == "ZRYNA-I3010"
+            && diagnostic.message().contains("state differs across a CFG join")
+    }));
+}
+
+#[test]
+fn conditional_join_diagnostic_is_independent_of_branch_target_order() {
+    let (sources, linear, linux) = authorities();
+    let entry = sources.verify_file_id(0).expect("entry");
+    let make_hostile = || {
+        let mut raw = conditional_borrow_flow_program(&sources, &linear, &linux);
+        let span = raw.modules[0].functions[0].span;
+        let function = &mut raw.modules[0].functions[0];
+        function.places.extend([
+            raw::Place {
+                id: raw::PlaceId(1),
+                ty: raw::TypeId(1),
+                span,
+                kind: raw::PlaceKind::Local(1),
+            },
+            raw::Place {
+                id: raw::PlaceId(2),
+                ty: raw::TypeId(1),
+                span,
+                kind: raw::PlaceKind::Local(2),
+            },
+        ]);
+        for (block, place) in [(1, raw::PlaceId(1)), (2, raw::PlaceId(2))] {
+            function.blocks[block].instructions.push(raw::Instruction {
+                result: None,
+                span,
+                kind: raw::InstructionKind::InitializePlace { place, value: raw::ValueId(0) },
+            });
+        }
+        function.blocks[1].instructions.push(raw::Instruction {
+            result: None,
+            span,
+            kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                id: raw::BorrowId(0),
+                place: raw::PlaceId(0),
+                access: raw::BorrowAccess::Shared,
+                span,
+            }),
+        });
+        raw
+    };
+    let diagnostic_trace = |raw: raw::Program,
+                            linear: zryna_layout::VerifiedLayouts,
+                            linux: zryna_layout::VerifiedLayouts| {
+        verify(raw, &sources, entry, linear, linux)
+            .expect_err("unequal join")
+            .into_iter()
+            .map(|diagnostic| {
+                let primary = match diagnostic.primary() {
+                    PrimaryLocation::Source { span } => Some((span.start(), span.end())),
+                    _ => None,
+                };
+                (diagnostic.code().to_owned(), diagnostic.message().to_owned(), primary)
+            })
+            .collect::<Vec<_>>()
+    };
+    let forward = make_hostile();
+    let mut reversed = make_hostile();
+    let raw::Terminator::Branch { when_true, when_false, .. } =
+        &mut reversed.modules[0].functions[0].blocks[0].terminators[0].kind
+    else {
+        panic!("entry branch")
+    };
+    std::mem::swap(when_true, when_false);
+    let forward = diagnostic_trace(forward, linear.clone(), linux.clone());
+    let reversed = diagnostic_trace(reversed, linear, linux);
+    assert_eq!(forward, reversed, "edge order cannot change any ordered diagnostic");
+    assert!(forward.iter().any(|(code, message, primary)| {
+        code == "ZRYNA-I3011"
+            && message.contains("borrow remains active at a control-flow edge")
+            && *primary == Some((10, 11))
+    }));
+    assert!(forward.iter().any(|(code, message, primary)| {
+        code == "ZRYNA-I3010"
+            && message.contains("state differs across a CFG join")
+            && *primary == Some((20, 21))
     }));
 }
 

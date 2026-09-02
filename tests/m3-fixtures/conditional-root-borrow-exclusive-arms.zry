@@ -1,0 +1,17 @@
+function choose(): bool {
+  let root: bool = true;
+  if (root) {
+    {
+      const thenAlias: BorrowMut<bool> = borrowMut(root);
+      thenAlias = false;
+      const thenValue: bool = thenAlias;
+    }
+  } else {
+    {
+      const elseAlias: BorrowMut<bool> = borrowMut(root);
+      elseAlias = true;
+      const elseValue: bool = elseAlias;
+    }
+  }
+  return root;
+}

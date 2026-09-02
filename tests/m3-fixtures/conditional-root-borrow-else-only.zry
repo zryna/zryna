@@ -1,0 +1,13 @@
+function choose(): bool {
+  const root: bool = true;
+  if (root) {
+    {
+    }
+  } else {
+    {
+      const alias: Borrow<bool> = borrow(root);
+      const value: bool = alias;
+    }
+  }
+  return root;
+}

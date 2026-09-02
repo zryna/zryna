@@ -2010,12 +2010,29 @@ struct RootBorrowPlan {
     root_ty: Ty,
     root_literal: RootBorrowLiteral,
     root_at: Span,
+    shape: RootBorrowShape,
+    aliases: usize,
+    reads: usize,
+    writes: usize,
+    return_at: Span,
+}
+
+struct RootBorrowArmPlan {
     steps: Vec<RootBorrowStep>,
     aliases: usize,
     reads: usize,
     writes: usize,
     block_exit: Span,
-    return_at: Span,
+}
+
+enum RootBorrowShape {
+    Straight(RootBorrowArmPlan),
+    Conditional {
+        condition_at: Span,
+        branch_at: Span,
+        then_arm: RootBorrowArmPlan,
+        else_arm: RootBorrowArmPlan,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -2023,46 +2040,117 @@ enum RootBorrowBudgetLimit {
     Values,
     Places,
     Transitions,
+    Blocks,
+    Edges,
     ActiveBorrows,
     CleanupPlans,
 }
 
-fn root_borrow_budget_violation(
+#[derive(Clone, Copy, Default)]
+struct RootBorrowResources {
+    values: usize,
+    places: usize,
+    transitions: usize,
+    blocks: usize,
+    edges: usize,
+    active_peak: usize,
+    cleanup_plans: usize,
+}
+
+fn straight_root_borrow_budget_violation(
     aliases: usize,
     reads: usize,
     writes: usize,
 ) -> Option<RootBorrowBudgetLimit> {
-    let values = reads.saturating_add(writes).saturating_add(2);
-    let places = reads.saturating_add(1);
-    let transitions = aliases
-        .saturating_mul(2)
-        .saturating_add(reads.saturating_mul(2))
-        .saturating_add(writes.saturating_mul(2))
-        .saturating_add(3);
-    if values > ir::MAX_VALUES_PER_FUNCTION {
+    root_borrow_resource_violation(RootBorrowResources {
+        values: reads.saturating_add(writes).saturating_add(2),
+        places: reads.saturating_add(1),
+        transitions: aliases
+            .saturating_mul(2)
+            .saturating_add(reads.saturating_mul(2))
+            .saturating_add(writes.saturating_mul(2))
+            .saturating_add(3),
+        blocks: 1,
+        edges: 0,
+        active_peak: aliases,
+        cleanup_plans: 1,
+    })
+}
+
+fn root_borrow_resource_violation(resources: RootBorrowResources) -> Option<RootBorrowBudgetLimit> {
+    if resources.values > ir::MAX_VALUES_PER_FUNCTION {
         Some(RootBorrowBudgetLimit::Values)
-    } else if places > ir::MAX_PLACES_PER_FUNCTION {
+    } else if resources.places > ir::MAX_PLACES_PER_FUNCTION {
         Some(RootBorrowBudgetLimit::Places)
-    } else if transitions > ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION {
+    } else if resources.transitions > ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION {
         Some(RootBorrowBudgetLimit::Transitions)
-    } else if aliases > ir::MAX_ACTIVE_BORROWS_PER_FUNCTION {
+    } else if resources.blocks > ir::MAX_BLOCKS_PER_FUNCTION {
+        Some(RootBorrowBudgetLimit::Blocks)
+    } else if resources.edges > ir::MAX_CFG_EDGES_PER_FUNCTION {
+        Some(RootBorrowBudgetLimit::Edges)
+    } else if resources.active_peak > ir::MAX_ACTIVE_BORROWS_PER_FUNCTION {
         Some(RootBorrowBudgetLimit::ActiveBorrows)
-    } else if 1 > ir::MAX_CLEANUP_PLANS_PER_FUNCTION {
+    } else if resources.cleanup_plans > ir::MAX_CLEANUP_PLANS_PER_FUNCTION {
         Some(RootBorrowBudgetLimit::CleanupPlans)
     } else {
         None
     }
 }
 
+fn conditional_root_borrow_budget_violation(
+    then_aliases: usize,
+    then_reads: usize,
+    then_writes: usize,
+    else_aliases: usize,
+    else_reads: usize,
+    else_writes: usize,
+) -> Option<RootBorrowBudgetLimit> {
+    root_borrow_resource_violation(conditional_root_borrow_resources(
+        then_aliases,
+        then_reads,
+        then_writes,
+        else_aliases,
+        else_reads,
+        else_writes,
+    ))
+}
+
+fn conditional_root_borrow_resources(
+    then_aliases: usize,
+    then_reads: usize,
+    then_writes: usize,
+    else_aliases: usize,
+    else_reads: usize,
+    else_writes: usize,
+) -> RootBorrowResources {
+    let aliases = then_aliases.saturating_add(else_aliases);
+    let reads = then_reads.saturating_add(else_reads);
+    let writes = then_writes.saturating_add(else_writes);
+    RootBorrowResources {
+        values: reads.saturating_add(writes).saturating_add(3),
+        places: 1,
+        transitions: aliases
+            .saturating_mul(2)
+            .saturating_add(reads)
+            .saturating_add(writes.saturating_mul(2))
+            .saturating_add(4),
+        blocks: 4,
+        edges: 4,
+        active_peak: then_aliases.max(else_aliases),
+        cleanup_plans: 1,
+    }
+}
+
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-fn plan_private_root_borrow_function<'a>(
+fn plan_private_straight_root_borrow_function<'a>(
     input: SemanticInput<'a>,
     module: usize,
-    function: &'a syntax::RawFunctionSyntax,
+    function: &syntax::RawFunctionSyntax,
     declarations: &'a [Decl],
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     result: Ty,
+    enforce_straight_budget: bool,
     errors: &mut Errors<'a>,
 ) -> Option<RootBorrowPlan> {
     let at = span(input.sources(), function.span);
@@ -2508,11 +2596,16 @@ fn plan_private_root_borrow_function<'a>(
         );
         return None;
     }
-    if let Some(limit) = root_borrow_budget_violation(aliases.len(), reads, writes) {
+    if let Some(limit) = enforce_straight_budget
+        .then(|| straight_root_borrow_budget_violation(aliases.len(), reads, writes))
+        .flatten()
+    {
         let label = match limit {
             RootBorrowBudgetLimit::Values => "derived values",
             RootBorrowBudgetLimit::Places => "derived places",
             RootBorrowBudgetLimit::Transitions => "derived ownership transitions",
+            RootBorrowBudgetLimit::Blocks => "derived blocks",
+            RootBorrowBudgetLimit::Edges => "derived control-flow edges",
             RootBorrowBudgetLimit::ActiveBorrows => "simultaneously active borrows",
             RootBorrowBudgetLimit::CleanupPlans => "derived cleanup plans",
         };
@@ -2528,13 +2621,380 @@ fn plan_private_root_borrow_function<'a>(
         root_ty,
         root_literal,
         root_at: span(input.sources(), root_local.span),
-        steps,
+        shape: RootBorrowShape::Straight(RootBorrowArmPlan {
+            steps,
+            aliases: aliases.len(),
+            reads,
+            writes,
+            block_exit: span(input.sources(), nested.close_brace_span),
+        }),
         aliases: aliases.len(),
         reads,
         writes,
-        block_exit: span(input.sources(), nested.close_brace_span),
         return_at: span(input.sources(), return_statement.span),
     })
+}
+
+fn shift_root_borrow_arm_ids(arm: &mut RootBorrowArmPlan, offset: usize) -> Option<()> {
+    let offset = u32::try_from(offset).ok()?;
+    for step in &mut arm.steps {
+        let id = match step {
+            RootBorrowStep::Begin { id, .. }
+            | RootBorrowStep::Read { id, .. }
+            | RootBorrowStep::Write { id, .. } => id,
+            RootBorrowStep::OwnerRead { .. } => continue,
+        };
+        id.0 = id.0.checked_add(offset)?;
+    }
+    Some(())
+}
+
+fn conditional_arm_scope_statement<'a>(
+    function: &'a syntax::RawFunctionSyntax,
+    block_id: u32,
+    sources: &SourceMap,
+    errors: &mut Errors<'a>,
+) -> Option<(u32, bool)> {
+    let block = usize::try_from(block_id).ok().and_then(|index| function.body.blocks.get(index))?;
+    let [scope_statement_id] = block.statements.as_slice() else {
+        errors.at(
+            "ZRYNA-M3017",
+            span(sources, block.span),
+            "conditional borrow arms require exactly one explicit lexical scope",
+            "put one nested borrow block in each then and else arm",
+        );
+        return None;
+    };
+    let scope_statement = usize::try_from(*scope_statement_id)
+        .ok()
+        .and_then(|index| function.body.statements.get(index))?;
+    let RawStatementKind::Block { block: scope_block_id } = scope_statement.kind else {
+        errors.at(
+            "ZRYNA-M3017",
+            span(sources, scope_statement.span),
+            "conditional borrow arms require one nested lexical block",
+            "wrap every arm-local borrow in one explicit nested block",
+        );
+        return None;
+    };
+    let scope =
+        usize::try_from(scope_block_id).ok().and_then(|index| function.body.blocks.get(index))?;
+    Some((*scope_statement_id, scope.statements.is_empty()))
+}
+
+fn synthetic_straight_arm(
+    function: &syntax::RawFunctionSyntax,
+    root_local: u32,
+    scope_statement: u32,
+    return_statement: u32,
+) -> Option<syntax::RawFunctionSyntax> {
+    let mut synthetic = function.clone();
+    let root = usize::try_from(function.body.root_block)
+        .ok()
+        .and_then(|index| function.body.blocks.get(index))?;
+    let mut synthetic_root = root.clone();
+    synthetic_root.statements = vec![root_local, scope_statement, return_statement];
+    synthetic.body.root_block = u32::try_from(synthetic.body.blocks.len()).ok()?;
+    synthetic.body.blocks.push(synthetic_root);
+    Some(synthetic)
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn plan_private_root_borrow_function<'a>(
+    input: SemanticInput<'a>,
+    module: usize,
+    function: &'a syntax::RawFunctionSyntax,
+    declarations: &'a [Decl],
+    graph: &'a raw_layout::Graph,
+    node_types: &'a [Option<Ty>],
+    result: Ty,
+    errors: &mut Errors<'a>,
+) -> Option<RootBorrowPlan> {
+    let root = usize::try_from(function.body.root_block)
+        .ok()
+        .and_then(|index| function.body.blocks.get(index))?;
+    let [root_local_id, middle_id, return_id] = root.statements.as_slice() else {
+        return plan_private_straight_root_borrow_function(
+            input,
+            module,
+            function,
+            declarations,
+            graph,
+            node_types,
+            result,
+            true,
+            errors,
+        );
+    };
+    let middle =
+        usize::try_from(*middle_id).ok().and_then(|index| function.body.statements.get(index))?;
+    let RawStatementKind::If { condition, then_block, else_clause, .. } = &middle.kind else {
+        return plan_private_straight_root_borrow_function(
+            input,
+            module,
+            function,
+            declarations,
+            graph,
+            node_types,
+            result,
+            true,
+            errors,
+        );
+    };
+    let Some(else_clause) = else_clause else {
+        errors.at(
+            "ZRYNA-M3017",
+            span(input.sources(), middle.span),
+            "conditional borrowing requires an explicit else arm",
+            "discharge one complete lexical scope in both conditional arms",
+        );
+        return None;
+    };
+    let root_local = usize::try_from(*root_local_id)
+        .ok()
+        .and_then(|index| function.body.statements.get(index))?;
+    let RawStatementKind::LocalDeclaration { name: root_name, .. } = &root_local.kind else {
+        errors.at(
+            "ZRYNA-M3017",
+            span(input.sources(), root_local.span),
+            "conditional borrowing requires one literal-initialized bool root",
+            "declare the bool root before the conditional",
+        );
+        return None;
+    };
+    let condition_expression =
+        usize::try_from(*condition).ok().and_then(|index| function.body.expressions.get(index))?;
+    let RawExpressionKind::Reference { name: condition_name } = &condition_expression.kind else {
+        errors.at(
+            "ZRYNA-M3017",
+            span(input.sources(), condition_expression.span),
+            "conditional borrowing requires the exact bool root as its condition",
+            "branch directly on the literal-initialized bool root",
+        );
+        return None;
+    };
+    if condition_name.text != root_name.text {
+        errors.at(
+            "ZRYNA-M3017",
+            span(input.sources(), condition_name.span),
+            "conditional borrowing requires the exact bool root as its condition",
+            "branch directly on the literal-initialized bool root",
+        );
+        return None;
+    }
+    let (then_scope, then_empty) =
+        conditional_arm_scope_statement(function, *then_block, input.sources(), errors)?;
+    let (else_scope, else_empty) =
+        conditional_arm_scope_statement(function, else_clause.block, input.sources(), errors)?;
+    if then_empty && else_empty {
+        errors.at(
+            "ZRYNA-M3017",
+            span(input.sources(), middle.span),
+            "conditional borrowing requires at least one complete lexical borrow",
+            "declare and use one arm-local Borrow or BorrowMut alias",
+        );
+        return None;
+    }
+    let plan_arm = |scope_statement: u32, errors: &mut Errors<'a>| {
+        let synthetic =
+            synthetic_straight_arm(function, *root_local_id, scope_statement, *return_id)?;
+        plan_private_straight_root_borrow_function(
+            input,
+            module,
+            &synthetic,
+            declarations,
+            graph,
+            node_types,
+            result,
+            false,
+            errors,
+        )
+    };
+    let mut then_plan = if then_empty { None } else { Some(plan_arm(then_scope, errors)?) };
+    let mut else_plan = if else_empty { None } else { Some(plan_arm(else_scope, errors)?) };
+    let common = then_plan.as_ref().or(else_plan.as_ref())?;
+    let common_root_ty = common.root_ty;
+    let common_root_literal = common.root_literal;
+    let common_root_at = common.root_at;
+    let common_return_at = common.return_at;
+    if common_root_ty.category != TypeCategory::Bool {
+        errors.at(
+            "ZRYNA-M3017",
+            span(input.sources(), root_local.span),
+            "conditional borrowing requires one literal-initialized bool root",
+            "use the same bool root for the condition, arm-local borrows, and final return",
+        );
+        return None;
+    }
+    let empty_arm = |scope_statement: u32| {
+        let statement = usize::try_from(scope_statement)
+            .ok()
+            .and_then(|index| function.body.statements.get(index))?;
+        let RawStatementKind::Block { block } = statement.kind else { return None };
+        let block =
+            usize::try_from(block).ok().and_then(|index| function.body.blocks.get(index))?;
+        Some(RootBorrowArmPlan {
+            steps: Vec::new(),
+            aliases: 0,
+            reads: 0,
+            writes: 0,
+            block_exit: span(input.sources(), block.close_brace_span),
+        })
+    };
+    let then_arm = match then_plan.take() {
+        Some(RootBorrowPlan { shape: RootBorrowShape::Straight(arm), .. }) => arm,
+        Some(_) => unreachable!("synthetic arm is straight-line"),
+        None => empty_arm(then_scope)?,
+    };
+    let mut else_arm = match else_plan.take() {
+        Some(RootBorrowPlan { shape: RootBorrowShape::Straight(arm), .. }) => arm,
+        Some(_) => unreachable!("synthetic arm is straight-line"),
+        None => empty_arm(else_scope)?,
+    };
+    shift_root_borrow_arm_ids(&mut else_arm, then_arm.aliases)?;
+    if let Some(limit) = conditional_root_borrow_budget_violation(
+        then_arm.aliases,
+        then_arm.reads,
+        then_arm.writes,
+        else_arm.aliases,
+        else_arm.reads,
+        else_arm.writes,
+    ) {
+        let label = match limit {
+            RootBorrowBudgetLimit::Values => "derived values",
+            RootBorrowBudgetLimit::Places => "derived places",
+            RootBorrowBudgetLimit::Transitions => "derived ownership transitions",
+            RootBorrowBudgetLimit::Blocks => "derived blocks",
+            RootBorrowBudgetLimit::Edges => "derived control-flow edges",
+            RootBorrowBudgetLimit::ActiveBorrows => "simultaneously active borrows",
+            RootBorrowBudgetLimit::CleanupPlans => "derived cleanup plans",
+        };
+        errors.at(
+            "ZRYNA-M3201",
+            span(input.sources(), middle.span),
+            format!("conditional borrowing exceeds the per-function limit for {label}"),
+            "reduce arm-local aliases or Copy reads before lowering",
+        );
+        return None;
+    }
+    let aliases = then_arm.aliases.checked_add(else_arm.aliases)?;
+    let reads = then_arm.reads.checked_add(else_arm.reads)?;
+    let writes = then_arm.writes.checked_add(else_arm.writes)?;
+    Some(RootBorrowPlan {
+        root_ty: common_root_ty,
+        root_literal: common_root_literal,
+        root_at: common_root_at,
+        shape: RootBorrowShape::Conditional {
+            condition_at: span(input.sources(), condition_expression.span),
+            branch_at: span(input.sources(), middle.span),
+            then_arm,
+            else_arm,
+        },
+        aliases,
+        reads,
+        writes,
+        return_at: common_return_at,
+    })
+}
+
+fn emit_root_borrow_arm(
+    arm: RootBorrowArmPlan,
+    root_place: raw::PlaceId,
+    materialize_reads: bool,
+    values: &mut u32,
+    places: &mut Vec<raw::Place>,
+    instructions: &mut Vec<raw::Instruction>,
+) -> Option<()> {
+    let mut begun = Vec::with_capacity(arm.aliases);
+    for step in arm.steps {
+        match step {
+            RootBorrowStep::Begin { id, access, at } => {
+                instructions.push(raw::Instruction {
+                    result: None,
+                    span: at,
+                    kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
+                        id,
+                        place: root_place,
+                        access,
+                        span: at,
+                    }),
+                });
+                begun.push(id);
+            }
+            RootBorrowStep::Read { id, ty, at } => {
+                let value = raw::ValueId(*values);
+                *values = values.checked_add(1)?;
+                instructions.push(raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+                    span: at,
+                    kind: raw::InstructionKind::BorrowRead { borrow: id },
+                });
+                if materialize_reads {
+                    let place = raw::PlaceId(u32::try_from(places.len()).ok()?);
+                    places.push(raw::Place {
+                        id: place,
+                        ty: ty.ir,
+                        span: at,
+                        kind: raw::PlaceKind::Local(place.0),
+                    });
+                    instructions.push(raw::Instruction {
+                        result: None,
+                        span: at,
+                        kind: raw::InstructionKind::InitializePlace { place, value },
+                    });
+                }
+            }
+            RootBorrowStep::OwnerRead { ty, at } => {
+                let value = raw::ValueId(*values);
+                *values = values.checked_add(1)?;
+                instructions.push(raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+                    span: at,
+                    kind: raw::InstructionKind::CopyFromPlace { place: root_place },
+                });
+                if materialize_reads {
+                    let place = raw::PlaceId(u32::try_from(places.len()).ok()?);
+                    places.push(raw::Place {
+                        id: place,
+                        ty: ty.ir,
+                        span: at,
+                        kind: raw::PlaceKind::Local(place.0),
+                    });
+                    instructions.push(raw::Instruction {
+                        result: None,
+                        span: at,
+                        kind: raw::InstructionKind::InitializePlace { place, value },
+                    });
+                }
+            }
+            RootBorrowStep::Write { id, literal, ty, at } => {
+                let value = raw::ValueId(*values);
+                *values = values.checked_add(1)?;
+                let kind = match literal {
+                    RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
+                    RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
+                };
+                instructions.push(raw::Instruction {
+                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+                    span: at,
+                    kind,
+                });
+                instructions.push(raw::Instruction {
+                    result: None,
+                    span: at,
+                    kind: raw::InstructionKind::BorrowWrite { borrow: id, value },
+                });
+            }
+        }
+    }
+    for borrow in begun.into_iter().rev() {
+        instructions.push(raw::Instruction {
+            result: None,
+            span: arm.block_exit,
+            kind: raw::InstructionKind::EndBorrow { borrow },
+        });
+    }
+    Some(())
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
@@ -2559,138 +3019,174 @@ fn lower_private_root_borrow_function<'a>(
         result,
         errors,
     )?;
+    let RootBorrowPlan { root_ty, root_literal, root_at, shape, aliases, reads, writes, return_at } =
+        plan;
     let mut values = 0_u32;
     let root_value = raw::ValueId(values);
-    values += 1;
+    values = values.checked_add(1)?;
     let root_place = raw::PlaceId(0);
-    let mut instructions = Vec::with_capacity(
-        plan.aliases
-            .checked_mul(2)?
-            .checked_add(plan.reads.checked_mul(2)?)?
-            .checked_add(plan.writes.checked_mul(2)?)?
-            .checked_add(3)?,
-    );
-    let literal_kind = match plan.root_literal {
+    let instruction_capacity = aliases
+        .checked_mul(2)?
+        .checked_add(reads.checked_mul(2)?)?
+        .checked_add(writes.checked_mul(2)?)?
+        .checked_add(4)?;
+    let literal_kind = match root_literal {
         RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
         RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
     };
-    instructions.push(raw::Instruction {
-        result: Some(raw::ValueDefinition {
-            id: root_value,
-            ty: plan.root_ty.ir,
-            span: plan.root_at,
-        }),
-        span: plan.root_at,
+    let root_literal_instruction = raw::Instruction {
+        result: Some(raw::ValueDefinition { id: root_value, ty: root_ty.ir, span: root_at }),
+        span: root_at,
         kind: literal_kind,
-    });
-    instructions.push(raw::Instruction {
+    };
+    let root_initialize_instruction = raw::Instruction {
         result: None,
-        span: plan.root_at,
+        span: root_at,
         kind: raw::InstructionKind::InitializePlace { place: root_place, value: root_value },
-    });
-    let mut places = Vec::with_capacity(plan.reads + 1);
+    };
+    let mut places = Vec::with_capacity(reads + 1);
     places.push(raw::Place {
         id: root_place,
-        ty: plan.root_ty.ir,
-        span: plan.root_at,
+        ty: root_ty.ir,
+        span: root_at,
         kind: raw::PlaceKind::Local(0),
     });
-    let mut begun = Vec::with_capacity(plan.aliases);
-    for step in plan.steps {
-        match step {
-            RootBorrowStep::Begin { id, access, at } => {
-                instructions.push(raw::Instruction {
-                    result: None,
-                    span: at,
-                    kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
-                        id,
-                        place: root_place,
-                        access,
-                        span: at,
-                    }),
-                });
-                begun.push(id);
-            }
-            RootBorrowStep::Read { id, ty, at } => {
-                let value = raw::ValueId(values);
-                values += 1;
-                instructions.push(raw::Instruction {
-                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
-                    span: at,
-                    kind: raw::InstructionKind::BorrowRead { borrow: id },
-                });
-                let place = raw::PlaceId(u32::try_from(places.len()).ok()?);
-                places.push(raw::Place {
-                    id: place,
-                    ty: ty.ir,
-                    span: at,
-                    kind: raw::PlaceKind::Local(place.0),
-                });
-                instructions.push(raw::Instruction {
-                    result: None,
-                    span: at,
-                    kind: raw::InstructionKind::InitializePlace { place, value },
-                });
-            }
-            RootBorrowStep::OwnerRead { ty, at } => {
-                let value = raw::ValueId(values);
-                values += 1;
-                instructions.push(raw::Instruction {
-                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
-                    span: at,
-                    kind: raw::InstructionKind::CopyFromPlace { place: root_place },
-                });
-                let place = raw::PlaceId(u32::try_from(places.len()).ok()?);
-                places.push(raw::Place {
-                    id: place,
-                    ty: ty.ir,
-                    span: at,
-                    kind: raw::PlaceKind::Local(place.0),
-                });
-                instructions.push(raw::Instruction {
-                    result: None,
-                    span: at,
-                    kind: raw::InstructionKind::InitializePlace { place, value },
-                });
-            }
-            RootBorrowStep::Write { id, literal, ty, at } => {
-                let value = raw::ValueId(values);
-                values += 1;
-                let kind = match literal {
-                    RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
-                    RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
-                };
-                instructions.push(raw::Instruction {
-                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
-                    span: at,
-                    kind,
-                });
-                instructions.push(raw::Instruction {
-                    result: None,
-                    span: at,
-                    kind: raw::InstructionKind::BorrowWrite { borrow: id, value },
-                });
-            }
-        }
-    }
-    for borrow in begun.into_iter().rev() {
-        instructions.push(raw::Instruction {
-            result: None,
-            span: plan.block_exit,
-            kind: raw::InstructionKind::EndBorrow { borrow },
-        });
-    }
-    let returned = raw::ValueId(values);
-    instructions.push(raw::Instruction {
-        result: Some(raw::ValueDefinition {
-            id: returned,
-            ty: plan.root_ty.ir,
-            span: plan.return_at,
-        }),
-        span: plan.return_at,
-        kind: raw::InstructionKind::CopyFromPlace { place: root_place },
-    });
     let cleanup = raw::CleanupPlanId(0);
+    let blocks = match shape {
+        RootBorrowShape::Straight(arm) => {
+            let mut instructions = Vec::with_capacity(instruction_capacity);
+            instructions.push(root_literal_instruction);
+            instructions.push(root_initialize_instruction);
+            emit_root_borrow_arm(
+                arm,
+                root_place,
+                true,
+                &mut values,
+                &mut places,
+                &mut instructions,
+            )?;
+            let returned = raw::ValueId(values);
+            values = values.checked_add(1)?;
+            instructions.push(raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: returned,
+                    ty: root_ty.ir,
+                    span: return_at,
+                }),
+                span: return_at,
+                kind: raw::InstructionKind::CopyFromPlace { place: root_place },
+            });
+            vec![raw::Block {
+                id: raw::BlockId(0),
+                parameters: Vec::new(),
+                instructions,
+                terminators: vec![raw::SpannedTerminator {
+                    span: return_at,
+                    kind: raw::Terminator::Return { value: returned, cleanup },
+                }],
+            }]
+        }
+        RootBorrowShape::Conditional { condition_at, branch_at, then_arm, else_arm } => {
+            let mut entry = Vec::with_capacity(3);
+            entry.push(root_literal_instruction);
+            entry.push(root_initialize_instruction);
+            let condition = raw::ValueId(values);
+            values = values.checked_add(1)?;
+            entry.push(raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: condition,
+                    ty: root_ty.ir,
+                    span: condition_at,
+                }),
+                span: condition_at,
+                kind: raw::InstructionKind::CopyFromPlace { place: root_place },
+            });
+            let mut then_instructions = Vec::with_capacity(instruction_capacity);
+            emit_root_borrow_arm(
+                then_arm,
+                root_place,
+                false,
+                &mut values,
+                &mut places,
+                &mut then_instructions,
+            )?;
+            let mut else_instructions = Vec::with_capacity(instruction_capacity);
+            emit_root_borrow_arm(
+                else_arm,
+                root_place,
+                false,
+                &mut values,
+                &mut places,
+                &mut else_instructions,
+            )?;
+            let returned = raw::ValueId(values);
+            values = values.checked_add(1)?;
+            let join_instructions = vec![raw::Instruction {
+                result: Some(raw::ValueDefinition {
+                    id: returned,
+                    ty: root_ty.ir,
+                    span: return_at,
+                }),
+                span: return_at,
+                kind: raw::InstructionKind::CopyFromPlace { place: root_place },
+            }];
+            vec![
+                raw::Block {
+                    id: raw::BlockId(0),
+                    parameters: Vec::new(),
+                    instructions: entry,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: branch_at,
+                        kind: raw::Terminator::Branch {
+                            condition,
+                            when_true: raw::Edge { target: raw::BlockId(1), arguments: Vec::new() },
+                            when_false: raw::Edge {
+                                target: raw::BlockId(2),
+                                arguments: Vec::new(),
+                            },
+                        },
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(1),
+                    parameters: Vec::new(),
+                    instructions: then_instructions,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: branch_at,
+                        kind: raw::Terminator::Jump(raw::Edge {
+                            target: raw::BlockId(3),
+                            arguments: Vec::new(),
+                        }),
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(2),
+                    parameters: Vec::new(),
+                    instructions: else_instructions,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: branch_at,
+                        kind: raw::Terminator::Jump(raw::Edge {
+                            target: raw::BlockId(3),
+                            arguments: Vec::new(),
+                        }),
+                    }],
+                },
+                raw::Block {
+                    id: raw::BlockId(3),
+                    parameters: Vec::new(),
+                    instructions: join_instructions,
+                    terminators: vec![raw::SpannedTerminator {
+                        span: return_at,
+                        kind: raw::Terminator::Return { value: returned, cleanup },
+                    }],
+                },
+            ]
+        }
+    };
+    debug_assert_eq!(
+        usize::try_from(values).ok(),
+        Some(reads + writes + if blocks.len() == 1 { 2 } else { 3 })
+    );
     Some(raw::Function {
         id: raw::FunctionId {
             module: raw::ModuleId(u32::try_from(module).ok()?),
@@ -2700,17 +3196,9 @@ fn lower_private_root_borrow_function<'a>(
         span: span(input.sources(), function.span),
         parameters: Vec::new(),
         borrow_parameters: Vec::new(),
-        result: plan.root_ty.ir,
+        result: root_ty.ir,
         places,
-        blocks: vec![raw::Block {
-            id: raw::BlockId(0),
-            parameters: Vec::new(),
-            instructions,
-            terminators: vec![raw::SpannedTerminator {
-                span: plan.return_at,
-                kind: raw::Terminator::Return { value: returned, cleanup },
-            }],
-        }],
+        blocks,
         cleanup_plans: vec![raw::CleanupPlan {
             id: cleanup,
             span: span(input.sources(), function.body.span),

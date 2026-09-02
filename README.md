@@ -135,8 +135,12 @@ The repository currently establishes and tests:
   mutable `bool` or `i32` root: const-alias assignment is write-through, exact Copy reads and
   writes lower to verified borrow authority, owner access is hidden until reverse lexical end, and
   shared-from-shared reborrow resolves to the same root. The complete shared/exclusive conflict
-  matrix and resources are preflighted before IR construction. Mutable-from-shared, every
-  reborrow from exclusive, projections, calls, control flow, lifetime shortening, and every
+  matrix and resources are preflighted before IR construction. One canonical private bool-root
+  conditional now discharges complete shared, exclusive, or mixed arm-local lexical scopes before
+  four fixed branch/jump edges and rejoins without borrow block parameters or edge arguments. A
+  complete borrow in only one arm is valid; arm-local value and transition costs sum while
+  active-borrow capacity uses the larger arm. Mutable-from-shared, every reborrow from exclusive, projections,
+  calls, loops, nested/repeated conditionals, lifetime shortening, and every
   runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
