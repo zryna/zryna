@@ -277,10 +277,13 @@ root conflict matrix, one shared-from-shared reborrow, deterministic reverse lex
 post-scope owner reuse. Issue #117 adds one private bool-root conditional with canonical
 entry/then/else/join blocks, complete reverse arm discharge before each jump, dense source-ordered
 borrow identities, exact summed arm costs, maximum-per-arm active capacity, and no borrow phi or
-edge authority. Issue #121 adds one fixed preheader/header/body/exit bool-root loop whose body
+edge authority. Issue #120 adds canonical recursively Copy Struct-field and constant fixed-array
+borrowing: static siblings are disjoint, same/ancestor/descendant paths overlap, projected
+resources are preflighted exactly, and dynamic/Vec/enum/non-Copy projections fail closed. Issue
+#121 adds one fixed preheader/header/body/exit bool-root loop whose body
 reuses one static dense authority plan, reverse-ends it before every backedge, restores exact root
 owner/initialization state, and carries no borrow authority, value block parameter, or edge
-argument. The remaining dependency-ordered slices retain projected, call, nested/repeated control flow, owned-root,
+argument. The remaining dependency-ordered slices retain call, nested/repeated control flow, owned-root,
 runtime, backend, and public-profile work.
 
 | Issue | Gate                                                                 | Depends on              | State       |

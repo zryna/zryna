@@ -1392,6 +1392,7 @@ fn derived_value_count(function: &syntax::RawFunctionSyntax) -> usize {
             return 0;
         };
         let children = match &expression.kind {
+            RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. } => return 0,
             RawExpressionKind::FieldAccess { base, .. } | RawExpressionKind::Index { base, .. } => {
                 place(body, *base)
             }
@@ -1991,24 +1992,71 @@ enum RootBorrowLiteral {
 }
 
 #[derive(Clone)]
+enum RootBorrowInitializer {
+    Literal { literal: RootBorrowLiteral, ty: Ty, at: Span },
+    Struct { ty: Ty, fields: Vec<Self>, at: Span },
+    FixedArray { ty: Ty, elements: Vec<Self>, at: Span },
+}
+
+impl RootBorrowInitializer {
+    fn value_count(&self) -> usize {
+        match self {
+            Self::Literal { .. } => 1,
+            Self::Struct { fields, .. } => fields
+                .iter()
+                .fold(1_usize, |count, field| count.saturating_add(field.value_count())),
+            Self::FixedArray { elements, .. } => elements
+                .iter()
+                .fold(1_usize, |count, element| count.saturating_add(element.value_count())),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum RootBorrowProjectionKey {
+    StructField(u32),
+    FixedArrayConstant(u32),
+}
+
+#[derive(Clone)]
+struct RootBorrowProjection {
+    key: RootBorrowProjectionKey,
+    ty: Ty,
+    at: Span,
+}
+
+#[derive(Clone)]
+struct RootBorrowPlacePlan {
+    ty: Ty,
+    projections: Vec<RootBorrowProjection>,
+}
+
+impl RootBorrowPlacePlan {
+    fn key(&self) -> Vec<RootBorrowProjectionKey> {
+        self.projections.iter().map(|projection| projection.key).collect()
+    }
+}
+
+#[derive(Clone)]
 enum RootBorrowStep {
-    Begin { id: raw::BorrowId, access: raw::BorrowAccess, at: Span },
+    Begin { id: raw::BorrowId, place: RootBorrowPlacePlan, access: raw::BorrowAccess, at: Span },
     Read { id: raw::BorrowId, ty: Ty, at: Span },
-    Write { id: raw::BorrowId, literal: RootBorrowLiteral, ty: Ty, at: Span },
-    OwnerRead { ty: Ty, at: Span },
+    Write { id: raw::BorrowId, value: RootBorrowInitializer, at: Span },
+    OwnerRead { place: RootBorrowPlacePlan, at: Span },
 }
 
 #[derive(Clone)]
 struct RootBorrowAlias {
     id: raw::BorrowId,
     ty: Ty,
+    place: RootBorrowPlacePlan,
     access: raw::BorrowAccess,
     used: bool,
 }
 
 struct RootBorrowPlan {
     root_ty: Ty,
-    root_literal: RootBorrowLiteral,
+    root_initializer: RootBorrowInitializer,
     root_at: Span,
     shape: RootBorrowShape,
     aliases: usize,
@@ -2062,6 +2110,7 @@ struct RootBorrowResources {
     cleanup_plans: usize,
 }
 
+#[cfg(test)]
 fn straight_root_borrow_budget_violation(
     aliases: usize,
     reads: usize,
@@ -2162,6 +2211,475 @@ fn loop_root_borrow_resources(aliases: usize, reads: usize, writes: usize) -> Ro
     }
 }
 
+fn root_borrow_paths_overlap(left: &RootBorrowPlacePlan, right: &RootBorrowPlacePlan) -> bool {
+    let left = left.key();
+    let right = right.key();
+    let common = left.len().min(right.len());
+    left[..common] == right[..common]
+}
+
+fn root_borrow_projection_place_count(steps: &[RootBorrowStep]) -> usize {
+    let mut prefixes = BTreeSet::new();
+    for place in steps.iter().filter_map(|step| match step {
+        RootBorrowStep::Begin { place, .. } | RootBorrowStep::OwnerRead { place, .. } => {
+            Some(place)
+        }
+        RootBorrowStep::Read { .. } | RootBorrowStep::Write { .. } => None,
+    }) {
+        let mut prefix = Vec::with_capacity(place.projections.len());
+        for projection in &place.projections {
+            prefix.push(projection.key);
+            prefixes.insert(prefix.clone());
+        }
+    }
+    prefixes.len()
+}
+
+fn root_borrow_write_value_count(steps: &[RootBorrowStep]) -> usize {
+    steps
+        .iter()
+        .filter_map(|step| match step {
+            RootBorrowStep::Write { value, .. } => Some(value.value_count()),
+            _ => None,
+        })
+        .fold(0_usize, usize::saturating_add)
+}
+
+fn projected_root_borrow_resources(
+    initializer: &RootBorrowInitializer,
+    arm: &RootBorrowArmPlan,
+) -> RootBorrowResources {
+    let write_values = root_borrow_write_value_count(&arm.steps);
+    projected_root_borrow_resource_counts(
+        initializer.value_count(),
+        arm.aliases,
+        arm.reads,
+        arm.writes,
+        write_values,
+        root_borrow_projection_place_count(&arm.steps),
+    )
+}
+
+fn projected_root_borrow_resource_counts(
+    initializer_values: usize,
+    aliases: usize,
+    reads: usize,
+    writes: usize,
+    write_values: usize,
+    projection_places: usize,
+) -> RootBorrowResources {
+    RootBorrowResources {
+        values: initializer_values
+            .saturating_add(reads)
+            .saturating_add(write_values)
+            .saturating_add(1),
+        places: reads.saturating_add(projection_places).saturating_add(1),
+        transitions: initializer_values
+            .saturating_add(1)
+            .saturating_add(aliases.saturating_mul(2))
+            .saturating_add(reads.saturating_mul(2))
+            .saturating_add(write_values)
+            .saturating_add(writes)
+            .saturating_add(1),
+        blocks: 1,
+        edges: 0,
+        active_peak: aliases,
+        cleanup_plans: 1,
+    }
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn plan_root_borrow_initializer<'a>(
+    input: SemanticInput<'a>,
+    module: usize,
+    function: &syntax::RawFunctionSyntax,
+    file: &syntax::SourceUnit,
+    declarations: &[Decl],
+    graph: &raw_layout::Graph,
+    node_types: &[Option<Ty>],
+    layouts: &layout::VerifiedLayouts,
+    expression_id: u32,
+    expected: Ty,
+    errors: &mut Errors<'a>,
+) -> Option<RootBorrowInitializer> {
+    let expression = usize::try_from(expression_id)
+        .ok()
+        .and_then(|index| function.body.expressions.get(index))?;
+    let at = span(input.sources(), expression.span);
+    match (&expected.category, &expression.kind) {
+        (TypeCategory::Bool, RawExpressionKind::BoolLiteral { value }) => {
+            Some(RootBorrowInitializer::Literal {
+                literal: RootBorrowLiteral::Bool(*value),
+                ty: expected,
+                at,
+            })
+        }
+        (TypeCategory::I32, RawExpressionKind::I32Literal { spelling }) => {
+            let Some(value) = spelling.parse::<i32>().ok() else {
+                errors.at(
+                    "ZRYNA-M3008",
+                    at,
+                    format!("integer literal '{spelling}' is outside i32"),
+                    "use a decimal i32 literal",
+                );
+                return None;
+            };
+            Some(RootBorrowInitializer::Literal {
+                literal: RootBorrowLiteral::I32(value),
+                ty: expected,
+                at,
+            })
+        }
+        (TypeCategory::Struct, RawExpressionKind::StructConstruction { type_name, fields, .. }) => {
+            let Some(declaration) = declarations.iter().find(|declaration| {
+                declaration.module == module && declaration.name == type_name.text
+            }) else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), type_name.span),
+                    "projected borrowing requires one exact module-local Copy struct root",
+                    "construct the declared Copy struct matching the root type",
+                );
+                return None;
+            };
+            let actual = node_types.get(declaration.node.0 as usize).and_then(|ty| *ty)?;
+            let RawDataDeclarationKind::Struct { fields: declared, .. } =
+                &file.data_declarations()[declaration.declaration].kind
+            else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), type_name.span),
+                    "projected borrowing does not admit an enum root constructor",
+                    "use a Copy struct or fixed-array root with static projections",
+                );
+                return None;
+            };
+            if actual != expected || !actual.is_copy() {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), type_name.span),
+                    "projected borrowing requires an exact recursively Copy struct root",
+                    "remove String, Vec, enum, Shared, Weak, or other owned fields",
+                );
+                return None;
+            }
+            let mut supplied = BTreeMap::new();
+            for field in fields {
+                let (name, value) = match &field.kind {
+                    RawFieldInitializerKind::Shorthand { name, value }
+                    | RawFieldInitializerKind::Explicit { name, value, .. } => (&name.text, *value),
+                };
+                if declared.iter().all(|candidate| candidate.name.text != *name)
+                    || supplied.insert(name.clone(), (value, field.span)).is_some()
+                {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), field.span),
+                        "projected-borrow struct initialization has an invalid or duplicate field",
+                        "initialize every exact declared field once",
+                    );
+                    return None;
+                }
+            }
+            let mut planned = Vec::with_capacity(declared.len());
+            for field in declared {
+                let Some((value, _)) = supplied.get(&field.name.text).copied() else {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        at,
+                        "projected-borrow struct initialization omits a declared field",
+                        "initialize every exact declared field once",
+                    );
+                    return None;
+                };
+                let ty = semantic_type(
+                    file,
+                    field.type_syntax,
+                    module,
+                    declarations,
+                    graph,
+                    node_types,
+                    errors,
+                )?;
+                planned.push(plan_root_borrow_initializer(
+                    input,
+                    module,
+                    function,
+                    file,
+                    declarations,
+                    graph,
+                    node_types,
+                    layouts,
+                    value,
+                    ty,
+                    errors,
+                )?);
+            }
+            Some(RootBorrowInitializer::Struct { ty: expected, fields: planned, at })
+        }
+        (
+            TypeCategory::FixedArray,
+            RawExpressionKind::FixedArrayConstruction { type_syntax, elements, .. },
+        ) => {
+            let actual =
+                semantic_type(file, *type_syntax, module, declarations, graph, node_types, errors)?;
+            let record = layouts.type_by_id(expected.layout)?;
+            let length = usize::try_from(record.array_length()?).ok()?;
+            if actual != expected || !actual.is_copy() || elements.len() != length {
+                errors.at(
+                    "ZRYNA-M3017",
+                    at,
+                    "projected borrowing requires one exact recursively Copy fixed-array root",
+                    "construct the exact fixed-array length from recursively Copy elements",
+                );
+                return None;
+            }
+            let element_layout = record.referenced_type()?;
+            let element =
+                node_types.iter().flatten().find(|ty| ty.layout == element_layout).copied()?;
+            let planned = elements
+                .iter()
+                .map(|element_id| {
+                    plan_root_borrow_initializer(
+                        input,
+                        module,
+                        function,
+                        file,
+                        declarations,
+                        graph,
+                        node_types,
+                        layouts,
+                        *element_id,
+                        element,
+                        errors,
+                    )
+                })
+                .collect::<Option<Vec<_>>>()?;
+            Some(RootBorrowInitializer::FixedArray { ty: expected, elements: planned, at })
+        }
+        _ => {
+            errors.at(
+                "ZRYNA-M3017",
+                at,
+                "projected borrowing requires a literal recursively Copy root initializer",
+                "initialize bool, i32, Copy struct, or Copy fixed-array storage directly",
+            );
+            None
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn plan_root_borrow_place<'a>(
+    input: SemanticInput<'a>,
+    module: usize,
+    function: &syntax::RawFunctionSyntax,
+    file: &syntax::SourceUnit,
+    declarations: &[Decl],
+    graph: &raw_layout::Graph,
+    node_types: &[Option<Ty>],
+    layouts: &layout::VerifiedLayouts,
+    expression_id: u32,
+    root_name: &str,
+    root_ty: Ty,
+    errors: &mut Errors<'a>,
+) -> Option<RootBorrowPlacePlan> {
+    let expression = usize::try_from(expression_id)
+        .ok()
+        .and_then(|index| function.body.expressions.get(index))?;
+    match &expression.kind {
+        RawExpressionKind::Reference { name } if name.text == root_name => {
+            Some(RootBorrowPlacePlan { ty: root_ty, projections: Vec::new() })
+        }
+        RawExpressionKind::Reference { name } => {
+            errors.at(
+                "ZRYNA-M3017",
+                span(input.sources(), name.span),
+                "borrow alias does not resolve to the projected root",
+                "borrow the exact root, one static projection, or a preceding shared alias",
+            );
+            None
+        }
+        RawExpressionKind::FieldAccess { base, field, .. } => {
+            let mut place = plan_root_borrow_place(
+                input,
+                module,
+                function,
+                file,
+                declarations,
+                graph,
+                node_types,
+                layouts,
+                *base,
+                root_name,
+                root_ty,
+                errors,
+            )?;
+            if place.ty.category == TypeCategory::Enum {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), expression.span),
+                    "enum payload borrowing conservatively overlaps the complete root and is unavailable",
+                    "borrow only a static Struct field or constant fixed-array element",
+                );
+                return None;
+            }
+            let Some(nominal) = layouts
+                .type_by_id(place.ty.layout)
+                .and_then(layout::VerifiedType::nominal_identity)
+            else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), expression.span),
+                    "borrow field projection does not have a Struct base",
+                    "project one exact declared field from the Copy root",
+                );
+                return None;
+            };
+            let Some(declaration) = declarations.iter().find(|declaration| {
+                (
+                    u32::try_from(declaration.module).ok(),
+                    u32::try_from(declaration.declaration).ok(),
+                ) == (Some(nominal.0), Some(nominal.1))
+            }) else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), field.span),
+                    "borrow field projection has no authenticated declaration",
+                    "project one exact declared field from the Copy root",
+                );
+                return None;
+            };
+            let RawDataDeclarationKind::Struct { fields, .. } =
+                &file.data_declarations()[declaration.declaration].kind
+            else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), expression.span),
+                    "enum payload borrowing conservatively overlaps the complete root and is unavailable",
+                    "borrow only a static Struct field or constant fixed-array element",
+                );
+                return None;
+            };
+            let Some((ordinal, declared)) =
+                fields.iter().enumerate().find(|(_, candidate)| candidate.name.text == field.text)
+            else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), field.span),
+                    format!(
+                        "struct '{}' has no borrowable field '{}'",
+                        declaration.name, field.text
+                    ),
+                    "use one exact declared field name",
+                );
+                return None;
+            };
+            let ty = semantic_type(
+                file,
+                declared.type_syntax,
+                module,
+                declarations,
+                graph,
+                node_types,
+                errors,
+            )?;
+            let ordinal = u32::try_from(ordinal).ok()?;
+            place.projections.push(RootBorrowProjection {
+                key: RootBorrowProjectionKey::StructField(ordinal),
+                ty,
+                at: span(input.sources(), expression.span),
+            });
+            place.ty = ty;
+            Some(place)
+        }
+        RawExpressionKind::Index { base, index, .. } => {
+            let mut place = plan_root_borrow_place(
+                input,
+                module,
+                function,
+                file,
+                declarations,
+                graph,
+                node_types,
+                layouts,
+                *base,
+                root_name,
+                root_ty,
+                errors,
+            )?;
+            if place.ty.category == TypeCategory::Vec {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), expression.span),
+                    "Vec element borrowing conservatively overlaps the complete root and is unavailable",
+                    "borrow only a static Struct field or constant fixed-array element",
+                );
+                return None;
+            }
+            if place.ty.category != TypeCategory::FixedArray {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), expression.span),
+                    "borrow index projection does not have a fixed-array base",
+                    "index one exact fixed array with an in-range constant",
+                );
+                return None;
+            }
+            let index_expression = usize::try_from(*index)
+                .ok()
+                .and_then(|index| function.body.expressions.get(index))?;
+            let RawExpressionKind::I32Literal { spelling } = &index_expression.kind else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), index_expression.span),
+                    "dynamic fixed-array borrowing conservatively overlaps the complete root and is unavailable",
+                    "use one in-range nonnegative i32 literal index",
+                );
+                return None;
+            };
+            let Some(index) = spelling.parse::<u32>().ok() else {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), index_expression.span),
+                    "borrow fixed-array index is negative or outside u32",
+                    "use one in-range nonnegative i32 literal index",
+                );
+                return None;
+            };
+            let record = layouts.type_by_id(place.ty.layout)?;
+            let length = record.array_length()?;
+            if u64::from(index) >= length {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), index_expression.span),
+                    format!("borrow fixed-array index {index} is outside length {length}"),
+                    "use one constant index less than the exact fixed-array length",
+                );
+                return None;
+            }
+            let element_layout = record.referenced_type()?;
+            let ty = node_types.iter().flatten().find(|ty| ty.layout == element_layout).copied()?;
+            place.projections.push(RootBorrowProjection {
+                key: RootBorrowProjectionKey::FixedArrayConstant(index),
+                ty,
+                at: span(input.sources(), expression.span),
+            });
+            place.ty = ty;
+            Some(place)
+        }
+        _ => {
+            errors.at(
+                "ZRYNA-M3017",
+                span(input.sources(), expression.span),
+                "borrow operand is not a static addressable place",
+                "borrow the exact root, one Struct field, or one constant fixed-array element",
+            );
+            None
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn plan_private_straight_root_borrow_function<'a>(
     input: SemanticInput<'a>,
@@ -2170,6 +2688,7 @@ fn plan_private_straight_root_borrow_function<'a>(
     declarations: &'a [Decl],
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
+    layouts: &'a layout::VerifiedLayouts,
     result: Ty,
     enforce_straight_budget: bool,
     errors: &mut Errors<'a>,
@@ -2184,12 +2703,20 @@ fn plan_private_straight_root_borrow_function<'a>(
         );
         return None;
     }
-    if !matches!(result.category, TypeCategory::Bool | TypeCategory::I32) {
+    if !result.is_copy()
+        || !matches!(
+            result.category,
+            TypeCategory::Bool
+                | TypeCategory::I32
+                | TypeCategory::Struct
+                | TypeCategory::FixedArray
+        )
+    {
         errors.at(
             "ZRYNA-M3017",
             at,
-            "shared-root borrowing requires an exact bool or i32 result",
-            "return the initialized Copy root after its lexical shared borrows end",
+            "root borrowing requires an exact recursively Copy result",
+            "return the initialized bool, i32, Copy struct, or Copy fixed-array root",
         );
         return None;
     }
@@ -2226,44 +2753,37 @@ fn plan_private_straight_root_borrow_function<'a>(
         return None;
     };
     let root_ty = semantic_type(file, *root_type, module, declarations, graph, node_types, errors)?;
-    if root_ty != result || !matches!(root_ty.category, TypeCategory::Bool | TypeCategory::I32) {
+    if root_ty != result
+        || !root_ty.is_copy()
+        || !matches!(
+            root_ty.category,
+            TypeCategory::Bool
+                | TypeCategory::I32
+                | TypeCategory::Struct
+                | TypeCategory::FixedArray
+        )
+    {
         errors.at(
             "ZRYNA-M3017",
             span(input.sources(), root_local.span),
-            "shared-root borrowing requires one exact bool or i32 root matching the result",
-            "give the root and function result the same Copy scalar type",
+            "root borrowing requires one exact recursively Copy root matching the result",
+            "give the root and function result the same Copy scalar or aggregate type",
         );
         return None;
     }
-    let root_expression = usize::try_from(*root_initializer)
-        .ok()
-        .and_then(|index| function.body.expressions.get(index))?;
-    let root_literal = match (&root_ty.category, &root_expression.kind) {
-        (TypeCategory::Bool, RawExpressionKind::BoolLiteral { value }) => {
-            RootBorrowLiteral::Bool(*value)
-        }
-        (TypeCategory::I32, RawExpressionKind::I32Literal { spelling }) => {
-            let Some(value) = spelling.parse::<i32>().ok() else {
-                errors.at(
-                    "ZRYNA-M3008",
-                    span(input.sources(), root_expression.span),
-                    format!("integer literal '{spelling}' is outside i32"),
-                    "use a decimal i32 literal",
-                );
-                return None;
-            };
-            RootBorrowLiteral::I32(value)
-        }
-        _ => {
-            errors.at(
-                "ZRYNA-M3017",
-                span(input.sources(), root_expression.span),
-                "shared-root borrowing requires a literal-initialized Copy root",
-                "initialize the root with one exact bool or i32 literal",
-            );
-            return None;
-        }
-    };
+    let root_initializer = plan_root_borrow_initializer(
+        input,
+        module,
+        function,
+        file,
+        declarations,
+        graph,
+        node_types,
+        layouts,
+        *root_initializer,
+        root_ty,
+        errors,
+    )?;
     let nested_statement =
         usize::try_from(*nested_id).ok().and_then(|index| function.body.statements.get(index))?;
     let RawStatementKind::Block { block: nested_block_id } = nested_statement.kind else {
@@ -2322,40 +2842,51 @@ fn plan_private_straight_root_borrow_function<'a>(
                     );
                     return None;
                 }
-                let value = usize::try_from(*value)
+                if !alias.ty.is_copy() {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), statement.span),
+                        "exclusive projected writes require an exact Copy referent",
+                        "write only through a bool, i32, Copy struct, or Copy fixed-array alias",
+                    );
+                    return None;
+                }
+                let assigned = usize::try_from(*value)
                     .ok()
                     .and_then(|index| function.body.expressions.get(index))?;
-                let literal = match (&alias.ty.category, &value.kind) {
-                    (TypeCategory::Bool, RawExpressionKind::BoolLiteral { value }) => {
-                        RootBorrowLiteral::Bool(*value)
-                    }
-                    (TypeCategory::I32, RawExpressionKind::I32Literal { spelling }) => {
-                        let Some(value) = spelling.parse::<i32>().ok() else {
-                            errors.at(
-                                "ZRYNA-M3008",
-                                span(input.sources(), value.span),
-                                format!("integer literal '{spelling}' is outside i32"),
-                                "use a decimal i32 literal",
-                            );
-                            return None;
-                        };
-                        RootBorrowLiteral::I32(value)
-                    }
-                    _ => {
-                        errors.at(
-                            "ZRYNA-M3017",
-                            span(input.sources(), value.span),
-                            "exclusive-borrow writes require an exact referent-typed literal",
-                            "write a bool or i32 literal matching the BorrowMut referent",
-                        );
-                        return None;
-                    }
-                };
+                if alias.place.projections.is_empty()
+                    && matches!(alias.ty.category, TypeCategory::Bool | TypeCategory::I32)
+                    && !matches!(
+                        (&assigned.kind, alias.ty.category),
+                        (RawExpressionKind::BoolLiteral { .. }, TypeCategory::Bool)
+                            | (RawExpressionKind::I32Literal { .. }, TypeCategory::I32)
+                    )
+                {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), assigned.span),
+                        "exclusive-borrow writes require an exact referent-typed literal",
+                        "assign one literal with the exact bool or i32 referent type",
+                    );
+                    return None;
+                }
+                let value = plan_root_borrow_initializer(
+                    input,
+                    module,
+                    function,
+                    file,
+                    declarations,
+                    graph,
+                    node_types,
+                    layouts,
+                    *value,
+                    alias.ty,
+                    errors,
+                )?;
                 alias.used = true;
                 steps.push(RootBorrowStep::Write {
                     id: alias.id,
-                    literal,
-                    ty: alias.ty,
+                    value,
                     at: span(input.sources(), statement.span),
                 });
                 writes = writes.checked_add(1)?;
@@ -2405,7 +2936,9 @@ fn plan_private_straight_root_borrow_function<'a>(
             };
             let referent =
                 semantic_type(file, argument, module, declarations, graph, node_types, errors)?;
-            if referent != root_ty {
+            if matches!(root_ty.category, TypeCategory::Bool | TypeCategory::I32)
+                && referent != root_ty
+            {
                 errors.at(
                     "ZRYNA-M3017",
                     span(input.sources(), declared.span),
@@ -2442,138 +2975,198 @@ fn plan_private_straight_root_borrow_function<'a>(
             let borrowed = usize::try_from(value)
                 .ok()
                 .and_then(|index| function.body.expressions.get(index))?;
-            let RawExpressionKind::Reference { name: borrowed_name } = &borrowed.kind else {
-                errors.at(
-                    "ZRYNA-M3017",
-                    span(input.sources(), borrowed.span),
-                    "root borrowing requires one direct root or lexical alias reference",
-                    "borrow the exact preceding bool or i32 root or an admitted shared alias",
-                );
-                return None;
-            };
-            if borrowed_name.text == root_name.text {
-                if access == raw::BorrowAccess::Exclusive && !*root_mutable {
-                    errors.at(
-                        "ZRYNA-M3017",
-                        span(input.sources(), borrowed_name.span),
-                        "exclusive borrowing requires a mutable root local",
-                        "declare the bool or i32 root with let before borrowMut",
-                    );
-                    return None;
-                }
-            } else if let Some(parent_access) =
-                aliases.get(&borrowed_name.text).map(|parent| parent.access)
+            let place = if let RawExpressionKind::Reference { name: borrowed_name } = &borrowed.kind
+                && let Some(parent) = aliases.get(&borrowed_name.text).cloned()
             {
-                if access != raw::BorrowAccess::Shared || parent_access != raw::BorrowAccess::Shared
+                if access != raw::BorrowAccess::Shared || parent.access != raw::BorrowAccess::Shared
                 {
                     errors.at(
                         "ZRYNA-M3017",
                         span(input.sources(), borrowed_name.span),
                         "only shared-from-shared reborrowing is admitted",
-                        "reborrow an active Borrow alias with borrow, or borrow the root directly",
+                        "reborrow an active Borrow alias with borrow, or borrow a static place directly",
                     );
                     return None;
                 }
                 aliases.get_mut(&borrowed_name.text).expect("resolved shared parent").used = true;
+                parent.place
             } else {
+                plan_root_borrow_place(
+                    input,
+                    module,
+                    function,
+                    file,
+                    declarations,
+                    graph,
+                    node_types,
+                    layouts,
+                    value,
+                    &root_name.text,
+                    root_ty,
+                    errors,
+                )?
+            };
+            if place.ty != referent || !referent.is_copy() {
                 errors.at(
                     "ZRYNA-M3017",
-                    span(input.sources(), borrowed_name.span),
-                    "borrow alias does not resolve to the root or an active shared alias",
-                    "borrow the exact root or reborrow one preceding Borrow alias",
+                    span(input.sources(), declared.span),
+                    "borrow alias referent does not match the projected place's exact Copy type",
+                    "declare Borrow or BorrowMut with the exact static projection type",
                 );
                 return None;
             }
-            if access == raw::BorrowAccess::Exclusive && !aliases.is_empty()
-                || access == raw::BorrowAccess::Shared
-                    && aliases.values().any(|alias| alias.access == raw::BorrowAccess::Exclusive)
-            {
+            if access == raw::BorrowAccess::Exclusive && !*root_mutable {
+                errors.at(
+                    "ZRYNA-M3017",
+                    span(input.sources(), borrowed.span),
+                    "exclusive borrowing requires a mutable root local",
+                    "declare the Copy root with let before borrowMut",
+                );
+                return None;
+            }
+            let conflicting = aliases.values().find(|alias| {
+                root_borrow_paths_overlap(&place, &alias.place)
+                    && (access == raw::BorrowAccess::Exclusive
+                        || alias.access == raw::BorrowAccess::Exclusive)
+            });
+            if let Some(conflicting) = conflicting {
+                let root_only =
+                    place.projections.is_empty() && conflicting.place.projections.is_empty();
                 errors.at(
                     "ZRYNA-M3017",
                     span(input.sources(), statement.span),
-                    "borrow access conflicts with an active alias of the same root",
-                    "keep shared aliases together or use one exclusive alias by itself",
+                    if root_only {
+                        "borrow access conflicts with an active alias of the same root"
+                    } else {
+                        "borrow access conflicts with an active alias of an overlapping place"
+                    },
+                    if root_only {
+                        "end the active alias before requesting incompatible authority"
+                    } else {
+                        "keep exclusive authority on disjoint static siblings or use shared access"
+                    },
                 );
                 return None;
             }
             let id = raw::BorrowId(u32::try_from(aliases.len()).ok()?);
             aliases.insert(
                 name.text.clone(),
-                RootBorrowAlias { id, ty: referent, access, used: false },
+                RootBorrowAlias { id, ty: referent, place: place.clone(), access, used: false },
             );
             steps.push(RootBorrowStep::Begin {
                 id,
+                place,
                 access,
                 at: span(input.sources(), statement.span),
             });
         } else {
             let read_ty =
                 semantic_type(file, *type_syntax, module, declarations, graph, node_types, errors)?;
-            if read_ty != root_ty {
-                errors.at(
-                    "ZRYNA-M3017",
-                    span(input.sources(), declared.span),
-                    "shared alias reads must retain the root's exact scalar type",
-                    "declare the read local as the borrowed bool or i32 type",
-                );
-                return None;
-            }
-            let initializer = usize::try_from(*initializer)
+            let initializer_id = *initializer;
+            let initializer = usize::try_from(initializer_id)
                 .ok()
                 .and_then(|index| function.body.expressions.get(index))?;
-            let RawExpressionKind::Reference { name: alias_name } = &initializer.kind else {
-                errors.at(
-                    "ZRYNA-M3017",
-                    span(input.sources(), initializer.span),
-                    "shared-borrow Copy locals must read one active alias",
-                    "initialize the const Copy local from a preceding Borrow alias",
-                );
-                return None;
-            };
-            if alias_name.text == root_name.text {
-                if aliases.is_empty() {
+            if let RawExpressionKind::Reference { name: alias_name } = &initializer.kind
+                && let Some(alias) = aliases.get_mut(&alias_name.text)
+            {
+                if alias.ty != read_ty {
                     errors.at(
                         "ZRYNA-M3017",
-                        span(input.sources(), alias_name.span),
-                        "owner reads in the lexical block require one active shared alias",
-                        "declare and use the shared alias before reading its root owner",
+                        span(input.sources(), declared.span),
+                        "borrow alias read type does not match its exact Copy referent",
+                        "declare the Copy local with the alias referent type",
                     );
                     return None;
                 }
-                if aliases.values().any(|alias| alias.access == raw::BorrowAccess::Exclusive) {
+                alias.used = true;
+                steps.push(RootBorrowStep::Read {
+                    id: alias.id,
+                    ty: read_ty,
+                    at: span(input.sources(), statement.span),
+                });
+            } else {
+                if matches!(root_ty.category, TypeCategory::Bool | TypeCategory::I32)
+                    && !matches!(initializer.kind, RawExpressionKind::Reference { .. })
+                {
                     errors.at(
                         "ZRYNA-M3017",
-                        span(input.sources(), alias_name.span),
-                        "owner reads are hidden while an exclusive alias is active",
-                        "read through BorrowMut or wait until the lexical block ends",
+                        span(input.sources(), initializer.span),
+                        "shared-borrow Copy locals must read one active alias",
+                        "initialize the Copy local from one preceding Borrow or BorrowMut alias",
+                    );
+                    return None;
+                }
+                if let RawExpressionKind::Reference { name } = &initializer.kind
+                    && name.text != root_name.text
+                {
+                    errors.at(
+                        "ZRYNA-M3002",
+                        span(input.sources(), name.span),
+                        format!("borrow alias '{}' is not active in this block", name.text),
+                        "read one exact preceding alias or one static root projection",
+                    );
+                    return None;
+                }
+                let place = plan_root_borrow_place(
+                    input,
+                    module,
+                    function,
+                    file,
+                    declarations,
+                    graph,
+                    node_types,
+                    layouts,
+                    initializer_id,
+                    &root_name.text,
+                    root_ty,
+                    errors,
+                )?;
+                if read_ty != place.ty || !read_ty.is_copy() {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), declared.span),
+                        "owner Copy read type does not match the static projected place",
+                        "declare the local with the exact Copy projection type",
+                    );
+                    return None;
+                }
+                if aliases.is_empty() {
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), initializer.span),
+                        "owner reads in the lexical block require one active borrow alias",
+                        "declare and use a borrow alias before reading owner storage",
+                    );
+                    return None;
+                }
+                let hiding = aliases.values().find(|alias| {
+                    alias.access == raw::BorrowAccess::Exclusive
+                        && root_borrow_paths_overlap(&place, &alias.place)
+                });
+                if let Some(hiding) = hiding {
+                    let root_only =
+                        place.projections.is_empty() && hiding.place.projections.is_empty();
+                    errors.at(
+                        "ZRYNA-M3017",
+                        span(input.sources(), initializer.span),
+                        if root_only {
+                            "owner reads are hidden while an exclusive alias is active"
+                        } else {
+                            "owner reads are hidden by an overlapping exclusive alias"
+                        },
+                        if root_only {
+                            "read through BorrowMut or wait for lexical end"
+                        } else {
+                            "read a disjoint sibling, read through BorrowMut, or wait for lexical end"
+                        },
                     );
                     return None;
                 }
                 steps.push(RootBorrowStep::OwnerRead {
-                    ty: read_ty,
+                    place,
                     at: span(input.sources(), statement.span),
                 });
-                reads = reads.checked_add(1)?;
-                continue;
             }
-            let Some(alias) = aliases.get_mut(&alias_name.text) else {
-                errors.at(
-                    "ZRYNA-M3002",
-                    span(input.sources(), alias_name.span),
-                    format!("borrow alias '{}' is not active in this block", alias_name.text),
-                    "read one exact preceding shared alias",
-                );
-                return None;
-            };
-            if alias.ty != read_ty {
-                return None;
-            }
-            alias.used = true;
-            steps.push(RootBorrowStep::Read {
-                id: alias.id,
-                ty: read_ty,
-                at: span(input.sources(), statement.span),
-            });
             reads = reads.checked_add(1)?;
         }
     }
@@ -2617,9 +3210,33 @@ fn plan_private_straight_root_borrow_function<'a>(
         );
         return None;
     }
-    if let Some(limit) = enforce_straight_budget
-        .then(|| straight_root_borrow_budget_violation(aliases.len(), reads, writes))
-        .flatten()
+    let arm = RootBorrowArmPlan {
+        steps,
+        aliases: aliases.len(),
+        reads,
+        writes,
+        block_exit: span(input.sources(), nested.close_brace_span),
+    };
+    let resources = if matches!(root_ty.category, TypeCategory::Bool | TypeCategory::I32) {
+        RootBorrowResources {
+            values: reads.saturating_add(writes).saturating_add(2),
+            places: reads.saturating_add(1),
+            transitions: aliases
+                .len()
+                .saturating_mul(2)
+                .saturating_add(reads.saturating_mul(2))
+                .saturating_add(writes.saturating_mul(2))
+                .saturating_add(3),
+            blocks: 1,
+            edges: 0,
+            active_peak: aliases.len(),
+            cleanup_plans: 1,
+        }
+    } else {
+        projected_root_borrow_resources(&root_initializer, &arm)
+    };
+    if let Some(limit) =
+        enforce_straight_budget.then(|| root_borrow_resource_violation(resources)).flatten()
     {
         let label = match limit {
             RootBorrowBudgetLimit::Values => "derived values",
@@ -2640,15 +3257,9 @@ fn plan_private_straight_root_borrow_function<'a>(
     }
     Some(RootBorrowPlan {
         root_ty,
-        root_literal,
+        root_initializer,
         root_at: span(input.sources(), root_local.span),
-        shape: RootBorrowShape::Straight(RootBorrowArmPlan {
-            steps,
-            aliases: aliases.len(),
-            reads,
-            writes,
-            block_exit: span(input.sources(), nested.close_brace_span),
-        }),
+        shape: RootBorrowShape::Straight(arm),
         aliases: aliases.len(),
         reads,
         writes,
@@ -2728,6 +3339,7 @@ fn plan_private_root_borrow_function<'a>(
     declarations: &'a [Decl],
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
+    layouts: &'a layout::VerifiedLayouts,
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<RootBorrowPlan> {
@@ -2742,6 +3354,7 @@ fn plan_private_root_borrow_function<'a>(
             declarations,
             graph,
             node_types,
+            layouts,
             result,
             true,
             errors,
@@ -2799,13 +3412,14 @@ fn plan_private_root_borrow_function<'a>(
             declarations,
             graph,
             node_types,
+            layouts,
             result,
             false,
             errors,
         )?;
         let RootBorrowPlan {
             root_ty,
-            root_literal,
+            root_initializer,
             root_at,
             shape: RootBorrowShape::Straight(body),
             aliases,
@@ -2847,7 +3461,7 @@ fn plan_private_root_borrow_function<'a>(
         }
         return Some(RootBorrowPlan {
             root_ty,
-            root_literal,
+            root_initializer,
             root_at,
             shape: RootBorrowShape::Loop {
                 condition_at: span(input.sources(), condition_expression.span),
@@ -2868,6 +3482,7 @@ fn plan_private_root_borrow_function<'a>(
             declarations,
             graph,
             node_types,
+            layouts,
             result,
             true,
             errors,
@@ -2937,6 +3552,7 @@ fn plan_private_root_borrow_function<'a>(
             declarations,
             graph,
             node_types,
+            layouts,
             result,
             false,
             errors,
@@ -2946,7 +3562,7 @@ fn plan_private_root_borrow_function<'a>(
     let mut else_plan = if else_empty { None } else { Some(plan_arm(else_scope, errors)?) };
     let common = then_plan.as_ref().or(else_plan.as_ref())?;
     let common_root_ty = common.root_ty;
-    let common_root_literal = common.root_literal;
+    let common_root_initializer = common.root_initializer.clone();
     let common_root_at = common.root_at;
     let common_return_at = common.return_at;
     if common_root_ty.category != TypeCategory::Bool {
@@ -3014,7 +3630,7 @@ fn plan_private_root_borrow_function<'a>(
     let writes = then_arm.writes.checked_add(else_arm.writes)?;
     Some(RootBorrowPlan {
         root_ty: common_root_ty,
-        root_literal: common_root_literal,
+        root_initializer: common_root_initializer,
         root_at: common_root_at,
         shape: RootBorrowShape::Conditional {
             condition_at: span(input.sources(), condition_expression.span),
@@ -3029,6 +3645,74 @@ fn plan_private_root_borrow_function<'a>(
     })
 }
 
+fn emit_root_borrow_initializer(
+    initializer: RootBorrowInitializer,
+    values: &mut u32,
+    instructions: &mut Vec<raw::Instruction>,
+) -> Option<raw::ValueId> {
+    let (ty, at, kind) = match initializer {
+        RootBorrowInitializer::Literal { literal, ty, at } => {
+            let kind = match literal {
+                RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
+                RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
+            };
+            (ty, at, kind)
+        }
+        RootBorrowInitializer::Struct { ty, fields, at } => {
+            let fields = fields
+                .into_iter()
+                .map(|field| emit_root_borrow_initializer(field, values, instructions))
+                .collect::<Option<Vec<_>>>()?;
+            (ty, at, raw::InstructionKind::StructConstruct { fields, cleanup: None })
+        }
+        RootBorrowInitializer::FixedArray { ty, elements, at } => {
+            let elements = elements
+                .into_iter()
+                .map(|element| emit_root_borrow_initializer(element, values, instructions))
+                .collect::<Option<Vec<_>>>()?;
+            (ty, at, raw::InstructionKind::FixedArrayConstruct { elements, cleanup: None })
+        }
+    };
+    let value = raw::ValueId(*values);
+    *values = values.checked_add(1)?;
+    instructions.push(raw::Instruction {
+        result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
+        span: at,
+        kind,
+    });
+    Some(value)
+}
+
+fn materialize_root_borrow_place(
+    plan: &RootBorrowPlacePlan,
+    root: raw::PlaceId,
+    places: &mut Vec<raw::Place>,
+    projected: &mut BTreeMap<Vec<RootBorrowProjectionKey>, raw::PlaceId>,
+) -> Option<raw::PlaceId> {
+    let mut parent = root;
+    let mut prefix = Vec::with_capacity(plan.projections.len());
+    for projection in &plan.projections {
+        prefix.push(projection.key);
+        if let Some(place) = projected.get(&prefix).copied() {
+            parent = place;
+            continue;
+        }
+        let id = raw::PlaceId(u32::try_from(places.len()).ok()?);
+        let kind = match projection.key {
+            RootBorrowProjectionKey::StructField(ordinal) => {
+                raw::PlaceKind::StructField { base: parent, ordinal }
+            }
+            RootBorrowProjectionKey::FixedArrayConstant(index) => {
+                raw::PlaceKind::FixedArrayConstant { base: parent, index }
+            }
+        };
+        places.push(raw::Place { id, ty: projection.ty.ir, span: projection.at, kind });
+        projected.insert(prefix.clone(), id);
+        parent = id;
+    }
+    Some(parent)
+}
+
 fn emit_root_borrow_arm(
     arm: RootBorrowArmPlan,
     root_place: raw::PlaceId,
@@ -3038,15 +3722,18 @@ fn emit_root_borrow_arm(
     instructions: &mut Vec<raw::Instruction>,
 ) -> Option<()> {
     let mut begun = Vec::with_capacity(arm.aliases);
+    let mut projected = BTreeMap::new();
     for step in arm.steps {
         match step {
-            RootBorrowStep::Begin { id, access, at } => {
+            RootBorrowStep::Begin { id, place, access, at } => {
+                let place =
+                    materialize_root_borrow_place(&place, root_place, places, &mut projected)?;
                 instructions.push(raw::Instruction {
                     result: None,
                     span: at,
                     kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
                         id,
-                        place: root_place,
+                        place,
                         access,
                         span: at,
                     }),
@@ -3076,13 +3763,16 @@ fn emit_root_borrow_arm(
                     });
                 }
             }
-            RootBorrowStep::OwnerRead { ty, at } => {
+            RootBorrowStep::OwnerRead { place, at } => {
+                let ty = place.ty;
+                let place =
+                    materialize_root_borrow_place(&place, root_place, places, &mut projected)?;
                 let value = raw::ValueId(*values);
                 *values = values.checked_add(1)?;
                 instructions.push(raw::Instruction {
                     result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
                     span: at,
-                    kind: raw::InstructionKind::CopyFromPlace { place: root_place },
+                    kind: raw::InstructionKind::CopyFromPlace { place },
                 });
                 if materialize_reads {
                     let place = raw::PlaceId(u32::try_from(places.len()).ok()?);
@@ -3099,18 +3789,8 @@ fn emit_root_borrow_arm(
                     });
                 }
             }
-            RootBorrowStep::Write { id, literal, ty, at } => {
-                let value = raw::ValueId(*values);
-                *values = values.checked_add(1)?;
-                let kind = match literal {
-                    RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
-                    RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
-                };
-                instructions.push(raw::Instruction {
-                    result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
-                    span: at,
-                    kind,
-                });
+            RootBorrowStep::Write { id, value, at } => {
+                let value = emit_root_borrow_initializer(value, values, instructions)?;
                 instructions.push(raw::Instruction {
                     result: None,
                     span: at,
@@ -3138,6 +3818,7 @@ fn lower_private_root_borrow_function<'a>(
     declarations: &'a [Decl],
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
+    layouts: &'a layout::VerifiedLayouts,
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<raw::Function> {
@@ -3148,34 +3829,35 @@ fn lower_private_root_borrow_function<'a>(
         declarations,
         graph,
         node_types,
+        layouts,
         result,
         errors,
     )?;
-    let RootBorrowPlan { root_ty, root_literal, root_at, shape, aliases, reads, writes, return_at } =
-        plan;
+    let RootBorrowPlan {
+        root_ty,
+        root_initializer,
+        root_at,
+        shape,
+        aliases,
+        reads,
+        writes,
+        return_at,
+    } = plan;
     let mut values = 0_u32;
-    let root_value = raw::ValueId(values);
-    values = values.checked_add(1)?;
     let root_place = raw::PlaceId(0);
     let instruction_capacity = aliases
         .checked_mul(2)?
         .checked_add(reads.checked_mul(2)?)?
         .checked_add(writes.checked_mul(2)?)?
         .checked_add(4)?;
-    let literal_kind = match root_literal {
-        RootBorrowLiteral::Bool(value) => raw::InstructionKind::BoolLiteral(value),
-        RootBorrowLiteral::I32(value) => raw::InstructionKind::I32Literal(value),
-    };
-    let root_literal_instruction = raw::Instruction {
-        result: Some(raw::ValueDefinition { id: root_value, ty: root_ty.ir, span: root_at }),
-        span: root_at,
-        kind: literal_kind,
-    };
-    let root_initialize_instruction = raw::Instruction {
+    let mut root_initialization = Vec::new();
+    let root_value =
+        emit_root_borrow_initializer(root_initializer, &mut values, &mut root_initialization)?;
+    root_initialization.push(raw::Instruction {
         result: None,
         span: root_at,
         kind: raw::InstructionKind::InitializePlace { place: root_place, value: root_value },
-    };
+    });
     let mut places = Vec::with_capacity(reads + 1);
     places.push(raw::Place {
         id: root_place,
@@ -3187,8 +3869,7 @@ fn lower_private_root_borrow_function<'a>(
     let blocks = match shape {
         RootBorrowShape::Straight(arm) => {
             let mut instructions = Vec::with_capacity(instruction_capacity);
-            instructions.push(root_literal_instruction);
-            instructions.push(root_initialize_instruction);
+            instructions.append(&mut root_initialization);
             emit_root_borrow_arm(
                 arm,
                 root_place,
@@ -3198,7 +3879,6 @@ fn lower_private_root_borrow_function<'a>(
                 &mut instructions,
             )?;
             let returned = raw::ValueId(values);
-            values = values.checked_add(1)?;
             instructions.push(raw::Instruction {
                 result: Some(raw::ValueDefinition {
                     id: returned,
@@ -3220,8 +3900,7 @@ fn lower_private_root_borrow_function<'a>(
         }
         RootBorrowShape::Conditional { condition_at, branch_at, then_arm, else_arm } => {
             let mut entry = Vec::with_capacity(3);
-            entry.push(root_literal_instruction);
-            entry.push(root_initialize_instruction);
+            entry.append(&mut root_initialization);
             let condition = raw::ValueId(values);
             values = values.checked_add(1)?;
             entry.push(raw::Instruction {
@@ -3252,7 +3931,6 @@ fn lower_private_root_borrow_function<'a>(
                 &mut else_instructions,
             )?;
             let returned = raw::ValueId(values);
-            values = values.checked_add(1)?;
             let join_instructions = vec![raw::Instruction {
                 result: Some(raw::ValueDefinition {
                     id: returned,
@@ -3315,7 +3993,7 @@ fn lower_private_root_borrow_function<'a>(
             ]
         }
         RootBorrowShape::Loop { condition_at, loop_at, body } => {
-            let entry = vec![root_literal_instruction, root_initialize_instruction];
+            let entry = root_initialization;
             let condition = raw::ValueId(values);
             values = values.checked_add(1)?;
             let header = vec![raw::Instruction {
@@ -3337,7 +4015,6 @@ fn lower_private_root_borrow_function<'a>(
                 &mut body_instructions,
             )?;
             let returned = raw::ValueId(values);
-            values = values.checked_add(1)?;
             let exit = vec![raw::Instruction {
                 result: Some(raw::ValueDefinition {
                     id: returned,
@@ -3400,10 +4077,7 @@ fn lower_private_root_borrow_function<'a>(
             ]
         }
     };
-    debug_assert_eq!(
-        usize::try_from(values).ok(),
-        Some(reads + writes + if blocks.len() == 1 { 2 } else { 3 })
-    );
+    let _ = (aliases, reads, writes);
     Some(raw::Function {
         id: raw::FunctionId {
             module: raw::ModuleId(u32::try_from(module).ok()?),
@@ -3468,6 +4142,7 @@ fn lower_function<'a>(
             declarations,
             graph,
             node_types,
+            layouts,
             result,
             errors,
         );

@@ -283,7 +283,7 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
     new URL("../docs/website-bundle-v1.json", import.meta.url),
     "utf8",
   );
-  assert.match(document, /Status: Issues #113, #114, #115, #117, and #121 complete/);
+  assert.match(document, /Status: Issues #113, #114, #115, #117, #120, and #121 complete/);
   assert.match(document, /#113 -> #114 -> #115 -> \{#116, #117, #119, #120, #121\} -> #122/);
   assert.match(document, /BorrowParameter/);
   assert.match(document, /BeginBorrow\(BorrowDefinition\)/);
@@ -309,6 +309,11 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   assert.match(document, /A complete borrow in only one arm is valid/);
   assert.match(document, /reversing hostile branch targets cannot select a\s+different join-mismatch diagnostic/);
   assert.match(document, /excludes nested or repeated conditionals, loops, calls, parameters/);
+  assert.match(document, /## Issue #120 projected-disjointness checkpoint/);
+  assert.match(document, /same path and every ancestor\/descendant pair overlap/);
+  assert.match(document, /distinct static siblings are disjoint/);
+  assert.match(document, /positive formula yields 19 values, 14 places, and 38 transitions/);
+  assert.match(document, /Dynamic index reasoning,\s+Vec\/enum projected borrowing/);
   assert.match(document, /## Issue #121 loop-edge checkpoint/);
   assert.match(document, /loop body itself is the single lexical borrow scope/);
   assert.match(document, /exactly four dense blocks and four empty-argument edges/);

@@ -1,0 +1,166 @@
+interface Pair extends ZrynaStruct {
+  x: i32;
+  y: i32;
+}
+
+interface State extends ZrynaStruct {
+  left: Pair;
+  slots: FixedArray<i32, 2>;
+}
+
+interface Maybe extends ZrynaEnum {
+  none: ZrynaNone;
+  some: i32;
+}
+
+interface OwnedState extends ZrynaStruct {
+  text: String;
+}
+
+function sameConflict(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const sharedX: Borrow<i32> = borrow(root.left.x);
+    const exclusiveX: BorrowMut<i32> = borrowMut(root.left.x);
+  }
+  return root;
+}
+
+function ancestorConflict(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const parent: BorrowMut<Pair> = borrowMut(root.left);
+    const child: Borrow<i32> = borrow(root.left.x);
+  }
+  return root;
+}
+
+function descendantConflict(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const child: BorrowMut<i32> = borrowMut(root.left.x);
+    const parent: Borrow<Pair> = borrow(root.left);
+  }
+  return root;
+}
+
+function overlappingOwnerRead(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const alias: BorrowMut<i32> = borrowMut(root.left.x);
+    const throughAlias: i32 = alias;
+    const throughOwner: i32 = root.left.x;
+  }
+  return root;
+}
+
+function invalidField(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const alias: Borrow<i32> = borrow(root.missing);
+    const value: i32 = alias;
+  }
+  return root;
+}
+
+function outOfRangeIndex(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const alias: Borrow<i32> = borrow(root.slots[2]);
+    const value: i32 = alias;
+  }
+  return root;
+}
+
+function negativeIndex(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const alias: Borrow<i32> = borrow(root.slots[-1]);
+    const value: i32 = alias;
+  }
+  return root;
+}
+
+function dynamicIndex(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const alias: Borrow<i32> = borrow(root.slots[root.left.x]);
+    const value: i32 = alias;
+  }
+  return root;
+}
+
+function vecElement(): Vec<i32> {
+  let root: Vec<i32> = Vec<i32>([1, 2]);
+  {
+    const alias: Borrow<i32> = borrow(root[0]);
+    const value: i32 = alias;
+  }
+  return root;
+}
+
+function enumPayload(): Maybe {
+  let root: Maybe = Maybe.some(1);
+  {
+    const alias: Borrow<i32> = borrow(root.some);
+    const value: i32 = alias;
+  }
+  return root;
+}
+
+function nonCopyProjection(): OwnedState {
+  let root: OwnedState = OwnedState({ text: "value" });
+  {
+    const alias: BorrowMut<String> = borrowMut(root.text);
+    const value: String = alias;
+  }
+  return root;
+}
+
+function nonStructField(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const alias: Borrow<i32> = borrow(root.left.x.missing);
+    const value: i32 = alias;
+  }
+  return root;
+}
+
+function exclusiveExclusiveConflict(): State {
+  let root: State = State({
+    left: Pair({ x: 1, y: 2 }),
+    slots: FixedArray<i32, 2>([3, 4]),
+  });
+  {
+    const parent: BorrowMut<Pair> = borrowMut(root.left);
+    const child: BorrowMut<i32> = borrowMut(root.left.x);
+  }
+  return root;
+}

@@ -191,6 +191,62 @@ test('v4 preserves the loop-borrow exclusion matrix without assigning semantic a
     fn.body.statements.filter((statement) => statement.kind.kind === 'while').length === 2));
 });
 
+test('v4 preserves projected borrow paths without assigning overlap semantics', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/projected-borrow.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/projected-borrow.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(35, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  const expressions = response.result.files[0].functions[0].body.expressions;
+  assert.equal(expressions.filter((expression) => expression.kind.kind === 'borrow-mut').length, 3);
+  assert.equal(expressions.filter((expression) => expression.kind.kind === 'borrow').length, 2);
+  assert.ok(expressions.some((expression) => expression.kind.kind === 'field-access'));
+  assert.ok(expressions.some((expression) => expression.kind.kind === 'index'));
+});
+
+test('v4 preserves overlapping shared projected paths as syntax only', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/projected-borrow-shared-overlap.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/projected-borrow-shared-overlap.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(36, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  const expressions = response.result.files[0].functions[0].body.expressions;
+  assert.equal(expressions.filter((expression) => expression.kind.kind === 'borrow').length, 2);
+});
+
+test('v4 preserves projected-borrow exclusions for deterministic semantic rejection', async () => {
+  const text = await readFile(
+    new URL('../../../tests/m3-fixtures/projected-borrow-exclusions.zry', import.meta.url),
+    'utf8',
+  );
+  const expected = JSON.parse(await readFile(
+    new URL('../../../tests/m3-fixtures/projected-borrow-exclusions.json', import.meta.url),
+    'utf8',
+  ));
+  const [response] = await exchange([analyze(37, text)]);
+  assert.equal(response.error, undefined, JSON.stringify(response.error));
+  assert.deepEqual(response.result, expected);
+  assert.equal(validateSnapshot(response.result), true, JSON.stringify(validateSnapshot.errors));
+  assert.equal(response.result.files[0].functions.length, 13);
+  const expressions = response.result.files[0].functions.flatMap((fn) => fn.body.expressions);
+  assert.ok(expressions.some((expression) => expression.kind.kind === 'field-access'));
+  assert.ok(expressions.some((expression) => expression.kind.kind === 'index'));
+});
+
 test('v4 reserves only the frozen prototype-sensitive names', async () => {
   const text = 'interface then extends ZrynaStruct { arguments: i32; eval: i32; }';
   const [response] = await exchange([analyze(4, text)]);

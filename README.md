@@ -139,7 +139,10 @@ The repository currently establishes and tests:
   conditional now discharges complete shared, exclusive, or mixed arm-local lexical scopes before
   four fixed branch/jump edges and rejoins without borrow block parameters or edge arguments. A
   complete borrow in only one arm is valid; arm-local value and transition costs sum while
-  active-borrow capacity uses the larger arm. Mutable-from-shared, every reborrow from exclusive, projections,
+  active-borrow capacity uses the larger arm. Static recursively Copy Struct fields and constant
+  fixed-array elements now retain exact canonical borrow paths: siblings are disjoint while the
+  same path and ancestor/descendant pairs overlap. Projected value/place/transition resources are
+  preflighted exactly; dynamic/Vec/enum/non-Copy projections fail closed. Mutable-from-shared, every reborrow from exclusive,
   calls, nested/repeated conditionals, lifetime shortening, and every
   runtime, ABI, backend, driver, CLI, artifact, and public-profile capability remain unavailable;
   one canonical private bool-root loop additionally reverse-ends its body-local authorities before

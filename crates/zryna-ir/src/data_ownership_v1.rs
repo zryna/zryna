@@ -5071,25 +5071,29 @@ fn mark_ancestors_partial(
     }
 }
 fn places_overlap(left: raw::PlaceId, right: raw::PlaceId, places: &[raw::Place]) -> bool {
-    fn ancestors(mut id: raw::PlaceId, places: &[raw::Place]) -> Vec<raw::PlaceId> {
-        let mut out = vec![id];
+    fn is_ancestor_or_same(
+        ancestor: raw::PlaceId,
+        mut place: raw::PlaceId,
+        places: &[raw::Place],
+    ) -> bool {
         let mut visited = vec![false; places.len()];
-        while let Some(base) =
-            places.get(id.0 as usize).and_then(|place| projection_base(&place.kind))
-        {
-            let Ok(index) = usize::try_from(id.0) else { break };
-            if index >= visited.len() || visited[index] || out.len() > MAX_PLACES_PER_FUNCTION {
-                break;
+        for _ in 0..=MAX_PLACES_PER_FUNCTION {
+            if place == ancestor {
+                return true;
+            }
+            let Ok(index) = usize::try_from(place.0) else { return false };
+            if index >= visited.len() || visited[index] {
+                return false;
             }
             visited[index] = true;
-            out.push(base);
-            id = base;
+            let Some(base) = places.get(index).and_then(|item| projection_base(&item.kind)) else {
+                return false;
+            };
+            place = base;
         }
-        out
+        false
     }
-    let left = ancestors(left, places);
-    let right = ancestors(right, places);
-    left.iter().any(|id| right.contains(id))
+    is_ancestor_or_same(left, right, places) || is_ancestor_or_same(right, left, places)
 }
 fn overlaps_active(
     place: raw::PlaceId,
