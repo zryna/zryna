@@ -111,7 +111,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.emit_aggregate_clone(&binding, expected, at)
     }
 
-    pub(in crate::data_ownership_v1) fn emit_aggregate_clone(
+    pub(super) fn emit_aggregate_clone(
         &mut self,
         binding: &Binding,
         expected: Ty,
@@ -131,7 +131,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         )
     }
 
-    pub(in crate::data_ownership_v1) fn emit_projected_aggregate_clone(
+    pub(super) fn emit_projected_aggregate_clone(
         &mut self,
         expression: u32,
         expected: Ty,

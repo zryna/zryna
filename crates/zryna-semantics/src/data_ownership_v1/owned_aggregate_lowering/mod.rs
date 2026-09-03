@@ -7,6 +7,7 @@ use zryna_syntax::v4 as syntax;
 use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 
 mod assignment_planning;
+mod assignments;
 mod clone;
 mod partial_transfers;
 mod projected_reads;
