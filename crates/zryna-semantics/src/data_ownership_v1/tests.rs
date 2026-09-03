@@ -21,6 +21,10 @@ use super::owned_control_flow_resources::{
     projected_root_borrow_resource_counts, root_borrow_resource_violation,
     straight_root_borrow_budget_violation, straight_root_borrow_resources,
 };
+use super::owned_control_flow_shape::{
+    is_terminal_owned_phi_candidate, preflight_owned_loop_body, preflight_owned_loop_exit,
+    terminal_owned_if,
+};
 use super::owned_lowering_resources::{
     OwnedCleanupAccounting, OwnedCleanupActionContext, OwnedStringPreparationBudget,
     checked_vec_clone_prefix_action_count, preflight_owned_string_preparation,
@@ -38,16 +42,14 @@ use super::{
     checked_string_concat_bytes, cleanup_actions_after_additions,
     cleanup_actions_after_preparation, cleanup_actions_after_transfer,
     enum_payload_move_resource_violation, estimate_owned_string_expression,
-    is_direct_owned_root_borrow_candidate, is_terminal_owned_phi_candidate, lower,
-    partial_assignment_budget_preflight, partial_return_budget_preflight,
-    partial_transfer_budget_preflight, preflight_owned_loop_body, preflight_owned_loop_exit,
+    is_direct_owned_root_borrow_candidate, lower, partial_assignment_budget_preflight,
+    partial_return_budget_preflight, partial_transfer_budget_preflight,
     preflight_owned_place_capacity, preflight_owned_place_capacity_with_reserved,
     projected_aggregate_assignment_budget_violation,
     projected_aggregate_clone_assignment_budget_violation,
     projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
     projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
-    projected_subobject_return_budget_violation, semantic_preflight, span, terminal_owned_if,
-    vec_push_target_invalid,
+    projected_subobject_return_budget_violation, semantic_preflight, span, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
