@@ -212,7 +212,7 @@ contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
 effects remain excluded. Issue #82 is now active through its checked child-issue dependency graph.
-Issues #113 through #117, #120, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
+Issues #113 through #117, #119, #120, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
 authority, and implement one internal private parameter-free literal-initialized `bool`/`i32` root
 with shared or exclusive aliases. Straight-line aliases use one nested lexical block, conditional
 aliases use one nested lexical scope per arm, and the loop body itself is #121's sole scope. Alias reads lower to `BorrowRead`;
@@ -239,8 +239,22 @@ are limited to String clone/checked concat, exact `Vec<bool>`/`Vec<i32>` Copy in
 supported whole Struct/root-Enum/fixed-array clone. Existing owned instructions and cleanup/fault
 authorities retain the source and produce distinct owned results where applicable; `BorrowRead`
 remains Copy-only. Projections, mutation, moves, calls, new runtime/backend behavior, and public
-activation remain excluded. Issue #116 passed independent verification and required merge gates;
-call and nested/repeated control flow remain later child issues.
+activation remain excluded. Issue #116 passed independent verification and required merge gates.
+Issue #119 is complete at merged-main provenance
+`32e3f0607389dd1274c21770088456c765ee4fb7`. Its bounded internal checkpoint admits private,
+straight-line, exact-signature direct calls with recursively Copy results and value parameters,
+one or more exact shared/exclusive whole-root borrow parameters in source order, left-to-right
+argument evaluation, same-authority forwarding, caller-owned lexical `EndBorrow`, and call-trap
+cleanup. The mandatory verifier retains final authority over exact access/referents, nonescape,
+acyclic calls, and the 128-accepts/129-rejects static-depth boundary. The
+`tests/m3-contract-v1.json` registry authenticates exactly 36 source/snapshot files, 5 accepted
+cases, and 13 exclusions. Its merged registry SHA-256 is
+`d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f`; its canonical borrow-call
+section SHA-256 is `ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20`.
+Protocol v4 is unchanged; projected forwarding, repeated calls, CFG
+crossing, recursion, owned aggregate call shapes, public borrow signatures, retained authority,
+and nested/repeated control flow remain later or unavailable child work. This adds no runtime,
+ABI, backend, driver, CLI, artifact, website-support, or public-profile capability.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
 route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
@@ -249,9 +263,10 @@ explicit `control-flow-v1` M2 remain the only public profiles.
 
 The first planned executable slice remains an internal scalarizable `Pair` struct observed through
 a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. The
-completed bounded owned String/Vec compiler boundary remains internal; later dependency-ready issues add
-bounded lexical borrows, explicit shared/weak references, three target implementations, an atomic
-manifest v3 CLI, fixed-oracle conformance, and authenticated website publication. Tracing GC,
+completed bounded owned String/Vec compiler boundary and implemented bounded lexical-borrow child
+slices remain internal; #122 owns aggregate borrowing closure. Later dependency-ready issues add
+explicit shared/weak references, three target implementations, an atomic manifest v3 CLI,
+fixed-oracle conformance, and authenticated website publication. Tracing GC,
 public aggregate ABI,
 raw pointers, unsafe, FFI, threads, WASI, Components, custom allocators, and freestanding targets
 remain outside M3.
@@ -292,6 +307,7 @@ data profiles.
 - [M2 verified native MIR](M2_NATIVE_MIR.md)
 - [M3 Copy aggregate semantics](M3_COPY_AGGREGATE_SEMANTICS.md)
 - [M3 verified data and ownership IR](M3_DATA_OWNERSHIP_IR.md)
+- [M3 bounded borrowing implementation contract](M3_BORROWING_SEMANTICS.md)
 - [M3 ownership runtime ABI authority](M3_OWNERSHIP_RUNTIME_ABI.md)
 - [Roadmap](ROADMAP.md)
 - [Aggregate layout v1](../spec/memory-model/AGGREGATE_LAYOUT_V1.md)

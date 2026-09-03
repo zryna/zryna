@@ -528,8 +528,15 @@ before its jump, and joins with no borrow block parameter, edge argument, or own
 Both arms are planned before materialization; identities follow then/else source order, arm-local
 value and transition costs sum, and peak active authority is the larger arm. The independent verifier uses canonical
 dense block order for join diagnostics without changing edge-indexed enum refinement. Mutable-from-
-shared, reborrow from exclusive, call, and nested/repeated conditional borrowing
-remain later slices. Issue #120 adds recursively Copy Struct/fixed-array projection plans whose
+shared, reborrow from exclusive, and nested/repeated conditional borrowing remain later slices.
+Issue #119 adds one bounded private straight-line whole-root direct-call boundary with exact
+recursively Copy signatures, source-ordered shared/exclusive borrow parameters, left-to-right
+argument evaluation, same-authority forwarding, caller-owned lexical end, and verified call-trap
+cleanup. The mandatory IR verifier remains final authority for exact access/referent matching,
+nonescape, acyclic calls, and static call depth; protocol v4 is consumed unchanged. This adds no
+runtime lifetime state, ABI, JavaScript/WebAssembly/native backend path, driver/CLI route, artifact,
+website support claim, or public-profile activation. Issue #120 adds recursively Copy
+Struct/fixed-array projection plans whose
 canonical static prefixes are materialized once: same/ancestor/descendant paths overlap, distinct
 static siblings are disjoint, and dynamic/Vec/enum/non-Copy cases fail before raw IR construction.
 The independent verifier rechecks exact projected authority and owner move/replace/drop/call use.

@@ -289,8 +289,15 @@ concat, exact `Vec<bool>`/`Vec<i32>` Copy indexing, and supported whole
 Struct/root-Enum/fixed-array clone; it retains the source, gives owned read results distinct owners,
 reuses existing cleanup/fault authority, and leaves `BorrowRead` Copy-only. Projection, mutation,
 move, runtime, backend, and public activation are excluded. Issue #116 passed independent
-verification and required merge gates. The remaining dependency-ordered slices retain call, nested/repeated
-control flow, runtime, backend, and public-profile work.
+verification and required merge gates. Issue #119 completes the bounded private straight-line
+whole-root call-only nonescape slice: exact recursively Copy signatures carry shared or exclusive
+authority in source order, evaluate arguments left to right, permit same-authority forwarding, and
+leave lexical `EndBorrow` with the caller. The mandatory verifier retains acyclic-call and exact
+static-depth authority, while the authenticated registry freezes 36 source/snapshot files, 5
+accepted cases, and 13 exclusions at merged-main provenance
+`32e3f0607389dd1274c21770088456c765ee4fb7`. Protocol v4 and every runtime, backend, driver, CLI,
+artifact, and public-profile boundary remain unchanged. The remaining dependency-ordered slices
+retain nested/repeated control flow, runtime, backend, and public-profile work.
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |
