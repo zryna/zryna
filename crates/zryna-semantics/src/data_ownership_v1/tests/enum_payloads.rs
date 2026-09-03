@@ -201,7 +201,7 @@ fn owned_enum_payload_move_rejects_noncanonical_arm_and_mutable_local() {
 fn owned_enum_payload_move_resource_preflight_accepts_exact_place_limit_only() {
     assert_eq!(
         enum_payload_move_resource_estimate(2).expect("small payload estimate"),
-        super::super::EnumPayloadMoveResourceEstimate {
+        EnumPayloadMoveResourceEstimate {
             blocks: 3,
             edges: 2,
             values: 3,
