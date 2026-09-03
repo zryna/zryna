@@ -57,6 +57,17 @@ fn private_string_cleanup_action_overflow_is_source_located_m3201() {
     assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
     let primary = diagnostics[0].primary_span().expect("cleanup site");
     assert_eq!((primary.start(), primary.end()), (32, 35));
+    assert_eq!(
+        diagnostics[0].message(),
+        format!(
+            "derived cleanup actions exceed the per-function M3 limit of {}",
+            zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION
+        )
+    );
+    assert_eq!(
+        diagnostics[0].guidance(),
+        "reduce simultaneously live Strings or fallible private String operations"
+    );
 }
 
 #[test]

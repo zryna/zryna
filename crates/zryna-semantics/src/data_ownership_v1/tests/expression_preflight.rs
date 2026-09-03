@@ -285,6 +285,13 @@ fn recursive_owned_string_preflight_is_exact_atomic_and_overflow_checked_for_all
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
         assert_eq!(diagnostics[0].primary_span(), Some(at));
+        assert_eq!(
+            (diagnostics[0].message(), diagnostics[0].guidance()),
+            (
+                "recursive owned String preparation exceeds the per-function cleanup limits",
+                "reduce nested String-producing expressions or simultaneously live owners",
+            )
+        );
 
         let mut overflow_errors = Errors::new(sources);
         let mut overflow_cfg =
@@ -302,6 +309,13 @@ fn recursive_owned_string_preflight_is_exact_atomic_and_overflow_checked_for_all
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
         assert_eq!(diagnostics[0].primary_span(), Some(at));
+        assert_eq!(
+            (diagnostics[0].message(), diagnostics[0].guidance()),
+            (
+                "recursive owned String preparation exceeds the per-function cleanup limits",
+                "reduce nested String-producing expressions or simultaneously live owners",
+            )
+        );
     }
 
     let (call_source, call_raw) = private_nested_string_call_fixture();

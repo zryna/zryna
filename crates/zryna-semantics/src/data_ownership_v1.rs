@@ -25,6 +25,7 @@ mod global_resource_limits;
 mod layout_graph;
 mod owned_cfg_state;
 mod owned_control_flow_resources;
+mod owned_lowering_resources;
 mod owned_root_borrow_planning;
 mod owned_root_borrow_postprocessing;
 mod owner_state;
@@ -67,7 +68,7 @@ use global_resource_limits::{
 use global_resource_limits::{
     accumulate_generated_cfg_function, accumulate_generated_value_function,
     aggregate_operand_budget_violation, aggregate_transition_budget_violation,
-    checked_string_concat_bytes, resource_budget_violation, semantic_preflight,
+    checked_string_concat_bytes, semantic_preflight,
 };
 use layout_graph::{Decl, build_graph, semantic_type};
 use owned_cfg_state::{
@@ -82,6 +83,11 @@ use owned_control_flow_resources::{
 use owned_control_flow_resources::{
     enum_payload_move_resource_violation, preflight_owned_place_capacity,
     preflight_owned_place_capacity_with_reserved,
+};
+use owned_lowering_resources::{
+    OwnedCleanupAccounting, OwnedCleanupActionContext, OwnedCleanupPlanContext,
+    OwnedStringPreparationBudget, checked_vec_clone_prefix_action_count,
+    preflight_owned_string_preparation,
 };
 use owned_root_borrow_planning::{
     is_direct_owned_root_borrow_candidate, plan_private_owned_root_borrow_syntax,
@@ -346,62 +352,6 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
         linux,
     )?;
     Ok(VerifiedProgram { ir: verified_ir, runtime_abi })
-}
-
-#[derive(Clone, Copy)]
-struct OwnedStringPreparationBudget {
-    cleanup_plans: usize,
-    reserved_cleanup_plans: usize,
-    cleanup_actions: usize,
-    reserved_cleanup_actions: usize,
-    places: usize,
-    reserved_places: usize,
-}
-
-fn preflight_owned_string_preparation(
-    estimate: OwnedStringPreparationEstimate,
-    budget: OwnedStringPreparationBudget,
-    cfg: &mut OwnedCfgState,
-    at: Span,
-    errors: &mut Errors<'_>,
-) -> bool {
-    let plans = budget.cleanup_plans.checked_add(budget.reserved_cleanup_plans);
-    let actions = budget.cleanup_actions.checked_add(budget.reserved_cleanup_actions);
-    if plans.is_none_or(|current| {
-        resource_budget_violation(
-            current,
-            estimate.cleanup_plans,
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        )
-    }) || actions.is_none_or(|current| {
-        resource_budget_violation(
-            current,
-            estimate.cleanup_actions,
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        )
-    }) {
-        errors.at(
-            "ZRYNA-M3201",
-            at,
-            "recursive owned String preparation exceeds the per-function cleanup limits",
-            "reduce nested String-producing expressions or simultaneously live owners",
-        );
-        return false;
-    }
-    if cfg.reserve_values(estimate.values, at, errors).is_none() {
-        return false;
-    }
-    cfg.release_values(estimate.values);
-    if !preflight_owned_place_capacity_with_reserved(
-        budget.places,
-        budget.reserved_places,
-        estimate.places,
-        at,
-        errors,
-    ) {
-        return false;
-    }
-    cfg.preflight_transitions(estimate.transitions, at, errors)
 }
 
 fn span(sources: &SourceMap, value: UntrustedSpan) -> Span {
@@ -1352,33 +1302,23 @@ impl PrivateStringLowerer<'_, '_, '_> {
     }
 
     fn reserve_cleanup_capacity(&mut self, actions: usize, at: Span) -> bool {
-        if resource_budget_violation(
-            self.cleanup_plans.len(),
-            self.reserved_cleanup_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) || resource_budget_violation(
-            self.cleanup_actions,
-            self.reserved_cleanup_actions.saturating_add(actions),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "reserved String cleanup exceeds the per-function M3 limits",
-                "reduce simultaneously live Strings or fallible String operations",
-            );
-            return false;
-        }
-        self.reserved_cleanup_plans += 1;
-        self.reserved_cleanup_actions += actions;
-        true
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .reserve_plan(actions, OwnedCleanupPlanContext::String, at, self.errors)
     }
 
     fn release_cleanup_capacity(&mut self, actions: usize) {
-        self.reserved_cleanup_plans =
-            self.reserved_cleanup_plans.checked_sub(1).expect("reserved cleanup plan");
-        self.reserved_cleanup_actions =
-            self.reserved_cleanup_actions.checked_sub(actions).expect("reserved cleanup actions");
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .release_plan(actions);
     }
 
     fn push_cleanup(
@@ -1386,54 +1326,19 @@ impl PrivateStringLowerer<'_, '_, '_> {
         at: Span,
         excluded: Option<raw::PlaceId>,
     ) -> Option<raw::CleanupPlanId> {
-        if resource_budget_violation(
-            self.cleanup_plans.len(),
-            self.reserved_cleanup_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup sites exceed the per-function M3 limit of {}",
-                    ir::MAX_CLEANUP_PLANS_PER_FUNCTION
-                ),
-                "reduce fallible private String operations",
-            );
-            return None;
-        }
-        let pending = self.owners.pending();
-        let excluded_present = excluded.is_some_and(|place| self.owners.contains(place));
-        let action_count = pending.len() - usize::from(excluded_present);
-        if resource_budget_violation(
-            self.cleanup_actions,
-            self.reserved_cleanup_actions.saturating_add(action_count),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup actions exceed the per-function M3 limit of {}",
-                    ir::MAX_DROP_ACTIONS_PER_FUNCTION
-                ),
-                "reduce simultaneously live Strings or fallible private String operations",
-            );
-            return None;
-        }
-        let id = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).unwrap_or(u32::MAX));
-        let actions = self
-            .owners
-            .pending()
-            .iter()
-            .rev()
-            .copied()
-            .filter(|place| Some(*place) != excluded)
-            .map(raw::DropAction::DropPlace)
-            .collect();
-        self.cleanup_plans.push(raw::CleanupPlan { id, span: at, actions });
-        self.cleanup_actions += action_count;
-        Some(id)
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .push_reverse(
+            &self.owners,
+            at,
+            excluded,
+            OwnedCleanupPlanContext::String,
+            self.errors,
+        )
     }
 
     fn push_instruction_cleanup(
@@ -1441,10 +1346,20 @@ impl PrivateStringLowerer<'_, '_, '_> {
         at: Span,
         excluded: Option<raw::PlaceId>,
     ) -> Option<raw::CleanupPlanId> {
-        if !self.cfg.preflight_transition(at, self.errors) {
-            return None;
-        }
-        self.push_cleanup(at, excluded)
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .push_instruction_reverse(
+            &mut self.cfg,
+            &self.owners,
+            at,
+            excluded,
+            OwnedCleanupPlanContext::String,
+            self.errors,
+        )
     }
 
     fn push_temporary(
@@ -1632,20 +1547,18 @@ impl PrivateStringLowerer<'_, '_, '_> {
             return None;
         }
         let branch_owners = self.owners.pending()[incoming.owners.pending().len()..].to_vec();
-        if resource_budget_violation(
-            self.cleanup_actions,
+        if !OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .preflight_actions(
             branch_owners.len(),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+            OwnedCleanupActionContext::StringBranchLocal,
+            at,
+            self.errors,
         ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup actions exceed the per-function M3 limit of {}",
-                    ir::MAX_DROP_ACTIONS_PER_FUNCTION
-                ),
-                "reduce branch-local owned Strings or fallible String operations",
-            );
             return None;
         }
         if !self.cfg.preflight_transitions(branch_owners.len(), at, self.errors) {
@@ -1660,7 +1573,13 @@ impl PrivateStringLowerer<'_, '_, '_> {
             if !self.cfg.preflight_emit(&drop, self.errors) || !self.cfg.emit(drop, self.errors) {
                 return None;
             }
-            self.cleanup_actions = self.cleanup_actions.checked_add(1)?;
+            OwnedCleanupAccounting::new(
+                &mut self.cleanup_plans,
+                &mut self.cleanup_actions,
+                &mut self.reserved_cleanup_plans,
+                &mut self.reserved_cleanup_actions,
+            )
+            .commit_action()?;
             let delta = self.owners.consume_owner(owner)?;
             apply_owner_delta(&mut self.known_bytes, delta);
         }
@@ -1685,17 +1604,18 @@ impl PrivateStringLowerer<'_, '_, '_> {
             .copied()
             .filter(|owner| *owner != carried)
             .collect::<Vec<_>>();
-        if resource_budget_violation(
-            self.cleanup_actions,
+        if !OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .preflight_actions(
             dropped.len(),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+            OwnedCleanupActionContext::StringTerminalArm,
+            at,
+            self.errors,
         ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "terminal String arm cleanup exceeds the per-function M3 limit",
-                "reduce owned temporaries in the returning branch expression",
-            );
             return None;
         }
         if !self.cfg.preflight_transitions(dropped.len(), at, self.errors) {
@@ -1712,7 +1632,13 @@ impl PrivateStringLowerer<'_, '_, '_> {
             ) {
                 return None;
             }
-            self.cleanup_actions = self.cleanup_actions.checked_add(1)?;
+            OwnedCleanupAccounting::new(
+                &mut self.cleanup_plans,
+                &mut self.cleanup_actions,
+                &mut self.reserved_cleanup_plans,
+                &mut self.reserved_cleanup_actions,
+            )
+            .commit_action()?;
             let delta = self.owners.consume_owner(owner)?;
             apply_owner_delta(&mut self.known_bytes, delta);
         }
@@ -1834,26 +1760,23 @@ impl PrivateStringLowerer<'_, '_, '_> {
     }
 
     fn reserve_loop_drop_actions(&mut self, actions: usize, at: Span) -> bool {
-        if resource_budget_violation(
-            self.cleanup_actions,
-            self.reserved_cleanup_actions.saturating_add(actions),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "reserved String loop cleanup exceeds the per-function M3 limit",
-                "reduce temporary read operands in the loop replacement",
-            );
-            return false;
-        }
-        self.reserved_cleanup_actions += actions;
-        true
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .reserve_string_loop_actions(actions, at, self.errors)
     }
 
     fn release_loop_drop_actions(&mut self, actions: usize) {
-        self.reserved_cleanup_actions =
-            self.reserved_cleanup_actions.checked_sub(actions).expect("reserved loop drop actions");
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .release_string_loop_actions(actions);
     }
 
     fn commit_loop_replacement(
@@ -1904,7 +1827,13 @@ impl PrivateStringLowerer<'_, '_, '_> {
             ) {
                 return None;
             }
-            self.cleanup_actions = self.cleanup_actions.checked_add(1)?;
+            OwnedCleanupAccounting::new(
+                &mut self.cleanup_plans,
+                &mut self.cleanup_actions,
+                &mut self.reserved_cleanup_plans,
+                &mut self.reserved_cleanup_actions,
+            )
+            .commit_action()?;
             let delta = self.owners.consume_owner(owner)?;
             apply_owner_delta(&mut self.known_bytes, delta);
         }
@@ -7012,33 +6941,23 @@ impl PrivateVecLowerer<'_, '_, '_> {
     }
 
     fn reserve_cleanup_capacity(&mut self, actions: usize, at: Span) -> bool {
-        if resource_budget_violation(
-            self.cleanup_plans.len(),
-            self.reserved_cleanup_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) || resource_budget_violation(
-            self.cleanup_actions,
-            self.reserved_cleanup_actions.saturating_add(actions),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "reserved Vec cleanup exceeds the per-function M3 limits",
-                "reduce simultaneously live owned values or fallible Vec operations",
-            );
-            return false;
-        }
-        self.reserved_cleanup_plans += 1;
-        self.reserved_cleanup_actions += actions;
-        true
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .reserve_plan(actions, OwnedCleanupPlanContext::Vec, at, self.errors)
     }
 
     fn release_cleanup_capacity(&mut self, actions: usize) {
-        self.reserved_cleanup_plans =
-            self.reserved_cleanup_plans.checked_sub(1).expect("reserved cleanup plan");
-        self.reserved_cleanup_actions =
-            self.reserved_cleanup_actions.checked_sub(actions).expect("reserved cleanup actions");
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .release_plan(actions);
     }
 
     #[allow(clippy::too_many_lines)]
@@ -7095,15 +7014,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         let actions = self.owners.pending().len();
         let clones_non_copy_elements = self.element.category == TypeCategory::String;
         let prefix_actions = if clones_non_copy_elements {
-            Some(actions.checked_add(1).or_else(|| {
-                self.errors.at(
-                    "ZRYNA-M3201",
-                    at,
-                    "Vec clone prefix cleanup overflows its checked action count",
-                    "reduce simultaneously live owned values",
-                );
-                None
-            })?)
+            Some(checked_vec_clone_prefix_action_count(actions, at, self.errors)?)
         } else {
             None
         };
@@ -7161,31 +7072,13 @@ impl PrivateVecLowerer<'_, '_, '_> {
         at: Span,
         result_owner: raw::PlaceId,
     ) -> Option<raw::CleanupPlanId> {
-        let action_count = self.owners.pending().len().checked_add(1)?;
-        if resource_budget_violation(
-            self.cleanup_plans.len(),
-            self.reserved_cleanup_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) || resource_budget_violation(
-            self.cleanup_actions,
-            self.reserved_cleanup_actions.saturating_add(action_count),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "Vec clone element cleanup exceeds the per-function M3 limits",
-                "reduce simultaneously live owned values or fallible Vec clones",
-            );
-            return None;
-        }
-        let id = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).ok()?);
-        let actions = std::iter::once(raw::DropAction::DropVecInitializedPrefix(result_owner))
-            .chain(self.owners.pending().iter().rev().copied().map(raw::DropAction::DropPlace))
-            .collect();
-        self.cleanup_plans.push(raw::CleanupPlan { id, span: at, actions });
-        self.cleanup_actions += action_count;
-        Some(id)
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .push_vec_clone_prefix(&self.owners, result_owner, at, self.errors)
     }
 
     fn condition(&mut self, id: u32, bool_ty: Ty) -> Option<raw::ValueId> {
@@ -7440,20 +7333,18 @@ impl PrivateVecLowerer<'_, '_, '_> {
             return None;
         }
         let branch_owners = self.owners.pending()[incoming.owners.pending().len()..].to_vec();
-        if resource_budget_violation(
-            self.cleanup_actions,
+        if !OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .preflight_actions(
             branch_owners.len(),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+            OwnedCleanupActionContext::VecBranchLocal,
+            at,
+            self.errors,
         ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup actions exceed the per-function M3 limit of {}",
-                    ir::MAX_DROP_ACTIONS_PER_FUNCTION
-                ),
-                "reduce branch-local owned values or fallible Vec operations",
-            );
             return None;
         }
         if !self.cfg.preflight_transitions(branch_owners.len(), at, self.errors) {
@@ -7468,7 +7359,13 @@ impl PrivateVecLowerer<'_, '_, '_> {
             if !self.cfg.preflight_emit(&drop, self.errors) || !self.cfg.emit(drop, self.errors) {
                 return None;
             }
-            self.cleanup_actions = self.cleanup_actions.checked_add(1)?;
+            OwnedCleanupAccounting::new(
+                &mut self.cleanup_plans,
+                &mut self.cleanup_actions,
+                &mut self.reserved_cleanup_plans,
+                &mut self.reserved_cleanup_actions,
+            )
+            .commit_action()?;
             let delta = self.owners.consume_owner(owner)?;
             apply_owner_delta(&mut self.known_string_bytes, delta);
         }
@@ -7494,17 +7391,18 @@ impl PrivateVecLowerer<'_, '_, '_> {
             .copied()
             .filter(|owner| *owner != carried)
             .collect::<Vec<_>>();
-        if resource_budget_violation(
-            self.cleanup_actions,
+        if !OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .preflight_actions(
             dropped.len(),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+            OwnedCleanupActionContext::VecTerminalArm,
+            at,
+            self.errors,
         ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "terminal Vec arm cleanup exceeds the per-function M3 limit",
-                "reduce owned temporaries in the returning branch expression",
-            );
             return None;
         }
         if !self.cfg.preflight_transitions(dropped.len(), at, self.errors) {
@@ -7514,7 +7412,13 @@ impl PrivateVecLowerer<'_, '_, '_> {
             if !self.emit_effect(at, raw::InstructionKind::DropPlace { place: owner }) {
                 return None;
             }
-            self.cleanup_actions = self.cleanup_actions.checked_add(1)?;
+            OwnedCleanupAccounting::new(
+                &mut self.cleanup_plans,
+                &mut self.cleanup_actions,
+                &mut self.reserved_cleanup_plans,
+                &mut self.reserved_cleanup_actions,
+            )
+            .commit_action()?;
             let delta = self.owners.consume_owner(owner)?;
             apply_owner_delta(&mut self.known_string_bytes, delta);
         }
@@ -7630,57 +7534,19 @@ impl PrivateVecLowerer<'_, '_, '_> {
         at: Span,
         excluded: Option<raw::PlaceId>,
     ) -> Option<raw::CleanupPlanId> {
-        if resource_budget_violation(
-            self.cleanup_plans.len(),
-            self.reserved_cleanup_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup sites exceed the per-function M3 limit of {}",
-                    ir::MAX_CLEANUP_PLANS_PER_FUNCTION
-                ),
-                "reduce fallible private Vec operations",
-            );
-            return None;
-        }
-        let pending = self.owners.pending();
-        let excluded_present = excluded.is_some_and(|place| self.owners.contains(place));
-        let action_count = pending.len() - usize::from(excluded_present);
-        if resource_budget_violation(
-            self.cleanup_actions,
-            self.reserved_cleanup_actions.saturating_add(action_count),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup actions exceed the per-function M3 limit of {}",
-                    ir::MAX_DROP_ACTIONS_PER_FUNCTION
-                ),
-                "reduce simultaneously live owned values or fallible private Vec operations",
-            );
-            return None;
-        }
-        let id = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).unwrap_or(u32::MAX));
-        self.cleanup_plans.push(raw::CleanupPlan {
-            id,
-            span: at,
-            actions: self
-                .owners
-                .pending()
-                .iter()
-                .rev()
-                .copied()
-                .filter(|place| Some(*place) != excluded)
-                .map(raw::DropAction::DropPlace)
-                .collect(),
-        });
-        self.cleanup_actions += action_count;
-        Some(id)
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .push_reverse(
+            &self.owners,
+            at,
+            excluded,
+            OwnedCleanupPlanContext::Vec,
+            self.errors,
+        )
     }
 
     fn push_instruction_cleanup(
@@ -7688,10 +7554,20 @@ impl PrivateVecLowerer<'_, '_, '_> {
         at: Span,
         excluded: Option<raw::PlaceId>,
     ) -> Option<raw::CleanupPlanId> {
-        if !self.cfg.preflight_transition(at, self.errors) {
-            return None;
-        }
-        self.push_cleanup(at, excluded)
+        OwnedCleanupAccounting::new(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &mut self.reserved_cleanup_plans,
+            &mut self.reserved_cleanup_actions,
+        )
+        .push_instruction_reverse(
+            &mut self.cfg,
+            &self.owners,
+            at,
+            excluded,
+            OwnedCleanupPlanContext::Vec,
+            self.errors,
+        )
     }
 
     fn emit(

@@ -3,6 +3,7 @@ use super::borrow_call_resources::{
     checked_add_resources, checked_call_delta, checked_straight_borrow_call_resources,
 };
 use super::function_catalog::FunctionBorrowParameter;
+use super::global_resource_limits::resource_budget_violation;
 use super::owned_cfg_state::OwnedCfgState;
 use super::owned_control_flow_resources::{
     OwnedCfgBudgetLimit, conditional_root_borrow_budget_violation,
@@ -11,34 +12,36 @@ use super::owned_control_flow_resources::{
     projected_root_borrow_resource_counts, root_borrow_resource_violation,
     straight_root_borrow_budget_violation, straight_root_borrow_resources,
 };
+use super::owned_lowering_resources::{
+    OwnedCleanupAccounting, OwnedCleanupActionContext, OwnedStringPreparationBudget,
+    checked_vec_clone_prefix_action_count, preflight_owned_string_preparation,
+};
 use super::owner_state::{OwnedStringBranchState, OwnerState};
 use super::type_model::{RootBorrowBudgetLimit, RootBorrowResources};
 use super::{
     Errors, FunctionCatalog, FunctionParameterOrder, FunctionSignature, MAX_SEMANTIC_DIAGNOSTICS,
-    OwnedStringEstimateContext, OwnedStringPreparationBudget, PartialTransferBudgetViolation,
-    PrivateStringLowerer, ProgramCfgBudgetLimit, SemanticInput, ValueBudgetLimit,
-    accumulate_generated_cfg_function, accumulate_generated_value_function,
-    aggregate_clone_budget_violation, aggregate_operand_budget_violation,
-    aggregate_transition_budget_violation, authenticated_type_capabilities,
-    checked_string_concat_bytes, cleanup_action_budget_violation, cleanup_actions_after_additions,
-    cleanup_actions_after_preparation, cleanup_actions_after_transfer, derived_value_count,
-    enum_payload_move_resource_estimate, enum_payload_move_resource_violation,
-    estimate_owned_string_expression, generated_cfg_budget_violation,
-    is_direct_owned_root_borrow_candidate, is_terminal_owned_phi_candidate, lower,
-    owned_call_cleanup_budget_violation, owned_place_budget_violation,
-    partial_assignment_budget_preflight, partial_assignment_place_delta,
-    partial_return_budget_preflight, partial_return_place_delta, partial_transfer_budget_preflight,
-    partial_transfer_place_delta, preflight_aggregate_operand_total, preflight_owned_loop_body,
-    preflight_owned_loop_exit, preflight_owned_place_capacity,
-    preflight_owned_place_capacity_with_reserved, preflight_owned_string_preparation,
+    OwnedStringEstimateContext, PartialTransferBudgetViolation, PrivateStringLowerer,
+    ProgramCfgBudgetLimit, SemanticInput, ValueBudgetLimit, accumulate_generated_cfg_function,
+    accumulate_generated_value_function, aggregate_clone_budget_violation,
+    aggregate_operand_budget_violation, aggregate_transition_budget_violation,
+    authenticated_type_capabilities, checked_string_concat_bytes, cleanup_action_budget_violation,
+    cleanup_actions_after_additions, cleanup_actions_after_preparation,
+    cleanup_actions_after_transfer, derived_value_count, enum_payload_move_resource_estimate,
+    enum_payload_move_resource_violation, estimate_owned_string_expression,
+    generated_cfg_budget_violation, is_direct_owned_root_borrow_candidate,
+    is_terminal_owned_phi_candidate, lower, owned_call_cleanup_budget_violation,
+    owned_place_budget_violation, partial_assignment_budget_preflight,
+    partial_assignment_place_delta, partial_return_budget_preflight, partial_return_place_delta,
+    partial_transfer_budget_preflight, partial_transfer_place_delta,
+    preflight_aggregate_operand_total, preflight_owned_loop_body, preflight_owned_loop_exit,
+    preflight_owned_place_capacity, preflight_owned_place_capacity_with_reserved,
     projected_aggregate_assignment_budget_violation,
     projected_aggregate_clone_assignment_budget_violation,
     projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
     projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
     projected_subobject_return_budget_violation, raw_function_value_count,
-    raw_terminator_edge_count, resource_budget_violation, semantic_preflight, span,
-    string_byte_budget_violation, terminal_owned_if, value_budget_violation,
-    vec_push_target_invalid,
+    raw_terminator_edge_count, semantic_preflight, span, string_byte_budget_violation,
+    terminal_owned_if, value_budget_violation, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
