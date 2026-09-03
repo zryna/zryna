@@ -6,12 +6,23 @@ use zryna_syntax::v4 as syntax;
 use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::function_catalog::FunctionCatalog;
+use super::layout_graph::Decl;
 use super::owned_cfg_state::OwnedCfgState;
 use super::owner_state::OwnerState;
 use super::type_model::{Binding, Ty};
 
+mod assignments;
+mod branches;
 mod expressions_and_calls;
 mod preparation;
+
+#[derive(Clone, Copy)]
+pub(in crate::data_ownership_v1) struct StringBranchTypes<'a> {
+    pub(in crate::data_ownership_v1) file: &'a syntax::SourceUnit,
+    pub(in crate::data_ownership_v1) declarations: &'a [Decl],
+    pub(in crate::data_ownership_v1) graph: &'a zryna_layout::raw::Graph,
+    pub(in crate::data_ownership_v1) node_types: &'a [Option<Ty>],
+}
 
 pub(in crate::data_ownership_v1) struct PrivateStringLowerer<'a, 'f, 'e> {
     pub(in crate::data_ownership_v1) input: SemanticInput<'a>,
