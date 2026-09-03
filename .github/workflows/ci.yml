@@ -39,7 +39,7 @@ jobs:
 
   preflight:
     name: preflight
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,7 +61,6 @@ jobs:
 
   rust:
     name: rust (${{ matrix.os }})
-    needs: preflight
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -99,7 +98,6 @@ jobs:
 
   adapter-platform:
     name: adapter (${{ matrix.os }})
-    needs: preflight
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -124,17 +122,17 @@ jobs:
   adapter:
     name: adapter
     if: always()
-    needs: adapter-platform
+    needs: [preflight, adapter-platform]
     runs-on: ubuntu-latest
     steps:
       - name: Verify adapter platforms
         env:
+          PREFLIGHT_RESULT: ${{ needs.preflight.result }}
           PLATFORM_RESULT: ${{ needs.adapter-platform.result }}
-        run: test "$PLATFORM_RESULT" = success
+        run: test "$PREFLIGHT_RESULT" = success && test "$PLATFORM_RESULT" = success
 
   m2-platform:
     name: m2 (${{ matrix.os }})
-    needs: preflight
     timeout-minutes: 30
     strategy:
       fail-fast: false
