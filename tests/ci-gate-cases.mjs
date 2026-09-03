@@ -7,6 +7,91 @@ import { parseDocument } from 'yaml';
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
 const workflow = document.toJS();
+const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'docs-publish'];
+const nodeStep = {
+  uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
+  with: { 'node-version': '22.22.1' },
+};
+const pnpmStep = {
+  uses: 'pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86',
+  with: { version: '11.18.0' },
+};
+
+function bootstrapOrder(candidate, metadata) {
+  assert.equal(metadata.packageManager, 'pnpm@11.18.0');
+  assert.equal(metadata.devEngines?.packageManager, undefined,
+    'new package-manager metadata requires explicit automatic-cache review');
+  const actualJobs = Object.entries(candidate.jobs).filter(([, job]) => job.steps.some(step =>
+    /^(actions\/setup-node|pnpm\/action-setup)@/.test(step.uses ?? ''))).map(([id]) => id);
+  assert.deepEqual(actualJobs, bootstrapJobs);
+  for (const id of bootstrapJobs) {
+    const steps = candidate.jobs[id].steps;
+    const pnpm = steps.flatMap((step, index) => /^pnpm\/action-setup@/.test(step.uses ?? '') ? [index] : []);
+    const nodes = steps.flatMap((step, index) => /^actions\/setup-node@/.test(step.uses ?? '') ? [index] : []);
+    assert.equal(pnpm.length, 1, id);
+    const index = pnpm[0];
+    assert.deepEqual(steps[index], pnpmStep, id);
+    assert.deepEqual(steps[index - 1], nodeStep, id);
+    if (id === 'owned-data-quick') {
+      assert.deepEqual(nodes, [index - 1], id);
+    } else {
+      assert.deepEqual(nodes, [index - 1, index + 1], id);
+      assert.deepEqual(steps[index + 1], {
+        ...nodeStep, with: { ...nodeStep.with, cache: 'pnpm' },
+      }, id);
+      assert.deepEqual(steps[index + 2], { run: 'pnpm install --frozen-lockfile' }, id);
+    }
+  }
+}
+
+test('CI pins bootstrap Node before pnpm and restores stores only after pnpm exists', () => {
+  bootstrapOrder(workflow, packageDocument);
+});
+
+test('bootstrap toolchain and cache-order mutations fail closed in every setup job', () => {
+  for (const id of bootstrapJobs) {
+    const mutations = [
+      (steps, index) => { steps.splice(index - 1, 1); },
+      (steps, index) => { [steps[index - 1], steps[index]] = [steps[index], steps[index - 1]]; },
+      (steps, index) => { steps[index - 1].uses = 'actions/setup-node@main'; },
+      (steps, index) => { steps[index - 1].with['node-version'] = '22'; },
+      (steps, index) => { steps[index - 1].with.cache = 'pnpm'; },
+      (steps, index) => { steps[index - 1].if = 'false'; },
+      (steps, index) => { steps[index - 1]['continue-on-error'] = true; },
+      (steps, index) => { steps[index].uses = 'pnpm/action-setup@main'; },
+      (steps, index) => { steps[index].with.version = 'latest'; },
+      (steps, index) => { steps[index].with.run_install = true; },
+      (steps, index) => { steps[index].if = 'false'; },
+      (steps, index) => { steps[index]['continue-on-error'] = true; },
+      steps => { steps.push(structuredClone(nodeStep)); },
+      steps => { steps.push(structuredClone(pnpmStep)); },
+    ];
+    if (id !== 'owned-data-quick') mutations.push(
+      (steps, index) => { steps.splice(index + 1, 1); },
+      (steps, index) => { [steps[index], steps[index + 1]] = [steps[index + 1], steps[index]]; },
+      (steps, index) => { delete steps[index + 1].with.cache; },
+      (steps, index) => { steps[index + 1].with.cache = 'npm'; },
+      (steps, index) => { steps[index + 1].with['node-version'] = 'latest'; },
+      (steps, index) => { steps[index + 1].uses = 'actions/setup-node@main'; },
+      (steps, index) => { steps[index + 1].if = 'false'; },
+      (steps, index) => { steps[index + 1]['continue-on-error'] = true; },
+      (steps, index) => { steps[index + 2].run = 'pnpm install'; },
+    );
+    for (const mutate of mutations) {
+      const changed = structuredClone(workflow);
+      const steps = changed.jobs[id].steps;
+      mutate(steps, steps.findIndex(step => step.uses === pnpmStep.uses));
+      assert.throws(() => bootstrapOrder(changed, packageDocument), `${id}: mutation must fail`);
+    }
+  }
+  for (const metadata of [
+    { ...packageDocument, packageManager: 'npm@11' },
+    { ...packageDocument, packageManager: undefined },
+    { ...packageDocument, devEngines: { packageManager: { name: 'npm' } } },
+    { ...packageDocument, devEngines: { packageManager: [{ name: 'npm' }] } },
+  ]) assert.throws(() => bootstrapOrder(workflow, metadata));
+});
 const aggregateNeeds = {
   adapter: ['preflight', 'adapter-platform'],
   m0: ['owned-data-quick', 'preflight', 'rust', 'adapter'],
@@ -155,7 +240,17 @@ test('aggregate grammar and dependency mutations fail closed', () => {
 });
 
 test('parallel scheduling preserves all other pinned workflow authority', () => {
+  bootstrapOrder(workflow, packageDocument);
   const original = structuredClone(workflow);
+  for (const id of bootstrapJobs) {
+    const steps = original.jobs[id].steps;
+    const index = steps.findIndex(step => step.uses === pnpmStep.uses);
+    if (id === 'owned-data-quick') {
+      [steps[index - 1], steps[index]] = [steps[index], steps[index - 1]];
+    } else {
+      steps.splice(index - 1, 1);
+    }
+  }
   original.jobs.preflight['timeout-minutes'] = 10;
   for (const id of ['rust', 'adapter-platform', 'm2-platform']) {
     original.jobs[id].needs = 'preflight';
