@@ -112,10 +112,55 @@ the aggregate closure claim; no earlier child marks Issue #82 complete or enable
 
 | Issue #82 acceptance criterion | Owning slices | Named evidence class |
 | --- | --- | --- |
-| valid local borrows compile with deterministic scope and access authority | #114, #115, #116, #119, #120, #121 | source-positive semantic fixtures plus mandatory verified-IR views |
+| valid local borrows compile with deterministic scope and access authority | #114, #115, #116, #117, #119, #120, #121 | source-positive semantic fixtures plus mandatory verified-IR views |
 | conflicts, escape, owner move/drop misuse, and invalid join/loop state fail stably | #115, #117, #120, #121 | source-hostile diagnostic fixtures with repeated-order checks |
 | forged or incomplete IR borrow claims fail | #113, retained by #122 | focused IR positives; unused, sparse, duplicate, inactive, wrong-access, overlap, call, and edge-escape negatives |
 | M1, M2, and non-borrowing M3 remain unchanged | every child, aggregate in #122 | focused quick lane, documentation checks, `pnpm preflight`, `pnpm m0:check`, required Linux/Windows jobs |
+
+### Named closure evidence
+
+The following tests make the parent map inspectable. Their presence is not a final closure
+result: #122 still requires integrated regression, resource, independent review, and required
+Linux/Windows evidence. Semantic fixtures authenticate syntax snapshots and inspect verified IR;
+they do not establish public CLI or target-runtime support.
+
+Semantic test paths below are relative to
+`crates/zryna-semantics/src/data_ownership_v1/tests/`.
+
+| Boundary | Positive test | Rejection or replay test |
+| --- | --- | --- |
+| shared and exclusive root scope (`straight_root_borrows.rs`) | `shared_root_aliases_read_copy_values_end_in_reverse_and_restore_owner_access`; `exclusive_root_borrow_reads_writes_and_restores_owner_access` | `complete_root_alias_conflict_matrix_fails_before_ir_construction`; `exclusive_lowering_and_conflict_diagnostics_are_deterministic` |
+| owned-root source preservation (`owned_root_borrow_reads.rs`) | `owned_root_shared_reads_reuse_existing_operations_and_restore_each_owner` | `owned_root_borrow_faults_retain_the_source_and_exact_cleanup_authority`; `owned_root_borrow_exclusions_are_ordered_source_faithful_and_deterministic` |
+| conditional discharge (`conditional_root_borrows.rs`) | `conditional_root_borrows_use_canonical_blocks_and_discharge_each_arm`; `conditional_root_borrow_accepts_exclusive_authority_in_both_arms` | `conditional_arm_conflicts_and_owner_access_fail_before_ir_construction`; `conditional_root_borrow_lowering_is_deterministic` |
+| loop discharge (`loop_root_borrows.rs`) | `loop_root_borrows_discharge_before_the_canonical_backedge`; `loop_shared_root_borrow_keeps_owner_copy_reads_inside_the_body` | `loop_root_borrow_exclusions_are_source_faithful_ordered_and_stable` |
+| exact private calls (`borrow_call_conformance.rs`) | `accepted_borrow_call_fixture_snapshots_authenticate_and_lower` | `rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery` |
+| unchanged forwarded authority (`borrow_forwarding_calls.rs`) | `lexical_authority_is_forwarded_unchanged_and_ended_only_by_its_caller` | `post_preflight_argument_failure_restores_the_full_lowerer_snapshot_before_replay` |
+| static projected disjointness (`projected_borrows.rs`) | `projected_borrows_preserve_exact_static_paths_and_disjoint_authority`; `overlapping_shared_parent_and_child_keep_independent_verified_authority` | `projected_borrow_exclusions_are_exact_ordered_and_deterministic`; `projected_borrow_lowering_replays_the_complete_place_and_authority_trace` |
+
+The independent verifier's tests in `crates/zryna-ir/src/data_ownership_v1/tests.rs`
+include real accepted authority in `dense_shared_borrow_read_and_end_is_accepted` and
+`borrow_parameter_is_an_authenticated_active_authority`. Forged or incomplete claims are covered
+by `unused_borrow_parameter_authority_is_rejected`,
+`sparse_and_duplicate_borrow_parameter_metadata_is_rejected`, and
+`sparse_duplicate_and_inactive_lexical_borrow_authority_is_rejected`. Edge and callee exclusions
+are covered by `lexical_borrow_cannot_escape_return_or_trap`,
+`lexical_borrow_cannot_cross_branch_or_jump_edges`,
+`lexical_borrow_loop_rejects_backedge_escape_inactive_header_end_and_state_mismatch`, and
+`borrow_parameter_cannot_be_ended_or_exported`.
+
+Issue #248 adds fully verified dense exact/first-extra resource programs in
+`crates/zryna-ir/src/data_ownership_v1/tests/borrow_resource_boundaries.rs`:
+
+- `dense_lexical_active_borrow_exact_and_first_extra_are_fully_verified`;
+- `parameter_and_lexical_authorities_share_the_authenticated_active_limit`;
+- `sequential_dense_lexical_sites_may_exceed_the_active_borrow_limit`.
+
+These tests distinguish simultaneously active authorities from total lexical sites. Other
+resource-formula and raw-preflight tests prove their counters and rejection order; an exact
+synthetic count alone does not prove that a complete program authenticates and verifies. Fixed
+source shapes may hit another resource limit before a nominal maximum is reachable. Loop trace
+walks over verified views prove scope topology, not execution by a JavaScript, WebAssembly, or
+native runtime. The final closure report must preserve these evidence distinctions.
 
 ## Issue #113 evidence
 
