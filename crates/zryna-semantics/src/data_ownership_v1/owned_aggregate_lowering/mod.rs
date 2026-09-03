@@ -8,6 +8,7 @@ use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 
 mod projections;
 mod shape;
+mod state;
 
 pub(super) use shape::{
     aggregate_graph_is_supported, complete_owned_projection_shape, owned_enum_graph_is_supported,
