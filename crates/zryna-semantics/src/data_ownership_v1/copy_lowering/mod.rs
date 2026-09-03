@@ -4,6 +4,7 @@ use super::{
     Binding, Decl, Errors, FunctionCatalog, SemanticInput, Ty, layout, raw, raw_layout, syntax,
 };
 
+mod expressions;
 mod resolvers;
 mod state;
 
