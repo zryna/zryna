@@ -41,7 +41,9 @@ borrow only after consuming the final opaque verified program in later target is
 - `Exclusive` grants read/write access and conflicts with every overlapping shared or exclusive
   borrow.
 - Parent and descendant places overlap. Distinct struct fields and distinct constant fixed-array
-  elements are disjoint. Dynamic indices and Vec elements conservatively use the container root.
+  elements are disjoint. Normative v1 rules make dynamic indices and Vec elements conservatively
+  overlap the complete container. The narrower Issue #120 source checkpoint rejects those forms;
+  that rejection does not narrow the normative rule.
 - The owner remains initialized while borrowed, but overlapping move, drop, replacement, mutable
   container operation, or other exclusive owner use is rejected. An exclusive borrow also blocks
   overlapping owner reads.
@@ -50,8 +52,10 @@ borrow only after consuming the final opaque verified program in later target is
 - A function borrow parameter is active on entry, cannot be ended by the callee, and must perform a
   `BorrowRead`, `BorrowWrite`, or exact direct-call borrow argument use. Unused signature metadata
   is invalid.
-- `BorrowRead` and `BorrowWrite` currently carry only `Copy` referents. Owned values cannot be
-  manufactured or transferred through a borrow in this slice.
+- `BorrowRead` and `BorrowWrite` currently carry only `Copy` referents. They cannot produce or
+  transfer an owned value. Issue #116 instead reuses existing owned clone/concatenation operations
+  while shared authority is active: each result has a distinct owner, without cloning the borrow
+  or transferring its source owner.
 - A direct call may pass an active lexical or parameter authority only to the exact referent type
   and access mode. Repeating or overlapping exclusive authority in one call is invalid.
 - Lexical authority cannot cross `Jump`, `Branch`, `EnumMatch`, `WeakUpgradeBranch`, loop,
@@ -94,10 +98,10 @@ The parent closes only through this graph:
 | #113 | contract and IR prerequisite audit | this document, hostile raw-IR evidence, no semantic lowering |
 | #114 | straight-line shared root borrows | deterministic scope, Copy reads, owner-read compatibility |
 | #115 | exclusive Copy borrows and bounded reborrowing | mutation, conflicts, exact lexical restoration |
-| #116 | shared reads of owned roots | no owned transfer, clone, stored reference, or cleanup authority |
+| #116 | shared reads of owned roots | distinct owned read results; no source-owner transfer, cloned borrow, stored reference, or borrow cleanup authority |
 | #117 | conditional edges | every arm ends authority; no borrow-carrying block parameter |
 | #119 | bounded internal calls | exact parameter modes; callee cannot retain, return, or end caller authority |
-| #120 | projected disjointness | static siblings may coexist; parent/child and conservative dynamic overlap fail closed |
+| #120 | projected disjointness | static siblings may coexist; overlapping exclusive authority fails; dynamic/Vec source forms remain rejected |
 | #121 | loop edges | header/backedge state equality and per-iteration lexical end |
 | #122 | closure, limits, regressions, and documentation | final diagnostic, exact/+1, Linux/Windows, M0/M1/M2/non-borrow M3 evidence |
 
@@ -238,6 +242,14 @@ CLI routes, artifacts, and public-profile activation. Unsupported shapes fail be
 construction; the mandatory existing verifier remains the final authority for owner exclusion,
 distinct result ownership, cleanup, and lexical end.
 
+Existing semantic evidence is
+`owned_root_shared_reads_reuse_existing_operations_and_restore_each_owner` (distinct results and
+post-end root return), `owned_root_borrow_faults_retain_the_source_and_exact_cleanup_authority`
+(source retention on failure), and
+`owned_root_borrow_exclusions_are_ordered_source_faithful_and_deterministic` (rejected shapes).
+The independent IR test `borrow_read_and_write_reject_non_copy_string_referents` preserves the
+Copy-only instruction boundary; owned operations do not widen it.
+
 ## Issue #117 conditional-edge checkpoint
 
 The same private parameter-free producer now admits one literal-initialized `bool` root, one
@@ -352,7 +364,8 @@ by a finite sequence of `StructField` ordinals and `FixedArrayConstant` indices.
 materialized once, identities remain dense, and `BeginBorrow` names the exact final place rather
 than collapsing static siblings to their common root.
 
-Overlap is exactly prefix-based: the same path and every ancestor/descendant pair overlap, while
+For these admitted static source paths, overlap is exactly prefix-based:
+the same path and every ancestor/descendant pair overlap, while
 distinct static siblings are disjoint. Consequently overlapping shared/shared parent and child
 authorities may coexist; shared/exclusive, exclusive/shared, and exclusive/exclusive overlaps are
 rejected; disjoint exclusive struct fields or fixed-array elements may coexist. An overlapping
@@ -374,9 +387,15 @@ produces no IR value; the global value preflight and the projected exact formula
 emitted definitions. The positive formula yields 19 values, 14 places, and 38 transitions; the
 fixture freezes 14 materialized places, five active authorities, reverse lexical ends, zero return
 cleanup actions, and deterministic ordered place/authority replay. Hostile fixtures freeze ordered source spans and diagnostics
-for every overlap direction, invalid fields and indices, conservative dynamic access, Vec/enum/
+for every overlap direction, invalid fields and indices, rejected dynamic access, Vec/enum/
 non-Copy roots, and unsupported projection continuation. The independent IR corpus separately
 proves projected move, replace, drop, direct-call, and hostile replay behavior.
+
+`projected_borrows_preserve_exact_static_paths_and_disjoint_authority` and
+`overlapping_shared_parent_and_child_keep_independent_verified_authority` prove admitted static
+access; `projected_borrow_exclusions_are_exact_ordered_and_deterministic` pins the rejected dynamic
+and Vec source forms. These tests do not claim implemented full-container dynamic/Vec borrowing;
+that remains the normative rule in `DATA_OWNERSHIP_V1.md` sections 5 and 9, not a new static-only rule.
 
 This checkpoint adds no runtime address, pointer, lifetime token, garbage collection, ABI,
 backend, driver route, CLI selection, target artifact, or public profile. Dynamic index reasoning,
