@@ -335,6 +335,12 @@ requirements; any staged remainder needs explicit blocking work. These tracked g
 activate new syntax or a public profile, and do not certify all other normative M3 requirements
 complete. Bounded #122 closure must preserve the distinction and its actual verification gates.
 
+The checked M3 registry records this dependency order rather than assuming that an earlier GitHub
+issue number cannot depend on later-discovered work. Its current SHA-256 is
+`0c144ad82ec1f601f5c2057578df001487e0bebeead002467bedcaa197ef9e51`.
+The original #119 provenance and unchanged borrow-call fixture digest remain historical evidence;
+updating the graph does not implement any of its planned capabilities.
+
 `Pair` is the smallest mandatory fixed-oracle case, remains internal, and preserves scalar ABI v1
 exports. Issue #79 proves nominal identity, construction, source field order and access, sealed
 logical layout, verified IR, and the fixed scalar results through a test-only evaluator over opaque

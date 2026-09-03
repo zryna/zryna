@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import "./m3-issue-graph-cases.mjs";
 
 import {
   expectedRegistrySha256,
@@ -24,7 +25,7 @@ test("digest-pins the real M3 issue graph and regression authorities", () => {
   assert.equal(contract.status, "specified-not-implemented");
   assert.deepEqual(
     contract.issues.map(({ number }) => number),
-    [75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90],
+    [75, 76, 77, 78, 79, 80, 81, 82, 83, 254, 255, 256, 84, 85, 86, 87, 88, 89, 90],
   );
   assert.deepEqual(
     contract.issues.find(({ number }) => number === 88).dependsOn,
