@@ -1,5 +1,179 @@
 use super::*;
 
+use super::owned_root_borrow_boundary_fixture_support::owned_root_cleanup_boundary_fixture;
+use zryna_ir::data_ownership_v1::{BorrowIdentity, CleanupPlanIdentity};
+
+fn cleanup_boundary_observation(program: &super::super::VerifiedProgram) -> Vec<String> {
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let mut observation = Vec::new();
+    for block in function.blocks() {
+        for instruction in block.instructions() {
+            observation.push(format!(
+                "{:?}/{:?}/{:?}/{:?}/{:?}/{:?}",
+                instruction.kind(),
+                instruction.result().map(FaultValueIdentity::index),
+                instruction.place_operands().map(FaultPlaceIdentity::index).collect::<Vec<_>>(),
+                instruction.value_operands().map(FaultValueIdentity::index).collect::<Vec<_>>(),
+                instruction.cleanup().map(CleanupPlanIdentity::index),
+                instruction.borrow().map(BorrowIdentity::index),
+            ));
+        }
+    }
+    for cleanup in function.cleanup_plans() {
+        observation.push(format!(
+            "{:?}",
+            cleanup.actions().map(FaultPlaceIdentity::index).collect::<Vec<_>>()
+        ));
+    }
+    observation
+}
+
+#[test]
+#[ignore = "authenticated exact/first-extra cleanup boundary runs in the full M3 preflight gate"]
+#[allow(clippy::too_many_lines)]
+fn owned_root_shared_read_drop_budget_is_authenticated_exact_and_first_extra() {
+    let exact = owned_root_cleanup_boundary_fixture(17, 27);
+    let extra = owned_root_cleanup_boundary_fixture(20, 25);
+    for (fixture, expressions, operands) in [(&exact, 1_070, 46), (&extra, 1_071, 47)] {
+        assert_eq!(fixture.source_expressions, expressions);
+        assert_eq!(fixture.source_statements, 514);
+        assert_eq!(fixture.source_types, 522);
+        assert_eq!(fixture.construction_operands, operands);
+        assert_eq!(fixture.raw.files[0].functions[0].body.blocks.len(), 2);
+        assert_eq!(derived_value_count(&fixture.raw.files[0].functions[0]), expressions - 512);
+        assert!(expressions - 512 < zryna_ir::data_ownership_v1::MAX_VALUES_PER_FUNCTION);
+        assert!(fixture.raw.files[0].functions[0].body.expressions.iter().all(|expression| {
+            match &expression.kind {
+                zryna_syntax::v4::RawExpressionKind::StringLiteral { spelling } => {
+                    spelling == "\"\""
+                }
+                _ => true,
+            }
+        }));
+        assert!(fixture.source.len() < zryna_syntax::v4::MAX_AGGREGATE_SOURCE_BYTES);
+        assert!(expressions < zryna_syntax::v4::MAX_EXPRESSIONS_PER_FUNCTION);
+        assert!(fixture.source_statements < zryna_syntax::v4::MAX_STATEMENTS_PER_FUNCTION);
+        assert!(fixture.source_types < zryna_syntax::v4::MAX_TYPE_NODES_PER_MODULE);
+        assert!(operands < zryna_syntax::v4::MAX_AGGREGATE_OPERANDS_PER_PROJECT);
+    }
+    // Constructor cleanup is A(A-1)/2 + B(B+1)/2. Clone k adds 2k+1
+    // actions; the final return adds 510, later moved into explicit lexical drops.
+    let clone_actions = (1..=510).map(|pending| 2 * pending + 1).sum::<usize>();
+    assert_eq!(clone_actions, 261_120);
+    let limit = zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION;
+    assert_eq!(17 * 16 / 2 + 27 * 28 / 2 + clone_actions + 510, limit);
+    assert_eq!(20 * 19 / 2 + 25 * 26 / 2 + clone_actions + 510, limit + 1);
+
+    let sources = sources_for(&exact.source);
+    let syntax = verify_snapshot(exact.raw, &sources).expect("authenticated exact cleanup source");
+    let program = lower(pair_input(&syntax, &sources)).expect("sealed exact cleanup boundary");
+    let module = program.modules().next().expect("one module");
+    assert_eq!(module.functions().len(), 1);
+    let function = module.functions().next().expect("one function");
+    assert_eq!(function.blocks().len(), 1);
+    assert_eq!(function.borrow_parameters().len(), 0);
+    assert_eq!(function.places().len(), 1_069);
+    let block = function.blocks().next().expect("one block");
+    assert_eq!(block.terminator().edges().len(), 0);
+    let instructions = block.instructions().collect::<Vec<_>>();
+    assert_eq!(instructions.len(), 1_581);
+    assert_eq!(
+        instructions.iter().filter(|instruction| instruction.result().is_some()).count(),
+        558
+    );
+    assert!(
+        instructions.len() < zryna_ir::data_ownership_v1::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
+    );
+    assert!(function.places().len() < zryna_ir::data_ownership_v1::MAX_PLACES_PER_FUNCTION);
+    let begin = instructions
+        .iter()
+        .position(|i| i.kind() == VerifiedInstructionKind::BeginBorrow)
+        .expect("shared begin");
+    let end = instructions
+        .iter()
+        .position(|i| i.kind() == VerifiedInstructionKind::EndBorrow)
+        .expect("lexical end");
+    assert_eq!(instructions.iter().filter(|i| i.borrow().is_some()).count(), 2);
+    assert_eq!(instructions[begin].borrow_access(), Some(VerifiedBorrowAccess::Shared));
+    assert_eq!(instructions[begin].borrow(), instructions[end].borrow());
+    let root = instructions[begin].place_operands().next().expect("borrowed root");
+    assert_eq!(instructions[end + 1].kind(), VerifiedInstructionKind::MoveFromPlace);
+    assert_eq!(instructions[end + 1].place_operands().collect::<Vec<_>>(), [root]);
+    assert_eq!(end + 2, instructions.len());
+    assert_eq!(block.terminator().value_operands().next(), instructions[end + 1].result());
+    let clones = instructions
+        .iter()
+        .enumerate()
+        .filter(|(_, i)| i.kind() == VerifiedInstructionKind::ClonePlace)
+        .collect::<Vec<_>>();
+    assert_eq!(clones.len(), 510);
+    let mut cloned_locals = Vec::new();
+    let mut temporary_owners = std::collections::BTreeSet::new();
+    for (index, instruction) in clones {
+        assert!(begin < index && index < end);
+        assert_eq!(instruction.place_operands().collect::<Vec<_>>(), [root]);
+        assert!(instruction.derived_drop_actions().any(|action| action.root() == root));
+        let result = instruction.result().expect("distinct clone result");
+        let owner = function
+            .places()
+            .find(|place| place.kind() == VerifiedPlaceKind::Temporary(result))
+            .expect("unique clone temporary");
+        assert_ne!(owner.id(), root);
+        assert!(temporary_owners.insert(owner.id().index()));
+        let initialize = instructions[index + 1];
+        assert_eq!(initialize.kind(), VerifiedInstructionKind::InitializePlace);
+        assert_eq!(initialize.value_operands().collect::<Vec<_>>(), [result]);
+        cloned_locals.push(initialize.place_operands().next().expect("clone local"));
+    }
+    let drops = instructions
+        .iter()
+        .enumerate()
+        .filter(|(_, i)| i.kind() == VerifiedInstructionKind::DropPlace)
+        .map(|(index, instruction)| {
+            assert!(begin < index && index < end);
+            instruction.place_operands().next().expect("lexical drop")
+        })
+        .collect::<Vec<_>>();
+    cloned_locals.reverse();
+    assert_eq!(drops, cloned_locals);
+    assert!(!drops.contains(&root));
+    let plans = function.cleanup_plans().collect::<Vec<_>>();
+    assert_eq!(plans.len(), 1_065);
+    assert_eq!(plans[..44].iter().map(|plan| plan.actions().len()).sum::<usize>(), 514);
+    for (index, pair) in plans[44..1_064].chunks_exact(2).enumerate() {
+        assert_eq!(pair[0].actions().len(), index + 1);
+        assert_eq!(pair[1].actions().len(), index + 2);
+    }
+    let return_cleanup = plans.last().expect("final return cleanup");
+    assert_eq!(return_cleanup.id(), block.terminator().cleanup().expect("return cleanup identity"));
+    assert_eq!(return_cleanup.actions().len(), 0);
+    let remaining_actions = plans.iter().map(|plan| plan.actions().len()).sum::<usize>();
+    assert_eq!(remaining_actions, 261_634);
+    assert_eq!(remaining_actions + drops.len(), limit);
+
+    let extra_sources = sources_for(&extra.source);
+    let extra_syntax = verify_snapshot(extra.raw, &extra_sources)
+        .expect("authenticated first-extra cleanup source");
+    let reject = || {
+        lower(pair_input(&extra_syntax, &extra_sources)).expect_err("first extra cleanup action")
+    };
+    let diagnostics = reject();
+    let return_span = extra_sources.verify_span(extra.return_span).expect("final return span");
+    assert_eq!(
+        diagnostics,
+        [zryna_diagnostics::Diagnostic::error_at(
+            "ZRYNA-M3201",
+            return_span,
+            "derived cleanup actions exceed the per-function M3 limit of 262144",
+            "reduce simultaneously live owned aggregates and String leaves",
+        )]
+    );
+    assert_eq!(diagnostics, reject());
+    let recovered =
+        lower(pair_input(&syntax, &sources)).expect("exact case recovers after rejection");
+    assert_eq!(cleanup_boundary_observation(&program), cleanup_boundary_observation(&recovered));
+}
+
 #[test]
 fn owned_root_shared_reads_reuse_existing_operations_and_restore_each_owner() {
     let sources = sources_for(OWNED_ROOT_BORROW_READS_SOURCE);
