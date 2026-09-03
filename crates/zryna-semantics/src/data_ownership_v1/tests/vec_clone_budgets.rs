@@ -50,7 +50,7 @@ fn private_vec_clone_preflights_exact_first_extra_and_overflow_atomically() {
             })
             .collect::<Vec<_>>();
         let source_place = raw::PlaceId(0);
-        let mut lowerer = super::super::PrivateVecLowerer {
+        let mut lowerer = super::super::owned_vec_lowering::PrivateVecLowerer {
             input,
             file,
             function,
@@ -141,7 +141,7 @@ fn private_vec_clone_preflights_exact_first_extra_and_overflow_atomically() {
                 value_owners: std::collections::BTreeMap::new(),
             }
         };
-        let mut lowerer = super::super::PrivateVecLowerer {
+        let mut lowerer = super::super::owned_vec_lowering::PrivateVecLowerer {
             input,
             file,
             function,
@@ -231,7 +231,7 @@ fn private_vec_string_clone_prefix_cleanup_is_exact_plus_one_and_overflow_atomic
             pending: vec![source_place],
             value_owners: std::collections::BTreeMap::new(),
         };
-        let mut lowerer = super::super::PrivateVecLowerer {
+        let mut lowerer = super::super::owned_vec_lowering::PrivateVecLowerer {
             input,
             file,
             function,

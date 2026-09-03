@@ -117,7 +117,7 @@ fn private_vec_call_rejects_borrow_signature_before_arity_or_value_evaluation() 
     };
     let mut errors = Errors::new(&sources);
     let cfg = OwnedCfgState::single_block(call_span, &mut errors).expect("entry block");
-    let mut lowerer = super::super::PrivateVecLowerer {
+    let mut lowerer = super::super::owned_vec_lowering::PrivateVecLowerer {
         input,
         file,
         function,
