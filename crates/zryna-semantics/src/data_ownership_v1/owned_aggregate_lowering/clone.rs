@@ -154,10 +154,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             },
         )
     }
-    pub(in crate::data_ownership_v1) fn projected_aggregate_clone_site_available(
-        &mut self,
-        at: Span,
-    ) -> bool {
+    pub(super) fn projected_aggregate_clone_site_available(&mut self, at: Span) -> bool {
         if self.projected_aggregate_clones == 0 {
             return true;
         }

@@ -166,10 +166,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn owned_place_preflight(
-        &self,
-        id: u32,
-    ) -> Option<OwnedAggregatePlacePreflight> {
+    pub(super) fn owned_place_preflight(&self, id: u32) -> Option<OwnedAggregatePlacePreflight> {
         let expression = self.expression(id)?;
         match &expression.kind {
             RawExpressionKind::Reference { name } => {
@@ -260,7 +257,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn preflight_projection_available(
+    pub(super) fn preflight_projection_available(
         &self,
         place: &OwnedAggregatePlacePreflight,
     ) -> bool {

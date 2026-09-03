@@ -10,10 +10,7 @@ use super::super::type_model::{ProjectedAggregateMoveContext, Ty};
 use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn preflight_aggregate_subobject_move_site(
-        &mut self,
-        at: Span,
-    ) -> bool {
+    pub(super) fn preflight_aggregate_subobject_move_site(&mut self, at: Span) -> bool {
         if self.aggregate_subobject_moves == 0 {
             return true;
         }
