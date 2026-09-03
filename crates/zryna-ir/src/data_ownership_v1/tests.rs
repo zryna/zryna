@@ -4,6 +4,8 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 use std::collections::BTreeSet;
 
+mod borrow_resource_boundaries;
+
 use super::{
     Errors, MAX_ACTIVE_BORROWS_PER_FUNCTION, MAX_AGGREGATE_OPERANDS, MAX_BLOCK_PARAMETERS,
     MAX_BLOCKS_PER_FUNCTION, MAX_CALL_EDGES, MAX_CFG_EDGES_PER_FUNCTION,
