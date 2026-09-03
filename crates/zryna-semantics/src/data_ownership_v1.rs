@@ -25,6 +25,7 @@ mod global_resource_limits;
 mod layout_graph;
 mod owned_cfg_state;
 mod owned_control_flow_resources;
+mod owned_control_flow_shape;
 mod owned_lowering_resources;
 mod owned_root_borrow_planning;
 mod owned_root_borrow_postprocessing;
@@ -68,6 +69,10 @@ use owned_control_flow_resources::{
     enum_payload_move_resource_violation, preflight_owned_place_capacity,
     preflight_owned_place_capacity_with_reserved,
 };
+use owned_control_flow_shape::{
+    is_terminal_owned_phi_candidate, preflight_owned_loop_body, preflight_owned_loop_exit,
+    root_is_terminal_if, terminal_owned_if,
+};
 use owned_lowering_resources::{
     OwnedCleanupAccounting, OwnedCleanupActionContext, OwnedCleanupPlanContext,
     OwnedCleanupReservationContext, OwnedStringPreparationBudget,
@@ -93,7 +98,7 @@ use string_vec_resource_estimates::{
 use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
     OwnedStaticProjectionKind, ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext,
-    TerminalOwnedIf, Ty, map_node_types,
+    Ty, map_node_types,
 };
 
 /// Maximum retained semantic diagnostics, including the terminal budget diagnostic.
@@ -977,105 +982,6 @@ fn lower_function_impl<'a>(
     })
 }
 
-fn root_is_terminal_if(function: &syntax::RawFunctionSyntax) -> bool {
-    let Some(root) = usize::try_from(function.body.root_block)
-        .ok()
-        .and_then(|index| function.body.blocks.get(index))
-    else {
-        return false;
-    };
-    let [statement] = root.statements.as_slice() else { return false };
-    usize::try_from(*statement)
-        .ok()
-        .and_then(|index| function.body.statements.get(index))
-        .is_some_and(|statement| matches!(statement.kind, RawStatementKind::If { .. }))
-}
-
-fn is_terminal_owned_phi_candidate(
-    function: &syntax::RawFunctionSyntax,
-    result: TypeCategory,
-    has_vec_operation: bool,
-) -> bool {
-    function.export_span.is_none()
-        && root_is_terminal_if(function)
-        && ((result == TypeCategory::String && !has_vec_operation) || result == TypeCategory::Vec)
-}
-
-fn preflight_owned_loop_body(
-    function: &syntax::RawFunctionSyntax,
-    body_block: u32,
-    allow_vec_effects: bool,
-    sources: &SourceMap,
-    errors: &mut Errors<'_>,
-) -> bool {
-    let Some(block) =
-        usize::try_from(body_block).ok().and_then(|index| function.body.blocks.get(index))
-    else {
-        return false;
-    };
-    for statement_id in &block.statements {
-        let Some(statement) = usize::try_from(*statement_id)
-            .ok()
-            .and_then(|index| function.body.statements.get(index))
-        else {
-            return false;
-        };
-        let supported = matches!(
-            statement.kind,
-            RawStatementKind::LocalDeclaration { .. } | RawStatementKind::Assignment { .. }
-        ) || (allow_vec_effects
-            && matches!(statement.kind, RawStatementKind::ExpressionStatement { .. }));
-        if !supported {
-            errors.at(
-                "ZRYNA-M3016",
-                span(sources, statement.span),
-                "owned loop body contains an unsupported control-flow or ownership statement",
-                "use loop-local declarations and push only into a loop-local Vec",
-            );
-            return false;
-        }
-    }
-    true
-}
-
-fn preflight_owned_loop_exit(
-    function: &syntax::RawFunctionSyntax,
-    loop_statement: u32,
-    sources: &SourceMap,
-    errors: &mut Errors<'_>,
-) -> bool {
-    let Some(root) = usize::try_from(function.body.root_block)
-        .ok()
-        .and_then(|index| function.body.blocks.get(index))
-    else {
-        return false;
-    };
-    let Some(position) = root.statements.iter().position(|statement| *statement == loop_statement)
-    else {
-        return false;
-    };
-    let Some(next_id) = root.statements.get(position + 1).copied() else {
-        return false;
-    };
-    let Some(next) =
-        usize::try_from(next_id).ok().and_then(|index| function.body.statements.get(index))
-    else {
-        return false;
-    };
-    if position + 2 != root.statements.len()
-        || !matches!(next.kind, RawStatementKind::Return { .. })
-    {
-        errors.at(
-            "ZRYNA-M3016",
-            span(sources, next.span),
-            "owned loop must be followed immediately by the sole final return",
-            "remove repeated control flow and effects after the loop",
-        );
-        return false;
-    }
-    true
-}
-
 fn preflight_owned_string_loop_skeleton(
     cfg: &OwnedCfgState,
     known_bytes: &mut BTreeMap<raw::PlaceId, Option<u64>>,
@@ -1092,68 +998,6 @@ fn preflight_owned_string_loop_skeleton(
         }
     }
     true
-}
-
-fn terminal_owned_if(
-    function: &syntax::RawFunctionSyntax,
-    sources: &SourceMap,
-    errors: &mut Errors<'_>,
-) -> Option<TerminalOwnedIf> {
-    let root = usize::try_from(function.body.root_block)
-        .ok()
-        .and_then(|index| function.body.blocks.get(index))?;
-    let [statement_id] = root.statements.as_slice() else { return None };
-    let statement = usize::try_from(*statement_id)
-        .ok()
-        .and_then(|index| function.body.statements.get(index))?;
-    let RawStatementKind::If { condition, then_block, else_clause, .. } = &statement.kind else {
-        return None;
-    };
-    let Some(else_clause) = else_clause else {
-        errors.at(
-            "ZRYNA-M3016",
-            span(sources, statement.span),
-            "terminal owned if requires an else branch",
-            "return one exact owned value from both branches",
-        );
-        return None;
-    };
-    let arm = |block_id: u32, errors: &mut Errors<'_>| {
-        let block =
-            usize::try_from(block_id).ok().and_then(|index| function.body.blocks.get(index))?;
-        let [arm_statement_id] = block.statements.as_slice() else {
-            errors.at(
-                "ZRYNA-M3016",
-                span(sources, block.span),
-                "terminal owned if arm must contain exactly one return",
-                "remove fallthrough and extra branch statements",
-            );
-            return None;
-        };
-        let arm_statement = usize::try_from(*arm_statement_id)
-            .ok()
-            .and_then(|index| function.body.statements.get(index))?;
-        let RawStatementKind::Return { value, .. } = arm_statement.kind else {
-            errors.at(
-                "ZRYNA-M3016",
-                span(sources, arm_statement.span),
-                "terminal owned if arm must end with its sole return",
-                "return one exact owned value directly from this branch",
-            );
-            return None;
-        };
-        Some((value, span(sources, arm_statement.span)))
-    };
-    let (then_value, then_span) = arm(*then_block, errors)?;
-    let (else_value, else_span) = arm(else_clause.block, errors)?;
-    Some(TerminalOwnedIf {
-        condition: *condition,
-        then_value,
-        then_span,
-        else_value,
-        else_span,
-        span: span(sources, statement.span),
-    })
 }
 
 struct PrivateStringLowerer<'a, 'f, 'e> {

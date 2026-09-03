@@ -2,6 +2,7 @@ use super::super::owned_cfg_state::{
     OwnedPendingBlock, release_owned_commit_transition, release_owned_commit_transitions,
     reserve_owned_commit_transition, reserve_owned_commit_transitions,
 };
+use super::super::preflight_owned_string_loop_skeleton;
 use super::*;
 
 #[test]
@@ -136,13 +137,7 @@ fn owned_loop_three_block_four_edge_preflight_is_exact_plus_one_and_atomic() {
     state.edges = maximum_edges - 4;
     let mut known = std::collections::BTreeMap::from([(raw::PlaceId(7), Some(6))]);
     let before = known.clone();
-    assert!(!super::super::preflight_owned_string_loop_skeleton(
-        &state,
-        &mut known,
-        true,
-        at,
-        &mut errors,
-    ));
+    assert!(!preflight_owned_string_loop_skeleton(&state, &mut known, true, at, &mut errors,));
     assert_eq!(known, before);
 }
 
