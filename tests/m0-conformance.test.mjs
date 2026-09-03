@@ -161,12 +161,12 @@ test('required CI consumes the same canonical gate on Linux and Windows', async 
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const rust = workflowJob(workflow, 'rust');
   const adapterPlatform = workflowJob(workflow, 'adapter-platform');
-  assert.match(rust, /needs: preflight/);
+  assert.doesNotMatch(rust, /needs:/);
   assert.match(rust, /name: rust \(\$\{\{ matrix\.os \}\}\)/);
   assert.match(rust, /os: \[ubuntu-latest, windows-latest\]/);
   assert.match(rust, /run: node scripts\/run-m0-conformance\.mjs/);
   assert.match(adapterPlatform, /os: \[ubuntu-latest, windows-latest\]/);
-  assert.match(adapterPlatform, /needs: preflight/);
+  assert.doesNotMatch(adapterPlatform, /needs:/);
   assert.match(adapterPlatform, /run: pnpm protocol:check/);
   assert.match(adapterPlatform, /run: pnpm protocol:test/);
 });

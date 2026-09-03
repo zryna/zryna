@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
+import './ci-gate-cases.mjs';
 
 import {
   PREFLIGHT_COMMANDS,
@@ -76,7 +77,7 @@ test('preflight stops at the first failure', () => {
   assert.deepEqual(started, ['first', 'fails']);
 });
 
-test('pull-request platform jobs wait for preflight and the aggregate requires every gate', async () => {
+test('independent platform jobs start alongside preflight and aggregates require every gate', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const document = parseDocument(workflow);
   assert.deepEqual(document.errors, []);
@@ -105,8 +106,8 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
   assert.deepEqual(parsed.jobs.rust.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
   assert.match(rust, /run: cargo test --locked -p zryna-driver --lib/);
   assert.doesNotMatch(rust, /module_closure_tests::/);
-  assert.match(rust, /needs: preflight/);
-  assert.match(adapterPlatform, /needs: preflight/);
+  assert.doesNotMatch(rust, /needs:/);
+  assert.doesNotMatch(adapterPlatform, /needs:/);
   assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter\]/);
   assert.match(
     aggregate,
@@ -116,25 +117,11 @@ test('pull-request platform jobs wait for preflight and the aggregate requires e
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /test "\$PREFLIGHT_RESULT" = success/);
 
-  assert.equal(parsed.jobs.rust.needs, 'preflight');
-  assert.equal(parsed.jobs['adapter-platform'].needs, 'preflight');
-  assert.equal(parsed.jobs.adapter.needs, 'adapter-platform');
+  assert.equal(parsed.jobs.preflight['timeout-minutes'], 15);
+  assert.equal(parsed.jobs.rust.needs, undefined);
+  assert.equal(parsed.jobs['adapter-platform'].needs, undefined);
+  assert.deepEqual(parsed.jobs.adapter.needs, ['preflight', 'adapter-platform']);
   assert.deepEqual(parsed.jobs.m0.needs, ['owned-data-quick', 'preflight', 'rust', 'adapter']);
-
-  const controlledResults = { preflight: 'failure' };
-  controlledResults.rust = controlledResults.preflight === 'success' ? 'success' : 'skipped';
-  controlledResults.adapterPlatform = controlledResults.preflight === 'success' ? 'success' : 'skipped';
-  controlledResults.adapter = controlledResults.adapterPlatform === 'success' ? 'success' : 'failure';
-  controlledResults.m0 = Object.values(controlledResults).every((result) => result === 'success')
-    ? 'success'
-    : 'failure';
-  assert.deepEqual(controlledResults, {
-    preflight: 'failure',
-    rust: 'skipped',
-    adapterPlatform: 'skipped',
-    adapter: 'failure',
-    m0: 'failure',
-  });
 });
 
 test('package exposes the exact documented preflight entrypoint', async () => {

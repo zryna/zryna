@@ -213,9 +213,9 @@ test('package and CI expose one stable cross-platform M2 gate', async () => {
     platform: parsed.jobs['m2-platform'],
     aggregate: parsed.jobs.m2,
   })).digest('hex');
-  assert.equal(ciDigest, 'cc23557aad7c42a0b739fda74dd901884194b156b896c38f5f64072d7b2e19e7');
+  assert.equal(ciDigest, '8eeee67d331c528f713625dde310a7af6a6f42cc0f85efcb8bf551a0de13ddaf');
 
-  assert.equal(parsed.jobs['m2-platform'].needs, 'preflight');
+  assert.equal(parsed.jobs['m2-platform'].needs, undefined);
   assert.deepEqual(parsed.jobs['m2-platform'].strategy.matrix.os,
     ['ubuntu-latest', 'windows-latest']);
   assert.deepEqual(parsed.jobs.m2.needs, ['m0', 'm2-platform']);
