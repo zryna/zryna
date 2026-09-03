@@ -65,12 +65,12 @@ pub(super) fn preflight_owned_string_preparation(
 }
 
 #[derive(Clone, Copy)]
-pub(super) enum OwnedCleanupPlanContext {
+pub(super) enum OwnedCleanupReservationContext {
     String,
     Vec,
 }
 
-impl OwnedCleanupPlanContext {
+impl OwnedCleanupReservationContext {
     fn reservation(self) -> (&'static str, &'static str) {
         match self {
             Self::String => (
@@ -83,11 +83,21 @@ impl OwnedCleanupPlanContext {
             ),
         }
     }
+}
 
+#[derive(Clone, Copy)]
+pub(super) enum OwnedCleanupPlanContext {
+    String,
+    Vec,
+    Aggregate,
+}
+
+impl OwnedCleanupPlanContext {
     fn plan_guidance(self) -> &'static str {
         match self {
             Self::String => "reduce fallible private String operations",
             Self::Vec => "reduce fallible private Vec operations",
+            Self::Aggregate => "reduce fallible String leaves in private aggregate construction",
         }
     }
 
@@ -99,6 +109,7 @@ impl OwnedCleanupPlanContext {
             Self::Vec => {
                 "reduce simultaneously live owned values or fallible private Vec operations"
             }
+            Self::Aggregate => "reduce simultaneously live owned aggregates and String leaves",
         }
     }
 }
@@ -160,7 +171,7 @@ impl<'a> OwnedCleanupAccounting<'a> {
     pub(super) fn reserve_plan(
         &mut self,
         actions: usize,
-        context: OwnedCleanupPlanContext,
+        context: OwnedCleanupReservationContext,
         at: Span,
         errors: &mut Errors<'_>,
     ) -> bool {
@@ -240,8 +251,7 @@ impl<'a> OwnedCleanupAccounting<'a> {
     }
 
     fn commit_actions(&mut self, additional: usize) -> Option<()> {
-        *self.committed_actions = self.committed_actions.checked_add(additional)?;
-        Some(())
+        commit_cleanup_actions(self.committed_actions, additional)
     }
 
     pub(super) fn push_reverse(
@@ -350,6 +360,48 @@ impl<'a> OwnedCleanupAccounting<'a> {
         self.commit_actions(action_count).expect("preflighted cleanup action count");
         Some(id)
     }
+}
+
+fn commit_cleanup_actions(committed_actions: &mut usize, additional: usize) -> Option<()> {
+    *committed_actions = committed_actions.checked_add(additional)?;
+    Some(())
+}
+
+pub(super) fn push_aggregate_reverse_cleanup(
+    plans: &mut Vec<raw::CleanupPlan>,
+    committed_actions: &mut usize,
+    owners: &OwnerState,
+    at: Span,
+    excluded: Option<raw::PlaceId>,
+    errors: &mut Errors<'_>,
+) -> Option<raw::CleanupPlanId> {
+    let mut reserved_plans = 0;
+    let mut reserved_actions = 0;
+    OwnedCleanupAccounting::new(
+        plans,
+        committed_actions,
+        &mut reserved_plans,
+        &mut reserved_actions,
+    )
+    .push_reverse(owners, at, excluded, OwnedCleanupPlanContext::Aggregate, errors)
+}
+
+pub(super) fn push_aggregate_clone_prefix_cleanup(
+    plans: &mut Vec<raw::CleanupPlan>,
+    committed_actions: &mut usize,
+    owners: &OwnerState,
+    result_owner: raw::PlaceId,
+    at: Span,
+) -> Option<raw::CleanupPlanId> {
+    let action_count = owners.pending().len().checked_add(1)?;
+    let id = raw::CleanupPlanId(u32::try_from(plans.len()).ok()?);
+    let actions = std::iter::once(raw::DropAction::DropAggregateInitializedPrefix(result_owner))
+        .chain(owners.pending().iter().rev().copied().map(raw::DropAction::DropPlace))
+        .collect();
+    plans.push(raw::CleanupPlan { id, span: at, actions });
+    commit_cleanup_actions(committed_actions, action_count)
+        .expect("preflighted aggregate cleanup action count");
+    Some(id)
 }
 
 pub(super) fn checked_vec_clone_prefix_action_count(

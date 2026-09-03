@@ -41,9 +41,8 @@ mod type_model;
 
 use aggregate_resource_formulas::{
     PartialTransferBudgetViolation, aggregate_clone_budget_violation,
-    cleanup_action_budget_violation, partial_assignment_budget_preflight,
-    partial_return_budget_preflight, partial_transfer_budget_preflight,
-    projected_aggregate_assignment_budget_violation,
+    partial_assignment_budget_preflight, partial_return_budget_preflight,
+    partial_transfer_budget_preflight, projected_aggregate_assignment_budget_violation,
     projected_aggregate_clone_assignment_budget_violation,
     projected_aggregate_clone_budget_violation, projected_string_clone_budget_violation,
     projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
@@ -51,7 +50,8 @@ use aggregate_resource_formulas::{
 };
 #[cfg(test)]
 use aggregate_resource_formulas::{
-    partial_assignment_place_delta, partial_return_place_delta, partial_transfer_place_delta,
+    cleanup_action_budget_violation, partial_assignment_place_delta, partial_return_place_delta,
+    partial_transfer_place_delta,
 };
 use borrow_call_resources::preflight_program_borrow_calls;
 use diagnostics::Errors;
@@ -86,8 +86,9 @@ use owned_control_flow_resources::{
 };
 use owned_lowering_resources::{
     OwnedCleanupAccounting, OwnedCleanupActionContext, OwnedCleanupPlanContext,
-    OwnedStringPreparationBudget, checked_vec_clone_prefix_action_count,
-    preflight_owned_string_preparation,
+    OwnedCleanupReservationContext, OwnedStringPreparationBudget,
+    checked_vec_clone_prefix_action_count, preflight_owned_string_preparation,
+    push_aggregate_clone_prefix_cleanup, push_aggregate_reverse_cleanup,
 };
 use owned_root_borrow_planning::{
     is_direct_owned_root_borrow_candidate, plan_private_owned_root_borrow_syntax,
@@ -1308,7 +1309,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
             &mut self.reserved_cleanup_plans,
             &mut self.reserved_cleanup_actions,
         )
-        .reserve_plan(actions, OwnedCleanupPlanContext::String, at, self.errors)
+        .reserve_plan(actions, OwnedCleanupReservationContext::String, at, self.errors)
     }
 
     fn release_cleanup_capacity(&mut self, actions: usize) {
@@ -3691,44 +3692,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
         excluded: Option<raw::PlaceId>,
     ) -> Option<raw::CleanupPlanId> {
-        if self.cleanup_plans.len() >= ir::MAX_CLEANUP_PLANS_PER_FUNCTION {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup sites exceed the per-function M3 limit of {}",
-                    ir::MAX_CLEANUP_PLANS_PER_FUNCTION
-                ),
-                "reduce fallible String leaves in private aggregate construction",
-            );
-            return None;
-        }
-        let pending = self.owners.pending();
-        let excluded_present = excluded.is_some_and(|place| self.owners.contains(place));
-        let action_count = pending.len() - usize::from(excluded_present);
-        if cleanup_action_budget_violation(self.cleanup_actions, pending.len(), excluded_present) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup actions exceed the per-function M3 limit of {}",
-                    ir::MAX_DROP_ACTIONS_PER_FUNCTION
-                ),
-                "reduce simultaneously live owned aggregates and String leaves",
-            );
-            return None;
-        }
-        let id = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).unwrap_or(u32::MAX));
-        let actions = pending
-            .iter()
-            .rev()
-            .copied()
-            .filter(|place| Some(*place) != excluded)
-            .map(raw::DropAction::DropPlace)
-            .collect();
-        self.cleanup_plans.push(raw::CleanupPlan { id, span: at, actions });
-        self.cleanup_actions += action_count;
-        Some(id)
+        push_aggregate_reverse_cleanup(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &self.owners,
+            at,
+            excluded,
+            self.errors,
+        )
     }
 
     fn emit(&mut self, ty: Ty, at: Span, kind: raw::InstructionKind) -> Option<raw::ValueId> {
@@ -5220,15 +5191,13 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
         result_owner: raw::PlaceId,
     ) -> Option<raw::CleanupPlanId> {
-        let action_count = self.owners.pending().len().checked_add(1)?;
-        let id = raw::CleanupPlanId(u32::try_from(self.cleanup_plans.len()).ok()?);
-        let actions =
-            std::iter::once(raw::DropAction::DropAggregateInitializedPrefix(result_owner))
-                .chain(self.owners.pending().iter().rev().copied().map(raw::DropAction::DropPlace))
-                .collect();
-        self.cleanup_plans.push(raw::CleanupPlan { id, span: at, actions });
-        self.cleanup_actions += action_count;
-        Some(id)
+        push_aggregate_clone_prefix_cleanup(
+            &mut self.cleanup_plans,
+            &mut self.cleanup_actions,
+            &self.owners,
+            result_owner,
+            at,
+        )
     }
 
     fn value(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
@@ -6947,7 +6916,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
             &mut self.reserved_cleanup_plans,
             &mut self.reserved_cleanup_actions,
         )
-        .reserve_plan(actions, OwnedCleanupPlanContext::Vec, at, self.errors)
+        .reserve_plan(actions, OwnedCleanupReservationContext::Vec, at, self.errors)
     }
 
     fn release_cleanup_capacity(&mut self, actions: usize) {
