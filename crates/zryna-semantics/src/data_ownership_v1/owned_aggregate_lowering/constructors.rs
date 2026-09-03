@@ -19,11 +19,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.node_types.iter().flatten().find(|ty| ty.layout == id).copied()
     }
 
-    pub(in crate::data_ownership_v1) fn value(
-        &mut self,
-        id: u32,
-        expected: Ty,
-    ) -> Option<raw::ValueId> {
+    pub(super) fn value(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
         let expression = self.expression(id)?.clone();
         let at = span(self.input.sources(), expression.span);
         match expression.kind {

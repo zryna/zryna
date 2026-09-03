@@ -12,7 +12,7 @@ use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn partial_local_transfer_source(
+    pub(super) fn partial_local_transfer_source(
         &self,
         initializer: u32,
         expected: Ty,
@@ -30,7 +30,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         .then_some(binding.place)
     }
 
-    pub(in crate::data_ownership_v1) fn partial_return_transfer_source(
+    pub(super) fn partial_return_transfer_source(
         &self,
         value: u32,
         expected: Ty,
@@ -48,7 +48,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         .then_some(binding.place)
     }
 
-    pub(in crate::data_ownership_v1) fn partial_assignment_transfer_source(
+    pub(super) fn partial_assignment_transfer_source(
         &self,
         value: u32,
         expected: Ty,
@@ -90,7 +90,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.errors.at("ZRYNA-M3201", at, message, guidance);
     }
 
-    pub(in crate::data_ownership_v1) fn lower_partial_local_transfer(
+    pub(super) fn lower_partial_local_transfer(
         &mut self,
         source: raw::PlaceId,
         ty: Ty,
@@ -176,7 +176,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(local)
     }
 
-    pub(in crate::data_ownership_v1) fn lower_partial_return_transfer(
+    pub(super) fn lower_partial_return_transfer(
         &mut self,
         source: raw::PlaceId,
         ty: Ty,
@@ -231,7 +231,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(value)
     }
 
-    pub(in crate::data_ownership_v1) fn lower_partial_assignment_transfer(
+    pub(super) fn lower_partial_assignment_transfer(
         &mut self,
         source: raw::PlaceId,
         target: raw::PlaceId,

@@ -27,7 +27,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub(in crate::data_ownership_v1) fn projected_value(
+    pub(super) fn projected_value(
         &mut self,
         id: u32,
         expected: Ty,

@@ -5,7 +5,7 @@ use super::super::type_model::{ProjectedAggregateAssignmentSource, ProjectedAggr
 use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn lower_projected_aggregate_assignment(
+    pub(super) fn lower_projected_aggregate_assignment(
         &mut self,
         target: u32,
         value: u32,

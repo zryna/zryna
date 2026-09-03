@@ -120,7 +120,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some((index, ty))
     }
 
-    pub(in crate::data_ownership_v1) fn projection_expression_type(&self, id: u32) -> Option<Ty> {
+    pub(super) fn projection_expression_type(&self, id: u32) -> Option<Ty> {
         let expression = self.expression(id)?;
         match &expression.kind {
             RawExpressionKind::Reference { name } => {
@@ -272,10 +272,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             })
     }
 
-    pub(in crate::data_ownership_v1) fn owned_place(
-        &mut self,
-        id: u32,
-    ) -> Option<OwnedAggregatePlace> {
+    pub(super) fn owned_place(&mut self, id: u32) -> Option<OwnedAggregatePlace> {
         let expression = self.expression(id)?.clone();
         let at = span(self.input.sources(), expression.span);
         match expression.kind {

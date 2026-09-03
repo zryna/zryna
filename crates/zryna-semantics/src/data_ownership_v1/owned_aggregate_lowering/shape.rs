@@ -152,14 +152,11 @@ pub(in crate::data_ownership_v1) fn complete_owned_projection_shape(
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn expression(
-        &self,
-        id: u32,
-    ) -> Option<&syntax::RawExpressionSyntax> {
+    pub(super) fn expression(&self, id: u32) -> Option<&syntax::RawExpressionSyntax> {
         usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))
     }
 
-    pub(in crate::data_ownership_v1) fn supported(&self, ty: Ty) -> bool {
+    pub(super) fn supported(&self, ty: Ty) -> bool {
         if ty.category == TypeCategory::Enum {
             owned_enum_graph_is_supported(ty, self.layouts)
         } else {
@@ -286,11 +283,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn whole_root_available(&self, root: raw::PlaceId) -> bool {
+    pub(super) fn whole_root_available(&self, root: raw::PlaceId) -> bool {
         self.owners.contains(root) && !self.partial_roots.contains(&root)
     }
 
-    pub(in crate::data_ownership_v1) fn projection_available(
+    pub(super) fn projection_available(
         &self,
         projection: raw::PlaceId,
         root: raw::PlaceId,
