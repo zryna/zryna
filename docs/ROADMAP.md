@@ -338,7 +338,7 @@ complete. Bounded #122 closure must preserve the distinction and its actual veri
 
 The checked M3 registry records this dependency order rather than assuming that an earlier GitHub
 issue number cannot depend on later-discovered work. Its current SHA-256 is
-`0c144ad82ec1f601f5c2057578df001487e0bebeead002467bedcaa197ef9e51`.
+`4840114001e53f510a285114a33fb15e3a9599067473e8707d2607333c339d18`.
 The original #119 provenance and unchanged borrow-call fixture digest remain historical evidence;
 updating the graph does not implement any of its planned capabilities.
 
@@ -350,6 +350,38 @@ Existing IR/ABI
 operations are reusable authority, not evidence that these source producers are implemented.
 Independent proof work may proceed after its interface is frozen; full payload support and all
 parent acceptance criteria remain required before #83 closes.
+
+Issue #269 tracks the remaining normative M3 source and independently verified IR composition.
+It is an additional completion prerequisite for #84/#85/#86, retaining every existing dependency;
+neither backend implementation nor #89 conformance supplies missing source semantics. These are
+planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoints:
+
+| Issue | Planned source-completion responsibility | Completion prerequisites |
+| ---: | --- | --- |
+| #277 | generic ownership integration contract and operation/CFG hooks | #259, retaining #77/#78/#80/#82 |
+| #278 | non-handle generic owned operation core | #277 |
+| #279 | compositional ownership CFG core | #277/#278/#260 |
+| #270 | full generic owned composition, structural clone, ordinary generic Vec reads/replacement | #83/#277/#278, retaining #76–#81 |
+| #271 | full structured owned control flow and lexical cleanup | #270/#279 |
+| #272 | internal owned calls and inherited imported-function resolution | #270/#271 |
+| #273 | exhaustive enum matching and active-payload composition | #270/#271 |
+| #274 | ordinary dynamic fixed-array access using the indexed authority | #254/#270; coordinate #255 |
+| #275 | non-indexed owned/static/active-payload lexical borrowing | #82/#254/#270/#271/#272/#273 |
+| #269 | complete source-composition integration | #83/#254/#255/#256 and every child above |
+
+Stages #277/#278/#279 are separately closeable children of #269, not dependents of its closure.
+#259 freezes full Shared/Weak meaning and required payload/CFG contexts; #277 fixes reusable
+integration interfaces. #260 consumes #277; #261 consumes #278; #262 consumes #279 and implements
+actual WeakUpgrade source control flow. #264 verifies the complete #83 contract before #83 closes.
+The cores use typed operation hooks without claiming source handle execution. Required #83
+payload, call, match and CFG cases cannot wait for later #270–#273 closure. Full #270/#271 then
+integrate actual handles into broader generic behavior; no parent-completion dependency cycle is
+permitted. Large children retain explicit bounded implementation sub-issues and integration gates.
+
+#254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
+semantics. The new source work invents no type-import syntax, break/continue, Vec pop, implicit
+clone, borrow escape or mismatched-state repair. #89 exercises #88's internal candidate route;
+public CLI activation and its final public corpus remain #90 work after conformance.
 
 `Pair` is the smallest mandatory fixed-oracle case, remains internal, and preserves scalar ABI v1
 exports. Issue #79 proves nominal identity, construction, source field order and access, sealed

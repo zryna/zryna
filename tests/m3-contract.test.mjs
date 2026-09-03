@@ -26,7 +26,8 @@ test("digest-pins the real M3 issue graph and regression authorities", () => {
   assert.equal(contract.status, "specified-not-implemented");
   assert.deepEqual(
     contract.issues.map(({ number }) => number),
-    [75, 76, 77, 78, 79, 80, 81, 82, 83, 254, 255, 256, 84, 85, 86, 87, 88, 89, 90],
+    [75, 76, 77, 78, 79, 80, 81, 82, 259, 277, 260, 278, 279, 261, 262, 263, 264,
+      83, 254, 255, 256, 270, 271, 272, 273, 274, 275, 269, 84, 85, 86, 87, 88, 89, 90],
   );
   assert.deepEqual(
     contract.issues.find(({ number }) => number === 88).dependsOn,
