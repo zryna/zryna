@@ -298,7 +298,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn reference_value(
+    pub(super) fn reference_value(
         &mut self,
         name: &syntax::RawIdentifierSyntax,
         expected: Ty,
