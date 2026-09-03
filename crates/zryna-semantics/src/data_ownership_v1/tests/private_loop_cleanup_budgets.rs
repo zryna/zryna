@@ -157,6 +157,75 @@ pub(super) fn private_string_branch_budget_lowerer<'a, 'e>(
         next_local: 0,
     }
 }
+
+fn assert_m3201_at(diagnostic: &zryna_diagnostics::Diagnostic, at: zryna_source::Span) {
+    assert_eq!(diagnostic.code(), "ZRYNA-M3201");
+    assert_eq!(diagnostic.primary_span(), Some(at));
+}
+
+fn cleanup_action_limit_message() -> String {
+    format!(
+        "derived cleanup actions exceed the per-function M3 limit of {}",
+        zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION
+    )
+}
+
+fn assert_cleanup_diagnostic(
+    diagnostic: &zryna_diagnostics::Diagnostic,
+    at: zryna_source::Span,
+    message: &str,
+    guidance: &str,
+) {
+    assert_m3201_at(diagnostic, at);
+    assert_eq!(diagnostic.message(), message);
+    assert_eq!(diagnostic.guidance(), guidance);
+}
+
+fn assert_cleanup_action_context_diagnostics(sources: &SourceMap, at: zryna_source::Span) {
+    let action_contexts = [
+        (
+            OwnedCleanupActionContext::StringBranchLocal,
+            cleanup_action_limit_message(),
+            "reduce branch-local owned Strings or fallible String operations",
+        ),
+        (
+            OwnedCleanupActionContext::StringTerminalArm,
+            "terminal String arm cleanup exceeds the per-function M3 limit".to_owned(),
+            "reduce owned temporaries in the returning branch expression",
+        ),
+        (
+            OwnedCleanupActionContext::VecBranchLocal,
+            cleanup_action_limit_message(),
+            "reduce branch-local owned values or fallible Vec operations",
+        ),
+        (
+            OwnedCleanupActionContext::VecTerminalArm,
+            "terminal Vec arm cleanup exceeds the per-function M3 limit".to_owned(),
+            "reduce owned temporaries in the returning branch expression",
+        ),
+    ];
+    for (context, message, guidance) in action_contexts {
+        let mut errors = Errors::new(sources);
+        let mut plans = Vec::new();
+        let mut committed = zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION;
+        let mut reserved_plans = 0;
+        let mut reserved_actions = 0;
+        let accounting = OwnedCleanupAccounting::new(
+            &mut plans,
+            &mut committed,
+            &mut reserved_plans,
+            &mut reserved_actions,
+        );
+        assert!(!accounting.preflight_actions(1, context, at, &mut errors));
+        assert!(plans.is_empty());
+        assert_eq!(committed, zryna_ir::data_ownership_v1::MAX_DROP_ACTIONS_PER_FUNCTION);
+        assert_eq!((reserved_plans, reserved_actions), (0, 0));
+        let diagnostics = errors.finish();
+        assert_eq!(diagnostics.len(), 1);
+        assert_cleanup_diagnostic(&diagnostics[0], at, &message, guidance);
+    }
+}
+
 #[test]
 fn private_string_branch_drop_budget_is_atomic_at_exact_plus_one() {
     let sources = sources_for(STRING_SOURCE);
@@ -213,8 +282,12 @@ fn private_string_branch_drop_budget_is_atomic_at_exact_plus_one() {
     drop(extra);
     let diagnostics = extra_errors.finish();
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
-    assert_eq!(diagnostics[0].primary_span(), Some(at));
+    assert_cleanup_diagnostic(
+        &diagnostics[0],
+        at,
+        &cleanup_action_limit_message(),
+        "reduce branch-local owned Strings or fallible String operations",
+    );
 
     let mut transition_errors = Errors::new(&sources);
     let mut transition = private_string_branch_budget_lowerer(
@@ -236,8 +309,7 @@ fn private_string_branch_drop_budget_is_atomic_at_exact_plus_one() {
     drop(transition);
     let diagnostics = transition_errors.finish();
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
-    assert_eq!(diagnostics[0].primary_span(), Some(at));
+    assert_m3201_at(&diagnostics[0], at);
 
     let mut overflow_errors = Errors::new(&sources);
     let mut overflow = private_string_branch_budget_lowerer(
@@ -258,6 +330,6 @@ fn private_string_branch_drop_budget_is_atomic_at_exact_plus_one() {
     drop(overflow);
     let diagnostics = overflow_errors.finish();
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
-    assert_eq!(diagnostics[0].primary_span(), Some(at));
+    assert_m3201_at(&diagnostics[0], at);
+    assert_cleanup_action_context_diagnostics(&sources, at);
 }

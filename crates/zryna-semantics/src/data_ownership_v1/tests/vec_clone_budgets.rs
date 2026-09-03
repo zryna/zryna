@@ -307,4 +307,50 @@ fn private_vec_string_clone_prefix_cleanup_is_exact_plus_one_and_overflow_atomic
             assert_eq!(diagnostics[0].primary_span(), Some(at));
         }
     }
+
+    let mut overflow_errors = Errors::new(&sources);
+    assert_eq!(checked_vec_clone_prefix_action_count(usize::MAX, at, &mut overflow_errors), None);
+    let diagnostics = overflow_errors.finish();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
+    assert_eq!(diagnostics[0].primary_span(), Some(at));
+    assert_eq!(
+        diagnostics[0].message(),
+        "Vec clone prefix cleanup overflows its checked action count"
+    );
+    assert_eq!(diagnostics[0].guidance(), "reduce simultaneously live owned values");
+
+    let mut capacity_errors = Errors::new(&sources);
+    let mut plans = Vec::new();
+    let mut committed_actions = 0;
+    let mut reserved_plans = zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION;
+    let mut reserved_actions = 0;
+    let owners = OwnerState {
+        pending: vec![raw::PlaceId(0)],
+        value_owners: std::collections::BTreeMap::new(),
+    };
+    let result = OwnedCleanupAccounting::new(
+        &mut plans,
+        &mut committed_actions,
+        &mut reserved_plans,
+        &mut reserved_actions,
+    )
+    .push_vec_clone_prefix(&owners, raw::PlaceId(1), at, &mut capacity_errors);
+    assert_eq!(result, None);
+    assert!(plans.is_empty());
+    assert_eq!(committed_actions, 0);
+    assert_eq!(reserved_plans, zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION);
+    assert_eq!(reserved_actions, 0);
+    let diagnostics = capacity_errors.finish();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3201");
+    assert_eq!(diagnostics[0].primary_span(), Some(at));
+    assert_eq!(
+        diagnostics[0].message(),
+        "Vec clone element cleanup exceeds the per-function M3 limits"
+    );
+    assert_eq!(
+        diagnostics[0].guidance(),
+        "reduce simultaneously live owned values or fallible Vec clones"
+    );
 }
