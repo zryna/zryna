@@ -170,7 +170,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         false
     }
 
-    pub(in crate::data_ownership_v1) fn clone_projected_aggregate_local(
+    pub(super) fn clone_projected_aggregate_local(
         &mut self,
         operand: u32,
         expected: Ty,

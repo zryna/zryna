@@ -32,7 +32,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         true
     }
 
-    pub(in crate::data_ownership_v1) fn reserve_transition(&mut self, at: Span) -> bool {
+    pub(super) fn reserve_transition(&mut self, at: Span) -> bool {
         if !self.preflight_transition(1, at) {
             return false;
         }
@@ -40,18 +40,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         true
     }
 
-    pub(in crate::data_ownership_v1) fn release_transition(&mut self) {
+    pub(super) fn release_transition(&mut self) {
         self.reserved_transitions = self
             .reserved_transitions
             .checked_sub(1)
             .expect("reserved aggregate assignment transition");
     }
 
-    pub(in crate::data_ownership_v1) fn emit_effect(
-        &mut self,
-        at: Span,
-        kind: raw::InstructionKind,
-    ) -> bool {
+    pub(super) fn emit_effect(&mut self, at: Span, kind: raw::InstructionKind) -> bool {
         if !self.preflight_transition(1, at) {
             return false;
         }
@@ -127,7 +123,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(value)
     }
 
-    pub(in crate::data_ownership_v1) fn target_consumption_span(
+    pub(super) fn target_consumption_span(
         &self,
         id: u32,
         target: raw::PlaceId,
