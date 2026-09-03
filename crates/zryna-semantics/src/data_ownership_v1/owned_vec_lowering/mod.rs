@@ -16,10 +16,13 @@ mod assignments_and_effects;
 mod branches;
 mod call_resolution;
 mod clone;
+mod driver;
 mod expressions_and_calls;
 mod loops;
 mod preparation;
 mod state;
+
+pub(in crate::data_ownership_v1) use driver::lower_private_vec_function;
 
 pub(in crate::data_ownership_v1) struct PrivateVecLowerer<'a, 'f, 'e> {
     pub(in crate::data_ownership_v1) input: SemanticInput<'a>,

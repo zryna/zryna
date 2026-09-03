@@ -10,7 +10,7 @@ use super::super::type_model::Ty;
 use super::PrivateVecLowerer;
 
 impl PrivateVecLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn preflight_place(&mut self, at: Span) -> bool {
+    pub(super) fn preflight_place(&mut self, at: Span) -> bool {
         preflight_owned_place_capacity_with_reserved(
             self.places.len(),
             self.reserved_places,
@@ -20,7 +20,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         )
     }
 
-    pub(in crate::data_ownership_v1) fn reserve_local_place(&mut self, at: Span) -> bool {
+    pub(super) fn reserve_local_place(&mut self, at: Span) -> bool {
         if !self.preflight_place(at) {
             return false;
         }
@@ -28,11 +28,11 @@ impl PrivateVecLowerer<'_, '_, '_> {
         true
     }
 
-    pub(in crate::data_ownership_v1) fn release_local_place(&mut self) {
+    pub(super) fn release_local_place(&mut self) {
         self.reserved_places = self.reserved_places.checked_sub(1).expect("reserved local place");
     }
 
-    pub(in crate::data_ownership_v1) fn reserve_local_commit(&mut self, at: Span) -> bool {
+    pub(super) fn reserve_local_commit(&mut self, at: Span) -> bool {
         if !self.reserve_local_place(at) {
             return false;
         }
@@ -43,16 +43,12 @@ impl PrivateVecLowerer<'_, '_, '_> {
         true
     }
 
-    pub(in crate::data_ownership_v1) fn release_local_commit(&mut self) {
+    pub(super) fn release_local_commit(&mut self) {
         self.cfg.release_transitions(1);
         self.release_local_place();
     }
 
-    pub(in crate::data_ownership_v1) fn reserve_cleanup_capacity(
-        &mut self,
-        actions: usize,
-        at: Span,
-    ) -> bool {
+    pub(super) fn reserve_cleanup_capacity(&mut self, actions: usize, at: Span) -> bool {
         OwnedCleanupAccounting::new(
             &mut self.cleanup_plans,
             &mut self.cleanup_actions,
@@ -62,7 +58,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         .reserve_plan(actions, OwnedCleanupReservationContext::Vec, at, self.errors)
     }
 
-    pub(in crate::data_ownership_v1) fn release_cleanup_capacity(&mut self, actions: usize) {
+    pub(super) fn release_cleanup_capacity(&mut self, actions: usize) {
         OwnedCleanupAccounting::new(
             &mut self.cleanup_plans,
             &mut self.cleanup_actions,
@@ -72,7 +68,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         .release_plan(actions);
     }
 
-    pub(in crate::data_ownership_v1) fn push_cleanup(
+    pub(super) fn push_cleanup(
         &mut self,
         at: Span,
         excluded: Option<raw::PlaceId>,
@@ -92,7 +88,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         )
     }
 
-    pub(in crate::data_ownership_v1) fn push_instruction_cleanup(
+    pub(super) fn push_instruction_cleanup(
         &mut self,
         at: Span,
         excluded: Option<raw::PlaceId>,
@@ -113,7 +109,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         )
     }
 
-    pub(in crate::data_ownership_v1) fn emit(
+    pub(super) fn emit(
         &mut self,
         ty: Ty,
         at: Span,
@@ -149,35 +145,23 @@ impl PrivateVecLowerer<'_, '_, '_> {
         Some((value, Some(owner)))
     }
 
-    pub(in crate::data_ownership_v1) fn emit_effect(
-        &mut self,
-        at: Span,
-        kind: raw::InstructionKind,
-    ) -> bool {
+    pub(super) fn emit_effect(&mut self, at: Span, kind: raw::InstructionKind) -> bool {
         self.cfg.emit(raw::Instruction { result: None, span: at, kind }, self.errors)
     }
 
-    pub(in crate::data_ownership_v1) fn rename_owner(
-        &mut self,
-        value: raw::ValueId,
-        target: raw::PlaceId,
-    ) -> bool {
+    pub(super) fn rename_owner(&mut self, value: raw::ValueId, target: raw::PlaceId) -> bool {
         let Some(delta) = self.owners.rename(value, target) else { return false };
         apply_owner_delta(&mut self.known_string_bytes, delta);
         true
     }
 
-    pub(in crate::data_ownership_v1) fn replace_owner(
-        &mut self,
-        value: raw::ValueId,
-        target: raw::PlaceId,
-    ) -> bool {
+    pub(super) fn replace_owner(&mut self, value: raw::ValueId, target: raw::PlaceId) -> bool {
         let Some(delta) = self.owners.replace(value, target) else { return false };
         apply_owner_delta(&mut self.known_string_bytes, delta);
         true
     }
 
-    pub(in crate::data_ownership_v1) fn transfer_owner(&mut self, value: raw::ValueId) -> bool {
+    pub(super) fn transfer_owner(&mut self, value: raw::ValueId) -> bool {
         let Some(delta) = self.owners.transfer(value) else { return false };
         apply_owner_delta(&mut self.known_string_bytes, delta);
         true

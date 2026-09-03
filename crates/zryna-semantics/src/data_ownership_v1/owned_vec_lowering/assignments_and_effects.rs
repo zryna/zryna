@@ -36,10 +36,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         None
     }
 
-    pub(in crate::data_ownership_v1) fn lower_local(
-        &mut self,
-        statement: &syntax::RawStatementSyntax,
-    ) -> Option<()> {
+    pub(super) fn lower_local(&mut self, statement: &syntax::RawStatementSyntax) -> Option<()> {
         let RawStatementKind::LocalDeclaration { mutable, name, type_syntax, initializer, .. } =
             &statement.kind
         else {
@@ -112,7 +109,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn lower_push_effect(
+    pub(super) fn lower_push_effect(
         &mut self,
         expression_id: u32,
         incoming: Option<&OwnedVecBranchState>,
@@ -245,7 +242,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn lower_root_local(
+    pub(super) fn lower_root_local(
         &mut self,
         statement: &syntax::RawStatementSyntax,
         after_control_flow: bool,
@@ -262,7 +259,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         self.lower_local(statement)
     }
 
-    pub(in crate::data_ownership_v1) fn lower_root_assignment(
+    pub(super) fn lower_root_assignment(
         &mut self,
         statement: &syntax::RawStatementSyntax,
         target: u32,
@@ -354,7 +351,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn lower_root_push_effect(
+    pub(super) fn lower_root_push_effect(
         &mut self,
         statement: &syntax::RawStatementSyntax,
         expression: u32,

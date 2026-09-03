@@ -10,11 +10,7 @@ use super::super::type_model::Ty;
 use super::PrivateVecLowerer;
 
 impl PrivateVecLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn condition(
-        &mut self,
-        id: u32,
-        bool_ty: Ty,
-    ) -> Option<raw::ValueId> {
+    pub(super) fn condition(&mut self, id: u32, bool_ty: Ty) -> Option<raw::ValueId> {
         let expression = self.expression(id)?.clone();
         let at = span(self.input.sources(), expression.span);
         debug_assert_eq!(bool_ty.category, TypeCategory::Bool);
@@ -123,11 +119,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn drop_non_carried(
-        &mut self,
-        carried: raw::PlaceId,
-        at: Span,
-    ) -> Option<()> {
+    pub(super) fn drop_non_carried(&mut self, carried: raw::PlaceId, at: Span) -> Option<()> {
         let dropped = self
             .owners
             .pending()
@@ -239,7 +231,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn lower_root_if(
+    pub(super) fn lower_root_if(
         &mut self,
         statement: &syntax::RawStatementSyntax,
         saw_if: &mut bool,
