@@ -30,7 +30,6 @@ use super::owned_lowering_resources::{
     checked_vec_clone_prefix_action_count, preflight_owned_string_preparation,
     push_aggregate_clone_prefix_cleanup, push_aggregate_reverse_cleanup,
 };
-use super::owned_string_lowering::PrivateStringLowerer;
 use super::owner_state::{OwnedStringBranchState, OwnerState};
 use super::string_vec_resource_estimates::owned_call_cleanup_budget_violation;
 use super::type_model::{RootBorrowBudgetLimit, RootBorrowResources};

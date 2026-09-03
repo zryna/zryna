@@ -1,3 +1,4 @@
+use super::super::owned_string_lowering::PrivateStringLowerer;
 use super::*;
 
 #[test]

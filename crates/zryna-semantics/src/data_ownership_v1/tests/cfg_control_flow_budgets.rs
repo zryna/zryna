@@ -2,7 +2,7 @@ use super::super::owned_cfg_state::{
     OwnedPendingBlock, release_owned_commit_transition, release_owned_commit_transitions,
     reserve_owned_commit_transition, reserve_owned_commit_transitions,
 };
-use super::super::preflight_owned_string_loop_skeleton;
+use super::super::owned_string_lowering::loops::preflight_owned_string_loop_skeleton;
 use super::*;
 
 #[test]
