@@ -7,15 +7,18 @@ const root = new URL("../", import.meta.url);
 const read = file => readFileSync(new URL(file, root), "utf8");
 const document = read("docs/M3_BORROWING_SEMANTICS.md");
 
+function testNames(file) {
+  return new Set([...read(file).matchAll(
+    /#\[test\]\s*(?:#\[[^\]]*\]\s*)*fn\s+([a-z][a-z0-9_]+)\s*\(/g,
+  )].map(match => match[1]));
+}
+
 function checkNamedEvidence(text) {
   const section = text.split("### Named closure evidence\n")[1]?.split("## Issue #113 evidence")[0];
   assert(section, "named closure evidence section is missing");
   let checked = 0;
   function check(file, names) {
-    const source = read(file);
-    const tests = new Set([...source.matchAll(
-      /#\[test\]\s*(?:#\[[^\]]*\]\s*)*fn\s+([a-z][a-z0-9_]+)\s*\(/g,
-    )].map(match => match[1]));
+    const tests = testNames(file);
     for (const name of names) {
       assert(tests.has(name), `${file}: missing test ${name}`);
       checked++;
@@ -46,6 +49,19 @@ function checkNamedEvidence(text) {
   check("crates/zryna-semantics/src/data_ownership_v1/tests/owned_root_borrow_reads.rs",
     [...cleanup.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]));
   assert.equal(checked, 38, "named evidence inventory changed without review");
+  const resources = section.split("### Resource evidence boundaries\n")[1];
+  assert(resources, "resource evidence boundaries section is missing");
+  const names = [...resources.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]);
+  assert.equal(names.length, 6, "resource evidence inventory changed without review");
+  const files = ["conditional_root_borrows.rs", "lexical_borrow_calls.rs", "owned_root_borrow_reads.rs"]
+    .map(file => `crates/zryna-semantics/src/data_ownership_v1/tests/${file}`);
+  const inventories = files.map(file => ({ file, tests: testNames(file) }));
+  for (const name of names) {
+    const matches = inventories.filter(({ tests }) => tests.has(name));
+    assert.equal(matches.length, 1, `resource evidence must resolve uniquely: ${name}`);
+    check(matches[0].file, [name]);
+  }
+  assert.equal(checked, 44, "complete closure evidence inventory changed without review");
 }
 
 test("borrowing documentation resolves named evidence to actual Rust test functions", () => {
@@ -61,6 +77,12 @@ test("borrowing evidence guard rejects missing tests and removed proof sections"
     /section is missing/);
   assert.throws(() => checkNamedEvidence(document.replace("Issue #248 adds", "Removed resource proof")),
     /authenticated resource evidence is missing/);
+  assert.throws(() => checkNamedEvidence(document.replace(
+    "`root_borrow_resources_enforce_exact_block_and_edge_limits`", "`missing_resource_test`",
+  )), /resource evidence must resolve uniquely: missing_resource_test/);
+  assert.throws(() => checkNamedEvidence(document.replace(
+    "### Resource evidence boundaries", "### Removed resource boundaries",
+  )), /resource evidence boundaries section is missing/);
   checkNamedEvidence(document);
 });
 
