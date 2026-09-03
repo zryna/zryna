@@ -1,5 +1,21 @@
 //! Linux x86-64 native object emission, sealed invocation linking, and bounded execution.
 
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+#[path = "native_process_diagnostics.rs"]
+mod process_diagnostics;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+macro_rules! process_io_failure {
+    ($context:ident, $operation:ident, $error:expr) => {{
+        let error: Option<&io::Error> = $error;
+        #[cfg(test)]
+        $context.record(process_diagnostics::Operation::$operation, error);
+        #[cfg(not(test))]
+        let _ = error;
+        process_io_error()
+    }};
+}
+
 use std::{
     error::Error,
     fmt, fs, io,
@@ -1745,6 +1761,10 @@ fn tool_identity_from_metadata(metadata: &fs::Metadata) -> Result<ToolFileIdenti
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_lines,
+    reason = "test-only error context keeps process control flow intact"
+)]
 fn run_bounded_process(
     program: &Path,
     arguments: &[OsString],
@@ -1755,8 +1775,11 @@ fn run_bounded_process(
     phase: ProcessPhase,
     temporary_directory: Option<&Path>,
 ) -> Result<BoundedProcessOutput, Diagnostic> {
+    #[cfg(test)]
+    let context = process_diagnostics::Context::new(phase);
     let started = Instant::now();
-    let deadline = started.checked_add(timeout).ok_or_else(process_io_error)?;
+    let deadline =
+        started.checked_add(timeout).ok_or_else(|| process_io_failure!(context, Deadline, None))?;
     let cleanup_deadline =
         deadline.checked_add(NATIVE_PROCESS_CLEANUP_RESERVE).ok_or_else(process_cleanup_error)?;
     let tmpdir = temporary_directory.unwrap_or(Path::new("/tmp"));
@@ -1776,20 +1799,35 @@ fn run_bounded_process(
         .stderr(Stdio::piped());
     let mut command = CommandWrap::from(native);
     command.wrap(ProcessGroup::leader());
-    let mut child = command.spawn().map_err(|_| process_io_error())?;
+    let mut child =
+        command.spawn().map_err(|error| process_io_failure!(context, Spawn, Some(&error)))?;
     let group_id = child.id().cast_signed();
     let operation = (|| {
-        let stdout = child.stdout().take().ok_or_else(process_io_error)?;
-        let stderr = child.stderr().take().ok_or_else(process_io_error)?;
+        let stdout =
+            child.stdout().take().ok_or_else(|| process_io_failure!(context, StdoutPipe, None))?;
+        let stderr =
+            child.stderr().take().ok_or_else(|| process_io_failure!(context, StderrPipe, None))?;
         let (stdout_sender, stdout_receiver) = mpsc::sync_channel(1);
         let (stderr_sender, stderr_receiver) = mpsc::sync_channel(1);
         let (overflow_sender, overflow_receiver) = mpsc::sync_channel(2);
         let stdout_overflow = overflow_sender.clone();
         thread::spawn(move || {
-            let _ = stdout_sender.send(capture_stream(stdout, stdout_limit, &stdout_overflow));
+            let _ = stdout_sender.send(capture_stream(
+                stdout,
+                stdout_limit,
+                &stdout_overflow,
+                #[cfg(test)]
+                (context, process_diagnostics::Operation::ReadStdout),
+            ));
         });
         thread::spawn(move || {
-            let _ = stderr_sender.send(capture_stream(stderr, stderr_limit, &overflow_sender));
+            let _ = stderr_sender.send(capture_stream(
+                stderr,
+                stderr_limit,
+                &overflow_sender,
+                #[cfg(test)]
+                (context, process_diagnostics::Operation::ReadStderr),
+            ));
         });
 
         let mut timed_out = false;
@@ -1802,7 +1840,10 @@ fn run_bounded_process(
                 }
                 Err(TryRecvError::Empty | TryRecvError::Disconnected) => {}
             }
-            match child.try_wait().map_err(|_| process_io_error())? {
+            match child
+                .try_wait()
+                .map_err(|error| process_io_failure!(context, TryWait, Some(&error)))?
+            {
                 Some(_) => break,
                 None if Instant::now() < deadline => thread::sleep(Duration::from_millis(10)),
                 None => {
@@ -1900,12 +1941,19 @@ fn capture_stream(
     mut stream: impl Read,
     limit: usize,
     overflow: &SyncSender<()>,
+    #[cfg(test)] context: (process_diagnostics::Context, process_diagnostics::Operation),
 ) -> Result<CapturedStream, Diagnostic> {
     let mut bytes = Vec::with_capacity(limit.min(8 * 1_024));
     let mut buffer = [0_u8; 8 * 1_024];
     let mut exceeded = false;
     loop {
-        let read = stream.read(&mut buffer).map_err(|_| process_io_error())?;
+        let read = stream.read(&mut buffer).map_err(|error| {
+            #[cfg(test)]
+            context.0.record(context.1, Some(&error));
+            #[cfg(not(test))]
+            let _ = error;
+            process_io_error()
+        })?;
         if read == 0 {
             break;
         }
