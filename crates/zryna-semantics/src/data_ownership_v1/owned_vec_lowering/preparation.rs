@@ -16,19 +16,11 @@ use super::super::type_model::Ty;
 use super::PrivateVecLowerer;
 
 impl PrivateVecLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn expression(
-        &self,
-        id: u32,
-    ) -> Option<&syntax::RawExpressionSyntax> {
+    pub(super) fn expression(&self, id: u32) -> Option<&syntax::RawExpressionSyntax> {
         usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))
     }
 
-    pub(in crate::data_ownership_v1) fn preflight_string_expression(
-        &mut self,
-        id: u32,
-        string_ty: Ty,
-        at: Span,
-    ) -> bool {
+    pub(super) fn preflight_string_expression(&mut self, id: u32, string_ty: Ty, at: Span) -> bool {
         let estimate = match estimate_owned_string_expression(
             self.function,
             &self.bindings,
@@ -144,7 +136,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         Some(total)
     }
 
-    pub(in crate::data_ownership_v1) fn preflight_string_sequence_with_enclosing_cleanup(
+    pub(super) fn preflight_string_sequence_with_enclosing_cleanup(
         &mut self,
         estimate: OwnedStringPreparationEstimate,
         enclosing_actions: usize,
@@ -295,11 +287,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn preflight_push_cleanup(
-        &mut self,
-        value: u32,
-        at: Span,
-    ) -> Option<usize> {
+    pub(super) fn preflight_push_cleanup(&mut self, value: u32, at: Span) -> Option<usize> {
         let moves_existing_owner = !self.element.is_copy()
             && self.expression(value).is_some_and(|expression| {
                 matches!(&expression.kind, RawExpressionKind::Reference { name }
@@ -333,7 +321,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
         Some(reserved_actions)
     }
 
-    pub(in crate::data_ownership_v1) fn preflight_construct_cleanup(
+    pub(super) fn preflight_construct_cleanup(
         &mut self,
         elements: &[u32],
         at: Span,

@@ -33,7 +33,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub(in crate::data_ownership_v1) fn lower_root_while(
+    pub(super) fn lower_root_while(
         &mut self,
         statement_id: u32,
         statement: &syntax::RawStatementSyntax,
