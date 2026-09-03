@@ -168,6 +168,46 @@ source producers. They must preserve the specification's referent, overlap, eval
 and cleanup rules before complete target support and #89/#90 public activation. Closing the
 bounded #82 checkpoint does not implement or waive that chain.
 
+Issue #250 adds the following tests in
+`crates/zryna-ir/src/data_ownership_v1/tests/borrow_loop_nesting.rs`:
+
+- `authenticated_borrow_loop_nesting_accepts_exact_and_rejects_first_extra`;
+- `authenticated_nested_borrow_loops_replay_the_header_latch_and_scope_trace`;
+- `authenticated_nested_loop_rejects_a_borrow_carried_to_its_latch`.
+
+They use real reducible nested headers/latches and a shared begin/read/end sequence. Full M3 IR
+verification accepts depth 128, rejects 129, and rejects an active borrow carried to the latch.
+This does not admit nested source borrowing or prove runtime loop execution.
+
+Issue #251 adds `owned_root_shared_read_drop_budget_is_authenticated_exact_and_first_extra` in
+`crates/zryna-semantics/src/data_ownership_v1/tests/owned_root_borrow_reads.rs`. Authenticated
+source/snapshot lowering accepts exactly 262,144 combined inserted drop actions, rejects the first
+extra action at return cleanup, and verifies deterministic recovery and source-owner preservation.
+The proportional test is ignored by ordinary test invocation and must run in the include-ignored
+preflight lane; an ordinary suite pass alone is not its execution evidence.
+
+These additional tests are inputs to #122's integrated closure review. Their presence here does
+not assert that #250/#251 or #122 have merged or that final cross-platform closure gates passed.
+
+### Resource evidence boundaries
+
+| Resource | Named authority | What the evidence proves |
+| --- | --- | --- |
+| active authorities | #248 dense lexical, parameter-plus-lexical and sequential tests above | complete raw programs and opaque verified traces, not duplicate-ID counter-only fixtures |
+| M3 loop nesting | #250 exact/first-extra and hostile latch tests above | complete reducible IR graph verification; source nested loops remain outside this checkpoint |
+| inserted drop actions | #251 authenticated owned-root boundary above | source/semantic/IR cleanup authority at the exact and first-extra frontier; no allocator or backend execution |
+| values, places and transitions | `root_borrow_resources_enforce_exact_value_place_and_transition_limits`; `borrow_call_resource_preflight_accepts_exact_limits_and_rejects_first_extra_in_order` | resource planning and rejection order; not a claim that every nominal maximum is reachable by an admitted source shape |
+| fixed branch blocks/edges | `root_borrow_resources_enforce_exact_block_and_edge_limits` | exact/first-extra resource planning; current canonical branch/loop shapes retain four blocks and four edges |
+| call edges/depth and arithmetic overflow | `borrow_call_program_edge_and_depth_boundaries_are_exact`; `borrow_call_resource_overflow_precedes_limit_selection_and_preserves_authority_cost` | program-budget arithmetic and precedence; independent call-graph verification separately proves real depth-128 acceptance and depth-129 rejection |
+| combined owned-root wrapper costs | `owned_root_borrow_authority_budget_is_exact_saturating_and_atomic` | checked wrapper instruction/drop/borrow cost accounting before rewrite; not a second claim of a fully verified maximum-size source program |
+
+The ordinary semantic resource tests live in `conditional_root_borrows.rs`,
+`lexical_borrow_calls.rs`, and `owned_root_borrow_reads.rs`. The complete IR suite retains its
+nominal type, construction operand, place, transition, cleanup-plan, drop and diagnostic-cap tests.
+Synthetic preflight collections authenticate count rejection, not all IDs or graph structure.
+Final closure must run the whole relevant suites and proportional cases, retaining these
+distinctions instead of treating every helper test as an executable target program.
+
 ## Issue #113 evidence
 
 The focused `zryna-ir` tests name the current positive and hostile boundary:

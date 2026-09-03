@@ -37,7 +37,15 @@ function checkNamedEvidence(text) {
   assert(limits, "authenticated resource evidence is missing");
   check("crates/zryna-ir/src/data_ownership_v1/tests/borrow_resource_boundaries.rs",
     [...limits.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]));
-  assert.equal(checked, 34, "named evidence inventory changed without review");
+  const nesting = section.split("Issue #250 adds")[1]?.split("Issue #251 adds")[0];
+  assert(nesting, "nested-loop evidence is missing");
+  check("crates/zryna-ir/src/data_ownership_v1/tests/borrow_loop_nesting.rs",
+    [...nesting.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]));
+  const cleanup = section.split("Issue #251 adds")[1]?.split("These additional tests")[0];
+  assert(cleanup, "owned-root cleanup evidence is missing");
+  check("crates/zryna-semantics/src/data_ownership_v1/tests/owned_root_borrow_reads.rs",
+    [...cleanup.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]));
+  assert.equal(checked, 38, "named evidence inventory changed without review");
 }
 
 test("borrowing documentation resolves named evidence to actual Rust test functions", () => {
