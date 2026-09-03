@@ -6,8 +6,24 @@ You do not need to run the contributor regression suite after every program edit
 
 ## Prepare the checkout
 
+With Git installed, clone into a new directory and enter it. If you already have this checkout,
+open a terminal at its root instead; do not clone inside the existing workspace.
+
+```bash
+git clone https://github.com/zryna/zryna.git
+cd zryna
+```
+
 Install Rust **1.97.1** (the repository pins it), pnpm **11.18.0**, and Node.js **22.22.1**.
-Then install the locked frontend dependencies:
+Use the official [Rust/rustup installation guide](https://rust-lang.org/tools/install/),
+[Node.js 22.22.1 downloads](https://nodejs.org/en/download/archive/v22.22.1), and
+[pnpm installation guide](https://pnpm.io/installation#installing-a-specific-version).
+Choose these exact versions, not a site's current default or `latest`. Rust's Windows instructions
+also explain the required C++ build tools. Keep downloaded installers and extracted toolchains
+outside this compiler checkout; arbitrary new root files/directories fail its strict workspace check.
+
+From the checkout, check `rustc --version`, `pnpm --version`, and `node --version` before continuing.
+They must report Rust 1.97.1, pnpm 11.18.0, and Node v22.22.1. Install the locked frontend dependencies:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -17,6 +33,23 @@ In every command below, replace `/absolute/path/to/node` with your real Node exe
 It must be an absolute path to a regular executable, not a PATH shim, symbolic link or Windows
 reparse point. Even native compilation needs Node for the frontend. Quote paths containing spaces.
 Source paths, unlike the Node path, must be workspace-relative and use `/` separators.
+
+To locate the executable behind your trusted Node installation, run this in Bash or PowerShell:
+
+```bash
+node -p "process.execPath"
+```
+
+Node's [`process.execPath`](https://nodejs.org/docs/latest-v22.x/api/process.html#processexecpath)
+returns its absolute executable pathname with symbolic links resolved. Use that printed path,
+not the shell's shim or alias. Check the printed executable directly: in Bash use
+`"/absolute/path/to/node" --version`; in PowerShell use `& "C:\actual\path\node.exe" --version`,
+replacing the example path in either case. Expect exactly `v22.22.1`. If Node is not on PATH,
+start with the actual `node`/`node.exe` in your trusted installation directory.
+This locates a candidate; the CLI still performs the authoritative file/reparse-point and version
+checks. If it rejects a shim or linked installation path, use the direct executable in a normal
+installation directory rather than bypassing validation. A successful version check alone does
+not certify a platform configuration.
 
 The first `cargo run` builds the compiler and can take time. Subsequent invocations reuse it.
 Every build/run checks the workspace architecture first; there is no bypass flag.
@@ -113,6 +146,20 @@ cargo run --locked -p zryna -- run examples/universal/add.zry --target javascrip
 
 It returns `i32:3`. On a second pass through the walkthrough, choose unused names throughout.
 Do not reuse an M1 bundle name for an M2 request of the same command kind either.
+
+For personal experiments, first edit a supported expression in the checked-in example, or save
+a regular UTF-8 copy of `examples/universal/add.zry` as `examples/universal/my-add.zry` using your
+editor. Keep the required explicit types and `export`. Use `examples/universal/my-add.zry` as the
+entrypoint in the same commands, with a fresh `--name`; no manifest edit is needed for a regular
+source file beneath the existing `examples` directory. For the M2 example, keep `main.zry` and
+`math.zry` together so its `./math.zry` import still resolves, and retain `--profile control-flow-v1`.
+This is editing guidance, not an additional executed example.
+
+Do not put personal source in `.zryna/out`, add a new top-level project directory, or create
+symlinks/reparse points in the checkout. The [strict workspace contract](STRICT_WORKSPACE.md)
+still checks file names, UTF-8 contents, layout and budgets. There is no `zryna init` command in
+this walkthrough and no architecture bypass; this repository-local workflow is not package or
+standalone-project support.
 
 ## Targets and limits
 

@@ -20,6 +20,22 @@ const PROVENANCE = {
   enforceWorkspaceOutput: false,
 };
 
+test('beginner setup preserves direct runtime and repository-local editing boundaries', async () => {
+  const guide = await readFile(path.join(compilerWorkspaceRoot, 'docs/GETTING_STARTED.md'), 'utf8');
+  for (const required of [
+    'git clone https://github.com/zryna/zryna.git\ncd zryna',
+    'node -p "process.execPath"',
+    'the CLI still performs the authoritative file/reparse-point and version',
+    'examples/universal/my-add.zry',
+    'This is editing guidance, not an additional executed example.',
+    'no architecture bypass',
+    'internal ownership tests do not enable that CLI profile',
+  ]) assert(guide.includes(required), required);
+  assert.match(guide, /Rust \*\*1\.97\.1\*\*/);
+  assert.match(guide, /pnpm \*\*11\.18\.0\*\*/);
+  assert.match(guide, /Node\.js \*\*22\.22\.1\*\*/);
+});
+
 async function temporaryOutput() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'zryna-docs-test-'));
   return { root, output: path.join(root, 'bundle') };
