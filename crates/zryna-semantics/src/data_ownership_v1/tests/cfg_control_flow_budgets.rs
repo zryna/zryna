@@ -1,3 +1,7 @@
+use super::super::owned_cfg_state::{
+    OwnedPendingBlock, release_owned_commit_transition, release_owned_commit_transitions,
+    reserve_owned_commit_transition, reserve_owned_commit_transitions,
+};
 use super::*;
 
 #[test]
@@ -87,7 +91,7 @@ fn owned_loop_three_block_four_edge_preflight_is_exact_plus_one_and_atomic() {
 
     let mut exact_errors = Errors::new(&sources);
     let mut exact = OwnedCfgState::single_block(at, &mut exact_errors).expect("entry block");
-    exact.arena.blocks.resize_with(maximum_blocks - 3, || super::super::OwnedPendingBlock {
+    exact.arena.blocks.resize_with(maximum_blocks - 3, || OwnedPendingBlock {
         populated: false,
         parameters: Vec::new(),
         instructions: Vec::new(),
@@ -103,7 +107,7 @@ fn owned_loop_three_block_four_edge_preflight_is_exact_plus_one_and_atomic() {
     for (blocks, edges) in [(4, 4), (3, 5), (usize::MAX, usize::MAX)] {
         let mut errors = Errors::new(&sources);
         let mut state = OwnedCfgState::single_block(at, &mut errors).expect("entry block");
-        state.arena.blocks.resize_with(maximum_blocks - 3, || super::super::OwnedPendingBlock {
+        state.arena.blocks.resize_with(maximum_blocks - 3, || OwnedPendingBlock {
             populated: false,
             parameters: Vec::new(),
             instructions: Vec::new(),
@@ -122,7 +126,7 @@ fn owned_loop_three_block_four_edge_preflight_is_exact_plus_one_and_atomic() {
 
     let mut errors = Errors::new(&sources);
     let mut state = OwnedCfgState::single_block(at, &mut errors).expect("entry block");
-    state.arena.blocks.resize_with(maximum_blocks - 2, || super::super::OwnedPendingBlock {
+    state.arena.blocks.resize_with(maximum_blocks - 2, || OwnedPendingBlock {
         populated: false,
         parameters: Vec::new(),
         instructions: Vec::new(),
@@ -153,10 +157,10 @@ fn owned_loop_commit_transition_reservation_is_exact_plus_one_and_releasable() {
     let mut exact_errors = Errors::new(&sources);
     let mut exact = OwnedCfgState::single_block(at, &mut exact_errors).expect("entry block");
     exact.transitions = maximum - 1;
-    assert!(super::super::reserve_owned_commit_transition(&mut exact, at, &mut exact_errors));
+    assert!(reserve_owned_commit_transition(&mut exact, at, &mut exact_errors));
     assert_eq!(exact.transitions, maximum - 1);
     assert_eq!(exact.reserved_transitions, 1);
-    super::super::release_owned_commit_transition(&mut exact);
+    release_owned_commit_transition(&mut exact);
     assert_eq!(exact.reserved_transitions, 0);
     assert!(exact_errors.finish().is_empty());
 
@@ -164,14 +168,9 @@ fn owned_loop_commit_transition_reservation_is_exact_plus_one_and_releasable() {
     let mut read_cleanup =
         OwnedCfgState::single_block(at, &mut read_cleanup_errors).expect("entry block");
     read_cleanup.transitions = maximum - 2;
-    assert!(super::super::reserve_owned_commit_transitions(
-        &mut read_cleanup,
-        2,
-        at,
-        &mut read_cleanup_errors,
-    ));
+    assert!(reserve_owned_commit_transitions(&mut read_cleanup, 2, at, &mut read_cleanup_errors,));
     assert_eq!(read_cleanup.reserved_transitions, 2);
-    super::super::release_owned_commit_transitions(&mut read_cleanup, 2);
+    release_owned_commit_transitions(&mut read_cleanup, 2);
     assert_eq!(read_cleanup.reserved_transitions, 0);
     assert!(read_cleanup_errors.finish().is_empty());
 
@@ -180,12 +179,7 @@ fn owned_loop_commit_transition_reservation_is_exact_plus_one_and_releasable() {
         OwnedCfgState::single_block(at, &mut first_extra_errors).expect("entry block");
     first_extra.transitions = maximum - 1;
     let before = (first_extra.transitions, first_extra.reserved_transitions);
-    assert!(!super::super::reserve_owned_commit_transitions(
-        &mut first_extra,
-        2,
-        at,
-        &mut first_extra_errors,
-    ));
+    assert!(!reserve_owned_commit_transitions(&mut first_extra, 2, at, &mut first_extra_errors,));
     assert_eq!((first_extra.transitions, first_extra.reserved_transitions), before);
     assert_eq!(first_extra_errors.finish()[0].code(), "ZRYNA-M3201");
 
@@ -194,7 +188,7 @@ fn owned_loop_commit_transition_reservation_is_exact_plus_one_and_releasable() {
         let mut state = OwnedCfgState::single_block(at, &mut errors).expect("entry block");
         state.transitions = transitions;
         let before = (state.transitions, state.reserved_transitions);
-        assert!(!super::super::reserve_owned_commit_transition(&mut state, at, &mut errors));
+        assert!(!reserve_owned_commit_transition(&mut state, at, &mut errors));
         assert_eq!((state.transitions, state.reserved_transitions), before);
         let diagnostics = errors.finish();
         assert_eq!(diagnostics.len(), 1);
