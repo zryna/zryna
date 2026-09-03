@@ -9,18 +9,18 @@ use super::owned_control_flow_resources::{
     projected_root_borrow_resource_counts, root_borrow_resource_violation,
     straight_root_borrow_budget_violation, straight_root_borrow_resources,
 };
+use super::owner_state::{OwnedStringBranchState, OwnerState};
 use super::type_model::{RootBorrowBudgetLimit, RootBorrowResources};
 use super::{
     Errors, FunctionCatalog, FunctionParameterOrder, FunctionSignature, MAX_SEMANTIC_DIAGNOSTICS,
-    OwnedCfgBudgetLimit, OwnedCfgState, OwnedStringBranchState, OwnedStringEstimateContext,
-    OwnedStringPreparationBudget, OwnerState, PartialTransferBudgetViolation, PrivateStringLowerer,
-    ProgramCfgBudgetLimit, SemanticInput, ValueBudgetLimit, accumulate_generated_cfg_function,
-    accumulate_generated_value_function, aggregate_clone_budget_violation,
-    aggregate_operand_budget_violation, aggregate_transition_budget_violation,
-    authenticated_type_capabilities, checked_string_concat_bytes, cleanup_action_budget_violation,
-    cleanup_actions_after_additions, cleanup_actions_after_preparation,
-    cleanup_actions_after_transfer, dense_owned_value_id, derived_value_count,
-    enum_payload_move_resource_estimate, enum_payload_move_resource_violation,
+    OwnedCfgBudgetLimit, OwnedCfgState, OwnedStringEstimateContext, OwnedStringPreparationBudget,
+    PartialTransferBudgetViolation, PrivateStringLowerer, ProgramCfgBudgetLimit, SemanticInput,
+    ValueBudgetLimit, accumulate_generated_cfg_function, accumulate_generated_value_function,
+    aggregate_clone_budget_violation, aggregate_operand_budget_violation,
+    aggregate_transition_budget_violation, authenticated_type_capabilities,
+    checked_string_concat_bytes, cleanup_action_budget_violation, cleanup_actions_after_additions,
+    cleanup_actions_after_preparation, cleanup_actions_after_transfer, dense_owned_value_id,
+    derived_value_count, enum_payload_move_resource_estimate, enum_payload_move_resource_violation,
     estimate_owned_string_expression, generated_cfg_budget_violation,
     is_direct_owned_root_borrow_candidate, is_terminal_owned_phi_candidate, lower,
     owned_call_cleanup_budget_violation, owned_cfg_budget_violation, owned_place_budget_violation,
