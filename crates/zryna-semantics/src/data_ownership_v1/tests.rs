@@ -15,6 +15,7 @@ use super::owned_control_flow_resources::{
 use super::owned_lowering_resources::{
     OwnedCleanupAccounting, OwnedCleanupActionContext, OwnedStringPreparationBudget,
     checked_vec_clone_prefix_action_count, preflight_owned_string_preparation,
+    push_aggregate_clone_prefix_cleanup, push_aggregate_reverse_cleanup,
 };
 use super::owner_state::{OwnedStringBranchState, OwnerState};
 use super::type_model::{RootBorrowBudgetLimit, RootBorrowResources};
