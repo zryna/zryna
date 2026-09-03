@@ -9,6 +9,7 @@ use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 mod assignment_planning;
 mod assignments;
 mod clone;
+mod constructors;
 mod partial_transfers;
 mod projected_reads;
 mod projections;

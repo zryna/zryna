@@ -13,7 +13,7 @@ use super::super::type_model::{Binding, Ty};
 use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn clone_aggregate(
+    pub(super) fn clone_aggregate(
         &mut self,
         operand: u32,
         expected: Ty,
@@ -253,7 +253,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(result)
     }
 
-    pub(in crate::data_ownership_v1) fn clone_projected_string(
+    pub(super) fn clone_projected_string(
         &mut self,
         operand: u32,
         expected: Ty,

@@ -190,11 +190,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn reserve_operands(
-        &mut self,
-        additional: usize,
-        at: Span,
-    ) -> Option<()> {
+    pub(super) fn reserve_operands(&mut self, additional: usize, at: Span) -> Option<()> {
         if aggregate_operand_budget_violation(self.aggregate_operands, additional) {
             self.errors.at(
                 "ZRYNA-M3201",
@@ -211,7 +207,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn prevalidate_constructor_operands(
+    pub(super) fn prevalidate_constructor_operands(
         &mut self,
         values: &[raw::ValueId],
         at: Span,
@@ -243,10 +239,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(consumed)
     }
 
-    pub(in crate::data_ownership_v1) fn commit_constructor_operands(
-        &mut self,
-        values: &[raw::ValueId],
-    ) {
+    pub(super) fn commit_constructor_operands(&mut self, values: &[raw::ValueId]) {
         for value in values {
             self.owners
                 .transfer(*value)
@@ -254,7 +247,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn commit_enum(
+    pub(super) fn commit_enum(
         &mut self,
         expected: Ty,
         at: Span,
