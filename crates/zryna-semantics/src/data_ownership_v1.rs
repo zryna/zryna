@@ -19,6 +19,7 @@ mod aggregate_resource_formulas;
 mod borrow_call_preflight;
 mod borrow_call_resources;
 mod borrow_forwarding;
+mod copy_lowering;
 mod diagnostics;
 mod function_catalog;
 mod global_resource_limits;
@@ -62,6 +63,7 @@ use aggregate_resource_formulas::{
     projected_subobject_move_budget_violation, projected_subobject_return_budget_violation,
 };
 use borrow_call_resources::preflight_program_borrow_calls;
+use copy_lowering::{BorrowBinding, FunctionLowerer};
 use diagnostics::Errors;
 use function_catalog::{
     FunctionCatalog, FunctionParameterOrder, FunctionSignature, build_function_catalog,
@@ -386,33 +388,6 @@ fn require_current_type_only_boundary(
         );
     }
     None
-}
-
-struct FunctionLowerer<'a, 'f, 'e> {
-    input: SemanticInput<'a>,
-    file: &'a syntax::SourceUnit,
-    function: &'f syntax::RawFunctionSyntax,
-    module: usize,
-    declarations: &'a [Decl],
-    graph: &'a raw_layout::Graph,
-    node_types: &'a [Option<Ty>],
-    layouts: &'a layout::VerifiedLayouts,
-    catalog: &'a FunctionCatalog,
-    errors: &'e mut Errors<'a>,
-    bindings: BTreeMap<String, Binding>,
-    borrow_bindings: BTreeMap<String, BorrowBinding>,
-    places: Vec<raw::Place>,
-    projections: BTreeMap<(u32, u8, u32), raw::PlaceId>,
-    instructions: Vec<raw::Instruction>,
-    cleanup_plans: Vec<raw::CleanupPlan>,
-    values: u32,
-}
-
-#[derive(Clone, Copy)]
-struct BorrowBinding {
-    ty: Ty,
-    borrow: raw::BorrowId,
-    access: raw::BorrowAccess,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1377,55 +1352,6 @@ fn lower_enum_match_function<'a>(
 }
 
 impl FunctionLowerer<'_, '_, '_> {
-    fn binding_name_exists(&self, candidate: &str) -> bool {
-        self.bindings
-            .keys()
-            .chain(self.borrow_bindings.keys())
-            .any(|name| name.eq_ignore_ascii_case(candidate))
-    }
-
-    fn borrow_reference(&self, id: u32) -> Option<BorrowBinding> {
-        let expression =
-            usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))?;
-        let RawExpressionKind::Reference { name } = &expression.kind else {
-            return None;
-        };
-        self.borrow_bindings.get(&name.text).copied()
-    }
-
-    fn push_place(&mut self, ty: Ty, span: Span, kind: raw::PlaceKind) -> raw::PlaceId {
-        let id = raw::PlaceId(u32::try_from(self.places.len()).unwrap_or(u32::MAX));
-        self.places.push(raw::Place { id, ty: ty.ir, span, kind });
-        id
-    }
-    fn emit(
-        &mut self,
-        result_ty: Option<Ty>,
-        span: Span,
-        kind: raw::InstructionKind,
-    ) -> Option<raw::ValueId> {
-        let result = result_ty.map(|ty| {
-            let id = raw::ValueId(self.values);
-            self.values += 1;
-            raw::ValueDefinition { id, ty: ty.ir, span }
-        });
-        let id = result.map(|v| v.id);
-        self.instructions.push(raw::Instruction { result, span, kind });
-        id
-    }
-    fn require_type(&mut self, expected: Ty, actual: Ty, at: Span, what: &str) -> Option<()> {
-        if expected.layout == actual.layout {
-            Some(())
-        } else {
-            self.errors.at(
-                "ZRYNA-M3007",
-                at,
-                format!("{what} has a different exact aggregate type"),
-                "use a value with the exact declared type",
-            );
-            None
-        }
-    }
     fn value(&mut self, id: u32) -> Option<(Ty, raw::ValueId)> {
         let expr = usize::try_from(id).ok().and_then(|i| self.function.body.expressions.get(i))?;
         let at = span(self.input.sources(), expr.span);
@@ -1636,92 +1562,6 @@ impl FunctionLowerer<'_, '_, '_> {
                 None
             }
         }
-    }
-    fn primitive(&self, category: TypeCategory) -> Option<Ty> {
-        self.node_types.iter().flatten().find(|ty| ty.category == category).copied()
-    }
-    fn decl_ty(&self, name: &str) -> Option<Ty> {
-        let decl = self.declarations.iter().find(|d| d.module == self.module && d.name == name)?;
-        self.node_types[usize::try_from(decl.node.0).ok()?]
-    }
-    fn field(&mut self, base: Ty, name: &str, use_span: Span) -> Option<(u32, Ty)> {
-        let nominal = self.layouts.type_by_id(base.layout)?.nominal_identity()?;
-        let decl = self.declarations.iter().find(|d| {
-            (u32::try_from(d.module).ok(), u32::try_from(d.declaration).ok())
-                == (Some(nominal.0), Some(nominal.1))
-        })?;
-        let raw_decl =
-            &self.input.syntax().files()[decl.module].data_declarations()[decl.declaration];
-        let RawDataDeclarationKind::Struct { fields, .. } = &raw_decl.kind else {
-            self.errors.at(
-                "ZRYNA-M3006",
-                decl.span,
-                "field access requires a struct",
-                "project fields only from a struct place",
-            );
-            return None;
-        };
-        fields
-            .iter()
-            .enumerate()
-            .find(|(_, f)| f.name.text == name)
-            .and_then(|(ordinal, f)| {
-                semantic_type(
-                    self.file,
-                    f.type_syntax,
-                    self.module,
-                    self.declarations,
-                    self.graph,
-                    self.node_types,
-                    self.errors,
-                )
-                .map(|ty| (u32::try_from(ordinal).unwrap_or(u32::MAX), ty))
-            })
-            .or_else(|| {
-                self.errors.at(
-                    "ZRYNA-M3006",
-                    use_span,
-                    format!("struct '{}' has no field '{name}'", decl.name),
-                    "use one exact declared field name",
-                );
-                None
-            })
-    }
-    fn constant_index(&mut self, base: Ty, index_expr: u32) -> Option<(u32, Ty)> {
-        let expr =
-            usize::try_from(index_expr).ok().and_then(|i| self.function.body.expressions.get(i))?;
-        let RawExpressionKind::I32Literal { spelling } = &expr.kind else {
-            self.errors.at(
-                "ZRYNA-M3006",
-                span(self.input.sources(), expr.span),
-                "fixed-array indices must be compile-time i32 literals",
-                "use a nonnegative literal within the fixed-array length",
-            );
-            return None;
-        };
-        let index = spelling.parse::<u32>().ok().or_else(|| {
-            self.errors.at(
-                "ZRYNA-M3006",
-                span(self.input.sources(), expr.span),
-                "fixed-array index is negative or outside u32",
-                "use a nonnegative constant index",
-            );
-            None
-        })?;
-        let record = self.layouts.type_by_id(base.layout)?;
-        let length = record.array_length()?;
-        if u64::from(index) >= length {
-            self.errors.at(
-                "ZRYNA-M3006",
-                span(self.input.sources(), expr.span),
-                format!("fixed-array index {index} is outside length {length}"),
-                "use an index less than the exact fixed-array length",
-            );
-            return None;
-        }
-        let element = record.referenced_type()?;
-        let ty = self.node_types.iter().flatten().find(|ty| ty.layout == element).copied()?;
-        Some((index, ty))
     }
     fn struct_value(
         &mut self,
