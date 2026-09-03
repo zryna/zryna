@@ -89,7 +89,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn lower_root_local(
+    pub(super) fn lower_root_local(
         &mut self,
         statement: &syntax::RawStatementSyntax,
         after_control_flow: bool,
@@ -177,7 +177,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn lower_root_assignment(
+    pub(super) fn lower_root_assignment(
         &mut self,
         statement: &syntax::RawStatementSyntax,
         after_control_flow: bool,

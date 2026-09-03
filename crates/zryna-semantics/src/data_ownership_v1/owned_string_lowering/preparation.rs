@@ -16,14 +16,11 @@ use super::super::type_model::Ty;
 use super::PrivateStringLowerer;
 
 impl PrivateStringLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn expression(
-        &self,
-        id: u32,
-    ) -> Option<&syntax::RawExpressionSyntax> {
+    pub(super) fn expression(&self, id: u32) -> Option<&syntax::RawExpressionSyntax> {
         usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))
     }
 
-    pub(in crate::data_ownership_v1) fn preparation_estimate(
+    pub(super) fn preparation_estimate(
         &mut self,
         id: u32,
         context: OwnedStringEstimateContext,
@@ -109,7 +106,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         self.reserved_places = self.reserved_places.checked_sub(1).expect("reserved local place");
     }
 
-    pub(in crate::data_ownership_v1) fn reserve_local_commit(&mut self, at: Span) -> bool {
+    pub(super) fn reserve_local_commit(&mut self, at: Span) -> bool {
         if !self.reserve_local_place(at) {
             return false;
         }
@@ -120,16 +117,12 @@ impl PrivateStringLowerer<'_, '_, '_> {
         true
     }
 
-    pub(in crate::data_ownership_v1) fn release_local_commit(&mut self) {
+    pub(super) fn release_local_commit(&mut self) {
         self.cfg.release_transitions(1);
         self.release_local_place();
     }
 
-    pub(in crate::data_ownership_v1) fn reserve_cleanup_capacity(
-        &mut self,
-        actions: usize,
-        at: Span,
-    ) -> bool {
+    pub(super) fn reserve_cleanup_capacity(&mut self, actions: usize, at: Span) -> bool {
         OwnedCleanupAccounting::new(
             &mut self.cleanup_plans,
             &mut self.cleanup_actions,
@@ -139,7 +132,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         .reserve_plan(actions, OwnedCleanupReservationContext::String, at, self.errors)
     }
 
-    pub(in crate::data_ownership_v1) fn release_cleanup_capacity(&mut self, actions: usize) {
+    pub(super) fn release_cleanup_capacity(&mut self, actions: usize) {
         OwnedCleanupAccounting::new(
             &mut self.cleanup_plans,
             &mut self.cleanup_actions,
@@ -222,7 +215,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         Some((value, place))
     }
 
-    pub(in crate::data_ownership_v1) fn push_copy_value(
+    pub(super) fn push_copy_value(
         &mut self,
         ty: Ty,
         at: Span,

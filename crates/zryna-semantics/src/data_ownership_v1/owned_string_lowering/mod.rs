@@ -13,15 +13,19 @@ use super::type_model::{Binding, Ty};
 
 mod assignments;
 mod branches;
+mod driver;
 mod expressions_and_calls;
+pub(super) mod loops;
 mod preparation;
 
+pub(in crate::data_ownership_v1) use driver::lower_private_string_function;
+
 #[derive(Clone, Copy)]
-pub(in crate::data_ownership_v1) struct StringBranchTypes<'a> {
-    pub(in crate::data_ownership_v1) file: &'a syntax::SourceUnit,
-    pub(in crate::data_ownership_v1) declarations: &'a [Decl],
-    pub(in crate::data_ownership_v1) graph: &'a zryna_layout::raw::Graph,
-    pub(in crate::data_ownership_v1) node_types: &'a [Option<Ty>],
+struct StringBranchTypes<'a> {
+    file: &'a syntax::SourceUnit,
+    declarations: &'a [Decl],
+    graph: &'a zryna_layout::raw::Graph,
+    node_types: &'a [Option<Ty>],
 }
 
 pub(in crate::data_ownership_v1) struct PrivateStringLowerer<'a, 'f, 'e> {

@@ -9,7 +9,7 @@ use super::super::span;
 use super::{PrivateStringLowerer, StringBranchTypes};
 
 impl PrivateStringLowerer<'_, '_, '_> {
-    pub(in crate::data_ownership_v1) fn condition(
+    pub(super) fn condition(
         &mut self,
         id: u32,
         bool_ty: super::super::type_model::Ty,
@@ -122,11 +122,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn drop_non_carried(
-        &mut self,
-        carried: raw::PlaceId,
-        at: Span,
-    ) -> Option<()> {
+    pub(super) fn drop_non_carried(&mut self, carried: raw::PlaceId, at: Span) -> Option<()> {
         let dropped = self
             .owners
             .pending()
@@ -175,7 +171,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(in crate::data_ownership_v1) fn lower_branch(
+    pub(super) fn lower_branch(
         &mut self,
         block_id: Option<u32>,
         incoming: &OwnedStringBranchState,
@@ -219,7 +215,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         self.restore_branch_scope(incoming, scope_span)
     }
 
-    pub(in crate::data_ownership_v1) fn incoming_move_span(
+    pub(super) fn incoming_move_span(
         &self,
         id: u32,
         incoming: &OwnedStringBranchState,
@@ -258,7 +254,7 @@ impl PrivateStringLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn lower_root_branch(
+    pub(super) fn lower_root_branch(
         &mut self,
         statement: &zryna_syntax::v4::RawStatementSyntax,
         saw_if: &mut bool,
