@@ -12,7 +12,9 @@ use super::owned_cfg_state::OwnedCfgState;
 use super::owner_state::OwnerState;
 use super::type_model::{Binding, Ty};
 
+mod call_resolution;
 mod clone;
+mod expressions_and_calls;
 mod preparation;
 mod state;
 
