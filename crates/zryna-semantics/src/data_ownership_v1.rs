@@ -24,6 +24,8 @@ mod function_catalog;
 mod global_resource_limits;
 mod layout_graph;
 mod owned_control_flow_resources;
+mod owned_root_borrow_planning;
+mod owned_root_borrow_postprocessing;
 mod root_borrow_arm_planning;
 mod root_borrow_call_planning;
 mod root_borrow_execution;
@@ -82,14 +84,18 @@ use owned_control_flow_resources::{
 };
 use owned_control_flow_resources::{
     OwnedCfgBudgetLimit, dense_owned_value_id, enum_payload_move_resource_violation,
-    owned_cfg_budget_violation, owned_root_borrow_resource_violation, owned_value_budget_violation,
-    preflight_owned_place_capacity, preflight_owned_place_capacity_with_reserved,
+    owned_cfg_budget_violation, owned_value_budget_violation, preflight_owned_place_capacity,
+    preflight_owned_place_capacity_with_reserved,
 };
 #[cfg(test)]
 use owned_control_flow_resources::{
     conditional_root_borrow_budget_violation, loop_root_borrow_resources,
-    root_borrow_resource_violation,
+    owned_root_borrow_resource_violation, root_borrow_resource_violation,
 };
+use owned_root_borrow_planning::{
+    is_direct_owned_root_borrow_candidate, plan_private_owned_root_borrow_syntax,
+};
+use owned_root_borrow_postprocessing::postprocess_private_owned_root_borrow_function;
 use root_borrow_function_lowering::lower_private_root_borrow_function;
 #[cfg(test)]
 use string_vec_resource_estimates::owned_call_cleanup_budget_violation;
@@ -101,14 +107,14 @@ use string_vec_resource_estimates::{
     estimate_owned_string_call_arguments, estimate_owned_string_expression,
     vec_push_target_invalid,
 };
-#[cfg(test)]
-use type_model::RootBorrowResources;
 use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
-    OwnedRootBorrowSyntax, OwnedStaticProjectionKind, OwnedStringBranchState, OwnedVecBranchState,
-    OwnerDelta, OwnerState, ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext,
-    RootBorrowBudgetLimit, TerminalOwnedIf, Ty, apply_owner_delta, map_node_types,
+    OwnedStaticProjectionKind, OwnedStringBranchState, OwnedVecBranchState, OwnerDelta, OwnerState,
+    ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext, TerminalOwnedIf, Ty,
+    apply_owner_delta, map_node_types,
 };
+#[cfg(test)]
+use type_model::{RootBorrowBudgetLimit, RootBorrowResources};
 
 /// Maximum retained semantic diagnostics, including the terminal budget diagnostic.
 pub const MAX_SEMANTIC_DIAGNOSTICS: usize = 256;
@@ -470,348 +476,7 @@ struct BorrowBinding {
     access: raw::BorrowAccess,
 }
 
-fn direct_reference_name(function: &syntax::RawFunctionSyntax, expression: u32) -> Option<&str> {
-    let expression =
-        usize::try_from(expression).ok().and_then(|index| function.body.expressions.get(index))?;
-    let RawExpressionKind::Reference { name } = &expression.kind else { return None };
-    Some(&name.text)
-}
-
-fn is_direct_owned_root_borrow_candidate(
-    file: &syntax::SourceUnit,
-    function: &syntax::RawFunctionSyntax,
-) -> bool {
-    let Some(root) = usize::try_from(function.body.root_block)
-        .ok()
-        .and_then(|index| function.body.blocks.get(index))
-    else {
-        return false;
-    };
-    let [root_local, nested, _] = root.statements.as_slice() else { return false };
-    let Some(root_local) =
-        usize::try_from(*root_local).ok().and_then(|index| function.body.statements.get(index))
-    else {
-        return false;
-    };
-    let RawStatementKind::LocalDeclaration { name: root_name, .. } = &root_local.kind else {
-        return false;
-    };
-    let Some(nested) =
-        usize::try_from(*nested).ok().and_then(|index| function.body.statements.get(index))
-    else {
-        return false;
-    };
-    let RawStatementKind::Block { block } = nested.kind else { return false };
-    let Some(alias) = usize::try_from(block)
-        .ok()
-        .and_then(|index| function.body.blocks.get(index))
-        .and_then(|block| block.statements.first())
-        .and_then(|statement| usize::try_from(*statement).ok())
-        .and_then(|index| function.body.statements.get(index))
-    else {
-        return false;
-    };
-    let RawStatementKind::LocalDeclaration { type_syntax, initializer, .. } = alias.kind else {
-        return false;
-    };
-    let shared = usize::try_from(type_syntax)
-        .ok()
-        .and_then(|index| file.type_syntax().get(index))
-        .is_some_and(|ty| matches!(ty.kind, RawTypeSyntaxKind::Borrow { .. }));
-    let Some(initializer) =
-        usize::try_from(initializer).ok().and_then(|index| function.body.expressions.get(index))
-    else {
-        return false;
-    };
-    let RawExpressionKind::Borrow { value, .. } = initializer.kind else { return false };
-    shared && direct_reference_name(function, value) == Some(root_name.text.as_str())
-}
-
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-fn plan_private_owned_root_borrow_syntax<'a>(
-    input: SemanticInput<'a>,
-    module: usize,
-    function: &'a syntax::RawFunctionSyntax,
-    declarations: &'a [Decl],
-    graph: &'a raw_layout::Graph,
-    node_types: &'a [Option<Ty>],
-    result: Ty,
-    errors: &mut Errors<'a>,
-) -> Option<OwnedRootBorrowSyntax> {
-    let at = span(input.sources(), function.span);
-    if function.export_span.is_some() || !function.parameters.is_empty() {
-        errors.at(
-            "ZRYNA-M3017",
-            at,
-            "owned-root borrow reads require one private parameter-free function",
-            "keep this internal checkpoint private and initialize its owner locally",
-        );
-        return None;
-    }
-    if result.is_copy()
-        || !matches!(
-            result.category,
-            TypeCategory::String
-                | TypeCategory::Vec
-                | TypeCategory::Struct
-                | TypeCategory::Enum
-                | TypeCategory::FixedArray
-        )
-    {
-        errors.at(
-            "ZRYNA-M3017",
-            at,
-            "owned-root borrow reads require one supported non-Copy result",
-            "return the exact String, Vec, Struct, Enum, or fixed-array root after lexical end",
-        );
-        return None;
-    }
-    let file = input.syntax().files().get(module)?;
-    let root = usize::try_from(function.body.root_block)
-        .ok()
-        .and_then(|index| function.body.blocks.get(index))?;
-    let [root_local_id, nested_id, return_id] = root.statements.as_slice() else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), root.span),
-            "owned-root borrow reads require one root local, one lexical block, and one final return",
-            "declare the owner, read it through one nested shared-borrow block, then return it",
-        );
-        return None;
-    };
-    let root_local = usize::try_from(*root_local_id)
-        .ok()
-        .and_then(|index| function.body.statements.get(index))?;
-    let RawStatementKind::LocalDeclaration { name: root_name, type_syntax: root_type, .. } =
-        &root_local.kind
-    else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), root_local.span),
-            "owned-root borrow reads require one initialized local owner",
-            "declare one exact owned root before the lexical block",
-        );
-        return None;
-    };
-    let root_ty = semantic_type(file, *root_type, module, declarations, graph, node_types, errors)?;
-    if root_ty != result || root_ty.is_copy() {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), root_local.span),
-            "owned-root borrow result must exactly match the initialized non-Copy root",
-            "give the local root and function result one exact owned type",
-        );
-        return None;
-    }
-    let nested_statement =
-        usize::try_from(*nested_id).ok().and_then(|index| function.body.statements.get(index))?;
-    let RawStatementKind::Block { block: nested_block_id } = nested_statement.kind else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), nested_statement.span),
-            "owned-root shared authority requires one explicit lexical block",
-            "place the alias and its read-only operations inside one nested block",
-        );
-        return None;
-    };
-    let nested =
-        usize::try_from(nested_block_id).ok().and_then(|index| function.body.blocks.get(index))?;
-    let Some((alias_statement_id, read_statement_ids)) = nested.statements.split_first() else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), nested.span),
-            "owned-root borrow block requires one shared alias and at least one read",
-            "declare Borrow<Root> first, then perform one admitted read-only operation",
-        );
-        return None;
-    };
-    if read_statement_ids.is_empty() {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), nested.span),
-            "owned-root borrow block requires at least one read-only operation",
-            "clone, concatenate, or index through the shared alias before lexical end",
-        );
-        return None;
-    }
-    let alias_statement = usize::try_from(*alias_statement_id)
-        .ok()
-        .and_then(|index| function.body.statements.get(index))?;
-    let RawStatementKind::LocalDeclaration {
-        mutable: false,
-        name: alias_name,
-        type_syntax: alias_type,
-        initializer: alias_initializer,
-        ..
-    } = &alias_statement.kind
-    else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), alias_statement.span),
-            "owned-root borrow block must begin with one const shared alias",
-            "declare `const alias: Borrow<Root> = borrow(root)`",
-        );
-        return None;
-    };
-    let declared =
-        usize::try_from(*alias_type).ok().and_then(|index| file.type_syntax().get(index))?;
-    let RawTypeSyntaxKind::Borrow { argument, .. } = declared.kind else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), declared.span),
-            "owned-root reads require shared Borrow authority",
-            "use Borrow rather than BorrowMut for read-only owned access",
-        );
-        return None;
-    };
-    let referent = semantic_type(file, argument, module, declarations, graph, node_types, errors)?;
-    if referent != root_ty {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), declared.span),
-            "owned-root borrow alias has the wrong exact referent type",
-            "declare Borrow with the exact whole-root owned type",
-        );
-        return None;
-    }
-    let alias_initializer_expression = usize::try_from(*alias_initializer)
-        .ok()
-        .and_then(|index| function.body.expressions.get(index))?;
-    let RawExpressionKind::Borrow { value: borrowed, .. } = alias_initializer_expression.kind
-    else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), alias_initializer_expression.span),
-            "owned-root shared alias must be initialized with borrow(root)",
-            "borrow the exact root directly without a projection or reborrow",
-        );
-        return None;
-    };
-    if direct_reference_name(function, borrowed) != Some(root_name.text.as_str()) {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), alias_initializer_expression.span),
-            "owned-root shared alias must borrow the exact whole root",
-            "remove projections, subobjects, and alternate operands from borrow(root)",
-        );
-        return None;
-    }
-
-    let mut flattened = Vec::with_capacity(read_statement_ids.len().saturating_add(2));
-    flattened.push(*root_local_id);
-    for statement_id in read_statement_ids {
-        let statement = usize::try_from(*statement_id)
-            .ok()
-            .and_then(|index| function.body.statements.get(index))?;
-        let RawStatementKind::LocalDeclaration { mutable: false, type_syntax, initializer, .. } =
-            statement.kind
-        else {
-            errors.at(
-                "ZRYNA-M3017",
-                span(input.sources(), statement.span),
-                "owned-root borrow blocks admit only const read results",
-                "remove moves, writes, replacement, drops, calls, and nested control flow",
-            );
-            return None;
-        };
-        let local_ty =
-            semantic_type(file, type_syntax, module, declarations, graph, node_types, errors)?;
-        let expression = usize::try_from(initializer)
-            .ok()
-            .and_then(|index| function.body.expressions.get(index))?;
-        let admitted = match (&expression.kind, root_ty.category) {
-            (RawExpressionKind::Clone { value, .. }, TypeCategory::String)
-                if local_ty == root_ty
-                    && direct_reference_name(function, *value)
-                        == Some(alias_name.text.as_str()) =>
-            {
-                true
-            }
-            (RawExpressionKind::Call { callee, arguments, .. }, TypeCategory::String)
-                if local_ty == root_ty
-                    && callee.text == "concat"
-                    && arguments.len() == 2
-                    && arguments.iter().all(|argument| {
-                        direct_reference_name(function, *argument) == Some(alias_name.text.as_str())
-                    }) =>
-            {
-                true
-            }
-            (RawExpressionKind::Index { base, .. }, TypeCategory::Vec)
-                if local_ty.is_copy()
-                    && matches!(local_ty.category, TypeCategory::Bool | TypeCategory::I32)
-                    && direct_reference_name(function, *base) == Some(alias_name.text.as_str()) =>
-            {
-                true
-            }
-            (RawExpressionKind::Clone { value, .. }, category)
-                if matches!(
-                    category,
-                    TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray
-                ) && local_ty == root_ty
-                    && direct_reference_name(function, *value)
-                        == Some(alias_name.text.as_str()) =>
-            {
-                true
-            }
-            _ => false,
-        };
-        if !admitted {
-            errors.at(
-                "ZRYNA-M3017",
-                span(input.sources(), expression.span),
-                "operation is outside whole owned-root shared reads",
-                "use String clone/concat, exact Vec<bool/i32> indexing, or whole-root aggregate clone through the alias",
-            );
-            return None;
-        }
-        flattened.push(*statement_id);
-    }
-
-    let return_statement =
-        usize::try_from(*return_id).ok().and_then(|index| function.body.statements.get(index))?;
-    let RawStatementKind::Return { value: returned, .. } = return_statement.kind else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), return_statement.span),
-            "owned-root borrow reads require one final root return",
-            "return the original owner after lexical end",
-        );
-        return None;
-    };
-    if direct_reference_name(function, returned) != Some(root_name.text.as_str()) {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), return_statement.span),
-            "owned-root borrow aliases and read results cannot escape",
-            "return the original root only after the shared alias ends",
-        );
-        return None;
-    }
-    flattened.push(*return_id);
-
-    let mut synthetic = function.clone();
-    let synthetic_root = usize::try_from(synthetic.body.root_block)
-        .ok()
-        .and_then(|index| synthetic.body.blocks.get_mut(index))?;
-    synthetic_root.statements = flattened;
-    let alias_statement_index = usize::try_from(*alias_statement_id).ok()?;
-    synthetic.body.statements[alias_statement_index] = root_local.clone();
-    for expression in &mut synthetic.body.expressions {
-        if let RawExpressionKind::Reference { name } = &mut expression.kind
-            && name.text == alias_name.text
-        {
-            name.text.clone_from(&root_name.text);
-        }
-    }
-    Some(OwnedRootBorrowSyntax {
-        synthetic,
-        borrow_at: span(input.sources(), alias_statement.span),
-        end_at: span(input.sources(), nested.close_brace_span),
-    })
-}
-
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+#[allow(clippy::too_many_arguments)]
 fn lower_private_owned_root_borrow_function<'a>(
     input: SemanticInput<'a>,
     module: usize,
@@ -835,7 +500,7 @@ fn lower_private_owned_root_borrow_function<'a>(
         result,
         errors,
     )?;
-    let mut lowered = lower_function_impl(
+    let lowered = lower_function_impl(
         input,
         module,
         declaration,
@@ -847,113 +512,13 @@ fn lower_private_owned_root_borrow_function<'a>(
         catalog,
         errors,
     )?;
-    let root_place =
-        lowered.places.iter().find(|place| matches!(place.kind, raw::PlaceKind::Local(0)))?.id;
-    let [block] = lowered.blocks.as_slice() else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), function.span),
-            "owned-root borrow reads require one straight-line lowered block",
-            "remove control flow and calls from the lexical read-only checkpoint",
-        );
-        return None;
-    };
-    let initialize = block.instructions.iter().position(|instruction| {
-        matches!(
-            instruction.kind,
-            raw::InstructionKind::InitializePlace { place, .. } if place == root_place
-        )
-    })?;
-    let consume = block.instructions.iter().rposition(|instruction| {
-        matches!(
-            instruction.kind,
-            raw::InstructionKind::MoveFromPlace { place } if place == root_place
-        )
-    })?;
-    if consume <= initialize {
-        return None;
-    }
-    let [
-        raw::SpannedTerminator {
-            kind: raw::Terminator::Return { cleanup: return_cleanup, .. },
-            ..
-        },
-    ] = block.terminators.as_slice()
-    else {
-        errors.at(
-            "ZRYNA-M3017",
-            span(input.sources(), function.span),
-            "owned-root borrow reads require one final return",
-            "return the original root after the lexical read-only block",
-        );
-        return None;
-    };
-    let return_cleanup_index = usize::try_from(return_cleanup.0).ok()?;
-    let lexical_owned_drops = lowered
-        .cleanup_plans
-        .get(return_cleanup_index)?
-        .actions
-        .iter()
-        .map(|action| match action {
-            raw::DropAction::DropPlace(place) if *place != root_place => Some(*place),
-            _ => None,
-        })
-        .collect::<Option<Vec<_>>>()?;
-    let existing_transitions = lowered
-        .blocks
-        .iter()
-        .try_fold(0_usize, |count, block| count.checked_add(block.instructions.len()))?;
-    if let Some(limit) =
-        owned_root_borrow_resource_violation(existing_transitions, lexical_owned_drops.len(), 0)
-    {
-        let label = match limit {
-            RootBorrowBudgetLimit::Transitions => "ownership transitions",
-            RootBorrowBudgetLimit::ActiveBorrows => "active borrows",
-            _ => unreachable!("owned-root borrow adds only transition and active-borrow costs"),
-        };
-        errors.at(
-            "ZRYNA-M3201",
-            span(input.sources(), function.span),
-            format!("owned-root borrow reads exceed the checked {label} budget"),
-            "reduce repeated read-only operations inside the lexical borrow block",
-        );
-        return None;
-    }
-    lowered.cleanup_plans.get_mut(return_cleanup_index)?.actions.clear();
-    let [block] = lowered.blocks.as_mut_slice() else {
-        unreachable!("single-block shape checked before cleanup rewrite")
-    };
-    let borrow = raw::BorrowId(0);
-    block.instructions.insert(
-        initialize + 1,
-        raw::Instruction {
-            result: None,
-            span: plan.borrow_at,
-            kind: raw::InstructionKind::BeginBorrow(raw::BorrowDefinition {
-                id: borrow,
-                place: root_place,
-                access: raw::BorrowAccess::Shared,
-                span: plan.borrow_at,
-            }),
-        },
-    );
-    let lexical_exit = lexical_owned_drops
-        .into_iter()
-        .map(|place| raw::Instruction {
-            result: None,
-            span: plan.end_at,
-            kind: raw::InstructionKind::DropPlace { place },
-        })
-        .chain(std::iter::once(raw::Instruction {
-            result: None,
-            span: plan.end_at,
-            kind: raw::InstructionKind::EndBorrow { borrow },
-        }))
-        .collect::<Vec<_>>();
-    block.instructions.splice((consume + 1)..=consume, lexical_exit);
-    Some(lowered)
+    postprocess_private_owned_root_borrow_function(
+        span(input.sources(), function.span),
+        &plan,
+        lowered,
+        errors,
+    )
 }
-
 #[allow(clippy::too_many_arguments)]
 fn lower_function<'a>(
     input: SemanticInput<'a>,
