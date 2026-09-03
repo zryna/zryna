@@ -4,6 +4,7 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 use std::collections::BTreeSet;
 
+mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
 
 use super::{
