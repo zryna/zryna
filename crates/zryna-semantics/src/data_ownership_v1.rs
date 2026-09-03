@@ -51,14 +51,7 @@ use aggregate_resource_formulas::{
     partial_assignment_place_delta, partial_return_place_delta, partial_transfer_place_delta,
 };
 use borrow_call_resources::preflight_program_borrow_calls;
-#[cfg(test)]
-use borrow_call_resources::{
-    BorrowCallPreflightError, BorrowCallProgramBudgetLimit, borrow_call_program_budget_violation,
-    checked_add_resources, checked_call_delta, checked_straight_borrow_call_resources,
-};
 use diagnostics::Errors;
-#[cfg(test)]
-use function_catalog::FunctionBorrowParameter;
 use function_catalog::{
     FunctionCatalog, FunctionParameterOrder, FunctionResolution, FunctionSignature,
     build_function_catalog,
@@ -77,20 +70,13 @@ use global_resource_limits::{
 use layout_graph::{Decl, build_graph, semantic_type};
 #[cfg(test)]
 use owned_control_flow_resources::{
-    EnumPayloadMoveResourceEstimate, conditional_root_borrow_resources,
-    enum_payload_move_resource_estimate, owned_place_budget_violation,
-    projected_root_borrow_resource_counts, straight_root_borrow_budget_violation,
-    straight_root_borrow_resources,
+    EnumPayloadMoveResourceEstimate, enum_payload_move_resource_estimate,
+    owned_place_budget_violation,
 };
 use owned_control_flow_resources::{
     OwnedCfgBudgetLimit, dense_owned_value_id, enum_payload_move_resource_violation,
     owned_cfg_budget_violation, owned_value_budget_violation, preflight_owned_place_capacity,
     preflight_owned_place_capacity_with_reserved,
-};
-#[cfg(test)]
-use owned_control_flow_resources::{
-    conditional_root_borrow_budget_violation, loop_root_borrow_resources,
-    owned_root_borrow_resource_violation, root_borrow_resource_violation,
 };
 use owned_root_borrow_planning::{
     is_direct_owned_root_borrow_candidate, plan_private_owned_root_borrow_syntax,
@@ -113,8 +99,6 @@ use type_model::{
     ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext, TerminalOwnedIf, Ty,
     apply_owner_delta, map_node_types,
 };
-#[cfg(test)]
-use type_model::{RootBorrowBudgetLimit, RootBorrowResources};
 
 /// Maximum retained semantic diagnostics, including the terminal budget diagnostic.
 pub const MAX_SEMANTIC_DIAGNOSTICS: usize = 256;
