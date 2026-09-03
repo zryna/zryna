@@ -666,7 +666,8 @@ test("completed owned-data semantics preserve the bounded internal boundary", as
   assert.match(architecture, /projected clone retains its source without descendant place expansion/);
   assert.match(architecture, /Commit recursively drops only the exact old target\.\s+Projected-subobject move or clone retains both pending roots plus every sibling mask; whole-root clone\s+retains source and destination; whole-root move consumes its source and retains the destination/);
   assert.match(document, /controlled allocation\/capacity\/bounds\/UTF-8 fault closure \| complete/);
-  assert.match(document, /authenticated internal fault\/drop traces, including Vec<String> and aggregate-clone partial initialization, cover every admitted operation.*executable target fault injection is outside this compiler boundary/);
+  assert.match(document, /authenticated internal fault\/drop traces, including `Vec<String>` and aggregate-clone partial initialization, cover every admitted operation.*executable target fault injection is outside this compiler boundary/);
+  assert.doesNotMatch(document, /authenticated internal fault\/drop traces, including Vec<String> and aggregate-clone partial initialization/);
   assert.match(document, /test-only fault oracle additionally consumes the ABI authority's sealed status\s+declarations/);
   assert.match(document, /`VecCloneElementFailure`, for the separately authenticated failure of one exact String element\s+clone after a runtime-recorded destination prefix has initialized/);
   assert.match(document, /`AggregateCloneElementFailure`, for the separately authenticated failure of one exact String leaf\s+after a verifier-derived aggregate destination prefix has initialized/);
