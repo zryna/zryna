@@ -26,6 +26,7 @@ mod layout_graph;
 mod owned_control_flow_resources;
 mod owned_root_borrow_planning;
 mod owned_root_borrow_postprocessing;
+mod owner_state;
 mod root_borrow_arm_planning;
 mod root_borrow_call_planning;
 mod root_borrow_execution;
@@ -82,6 +83,9 @@ use owned_root_borrow_planning::{
     is_direct_owned_root_borrow_candidate, plan_private_owned_root_borrow_syntax,
 };
 use owned_root_borrow_postprocessing::postprocess_private_owned_root_borrow_function;
+use owner_state::{
+    OwnedStringBranchState, OwnedVecBranchState, OwnerDelta, OwnerState, apply_owner_delta,
+};
 use root_borrow_function_lowering::lower_private_root_borrow_function;
 #[cfg(test)]
 use string_vec_resource_estimates::owned_call_cleanup_budget_violation;
@@ -95,9 +99,8 @@ use string_vec_resource_estimates::{
 };
 use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
-    OwnedStaticProjectionKind, OwnedStringBranchState, OwnedVecBranchState, OwnerDelta, OwnerState,
-    ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext, TerminalOwnedIf, Ty,
-    apply_owner_delta, map_node_types,
+    OwnedStaticProjectionKind, ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext,
+    TerminalOwnedIf, Ty, map_node_types,
 };
 
 /// Maximum retained semantic diagnostics, including the terminal budget diagnostic.

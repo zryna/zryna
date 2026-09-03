@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 #[cfg(test)]
 use super::global_resource_limits::resource_budget_violation;
-use super::type_model::{Binding, OwnerState, Ty};
+use super::owner_state::OwnerState;
+use super::type_model::{Binding, Ty};
 #[cfg(test)]
 use zryna_ir::data_ownership_v1 as ir;
 use zryna_source::UntrustedSpan;
