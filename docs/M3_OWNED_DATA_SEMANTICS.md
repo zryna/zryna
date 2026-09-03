@@ -147,7 +147,7 @@ work.
 | direct local transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-temporary-to-local owner/mask migration, deterministic rejection of old-owner reuse, and checked amplification |
 | final return transfer of a partial Struct/FixedArray root | complete | exact type, complete static topology, source-to-return-temporary mask migration, returned-owner exclusion, reverse survivor cleanup, and checked amplification |
 | whole-root assignment transfer of a partial Struct/FixedArray root | complete | distinct mutable initialized exact-type destination, source-to-temporary-to-destination mask migration, old-destination recursive drop at commit, and checked amplification |
-| controlled allocation/capacity/bounds/UTF-8 fault closure | complete | authenticated internal fault/drop traces, including Vec<String> and aggregate-clone partial initialization, cover every admitted operation; executable target fault injection is outside this compiler boundary |
+| controlled allocation/capacity/bounds/UTF-8 fault closure | complete | authenticated internal fault/drop traces, including `Vec<String>` and aggregate-clone partial initialization, cover every admitted operation; executable target fault injection is outside this compiler boundary |
 | full Issue #81 limits, regressions, and cross-platform CI | complete | complete preflight plus focused Linux and Windows required checks |
 
 This ledger records implementation evidence, not public language availability. Every row remains
