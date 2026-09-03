@@ -45,6 +45,12 @@
       "title": "Frontend providers"
     },
     {
+      "id": "reference/getting-started",
+      "source": "docs/GETTING_STARTED.md",
+      "path": "documents/reference/getting-started.md",
+      "title": "Run your first Zryna programs"
+    },
+    {
       "id": "reference/language-overview",
       "source": "spec/language/OVERVIEW.md",
       "path": "documents/reference/language-overview.md",
