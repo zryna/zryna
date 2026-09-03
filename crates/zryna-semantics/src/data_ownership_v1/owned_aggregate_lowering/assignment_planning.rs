@@ -12,10 +12,10 @@ use super::super::span;
 use super::super::type_model::{ProjectedAggregateAssignmentSource, Ty};
 use super::PrivateOwnedAggregateLowerer;
 
-pub(in crate::data_ownership_v1) struct ProjectedAggregateAssignmentPlan {
-    pub(in crate::data_ownership_v1) target_ty: Ty,
-    pub(in crate::data_ownership_v1) source: ProjectedAggregateAssignmentSource,
-    pub(in crate::data_ownership_v1) clones_projection: bool,
+pub(super) struct ProjectedAggregateAssignmentPlan {
+    pub(super) target_ty: Ty,
+    pub(super) source: ProjectedAggregateAssignmentSource,
+    pub(super) clones_projection: bool,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
@@ -373,7 +373,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn plan_projected_aggregate_assignment(
+    pub(super) fn plan_projected_aggregate_assignment(
         &mut self,
         target: u32,
         value: u32,

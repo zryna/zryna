@@ -104,8 +104,8 @@ use string_vec_resource_estimates::{
     estimate_owned_string_expression, vec_push_target_invalid,
 };
 use type_model::{
-    Binding, OwnedProjectionShapeEntry, OwnedStaticProjectionKind,
-    ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext, Ty, map_node_types,
+    Binding, OwnedProjectionShapeEntry, OwnedStaticProjectionKind, ProjectedAggregateMoveContext,
+    Ty, map_node_types,
 };
 
 /// Maximum retained semantic diagnostics, including the terminal budget diagnostic.
@@ -992,65 +992,6 @@ fn lower_function_impl<'a>(
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     fn ty_for_layout(&self, id: layout::TypeId) -> Option<Ty> {
         self.node_types.iter().flatten().find(|ty| ty.layout == id).copied()
-    }
-
-    #[allow(clippy::too_many_lines)]
-    fn lower_projected_aggregate_assignment(
-        &mut self,
-        target: u32,
-        value: u32,
-        at: Span,
-    ) -> Option<()> {
-        let plan = self.plan_projected_aggregate_assignment(target, value, at)?;
-        let target_ty = plan.target_ty;
-        let source = plan.source;
-        let clones_projection = plan.clones_projection;
-
-        let target = self.owned_place(target)?;
-        debug_assert_eq!(target.ty, target_ty);
-        debug_assert!(!target.is_root);
-        if !self.reserve_transition(at) {
-            return None;
-        }
-        let prepared = match &source {
-            ProjectedAggregateAssignmentSource::MoveRoot { name, at } => {
-                self.reference_value(name, target_ty, *at)
-            }
-            ProjectedAggregateAssignmentSource::MoveProjection { expression, .. } => self
-                .projected_value(
-                    *expression,
-                    target_ty,
-                    Some(ProjectedAggregateMoveContext::ProjectedReplacement),
-                ),
-            ProjectedAggregateAssignmentSource::CloneRoot { binding, at } => {
-                self.emit_aggregate_clone(binding, target_ty, *at)
-            }
-            ProjectedAggregateAssignmentSource::CloneProjection { expression, at, .. } => {
-                self.emit_projected_aggregate_clone(*expression, target_ty, *at)
-            }
-        };
-        self.release_transition();
-        let prepared = prepared?;
-        if !self.emit_effect(
-            at,
-            raw::InstructionKind::ReplacePlace { place: target.place, value: prepared },
-        ) {
-            return None;
-        }
-        if self.owners.transfer(prepared).is_none() {
-            self.errors.at(
-                "ZRYNA-M3014",
-                at,
-                "projected aggregate assignment has no distinct prepared owner",
-                "move one available static aggregate subobject, or move or clone one independently owned root, into the projection",
-            );
-            return None;
-        }
-        self.projected_aggregate_assignments += 1;
-        if clones_projection {
-            self.projected_aggregate_clones += 1;
-        }
-        Some(())
     }
 
     fn value(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
