@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import "./m3-issue-graph-cases.mjs";
+import "./m3-borrowing-evidence-cases.mjs";
 
 import {
   expectedRegistrySha256,
