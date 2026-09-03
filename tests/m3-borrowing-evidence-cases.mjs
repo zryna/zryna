@@ -53,6 +53,7 @@ function checkNamedEvidence(text) {
   assert(resources, "resource evidence boundaries section is missing");
   const names = [...resources.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]);
   assert.equal(names.length, 6, "resource evidence inventory changed without review");
+  assert.equal(new Set(names).size, names.length, "duplicate resource evidence reference");
   const files = ["conditional_root_borrows.rs", "lexical_borrow_calls.rs", "owned_root_borrow_reads.rs"]
     .map(file => `crates/zryna-semantics/src/data_ownership_v1/tests/${file}`);
   const inventories = files.map(file => ({ file, tests: testNames(file) }));
@@ -80,6 +81,10 @@ test("borrowing evidence guard rejects missing tests and removed proof sections"
   assert.throws(() => checkNamedEvidence(document.replace(
     "`root_borrow_resources_enforce_exact_block_and_edge_limits`", "`missing_resource_test`",
   )), /resource evidence must resolve uniquely: missing_resource_test/);
+  assert.throws(() => checkNamedEvidence(document.replace(
+    "`root_borrow_resources_enforce_exact_block_and_edge_limits`",
+    "`root_borrow_resources_enforce_exact_value_place_and_transition_limits`",
+  )), /duplicate resource evidence reference/);
   assert.throws(() => checkNamedEvidence(document.replace(
     "### Resource evidence boundaries", "### Removed resource boundaries",
   )), /resource evidence boundaries section is missing/);
