@@ -407,7 +407,7 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   const borrowCallConformance = clonedContract().borrowCallConformance;
   assert.match(
     document,
-    /Status: Issues #113, #114, #115, #116, #117, #119, #120, and #121 complete/,
+    /Status: bounded compiler-boundary implementation complete for Issue #82/,
   );
   assert.match(document, /#113 -> #114 -> #115 -> \{#116, #117, #119, #120, #121\} -> #122/);
   assert.match(document, /BorrowParameter/);
@@ -477,7 +477,7 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   assert.match(document, /exactly four dense blocks and four empty-argument edges/);
   assert.match(document, /exact root owner.initialization state is restored/);
   assert.match(document, /M1 and explicit `control-flow-v1` M2 remain the only public profiles/);
-  assert.match(status, /Issue #82 is now active through its checked child-issue dependency graph/);
+  assert.match(status, /Issue #82 is complete at its bounded internal lexical-borrowing boundary/);
   assert.match(status, /Issue #119 is complete at merged-main provenance/);
   assert.match(status, /exactly 36 source\/snapshot files, 5 accepted\s+cases, and 13 exclusions/);
   assert.match(status, /d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f/);
@@ -485,14 +485,16 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   assert.match(status, /This adds no runtime,\s+ABI, backend, driver, CLI, artifact, website-support, or public-profile capability/);
   assert.match(
     status,
-    /implemented bounded lexical-borrow child\s+slices remain internal; #122 owns aggregate borrowing closure/,
+    /completed bounded owned String\/Vec and lexical-borrow compiler boundaries remain internal;\s+#122 consolidates borrowing closure evidence/,
   );
   assert.doesNotMatch(
     status,
     /later dependency-ready issues add\s+bounded lexical borrows/,
   );
   assert.match(roadmap, /Issue #119 completes the bounded private straight-line\s+whole-root call-only nonescape slice/);
-  assert.match(roadmap, /\|\s+#82 \| bounded nonescaping lexical borrowing\s+\| #81\s+\| in progress \|/);
+  assert.match(roadmap, /\|\s+#82 \| bounded nonescaping lexical borrowing\s+\| #81\s+\| complete\s+\|/);
+  assert.match(status, /Issue #83 is the next dependency-ready work/);
+  assert.match(document, /## Issue #122 closure scope/);
   assert.match(
     architecture,
     /Issue #119 adds one bounded private straight-line whole-root direct-call boundary/,
@@ -550,9 +552,9 @@ test("completed owned-data semantics preserve the bounded internal boundary", as
   );
   assert.match(document, /Status: bounded compiler-boundary implementation complete for Issue #81/);
   assert.match(status, /Issue #81 is complete at its bounded internal private compiler boundary/);
-  assert.match(status, /Issue #82 is now active through its checked child-issue dependency graph/);
+  assert.match(status, /Issue #82 is complete at its bounded internal lexical-borrowing boundary/);
   assert.match(roadmap, /\|\s+#81 \| owned String\/Vec, move checking, and deterministic drop\s+\| #78, #79, #80\s+\| complete\s+\|/);
-  assert.match(roadmap, /Issue #82 is active through the checked dependency graph/);
+  assert.match(roadmap, /Issue #82 is complete at its bounded internal boundary/);
   assert.match(readme, /completed internal Issue #81 boundary/);
   assert.match(semanticsReadme, /completed internal Issue #81 boundary/);
   assert.doesNotMatch(status, /Issue #81 is (?:in progress|not complete)/);

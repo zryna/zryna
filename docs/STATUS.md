@@ -211,7 +211,7 @@ transfer or partial-root transfer in call/CFG contexts, direct projected-clone r
 contexts, or non-final/non-reference returns, general owned phi joins,
 owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
 deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
-effects remain excluded. Issue #82 is now active through its checked child-issue dependency graph.
+effects remain excluded. Issue #82 is complete at its bounded internal lexical-borrowing boundary.
 Issues #113 through #117, #119, #120, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
 authority, and implement one internal private parameter-free literal-initialized `bool`/`i32` root
 with shared or exclusive aliases. Straight-line aliases use one nested lexical block, conditional
@@ -268,8 +268,8 @@ explicit `control-flow-v1` M2 remain the only public profiles.
 
 The first planned executable slice remains an internal scalarizable `Pair` struct observed through
 a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. The
-completed bounded owned String/Vec compiler boundary and implemented bounded lexical-borrow child
-slices remain internal; #122 owns aggregate borrowing closure. Later dependency-ready issues add
+completed bounded owned String/Vec and lexical-borrow compiler boundaries remain internal;
+#122 consolidates borrowing closure evidence. Issue #83 is the next dependency-ready work. Later issues add
 explicit shared/weak references, three target implementations, an atomic manifest v3 CLI,
 fixed-oracle conformance, and authenticated website publication. Tracing GC,
 public aggregate ABI,

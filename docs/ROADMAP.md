@@ -269,7 +269,8 @@ move/explicit clone from a distinct fully
 initialized exact same-type whole Struct/FixedArray root into a mutable available static
 `StructField`/`FixedArrayConstant` projection remain open, alongside
 general owned joins, owned loop-carried joins, repeated or nested control flow, and general scope
-exits are future child-issue work. Issue #82 is active through the checked dependency graph in
+exits are future child-issue work. Issue #82 is complete at its bounded internal boundary through
+the checked dependency graph in
 [`M3_BORROWING_SEMANTICS.md`](M3_BORROWING_SEMANTICS.md). Issue #113 freezes the contract and
 existing verified-IR prerequisite. Issues #114 and #115 implement the internal private straight-line
 `bool`/`i32` root shapes: shared and exclusive Copy access, const-alias write-through, the complete
@@ -308,7 +309,7 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | complete    |
 |   #80 | versioned ownership runtime ABI authority                            | #75, #77                | complete    |
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | complete    |
-|   #82 | bounded nonescaping lexical borrowing                                | #81                     | in progress |
+|   #82 | bounded nonescaping lexical borrowing                                | #81                     | complete    |
 |   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | planned     |
 |   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | planned     |
 |   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | planned     |
@@ -344,7 +345,8 @@ updating the graph does not implement any of its planned capabilities.
 Issue #83 has six tracked sub-issues: #259 freezes the shared/weak interface, #260 verifies
 transition and upgrade graphs, #261 implements source handles and cleanup, #262 implements
 indivisible upgrade control flow, #263 proves failure/count/resource boundaries, and #264 owns
-integrated closure. Implementation remains gated on actual verified #82 closure. Existing IR/ABI
+integrated closure. Issue #83 is dependency-ready after the verified #82 closure change merges.
+Existing IR/ABI
 operations are reusable authority, not evidence that these source producers are implemented.
 Independent proof work may proceed after its interface is frozen; full payload support and all
 parent acceptance criteria remain required before #83 closes.

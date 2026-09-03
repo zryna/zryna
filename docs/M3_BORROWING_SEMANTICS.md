@@ -1,6 +1,8 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, #115, #116, #117, #119, #120, and #121 complete. Issue #116 adds one
+Status: bounded compiler-boundary implementation complete for Issue #82.
+
+Issues #113, #114, #115, #116, #117, #119, #120, and #121 complete. Issue #116 adds one
 bounded shared-read shape for a whole owned root after independent verification and required merge
 gates.
 The internal semantic producer admits bounded
@@ -119,9 +121,10 @@ the aggregate closure claim; no earlier child marks Issue #82 complete or enable
 
 ### Named closure evidence
 
-The following tests make the parent map inspectable. Their presence is not a final closure
-result: #122 still requires integrated regression, resource, independent review, and required
-Linux/Windows evidence. Semantic fixtures authenticate syntax snapshots and inspect verified IR;
+The following tests make the parent map inspectable. Issue #122 consolidates the bounded
+implementation, resource and regression evidence; source presence alone is not execution proof.
+The closure change requires independent review and successful integrated Linux/Windows gates.
+Semantic fixtures authenticate syntax snapshots and inspect verified IR;
 they do not establish public CLI or target-runtime support.
 
 Semantic test paths below are relative to
@@ -186,8 +189,11 @@ extra action at return cleanup, and verifies deterministic recovery and source-o
 The proportional test is ignored by ordinary test invocation and must run in the include-ignored
 preflight lane; an ordinary suite pass alone is not its execution evidence.
 
-These additional tests are inputs to #122's integrated closure review. Their presence here does
-not assert that #250/#251 or #122 have merged or that final cross-platform closure gates passed.
+Issues #250 and #251 are merged in the implementation checkpoint
+`834ca0ef0697694b9fd7aee8ef68215892af85fe`. The pre-merge candidate passed its required
+Linux/Windows checks, and this merge preserves its complete tree. Issue #122
+adds the named evidence map and documentation guards without changing compiler behavior. Its own
+closure commit must also pass the integrated gates; earlier child results do not waive them.
 
 ### Resource evidence boundaries
 
@@ -207,6 +213,21 @@ nominal type, construction operand, place, transition, cleanup-plan, drop and di
 Synthetic preflight collections authenticate count rejection, not all IDs or graph structure.
 Final closure must run the whole relevant suites and proportional cases, retaining these
 distinctions instead of treating every helper test as an executable target program.
+
+## Issue #122 closure scope
+
+The bounded internal borrowing implementation is complete; Shared/Weak source production is the
+next dependency-ready work in #83, not an implemented capability. The tracked #254–#256 indexed
+borrowing chain and all runtime, target, driver, conformance and public-profile gates remain open.
+This checkpoint does not certify the entire normative M3 profile or enable a public CLI profile.
+
+At the implementation checkpoint above, ordinary semantics has 344 passing tests and two ignored
+proportional tests. The include-ignored M3 lane runs 324 tests, including both proportional cases;
+together the lanes cover all 346 semantic tests. The M3 IR lane runs 141 tests, including the
+proportional String boundary; ordinary IR has 170 passing tests and one ignored case. These are
+distinct lanes, not a claim of 346 or 171 ordinary passes. The 44 named references above also have
+actual passing execution records. Reproduction remains `pnpm preflight` plus `pnpm m0:check` and
+the required Linux/Windows CI, with exact commit and artifact provenance recorded by publication.
 
 ## Issue #113 evidence
 

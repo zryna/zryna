@@ -16,6 +16,8 @@ function testNames(file) {
 function checkNamedEvidence(text) {
   const section = text.split("### Named closure evidence\n")[1]?.split("## Issue #113 evidence")[0];
   assert(section, "named closure evidence section is missing");
+  const resources = section.split("### Resource evidence boundaries\n")[1];
+  assert(resources, "resource evidence boundaries section is missing");
   let checked = 0;
   function check(file, names) {
     const tests = testNames(file);
@@ -44,13 +46,11 @@ function checkNamedEvidence(text) {
   assert(nesting, "nested-loop evidence is missing");
   check("crates/zryna-ir/src/data_ownership_v1/tests/borrow_loop_nesting.rs",
     [...nesting.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]));
-  const cleanup = section.split("Issue #251 adds")[1]?.split("These additional tests")[0];
+  const cleanup = section.split("Issue #251 adds")[1]?.split("### Resource evidence boundaries\n")[0];
   assert(cleanup, "owned-root cleanup evidence is missing");
   check("crates/zryna-semantics/src/data_ownership_v1/tests/owned_root_borrow_reads.rs",
     [...cleanup.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]));
   assert.equal(checked, 38, "named evidence inventory changed without review");
-  const resources = section.split("### Resource evidence boundaries\n")[1];
-  assert(resources, "resource evidence boundaries section is missing");
   const names = [...resources.matchAll(/`([a-z][a-z_]+)`/g)].map(match => match[1]);
   assert.equal(names.length, 6, "resource evidence inventory changed without review");
   assert.equal(new Set(names).size, names.length, "duplicate resource evidence reference");
