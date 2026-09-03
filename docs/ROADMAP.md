@@ -341,6 +341,14 @@ issue number cannot depend on later-discovered work. Its current SHA-256 is
 The original #119 provenance and unchanged borrow-call fixture digest remain historical evidence;
 updating the graph does not implement any of its planned capabilities.
 
+Issue #83 has six tracked sub-issues: #259 freezes the shared/weak interface, #260 verifies
+transition and upgrade graphs, #261 implements source handles and cleanup, #262 implements
+indivisible upgrade control flow, #263 proves failure/count/resource boundaries, and #264 owns
+integrated closure. Implementation remains gated on actual verified #82 closure. Existing IR/ABI
+operations are reusable authority, not evidence that these source producers are implemented.
+Independent proof work may proceed after its interface is frozen; full payload support and all
+parent acceptance criteria remain required before #83 closes.
+
 `Pair` is the smallest mandatory fixed-oracle case, remains internal, and preserves scalar ABI v1
 exports. Issue #79 proves nominal identity, construction, source field order and access, sealed
 logical layout, verified IR, and the fixed scalar results through a test-only evaluator over opaque
