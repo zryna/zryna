@@ -63,9 +63,7 @@ use global_resource_limits::{
     aggregate_operand_budget_violation, aggregate_transition_budget_violation, semantic_preflight,
 };
 use layout_graph::{Decl, build_graph, semantic_type};
-use owned_cfg_state::{
-    OwnedCfgState, release_owned_commit_transition, reserve_owned_commit_transition,
-};
+use owned_cfg_state::OwnedCfgState;
 #[cfg(test)]
 use owned_control_flow_resources::preflight_owned_place_capacity_with_reserved;
 use owned_control_flow_resources::{
@@ -86,12 +84,11 @@ use owned_root_borrow_postprocessing::postprocess_private_owned_root_borrow_func
 use owned_string_lowering::lower_private_string_function;
 use owner_state::{OwnedVecBranchState, OwnerState, apply_owner_delta};
 use root_borrow_function_lowering::lower_private_root_borrow_function;
-use string_vec_resource_estimates::vec_push_target_invalid;
 #[cfg(test)]
 use string_vec_resource_estimates::{
     OwnedStringEstimateContext, OwnedStringPreparationEstimate, cleanup_actions_after_additions,
     cleanup_actions_after_preparation, cleanup_actions_after_transfer,
-    estimate_owned_string_expression,
+    estimate_owned_string_expression, vec_push_target_invalid,
 };
 use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
@@ -4486,28 +4483,6 @@ fn lower_private_owned_aggregate_function<'a>(
 }
 
 impl owned_vec_lowering::PrivateVecLowerer<'_, '_, '_> {
-    fn push_scope_error(
-        incoming: Option<&OwnedVecBranchState>,
-        place: raw::PlaceId,
-        allow_incoming_target: bool,
-    ) -> Option<(&'static str, &'static str)> {
-        let incoming = incoming?;
-        let is_incoming_target = incoming.bindings.values().any(|outer| outer.place == place);
-        if allow_incoming_target && !is_incoming_target {
-            return Some((
-                "owned Vec loop must mutate its one incoming Vec root",
-                "push only into the mutable Vec declared before this loop",
-            ));
-        }
-        if !allow_incoming_target && is_incoming_target {
-            return Some((
-                "owned Vec branch cannot mutate an incoming Vec",
-                "push only into a Vec declared inside this branch",
-            ));
-        }
-        None
-    }
-
     fn condition(&mut self, id: u32, bool_ty: Ty) -> Option<raw::ValueId> {
         let expression = self.expression(id)?.clone();
         let at = span(self.input.sources(), expression.span);
@@ -4554,178 +4529,6 @@ impl owned_vec_lowering::PrivateVecLowerer<'_, '_, '_> {
                 None
             }
         }
-    }
-
-    fn lower_local(&mut self, statement: &syntax::RawStatementSyntax) -> Option<()> {
-        let RawStatementKind::LocalDeclaration { mutable, name, type_syntax, initializer, .. } =
-            &statement.kind
-        else {
-            return None;
-        };
-        if self.bindings.keys().any(|existing| existing.eq_ignore_ascii_case(&name.text)) {
-            self.errors.at(
-                "ZRYNA-M3002",
-                span(self.input.sources(), name.span),
-                format!("binding '{}' collides under portable ASCII case folding", name.text),
-                "give every binding one portable case-insensitive unique name",
-            );
-            return None;
-        }
-        let ty = semantic_type(
-            self.file,
-            *type_syntax,
-            self.module,
-            self.declarations,
-            self.graph,
-            self.node_types,
-            self.errors,
-        )?;
-        if !matches!(ty.category, TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String)
-            && ty != self.vec_ty
-        {
-            self.errors.at(
-                "ZRYNA-M3013",
-                span(self.input.sources(), statement.span),
-                "local type is outside this private Vec slice",
-                "use the exact Vec type or its bool, i32, or String element type",
-            );
-            return None;
-        }
-        let local_span = span(self.input.sources(), statement.span);
-        if !self.reserve_local_commit(local_span) {
-            return None;
-        }
-        let Some(value) = self.value(*initializer, ty) else {
-            self.release_local_commit();
-            return None;
-        };
-        let place = raw::PlaceId(u32::try_from(self.places.len()).expect("bounded places"));
-        let initialize = raw::Instruction {
-            result: None,
-            span: local_span,
-            kind: raw::InstructionKind::InitializePlace { place, value },
-        };
-        self.release_local_commit();
-        self.places.push(raw::Place {
-            id: place,
-            ty: ty.ir,
-            span: local_span,
-            kind: raw::PlaceKind::Local(self.next_local),
-        });
-        self.next_local = self.next_local.checked_add(1)?;
-        if !self.cfg.emit(initialize, self.errors) {
-            return None;
-        }
-        if !ty.is_copy() && !self.rename_owner(value, place) {
-            self.errors.at(
-                "ZRYNA-M3014",
-                local_span,
-                "owned local initializer has no available owner",
-                "initialize the local from one available owned value",
-            );
-            return None;
-        }
-        self.bindings.insert(name.text.clone(), Binding { ty, place, mutable: *mutable });
-        Some(())
-    }
-
-    fn lower_push_effect(
-        &mut self,
-        expression_id: u32,
-        incoming: Option<&OwnedVecBranchState>,
-    ) -> Option<()> {
-        self.lower_push_effect_with_policy(expression_id, incoming, false)
-    }
-
-    fn lower_push_effect_with_policy(
-        &mut self,
-        expression_id: u32,
-        incoming: Option<&OwnedVecBranchState>,
-        allow_incoming_target: bool,
-    ) -> Option<()> {
-        let expression = self.expression(expression_id)?.clone();
-        let at = span(self.input.sources(), expression.span);
-        let RawExpressionKind::VecPush { vector, value, .. } = expression.kind else {
-            self.errors.at(
-                "ZRYNA-M3013",
-                at,
-                "only push(vector, value) is admitted as a Vec effect statement",
-                "use push on one mutable initialized Vec local",
-            );
-            return None;
-        };
-        let vector_expression = self.expression(vector)?.clone();
-        let RawExpressionKind::Reference { name } = vector_expression.kind else {
-            self.errors.at(
-                "ZRYNA-M3013",
-                span(self.input.sources(), vector_expression.span),
-                "push requires an addressable Vec local",
-                "push into one mutable initialized Vec local",
-            );
-            return None;
-        };
-        let Some(binding) = self.bindings.get(&name.text).cloned() else {
-            self.errors.at(
-                "ZRYNA-M3002",
-                span(self.input.sources(), name.span),
-                format!("Vec binding '{}' is not declared in this function", name.text),
-                "reference one exact preceding mutable Vec local",
-            );
-            return None;
-        };
-        if let Some((message, help)) =
-            Self::push_scope_error(incoming, binding.place, allow_incoming_target)
-        {
-            self.errors.at("ZRYNA-M3015", span(self.input.sources(), name.span), message, help);
-            return None;
-        }
-        if binding.ty != self.vec_ty {
-            self.errors.at(
-                "ZRYNA-M3013",
-                span(self.input.sources(), name.span),
-                "push target has the wrong exact Vec type",
-                "push into the function's exact Vec type",
-            );
-            return None;
-        }
-        if vec_push_target_invalid(binding.mutable, self.owners.contains(binding.place)) {
-            self.errors.at(
-                "ZRYNA-M3014",
-                span(self.input.sources(), name.span),
-                "push target is immutable, uninitialized, or already moved",
-                "push into one mutable initialized available Vec local",
-            );
-            return None;
-        }
-        let reserved_actions = self.preflight_push_cleanup(value, at)?;
-        if !reserve_owned_commit_transition(&mut self.cfg, at, self.errors) {
-            return None;
-        }
-        if !self.reserve_cleanup_capacity(reserved_actions, at) {
-            release_owned_commit_transition(&mut self.cfg);
-            return None;
-        }
-        let Some(value) = self.value(value, self.element) else {
-            self.release_cleanup_capacity(reserved_actions);
-            release_owned_commit_transition(&mut self.cfg);
-            return None;
-        };
-        let consumed = self.owners.owner(value);
-        self.release_cleanup_capacity(reserved_actions);
-        release_owned_commit_transition(&mut self.cfg);
-        let cleanup = self.push_instruction_cleanup(at, None)?;
-        if !self.emit_effect(
-            at,
-            raw::InstructionKind::VecPush { vector: binding.place, value, cleanup },
-        ) {
-            return None;
-        }
-        if let Some(owner) = consumed
-            && let Some(delta) = self.owners.consume_owner(owner)
-        {
-            apply_owner_delta(&mut self.known_string_bytes, delta);
-        }
-        Some(())
     }
 
     fn lower_loop_push(
@@ -4918,40 +4721,6 @@ impl owned_vec_lowering::PrivateVecLowerer<'_, '_, '_> {
             RawExpressionKind::VecConstruction { elements, .. } => {
                 elements.iter().find_map(|element| self.incoming_move_span(*element, incoming))
             }
-            _ => None,
-        }
-    }
-
-    fn target_consumption_span(
-        &self,
-        id: u32,
-        target: raw::PlaceId,
-        consumes_reference: bool,
-    ) -> Option<UntrustedSpan> {
-        let expression = self.expression(id)?;
-        match &expression.kind {
-            RawExpressionKind::Reference { name }
-                if consumes_reference
-                    && self.bindings.get(&name.text).is_some_and(|binding| {
-                        binding.place == target && self.owners.contains(binding.place)
-                    }) =>
-            {
-                Some(name.span)
-            }
-            RawExpressionKind::Clone { value, .. } => {
-                self.target_consumption_span(*value, target, false)
-            }
-            RawExpressionKind::Call { callee, arguments, .. } if callee.text == "concat" => {
-                arguments
-                    .iter()
-                    .find_map(|argument| self.target_consumption_span(*argument, target, false))
-            }
-            RawExpressionKind::Call { arguments, .. } => arguments
-                .iter()
-                .find_map(|argument| self.target_consumption_span(*argument, target, true)),
-            RawExpressionKind::VecConstruction { elements, .. } => elements
-                .iter()
-                .find_map(|element| self.target_consumption_span(*element, target, true)),
             _ => None,
         }
     }
@@ -5274,122 +5043,17 @@ fn lower_private_vec_function<'a>(
             .and_then(|index| function.body.statements.get(index))?;
         match &statement.kind {
             RawStatementKind::LocalDeclaration { .. } => {
-                if saw_if || saw_loop {
-                    lowerer.errors.at(
-                        "ZRYNA-M3016",
-                        span(input.sources(), statement.span),
-                        "owned Vec control flow must immediately precede the final return",
-                        "move every outer declaration before the single top-level control-flow statement",
-                    );
-                    return None;
-                }
-                lowerer.lower_local(statement)?;
+                lowerer.lower_root_local(statement, saw_if || saw_loop)?;
             }
             RawStatementKind::Return { value, .. } => {
                 returned =
                     Some((lowerer.value(*value, result)?, span(input.sources(), statement.span)));
             }
             RawStatementKind::Assignment { target, value, .. } => {
-                if saw_if || saw_loop {
-                    lowerer.errors.at(
-                        "ZRYNA-M3016",
-                        span(input.sources(), statement.span),
-                        "owned Vec control-flow lowering excludes assignment after its exit",
-                        "leave the joined outer owned state unchanged and return it directly",
-                    );
-                    return None;
-                }
-                let target_expression = lowerer.expression(*target)?.clone();
-                let RawExpressionKind::Reference { name } = target_expression.kind else {
-                    lowerer.errors.at(
-                        "ZRYNA-M3013",
-                        span(input.sources(), target_expression.span),
-                        "owned assignment requires one root local target",
-                        "assign only to an initialized mutable String or exact Vec local",
-                    );
-                    return None;
-                };
-                let Some(binding) = lowerer.bindings.get(&name.text).cloned() else {
-                    lowerer.errors.at(
-                        "ZRYNA-M3002",
-                        span(input.sources(), name.span),
-                        format!("owned assignment target '{}' is not declared", name.text),
-                        "assign one exact preceding local",
-                    );
-                    return None;
-                };
-                if binding.ty.is_copy()
-                    || !matches!(binding.ty.category, TypeCategory::String | TypeCategory::Vec)
-                    || (binding.ty.category == TypeCategory::Vec && binding.ty != vec_ty)
-                {
-                    lowerer.errors.at(
-                        "ZRYNA-M3013",
-                        span(input.sources(), name.span),
-                        "assignment target is outside the exact supported owned type",
-                        "assign only to String or the function's exact Vec type",
-                    );
-                    return None;
-                }
-                if !binding.mutable || !lowerer.owners.contains(binding.place) {
-                    lowerer.errors.at(
-                        "ZRYNA-M3014",
-                        span(input.sources(), name.span),
-                        "owned assignment target is immutable, uninitialized, or already moved",
-                        "assign only to an initialized mutable available owned local",
-                    );
-                    return None;
-                }
-                if let Some(reference_span) =
-                    lowerer.target_consumption_span(*value, binding.place, true)
-                {
-                    lowerer.errors.at(
-                        "ZRYNA-M3014",
-                        span(input.sources(), reference_span),
-                        "owned assignment cannot consume its destination while preparing its replacement",
-                        "prepare a distinct owned value before replacement",
-                    );
-                    return None;
-                }
-                let assignment_span = span(input.sources(), statement.span);
-                if !reserve_owned_commit_transition(
-                    &mut lowerer.cfg,
-                    assignment_span,
-                    lowerer.errors,
-                ) {
-                    return None;
-                }
-                let Some(prepared) = lowerer.value(*value, binding.ty) else {
-                    release_owned_commit_transition(&mut lowerer.cfg);
-                    return None;
-                };
-                release_owned_commit_transition(&mut lowerer.cfg);
-                if !lowerer.emit_effect(
-                    assignment_span,
-                    raw::InstructionKind::ReplacePlace { place: binding.place, value: prepared },
-                ) {
-                    return None;
-                }
-                if !lowerer.replace_owner(prepared, binding.place) {
-                    lowerer.errors.at(
-                        "ZRYNA-M3014",
-                        span(input.sources(), statement.span),
-                        "owned assignment replacement has no distinct prepared owner",
-                        "replace from one available independently prepared owned value",
-                    );
-                    return None;
-                }
+                lowerer.lower_root_assignment(statement, *target, *value, saw_if || saw_loop)?;
             }
             RawStatementKind::ExpressionStatement { expression, .. } => {
-                if saw_if || saw_loop {
-                    lowerer.errors.at(
-                        "ZRYNA-M3016",
-                        span(input.sources(), statement.span),
-                        "owned Vec control-flow lowering excludes effects after its exit",
-                        "leave the joined outer owned state unchanged and return it directly",
-                    );
-                    return None;
-                }
-                lowerer.lower_push_effect(*expression, None)?;
+                lowerer.lower_root_push_effect(statement, *expression, saw_if || saw_loop)?;
             }
             RawStatementKind::If { condition, then_block, else_clause, .. } => {
                 if saw_if || saw_loop {
