@@ -48,22 +48,11 @@ use aggregate_resource_formulas::{
     projected_subobject_assignment_budget_violation, projected_subobject_move_budget_violation,
     projected_subobject_return_budget_violation,
 };
-#[cfg(test)]
-use aggregate_resource_formulas::{
-    cleanup_action_budget_violation, partial_assignment_place_delta, partial_return_place_delta,
-    partial_transfer_place_delta,
-};
 use borrow_call_resources::preflight_program_borrow_calls;
 use diagnostics::Errors;
 use function_catalog::{
     FunctionCatalog, FunctionParameterOrder, FunctionResolution, FunctionSignature,
     build_function_catalog,
-};
-#[cfg(test)]
-use global_resource_limits::{
-    ProgramCfgBudgetLimit, ValueBudgetLimit, derived_value_count, generated_cfg_budget_violation,
-    preflight_aggregate_operand_total, raw_function_value_count, raw_terminator_edge_count,
-    string_byte_budget_violation, value_budget_violation,
 };
 use global_resource_limits::{
     accumulate_generated_cfg_function, accumulate_generated_value_function,
@@ -74,11 +63,6 @@ use layout_graph::{Decl, build_graph, semantic_type};
 use owned_cfg_state::{
     OwnedCfgState, release_owned_commit_transition, release_owned_commit_transitions,
     reserve_owned_commit_transition, reserve_owned_commit_transitions,
-};
-#[cfg(test)]
-use owned_control_flow_resources::{
-    EnumPayloadMoveResourceEstimate, enum_payload_move_resource_estimate,
-    owned_place_budget_violation,
 };
 use owned_control_flow_resources::{
     enum_payload_move_resource_violation, preflight_owned_place_capacity,
@@ -98,8 +82,6 @@ use owner_state::{
     OwnedStringBranchState, OwnedVecBranchState, OwnerDelta, OwnerState, apply_owner_delta,
 };
 use root_borrow_function_lowering::lower_private_root_borrow_function;
-#[cfg(test)]
-use string_vec_resource_estimates::owned_call_cleanup_budget_violation;
 use string_vec_resource_estimates::{
     OwnedStringEstimateContext, OwnedStringEstimateError, OwnedStringEstimateOutcome,
     OwnedStringPreparationEstimate, VecPreparationEstimate, add_estimate_counts,
