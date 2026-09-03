@@ -24,7 +24,7 @@ fn nested_vec_construct_and_push_cleanup_fail_before_lowering_mutation_at_first_
         let at = span(&sources, function.body.expressions[3].span);
         let mut errors = Errors::new(&sources);
         let cfg = OwnedCfgState::single_block(at, &mut errors).expect("entry");
-        let mut lowerer = super::super::PrivateVecLowerer {
+        let mut lowerer = super::super::owned_vec_lowering::PrivateVecLowerer {
             input,
             file,
             function,
@@ -113,7 +113,7 @@ fn nested_vec_construct_and_push_cleanup_fail_before_lowering_mutation_at_first_
             span: at,
             kind: raw::PlaceKind::Local(0),
         };
-        let mut lowerer = super::super::PrivateVecLowerer {
+        let mut lowerer = super::super::owned_vec_lowering::PrivateVecLowerer {
             input,
             file,
             function,
@@ -256,7 +256,7 @@ fn nested_vec_direct_call_cleanup_is_exact_and_atomic_before_argument_lowering()
             span: at,
             kind: raw::PlaceKind::Local(0),
         };
-        let mut lowerer = super::super::PrivateVecLowerer {
+        let mut lowerer = super::super::owned_vec_lowering::PrivateVecLowerer {
             input,
             file,
             function,

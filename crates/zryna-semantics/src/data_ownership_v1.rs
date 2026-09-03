@@ -30,6 +30,7 @@ mod owned_lowering_resources;
 mod owned_root_borrow_planning;
 mod owned_root_borrow_postprocessing;
 mod owned_string_lowering;
+mod owned_vec_lowering;
 mod owner_state;
 mod root_borrow_arm_planning;
 mod root_borrow_call_planning;
@@ -65,18 +66,17 @@ use layout_graph::{Decl, build_graph, semantic_type};
 use owned_cfg_state::{
     OwnedCfgState, release_owned_commit_transition, reserve_owned_commit_transition,
 };
+#[cfg(test)]
+use owned_control_flow_resources::preflight_owned_place_capacity_with_reserved;
 use owned_control_flow_resources::{
     enum_payload_move_resource_violation, preflight_owned_place_capacity,
-    preflight_owned_place_capacity_with_reserved,
 };
 use owned_control_flow_shape::{
     is_terminal_owned_phi_candidate, preflight_owned_loop_body, preflight_owned_loop_exit,
     root_is_terminal_if, terminal_owned_if,
 };
 use owned_lowering_resources::{
-    OwnedCleanupAccounting, OwnedCleanupActionContext, OwnedCleanupPlanContext,
-    OwnedCleanupReservationContext, OwnedStringPreparationBudget,
-    checked_vec_clone_prefix_action_count, preflight_owned_string_preparation,
+    OwnedCleanupAccounting, OwnedCleanupActionContext, checked_vec_clone_prefix_action_count,
     push_aggregate_clone_prefix_cleanup, push_aggregate_reverse_cleanup,
 };
 use owned_root_borrow_planning::{
@@ -86,12 +86,12 @@ use owned_root_borrow_postprocessing::postprocess_private_owned_root_borrow_func
 use owned_string_lowering::lower_private_string_function;
 use owner_state::{OwnedVecBranchState, OwnerDelta, OwnerState, apply_owner_delta};
 use root_borrow_function_lowering::lower_private_root_borrow_function;
+#[cfg(test)]
 use string_vec_resource_estimates::{
-    OwnedStringEstimateContext, OwnedStringEstimateError, OwnedStringPreparationEstimate,
-    VecPreparationEstimate, add_estimate_counts, cleanup_actions_after_additions,
-    cleanup_actions_after_preparation, cleanup_actions_after_transfer, empty_owned_string_estimate,
-    estimate_owned_string_expression, vec_push_target_invalid,
+    OwnedStringEstimateContext, OwnedStringPreparationEstimate, cleanup_actions_after_additions,
+    cleanup_actions_after_preparation, estimate_owned_string_expression,
 };
+use string_vec_resource_estimates::{cleanup_actions_after_transfer, vec_push_target_invalid};
 use type_model::{
     Binding, OwnedAggregatePlace, OwnedAggregatePlacePreflight, OwnedProjectionShapeEntry,
     OwnedStaticProjectionKind, ProjectedAggregateAssignmentSource, ProjectedAggregateMoveContext,
@@ -4484,33 +4484,7 @@ fn lower_private_owned_aggregate_function<'a>(
     })
 }
 
-struct PrivateVecLowerer<'a, 'f, 'e> {
-    input: SemanticInput<'a>,
-    file: &'a syntax::SourceUnit,
-    function: &'f syntax::RawFunctionSyntax,
-    module: usize,
-    declarations: &'a [Decl],
-    graph: &'a raw_layout::Graph,
-    node_types: &'a [Option<Ty>],
-    catalog: &'a FunctionCatalog,
-    vec_ty: Ty,
-    element: Ty,
-    errors: &'e mut Errors<'a>,
-    bindings: BTreeMap<String, Binding>,
-    places: Vec<raw::Place>,
-    reserved_places: usize,
-    cfg: OwnedCfgState,
-    cleanup_plans: Vec<raw::CleanupPlan>,
-    cleanup_actions: usize,
-    reserved_cleanup_plans: usize,
-    reserved_cleanup_actions: usize,
-    owners: OwnerState,
-    known_string_bytes: BTreeMap<raw::PlaceId, u64>,
-    next_value: u32,
-    next_local: u32,
-}
-
-impl PrivateVecLowerer<'_, '_, '_> {
+impl owned_vec_lowering::PrivateVecLowerer<'_, '_, '_> {
     fn push_scope_error(
         incoming: Option<&OwnedVecBranchState>,
         place: raw::PlaceId,
@@ -4531,403 +4505,6 @@ impl PrivateVecLowerer<'_, '_, '_> {
             ));
         }
         None
-    }
-
-    fn expression(&self, id: u32) -> Option<&syntax::RawExpressionSyntax> {
-        usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))
-    }
-
-    fn preflight_string_expression(&mut self, id: u32, string_ty: Ty, at: Span) -> bool {
-        let estimate = match estimate_owned_string_expression(
-            self.function,
-            &self.bindings,
-            &self.owners,
-            string_ty,
-            id,
-            self.owners.pending().len(),
-            OwnedStringEstimateContext::Value,
-        ) {
-            Ok(estimate) => estimate,
-            Err(OwnedStringEstimateError::Unsupported) => return true,
-            Err(OwnedStringEstimateError::Unavailable(reference)) => {
-                self.errors.at(
-                    "ZRYNA-M3014",
-                    span(self.input.sources(), reference),
-                    "Vec String element has no available owner",
-                    "move each String element at most once",
-                );
-                return false;
-            }
-            Err(OwnedStringEstimateError::Overflow) => {
-                self.errors.at(
-                    "ZRYNA-M3201",
-                    at,
-                    "recursive Vec String-element preparation overflows its checked resource estimate",
-                    "reduce nested String-producing element expressions",
-                );
-                return false;
-            }
-        };
-        preflight_owned_string_preparation(
-            estimate,
-            OwnedStringPreparationBudget {
-                cleanup_plans: self.cleanup_plans.len(),
-                reserved_cleanup_plans: self.reserved_cleanup_plans,
-                cleanup_actions: self.cleanup_actions,
-                reserved_cleanup_actions: self.reserved_cleanup_actions,
-                places: self.places.len(),
-                reserved_places: self.reserved_places,
-            },
-            &mut self.cfg,
-            at,
-            self.errors,
-        )
-    }
-
-    fn estimate_string_sequence(
-        &mut self,
-        expressions: &[u32],
-        string_ty: Ty,
-        at: Span,
-    ) -> Option<OwnedStringPreparationEstimate> {
-        let mut total = empty_owned_string_estimate(self.owners.pending().len());
-        for expression in expressions {
-            let child = match estimate_owned_string_expression(
-                self.function,
-                &self.bindings,
-                &self.owners,
-                string_ty,
-                *expression,
-                total.end_pending,
-                OwnedStringEstimateContext::Value,
-            ) {
-                Ok(estimate) => estimate,
-                Err(OwnedStringEstimateError::Unsupported) => {
-                    let expression = self.expression(*expression)?;
-                    self.errors.at(
-                        "ZRYNA-M3013",
-                        span(self.input.sources(), expression.span),
-                        "Vec<String> element expression is outside checked String preparation",
-                        "use a String literal, available String move, clone, concat, or private String call",
-                    );
-                    return None;
-                }
-                Err(OwnedStringEstimateError::Unavailable(reference)) => {
-                    self.errors.at(
-                        "ZRYNA-M3014",
-                        span(self.input.sources(), reference),
-                        "Vec String element has no available owner",
-                        "move each String element at most once",
-                    );
-                    return None;
-                }
-                Err(OwnedStringEstimateError::Overflow) => {
-                    self.errors.at(
-                        "ZRYNA-M3201",
-                        at,
-                        "recursive Vec String-element preparation overflows its checked resource estimate",
-                        "reduce nested String-producing element expressions",
-                    );
-                    return None;
-                }
-            };
-            total = match add_estimate_counts(total, child) {
-                Ok(total) => total,
-                Err(OwnedStringEstimateError::Overflow) => {
-                    self.errors.at(
-                        "ZRYNA-M3201",
-                        at,
-                        "recursive Vec String-element sequence overflows its checked resource estimate",
-                        "reduce nested String-producing element expressions",
-                    );
-                    return None;
-                }
-                Err(
-                    OwnedStringEstimateError::Unsupported
-                    | OwnedStringEstimateError::Unavailable(_),
-                ) => {
-                    unreachable!("combining checked estimates cannot change expression support")
-                }
-            };
-        }
-        Some(total)
-    }
-
-    fn preflight_string_sequence_with_enclosing_cleanup(
-        &mut self,
-        estimate: OwnedStringPreparationEstimate,
-        enclosing_actions: usize,
-        at: Span,
-    ) -> bool {
-        let Some(reserved_cleanup_plans) = self.reserved_cleanup_plans.checked_add(1) else {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "enclosing Vec cleanup reservation overflows its checked resource estimate",
-                "reduce nested Vec and String-producing expressions",
-            );
-            return false;
-        };
-        let Some(reserved_cleanup_actions) =
-            self.reserved_cleanup_actions.checked_add(enclosing_actions)
-        else {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "enclosing Vec cleanup action reservation overflows its checked resource estimate",
-                "reduce simultaneously live Vec and String owners",
-            );
-            return false;
-        };
-        preflight_owned_string_preparation(
-            estimate,
-            OwnedStringPreparationBudget {
-                cleanup_plans: self.cleanup_plans.len(),
-                reserved_cleanup_plans,
-                cleanup_actions: self.cleanup_actions,
-                reserved_cleanup_actions,
-                places: self.places.len(),
-                reserved_places: self.reserved_places,
-            },
-            &mut self.cfg,
-            at,
-            self.errors,
-        )
-    }
-
-    fn estimate_vec_preparation(
-        &mut self,
-        id: u32,
-        expected: Ty,
-        pending: usize,
-        at: Span,
-    ) -> Option<VecPreparationEstimate> {
-        let expression = self.expression(id)?.clone();
-        match expression.kind {
-            RawExpressionKind::Reference { name } => {
-                self.bindings.get(&name.text).filter(|binding| {
-                    binding.ty == expected && self.owners.contains(binding.place)
-                })?;
-                Some(VecPreparationEstimate {
-                    end_pending: pending,
-                    resources: OwnedStringPreparationEstimate {
-                        values: 1,
-                        places: 1,
-                        transitions: 1,
-                        transfers_existing: true,
-                        ..empty_owned_string_estimate(pending)
-                    },
-                })
-            }
-            RawExpressionKind::Clone { value, .. } => {
-                let operand = self.expression(value)?;
-                let RawExpressionKind::Reference { name } = &operand.kind else {
-                    return None;
-                };
-                self.bindings.get(&name.text).filter(|binding| {
-                    binding.ty == expected && self.owners.contains(binding.place)
-                })?;
-                let end_pending = pending.checked_add(1)?;
-                let clones_non_copy_elements = self.element.category == TypeCategory::String;
-                Some(VecPreparationEstimate {
-                    end_pending,
-                    resources: OwnedStringPreparationEstimate {
-                        end_pending,
-                        peak_pending: end_pending,
-                        cleanup_plans: 1 + usize::from(clones_non_copy_elements),
-                        cleanup_actions: pending.checked_add(if clones_non_copy_elements {
-                            pending.checked_add(1)?
-                        } else {
-                            0
-                        })?,
-                        values: 1,
-                        places: 1,
-                        transitions: 1,
-                        transfers_existing: false,
-                        root_cleanup_actions: Some(pending),
-                    },
-                })
-            }
-            RawExpressionKind::VecConstruction { elements, .. } => {
-                let mut resources = if self.element.category == TypeCategory::String {
-                    self.estimate_string_sequence(&elements, self.element, at)?
-                } else {
-                    empty_owned_string_estimate(pending)
-                };
-                let prepared_pending = resources.end_pending;
-                let consumed = usize::from(!self.element.is_copy()) * elements.len();
-                let end_pending = prepared_pending.checked_sub(consumed)?.checked_add(1)?;
-                resources.end_pending = end_pending;
-                resources.peak_pending = resources.peak_pending.max(end_pending);
-                resources.cleanup_plans = resources.cleanup_plans.checked_add(1)?;
-                resources.cleanup_actions =
-                    resources.cleanup_actions.checked_add(prepared_pending)?;
-                resources.values = resources.values.checked_add(1)?;
-                resources.places = resources.places.checked_add(1)?;
-                resources.transitions = resources.transitions.checked_add(1)?;
-                resources.root_cleanup_actions = Some(prepared_pending);
-                Some(VecPreparationEstimate { end_pending, resources })
-            }
-            RawExpressionKind::Call { arguments, .. } if arguments.is_empty() => {
-                let end_pending = pending.checked_add(1)?;
-                Some(VecPreparationEstimate {
-                    end_pending,
-                    resources: OwnedStringPreparationEstimate {
-                        end_pending,
-                        peak_pending: end_pending,
-                        cleanup_plans: 1,
-                        cleanup_actions: pending,
-                        values: 1,
-                        places: 1,
-                        transitions: 1,
-                        transfers_existing: false,
-                        root_cleanup_actions: Some(pending),
-                    },
-                })
-            }
-            RawExpressionKind::Call { arguments, .. } if arguments.len() == 1 => {
-                let mut preparation =
-                    self.estimate_vec_preparation(arguments[0], expected, pending, at)?;
-                let cleanup = preparation.end_pending.checked_sub(1)?;
-                preparation.resources.cleanup_plans =
-                    preparation.resources.cleanup_plans.checked_add(1)?;
-                preparation.resources.cleanup_actions =
-                    preparation.resources.cleanup_actions.checked_add(cleanup)?;
-                preparation.resources.values = preparation.resources.values.checked_add(1)?;
-                preparation.resources.places = preparation.resources.places.checked_add(1)?;
-                preparation.resources.transitions =
-                    preparation.resources.transitions.checked_add(1)?;
-                preparation.resources.root_cleanup_actions = Some(cleanup);
-                Some(preparation)
-            }
-            _ => None,
-        }
-    }
-
-    fn preflight_push_cleanup(&mut self, value: u32, at: Span) -> Option<usize> {
-        let moves_existing_owner = !self.element.is_copy()
-            && self.expression(value).is_some_and(|expression| {
-                matches!(&expression.kind, RawExpressionKind::Reference { name }
-                if self.bindings.get(&name.text).is_some_and(|binding| {
-                    binding.ty == self.element && self.owners.contains(binding.place)
-                }))
-            });
-        let nested_estimate = if self.element.category == TypeCategory::String {
-            Some(self.estimate_string_sequence(&[value], self.element, at)?)
-        } else {
-            None
-        };
-        let reserved_actions = nested_estimate.map_or_else(
-            || {
-                cleanup_actions_after_preparation(
-                    self.owners.pending().len(),
-                    !self.element.is_copy() && !moves_existing_owner,
-                )
-            },
-            |estimate| estimate.end_pending,
-        );
-        if let Some(estimate) = nested_estimate
-            && !self.preflight_string_sequence_with_enclosing_cleanup(
-                estimate,
-                reserved_actions,
-                at,
-            )
-        {
-            return None;
-        }
-        Some(reserved_actions)
-    }
-
-    fn preflight_construct_cleanup(&mut self, elements: &[u32], at: Span) -> Option<usize> {
-        let nested_estimate = if self.element.category == TypeCategory::String {
-            Some(self.estimate_string_sequence(elements, self.element, at)?)
-        } else {
-            None
-        };
-        let additional_owners = elements
-            .iter()
-            .filter(|element| {
-                !self.element.is_copy()
-                    && !self.expression(**element).is_some_and(|expression| {
-                        matches!(&expression.kind, RawExpressionKind::Reference { name }
-                        if self.bindings.get(&name.text).is_some_and(|binding| {
-                            binding.ty == self.element && self.owners.contains(binding.place)
-                        }))
-                    })
-            })
-            .count();
-        let reserved_actions = nested_estimate.map_or_else(
-            || cleanup_actions_after_additions(self.owners.pending().len(), additional_owners),
-            |estimate| estimate.end_pending,
-        );
-        if let Some(estimate) = nested_estimate
-            && !self.preflight_string_sequence_with_enclosing_cleanup(
-                estimate,
-                reserved_actions,
-                at,
-            )
-        {
-            return None;
-        }
-        Some(reserved_actions)
-    }
-
-    fn preflight_place(&mut self, at: Span) -> bool {
-        preflight_owned_place_capacity_with_reserved(
-            self.places.len(),
-            self.reserved_places,
-            1,
-            at,
-            self.errors,
-        )
-    }
-
-    fn reserve_local_place(&mut self, at: Span) -> bool {
-        if !self.preflight_place(at) {
-            return false;
-        }
-        self.reserved_places += 1;
-        true
-    }
-
-    fn release_local_place(&mut self) {
-        self.reserved_places = self.reserved_places.checked_sub(1).expect("reserved local place");
-    }
-
-    fn reserve_local_commit(&mut self, at: Span) -> bool {
-        if !self.reserve_local_place(at) {
-            return false;
-        }
-        if self.cfg.reserve_transitions(1, at, self.errors).is_none() {
-            self.release_local_place();
-            return false;
-        }
-        true
-    }
-
-    fn release_local_commit(&mut self) {
-        self.cfg.release_transitions(1);
-        self.release_local_place();
-    }
-
-    fn reserve_cleanup_capacity(&mut self, actions: usize, at: Span) -> bool {
-        OwnedCleanupAccounting::new(
-            &mut self.cleanup_plans,
-            &mut self.cleanup_actions,
-            &mut self.reserved_cleanup_plans,
-            &mut self.reserved_cleanup_actions,
-        )
-        .reserve_plan(actions, OwnedCleanupReservationContext::Vec, at, self.errors)
-    }
-
-    fn release_cleanup_capacity(&mut self, actions: usize) {
-        OwnedCleanupAccounting::new(
-            &mut self.cleanup_plans,
-            &mut self.cleanup_actions,
-            &mut self.reserved_cleanup_plans,
-            &mut self.reserved_cleanup_actions,
-        )
-        .release_plan(actions);
     }
 
     #[allow(clippy::too_many_lines)]
@@ -5497,105 +5074,6 @@ impl PrivateVecLowerer<'_, '_, '_> {
                 .find_map(|element| self.target_consumption_span(*element, target, true)),
             _ => None,
         }
-    }
-
-    fn push_cleanup(
-        &mut self,
-        at: Span,
-        excluded: Option<raw::PlaceId>,
-    ) -> Option<raw::CleanupPlanId> {
-        OwnedCleanupAccounting::new(
-            &mut self.cleanup_plans,
-            &mut self.cleanup_actions,
-            &mut self.reserved_cleanup_plans,
-            &mut self.reserved_cleanup_actions,
-        )
-        .push_reverse(
-            &self.owners,
-            at,
-            excluded,
-            OwnedCleanupPlanContext::Vec,
-            self.errors,
-        )
-    }
-
-    fn push_instruction_cleanup(
-        &mut self,
-        at: Span,
-        excluded: Option<raw::PlaceId>,
-    ) -> Option<raw::CleanupPlanId> {
-        OwnedCleanupAccounting::new(
-            &mut self.cleanup_plans,
-            &mut self.cleanup_actions,
-            &mut self.reserved_cleanup_plans,
-            &mut self.reserved_cleanup_actions,
-        )
-        .push_instruction_reverse(
-            &mut self.cfg,
-            &self.owners,
-            at,
-            excluded,
-            OwnedCleanupPlanContext::Vec,
-            self.errors,
-        )
-    }
-
-    fn emit(
-        &mut self,
-        ty: Ty,
-        at: Span,
-        kind: raw::InstructionKind,
-    ) -> Option<(raw::ValueId, Option<raw::PlaceId>)> {
-        if !ty.is_copy() && !self.preflight_place(at) {
-            return None;
-        }
-        let value = raw::ValueId(self.next_value);
-        let instruction = raw::Instruction {
-            result: Some(raw::ValueDefinition { id: value, ty: ty.ir, span: at }),
-            span: at,
-            kind,
-        };
-        if !self.cfg.preflight_emit(&instruction, self.errors) {
-            return None;
-        }
-        self.next_value = self.next_value.checked_add(1)?;
-        if !self.cfg.emit(instruction, self.errors) {
-            return None;
-        }
-        if ty.is_copy() {
-            return Some((value, None));
-        }
-        let owner = raw::PlaceId(u32::try_from(self.places.len()).unwrap_or(u32::MAX));
-        self.places.push(raw::Place {
-            id: owner,
-            ty: ty.ir,
-            span: at,
-            kind: raw::PlaceKind::Temporary(value),
-        });
-        let _ = self.owners.register(value, owner);
-        Some((value, Some(owner)))
-    }
-
-    fn emit_effect(&mut self, at: Span, kind: raw::InstructionKind) -> bool {
-        self.cfg.emit(raw::Instruction { result: None, span: at, kind }, self.errors)
-    }
-
-    fn rename_owner(&mut self, value: raw::ValueId, target: raw::PlaceId) -> bool {
-        let Some(delta) = self.owners.rename(value, target) else { return false };
-        apply_owner_delta(&mut self.known_string_bytes, delta);
-        true
-    }
-
-    fn replace_owner(&mut self, value: raw::ValueId, target: raw::PlaceId) -> bool {
-        let Some(delta) = self.owners.replace(value, target) else { return false };
-        apply_owner_delta(&mut self.known_string_bytes, delta);
-        true
-    }
-
-    fn transfer_owner(&mut self, value: raw::ValueId) -> bool {
-        let Some(delta) = self.owners.transfer(value) else { return false };
-        apply_owner_delta(&mut self.known_string_bytes, delta);
-        true
     }
 
     fn string_place_for_read(&mut self, id: u32) -> Option<(raw::PlaceId, u64)> {
@@ -6202,7 +5680,7 @@ fn lower_private_vec_function<'a>(
         .ok()
         .and_then(|index| function.body.blocks.get(index))?;
     let cfg = OwnedCfgState::single_block(span(input.sources(), function.body.span), errors)?;
-    let mut lowerer = PrivateVecLowerer {
+    let mut lowerer = owned_vec_lowering::PrivateVecLowerer {
         input,
         file,
         function,
