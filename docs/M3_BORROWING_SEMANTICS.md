@@ -162,6 +162,12 @@ source shapes may hit another resource limit before a nominal maximum is reachab
 walks over verified views prove scope topology, not execution by a JavaScript, WebAssembly, or
 native runtime. The final closure report must preserve these evidence distinctions.
 
+Normative indexed borrowing remains separately tracked: #254 owns the verified element-access
+and complete-container conflict authority; #255 and #256 own dynamic fixed-array and Vec-element
+source producers. They must preserve the specification's referent, overlap, evaluation, bounds,
+and cleanup rules before complete target support and #89/#90 public activation. Closing the
+bounded #82 checkpoint does not implement or waive that chain.
+
 ## Issue #113 evidence
 
 The focused `zryna-ir` tests name the current positive and hostile boundary:

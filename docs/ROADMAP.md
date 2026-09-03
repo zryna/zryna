@@ -318,6 +318,23 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #89 | fixed-oracle three-target conformance and resource gates             | #88                     | planned     |
 |   #90 | public profile activation, authenticated docs, website, and provenance | #89                     | planned     |
 
+The bounded #82/#120 checkpoint rejects dynamic-index and Vec-element source borrows. This does
+not implement or waive the normative complete-container overlap rule. The remaining M3 capability
+is explicitly tracked before complete target support and public activation:
+
+| Issue | Normative completion work | Dependencies |
+| ---: | --- | --- |
+| #254 | exact indexed element access with independently verified conservative container authority | #82, retaining #77/#78/#80/#81 |
+| #255 | dynamic fixed-array borrowing producer and failure/resource evidence | #254, retaining #76/#79/#81/#82 |
+| #256 | Vec-element borrowing producer and failure/resource evidence | #254, retaining #76/#80/#81/#82 |
+
+Issues #84, #85, and #86 retain their existing dependencies and also require this chain before
+claiming complete M3 target support. #89/#90 remain conformance and activation gates, not owners
+of missing source semantics. Copy-only staged evidence cannot close generic owned-element
+requirements; any staged remainder needs explicit blocking work. These tracked gaps do not
+activate new syntax or a public profile, and do not certify all other normative M3 requirements
+complete. Bounded #122 closure must preserve the distinction and its actual verification gates.
+
 `Pair` is the smallest mandatory fixed-oracle case, remains internal, and preserves scalar ABI v1
 exports. Issue #79 proves nominal identity, construction, source field order and access, sealed
 logical layout, verified IR, and the fixed scalar results through a test-only evaluator over opaque
