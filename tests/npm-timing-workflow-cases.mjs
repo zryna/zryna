@@ -28,7 +28,7 @@ assert.deepEqual(parsed.errors, []);
 const workflow = parsed.toJS();
 test('npm timing changes only the preflight bootstrap and preserves fail-closed collection', () => {
   const original = withoutBootstrapTiming(workflow);
-  assert.equal(original.jobs.preflight['timeout-minutes'], 15);
+  assert.equal(original.jobs.preflight['timeout-minutes'], 30);
   assert.equal(original.jobs.preflight['runs-on'], 'ubuntu-latest');
   assert.equal(workflow.jobs.preflight['continue-on-error'], undefined);
 });
