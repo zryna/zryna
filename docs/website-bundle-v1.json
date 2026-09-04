@@ -141,6 +141,18 @@
       "title": "M3 ownership runtime ABI authority"
     },
     {
+      "id": "reference/m3-shared-weak-authority",
+      "source": "docs/M3_SHARED_WEAK_AUTHORITY.md",
+      "path": "documents/reference/m3-shared-weak-authority.md",
+      "title": "M3 Shared and Weak authority contract"
+    },
+    {
+      "id": "reference/m3-shared-weak-evidence",
+      "source": "docs/M3_SHARED_WEAK_EVIDENCE.md",
+      "path": "documents/reference/m3-shared-weak-evidence.md",
+      "title": "M3 Shared and Weak evidence matrix"
+    },
+    {
       "id": "reference/memory-model",
       "source": "spec/memory-model/OVERVIEW.md",
       "path": "documents/reference/memory-model.md",

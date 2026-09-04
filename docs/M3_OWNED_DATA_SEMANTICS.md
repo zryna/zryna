@@ -10,6 +10,10 @@ The normative language behavior remains defined by
 [`DATA_OWNERSHIP_V1.md`](../spec/language/DATA_OWNERSHIP_V1.md). This document fixes the smaller
 implementation boundary that Issue #81 proved before later target work may consume it.
 
+The subsequent [Shared/Weak authority contract](M3_SHARED_WEAK_AUTHORITY.md) freezes Issue #259's
+complete interfaces and required evidence after borrowing closure. It is a planning boundary,
+not implemented Shared/Weak source semantics or an extension of this checkpoint.
+
 ## Current implementation checkpoint
 
 The implemented semantic producer is deliberately narrower than the complete contract in this

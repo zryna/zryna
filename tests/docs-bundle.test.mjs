@@ -20,6 +20,26 @@ const PROVENANCE = {
   enforceWorkspaceOutput: false,
 };
 
+test('Shared and Weak authority documents code-format generic type spellings', async () => {
+  function checkGenericSpellings(markdown) {
+    for (const match of markdown.matchAll(/(?:Shared|Weak)<[^>\n]+>/g)) {
+      assert.equal(markdown[match.index - 1], '`', 'generic type must start inside inline code');
+      assert.equal(markdown[match.index + match[0].length], '`', 'generic type must end inside inline code');
+    }
+  }
+  for (const name of ['AUTHORITY', 'EVIDENCE']) {
+    const markdown = await readFile(
+      path.join(compilerWorkspaceRoot, `docs/M3_SHARED_WEAK_${name}.md`), 'utf8',
+    );
+    checkGenericSpellings(markdown);
+  }
+  for (const spelling of ['Shared<T>', 'Weak<T>']) {
+    checkGenericSpellings(`one \`${spelling}\` value`);
+    assert.throws(() => checkGenericSpellings(`one ${spelling} value`), /start inside inline code/);
+    assert.throws(() => checkGenericSpellings(`one \`${spelling} value`), /end inside inline code/);
+  }
+});
+
 test('beginner setup preserves direct runtime and repository-local editing boundaries', async () => {
   const guide = await readFile(path.join(compilerWorkspaceRoot, 'docs/GETTING_STARTED.md'), 'utf8');
   for (const required of [
@@ -98,6 +118,8 @@ test('registry exports the exact implemented and planned publication inventory',
       { id: 'reference/m3-data-ownership-ir', source: 'docs/M3_DATA_OWNERSHIP_IR.md', path: 'documents/reference/m3-data-ownership-ir.md', title: 'M3 verified data and ownership IR' },
       { id: 'reference/m3-owned-data-semantics', source: 'docs/M3_OWNED_DATA_SEMANTICS.md', path: 'documents/reference/m3-owned-data-semantics.md', title: 'M3 owned data semantics' },
       { id: 'reference/m3-ownership-runtime-abi', source: 'docs/M3_OWNERSHIP_RUNTIME_ABI.md', path: 'documents/reference/m3-ownership-runtime-abi.md', title: 'M3 ownership runtime ABI authority' },
+      { id: 'reference/m3-shared-weak-authority', source: 'docs/M3_SHARED_WEAK_AUTHORITY.md', path: 'documents/reference/m3-shared-weak-authority.md', title: 'M3 Shared and Weak authority contract' },
+      { id: 'reference/m3-shared-weak-evidence', source: 'docs/M3_SHARED_WEAK_EVIDENCE.md', path: 'documents/reference/m3-shared-weak-evidence.md', title: 'M3 Shared and Weak evidence matrix' },
       { id: 'reference/memory-model', source: 'spec/memory-model/OVERVIEW.md', path: 'documents/reference/memory-model.md', title: 'Memory model direction' },
       { id: 'reference/ownership-runtime-v1', source: 'spec/abi/OWNERSHIP_RUNTIME_V1.md', path: 'documents/reference/ownership-runtime-v1.md', title: 'Ownership runtime ABI v1' },
       { id: 'reference/scalar-abi-v1', source: 'spec/abi/SCALAR_V1.md', path: 'documents/reference/scalar-abi-v1.md', title: 'Scalar ABI v1' },
