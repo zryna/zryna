@@ -46,7 +46,39 @@ pub(super) fn integer(spelling: &str, at: Span, errors: &mut Errors<'_>) -> Opti
     })
 }
 
+pub(super) fn select(kind: &super::RawExpressionKind) -> Option<(ScalarOperation, Vec<u32>)> {
+    use super::RawExpressionKind as Expression;
+    Some(match kind {
+        Expression::Negation { operand, .. } => (ScalarOperation::Neg, vec![*operand]),
+        Expression::Addition { lhs, rhs, .. } => (ScalarOperation::Add, vec![*lhs, *rhs]),
+        Expression::Subtraction { lhs, rhs, .. } => (ScalarOperation::Sub, vec![*lhs, *rhs]),
+        Expression::Multiplication { lhs, rhs, .. } => (ScalarOperation::Mul, vec![*lhs, *rhs]),
+        Expression::Equal { lhs, rhs, .. } => (ScalarOperation::Eq, vec![*lhs, *rhs]),
+        Expression::NotEqual { lhs, rhs, .. } => (ScalarOperation::Ne, vec![*lhs, *rhs]),
+        Expression::LessThan { lhs, rhs, .. } => (ScalarOperation::Lt, vec![*lhs, *rhs]),
+        Expression::LessEqual { lhs, rhs, .. } => (ScalarOperation::Le, vec![*lhs, *rhs]),
+        Expression::GreaterThan { lhs, rhs, .. } => (ScalarOperation::Gt, vec![*lhs, *rhs]),
+        Expression::GreaterEqual { lhs, rhs, .. } => (ScalarOperation::Ge, vec![*lhs, *rhs]),
+        _ => return None,
+    })
+}
+
+pub(super) fn missing_reference(name: &str, at: Span, errors: &mut Errors<'_>) {
+    errors.at(
+        "ZRYNA-M3002",
+        at,
+        format!("name '{name}' is not declared"),
+        "reference one exact parameter, local, or match payload binding",
+    );
+}
+
 impl ScalarOperation {
+    pub(super) fn result_category(self) -> TypeCategory {
+        match self {
+            Self::Neg | Self::Add | Self::Sub | Self::Mul => TypeCategory::I32,
+            _ => TypeCategory::Bool,
+        }
+    }
     pub(super) fn validate(
         self,
         integer: Option<Ty>,

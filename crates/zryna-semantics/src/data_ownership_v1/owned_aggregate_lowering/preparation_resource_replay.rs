@@ -86,7 +86,7 @@ fn ordinary_step(
                 return None;
             }
         }
-        Operation::Leaf(_) => {
+        Operation::Leaf(_) | Operation::ScalarCommit { .. } => {
             let valid = if vector_parent
                 || calls.last().is_some_and(|(depth, _, _)| *depth == constructor_depth)
             {
@@ -138,21 +138,9 @@ pub(super) fn validate(
                 }
                 released_call = None;
             }
-            Operation::Enter { arity, kind, .. } => {
-                let actions = if *kind == ConstructorKind::Vec {
-                    let (actions, reserved) =
-                        vec_resources::enter(plan, index, before, layouts, errors)?;
-                    held = reserved;
-                    if !resources.operands(*arity, step.at, errors) {
-                        return None;
-                    }
-                    Some(actions)
-                } else {
-                    if !resources.constructor(step.ty, *arity, step.at, errors) {
-                        return None;
-                    }
-                    None
-                };
+            Operation::Enter { .. } => {
+                let (actions, reserved) = constructor_entry(plan, index, before, layouts, errors)?;
+                held = reserved;
                 frames.push(actions);
             }
             Operation::Release => {
@@ -174,11 +162,14 @@ pub(super) fn validate(
                 clone_capacity(before, *aggregate, step.at, errors)?;
             }
             Operation::CallTransfer { .. }
+            | Operation::ScalarEnter { .. }
             | Operation::StringEnter { .. }
             | Operation::StringRead(_)
             | Operation::StringExit
             | Operation::Cleanup { prefix: Some(_), .. } => {}
-            Operation::Cleanup { prefix: None, .. } | Operation::Leaf(_) => {
+            Operation::Cleanup { prefix: None, .. }
+            | Operation::Leaf(_)
+            | Operation::ScalarCommit { .. } => {
                 ordinary_step(
                     step,
                     before,
@@ -222,4 +213,30 @@ fn finish(
     assert!(calls_clear, "summarized call frames balance");
     assert_eq!(held, plan.start.held_cleanup, "summary releases only its own cleanup credits");
     plan.facts.held_cleanup = held;
+}
+
+fn constructor_entry(
+    plan: &PreparationPlan<'_>,
+    index: usize,
+    before: Checkpoint,
+    layouts: &zryna_layout::VerifiedLayouts,
+    errors: &mut Errors<'_>,
+) -> Option<(Option<usize>, [usize; 2])> {
+    let step = &plan.steps[index];
+    let Operation::Enter { arity, kind, .. } = step.operation else {
+        unreachable!("constructor entry");
+    };
+    let resources = usage(before);
+    if kind == ConstructorKind::Vec {
+        let (actions, held) = vec_resources::enter(plan, index, before, layouts, errors)?;
+        if !resources.operands(arity, step.at, errors) {
+            return None;
+        }
+        Some((Some(actions), held))
+    } else {
+        if !resources.constructor(step.ty, arity, step.at, errors) {
+            return None;
+        }
+        Some((None, before.held_cleanup))
+    }
 }

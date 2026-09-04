@@ -11,6 +11,7 @@ mod copy_nested_enum_routes;
 pub(in crate::data_ownership_v1) mod mixed_call_string_nesting;
 pub(in crate::data_ownership_v1) mod mixed_call_unknown_clone;
 mod mixed_construction;
+mod mixed_copy_operators;
 mod mixed_local_construction;
 pub(super) mod mixed_phase_fixtures;
 mod mixed_recursive_vec;
@@ -24,6 +25,7 @@ pub(in crate::data_ownership_v1) mod mixed_vec_siblings;
 mod mixed_zero_array_vec;
 pub(super) mod nested_mixed_construction;
 mod projection_descriptors;
+mod scalar_operator_matrix;
 use super::borrow_call_resources::{
     BorrowCallPreflightError, BorrowCallProgramBudgetLimit, borrow_call_program_budget_violation,
     checked_add_resources, checked_call_delta, checked_straight_borrow_call_resources,

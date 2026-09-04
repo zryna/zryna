@@ -45,6 +45,8 @@ mod optional_string_bytes;
 mod phase_controls;
 #[path = "preparation_resource_replay.rs"]
 mod resource_replay;
+#[path = "preparation_scalar_scope.rs"]
+mod scalar_scope;
 #[cfg(test)]
 #[path = "../tests/mixed_string_call_facts.rs"]
 mod string_call_facts;
@@ -94,7 +96,8 @@ struct ConstructorFrame<'f> {
 
 enum Frame<'f> {
     Call(call_scope::CallFrame),
-    Visit(u32, Ty),
+    Visit(u32, Option<Ty>),
+    Scalar(scalar_scope::ScalarFrame),
     Constructor(ConstructorFrame<'f>),
     String(StringFrame),
     Read(u32, Ty),
@@ -152,11 +155,44 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         }))
     }
 
-    fn visit(&mut self, id: u32, ty: Ty, frames: &mut Vec<Frame<'f>>) -> Option<VisitOutcome> {
+    fn expression_span(&self, id: u32) -> Option<Span> {
+        let expression = self.decisions.function.body.expressions.get(usize::try_from(id).ok()?)?;
+        Some(super::super::span(self.decisions.input.sources(), expression.span))
+    }
+
+    fn visit(
+        &mut self,
+        id: u32,
+        expected: Option<Ty>,
+        frames: &mut Vec<Frame<'f>>,
+    ) -> Option<VisitOutcome> {
         self.visits = self.visits.checked_add(1)?;
-        let decision = self.decisions.classify(id, ty)?;
+        let decision = self.decisions.classify_prepared(id, expected, self.state.summary)?;
         let at = decision.at;
+        if let ExpressionKind::Scalar { operation, ref inputs } = decision.kind {
+            frames.push(self.enter_scalar(operation, inputs.clone(), expected, decision.ty?, at));
+            return Some(VisitOutcome::Deferred);
+        }
+        let ty = match (&decision.kind, decision.ty) {
+            (_, Some(ty)) => ty,
+            (ExpressionKind::Reference(name), None) => self.inferred_reference_type(name)?,
+            (ExpressionKind::Projection(id), None) => {
+                let source = self.resolve(*id)?;
+                let value = self.resolved_projection(source, source.ty, at)?;
+                return Some(VisitOutcome::Value(value));
+            }
+            _ => {
+                self.decisions.errors.at(
+                    "ZRYNA-M3016",
+                    at,
+                    "expression requires an exact owned contextual type",
+                    "use a supported typed scalar operand",
+                );
+                return None;
+            }
+        };
         let value = match decision.kind {
+            ExpressionKind::Scalar { .. } => unreachable!("scalar frame entered"),
             ExpressionKind::Bool(value) => self.emit_leaf(Leaf::Bool(value), ty, at),
             ExpressionKind::I32(value) => self.emit_leaf(Leaf::I32(value), ty, at),
             ExpressionKind::String(bytes) => {
@@ -219,11 +255,18 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
     }
 
     fn walk(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
-        let mut frames = vec![Frame::Visit(id, expected)];
+        let mut frames = vec![Frame::Visit(id, Some(expected))];
         let mut result = None;
         let mut read_result = None;
         while let Some(frame) = frames.pop() {
             match frame {
+                Frame::Scalar(frame) => {
+                    if let VisitOutcome::Value(value) =
+                        self.advance_scalar(frame, &mut result, &mut frames)?
+                    {
+                        result = Some(value);
+                    }
+                }
                 Frame::Call(mut frame) => {
                     if frame.waiting {
                         frame.values.push(result.take()?);
@@ -233,7 +276,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                         frame.next += 1;
                         frame.waiting = true;
                         frames.push(Frame::Call(frame));
-                        frames.push(Frame::Visit(id, ty));
+                        frames.push(Frame::Visit(id, Some(ty)));
                     } else {
                         result = Some(self.finish_call(frame)?);
                     }
@@ -269,7 +312,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                         frame.next = frame.next.checked_add(1)?;
                         frame.waiting = true;
                         frames.push(Frame::Constructor(frame));
-                        frames.push(Frame::Visit(id, ty));
+                        frames.push(Frame::Visit(id, Some(ty)));
                     } else {
                         result = Some(self.finish(frame)?);
                     }
@@ -294,17 +337,9 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                     {
                         read_result = Some(read);
                     } else {
-                        let at = super::super::span(
-                            self.decisions.input.sources(),
-                            self.decisions
-                                .function
-                                .body
-                                .expressions
-                                .get(usize::try_from(id).ok()?)?
-                                .span,
-                        );
+                        let at = self.expression_span(id)?;
                         frames.push(Frame::ReadResult(ty, at));
-                        frames.push(Frame::Visit(id, ty));
+                        frames.push(Frame::Visit(id, Some(ty)));
                     }
                 }
                 Frame::ReadResult(ty, at) => {

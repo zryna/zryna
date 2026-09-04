@@ -158,6 +158,15 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
 
     pub(super) fn projection(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
         let source = self.resolve(id)?;
+        self.resolved_projection(source, ty, at)
+    }
+
+    pub(super) fn resolved_projection(
+        &mut self,
+        source: OwnedAggregatePlace,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
         let operation = self.operands().projection_decision(source, ty, None, at)?;
         self.emit_leaf(Leaf::Projection { source, operation }, ty, at)
     }

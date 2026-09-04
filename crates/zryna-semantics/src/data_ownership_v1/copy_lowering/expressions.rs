@@ -157,11 +157,10 @@ impl FunctionLowerer<'_, '_, '_> {
         match &expr.kind {
             RawExpressionKind::Reference { name } => {
                 self.bindings.get(&name.text).map(|b| (b.ty, b.place, b.mutable)).or_else(|| {
-                    self.errors.at(
-                        "ZRYNA-M3002",
+                    scalar_operations::missing_reference(
+                        &name.text,
                         span(self.input.sources(), name.span),
-                        format!("name '{}' is not declared", name.text),
-                        "reference one exact parameter, local, or match payload binding",
+                        self.errors,
                     );
                     None
                 })

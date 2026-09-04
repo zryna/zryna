@@ -68,6 +68,15 @@ pub(super) struct StringRead {
 }
 
 pub(super) enum Operation<'f> {
+    ScalarEnter {
+        kind: super::super::scalar_operations::ScalarOperation,
+        end: usize,
+        operands: Vec<(raw::ValueId, Ty)>,
+    },
+    ScalarCommit {
+        kind: super::super::scalar_operations::ScalarOperation,
+        operands: Vec<(raw::ValueId, Ty)>,
+    },
     CallEnter {
         signature: CallSignature,
         end: usize,
