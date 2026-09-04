@@ -9,11 +9,14 @@ use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 
 mod assignment_planning;
 mod assignments;
+mod availability;
 mod clone;
+mod clone_decisions;
 mod constructor_resources;
 mod constructors;
 mod driver;
 mod expression_decisions;
+mod operand_decisions;
 mod partial_transfers;
 mod projected_reads;
 mod projection_resolution;

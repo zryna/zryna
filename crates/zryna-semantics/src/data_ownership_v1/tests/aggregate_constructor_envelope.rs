@@ -19,6 +19,9 @@ mod integration;
 #[path = "ordered_expression_decisions.rs"]
 mod decisions;
 
+#[path = "operand_decision_tests.rs"]
+mod operands;
+
 fn with_snapshot(
     source: &str,
     snapshot: RawProjectSyntaxSnapshot,

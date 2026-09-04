@@ -154,38 +154,17 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     pub(super) fn supported(&self, ty: Ty) -> bool {
-        if ty.category == TypeCategory::Enum {
-            owned_enum_graph_is_supported(ty, self.layouts)
-        } else {
-            aggregate_graph_is_supported(ty, self.layouts, &mut BTreeSet::new())
-        }
+        super::operand_decisions::supported(ty, self.layouts)
     }
 
-    fn place_parent(&self, place: raw::PlaceId) -> Option<raw::PlaceId> {
-        match self.places.get(place.0 as usize)?.kind {
-            raw::PlaceKind::StructField { base, .. }
-            | raw::PlaceKind::EnumPayload { base, .. }
-            | raw::PlaceKind::FixedArrayConstant { base, .. } => Some(base),
-            raw::PlaceKind::Parameter(_)
-            | raw::PlaceKind::Local(_)
-            | raw::PlaceKind::Temporary(_) => None,
-        }
-    }
-
-    pub(super) fn place_is_at_or_below(&self, mut place: raw::PlaceId, root: raw::PlaceId) -> bool {
-        let mut visited = BTreeSet::new();
-        while visited.insert(place) {
-            if place == root {
-                return true;
-            }
-            let Some(parent) = self.place_parent(place) else { return false };
-            place = parent;
-        }
-        false
-    }
-
-    fn places_overlap(&self, left: raw::PlaceId, right: raw::PlaceId) -> bool {
-        self.place_is_at_or_below(left, right) || self.place_is_at_or_below(right, left)
+    pub(super) fn place_is_at_or_below(&self, place: raw::PlaceId, root: raw::PlaceId) -> bool {
+        super::availability::materialized_availability(
+            &self.owners,
+            &self.moved_projections,
+            &self.partial_roots,
+            &self.places,
+        )
+        .place_is_at_or_below(place, root)
     }
 
     pub(super) fn complete_projection_shape(
@@ -277,7 +256,13 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     pub(super) fn whole_root_available(&self, root: raw::PlaceId) -> bool {
-        self.owners.contains(root) && !self.partial_roots.contains(&root)
+        super::availability::materialized_availability(
+            &self.owners,
+            &self.moved_projections,
+            &self.partial_roots,
+            &self.places,
+        )
+        .whole_root_available(root)
     }
 
     pub(super) fn projection_available(
@@ -285,8 +270,13 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         projection: raw::PlaceId,
         root: raw::PlaceId,
     ) -> bool {
-        self.owners.contains(root)
-            && !self.moved_projections.iter().any(|moved| self.places_overlap(*moved, projection))
+        super::availability::materialized_availability(
+            &self.owners,
+            &self.moved_projections,
+            &self.partial_roots,
+            &self.places,
+        )
+        .projection_available(projection, root)
     }
 
     pub(super) fn push_projection(

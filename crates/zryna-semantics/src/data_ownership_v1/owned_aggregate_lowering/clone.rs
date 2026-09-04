@@ -1,14 +1,9 @@
 use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::TypeCategory;
 use zryna_source::Span;
-use zryna_syntax::v4::RawExpressionKind;
 
-use super::super::aggregate_resource_formulas::{
-    aggregate_clone_budget_violation, projected_aggregate_clone_budget_violation,
-    projected_string_clone_budget_violation,
-};
+use super::super::aggregate_resource_formulas::projected_aggregate_clone_budget_violation;
 use super::super::owned_lowering_resources::push_aggregate_clone_prefix_cleanup;
-use super::super::span;
 use super::super::type_model::{Binding, Ty};
 use super::PrivateOwnedAggregateLowerer;
 
@@ -19,95 +14,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         expected: Ty,
         at: Span,
     ) -> Option<raw::ValueId> {
-        if expected.is_copy()
-            || !matches!(
-                expected.category,
-                TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray
-            )
-            || !self.supported(expected)
-        {
-            self.errors.at(
-                "ZRYNA-M3016",
-                at,
-                "structural clone requires one exact supported String-bearing aggregate",
-                "clone an acyclic private Struct, Enum, or fixed array containing only bool, i32, String, and supported aggregate nodes",
-            );
-            return None;
-        }
-        let operand = self.expression(operand)?.clone();
-        let RawExpressionKind::Reference { name } = operand.kind else {
-            self.errors.at(
-                "ZRYNA-M3013",
-                span(self.input.sources(), operand.span),
-                "structural clone requires an addressable aggregate local root",
-                "clone one available aggregate local by name",
-            );
-            return None;
-        };
-        let Some(binding) = self.bindings.get(&name.text).cloned() else {
-            self.errors.at(
-                "ZRYNA-M3002",
-                span(self.input.sources(), name.span),
-                format!("aggregate binding '{}' is not declared in this function", name.text),
-                "clone one preceding available aggregate local",
-            );
-            return None;
-        };
-        if binding.ty != expected {
-            self.errors.at(
-                "ZRYNA-M3016",
-                span(self.input.sources(), name.span),
-                "structural clone source has the wrong exact aggregate type",
-                "clone a local with the exact contextual aggregate type",
-            );
-            return None;
-        }
-        if !self.whole_root_available(binding.place) {
-            self.errors.at(
-                "ZRYNA-M3014",
-                span(self.input.sources(), name.span),
-                format!("aggregate value '{}' is moved or only partially available", name.text),
-                "clone the aggregate only before moving any owned projection",
-            );
-            return None;
-        }
-
-        let pending = self.owners.pending().len();
-        let prefix_actions = pending.checked_add(1).or_else(|| {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "aggregate clone prefix cleanup overflows its checked action count",
-                "reduce simultaneously live owned aggregates",
-            );
-            None
-        })?;
-        let _total_actions = pending.checked_add(prefix_actions).or_else(|| {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "aggregate clone cleanup accounting overflows",
-                "reduce simultaneously live owned aggregates",
-            );
-            None
-        })?;
-        if aggregate_clone_budget_violation(
-            self.budget_values(),
-            self.budget_places(),
-            self.budget_transitions(),
-            self.cleanup_plans.len(),
-            self.cleanup_actions,
-            pending,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "structural clone exceeds a checked value, place, or cleanup resource limit",
-                "reduce simultaneously live owned aggregates or clone sites",
-            );
-            return None;
-        }
-
+        let usage = self.clone_usage();
+        let binding =
+            self.operand_decisions().aggregate_clone_decision(operand, expected, at, &usage)?;
         self.emit_aggregate_clone(&binding, expected, at)
     }
 
@@ -257,45 +166,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
     ) -> Option<raw::ValueId> {
         let projection = self.owned_place(operand)?;
-        if projection.is_root
-            || expected.category != TypeCategory::String
-            || projection.ty != expected
-        {
-            self.errors.at(
-                "ZRYNA-M3012",
-                at,
-                "projected String clone requires one exact static String leaf",
-                "clone an initialized Struct field or constant fixed-array String element",
-            );
-            return None;
-        }
-        if !self.projection_available(projection.place, projection.root) {
-            self.errors.at(
-                "ZRYNA-M3014",
-                at,
-                "projected String clone source is moved or overlaps a moved subobject",
-                "clone only an initialized available static String projection",
-            );
-            return None;
-        }
-        let pending = self.owners.pending().len();
-        if projected_string_clone_budget_violation(
-            self.budget_values(),
-            self.budget_places(),
-            self.instructions.len(),
-            self.reserved_transitions,
-            self.cleanup_plans.len(),
-            self.cleanup_actions,
-            pending,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "projected String clone exceeds a checked value, place, transition, or cleanup limit",
-                "reduce simultaneously live owned aggregates or projected clone sites",
-            );
-            return None;
-        }
+        let usage = self.clone_usage();
+        let projection =
+            self.operand_decisions().string_clone_decision(projection, expected, at, &usage)?;
         let cleanup = self.push_cleanup(at, None)?;
         self.emit(
             expected,

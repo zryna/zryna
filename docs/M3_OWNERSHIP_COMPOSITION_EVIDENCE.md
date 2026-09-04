@@ -42,6 +42,11 @@ reservation; array element and selected enum payload types resolve before it. Th
 preserves existing child emission and partial compile-time failure artifacts. It is not the full
 C2 immutable child-effect plan, and activates no additional source forms or public capability.
 
+Shared private operand decisions also retain the existing binding diagnostics, ancestry/mask
+availability rules and clone resource-check order. Projection prefixes still materialize before
+contextual failures, and projected String clone budgets include those prefixes. Materializers keep
+ownership updates and cleanup insertion; this extraction does not supply immutable C2 planning.
+
 The affine ticket releases its own credits in reverse order on child failure and immediately
 before final commit on success, preserving ancestor and assignment credits. Ordinary emission,
 whole/projected clone, projection topology materialization, compound assignment and direct

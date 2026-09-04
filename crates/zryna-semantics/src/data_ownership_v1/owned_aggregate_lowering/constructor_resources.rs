@@ -71,6 +71,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.aggregate_operands.saturating_add(self.constructor_storage.operands)
     }
 
+    #[cfg(test)]
     pub(super) fn budget_transitions(&self) -> usize {
         self.instructions.len().saturating_add(self.reserved_transitions)
     }

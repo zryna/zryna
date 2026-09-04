@@ -7,7 +7,6 @@ use super::super::aggregate_resource_formulas::{
     PartialTransferBudgetViolation, partial_assignment_budget_preflight,
     partial_return_budget_preflight, partial_transfer_budget_preflight,
 };
-use super::super::span;
 use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
 
@@ -304,44 +303,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         expected: Ty,
         at: Span,
     ) -> Option<raw::ValueId> {
-        let Some(binding) = self.bindings.get(&name.text).cloned() else {
-            let wrong_case = self.bindings.keys().any(|key| key.eq_ignore_ascii_case(&name.text));
-            self.errors.at(
-                "ZRYNA-M3002",
-                span(self.input.sources(), name.span),
-                if wrong_case {
-                    format!("aggregate value '{}' has the wrong portable ASCII case", name.text)
-                } else {
-                    format!("aggregate value '{}' is not declared", name.text)
-                },
-                "reference one exact preceding local using its declared spelling",
-            );
-            return None;
-        };
-        if binding.ty != expected {
-            self.errors.at(
-                "ZRYNA-M3016",
-                span(self.input.sources(), name.span),
-                "aggregate operand has the wrong exact type",
-                "use the exact declared field, element, local, or result type",
-            );
-            return None;
-        }
-        if expected.is_copy() {
+        let decision = self.operand_decisions().reference_decision(name, expected)?;
+        let binding = decision.binding;
+        if matches!(decision.kind, super::operand_decisions::ReferenceKind::Copy) {
             return self.emit(
                 expected,
                 at,
                 raw::InstructionKind::CopyFromPlace { place: binding.place },
             );
-        }
-        if !self.whole_root_available(binding.place) {
-            self.errors.at(
-                "ZRYNA-M3014",
-                span(self.input.sources(), name.span),
-                format!("aggregate value '{}' is moved or only partially available", name.text),
-                "move a whole owned aggregate only before moving any of its projections",
-            );
-            return None;
         }
         let value =
             self.emit(expected, at, raw::InstructionKind::MoveFromPlace { place: binding.place })?;

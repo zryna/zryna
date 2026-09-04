@@ -11,16 +11,7 @@ use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn preflight_aggregate_subobject_move_site(&mut self, at: Span) -> bool {
-        if self.aggregate_subobject_moves == 0 {
-            return true;
-        }
-        self.errors.at(
-            "ZRYNA-M3016",
-            at,
-            "this checkpoint admits only one aggregate-subobject move per function",
-            "move one supported Struct or fixed-array subobject into one exact direct local",
-        );
-        false
+        self.operand_decisions().preflight_aggregate_subobject_move_site(at)
     }
 
     #[allow(clippy::too_many_lines)]
@@ -108,58 +99,24 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             None
         };
         let projection = self.owned_place(id)?;
-        if projection.is_root || projection.ty != expected {
-            self.errors.at(
-                "ZRYNA-M3016",
-                at,
-                "owned projection has the wrong exact contextual type",
-                "use one exact supported Struct field or fixed-array element",
-            );
-            return None;
-        }
-        if !self.projection_available(projection.place, projection.root) {
-            self.errors.at(
-                "ZRYNA-M3014",
-                at,
-                "owned projection is unavailable or overlaps an already moved subobject",
-                "move each owned field or fixed-array element at most once",
-            );
-            return None;
-        }
-        if expected.is_copy() {
-            return self.emit(
-                expected,
-                at,
-                raw::InstructionKind::CopyFromPlace { place: projection.place },
-            );
-        }
-        let aggregate_subobject =
-            matches!(expected.category, TypeCategory::Struct | TypeCategory::FixedArray);
-        if aggregate_subobject && aggregate_context.is_none() {
-            self.errors.at(
-                "ZRYNA-M3016",
-                at,
-                "static aggregate-subobject move requires one exact direct local or final return",
-                "initialize one exact private local or return the exact result type from the Struct field or constant fixed-array element",
-            );
-            return None;
-        }
-        if aggregate_subobject && !self.preflight_aggregate_subobject_move_site(at) {
-            return None;
-        }
-        if !matches!(
-            expected.category,
-            TypeCategory::String | TypeCategory::Struct | TypeCategory::FixedArray
-        ) || !self.supported(expected)
-        {
-            self.errors.at(
-                "ZRYNA-M3016",
-                at,
-                "owned projection type is outside the static subobject move checkpoint",
-                "move a String, supported Struct, or supported fixed-array field or constant element into one exact direct local",
-            );
-            return None;
-        }
+        let operation = self.operand_decisions().projection_decision(
+            projection,
+            expected,
+            aggregate_context,
+            at,
+        )?;
+        let aggregate_subobject = match operation {
+            super::operand_decisions::ProjectionOperation::Copy => {
+                return self.emit(
+                    expected,
+                    at,
+                    raw::InstructionKind::CopyFromPlace { place: projection.place },
+                );
+            }
+            super::operand_decisions::ProjectionOperation::Move { aggregate_subobject } => {
+                aggregate_subobject
+            }
+        };
         if aggregate_subobject {
             let Some(shape) = self.complete_projection_shape(expected) else {
                 self.errors.at(
