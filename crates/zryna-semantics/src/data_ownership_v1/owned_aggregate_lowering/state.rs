@@ -18,18 +18,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if !self.preflight_transition(1, at) {
             return false;
         }
-        self.reserved_transitions = self
-            .reserved_transitions
-            .checked_add(1)
-            .expect("assignment transition capacity preflighted");
+        self.credit_ledger().acquire_assignment();
         true
     }
 
     pub(super) fn release_transition(&mut self) {
-        self.reserved_transitions = self
-            .reserved_transitions
-            .checked_sub(1)
-            .expect("reserved aggregate assignment transition");
+        self.credit_ledger().release_assignment();
     }
 
     pub(super) fn emit_effect(&mut self, at: Span, kind: raw::InstructionKind) -> bool {
@@ -61,13 +55,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
         kind: raw::InstructionKind,
     ) -> Option<raw::ValueId> {
-        if !self.preflight_transition(1, at) {
-            return None;
-        }
-        if !self.preflight_value(at) {
-            return None;
-        }
-        if !ty.is_copy() && !self.preflight_constructor_places(1, at) {
+        if !self.resource_usage().emit(ty, at, self.errors) {
             return None;
         }
         let value = raw::ValueId(self.next_value);

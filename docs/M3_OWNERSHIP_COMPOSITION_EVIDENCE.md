@@ -51,6 +51,9 @@ Shared aggregate resource decisions read committed and held counters without iss
 emitting identities. Constructor and ordinary-emission wrappers retain their different check
 orders, including the absence of a place check for Copy emission. The live constructor ticket
 remains responsible for checked acquisition and release; these views are not an immutable C2 plan.
+The ordered check chains now share those same decisions, while one borrowed credit ledger applies
+the existing constructor and assignment arithmetic to live or isolated scratch counters. Storage,
+panic semantics and final-commit order are unchanged; no child-effect planner is activated.
 
 The affine ticket releases its own credits in reverse order on child failure and immediately
 before final commit on success, preserving ancestor and assignment credits. Ordinary emission,

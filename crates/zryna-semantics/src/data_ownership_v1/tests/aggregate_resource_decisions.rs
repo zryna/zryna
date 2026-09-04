@@ -2,6 +2,9 @@ use super::*;
 use crate::data_ownership_v1::owned_aggregate_lowering::resource_decisions::AggregateUsage;
 use zryna_layout::TypeCategory;
 
+#[path = "aggregate_credit_bridges.rs"]
+mod credits;
+
 fn usage(dimension: usize, raw: usize, held: usize) -> AggregateUsage {
     let mut result = AggregateUsage {
         values: 0,

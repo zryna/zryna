@@ -6,6 +6,10 @@ use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
 use super::resource_decisions::AggregateUsage;
 
+#[path = "credit_ledger.rs"]
+mod credit_ledger;
+pub(super) use credit_ledger::CreditLedgerMut;
+
 #[cfg(test)]
 #[path = "../tests/aggregate_constructor_envelope.rs"]
 mod tests;
@@ -24,34 +28,18 @@ pub(super) struct ConstructorCommitReservation {
 
 impl ConstructorCommitReservation {
     pub(super) fn release(self, lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
-        let Self { storage } = self;
-        let places = lowerer
-            .constructor_storage
-            .places
-            .checked_sub(storage.places)
-            .expect("held constructor place credit");
-        let values = lowerer
-            .constructor_storage
-            .values
-            .checked_sub(storage.values)
-            .expect("held constructor value credit");
-        let transitions = lowerer
-            .reserved_transitions
-            .checked_sub(1)
-            .expect("held constructor transition credit");
-        let operands = lowerer
-            .constructor_storage
-            .operands
-            .checked_sub(storage.operands)
-            .expect("held constructor operand credit");
-        lowerer.constructor_storage.places = places;
-        lowerer.constructor_storage.values = values;
-        lowerer.reserved_transitions = transitions;
-        lowerer.constructor_storage.operands = operands;
+        lowerer.credit_ledger().release_constructor(self);
     }
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
+    pub(super) fn credit_ledger(&mut self) -> CreditLedgerMut<'_> {
+        CreditLedgerMut {
+            storage: &mut self.constructor_storage,
+            transitions: &mut self.reserved_transitions,
+        }
+    }
+
     pub(super) fn resource_usage(&self) -> AggregateUsage {
         AggregateUsage {
             values: self.next_value as usize,
@@ -97,10 +85,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.resource_usage().operands(additional, at, self.errors)
     }
 
+    #[cfg(test)]
     pub(super) fn preflight_value(&mut self, at: Span) -> bool {
         self.resource_usage().value(at, self.errors)
     }
 
+    #[cfg(test)]
     pub(super) fn preflight_constructor_places(&mut self, additional: usize, at: Span) -> bool {
         self.resource_usage().places(additional, at, self.errors)
     }
@@ -111,24 +101,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         arity: usize,
         at: Span,
     ) -> Option<ConstructorCommitReservation> {
-        if !self.preflight_constructor_operands(arity, at)
-            || !self.preflight_transition(1, at)
-            || !self.preflight_value(at)
-            || !self.preflight_constructor_places(usize::from(!result.is_copy()), at)
-        {
+        if !self.resource_usage().constructor(result, arity, at, self.errors) {
             return None;
         }
-        let places = usize::from(!result.is_copy());
-        let next_operands = self.constructor_storage.operands.checked_add(arity)?;
-        let next_transitions = self.reserved_transitions.checked_add(1)?;
-        let next_values = self.constructor_storage.values.checked_add(1)?;
-        let next_places = self.constructor_storage.places.checked_add(places)?;
-        self.constructor_storage.operands = next_operands;
-        self.reserved_transitions = next_transitions;
-        self.constructor_storage.values = next_values;
-        self.constructor_storage.places = next_places;
-        Some(ConstructorCommitReservation {
-            storage: ConstructorStorage { values: 1, places, operands: arity },
-        })
+        self.credit_ledger().acquire_constructor(arity, usize::from(!result.is_copy()))
     }
 }

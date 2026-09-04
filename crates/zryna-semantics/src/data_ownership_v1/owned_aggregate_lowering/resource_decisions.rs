@@ -6,6 +6,7 @@ use super::super::global_resource_limits::{
     aggregate_operand_budget_violation, aggregate_transition_budget_violation,
     resource_budget_violation,
 };
+use super::super::type_model::Ty;
 
 // These rejecting preflight views never determine emitted IDs or issue a live reservation.
 pub(super) struct AggregateUsage {
@@ -20,6 +21,32 @@ pub(super) struct AggregateUsage {
 }
 
 impl AggregateUsage {
+    pub(super) fn emit(&self, result: Ty, at: Span, errors: &mut Errors<'_>) -> bool {
+        if !self.transition(1, at, errors) {
+            return false;
+        }
+        if !self.value(at, errors) {
+            return false;
+        }
+        if !result.is_copy() && !self.places(1, at, errors) {
+            return false;
+        }
+        true
+    }
+
+    pub(super) fn constructor(
+        &self,
+        result: Ty,
+        arity: usize,
+        at: Span,
+        errors: &mut Errors<'_>,
+    ) -> bool {
+        self.operands(arity, at, errors)
+            && self.transition(1, at, errors)
+            && self.value(at, errors)
+            && self.places(usize::from(!result.is_copy()), at, errors)
+    }
+
     pub(super) fn transition(&self, additional: usize, at: Span, errors: &mut Errors<'_>) -> bool {
         if aggregate_transition_budget_violation(
             self.transitions,
