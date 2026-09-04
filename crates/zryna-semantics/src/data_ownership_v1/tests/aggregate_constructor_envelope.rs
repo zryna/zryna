@@ -16,6 +16,9 @@ mod flows;
 #[path = "aggregate_constructor_projection_integration.rs"]
 mod integration;
 
+#[path = "ordered_expression_decisions.rs"]
+mod decisions;
+
 fn with_snapshot(
     source: &str,
     snapshot: RawProjectSyntaxSnapshot,

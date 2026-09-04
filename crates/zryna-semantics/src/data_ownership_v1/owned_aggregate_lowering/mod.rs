@@ -13,6 +13,7 @@ mod clone;
 mod constructor_resources;
 mod constructors;
 mod driver;
+mod expression_decisions;
 mod partial_transfers;
 mod projected_reads;
 mod projection_resolution;

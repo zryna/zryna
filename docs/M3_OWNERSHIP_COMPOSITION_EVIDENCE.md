@@ -36,6 +36,12 @@ diagnostics at the constructor span. When capacity is available, declaration/ind
 order and existing semantic diagnostics are unchanged. Vec retains its separate existing
 fallible construction reservation; source admission, IR, ABI and limits are unchanged.
 
+The aggregate route's private ordered-expression decisions separate source/type validation from
+materialization. Struct field types still resolve one child at a time under the constructor
+reservation; array element and selected enum payload types resolve before it. This extraction
+preserves existing child emission and partial compile-time failure artifacts. It is not the full
+C2 immutable child-effect plan, and activates no additional source forms or public capability.
+
 The affine ticket releases its own credits in reverse order on child failure and immediately
 before final commit on success, preserving ancestor and assignment credits. Ordinary emission,
 whole/projected clone, projection topology materialization, compound assignment and direct
