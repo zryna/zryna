@@ -7,7 +7,7 @@ import { withoutBootstrapTiming } from './npm-timing-workflow-cases.mjs';
 
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
-const workflow = withoutBootstrapTiming(document.toJS());
+const budgetWorkflow = withoutBootstrapTiming(document.toJS());
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'docs-publish'];
 const nodeStep = {
@@ -18,6 +18,74 @@ const pnpmStep = {
   uses: 'pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86',
   with: { version: '11.18.0' },
 };
+const workflow = withoutPreflightBudgets(budgetWorkflow);
+
+function withoutPreflightBudgets(candidate) {
+  const original = structuredClone(candidate);
+  const job = original.jobs.preflight;
+  assert.deepEqual(Object.keys(job).sort(), ['name', 'runs-on', 'steps', 'timeout-minutes']);
+  assert.equal(job['timeout-minutes'], 30);
+  const bootstrap = job.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@'));
+  const execution = job.steps.filter(step => step.run === 'pnpm preflight');
+  assert.equal(bootstrap.length, 1);
+  assert.equal(execution.length, 1);
+  assert.deepEqual(bootstrap[0], { ...pnpmStep, 'timeout-minutes': 10 });
+  assert.deepEqual(execution[0], { run: 'pnpm preflight', 'timeout-minutes': 15 });
+  assert.equal(job.steps.at(-1), execution[0]);
+  assert(job.steps.indexOf(bootstrap[0]) < job.steps.indexOf(execution[0]));
+  assert(bootstrap[0]['timeout-minutes'] + execution[0]['timeout-minutes'] < job['timeout-minutes']);
+  delete bootstrap[0]['timeout-minutes'];
+  delete execution[0]['timeout-minutes'];
+  for (const other of Object.values(original.jobs)) {
+    for (const step of other.steps) assert.equal(step['timeout-minutes'], undefined);
+  }
+  return original;
+}
+
+test('preflight separates bounded bootstrap and execution budgets without changing commands', () => {
+  assert.doesNotThrow(() => withoutPreflightBudgets(budgetWorkflow));
+  assert.equal(workflow.jobs.preflight['timeout-minutes'], 30);
+});
+
+test('preflight budget removal, relocation, bypass and ambiguous targets fail closed', () => {
+  const targets = [
+    w => w.jobs.preflight,
+    w => w.jobs.preflight.steps.find(step => step.uses === pnpmStep.uses),
+    w => w.jobs.preflight.steps.find(step => step.run === 'pnpm preflight'),
+  ];
+  for (const target of targets) {
+    for (const value of [undefined, 0, -1, 1.5, '15', '${{ 15 }}', 9, 11, 14, 16, 29, 31]) {
+      const changed = structuredClone(budgetWorkflow);
+      if (value === undefined) delete target(changed)['timeout-minutes'];
+      else target(changed)['timeout-minutes'] = value;
+      assert.throws(() => withoutPreflightBudgets(changed));
+    }
+    for (const property of ['if', 'continue-on-error']) {
+      const changed = structuredClone(budgetWorkflow);
+      target(changed)[property] = property === 'if' ? 'always()' : true;
+      assert.throws(() => withoutPreflightBudgets(changed));
+    }
+  }
+  for (const mutate of [
+    steps => { steps.push(structuredClone(steps.find(step => step.uses === pnpmStep.uses))); },
+    steps => { steps.push(structuredClone(steps.find(step => step.run === 'pnpm preflight'))); },
+    steps => { steps.splice(steps.findIndex(step => step.uses === pnpmStep.uses), 1); },
+    steps => { steps.pop(); },
+    steps => { const index = steps.findIndex(step => step.uses === pnpmStep.uses); [steps[index], steps[steps.length - 1]] = [steps.at(-1), steps[index]]; },
+    steps => { steps.at(-1).run += ' || true'; },
+    steps => { steps.at(-1).run = 'pnpm m3:owned:quick'; },
+    steps => { steps[0]['timeout-minutes'] = steps.at(-1)['timeout-minutes']; delete steps.at(-1)['timeout-minutes']; },
+  ]) {
+    const changed = structuredClone(budgetWorkflow);
+    mutate(changed.jobs.preflight.steps);
+    assert.throws(() => withoutPreflightBudgets(changed));
+  }
+  for (const id of Object.keys(budgetWorkflow.jobs)) {
+    const changed = structuredClone(budgetWorkflow);
+    changed.jobs[id].steps[0]['timeout-minutes'] = 10;
+    assert.throws(() => withoutPreflightBudgets(changed));
+  }
+});
 
 function bootstrapOrder(candidate, metadata) {
   assert.equal(metadata.packageManager, 'pnpm@11.18.0');
@@ -163,7 +231,7 @@ function evaluateGraph(jobs, leaves) {
 }
 
 test('CI starts independent authorities together with bounded preflight headroom', () => {
-  assert.equal(workflow.jobs.preflight['timeout-minutes'], 15);
+  assert.equal(workflow.jobs.preflight['timeout-minutes'], 30);
   assert.equal(workflow.jobs.preflight.if, undefined);
   assert.equal(workflow.jobs.preflight.needs, undefined);
   for (const id of matrixJobs) {
