@@ -20,16 +20,17 @@ const PROVENANCE = {
   enforceWorkspaceOutput: false,
 };
 
-test('Shared and Weak authority documents code-format generic type spellings', async () => {
+test('ownership authority documents code-format generic type spellings', async () => {
   function checkGenericSpellings(markdown) {
     for (const match of markdown.matchAll(/(?:Shared|Weak)<[^>\n]+>/g)) {
       assert.equal(markdown[match.index - 1], '`', 'generic type must start inside inline code');
       assert.equal(markdown[match.index + match[0].length], '`', 'generic type must end inside inline code');
     }
   }
-  for (const name of ['AUTHORITY', 'EVIDENCE']) {
+  for (const name of ['SHARED_WEAK_AUTHORITY', 'SHARED_WEAK_EVIDENCE',
+    'OWNERSHIP_COMPOSITION', 'OWNERSHIP_COMPOSITION_EVIDENCE']) {
     const markdown = await readFile(
-      path.join(compilerWorkspaceRoot, `docs/M3_SHARED_WEAK_${name}.md`), 'utf8',
+      path.join(compilerWorkspaceRoot, `docs/M3_${name}.md`), 'utf8',
     );
     checkGenericSpellings(markdown);
   }
@@ -37,6 +38,91 @@ test('Shared and Weak authority documents code-format generic type spellings', a
     checkGenericSpellings(`one \`${spelling}\` value`);
     assert.throws(() => checkGenericSpellings(`one ${spelling} value`), /start inside inline code/);
     assert.throws(() => checkGenericSpellings(`one \`${spelling} value`), /end inside inline code/);
+  }
+});
+
+test('planned ownership composition binds existing declarations and located tests without claiming production', async () => {
+  const contract = await readFile(path.join(compilerWorkspaceRoot, 'docs/M3_OWNERSHIP_COMPOSITION.md'), 'utf8');
+  const evidence = await readFile(path.join(compilerWorkspaceRoot, 'docs/M3_OWNERSHIP_COMPOSITION_EVIDENCE.md'), 'utf8');
+  const root = 'crates/zryna-semantics/src/data_ownership_v1/';
+  const declarations = [
+    ['type_model.rs', 'fn map_node_types('],
+    ['owner_state.rs', 'struct OwnerState {'],
+    ['owner_state.rs', 'enum OwnerDelta {'],
+    ['owned_lowering_resources.rs', "struct OwnedCleanupAccounting<'a> {"],
+    ['owned_cfg_state.rs', 'struct OwnedCfgState {'],
+  ];
+  const references = [...evidence.matchAll(/^\| `([a-z_]+\.rs)` \| `([a-z_0-9]+)` \|/gm)]
+    .map(([, file, name]) => [file, name]);
+  assert.equal(references.length, 9);
+  assert.equal(new Set(references.map(([file, name]) => `${file}:${name}`)).size, 9);
+  const files = [...new Set([...declarations.map(([file]) => file), ...references.map(([file]) => `tests/${file}`)])];
+  const sources = new Map(await Promise.all(files.map(async file => [file,
+    await readFile(path.join(compilerWorkspaceRoot, root, file), 'utf8')])));
+  const upgradeRequirements = [
+    'producer-facing edge-shape descriptor before a complete CFG exists',
+    'The descriptor proves type/signature shape only.',
+    'does not require an already-verified upgraded program',
+    'Mandatory full IR verification subsequently proves the complete operation',
+    'descriptor does not decide which outcome will execute',
+    'separate from real target/runtime execution',
+  ];
+  function check(text, sourceFiles) {
+    assert.match(text, /planned implementation contract, not implemented generic source semantics/);
+    assert.match(text, /callee's call-scoped borrow access ends on call completion,\non either success or trap/);
+    assert.match(text, /caller's original lexical borrow authority is separately retained\nand discharged under lexical rules; the call does not implicitly extend it or permit escape/);
+    const sections = [...text.matchAll(/^## C([1-8]): /gm)].map(match => match[1]);
+    assert.deepEqual(sections, ['1', '2', '3', '4', '5', '6', '7', '8']);
+    const upgrade = text.split('## C8: Upgrade-success edge signature\n')[1]
+      ?.split('\n## Integration and closure')[0].replace(/\s+/g, ' ') ?? '';
+    for (const requirement of upgradeRequirements) assert(upgrade.includes(requirement), requirement);
+    for (const [file, declaration] of declarations) assert(sourceFiles.get(file)?.includes(declaration), declaration);
+    for (const [file, name] of references) {
+      assert.match(sourceFiles.get(`tests/${file}`) ?? '', new RegExp(`#\\[test\\]\\s*fn ${name}\\(`), name);
+    }
+  }
+  check(contract, sources);
+  assert.throws(() => check(contract.replace('on either success or trap', 'only on success'), sources));
+  assert.throws(() => check(contract.replace('separately retained', 'implicitly extended'), sources));
+  for (const [index, fragment] of ['edge-shape descriptor', 'type/signature shape only',
+    'already-verified upgraded', 'Mandatory full IR verification',
+    'descriptor does not decide', 'separate from real target/runtime execution'].entries()) {
+    const changed = contract.replace(fragment, 'removed requirement');
+    assert.notEqual(changed, contract);
+    assert.throws(() => check(changed, sources), error => error.message.includes(upgradeRequirements[index]));
+  }
+  for (let index = 1; index <= 8; index++) {
+    assert.throws(() => check(contract.replace(`## C${index}: `, '## Missing: '), sources));
+  }
+  assert.throws(() => check(contract.replace('## C8: ', '## C7: '), sources));
+  for (const [file, declaration] of declarations) {
+    const changed = new Map(sources);
+    changed.set(file, changed.get(file).replace(declaration, 'removed declaration'));
+    assert.throws(() => check(contract, changed));
+  }
+  for (const [file, name] of references) {
+    const changed = new Map(sources);
+    changed.set(`tests/${file}`, changed.get(`tests/${file}`).replace(`fn ${name}(`, 'fn missing_test('));
+    assert.throws(() => check(contract, changed));
+  }
+  assert.match(evidence, /Every name in this table is proposed, not an existing test or API/);
+  assert.match(evidence, /This candidate includes the #233–#237 extractions and the #288 constructor-order correction/);
+  assert.match(evidence, /candidate tree, not the merge status of its prerequisite pull requests/);
+  const dispatch = await readFile(path.join(compilerWorkspaceRoot, root, 'function_dispatch.rs'), 'utf8');
+  assert.match(dispatch, /fn /);
+  assert.match(evidence, /500 lines triggers a split\/cohesion review, not a compulsory limit/);
+  assert.match(evidence, /larger cohesive module is allowed with a documented rationale/);
+  function checkUpgradeEvidence(text) {
+    const row = text.split('\n').find(line => line.startsWith('| `generic_upgrade_synthetic_success_signature` |')) ?? '';
+    for (const requirement of ['producer-facing type/signature shape before CFG construction',
+      'mandatory full IR verification seals', 'separate bounded transition-model proof', 'not target execution']) {
+      assert(row.includes(requirement), requirement);
+    }
+  }
+  checkUpgradeEvidence(evidence);
+  for (const requirement of ['producer-facing type/signature shape before CFG construction',
+    'mandatory full IR verification seals', 'separate bounded transition-model proof', 'not target execution']) {
+    assert.throws(() => checkUpgradeEvidence(evidence.replace(requirement, 'removed requirement')));
   }
 });
 
@@ -117,6 +203,8 @@ test('registry exports the exact implemented and planned publication inventory',
       { id: 'reference/m3-copy-aggregate-semantics', source: 'docs/M3_COPY_AGGREGATE_SEMANTICS.md', path: 'documents/reference/m3-copy-aggregate-semantics.md', title: 'M3 Copy aggregate semantics' },
       { id: 'reference/m3-data-ownership-ir', source: 'docs/M3_DATA_OWNERSHIP_IR.md', path: 'documents/reference/m3-data-ownership-ir.md', title: 'M3 verified data and ownership IR' },
       { id: 'reference/m3-owned-data-semantics', source: 'docs/M3_OWNED_DATA_SEMANTICS.md', path: 'documents/reference/m3-owned-data-semantics.md', title: 'M3 owned data semantics' },
+      { id: 'reference/m3-ownership-composition-evidence', source: 'docs/M3_OWNERSHIP_COMPOSITION_EVIDENCE.md', path: 'documents/reference/m3-ownership-composition-evidence.md', title: 'M3 ownership composition evidence' },
+      { id: 'reference/m3-ownership-composition', source: 'docs/M3_OWNERSHIP_COMPOSITION.md', path: 'documents/reference/m3-ownership-composition.md', title: 'M3 ownership composition interfaces' },
       { id: 'reference/m3-ownership-runtime-abi', source: 'docs/M3_OWNERSHIP_RUNTIME_ABI.md', path: 'documents/reference/m3-ownership-runtime-abi.md', title: 'M3 ownership runtime ABI authority' },
       { id: 'reference/m3-shared-weak-authority', source: 'docs/M3_SHARED_WEAK_AUTHORITY.md', path: 'documents/reference/m3-shared-weak-authority.md', title: 'M3 Shared and Weak authority contract' },
       { id: 'reference/m3-shared-weak-evidence', source: 'docs/M3_SHARED_WEAK_EVIDENCE.md', path: 'documents/reference/m3-shared-weak-evidence.md', title: 'M3 Shared and Weak evidence matrix' },

@@ -135,6 +135,18 @@
       "title": "M3 owned data semantics"
     },
     {
+      "id": "reference/m3-ownership-composition-evidence",
+      "source": "docs/M3_OWNERSHIP_COMPOSITION_EVIDENCE.md",
+      "path": "documents/reference/m3-ownership-composition-evidence.md",
+      "title": "M3 ownership composition evidence"
+    },
+    {
+      "id": "reference/m3-ownership-composition",
+      "source": "docs/M3_OWNERSHIP_COMPOSITION.md",
+      "path": "documents/reference/m3-ownership-composition.md",
+      "title": "M3 ownership composition interfaces"
+    },
+    {
       "id": "reference/m3-ownership-runtime-abi",
       "source": "docs/M3_OWNERSHIP_RUNTIME_ABI.md",
       "path": "documents/reference/m3-ownership-runtime-abi.md",
