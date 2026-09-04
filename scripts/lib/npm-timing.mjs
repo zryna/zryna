@@ -1,5 +1,5 @@
 import { constants } from 'node:fs';
-import { lstat, mkdir, open, readdir, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, open, opendir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export const TIMING_DIRECTORY = 'zryna-npm-bootstrap-timing';
@@ -79,8 +79,11 @@ export async function collectTiming(runnerTemp) {
     const directory = await trustedDirectory(path.join(parent, TIMING_DIRECTORY));
     const marker = await boundedFile(path.join(directory, '.prepared'), 32);
     if (marker.toString('utf8') !== 'npm-timing-v1\n') throw unavailable();
-    const entries = await readdir(directory, { withFileTypes: true });
-    if (entries.length > 256) throw unavailable();
+    const entries = [];
+    for await (const entry of await opendir(directory)) {
+      if (entries.length === 256) throw unavailable();
+      entries.push(entry);
+    }
     const candidates = entries.filter(entry => entry.name.endsWith('-timing.json'));
     if (candidates.length > 32) throw unavailable();
     const records = [];

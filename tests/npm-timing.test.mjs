@@ -63,12 +63,13 @@ test('fresh exclusive directory and exactly one completed ci record are required
   await assert.rejects(collectTiming(root), failure);
 });
 test('collector rejects malformed candidates and bounded input overruns', async context => {
-  for (const mode of ['malformed', 'large', 'many', 'directory']) {
+  for (const mode of ['malformed', 'large', 'many', 'entries', 'directory']) {
     const root = await temporary(context); await prepareTimingDirectory(root);
     const file = path.join(root, TIMING_DIRECTORY, 'bad-timing.json');
     if (mode === 'malformed') await writeFile(file, secret);
     if (mode === 'large') await writeFile(file, Buffer.alloc(1024 * 1024 + 1));
     if (mode === 'many') await Promise.all(Array.from({ length: 33 }, (_, i) => record(root, `${i}-timing.json`)));
+    if (mode === 'entries') await Promise.all(Array.from({ length: 257 }, (_, i) => record(root, `${i}-debug.log`)));
     if (mode === 'directory') await mkdir(file);
     await assert.rejects(collectTiming(root), failure);
   }
