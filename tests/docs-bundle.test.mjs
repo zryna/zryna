@@ -61,6 +61,8 @@ test('planned ownership composition binds existing declarations and located test
     await readFile(path.join(compilerWorkspaceRoot, root, file), 'utf8')])));
   function check(text, sourceFiles) {
     assert.match(text, /planned implementation contract, not implemented generic source semantics/);
+    assert.match(text, /callee's call-scoped borrow access ends on call completion,\non either success or trap/);
+    assert.match(text, /caller's original lexical borrow authority is separately retained\nand discharged under lexical rules; the call does not implicitly extend it or permit escape/);
     const sections = [...text.matchAll(/^## C([1-8]): /gm)].map(match => match[1]);
     assert.deepEqual(sections, ['1', '2', '3', '4', '5', '6', '7', '8']);
     for (const [file, declaration] of declarations) assert(sourceFiles.get(file)?.includes(declaration), declaration);
@@ -69,6 +71,8 @@ test('planned ownership composition binds existing declarations and located test
     }
   }
   check(contract, sources);
+  assert.throws(() => check(contract.replace('on either success or trap', 'only on success'), sources));
+  assert.throws(() => check(contract.replace('separately retained', 'implicitly extended'), sources));
   for (let index = 1; index <= 8; index++) {
     assert.throws(() => check(contract.replace(`## C${index}: `, '## Missing: '), sources));
   }

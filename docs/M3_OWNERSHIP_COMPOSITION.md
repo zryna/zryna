@@ -79,8 +79,10 @@ and caller state. Prevalidate arity/types, then evaluate arguments left to right
 one caller-owned result and precisely transferred callee inputs. During argument preparation the
 caller owns completed argument temporaries. After transfer the callee owns its by-value inputs;
 callee trap cleanup handles them, and caller trap cleanup excludes them. No double cleanup or
-implicit clone repairs a mismatch. Call-scoped borrows retain exact authority, cannot escape and
-end with the caller; they cannot be stored or returned.
+implicit clone repairs a mismatch. The callee's call-scoped borrow access ends on call completion,
+on either success or trap. The caller's original lexical borrow authority is separately retained
+and discharged under lexical rules; the call does not implicitly extend it or permit escape.
+Neither authority may be stored or returned.
 
 Mixed/nested payload arguments and results, including required handle combinations, are #278/#279
 plus #261 integration obligations before #83 closes, not missing work deferred to #272.
