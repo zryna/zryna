@@ -2,6 +2,8 @@
 
 Zryna accepts focused changes that preserve the architecture contract and accurately describe implemented behavior.
 
+Use the [task-oriented code navigation map](docs/CODE_NAVIGATION.md) to find component entrypoints and focused tests.
+
 Before changing a component:
 
 1. read `README.md`, `docs/ARCHITECTURE.md`, and `docs/STRICT_WORKSPACE.md`;
