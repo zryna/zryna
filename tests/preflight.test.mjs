@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import './ci-gate-cases.mjs';
+import './npm-timing.test.mjs';
 
 import {
   PREFLIGHT_COMMANDS,

@@ -3,10 +3,11 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
+import { withoutBootstrapTiming } from './npm-timing-workflow-cases.mjs';
 
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
-const workflow = document.toJS();
+const workflow = withoutBootstrapTiming(document.toJS());
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'docs-publish'];
 const nodeStep = {

@@ -100,6 +100,30 @@ administrators are subject to the rules, and conversations must be resolved.
 - The checked-in status text distinguishes implemented proof boundaries from planned execution.
 - Independent closure review has no unresolved P0 or P1 M0 finding.
 
+## Bootstrap timing diagnostic
+
+The current Ubuntu preflight job enables npm timing only during its pinned pnpm setup.
+It first exclusively creates `zryna-npm-bootstrap-timing` beneath trusted `RUNNER_TEMP`,
+rejecting existing paths and symlink ancestors. Collection runs immediately after setup,
+before package-store restoration or project installation, unless the job is cancelled.
+Exactly one completed npm 10.9.4 `ci` timing record is required; absent, ambiguous or
+malformed evidence emits only `npm bootstrap timing unavailable` and fails the diagnostic
+step. It never clears a setup failure. A job timeout can prevent collection entirely.
+
+Output contains only fixed timer names and nonnegative integer milliseconds. Metadata,
+arguments, URLs, paths, dynamic timer names and raw logs are not emitted or uploaded.
+The collector bounds directory entries, record count and bytes; it does not change npm
+audit, retry, integrity, cache, install or timeout behavior, or any required compiler gate.
+The private directory and checked reads reject persistent links and observed file changes;
+they are not a sandbox against a process concurrently replacing ancestor directories.
+
+`auditReport:getReport` includes advisory requests and any fallback/retries;
+`reify:unpack` includes package acquisition and extraction, not network time alone.
+Audit and unpack overlap, so these nested durations must not be summed or subtracted
+to manufacture a causal breakdown. npm timing does not measure later pnpm version selection
+or project installation. This diagnostic gathers evidence for Issue #284, not a latency fix,
+speedup claim, security verdict, or closure of that issue.
+
 ## Closure evidence
 
 - [M0 closure pull request](https://github.com/zryna/zryna/pull/31) records the reviewed change and
