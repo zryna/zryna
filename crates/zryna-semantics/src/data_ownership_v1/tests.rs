@@ -21,6 +21,7 @@ pub(in crate::data_ownership_v1) mod mixed_string_read_scopes;
 pub(in crate::data_ownership_v1) mod mixed_unknown_projected;
 pub(in crate::data_ownership_v1) mod mixed_vec_calls;
 pub(in crate::data_ownership_v1) mod mixed_vec_siblings;
+mod mixed_zero_array_vec;
 pub(super) mod nested_mixed_construction;
 mod projection_descriptors;
 use super::borrow_call_resources::{

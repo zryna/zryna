@@ -45,6 +45,7 @@ mod root_borrow_function_lowering;
 mod root_borrow_shape_planning;
 mod root_borrow_straight_planning;
 mod root_borrow_value_planning;
+mod scalar_operations;
 mod string_vec_resource_estimates;
 mod type_model;
 

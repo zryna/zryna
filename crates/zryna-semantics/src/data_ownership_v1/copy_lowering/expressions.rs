@@ -1,4 +1,5 @@
 use super::super::function_catalog::{FunctionParameterOrder, FunctionSignature};
+use super::super::scalar_operations::{self, ScalarOperation};
 use super::super::{
     RawDataDeclarationKind, RawExpressionKind, Span, Ty, TypeCategory, raw, semantic_type, span,
     syntax,
@@ -38,15 +39,7 @@ impl FunctionLowerer<'_, '_, '_> {
                 Some((ty, id))
             }
             RawExpressionKind::I32Literal { spelling } => {
-                let value = spelling.parse::<i32>().ok().or_else(|| {
-                    self.errors.at(
-                        "ZRYNA-M3008",
-                        at,
-                        format!("integer literal '{spelling}' is outside i32"),
-                        "use a decimal i32 literal",
-                    );
-                    None
-                })?;
+                let value = scalar_operations::integer(spelling, at, self.errors)?;
                 let ty = self.primitive(TypeCategory::I32)?;
                 let id = self.emit(Some(ty), at, raw::InstructionKind::I32Literal(value))?;
                 Some((ty, id))
@@ -65,29 +58,32 @@ impl FunctionLowerer<'_, '_, '_> {
             }
             RawExpressionKind::Negation { operand, .. } => self.unary_i32(*operand, at),
             RawExpressionKind::Addition { lhs, rhs, .. } => {
-                self.binary_i32(*lhs, *rhs, at, |lhs, rhs| raw::InstructionKind::I32Add {
-                    lhs,
-                    rhs,
-                })
+                self.binary_i32(*lhs, *rhs, at, ScalarOperation::Add)
             }
             RawExpressionKind::Subtraction { lhs, rhs, .. } => {
-                self.binary_i32(*lhs, *rhs, at, |lhs, rhs| raw::InstructionKind::I32Sub {
-                    lhs,
-                    rhs,
-                })
+                self.binary_i32(*lhs, *rhs, at, ScalarOperation::Sub)
             }
             RawExpressionKind::Multiplication { lhs, rhs, .. } => {
-                self.binary_i32(*lhs, *rhs, at, |lhs, rhs| raw::InstructionKind::I32Mul {
-                    lhs,
-                    rhs,
-                })
+                self.binary_i32(*lhs, *rhs, at, ScalarOperation::Mul)
             }
-            RawExpressionKind::Equal { lhs, rhs, .. } => self.compare(*lhs, *rhs, at, false),
-            RawExpressionKind::NotEqual { lhs, rhs, .. } => self.compare(*lhs, *rhs, at, true),
-            RawExpressionKind::LessThan { lhs, rhs, .. } => self.rel(*lhs, *rhs, at, 0),
-            RawExpressionKind::LessEqual { lhs, rhs, .. } => self.rel(*lhs, *rhs, at, 1),
-            RawExpressionKind::GreaterThan { lhs, rhs, .. } => self.rel(*lhs, *rhs, at, 2),
-            RawExpressionKind::GreaterEqual { lhs, rhs, .. } => self.rel(*lhs, *rhs, at, 3),
+            RawExpressionKind::Equal { lhs, rhs, .. } => {
+                self.compare(*lhs, *rhs, at, ScalarOperation::Eq)
+            }
+            RawExpressionKind::NotEqual { lhs, rhs, .. } => {
+                self.compare(*lhs, *rhs, at, ScalarOperation::Ne)
+            }
+            RawExpressionKind::LessThan { lhs, rhs, .. } => {
+                self.rel(*lhs, *rhs, at, ScalarOperation::Lt)
+            }
+            RawExpressionKind::LessEqual { lhs, rhs, .. } => {
+                self.rel(*lhs, *rhs, at, ScalarOperation::Le)
+            }
+            RawExpressionKind::GreaterThan { lhs, rhs, .. } => {
+                self.rel(*lhs, *rhs, at, ScalarOperation::Gt)
+            }
+            RawExpressionKind::GreaterEqual { lhs, rhs, .. } => {
+                self.rel(*lhs, *rhs, at, ScalarOperation::Ge)
+            }
             _ => {
                 self.errors.at(
                     "ZRYNA-M3008",
@@ -424,9 +420,8 @@ impl FunctionLowerer<'_, '_, '_> {
     fn unary_i32(&mut self, operand: u32, at: Span) -> Option<(Ty, raw::ValueId)> {
         let expected = self.primitive(TypeCategory::I32)?;
         let value = self.value(operand)?;
-        self.require_type(expected, value.0, at, "negation operand")?;
-        let id =
-            self.emit(Some(expected), at, raw::InstructionKind::I32Neg { operand: value.1 })?;
+        ScalarOperation::Neg.validate(Some(expected), value.0, None, at, self.errors)?;
+        let id = self.emit(Some(expected), at, ScalarOperation::Neg.instruction(value.1, None))?;
         Some((expected, id))
     }
     fn binary_i32(
@@ -434,52 +429,42 @@ impl FunctionLowerer<'_, '_, '_> {
         lhs: u32,
         rhs: u32,
         at: Span,
-        make: impl FnOnce(raw::ValueId, raw::ValueId) -> raw::InstructionKind,
+        operation: ScalarOperation,
     ) -> Option<(Ty, raw::ValueId)> {
         let expected = self.primitive(TypeCategory::I32)?;
         let lhs = self.value(lhs)?;
         let rhs = self.value(rhs)?;
-        self.require_type(expected, lhs.0, at, "left operand")?;
-        self.require_type(expected, rhs.0, at, "right operand")?;
-        let id = self.emit(Some(expected), at, make(lhs.1, rhs.1))?;
+        operation.validate(Some(expected), lhs.0, Some(rhs.0), at, self.errors)?;
+        let id = self.emit(Some(expected), at, operation.instruction(lhs.1, Some(rhs.1)))?;
         Some((expected, id))
     }
-    fn compare(&mut self, lhs: u32, rhs: u32, at: Span, not: bool) -> Option<(Ty, raw::ValueId)> {
+    fn compare(
+        &mut self,
+        lhs: u32,
+        rhs: u32,
+        at: Span,
+        operation: ScalarOperation,
+    ) -> Option<(Ty, raw::ValueId)> {
         let lhs = self.value(lhs)?;
         let rhs = self.value(rhs)?;
-        self.require_type(lhs.0, rhs.0, at, "comparison")?;
-        if !matches!(lhs.0.category, TypeCategory::Bool | TypeCategory::I32) {
-            self.errors.at(
-                "ZRYNA-M3008",
-                at,
-                "equality is scalar-only in aggregate M3",
-                "compare bool or i32 projections rather than whole aggregates",
-            );
-            return None;
-        }
+        operation.validate(None, lhs.0, Some(rhs.0), at, self.errors)?;
         let result = self.primitive(TypeCategory::Bool)?;
-        let kind = if not {
-            raw::InstructionKind::Ne { lhs: lhs.1, rhs: rhs.1 }
-        } else {
-            raw::InstructionKind::Eq { lhs: lhs.1, rhs: rhs.1 }
-        };
-        let id = self.emit(Some(result), at, kind)?;
+        let id = self.emit(Some(result), at, operation.instruction(lhs.1, Some(rhs.1)))?;
         Some((result, id))
     }
-    fn rel(&mut self, lhs: u32, rhs: u32, at: Span, op: u8) -> Option<(Ty, raw::ValueId)> {
+    fn rel(
+        &mut self,
+        lhs: u32,
+        rhs: u32,
+        at: Span,
+        operation: ScalarOperation,
+    ) -> Option<(Ty, raw::ValueId)> {
         let i32_ty = self.primitive(TypeCategory::I32)?;
         let lhs = self.value(lhs)?;
         let rhs = self.value(rhs)?;
-        self.require_type(i32_ty, lhs.0, at, "relational operand")?;
-        self.require_type(i32_ty, rhs.0, at, "relational operand")?;
-        let kind = match op {
-            0 => raw::InstructionKind::I32LtS { lhs: lhs.1, rhs: rhs.1 },
-            1 => raw::InstructionKind::I32LeS { lhs: lhs.1, rhs: rhs.1 },
-            2 => raw::InstructionKind::I32GtS { lhs: lhs.1, rhs: rhs.1 },
-            _ => raw::InstructionKind::I32GeS { lhs: lhs.1, rhs: rhs.1 },
-        };
+        operation.validate(Some(i32_ty), lhs.0, Some(rhs.0), at, self.errors)?;
         let result = self.primitive(TypeCategory::Bool)?;
-        let id = self.emit(Some(result), at, kind)?;
+        let id = self.emit(Some(result), at, operation.instruction(lhs.1, Some(rhs.1)))?;
         Some((result, id))
     }
 }
