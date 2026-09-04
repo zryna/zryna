@@ -66,7 +66,8 @@ runtime fault/drop receipts and three-target equivalence remain separate later g
 ## Proposed file ownership and integration protocol
 
 These filenames reserve review boundaries, not existing APIs or a demand to create every file.
-Keep cohesive new production modules below 500 lines and minimize actual registration edits.
+Around 500 lines triggers a split/cohesion review, not a compulsory limit. Split where cohesive;
+a larger cohesive module is allowed with a documented rationale. Minimize actual registration edits.
 
 | Owner | Proposed scope | Exclusion |
 | --- | --- | --- |

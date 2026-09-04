@@ -89,6 +89,8 @@ test('planned ownership composition binds existing declarations and located test
   }
   assert.match(evidence, /Every name in this table is proposed, not an existing test or API/);
   assert.match(evidence, /pending #233–#237 extraction paths are not current-main paths/);
+  assert.match(evidence, /500 lines triggers a split\/cohesion review, not a compulsory limit/);
+  assert.match(evidence, /larger cohesive module is allowed with a documented rationale/);
 });
 
 test('beginner setup preserves direct runtime and repository-local editing boundaries', async () => {
