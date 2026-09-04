@@ -125,6 +125,7 @@ fn private_vec_call_rejects_borrow_signature_before_arity_or_value_evaluation() 
         declarations: &declarations,
         graph: &graph,
         node_types: &node_types,
+        layouts: &layouts,
         catalog: &catalog,
         vec_ty,
         element: referent,

@@ -323,8 +323,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         match source {
             ProjectedAggregateAssignmentSource::MoveRoot { .. } => {
                 projected_aggregate_assignment_budget_violation(
-                    self.next_value as usize,
-                    self.places.len(),
+                    self.budget_values(),
+                    self.budget_places(),
                     self.instructions.len(),
                     self.reserved_transitions,
                     missing_path_places,
@@ -335,8 +335,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 missing_descendant_places,
                 ..
             } => projected_subobject_assignment_budget_violation(
-                self.next_value as usize,
-                self.places.len(),
+                self.budget_values(),
+                self.budget_places(),
                 self.instructions.len(),
                 self.reserved_transitions,
                 *source_missing_path_places,
@@ -345,8 +345,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             ),
             ProjectedAggregateAssignmentSource::CloneRoot { .. } => {
                 projected_aggregate_clone_assignment_budget_violation(
-                    self.next_value as usize,
-                    self.places.len(),
+                    self.budget_values(),
+                    self.budget_places(),
                     self.instructions.len(),
                     self.reserved_transitions,
                     self.cleanup_plans.len(),
@@ -360,8 +360,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 missing_path_places: source_missing_path_places,
                 ..
             } => projected_aggregate_clone_assignment_budget_violation(
-                self.next_value as usize,
-                self.places.len(),
+                self.budget_values(),
+                self.budget_places(),
                 self.instructions.len(),
                 self.reserved_transitions,
                 self.cleanup_plans.len(),

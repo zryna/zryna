@@ -117,6 +117,21 @@ impl OwnerState {
         Some(OwnerDelta::Transferred { owner })
     }
 
+    pub(super) fn transfer_batch(&mut self, values: &[raw::ValueId]) -> Option<Vec<OwnerDelta>> {
+        let mut consumed = std::collections::BTreeSet::new();
+        let mut deltas = Vec::with_capacity(values.len());
+        for value in values {
+            let owner = self.owner(*value)?;
+            if !self.contains(owner) || !consumed.insert(owner) {
+                return None;
+            }
+            deltas.push(OwnerDelta::Transferred { owner });
+        }
+        self.pending.retain(|owner| !consumed.contains(owner));
+        self.value_owners.retain(|_, owner| !consumed.contains(owner));
+        Some(deltas)
+    }
+
     pub(super) fn consume_owner(&mut self, owner: raw::PlaceId) -> Option<OwnerDelta> {
         let slot = self.pending.iter().position(|place| *place == owner)?;
         self.pending.remove(slot);

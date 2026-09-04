@@ -69,6 +69,8 @@ fn lower_owned_aggregate_function_impl<'a>(
         partial_roots: BTreeSet::new(),
         places: Vec::new(),
         instructions: Vec::new(),
+        constructor_types: super::ConstructorValueTypes::default(),
+        constructor_storage: super::constructor_resources::ConstructorStorage::default(),
         cleanup_plans: Vec::new(),
         cleanup_actions: 0,
         aggregate_operands: 0,
@@ -112,8 +114,8 @@ fn lower_owned_aggregate_function_impl<'a>(
             );
             return None;
         }
-        if lowerer.next_value as usize >= ir::MAX_VALUES_PER_FUNCTION
-            || lowerer.places.len() >= ir::MAX_PLACES_PER_FUNCTION
+        if lowerer.budget_values() >= ir::MAX_VALUES_PER_FUNCTION
+            || lowerer.budget_places() >= ir::MAX_PLACES_PER_FUNCTION
         {
             lowerer.errors.at(
                 "ZRYNA-M3201",
@@ -130,6 +132,10 @@ fn lower_owned_aggregate_function_impl<'a>(
             ty: ty.ir,
             span: span(input.sources(), parameter.span),
         });
+        lowerer
+            .constructor_types
+            .record_parameter(parameters.last().expect("new parameter"))
+            .expect("aggregate parameters have dense emitted identities");
         let place = raw::PlaceId(u32::try_from(lowerer.places.len()).ok()?);
         lowerer.places.push(raw::Place {
             id: place,
@@ -166,6 +172,8 @@ fn lower_owned_aggregate_function_impl<'a>(
         }
     }
     let (returned, return_span) = returned?;
+    assert!(lowerer.constructor_storage_is_clear(), "constructor storage credits released");
+    assert_eq!(lowerer.reserved_transitions, 0, "aggregate transition credits released");
     let return_owner = lowerer.owners.owner(returned);
     let cleanup = lowerer.push_cleanup(return_span, return_owner)?;
     Some(raw::Function {

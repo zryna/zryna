@@ -1,7 +1,8 @@
 # M3 ownership composition evidence
 
-Status: Issue #277 planned evidence and integration matrix, not execution or implemented generic
-source capability. Read the [eight interface contracts](M3_OWNERSHIP_COMPOSITION.md) and
+Status: Issue #277 planned generic evidence and integration matrix, with the internal #278
+constructor-preparation candidate described below; not implemented generic source capability.
+Read the [eight interface contracts](M3_OWNERSHIP_COMPOSITION.md) and
 [Shared/Weak evidence](M3_SHARED_WEAK_EVIDENCE.md). Normative language/ABI authority remains
 unchanged. Existing tests below are located evidence, not newly executed by this document.
 
@@ -25,6 +26,105 @@ This candidate includes the #233–#237 extractions and the #288 constructor-ord
 `function_dispatch.rs` now exists in this candidate; proposed generic modules remain unimplemented.
 This describes the candidate tree, not the merge status of its prerequisite pull requests.
 Resolve final registration paths against the integrated parent before implementation.
+
+## Staged constructor commit envelope (#278)
+
+The private Struct, Enum and fixed-array constructor adapters now reserve their own final
+commit capacity after complete outer type/shape/field mapping and before child materialization.
+The checked precedence is aggregate operands, transition, result value, then result place
+(zero places for a Copy result). Parent-capacity rejection intentionally precedes child
+diagnostics at the constructor span. When capacity is available, declaration/index evaluation
+order and existing semantic diagnostics are unchanged. Vec retains its separate existing
+fallible construction reservation; source admission, IR, ABI and limits are unchanged.
+
+The aggregate route's private ordered-expression decisions separate source/type validation from
+materialization. Struct field types still resolve one child at a time under the constructor
+reservation; array element and selected enum payload types resolve before it. The shared
+classifier is used by the child-preparation candidate below without admitting additional source
+forms or public capability.
+
+Shared private operand decisions also retain the existing binding diagnostics, ancestry/mask
+availability rules and clone resource-check order. Direct projection APIs still materialize
+prefixes before contextual failures, and projected String clone budgets include those prefixes.
+Complete child preparation applies those same decisions to scratch topology instead: a rejected
+child tree publishes no new real prefix. These are distinct call boundaries, not changed
+projection diagnostic precedence.
+
+Shared aggregate resource decisions read committed and held counters without issuing credits or
+emitting identities. Constructor and ordinary-emission wrappers retain their different check
+orders, including the absence of a place check for Copy emission. The live constructor ticket
+remains responsible for checked acquisition and release; these views are not an immutable C2 plan.
+The ordered check chains now share those same decisions, while one borrowed credit ledger applies
+the existing constructor and assignment arithmetic to live or isolated scratch counters. Storage,
+panic semantics and final-commit order are unchanged. The child planner uses the same ledger on
+isolated counters; it does not acquire a second whole-subtree ticket in addition to nested tickets.
+
+The affine ticket releases its own credits in reverse order on child failure and immediately
+before final commit on success, preserving ancestor and assignment credits. Ordinary emission,
+whole/projected clone, projection topology materialization, compound assignment and direct
+partial-transfer preflights all account for held capacity. Committed arena counts still determine
+identities. Infallible aggregate commit reserves no fictional cleanup actions or plans.
+
+The `aggregate_constructor_envelope.rs` and `aggregate_constructor_envelope_flows.rs` tests
+separate injected-counter acquisition/frontier/unwind checks from authenticated source fixtures
+and independent full-IR valid replay. Injected held counts are not claims that every independent
+limit is reachable from dense source. These tests are source additions, not execution claims in
+this document; the handoff must report actual commands and results.
+
+## Internal child preparation and consumption candidate (#278)
+
+The aggregate `value` entry now prepares the complete currently admitted child tree before
+materializing any of its children. One iterative walker uses the shared classifier and keeps a
+single scratch owner state, canonical projection map, moved/partial masks, checked resource
+counters and constructor credits. Existing place metadata is borrowed; planned places are metadata,
+not speculative raw instructions. A private value-type snapshot observes the pending instruction
+suffix without advancing the real cache, then appends predicted result definitions. Instruction
+and value cursors remain distinct when earlier instructions have no result.
+
+Preparation rejection preserves the real instruction/place/cleanup arenas, owners and pending
+order, projection topology and masks, constructor cache contents/cursor, counters and outstanding
+credits. Earlier successful statements remain intact. The diagnostic still comes from the first
+ordered semantic or resource failure; a later invalid name cannot displace an earlier cleanup
+capacity failure. This intentionally replaces the previous retained **compile-time** child
+artifacts. It neither runs an allocator nor rolls back effects of an executing source program.
+
+The private single-use plan holds an exclusive lowerer borrow through consumption. Selected
+operations materialize without classifying or resolving source again. Release-build checks bind
+actual result identities/types, ordered immediate child operands, nested constructor contracts,
+cleanup IDs/roles and destination-prefix identity, resource effects, ordered per-operation owner
+deltas and final owner/topology
+state. Real constructor commits still observe the actual emitted value types and use the existing
+prepared-constructor authority. Mandatory independent full IR verification remains separate and
+cannot be replaced by a successful plan check.
+
+The covered child vocabulary is Bool/i32/String literals, Copy and whole-value references,
+static Copy/String projections, projected String clone, named whole aggregate clone, and nested
+Struct/FixedArray/selected Enum constructors. Context-only projected aggregate transfers/clones,
+Vec operations, handles, calls, borrowing and CFG are not newly admitted children. This candidate
+does not complete generic C2, #278, #83 or M3, and enables no runtime/backend/CLI/public profile.
+
+Zero-length fixed arrays and payloadless Enum variants are distinct from zero-field Struct
+declarations. The current protocol-v4 collection check rejects a zero-member data declaration
+before source authentication and lowering. A raw empty-Struct rejection test documents that
+boundary; it is not a successful prepared child or full-IR control, and this work does not change
+the admission policy.
+
+| Test source | Located coverage and limits |
+| --- | --- |
+| `constructor_child_preparation_red.rs` | Later-invalid child after a String literal or whole move; full real-state equality and exact diagnostics. The historical red cases must pass on the integrated implementation. |
+| `constructor_child_preparation_matrix.rs` | Authenticated nested arrays and Enum-array payload; exact valid instruction shapes through independent full IR verification, deterministic replay, first-error precedence and later-error atomicity. |
+| `constructor_preparation_types.rs` | Isolated cache observation, dense append/cursor checks and overflow rejection; helper tests, not target execution. |
+| `constructor_preparation_consumption.rs` | Private malformed-plan result, cleanup, constructor contract, range and same-typed child-order rejection, with successful controls. Internal invariant panics are not a source-error rollback guarantee. |
+| `constructor_preparation_controls.rs`, `constructor_preparation_control_fixtures.rs`, `constructor_preparation_copy_prefix.rs` | Source/IR positive controls for zero-length arrays, payloadless Enum variants, Copy parameters and bounded visits; fresh and prior-cached String-clone prefixes, plus cached Copy projection with a moved String sibling. Replays compare instruction-kind sequences, not complete IR structural equality. Empty-Struct protocol rejection is a separate negative control. |
+| `constructor_preparation_cleanup_boundaries.rs` | Exact/first-extra cleanup-plan and cleanup-action limits, competing limits and overflow, with full rejection-state equality. Initial counters/plans are synthetic; these budget frontiers do not establish full-program IR validity or runtime allocation behavior. |
+| `ordered_expression_decisions.rs`, `operand_projection_tests.rs` | Full rejected-child state equality while retaining earlier cleanup/name/field diagnostic precedence and unchanged direct projection behavior. |
+| `aggregate_constructor_envelope.rs`, `aggregate_constructor_envelope_flows.rs` | Full failure-state equality with held parent/assignment credits, separate from authenticated successful shape checks and synthetic frontier limits. |
+
+These are located source checks, not a substitute for a current execution receipt. Acceptance
+still requires exact test inventory, independent review, resource/complexity and ignored-boundary
+evidence, and the complete required Linux/Windows gates. Runtime failure-prefix cleanup and
+three-target execution remain separate authorities; compile-time state preservation does not
+prove them. The remaining generic operation, payload, call and CFG families below are not waived.
 
 ## Located tests, not complete composition proofs
 
@@ -87,8 +187,9 @@ commands/results and missing integration. No concurrent shared-file edits or gue
 
 #277 documentation drift checks bind real existing declarations, located tests and eight contract
 sections, with missing-symbol/section mutations. They do not verify future APIs or execute Rust.
-Re-freeze the current semantic inventory before code handoff: this candidate has351names,
-including2ignored proportional tests; historical345/346refactor evidence is not current proof. Preserve
+The frozen historical #277 checkpoint had 351 test names, including 2 ignored proportional tests.
+Re-freeze the actual semantic inventory for every current executable change before handoff;
+that historical count and earlier 345/346 refactor evidence are not current execution proof. Preserve
 existing44borrowing evidence guards and required ignored execution through preflight. Every later
 executable change requires independent source/IR review, relevant focused tests and complete
 preflight/M0 on Linux and Windows; contract-only narrow checks cannot replace those merge gates.

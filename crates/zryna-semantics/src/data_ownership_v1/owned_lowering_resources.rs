@@ -8,6 +8,10 @@ use super::owned_control_flow_resources::preflight_owned_place_capacity_with_res
 use super::owner_state::OwnerState;
 use super::string_vec_resource_estimates::OwnedStringPreparationEstimate;
 
+#[path = "owned_cleanup_recipes.rs"]
+mod cleanup_recipes;
+pub(super) use cleanup_recipes::{CleanupRecipe, CleanupUsage};
+
 #[derive(Clone, Copy)]
 pub(super) struct OwnedStringPreparationBudget {
     pub(super) cleanup_plans: usize,
@@ -262,50 +266,22 @@ impl<'a> OwnedCleanupAccounting<'a> {
         context: OwnedCleanupPlanContext,
         errors: &mut Errors<'_>,
     ) -> Option<raw::CleanupPlanId> {
-        if resource_budget_violation(
-            self.plans.len(),
-            self.reserved_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) {
-            errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup sites exceed the per-function M3 limit of {}",
-                    ir::MAX_CLEANUP_PLANS_PER_FUNCTION
-                ),
-                context.plan_guidance(),
-            );
-            return None;
-        }
-        let pending = owners.pending();
-        let excluded_present = excluded.is_some_and(|place| owners.contains(place));
-        let action_count = pending.len() - usize::from(excluded_present);
-        if resource_budget_violation(
-            *self.committed_actions,
-            self.reserved_actions.saturating_add(action_count),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived cleanup actions exceed the per-function M3 limit of {}",
-                    ir::MAX_DROP_ACTIONS_PER_FUNCTION
-                ),
-                context.action_guidance(),
-            );
-            return None;
-        }
-        let id = raw::CleanupPlanId(u32::try_from(self.plans.len()).unwrap_or(u32::MAX));
-        let actions = owners
-            .pending()
-            .iter()
-            .rev()
-            .copied()
-            .filter(|place| Some(*place) != excluded)
-            .map(raw::DropAction::DropPlace)
-            .collect();
+        let recipe = CleanupRecipe::reverse(
+            &CleanupUsage {
+                plans: self.plans.len(),
+                actions: *self.committed_actions,
+                reserved_plans: *self.reserved_plans,
+                reserved_actions: *self.reserved_actions,
+            },
+            owners.pending(),
+            excluded,
+            context,
+            at,
+            errors,
+        )?;
+        let id = recipe.id;
+        let action_count = recipe.action_count;
+        let actions = recipe.into_actions().collect();
         self.plans.push(raw::CleanupPlan { id, span: at, actions });
         self.commit_actions(action_count).expect("preflighted cleanup action count");
         Some(id)
@@ -333,29 +309,21 @@ impl<'a> OwnedCleanupAccounting<'a> {
         at: Span,
         errors: &mut Errors<'_>,
     ) -> Option<raw::CleanupPlanId> {
-        let action_count =
-            checked_vec_clone_prefix_action_count(owners.pending().len(), at, errors)?;
-        if resource_budget_violation(
-            self.plans.len(),
-            self.reserved_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) || resource_budget_violation(
-            *self.committed_actions,
-            self.reserved_actions.saturating_add(action_count),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            errors.at(
-                "ZRYNA-M3201",
-                at,
-                "Vec clone element cleanup exceeds the per-function M3 limits",
-                "reduce simultaneously live owned values or fallible Vec clones",
-            );
-            return None;
-        }
-        let id = raw::CleanupPlanId(u32::try_from(self.plans.len()).ok()?);
-        let actions = std::iter::once(raw::DropAction::DropVecInitializedPrefix(result_owner))
-            .chain(owners.pending().iter().rev().copied().map(raw::DropAction::DropPlace))
-            .collect();
+        let recipe = CleanupRecipe::vec_prefix(
+            &CleanupUsage {
+                plans: self.plans.len(),
+                actions: *self.committed_actions,
+                reserved_plans: *self.reserved_plans,
+                reserved_actions: *self.reserved_actions,
+            },
+            owners.pending(),
+            result_owner,
+            at,
+            errors,
+        )?;
+        let id = recipe.id;
+        let action_count = recipe.action_count;
+        let actions = recipe.into_actions().collect();
         self.plans.push(raw::CleanupPlan { id, span: at, actions });
         self.commit_actions(action_count).expect("preflighted cleanup action count");
         Some(id)
@@ -393,11 +361,10 @@ pub(super) fn push_aggregate_clone_prefix_cleanup(
     result_owner: raw::PlaceId,
     at: Span,
 ) -> Option<raw::CleanupPlanId> {
-    let action_count = owners.pending().len().checked_add(1)?;
-    let id = raw::CleanupPlanId(u32::try_from(plans.len()).ok()?);
-    let actions = std::iter::once(raw::DropAction::DropAggregateInitializedPrefix(result_owner))
-        .chain(owners.pending().iter().rev().copied().map(raw::DropAction::DropPlace))
-        .collect();
+    let recipe = CleanupRecipe::aggregate_prefix(plans.len(), owners.pending(), result_owner)?;
+    let id = recipe.id;
+    let action_count = recipe.action_count;
+    let actions = recipe.into_actions().collect();
     plans.push(raw::CleanupPlan { id, span: at, actions });
     commit_cleanup_actions(committed_actions, action_count)
         .expect("preflighted aggregate cleanup action count");

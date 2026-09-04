@@ -1,50 +1,35 @@
-use std::collections::BTreeSet;
-
-use zryna_ir::data_ownership_v1::{self as ir, raw};
+use zryna_ir::data_ownership_v1::raw;
 use zryna_source::{Span, UntrustedSpan};
 use zryna_syntax::v4::{RawExpressionKind, RawFieldInitializerKind};
 
-use super::super::global_resource_limits::{
-    aggregate_operand_budget_violation, aggregate_transition_budget_violation,
+use super::super::owned_constructor_plan::{
+    ConstructorKind, ConstructorPlanError, ConstructorShape, PreparedConstructor,
 };
 use super::super::owned_lowering_resources::push_aggregate_reverse_cleanup;
+use super::super::owner_state::OwnerDelta;
 use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
 
+pub(super) struct Emission {
+    pub(super) value: raw::ValueId,
+    pub(super) owners: Vec<OwnerDelta>,
+}
+
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    fn preflight_transition(&mut self, additional: usize, at: Span) -> bool {
-        if aggregate_transition_budget_violation(
-            self.instructions.len(),
-            self.reserved_transitions,
-            additional,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived ownership transitions exceed the per-function M3 limit of {}",
-                    ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
-                ),
-                "reduce private aggregate expressions and assignments",
-            );
-            return false;
-        }
-        true
+    pub(super) fn preflight_transition(&mut self, additional: usize, at: Span) -> bool {
+        self.resource_usage().transition(additional, at, self.errors)
     }
 
     pub(super) fn reserve_transition(&mut self, at: Span) -> bool {
         if !self.preflight_transition(1, at) {
             return false;
         }
-        self.reserved_transitions += 1;
+        self.credit_ledger().acquire_assignment();
         true
     }
 
     pub(super) fn release_transition(&mut self) {
-        self.reserved_transitions = self
-            .reserved_transitions
-            .checked_sub(1)
-            .expect("reserved aggregate assignment transition");
+        self.credit_ledger().release_assignment();
     }
 
     pub(super) fn emit_effect(&mut self, at: Span, kind: raw::InstructionKind) -> bool {
@@ -76,31 +61,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
         kind: raw::InstructionKind,
     ) -> Option<raw::ValueId> {
-        if !self.preflight_transition(1, at) {
-            return None;
-        }
-        if self.next_value as usize >= ir::MAX_VALUES_PER_FUNCTION {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived values exceed the per-function M3 limit of {}",
-                    ir::MAX_VALUES_PER_FUNCTION
-                ),
-                "reduce private aggregate expressions",
-            );
-            return None;
-        }
-        if !ty.is_copy() && self.places.len() >= ir::MAX_PLACES_PER_FUNCTION {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived places exceed the per-function M3 limit of {}",
-                    ir::MAX_PLACES_PER_FUNCTION
-                ),
-                "reduce owned aggregate temporaries and locals",
-            );
+        self.emit_recorded(ty, at, kind).map(|emission| emission.value)
+    }
+
+    pub(super) fn emit_recorded(
+        &mut self,
+        ty: Ty,
+        at: Span,
+        kind: raw::InstructionKind,
+    ) -> Option<Emission> {
+        if !self.resource_usage().emit(ty, at, self.errors) {
             return None;
         }
         let value = raw::ValueId(self.next_value);
@@ -110,6 +80,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             span: at,
             kind,
         });
+        let mut owners = Vec::new();
         if !ty.is_copy() {
             let owner = raw::PlaceId(u32::try_from(self.places.len()).unwrap_or(u32::MAX));
             self.places.push(raw::Place {
@@ -118,9 +89,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 span: at,
                 kind: raw::PlaceKind::Temporary(value),
             });
-            self.owners.register(value, owner)?;
+            owners.push(self.owners.register(value, owner)?);
         }
-        Some(value)
+        Some(Emission { value, owners })
     }
 
     pub(super) fn target_consumption_span(
@@ -187,82 +158,64 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     pub(super) fn reserve_operands(&mut self, additional: usize, at: Span) -> Option<()> {
-        if aggregate_operand_budget_violation(self.aggregate_operands, additional) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived aggregate operands exceed the M3 limit of {}",
-                    ir::MAX_AGGREGATE_OPERANDS
-                ),
-                "reduce Struct fields and fixed-array elements",
-            );
+        if !self.preflight_constructor_operands(additional, at) {
             return None;
         }
-        self.aggregate_operands += additional;
+        self.aggregate_operands = self
+            .aggregate_operands
+            .checked_add(additional)
+            .expect("constructor operand capacity preflighted");
         Some(())
     }
 
-    pub(super) fn prevalidate_constructor_operands(
-        &mut self,
-        values: &[raw::ValueId],
-        at: Span,
-    ) -> Option<Vec<raw::ValueId>> {
-        let mut seen = BTreeSet::new();
-        let mut consumed = Vec::new();
-        for value in values {
-            let Some(owner) = self.owners.owner(*value) else { continue };
-            if !self.owners.contains(owner) {
-                self.errors.at(
-                    "ZRYNA-M3014",
-                    at,
-                    "aggregate constructor operand owner is unavailable before commit",
-                    "construct from only currently pending exact values",
-                );
-                return None;
-            }
-            if !seen.insert(owner) {
-                self.errors.at(
-                    "ZRYNA-M3014",
-                    at,
-                    "aggregate constructor attempts to consume one owner more than once",
-                    "move each non-Copy field or element exactly once",
-                );
-                return None;
-            }
-            consumed.push(*value);
-        }
-        Some(consumed)
-    }
-
-    pub(super) fn commit_constructor_operands(&mut self, values: &[raw::ValueId]) {
-        for value in values {
-            self.owners
-                .transfer(*value)
-                .expect("prevalidated aggregate operand remains pending until infallible commit");
-        }
-    }
-
-    pub(super) fn commit_enum(
+    pub(super) fn commit_constructor(
         &mut self,
         expected: Ty,
+        kind: ConstructorKind,
+        values: &[raw::ValueId],
         at: Span,
-        ordinal: usize,
-        payload: Option<raw::ValueId>,
-    ) -> Option<raw::ValueId> {
-        self.reserve_operands(usize::from(payload.is_some()), at)?;
-        let operands = payload.into_iter().collect::<Vec<_>>();
-        let consumed = self.prevalidate_constructor_operands(&operands, at)?;
-        let result = self.emit(
-            expected,
-            at,
-            raw::InstructionKind::EnumConstruct {
-                variant: u32::try_from(ordinal).ok()?,
-                payload: operands.first().copied(),
-                cleanup: None,
-            },
-        )?;
-        self.commit_constructor_operands(&consumed);
-        Some(result)
+    ) -> Option<Emission> {
+        self.reserve_operands(values.len(), at)?;
+        let prepared = ConstructorShape::derive(self.layouts, expected, kind, values.len(), |id| {
+            self.node_types.iter().flatten().find(|ty| ty.layout == id).copied()
+        })
+        .and_then(|shape| {
+            self.constructor_types.observe(&self.instructions)?;
+            shape.prepare(values, |value| self.constructor_types.get(value), &self.owners)
+        });
+        let prepared = constructor_result(prepared, at, self.errors)?;
+        let instruction = prepared.instruction(None).expect("infallible aggregate constructor");
+        let mut emission = self.emit_recorded(prepared.result_type(), at, instruction)?;
+        emission.owners.extend(prepared.commit(&mut self.owners));
+        Some(emission)
     }
+}
+
+pub(super) fn constructor_result(
+    prepared: Result<PreparedConstructor, ConstructorPlanError>,
+    at: Span,
+    errors: &mut super::super::Errors<'_>,
+) -> Option<PreparedConstructor> {
+    let prepared = match prepared {
+        Ok(prepared) => prepared,
+        Err(ConstructorPlanError::DuplicateOwner) => {
+            errors.at(
+                "ZRYNA-M3014",
+                at,
+                "aggregate constructor attempts to consume one owner more than once",
+                "move each non-Copy field or element exactly once",
+            );
+            return None;
+        }
+        Err(_) => {
+            errors.at(
+                "ZRYNA-M3014",
+                at,
+                "aggregate constructor operand owner is unavailable before commit",
+                "construct from only currently pending exact values",
+            );
+            return None;
+        }
+    };
+    Some(prepared)
 }

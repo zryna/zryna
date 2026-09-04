@@ -4,16 +4,32 @@ use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::{self as layout, raw as raw_layout};
 use zryna_syntax::v4 as syntax;
 
+use super::owned_constructor_plan::ConstructorValueTypes;
 use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 
 mod assignment_planning;
 mod assignments;
+mod availability;
 mod clone;
+mod clone_decisions;
+mod constructor_preparation;
+mod constructor_resources;
 mod constructors;
 mod driver;
+mod expression_decisions;
+mod operand_decisions;
 mod partial_transfers;
+mod preparation_operations;
+mod preparation_plan;
+mod preparation_state;
 mod projected_reads;
+mod projection_resolution;
+#[cfg(test)]
+#[path = "../tests/projection_resolution_checks.rs"]
+pub(in crate::data_ownership_v1) mod projection_resolution_checks;
+mod projection_topology;
 mod projections;
+mod resource_decisions;
 mod shape;
 mod state;
 mod statements;
@@ -42,6 +58,8 @@ struct PrivateOwnedAggregateLowerer<'a, 'f, 'e> {
     partial_roots: BTreeSet<raw::PlaceId>,
     places: Vec<raw::Place>,
     instructions: Vec<raw::Instruction>,
+    constructor_types: ConstructorValueTypes,
+    constructor_storage: constructor_resources::ConstructorStorage,
     cleanup_plans: Vec<raw::CleanupPlan>,
     cleanup_actions: usize,
     aggregate_operands: usize,
