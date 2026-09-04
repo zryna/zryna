@@ -172,6 +172,7 @@ impl<P: Fn(raw::PlaceId) -> Option<raw::PlaceId>> OperandDecisions<'_, '_, '_, P
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
+    #[cfg(test)]
     pub(super) fn clone_usage(&self) -> CloneUsage {
         CloneUsage {
             values: self.budget_values(),

@@ -9,25 +9,25 @@ use zryna_source::Span;
 #[path = "tests/owned_cleanup_recipes.rs"]
 mod tests;
 
-pub(super) struct CleanupUsage {
-    pub(super) plans: usize,
-    pub(super) actions: usize,
-    pub(super) reserved_plans: usize,
-    pub(super) reserved_actions: usize,
+pub(in crate::data_ownership_v1) struct CleanupUsage {
+    pub(in crate::data_ownership_v1) plans: usize,
+    pub(in crate::data_ownership_v1) actions: usize,
+    pub(in crate::data_ownership_v1) reserved_plans: usize,
+    pub(in crate::data_ownership_v1) reserved_actions: usize,
 }
 
 // The pending sequence comes from OwnerState's unique-owner invariant. This description
 // preserves existing counts and action order; it neither verifies owners nor issues capacity.
-pub(super) struct CleanupRecipe<'a> {
-    pub(super) id: raw::CleanupPlanId,
-    pub(super) action_count: usize,
+pub(in crate::data_ownership_v1) struct CleanupRecipe<'a> {
+    pub(in crate::data_ownership_v1) id: raw::CleanupPlanId,
+    pub(in crate::data_ownership_v1) action_count: usize,
     pending: &'a [raw::PlaceId],
     excluded: Option<raw::PlaceId>,
     prefix: Option<raw::DropAction>,
 }
 
 impl<'a> CleanupRecipe<'a> {
-    pub(super) fn reverse(
+    pub(in crate::data_ownership_v1) fn reverse(
         usage: &CleanupUsage,
         pending: &'a [raw::PlaceId],
         excluded: Option<raw::PlaceId>,
@@ -110,7 +110,7 @@ impl<'a> CleanupRecipe<'a> {
 
     // Aggregate clone callers already establish capacity. This retains only the original
     // checked count and plan-ID conversion, not a new independent budget gate.
-    pub(super) fn aggregate_prefix(
+    pub(in crate::data_ownership_v1) fn aggregate_prefix(
         plans: usize,
         pending: &'a [raw::PlaceId],
         result_owner: raw::PlaceId,
@@ -126,7 +126,9 @@ impl<'a> CleanupRecipe<'a> {
         })
     }
 
-    pub(super) fn into_actions(self) -> impl Iterator<Item = raw::DropAction> + 'a {
+    pub(in crate::data_ownership_v1) fn into_actions(
+        self,
+    ) -> impl Iterator<Item = raw::DropAction> + 'a {
         let Self { pending, excluded, prefix, .. } = self;
         prefix.into_iter().chain(
             pending

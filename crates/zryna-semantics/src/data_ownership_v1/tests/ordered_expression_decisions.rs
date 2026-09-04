@@ -1,3 +1,4 @@
+use super::child_preparation_red::state as preparation_state;
 use super::*;
 use crate::data_ownership_v1::owned_aggregate_lowering::expression_decisions::{
     ExpressionDecisions, ExpressionKind,
@@ -77,7 +78,7 @@ fn ordered_expression_decisions_map_struct_fields_without_resolving_children_or_
 }
 
 #[test]
-fn ordered_expression_decisions_preserve_later_failure_artifacts_and_earlier_cleanup_precedence() {
+fn ordered_expression_decisions_reject_later_failure_atomically_and_preserve_cleanup_precedence() {
     let (mut source, mut snapshot) = fixtures::snapshot(Fixture::Pair);
     let expression = &mut snapshot.files[0].functions[0].body.expressions[0];
     let at = expression.span;
@@ -116,33 +117,16 @@ fn ordered_expression_decisions_preserve_later_failure_artifacts_and_earlier_cle
                     // Counter-only frontier, not a claim that this is complete valid raw IR.
                     lowerer.cleanup_actions = ir::MAX_DROP_ACTIONS_PER_FUNCTION + 1;
                 }
+                let before = preparation_state(lowerer);
                 assert!(lowerer.value(root_value(lowerer, 0), result).is_none());
+                assert_eq!(preparation_state(lowerer), before);
                 assert!(lowerer.constructor_storage_is_clear());
                 assert_eq!(lowerer.reserved_transitions, 0);
-                assert_eq!(lowerer.instructions.len(), usize::from(!exhausted_cleanup));
-                assert_eq!(lowerer.places.len(), usize::from(!exhausted_cleanup));
-                assert_eq!(lowerer.owners.pending().len(), usize::from(!exhausted_cleanup));
-                assert_eq!(lowerer.cleanup_plans.len(), usize::from(!exhausted_cleanup));
-                assert_eq!(lowerer.aggregate_operands, 0);
-                assert_eq!(lowerer.next_value, u32::from(!exhausted_cleanup));
-                assert_eq!(lowerer.next_local, 0);
+                assert_no_materialization(lowerer);
                 assert_eq!(
                     lowerer.cleanup_actions,
                     if exhausted_cleanup { ir::MAX_DROP_ACTIONS_PER_FUNCTION + 1 } else { 0 }
                 );
-                if exhausted_cleanup {
-                    assert_no_materialization(lowerer);
-                } else {
-                    assert!(matches!(
-                        lowerer.instructions[0].kind,
-                        raw::InstructionKind::StringFromUtf8 { .. }
-                    ));
-                    assert_eq!(lowerer.instructions[0].span, string_at);
-                    assert_eq!(lowerer.owners.pending(), [raw::PlaceId(0)]);
-                    assert_eq!(lowerer.owners.owner(raw::ValueId(0)), Some(raw::PlaceId(0)));
-                    assert_eq!(lowerer.cleanup_plans[0].span, string_at);
-                    assert!(lowerer.cleanup_plans[0].actions.is_empty());
-                }
             });
             assert_eq!(errors, expected, "exact ordered diagnostic including source authority");
             assert_eq!(errors.len(), 1);

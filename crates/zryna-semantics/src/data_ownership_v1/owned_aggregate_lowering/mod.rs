@@ -12,12 +12,16 @@ mod assignments;
 mod availability;
 mod clone;
 mod clone_decisions;
+mod constructor_preparation;
 mod constructor_resources;
 mod constructors;
 mod driver;
 mod expression_decisions;
 mod operand_decisions;
 mod partial_transfers;
+mod preparation_operations;
+mod preparation_plan;
+mod preparation_state;
 mod projected_reads;
 mod projection_resolution;
 #[cfg(test)]

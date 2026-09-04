@@ -178,12 +178,12 @@ fn constructor_envelope_array_and_enum_parent_failure_child_failure_and_exact_co
                     held[2] += 1;
                 }
                 set_credits(lowerer, held);
-                let before = state_counts(lowerer);
+                let before = child_preparation_red::state(lowerer);
                 let value = lowerer.value(root_value(lowerer, statement), result);
                 assert_eq!(credits(lowerer), held);
                 assert_eq!(value.is_some(), mode == 2);
-                if mode == 0 {
-                    assert_eq!(state_counts(lowerer), before);
+                if mode != 2 {
+                    assert_eq!(child_preparation_red::state(lowerer), before);
                 }
                 if mode == 2 {
                     assert_eq!(lowerer.next_value as usize, current[2] + costs[2]);

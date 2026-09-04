@@ -12,13 +12,19 @@ pub(super) use credit_ledger::CreditLedgerMut;
 
 #[cfg(test)]
 #[path = "../tests/aggregate_constructor_envelope.rs"]
-mod tests;
+pub(super) mod tests;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(super) struct ConstructorStorage {
     values: usize,
     places: usize,
     operands: usize,
+}
+
+impl ConstructorStorage {
+    pub(super) fn counts(&self) -> [usize; 3] {
+        [self.values, self.places, self.operands]
+    }
 }
 
 // This affine ticket owns only the final constructor's capacity, not its child effects.
@@ -33,6 +39,14 @@ impl ConstructorCommitReservation {
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
+    pub(super) fn preparation_storage(&self) -> ConstructorStorage {
+        ConstructorStorage {
+            values: self.constructor_storage.values,
+            places: self.constructor_storage.places,
+            operands: self.constructor_storage.operands,
+        }
+    }
+
     pub(super) fn credit_ledger(&mut self) -> CreditLedgerMut<'_> {
         CreditLedgerMut {
             storage: &mut self.constructor_storage,

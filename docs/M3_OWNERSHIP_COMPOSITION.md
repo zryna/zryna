@@ -40,6 +40,13 @@ temporaries according to the original trap. This is not rollback of earlier succ
 evaluation. A trap prevents later evaluation. Preserve diagnostic precedence, authenticated spans
 and reservation-release order; a terminal resource diagnostic prevents later dependent planning.
 
+Compile-time rejection and runtime failure are separate observations. The internal aggregate
+child-preparation candidate leaves real compiler arenas, ownership state and type cache unchanged
+when a child tree is rejected, while retaining earlier successful statements. Its runtime cleanup
+instructions still follow the failure/commit contract above; planning is not target execution.
+See the [candidate evidence and remaining scope](M3_OWNERSHIP_COMPOSITION_EVIDENCE.md) rather than
+interpreting this internal checkpoint as completed generic C2 or public M3 support.
+
 ## C3: Place replacement and initialized shape
 
 Input: exact place topology, active enum variant, initialized field/element mask, borrow access and

@@ -25,7 +25,16 @@ mod operands;
 #[path = "aggregate_resource_decisions.rs"]
 mod resources;
 
-fn with_snapshot(
+#[path = "constructor_child_preparation_red.rs"]
+mod child_preparation_red;
+
+#[path = "constructor_child_preparation_matrix.rs"]
+mod child_preparation_matrix;
+
+#[path = "constructor_preparation_cleanup_boundaries.rs"]
+mod preparation_cleanup;
+
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_snapshot(
     source: &str,
     snapshot: RawProjectSyntaxSnapshot,
     exercise: impl FnOnce(&mut PrivateOwnedAggregateLowerer<'_, '_, '_>, Ty),
@@ -85,7 +94,7 @@ fn with_snapshot(
     errors.finish()
 }
 
-fn with_fixture(
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_fixture(
     fixture: Fixture,
     exercise: impl FnOnce(&mut PrivateOwnedAggregateLowerer<'_, '_, '_>, Ty),
 ) -> Vec<Diagnostic> {
@@ -108,7 +117,10 @@ fn set_credits(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>, values: [
     lowerer.reserved_transitions = values[1];
 }
 
-fn root_value(lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>, statement: usize) -> u32 {
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn root_value(
+    lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>,
+    statement: usize,
+) -> u32 {
     match lowerer.function.body.statements[statement].kind {
         RawStatementKind::LocalDeclaration { initializer, .. } => initializer,
         RawStatementKind::Return { value, .. } => value,
@@ -116,7 +128,7 @@ fn root_value(lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>, statement: usi
     }
 }
 
-fn run_statement(
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn run_statement(
     lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
     index: usize,
     result: Ty,
@@ -262,6 +274,7 @@ fn constructor_envelope_nested_exact_and_first_extra_restore_all_surrounding_cre
                 held[failed_dimension] += 1;
             }
             set_credits(lowerer, held);
+            let before = child_preparation_red::state(lowerer);
             let value = lowerer.value(root_value(lowerer, 0), result);
             assert_eq!(credits(lowerer), held);
             if failed_dimension == 4 {
@@ -275,6 +288,7 @@ fn constructor_envelope_nested_exact_and_first_extra_restore_all_surrounding_cre
                 );
             } else {
                 assert!(value.is_none());
+                assert_eq!(child_preparation_red::state(lowerer), before);
             }
             assert!(lowerer.budget_values() <= LIMITS[2]);
             assert!(lowerer.budget_places() <= LIMITS[3]);

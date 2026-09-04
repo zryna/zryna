@@ -112,17 +112,29 @@ test('planned ownership composition binds existing declarations and located test
   assert.match(dispatch, /fn /);
   assert.match(evidence, /500 lines triggers a split\/cohesion review, not a compulsory limit/);
   assert.match(evidence, /larger cohesive module is allowed with a documented rationale/);
+  const upgradeEvidenceRequirements = ['producer-facing type/signature shape before CFG construction',
+    'mandatory full IR verification seals', 'separate bounded transition-model proof', 'not target execution'];
   function checkUpgradeEvidence(text) {
-    const row = text.split('\n').find(line => line.startsWith('| `generic_upgrade_synthetic_success_signature` |')) ?? '';
-    for (const requirement of ['producer-facing type/signature shape before CFG construction',
-      'mandatory full IR verification seals', 'separate bounded transition-model proof', 'not target execution']) {
+    const rows = text.split('\n').filter(line => line.startsWith('| `generic_upgrade_synthetic_success_signature` |'));
+    assert.equal(rows.length, 1, 'one exact upgrade evidence row');
+    const [row] = rows;
+    for (const requirement of upgradeEvidenceRequirements) {
       assert(row.includes(requirement), requirement);
     }
+    return row;
   }
-  checkUpgradeEvidence(evidence);
-  for (const requirement of ['producer-facing type/signature shape before CFG construction',
-    'mandatory full IR verification seals', 'separate bounded transition-model proof', 'not target execution']) {
-    assert.throws(() => checkUpgradeEvidence(evidence.replace(requirement, 'removed requirement')));
+  // Matching prose elsewhere must not redirect a mutation away from the checked row.
+  for (const text of [evidence, `${upgradeEvidenceRequirements.join('; ')}\n${evidence}`]) {
+    const row = checkUpgradeEvidence(text);
+    for (const requirement of upgradeEvidenceRequirements) {
+      const changedRow = row.replace(requirement, 'removed requirement');
+      assert.notEqual(changedRow, row);
+      const changed = text.replace(row, changedRow);
+      assert.notEqual(changed, text);
+      assert.throws(() => checkUpgradeEvidence(changed), error => error.message === requirement);
+    }
+    assert.throws(() => checkUpgradeEvidence(text.replace(row, '')), /one exact upgrade evidence row/);
+    assert.throws(() => checkUpgradeEvidence(`${text}\n${row}`), /one exact upgrade evidence row/);
   }
 });
 

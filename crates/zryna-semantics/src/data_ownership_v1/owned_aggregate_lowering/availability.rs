@@ -52,13 +52,17 @@ pub(super) fn materialized_availability<'a>(
     places: &'a [raw::Place],
 ) -> AvailabilityView<'a, impl Fn(raw::PlaceId) -> Option<raw::PlaceId> + 'a> {
     AvailabilityView::new(owners, moved_projections, partial_roots, move |place| {
-        match places.get(place.0 as usize)?.kind {
-            raw::PlaceKind::StructField { base, .. }
-            | raw::PlaceKind::EnumPayload { base, .. }
-            | raw::PlaceKind::FixedArrayConstant { base, .. } => Some(base),
-            raw::PlaceKind::Parameter(_)
-            | raw::PlaceKind::Local(_)
-            | raw::PlaceKind::Temporary(_) => None,
-        }
+        parent_kind(&places.get(place.0 as usize)?.kind)
     })
+}
+
+pub(super) fn parent_kind(kind: &raw::PlaceKind) -> Option<raw::PlaceId> {
+    match kind {
+        raw::PlaceKind::StructField { base, .. }
+        | raw::PlaceKind::EnumPayload { base, .. }
+        | raw::PlaceKind::FixedArrayConstant { base, .. } => Some(*base),
+        raw::PlaceKind::Parameter(_) | raw::PlaceKind::Local(_) | raw::PlaceKind::Temporary(_) => {
+            None
+        }
+    }
 }

@@ -107,11 +107,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         )?;
         let aggregate_subobject = match operation {
             super::operand_decisions::ProjectionOperation::Copy => {
-                return self.emit(
-                    expected,
-                    at,
-                    raw::InstructionKind::CopyFromPlace { place: projection.place },
-                );
+                return self.emit_selected_projection(projection, expected, at, &operation);
             }
             super::operand_decisions::ProjectionOperation::Move { aggregate_subobject } => {
                 aggregate_subobject
@@ -157,16 +153,49 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 at,
             );
         }
-        let value = self.emit(
+        self.emit_selected_projection(projection, expected, at, &operation)
+    }
+
+    pub(super) fn emit_selected_projection(
+        &mut self,
+        projection: super::super::type_model::OwnedAggregatePlace,
+        expected: Ty,
+        at: Span,
+        operation: &super::operand_decisions::ProjectionOperation,
+    ) -> Option<raw::ValueId> {
+        self.emit_projection_recorded(projection, expected, at, operation)
+            .map(|emission| emission.value)
+    }
+
+    pub(super) fn emit_projection_recorded(
+        &mut self,
+        projection: super::super::type_model::OwnedAggregatePlace,
+        expected: Ty,
+        at: Span,
+        operation: &super::operand_decisions::ProjectionOperation,
+    ) -> Option<super::state::Emission> {
+        let aggregate_subobject = match operation {
+            super::operand_decisions::ProjectionOperation::Copy => {
+                return self.emit_recorded(
+                    expected,
+                    at,
+                    raw::InstructionKind::CopyFromPlace { place: projection.place },
+                );
+            }
+            super::operand_decisions::ProjectionOperation::Move { aggregate_subobject } => {
+                aggregate_subobject
+            }
+        };
+        let emission = self.emit_recorded(
             expected,
             at,
             raw::InstructionKind::MoveFromPlace { place: projection.place },
         )?;
-        if aggregate_subobject {
+        if *aggregate_subobject {
             self.aggregate_subobject_moves += 1;
         }
         self.moved_projections.insert(projection.place);
         self.partial_roots.insert(projection.root);
-        Some(value)
+        Some(emission)
     }
 }

@@ -196,6 +196,36 @@ pub(super) struct ConstructorValueTypes {
 }
 
 impl ConstructorValueTypes {
+    pub(super) fn observed_snapshot(
+        &self,
+        instructions: &[raw::Instruction],
+    ) -> Result<Self, ConstructorPlanError> {
+        let mut snapshot =
+            Self { types: self.types.clone(), scanned_instructions: self.scanned_instructions };
+        snapshot.observe(instructions)?;
+        Ok(snapshot)
+    }
+
+    pub(super) fn append_predicted(
+        &mut self,
+        value: raw::ValueId,
+        ty: raw::TypeId,
+        instruction_index: usize,
+    ) -> Result<(), ConstructorPlanError> {
+        if value.0 as usize != self.types.len() || instruction_index != self.scanned_instructions {
+            return Err(ConstructorPlanError::WrongShape);
+        }
+        let next_instruction =
+            self.scanned_instructions.checked_add(1).ok_or(ConstructorPlanError::WrongShape)?;
+        self.types.push(ty);
+        self.scanned_instructions = next_instruction;
+        Ok(())
+    }
+
+    pub(super) fn checkpoint(&self) -> (usize, usize) {
+        (self.types.len(), self.scanned_instructions)
+    }
+
     pub(super) fn record_parameter(
         &mut self,
         definition: &raw::ValueDefinition,
@@ -231,3 +261,7 @@ impl ConstructorValueTypes {
         self.types.get(value.0 as usize).copied()
     }
 }
+
+#[cfg(test)]
+#[path = "tests/constructor_preparation_types.rs"]
+mod preparation_types_tests;

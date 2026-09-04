@@ -8,18 +8,6 @@ use super::super::type_model::{Binding, Ty};
 use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    pub(super) fn clone_aggregate(
-        &mut self,
-        operand: u32,
-        expected: Ty,
-        at: Span,
-    ) -> Option<raw::ValueId> {
-        let usage = self.clone_usage();
-        let binding =
-            self.operand_decisions().aggregate_clone_decision(operand, expected, at, &usage)?;
-        self.emit_aggregate_clone(&binding, expected, at)
-    }
-
     pub(super) fn emit_aggregate_clone(
         &mut self,
         binding: &Binding,
@@ -29,11 +17,23 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let cleanup = self.push_cleanup(at, None)?;
         let result_owner = raw::PlaceId(u32::try_from(self.places.len()).ok()?);
         let element_cleanup = self.push_aggregate_clone_prefix_cleanup(at, result_owner)?;
-        self.emit(
+        self.emit_prepared_aggregate_clone(binding.place, expected, at, cleanup, element_cleanup)
+            .map(|emission| emission.value)
+    }
+
+    pub(super) fn emit_prepared_aggregate_clone(
+        &mut self,
+        place: raw::PlaceId,
+        expected: Ty,
+        at: Span,
+        cleanup: raw::CleanupPlanId,
+        element_cleanup: raw::CleanupPlanId,
+    ) -> Option<super::state::Emission> {
+        self.emit_recorded(
             expected,
             at,
             raw::InstructionKind::ClonePlace {
-                place: binding.place,
+                place,
                 cleanup,
                 element_cleanup: Some(element_cleanup),
             },
@@ -159,6 +159,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(result)
     }
 
+    #[cfg(test)]
     pub(super) fn clone_projected_string(
         &mut self,
         operand: u32,
@@ -169,15 +170,36 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let usage = self.clone_usage();
         let projection =
             self.operand_decisions().string_clone_decision(projection, expected, at, &usage)?;
+        self.emit_string_clone(projection, expected, at)
+    }
+
+    #[cfg(test)]
+    pub(super) fn emit_string_clone(
+        &mut self,
+        projection: super::super::type_model::OwnedAggregatePlace,
+        expected: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
         let cleanup = self.push_cleanup(at, None)?;
-        self.emit(
+        self.emit_prepared_string_clone(projection, expected, at, cleanup)
+            .map(|emission| emission.value)
+    }
+
+    pub(super) fn emit_prepared_string_clone(
+        &mut self,
+        projection: super::super::type_model::OwnedAggregatePlace,
+        expected: Ty,
+        at: Span,
+        cleanup: raw::CleanupPlanId,
+    ) -> Option<super::state::Emission> {
+        self.emit_recorded(
             expected,
             at,
             raw::InstructionKind::StringClone { place: projection.place, cleanup },
         )
     }
 
-    fn push_aggregate_clone_prefix_cleanup(
+    pub(super) fn push_aggregate_clone_prefix_cleanup(
         &mut self,
         at: Span,
         result_owner: raw::PlaceId,

@@ -10,7 +10,7 @@ use super::string_vec_resource_estimates::OwnedStringPreparationEstimate;
 
 #[path = "owned_cleanup_recipes.rs"]
 mod cleanup_recipes;
-use cleanup_recipes::{CleanupRecipe, CleanupUsage};
+pub(super) use cleanup_recipes::{CleanupRecipe, CleanupUsage};
 
 #[derive(Clone, Copy)]
 pub(super) struct OwnedStringPreparationBudget {

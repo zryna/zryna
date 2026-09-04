@@ -304,17 +304,38 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
     ) -> Option<raw::ValueId> {
         let decision = self.operand_decisions().reference_decision(name, expected)?;
+        self.emit_reference_decision(decision, expected, at)
+    }
+
+    pub(super) fn emit_reference_decision(
+        &mut self,
+        decision: super::operand_decisions::ReferenceDecision,
+        expected: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        self.emit_reference_recorded(decision, expected, at).map(|emission| emission.value)
+    }
+
+    pub(super) fn emit_reference_recorded(
+        &mut self,
+        decision: super::operand_decisions::ReferenceDecision,
+        expected: Ty,
+        at: Span,
+    ) -> Option<super::state::Emission> {
         let binding = decision.binding;
         if matches!(decision.kind, super::operand_decisions::ReferenceKind::Copy) {
-            return self.emit(
+            return self.emit_recorded(
                 expected,
                 at,
                 raw::InstructionKind::CopyFromPlace { place: binding.place },
             );
         }
-        let value =
-            self.emit(expected, at, raw::InstructionKind::MoveFromPlace { place: binding.place })?;
-        self.owners.rehome_move_result(value, binding.place)?;
-        Some(value)
+        let mut emission = self.emit_recorded(
+            expected,
+            at,
+            raw::InstructionKind::MoveFromPlace { place: binding.place },
+        )?;
+        emission.owners.push(self.owners.rehome_move_result(emission.value, binding.place)?);
+        Some(emission)
     }
 }

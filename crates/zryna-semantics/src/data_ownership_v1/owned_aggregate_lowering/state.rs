@@ -3,11 +3,17 @@ use zryna_source::{Span, UntrustedSpan};
 use zryna_syntax::v4::{RawExpressionKind, RawFieldInitializerKind};
 
 use super::super::owned_constructor_plan::{
-    ConstructorKind, ConstructorPlanError, ConstructorShape,
+    ConstructorKind, ConstructorPlanError, ConstructorShape, PreparedConstructor,
 };
 use super::super::owned_lowering_resources::push_aggregate_reverse_cleanup;
+use super::super::owner_state::OwnerDelta;
 use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
+
+pub(super) struct Emission {
+    pub(super) value: raw::ValueId,
+    pub(super) owners: Vec<OwnerDelta>,
+}
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn preflight_transition(&mut self, additional: usize, at: Span) -> bool {
@@ -55,6 +61,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
         kind: raw::InstructionKind,
     ) -> Option<raw::ValueId> {
+        self.emit_recorded(ty, at, kind).map(|emission| emission.value)
+    }
+
+    pub(super) fn emit_recorded(
+        &mut self,
+        ty: Ty,
+        at: Span,
+        kind: raw::InstructionKind,
+    ) -> Option<Emission> {
         if !self.resource_usage().emit(ty, at, self.errors) {
             return None;
         }
@@ -65,6 +80,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             span: at,
             kind,
         });
+        let mut owners = Vec::new();
         if !ty.is_copy() {
             let owner = raw::PlaceId(u32::try_from(self.places.len()).unwrap_or(u32::MAX));
             self.places.push(raw::Place {
@@ -73,9 +89,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 span: at,
                 kind: raw::PlaceKind::Temporary(value),
             });
-            self.owners.register(value, owner)?;
+            owners.push(self.owners.register(value, owner)?);
         }
-        Some(value)
+        Some(Emission { value, owners })
     }
 
     pub(super) fn target_consumption_span(
@@ -158,7 +174,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         kind: ConstructorKind,
         values: &[raw::ValueId],
         at: Span,
-    ) -> Option<raw::ValueId> {
+    ) -> Option<Emission> {
         self.reserve_operands(values.len(), at)?;
         let prepared = ConstructorShape::derive(self.layouts, expected, kind, values.len(), |id| {
             self.node_types.iter().flatten().find(|ty| ty.layout == id).copied()
@@ -167,46 +183,39 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             self.constructor_types.observe(&self.instructions)?;
             shape.prepare(values, |value| self.constructor_types.get(value), &self.owners)
         });
-        let prepared = match prepared {
-            Ok(prepared) => prepared,
-            Err(ConstructorPlanError::DuplicateOwner) => {
-                self.errors.at(
-                    "ZRYNA-M3014",
-                    at,
-                    "aggregate constructor attempts to consume one owner more than once",
-                    "move each non-Copy field or element exactly once",
-                );
-                return None;
-            }
-            Err(_) => {
-                self.errors.at(
-                    "ZRYNA-M3014",
-                    at,
-                    "aggregate constructor operand owner is unavailable before commit",
-                    "construct from only currently pending exact values",
-                );
-                return None;
-            }
-        };
+        let prepared = constructor_result(prepared, at, self.errors)?;
         let instruction = prepared.instruction(None).expect("infallible aggregate constructor");
-        let result = self.emit(prepared.result_type(), at, instruction)?;
-        let _ = prepared.commit(&mut self.owners);
-        Some(result)
+        let mut emission = self.emit_recorded(prepared.result_type(), at, instruction)?;
+        emission.owners.extend(prepared.commit(&mut self.owners));
+        Some(emission)
     }
+}
 
-    pub(super) fn commit_enum(
-        &mut self,
-        expected: Ty,
-        at: Span,
-        ordinal: usize,
-        payload: Option<raw::ValueId>,
-    ) -> Option<raw::ValueId> {
-        let operands = payload.into_iter().collect::<Vec<_>>();
-        self.commit_constructor(
-            expected,
-            ConstructorKind::Enum { variant: u32::try_from(ordinal).ok()? },
-            &operands,
-            at,
-        )
-    }
+pub(super) fn constructor_result(
+    prepared: Result<PreparedConstructor, ConstructorPlanError>,
+    at: Span,
+    errors: &mut super::super::Errors<'_>,
+) -> Option<PreparedConstructor> {
+    let prepared = match prepared {
+        Ok(prepared) => prepared,
+        Err(ConstructorPlanError::DuplicateOwner) => {
+            errors.at(
+                "ZRYNA-M3014",
+                at,
+                "aggregate constructor attempts to consume one owner more than once",
+                "move each non-Copy field or element exactly once",
+            );
+            return None;
+        }
+        Err(_) => {
+            errors.at(
+                "ZRYNA-M3014",
+                at,
+                "aggregate constructor operand owner is unavailable before commit",
+                "construct from only currently pending exact values",
+            );
+            return None;
+        }
+    };
+    Some(prepared)
 }

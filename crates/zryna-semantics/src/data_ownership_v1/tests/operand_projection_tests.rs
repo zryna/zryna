@@ -1,3 +1,4 @@
+use super::super::child_preparation_red::state as preparation_state;
 use super::*;
 use crate::data_ownership_v1::owned_aggregate_lowering::operand_decisions::ProjectionOperation;
 use crate::data_ownership_v1::type_model::ProjectedAggregateMoveContext;
@@ -337,7 +338,7 @@ fn operand_decisions_string_clone_all_resource_frontiers_are_read_only() {
 }
 
 #[test]
-fn operand_decisions_later_child_failure_preserves_prior_move_and_masks() {
+fn operand_decisions_later_child_failure_preserves_complete_prior_state() {
     let (mut source, mut snapshot) = fixtures::snapshot(Fixture::Projection);
     let field = snapshot.files[0].functions[0]
         .body
@@ -356,18 +357,9 @@ fn operand_decisions_later_child_failure_preserves_prior_move_and_masks() {
         let errors = with_snapshot(&source, snapshot.clone(), |lowerer, result| {
             assert!(run_statement(lowerer, 0, result));
             at = Some(span(lowerer.input.sources(), field_span));
-            let instructions = lowerer.instructions.len();
-            let places = lowerer.places.len();
-            let pending = lowerer.owners.pending().to_vec();
-            let operands = lowerer.aggregate_operands;
+            let before = preparation_state(lowerer);
             assert!(lowerer.value(root_value(lowerer, 1), result).is_none());
-            assert_eq!(lowerer.instructions.len(), instructions + 1);
-            assert_eq!(lowerer.places.len(), places + 2);
-            assert_eq!(lowerer.owners.pending().len(), pending.len() + 1);
-            assert_eq!(&lowerer.owners.pending()[..pending.len()], pending);
-            assert_eq!(lowerer.moved_projections.len(), 1);
-            assert!(lowerer.partial_roots.contains(&pending[0]));
-            assert_eq!(lowerer.aggregate_operands, operands);
+            assert_eq!(preparation_state(lowerer), before);
             assert!(lowerer.constructor_storage_is_clear());
             assert_eq!(lowerer.reserved_transitions, 0);
         });
