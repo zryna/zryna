@@ -238,6 +238,9 @@ the sealed M2 verified program consumed by all three backends. See
 
 ## Build and run
 
+Start with [your first Zryna programs](docs/GETTING_STARTED.md) for a setup, build, run and rerun
+walkthrough using the checked-in addition and control-flow examples.
+
 The public CLI accepts exactly one workspace-relative `.zry` entrypoint and requires an explicit
 target. That is the complete M1 source set when `--profile` is omitted and the root of one explicit
 relative-import module graph under `--profile control-flow-v1`. These examples use an exact Node.js
