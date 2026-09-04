@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn private_owned_struct_prepares_in_source_order_and_commits_in_declaration_order() {
+fn private_owned_struct_prepares_and_commits_in_declaration_order() {
     let sources = sources_for(OWNED_PAIR_SOURCE);
     let syntax = verify_snapshot(response_snapshot(OWNED_PAIR_RESPONSE), &sources)
         .expect("source-faithful owned Pair v4");
@@ -12,8 +12,8 @@ fn private_owned_struct_prepares_in_source_order_and_commits_in_declaration_orde
     assert_eq!(
         instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
         vec![
-            VerifiedInstructionKind::BoolLiteral,
             VerifiedInstructionKind::StringFromUtf8,
+            VerifiedInstructionKind::BoolLiteral,
             VerifiedInstructionKind::StructConstruct,
             VerifiedInstructionKind::InitializePlace,
             VerifiedInstructionKind::MoveFromPlace,
@@ -24,10 +24,10 @@ fn private_owned_struct_prepares_in_source_order_and_commits_in_declaration_orde
             .value_operands()
             .map(zryna_ir::data_ownership_v1::ValueIdentity::index)
             .collect::<Vec<_>>(),
-        vec![1, 0],
-        "constructor operands follow declaration order after source-order preparation",
+        vec![0, 1],
+        "constructor preparation and operands follow declaration order",
     );
-    assert_eq!(instructions[1].derived_drop_actions().count(), 0);
+    assert_eq!(instructions[0].derived_drop_actions().count(), 0);
     assert_eq!(instructions[2].cleanup(), None);
     assert_eq!(block.terminator().derived_drop_actions().count(), 0);
 }
@@ -44,8 +44,8 @@ fn string_bearing_struct_clone_retains_source_and_seals_recursive_prefix_cleanup
     assert_eq!(
         instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
         vec![
-            VerifiedInstructionKind::BoolLiteral,
             VerifiedInstructionKind::StringFromUtf8,
+            VerifiedInstructionKind::BoolLiteral,
             VerifiedInstructionKind::StructConstruct,
             VerifiedInstructionKind::InitializePlace,
             VerifiedInstructionKind::ClonePlace,
