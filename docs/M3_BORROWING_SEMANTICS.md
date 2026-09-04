@@ -221,6 +221,15 @@ next dependency-ready work in #83, not an implemented capability. The tracked #2
 borrowing chain and all runtime, target, driver, conformance and public-profile gates remain open.
 This checkpoint does not certify the entire normative M3 profile or enable a public CLI profile.
 
+Issue #269 additionally tracks full normative source composition through #270–#275, including
+ordinary dynamic-array access and non-indexed owned/static/active-enum borrowing. #254–#256
+retain indexed-borrow authority and producers; #83 retains Shared/Weak semantics. Separately
+closeable #277 integration contracts, #278 non-handle operation core and #279 ownership CFG core
+support the full #83 payload/control-flow requirements before its closure. They do not defer
+required #83 cases to later generic integration or claim handle execution from opaque hooks.
+The #269 completion chain blocks complete target support and downstream #89/#90; it neither
+changes the bounded evidence below nor introduces new syntax or public capability.
+
 At the implementation checkpoint above, ordinary semantics has 344 passing tests and two ignored
 proportional tests. The include-ignored M3 lane runs 324 tests, including both proportional cases;
 together the lanes cover all 346 semantic tests. The M3 IR lane runs 141 tests, including the

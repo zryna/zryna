@@ -17,7 +17,7 @@ import {
 import { m3IssueGraph, validateM3IssueOrder } from "./lib/m3-issue-graph.mjs";
 
 export const expectedRegistrySha256 =
-  "0c144ad82ec1f601f5c2057578df001487e0bebeead002467bedcaa197ef9e51";
+  "4840114001e53f510a285114a33fb15e3a9599067473e8707d2607333c339d18";
 const registryPath = fileURLToPath(
   new URL("../tests/m3-contract-v1.json", import.meta.url),
 );

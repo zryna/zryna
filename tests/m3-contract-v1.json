@@ -75,11 +75,107 @@
       "gate": "bounded-borrowing"
     },
     {
-      "number": 83,
+      "number": 259,
       "dependsOn": [
         80,
         81,
         82
+      ],
+      "gate": "shared-weak-interface"
+    },
+    {
+      "number": 277,
+      "dependsOn": [
+        77,
+        78,
+        80,
+        82,
+        259
+      ],
+      "gate": "generic-ownership-integration-contract"
+    },
+    {
+      "number": 260,
+      "dependsOn": [
+        80,
+        81,
+        82,
+        259,
+        277
+      ],
+      "gate": "verified-shared-weak-transitions"
+    },
+    {
+      "number": 278,
+      "dependsOn": [
+        277
+      ],
+      "gate": "non-handle-owned-operation-core"
+    },
+    {
+      "number": 279,
+      "dependsOn": [
+        277,
+        278,
+        260
+      ],
+      "gate": "compositional-ownership-cfg-core"
+    },
+    {
+      "number": 261,
+      "dependsOn": [
+        80,
+        81,
+        82,
+        259,
+        260,
+        278
+      ],
+      "gate": "shared-weak-source-handles"
+    },
+    {
+      "number": 262,
+      "dependsOn": [
+        82,
+        259,
+        260,
+        261,
+        279
+      ],
+      "gate": "weak-upgrade-source-control-flow"
+    },
+    {
+      "number": 263,
+      "dependsOn": [
+        82,
+        259,
+        260,
+        261,
+        262
+      ],
+      "gate": "shared-weak-failure-resources"
+    },
+    {
+      "number": 264,
+      "dependsOn": [
+        80,
+        81,
+        82,
+        259,
+        260,
+        261,
+        262,
+        263
+      ],
+      "gate": "shared-weak-integrated-closure"
+    },
+    {
+      "number": 83,
+      "dependsOn": [
+        80,
+        81,
+        82,
+        264
       ],
       "gate": "shared-weak-semantics"
     },
@@ -117,6 +213,84 @@
       "gate": "vec-element-borrowing"
     },
     {
+      "number": 270,
+      "dependsOn": [
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        83,
+        277,
+        278
+      ],
+      "gate": "generic-owned-composition"
+    },
+    {
+      "number": 271,
+      "dependsOn": [
+        270,
+        279
+      ],
+      "gate": "structured-owned-control-flow"
+    },
+    {
+      "number": 272,
+      "dependsOn": [
+        270,
+        271
+      ],
+      "gate": "owned-calls-module-resolution"
+    },
+    {
+      "number": 273,
+      "dependsOn": [
+        270,
+        271
+      ],
+      "gate": "enum-payload-composition"
+    },
+    {
+      "number": 274,
+      "dependsOn": [
+        254,
+        270
+      ],
+      "gate": "ordinary-dynamic-array-access"
+    },
+    {
+      "number": 275,
+      "dependsOn": [
+        82,
+        254,
+        270,
+        271,
+        272,
+        273
+      ],
+      "gate": "non-indexed-owned-borrowing"
+    },
+    {
+      "number": 269,
+      "dependsOn": [
+        83,
+        254,
+        255,
+        256,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        277,
+        278,
+        279
+      ],
+      "gate": "normative-source-completion"
+    },
+    {
       "number": 84,
       "dependsOn": [
         79,
@@ -126,7 +300,8 @@
         83,
         254,
         255,
-        256
+        256,
+        269
       ],
       "gate": "javascript"
     },
@@ -140,7 +315,8 @@
         83,
         254,
         255,
-        256
+        256,
+        269
       ],
       "gate": "webassembly"
     },
@@ -154,7 +330,8 @@
         83,
         254,
         255,
-        256
+        256,
+        269
       ],
       "gate": "verified-native-mir"
     },

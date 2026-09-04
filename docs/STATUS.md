@@ -251,11 +251,17 @@ acyclic calls, and the 128-accepts/129-rejects static-depth boundary. The
 cases, and 13 exclusions. Its merged registry SHA-256 is
 `d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f`; its canonical borrow-call
 section SHA-256 is `ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20`.
-The current registry additionally tracks normative indexed-borrow prerequisites #254–#256 before
-complete target support; its SHA-256 is
-`0c144ad82ec1f601f5c2057578df001487e0bebeead002467bedcaa197ef9e51`.
+The current registry additionally tracks normative indexed-borrow prerequisites #254–#256 and
+source-completion #269 before complete target support; its SHA-256 is
+`4840114001e53f510a285114a33fb15e3a9599067473e8707d2607333c339d18`.
 This updates planned dependencies, not implemented capability. The #119 commit and digest above
 remain immutable historical provenance; the borrow-call section and fixture bytes are unchanged.
+The planned #277 integration contract, #278 non-handle owned core and #279 ownership CFG core
+are separately closeable prerequisites for the full Shared/Weak producers, not dependents of
+#83 or #269 closure. #259–#264 retain full payload and control-flow obligations. Later #270–#275
+complete generic ownership, CFG, calls, enums, ordinary dynamic-array access and non-indexed
+owned borrowing; #270 also owns ordinary generic Vec reads and replacement. These source/IR
+requirements remain mandatory and block complete #84/#85/#86 support alongside existing gates.
 Protocol v4 is unchanged; projected forwarding, repeated calls, CFG
 crossing, recursion, owned aggregate call shapes, public borrow signatures, retained authority,
 and nested/repeated control flow remain later or unavailable child work. This adds no runtime,
