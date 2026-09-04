@@ -2,9 +2,7 @@ use zryna_ir::data_ownership_v1::{self as ir, raw};
 use zryna_source::{Span, UntrustedSpan};
 use zryna_syntax::v4::{RawExpressionKind, RawFieldInitializerKind};
 
-use super::super::global_resource_limits::{
-    aggregate_operand_budget_violation, aggregate_transition_budget_violation,
-};
+use super::super::global_resource_limits::aggregate_transition_budget_violation;
 use super::super::owned_constructor_plan::{
     ConstructorKind, ConstructorPlanError, ConstructorShape,
 };
@@ -13,7 +11,7 @@ use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    fn preflight_transition(&mut self, additional: usize, at: Span) -> bool {
+    pub(super) fn preflight_transition(&mut self, additional: usize, at: Span) -> bool {
         if aggregate_transition_budget_violation(
             self.instructions.len(),
             self.reserved_transitions,
@@ -37,7 +35,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if !self.preflight_transition(1, at) {
             return false;
         }
-        self.reserved_transitions += 1;
+        self.reserved_transitions = self
+            .reserved_transitions
+            .checked_add(1)
+            .expect("assignment transition capacity preflighted");
         true
     }
 
@@ -80,28 +81,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if !self.preflight_transition(1, at) {
             return None;
         }
-        if self.next_value as usize >= ir::MAX_VALUES_PER_FUNCTION {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived values exceed the per-function M3 limit of {}",
-                    ir::MAX_VALUES_PER_FUNCTION
-                ),
-                "reduce private aggregate expressions",
-            );
+        if !self.preflight_value(at) {
             return None;
         }
-        if !ty.is_copy() && self.places.len() >= ir::MAX_PLACES_PER_FUNCTION {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived places exceed the per-function M3 limit of {}",
-                    ir::MAX_PLACES_PER_FUNCTION
-                ),
-                "reduce owned aggregate temporaries and locals",
-            );
+        if !ty.is_copy() && !self.preflight_constructor_places(1, at) {
             return None;
         }
         let value = raw::ValueId(self.next_value);
@@ -188,19 +171,13 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     pub(super) fn reserve_operands(&mut self, additional: usize, at: Span) -> Option<()> {
-        if aggregate_operand_budget_violation(self.aggregate_operands, additional) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived aggregate operands exceed the M3 limit of {}",
-                    ir::MAX_AGGREGATE_OPERANDS
-                ),
-                "reduce Struct fields and fixed-array elements",
-            );
+        if !self.preflight_constructor_operands(additional, at) {
             return None;
         }
-        self.aggregate_operands += additional;
+        self.aggregate_operands = self
+            .aggregate_operands
+            .checked_add(additional)
+            .expect("constructor operand capacity preflighted");
         Some(())
     }
 

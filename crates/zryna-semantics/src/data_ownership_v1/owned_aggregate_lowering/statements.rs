@@ -102,7 +102,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 } else {
                     self.value(*initializer, ty)?
                 };
-                if self.places.len() >= ir::MAX_PLACES_PER_FUNCTION {
+                if self.budget_places() >= ir::MAX_PLACES_PER_FUNCTION {
                     self.errors.at(
                         "ZRYNA-M3201",
                         span(self.input.sources(), statement.span),

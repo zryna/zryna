@@ -108,8 +108,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let existing = self.existing_projection_shape(source, &shape);
         let existing_count = existing.iter().filter(|place| place.is_some()).count();
         let _additional_places = match partial_transfer_budget_preflight(
-            self.next_value as usize,
-            self.places.len(),
+            self.budget_values(),
+            self.budget_places(),
             self.instructions.len(),
             self.reserved_transitions,
             shape.len(),
@@ -194,8 +194,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let existing = self.existing_projection_shape(source, &shape);
         let existing_count = existing.iter().filter(|place| place.is_some()).count();
         if let Err(violation) = partial_return_budget_preflight(
-            self.next_value as usize,
-            self.places.len(),
+            self.budget_values(),
+            self.budget_places(),
             self.instructions.len(),
             self.reserved_transitions,
             shape.len(),
@@ -250,8 +250,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let source_existing = self.existing_projection_shape(source, &shape);
         let target_existing = self.existing_projection_shape(target, &shape);
         if let Err(violation) = partial_assignment_budget_preflight(
-            self.next_value as usize,
-            self.places.len(),
+            self.budget_values(),
+            self.budget_places(),
             self.instructions.len(),
             self.reserved_transitions,
             shape.len(),

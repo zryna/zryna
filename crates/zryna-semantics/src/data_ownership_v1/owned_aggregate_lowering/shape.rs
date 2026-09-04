@@ -299,7 +299,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if let Some(place) = self.projections.get(&key).copied() {
             return Some(place);
         }
-        if self.places.len() >= ir::MAX_PLACES_PER_FUNCTION {
+        if self.budget_places() >= ir::MAX_PLACES_PER_FUNCTION {
             self.errors.at(
                 "ZRYNA-M3201",
                 at,

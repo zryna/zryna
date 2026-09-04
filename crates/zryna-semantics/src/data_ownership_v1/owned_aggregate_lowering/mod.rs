@@ -10,6 +10,7 @@ use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 mod assignment_planning;
 mod assignments;
 mod clone;
+mod constructor_resources;
 mod constructors;
 mod driver;
 mod partial_transfers;
@@ -44,6 +45,7 @@ struct PrivateOwnedAggregateLowerer<'a, 'f, 'e> {
     places: Vec<raw::Place>,
     instructions: Vec<raw::Instruction>,
     constructor_types: ConstructorValueTypes,
+    constructor_storage: constructor_resources::ConstructorStorage,
     cleanup_plans: Vec<raw::CleanupPlan>,
     cleanup_actions: usize,
     aggregate_operands: usize,

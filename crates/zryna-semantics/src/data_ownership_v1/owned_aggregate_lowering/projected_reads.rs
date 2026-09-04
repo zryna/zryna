@@ -85,8 +85,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 shape.len()
             };
             if projected_subobject_return_budget_violation(
-                self.next_value as usize,
-                self.places.len(),
+                self.budget_values(),
+                self.budget_places(),
                 self.instructions.len(),
                 self.reserved_transitions,
                 self.cleanup_plans.len(),
@@ -177,8 +177,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     ProjectedAggregateMoveContext::DirectLocal
                     | ProjectedAggregateMoveContext::ProjectedReplacement,
                 ) => projected_subobject_move_budget_violation(
-                    self.next_value as usize,
-                    self.places.len(),
+                    self.budget_values(),
+                    self.budget_places(),
                     self.instructions.len(),
                     self.reserved_transitions,
                     missing,

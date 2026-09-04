@@ -165,20 +165,25 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             return None;
         }
-        let mut values = Vec::with_capacity(declared.len());
-        for (declaration, expression) in declared.iter().zip(ordered.into_iter().flatten()) {
-            let field_ty = semantic_type(
-                self.file,
-                declaration.type_syntax,
-                self.module,
-                self.declarations,
-                self.graph,
-                self.node_types,
-                self.errors,
-            )?;
-            values.push(self.value(expression, field_ty)?);
-        }
-        self.commit_constructor(expected, ConstructorKind::Struct, &values, at)
+        let reservation = self.reserve_constructor_commit(expected, declared.len(), at)?;
+        let values = (|| {
+            let mut values = Vec::with_capacity(declared.len());
+            for (declaration, expression) in declared.iter().zip(ordered.into_iter().flatten()) {
+                let field_ty = semantic_type(
+                    self.file,
+                    declaration.type_syntax,
+                    self.module,
+                    self.declarations,
+                    self.graph,
+                    self.node_types,
+                    self.errors,
+                )?;
+                values.push(self.value(expression, field_ty)?);
+            }
+            Some(values)
+        })();
+        reservation.release(self);
+        self.commit_constructor(expected, ConstructorKind::Struct, &values?, at)
     }
 
     fn array_value(
@@ -221,11 +226,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             return None;
         }
         let element = self.ty_for_layout(record.referenced_type()?)?;
-        let mut values = Vec::with_capacity(elements.len());
-        for expression in elements {
-            values.push(self.value(*expression, element)?);
-        }
-        self.commit_constructor(expected, ConstructorKind::FixedArray, &values, at)
+        let reservation = self.reserve_constructor_commit(expected, elements.len(), at)?;
+        let values = (|| {
+            let mut values = Vec::with_capacity(elements.len());
+            for expression in elements {
+                values.push(self.value(*expression, element)?);
+            }
+            Some(values)
+        })();
+        reservation.release(self);
+        self.commit_constructor(expected, ConstructorKind::FixedArray, &values?, at)
     }
 
     fn enum_value(
@@ -299,7 +309,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             return None;
         };
-        let payload_value = match (variant.payload_type, payload) {
+        let payload_input = match (variant.payload_type, payload) {
             (None, None) => None,
             (Some(type_syntax), Some(expression)) => {
                 let payload_ty = semantic_type(
@@ -320,7 +330,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     );
                     return None;
                 }
-                Some(self.value(expression, payload_ty)?)
+                Some((expression, payload_ty))
             }
             _ => {
                 self.errors.at(
@@ -332,6 +342,23 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 return None;
             }
         };
-        self.commit_enum(expected, at, ordinal, payload_value)
+        self.prepare_enum_payload(expected, ordinal, payload_input, at)
+    }
+
+    fn prepare_enum_payload(
+        &mut self,
+        expected: Ty,
+        ordinal: usize,
+        payload_input: Option<(u32, Ty)>,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        let reservation =
+            self.reserve_constructor_commit(expected, usize::from(payload_input.is_some()), at)?;
+        let payload_value = match payload_input {
+            Some((expression, ty)) => self.value(expression, ty).map(Some),
+            None => Some(None),
+        };
+        reservation.release(self);
+        self.commit_enum(expected, at, ordinal, payload_value?)
     }
 }

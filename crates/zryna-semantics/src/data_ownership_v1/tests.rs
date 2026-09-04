@@ -3,6 +3,7 @@ use super::aggregate_resource_formulas::{
     partial_transfer_place_delta,
 };
 
+pub(super) mod constructor_envelope_fixtures;
 mod constructor_plans;
 mod constructor_reservations;
 mod constructor_value_types;

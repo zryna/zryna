@@ -92,9 +92,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             None
         })?;
         if aggregate_clone_budget_violation(
-            self.next_value as usize,
-            self.places.len(),
-            self.instructions.len(),
+            self.budget_values(),
+            self.budget_places(),
+            self.budget_transitions(),
             self.cleanup_plans.len(),
             self.cleanup_actions,
             pending,
@@ -212,8 +212,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
         let pending = self.owners.pending().len();
         if projected_aggregate_clone_budget_violation(
-            self.next_value as usize,
-            self.places.len(),
+            self.budget_values(),
+            self.budget_places(),
             self.instructions.len(),
             self.reserved_transitions,
             self.cleanup_plans.len(),
@@ -280,8 +280,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
         let pending = self.owners.pending().len();
         if projected_string_clone_budget_violation(
-            self.next_value as usize,
-            self.places.len(),
+            self.budget_values(),
+            self.budget_places(),
             self.instructions.len(),
             self.reserved_transitions,
             self.cleanup_plans.len(),

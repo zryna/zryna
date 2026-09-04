@@ -26,6 +26,35 @@ This candidate includes the #233–#237 extractions and the #288 constructor-ord
 This describes the candidate tree, not the merge status of its prerequisite pull requests.
 Resolve final registration paths against the integrated parent before implementation.
 
+## Staged constructor commit envelope (#278)
+
+The private Struct, Enum and fixed-array constructor adapters now reserve their own final
+commit capacity after complete outer type/shape/field mapping and before child materialization.
+The checked precedence is aggregate operands, transition, result value, then result place
+(zero places for a Copy result). Parent-capacity rejection intentionally precedes child
+diagnostics at the constructor span. When capacity is available, declaration/index evaluation
+order and existing semantic diagnostics are unchanged. Vec retains its separate existing
+fallible construction reservation; source admission, IR, ABI and limits are unchanged.
+
+The affine ticket releases its own credits in reverse order on child failure and immediately
+before final commit on success, preserving ancestor and assignment credits. Ordinary emission,
+whole/projected clone, projection topology materialization, compound assignment and direct
+partial-transfer preflights all account for held capacity. Committed arena counts still determine
+identities. Infallible aggregate commit reserves no fictional cleanup actions or plans.
+
+The `aggregate_constructor_envelope.rs` and `aggregate_constructor_envelope_flows.rs` tests
+separate injected-counter acquisition/frontier/unwind checks from authenticated source fixtures
+and independent full-IR valid replay. Injected held counts are not claims that every independent
+limit is reachable from dense source. These tests are source additions, not execution claims in
+this document; the handoff must report actual commands and results.
+
+This is only a prerequisite to C2, not completed #278 or generic composition. Complete read-only
+child-cost/effect planning before any child mutation remains REQUIRED, including exact cleanup
+plans/actions, pending-owner order, projection/mask effects, retention, failure prefixes and
+all supported nested operations. Releasing a commit ticket does not roll back already prepared
+children or prove their combined capacity. Existing per-child cleanup and failure behavior remains
+in force until that separately reviewed planning/commit unit is implemented and verified.
+
 ## Located tests, not complete composition proofs
 
 Names below are actual `#[test]` functions under the same directory's `tests/`.
@@ -87,8 +116,9 @@ commands/results and missing integration. No concurrent shared-file edits or gue
 
 #277 documentation drift checks bind real existing declarations, located tests and eight contract
 sections, with missing-symbol/section mutations. They do not verify future APIs or execute Rust.
-Re-freeze the current semantic inventory before code handoff: this candidate has351names,
-including2ignored proportional tests; historical345/346refactor evidence is not current proof. Preserve
+The frozen historical #277 checkpoint had 351 test names, including 2 ignored proportional tests.
+Re-freeze the actual semantic inventory for every current executable change before handoff;
+that historical count and earlier 345/346 refactor evidence are not current execution proof. Preserve
 existing44borrowing evidence guards and required ignored execution through preflight. Every later
 executable change requires independent source/IR review, relevant focused tests and complete
 preflight/M0 on Linux and Windows; contract-only narrow checks cannot replace those merge gates.
