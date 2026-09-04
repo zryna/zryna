@@ -1,5 +1,49 @@
 use super::*;
 
+mod constructor_order;
+
+#[test]
+fn owned_struct_initializers_preserve_declared_evaluation_order_and_source_spans() {
+    for (source, response, expected) in [
+        (
+            OWNED_TRIO_SOURCE,
+            OWNED_TRIO_RESPONSE,
+            vec![(b'a', 129, 132), (b'b', 121, 124), (b'c', 113, 116)],
+        ),
+        (NESTED_OWNED_SOURCE, NESTED_OWNED_RESPONSE, vec![(b'a', 194, 197), (b'b', 168, 171)]),
+    ] {
+        let sources = sources_for(source);
+        let syntax = verify_snapshot(response_snapshot(response), &sources)
+            .expect("original source-order syntax remains authenticated");
+        let program = lower(pair_input(&syntax, &sources)).expect("owned constructor verifies");
+        let function =
+            program.modules().next().expect("module").functions().next().expect("function");
+        let instructions =
+            function.blocks().next().expect("block").instructions().collect::<Vec<_>>();
+        let actual = instructions
+            .iter()
+            .filter_map(|instruction| {
+                instruction.string_utf8_bytes().map(|bytes| {
+                    assert_eq!(bytes.len(), 1);
+                    (bytes[0], instruction.span().start(), instruction.span().end())
+                })
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(actual, expected, "prepare declarations, not constructor spelling order");
+        if source == NESTED_OWNED_SOURCE {
+            assert_eq!(
+                instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
+                vec![
+                    VerifiedInstructionKind::StringFromUtf8,
+                    VerifiedInstructionKind::StructConstruct,
+                    VerifiedInstructionKind::StringFromUtf8,
+                    VerifiedInstructionKind::StructConstruct,
+                ]
+            );
+        }
+    }
+}
+
 #[test]
 fn private_owned_fixed_array_prepares_indices_and_moves_whole_result() {
     let sources = sources_for(OWNED_ARRAY_SOURCE);
@@ -42,19 +86,27 @@ fn nested_owned_structs_consume_inner_owner_once_and_preserve_failure_cleanup() 
         instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
         vec![
             VerifiedInstructionKind::StringFromUtf8,
-            VerifiedInstructionKind::StringFromUtf8,
             VerifiedInstructionKind::StructConstruct,
+            VerifiedInstructionKind::StringFromUtf8,
             VerifiedInstructionKind::StructConstruct,
         ]
     );
-    assert_eq!(instructions[1].derived_drop_actions().count(), 1);
+    assert_eq!(instructions[0].derived_drop_actions().count(), 0);
+    assert_eq!(instructions[1].cleanup(), None);
+    assert_eq!(
+        instructions[2]
+            .derived_drop_actions()
+            .map(|action| action.root().index())
+            .collect::<Vec<_>>(),
+        vec![1]
+    );
     assert_eq!(
         instructions[3]
             .value_operands()
             .map(zryna_ir::data_ownership_v1::ValueIdentity::index)
             .collect::<Vec<_>>(),
-        vec![2, 0],
-        "outer operands are reordered after source-order tail/inner evaluation",
+        vec![1, 2],
+        "inner commits before tail preparation in outer declaration order",
     );
     assert_eq!(block.terminator().derived_drop_actions().count(), 0);
 }
@@ -66,6 +118,16 @@ fn reversed_owned_fields_have_reverse_prepare_cleanup_and_canonical_commit_opera
     let program = lower(pair_input(&syntax, &sources)).expect("owned Trio must verify");
     let function = program.modules().next().expect("module").functions().next().expect("function");
     let instructions = function.blocks().next().expect("block").instructions().collect::<Vec<_>>();
+    for (index, instruction) in instructions[..3].iter().enumerate() {
+        assert_eq!(
+            instruction
+                .derived_drop_actions()
+                .map(|action| action.root().index())
+                .collect::<Vec<_>>(),
+            (0..u32::try_from(index).expect("three initializers")).rev().collect::<Vec<_>>(),
+            "each fallible initializer cleans only the actual completed prefix",
+        );
+    }
     assert_eq!(
         instructions[2]
             .derived_drop_actions()
@@ -79,8 +141,8 @@ fn reversed_owned_fields_have_reverse_prepare_cleanup_and_canonical_commit_opera
             .value_operands()
             .map(zryna_ir::data_ownership_v1::ValueIdentity::index)
             .collect::<Vec<_>>(),
-        vec![2, 1, 0],
-        "commit reorders c/b/a source evaluation into a/b/c declaration order",
+        vec![0, 1, 2],
+        "a/b/c preparation and commit both follow declaration order",
     );
     assert_eq!(instructions[3].cleanup(), None);
 }

@@ -131,7 +131,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 RawFieldInitializerKind::Shorthand { name, value }
                 | RawFieldInitializerKind::Explicit { name, value, .. } => (&name.text, *value),
             };
-            let Some((ordinal, declaration)) = declared
+            let Some((ordinal, _)) = declared
                 .iter()
                 .enumerate()
                 .find(|(_, candidate)| candidate.name.text == *field_name)
@@ -153,16 +153,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 );
                 return None;
             }
-            let field_ty = semantic_type(
-                self.file,
-                declaration.type_syntax,
-                self.module,
-                self.declarations,
-                self.graph,
-                self.node_types,
-                self.errors,
-            )?;
-            ordered[ordinal] = Some(self.value(expression, field_ty)?);
+            ordered[ordinal] = Some(expression);
         }
         if let Some((ordinal, _)) = ordered.iter().enumerate().find(|(_, value)| value.is_none()) {
             self.errors.at(
@@ -173,7 +164,19 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             return None;
         }
-        let values = ordered.into_iter().flatten().collect::<Vec<_>>();
+        let mut values = Vec::with_capacity(declared.len());
+        for (declaration, expression) in declared.iter().zip(ordered.into_iter().flatten()) {
+            let field_ty = semantic_type(
+                self.file,
+                declaration.type_syntax,
+                self.module,
+                self.declarations,
+                self.graph,
+                self.node_types,
+                self.errors,
+            )?;
+            values.push(self.value(expression, field_ty)?);
+        }
         self.reserve_operands(values.len(), at)?;
         let consumed = self.prevalidate_constructor_operands(&values, at)?;
         let result = self.emit(
