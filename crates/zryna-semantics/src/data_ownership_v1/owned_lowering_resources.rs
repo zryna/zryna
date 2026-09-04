@@ -3,7 +3,7 @@ use zryna_source::Span;
 
 use super::diagnostics::Errors;
 use super::global_resource_limits::resource_budget_violation;
-use super::owned_cfg_state::OwnedCfgState;
+use super::owned_cfg_state::{OwnedCfgCapacity, OwnedCfgState};
 use super::owned_control_flow_resources::preflight_owned_place_capacity_with_reserved;
 use super::owner_state::OwnerState;
 use super::string_vec_resource_estimates::OwnedStringPreparationEstimate;
@@ -22,10 +22,42 @@ pub(super) struct OwnedStringPreparationBudget {
     pub(super) reserved_places: usize,
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct OwnedStringPreparationResources {
+    pub(super) cleanup_plans: usize,
+    pub(super) cleanup_actions: usize,
+    pub(super) values: usize,
+    pub(super) places: usize,
+    pub(super) transitions: usize,
+}
+
+impl From<OwnedStringPreparationEstimate> for OwnedStringPreparationResources {
+    fn from(value: OwnedStringPreparationEstimate) -> Self {
+        Self {
+            cleanup_plans: value.cleanup_plans,
+            cleanup_actions: value.cleanup_actions,
+            values: value.values,
+            places: value.places,
+            transitions: value.transitions,
+        }
+    }
+}
+
 pub(super) fn preflight_owned_string_preparation(
     estimate: OwnedStringPreparationEstimate,
     budget: OwnedStringPreparationBudget,
     cfg: &mut OwnedCfgState,
+    at: Span,
+    errors: &mut Errors<'_>,
+) -> bool {
+    preflight_owned_string_inputs(estimate.into(), budget, &cfg.capacity(), at, errors)
+        && cfg.preflight_transitions(estimate.transitions, at, errors)
+}
+
+pub(super) fn preflight_owned_string_inputs(
+    estimate: OwnedStringPreparationResources,
+    budget: OwnedStringPreparationBudget,
+    capacity: &OwnedCfgCapacity,
     at: Span,
     errors: &mut Errors<'_>,
 ) -> bool {
@@ -52,10 +84,9 @@ pub(super) fn preflight_owned_string_preparation(
         );
         return false;
     }
-    if cfg.reserve_values(estimate.values, at, errors).is_none() {
+    if !capacity.values(estimate.values, at, errors) {
         return false;
     }
-    cfg.release_values(estimate.values);
     if !preflight_owned_place_capacity_with_reserved(
         budget.places,
         budget.reserved_places,
@@ -65,7 +96,7 @@ pub(super) fn preflight_owned_string_preparation(
     ) {
         return false;
     }
-    cfg.preflight_transitions(estimate.transitions, at, errors)
+    true
 }
 
 #[derive(Clone, Copy)]
@@ -179,28 +210,25 @@ impl<'a> OwnedCleanupAccounting<'a> {
         at: Span,
         errors: &mut Errors<'_>,
     ) -> bool {
-        if resource_budget_violation(
-            self.plans.len(),
-            self.reserved_plans.saturating_add(1),
-            ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-        ) || resource_budget_violation(
-            *self.committed_actions,
-            self.reserved_actions.saturating_add(actions),
-            ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-        ) {
-            let (message, guidance) = context.reservation();
-            errors.at("ZRYNA-M3201", at, message, guidance);
+        let usage = CleanupUsage {
+            plans: self.plans.len(),
+            actions: *self.committed_actions,
+            reserved_plans: *self.reserved_plans,
+            reserved_actions: *self.reserved_actions,
+        };
+        let Some([plans, actions]) = usage.reserve(actions, context, at, errors) else {
             return false;
-        }
-        *self.reserved_plans += 1;
-        *self.reserved_actions += actions;
+        };
+        *self.reserved_plans = plans;
+        *self.reserved_actions = actions;
         true
     }
 
     pub(super) fn release_plan(&mut self, actions: usize) {
-        *self.reserved_plans = self.reserved_plans.checked_sub(1).expect("reserved cleanup plan");
-        *self.reserved_actions =
-            self.reserved_actions.checked_sub(actions).expect("reserved cleanup actions");
+        let [plans, actions] =
+            CleanupUsage::release([*self.reserved_plans, *self.reserved_actions], actions);
+        *self.reserved_plans = plans;
+        *self.reserved_actions = actions;
     }
 
     pub(super) fn reserve_string_loop_actions(
@@ -335,6 +363,7 @@ fn commit_cleanup_actions(committed_actions: &mut usize, additional: usize) -> O
     Some(())
 }
 
+#[cfg(test)]
 pub(super) fn push_aggregate_reverse_cleanup(
     plans: &mut Vec<raw::CleanupPlan>,
     committed_actions: &mut usize,

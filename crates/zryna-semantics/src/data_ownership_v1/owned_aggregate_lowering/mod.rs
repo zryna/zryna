@@ -17,6 +17,7 @@ mod constructor_resources;
 mod constructors;
 mod driver;
 mod expression_decisions;
+mod mixed_shape;
 mod operand_decisions;
 mod partial_transfers;
 mod preparation_operations;
@@ -35,7 +36,8 @@ mod state;
 mod statements;
 
 pub(super) use driver::{
-    is_private_owned_aggregate_candidate, lower_private_owned_aggregate_function,
+    is_private_mixed_constructor_candidate, is_private_owned_aggregate_candidate,
+    lower_private_owned_aggregate_function,
 };
 use statements::StatementOutcome;
 
@@ -51,6 +53,8 @@ struct PrivateOwnedAggregateLowerer<'a, 'f, 'e> {
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a super::function_catalog::FunctionCatalog,
+    mixed_function: bool,
     errors: &'e mut Errors<'a>,
     bindings: BTreeMap<String, Binding>,
     projections: BTreeMap<(u32, u8, u32), raw::PlaceId>,
@@ -60,6 +64,7 @@ struct PrivateOwnedAggregateLowerer<'a, 'f, 'e> {
     instructions: Vec<raw::Instruction>,
     constructor_types: ConstructorValueTypes,
     constructor_storage: constructor_resources::ConstructorStorage,
+    preparation_facts: preparation_plan::PreparationFacts,
     cleanup_plans: Vec<raw::CleanupPlan>,
     cleanup_actions: usize,
     aggregate_operands: usize,

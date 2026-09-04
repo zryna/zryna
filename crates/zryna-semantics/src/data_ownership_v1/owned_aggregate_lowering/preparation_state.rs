@@ -19,6 +19,7 @@ use super::state::Emission;
 pub(super) struct Checkpoint {
     pub(super) counts: [usize; 6],
     pub(super) held: [usize; 4],
+    pub(super) held_cleanup: [usize; 2],
     pub(super) pending: usize,
     pub(super) cache: (usize, usize),
 }
@@ -41,6 +42,8 @@ pub(super) struct PreparationState<'s> {
     pub(super) transitions: usize,
     pub(super) types: Result<ConstructorValueTypes, ConstructorPlanError>,
     pub(super) cache: (usize, usize),
+    pub(super) summary: bool,
+    pub(super) facts: super::preparation_plan::PreparationFacts,
 }
 
 impl PreparationState<'_> {
@@ -69,8 +72,8 @@ impl PreparationState<'_> {
             places: usage.places.saturating_add(usage.held_places),
             transitions: usage.transitions,
             reserved_transitions: usage.held_transitions,
-            cleanup_plans: self.counts[4],
-            cleanup_actions: self.counts[5],
+            cleanup_plans: self.counts[4].saturating_add(self.facts.held_cleanup[0]),
+            cleanup_actions: self.counts[5].saturating_add(self.facts.held_cleanup[1]),
             pending: self.owners.pending().len(),
         }
     }
@@ -80,6 +83,7 @@ impl PreparationState<'_> {
         Checkpoint {
             counts: self.counts,
             held: [operands, self.transitions, values, places],
+            held_cleanup: self.facts.held_cleanup,
             pending: self.owners.pending().len(),
             cache: self.cache,
         }
@@ -96,7 +100,7 @@ impl PreparationState<'_> {
     }
 
     pub(super) fn emit(&mut self, ty: Ty, at: Span, errors: &mut Errors<'_>) -> Option<Emission> {
-        if !self.usage().emit(ty, at, errors) {
+        if !self.summary && !self.usage().emit(ty, at, errors) {
             return None;
         }
         let value = raw::ValueId(u32::try_from(self.counts[0]).ok()?);
@@ -132,11 +136,21 @@ impl PreparationState<'_> {
         at: Span,
         errors: &mut Errors<'_>,
     ) -> Option<(raw::CleanupPlanId, usize)> {
+        if self.summary {
+            let recipe =
+                CleanupRecipe::describe_reverse(self.counts[4], self.owners.pending(), None)?;
+            let result = (recipe.id, recipe.action_count);
+            let plans = self.counts[4].checked_add(1)?;
+            let actions = self.counts[5].checked_add(recipe.action_count)?;
+            self.counts[4] = plans;
+            self.counts[5] = actions;
+            return Some(result);
+        }
         let usage = CleanupUsage {
             plans: self.counts[4],
             actions: self.counts[5],
-            reserved_plans: 0,
-            reserved_actions: 0,
+            reserved_plans: self.facts.held_cleanup[0],
+            reserved_actions: self.facts.held_cleanup[1],
         };
         let recipe = CleanupRecipe::reverse(
             &usage,
@@ -174,6 +188,9 @@ pub(super) struct PreparationTopology<'p, 's> {
 }
 
 impl ProjectionTopology for PreparationTopology<'_, '_> {
+    fn checks_capacity(&self) -> bool {
+        !self.state.summary
+    }
     fn cached(&self, key: (u32, u8, u32)) -> Option<raw::PlaceId> {
         self.state.projections.get(&key).copied()
     }
@@ -207,6 +224,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 self.cleanup_actions,
             ],
             held: [operands, self.reserved_transitions, values, places],
+            held_cleanup: self.preparation_facts.held_cleanup,
             pending: self.owners.pending().len(),
             cache: self.constructor_types.checkpoint(),
         }

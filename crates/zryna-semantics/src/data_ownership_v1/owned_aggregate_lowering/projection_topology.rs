@@ -16,6 +16,22 @@ pub(super) trait ProjectionTopology {
     fn cached(&self, key: (u32, u8, u32)) -> Option<raw::PlaceId>;
     fn used_places(&self) -> usize;
     fn insert(&mut self, descriptor: ProjectionDescriptor) -> Option<raw::PlaceId>;
+    fn checks_capacity(&self) -> bool {
+        true
+    }
+}
+
+pub(super) fn projection_capacity(used: usize, at: Span, errors: &mut Errors<'_>) -> bool {
+    if used >= ir::MAX_PLACES_PER_FUNCTION {
+        errors.at(
+            "ZRYNA-M3201",
+            at,
+            "derived owned projection places exceed the per-function M3 limit",
+            "reduce distinct private aggregate field and fixed-array projections",
+        );
+        return false;
+    }
+    true
 }
 
 pub(super) fn project(
@@ -26,13 +42,9 @@ pub(super) fn project(
     if let Some(place) = topology.cached(descriptor.key) {
         return Some(place);
     }
-    if topology.used_places() >= ir::MAX_PLACES_PER_FUNCTION {
-        errors.at(
-            "ZRYNA-M3201",
-            descriptor.at,
-            "derived owned projection places exceed the per-function M3 limit",
-            "reduce distinct private aggregate field and fixed-array projections",
-        );
+    if topology.checks_capacity()
+        && !projection_capacity(topology.used_places(), descriptor.at, errors)
+    {
         return None;
     }
     topology.insert(descriptor)

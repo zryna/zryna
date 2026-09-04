@@ -24,10 +24,13 @@ fn lower_owned_aggregate_function_impl<'a>(
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a super::super::function_catalog::FunctionCatalog,
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<raw::Function> {
-    if !if result.category == TypeCategory::Enum {
+    if !if super::mixed_shape::requires_summary(result, layouts) {
+        true
+    } else if result.category == TypeCategory::Enum {
         owned_enum_graph_is_supported(result, layouts)
     } else {
         aggregate_graph_is_supported(result, layouts, &mut BTreeSet::new())
@@ -41,6 +44,11 @@ fn lower_owned_aggregate_function_impl<'a>(
         return None;
     }
     let file = &input.syntax().files()[module];
+    let signature = catalog.modules.get(module)?.get(declaration)?.as_ref()?;
+    assert_eq!(signature.name, function.name.text, "aggregate catalog declaration name");
+    assert_eq!(signature.result, result, "aggregate catalog result type");
+    assert_eq!(signature.id.module.0 as usize, module, "aggregate catalog module");
+    assert_eq!(signature.id.declaration as usize, declaration, "aggregate catalog declaration");
     let root = usize::try_from(function.body.root_block)
         .ok()
         .and_then(|index| function.body.blocks.get(index))?;
@@ -62,6 +70,10 @@ fn lower_owned_aggregate_function_impl<'a>(
         graph,
         node_types,
         layouts,
+        catalog,
+        mixed_function: signature.private
+            && !result.is_copy()
+            && super::mixed_shape::requires_summary(result, layouts),
         errors,
         bindings: BTreeMap::new(),
         projections: BTreeMap::new(),
@@ -71,6 +83,7 @@ fn lower_owned_aggregate_function_impl<'a>(
         instructions: Vec::new(),
         constructor_types: super::ConstructorValueTypes::default(),
         constructor_storage: super::constructor_resources::ConstructorStorage::default(),
+        preparation_facts: super::preparation_plan::PreparationFacts::default(),
         cleanup_plans: Vec::new(),
         cleanup_actions: 0,
         aggregate_operands: 0,
@@ -212,6 +225,16 @@ pub(in crate::data_ownership_v1) fn is_private_owned_aggregate_candidate(
         )
 }
 
+pub(in crate::data_ownership_v1) fn is_private_mixed_constructor_candidate(
+    function: &syntax::RawFunctionSyntax,
+    result: Ty,
+    layouts: &layout::VerifiedLayouts,
+) -> bool {
+    function.export_span.is_none()
+        && !result.is_copy()
+        && super::mixed_shape::requires_summary(result, layouts)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(in crate::data_ownership_v1) fn lower_private_owned_aggregate_function<'a>(
     input: SemanticInput<'a>,
@@ -222,6 +245,7 @@ pub(in crate::data_ownership_v1) fn lower_private_owned_aggregate_function<'a>(
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a super::super::function_catalog::FunctionCatalog,
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<raw::Function> {
@@ -235,6 +259,7 @@ pub(in crate::data_ownership_v1) fn lower_private_owned_aggregate_function<'a>(
         graph,
         node_types,
         layouts,
+        catalog,
         result,
         errors,
     );

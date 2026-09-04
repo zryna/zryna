@@ -48,7 +48,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     self.node_types,
                     self.errors,
                 )?;
-                if !self.supported(ty) {
+                if !matches!(
+                    self.local_preparation_route(ty),
+                    super::mixed_shape::PreparationRoute::Aggregate
+                        | super::mixed_shape::PreparationRoute::MixedSummary
+                ) {
                     self.errors.at(
                         "ZRYNA-M3016",
                         span(self.input.sources(), statement.span),
@@ -100,7 +104,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         Some(ProjectedAggregateMoveContext::DirectLocal),
                     )?
                 } else {
-                    self.value(*initializer, ty)?
+                    super::constructor_preparation::PreparedValue::prepare_local(
+                        self,
+                        *initializer,
+                        ty,
+                    )?
+                    .consume()
                 };
                 if self.budget_places() >= ir::MAX_PLACES_PER_FUNCTION {
                     self.errors.at(
@@ -125,7 +134,13 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 ) {
                     return None;
                 }
-                if !ty.is_copy() && self.owners.rename(value, place).is_none() {
+                if !ty.is_copy()
+                    && self
+                        .owners
+                        .rename(value, place)
+                        .map(|delta| self.preparation_facts.apply(delta))
+                        .is_none()
+                {
                     self.errors.at(
                         "ZRYNA-M3014",
                         statement_span,
@@ -253,7 +268,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     ) {
                         return None;
                     }
-                    if self.owners.transfer(prepared).is_none() {
+                    if self
+                        .owners
+                        .transfer(prepared)
+                        .map(|delta| self.preparation_facts.apply(delta))
+                        .is_none()
+                    {
                         self.errors.at(
                             "ZRYNA-M3014",
                             assignment_span,
@@ -343,7 +363,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 ) {
                     return None;
                 }
-                if self.owners.replace(prepared, binding.place).is_none() {
+                if self
+                    .owners
+                    .replace(prepared, binding.place)
+                    .map(|delta| self.preparation_facts.apply(delta))
+                    .is_none()
+                {
                     self.errors.at(
                         "ZRYNA-M3014",
                         assignment_span,

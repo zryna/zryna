@@ -21,6 +21,77 @@ pub(super) struct CloneUsage {
     pub(super) pending: usize,
 }
 
+impl CloneUsage {
+    pub(super) fn validate(
+        &self,
+        aggregate: bool,
+        at: Span,
+        errors: &mut super::super::Errors<'_>,
+    ) -> Option<()> {
+        if aggregate { self.aggregate(at, errors) } else { self.string(at, errors) }
+    }
+    fn aggregate(&self, at: Span, errors: &mut super::super::Errors<'_>) -> Option<()> {
+        let pending = self.pending;
+        let prefix_actions = pending.checked_add(1).or_else(|| {
+            errors.at(
+                "ZRYNA-M3201",
+                at,
+                "aggregate clone prefix cleanup overflows its checked action count",
+                "reduce simultaneously live owned aggregates",
+            );
+            None
+        })?;
+        let _total_actions = pending.checked_add(prefix_actions).or_else(|| {
+            errors.at(
+                "ZRYNA-M3201",
+                at,
+                "aggregate clone cleanup accounting overflows",
+                "reduce simultaneously live owned aggregates",
+            );
+            None
+        })?;
+        if aggregate_clone_budget_violation(
+            self.values,
+            self.places,
+            self.transitions.saturating_add(self.reserved_transitions),
+            self.cleanup_plans,
+            self.cleanup_actions,
+            pending,
+        ) {
+            errors.at(
+                "ZRYNA-M3201",
+                at,
+                "structural clone exceeds a checked value, place, or cleanup resource limit",
+                "reduce simultaneously live owned aggregates or clone sites",
+            );
+            return None;
+        }
+
+        Some(())
+    }
+    fn string(&self, at: Span, errors: &mut super::super::Errors<'_>) -> Option<()> {
+        let pending = self.pending;
+        if projected_string_clone_budget_violation(
+            self.values,
+            self.places,
+            self.transitions,
+            self.reserved_transitions,
+            self.cleanup_plans,
+            self.cleanup_actions,
+            pending,
+        ) {
+            errors.at(
+                "ZRYNA-M3201",
+                at,
+                "projected String clone exceeds a checked value, place, transition, or cleanup limit",
+                "reduce simultaneously live owned aggregates or projected clone sites",
+            );
+            return None;
+        }
+        Some(())
+    }
+}
+
 impl<P: Fn(raw::PlaceId) -> Option<raw::PlaceId>> OperandDecisions<'_, '_, '_, P> {
     pub(super) fn aggregate_clone_decision(
         &mut self,
@@ -28,6 +99,28 @@ impl<P: Fn(raw::PlaceId) -> Option<raw::PlaceId>> OperandDecisions<'_, '_, '_, P
         expected: Ty,
         at: Span,
         usage: &CloneUsage,
+    ) -> Option<Binding> {
+        let binding = self.aggregate_clone_source(operand, expected, at)?;
+        usage.validate(true, at, self.errors)?;
+        Some(binding)
+    }
+    pub(super) fn string_clone_decision(
+        &mut self,
+        projection: OwnedAggregatePlace,
+        expected: Ty,
+        at: Span,
+        usage: &CloneUsage,
+    ) -> Option<OwnedAggregatePlace> {
+        let projection = self.string_clone_source(projection, expected, at)?;
+        usage.validate(false, at, self.errors)?;
+        Some(projection)
+    }
+
+    pub(super) fn aggregate_clone_source(
+        &mut self,
+        operand: u32,
+        expected: Ty,
+        at: Span,
     ) -> Option<Binding> {
         if expected.is_copy()
             || !matches!(
@@ -82,51 +175,14 @@ impl<P: Fn(raw::PlaceId) -> Option<raw::PlaceId>> OperandDecisions<'_, '_, '_, P
             return None;
         }
 
-        let pending = usage.pending;
-        let prefix_actions = pending.checked_add(1).or_else(|| {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "aggregate clone prefix cleanup overflows its checked action count",
-                "reduce simultaneously live owned aggregates",
-            );
-            None
-        })?;
-        let _total_actions = pending.checked_add(prefix_actions).or_else(|| {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "aggregate clone cleanup accounting overflows",
-                "reduce simultaneously live owned aggregates",
-            );
-            None
-        })?;
-        if aggregate_clone_budget_violation(
-            usage.values,
-            usage.places,
-            usage.transitions.saturating_add(usage.reserved_transitions),
-            usage.cleanup_plans,
-            usage.cleanup_actions,
-            pending,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "structural clone exceeds a checked value, place, or cleanup resource limit",
-                "reduce simultaneously live owned aggregates or clone sites",
-            );
-            return None;
-        }
-
         Some(binding)
     }
 
-    pub(super) fn string_clone_decision(
+    pub(super) fn string_clone_source(
         &mut self,
         projection: OwnedAggregatePlace,
         expected: Ty,
         at: Span,
-        usage: &CloneUsage,
     ) -> Option<OwnedAggregatePlace> {
         if projection.is_root
             || expected.category != TypeCategory::String
@@ -149,24 +205,7 @@ impl<P: Fn(raw::PlaceId) -> Option<raw::PlaceId>> OperandDecisions<'_, '_, '_, P
             );
             return None;
         }
-        let pending = usage.pending;
-        if projected_string_clone_budget_violation(
-            usage.values,
-            usage.places,
-            usage.transitions,
-            usage.reserved_transitions,
-            usage.cleanup_plans,
-            usage.cleanup_actions,
-            pending,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "projected String clone exceeds a checked value, place, transition, or cleanup limit",
-                "reduce simultaneously live owned aggregates or projected clone sites",
-            );
-            return None;
-        }
+
         Some(projection)
     }
 }

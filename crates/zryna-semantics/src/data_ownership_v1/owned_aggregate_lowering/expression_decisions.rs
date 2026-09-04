@@ -46,9 +46,12 @@ pub(super) enum ExpressionKind<'f> {
     Reference(&'f syntax::RawIdentifierSyntax),
     Projection(u32),
     StringClone(u32),
+    StringConcat { arguments: &'f [u32], callee: Span },
+    Call { arguments: &'f [u32], callee: &'f syntax::RawIdentifierSyntax },
     AggregateClone(u32),
     Struct(StructDecision),
     Array(ArrayDecision<'f>),
+    Vec(ArrayDecision<'f>),
     Enum(EnumDecision),
 }
 
@@ -101,15 +104,44 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
                 ExpressionKind::StringClone(*value)
             }
             RawExpressionKind::Clone { value, .. } => ExpressionKind::AggregateClone(*value),
+            RawExpressionKind::Call { callee, arguments, .. }
+                if expected.category == TypeCategory::String && callee.text == "concat" =>
+            {
+                ExpressionKind::StringConcat {
+                    arguments,
+                    callee: span(self.input.sources(), callee.span),
+                }
+            }
             RawExpressionKind::StructConstruction { type_name, fields, .. }
                 if expected.category == TypeCategory::Struct =>
             {
                 ExpressionKind::Struct(self.struct_decision(type_name, fields, expected, at)?)
             }
+            RawExpressionKind::Call { callee, arguments, .. } => {
+                ExpressionKind::Call { callee, arguments }
+            }
             RawExpressionKind::FixedArrayConstruction { type_syntax, elements, .. }
                 if expected.category == TypeCategory::FixedArray =>
             {
                 ExpressionKind::Array(self.array_decision(*type_syntax, elements, expected, at)?)
+            }
+            RawExpressionKind::VecConstruction { type_syntax, elements, .. }
+                if expected.category == TypeCategory::Vec =>
+            {
+                let actual = self.child_type(*type_syntax)?;
+                if actual != expected {
+                    self.errors.at(
+                        "ZRYNA-M3013",
+                        at,
+                        "Vec construction type differs from its contextual type",
+                        "construct the exact annotated Vec type",
+                    );
+                    return None;
+                }
+                let element_id = self.layouts.type_by_id(actual.layout)?.referenced_type()?;
+                let element =
+                    self.node_types.iter().flatten().find(|ty| ty.layout == element_id).copied()?;
+                ExpressionKind::Vec(ArrayDecision { elements, element })
             }
             RawExpressionKind::EnumConstruction { type_name, variant, payload, .. }
                 if expected.category == TypeCategory::Enum =>

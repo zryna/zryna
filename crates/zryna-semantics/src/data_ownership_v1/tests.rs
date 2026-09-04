@@ -7,6 +7,21 @@ pub(super) mod constructor_envelope_fixtures;
 mod constructor_plans;
 mod constructor_reservations;
 mod constructor_value_types;
+mod copy_nested_enum_routes;
+pub(in crate::data_ownership_v1) mod mixed_call_string_nesting;
+pub(in crate::data_ownership_v1) mod mixed_call_unknown_clone;
+mod mixed_construction;
+mod mixed_local_construction;
+pub(super) mod mixed_phase_fixtures;
+mod mixed_recursive_vec;
+mod mixed_string_call_rejections;
+pub(in crate::data_ownership_v1) mod mixed_string_calls;
+mod mixed_string_local_call;
+pub(in crate::data_ownership_v1) mod mixed_string_read_scopes;
+pub(in crate::data_ownership_v1) mod mixed_unknown_projected;
+pub(in crate::data_ownership_v1) mod mixed_vec_calls;
+pub(in crate::data_ownership_v1) mod mixed_vec_siblings;
+pub(super) mod nested_mixed_construction;
 mod projection_descriptors;
 use super::borrow_call_resources::{
     BorrowCallPreflightError, BorrowCallProgramBudgetLimit, borrow_call_program_budget_violation,

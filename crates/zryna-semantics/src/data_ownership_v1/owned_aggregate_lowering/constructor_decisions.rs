@@ -36,7 +36,8 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         };
         let actual = self.node_types.get(decl.node.0 as usize).and_then(|ty| *ty)?;
         if actual != expected
-            || !aggregate_graph_is_supported(actual, self.layouts, &mut BTreeSet::new())
+            || !(aggregate_graph_is_supported(actual, self.layouts, &mut BTreeSet::new())
+                || super::super::mixed_shape::requires_summary(actual, self.layouts))
         {
             self.errors.at(
                 "ZRYNA-M3016",
@@ -123,7 +124,8 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             self.errors,
         )?;
         if actual != expected
-            || !aggregate_graph_is_supported(actual, self.layouts, &mut BTreeSet::new())
+            || !(aggregate_graph_is_supported(actual, self.layouts, &mut BTreeSet::new())
+                || super::super::mixed_shape::requires_summary(actual, self.layouts))
         {
             self.errors.at(
                 "ZRYNA-M3016",
@@ -149,6 +151,11 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         }
         let element = self.ty_for_layout(record.referenced_type()?)?;
         Some(ArrayDecision { elements, element })
+    }
+
+    fn enum_constructor_supported(&self, ty: Ty) -> bool {
+        owned_enum_graph_is_supported(ty, self.layouts)
+            || super::super::mixed_shape::requires_summary(ty, self.layouts)
     }
 
     pub(super) fn enum_decision(
@@ -191,7 +198,7 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             );
             return None;
         }
-        if !owned_enum_graph_is_supported(actual, self.layouts) {
+        if !self.enum_constructor_supported(actual) {
             self.errors.at(
                 "ZRYNA-M3016",
                 span(self.input.sources(), name.span),
@@ -234,7 +241,9 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
                     self.node_types,
                     self.errors,
                 )?;
-                if !aggregate_graph_is_supported(payload_ty, self.layouts, &mut BTreeSet::new()) {
+                if !aggregate_graph_is_supported(payload_ty, self.layouts, &mut BTreeSet::new())
+                    && !super::super::mixed_shape::supported(payload_ty, self.layouts)
+                {
                     self.errors.at(
                         "ZRYNA-M3016",
                         span(self.input.sources(), variant_name.span),

@@ -2,8 +2,7 @@ use zryna_ir::data_ownership_v1::raw;
 use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 
-use super::super::function_catalog::{FunctionResolution, FunctionSignature};
-use super::super::global_resource_limits::checked_string_concat_bytes;
+use super::super::function_catalog::FunctionSignature;
 use super::super::owned_lowering_resources::{
     OwnedStringPreparationBudget, preflight_owned_string_preparation,
 };
@@ -104,21 +103,13 @@ impl PrivateStringLowerer<'_, '_, '_> {
                 };
                 let (left, left_bytes) = self.place_for_read(*left)?;
                 let (right, right_bytes) = self.place_for_read(*right)?;
-                let bytes = match (left_bytes, right_bytes) {
-                    (Some(left), Some(right)) => {
-                        let Some(bytes) = checked_string_concat_bytes(left, right) else {
-                            self.errors.at(
-                                "ZRYNA-M3012",
-                                at,
-                                "String concatenation exceeds the sealed runtime byte limit",
-                                "reduce the statically known concatenated String size",
-                            );
-                            return None;
-                        };
-                        Some(bytes)
-                    }
-                    _ => None,
-                };
+                let bytes = super::super::owned_string_read::concat_optional_bytes(
+                    left_bytes,
+                    right_bytes,
+                    at,
+                    self.errors,
+                )?
+                .known();
                 let cleanup = self.push_instruction_cleanup(at, None)?;
                 let concatenated = self.push_temporary(
                     at,
@@ -146,50 +137,13 @@ impl PrivateStringLowerer<'_, '_, '_> {
         &mut self,
         callee: &syntax::RawIdentifierSyntax,
     ) -> Option<FunctionSignature> {
-        let signature = match self.catalog.resolve(self.module, &callee.text) {
-            FunctionResolution::Exact(signature) => signature.clone(),
-            FunctionResolution::WrongCase => {
-                self.errors.at(
-                    "ZRYNA-M3002",
-                    span(self.input.sources(), callee.span),
-                    format!("call name '{}' has the wrong portable ASCII case", callee.text),
-                    "use the callee's exact declared spelling",
-                );
-                return None;
-            }
-            FunctionResolution::Missing => {
-                self.errors.at(
-                    "ZRYNA-M3002",
-                    span(self.input.sources(), callee.span),
-                    format!("function '{}' is not declared in this module", callee.text),
-                    "call one exact private same-module function",
-                );
-                return None;
-            }
-        };
-        if !signature.private {
-            self.errors.at(
-                "ZRYNA-M3016",
-                span(self.input.sources(), callee.span),
-                "owned calls require one private same-module callee",
-                "keep String producers and identity functions internal",
-            );
-            return None;
+        super::super::owned_call_resolution::OwnedCallResolution {
+            input: self.input,
+            module: self.module,
+            catalog: self.catalog,
+            errors: self.errors,
         }
-        if signature.result != self.ty
-            || signature.has_borrow_parameters()
-            || signature.parameters.len() > 1
-            || signature.parameters.iter().any(|parameter| *parameter != self.ty)
-        {
-            self.errors.at(
-                "ZRYNA-M3016",
-                span(self.input.sources(), callee.span),
-                "owned call signature is outside the sealed String producer/identity checkpoint",
-                "call a private zero-argument String producer or one-String identity function",
-            );
-            return None;
-        }
-        Some(signature)
+        .string(self.ty, callee)
     }
 
     fn prepare_direct_call_arguments(
