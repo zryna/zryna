@@ -59,12 +59,23 @@ test('planned ownership composition binds existing declarations and located test
   const files = [...new Set([...declarations.map(([file]) => file), ...references.map(([file]) => `tests/${file}`)])];
   const sources = new Map(await Promise.all(files.map(async file => [file,
     await readFile(path.join(compilerWorkspaceRoot, root, file), 'utf8')])));
+  const upgradeRequirements = [
+    'producer-facing edge-shape descriptor before a complete CFG exists',
+    'The descriptor proves type/signature shape only.',
+    'does not require an already-verified upgraded program',
+    'Mandatory full IR verification subsequently proves the complete operation',
+    'descriptor does not decide which outcome will execute',
+    'separate from real target/runtime execution',
+  ];
   function check(text, sourceFiles) {
     assert.match(text, /planned implementation contract, not implemented generic source semantics/);
     assert.match(text, /callee's call-scoped borrow access ends on call completion,\non either success or trap/);
     assert.match(text, /caller's original lexical borrow authority is separately retained\nand discharged under lexical rules; the call does not implicitly extend it or permit escape/);
     const sections = [...text.matchAll(/^## C([1-8]): /gm)].map(match => match[1]);
     assert.deepEqual(sections, ['1', '2', '3', '4', '5', '6', '7', '8']);
+    const upgrade = text.split('## C8: Upgrade-success edge signature\n')[1]
+      ?.split('\n## Integration and closure')[0].replace(/\s+/g, ' ') ?? '';
+    for (const requirement of upgradeRequirements) assert(upgrade.includes(requirement), requirement);
     for (const [file, declaration] of declarations) assert(sourceFiles.get(file)?.includes(declaration), declaration);
     for (const [file, name] of references) {
       assert.match(sourceFiles.get(`tests/${file}`) ?? '', new RegExp(`#\\[test\\]\\s*fn ${name}\\(`), name);
@@ -73,6 +84,13 @@ test('planned ownership composition binds existing declarations and located test
   check(contract, sources);
   assert.throws(() => check(contract.replace('on either success or trap', 'only on success'), sources));
   assert.throws(() => check(contract.replace('separately retained', 'implicitly extended'), sources));
+  for (const [index, fragment] of ['edge-shape descriptor', 'type/signature shape only',
+    'already-verified upgraded', 'Mandatory full IR verification',
+    'descriptor does not decide', 'separate from real target/runtime execution'].entries()) {
+    const changed = contract.replace(fragment, 'removed requirement');
+    assert.notEqual(changed, contract);
+    assert.throws(() => check(changed, sources), error => error.message.includes(upgradeRequirements[index]));
+  }
   for (let index = 1; index <= 8; index++) {
     assert.throws(() => check(contract.replace(`## C${index}: `, '## Missing: '), sources));
   }
@@ -91,6 +109,18 @@ test('planned ownership composition binds existing declarations and located test
   assert.match(evidence, /pending #233–#237 extraction paths are not current-main paths/);
   assert.match(evidence, /500 lines triggers a split\/cohesion review, not a compulsory limit/);
   assert.match(evidence, /larger cohesive module is allowed with a documented rationale/);
+  function checkUpgradeEvidence(text) {
+    const row = text.split('\n').find(line => line.startsWith('| `generic_upgrade_synthetic_success_signature` |')) ?? '';
+    for (const requirement of ['producer-facing type/signature shape before CFG construction',
+      'mandatory full IR verification seals', 'separate bounded transition-model proof', 'not target execution']) {
+      assert(row.includes(requirement), requirement);
+    }
+  }
+  checkUpgradeEvidence(evidence);
+  for (const requirement of ['producer-facing type/signature shape before CFG construction',
+    'mandatory full IR verification seals', 'separate bounded transition-model proof', 'not target execution']) {
+    assert.throws(() => checkUpgradeEvidence(evidence.replace(requirement, 'removed requirement')));
+  }
 });
 
 test('beginner setup preserves direct runtime and repository-local editing boundaries', async () => {

@@ -53,7 +53,7 @@ hostile, failure/resource and deterministic valid-replay cases at its implementi
 | `generic_owned_call_arguments_results_and_traps` | #278/#279/#261: mixed owned arguments/results, left-to-right effects, preparation versus callee-trap transfer, borrow exclusions, acyclic calls |
 | `generic_refined_match_continuation_state` | #278/#279/#261: exhaustive multi-arm nested payloads and nonterminal continuation; wrong variant, repeated consumption and unequal state rejection |
 | `generic_nested_branch_loop_scope_cleanup` | #279/#262: nested/repeated branches/loops, body calls/matches/returns/traps, exact header restoration and lexical borrow discharge; no repair of mismatched state |
-| `generic_upgrade_synthetic_success_signature` | #260/#279 then #262: +1 success parameter only, expired zero synthetic, exact type/dense identity, overflow neither edge; forged outcome/owner/replay rejected |
+| `generic_upgrade_synthetic_success_signature` | #260/#279 then #262: producer-facing type/signature shape before CFG construction, not final ownership or runtime outcome; mandatory full IR verification seals +1 success parameter only, expired zero synthetic, exact type/dense identity and cleanup; separate bounded transition-model proof covers overflow neither edge and forged outcome/owner/replay rejection, not target execution |
 | `generic_composition_resource_boundaries` | #278/#279/#263: checked values/places/blocks/edges/transitions/operands/drop actions/sites and program totals, exact/first-extra/overflow before dependent mutation and valid replay |
 
 Source positives require authenticated syntax through mandatory independent IR verification.

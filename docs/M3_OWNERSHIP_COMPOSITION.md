@@ -114,19 +114,34 @@ than inserting implicit clone/conditional-drop repair. Divergence is not a contr
 
 ## C8: Upgrade-success edge signature
 
-Input: #260-sealed operation obligation binding exact `Weak<T>`, site, retained operand, checked
-outcome and cleanup, plus ordinary typed successor arguments. Output: an ordinary edge signature
-or a distinct upgrade-success signature. Only success creates the first `Shared<T>` parameter;
-its remaining parameters match explicit arguments. Expired has no synthetic owner. REFCOUNT takes
-neither edge and uses original-trap cleanup. Expiration skips upgrade's trap cleanup, not normal
-cleanup in the expired body. No reusable Boolean ticket, nullable handle or preliminary count test.
+Producer input: the exact `Weak<T>` type from the sealed type universe and the ordinary typed
+successor-argument schemas. #260 supplies a producer-facing edge-shape descriptor before a complete
+CFG exists. It describes an ordinary edge or an upgrade-success edge: success requires a first
+`Shared<T>` parameter of the exact referent type, followed by parameters matching its explicit
+arguments; expired requires only parameters matching its explicit arguments. Declaring that
+synthetic raw parameter does not issue an owned value or prove an outcome.
+
+The descriptor proves type/signature shape only. It does not require an already-verified upgraded
+program and proves no operand liveness, site ownership, borrow discharge, cleanup completion,
+final CFG validity or concrete refcount outcome. #279 uses it while assembling untrusted raw IR.
+Mandatory full IR verification subsequently proves the complete operation, ownership flow,
+dominance, edge signatures and site-bound cleanup; only the resulting opaque verified views carry
+final authority for verified consumers. No producer helper can replace or bypass that boundary.
+
+The symbolic operation contract remains indivisible upgrade: success alone issues the new owner,
+expired issues none, and REFCOUNT takes neither successor while preserving original-trap cleanup.
+Expiration skips upgrade's trap cleanup, not normal cleanup in the expired body. A compile-time
+descriptor does not decide which outcome will execute. Bounded #260 transition-model evidence is
+separate from real target/runtime execution. No reusable Boolean ticket, nullable handle or
+preliminary count test is introduced.
 
 At the frozen baseline, `OwnedCfgState::finish` checks explicit edge arguments against every target
 parameter, even for `WeakUpgradeBranch`. The independent IR instead requires success arguments + 1
 to equal success parameters, issues the first owner and matches remaining arguments to parameters
 after it. This is an unused future-producer adapter gap, not a failing supported source program.
-#279 must implement that distinction using #260 authority before #262 emits authenticated upgrades;
-do not weaken IR validation or manufacture a value on the expired edge.
+#279 must implement that distinction using the #260 producer-facing shape before #262 emits
+upgrade programs; every completed program must still pass mandatory full IR verification. Do not
+weaken IR validation or manufacture a value on the expired edge.
 
 ## Integration and closure
 
