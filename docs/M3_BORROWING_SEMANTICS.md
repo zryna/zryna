@@ -1,6 +1,8 @@
 # M3 bounded borrowing implementation contract
 
-Status: Issues #113, #114, #115, #116, #117, #119, #120, and #121 complete. Issue #116 adds one
+Status: bounded compiler-boundary implementation complete for Issue #82.
+
+Issues #113, #114, #115, #116, #117, #119, #120, and #121 complete. Issue #116 adds one
 bounded shared-read shape for a whole owned root after independent verification and required merge
 gates.
 The internal semantic producer admits bounded
@@ -112,10 +114,120 @@ the aggregate closure claim; no earlier child marks Issue #82 complete or enable
 
 | Issue #82 acceptance criterion | Owning slices | Named evidence class |
 | --- | --- | --- |
-| valid local borrows compile with deterministic scope and access authority | #114, #115, #116, #119, #120, #121 | source-positive semantic fixtures plus mandatory verified-IR views |
+| valid local borrows compile with deterministic scope and access authority | #114, #115, #116, #117, #119, #120, #121 | source-positive semantic fixtures plus mandatory verified-IR views |
 | conflicts, escape, owner move/drop misuse, and invalid join/loop state fail stably | #115, #117, #120, #121 | source-hostile diagnostic fixtures with repeated-order checks |
 | forged or incomplete IR borrow claims fail | #113, retained by #122 | focused IR positives; unused, sparse, duplicate, inactive, wrong-access, overlap, call, and edge-escape negatives |
 | M1, M2, and non-borrowing M3 remain unchanged | every child, aggregate in #122 | focused quick lane, documentation checks, `pnpm preflight`, `pnpm m0:check`, required Linux/Windows jobs |
+
+### Named closure evidence
+
+The following tests make the parent map inspectable. Issue #122 consolidates the bounded
+implementation, resource and regression evidence; source presence alone is not execution proof.
+The closure change requires independent review and successful integrated Linux/Windows gates.
+Semantic fixtures authenticate syntax snapshots and inspect verified IR;
+they do not establish public CLI or target-runtime support.
+
+Semantic test paths below are relative to
+`crates/zryna-semantics/src/data_ownership_v1/tests/`.
+
+| Boundary | Positive test | Rejection or replay test |
+| --- | --- | --- |
+| shared and exclusive root scope (`straight_root_borrows.rs`) | `shared_root_aliases_read_copy_values_end_in_reverse_and_restore_owner_access`; `exclusive_root_borrow_reads_writes_and_restores_owner_access` | `complete_root_alias_conflict_matrix_fails_before_ir_construction`; `exclusive_lowering_and_conflict_diagnostics_are_deterministic` |
+| owned-root source preservation (`owned_root_borrow_reads.rs`) | `owned_root_shared_reads_reuse_existing_operations_and_restore_each_owner` | `owned_root_borrow_faults_retain_the_source_and_exact_cleanup_authority`; `owned_root_borrow_exclusions_are_ordered_source_faithful_and_deterministic` |
+| conditional discharge (`conditional_root_borrows.rs`) | `conditional_root_borrows_use_canonical_blocks_and_discharge_each_arm`; `conditional_root_borrow_accepts_exclusive_authority_in_both_arms` | `conditional_arm_conflicts_and_owner_access_fail_before_ir_construction`; `conditional_root_borrow_lowering_is_deterministic` |
+| loop discharge (`loop_root_borrows.rs`) | `loop_root_borrows_discharge_before_the_canonical_backedge`; `loop_shared_root_borrow_keeps_owner_copy_reads_inside_the_body` | `loop_root_borrow_exclusions_are_source_faithful_ordered_and_stable` |
+| exact private calls (`borrow_call_conformance.rs`) | `accepted_borrow_call_fixture_snapshots_authenticate_and_lower` | `rejected_borrow_call_fixtures_freeze_diagnostics_spans_and_recovery` |
+| unchanged forwarded authority (`borrow_forwarding_calls.rs`) | `lexical_authority_is_forwarded_unchanged_and_ended_only_by_its_caller` | `post_preflight_argument_failure_restores_the_full_lowerer_snapshot_before_replay` |
+| static projected disjointness (`projected_borrows.rs`) | `projected_borrows_preserve_exact_static_paths_and_disjoint_authority`; `overlapping_shared_parent_and_child_keep_independent_verified_authority` | `projected_borrow_exclusions_are_exact_ordered_and_deterministic`; `projected_borrow_lowering_replays_the_complete_place_and_authority_trace` |
+
+The independent verifier's tests in `crates/zryna-ir/src/data_ownership_v1/tests.rs`
+include real accepted authority in `dense_shared_borrow_read_and_end_is_accepted` and
+`borrow_parameter_is_an_authenticated_active_authority`. Forged or incomplete claims are covered
+by `unused_borrow_parameter_authority_is_rejected`,
+`sparse_and_duplicate_borrow_parameter_metadata_is_rejected`, and
+`sparse_duplicate_and_inactive_lexical_borrow_authority_is_rejected`. Edge and callee exclusions
+are covered by `lexical_borrow_cannot_escape_return_or_trap`,
+`lexical_borrow_cannot_cross_branch_or_jump_edges`,
+`lexical_borrow_loop_rejects_backedge_escape_inactive_header_end_and_state_mismatch`, and
+`borrow_parameter_cannot_be_ended_or_exported`.
+
+Issue #248 adds fully verified dense exact/first-extra resource programs in
+`crates/zryna-ir/src/data_ownership_v1/tests/borrow_resource_boundaries.rs`:
+
+- `dense_lexical_active_borrow_exact_and_first_extra_are_fully_verified`;
+- `parameter_and_lexical_authorities_share_the_authenticated_active_limit`;
+- `sequential_dense_lexical_sites_may_exceed_the_active_borrow_limit`.
+
+These tests distinguish simultaneously active authorities from total lexical sites. Other
+resource-formula and raw-preflight tests prove their counters and rejection order; an exact
+synthetic count alone does not prove that a complete program authenticates and verifies. Fixed
+source shapes may hit another resource limit before a nominal maximum is reachable. Loop trace
+walks over verified views prove scope topology, not execution by a JavaScript, WebAssembly, or
+native runtime. The final closure report must preserve these evidence distinctions.
+
+Normative indexed borrowing remains separately tracked: #254 owns the verified element-access
+and complete-container conflict authority; #255 and #256 own dynamic fixed-array and Vec-element
+source producers. They must preserve the specification's referent, overlap, evaluation, bounds,
+and cleanup rules before complete target support and #89/#90 public activation. Closing the
+bounded #82 checkpoint does not implement or waive that chain.
+
+Issue #250 adds the following tests in
+`crates/zryna-ir/src/data_ownership_v1/tests/borrow_loop_nesting.rs`:
+
+- `authenticated_borrow_loop_nesting_accepts_exact_and_rejects_first_extra`;
+- `authenticated_nested_borrow_loops_replay_the_header_latch_and_scope_trace`;
+- `authenticated_nested_loop_rejects_a_borrow_carried_to_its_latch`.
+
+They use real reducible nested headers/latches and a shared begin/read/end sequence. Full M3 IR
+verification accepts depth 128, rejects 129, and rejects an active borrow carried to the latch.
+This does not admit nested source borrowing or prove runtime loop execution.
+
+Issue #251 adds `owned_root_shared_read_drop_budget_is_authenticated_exact_and_first_extra` in
+`crates/zryna-semantics/src/data_ownership_v1/tests/owned_root_borrow_reads.rs`. Authenticated
+source/snapshot lowering accepts exactly 262,144 combined inserted drop actions, rejects the first
+extra action at return cleanup, and verifies deterministic recovery and source-owner preservation.
+The proportional test is ignored by ordinary test invocation and must run in the include-ignored
+preflight lane; an ordinary suite pass alone is not its execution evidence.
+
+Issues #250 and #251 are merged in the implementation checkpoint
+`834ca0ef0697694b9fd7aee8ef68215892af85fe`. The pre-merge candidate passed its required
+Linux/Windows checks, and this merge preserves its complete tree. Issue #122
+adds the named evidence map and documentation guards without changing compiler behavior. Its own
+closure commit must also pass the integrated gates; earlier child results do not waive them.
+
+### Resource evidence boundaries
+
+| Resource | Named authority | What the evidence proves |
+| --- | --- | --- |
+| active authorities | #248 dense lexical, parameter-plus-lexical and sequential tests above | complete raw programs and opaque verified traces, not duplicate-ID counter-only fixtures |
+| M3 loop nesting | #250 exact/first-extra and hostile latch tests above | complete reducible IR graph verification; source nested loops remain outside this checkpoint |
+| inserted drop actions | #251 authenticated owned-root boundary above | source/semantic/IR cleanup authority at the exact and first-extra frontier; no allocator or backend execution |
+| values, places and transitions | `root_borrow_resources_enforce_exact_value_place_and_transition_limits`; `borrow_call_resource_preflight_accepts_exact_limits_and_rejects_first_extra_in_order` | resource planning and rejection order; not a claim that every nominal maximum is reachable by an admitted source shape |
+| fixed branch blocks/edges | `root_borrow_resources_enforce_exact_block_and_edge_limits` | exact/first-extra resource planning; current canonical branch/loop shapes retain four blocks and four edges |
+| call edges/depth and arithmetic overflow | `borrow_call_program_edge_and_depth_boundaries_are_exact`; `borrow_call_resource_overflow_precedes_limit_selection_and_preserves_authority_cost` | program-budget arithmetic and precedence; independent call-graph verification separately proves real depth-128 acceptance and depth-129 rejection |
+| combined owned-root wrapper costs | `owned_root_borrow_authority_budget_is_exact_saturating_and_atomic` | checked wrapper instruction/drop/borrow cost accounting before rewrite; not a second claim of a fully verified maximum-size source program |
+
+The ordinary semantic resource tests live in `conditional_root_borrows.rs`,
+`lexical_borrow_calls.rs`, and `owned_root_borrow_reads.rs`. The complete IR suite retains its
+nominal type, construction operand, place, transition, cleanup-plan, drop and diagnostic-cap tests.
+Synthetic preflight collections authenticate count rejection, not all IDs or graph structure.
+Final closure must run the whole relevant suites and proportional cases, retaining these
+distinctions instead of treating every helper test as an executable target program.
+
+## Issue #122 closure scope
+
+The bounded internal borrowing implementation is complete; Shared/Weak source production is the
+next dependency-ready work in #83, not an implemented capability. The tracked #254–#256 indexed
+borrowing chain and all runtime, target, driver, conformance and public-profile gates remain open.
+This checkpoint does not certify the entire normative M3 profile or enable a public CLI profile.
+
+At the implementation checkpoint above, ordinary semantics has 344 passing tests and two ignored
+proportional tests. The include-ignored M3 lane runs 324 tests, including both proportional cases;
+together the lanes cover all 346 semantic tests. The M3 IR lane runs 141 tests, including the
+proportional String boundary; ordinary IR has 170 passing tests and one ignored case. These are
+distinct lanes, not a claim of 346 or 171 ordinary passes. The 44 named references above also have
+actual passing execution records. Reproduction remains `pnpm preflight` plus `pnpm m0:check` and
+the required Linux/Windows CI, with exact commit and artifact provenance recorded by publication.
 
 ## Issue #113 evidence
 

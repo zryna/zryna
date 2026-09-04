@@ -14,9 +14,10 @@ import {
   borrowCallFixtureInventory,
   validateM3BorrowCallConformance,
 } from "./lib/check-m3-borrow-call-conformance.mjs";
+import { m3IssueGraph, validateM3IssueOrder } from "./lib/m3-issue-graph.mjs";
 
 export const expectedRegistrySha256 =
-  "d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f";
+  "0c144ad82ec1f601f5c2057578df001487e0bebeead002467bedcaa197ef9e51";
 const registryPath = fileURLToPath(
   new URL("../tests/m3-contract-v1.json", import.meta.url),
 );
@@ -45,25 +46,6 @@ const ROOT_KEYS = [
   "borrowCallConformance",
   "unsupported",
 ];
-
-const ISSUE_GRAPH = [
-  [75, [], "normative-profile"],
-  [76, [75], "syntax-protocol-v4"],
-  [77, [75], "verified-layout-authority"],
-  [78, [75, 77], "verified-data-ir"],
-  [79, [76, 77, 78], "aggregate-semantic-lowering"],
-  [80, [75, 77], "ownership-runtime-abi"],
-  [81, [78, 79, 80], "owned-data-move-drop"],
-  [82, [81], "bounded-borrowing"],
-  [83, [80, 81, 82], "shared-weak-semantics"],
-  [84, [79, 80, 81, 82, 83], "javascript"],
-  [85, [79, 80, 81, 82, 83], "webassembly"],
-  [86, [78, 80, 81, 82, 83], "verified-native-mir"],
-  [87, [77, 80, 86], "native-object-link-run"],
-  [88, [76, 84, 85, 87], "atomic-candidate-manifest-v3"],
-  [89, [88], "fixed-oracle-conformance"],
-  [90, [89], "public-activation-authenticated-documentation"],
-].map(([number, dependsOn, gate]) => ({ number, dependsOn, gate }));
 
 const U64_MAXIMUM = (1n << 64n) - 1n;
 
@@ -158,11 +140,10 @@ export function validateM3Contract(
     ["m0", "m1-i32-v1", "m2-control-flow-v1"],
     "regressions",
   );
-  exactArray(contract.issues, ISSUE_GRAPH, "issue graph");
+  exactArray(contract.issues, m3IssueGraph, "issue graph");
+  validateM3IssueOrder(contract.issues);
   for (const issue of contract.issues) {
     exactKeys(issue, ["number", "dependsOn", "gate"], `issue ${issue.number}`);
-    if (issue.dependsOn.some((dependency) => dependency >= issue.number))
-      fail(`issue ${issue.number} has a non-prior dependency`);
   }
   for (const [label, values] of [
     ["types", contract.types],

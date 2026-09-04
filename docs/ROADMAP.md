@@ -269,7 +269,8 @@ move/explicit clone from a distinct fully
 initialized exact same-type whole Struct/FixedArray root into a mutable available static
 `StructField`/`FixedArrayConstant` projection remain open, alongside
 general owned joins, owned loop-carried joins, repeated or nested control flow, and general scope
-exits are future child-issue work. Issue #82 is active through the checked dependency graph in
+exits are future child-issue work. Issue #82 is complete at its bounded internal boundary through
+the checked dependency graph in
 [`M3_BORROWING_SEMANTICS.md`](M3_BORROWING_SEMANTICS.md). Issue #113 freezes the contract and
 existing verified-IR prerequisite. Issues #114 and #115 implement the internal private straight-line
 `bool`/`i32` root shapes: shared and exclusive Copy access, const-alias write-through, the complete
@@ -308,7 +309,7 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #79 | struct, enum, and fixed-array semantic lowering                      | #76, #77, #78           | complete    |
 |   #80 | versioned ownership runtime ABI authority                            | #75, #77                | complete    |
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | complete    |
-|   #82 | bounded nonescaping lexical borrowing                                | #81                     | in progress |
+|   #82 | bounded nonescaping lexical borrowing                                | #81                     | complete    |
 |   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | planned     |
 |   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | planned     |
 |   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | planned     |
@@ -317,6 +318,38 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #88 | candidate driver integration and atomic manifest v3 bundles          | #76, #84, #85, #87      | planned     |
 |   #89 | fixed-oracle three-target conformance and resource gates             | #88                     | planned     |
 |   #90 | public profile activation, authenticated docs, website, and provenance | #89                     | planned     |
+
+The bounded #82/#120 checkpoint rejects dynamic-index and Vec-element source borrows. This does
+not implement or waive the normative complete-container overlap rule. The remaining M3 capability
+is explicitly tracked before complete target support and public activation:
+
+| Issue | Normative completion work | Dependencies |
+| ---: | --- | --- |
+| #254 | exact indexed element access with independently verified conservative container authority | #82, retaining #77/#78/#80/#81 |
+| #255 | dynamic fixed-array borrowing producer and failure/resource evidence | #254, retaining #76/#79/#81/#82 |
+| #256 | Vec-element borrowing producer and failure/resource evidence | #254, retaining #76/#80/#81/#82 |
+
+Issues #84, #85, and #86 retain their existing dependencies and also require this chain before
+claiming complete M3 target support. #89/#90 remain conformance and activation gates, not owners
+of missing source semantics. Copy-only staged evidence cannot close generic owned-element
+requirements; any staged remainder needs explicit blocking work. These tracked gaps do not
+activate new syntax or a public profile, and do not certify all other normative M3 requirements
+complete. Bounded #122 closure must preserve the distinction and its actual verification gates.
+
+The checked M3 registry records this dependency order rather than assuming that an earlier GitHub
+issue number cannot depend on later-discovered work. Its current SHA-256 is
+`0c144ad82ec1f601f5c2057578df001487e0bebeead002467bedcaa197ef9e51`.
+The original #119 provenance and unchanged borrow-call fixture digest remain historical evidence;
+updating the graph does not implement any of its planned capabilities.
+
+Issue #83 has six tracked sub-issues: #259 freezes the shared/weak interface, #260 verifies
+transition and upgrade graphs, #261 implements source handles and cleanup, #262 implements
+indivisible upgrade control flow, #263 proves failure/count/resource boundaries, and #264 owns
+integrated closure. Issue #83 is dependency-ready after the verified #82 closure change merges.
+Existing IR/ABI
+operations are reusable authority, not evidence that these source producers are implemented.
+Independent proof work may proceed after its interface is frozen; full payload support and all
+parent acceptance criteria remain required before #83 closes.
 
 `Pair` is the smallest mandatory fixed-oracle case, remains internal, and preserves scalar ABI v1
 exports. Issue #79 proves nominal identity, construction, source field order and access, sealed

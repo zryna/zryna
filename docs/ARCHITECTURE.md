@@ -550,7 +550,9 @@ Struct/root-Enum/fixed-array clone. It brackets the existing owned operations wi
 authority, retains the source, gives each owned result a distinct owner, and reuses existing
 cleanup/fault plans; `BorrowRead` remains Copy-only. It adds no projection, mutation, move,
 runtime, backend, or public capability. Issue #116 passed independent verification and required
-merge gates; aggregate closure remains #122.
+merge gates. Issue #122 consolidates the complete bounded internal borrowing boundary, its named
+resource/negative evidence and integrated regressions. Shared/Weak production and the normative
+#254–#256 indexed-borrowing chain remain separate work; this enables no public profile or runtime.
 
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve
