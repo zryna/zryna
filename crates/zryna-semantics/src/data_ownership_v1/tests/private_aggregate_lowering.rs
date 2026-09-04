@@ -295,7 +295,7 @@ fn private_owned_enum_accepts_supported_nested_aggregate_payload() {
     assert_eq!(instructions[2].variant(), Some(1));
 }
 #[test]
-fn private_owned_enum_use_after_move_and_exclusions_fail_closed() {
+fn private_owned_enum_use_after_move_fails_closed() {
     let sources = sources_for(OWNED_ENUM_MOVED_SOURCE);
     let syntax = verify_snapshot(response_snapshot(OWNED_ENUM_MOVED_RESPONSE), &sources)
         .expect("source-faithful moved enum v4");
@@ -305,12 +305,66 @@ fn private_owned_enum_use_after_move_and_exclusions_fail_closed() {
         diagnostics[0].primary_span().map(|span| (span.start(), span.end())),
         Some((155, 156)),
     );
+}
 
+#[test]
+fn private_owned_enum_vec_payload_reaches_verified_ir() {
     let sources = sources_for(OWNED_ENUM_VEC_SOURCE);
     let syntax = verify_snapshot(response_snapshot(OWNED_ENUM_VEC_RESPONSE), &sources)
-        .expect("source-faithful excluded Vec payload v4");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("Vec enum payload excluded");
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3016");
+        .expect("source-faithful Vec payload v4");
+    for _ in 0..2 {
+        let program = lower(pair_input(&syntax, &sources))
+            .expect("Vec enum payload reaches independent IR verification");
+        let functions = program
+            .modules()
+            .flat_map(zryna_ir::data_ownership_v1::VerifiedModule::functions)
+            .collect::<Vec<_>>();
+        assert_eq!(functions.len(), 1);
+        let function = functions[0];
+        let blocks = function.blocks().collect::<Vec<_>>();
+        assert_eq!(blocks.len(), 1);
+        let instructions = blocks[0].instructions().collect::<Vec<_>>();
+        assert_eq!(
+            instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>(),
+            vec![
+                VerifiedInstructionKind::StringFromUtf8,
+                VerifiedInstructionKind::VecConstruct,
+                VerifiedInstructionKind::EnumConstruct,
+            ],
+        );
+        assert_eq!(instructions[0].string_utf8_bytes(), Some(&b"x"[..]));
+        assert_eq!(instructions[2].variant(), Some(0));
+        let results = instructions
+            .iter()
+            .map(|instruction| instruction.result().expect("result"))
+            .collect::<Vec<_>>();
+        assert_eq!(results.iter().map(|value| value.index()).collect::<Vec<_>>(), vec![0, 1, 2]);
+        for (index, instruction) in instructions.iter().enumerate() {
+            let operands = instruction.value_operands().collect::<Vec<_>>();
+            assert_eq!(operands, if index == 0 { vec![] } else { vec![results[index - 1]] });
+        }
+        let places = function.places().collect::<Vec<_>>();
+        assert_eq!(places.len(), 3);
+        for (index, place) in places.iter().enumerate() {
+            assert!(!place.is_copy());
+            assert_eq!(place.kind(), VerifiedPlaceKind::Temporary(results[index]));
+            assert_eq!(place.ty(), instructions[index].result_type().expect("owned result type"));
+        }
+        assert_eq!(instructions[0].derived_drop_actions().count(), 0);
+        assert_eq!(
+            instructions[1]
+                .derived_drop_actions()
+                .map(|action| action.root().index())
+                .collect::<Vec<_>>(),
+            vec![0]
+        );
+        assert_eq!(instructions[2].cleanup(), None);
+        assert_eq!(function.cleanup_plans().count(), 3);
+        let returned = blocks[0].terminator();
+        assert_eq!(returned.kind(), VerifiedTerminatorKind::Return);
+        assert_eq!(returned.value_operands().collect::<Vec<_>>(), vec![results[2]]);
+        assert_eq!(returned.derived_drop_actions().count(), 0);
+    }
 }
 #[test]
 fn private_owned_enum_wrong_payload_shape_uses_enum_diagnostic() {

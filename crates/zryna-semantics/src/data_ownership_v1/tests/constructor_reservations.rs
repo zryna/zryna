@@ -2,6 +2,9 @@ use super::super::owned_vec_lowering::PrivateVecLowerer;
 use super::*;
 use zryna_ir::data_ownership_v1 as ir;
 
+#[path = "vec_order_controls.rs"]
+mod vec_order_controls;
+
 fn credits(lowerer: &PrivateVecLowerer<'_, '_, '_>) -> [usize; 5] {
     [
         lowerer.cfg.reserved_values,

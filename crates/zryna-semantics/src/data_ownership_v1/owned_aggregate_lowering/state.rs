@@ -5,7 +5,7 @@ use zryna_syntax::v4::{RawExpressionKind, RawFieldInitializerKind};
 use super::super::owned_constructor_plan::{
     ConstructorKind, ConstructorPlanError, ConstructorShape, PreparedConstructor,
 };
-use super::super::owned_lowering_resources::push_aggregate_reverse_cleanup;
+use super::super::owned_lowering_resources::{OwnedCleanupAccounting, OwnedCleanupPlanContext};
 use super::super::owner_state::OwnerDelta;
 use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
@@ -36,8 +36,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if !self.preflight_transition(1, at) {
             return false;
         }
-        self.instructions.push(raw::Instruction { result: None, span: at, kind });
+        self.emit_prepared_effect(at, kind);
         true
+    }
+
+    pub(super) fn emit_prepared_effect(&mut self, at: Span, kind: raw::InstructionKind) {
+        self.instructions.push(raw::Instruction { result: None, span: at, kind });
     }
 
     pub(super) fn push_cleanup(
@@ -45,12 +49,18 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
         excluded: Option<raw::PlaceId>,
     ) -> Option<raw::CleanupPlanId> {
-        push_aggregate_reverse_cleanup(
+        let [plans, actions] = &mut self.preparation_facts.held_cleanup;
+        OwnedCleanupAccounting::new(
             &mut self.cleanup_plans,
             &mut self.cleanup_actions,
+            plans,
+            actions,
+        )
+        .push_reverse(
             &self.owners,
             at,
             excluded,
+            OwnedCleanupPlanContext::Aggregate,
             self.errors,
         )
     }
@@ -175,6 +185,17 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         values: &[raw::ValueId],
         at: Span,
     ) -> Option<Emission> {
+        self.commit_constructor_with_cleanup(expected, kind, values, at, None)
+    }
+
+    pub(super) fn commit_constructor_with_cleanup(
+        &mut self,
+        expected: Ty,
+        kind: ConstructorKind,
+        values: &[raw::ValueId],
+        at: Span,
+        cleanup: Option<raw::CleanupPlanId>,
+    ) -> Option<Emission> {
         self.reserve_operands(values.len(), at)?;
         let prepared = ConstructorShape::derive(self.layouts, expected, kind, values.len(), |id| {
             self.node_types.iter().flatten().find(|ty| ty.layout == id).copied()
@@ -184,9 +205,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             shape.prepare(values, |value| self.constructor_types.get(value), &self.owners)
         });
         let prepared = constructor_result(prepared, at, self.errors)?;
-        let instruction = prepared.instruction(None).expect("infallible aggregate constructor");
+        let instruction =
+            prepared.instruction(cleanup).expect("typed constructor cleanup contract");
         let mut emission = self.emit_recorded(prepared.result_type(), at, instruction)?;
         emission.owners.extend(prepared.commit(&mut self.owners));
+        for delta in &emission.owners {
+            super::super::owner_state::apply_owner_delta(
+                &mut self.preparation_facts.string_bytes,
+                *delta,
+            );
+        }
         Some(emission)
     }
 }

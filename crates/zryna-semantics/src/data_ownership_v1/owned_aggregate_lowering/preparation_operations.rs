@@ -16,6 +16,7 @@ use super::state::constructor_result;
 
 pub(super) struct PreparationContext<'a, 'f, 's, 'e> {
     pub(super) decisions: ExpressionDecisions<'a, 'f, 'e>,
+    pub(super) catalog: &'a super::super::function_catalog::FunctionCatalog,
     pub(super) bindings: &'s BTreeMap<String, Binding>,
     pub(super) state: PreparationState<'s>,
     pub(super) aggregate_subobject_moves: usize,
@@ -88,6 +89,22 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
             }
             _ => {}
         }
+        for delta in &emission.owners {
+            super::super::owner_state::apply_owner_delta(
+                &mut self.state.facts.string_bytes,
+                *delta,
+            );
+        }
+        if let Some(owner) = self.state.owners.owner(emission.value) {
+            let bytes = match &leaf {
+                Leaf::String { bytes, .. } => Some(u64::try_from(bytes.len()).ok()?),
+                Leaf::StringClone { bytes, .. } | Leaf::StringConcat { bytes, .. } => bytes.known(),
+                _ => None,
+            };
+            if let Some(bytes) = bytes {
+                self.state.facts.string_bytes.insert(owner, bytes);
+            }
+        }
         let value = emission.value;
         self.steps.push(Step {
             operation: Operation::Leaf(leaf),
@@ -110,7 +127,7 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
         self.emit_leaf(Leaf::Reference(decision), ty, at)
     }
 
-    fn resolve(&mut self, id: u32) -> Option<OwnedAggregatePlace> {
+    pub(super) fn resolve(&mut self, id: u32) -> Option<OwnedAggregatePlace> {
         let mut inserted = Vec::new();
         let decisions = &mut self.decisions;
         let result = ProjectionResolver {
@@ -141,21 +158,82 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
 
     pub(super) fn projection(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
         let source = self.resolve(id)?;
+        self.resolved_projection(source, ty, at)
+    }
+
+    pub(super) fn resolved_projection(
+        &mut self,
+        source: OwnedAggregatePlace,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
         let operation = self.operands().projection_decision(source, ty, None, at)?;
         self.emit_leaf(Leaf::Projection { source, operation }, ty, at)
     }
 
-    pub(super) fn string_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
+    pub(super) fn string_read_projection(
+        &mut self,
+        id: u32,
+        ty: Ty,
+        at: Span,
+    ) -> Option<OwnedAggregatePlace> {
         let source = self.resolve(id)?;
+        self.operands().string_clone_source(source, ty, at)
+    }
+
+    pub(super) fn string_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
+        if self.state.summary
+            && let syntax::RawExpressionKind::Reference { name } =
+                &self.decisions.function.body.expressions.get(id as usize)?.kind
+        {
+            let (place, bytes) = super::super::owned_string_read::local_source(
+                name,
+                self.bindings,
+                &self.state.owners,
+                &self.state.facts.string_bytes,
+                Some(ty),
+                super::super::span(self.decisions.input.sources(), name.span),
+                self.decisions.errors,
+            )?;
+            let source =
+                OwnedAggregatePlace { ty, place, root: place, mutable: false, is_root: true };
+            let cleanup = self.reverse(ty, at)?;
+            return self.emit_leaf(Leaf::StringClone { source, bytes, cleanup }, ty, at);
+        }
+        let source = self.resolve(id)?;
+        self.resolved_string_clone(source, ty, at)
+    }
+
+    pub(super) fn resolved_string_clone(
+        &mut self,
+        source: OwnedAggregatePlace,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
         let usage = self.state.clone_usage();
-        let source = self.operands().string_clone_decision(source, ty, at, &usage)?;
+        let source = if self.state.summary {
+            let source = self.operands().string_clone_source(source, ty, at)?;
+            self.push(Operation::CloneCapacity { aggregate: false }, ty, at, None);
+            source
+        } else {
+            self.operands().string_clone_decision(source, ty, at, &usage)?
+        };
         let cleanup = self.reverse(ty, at)?;
-        self.emit_leaf(Leaf::StringClone { source, cleanup }, ty, at)
+        let bytes = super::super::owned_string_read::StringBytes::from_known(
+            self.state.facts.string_bytes.get(&source.place).copied(),
+        );
+        self.emit_leaf(Leaf::StringClone { source, bytes, cleanup }, ty, at)
     }
 
     pub(super) fn aggregate_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
         let usage = self.state.clone_usage();
-        let binding = self.operands().aggregate_clone_decision(id, ty, at, &usage)?;
+        let binding = if self.state.summary {
+            let binding = self.operands().aggregate_clone_source(id, ty, at)?;
+            self.push(Operation::CloneCapacity { aggregate: true }, ty, at, None);
+            binding
+        } else {
+            self.operands().aggregate_clone_decision(id, ty, at, &usage)?
+        };
         let cleanup = self.reverse(ty, at)?;
         let owner = raw::PlaceId(u32::try_from(self.state.counts[1]).ok()?);
         let (prefix, actions) = self.state.prefix_cleanup(owner)?;
@@ -169,8 +247,11 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
         at: Span,
         kind: ConstructorKind,
         values: Vec<raw::ValueId>,
+        cleanup: Option<raw::CleanupPlanId>,
     ) -> Option<raw::ValueId> {
-        if !self.state.usage().operands(values.len(), at, self.decisions.errors) {
+        if !self.state.summary
+            && !self.state.usage().operands(values.len(), at, self.decisions.errors)
+        {
             return None;
         }
         self.state.counts[3] = self.state.counts[3].checked_add(values.len())?;
@@ -186,9 +267,18 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
         let prepared = constructor_result(prepared, at, self.decisions.errors)?;
         let mut emission = self.state.emit(prepared.result_type(), at, self.decisions.errors)?;
         emission.owners.extend(prepared.commit(&mut self.state.owners));
+        for delta in &emission.owners {
+            super::super::owner_state::apply_owner_delta(
+                &mut self.state.facts.string_bytes,
+                *delta,
+            );
+        }
         let value = emission.value;
         self.steps.push(Step {
-            operation: Operation::Commit { kind, values },
+            operation: match cleanup {
+                Some(cleanup) => Operation::VecCommit { values, cleanup },
+                None => Operation::Commit { kind, values },
+            },
             ty,
             at,
             value: Some(value),

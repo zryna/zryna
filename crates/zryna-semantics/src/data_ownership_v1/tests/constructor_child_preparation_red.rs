@@ -2,7 +2,7 @@ use super::*;
 use zryna_ir::data_ownership_v1::raw;
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct PreparationState {
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) struct PreparationState {
     arenas: String,
     constructor_types: String,
     bindings: String,
@@ -16,7 +16,9 @@ pub(super) struct PreparationState {
     sites: [usize; 3],
 }
 
-pub(super) fn state(lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>) -> PreparationState {
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn state(
+    lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>,
+) -> PreparationState {
     PreparationState {
         arenas: format!(
             "{:?}\n{:?}\n{:?}",

@@ -170,7 +170,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             span: at,
             kind: raw::InstructionKind::InitializePlace { place: local, value },
         });
-        self.owners.rename(value, local).expect("partial transfer temporary owner available");
+        let delta =
+            self.owners.rename(value, local).expect("partial transfer temporary owner available");
+        self.preparation_facts.apply(delta);
         self.migrate_partial_mask(temporary, local, &temporary_places, &local_places);
         Some(local)
     }
@@ -292,7 +294,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             span: at,
             kind: raw::InstructionKind::ReplacePlace { place: target, value },
         });
-        self.owners.replace(value, target).expect("partial assignment temporary owner available");
+        let delta = self
+            .owners
+            .replace(value, target)
+            .expect("partial assignment temporary owner available");
+        self.preparation_facts.apply(delta);
         self.migrate_partial_mask(temporary, target, &temporary_places, &target_places);
         Some(())
     }

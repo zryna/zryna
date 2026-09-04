@@ -38,7 +38,8 @@ Commit consumes only the prepared inputs and issues the exact result once. Faile
 publishes no result, retains the operation's uncommitted inputs and reverse-cleans completed
 temporaries according to the original trap. This is not rollback of earlier successful expression
 evaluation. A trap prevents later evaluation. Preserve diagnostic precedence, authenticated spans
-and reservation-release order; a terminal resource diagnostic prevents later dependent planning.
+and reservation-release order; a terminal resource diagnostic prevents later dependent work in
+the selected preparation schedule.
 
 Compile-time rejection and runtime failure are separate observations. The internal aggregate
 child-preparation candidate leaves real compiler arenas, ownership state and type cache unchanged
@@ -46,6 +47,19 @@ when a child tree is rejected, while retaining earlier successful statements. It
 instructions still follow the failure/commit contract above; planning is not target execution.
 See the [candidate evidence and remaining scope](M3_OWNERSHIP_COMPOSITION_EVIDENCE.md) rather than
 interpreting this internal checkpoint as completed generic C2 or public M3 support.
+
+Issue #296 extends that shared authority to mixed non-handle constructor trees. Schedule selection
+precedes evaluation and does not retry a failed operation through another lowerer. Previously
+admitted complete aggregate trees retain interleaved semantic/resource checks. Newly admitted
+mixed owned roots first prepare an ordered semantic/effect summary, then replay recorded resource
+checks with actual ancestor credits. A semantic rejection in that summary precedes deferred
+resource diagnostics. Legacy-shaped children inherit their mixed root's selected schedule;
+standalone legacy Vec operations retain their existing route and precedence. Syntax/input limits,
+layout checks, intrinsic byte bounds and checked arithmetic are not deferred by this policy.
+The evidence matrix documents this deliberate boundary rather than asserting one global ordering.
+For mixed-route local initialization, preparation also checks the destination local place and
+initialization transition before consuming the initializer. Rejection preserves earlier statements,
+bindings and ownership; this does not enable generic destination replacement.
 
 ## C3: Place replacement and initialized shape
 

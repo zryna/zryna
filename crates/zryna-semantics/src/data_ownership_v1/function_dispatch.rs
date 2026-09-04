@@ -3,7 +3,8 @@ use zryna_syntax::v4::RawTypeSyntaxKind;
 use super::copy_enum_match::lower_enum_match_function;
 use super::copy_function_lowering::lower_copy_function;
 use super::owned_aggregate_lowering::{
-    is_private_owned_aggregate_candidate, lower_private_owned_aggregate_function,
+    is_private_mixed_constructor_candidate, is_private_owned_aggregate_candidate,
+    lower_private_owned_aggregate_function,
 };
 use super::owned_control_flow_shape::is_terminal_owned_phi_candidate;
 use super::owned_enum_payload_move::{
@@ -238,7 +239,9 @@ fn lower_function_impl<'a>(
             errors,
         );
     }
-    if is_private_owned_aggregate_candidate(function, result) {
+    if is_private_owned_aggregate_candidate(function, result)
+        || is_private_mixed_constructor_candidate(function, result, layouts)
+    {
         return lower_private_owned_aggregate_function(
             input,
             module,
@@ -248,6 +251,7 @@ fn lower_function_impl<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             errors,
         );

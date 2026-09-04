@@ -47,7 +47,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         ) {
             return None;
         }
-        if self.owners.transfer(prepared).is_none() {
+        if self.owners.transfer(prepared).map(|delta| self.preparation_facts.apply(delta)).is_none()
+        {
             self.errors.at(
                 "ZRYNA-M3014",
                 at,

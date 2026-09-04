@@ -26,7 +26,7 @@ mod operands;
 mod resources;
 
 #[path = "constructor_child_preparation_red.rs"]
-mod child_preparation_red;
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) mod child_preparation_red;
 
 #[path = "constructor_child_preparation_matrix.rs"]
 mod child_preparation_matrix;
@@ -48,6 +48,13 @@ pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_snapshot(
     let layouts = zryna_layout::verify(&graph, &sources, zryna_layout::StorageTarget::Linear32V1)
         .expect("authenticated layouts");
     let node_types = ownership::map_node_types(&graph, &layouts, &mut errors);
+    let catalog = ownership::function_catalog::build_function_catalog(
+        input,
+        &declarations,
+        &graph,
+        &node_types,
+        &mut errors,
+    );
     let file = &syntax.files()[0];
     let function = &file.functions()[0];
     let result = semantic_type(
@@ -70,6 +77,10 @@ pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_snapshot(
         graph: &graph,
         node_types: &node_types,
         layouts: &layouts,
+        catalog: &catalog,
+        mixed_function: !result.is_copy()
+            && function.export_span.is_none()
+            && super::super::mixed_shape::requires_summary(result, &layouts),
         errors: &mut errors,
         bindings: BTreeMap::new(),
         projections: BTreeMap::new(),
@@ -79,6 +90,7 @@ pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_snapshot(
         instructions: vec![],
         constructor_types: ConstructorValueTypes::default(),
         constructor_storage: ConstructorStorage::default(),
+        preparation_facts: super::super::preparation_plan::PreparationFacts::default(),
         cleanup_plans: vec![],
         cleanup_actions: 0,
         aggregate_operands: 0,

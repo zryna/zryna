@@ -1,6 +1,10 @@
 use zryna_ir::data_ownership_v1::{self as ir, raw};
 use zryna_source::Span;
 
+#[path = "owned_cfg_capacity.rs"]
+mod capacity;
+pub(super) use capacity::OwnedCfgCapacity;
+
 use super::diagnostics::Errors;
 use super::global_resource_limits::resource_budget_violation;
 use super::owned_control_flow_resources::{
@@ -58,6 +62,16 @@ pub(super) struct OwnedCfgState {
 }
 
 impl OwnedCfgState {
+    pub(super) fn capacity(&self) -> OwnedCfgCapacity {
+        OwnedCfgCapacity {
+            values: self.value_types.len(),
+            held_values: self.reserved_values,
+            blocks: self.arena.blocks.len(),
+            edges: self.edges,
+            transitions: self.transitions,
+            held_transitions: self.reserved_transitions,
+        }
+    }
     pub(super) fn single_block(at: Span, errors: &mut Errors<'_>) -> Option<Self> {
         let mut state = Self {
             arena: OwnedBlockArena::empty(),
@@ -228,9 +242,7 @@ impl OwnedCfgState {
         at: Span,
         errors: &mut Errors<'_>,
     ) -> Option<()> {
-        let current = self.value_types.len().checked_add(self.reserved_values);
-        if current.is_none_or(|current| owned_value_budget_violation(current, additional)) {
-            Self::limit(OwnedCfgBudgetLimit::Values, at, errors);
+        if !self.capacity().values(additional, at, errors) {
             return None;
         }
         self.reserved_values = self.reserved_values.checked_add(additional)?;
@@ -285,19 +297,7 @@ impl OwnedCfgState {
             );
             return false;
         }
-        let Some(transitions) = self
-            .transitions
-            .checked_add(self.reserved_transitions)
-            .and_then(|current| current.checked_add(additional))
-        else {
-            Self::limit(OwnedCfgBudgetLimit::Transitions, at, errors);
-            return false;
-        };
-        if owned_cfg_budget_violation(self.arena.blocks.len(), self.edges, transitions).is_some() {
-            Self::limit(OwnedCfgBudgetLimit::Transitions, at, errors);
-            return false;
-        }
-        true
+        self.capacity().transitions(additional, at, errors)
     }
 
     pub(super) fn reserve_transitions(

@@ -50,16 +50,6 @@ impl FunctionLowerer<'_, '_, '_> {
         at: Span,
         what: &str,
     ) -> Option<()> {
-        if expected.layout == actual.layout {
-            Some(())
-        } else {
-            self.errors.at(
-                "ZRYNA-M3007",
-                at,
-                format!("{what} has a different exact aggregate type"),
-                "use a value with the exact declared type",
-            );
-            None
-        }
+        super::super::scalar_operations::require_type(expected, actual, at, what, self.errors)
     }
 }

@@ -3,7 +3,6 @@ use zryna_layout::TypeCategory;
 use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 
-use super::super::global_resource_limits::checked_string_concat_bytes;
 use super::super::owner_state::{OwnerDelta, apply_owner_delta};
 use super::super::span;
 use super::super::string_vec_resource_estimates::cleanup_actions_after_transfer;
@@ -14,34 +13,14 @@ impl PrivateVecLowerer<'_, '_, '_> {
     fn string_place_for_read(&mut self, id: u32) -> Option<(raw::PlaceId, u64)> {
         let expression = self.expression(id)?.clone();
         if let RawExpressionKind::Reference { name } = expression.kind {
-            let Some(binding) = self.bindings.get(&name.text).cloned() else {
-                self.errors.at(
-                    "ZRYNA-M3002",
-                    span(self.input.sources(), name.span),
-                    format!("String operand '{}' is not declared", name.text),
-                    "reference one exact preceding String local",
-                );
-                return None;
-            };
-            if binding.ty.category != TypeCategory::String {
-                self.errors.at(
-                    "ZRYNA-M3012",
-                    span(self.input.sources(), name.span),
-                    "String operand has the wrong exact type",
-                    "use one exact String value",
-                );
-                return None;
-            }
-            if !self.owners.contains(binding.place) {
-                self.errors.at(
-                    "ZRYNA-M3014",
-                    span(self.input.sources(), name.span),
-                    format!("String value '{}' was already moved", name.text),
-                    "use each owned String only while it remains available",
-                );
-                return None;
-            }
-            Some((binding.place, *self.known_string_bytes.get(&binding.place)?))
+            super::super::owned_string_read::local(
+                &name,
+                &self.bindings,
+                &self.owners,
+                &self.known_string_bytes,
+                span(self.input.sources(), name.span),
+                self.errors,
+            )
         } else {
             let string = self
                 .node_types
@@ -167,26 +146,19 @@ impl PrivateVecLowerer<'_, '_, '_> {
             RawExpressionKind::Call { callee, arguments, .. }
                 if expected.category == TypeCategory::String && callee.text == "concat" =>
             {
-                let [left, right] = arguments.as_slice() else {
-                    self.errors.at(
-                        "ZRYNA-M3012",
-                        span(self.input.sources(), callee.span),
-                        "String concat requires exactly two operands",
-                        "call concat(left, right) with two available String values",
-                    );
-                    return None;
-                };
-                let (left, left_bytes) = self.string_place_for_read(*left)?;
-                let (right, right_bytes) = self.string_place_for_read(*right)?;
-                let Some(bytes) = checked_string_concat_bytes(left_bytes, right_bytes) else {
-                    self.errors.at(
-                        "ZRYNA-M3012",
-                        at,
-                        "String concatenation exceeds the sealed runtime byte limit",
-                        "reduce the statically known concatenated String size",
-                    );
-                    return None;
-                };
+                let [left, right] = super::super::owned_string_read::concat_arguments(
+                    &arguments,
+                    span(self.input.sources(), callee.span),
+                    self.errors,
+                )?;
+                let (left, left_bytes) = self.string_place_for_read(left)?;
+                let (right, right_bytes) = self.string_place_for_read(right)?;
+                let bytes = super::super::owned_string_read::concat_bytes(
+                    left_bytes,
+                    right_bytes,
+                    at,
+                    self.errors,
+                )?;
                 let cleanup = self.push_instruction_cleanup(at, None)?;
                 let (value, owner) = self.emit(
                     expected,

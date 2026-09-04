@@ -1,7 +1,8 @@
 # M3 ownership composition evidence
 
 Status: Issue #277 planned generic evidence and integration matrix, with the internal #278
-constructor-preparation candidate described below; not implemented generic source capability.
+constructor-preparation and #296 mixed-construction work described below; not implemented generic
+source capability.
 Read the [eight interface contracts](M3_OWNERSHIP_COMPOSITION.md) and
 [Shared/Weak evidence](M3_SHARED_WEAK_EVIDENCE.md). Normative language/ABI authority remains
 unchanged. Existing tests below are located evidence, not newly executed by this document.
@@ -83,9 +84,10 @@ and value cursors remain distinct when earlier instructions have no result.
 
 Preparation rejection preserves the real instruction/place/cleanup arenas, owners and pending
 order, projection topology and masks, constructor cache contents/cursor, counters and outstanding
-credits. Earlier successful statements remain intact. The diagnostic still comes from the first
-ordered semantic or resource failure; a later invalid name cannot displace an earlier cleanup
-capacity failure. This intentionally replaces the previous retained **compile-time** child
+credits. Earlier successful statements remain intact. In the legacy complete-aggregate schedule,
+the diagnostic comes from the first ordered semantic or resource failure; a later invalid name
+cannot displace an earlier cleanup capacity failure. The new mixed-root schedule below explicitly
+differs. This intentionally replaces the previous retained **compile-time** child
 artifacts. It neither runs an allocator nor rolls back effects of an executing source program.
 
 The private single-use plan holds an exclusive lowerer borrow through consumption. Selected
@@ -97,10 +99,12 @@ state. Real constructor commits still observe the actual emitted value types and
 prepared-constructor authority. Mandatory independent full IR verification remains separate and
 cannot be replaced by a successful plan check.
 
-The covered child vocabulary is Bool/i32/String literals, Copy and whole-value references,
+The prerequisite child vocabulary is Bool/i32/String literals, Copy and whole-value references,
 static Copy/String projections, projected String clone, named whole aggregate clone, and nested
 Struct/FixedArray/selected Enum constructors. Context-only projected aggregate transfers/clones,
-Vec operations, handles, calls, borrowing and CFG are not newly admitted children. This candidate
+Vec operations, handles, calls, borrowing and CFG were not admitted by that prerequisite alone.
+The #296 extension below adds its stated constructor/read/call forms through the same authority.
+This candidate
 does not complete generic C2, #278, #83 or M3, and enables no runtime/backend/CLI/public profile.
 
 Zero-length fixed arrays and payloadless Enum variants are distinct from zero-field Struct
@@ -125,6 +129,78 @@ still requires exact test inventory, independent review, resource/complexity and
 evidence, and the complete required Linux/Windows gates. Runtime failure-prefix cleanup and
 three-target execution remain separate authorities; compile-time state preservation does not
 prove them. The remaining generic operation, payload, call and CFG families below are not waived.
+
+## Mixed non-handle construction (#296)
+
+Private straight-line mixed owned results use the shared aggregate preparation authority for
+Struct, selected Enum, fixed-array and Vec trees, including whole local moves. Each Vec seals its
+own exact element identity; it does not inherit an unrelated function-wide element type. Type
+mapping uses complete instantiated identities, including legal container indirections, rather
+than relying on referenced types occurring earlier. Zero-member declarations, by-value cycles,
+zero-stride Vec elements, source handles and inactive payload access remain rejected.
+
+The selected mixed-root schedule prepares source/type/effect decisions before replaying deferred
+resource checks. Struct children follow declaration order; array/Vec children follow ascending
+index order. A later invalid name therefore precedes deferred capacity exhaustion in this new
+schedule. Complete legacy aggregate roots retain their earlier interleaving, and standalone legacy
+Vec operations retain their existing route. No failure triggers a fallback to a second evaluator.
+Both schedules use the same decisions, checked credit ledger and affine consumption checks.
+
+The contextual local-initializer entry is derived from the actual private mixed-result function;
+it does not globally reclassify Vec roots or capture recursively Copy functions. Copy children
+reuse the existing ten scalar operators and exact Bool/i32 semantics. Binary operands are prepared
+left then right before operand-type validation. A mismatched scalar result in this new mixed
+boundary reports M3007 at the complete expression, with `scalar result has a different exact
+aggregate type` and `use a value with the exact declared type`. Existing Copy field diagnostics
+are unchanged. A scalar result charges one value and one transition, not an owned place or cleanup.
+
+Mixed-route local initialization extends that prepared result with one destination place and one
+initialization transition, checked in that order after initializer resource replay and before real
+consumption. Copy locals still require the destination place. Owned results retain their pending
+slot while ownership and String byte facts move to the exact local identity. Capacity rejection
+preserves arenas, bindings, local numbering, ownership, facts, cache and surrounding credits;
+legacy local routes and destination replacement are unchanged.
+
+String clone/concat and supported private same-module String/Vec producer/identity calls use
+their existing typed authorities. Nested scopes forward only their final immediate result.
+Arguments transfer before caller CallTrap cleanup; original borrowed read owners remain retained.
+Known zero bytes and Unknown bytes are distinct after actual availability/type checks; opaque
+calls or aggregate projections cannot fabricate known lengths. This is not arbitrary mixed
+signature calls, non-addressable aggregate cloning, general borrowed payloads or CFG composition.
+
+| Test module group | Located bounded evidence |
+| --- | --- |
+| `mixed_construction.rs`, `nested_mixed_construction.rs`, `mixed_positive_arrays.rs`, `mixed_zero_array_vec.rs`, `mixed_recursive_vec.rs` | Authenticated source/full-IR nesting in both directions, selected payload, zero/nonzero array, empty/nonempty Vec and one finite recursive nominal value. |
+| `mixed_local_construction.rs`, `mixed_array_whole_moves.rs`, `mixed_enum_whole_moves.rs`, `mixed_struct_whole_moves.rs` | Actual local-to-constructor whole moves, exact owner/result/cleanup identities, duplicate-source rejection and deterministic replay. |
+| `local_commit_fixture.rs`, `local_commit_controls.rs`, `local_tail_supplement.rs`, `local_tail_supplement_controls.rs` | Authenticated source/full-IR local controls; exact and first-extra destination capacity, competing place/transition limits, semantic precedence, Copy destination cost and known String fact renaming. Both late-capacity regressions failed before the prepared local tail and pass with it. |
+| `mixed_copy_operators.rs`, `scalar_operator_matrix.rs`, `scalar_matrix_negatives.rs`, `scalar_owned_lhs.rs` | All ten scalar operations, Bool/i32 equality, ordered nested operands, exact result mismatch and competing operand diagnostics through the existing checker. Owned-left/missing-right cases test inference order, not acceptance of owned scalar operands. |
+| `scalar_private_controls.rs`, `scalar_resource_controls.rs` | Malformed private scope/order/type/range rejection; immediate nested results; exact/extra real held credits; semantic rejection preserves full state/facts. Impossible internal-counter overflow is separately labeled. |
+| `mixed_type_negatives.rs`, `mixed_type_negative_controls.rs` | Exact distinct nominal, nested Vec element, outer context and selected-payload rejection; valid full-IR controls, complete state/facts with surrounding credit, and fixed nested scalar/call visit/result-step counts. |
+| `mixed_string_read_scopes.rs`, `mixed_unknown_projected.rs`, `mixed_disjoint_owned_sibling.rs` and their controls | Literal/local/projected reads, disjoint owned sibling availability, exact cleanup, fresh/cached projection and whole-state rejection. |
+| `mixed_string_calls.rs`, `mixed_call_string_nesting.rs`, `mixed_vec_calls.rs`, `mixed_vec_siblings.rs`, `mixed_call_unknown_clone.rs` | Actual supported signatures, distinct callee/argument/result linkage, local ownership, Unknown facts and nested read/call full-IR replay. |
+| `mixed_string_call_rejections.rs`, `mixed_call_consumption_misuse.rs` | Exact name/case/signature diagnostics and private catalog/type/transfer/site/result corruption rejection; no arbitrary call-profile activation or post-panic rollback promise. |
+| `mixed_phase_controls.rs`, `mixed_cleanup_frontiers.rs`, `mixed_call_resource_controls.rs`, `mixed_call_resource_order.rs`, `mixed_byte_facts.rs` | Parent/child order, surrounding credits, checked coupled resource costs, byte-fact effects and rejection-state controls. Synthetic counter frontiers are not giant valid source programs. |
+| IR `mixed_constructor_authority.rs`, `mixed_enum_authority.rs` | Independently built valid raw-IR controls followed by isolated layout/type/owner/variant/site/missing-or-duplicate-cleanup mutations. Raw spans alone do not authenticate source syntax. |
+| `mixed_constructor_faults.rs`, `mixed_read_faults.rs`, `mixed_two_element_faults.rs` | Existing fault authority over actual verified operation sites/statuses, retained inputs and reverse root cleanup, including preceding locals and String reads. |
+| `recursive_cleanup_witness.rs` and its tests | Bounded constructor-provenance replay derives reverse completed children before Vec storage-release events, rejects foreign/duplicate/unknown provenance and preserves the original fault. |
+
+The recursive witness is deliberately not an interpreter or an allocator. It accepts only its
+whitelisted single-block executed constructor/literal prefix and complete temporary roots.
+Local/call/mutation prefixes and partial masks are rejected, not guessed. Empty Vec storage release
+is a logical no-op event, not proof of an allocation or free. Separate read-fault tests prove root
+cleanup for their supported prefixes without claiming recursive storage replay or target execution.
+
+Private corrupted-plan panics test release-build invariants, not rollback after internal misuse.
+Full-state comparisons apply to rejected source preparation. Source/full-IR replay, forged IR,
+resource helpers and fault traces remain distinct evidence classes. Named tests must actually run;
+inventory counts or these descriptions cannot replace ordinary/required ignored tests, ABI/static
+contracts, preflight, M0/M2 and required Linux/Windows CI before merge.
+
+This child does not finish #278, #83 or public M3. Generic structural clone, generalized
+initialization/replacement, generic Vec observations/replacement, mixed calls/CFG and Shared/Weak
+production remain their following issues. Constructor commitment does not activate arbitrary
+assignment RHS or mixed destination replacement. No runtime/backend/CLI/profile is enabled, and
+website publication must consume the authenticated successful main documentation artifact.
 
 ## Located tests, not complete composition proofs
 

@@ -3,6 +3,7 @@ use zryna_ir::data_ownership_v1::raw;
 use zryna_source::Span;
 
 use super::super::owned_constructor_plan::ConstructorKind;
+use super::super::owned_string_read::StringBytes;
 use super::super::owner_state::OwnerDelta;
 use super::super::type_model::OwnedAggregatePlace;
 use super::super::{OwnerState, Ty};
@@ -10,23 +11,136 @@ use super::operand_decisions::{ProjectionOperation, ReferenceDecision};
 use super::preparation_state::{Checkpoint, PlannedPlace};
 use super::projection_topology::ProjectionDescriptor;
 
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
+pub(super) struct PreparationFacts {
+    pub(super) held_cleanup: [usize; 2],
+    pub(super) string_bytes: BTreeMap<raw::PlaceId, u64>,
+}
+
+impl PreparationFacts {
+    pub(super) fn apply(&mut self, delta: OwnerDelta) {
+        super::super::owner_state::apply_owner_delta(&mut self.string_bytes, delta);
+    }
+}
+
 pub(super) enum Leaf<'f> {
     Bool(bool),
     I32(i32),
-    String { bytes: &'f [u8], cleanup: raw::CleanupPlanId },
+    String {
+        bytes: &'f [u8],
+        cleanup: raw::CleanupPlanId,
+    },
     Reference(ReferenceDecision),
-    Projection { source: OwnedAggregatePlace, operation: ProjectionOperation },
-    StringClone { source: OwnedAggregatePlace, cleanup: raw::CleanupPlanId },
-    AggregateClone { source: raw::PlaceId, cleanup: raw::CleanupPlanId, prefix: raw::CleanupPlanId },
+    Projection {
+        source: OwnedAggregatePlace,
+        operation: ProjectionOperation,
+    },
+    StringClone {
+        source: OwnedAggregatePlace,
+        bytes: StringBytes,
+        cleanup: raw::CleanupPlanId,
+    },
+    StringConcat {
+        left: raw::PlaceId,
+        right: raw::PlaceId,
+        bytes: StringBytes,
+        cleanup: raw::CleanupPlanId,
+    },
+    AggregateClone {
+        source: raw::PlaceId,
+        cleanup: raw::CleanupPlanId,
+        prefix: raw::CleanupPlanId,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum StringOperation {
+    Clone,
+    Concat,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct StringRead {
+    pub(super) place: raw::PlaceId,
+    pub(super) root: raw::PlaceId,
+    pub(super) value: Option<raw::ValueId>,
+    pub(super) bytes: StringBytes,
 }
 
 pub(super) enum Operation<'f> {
-    Enter { arity: usize, kind: ConstructorKind, end: usize },
+    ScalarEnter {
+        kind: super::super::scalar_operations::ScalarOperation,
+        end: usize,
+        operands: Vec<(raw::ValueId, Ty)>,
+    },
+    ScalarCommit {
+        kind: super::super::scalar_operations::ScalarOperation,
+        operands: Vec<(raw::ValueId, Ty)>,
+    },
+    CallEnter {
+        signature: CallSignature,
+        end: usize,
+        arguments: Vec<raw::ValueId>,
+    },
+    CallTransfer {
+        value: raw::ValueId,
+        owner: raw::PlaceId,
+    },
+    CallRelease,
+    CallCommit {
+        signature: CallSignature,
+        arguments: Vec<raw::ValueId>,
+        cleanup: raw::CleanupPlanId,
+    },
+    StringEnter {
+        kind: StringOperation,
+        end: usize,
+        reads: Vec<StringRead>,
+    },
+    StringRead(StringRead),
+    StringExit,
+    Enter {
+        arity: usize,
+        kind: ConstructorKind,
+        end: usize,
+    },
     Release,
-    Prefix { id: raw::PlaceId, descriptor: ProjectionDescriptor },
-    Cleanup { id: raw::CleanupPlanId, actions: usize, prefix: Option<raw::PlaceId> },
+    Prefix {
+        id: raw::PlaceId,
+        descriptor: ProjectionDescriptor,
+    },
+    CloneCapacity {
+        aggregate: bool,
+    },
+    Cleanup {
+        id: raw::CleanupPlanId,
+        actions: usize,
+        prefix: Option<raw::PlaceId>,
+    },
     Leaf(Leaf<'f>),
-    Commit { kind: ConstructorKind, values: Vec<raw::ValueId> },
+    Commit {
+        kind: ConstructorKind,
+        values: Vec<raw::ValueId>,
+    },
+    VecCommit {
+        values: Vec<raw::ValueId>,
+        cleanup: raw::CleanupPlanId,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum CallKind {
+    String,
+    Vec,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct CallSignature {
+    pub(super) id: raw::FunctionId,
+    pub(super) result: Ty,
+    pub(super) parameter: Option<Ty>,
+    pub(super) kind: CallKind,
+    pub(super) bytes: Option<StringBytes>,
 }
 
 pub(super) struct Step<'f> {
@@ -50,4 +164,5 @@ pub(super) struct PreparationPlan<'f> {
     pub(super) partial: BTreeSet<raw::PlaceId>,
     pub(super) places: Vec<PlannedPlace>,
     pub(super) visits: usize,
+    pub(super) facts: PreparationFacts,
 }

@@ -21,6 +21,19 @@ pub(super) struct AggregateUsage {
 }
 
 impl AggregateUsage {
+    pub(super) fn local_place(&self, at: Span, errors: &mut Errors<'_>) -> bool {
+        if self.places.saturating_add(self.held_places) >= ir::MAX_PLACES_PER_FUNCTION {
+            errors.at(
+                "ZRYNA-M3201",
+                at,
+                "derived aggregate places exceed the per-function M3 limit",
+                "reduce private aggregate locals",
+            );
+            return false;
+        }
+        true
+    }
+
     pub(super) fn emit(&self, result: Ty, at: Span, errors: &mut Errors<'_>) -> bool {
         if !self.transition(1, at, errors) {
             return false;

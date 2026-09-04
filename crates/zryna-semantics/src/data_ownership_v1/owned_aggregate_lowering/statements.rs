@@ -1,4 +1,4 @@
-use zryna_ir::data_ownership_v1::{self as ir, raw};
+use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::TypeCategory;
 use zryna_source::Span;
 use zryna_syntax::v4::{RawExpressionKind, RawStatementKind, RawStatementSyntax};
@@ -48,7 +48,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     self.node_types,
                     self.errors,
                 )?;
-                if !self.supported(ty) {
+                if !matches!(
+                    self.local_preparation_route(ty),
+                    super::mixed_shape::PreparationRoute::Aggregate
+                        | super::mixed_shape::PreparationRoute::MixedSummary
+                ) {
                     self.errors.at(
                         "ZRYNA-M3016",
                         span(self.input.sources(), statement.span),
@@ -99,16 +103,28 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         ty,
                         Some(ProjectedAggregateMoveContext::DirectLocal),
                     )?
+                } else if self.local_preparation_route(ty)
+                    == super::mixed_shape::PreparationRoute::MixedSummary
+                {
+                    super::constructor_preparation::PreparedLocal::prepare(
+                        self,
+                        *initializer,
+                        ty,
+                        statement_span,
+                        &name.text,
+                        *mutable,
+                    )?
+                    .consume();
+                    return Some(StatementOutcome::Continue);
                 } else {
-                    self.value(*initializer, ty)?
+                    super::constructor_preparation::PreparedValue::prepare_local(
+                        self,
+                        *initializer,
+                        ty,
+                    )?
+                    .consume()
                 };
-                if self.budget_places() >= ir::MAX_PLACES_PER_FUNCTION {
-                    self.errors.at(
-                        "ZRYNA-M3201",
-                        span(self.input.sources(), statement.span),
-                        "derived aggregate places exceed the per-function M3 limit",
-                        "reduce private aggregate locals",
-                    );
+                if !self.resource_usage().local_place(statement_span, self.errors) {
                     return None;
                 }
                 let place = raw::PlaceId(u32::try_from(self.places.len()).ok()?);
@@ -125,7 +141,13 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 ) {
                     return None;
                 }
-                if !ty.is_copy() && self.owners.rename(value, place).is_none() {
+                if !ty.is_copy()
+                    && self
+                        .owners
+                        .rename(value, place)
+                        .map(|delta| self.preparation_facts.apply(delta))
+                        .is_none()
+                {
                     self.errors.at(
                         "ZRYNA-M3014",
                         statement_span,
@@ -253,7 +275,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     ) {
                         return None;
                     }
-                    if self.owners.transfer(prepared).is_none() {
+                    if self
+                        .owners
+                        .transfer(prepared)
+                        .map(|delta| self.preparation_facts.apply(delta))
+                        .is_none()
+                    {
                         self.errors.at(
                             "ZRYNA-M3014",
                             assignment_span,
@@ -343,7 +370,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 ) {
                     return None;
                 }
-                if self.owners.replace(prepared, binding.place).is_none() {
+                if self
+                    .owners
+                    .replace(prepared, binding.place)
+                    .map(|delta| self.preparation_facts.apply(delta))
+                    .is_none()
+                {
                     self.errors.at(
                         "ZRYNA-M3014",
                         assignment_span,
