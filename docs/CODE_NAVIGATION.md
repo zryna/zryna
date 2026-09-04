@@ -34,7 +34,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Aggregate preparation: `src/data_ownership_v1/owned_aggregate_lowering/{driver,constructor_preparation,constructor_resources}.rs`; Vec route: `owned_vec_lowering/{driver,constructors}.rs`.
 - Shared typed constructor authority: `owned_constructor_plan.rs`; relevant tests live under `src/data_ownership_v1/tests/` and are registered by its parent tests module.
 - Focus: `pnpm m3:data:quick`; for authority changes also `pnpm m3:owned:quick` and `pnpm m3:contract`. Find the exact neighboring constructor/borrow/cleanup test before selecting a filter.
-- New mixed-construction work in unmerged branches is not this main checkpoint. Preserve diagnostic order, failure state, ownership, and resource evidence; finish with full gates.
+- Mixed-construction preparation and its bounded evidence are described in the composition map above; this is internal work, not public M3 activation. Preserve both legacy and mixed diagnostic schedules, failure state and resource evidence; finish with full gates.
 
 ## 4. Type/layout identity, raw IR, or hostile verification
 

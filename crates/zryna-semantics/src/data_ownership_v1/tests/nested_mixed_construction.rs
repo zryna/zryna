@@ -370,5 +370,7 @@ pub(in crate::data_ownership_v1) fn cleanup_frontier_fixture() -> (String, RawPr
 mod faults;
 #[path = "mixed_struct_whole_moves.rs"]
 mod struct_whole_moves;
+#[path = "mixed_type_negatives.rs"]
+pub(in crate::data_ownership_v1) mod type_negatives;
 #[path = "mixed_enum_whole_moves.rs"]
 mod whole_moves;

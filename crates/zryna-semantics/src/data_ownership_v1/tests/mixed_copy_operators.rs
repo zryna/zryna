@@ -1,4 +1,6 @@
 use super::*;
+#[path = "scalar_owned_lhs.rs"]
+mod owned_lhs;
 use zryna_diagnostics::Diagnostic;
 use zryna_ir::data_ownership_v1::ValueIdentity;
 use zryna_source::UntrustedSpan;

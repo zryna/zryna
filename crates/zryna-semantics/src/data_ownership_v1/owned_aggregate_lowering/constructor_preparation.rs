@@ -484,6 +484,9 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
 #[path = "../tests/mixed_disjoint_owned_sibling_controls.rs"]
 mod mixed_disjoint_owned_sibling_controls;
 #[cfg(test)]
+#[path = "../tests/mixed_type_negative_controls.rs"]
+mod mixed_type_negative_controls;
+#[cfg(test)]
 #[path = "../tests/scalar_private_controls.rs"]
 mod scalar_private_controls;
 #[cfg(test)]

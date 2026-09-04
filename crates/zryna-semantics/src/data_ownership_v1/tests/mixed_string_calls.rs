@@ -23,7 +23,7 @@ fn call(start: usize, name: &str, end: usize, arguments: Vec<u32>) -> RawExpress
 }
 
 // Reuse the actual sealed identity/producer declarations, relocating syntax only.
-fn append_string_callees(source: &mut String, raw: &mut RawProjectSyntaxSnapshot) {
+pub(super) fn append_string_callees(source: &mut String, raw: &mut RawProjectSyntaxSnapshot) {
     let (callee_source, callees) = private_string_call_fixture();
     assert_eq!(callees.files[0].functions.len(), 3);
     assert_eq!(callees.files[0].type_syntax.len(), 6);
