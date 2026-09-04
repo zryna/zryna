@@ -20,23 +20,8 @@ pub(super) struct CallFrame {
 }
 
 impl<'f> PreparationContext<'_, 'f, '_, '_> {
-    pub(super) fn enter_call(
-        &mut self,
-        callee: &syntax::RawIdentifierSyntax,
-        arguments: &[u32],
-        ty: Ty,
-        at: Span,
-    ) -> Option<Frame<'f>> {
-        if !self.state.summary {
-            self.decisions.errors.at(
-                "ZRYNA-M3016",
-                at,
-                "expression is outside private owned Struct/Enum/FixedArray lowering",
-                "use literals, whole-value moves, and exact Struct/Enum/FixedArray constructors",
-            );
-            return None;
-        }
-        let kind = match ty.category {
+    fn call_kind(&mut self, ty: Ty, at: Span) -> Option<CallKind> {
+        Some(match ty.category {
             TypeCategory::String => CallKind::String,
             TypeCategory::Vec
                 if self
@@ -58,16 +43,51 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 );
                 return None;
             }
+        })
+    }
+
+    pub(super) fn enter_call(
+        &mut self,
+        callee: &syntax::RawIdentifierSyntax,
+        arguments: &[u32],
+        expected: Option<Ty>,
+        at: Span,
+    ) -> Option<Frame<'f>> {
+        if !self.state.summary {
+            self.decisions.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "expression is outside private owned Struct/Enum/FixedArray lowering",
+                "use literals, whole-value moves, and exact Struct/Enum/FixedArray constructors",
+            );
+            return None;
+        }
+        let inferred = if expected.is_none() {
+            Some(
+                OwnedCallResolution {
+                    input: self.decisions.input,
+                    module: self.decisions.module,
+                    catalog: self.catalog,
+                    errors: self.decisions.errors,
+                }
+                .lookup(callee, "call one exact private same-module function")?,
+            )
+        } else {
+            None
         };
+        let ty = expected.or_else(|| inferred.as_ref().map(|signature| signature.result))?;
+        let kind = self.call_kind(ty, at)?;
         let mut resolver = OwnedCallResolution {
             input: self.decisions.input,
             module: self.decisions.module,
             catalog: self.catalog,
             errors: self.decisions.errors,
         };
-        let signature = match kind {
-            CallKind::String => resolver.string(ty, callee),
-            CallKind::Vec => resolver.vec(ty, callee, ty),
+        let signature = match (kind, inferred) {
+            (CallKind::String, Some(signature)) => resolver.checked_string(ty, callee, signature),
+            (CallKind::Vec, Some(signature)) => resolver.checked_vec(ty, callee, ty, signature),
+            (CallKind::String, None) => resolver.string(ty, callee),
+            (CallKind::Vec, None) => resolver.vec(ty, callee, ty),
         }?;
         if arguments.len() != signature.parameters.len() {
             self.decisions.errors.at(

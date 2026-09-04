@@ -11,13 +11,13 @@ pub(super) struct OwnedCallResolution<'s, 'a, 'e> {
 }
 
 impl OwnedCallResolution<'_, '_, '_> {
-    pub(super) fn string(
+    pub(super) fn lookup(
         &mut self,
-        ty: Ty,
         callee: &syntax::RawIdentifierSyntax,
+        missing_help: &'static str,
     ) -> Option<FunctionSignature> {
-        let signature = match self.catalog.resolve(self.module, &callee.text) {
-            FunctionResolution::Exact(signature) => signature.clone(),
+        match self.catalog.resolve(self.module, &callee.text) {
+            FunctionResolution::Exact(signature) => Some(signature.clone()),
             FunctionResolution::WrongCase => {
                 self.errors.at(
                     "ZRYNA-M3002",
@@ -25,18 +25,35 @@ impl OwnedCallResolution<'_, '_, '_> {
                     format!("call name '{}' has the wrong portable ASCII case", callee.text),
                     "use the callee's exact declared spelling",
                 );
-                return None;
+                None
             }
             FunctionResolution::Missing => {
                 self.errors.at(
                     "ZRYNA-M3002",
                     span(self.input.sources(), callee.span),
                     format!("function '{}' is not declared in this module", callee.text),
-                    "call one exact private same-module function",
+                    missing_help,
                 );
-                return None;
+                None
             }
-        };
+        }
+    }
+
+    pub(super) fn string(
+        &mut self,
+        ty: Ty,
+        callee: &syntax::RawIdentifierSyntax,
+    ) -> Option<FunctionSignature> {
+        let signature = self.lookup(callee, "call one exact private same-module function")?;
+        self.checked_string(ty, callee, signature)
+    }
+
+    pub(super) fn checked_string(
+        &mut self,
+        ty: Ty,
+        callee: &syntax::RawIdentifierSyntax,
+        signature: FunctionSignature,
+    ) -> Option<FunctionSignature> {
         if !signature.private {
             self.errors.at(
                 "ZRYNA-M3016",
@@ -68,27 +85,17 @@ impl OwnedCallResolution<'_, '_, '_> {
         callee: &syntax::RawIdentifierSyntax,
         expected: Ty,
     ) -> Option<FunctionSignature> {
-        let signature = match self.catalog.resolve(self.module, &callee.text) {
-            FunctionResolution::Exact(signature) => signature.clone(),
-            FunctionResolution::WrongCase => {
-                self.errors.at(
-                    "ZRYNA-M3002",
-                    span(self.input.sources(), callee.span),
-                    format!("call name '{}' has the wrong portable ASCII case", callee.text),
-                    "use the callee's exact declared spelling",
-                );
-                return None;
-            }
-            FunctionResolution::Missing => {
-                self.errors.at(
-                    "ZRYNA-M3002",
-                    span(self.input.sources(), callee.span),
-                    format!("function '{}' is not declared in this module", callee.text),
-                    "call one exact private same-module Vec function",
-                );
-                return None;
-            }
-        };
+        let signature = self.lookup(callee, "call one exact private same-module Vec function")?;
+        self.checked_vec(vec_ty, callee, expected, signature)
+    }
+
+    pub(super) fn checked_vec(
+        &mut self,
+        vec_ty: Ty,
+        callee: &syntax::RawIdentifierSyntax,
+        expected: Ty,
+        signature: FunctionSignature,
+    ) -> Option<FunctionSignature> {
         let exact_parameters = !signature.has_borrow_parameters()
             && (signature.parameters.is_empty() || signature.parameters.as_slice() == [vec_ty]);
         if !signature.private

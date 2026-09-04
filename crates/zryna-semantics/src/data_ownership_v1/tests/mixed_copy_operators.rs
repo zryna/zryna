@@ -31,7 +31,9 @@ fn insertion(
 }
 
 // Two fixed expression shapes, not a test parser or a semantic/type estimator.
-fn operator_fixture(bad_right: bool) -> (String, RawProjectSyntaxSnapshot) {
+pub(in crate::data_ownership_v1) fn operator_fixture(
+    bad_right: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
     let (source, raw) = mixed_construction::mixed_fixture(false);
     let (mut source, mut raw) = scalar_fields(source, raw);
     let RawExpressionKind::StructConstruction { close_brace_span, .. } =

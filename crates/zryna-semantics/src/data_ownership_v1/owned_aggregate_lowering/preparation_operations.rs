@@ -201,6 +201,15 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
             return self.emit_leaf(Leaf::StringClone { source, bytes, cleanup }, ty, at);
         }
         let source = self.resolve(id)?;
+        self.resolved_string_clone(source, ty, at)
+    }
+
+    pub(super) fn resolved_string_clone(
+        &mut self,
+        source: OwnedAggregatePlace,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
         let usage = self.state.clone_usage();
         let source = if self.state.summary {
             let source = self.operands().string_clone_source(source, ty, at)?;

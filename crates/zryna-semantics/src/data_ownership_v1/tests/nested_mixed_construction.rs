@@ -366,3 +366,9 @@ pub(in crate::data_ownership_v1) fn cleanup_frontier_fixture() -> (String, RawPr
     let raw = s.snapshot(types, vec![], 2, expressions);
     (s.0.to_owned(), raw)
 }
+#[path = "mixed_constructor_faults.rs"]
+mod faults;
+#[path = "mixed_struct_whole_moves.rs"]
+mod struct_whole_moves;
+#[path = "mixed_enum_whole_moves.rs"]
+mod whole_moves;

@@ -173,6 +173,13 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             frames.push(self.enter_scalar(operation, inputs.clone(), expected, decision.ty?, at));
             return Some(VisitOutcome::Deferred);
         }
+        if let ExpressionKind::Call { callee, arguments } = decision.kind {
+            frames.push(self.enter_call(callee, arguments, decision.ty, at)?);
+            return Some(VisitOutcome::Deferred);
+        }
+        if let ExpressionKind::InferredClone(operand) = decision.kind {
+            return self.inferred_clone(operand, at, frames);
+        }
         let ty = match (&decision.kind, decision.ty) {
             (_, Some(ty)) => ty,
             (ExpressionKind::Reference(name), None) => self.inferred_reference_type(name)?,
@@ -193,6 +200,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         };
         let value = match decision.kind {
             ExpressionKind::Scalar { .. } => unreachable!("scalar frame entered"),
+            ExpressionKind::InferredClone(_) => unreachable!("inferred clone selected"),
             ExpressionKind::Bool(value) => self.emit_leaf(Leaf::Bool(value), ty, at),
             ExpressionKind::I32(value) => self.emit_leaf(Leaf::I32(value), ty, at),
             ExpressionKind::String(bytes) => {
@@ -219,10 +227,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 return Some(VisitOutcome::Deferred);
             }
             ExpressionKind::AggregateClone(id) => self.aggregate_clone(id, ty, at),
-            ExpressionKind::Call { callee, arguments } => {
-                frames.push(self.enter_call(callee, arguments, ty, at)?);
-                return Some(VisitOutcome::Deferred);
-            }
+            ExpressionKind::Call { .. } => unreachable!("call frame entered"),
             ExpressionKind::Struct(decision) => {
                 frames.push(self.enter(
                     Children::Struct(decision),
@@ -475,3 +480,12 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
         Some(Self { lowerer, plan })
     }
 }
+#[cfg(test)]
+#[path = "../tests/mixed_disjoint_owned_sibling_controls.rs"]
+mod mixed_disjoint_owned_sibling_controls;
+#[cfg(test)]
+#[path = "../tests/scalar_private_controls.rs"]
+mod scalar_private_controls;
+#[cfg(test)]
+#[path = "../tests/scalar_resource_controls.rs"]
+mod scalar_resource_controls;

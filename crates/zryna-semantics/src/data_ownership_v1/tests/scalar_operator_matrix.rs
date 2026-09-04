@@ -237,3 +237,6 @@ fn mixed_i32_wrapping_boundary_retains_add_opcode_without_arithmetic_trap() {
         // Verifies the frozen wrapping opcode/inputs, not a target runtime result.
     }
 }
+pub(in crate::data_ownership_v1) fn nested_scalar_fixture() -> (String, RawProjectSyntaxSnapshot) {
+    fixture(ARITHMETIC, BOOL_EQ)
+}

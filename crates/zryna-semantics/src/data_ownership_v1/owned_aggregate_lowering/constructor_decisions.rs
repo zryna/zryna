@@ -17,9 +17,9 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         &mut self,
         name: &syntax::RawIdentifierSyntax,
         fields: &[syntax::RawFieldInitializer],
-        expected: Ty,
+        expected: Option<Ty>,
         at: Span,
-    ) -> Option<StructDecision> {
+    ) -> Option<(Ty, StructDecision)> {
         let decl = self
             .declarations
             .iter()
@@ -35,7 +35,7 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             return None;
         };
         let actual = self.node_types.get(decl.node.0 as usize).and_then(|ty| *ty)?;
-        if actual != expected
+        if expected.is_some_and(|expected| actual != expected)
             || !(aggregate_graph_is_supported(actual, self.layouts, &mut BTreeSet::new())
                 || super::super::mixed_shape::requires_summary(actual, self.layouts))
         {
@@ -98,13 +98,16 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             );
             return None;
         }
-        Some(StructDecision {
-            children: declared
-                .iter()
-                .zip(ordered.into_iter().flatten())
-                .map(|(declaration, expression)| (declaration.type_syntax, expression))
-                .collect(),
-        })
+        Some((
+            actual,
+            StructDecision {
+                children: declared
+                    .iter()
+                    .zip(ordered.into_iter().flatten())
+                    .map(|(declaration, expression)| (declaration.type_syntax, expression))
+                    .collect(),
+            },
+        ))
     }
 
     pub(super) fn array_decision(
@@ -163,9 +166,9 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         name: &syntax::RawIdentifierSyntax,
         variant_name: &syntax::RawIdentifierSyntax,
         payload: Option<u32>,
-        expected: Ty,
+        expected: Option<Ty>,
         at: Span,
-    ) -> Option<EnumDecision> {
+    ) -> Option<(Ty, EnumDecision)> {
         let Some(decl) = self
             .declarations
             .iter()
@@ -189,7 +192,7 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             );
             return None;
         };
-        if actual != expected {
+        if expected.is_some_and(|expected| actual != expected) {
             self.errors.at(
                 "ZRYNA-M3007",
                 span(self.input.sources(), name.span),
@@ -264,6 +267,6 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
                 return None;
             }
         };
-        Some(EnumDecision { ordinal, payload_input })
+        Some((actual, EnumDecision { ordinal, payload_input }))
     }
 }

@@ -362,3 +362,5 @@ fn mixed_vec_of_zero_stored_array_is_rejected_by_layout_before_lowering() {
         assert_eq!(lower(input).expect_err("layout blocks IR lowering"), expected);
     }
 }
+#[path = "mixed_positive_arrays.rs"]
+mod positive_arrays;

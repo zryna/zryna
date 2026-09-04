@@ -11,6 +11,15 @@ use super::super::{Binding, Ty, span};
 use super::PrivateOwnedAggregateLowerer;
 use super::operand_decisions::OperandDecisions;
 
+pub(super) fn nonaddressable_clone(at: Span, errors: &mut super::super::Errors<'_>) {
+    errors.at(
+        "ZRYNA-M3013",
+        at,
+        "structural clone requires an addressable aggregate local root",
+        "clone one available aggregate local by name",
+    );
+}
+
 pub(super) struct CloneUsage {
     pub(super) values: usize,
     pub(super) places: usize,
@@ -139,12 +148,7 @@ impl<P: Fn(raw::PlaceId) -> Option<raw::PlaceId>> OperandDecisions<'_, '_, '_, P
         }
         let operand = self.expression(operand)?.clone();
         let RawExpressionKind::Reference { name } = operand.kind else {
-            self.errors.at(
-                "ZRYNA-M3013",
-                span(self.input.sources(), operand.span),
-                "structural clone requires an addressable aggregate local root",
-                "clone one available aggregate local by name",
-            );
+            nonaddressable_clone(span(self.input.sources(), operand.span), self.errors);
             return None;
         };
         let Some(binding) = self.bindings.get(&name.text).cloned() else {

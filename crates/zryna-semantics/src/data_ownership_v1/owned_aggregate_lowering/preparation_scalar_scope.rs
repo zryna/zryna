@@ -3,6 +3,7 @@ use super::super::preparation_plan::{Operation, Step};
 use super::{Frame, PreparationContext, Span, Ty, VisitOutcome};
 use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::TypeCategory;
+use zryna_syntax::v4::RawExpressionKind;
 use zryna_syntax::v4::RawIdentifierSyntax;
 
 pub(super) struct ScalarFrame {
@@ -18,6 +19,48 @@ pub(super) struct ScalarFrame {
 }
 
 impl<'f> PreparationContext<'_, 'f, '_, '_> {
+    pub(super) fn inferred_clone(
+        &mut self,
+        id: u32,
+        at: Span,
+        frames: &mut Vec<Frame<'f>>,
+    ) -> Option<VisitOutcome> {
+        let expression = self.decisions.function.body.expressions.get(id as usize)?;
+        let value = match &expression.kind {
+            RawExpressionKind::Reference { name } => {
+                let ty = self.inferred_reference_type(name)?;
+                if ty.category == TypeCategory::String {
+                    self.string_clone(id, ty, at)?
+                } else {
+                    self.aggregate_clone(id, ty, at)?
+                }
+            }
+            RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
+                let source = self.resolve(id)?;
+                if source.ty.category == TypeCategory::String {
+                    self.resolved_string_clone(source, source.ty, at)?
+                } else {
+                    self.aggregate_clone(id, source.ty, at)?
+                }
+            }
+            RawExpressionKind::StringLiteral { .. }
+            | RawExpressionKind::Clone { .. }
+            | RawExpressionKind::Call { .. } => {
+                let ty = self.decisions.primitive(TypeCategory::String)?;
+                frames.push(self.enter_string(super::StringOperation::Clone, vec![id], ty, at)?);
+                return Some(VisitOutcome::Deferred);
+            }
+            _ => {
+                super::super::clone_decisions::nonaddressable_clone(
+                    super::super::super::span(self.decisions.input.sources(), expression.span),
+                    self.decisions.errors,
+                );
+                return None;
+            }
+        };
+        Some(VisitOutcome::Value(value))
+    }
+
     pub(super) fn advance_scalar(
         &mut self,
         mut frame: ScalarFrame,

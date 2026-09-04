@@ -47,6 +47,7 @@ pub(super) enum ExpressionKind<'f> {
     String(&'f [u8]),
     Reference(&'f syntax::RawIdentifierSyntax),
     Projection(u32),
+    InferredClone(u32),
     StringClone(u32),
     StringConcat { arguments: &'f [u32], callee: Span },
     Call { arguments: &'f [u32], callee: &'f syntax::RawIdentifierSyntax },
@@ -75,16 +76,21 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         self.classify_prepared(id, Some(expected), false)
     }
 
-    fn nominal_type(&self, name: &syntax::RawIdentifierSyntax) -> Option<Ty> {
-        let decl = self
-            .declarations
-            .iter()
-            .find(|decl| decl.module == self.module && decl.name == name.text)?;
-        self.node_types.get(decl.node.0 as usize).copied().flatten()
-    }
-
     pub(super) fn primitive(&self, category: TypeCategory) -> Option<Ty> {
         self.node_types.iter().flatten().find(|ty| ty.category == category).copied()
+    }
+
+    fn scalar_decision(
+        &self,
+        kind: &RawExpressionKind,
+        at: Span,
+    ) -> Option<ExpressionDecision<'f>> {
+        let (operation, inputs) = super::super::scalar_operations::select(kind)?;
+        Some(ExpressionDecision {
+            at,
+            ty: Some(self.primitive(operation.result_category())?),
+            kind: ExpressionKind::Scalar { operation, inputs },
+        })
     }
 
     pub(super) fn classify_prepared(
@@ -96,15 +102,8 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         let expression =
             usize::try_from(id).ok().and_then(|index| self.function.body.expressions.get(index))?;
         let at = span(self.input.sources(), expression.span);
-        if scalar
-            && let Some((operation, inputs)) =
-                super::super::scalar_operations::select(&expression.kind)
-        {
-            return Some(ExpressionDecision {
-                at,
-                ty: Some(self.primitive(operation.result_category())?),
-                kind: ExpressionKind::Scalar { operation, inputs },
-            });
+        if scalar && let Some(decision) = self.scalar_decision(&expression.kind, at) {
+            return Some(decision);
         }
         let mut ty = expected;
         let kind = match &expression.kind {
@@ -132,8 +131,11 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
                 ExpressionKind::Projection(id)
             }
+            RawExpressionKind::Clone { value, .. } if expected.is_none() => {
+                ExpressionKind::InferredClone(*value)
+            }
             RawExpressionKind::Clone { value, .. }
-                if expected.is_none_or(|ty| ty.category == TypeCategory::String) =>
+                if expected.is_some_and(|ty| ty.category == TypeCategory::String) =>
             {
                 ExpressionKind::StringClone(*value)
             }
@@ -142,6 +144,7 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
                 if expected.is_none_or(|ty| ty.category == TypeCategory::String)
                     && callee.text == "concat" =>
             {
+                ty = Some(expected.or_else(|| self.primitive(TypeCategory::String))?);
                 ExpressionKind::StringConcat {
                     arguments,
                     callee: span(self.input.sources(), callee.span),
@@ -150,8 +153,9 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             RawExpressionKind::StructConstruction { type_name, fields, .. }
                 if expected.is_none_or(|ty| ty.category == TypeCategory::Struct) =>
             {
-                ty = Some(expected.or_else(|| self.nominal_type(type_name))?);
-                ExpressionKind::Struct(self.struct_decision(type_name, fields, ty?, at)?)
+                let (actual, decision) = self.struct_decision(type_name, fields, expected, at)?;
+                ty = Some(actual);
+                ExpressionKind::Struct(decision)
             }
             RawExpressionKind::Call { callee, arguments, .. } => {
                 ExpressionKind::Call { callee, arguments }
@@ -176,8 +180,10 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             RawExpressionKind::EnumConstruction { type_name, variant, payload, .. }
                 if expected.is_none_or(|ty| ty.category == TypeCategory::Enum) =>
             {
-                ty = Some(expected.or_else(|| self.nominal_type(type_name))?);
-                ExpressionKind::Enum(self.enum_decision(type_name, variant, *payload, ty?, at)?)
+                let (actual, decision) =
+                    self.enum_decision(type_name, variant, *payload, expected, at)?;
+                ty = Some(actual);
+                ExpressionKind::Enum(decision)
             }
             _ => {
                 self.errors.at(
