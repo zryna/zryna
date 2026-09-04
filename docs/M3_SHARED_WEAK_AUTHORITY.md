@@ -86,11 +86,11 @@ must not replace a language trap. The table describes valid input; forged inputs
 
 | Operation | Success and retained ownership | Non-success |
 | --- | --- | --- |
-| Shared construction | Prepare fully initialized T and checked control layout; allocate nonzero control, initialize counts(1,1), move payload, publish one Shared<T> | Size/limit overflow: CAPACITY; valid unsatisfied allocation: ALLOCATION. No result; input still owned for original-trap cleanup |
+| Shared construction | Prepare fully initialized T and checked control layout; allocate nonzero control, initialize counts(1,1), move payload, publish one `Shared<T>` | Size/limit overflow: CAPACITY; valid unsatisfied allocation: ALLOCATION. No result; input still owned for original-trap cleanup |
 | Shared clone | Retain source; checked strong increment; publish exactly one Shared of same T/control | MAX strong: REFCOUNT, unchanged input/counts, no result |
 | Downgrade | Retain live Shared; checked weak increment; publish one explicit Weak of same T/control | MAX weak: REFCOUNT, unchanged input/counts, no result |
 | Weak clone | Retain explicit live Weak; checked weak increment, including expired payload control | MAX weak: REFCOUNT, unchanged input/counts, no result |
-| Weak upgrade | One indivisible observation plus checked increment; success edge receives exactly one new Shared<T> | strong=0: EXPIRED, no new value or trap cleanup; strong=MAX: REFCOUNT before either successor, original-trap cleanup |
+| Weak upgrade | One indivisible observation plus checked increment; success edge receives exactly one new `Shared<T>` | strong=0: EXPIRED, no new value or trap cleanup; strong=MAX: REFCOUNT before either successor, original-trap cleanup |
 | Non-last Shared release | Consume one Shared, decrement strong only, preserve payload and weak count | Infallible for verified input; corruption is ABI_VIOLATION |
 | Last Shared release | Begin1→0, reserve control; complete recursive payload drop once; finish removes implicit weak, frees control iff no explicit Weak remains | No allocation or source callback; invalid phase/completion is ABI_VIOLATION |
 | Explicit Weak release | Consume one explicit Weak; decrement weak; free iff no strong/implicit owner and last explicit Weak gone | Never consumes implicit weak; double/stale/wrong-control release is ABI_VIOLATION |
@@ -108,7 +108,7 @@ Cleanup retains that original identity and never allocates.
 Reuse `WeakUpgradeBranch { weak, success, expired, cleanup }`, not a preliminary liveness test,
 a reusable Boolean ticket, Option, nullable result, or source-visible count.
 
-The first success block parameter is the synthesized Shared<T> for the exact Weak<T> payload;
+The first success block parameter is the synthesized `Shared<T>` for the exact `Weak<T>` payload;
 remaining success parameters correspond to ordinary explicit edge arguments. The expired edge
 has only its ordinary arguments and no synthesized handle. Expiration skips only upgrade's trap
 cleanup, not normal cleanup later in the expired body. Overflow takes neither successor.
