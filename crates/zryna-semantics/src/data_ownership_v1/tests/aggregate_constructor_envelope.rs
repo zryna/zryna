@@ -22,6 +22,9 @@ mod decisions;
 #[path = "operand_decision_tests.rs"]
 mod operands;
 
+#[path = "aggregate_resource_decisions.rs"]
+mod resources;
+
 fn with_snapshot(
     source: &str,
     snapshot: RawProjectSyntaxSnapshot,

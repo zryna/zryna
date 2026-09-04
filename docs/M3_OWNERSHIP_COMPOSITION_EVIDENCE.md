@@ -47,6 +47,11 @@ availability rules and clone resource-check order. Projection prefixes still mat
 contextual failures, and projected String clone budgets include those prefixes. Materializers keep
 ownership updates and cleanup insertion; this extraction does not supply immutable C2 planning.
 
+Shared aggregate resource decisions read committed and held counters without issuing credits or
+emitting identities. Constructor and ordinary-emission wrappers retain their different check
+orders, including the absence of a place check for Copy emission. The live constructor ticket
+remains responsible for checked acquisition and release; these views are not an immutable C2 plan.
+
 The affine ticket releases its own credits in reverse order on child failure and immediately
 before final commit on success, preserving ancestor and assignment credits. Ordinary emission,
 whole/projected clone, projection topology materialization, compound assignment and direct

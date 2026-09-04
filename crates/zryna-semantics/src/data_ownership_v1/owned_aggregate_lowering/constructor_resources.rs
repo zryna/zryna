@@ -1,11 +1,10 @@
+#[cfg(test)]
 use zryna_ir::data_ownership_v1 as ir;
 use zryna_source::Span;
 
-use super::super::global_resource_limits::{
-    aggregate_operand_budget_violation, resource_budget_violation,
-};
 use super::super::type_model::Ty;
 use super::PrivateOwnedAggregateLowerer;
+use super::resource_decisions::AggregateUsage;
 
 #[cfg(test)]
 #[path = "../tests/aggregate_constructor_envelope.rs"]
@@ -53,6 +52,19 @@ impl ConstructorCommitReservation {
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
+    pub(super) fn resource_usage(&self) -> AggregateUsage {
+        AggregateUsage {
+            values: self.next_value as usize,
+            places: self.places.len(),
+            transitions: self.instructions.len(),
+            operands: self.aggregate_operands,
+            held_values: self.constructor_storage.values,
+            held_places: self.constructor_storage.places,
+            held_transitions: self.reserved_transitions,
+            held_operands: self.constructor_storage.operands,
+        }
+    }
+
     // Overflow is represented only as an over-limit preflight input. These counts never
     // determine emitted identities or become committed arena/accounting state.
     pub(super) fn budget_values(&self) -> usize {
@@ -67,6 +79,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.constructor_storage.places
     }
 
+    #[cfg(test)]
     pub(super) fn budget_operands(&self) -> usize {
         self.aggregate_operands.saturating_add(self.constructor_storage.operands)
     }
@@ -81,52 +94,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     pub(super) fn preflight_constructor_operands(&mut self, additional: usize, at: Span) -> bool {
-        if aggregate_operand_budget_violation(self.budget_operands(), additional) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived aggregate operands exceed the M3 limit of {}",
-                    ir::MAX_AGGREGATE_OPERANDS
-                ),
-                "reduce Struct fields and fixed-array elements",
-            );
-            return false;
-        }
-        true
+        self.resource_usage().operands(additional, at, self.errors)
     }
 
     pub(super) fn preflight_value(&mut self, at: Span) -> bool {
-        if self.budget_values() >= ir::MAX_VALUES_PER_FUNCTION {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived values exceed the per-function M3 limit of {}",
-                    ir::MAX_VALUES_PER_FUNCTION
-                ),
-                "reduce private aggregate expressions",
-            );
-            return false;
-        }
-        true
+        self.resource_usage().value(at, self.errors)
     }
 
     pub(super) fn preflight_constructor_places(&mut self, additional: usize, at: Span) -> bool {
-        if resource_budget_violation(self.budget_places(), additional, ir::MAX_PLACES_PER_FUNCTION)
-        {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived places exceed the per-function M3 limit of {}",
-                    ir::MAX_PLACES_PER_FUNCTION
-                ),
-                "reduce owned aggregate temporaries and locals",
-            );
-            return false;
-        }
-        true
+        self.resource_usage().places(additional, at, self.errors)
     }
 
     pub(super) fn reserve_constructor_commit(

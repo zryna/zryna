@@ -25,6 +25,7 @@ mod projection_resolution;
 pub(in crate::data_ownership_v1) mod projection_resolution_checks;
 mod projection_topology;
 mod projections;
+mod resource_decisions;
 mod shape;
 mod state;
 mod statements;

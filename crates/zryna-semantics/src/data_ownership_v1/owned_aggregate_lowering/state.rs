@@ -1,8 +1,7 @@
-use zryna_ir::data_ownership_v1::{self as ir, raw};
+use zryna_ir::data_ownership_v1::raw;
 use zryna_source::{Span, UntrustedSpan};
 use zryna_syntax::v4::{RawExpressionKind, RawFieldInitializerKind};
 
-use super::super::global_resource_limits::aggregate_transition_budget_violation;
 use super::super::owned_constructor_plan::{
     ConstructorKind, ConstructorPlanError, ConstructorShape,
 };
@@ -12,23 +11,7 @@ use super::PrivateOwnedAggregateLowerer;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn preflight_transition(&mut self, additional: usize, at: Span) -> bool {
-        if aggregate_transition_budget_violation(
-            self.instructions.len(),
-            self.reserved_transitions,
-            additional,
-        ) {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                format!(
-                    "derived ownership transitions exceed the per-function M3 limit of {}",
-                    ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
-                ),
-                "reduce private aggregate expressions and assignments",
-            );
-            return false;
-        }
-        true
+        self.resource_usage().transition(additional, at, self.errors)
     }
 
     pub(super) fn reserve_transition(&mut self, at: Span) -> bool {
