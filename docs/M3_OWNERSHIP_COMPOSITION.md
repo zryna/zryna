@@ -1,7 +1,7 @@
 # M3 ownership composition interfaces
 
 Status: Issue #277 planned implementation contract, not implemented generic source semantics.
-Baseline: `46f7c012bcce7d6f771bd7c174f61d02417791f5`. No runtime, backend, driver route,
+Authority baseline: `8cc4eed8d522976ca557a27ea54993fb0d5ebf1c`. No runtime, backend, driver route,
 public profile or target execution is enabled. The [evidence matrix](M3_OWNERSHIP_COMPOSITION_EVIDENCE.md)
 separates existing declarations/tests from proposed interfaces and future proofs.
 

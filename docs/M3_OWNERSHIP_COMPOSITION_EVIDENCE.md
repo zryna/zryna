@@ -8,7 +8,8 @@ unchanged. Existing tests below are located evidence, not newly executed by this
 ## Existing authority and limits
 
 Paths below are relative to `crates/zryna-semantics/src/data_ownership_v1/` at
-`46f7c012bcce7d6f771bd7c174f61d02417791f5`, except the explicitly named IR file.
+the merged authority baseline `8cc4eed8d522976ca557a27ea54993fb0d5ebf1c`, except the explicitly
+named IR file. The declarations and named tests below are also checked against this candidate.
 
 | Existing declaration | Reuse and missing interface |
 | --- | --- |
@@ -20,9 +21,10 @@ Paths below are relative to `crates/zryna-semantics/src/data_ownership_v1/` at
 | `owned_enum_payload_move.rs` | Narrow refined payload/local continuation, not arbitrary owned matches |
 | `crates/zryna-ir/src/data_ownership_v1.rs::transfer_edge_owners` | Independent synthesized-success owner and ordinary argument transfer; preserve its exact authority |
 
-The pending #233–#237 extraction paths are not current-main paths at this baseline. In particular,
-this document does not claim `function_dispatch.rs` or proposed generic modules already exist.
-Resolve final registration paths against the actually integrated parent before implementation.
+This candidate includes the #233–#237 extractions and the #288 constructor-order correction.
+`function_dispatch.rs` now exists in this candidate; proposed generic modules remain unimplemented.
+This describes the candidate tree, not the merge status of its prerequisite pull requests.
+Resolve final registration paths against the integrated parent before implementation.
 
 ## Located tests, not complete composition proofs
 
@@ -85,8 +87,8 @@ commands/results and missing integration. No concurrent shared-file edits or gue
 
 #277 documentation drift checks bind real existing declarations, located tests and eight contract
 sections, with missing-symbol/section mutations. They do not verify future APIs or execute Rust.
-Re-freeze the current semantic inventory before code handoff: integrated baseline has346names,
-including2ignored proportional tests; historical345refactor evidence is not current proof. Preserve
+Re-freeze the current semantic inventory before code handoff: this candidate has351names,
+including2ignored proportional tests; historical345/346refactor evidence is not current proof. Preserve
 existing44borrowing evidence guards and required ignored execution through preflight. Every later
 executable change requires independent source/IR review, relevant focused tests and complete
 preflight/M0 on Linux and Windows; contract-only narrow checks cannot replace those merge gates.

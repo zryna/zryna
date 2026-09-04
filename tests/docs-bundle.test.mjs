@@ -106,7 +106,10 @@ test('planned ownership composition binds existing declarations and located test
     assert.throws(() => check(contract, changed));
   }
   assert.match(evidence, /Every name in this table is proposed, not an existing test or API/);
-  assert.match(evidence, /pending #233–#237 extraction paths are not current-main paths/);
+  assert.match(evidence, /This candidate includes the #233–#237 extractions and the #288 constructor-order correction/);
+  assert.match(evidence, /candidate tree, not the merge status of its prerequisite pull requests/);
+  const dispatch = await readFile(path.join(compilerWorkspaceRoot, root, 'function_dispatch.rs'), 'utf8');
+  assert.match(dispatch, /fn /);
   assert.match(evidence, /500 lines triggers a split\/cohesion review, not a compulsory limit/);
   assert.match(evidence, /larger cohesive module is allowed with a documented rationale/);
   function checkUpgradeEvidence(text) {
