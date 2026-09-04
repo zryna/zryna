@@ -57,6 +57,9 @@ resource diagnostics. Legacy-shaped children inherit their mixed root's selected
 standalone legacy Vec operations retain their existing route and precedence. Syntax/input limits,
 layout checks, intrinsic byte bounds and checked arithmetic are not deferred by this policy.
 The evidence matrix documents this deliberate boundary rather than asserting one global ordering.
+For mixed-route local initialization, preparation also checks the destination local place and
+initialization transition before consuming the initializer. Rejection preserves earlier statements,
+bindings and ownership; this does not enable generic destination replacement.
 
 ## C3: Place replacement and initialized shape
 

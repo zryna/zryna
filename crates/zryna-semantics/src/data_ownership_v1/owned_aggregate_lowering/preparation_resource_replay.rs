@@ -8,7 +8,7 @@ use super::super::resource_decisions::AggregateUsage;
 #[path = "preparation_vec_resources.rs"]
 pub(super) mod vec_resources;
 
-fn usage(at: Checkpoint) -> AggregateUsage {
+pub(super) fn usage(at: Checkpoint) -> AggregateUsage {
     AggregateUsage {
         values: at.counts[0],
         places: at.counts[1],

@@ -36,8 +36,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if !self.preflight_transition(1, at) {
             return false;
         }
-        self.instructions.push(raw::Instruction { result: None, span: at, kind });
+        self.emit_prepared_effect(at, kind);
         true
+    }
+
+    pub(super) fn emit_prepared_effect(&mut self, at: Span, kind: raw::InstructionKind) {
+        self.instructions.push(raw::Instruction { result: None, span: at, kind });
     }
 
     pub(super) fn push_cleanup(

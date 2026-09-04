@@ -4,7 +4,7 @@ use zryna_diagnostics::Diagnostic;
 use zryna_ir::data_ownership_v1::{PlaceIdentity, ValueIdentity};
 use zryna_syntax::v4::{RawExpressionKind, RawFieldInitializer, RawFieldInitializerKind};
 
-fn fixture(duplicate: bool) -> (String, RawProjectSyntaxSnapshot) {
+pub(super) fn fixture(duplicate: bool) -> (String, RawProjectSyntaxSnapshot) {
     let s = NestedSource(if duplicate {
         "interface Parcel extends ZrynaStruct { value: Vec<String>; }\nfunction make(): Vec<Parcel> { const item: Parcel = Parcel({ value: Vec<String>([\"a\"]) }); return Vec<Parcel>([item, item]); }"
     } else {

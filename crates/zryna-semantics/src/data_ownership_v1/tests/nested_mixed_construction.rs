@@ -368,6 +368,10 @@ pub(in crate::data_ownership_v1) fn cleanup_frontier_fixture() -> (String, RawPr
 }
 #[path = "mixed_constructor_faults.rs"]
 mod faults;
+#[path = "local_commit_fixture.rs"]
+pub(in crate::data_ownership_v1) mod local_commit_fixture;
+#[path = "local_tail_supplement.rs"]
+pub(in crate::data_ownership_v1) mod local_tail_supplement;
 #[path = "mixed_struct_whole_moves.rs"]
 mod struct_whole_moves;
 #[path = "mixed_type_negatives.rs"]

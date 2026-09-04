@@ -480,6 +480,11 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
         Some(Self { lowerer, plan })
     }
 }
+#[path = "preparation_local_commit.rs"]
+mod local_commit;
+#[cfg(test)]
+#[path = "../tests/local_commit_controls.rs"]
+mod local_commit_controls;
 #[cfg(test)]
 #[path = "../tests/mixed_disjoint_owned_sibling_controls.rs"]
 mod mixed_disjoint_owned_sibling_controls;
@@ -492,3 +497,7 @@ mod scalar_private_controls;
 #[cfg(test)]
 #[path = "../tests/scalar_resource_controls.rs"]
 mod scalar_resource_controls;
+pub(super) use local_commit::PreparedLocal;
+#[cfg(test)]
+#[path = "../tests/local_tail_supplement_controls.rs"]
+mod local_tail_supplement_controls;

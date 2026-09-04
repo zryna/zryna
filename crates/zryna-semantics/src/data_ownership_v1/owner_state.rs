@@ -81,15 +81,24 @@ impl OwnerState {
         Some(OwnerDelta::Renamed { from, to })
     }
 
-    pub(super) fn rename(&mut self, value: raw::ValueId, to: raw::PlaceId) -> Option<OwnerDelta> {
+    pub(super) fn rename_effect(
+        &self,
+        value: raw::ValueId,
+        to: raw::PlaceId,
+    ) -> Option<(usize, OwnerDelta)> {
         let from = self.owner(value)?;
         if from == to || self.pending.contains(&to) {
             return None;
         }
         let slot = self.pending.iter().position(|place| *place == from)?;
+        Some((slot, OwnerDelta::Renamed { from, to }))
+    }
+
+    pub(super) fn rename(&mut self, value: raw::ValueId, to: raw::PlaceId) -> Option<OwnerDelta> {
+        let (slot, delta) = self.rename_effect(value, to)?;
         self.pending[slot] = to;
         self.value_owners.remove(&value);
-        Some(OwnerDelta::Renamed { from, to })
+        Some(delta)
     }
 
     pub(super) fn replace(

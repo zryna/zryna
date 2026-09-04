@@ -154,6 +154,13 @@ boundary reports M3007 at the complete expression, with `scalar result has a dif
 aggregate type` and `use a value with the exact declared type`. Existing Copy field diagnostics
 are unchanged. A scalar result charges one value and one transition, not an owned place or cleanup.
 
+Mixed-route local initialization extends that prepared result with one destination place and one
+initialization transition, checked in that order after initializer resource replay and before real
+consumption. Copy locals still require the destination place. Owned results retain their pending
+slot while ownership and String byte facts move to the exact local identity. Capacity rejection
+preserves arenas, bindings, local numbering, ownership, facts, cache and surrounding credits;
+legacy local routes and destination replacement are unchanged.
+
 String clone/concat and supported private same-module String/Vec producer/identity calls use
 their existing typed authorities. Nested scopes forward only their final immediate result.
 Arguments transfer before caller CallTrap cleanup; original borrowed read owners remain retained.
@@ -165,6 +172,7 @@ signature calls, non-addressable aggregate cloning, general borrowed payloads or
 | --- | --- |
 | `mixed_construction.rs`, `nested_mixed_construction.rs`, `mixed_positive_arrays.rs`, `mixed_zero_array_vec.rs`, `mixed_recursive_vec.rs` | Authenticated source/full-IR nesting in both directions, selected payload, zero/nonzero array, empty/nonempty Vec and one finite recursive nominal value. |
 | `mixed_local_construction.rs`, `mixed_array_whole_moves.rs`, `mixed_enum_whole_moves.rs`, `mixed_struct_whole_moves.rs` | Actual local-to-constructor whole moves, exact owner/result/cleanup identities, duplicate-source rejection and deterministic replay. |
+| `local_commit_fixture.rs`, `local_commit_controls.rs`, `local_tail_supplement.rs`, `local_tail_supplement_controls.rs` | Authenticated source/full-IR local controls; exact and first-extra destination capacity, competing place/transition limits, semantic precedence, Copy destination cost and known String fact renaming. Both late-capacity regressions failed before the prepared local tail and pass with it. |
 | `mixed_copy_operators.rs`, `scalar_operator_matrix.rs`, `scalar_matrix_negatives.rs`, `scalar_owned_lhs.rs` | All ten scalar operations, Bool/i32 equality, ordered nested operands, exact result mismatch and competing operand diagnostics through the existing checker. Owned-left/missing-right cases test inference order, not acceptance of owned scalar operands. |
 | `scalar_private_controls.rs`, `scalar_resource_controls.rs` | Malformed private scope/order/type/range rejection; immediate nested results; exact/extra real held credits; semantic rejection preserves full state/facts. Impossible internal-counter overflow is separately labeled. |
 | `mixed_type_negatives.rs`, `mixed_type_negative_controls.rs` | Exact distinct nominal, nested Vec element, outer context and selected-payload rejection; valid full-IR controls, complete state/facts with surrounding credit, and fixed nested scalar/call visit/result-step counts. |
