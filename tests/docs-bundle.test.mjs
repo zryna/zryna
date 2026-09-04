@@ -3,6 +3,7 @@ import { cp, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import './code-navigation-cases.mjs';
 
 import {
   compilerWorkspaceRoot,
