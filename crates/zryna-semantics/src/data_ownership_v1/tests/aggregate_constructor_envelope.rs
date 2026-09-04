@@ -13,6 +13,9 @@ use zryna_syntax::v4::{
 #[path = "aggregate_constructor_envelope_flows.rs"]
 mod flows;
 
+#[path = "aggregate_constructor_projection_integration.rs"]
+mod integration;
+
 fn with_snapshot(
     source: &str,
     snapshot: RawProjectSyntaxSnapshot,

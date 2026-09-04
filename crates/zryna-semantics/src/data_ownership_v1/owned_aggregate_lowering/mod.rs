@@ -15,6 +15,11 @@ mod constructors;
 mod driver;
 mod partial_transfers;
 mod projected_reads;
+mod projection_resolution;
+#[cfg(test)]
+#[path = "../tests/projection_resolution_checks.rs"]
+pub(in crate::data_ownership_v1) mod projection_resolution_checks;
+mod projection_topology;
 mod projections;
 mod shape;
 mod state;

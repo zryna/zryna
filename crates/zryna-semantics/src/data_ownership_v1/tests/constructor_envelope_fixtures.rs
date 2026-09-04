@@ -10,6 +10,7 @@ pub(in crate::data_ownership_v1) enum Fixture {
     WholeClone,
     Projection,
     PartialTransfer,
+    NestedPartialTransfer,
 }
 
 pub(in crate::data_ownership_v1) fn snapshot(kind: Fixture) -> (String, RawProjectSyntaxSnapshot) {
@@ -24,6 +25,7 @@ pub(in crate::data_ownership_v1) fn snapshot(kind: Fixture) -> (String, RawProje
         }
         Fixture::Projection => return owned_pair_projected_return_snapshot("first"),
         Fixture::PartialTransfer => return owned_pair_partial_local_transfer_snapshot(),
+        Fixture::NestedPartialTransfer => return nested_owned_partial_local_transfer_snapshot(),
     };
     (source.to_owned(), response_snapshot(response))
 }

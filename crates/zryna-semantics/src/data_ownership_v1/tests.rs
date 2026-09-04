@@ -7,6 +7,7 @@ pub(super) mod constructor_envelope_fixtures;
 mod constructor_plans;
 mod constructor_reservations;
 mod constructor_value_types;
+mod projection_descriptors;
 use super::borrow_call_resources::{
     BorrowCallPreflightError, BorrowCallProgramBudgetLimit, borrow_call_program_budget_violation,
     checked_add_resources, checked_call_delta, checked_straight_borrow_call_resources,

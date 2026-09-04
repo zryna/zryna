@@ -63,6 +63,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.places.len().saturating_add(self.constructor_storage.places)
     }
 
+    pub(super) fn reserved_constructor_places(&self) -> usize {
+        self.constructor_storage.places
+    }
+
     pub(super) fn budget_operands(&self) -> usize {
         self.aggregate_operands.saturating_add(self.constructor_storage.operands)
     }

@@ -14,6 +14,13 @@ The subsequent [Shared/Weak authority contract](M3_SHARED_WEAK_AUTHORITY.md) fre
 complete interfaces and required evidence after borrowing closure. It is a planning boundary,
 not implemented Shared/Weak source semantics or an extension of this checkpoint.
 
+The private static-projection resolver shares its ordered syntax, exact-type and diagnostic
+checks with a caller-supplied topology view. Existing lowering still materializes each checked
+prefix immediately, preserves cached-prefix identity and the first source span, and retains
+earlier prefixes if a later check fails. A separate scratch topology can consume the same
+descriptors without mutating raw places; this is a prerequisite seam for #278 preparation,
+not complete C2 cost/ownership planning, new admitted source forms, or public activation.
+
 ## Current implementation checkpoint
 
 The implemented semantic producer is deliberately narrower than the complete contract in this

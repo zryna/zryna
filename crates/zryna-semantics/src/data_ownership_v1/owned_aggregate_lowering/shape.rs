@@ -296,21 +296,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         key: (u32, u8, u32),
         kind: raw::PlaceKind,
     ) -> Option<raw::PlaceId> {
-        if let Some(place) = self.projections.get(&key).copied() {
-            return Some(place);
-        }
-        if self.budget_places() >= ir::MAX_PLACES_PER_FUNCTION {
-            self.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "derived owned projection places exceed the per-function M3 limit",
-                "reduce distinct private aggregate field and fixed-array projections",
-            );
-            return None;
-        }
-        let place = raw::PlaceId(u32::try_from(self.places.len()).ok()?);
-        self.places.push(raw::Place { id: place, ty: ty.ir, span: at, kind });
-        self.projections.insert(key, place);
-        Some(place)
+        let reserved_places = self.reserved_constructor_places();
+        let mut topology = super::projection_topology::MaterializedProjectionTopology {
+            projections: &mut self.projections,
+            places: &mut self.places,
+            reserved_places,
+        };
+        super::projection_topology::project(
+            &mut topology,
+            super::projection_topology::ProjectionDescriptor { ty, at, key, kind },
+            self.errors,
+        )
     }
 }
