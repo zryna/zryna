@@ -51,10 +51,7 @@ pub(in crate::data_ownership_v1) fn aggregate_graph_is_supported(
     supported
 }
 
-pub(in crate::data_ownership_v1) fn owned_enum_graph_is_supported(
-    ty: Ty,
-    layouts: &layout::VerifiedLayouts,
-) -> bool {
+pub(super) fn owned_enum_graph_is_supported(ty: Ty, layouts: &layout::VerifiedLayouts) -> bool {
     layouts.type_by_id(ty.layout).is_some_and(|record| {
         record.category() == TypeCategory::Enum
             && record.variants().iter().all(|variant| {
@@ -175,11 +172,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
-    pub(in crate::data_ownership_v1) fn place_is_at_or_below(
-        &self,
-        mut place: raw::PlaceId,
-        root: raw::PlaceId,
-    ) -> bool {
+    pub(super) fn place_is_at_or_below(&self, mut place: raw::PlaceId, root: raw::PlaceId) -> bool {
         let mut visited = BTreeSet::new();
         while visited.insert(place) {
             if place == root {
@@ -195,14 +188,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.place_is_at_or_below(left, right) || self.place_is_at_or_below(right, left)
     }
 
-    pub(in crate::data_ownership_v1) fn complete_projection_shape(
+    pub(super) fn complete_projection_shape(
         &self,
         ty: Ty,
     ) -> Option<Vec<OwnedProjectionShapeEntry>> {
         complete_owned_projection_shape(ty, self.layouts)
     }
 
-    pub(in crate::data_ownership_v1) fn existing_projection_shape(
+    pub(super) fn existing_projection_shape(
         &self,
         root: raw::PlaceId,
         shape: &[OwnedProjectionShapeEntry],
@@ -224,7 +217,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         places
     }
 
-    pub(in crate::data_ownership_v1) fn materialize_projection_shape(
+    pub(super) fn materialize_projection_shape(
         &mut self,
         root: raw::PlaceId,
         shape: &[OwnedProjectionShapeEntry],
@@ -250,7 +243,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         places
     }
 
-    pub(in crate::data_ownership_v1) fn migrate_partial_mask(
+    pub(super) fn migrate_partial_mask(
         &mut self,
         source_root: raw::PlaceId,
         target_root: raw::PlaceId,
@@ -296,7 +289,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             && !self.moved_projections.iter().any(|moved| self.places_overlap(*moved, projection))
     }
 
-    pub(in crate::data_ownership_v1) fn push_projection(
+    pub(super) fn push_projection(
         &mut self,
         ty: Ty,
         at: Span,

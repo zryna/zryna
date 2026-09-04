@@ -8,14 +8,14 @@ use super::super::span;
 use super::super::type_model::{Binding, ProjectedAggregateMoveContext, Ty};
 use super::PrivateOwnedAggregateLowerer;
 
-pub(in crate::data_ownership_v1) enum StatementOutcome {
+pub(super) enum StatementOutcome {
     Continue,
     Return(raw::ValueId, Span),
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     #[allow(clippy::too_many_lines)]
-    pub(in crate::data_ownership_v1) fn lower_statement(
+    pub(super) fn lower_statement(
         &mut self,
         statement_id: u32,
         statement: &RawStatementSyntax,

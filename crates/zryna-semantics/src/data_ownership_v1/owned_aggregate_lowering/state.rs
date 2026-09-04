@@ -55,7 +55,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         true
     }
 
-    pub(in crate::data_ownership_v1) fn push_cleanup(
+    pub(super) fn push_cleanup(
         &mut self,
         at: Span,
         excluded: Option<raw::PlaceId>,
@@ -70,7 +70,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         )
     }
 
-    pub(in crate::data_ownership_v1) fn emit(
+    pub(super) fn emit(
         &mut self,
         ty: Ty,
         at: Span,
