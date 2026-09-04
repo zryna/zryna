@@ -120,6 +120,7 @@ pub(in crate::data_ownership_v1) fn lower_private_vec_function<'a>(
         graph,
         node_types,
         catalog,
+        layouts,
         vec_ty,
         element,
         errors,

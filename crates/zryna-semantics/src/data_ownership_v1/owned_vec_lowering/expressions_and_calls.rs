@@ -4,7 +4,6 @@ use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 
 use super::super::global_resource_limits::checked_string_concat_bytes;
-use super::super::layout_graph::semantic_type;
 use super::super::owner_state::{OwnerDelta, apply_owner_delta};
 use super::super::span;
 use super::super::string_vec_resource_estimates::cleanup_actions_after_transfer;
@@ -205,72 +204,7 @@ impl PrivateVecLowerer<'_, '_, '_> {
             RawExpressionKind::VecConstruction { type_syntax, elements, .. }
                 if expected.category == TypeCategory::Vec =>
             {
-                let constructed = semantic_type(
-                    self.file,
-                    type_syntax,
-                    self.module,
-                    self.declarations,
-                    self.graph,
-                    self.node_types,
-                    self.errors,
-                )?;
-                if constructed != expected {
-                    self.errors.at(
-                        "ZRYNA-M3013",
-                        at,
-                        "Vec construction type differs from its contextual type",
-                        "construct the exact annotated Vec type",
-                    );
-                    return None;
-                }
-                let reserved_actions = self.preflight_construct_cleanup(&elements, at)?;
-                self.cfg.reserve_values(1, at, self.errors)?;
-                if !self.reserve_local_place(at) {
-                    self.cfg.release_values(1);
-                    return None;
-                }
-                if self.cfg.reserve_transitions(1, at, self.errors).is_none() {
-                    self.release_local_place();
-                    self.cfg.release_values(1);
-                    return None;
-                }
-                if !self.reserve_cleanup_capacity(reserved_actions, at) {
-                    self.cfg.release_transitions(1);
-                    self.release_local_place();
-                    self.cfg.release_values(1);
-                    return None;
-                }
-                let mut values = Vec::with_capacity(elements.len());
-                for element in elements {
-                    let Some(value) = self.value(element, self.element) else {
-                        self.release_cleanup_capacity(reserved_actions);
-                        self.cfg.release_transitions(1);
-                        self.release_local_place();
-                        self.cfg.release_values(1);
-                        return None;
-                    };
-                    values.push(value);
-                }
-                let consumed =
-                    values.iter().filter_map(|value| self.owners.owner(*value)).collect::<Vec<_>>();
-                self.release_cleanup_capacity(reserved_actions);
-                self.cfg.release_transitions(1);
-                self.release_local_place();
-                self.cfg.release_values(1);
-                let cleanup = self.push_instruction_cleanup(at, None)?;
-                let result = self
-                    .emit(
-                        expected,
-                        at,
-                        raw::InstructionKind::VecConstruct { elements: values, cleanup },
-                    )?
-                    .0;
-                for owner in consumed {
-                    if let Some(delta) = self.owners.consume_owner(owner) {
-                        apply_owner_delta(&mut self.known_string_bytes, delta);
-                    }
-                }
-                Some(result)
+                self.construct_vec(type_syntax, &elements, expected, at)
             }
             RawExpressionKind::Index { base, index, .. } => {
                 if expected != self.element || !expected.is_copy() {

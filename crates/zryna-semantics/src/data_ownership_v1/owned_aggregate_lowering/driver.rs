@@ -69,6 +69,7 @@ fn lower_owned_aggregate_function_impl<'a>(
         partial_roots: BTreeSet::new(),
         places: Vec::new(),
         instructions: Vec::new(),
+        constructor_types: super::ConstructorValueTypes::default(),
         cleanup_plans: Vec::new(),
         cleanup_actions: 0,
         aggregate_operands: 0,
@@ -130,6 +131,10 @@ fn lower_owned_aggregate_function_impl<'a>(
             ty: ty.ir,
             span: span(input.sources(), parameter.span),
         });
+        lowerer
+            .constructor_types
+            .record_parameter(parameters.last().expect("new parameter"))
+            .expect("aggregate parameters have dense emitted identities");
         let place = raw::PlaceId(u32::try_from(lowerer.places.len()).ok()?);
         lowerer.places.push(raw::Place {
             id: place,

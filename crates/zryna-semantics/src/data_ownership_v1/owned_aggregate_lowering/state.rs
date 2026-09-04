@@ -1,11 +1,12 @@
-use std::collections::BTreeSet;
-
 use zryna_ir::data_ownership_v1::{self as ir, raw};
 use zryna_source::{Span, UntrustedSpan};
 use zryna_syntax::v4::{RawExpressionKind, RawFieldInitializerKind};
 
 use super::super::global_resource_limits::{
     aggregate_operand_budget_violation, aggregate_transition_budget_violation,
+};
+use super::super::owned_constructor_plan::{
+    ConstructorKind, ConstructorPlanError, ConstructorShape,
 };
 use super::super::owned_lowering_resources::push_aggregate_reverse_cleanup;
 use super::super::type_model::Ty;
@@ -203,25 +204,24 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(())
     }
 
-    pub(super) fn prevalidate_constructor_operands(
+    pub(super) fn commit_constructor(
         &mut self,
+        expected: Ty,
+        kind: ConstructorKind,
         values: &[raw::ValueId],
         at: Span,
-    ) -> Option<Vec<raw::ValueId>> {
-        let mut seen = BTreeSet::new();
-        let mut consumed = Vec::new();
-        for value in values {
-            let Some(owner) = self.owners.owner(*value) else { continue };
-            if !self.owners.contains(owner) {
-                self.errors.at(
-                    "ZRYNA-M3014",
-                    at,
-                    "aggregate constructor operand owner is unavailable before commit",
-                    "construct from only currently pending exact values",
-                );
-                return None;
-            }
-            if !seen.insert(owner) {
+    ) -> Option<raw::ValueId> {
+        self.reserve_operands(values.len(), at)?;
+        let prepared = ConstructorShape::derive(self.layouts, expected, kind, values.len(), |id| {
+            self.node_types.iter().flatten().find(|ty| ty.layout == id).copied()
+        })
+        .and_then(|shape| {
+            self.constructor_types.observe(&self.instructions)?;
+            shape.prepare(values, |value| self.constructor_types.get(value), &self.owners)
+        });
+        let prepared = match prepared {
+            Ok(prepared) => prepared,
+            Err(ConstructorPlanError::DuplicateOwner) => {
                 self.errors.at(
                     "ZRYNA-M3014",
                     at,
@@ -230,17 +230,20 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 );
                 return None;
             }
-            consumed.push(*value);
-        }
-        Some(consumed)
-    }
-
-    pub(super) fn commit_constructor_operands(&mut self, values: &[raw::ValueId]) {
-        for value in values {
-            self.owners
-                .transfer(*value)
-                .expect("prevalidated aggregate operand remains pending until infallible commit");
-        }
+            Err(_) => {
+                self.errors.at(
+                    "ZRYNA-M3014",
+                    at,
+                    "aggregate constructor operand owner is unavailable before commit",
+                    "construct from only currently pending exact values",
+                );
+                return None;
+            }
+        };
+        let instruction = prepared.instruction(None).expect("infallible aggregate constructor");
+        let result = self.emit(prepared.result_type(), at, instruction)?;
+        let _ = prepared.commit(&mut self.owners);
+        Some(result)
     }
 
     pub(super) fn commit_enum(
@@ -250,19 +253,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         ordinal: usize,
         payload: Option<raw::ValueId>,
     ) -> Option<raw::ValueId> {
-        self.reserve_operands(usize::from(payload.is_some()), at)?;
         let operands = payload.into_iter().collect::<Vec<_>>();
-        let consumed = self.prevalidate_constructor_operands(&operands, at)?;
-        let result = self.emit(
+        self.commit_constructor(
             expected,
+            ConstructorKind::Enum { variant: u32::try_from(ordinal).ok()? },
+            &operands,
             at,
-            raw::InstructionKind::EnumConstruct {
-                variant: u32::try_from(ordinal).ok()?,
-                payload: operands.first().copied(),
-                cleanup: None,
-            },
-        )?;
-        self.commit_constructor_operands(&consumed);
-        Some(result)
+        )
     }
 }

@@ -16,6 +16,7 @@ mod assignments_and_effects;
 mod branches;
 mod call_resolution;
 mod clone;
+mod constructors;
 mod driver;
 mod expressions_and_calls;
 mod loops;
@@ -32,6 +33,7 @@ pub(in crate::data_ownership_v1) struct PrivateVecLowerer<'a, 'f, 'e> {
     pub(in crate::data_ownership_v1) declarations: &'a [Decl],
     pub(in crate::data_ownership_v1) graph: &'a raw_layout::Graph,
     pub(in crate::data_ownership_v1) node_types: &'a [Option<Ty>],
+    pub(in crate::data_ownership_v1) layouts: &'a zryna_layout::VerifiedLayouts,
     pub(in crate::data_ownership_v1) catalog: &'a FunctionCatalog,
     pub(in crate::data_ownership_v1) vec_ty: Ty,
     pub(in crate::data_ownership_v1) element: Ty,

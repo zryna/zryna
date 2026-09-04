@@ -8,6 +8,7 @@ use zryna_syntax::v4::{
 };
 
 use super::super::layout_graph::semantic_type;
+use super::super::owned_constructor_plan::ConstructorKind;
 use super::super::span;
 use super::super::type_model::Ty;
 use super::{
@@ -177,15 +178,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             )?;
             values.push(self.value(expression, field_ty)?);
         }
-        self.reserve_operands(values.len(), at)?;
-        let consumed = self.prevalidate_constructor_operands(&values, at)?;
-        let result = self.emit(
-            expected,
-            at,
-            raw::InstructionKind::StructConstruct { fields: values.clone(), cleanup: None },
-        )?;
-        self.commit_constructor_operands(&consumed);
-        Some(result)
+        self.commit_constructor(expected, ConstructorKind::Struct, &values, at)
     }
 
     fn array_value(
@@ -232,15 +225,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         for expression in elements {
             values.push(self.value(*expression, element)?);
         }
-        self.reserve_operands(values.len(), at)?;
-        let consumed = self.prevalidate_constructor_operands(&values, at)?;
-        let result = self.emit(
-            expected,
-            at,
-            raw::InstructionKind::FixedArrayConstruct { elements: values.clone(), cleanup: None },
-        )?;
-        self.commit_constructor_operands(&consumed);
-        Some(result)
+        self.commit_constructor(expected, ConstructorKind::FixedArray, &values, at)
     }
 
     fn enum_value(

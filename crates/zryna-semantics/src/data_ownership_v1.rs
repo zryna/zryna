@@ -26,6 +26,7 @@ mod global_resource_limits;
 mod layout_graph;
 mod owned_aggregate_lowering;
 mod owned_cfg_state;
+mod owned_constructor_plan;
 mod owned_control_flow_resources;
 mod owned_control_flow_shape;
 mod owned_enum_payload_move;

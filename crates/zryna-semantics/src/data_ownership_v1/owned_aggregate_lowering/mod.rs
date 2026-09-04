@@ -4,6 +4,7 @@ use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::{self as layout, raw as raw_layout};
 use zryna_syntax::v4 as syntax;
 
+use super::owned_constructor_plan::ConstructorValueTypes;
 use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 
 mod assignment_planning;
@@ -42,6 +43,7 @@ struct PrivateOwnedAggregateLowerer<'a, 'f, 'e> {
     partial_roots: BTreeSet<raw::PlaceId>,
     places: Vec<raw::Place>,
     instructions: Vec<raw::Instruction>,
+    constructor_types: ConstructorValueTypes,
     cleanup_plans: Vec<raw::CleanupPlan>,
     cleanup_actions: usize,
     aggregate_operands: usize,
