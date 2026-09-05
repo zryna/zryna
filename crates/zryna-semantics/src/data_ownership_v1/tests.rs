@@ -90,9 +90,10 @@ use super::{
     projected_subobject_return_budget_violation, semantic_preflight, span, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
-    PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
-    VerifiedActiveVariant, VerifiedBorrowAccess, VerifiedCallArgument, VerifiedCleanupRole,
-    VerifiedDropActionKind, VerifiedFunction, VerifiedHandleCloneRecipeKind,
+    BorrowIdentity as FaultBorrowIdentity, PlaceIdentity as FaultPlaceIdentity,
+    ValueIdentity as FaultValueIdentity, VerifiedActiveVariant, VerifiedBorrowAccess,
+    VerifiedCallArgument, VerifiedCleanupRole, VerifiedDropActionKind, VerifiedFunction,
+    VerifiedHandleAwareCloneSourceAuthority, VerifiedHandleCloneRecipeKind,
     VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind, VerifiedPlaceKind,
     VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
 };

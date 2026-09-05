@@ -24,7 +24,8 @@ pub use generic_clone::{
 };
 pub use handle_aware_clone::{
     VerifiedHandleAwareClone, VerifiedHandleAwareCloneFrontier, VerifiedHandleAwareCloneSource,
-    VerifiedHandleCloneRecipeKind, VerifiedHandleCloneRecipeNode,
+    VerifiedHandleAwareCloneSourceAuthority, VerifiedHandleCloneRecipeKind,
+    VerifiedHandleCloneRecipeNode,
 };
 pub use weak_upgrade_shape::WeakUpgradeShape;
 

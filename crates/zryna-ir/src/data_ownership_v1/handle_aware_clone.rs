@@ -16,6 +16,15 @@ pub enum VerifiedHandleAwareCloneSource {
     Borrow(BorrowIdentity),
 }
 
+/// Authority retaining a handle-aware clone source across failure.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum VerifiedHandleAwareCloneSourceAuthority {
+    /// Exact lexical or indexed local root retained by the clone cleanup plan.
+    Root(PlaceIdentity),
+    /// Formal borrow whose referent remains owned by the caller.
+    FormalBorrow(BorrowIdentity),
+}
+
 /// One node in the sealed, type-directed clone recipe.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VerifiedHandleCloneRecipeKind {
@@ -142,22 +151,25 @@ impl<'a> VerifiedHandleAwareClone<'a> {
     pub const fn source(self) -> VerifiedHandleAwareCloneSource {
         self.source
     }
-    /// Exact complete owner retaining the source value across any clone failure.
+    /// Exact local root or caller-owned formal borrow retaining the source across failure.
     #[must_use]
-    pub fn source_root(self) -> PlaceIdentity {
+    pub fn source_authority(self) -> VerifiedHandleAwareCloneSourceAuthority {
+        let owner = self.instruction.function.id();
         let place = match self.source {
             VerifiedHandleAwareCloneSource::Place(place) => raw::PlaceId(place.index),
-            VerifiedHandleAwareCloneSource::Borrow(borrow) => self
-                .instruction
-                .function
-                .borrows()
-                .region(raw::BorrowId(borrow.index))
-                .expect("verified clone borrow region"),
+            VerifiedHandleAwareCloneSource::Borrow(borrow) => {
+                let Some(place) =
+                    self.instruction.function.borrows().region(raw::BorrowId(borrow.index))
+                else {
+                    return VerifiedHandleAwareCloneSourceAuthority::FormalBorrow(borrow);
+                };
+                place
+            }
         };
-        PlaceIdentity {
-            owner: self.instruction.function.id(),
+        VerifiedHandleAwareCloneSourceAuthority::Root(PlaceIdentity {
+            owner,
             index: super::root_place(place, self.instruction.function.function).0,
-        }
+        })
     }
     /// Distinct temporary destination, unpublished until the clone completes.
     #[must_use]

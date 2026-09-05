@@ -2,7 +2,10 @@ use super::generic_clone_fixture::{Fixture, GraphKind};
 use super::generic_vec_observation;
 use super::indexed_borrow_fixture::{Container, Element, Fixture as IndexedFixture};
 use super::*;
-use crate::data_ownership_v1::{VerifiedHandleAwareCloneSource, VerifiedHandleCloneRecipeKind};
+use crate::data_ownership_v1::{
+    VerifiedHandleAwareCloneSource, VerifiedHandleAwareCloneSourceAuthority,
+    VerifiedHandleCloneRecipeKind,
+};
 use zryna_layout::TypeCategory;
 
 fn seed(category: TypeCategory, graph: GraphKind) -> (Fixture, raw::Program) {
@@ -129,4 +132,51 @@ fn indexed_shared_and_weak_leaves_retain_exact_borrow_count_authority() {
                 | VerifiedHandleCloneRecipeKind::WeakCountClone
         ));
     }
+}
+
+#[test]
+fn formal_borrow_source_retains_caller_authority_without_inventing_a_local_root() {
+    let (fixture, mut raw) = seed(TypeCategory::Struct, GraphKind::Shared);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.borrow_parameters = vec![raw::BorrowParameter {
+        id: raw::BorrowId(0),
+        referent: fixture.root,
+        access: raw::BorrowAccess::Shared,
+        span,
+    }];
+    let raw::InstructionKind::HandleAwareClonePlace { cleanup, prefix_cleanup, .. } =
+        function.blocks[0].instructions[0].kind
+    else {
+        panic!("handle-aware clone fixture");
+    };
+    function.blocks[0].instructions[0].kind = raw::InstructionKind::HandleAwareCloneBorrow {
+        borrow: raw::BorrowId(0),
+        cleanup,
+        prefix_cleanup,
+    };
+
+    let verified = fixture.verify(raw);
+    let clone = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .next()
+        .expect("clone")
+        .handle_aware_clone()
+        .expect("handle-aware clone");
+    let VerifiedHandleAwareCloneSource::Borrow(borrow) = clone.source() else {
+        panic!("formal borrow source");
+    };
+    assert_eq!(
+        clone.source_authority(),
+        VerifiedHandleAwareCloneSourceAuthority::FormalBorrow(borrow)
+    );
 }

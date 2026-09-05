@@ -29,6 +29,7 @@ pub(super) struct OwnedFaultTrace {
     pub(super) result_committed: bool,
     pub(super) uncommitted_result: Option<FaultValueIdentity>,
     pub(super) retained_roots: Vec<FaultPlaceIdentity>,
+    pub(super) retained_formal_borrows: Vec<FaultBorrowIdentity>,
     pub(super) reverse_cleanup: Vec<FaultPlaceIdentity>,
     pub(super) prefix_owner: Option<FaultPlaceIdentity>,
     pub(super) reverse_prefix: Vec<u64>,
@@ -318,10 +319,17 @@ pub(super) fn owned_fault_trace(
             _ => return Err(OwnedFaultOracleError::AtomicityMismatch),
         }
     }
+    let mut retained_formal_borrows = Vec::new();
     if let Some(clone) = instruction.handle_aware_clone() {
-        let source = clone.source_root();
-        if !retained_roots.contains(&source) {
-            retained_roots.push(source);
+        match clone.source_authority() {
+            VerifiedHandleAwareCloneSourceAuthority::Root(source) => {
+                if !retained_roots.contains(&source) {
+                    retained_roots.push(source);
+                }
+            }
+            VerifiedHandleAwareCloneSourceAuthority::FormalBorrow(source) => {
+                retained_formal_borrows.push(source);
+            }
         }
     }
     if retained_roots.iter().any(|owner| !reverse_cleanup.contains(owner)) {
@@ -382,6 +390,7 @@ pub(super) fn owned_fault_trace(
         result_committed: false,
         uncommitted_result: instruction.result(),
         retained_roots,
+        retained_formal_borrows,
         reverse_cleanup,
         prefix_owner,
         reverse_prefix,

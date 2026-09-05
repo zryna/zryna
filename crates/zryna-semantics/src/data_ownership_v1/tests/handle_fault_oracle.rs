@@ -172,8 +172,13 @@ fn structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention() {
             );
             assert_eq!(first.disposition, disposition(status));
             assert_eq!(first.prefix_owner, Some(clone.destination()));
-            assert_eq!(first.retained_roots, [clone.source_root()]);
-            assert!(first.reverse_cleanup.contains(&clone.source_root()));
+            let VerifiedHandleAwareCloneSourceAuthority::Root(source) = clone.source_authority()
+            else {
+                panic!("source fixture retains a local root");
+            };
+            assert_eq!(first.retained_roots, [source]);
+            assert!(first.retained_formal_borrows.is_empty());
+            assert!(first.reverse_cleanup.contains(&source));
             assert_eq!(first.reverse_prefix, (0..ordinal as u64).rev().collect::<Vec<_>>());
             assert!(!first.result_committed);
             assert_eq!(first.uncommitted_result, Some(clone.result()));
