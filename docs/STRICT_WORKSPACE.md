@@ -147,17 +147,25 @@ count and trusted-base content count. After reaching 500 or fewer in the trusted
 ordinary ceiling. The immutable historical inventory records exact source paths/counts at
 `885bb4d863ad112566add72fab6d2931587b71b1`, including separately classified test sources and a frozen
 initial `production` eligibility bit; initial test records never grant grandfathering, even after
-later reclassification. The checker reproduces the complete
-inventory from Git objects and rejects attempted self-raised counts or substituted anchors.
+later reclassification. Before initial adoption the checker reproduces the complete inventory
+from Git objects. Once an independently selected trusted base contains the policy, its anchor and
+baseline must equal both the working policy and the original reachable policy adoption. This
+preserves the reviewed inventory even when a squash merge omits the pre-adoption commit object;
+it does not replace that identity or regenerate any allowance. Adoption source sizes can only
+lower the frozen ceilings. Self-raised counts, eligibility changes and substituted anchors reject.
 
 Local working trees, including linked Git worktrees, compare all current bytes (staged and
 unstaged) to `HEAD`. To check a complete branch, set `ZRYNA_STRUCTURE_BASE` to a full trusted
 ancestor commit SHA. CI must set that variable: PRs use the event's base SHA; main pushes use
-the event's previous SHA. Full checkout history supplies both comparison and initial anchor
-objects. The checker never fetches. Missing, zero, ambiguous or unrelated authority fails with
+the event's previous SHA. Full checkout history supplies comparison and policy-adoption history;
+the initial anchor object is required only before a trusted policy has been adopted. The checker
+never fetches. Missing, zero, ambiguous or unrelated authority fails with
 an actionable error. During initial adoption only, when the trusted base predates the reviewed
 anchor and has no policy, that named anchor establishes the initial ceiling. Later bases retain
-the authenticated policy anchor. Reductions ratchet at accepted comparison revisions, not at
+the authenticated policy anchor as immutable provenance, without requiring that pre-squash
+object to remain reachable. Shallow histories and multiple policy additions fail closed. Rename
+tracking starts at the reachable adoption for adopted policies; an unrecognized pre-adoption
+rename receives no inherited allowance. Reductions ratchet at accepted comparison revisions, not at
 uncommitted intermediate editor states.
 
 Git's deterministic 50%-similarity rename detection carries the old ceiling and trusted reduction

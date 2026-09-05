@@ -2,6 +2,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { INITIAL_COMMIT, POLICY_PATH, fail, physicalLines, reviewChanges, validatePolicy } from './structure/policy.mjs';
 import { blobs, commit, git, navigation, readSafe, renames, source, tree, workingPaths } from './structure/repository.mjs';
+import { history } from './structure/history.mjs';
 
 export function checkRepository({ root, base = process.env.ZRYNA_STRUCTURE_BASE,
   today = new Date().toISOString().slice(0, 10), bootstrap = INITIAL_COMMIT } = {}) {
@@ -12,37 +13,16 @@ export function checkRepository({ root, base = process.env.ZRYNA_STRUCTURE_BASE,
   git(root, ['merge-base', '--is-ancestor', comparison, head]);
   const policyText = readSafe(root, POLICY_PATH);
   const policy = validatePolicy(JSON.parse(policyText), today);
-  let before = tree(root, comparison);
-  const trustedPolicyEntry = before.get(POLICY_PATH);
+  const beforePolicy = tree(root, comparison);
+  const trustedPolicyEntry = beforePolicy.get(POLICY_PATH);
   let trustedPolicy;
   if (trustedPolicyEntry) {
     if (trustedPolicyEntry.mode !== '100644') fail('trusted policy is not a regular file');
     trustedPolicy = validatePolicy(JSON.parse(blobs(root, [trustedPolicyEntry]).get(trustedPolicyEntry.hash)), '0000-00-00');
   }
   if (policy.anchor !== (trustedPolicy?.anchor ?? bootstrap)) fail('anchor differs from trusted policy/bootstrap commit');
-  commit(root, policy.anchor);
-  git(root, ['merge-base', '--is-ancestor', policy.anchor, head]);
-  let ratchetBase = comparison;
-  const common = git(root, ['merge-base', policy.anchor, comparison]).trim();
-  if (common !== policy.anchor) {
-    if (trustedPolicy || common !== comparison) fail('trusted base and initial anchor are incomparable');
-    ratchetBase = policy.anchor;
-    before = tree(root, ratchetBase);
-  }
-  const original = tree(root, policy.anchor);
-  const historical = blobs(root, [...original.entries(), ...before.entries()]
-    .filter(([path, entry]) => source(path) && ['100644', '100755'].includes(entry.mode))
-    .map(([, entry]) => entry));
-  // Initial production eligibility is frozen with the baseline, not recomputed when a later
-  // change removes a test classification. Bootstrap classification requires maintainer review.
-  const initialEligibility = new Map(trustedPolicy?.baseline.map(entry => [entry.path, entry.production]));
-  const initialExcluded = new Set(policy.classifications.map(entry => entry.path));
-  const inventory = [...original.entries()].filter(([path, entry]) => source(path)
-    && historical.has(entry.hash) && physicalLines(historical.get(entry.hash)) > 500)
-    .map(([path, entry]) => ({ path, lines: physicalLines(historical.get(entry.hash)),
-      production: trustedPolicy ? initialEligibility.get(path) : !initialExcluded.has(path) }));
-  if (JSON.stringify(policy.baseline) !== JSON.stringify(inventory)) fail('baseline differs from exact anchored source inventory; do not raise or regenerate allowances');
-  if (trustedPolicy && JSON.stringify(policy.baseline) !== JSON.stringify(trustedPolicy.baseline)) fail('baseline differs from trusted base policy');
+  const { origin, ratchetBase, before, historical, ceilings: baseline } =
+    history(root, comparison, head, policy, trustedPolicy);
   const messages = [];
   if (!trustedPolicy || policyText !== blobs(root, [trustedPolicyEntry]).get(trustedPolicyEntry.hash)) {
     messages.push('REVIEW policy changed: classifications, baseline and exceptions require explicit maintainer review; this check does not prove approval');
@@ -63,8 +43,7 @@ export function checkRepository({ root, base = process.env.ZRYNA_STRUCTURE_BASE,
   for (const path of exceptions.keys()) {
     if (classifications.has(path) || current.get(path) <= 500) fail(`stale exception for non-production or ordinary-sized file: ${path}`);
   }
-  const baseline = new Map(policy.baseline.filter(entry => entry.production).map(entry => [entry.path, entry.lines]));
-  const historicalRenames = renames(root, policy.anchor, ratchetBase);
+  const historicalRenames = renames(root, origin, ratchetBase);
   const currentRenames = renames(root, ratchetBase);
   const errors = [];
   for (const [path, lines] of current) {
