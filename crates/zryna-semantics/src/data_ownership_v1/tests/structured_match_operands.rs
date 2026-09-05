@@ -1,13 +1,22 @@
 use super::*;
 
 impl Builder {
-    pub(super) fn match_operand(&mut self, cloned: bool, nested: bool, call: bool) -> u32 {
-        if !nested {
+    pub(super) fn match_operand(&mut self, cloned: bool, operand: OperandKind) -> u32 {
+        if matches!(operand, OperandKind::Plain) {
             return self.matched(cloned);
         }
         let start = self.text.len();
+        let call = matches!(operand, OperandKind::Call);
         let callee = call.then(|| self.name("collect"));
-        let type_syntax = if call { None } else { Some(self.payload_type(Payload::Array(2))) };
+        let type_syntax = if call {
+            None
+        } else {
+            Some(self.payload_type(if matches!(operand, OperandKind::Vec) {
+                Payload::Vec
+            } else {
+                Payload::Array(2)
+            }))
+        };
         let open_paren_span = self.text("(");
         let open_bracket_span = if call { open_paren_span } else { self.text("[") };
         let literal_start = self.text.len();
@@ -30,6 +39,15 @@ impl Builder {
                     callee,
                     open_paren_span,
                     arguments: vec![first, second],
+                    close_paren_span,
+                }
+            } else if matches!(operand, OperandKind::Vec) {
+                RawExpressionKind::VecConstruction {
+                    type_syntax: type_syntax.expect("Vec type"),
+                    open_paren_span,
+                    open_bracket_span,
+                    elements: vec![first, second],
+                    close_bracket_span,
                     close_paren_span,
                 }
             } else {

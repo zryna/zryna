@@ -171,6 +171,24 @@ enum OperandKind {
     Plain,
     Array,
     Call,
+    Vec,
+}
+
+impl OperandKind {
+    fn result(self, payload: Payload) -> Payload {
+        match self {
+            Self::Plain => payload,
+            Self::Vec => Payload::Vec,
+            Self::Array | Self::Call => Payload::Array(2),
+        }
+    }
+}
+
+pub(in crate::data_ownership_v1) fn vec_fixture(
+    cloned: bool,
+    local: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    build(Payload::String, cloned, local, OperandKind::Vec)
 }
 
 fn build(
@@ -179,7 +197,6 @@ fn build(
     local: bool,
     operand: OperandKind,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    let nested = !matches!(operand, OperandKind::Plain);
     let call = matches!(operand, OperandKind::Call);
     let mut builder = Builder::default();
     let mut declarations = builder.payload_declaration(payload).into_iter().collect::<Vec<_>>();
@@ -195,7 +212,7 @@ fn build(
     builder.text("(");
     let parameters = parameters(&mut builder, payload);
     builder.text("): ");
-    let result_payload = if nested { Payload::Array(2) } else { payload };
+    let result_payload = operand.result(payload);
     let result_type = builder.payload_type(result_payload);
     builder.text(" ");
     let body_start = builder.text.len();
@@ -211,7 +228,7 @@ fn build(
         builder.text(" ");
         let equals_span = builder.text("=");
         builder.text(" ");
-        let initializer = builder.match_operand(cloned, nested, call);
+        let initializer = builder.match_operand(cloned, operand);
         let semicolon_span = builder.text(";");
         RawStatementKind::LocalDeclaration {
             keyword_span,
@@ -225,7 +242,7 @@ fn build(
     } else {
         let keyword_span = builder.text("return");
         builder.text(" ");
-        let value = builder.match_operand(cloned, nested, call);
+        let value = builder.match_operand(cloned, operand);
         let semicolon_span = builder.text(";");
         RawStatementKind::Return { keyword_span, value, semicolon_span }
     };

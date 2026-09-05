@@ -1,6 +1,34 @@
 use super::*;
 
 #[test]
+fn structured_match_vec_growth_cleanup_retains_both_completed_operands() {
+    for cloned in [false, true] {
+        let (text, raw) = structured_owned_fixture::vec_match_fixture(cloned, true);
+        let sources = sources_for(&text);
+        let syntax = verify_snapshot(raw, &sources).expect("authenticated Vec match operand");
+        let program = lower(pair_input(&syntax, &sources)).expect("Vec constructor continuation");
+        let function = program
+            .verified_ir()
+            .modules()
+            .next()
+            .expect("module")
+            .functions()
+            .next()
+            .expect("function");
+        let blocks = function.blocks().collect::<Vec<_>>();
+        let growth = blocks[3].instructions().next().expect("Vec growth after join");
+        assert_eq!(growth.kind(), VerifiedInstructionKind::VecConstruct);
+        let operands = growth.value_operands().collect::<Vec<_>>();
+        assert_eq!(operands.len(), 2);
+        let owners = operands.iter().map(|&value| function.places().find(|place| matches!(place.kind(), VerifiedPlaceKind::Temporary(actual) if actual == value)).expect("complete child owner").id()).collect::<Vec<_>>();
+        assert_eq!(
+            growth.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+            vec![owners[1], owners[0]]
+        );
+    }
+}
+
+#[test]
 fn structured_match_call_missing_target_rejects_before_argument_effects_and_replays() {
     let (mut text, mut raw) = structured_owned_fixture::call_match_fixture(true, true);
     let expression = raw.files[0].functions[0]

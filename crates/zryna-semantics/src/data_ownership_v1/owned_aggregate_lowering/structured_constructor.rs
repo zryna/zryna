@@ -30,7 +30,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 RawExpressionKind::Call { .. } => return self.structured_call(id, ty, graph),
                 RawExpressionKind::StructConstruction { .. }
                 | RawExpressionKind::EnumConstruction { .. }
-                | RawExpressionKind::FixedArrayConstruction { .. } => {
+                | RawExpressionKind::FixedArrayConstruction { .. }
+                | RawExpressionKind::VecConstruction { .. } => {
                     return self.structured_constructor(id, ty, graph);
                 }
                 _ => {}
@@ -69,6 +70,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 ConstructorKind::Enum { variant: u32::try_from(value.ordinal).ok()? },
                 value.payload_input.into_iter().collect(),
             ),
+            ExpressionKind::Vec(value) => (
+                ConstructorKind::Vec,
+                value.elements.iter().map(|&child| (child, value.element)).collect(),
+            ),
             _ => return None,
         };
         let reservation = self.reserve_constructor_commit(ty, children.len(), decision.at)?;
@@ -93,6 +98,20 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             frame.values.push(self.structured_value(child, child_ty, graph)?);
         }
         frame.reservation.release(self);
-        Some(self.commit_constructor(frame.ty, frame.kind, &frame.values, frame.at)?.value)
+        let cleanup = if frame.kind == ConstructorKind::Vec {
+            Some(self.push_cleanup(frame.at, None)?)
+        } else {
+            None
+        };
+        Some(
+            self.commit_constructor_with_cleanup(
+                frame.ty,
+                frame.kind,
+                &frame.values,
+                frame.at,
+                cleanup,
+            )?
+            .value,
+        )
     }
 }
