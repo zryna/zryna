@@ -166,17 +166,6 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         ))
     }
 
-    fn handle_operand_is_place(&self, id: u32) -> bool {
-        self.decisions.function.body.expressions.get(id as usize).is_some_and(|expression| {
-            matches!(
-                expression.kind,
-                zryna_syntax::v4::RawExpressionKind::Reference { .. }
-                    | zryna_syntax::v4::RawExpressionKind::FieldAccess { .. }
-                    | zryna_syntax::v4::RawExpressionKind::Index { .. }
-            )
-        })
-    }
-
     #[allow(clippy::too_many_lines)]
     fn visit(
         &mut self,
@@ -256,18 +245,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 } else {
                     HandleOperation::WeakClone
                 };
-                if self.handle_operand_is_place(id) {
-                    self.handle_read(id, ty, ty, operation, at)
-                } else {
-                    frames.push(Frame::HandleRead(HandleReadFrame {
-                        operand: ty,
-                        result: ty,
-                        operation,
-                        at,
-                    }));
-                    frames.push(Frame::Visit(id, Some(ty)));
-                    return Some(VisitOutcome::Deferred);
-                }
+                return self.visit_handle_read(id, ty, ty, operation, at, frames);
             }
             ExpressionKind::Shared(id) => {
                 let payload = self.handle_payload(ty)?;
@@ -277,18 +255,14 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             }
             ExpressionKind::Downgrade(id) => {
                 let shared = self.shared_for_weak(ty)?;
-                if self.handle_operand_is_place(id) {
-                    self.handle_read(id, shared, ty, HandleOperation::WeakDowngrade, at)
-                } else {
-                    frames.push(Frame::HandleRead(HandleReadFrame {
-                        operand: shared,
-                        result: ty,
-                        operation: HandleOperation::WeakDowngrade,
-                        at,
-                    }));
-                    frames.push(Frame::Visit(id, Some(shared)));
-                    return Some(VisitOutcome::Deferred);
-                }
+                return self.visit_handle_read(
+                    id,
+                    shared,
+                    ty,
+                    HandleOperation::WeakDowngrade,
+                    at,
+                    frames,
+                );
             }
             ExpressionKind::Call { .. } => unreachable!("call frame entered"),
             ExpressionKind::Struct(decision) => {
@@ -320,26 +294,6 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             }
         };
         Some(VisitOutcome::Value(value?))
-    }
-
-    fn prepared_observation(
-        &mut self,
-        id: u32,
-        expected: Option<Ty>,
-    ) -> Option<super::indexed_vec_preparation::IndexedObservation> {
-        if self.state.summary {
-            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-                self.lexical_alias_read(id, expected)?
-            {
-                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
-            }
-            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-                self.indexed_read(id, expected)?
-            {
-                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
-            }
-        }
-        Some(super::indexed_vec_preparation::IndexedObservation::Unselected)
     }
 
     // Keep the iterative frame dispatcher together so result handoff order stays explicit.
@@ -472,6 +426,11 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         Some(value)
     }
 }
+
+#[path = "handle_frame_dispatch.rs"]
+mod handle_frame_dispatch;
+#[path = "preparation_observation.rs"]
+mod preparation_observation;
 
 // The exclusive borrow binds preparation and consumption to one real lowerer state.
 // Rejection drops scratch metadata only; no rollback of real arenas or cache is needed.

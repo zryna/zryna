@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use zryna_ir::data_ownership_v1::raw;
 use zryna_source::Span;
 use zryna_syntax::v4::RawExpressionKind;
@@ -12,6 +13,15 @@ use super::preparation_plan::{Leaf, Operation};
 
 impl PreparationContext<'_, '_, '_, '_> {
     pub(super) fn generic_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
+        if contains_handle(ty.layout, self.decisions.layouts, &mut BTreeSet::new()) {
+            self.decisions.errors.at(
+                "ZRYNA-M3016",
+                at,
+                "structural clone containing shared or weak handles requires explicit count operations",
+                "clone each handle leaf explicitly before rebuilding a static aggregate; dynamic Enum and Vec clone composition is not yet admitted",
+            );
+            return None;
+        }
         let expression = self.decisions.function.body.expressions.get(id as usize)?;
         if matches!(
             expression.kind,
@@ -99,6 +109,35 @@ impl PreparationContext<'_, '_, '_, '_> {
         self.push(Operation::GenericClonePrefix { id: prefix, owner, actions }, ty, at, None);
         self.emit_leaf(Leaf::GenericClone { source, cleanup, prefix }, ty, at)
     }
+}
+
+fn contains_handle(
+    ty: zryna_layout::TypeId,
+    layouts: &zryna_layout::VerifiedLayouts,
+    active: &mut BTreeSet<zryna_layout::TypeId>,
+) -> bool {
+    if !active.insert(ty) {
+        return false;
+    }
+    let found = layouts.type_by_id(ty).is_some_and(|record| match record.category() {
+        zryna_layout::TypeCategory::Shared | zryna_layout::TypeCategory::Weak => true,
+        zryna_layout::TypeCategory::Struct => {
+            record.fields().iter().any(|field| contains_handle(field.ty(), layouts, active))
+        }
+        zryna_layout::TypeCategory::Enum => record
+            .variants()
+            .iter()
+            .filter_map(|variant| variant.payload())
+            .any(|payload| contains_handle(payload, layouts, active)),
+        zryna_layout::TypeCategory::FixedArray | zryna_layout::TypeCategory::Vec => record
+            .referenced_type()
+            .is_some_and(|element| contains_handle(element, layouts, active)),
+        zryna_layout::TypeCategory::Bool
+        | zryna_layout::TypeCategory::I32
+        | zryna_layout::TypeCategory::String => false,
+    });
+    active.remove(&ty);
+    found
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {

@@ -25,7 +25,37 @@ pub(super) struct HandleReadFrame {
     pub(super) at: Span,
 }
 
+pub(super) enum HandleReadSelection {
+    Value(raw::ValueId),
+    Deferred(HandleReadFrame),
+}
+
 impl PreparationContext<'_, '_, '_, '_> {
+    pub(super) fn select_handle_read(
+        &mut self,
+        id: u32,
+        operand: Ty,
+        result: Ty,
+        operation: HandleOperation,
+        at: Span,
+    ) -> Option<HandleReadSelection> {
+        let addressable =
+            self.decisions.function.body.expressions.get(id as usize).is_some_and(|expression| {
+                matches!(
+                    expression.kind,
+                    zryna_syntax::v4::RawExpressionKind::Reference { .. }
+                        | zryna_syntax::v4::RawExpressionKind::FieldAccess { .. }
+                        | zryna_syntax::v4::RawExpressionKind::Index { .. }
+                )
+            });
+        if addressable {
+            return self
+                .handle_read(id, operand, result, operation, at)
+                .map(HandleReadSelection::Value);
+        }
+        Some(HandleReadSelection::Deferred(HandleReadFrame { operand, result, operation, at }))
+    }
+
     fn available_handle(
         &mut self,
         source: super::super::type_model::OwnedAggregatePlace,

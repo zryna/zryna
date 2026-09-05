@@ -1,6 +1,9 @@
 use super::*;
 use zryna_syntax::v4::RawEnumVariant;
 
+#[path = "shared_weak_composition_fixture.rs"]
+pub(in crate::data_ownership_v1) mod composition_fixture;
+
 fn unary(f: &mut Builder, spelling: &str, value: impl FnOnce(&mut Builder) -> u32) -> u32 {
     let start = f.source.len();
     let keyword_span = f.text(spelling);

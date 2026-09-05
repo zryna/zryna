@@ -11,7 +11,12 @@ impl Consumption<'_, '_, '_, '_> {
     ) -> Vec<OwnerDelta> {
         self.lowerer.emit_prepared_effect(
             at,
-            if ty.is_copy() {
+            if ty.is_copy()
+                || matches!(
+                    ty.category,
+                    zryna_layout::TypeCategory::Shared | zryna_layout::TypeCategory::Weak
+                )
+            {
                 raw::InstructionKind::ReplacePlace { place, value }
             } else {
                 raw::InstructionKind::GenericReplacePlace { place, value }

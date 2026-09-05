@@ -1,8 +1,10 @@
 use super::super::constructor_resources::tests::child_preparation_red::state;
-use super::super::constructor_resources::tests::with_snapshot;
+use super::super::constructor_resources::tests::{run_statement, with_snapshot};
 use super::*;
 use crate::data_ownership_v1::layout_graph::semantic_type;
-use crate::data_ownership_v1::tests::generic_vec_fixture::shared_weak_fixture::fixture;
+use crate::data_ownership_v1::tests::generic_vec_fixture::shared_weak_fixture::{
+    Case, fixture, fixture_case,
+};
 use crate::data_ownership_v1::{Binding, span};
 use zryna_diagnostics::Diagnostic;
 use zryna_ir::data_ownership_v1 as ir;
@@ -84,6 +86,48 @@ fn shared_construct_cleanup_frontier_is_exact_atomic_and_recovers() {
                     .consume();
                 assert_eq!(lowerer.cleanup_actions, ir::MAX_DROP_ACTIONS_PER_FUNCTION);
             }
+            assert!(lowerer.constructor_storage_is_clear());
+        });
+        assert_eq!(errors, expected.into_iter().collect::<Vec<_>>());
+    }
+}
+
+#[test]
+fn temporary_handle_drop_transition_has_exact_extra_boundary_and_recovers() {
+    let (source, snapshot) = fixture_case(Case::TemporaryOperands);
+    for extra in [false, true] {
+        let mut expected = None;
+        let errors = with_snapshot(&source, snapshot.clone(), |lowerer, result| {
+            register_parameter(lowerer);
+            assert!(run_statement(lowerer, 0, result));
+            let initial =
+                ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - lowerer.instructions.len() - 4
+                    + usize::from(extra);
+            lowerer.reserved_transitions = initial;
+            let before = state(lowerer);
+            let checkpoint = lowerer.preparation_checkpoint();
+            let facts = lowerer.preparation_facts.clone();
+            let count = lowerer.instructions.len();
+            assert_eq!(run_statement(lowerer, 1, result), !extra);
+            if extra {
+                assert_eq!(state(lowerer), before);
+                assert_eq!(lowerer.preparation_checkpoint(), checkpoint);
+                assert_eq!(lowerer.preparation_facts, facts);
+                expected = Some(Diagnostic::error_at(
+                    "ZRYNA-M3201",
+                    span(lowerer.input.sources(), lowerer.function.body.statements[1].span),
+                    format!(
+                        "derived ownership transitions exceed the per-function M3 limit of {}",
+                        ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
+                    ),
+                    "reduce private aggregate expressions and assignments",
+                ));
+                lowerer.reserved_transitions = 0;
+                assert!(run_statement(lowerer, 1, result), "valid retry after rejected summary");
+            } else {
+                assert_eq!(lowerer.instructions.len() - count, 4);
+            }
+            lowerer.reserved_transitions = 0;
             assert!(lowerer.constructor_storage_is_clear());
         });
         assert_eq!(errors, expected.into_iter().collect::<Vec<_>>());

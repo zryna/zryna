@@ -154,13 +154,8 @@ fn temporary_handle_operands_drop_at_the_exact_expression_boundary() {
     let syntax = verify_snapshot(raw, &sources).expect("authenticated temporary handle fixture");
     let program = lower(pair_input(&syntax, &sources)).expect("temporary handle lowering");
     let function = program.modules().next().expect("module").functions().next().expect("function");
-    let kinds = function
-        .blocks()
-        .next()
-        .expect("block")
-        .instructions()
-        .map(|instruction| instruction.kind())
-        .collect::<Vec<_>>();
+    let instructions = function.blocks().next().expect("block").instructions().collect::<Vec<_>>();
+    let kinds = instructions.iter().map(|instruction| instruction.kind()).collect::<Vec<_>>();
     let handle_or_drop = kinds
         .iter()
         .copied()
@@ -191,6 +186,99 @@ fn temporary_handle_operands_drop_at_the_exact_expression_boundary() {
         ],
         "each non-addressable operand is counted before its temporary is released"
     );
+    let drops = instructions
+        .iter()
+        .enumerate()
+        .filter(|(_, instruction)| instruction.kind() == VerifiedInstructionKind::DropPlace)
+        .collect::<Vec<_>>();
+    assert_eq!(drops.len(), 3);
+    for (drop_index, drop) in drops {
+        let outer = instructions[drop_index - 1];
+        let inner = instructions[drop_index - 2];
+        let inner_result = inner.result().expect("inner handle result");
+        let temporary = function
+            .places()
+            .find(|place| place.kind() == VerifiedPlaceKind::Temporary(inner_result))
+            .expect("inner result has one temporary owner")
+            .id();
+        assert_eq!(outer.place_operands().collect::<Vec<_>>(), [temporary]);
+        assert_eq!(drop.place_operands().collect::<Vec<_>>(), [temporary]);
+        assert_eq!(
+            outer.derived_drop_actions().next().map(|action| action.root()),
+            Some(temporary),
+            "outer count failure retains and first releases its temporary source"
+        );
+    }
+}
+
+#[test]
+fn handle_leaves_compose_through_struct_array_vec_projection_and_replacement() {
+    let (source, raw) = generic_vec_fixture::shared_weak_fixture::composition_fixture::fixture();
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated handle composition fixture");
+    let program = lower(pair_input(&syntax, &sources)).expect("handle composition lowering");
+    let function =
+        program.modules().next().expect("module").functions().nth(1).expect("composition caller");
+    let kinds = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .map(|instruction| instruction.kind())
+        .collect::<Vec<_>>();
+    assert!(kinds.contains(&VerifiedInstructionKind::StructConstruct));
+    assert!(kinds.contains(&VerifiedInstructionKind::EnumConstruct));
+    assert!(kinds.contains(&VerifiedInstructionKind::FixedArrayConstruct));
+    assert!(kinds.contains(&VerifiedInstructionKind::VecConstruct));
+    assert!(kinds.contains(&VerifiedInstructionKind::DirectCall));
+    assert!(kinds.contains(&VerifiedInstructionKind::ReplacePlace));
+    assert_eq!(
+        kinds.iter().filter(|kind| **kind == VerifiedInstructionKind::SharedClone).count(),
+        2,
+        "root and projected Shared clones are explicit count operations"
+    );
+    assert_eq!(
+        kinds.iter().filter(|kind| **kind == VerifiedInstructionKind::WeakClone).count(),
+        1,
+        "fixed-array Weak projection clone is an explicit count operation"
+    );
+}
+
+#[test]
+fn opaque_structural_handle_clone_rejects_before_unverified_ir_and_recovers() {
+    let (source, raw) =
+        generic_vec_fixture::shared_weak_fixture::composition_fixture::clone_rejection_fixture();
+    let clone_at = raw.files[0]
+        .functions
+        .iter()
+        .flat_map(|function| &function.body.expressions)
+        .find(|expression| {
+            matches!(expression.kind, RawExpressionKind::Clone { .. })
+                && source[expression.span.start as usize..expression.span.end as usize]
+                    == *"clone(bundle)"
+        })
+        .expect("structural handle clone")
+        .span;
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated structural clone rejection");
+    let expected = vec![Diagnostic::error_at(
+        "ZRYNA-M3016",
+        span(&sources, clone_at),
+        "structural clone containing shared or weak handles requires explicit count operations",
+        "clone each handle leaf explicitly before rebuilding a static aggregate; dynamic Enum and Vec clone composition is not yet admitted",
+    )];
+    for _ in 0..2 {
+        assert_eq!(
+            lower(pair_input(&syntax, &sources)).expect_err("structural clone rejection"),
+            expected
+        );
+    }
+    let (valid_source, valid_raw) =
+        generic_vec_fixture::shared_weak_fixture::composition_fixture::fixture();
+    let valid_sources = sources_for(&valid_source);
+    let valid_syntax =
+        verify_snapshot(valid_raw, &valid_sources).expect("authenticated recovery fixture");
+    lower(pair_input(&valid_syntax, &valid_sources)).expect("valid composition after rejection");
 }
 
 fn rejected(case: Case, code: &str, message: &str, guidance: &str) {
