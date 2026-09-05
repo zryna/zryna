@@ -75,16 +75,7 @@ pub(super) fn route(ty: Ty, layouts: &layout::VerifiedLayouts) -> PreparationRou
 
 impl super::PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn mixed_replacement_target(&self, ty: Ty) -> bool {
-        self.mixed_function
-            && !ty.is_copy()
-            && matches!(
-                ty.category,
-                TypeCategory::Struct
-                    | TypeCategory::Enum
-                    | TypeCategory::FixedArray
-                    | TypeCategory::Vec
-            )
-            && requires_summary(ty, self.layouts)
+        self.mixed_function && !ty.is_copy() && supported(ty, self.layouts)
     }
 
     pub(super) fn local_preparation_route(&self, ty: Ty) -> PreparationRoute {

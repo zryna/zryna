@@ -1,11 +1,20 @@
 //! Canonical non-handle structural clone and its recursive destination frontier.
 
 use super::{
-    CleanupPlanIdentity, Errors, LayoutTypeId, OwnershipFlow, PlaceIdentity, TypeCategory,
-    ValueIdentity, VerifiedDropAction, VerifiedInstruction, VerifiedLayouts, error_at, layout_type,
-    raw,
+    BorrowIdentity, CleanupPlanIdentity, Errors, LayoutTypeId, OwnershipFlow, PlaceIdentity,
+    TypeCategory, ValueIdentity, VerifiedDropAction, VerifiedInstruction, VerifiedLayouts,
+    error_at, layout_type, raw,
 };
 use std::collections::BTreeSet;
+
+/// Exact retained operand role of the canonical clone operation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum VerifiedGenericCloneSource {
+    /// Complete initialized root or exact static subobject read directly.
+    Place(PlaceIdentity),
+    /// Active exact referent, including indexed elements and call-frame parameters.
+    Borrow(BorrowIdentity),
+}
 
 /// One sealed generic clone, retaining its complete source and issuing a distinct result owner.
 ///
@@ -16,7 +25,7 @@ use std::collections::BTreeSet;
 #[derive(Clone, Copy, Debug)]
 pub struct VerifiedGenericClone<'a> {
     instruction: VerifiedInstruction<'a>,
-    source: raw::PlaceId,
+    source: VerifiedGenericCloneSource,
     destination: raw::PlaceId,
     result: raw::ValueId,
     ty: LayoutTypeId,
@@ -28,17 +37,26 @@ impl<'a> VerifiedInstruction<'a> {
     /// Returns the canonical non-handle clone authority, not a legacy clone interpretation.
     #[must_use]
     pub fn generic_clone(self) -> Option<VerifiedGenericClone<'a>> {
-        let raw::InstructionKind::GenericClonePlace { place, cleanup, prefix_cleanup } =
-            self.instruction.kind
-        else {
-            return None;
+        let owner = self.function.id();
+        let (source, cleanup, prefix_cleanup) = match self.instruction.kind {
+            raw::InstructionKind::GenericClonePlace { place, cleanup, prefix_cleanup } => (
+                VerifiedGenericCloneSource::Place(PlaceIdentity { owner, index: place.0 }),
+                cleanup,
+                prefix_cleanup,
+            ),
+            raw::InstructionKind::GenericCloneBorrow { borrow, cleanup, prefix_cleanup } => (
+                VerifiedGenericCloneSource::Borrow(BorrowIdentity { owner, index: borrow.0 }),
+                cleanup,
+                prefix_cleanup,
+            ),
+            _ => return None,
         };
         let result = self.instruction.result?;
         let destination =
             super::unique_temporary_owner(self.function.function, result.id, result.ty)?;
         Some(VerifiedGenericClone {
             instruction: self,
-            source: place,
+            source,
             destination,
             result: result.id,
             ty: layout_type(&self.function.owner.linear32, result.ty)?.id(),
@@ -74,10 +92,10 @@ impl<'a> VerifiedInstruction<'a> {
 }
 
 impl<'a> VerifiedGenericClone<'a> {
-    /// Complete retained read-only source owner.
+    /// Exact retained source role; an indexed referent never becomes a fabricated place.
     #[must_use]
-    pub const fn source(self) -> PlaceIdentity {
-        PlaceIdentity { owner: self.instruction.function.id(), index: self.source.0 }
+    pub const fn source(self) -> VerifiedGenericCloneSource {
+        self.source
     }
     /// Distinct destination, published only after complete preparation succeeds.
     #[must_use]
@@ -157,7 +175,13 @@ pub(super) fn classify_program(program: &raw::Program, layouts: &VerifiedLayouts
     let has_generic_clone =
         program.modules.iter().flat_map(|module| &module.functions).any(|function| {
             function.blocks.iter().flat_map(|block| &block.instructions).any(|instruction| {
-                matches!(instruction.kind, raw::InstructionKind::GenericClonePlace { .. })
+                matches!(
+                    instruction.kind,
+                    raw::InstructionKind::GenericClonePlace { .. }
+                        | raw::InstructionKind::GenericCloneBorrow { .. }
+                        | raw::InstructionKind::GenericMoveFromPlace { .. }
+                        | raw::InstructionKind::GenericReplacePlace { .. }
+                )
             })
         });
     if !has_generic_clone {
@@ -250,14 +274,21 @@ pub(super) fn verify_prefix_cleanup(
     flow: &OwnershipFlow,
     errors: &mut Errors,
 ) {
-    let raw::InstructionKind::GenericClonePlace { place, prefix_cleanup, .. } = instruction.kind
-    else {
-        return;
+    let (source_region, prefix_cleanup) = match instruction.kind {
+        raw::InstructionKind::GenericClonePlace { place, prefix_cleanup, .. } => {
+            (Some(place), prefix_cleanup)
+        }
+        raw::InstructionKind::GenericCloneBorrow { borrow, prefix_cleanup, .. } => {
+            (super::lexical_borrow_place(function, borrow), prefix_cleanup)
+        }
+        _ => return,
     };
     let Some(plan) = function.cleanup_plans.get(prefix_cleanup.0 as usize) else { return };
     let destination =
         instruction.result.and_then(|result| owners.get(result.id.0 as usize).copied().flatten());
-    let Some(destination) = destination.filter(|destination| *destination != place) else {
+    let Some(destination) = destination.filter(|destination| {
+        source_region.is_none_or(|source| super::root_place(source, function) != *destination)
+    }) else {
         errors.push(error_at(
             "ZRYNA-I3012",
             plan.span,

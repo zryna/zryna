@@ -24,6 +24,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         return_count: usize,
     ) -> Option<StatementOutcome> {
         match &statement.kind {
+            RawStatementKind::ExpressionStatement { expression, .. }
+                if self.mixed_function
+                    && self.expression(*expression).is_some_and(|expression| {
+                        matches!(expression.kind, RawExpressionKind::VecPush { .. })
+                    }) =>
+            {
+                self.lower_generic_vec_push(*expression)?;
+            }
             RawStatementKind::LocalDeclaration {
                 mutable, name, type_syntax, initializer, ..
             } => {
@@ -68,33 +76,34 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         .insert(name.text.clone(), Binding { ty, place, mutable: *mutable });
                     return Some(StatementOutcome::Continue);
                 }
-                let aggregate_projection_local =
-                    matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
-                        && self.expression(*initializer).is_some_and(|expression| {
-                            matches!(
-                                &expression.kind,
-                                RawExpressionKind::FieldAccess { .. }
-                                    | RawExpressionKind::Index { .. }
-                            )
-                        });
-                let projected_aggregate_clone_operand =
-                    matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
-                        .then(|| self.expression(*initializer))
-                        .flatten()
-                        .and_then(|expression| match &expression.kind {
-                            RawExpressionKind::Clone { value, .. }
-                                if self.expression(*value).is_some_and(|operand| {
-                                    matches!(
-                                        &operand.kind,
-                                        RawExpressionKind::FieldAccess { .. }
-                                            | RawExpressionKind::Index { .. }
-                                    )
-                                }) =>
-                            {
-                                Some((*value, span(self.input.sources(), expression.span)))
-                            }
-                            _ => None,
-                        });
+                let aggregate_projection_local = !self.mixed_function
+                    && !self.is_vec_index(*initializer)
+                    && matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
+                    && self.expression(*initializer).is_some_and(|expression| {
+                        matches!(
+                            &expression.kind,
+                            RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. }
+                        )
+                    });
+                let projected_aggregate_clone_operand = (!self.mixed_function
+                    && matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray))
+                .then(|| self.expression(*initializer))
+                .flatten()
+                .and_then(|expression| match &expression.kind {
+                    RawExpressionKind::Clone { value, .. }
+                        if !self.is_vec_index(*value)
+                            && self.expression(*value).is_some_and(|operand| {
+                                matches!(
+                                    &operand.kind,
+                                    RawExpressionKind::FieldAccess { .. }
+                                        | RawExpressionKind::Index { .. }
+                                )
+                            }) =>
+                    {
+                        Some((*value, span(self.input.sources(), expression.span)))
+                    }
+                    _ => None,
+                });
                 let value = if let Some((operand, clone_span)) = projected_aggregate_clone_operand {
                     self.clone_projected_aggregate_local(operand, ty, clone_span)?
                 } else if aggregate_projection_local {
@@ -160,15 +169,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             }
             RawStatementKind::Return { value, .. } => {
                 let return_span = span(self.input.sources(), statement.span);
-                let aggregate_projection_return =
-                    matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
-                        && self.expression(*value).is_some_and(|expression| {
-                            matches!(
-                                expression.kind,
-                                RawExpressionKind::FieldAccess { .. }
-                                    | RawExpressionKind::Index { .. }
-                            )
-                        });
+                let aggregate_projection_return = !self.mixed_function
+                    && !self.is_vec_index(*value)
+                    && matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
+                    && self.expression(*value).is_some_and(|expression| {
+                        matches!(
+                            expression.kind,
+                            RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. }
+                        )
+                    });
                 let value = if let Some(source) =
                     self.partial_return_transfer_source(*value, result)
                 {
@@ -197,6 +206,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 return Some(StatementOutcome::Return(value, return_span));
             }
             RawStatementKind::Assignment { target, value, .. } => {
+                if self.mixed_function && self.is_vec_index(*target) {
+                    self.lower_vec_replacement(*target, *value)?;
+                    return Some(StatementOutcome::Continue);
+                }
                 let target_expression = self.expression(*target)?.clone();
                 if !matches!(
                     target_expression.kind,
@@ -214,6 +227,17 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 }
                 if !matches!(target_expression.kind, RawExpressionKind::Reference { .. }) {
                     let target_ty = self.projection_expression_type(*target);
+                    if self.mixed_function
+                        && let Some(ty) =
+                            target_ty.filter(|ty| super::mixed_shape::supported(*ty, self.layouts))
+                    {
+                        let at = span(self.input.sources(), statement.span);
+                        super::constructor_preparation::PreparedValue::prepare_static_replacement(
+                            self, *target, *value, ty, at,
+                        )?
+                        .consume();
+                        return Some(StatementOutcome::Continue);
+                    }
                     if target_ty.is_some_and(|ty| {
                         matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
                     }) {

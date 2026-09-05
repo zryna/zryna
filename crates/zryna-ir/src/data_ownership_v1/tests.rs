@@ -9,6 +9,11 @@ mod borrow_resource_boundaries;
 mod generic_clone_fixture;
 mod generic_clone_hostile;
 mod generic_clone_positive;
+mod generic_clone_projection;
+mod generic_static_refinement;
+mod generic_static_transfer;
+mod generic_vec_hostile;
+mod generic_vec_observation;
 mod indexed_borrow_call_cleanup;
 mod indexed_borrow_conflicts;
 mod indexed_borrow_copy_refinement;
@@ -22,6 +27,8 @@ mod mixed_constructor_authority;
 mod mixed_enum_authority;
 mod mixed_replacement_authority;
 mod mixed_replacement_authority_fixture;
+mod opaque_handle_slots;
+mod opaque_handle_slots_fixture;
 
 use super::{
     Errors, MAX_ACTIVE_BORROWS_PER_FUNCTION, MAX_AGGREGATE_OPERANDS, MAX_BLOCK_PARAMETERS,

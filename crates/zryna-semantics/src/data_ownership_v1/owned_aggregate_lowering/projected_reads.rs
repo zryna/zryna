@@ -112,6 +112,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             super::operand_decisions::ProjectionOperation::Move { aggregate_subobject } => {
                 aggregate_subobject
             }
+            super::operand_decisions::ProjectionOperation::GenericMove => false,
         };
         if aggregate_subobject {
             let Some(shape) = self.complete_projection_shape(expected) else {
@@ -185,11 +186,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             super::operand_decisions::ProjectionOperation::Move { aggregate_subobject } => {
                 aggregate_subobject
             }
+            super::operand_decisions::ProjectionOperation::GenericMove => &false,
         };
         let emission = self.emit_recorded(
             expected,
             at,
-            raw::InstructionKind::MoveFromPlace { place: projection.place },
+            if matches!(operation, super::operand_decisions::ProjectionOperation::GenericMove) {
+                raw::InstructionKind::GenericMoveFromPlace { place: projection.place }
+            } else {
+                raw::InstructionKind::MoveFromPlace { place: projection.place }
+            },
         )?;
         if *aggregate_subobject {
             self.aggregate_subobject_moves += 1;

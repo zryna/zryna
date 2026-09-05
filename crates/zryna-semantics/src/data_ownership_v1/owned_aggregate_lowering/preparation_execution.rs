@@ -26,6 +26,11 @@ use call_consumption::CallScopes;
 #[path = "preparation_scalar_consumption.rs"]
 mod scalar_consumption;
 use scalar_consumption::ScalarScopes;
+#[path = "preparation_indexed_consumption.rs"]
+mod indexed_consumption;
+use indexed_consumption::IndexedScopes;
+#[path = "preparation_push_consumption.rs"]
+mod push_consumption;
 
 struct OpenConstructor {
     end: usize,
@@ -45,6 +50,7 @@ struct Consumption<'l, 'a, 'f, 'e> {
     strings: StringScopes,
     calls: CallScopes,
     scalars: ScalarScopes,
+    indexed: IndexedScopes,
 }
 
 impl Consumption<'_, '_, '_, '_> {
@@ -249,6 +255,20 @@ impl Consumption<'_, '_, '_, '_> {
         self.require_next(&step.operation);
         let mut effects = Vec::new();
         let emission = match step.operation {
+            Operation::ReplaceProjection { place, value } => {
+                effects = self.replace_projection(place, value, step.ty, step.at);
+                None
+            }
+            Operation::VecPush { vector, value, cleanup } => {
+                effects = self.vec_push(vector, value, cleanup, step.ty, step.at);
+                None
+            }
+            operation @ (Operation::IndexedEnter { .. }
+            | Operation::IndexedExit
+            | Operation::IndexedEffect(_)) => {
+                effects = self.indexed_step(index, operation, step.at);
+                None
+            }
             Operation::ScalarEnter { kind, end, operands } => {
                 assert!(self.cleanups.is_empty(), "scalar entry cannot interrupt cleanup");
                 self.scalars.enter((index, end, length), self.open.len(), step.ty, kind, operands);
@@ -311,16 +331,7 @@ impl Consumption<'_, '_, '_, '_> {
                 self.generic_clone_prefix(id, owner, actions, step.at);
                 None
             }
-            Operation::Leaf(leaf) => {
-                self.strings.leaf(index, step.ty, &leaf);
-                check_cleanup_link(&leaf, &self.cleanups, self.lowerer.places.len());
-                self.cleanups.clear();
-                Some(
-                    self.lowerer
-                        .consume_prepared_leaf(leaf, step.ty, step.at)
-                        .expect("prepared leaf emission"),
-                )
-            }
+            Operation::Leaf(leaf) => Some(self.consume_leaf(index, leaf, step.ty, step.at)),
             operation @ (Operation::Commit { .. } | Operation::VecCommit { .. }) => {
                 Some(self.commit_step(index, (step.ty, step.at), operation))
             }
@@ -330,21 +341,41 @@ impl Consumption<'_, '_, '_, '_> {
             emission.as_ref().map_or(effects.as_slice(), |emission| emission.owners.as_slice());
         assert_eq!(value, step.value, "prepared value identity");
         assert_eq!(owners, step.owners, "prepared ordered owner effects");
-        let outward = value.is_some_and(|value| {
-            if self.scalars.start() > self.calls.start().max(self.strings.start()) {
-                self.scalars.result(value, step.ty, self.open.len())
-            } else if self.calls.start() > self.strings.start() {
-                self.calls.result(value, self.open.len())
-            } else {
-                self.strings.result(value, self.open.len())
-            }
-        });
-        if let (Some(value), Some(parent)) = (value.filter(|_| outward), self.open.last_mut()) {
-            assert!(parent.values.len() < parent.arity, "constructor has no extra child result");
-            parent.values.push(value);
+        if let Some(value) = value {
+            self.record_result(index, value, step.ty);
         }
         assert_eq!(self.lowerer.preparation_checkpoint(), step.after, "prepared step effects");
         value
+    }
+
+    fn record_result(&mut self, index: usize, value: raw::ValueId, ty: Ty) {
+        if !self.indexed.outward(index, self.open.len()) {
+            return;
+        }
+        let outward = if self.scalars.start() > self.calls.start().max(self.strings.start()) {
+            self.scalars.result(value, ty, self.open.len())
+        } else if self.calls.start() > self.strings.start() {
+            self.calls.result(value, self.open.len())
+        } else {
+            self.strings.result(value, self.open.len())
+        };
+        if outward && let Some(parent) = self.open.last_mut() {
+            assert!(parent.values.len() < parent.arity, "constructor has no extra child result");
+            parent.values.push(value);
+        }
+    }
+
+    fn consume_leaf(
+        &mut self,
+        index: usize,
+        leaf: Leaf<'_>,
+        ty: Ty,
+        at: Span,
+    ) -> super::super::state::Emission {
+        self.strings.leaf(index, ty, &leaf);
+        check_cleanup_link(&leaf, &self.cleanups, self.lowerer.places.len());
+        self.cleanups.clear();
+        self.lowerer.consume_prepared_leaf(leaf, ty, at).expect("prepared leaf emission")
     }
 }
 
@@ -365,6 +396,7 @@ impl PreparedValue<'_, '_, '_, '_> {
             strings: StringScopes::default(),
             calls: CallScopes::default(),
             scalars: ScalarScopes::default(),
+            indexed: IndexedScopes::default(),
         };
         let steps = std::mem::take(&mut plan.steps);
         let vec_actions: Vec<_> = steps
@@ -405,6 +437,7 @@ impl PreparedValue<'_, '_, '_, '_> {
         assert!(consumption.strings.complete(), "all String scopes consumed");
         assert!(consumption.calls.complete(), "all call scopes consumed");
         assert!(consumption.scalars.complete(), "all scalar scopes consumed");
+        assert!(consumption.indexed.complete(), "all indexed scopes consumed");
         assert_final(consumption.lowerer, &plan, original_places, last_result, visits);
         plan.result
     }

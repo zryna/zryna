@@ -36,7 +36,7 @@ pub(super) fn enter(
         cleanup_plans: after.counts[4].checked_sub(before.counts[4])?,
         cleanup_actions: after.counts[5].checked_sub(before.counts[5])?,
     };
-    let own_cleanup = usize::from(signature.kind == CallKind::Vec);
+    let own_cleanup = usize::from(signature.kind != CallKind::String);
     let budget = OwnedStringPreparationBudget {
         cleanup_plans: before.counts[4],
         cleanup_actions: before.counts[5],
@@ -56,7 +56,7 @@ pub(super) fn enter(
         || !preflight_owned_place_capacity_with_reserved(
             before.counts[1],
             before.held[3],
-            1,
+            usize::from(!signature.result.is_copy()),
             step.at,
             errors,
         )

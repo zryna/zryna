@@ -370,6 +370,11 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M3 bounded borrowing implementation contract](docs/M3_BORROWING_SEMANTICS.md),
 [M3 Shared/Weak authority freeze](docs/M3_SHARED_WEAK_AUTHORITY.md),
 [M3 planned ownership composition](docs/M3_OWNERSHIP_COMPOSITION.md),
+[M3 private generic function operations](docs/M3_GENERIC_FUNCTION_OPERATIONS.md),
+[M3 canonical structural clone](docs/M3_GENERIC_CLONE_CORE.md),
+[M3 complete static subobjects](docs/M3_GENERIC_STATIC_PLACES.md),
+[M3 ordinary generic Vec operations](docs/M3_GENERIC_VEC_OPERATIONS.md),
+[M3 opaque typed handle slots](docs/M3_OPAQUE_HANDLE_SLOTS.md),
 [M3 Copy aggregate semantics](docs/M3_COPY_AGGREGATE_SEMANTICS.md),
 [M3 owned-data semantic design contract](docs/M3_OWNED_DATA_SEMANTICS.md),
 [M0 conformance](docs/M0_CONFORMANCE.md), and

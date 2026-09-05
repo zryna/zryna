@@ -129,6 +129,42 @@
       "title": "M3 verified data and ownership IR"
     },
     {
+      "id": "reference/m3-generic-clone-core",
+      "source": "docs/M3_GENERIC_CLONE_CORE.md",
+      "path": "documents/reference/m3-generic-clone-core.md",
+      "title": "M3 canonical structural clone"
+    },
+    {
+      "id": "reference/m3-generic-function-operations",
+      "source": "docs/M3_GENERIC_FUNCTION_OPERATIONS.md",
+      "path": "documents/reference/m3-generic-function-operations.md",
+      "title": "M3 private generic function operations"
+    },
+    {
+      "id": "reference/m3-generic-static-places",
+      "source": "docs/M3_GENERIC_STATIC_PLACES.md",
+      "path": "documents/reference/m3-generic-static-places.md",
+      "title": "M3 complete generic static subobjects"
+    },
+    {
+      "id": "reference/m3-generic-vec-operations",
+      "source": "docs/M3_GENERIC_VEC_OPERATIONS.md",
+      "path": "documents/reference/m3-generic-vec-operations.md",
+      "title": "M3 ordinary generic Vec operations"
+    },
+    {
+      "id": "reference/m3-indexed-borrow-authority",
+      "source": "docs/M3_INDEXED_BORROW_AUTHORITY.md",
+      "path": "documents/reference/m3-indexed-borrow-authority.md",
+      "title": "M3 indexed borrow authority"
+    },
+    {
+      "id": "reference/m3-opaque-handle-slots",
+      "source": "docs/M3_OPAQUE_HANDLE_SLOTS.md",
+      "path": "documents/reference/m3-opaque-handle-slots.md",
+      "title": "M3 opaque typed handle slots"
+    },
+    {
       "id": "reference/m3-owned-data-semantics",
       "source": "docs/M3_OWNED_DATA_SEMANTICS.md",
       "path": "documents/reference/m3-owned-data-semantics.md",

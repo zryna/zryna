@@ -243,10 +243,17 @@ modules independently exercise the new authority, exact destination/site/type bi
 malformed cleanup. Opaque-frontier tests prove a symbolic obligation, not runtime progress or
 fault-injected execution. Final command receipts must identify the tested candidate.
 
-This candidate does not close #278. Projected or indexed clone adapters, ordinary generic Vec
-observations/replacement, remaining generic operation and call integration, handles and CFG
-remain separately required. In particular, #255 cannot replace a dynamic element with a fabricated
-static place or claim owned shared reads merely from this whole-root source adapter.
+The enclosing #278 candidate now also contains the [exact indexed clone/Vec adapters](M3_GENERIC_VEC_OPERATIONS.md),
+[private generic signatures and calls](M3_GENERIC_FUNCTION_OPERATIONS.md), and
+[opaque typed handle slots](M3_OPAQUE_HANDLE_SLOTS.md). These add focused source/hostile-IR,
+retention and resource proofs; they do not make the earlier whole-root clone proof evidence for
+all other operations. Static subtree transfer/replacement and final integrated gates require their
+own verification. No issue closure or target execution is asserted by this document.
+
+In particular, #255 cannot replace a dynamic element with a fabricated static place. The borrowed
+clone adapter retains an explicit borrow operand and uses the same recursive frontier, not a
+second clone interpretation. Broader final Vec expression composition stays explicit in the
+function operation contract rather than being silently repaired by an allocating clone.
 
 ## Located tests, not complete composition proofs
 

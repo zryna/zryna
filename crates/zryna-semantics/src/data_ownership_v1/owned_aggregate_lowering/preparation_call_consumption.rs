@@ -12,6 +12,8 @@ struct OpenCall {
     signature: CallSignature,
     arguments: Vec<raw::ValueId>,
     actual: Vec<raw::ValueId>,
+    parameters: Vec<Ty>,
+    owned_arguments: Vec<(raw::ValueId, Ty)>,
     transfers: usize,
     reservation: Option<ConstructorCommitReservation>,
     actions: usize,
@@ -68,30 +70,41 @@ impl Consumption<'_, '_, '_, '_> {
             .get(signature.id.module.0 as usize)
             .and_then(|module| module.get(signature.id.declaration as usize))
             .and_then(Option::as_ref)
+            .cloned()
             .expect("call catalog identity");
         assert_eq!(actual.id, signature.id, "call actual callee identity");
         assert!(actual.private && !actual.has_borrow_parameters(), "call private value signature");
         assert_eq!(actual.result, ty, "call actual result type");
         assert_eq!(signature.result, ty, "call recorded result type");
-        assert_eq!(
-            actual.parameters.as_slice(),
-            signature.parameter.as_slice(),
-            "call actual parameter signature"
-        );
-        assert_eq!(
-            arguments.len(),
-            usize::from(signature.parameter.is_some()),
-            "call exact argument arity"
-        );
+        if signature.kind == CallKind::Generic {
+            assert!(signature.parameter.is_none(), "generic signature has no identity shorthand");
+            assert!(
+                actual.parameters.iter().all(|ty| super::super::super::mixed_shape::supported(
+                    *ty,
+                    self.lowerer.layouts
+                )),
+                "generic exact non-handle parameters"
+            );
+        } else {
+            assert_eq!(
+                actual.parameters.as_slice(),
+                signature.parameter.as_slice(),
+                "call actual parameter signature"
+            );
+        }
+        assert_eq!(arguments.len(), signature.arity, "call exact argument arity");
         assert!(
             signature.parameter.is_none_or(|parameter| parameter == ty),
             "call exact identity parameter"
         );
-        assert_eq!(
-            signature.kind == CallKind::String,
-            ty.category == zryna_layout::TypeCategory::String,
-            "call category linkage"
-        );
+        assert_eq!(signature.arity, actual.parameters.len(), "exact catalog arity");
+        if signature.kind != CallKind::Generic {
+            assert_eq!(
+                signature.kind == CallKind::String,
+                ty.category == zryna_layout::TypeCategory::String,
+                "call category linkage"
+            );
+        }
         if signature.kind == CallKind::Vec {
             assert!(ty.category == zryna_layout::TypeCategory::Vec
                 && self.lowerer.layouts.type_by_id(ty.layout)
@@ -121,6 +134,13 @@ impl Consumption<'_, '_, '_, '_> {
             self.lowerer.errors,
         )
         .expect("prepared call cleanup reservation");
+        let parameters = actual.parameters.clone();
+        let owned_arguments = arguments
+            .iter()
+            .copied()
+            .zip(parameters.iter().copied())
+            .filter(|(_, ty)| !ty.is_copy())
+            .collect();
         self.calls.open.push(OpenCall {
             start,
             end,
@@ -128,6 +148,8 @@ impl Consumption<'_, '_, '_, '_> {
             signature,
             arguments,
             actual: Vec::new(),
+            parameters,
+            owned_arguments,
             transfers: 0,
             reservation: Some(reservation),
             actions,
@@ -146,15 +168,17 @@ impl Consumption<'_, '_, '_, '_> {
         assert_eq!(call.depth, self.open.len(), "call transfer constructor depth");
         assert_eq!(call.signature.result, ty, "call transfer exact type");
         assert_eq!(call.actual, call.arguments, "call ordered immediate argument results");
-        assert_eq!(call.arguments.get(call.transfers), Some(&value), "call ordered transfer value");
+        let (expected_value, parameter) =
+            call.owned_arguments.get(call.transfers).expect("call owned transfer position");
+        assert_eq!(*expected_value, value, "call ordered transfer value");
         assert_eq!(
-            index + call.arguments.len() - call.transfers + 3,
+            index + call.owned_arguments.len() - call.transfers + 3,
             call.end,
             "call transfer tail range"
         );
         assert_eq!(self.lowerer.owners.owner(value), Some(owner), "call actual argument owner");
         let actual_ty = self.lowerer.places.get(owner.0 as usize).expect("call owner place").ty;
-        assert_eq!(actual_ty, ty.ir, "call actual argument type");
+        assert_eq!(actual_ty, parameter.ir, "call actual argument type");
         let delta = self.lowerer.owners.transfer(value).expect("prepared available call argument");
         assert_eq!(delta, OwnerDelta::Transferred { owner }, "call transferred owner linkage");
         self.lowerer.preparation_facts.apply(delta);
@@ -172,7 +196,15 @@ impl Consumption<'_, '_, '_, '_> {
             "call release exact range type and parent"
         );
         assert_eq!(call.actual, call.arguments, "call complete ordered arguments");
-        assert_eq!(call.transfers, call.arguments.len(), "call complete argument transfer");
+        assert_eq!(call.transfers, call.owned_arguments.len(), "call complete argument transfer");
+        let types = self
+            .lowerer
+            .constructor_types
+            .observed_snapshot(&self.lowerer.instructions)
+            .expect("prepared exact emitted argument types");
+        for (value, parameter) in call.arguments.iter().zip(&call.parameters) {
+            assert_eq!(types.get(*value), Some(parameter.ir), "call actual exact argument type");
+        }
         self.lowerer.preparation_facts.held_cleanup =
             super::super::super::super::owned_lowering_resources::CleanupUsage::release(
                 self.lowerer.preparation_facts.held_cleanup,

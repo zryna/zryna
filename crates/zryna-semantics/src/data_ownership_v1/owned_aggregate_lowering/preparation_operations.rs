@@ -69,6 +69,7 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
     }
 
     pub(super) fn emit_leaf(&mut self, leaf: Leaf<'f>, ty: Ty, at: Span) -> Option<raw::ValueId> {
+        self.check_leaf_access(&leaf, at)?;
         let mut emission = self.state.emit(ty, at, self.decisions.errors)?;
         match &leaf {
             Leaf::Reference(decision) if matches!(decision.kind, ReferenceKind::Move) => {
@@ -84,6 +85,10 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
                     !aggregate_subobject,
                     "constructor child cannot acquire contextual aggregate move authority"
                 );
+                self.state.moved.insert(source.place);
+                self.state.partial.insert(source.root);
+            }
+            Leaf::Projection { source, operation: ProjectionOperation::GenericMove } => {
                 self.state.moved.insert(source.place);
                 self.state.partial.insert(source.root);
             }
@@ -167,7 +172,12 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
         ty: Ty,
         at: Span,
     ) -> Option<raw::ValueId> {
-        let operation = self.operands().projection_decision(source, ty, None, at)?;
+        let operation =
+            if self.state.summary && super::mixed_shape::supported(ty, self.decisions.layouts) {
+                self.generic_projection_decision(source, ty, at)?
+            } else {
+                self.operands().projection_decision(source, ty, None, at)?
+            };
         self.emit_leaf(Leaf::Projection { source, operation }, ty, at)
     }
 
@@ -229,7 +239,10 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
     }
 
     pub(super) fn aggregate_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
-        if self.state.summary && super::mixed_shape::requires_summary(ty, self.decisions.layouts) {
+        if self.state.summary
+            && !ty.is_copy()
+            && super::mixed_shape::supported(ty, self.decisions.layouts)
+        {
             return self.generic_clone(id, ty, at);
         }
         let usage = self.state.clone_usage();

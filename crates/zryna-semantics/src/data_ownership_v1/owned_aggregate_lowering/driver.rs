@@ -29,7 +29,19 @@ fn lower_owned_aggregate_function_impl<'a>(
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<raw::Function> {
-    if !if super::mixed_shape::requires_summary(result, layouts) {
+    let file = &input.syntax().files()[module];
+    let signature = catalog.modules.get(module)?.get(declaration)?.as_ref()?;
+    let generic_function = super::requires_generic_function(
+        function,
+        (signature, catalog),
+        file,
+        declarations,
+        node_types,
+        layouts,
+    );
+    if !if generic_function {
+        super::mixed_shape::supported(result, layouts)
+    } else if super::mixed_shape::requires_summary(result, layouts) {
         true
     } else if result.category == TypeCategory::Enum {
         owned_enum_graph_is_supported(result, layouts)
@@ -44,8 +56,6 @@ fn lower_owned_aggregate_function_impl<'a>(
         );
         return None;
     }
-    let file = &input.syntax().files()[module];
-    let signature = catalog.modules.get(module)?.get(declaration)?.as_ref()?;
     assert_eq!(signature.name, function.name.text, "aggregate catalog declaration name");
     assert_eq!(signature.result, result, "aggregate catalog result type");
     assert_eq!(signature.id.module.0 as usize, module, "aggregate catalog module");
@@ -53,7 +63,8 @@ fn lower_owned_aggregate_function_impl<'a>(
     let root = usize::try_from(function.body.root_block)
         .ok()
         .and_then(|index| function.body.blocks.get(index))?;
-    if result.category == TypeCategory::Enum && !function.parameters.is_empty() {
+    if !generic_function && result.category == TypeCategory::Enum && !function.parameters.is_empty()
+    {
         errors.at(
             "ZRYNA-M3016",
             span(input.sources(), function.parameters[0].span),
@@ -72,9 +83,10 @@ fn lower_owned_aggregate_function_impl<'a>(
         node_types,
         layouts,
         catalog,
-        mixed_function: signature.private
-            && !result.is_copy()
-            && super::mixed_shape::requires_summary(result, layouts),
+        mixed_function: generic_function
+            || (signature.private
+                && !result.is_copy()
+                && super::mixed_shape::requires_summary(result, layouts)),
         errors,
         bindings: BTreeMap::new(),
         projections: BTreeMap::new(),
@@ -107,7 +119,12 @@ fn lower_owned_aggregate_function_impl<'a>(
             node_types,
             lowerer.errors,
         )?;
-        if !ty.is_copy() || !matches!(ty.category, TypeCategory::Bool | TypeCategory::I32) {
+        let admitted = if generic_function {
+            super::mixed_shape::supported(ty, layouts)
+        } else {
+            ty.is_copy() && matches!(ty.category, TypeCategory::Bool | TypeCategory::I32)
+        };
+        if !admitted {
             lowerer.errors.at(
                 "ZRYNA-M3016",
                 span(input.sources(), parameter.span),
@@ -158,6 +175,9 @@ fn lower_owned_aggregate_function_impl<'a>(
             kind: raw::PlaceKind::Parameter(u32::try_from(index).ok()?),
         });
         lowerer.bindings.insert(parameter.name.text.clone(), Binding { ty, place, mutable: false });
+        if !ty.is_copy() {
+            lowerer.owners.register_parameter(place)?;
+        }
     }
     let mut returned = None;
     let final_statement = root.statements.last().copied();

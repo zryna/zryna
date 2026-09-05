@@ -14,7 +14,10 @@ use zryna_layout::{
 use zryna_source::{FileId, SourceMap, SourceMapIdentity, Span};
 
 mod generic_clone;
-pub use generic_clone::{VerifiedGenericClone, VerifiedGenericCloneFrontier};
+mod generic_static_places;
+pub use generic_clone::{
+    VerifiedGenericClone, VerifiedGenericCloneFrontier, VerifiedGenericCloneSource,
+};
 
 /// Maximum modules in one program.
 pub const MAX_MODULES: usize = 4_096;
@@ -257,6 +260,9 @@ pub mod raw {
         MoveFromPlace {
             place: PlaceId,
         },
+        GenericMoveFromPlace {
+            place: PlaceId,
+        },
         ClonePlace {
             place: PlaceId,
             cleanup: CleanupPlanId,
@@ -267,11 +273,20 @@ pub mod raw {
             cleanup: CleanupPlanId,
             prefix_cleanup: CleanupPlanId,
         },
+        GenericCloneBorrow {
+            borrow: BorrowId,
+            cleanup: CleanupPlanId,
+            prefix_cleanup: CleanupPlanId,
+        },
         InitializePlace {
             place: PlaceId,
             value: ValueId,
         },
         ReplacePlace {
+            place: PlaceId,
+            value: ValueId,
+        },
+        GenericReplacePlace {
             place: PlaceId,
             value: ValueId,
         },
@@ -933,10 +948,13 @@ pub enum VerifiedInstructionKind {
     FixedArrayConstruct,
     CopyFromPlace,
     MoveFromPlace,
+    GenericMoveFromPlace,
     ClonePlace,
     GenericClonePlace,
+    GenericCloneBorrow,
     InitializePlace,
     ReplacePlace,
+    GenericReplacePlace,
     DropPlace,
     EnumDiscriminant,
     FixedArrayIndexCopy,
@@ -992,10 +1010,13 @@ impl<'a> VerifiedInstruction<'a> {
             I::FixedArrayConstruct { .. } => VerifiedInstructionKind::FixedArrayConstruct,
             I::CopyFromPlace { .. } => VerifiedInstructionKind::CopyFromPlace,
             I::MoveFromPlace { .. } => VerifiedInstructionKind::MoveFromPlace,
+            I::GenericMoveFromPlace { .. } => VerifiedInstructionKind::GenericMoveFromPlace,
             I::ClonePlace { .. } => VerifiedInstructionKind::ClonePlace,
             I::GenericClonePlace { .. } => VerifiedInstructionKind::GenericClonePlace,
+            I::GenericCloneBorrow { .. } => VerifiedInstructionKind::GenericCloneBorrow,
             I::InitializePlace { .. } => VerifiedInstructionKind::InitializePlace,
             I::ReplacePlace { .. } => VerifiedInstructionKind::ReplacePlace,
+            I::GenericReplacePlace { .. } => VerifiedInstructionKind::GenericReplacePlace,
             I::DropPlace { .. } => VerifiedInstructionKind::DropPlace,
             I::EnumDiscriminant { .. } => VerifiedInstructionKind::EnumDiscriminant,
             I::FixedArrayIndexCopy { .. } => VerifiedInstructionKind::FixedArrayIndexCopy,
@@ -1156,6 +1177,7 @@ impl<'a> VerifiedInstruction<'a> {
             raw::InstructionKind::BeginBorrow(definition)
             | raw::InstructionKind::BeginIndexedBorrow { definition, .. } => definition.id,
             raw::InstructionKind::BorrowRead { borrow }
+            | raw::InstructionKind::GenericCloneBorrow { borrow, .. }
             | raw::InstructionKind::BorrowWrite { borrow, .. }
             | raw::InstructionKind::BorrowReplace { borrow, .. }
             | raw::InstructionKind::EndBorrow { borrow } => *borrow,
@@ -1197,7 +1219,8 @@ impl<'a> VerifiedInstruction<'a> {
                         &variants,
                     )]
                 }
-                raw::InstructionKind::ReplacePlace { place, .. } => {
+                raw::InstructionKind::ReplacePlace { place, .. }
+                | raw::InstructionKind::GenericReplacePlace { place, .. } => {
                     vec![sealed_drop_action(
                         self.function.id(),
                         self.function.function,
@@ -2143,6 +2166,7 @@ fn verify_borrow_parameter_usage(function: &raw::Function, errors: &mut Errors) 
     for instruction in function.blocks.iter().flat_map(|block| &block.instructions) {
         match &instruction.kind {
             raw::InstructionKind::BorrowRead { borrow }
+            | raw::InstructionKind::GenericCloneBorrow { borrow, .. }
             | raw::InstructionKind::BorrowWrite { borrow, .. }
             | raw::InstructionKind::BorrowReplace { borrow, .. } => {
                 if let Some(slot) = used.get_mut(borrow.0 as usize) {
@@ -3006,10 +3030,12 @@ fn instruction_place_operands(kind: &raw::InstructionKind) -> Vec<raw::PlaceId> 
     match kind {
         I::CopyFromPlace { place }
         | I::MoveFromPlace { place }
+        | I::GenericMoveFromPlace { place }
         | I::ClonePlace { place, .. }
         | I::GenericClonePlace { place, .. }
         | I::InitializePlace { place, .. }
         | I::ReplacePlace { place, .. }
+        | I::GenericReplacePlace { place, .. }
         | I::DropPlace { place }
         | I::EnumDiscriminant { place }
         | I::FixedArrayIndexCopy { place, .. }
@@ -3115,6 +3141,7 @@ fn consuming_instruction_operands(kind: &raw::InstructionKind) -> Vec<raw::Value
         }
         I::InitializePlace { value, .. }
         | I::ReplacePlace { value, .. }
+        | I::GenericReplacePlace { value, .. }
         | I::VecPush { value, .. }
         | I::SharedConstruct { value, .. }
         | I::BorrowWrite { value, .. }
@@ -3452,7 +3479,11 @@ fn derive_state_before(
             if let Some(result) = instruction.result
                 && let Some(owner) = owners.get(result.id.0 as usize).copied().flatten()
             {
-                if !matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. }) {
+                if !matches!(
+                    instruction.kind,
+                    raw::InstructionKind::MoveFromPlace { .. }
+                        | raw::InstructionKind::GenericMoveFromPlace { .. }
+                ) {
                     push_pending_owner(
                         owner,
                         function,
@@ -3469,7 +3500,8 @@ fn derive_state_before(
                     | raw::InstructionKind::GenericClonePlace { place, .. } => {
                         flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
                     }
-                    raw::InstructionKind::MoveFromPlace { .. } => {}
+                    raw::InstructionKind::MoveFromPlace { .. }
+                    | raw::InstructionKind::GenericMoveFromPlace { .. } => {}
                     _ => flow.variants[owner.0 as usize] = None,
                 }
             }
@@ -3763,7 +3795,11 @@ fn verify_ownership_dataflow(
             if let Some(result) = instruction.result
                 && let Some(owner) = value_owners.get(result.id.0 as usize).copied().flatten()
             {
-                if !matches!(instruction.kind, raw::InstructionKind::MoveFromPlace { .. }) {
+                if !matches!(
+                    instruction.kind,
+                    raw::InstructionKind::MoveFromPlace { .. }
+                        | raw::InstructionKind::GenericMoveFromPlace { .. }
+                ) {
                     push_pending_owner(owner, function, &mut flow, instruction.span, errors);
                 }
                 match instruction.kind {
@@ -3774,7 +3810,8 @@ fn verify_ownership_dataflow(
                     | raw::InstructionKind::GenericClonePlace { place, .. } => {
                         flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
                     }
-                    raw::InstructionKind::MoveFromPlace { .. } => {}
+                    raw::InstructionKind::MoveFromPlace { .. }
+                    | raw::InstructionKind::GenericMoveFromPlace { .. } => {}
                     _ => flow.variants[owner.0 as usize] = None,
                 }
             }
@@ -3907,7 +3944,8 @@ fn cleanup_references(function: &raw::Function) -> Vec<CleanupReference> {
                     role: VerifiedCleanupRole::AggregateCloneElementFailure,
                 });
             }
-            if let raw::InstructionKind::GenericClonePlace { prefix_cleanup: plan, .. } =
+            if let raw::InstructionKind::GenericClonePlace { prefix_cleanup: plan, .. }
+            | raw::InstructionKind::GenericCloneBorrow { prefix_cleanup: plan, .. } =
                 instruction.kind
             {
                 references.push(CleanupReference {
@@ -3955,6 +3993,7 @@ fn instruction_cleanup(kind: &raw::InstructionKind) -> Option<raw::CleanupPlanId
         I::DirectCall { cleanup, .. }
         | I::ClonePlace { cleanup, .. }
         | I::GenericClonePlace { cleanup, .. }
+        | I::GenericCloneBorrow { cleanup, .. }
         | I::FixedArrayIndexCopy { cleanup, .. }
         | I::VecIndexCopy { cleanup, .. }
         | I::StringFromUtf8 { cleanup, .. }
@@ -4338,6 +4377,21 @@ fn apply_value_transfers(
 ) {
     use raw::InstructionKind as I;
     match &instruction.kind {
+        I::GenericMoveFromPlace { place } => {
+            if let Some(result_owner) = instruction
+                .result
+                .and_then(|result| value_owners.get(result.id.0 as usize).copied().flatten())
+            {
+                generic_static_places::transfer_complete(
+                    *place,
+                    result_owner,
+                    function,
+                    flow,
+                    instruction.span,
+                    errors,
+                );
+            }
+        }
         I::MoveFromPlace { place } if !place_is_copy(*place, function, layouts) => {
             let Some(result_owner) = instruction
                 .result
@@ -4401,7 +4455,7 @@ fn apply_value_transfers(
                 flow.pending.push(target);
             }
         }
-        I::ReplacePlace { place, value, .. } => {
+        I::ReplacePlace { place, value, .. } | I::GenericReplacePlace { place, value } => {
             let target = root_place(*place, function);
             let Some(source) = value_owners.get(value.0 as usize).copied().flatten() else {
                 return;
@@ -4598,7 +4652,7 @@ fn apply_ownership_instruction(
                 );
             }
         }
-        I::MoveFromPlace { place } => {
+        I::MoveFromPlace { place } | I::GenericMoveFromPlace { place } => {
             let whole_non_copy =
                 root_place(*place, function) == *place && !place_is_copy(*place, function, layouts);
             let unavailable = state(*place, states).is_none_or(|state| {
@@ -4686,7 +4740,7 @@ fn apply_ownership_instruction(
                 promote_initialized_ancestors(*place, function, layouts, states, active_variants);
             }
         }
-        I::ReplacePlace { place, .. } => {
+        I::ReplacePlace { place, .. } | I::GenericReplacePlace { place, .. } => {
             let unavailable = state(*place, states)
                 .is_none_or(|state| state.kind != PlaceStateKind::Initialized)
                 || overlaps_active(*place, active, &function.places);
@@ -4749,7 +4803,7 @@ fn apply_ownership_instruction(
                 }
             }
         }
-        I::BorrowRead { borrow } => {
+        I::BorrowRead { borrow } | I::GenericCloneBorrow { borrow, .. } => {
             if active.get(borrow.0 as usize).is_none_or(Option::is_none) {
                 errors.push(error_at(
                     "ZRYNA-I3011",
@@ -5457,10 +5511,23 @@ fn verify_operation_types(
         }
         I::GenericClonePlace { place, .. } => {
             place_type(*place) == result_type
-                && root_place(*place, function) == *place
                 && result_type.is_some_and(|ty| {
                     generic_clone_types.get(ty.0 as usize).copied().unwrap_or(false)
                 })
+        }
+        I::GenericCloneBorrow { borrow, .. } => borrow_definition(function, *borrow, layouts)
+            .is_some_and(|(referent, _)| {
+                Some(referent) == result_type
+                    && generic_clone_types.get(referent.0 as usize).copied().unwrap_or(false)
+            }),
+        I::GenericMoveFromPlace { place } => {
+            place_type(*place) == result_type
+                && generic_static_places::valid_type(*place, function, generic_clone_types)
+        }
+        I::GenericReplacePlace { place, value } => {
+            instruction.result.is_none()
+                && place_type(*place) == value_info(values, *value).map(|info| info.ty)
+                && generic_static_places::valid_type(*place, function, generic_clone_types)
         }
         I::InitializePlace { place, value } | I::ReplacePlace { place, value, .. } => {
             place_type(*place) == value_info(values, *value).map(|info| info.ty)
@@ -5727,6 +5794,7 @@ fn instruction_operands(kind: &raw::InstructionKind) -> Vec<raw::ValueId> {
         }
         I::InitializePlace { value, .. }
         | I::ReplacePlace { value, .. }
+        | I::GenericReplacePlace { value, .. }
         | I::VecPush { value, .. }
         | I::SharedConstruct { value, .. }
         | I::BorrowWrite { value, .. }
@@ -5761,6 +5829,7 @@ fn verify_instruction_shape(
         instruction.kind,
         I::InitializePlace { .. }
             | I::ReplacePlace { .. }
+            | I::GenericReplacePlace { .. }
             | I::DropPlace { .. }
             | I::VecPush { .. }
             | I::BeginBorrow(_)
@@ -5782,9 +5851,11 @@ fn verify_instruction_shape(
     let bad = match &instruction.kind {
         I::CopyFromPlace { place }
         | I::MoveFromPlace { place }
+        | I::GenericMoveFromPlace { place }
         | I::DropPlace { place }
         | I::EnumDiscriminant { place }
-        | I::ReplacePlace { place, .. } => !place_valid(*place),
+        | I::ReplacePlace { place, .. }
+        | I::GenericReplacePlace { place, .. } => !place_valid(*place),
         I::ClonePlace { place, cleanup, element_cleanup } => {
             !place_valid(*place)
                 || !cleanup_valid(*cleanup)
@@ -5792,6 +5863,9 @@ fn verify_instruction_shape(
         }
         I::GenericClonePlace { place, cleanup, prefix_cleanup } => {
             !place_valid(*place) || !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
+        }
+        I::GenericCloneBorrow { cleanup, prefix_cleanup, .. } => {
+            !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
         }
         I::FixedArrayIndexCopy { place, cleanup, .. }
         | I::VecIndexCopy { place, cleanup, .. }

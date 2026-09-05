@@ -120,6 +120,13 @@ pub(super) fn validate(
         let step = &plan.steps[index];
         let resources = usage(before);
         match &step.operation {
+            Operation::IndexedEffect(_)
+            | Operation::VecPush { .. }
+            | Operation::ReplaceProjection { .. } => {
+                if !resources.transition(1, step.at, errors) {
+                    return None;
+                }
+            }
             Operation::CallEnter { signature, .. } => {
                 let (actions, reserved) =
                     super::call_resources::enter(plan, index, before, errors)?;
@@ -150,18 +157,19 @@ pub(super) fn validate(
                 }
             }
             Operation::Prefix { .. } => {
-                if !super::super::projection_topology::projection_capacity(
+                super::super::projection_topology::projection_capacity(
                     resources.places.saturating_add(resources.held_places),
                     step.at,
                     errors,
-                ) {
-                    return None;
-                }
+                )
+                .then_some(())?;
             }
             Operation::CloneCapacity { aggregate } => {
                 clone_capacity(before, *aggregate, step.at, errors)?;
             }
-            Operation::CallTransfer { .. }
+            Operation::IndexedEnter { .. }
+            | Operation::IndexedExit
+            | Operation::CallTransfer { .. }
             | Operation::ScalarEnter { .. }
             | Operation::StringEnter { .. }
             | Operation::StringRead(_)

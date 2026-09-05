@@ -11,6 +11,7 @@ use super::{Frame, Operation, PreparationContext, Ty};
 pub(super) struct CallFrame {
     pub(super) signature: CallSignature,
     pub(super) inputs: Vec<u32>,
+    pub(super) parameters: Vec<Ty>,
     pub(super) values: Vec<raw::ValueId>,
     pub(super) at: Span,
     pub(super) start: usize,
@@ -33,6 +34,9 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                     .is_some_and(|value| value.category() == TypeCategory::String) =>
             {
                 CallKind::Vec
+            }
+            _ if super::super::mixed_shape::supported(ty, self.decisions.layouts) => {
+                CallKind::Generic
             }
             _ => {
                 self.decisions.errors.at(
@@ -62,21 +66,23 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             );
             return None;
         }
-        let inferred = if expected.is_none() {
-            Some(
-                OwnedCallResolution {
-                    input: self.decisions.input,
-                    module: self.decisions.module,
-                    catalog: self.catalog,
-                    errors: self.decisions.errors,
-                }
-                .lookup(callee, "call one exact private same-module function")?,
-            )
-        } else {
-            None
-        };
+        let inferred = Some(
+            OwnedCallResolution {
+                input: self.decisions.input,
+                module: self.decisions.module,
+                catalog: self.catalog,
+                errors: self.decisions.errors,
+            }
+            .lookup(callee, "call one exact private same-module function")?,
+        );
         let ty = expected.or_else(|| inferred.as_ref().map(|signature| signature.result))?;
-        let kind = self.call_kind(ty, at)?;
+        let mut kind = self.call_kind(ty, at)?;
+        if inferred.as_ref().is_some_and(|signature| {
+            signature.parameters.len() > 1
+                || signature.parameters.iter().any(|parameter| *parameter != ty)
+        }) {
+            kind = CallKind::Generic;
+        }
         let mut resolver = OwnedCallResolution {
             input: self.decisions.input,
             module: self.decisions.module,
@@ -88,34 +94,49 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             (CallKind::Vec, Some(signature)) => resolver.checked_vec(ty, callee, ty, signature),
             (CallKind::String, None) => resolver.string(ty, callee),
             (CallKind::Vec, None) => resolver.vec(ty, callee, ty),
+            (CallKind::Generic, Some(signature)) => {
+                if !signature.private
+                    || signature.has_borrow_parameters()
+                    || signature.result != ty
+                    || !super::super::mixed_shape::supported(ty, self.decisions.layouts)
+                    || signature.parameters.iter().any(|parameter| {
+                        !super::super::mixed_shape::supported(*parameter, self.decisions.layouts)
+                    })
+                {
+                    resolver.errors.at(
+                        "ZRYNA-M3016",
+                        at,
+                        "generic owned call requires an exact private non-handle value signature",
+                        "pass exact non-handle value types to one private same-module function",
+                    );
+                    return None;
+                }
+                Some(signature)
+            }
+            (CallKind::Generic, None) => unreachable!("generic signature resolved before effects"),
         }?;
-        if arguments.len() != signature.parameters.len() {
-            self.decisions.errors.at(
-                if kind == CallKind::String { "ZRYNA-M3012" } else { "ZRYNA-M3016" },
-                at,
-                format!(
-                    "call to '{}' has {} arguments but its signature requires {}",
-                    signature.name,
-                    arguments.len(),
-                    signature.parameters.len()
-                ),
-                if kind == CallKind::String {
-                    "pass the exact declared String argument"
-                } else {
-                    "pass the exact declared Vec argument"
-                },
-            );
-            return None;
-        }
+        self.validate_call_arity(
+            kind,
+            &signature.name,
+            signature.parameters.len(),
+            arguments.len(),
+            at,
+        )?;
+        let parameters = signature.parameters.clone();
         let signature = CallSignature {
             id: signature.id,
             result: signature.result,
-            parameter: signature.parameters.first().copied(),
+            parameter: if kind == CallKind::Generic {
+                None
+            } else {
+                signature.parameters.first().copied()
+            },
+            arity: signature.parameters.len(),
             kind,
             bytes: (kind == CallKind::String)
                 .then_some(super::super::super::owned_string_read::StringBytes::Unknown),
         };
-        let reservation = self.state.ledger().acquire_constructor(0, 1)?;
+        let reservation = self.state.ledger().acquire_constructor(0, usize::from(!ty.is_copy()))?;
         let start = self.steps.len();
         self.push(
             Operation::CallEnter { signature, end: usize::MAX, arguments: Vec::new() },
@@ -126,6 +147,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         Some(Frame::Call(CallFrame {
             signature,
             inputs: arguments.to_vec(),
+            parameters,
             values: Vec::new(),
             at,
             start,
@@ -135,10 +157,40 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         }))
     }
 
+    fn validate_call_arity(
+        &mut self,
+        kind: CallKind,
+        name: &str,
+        parameters: usize,
+        arguments: usize,
+        at: Span,
+    ) -> Option<()> {
+        if arguments != parameters {
+            self.decisions.errors.at(
+                if kind == CallKind::String { "ZRYNA-M3012" } else { "ZRYNA-M3016" },
+                at,
+                format!("call to '{name}' has {arguments} arguments but its signature requires {parameters}"),
+                if kind == CallKind::String {
+                    "pass the exact declared String argument"
+                } else if kind == CallKind::Vec {
+                    "pass the exact declared Vec argument"
+                } else {
+                    "pass every exact declared value argument in source order"
+                },
+            );
+            return None;
+        }
+        Some(())
+    }
+
     pub(super) fn finish_call(&mut self, frame: CallFrame) -> Option<raw::ValueId> {
         let ty = frame.signature.result;
-        for &value in &frame.values {
+        for (&value, parameter) in frame.values.iter().zip(&frame.parameters) {
+            if parameter.is_copy() {
+                continue;
+            }
             let owner = self.state.owners.owner(value)?;
+            self.check_access(owner, false, frame.at)?;
             let delta = self.state.owners.transfer(value)?;
             assert_eq!(delta, OwnerDelta::Transferred { owner }, "prepared call transfer owner");
             self.state.facts.apply(delta);

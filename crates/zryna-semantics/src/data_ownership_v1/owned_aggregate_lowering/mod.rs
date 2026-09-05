@@ -18,6 +18,9 @@ mod constructors;
 mod driver;
 mod expression_decisions;
 mod generic_clone_preparation;
+mod generic_function_shape;
+mod generic_projection_preparation;
+mod indexed_vec_preparation;
 mod mixed_shape;
 mod operand_decisions;
 mod partial_transfers;
@@ -35,11 +38,13 @@ mod resource_decisions;
 mod shape;
 mod state;
 mod statements;
+mod vec_push_preparation;
 
 pub(super) use driver::{
     is_private_mixed_constructor_candidate, is_private_owned_aggregate_candidate,
     lower_private_owned_aggregate_function,
 };
+pub(super) use generic_function_shape::requires_generic_function;
 use statements::StatementOutcome;
 
 use shape::owned_enum_graph_is_supported;

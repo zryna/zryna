@@ -167,6 +167,12 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         frames: &mut Vec<Frame<'f>>,
     ) -> Option<VisitOutcome> {
         self.visits = self.visits.checked_add(1)?;
+        if self.state.summary
+            && let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+                self.indexed_read(id, expected)?
+        {
+            return Some(VisitOutcome::Value(value));
+        }
         let decision = self.decisions.classify_prepared(id, expected, self.state.summary)?;
         let at = decision.at;
         if let ExpressionKind::Scalar { operation, ref inputs } = decision.kind {
@@ -259,7 +265,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         Some(VisitOutcome::Value(value?))
     }
 
-    fn walk(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
+    pub(super) fn walk(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
         let mut frames = vec![Frame::Visit(id, Some(expected))];
         let mut result = None;
         let mut read_result = None;
@@ -277,7 +283,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                         frame.values.push(result.take()?);
                     }
                     if let Some(&id) = frame.inputs.get(frame.next) {
-                        let ty = frame.signature.parameter?;
+                        let ty = *frame.parameters.get(frame.next)?;
                         frame.next += 1;
                         frame.waiting = true;
                         frames.push(Frame::Call(frame));
@@ -405,6 +411,12 @@ pub(super) use local_commit::PreparedLocal;
 #[cfg(test)]
 #[path = "../tests/generic_clone_resources.rs"]
 mod generic_clone_resources;
+#[cfg(test)]
+#[path = "../tests/generic_static_resources.rs"]
+mod generic_static_resources;
+#[cfg(test)]
+#[path = "../tests/generic_vec_resources.rs"]
+mod generic_vec_resources;
 #[cfg(test)]
 #[path = "../tests/local_tail_supplement_controls.rs"]
 mod local_tail_supplement_controls;

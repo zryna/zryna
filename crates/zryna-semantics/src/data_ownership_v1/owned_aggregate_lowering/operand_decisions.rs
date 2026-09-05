@@ -22,6 +22,7 @@ pub(super) struct ReferenceDecision {
 }
 pub(super) enum ProjectionOperation {
     Copy,
+    GenericMove,
     Move { aggregate_subobject: bool },
 }
 

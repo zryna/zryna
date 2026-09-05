@@ -7,18 +7,15 @@ use super::*;
 use crate::data_ownership_v1::OwnerState;
 use crate::data_ownership_v1::layout_graph::semantic_type;
 use crate::data_ownership_v1::owned_constructor_plan::ConstructorValueTypes;
-use crate::data_ownership_v1::span;
 use crate::data_ownership_v1::tests::constructor_envelope_fixtures::Fixture;
 use crate::data_ownership_v1::tests::mixed_vec_siblings::vec_sibling_fixture;
 use std::collections::{BTreeMap, BTreeSet};
-use zryna_diagnostics::Diagnostic;
 use zryna_syntax::v4::RawStatementKind;
 
 #[test]
-fn contextual_vec_local_route_does_not_reclassify_root_topology() {
+fn contextual_vec_entries_share_preparation_without_reclassifying_type_topology() {
     let (source, snapshot) = vec_sibling_fixture(false);
     for local in [false, true] {
-        let mut expected = None;
         let errors = with_snapshot(&source, snapshot.clone(), |lowerer, _| {
             assert!(lowerer.mixed_function, "actual authenticated mixed function context");
             let RawStatementKind::LocalDeclaration { type_syntax, initializer, .. } =
@@ -40,37 +37,26 @@ fn contextual_vec_local_route_does_not_reclassify_root_topology() {
             assert_eq!(lowerer.local_preparation_route(ty), PreparationRoute::MixedSummary);
             let before = state(lowerer);
             let facts = lowerer.preparation_facts.clone();
-            if local {
-                let prepared = PreparedValue::prepare_local(lowerer, initializer, ty)
-                    .expect("contextual local uses shared summary");
-                assert_eq!(state(prepared.lowerer), before);
-                assert_eq!(prepared.lowerer.preparation_facts, facts);
-                let value = prepared.consume();
-                assert_eq!(value, raw::ValueId(0));
-                assert_eq!(lowerer.instructions.len(), 1);
-                assert!(matches!(
-                    lowerer.instructions[0].kind,
-                    raw::InstructionKind::DirectCall { .. }
-                ));
-                assert_eq!(lowerer.owners.pending(), &[raw::PlaceId(0)]);
-                assert!(lowerer.preparation_facts.string_bytes.is_empty());
+            let prepared = if local {
+                PreparedValue::prepare_local(lowerer, initializer, ty)
             } else {
-                expected = Some(Diagnostic::error_at(
-                    "ZRYNA-M3016",
-                    span(
-                        lowerer.input.sources(),
-                        lowerer.function.body.expressions[initializer as usize].span,
-                    ),
-                    "scalar and String Vec roots require their existing ordered lowering route",
-                    "keep this Vec root on its established construction authority",
-                ));
-                assert!(PreparedValue::prepare(lowerer, initializer, ty).is_none());
-                assert_eq!(state(lowerer), before);
-                assert_eq!(lowerer.preparation_facts, facts);
+                PreparedValue::prepare(lowerer, initializer, ty)
             }
+            .expect("generic function entries use shared summary");
+            assert_eq!(state(prepared.lowerer), before);
+            assert_eq!(prepared.lowerer.preparation_facts, facts);
+            let value = prepared.consume();
+            assert_eq!(value, raw::ValueId(0));
+            assert_eq!(lowerer.instructions.len(), 1);
+            assert!(matches!(
+                lowerer.instructions[0].kind,
+                raw::InstructionKind::DirectCall { .. }
+            ));
+            assert_eq!(lowerer.owners.pending(), &[raw::PlaceId(0)]);
+            assert!(lowerer.preparation_facts.string_bytes.is_empty());
             assert_eq!(route(ty, lowerer.layouts), PreparationRoute::LegacyVec);
         });
-        assert_eq!(errors, expected.into_iter().collect::<Vec<_>>());
+        assert!(errors.is_empty(), "{errors:?}");
     }
 }
 

@@ -4,7 +4,7 @@ use super::copy_enum_match::lower_enum_match_function;
 use super::copy_function_lowering::lower_copy_function;
 use super::owned_aggregate_lowering::{
     is_private_mixed_constructor_candidate, is_private_owned_aggregate_candidate,
-    lower_private_owned_aggregate_function,
+    lower_private_owned_aggregate_function, requires_generic_function,
 };
 use super::owned_control_flow_shape::is_terminal_owned_phi_candidate;
 use super::owned_enum_payload_move::{
@@ -195,6 +195,39 @@ fn lower_function_impl<'a>(
         is_terminal_owned_phi_candidate(function, result.category, has_vec_operation);
     if !terminal_owned_phi_candidate {
         verify_single_final_return(function, input.sources(), errors)?;
+    }
+    let generic_function = catalog
+        .modules
+        .get(module)
+        .and_then(|signatures| signatures.get(declaration))
+        .and_then(Option::as_ref)
+        .is_some_and(|signature| {
+            requires_generic_function(
+                function,
+                (signature, catalog),
+                file,
+                declarations,
+                node_types,
+                layouts,
+            )
+        });
+    let existing_payload_move = function.export_span.is_none()
+        && matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
+        && is_private_owned_enum_payload_move_candidate(function);
+    if generic_function && !existing_payload_move {
+        return lower_private_owned_aggregate_function(
+            input,
+            module,
+            declaration,
+            function,
+            declarations,
+            graph,
+            node_types,
+            layouts,
+            catalog,
+            result,
+            errors,
+        );
     }
     if result.category == TypeCategory::String
         && function.export_span.is_none()

@@ -138,11 +138,14 @@ fn valid_source() {
         let instructions = blocks[0].instructions().collect::<Vec<_>>();
         let kinds = instructions.iter().map(|i| i.kind()).collect::<Vec<_>>();
         assert_eq!(kinds.len(), 6);
-        assert_eq!(kinds.iter().filter(|k| **k == VerifiedInstructionKind::ClonePlace).count(), 1);
+        assert_eq!(
+            kinds.iter().filter(|k| **k == VerifiedInstructionKind::GenericClonePlace).count(),
+            1
+        );
         assert_eq!(kinds.last(), Some(&VerifiedInstructionKind::VecConstruct));
         let clone = instructions
             .iter()
-            .find(|i| i.kind() == VerifiedInstructionKind::ClonePlace)
+            .find(|i| i.kind() == VerifiedInstructionKind::GenericClonePlace)
             .expect("clone");
         assert_eq!(
             instructions.last().expect("Vec").value_operands().collect::<Vec<_>>(),

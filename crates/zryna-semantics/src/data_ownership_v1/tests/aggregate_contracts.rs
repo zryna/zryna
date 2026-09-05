@@ -53,10 +53,17 @@ fn public_aggregate_parameter_is_rejected() {
 
 #[test]
 fn semantic_diagnostics_replay_deterministically() {
-    let sources = sources_for(OWNED_TYPES_SOURCE);
-    let syntax = verify_snapshot(owned_types_snapshot(), &sources).expect("owned v4");
+    let mut source = OWNED_TYPES_SOURCE.to_owned();
+    source.insert_str(118, "export ");
+    let sources = sources_for(&source);
+    let mut raw = shift_snapshot(owned_types_snapshot(), 118, 7);
+    let function = &mut raw.files[0].functions[0];
+    function.span.start = 118;
+    function.export_span = Some(zryna_source::UntrustedSpan { file: 0, start: 118, end: 124 });
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated public owned signature");
     let first = lower(pair_input(&syntax, &sources)).expect_err("first rejection");
     let second = lower(pair_input(&syntax, &sources)).expect_err("second rejection");
+    assert_eq!(first[0].code(), "ZRYNA-M3010");
     let summarize = |diagnostics: &[zryna_diagnostics::Diagnostic]| {
         diagnostics
             .iter()
@@ -98,9 +105,33 @@ fn authenticated_owned_types_have_canonical_sealed_capabilities() {
 }
 
 #[test]
-fn unsupported_owned_vec_shape_uses_vec_diagnostic_family() {
+fn generic_owned_parameters_retain_recursive_cleanup_for_scalar_result() {
     let sources = sources_for(OWNED_TYPES_SOURCE);
     let syntax = verify_snapshot(owned_types_snapshot(), &sources).expect("owned v4");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("unsupported Vec shape");
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3013");
+    let program = lower(pair_input(&syntax, &sources)).expect("generic owned signature");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    assert_eq!(function.parameters().count(), 4);
+    let parameters = (0..4)
+        .map(|index| {
+            function
+                .places()
+                .find(|place| place.kind() == VerifiedPlaceKind::Parameter(index))
+                .expect("owned parameter")
+                .id()
+        })
+        .collect::<Vec<_>>();
+    let block = function.blocks().next().expect("block");
+    let literal = block
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::StringFromUtf8)
+        .expect("fallible local preparation");
+    assert_eq!(
+        literal.derived_drop_actions().map(|drop| drop.root()).collect::<Vec<_>>(),
+        parameters.iter().rev().copied().collect::<Vec<_>>()
+    );
+    let returned =
+        block.terminator().derived_drop_actions().map(|drop| drop.root()).collect::<Vec<_>>();
+    assert_eq!(returned.len(), 5, "local Vec then all four owned parameters");
+    assert!(!parameters.contains(&returned[0]));
+    assert_eq!(&returned[1..], parameters.iter().rev().copied().collect::<Vec<_>>());
 }

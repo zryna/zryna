@@ -5,6 +5,11 @@ Authority baseline: `8cc4eed8d522976ca557a27ea54993fb0d5ebf1c`. No runtime, back
 public profile or target execution is enabled. The [evidence matrix](M3_OWNERSHIP_COMPOSITION_EVIDENCE.md)
 separates existing declarations/tests from proposed interfaces and future proofs.
 
+Later #278 candidate extensions are documented in [generic function operations](M3_GENERIC_FUNCTION_OPERATIONS.md),
+[structural clone](M3_GENERIC_CLONE_CORE.md), and [generic Vec operations](M3_GENERIC_VEC_OPERATIONS.md).
+The bounded constructor/root-replacement slices described below record their original scope;
+their earlier exclusions are not a substitute for the later candidate's separate evidence.
+
 The normative authorities are [data ownership](../spec/language/DATA_OWNERSHIP_V1.md), sections
 2–12, and [ownership runtime ABI](../spec/abi/OWNERSHIP_RUNTIME_V1.md), sections 2–8.
 The [Shared/Weak contract](M3_SHARED_WEAK_AUTHORITY.md) owns SW1–SW5 and handle meanings;

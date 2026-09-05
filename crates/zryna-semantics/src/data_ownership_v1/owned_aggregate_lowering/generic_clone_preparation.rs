@@ -13,6 +13,30 @@ use super::preparation_plan::{Leaf, Operation};
 impl PreparationContext<'_, '_, '_, '_> {
     pub(super) fn generic_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
         let expression = self.decisions.function.body.expressions.get(id as usize)?;
+        if matches!(
+            expression.kind,
+            RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. }
+        ) {
+            let source = self.resolve(id)?;
+            let state = &self.state;
+            let available =
+                AvailabilityView::new(&state.owners, &state.moved, &state.partial, |id| {
+                    state.parent(id)
+                });
+            if source.ty != ty
+                || ty.is_copy()
+                || !available.projection_available(source.place, source.root)
+            {
+                self.decisions.errors.at(
+                    "ZRYNA-M3014",
+                    at,
+                    "structural clone requires one complete available exact static subobject",
+                    "clone the exact initialized subobject before moving it or any descendant",
+                );
+                return None;
+            }
+            return self.generic_clone_from_place(source.place, ty, at);
+        }
         let RawExpressionKind::Reference { name } = &expression.kind else {
             super::clone_decisions::nonaddressable_clone(
                 span(self.decisions.input.sources(), expression.span),
@@ -52,7 +76,15 @@ impl PreparationContext<'_, '_, '_, '_> {
             );
             return None;
         }
-        let source = binding.place;
+        self.generic_clone_from_place(binding.place, ty, at)
+    }
+
+    fn generic_clone_from_place(
+        &mut self,
+        source: raw::PlaceId,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
         self.push(Operation::CloneCapacity { aggregate: true }, ty, at, None);
         let cleanup = self.reverse(ty, at)?;
         let owner = raw::PlaceId(u32::try_from(self.state.counts[1]).ok()?);

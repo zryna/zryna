@@ -3,17 +3,23 @@
 This bounded Issue #278 operation implements the reusable clone part of
 [C1–C4](M3_OWNERSHIP_COMPOSITION.md). It does not close #278, provide #255/#256 indexed source
 borrows, implement handle operations, or activate a runtime, backend or public profile.
-Existing `ClonePlace`, String and exact Vec clone operations, views and source routing remain
-unchanged. Newly supported mixed source graphs use this authority rather than redefining legacy
-clone behavior.
+Existing `ClonePlace`, String and exact Vec clone operations and views remain unchanged.
+Generic function preparation uses the canonical non-handle aggregate clone, including legacy-shaped
+subtrees inside a mixed context. Standalone legacy function routes remain separate.
 
 ## Exact operation and ownership
 
-Raw `GenericClonePlace { place, cleanup, prefix_cleanup }` claims one complete initialized whole
-source root and one exact same-type non-Copy result. Mandatory IR verification requires a distinct
+Raw `GenericClonePlace { place, cleanup, prefix_cleanup }` claims one complete initialized
+source root or exact static subobject and one exact same-type non-Copy result. Mandatory IR verification requires a distinct
 temporary owner for that result. The source is read without consumption; shared lexical reads are
-compatible, overlapping exclusive authority is not. Partial, moved, projected, foreign, wrong-type
+compatible, overlapping exclusive authority is not. Partial, moved, foreign, wrong-type
 or aliased source/result claims fail closed through the existing place/type/ownership diagnostics.
+For a static subobject the enclosing owner remains live; a disjoint moved sibling does not make
+the complete selected subobject unavailable. No dynamic index is converted into a static place.
+
+`GenericCloneBorrow { borrow, cleanup, prefix_cleanup }` adapts an existing exact active lexical
+or call-frame referent to the same frontier. Ordinary owned Vec observation uses this adapter
+after its signed bounds check; see [generic Vec operations](M3_GENERIC_VEC_OPERATIONS.md).
 
 The accepted graph contains bool/i32 Copy leaves, String, arbitrary nested Struct/Enum/FixedArray
 and positive-stride Vec nodes. Every Enum variant participates in capability validation, even if
@@ -57,13 +63,16 @@ recursive drop. A frame does not release storage before any owned descendant. No
 uninitialized destination leaf belongs to the destination frontier.
 
 The result becomes a distinct fully initialized owner only after the complete traversal succeeds.
-Whole-root enum refinement, when known, propagates to the successful result; failure cleanup does
+Exact source-place enum refinement, when known, propagates to the successful result; borrow-sourced
+results start with unknown static variant. Failure cleanup does
 not fabricate destination projection masks or claim that a partial destination is wholly active.
 
 ## Sealed consumers and accounting
 
 `VerifiedInstruction::generic_clone()` supplies an opaque `VerifiedGenericClone` with exact source,
-destination, result, type and both cleanup identities. Its `frontier()` supplies the operation-bound
+destination, result, type and both cleanup identities.
+`source()` explicitly distinguishes `VerifiedGenericCloneSource::Place` from `Borrow`; a borrowed
+element never masquerades as its enclosing place. `frontier()` supplies the operation-bound
 `VerifiedGenericCloneFrontier`; `types()` exposes only the reachable sealed layout records in
 canonical identity order. Their field/type/variant identities and fixed lengths define traversal.
 `generic_clone_prefix_failure_drop_actions()` exposes the typed

@@ -9,12 +9,41 @@ use crate::data_ownership_v1::diagnostics::span;
 
 #[derive(Clone, Copy)]
 enum PreparationSite {
+    StaticReplacement { target: u32, at: super::Span },
+    Push { vector: u32, at: super::Span },
     RootTopology,
     LocalInitializer,
     Replacement { target: super::raw::PlaceId },
+    IndexedReplacement { target: u32 },
 }
 
 impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_static_replacement(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        target: u32,
+        value: u32,
+        ty: Ty,
+        at: super::Span,
+    ) -> Option<Self> {
+        Self::prepare_at(lowerer, value, ty, PreparationSite::StaticReplacement { target, at })
+    }
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_push(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        vector: u32,
+        value: u32,
+        ty: Ty,
+        at: super::Span,
+    ) -> Option<Self> {
+        Self::prepare_at(lowerer, value, ty, PreparationSite::Push { vector, at })
+    }
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_indexed_replacement(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        target: u32,
+        value: u32,
+        ty: Ty,
+    ) -> Option<Self> {
+        Self::prepare_at(lowerer, value, ty, PreparationSite::IndexedReplacement { target })
+    }
     pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare(
         lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
         id: u32,
@@ -48,12 +77,7 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
         site: PreparationSite,
     ) -> Option<Self> {
         let start = lowerer.preparation_checkpoint();
-        let route = match site {
-            PreparationSite::RootTopology | PreparationSite::Replacement { .. } => {
-                mixed_shape::route(expected, lowerer.layouts)
-            }
-            PreparationSite::LocalInitializer => lowerer.local_preparation_route(expected),
-        };
+        let route = site.route(lowerer, expected);
         if route == mixed_shape::PreparationRoute::LegacyVec {
             lowerer.errors.at(
                 "ZRYNA-M3016",
@@ -101,7 +125,16 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             steps: Vec::new(),
             visits: 0,
         };
-        let result = context.walk(id, expected)?;
+        let result = match site {
+            PreparationSite::IndexedReplacement { target } => {
+                context.indexed_replacement(target, id, expected)?
+            }
+            PreparationSite::Push { vector, at } => context.vec_push(vector, id, expected, at)?,
+            PreparationSite::StaticReplacement { target, at } => {
+                context.static_replacement(target, id, expected, at)?
+            }
+            _ => context.walk(id, expected)?,
+        };
         let mut plan = PreparationPlan {
             start,
             steps: context.steps,
@@ -131,5 +164,27 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             resource_replay::validate(&mut plan, lowerer.layouts, lowerer.errors)?;
         }
         Some(Self { lowerer, plan })
+    }
+}
+
+impl PreparationSite {
+    fn route(
+        self,
+        lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>,
+        expected: Ty,
+    ) -> mixed_shape::PreparationRoute {
+        match self {
+            Self::IndexedReplacement { .. }
+            | Self::Push { .. }
+            | Self::StaticReplacement { .. } => mixed_shape::PreparationRoute::MixedSummary,
+            Self::RootTopology | Self::Replacement { .. } => {
+                if lowerer.mixed_function {
+                    lowerer.local_preparation_route(expected)
+                } else {
+                    mixed_shape::route(expected, lowerer.layouts)
+                }
+            }
+            Self::LocalInitializer => lowerer.local_preparation_route(expected),
+        }
     }
 }

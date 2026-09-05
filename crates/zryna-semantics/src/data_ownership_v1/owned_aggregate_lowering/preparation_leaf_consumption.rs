@@ -79,6 +79,20 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             _ => None,
         };
         let emission = match leaf {
+            Leaf::IndexedCopy { source, index, cleanup } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::VecIndexCopy { place: source, index, cleanup },
+            ),
+            Leaf::IndexedClone { borrow, cleanup, prefix } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::GenericCloneBorrow {
+                    borrow,
+                    cleanup,
+                    prefix_cleanup: prefix,
+                },
+            ),
             Leaf::Bool(value) => {
                 self.emit_recorded(ty, at, raw::InstructionKind::BoolLiteral(value))
             }
@@ -177,11 +191,13 @@ pub(super) fn check_cleanup_link(
 ) {
     match leaf {
         Leaf::String { cleanup, .. }
+        | Leaf::IndexedCopy { cleanup, .. }
         | Leaf::StringClone { cleanup, .. }
         | Leaf::StringConcat { cleanup, .. } => {
             assert_eq!(events, &[(*cleanup, None)], "fallible leaf cleanup linkage");
         }
         Leaf::AggregateClone { cleanup, prefix, .. }
+        | Leaf::IndexedClone { cleanup, prefix, .. }
         | Leaf::GenericClone { cleanup, prefix, .. } => {
             let owner = raw::PlaceId(u32::try_from(places).expect("prepared clone owner identity"));
             assert_eq!(

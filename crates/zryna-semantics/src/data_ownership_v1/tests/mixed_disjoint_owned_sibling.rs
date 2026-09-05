@@ -72,7 +72,7 @@ fn expected_kinds() -> Vec<VerifiedInstructionKind> {
         VerifiedInstructionKind::StringFromUtf8,
         VerifiedInstructionKind::StructConstruct,
         VerifiedInstructionKind::InitializePlace,
-        VerifiedInstructionKind::MoveFromPlace,
+        VerifiedInstructionKind::GenericMoveFromPlace,
         VerifiedInstructionKind::InitializePlace,
         VerifiedInstructionKind::StringFromUtf8,
         VerifiedInstructionKind::StringConcat,

@@ -49,7 +49,9 @@ fn generic_clone_seals_recursive_type_frontier_and_separate_pending_prefix_clean
             let block = function.blocks().next().expect("block");
             let instruction = block.instructions().next().expect("clone");
             let clone = instruction.generic_clone().expect("sealed generic clone");
-            assert_eq!(clone.source().index(), 0);
+            assert!(
+                matches!(clone.source(), super::super::VerifiedGenericCloneSource::Place(place) if place.index() == 0)
+            );
             assert_eq!(clone.destination().index(), 2);
             assert_eq!(clone.result().index(), 3);
             assert_eq!(clone.ty().index(), fixture.root.0);

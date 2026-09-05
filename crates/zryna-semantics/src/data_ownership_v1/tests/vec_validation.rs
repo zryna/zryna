@@ -123,7 +123,7 @@ fn private_vec_assignment_rejects_a_copy_typed_source() {
 }
 
 #[test]
-fn private_vec_assignment_rejects_a_projection_target() {
+fn private_vec_assignment_rejects_vec_rhs_for_string_element() {
     let source = VEC_ASSIGN_STRING_SOURCE.replacen("x = Vec", "x[0] = Vec", 1);
     let sources = sources_for(&source);
     let mut raw = shift_snapshot(response_snapshot(VEC_ASSIGN_STRING_RESPONSE), 71, 3);
@@ -171,14 +171,15 @@ fn private_vec_assignment_rejects_a_projection_target() {
         panic!("return")
     };
     *value = 7;
+    let rhs_span = body.expressions[6].span;
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful projection target");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("projection assignment");
+    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("wrong exact element type");
     let diagnostic = diagnostics
         .iter()
-        .find(|diagnostic| diagnostic.code() == "ZRYNA-M3013")
-        .expect("projection target diagnostic");
-    let at = diagnostic.primary_span().expect("projection span");
-    assert_eq!((at.start(), at.end()), (69, 73));
+        .find(|diagnostic| diagnostic.code() == "ZRYNA-M3016")
+        .expect("exact RHS type diagnostic");
+    let at = diagnostic.primary_span().expect("RHS span");
+    assert_eq!((at.start(), at.end()), (rhs_span.start, rhs_span.end));
 }
 
 #[test]
