@@ -121,6 +121,7 @@ mod borrow_forwarding_calls;
 mod borrow_parameter_calls;
 mod cfg_control_flow_budgets;
 mod cfg_owner_state;
+mod cfg_upgrade_shapes;
 mod cfg_validation;
 mod common_fixture_support;
 mod conditional_root_borrows;

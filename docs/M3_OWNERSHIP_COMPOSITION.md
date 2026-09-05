@@ -178,13 +178,14 @@ descriptor does not decide which outcome will execute. Bounded #260 transition-m
 separate from real target/runtime execution. No reusable Boolean ticket, nullable handle or
 preliminary count test is introduced.
 
-At the frozen baseline, `OwnedCfgState::finish` checks explicit edge arguments against every target
-parameter, even for `WeakUpgradeBranch`. The independent IR instead requires success arguments + 1
-to equal success parameters, issues the first owner and matches remaining arguments to parameters
-after it. This is an unused future-producer adapter gap, not a failing supported source program.
-#279 must implement that distinction using the #260 producer-facing shape before #262 emits
-upgrade programs; every completed program must still pass mandatory full IR verification. Do not
-weaken IR validation or manufacture a value on the expired edge.
+`OwnedCfgState::finish_with_layouts` now derives the exact #260 `WeakUpgradeShape` from the
+operand place and sealed layout. It matches success arguments after the synthetic first Shared
+parameter and matches expired arguments without a prefix. Ordinary finalization remains unchanged;
+an upgrade without layout context fails closed. The named `owned_cfg_upgrade_success_prefix_is_sealed_and_ordinary_arguments_remain_exact`
+test covers both schemas, malformed prefixes and operands, missing context, and pristine recovery.
+This is producer schema evidence only, not source upgrade support or a full-program ownership
+proof. Every completed program must still pass mandatory full IR verification. The remaining
+#279 C6/C7 structured ownership composition is not completed by this adapter.
 
 ## Integration and closure
 
