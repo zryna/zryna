@@ -1,4 +1,5 @@
 use super::named_import_calls::{Base, imported_fixture, rewrite_spans, span};
+use super::named_import_graphs::multi_hop_fixture;
 use super::*;
 use crate::data_ownership_v1::function_catalog::{FunctionResolution, build_function_catalog};
 use crate::data_ownership_v1::import_resolution;
@@ -41,6 +42,82 @@ fn named_import_alias_binding_does_not_create_a_declaration_identity() {
         1
     );
     assert_eq!(input.syntax().files()[main].functions().len(), 1);
+}
+
+#[test]
+fn named_import_alias_cannot_be_reexported_as_a_target_declaration() {
+    let (sources, mut raw) = multi_hop_fixture();
+    let main = raw.files.iter_mut().find(|file| file.path == "src/main.zry").unwrap();
+    main.imports[0].bindings[0].imported.text = "select".into();
+    let expected_span = main.imports[0].bindings[0].imported.span;
+    let inputs = ["src/lib.zry", "src/main.zry", "src/mid.zry"]
+        .into_iter()
+        .map(|path| {
+            let normalized = NormalizedSourcePath::new(path).unwrap();
+            let source = sources.source(sources.file_id(&normalized).unwrap()).unwrap();
+            SourceFileInput {
+                path: path.into(),
+                text: if path == "src/main.zry" {
+                    source.text().replacen("caller as bridge", "select as bridge", 1)
+                } else {
+                    source.text().to_owned()
+                },
+            }
+        })
+        .collect();
+    let sources = SourceMap::build(inputs).unwrap();
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated re-export attempt");
+    let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
+    let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+    let expected = lower(input).expect_err("aliases are not declarations");
+    assert_eq!(expected.len(), 1);
+    assert_eq!(expected[0].code, "ZRYNA-M3016");
+    assert_eq!(expected[0].message, "module 'src/mid.zry' does not export function 'select'");
+    assert_eq!(
+        expected[0].primary_span(),
+        Some(crate::data_ownership_v1::span(&sources, expected_span))
+    );
+    assert_eq!(lower(input).expect_err("replay"), expected);
+}
+
+#[test]
+fn named_import_rejects_an_existing_nonexported_declaration_exactly() {
+    let (sources, mut raw) =
+        imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
+    let library = raw.files.iter_mut().find(|file| file.path == "src/lib.zry").unwrap();
+    library.functions[0].export_span = None;
+    let binding_span =
+        raw.files.iter().find(|file| file.path == "src/main.zry").unwrap().imports[0].bindings[0]
+            .imported
+            .span;
+    let inputs = ["src/lib.zry", "src/main.zry"]
+        .into_iter()
+        .map(|path| {
+            let normalized = NormalizedSourcePath::new(path).unwrap();
+            let source = sources.source(sources.file_id(&normalized).unwrap()).unwrap();
+            SourceFileInput {
+                path: path.into(),
+                text: if path == "src/lib.zry" {
+                    source.text().replacen("export ", "       ", 1)
+                } else {
+                    source.text().to_owned()
+                },
+            }
+        })
+        .collect();
+    let sources = SourceMap::build(inputs).unwrap();
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated private declaration");
+    let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
+    let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+    let expected = lower(input).expect_err("private target");
+    assert_eq!(expected.len(), 1);
+    assert_eq!(expected[0].code, "ZRYNA-M3016");
+    assert_eq!(expected[0].message, "module 'src/lib.zry' does not export function 'choose'");
+    assert_eq!(
+        expected[0].primary_span(),
+        Some(crate::data_ownership_v1::span(&sources, binding_span))
+    );
+    assert_eq!(lower(input).expect_err("replay"), expected);
 }
 
 #[test]
@@ -93,6 +170,9 @@ fn named_import_malformed_path_is_rejected_by_syntax_exactly() {
         "module specifier is not canonical explicit-relative .zry syntax"
     );
     assert_eq!(expected[0].guidance, "return source-faithful canonical protocol-v4 syntax");
+    let encoded = serde_json::to_value(&expected[0]).unwrap();
+    assert_eq!(encoded["primary"]["kind"], "workspace-path");
+    assert_eq!(encoded["primary"]["path"], "src/main.zry");
     assert_eq!(
         verify_snapshot(
             imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "../Lib.ts").1,
@@ -189,6 +269,7 @@ fn named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly() {
     let local = prefix.find("cyclex").unwrap();
     let from = prefix.find("from").unwrap();
     let token = prefix.find("'./lib.zry'").unwrap();
+    let expected_cycle_span = span(file.id, token, token + 11);
     file.imports.push(RawImportSyntax {
         span: span(file.id, 0, prefix.len() - 1),
         import_span: span(file.id, 0, 6),
@@ -228,7 +309,18 @@ fn named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly() {
     assert_eq!(expected[0].code, "ZRYNA-M3016");
     assert_eq!(expected[0].message, "the resolved module import graph contains a cycle");
     assert_eq!(expected[0].guidance, "remove the cyclic relative import chain");
+    assert_eq!(
+        expected[0].primary_span(),
+        Some(crate::data_ownership_v1::span(&sources, expected_cycle_span))
+    );
     assert_eq!(lower(input).expect_err("replay"), expected);
+    let (valid_sources, valid_raw) =
+        imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
+    let valid_syntax = verify_snapshot(valid_raw, &valid_sources).expect("valid recovery syntax");
+    let valid_entry =
+        valid_sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
+    lower(SemanticInput::try_new(&valid_syntax, &valid_sources, valid_entry).unwrap())
+        .expect("valid recovery after cyclic closure");
 }
 
 #[test]

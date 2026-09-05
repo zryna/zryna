@@ -3,8 +3,7 @@ use super::named_import_calls::{Base, imported_fixture, rewrite_spans, span};
 use super::*;
 use zryna_syntax::v4::RawExpressionKind;
 
-#[test]
-fn named_import_calls_follow_a_canonical_acyclic_multi_hop_chain() {
+pub(super) fn multi_hop_fixture() -> (SourceMap, RawProjectSyntaxSnapshot) {
     let (sources, raw) =
         imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
     let library_path = NormalizedSourcePath::new("src/lib.zry").unwrap();
@@ -70,15 +69,21 @@ fn named_import_calls_follow_a_canonical_acyclic_multi_hop_chain() {
         SourceFileInput { path: mid_path.as_str().into(), text: mid_text },
     ])
     .unwrap();
-    let syntax = verify_snapshot(
+    (
+        sources,
         RawProjectSyntaxSnapshot {
             schema_version: PROTOCOL_VERSION,
             files: vec![library, entry, mid],
             diagnostics: vec![],
         },
-        &sources,
     )
-    .expect("authenticated multi-hop closure");
+}
+
+#[test]
+fn named_import_calls_follow_a_canonical_acyclic_multi_hop_chain() {
+    let (sources, raw) = multi_hop_fixture();
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated multi-hop closure");
+    let entry_path = NormalizedSourcePath::new("src/main.zry").unwrap();
     let entry_id = sources.file_id(&entry_path).unwrap();
     let program = lower(SemanticInput::try_new(&syntax, &sources, entry_id).unwrap())
         .unwrap_or_else(|errors| panic!("{errors:?}"));

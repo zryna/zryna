@@ -188,6 +188,11 @@ pub(super) fn imported_fixture(
     (sources, raw)
 }
 
+pub(in crate::data_ownership_v1) fn imported_zero_argument_fixture()
+-> (SourceMap, RawProjectSyntaxSnapshot) {
+    imported_fixture(Base::ZeroArgument, "producer", "factoryx", "./lib.zry")
+}
+
 fn imported_fixture_paths(
     base: Base,
     imported_name: &str,
@@ -318,8 +323,47 @@ fn named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup(
         .expect("call");
     let callee = call.callee().expect("callee");
     assert_eq!((callee.module(), callee.declaration()), (0, 0));
-    assert_eq!(call.call_arguments().count(), 3);
-    assert_eq!(call.derived_drop_actions().count(), 1);
+    let arguments = call
+        .call_arguments()
+        .map(|argument| match argument {
+            VerifiedCallArgument::Value(value) => value.index(),
+            VerifiedCallArgument::Borrow(_) => panic!("by-value call"),
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(arguments, [4, 5, 6], "left/count/right preparation order");
+    assert_eq!(
+        call.derived_drop_actions().map(|action| action.root().index()).collect::<Vec<_>>(),
+        [3],
+        "CallTrap retains only the untransferred caller survivor"
+    );
+    let call_cleanup =
+        caller.cleanup_plans().find(|plan| Some(plan.id()) == call.cleanup()).unwrap();
+    assert_eq!(call_cleanup.site().role(), VerifiedCleanupRole::CallTrap);
+    let callee_function = modules[0].functions().next().unwrap();
+    assert_eq!(
+        callee_function
+            .blocks()
+            .next()
+            .unwrap()
+            .terminator()
+            .derived_drop_actions()
+            .map(|action| action.root().index())
+            .collect::<Vec<_>>(),
+        [2],
+        "callee transfers its returned left input and cleans the right input exactly once"
+    );
+    assert_eq!(
+        caller
+            .blocks()
+            .next()
+            .unwrap()
+            .terminator()
+            .derived_drop_actions()
+            .map(|action| action.root().index())
+            .collect::<Vec<_>>(),
+        [3],
+        "returned owned result is transferred while the caller survivor is cleaned"
+    );
     assert_eq!(modules[0].functions().count(), 1);
 }
 

@@ -36,7 +36,7 @@ pub(in crate::data_ownership_v1) mod mixed_vec_calls;
 pub(in crate::data_ownership_v1) mod mixed_vec_siblings;
 mod mixed_zero_array_vec;
 mod named_import_boundaries;
-mod named_import_calls;
+pub(in crate::data_ownership_v1) mod named_import_calls;
 mod named_import_graphs;
 pub(super) mod nested_mixed_construction;
 mod projection_descriptors;

@@ -37,6 +37,11 @@ alias retains the dependency declaration's canonical module/declaration `Functio
 a dependency grants module visibility, while only entry-module exports enter the public scalar ABI.
 Imported signatures are limited here to by-value `bool`, `i32`, and `String`; nominal/container
 imports, borrowed imports, broader CFG, handles, and public owned ABI remain outside #315.
+The closure evidence includes both source-file orders, a real alias re-export rejection, an acyclic
+multi-hop import, exact import/call-cycle diagnostics, and genuine cross-module IR identities.
+Imported owned-call preparation reuses the same exact/first-extra value and cleanup reservations;
+hostile IR mutations independently cover signature, result, ownership, cleanup, static-depth and
+deterministic-recovery boundaries rather than trusting the source resolver alone.
 Borrow arguments require
 matching live aliases with exact referent/access and cannot escape the call; unsupported graph
 categories, mismatched result type and wrong arity remain rejected. Its ordered

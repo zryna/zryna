@@ -35,6 +35,9 @@ mod contextual_local_routing;
 #[path = "preparation_execution.rs"]
 mod execution;
 #[cfg(test)]
+#[path = "../tests/named_import_resources.rs"]
+mod named_import_resources;
+#[cfg(test)]
 #[path = "../tests/mixed_optional_string_bytes.rs"]
 mod optional_string_bytes;
 #[cfg(test)]

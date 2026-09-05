@@ -113,6 +113,55 @@ fn has(diagnostics: &[zryna_diagnostics::Diagnostic], code: &str) -> bool {
     diagnostics.iter().any(|diagnostic| diagnostic.code() == code)
 }
 
+fn cross_module_scalar_chain(
+    functions: usize,
+) -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::VerifiedLayouts, raw::Program) {
+    let (sources, linear, linux) = authorities_for_two_modules();
+    let (one_source, one_linear, one_linux) = authorities();
+    let mut program = scalar_call_chain(&one_source, &one_linear, &one_linux, functions);
+    program.authorities.type_universe = linear.universe_identity().as_bytes();
+    program.authorities.linear32_fingerprint = *linear.fingerprint();
+    program.authorities.linux_x86_64_fingerprint = *linux.fingerprint();
+    let main = sources.verify_file_id(0).expect("main");
+    let library = sources.verify_file_id(1).expect("library");
+    let mut functions = std::mem::take(&mut program.modules[0].functions);
+    let mut caller = functions.remove(0);
+    rebind_spans(&mut caller, sources.span(main, 0, 53).expect("main span"));
+    if let Some(instruction) = caller.blocks[0].instructions.first_mut() {
+        let raw::InstructionKind::DirectCall { callee, .. } = &mut instruction.kind else {
+            unreachable!()
+        };
+        *callee = raw::FunctionId { module: raw::ModuleId(1), declaration: 0 };
+    }
+    for (index, function) in functions.iter_mut().enumerate() {
+        function.id = raw::FunctionId {
+            module: raw::ModuleId(1),
+            declaration: u32::try_from(index).unwrap(),
+        };
+        function.entry_export = None;
+        rebind_spans(function, sources.span(library, 0, 53).expect("library span"));
+        if let Some(instruction) = function.blocks[0].instructions.first_mut() {
+            let raw::InstructionKind::DirectCall { callee, .. } = &mut instruction.kind else {
+                unreachable!()
+            };
+            *callee = raw::FunctionId {
+                module: raw::ModuleId(1),
+                declaration: u32::try_from(index + 1).unwrap(),
+            };
+        }
+    }
+    program.modules[0].source_file = main;
+    program.modules[0].data_declarations = 0;
+    program.modules[0].functions = vec![caller];
+    program.modules.push(raw::Module {
+        id: raw::ModuleId(1),
+        source_file: library,
+        data_declarations: 0,
+        functions,
+    });
+    (sources, linear, linux, program)
+}
+
 #[test]
 fn named_import_cross_module_function_ids_and_cleanup_are_verified_independently() {
     let (sources, linear, linux, program) = cross_module_owned_call();
@@ -145,7 +194,8 @@ fn named_import_cross_module_function_ids_and_cleanup_are_verified_independently
         .as_mut()
         .expect("result")
         .ty = raw::TypeId(0);
-    mutations.push((wrong_result, "ZRYNA-I3014"));
+    wrong_result.modules[0].functions[0].result = raw::TypeId(0);
+    mutations.push((wrong_result, "ZRYNA-I3009"));
 
     let mut duplicate_owner = program.clone();
     let raw::InstructionKind::DirectCall { arguments, .. } =
@@ -162,14 +212,21 @@ fn named_import_cross_module_function_ids_and_cleanup_are_verified_independently
         .insert(0, raw::DropAction::DropPlace(raw::PlaceId(0)));
     mutations.push((caller_cleanup, "ZRYNA-I3012"));
 
-    let mut callee_cleanup = program;
+    let mut callee_cleanup = program.clone();
     callee_cleanup.modules[1].functions[0].cleanup_plans[0].actions.pop();
     mutations.push((callee_cleanup, "ZRYNA-I3012"));
 
     for (mutation, code) in mutations {
-        let diagnostics = verify(mutation, &sources, entry, linear.clone(), linux.clone())
+        let diagnostics = verify(mutation.clone(), &sources, entry, linear.clone(), linux.clone())
             .expect_err("hostile cross-module call");
         assert!(has(&diagnostics, code), "missing {code}: {diagnostics:?}");
+        assert_eq!(
+            verify(mutation, &sources, entry, linear.clone(), linux.clone())
+                .expect_err("deterministic hostile replay"),
+            diagnostics
+        );
+        verify(program.clone(), &sources, entry, linear.clone(), linux.clone())
+            .expect("valid recovery after hostile call");
     }
 }
 
@@ -222,5 +279,28 @@ fn named_import_two_module_function_ids_do_not_bypass_call_cycle_verification() 
     });
     let entry = sources.verify_file_id(0).expect("entry");
     let diagnostics = verify(program, &sources, entry, linear, linux).expect_err("cycle");
-    assert!(has(&diagnostics, "ZRYNA-I3009"));
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-I3009");
+    assert_eq!(diagnostics[0].message, "direct call graph contains a cycle");
+    assert_eq!(diagnostics[0].guidance, "use one acyclic exact-signature direct call graph");
+}
+
+#[test]
+fn named_import_cross_module_static_depth_is_exact_and_first_extra_rejected() {
+    let (sources, linear, linux, exact) = cross_module_scalar_chain(super::MAX_STATIC_CALL_DEPTH);
+    let entry = sources.verify_file_id(0).expect("entry");
+    verify(exact, &sources, entry, linear, linux).expect("exact cross-module call depth");
+
+    let (sources, linear, linux, extra) =
+        cross_module_scalar_chain(super::MAX_STATIC_CALL_DEPTH + 1);
+    let entry = sources.verify_file_id(0).expect("entry");
+    let expected = verify(extra.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect_err("first extra cross-module call depth");
+    assert_eq!(expected.len(), 1);
+    assert_eq!(expected[0].code(), "ZRYNA-I3009");
+    assert_eq!(expected[0].message, "static call depth exceeds its limit");
+    assert_eq!(
+        verify(extra, &sources, entry, linear, linux).expect_err("deterministic replay"),
+        expected
+    );
 }
