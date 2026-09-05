@@ -50,6 +50,11 @@ pub(super) enum Leaf<'f> {
         cleanup: raw::CleanupPlanId,
         prefix: raw::CleanupPlanId,
     },
+    HandleAwareIndexedClone {
+        borrow: raw::BorrowId,
+        cleanup: raw::CleanupPlanId,
+        prefix: raw::CleanupPlanId,
+    },
     Bool(bool),
     I32(i32),
     String {
@@ -78,6 +83,11 @@ pub(super) enum Leaf<'f> {
         prefix: raw::CleanupPlanId,
     },
     GenericClone {
+        source: raw::PlaceId,
+        cleanup: raw::CleanupPlanId,
+        prefix: raw::CleanupPlanId,
+    },
+    HandleAwareClone {
         source: raw::PlaceId,
         cleanup: raw::CleanupPlanId,
         prefix: raw::CleanupPlanId,

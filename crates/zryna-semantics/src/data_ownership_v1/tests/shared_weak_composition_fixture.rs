@@ -335,6 +335,7 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
     let weak = Ty::Weak(Box::new(string.clone()));
     let bundle = Ty::Named("Bundle");
     let envelope = Ty::Named("Envelope");
+    let bundle_vec = Ty::Vec(Box::new(bundle.clone()));
     let weak_array = Ty::Array(Box::new(weak.clone()), 1);
     let shared_vec = Ty::Vec(Box::new(shared.clone()));
     let start = f.source.len();
@@ -358,6 +359,12 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
     mutable_local(&mut f, "bundle", &bundle, |f| struct_value(f, "copy", "spare"));
     if let Some(source) = structural_clone_source {
         local(&mut f, "bundleCopy", &bundle, |f| unary(f, "clone", |f| f.reference(source)));
+        local(&mut f, "bundleItems", &bundle_vec, |f| {
+            container_value(f, &bundle_vec, true, "bundleCopy")
+        });
+        local(&mut f, "indexedBundleCopy", &bundle, |f| {
+            unary(f, "clone", |f| index(f, "bundleItems"))
+        });
     }
     local(&mut f, "fieldCopy", &shared, |f| unary(f, "clone", |f| field(f, "bundle", "strong")));
     let assignment_start = f.source.len();
@@ -372,12 +379,27 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
     });
     f.text(" ");
     local(&mut f, "envelope", &envelope, |f| enum_value(f, "bundle"));
+    if structural_clone_source.is_some() {
+        local(&mut f, "envelopeCopy", &envelope, |f| {
+            unary(f, "clone", |f| f.reference("envelope"))
+        });
+    }
     local(&mut f, "called", &envelope, |f| call(f, "envelope"));
     local(&mut f, "weakItems", &weak_array, |f| container_value(f, &weak_array, false, "weak"));
+    if structural_clone_source.is_some() {
+        local(&mut f, "weakItemsCopy", &weak_array, |f| {
+            unary(f, "clone", |f| f.reference("weakItems"))
+        });
+    }
     local(&mut f, "weakCopy", &weak, |f| unary(f, "clone", |f| index(f, "weakItems")));
     local(&mut f, "strongItems", &shared_vec, |f| {
         container_value(f, &shared_vec, true, "fieldCopy")
     });
+    if structural_clone_source.is_some() {
+        local(&mut f, "strongItemsCopy", &shared_vec, |f| {
+            unary(f, "clone", |f| f.reference("strongItems"))
+        });
+    }
     let return_start = f.source.len();
     let keyword_span = f.text("return");
     f.text(" ");

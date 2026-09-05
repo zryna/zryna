@@ -47,10 +47,12 @@ values, clones static handle projections, replaces a static handle field, and tr
 handle aggregate through one internal straight-line call. These paths use explicit
 `SharedClone`/`WeakClone` count operations; they do not reinterpret handle leaves as Copy.
 
-This is a bounded #261 progress checkpoint, not issue or #83 closure. Opaque structural clone of
-runtime-active Enum payloads or dynamic Vec elements containing handles cannot express per-leaf
-count operations in the current generic-clone IR and is rejected deterministically; it requires a
-separately reviewed sealed recursive handle-clone contract or later CFG iteration. Full
+This is a bounded #261 progress checkpoint, not issue or #83 closure. A distinct verified
+handle-aware clone contract now retains exact place/indexed-borrow source authority, a distinct
+destination, and a finite canonical recipe graph. That recipe requires declaration-order Struct,
+runtime-active Enum, ascending fixed-array/dynamic-Vec traversal and explicit Shared/Weak count
+operations, with initialized-prefix cleanup before surviving roots. It does not relax the generic
+non-handle clone contract and does not claim that a target backend executed the recipe. Full
 count/allocation execution faults and CFG upgrade/match composition still require their #260–#263
 authorities and named evidence below. No target runtime or public profile is enabled.
 

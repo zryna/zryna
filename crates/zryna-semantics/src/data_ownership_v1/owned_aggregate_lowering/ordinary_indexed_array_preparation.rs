@@ -51,6 +51,13 @@ impl PreparationContext<'_, '_, '_, '_> {
         self.state.counts[4] = self.state.counts[4].checked_add(1)?;
         self.state.counts[5] = self.state.counts[5].checked_add(actions)?;
         self.push(Operation::GenericClonePrefix { id: prefix, owner, actions }, ty, at, None);
-        self.emit_leaf(Leaf::IndexedClone { borrow, cleanup, prefix }, ty, at)
+        let leaf =
+            if super::generic_clone_preparation::contains_handle(ty.layout, self.decisions.layouts)
+            {
+                Leaf::HandleAwareIndexedClone { borrow, cleanup, prefix }
+            } else {
+                Leaf::IndexedClone { borrow, cleanup, prefix }
+            };
+        self.emit_leaf(leaf, ty, at)
     }
 }

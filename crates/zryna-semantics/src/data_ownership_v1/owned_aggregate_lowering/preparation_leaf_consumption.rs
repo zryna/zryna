@@ -101,6 +101,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     prefix_cleanup: prefix,
                 },
             ),
+            Leaf::HandleAwareIndexedClone { borrow, cleanup, prefix } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::HandleAwareCloneBorrow {
+                    borrow,
+                    cleanup,
+                    prefix_cleanup: prefix,
+                },
+            ),
             Leaf::Bool(value) => {
                 self.emit_recorded(ty, at, raw::InstructionKind::BoolLiteral(value))
             }
@@ -129,6 +138,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 ty,
                 at,
                 raw::InstructionKind::GenericClonePlace {
+                    place: source,
+                    cleanup,
+                    prefix_cleanup: prefix,
+                },
+            ),
+            Leaf::HandleAwareClone { source, cleanup, prefix } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::HandleAwareClonePlace {
                     place: source,
                     cleanup,
                     prefix_cleanup: prefix,
@@ -229,7 +247,9 @@ pub(super) fn check_cleanup_link(
         }
         Leaf::AggregateClone { cleanup, prefix, .. }
         | Leaf::IndexedClone { cleanup, prefix, .. }
-        | Leaf::GenericClone { cleanup, prefix, .. } => {
+        | Leaf::HandleAwareIndexedClone { cleanup, prefix, .. }
+        | Leaf::GenericClone { cleanup, prefix, .. }
+        | Leaf::HandleAwareClone { cleanup, prefix, .. } => {
             let owner = raw::PlaceId(u32::try_from(places).expect("prepared clone owner identity"));
             assert_eq!(
                 events,

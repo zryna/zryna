@@ -37,7 +37,6 @@ impl PreparationContext<'_, '_, '_, '_> {
                 );
                 return None;
             }
-            self.reject_handle_structural_clone(ty, at)?;
             return self.generic_clone_from_place(source.place, ty, at);
         }
         let RawExpressionKind::Reference { name } = &expression.kind else {
@@ -79,21 +78,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             );
             return None;
         }
-        self.reject_handle_structural_clone(ty, at)?;
         self.generic_clone_from_place(binding.place, ty, at)
-    }
-
-    fn reject_handle_structural_clone(&mut self, ty: Ty, at: Span) -> Option<()> {
-        if !contains_handle(ty.layout, self.decisions.layouts) {
-            return Some(());
-        }
-        self.decisions.errors.at(
-            "ZRYNA-M3016",
-            at,
-            "structural clone containing shared or weak handles requires explicit count operations",
-            "clone each handle leaf explicitly before rebuilding a static aggregate; dynamic Enum and Vec clone composition is not yet admitted",
-        );
-        None
     }
 
     fn generic_clone_from_place(
@@ -114,11 +99,19 @@ impl PreparationContext<'_, '_, '_, '_> {
         self.state.counts[4] = self.state.counts[4].checked_add(1)?;
         self.state.counts[5] = self.state.counts[5].checked_add(actions)?;
         self.push(Operation::GenericClonePrefix { id: prefix, owner, actions }, ty, at, None);
-        self.emit_leaf(Leaf::GenericClone { source, cleanup, prefix }, ty, at)
+        let leaf = if contains_handle(ty.layout, self.decisions.layouts) {
+            Leaf::HandleAwareClone { source, cleanup, prefix }
+        } else {
+            Leaf::GenericClone { source, cleanup, prefix }
+        };
+        self.emit_leaf(leaf, ty, at)
     }
 }
 
-fn contains_handle(root: zryna_layout::TypeId, layouts: &zryna_layout::VerifiedLayouts) -> bool {
+pub(super) fn contains_handle(
+    root: zryna_layout::TypeId,
+    layouts: &zryna_layout::VerifiedLayouts,
+) -> bool {
     graph_contains_handle(root, |ty| {
         let record = layouts.type_by_id(ty)?;
         let handle = matches!(

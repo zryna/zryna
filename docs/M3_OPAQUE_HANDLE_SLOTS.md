@@ -2,8 +2,9 @@
 
 Issue #278 supplies non-handle composition before #261 supplies authenticated Shared/Weak source
 operations. Its opaque slot boundary reuses existing typed IR, layout and ownership effects. No
-new placeholder value, unchecked producer, handle opcode, reference-count model or alternate
-verifier is needed or introduced.
+new placeholder value, unchecked producer, reference-count model or alternate verifier is needed
+or introduced. Issue #261 later adds a distinct verified structural handle-clone opcode; it does
+not change this generic slot contract.
 
 ## Existing integration interfaces
 

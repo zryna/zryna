@@ -245,40 +245,47 @@ fn handle_leaves_compose_through_struct_array_vec_projection_and_replacement() {
 }
 
 #[test]
-fn opaque_structural_handle_clone_rejects_before_unverified_ir_and_recovers() {
+fn structural_handle_clone_seals_struct_enum_array_and_vec_count_recipes() {
     let (source, raw) =
         generic_vec_fixture::shared_weak_fixture::composition_fixture::clone_rejection_fixture();
-    let clone_at = raw.files[0]
-        .functions
-        .iter()
-        .flat_map(|function| &function.body.expressions)
-        .find(|expression| {
-            matches!(expression.kind, RawExpressionKind::Clone { .. })
-                && source[expression.span.start as usize..expression.span.end as usize]
-                    == *"clone(bundle)"
-        })
-        .expect("structural handle clone")
-        .span;
     let sources = sources_for(&source);
-    let syntax = verify_snapshot(raw, &sources).expect("authenticated structural clone rejection");
-    let expected = vec![Diagnostic::error_at(
-        "ZRYNA-M3016",
-        span(&sources, clone_at),
-        "structural clone containing shared or weak handles requires explicit count operations",
-        "clone each handle leaf explicitly before rebuilding a static aggregate; dynamic Enum and Vec clone composition is not yet admitted",
-    )];
-    for _ in 0..2 {
-        assert_eq!(
-            lower(pair_input(&syntax, &sources)).expect_err("structural clone rejection"),
-            expected
-        );
-    }
-    let (valid_source, valid_raw) =
-        generic_vec_fixture::shared_weak_fixture::composition_fixture::fixture();
-    let valid_sources = sources_for(&valid_source);
-    let valid_syntax =
-        verify_snapshot(valid_raw, &valid_sources).expect("authenticated recovery fixture");
-    lower(pair_input(&valid_syntax, &valid_sources)).expect("valid composition after rejection");
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated structural clone fixture");
+    let program = lower(pair_input(&syntax, &sources)).expect("handle-aware clone lowering");
+    let function =
+        program.modules().next().expect("module").functions().nth(1).expect("composition caller");
+    let clones = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .filter_map(|instruction| {
+            instruction.handle_aware_clone().map(|clone| (instruction, clone))
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(clones.len(), 5, "place and indexed Struct, Enum, fixed array, and Vec clones");
+    assert!(clones.iter().any(|(_, clone)| matches!(
+        clone.source(),
+        zryna_ir::data_ownership_v1::VerifiedHandleAwareCloneSource::Borrow(_)
+    )));
+    assert!(clones.iter().all(|(instruction, clone)| {
+        let prefix =
+            instruction.handle_aware_clone_prefix_failure_drop_actions().collect::<Vec<_>>();
+        assert_eq!(prefix[0].kind(), VerifiedDropActionKind::GenericCloneInitializedPrefix);
+        assert_eq!(prefix[0].root(), clone.destination());
+        assert_eq!(&prefix[1..], instruction.derived_drop_actions().collect::<Vec<_>>());
+        if let zryna_ir::data_ownership_v1::VerifiedHandleAwareCloneSource::Place(source) =
+            clone.source()
+        {
+            assert_ne!(source, clone.destination());
+        }
+        clone.frontier().nodes().any(|node| {
+            matches!(
+                node.kind(),
+                zryna_ir::data_ownership_v1::VerifiedHandleCloneRecipeKind::SharedCountClone
+                    | zryna_ir::data_ownership_v1::VerifiedHandleCloneRecipeKind::WeakCountClone
+            )
+        })
+    }));
 }
 
 #[test]
