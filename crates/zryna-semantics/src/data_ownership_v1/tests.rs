@@ -185,6 +185,7 @@ mod structured_formal_source;
 mod structured_match_source;
 pub(super) mod structured_owned_fixture;
 mod structured_owned_source;
+mod structured_string_source;
 mod terminal_owned_if;
 mod termination_validation;
 mod vec_assignment;

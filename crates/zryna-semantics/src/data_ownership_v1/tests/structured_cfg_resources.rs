@@ -4,7 +4,7 @@ use super::*;
 use crate::data_ownership_v1::Binding;
 use crate::data_ownership_v1::tests::structured_owned_fixture::{
     Payload, call_match_fixture, formal_match_fixture, match_fixture, nested_match_fixture,
-    vec_match_fixture,
+    string_match_fixture, vec_match_fixture,
 };
 use zryna_ir::data_ownership_v1 as ir;
 
@@ -66,7 +66,7 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> raw::Val
 
 #[test]
 fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
-    for shape in 0..5 {
+    for shape in 0..7 {
         for resource in 0..5 {
             for extra in [0, 1, usize::MAX] {
                 let (source, snapshot) = match shape {
@@ -74,7 +74,9 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                     1 => nested_match_fixture(true, true),
                     2 => call_match_fixture(true, true),
                     3 => vec_match_fixture(true, true),
-                    _ => formal_match_fixture(true),
+                    4 => formal_match_fixture(true),
+                    5 => string_match_fixture(0),
+                    _ => string_match_fixture(1),
                 };
                 let errors = with_snapshot(&source, snapshot, |lowerer, result| {
                     let parameter = parameter(lowerer);

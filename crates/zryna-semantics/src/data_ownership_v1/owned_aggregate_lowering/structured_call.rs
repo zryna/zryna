@@ -25,6 +25,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
         .classify_prepared(id, Some(ty), true)?;
         let ExpressionKind::Call { callee, arguments } = decision.kind else {
+            if matches!(decision.kind, ExpressionKind::StringConcat { .. }) {
+                return self.structured_string(id, ty, graph);
+            }
             return self.value(id, ty);
         };
         let at = decision.at;

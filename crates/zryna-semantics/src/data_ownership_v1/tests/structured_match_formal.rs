@@ -1,5 +1,45 @@
 use super::*;
 
+pub(super) fn parameters(
+    builder: &mut Builder,
+    payload: Payload,
+    operand: OperandKind,
+) -> Vec<RawParameterSyntax> {
+    let parameter_start = builder.text.len();
+    let parameter_name = builder.name("source");
+    builder.text(": ");
+    let type_syntax = builder.named_type("Choice");
+    let mut parameters = vec![RawParameterSyntax {
+        span: builder.span(parameter_start),
+        name: parameter_name,
+        type_syntax,
+    }];
+    for name in [
+        matches!(payload, Payload::I32).then_some("retained"),
+        match operand {
+            OperandKind::StringNamed => Some("saved"),
+            OperandKind::Lexical => Some("container"),
+            _ => None,
+        },
+    ]
+    .into_iter()
+    .flatten()
+    {
+        builder.text(", ");
+        let start = builder.text.len();
+        let name = builder.name(name);
+        builder.text(": ");
+        let type_syntax = builder.ty(true);
+        parameters.push(RawParameterSyntax { span: builder.span(start), name, type_syntax });
+    }
+    if !matches!(operand, OperandKind::Lexical)
+        && let Some(exclusive) = operand.formal()
+    {
+        builder.formal_parameter(&mut parameters, exclusive);
+    }
+    parameters
+}
+
 impl Builder {
     pub(super) fn formal_parameter(
         &mut self,

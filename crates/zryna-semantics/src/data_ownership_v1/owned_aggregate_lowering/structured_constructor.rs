@@ -28,6 +28,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if graph.contains_match(expression.span.start, expression.span.end) {
             match expression.kind {
                 RawExpressionKind::Call { .. } => return self.structured_call(id, ty, graph),
+                RawExpressionKind::Clone { .. }
+                    if ty.category == zryna_layout::TypeCategory::String =>
+                {
+                    return self.structured_string(id, ty, graph);
+                }
                 RawExpressionKind::StructConstruction { .. }
                 | RawExpressionKind::EnumConstruction { .. }
                 | RawExpressionKind::FixedArrayConstruction { .. }

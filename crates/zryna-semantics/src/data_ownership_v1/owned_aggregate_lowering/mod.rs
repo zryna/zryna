@@ -58,6 +58,7 @@ mod structured_match;
 mod structured_match_local;
 mod structured_scratch;
 mod structured_state;
+mod structured_string;
 mod vec_push_preparation;
 
 pub(super) use driver::{

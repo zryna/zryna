@@ -87,6 +87,21 @@ impl PreparationContext<'_, '_, '_, '_> {
             AvailabilityView::new(&state.owners, &state.moved, &state.partial, |id| {
                 state.parent(id)
             });
+        if !read
+            && state
+                .facts
+                .retained_string_reads
+                .iter()
+                .any(|region| availability.places_overlap(place, *region))
+        {
+            self.decisions.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "owned access conflicts with a retained String operand",
+                "finish the String operation before consuming or mutating its retained operand",
+            );
+            return None;
+        }
         if state.facts.active_borrows.values().any(|(region, access)| {
             availability.places_overlap(place, *region)
                 && (!read || *access == raw::BorrowAccess::Exclusive)

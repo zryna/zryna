@@ -56,7 +56,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub(super) fn consume_prepared_leaf(
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn consume_prepared_leaf(
         &mut self,
         leaf: Leaf<'_>,
         ty: Ty,

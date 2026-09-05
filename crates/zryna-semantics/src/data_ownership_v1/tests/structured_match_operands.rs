@@ -2,6 +2,12 @@ use super::*;
 
 impl Builder {
     pub(super) fn match_operand(&mut self, cloned: bool, operand: OperandKind) -> u32 {
+        if matches!(
+            operand,
+            OperandKind::StringClone | OperandKind::StringConcat | OperandKind::StringNamed
+        ) {
+            return self.string_match_operand(operand, cloned);
+        }
         if matches!(operand, OperandKind::Plain) {
             return self.matched(cloned);
         }

@@ -9,6 +9,8 @@ mod formal;
 mod operands;
 #[path = "structured_match_payloads.rs"]
 mod payloads;
+#[path = "structured_match_string.rs"]
+mod string;
 pub(in crate::data_ownership_v1) use payloads::Payload;
 
 impl Builder {
@@ -120,46 +122,6 @@ impl Builder {
     }
 }
 
-fn parameters(
-    builder: &mut Builder,
-    payload: Payload,
-    operand: OperandKind,
-) -> Vec<RawParameterSyntax> {
-    let parameter_start = builder.text.len();
-    let parameter_name = builder.name("source");
-    builder.text(": ");
-    let type_syntax = builder.named_type("Choice");
-    let parameter = RawParameterSyntax {
-        span: builder.span(parameter_start),
-        name: parameter_name,
-        type_syntax,
-    };
-    let mut parameters = vec![parameter];
-    if matches!(payload, Payload::I32) {
-        builder.text(", ");
-        let parameter_start = builder.text.len();
-        let name = builder.name("retained");
-        builder.text(": ");
-        let type_syntax = builder.ty(true);
-        parameters.push(RawParameterSyntax {
-            span: builder.span(parameter_start),
-            name,
-            type_syntax,
-        });
-    }
-    if matches!(operand, OperandKind::Lexical) {
-        builder.text(", ");
-        let start = builder.text.len();
-        let name = builder.name("container");
-        builder.text(": ");
-        let type_syntax = builder.ty(true);
-        parameters.push(RawParameterSyntax { span: builder.span(start), name, type_syntax });
-    } else if let Some(exclusive) = operand.formal() {
-        builder.formal_parameter(&mut parameters, exclusive);
-    }
-    parameters
-}
-
 pub(in crate::data_ownership_v1) fn fixture(
     payload: Payload,
     cloned: bool,
@@ -191,6 +153,9 @@ enum OperandKind {
     FormalShared,
     FormalExclusive,
     Lexical,
+    StringClone,
+    StringConcat,
+    StringNamed,
 }
 
 impl OperandKind {
@@ -198,6 +163,7 @@ impl OperandKind {
         match self {
             Self::Plain => payload,
             Self::Vec => Payload::Vec,
+            Self::StringClone | Self::StringConcat | Self::StringNamed => Payload::String,
             Self::Array
             | Self::Call
             | Self::FormalShared
@@ -239,6 +205,23 @@ pub(in crate::data_ownership_v1) fn lexical_fixture() -> (String, RawProjectSynt
     build(Payload::String, true, true, OperandKind::Lexical)
 }
 
+pub(in crate::data_ownership_v1) fn string_fixture(mode: u8) -> (String, RawProjectSyntaxSnapshot) {
+    build(
+        Payload::String,
+        true,
+        true,
+        match mode {
+            0 => OperandKind::StringClone,
+            1 => OperandKind::StringConcat,
+            _ => OperandKind::StringNamed,
+        },
+    )
+}
+
+pub(in crate::data_ownership_v1) fn string_move_fixture() -> (String, RawProjectSyntaxSnapshot) {
+    build(Payload::String, false, true, OperandKind::StringNamed)
+}
+
 fn build(
     payload: Payload,
     cloned: bool,
@@ -258,7 +241,7 @@ fn build(
     builder.text(" ");
     let name = builder.name("extract");
     builder.text("(");
-    let parameters = parameters(&mut builder, payload, operand);
+    let parameters = formal::parameters(&mut builder, payload, operand);
     builder.text("): ");
     let result_payload = operand.result(payload);
     let result_type = builder.payload_type(result_payload);
@@ -301,6 +284,10 @@ fn build(
     builder.statements.push(RawStatementSyntax { span: builder.span(statement_start), kind });
     if local {
         builder.text(" ");
+        if matches!(operand, OperandKind::StringNamed) {
+            builder.statement(&Statement::Local("after", "saved", false));
+            builder.text(" ");
+        }
         builder.statement(&Statement::Return("output"));
     }
     builder.text(" ");

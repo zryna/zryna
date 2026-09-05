@@ -178,7 +178,7 @@ operands remain pending during arm failures and transfer only at the exact typed
 then derives exact CallTrap cleanup from reconciled post-argument owners in scratch, transferring
 owned arguments before the call cleanup. Nested FixedArray and two-function call fixtures repeat
 the checked-resource/recovery matrix. Vec growth failure retains every completed child in reverse
-completion order; its result is not yet pending. This is not #279 completion: String/indexed read
+completion order; its result is not yet pending. This is not #279 completion: indexed read
 scopes, the complete C7 interaction matrix and
 independent hostile evidence remain; no source handle or runtime-execution support is claimed.
 
@@ -190,6 +190,15 @@ preserved at joins, failures end the same formal identity, and no EndBorrow/rebo
 and lexical-carry rejection. The resource matrix includes a genuine catalog-backed formal parameter.
 Non-formal lexical/indexed authorities still cannot cross CFG edges (`I3011`); this slice does not
 extend their lifetime or supply the broader #271 edge-borrow contract.
+
+`structured_string.rs` preserves named/static String read places and genuine expression-result
+owners through nested matches, then uses existing StringClone/StringConcat opcodes. Compiler-only
+retained-read exclusions are exact overlapping places, carried unchanged through joins; consuming
+or mutating access rejects while read-only clones remain allowed. The tail revalidates initialized
+state and byte facts before releasing its own exclusions. `structured_string_` tests pin no extra
+move/clone for named reads, arm/tail cleanup, read-only overlap, forbidden moves, post-operation
+release, deterministic diagnostics and replay. Clone/concat shapes join the checked-resource matrix.
+These exclusions do not grant IR borrow authority or extend lexical/indexed borrow lifetimes.
 
 ## C8: Upgrade-success edge signature
 

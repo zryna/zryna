@@ -12,6 +12,7 @@ pub(super) struct JoinState {
     partial: BTreeSet<raw::PlaceId>,
     bytes: BTreeMap<raw::PlaceId, u64>,
     aliases: BTreeMap<String, super::preparation_plan::LexicalAlias>,
+    reads: BTreeSet<raw::PlaceId>,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
@@ -52,6 +53,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 .collect(),
             bytes: self.preparation_facts.string_bytes.clone(),
             aliases: self.preparation_facts.aliases.clone(),
+            reads: self.preparation_facts.retained_string_reads.clone(),
         })
     }
 
@@ -62,6 +64,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.partial_roots.clone_from(&state.partial);
         self.preparation_facts.string_bytes.clone_from(&state.bytes);
         self.preparation_facts.aliases.clone_from(&state.aliases);
+        self.preparation_facts.retained_string_reads.clone_from(&state.reads);
         self.preparation_facts.active_borrows.clear();
     }
 
@@ -72,6 +75,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             || current.moved != state.moved
             || current.partial != state.partial
             || current.aliases != state.aliases
+            || current.reads != state.reads
         {
             self.errors.at(
                 "ZRYNA-M3015",
