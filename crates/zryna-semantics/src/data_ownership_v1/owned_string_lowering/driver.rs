@@ -12,8 +12,9 @@ use super::super::owned_control_flow_resources::preflight_owned_place_capacity;
 use super::super::owned_control_flow_shape::{root_is_terminal_if, terminal_owned_if};
 use super::super::owner_state::{OwnedStringBranchState, OwnerState};
 use super::super::type_model::{Binding, Ty};
-use super::super::{SemanticInput, semantic_type, span};
+use super::super::{SemanticInput, semantic_type};
 use super::{PrivateStringLowerer, StringBranchTypes};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(in crate::data_ownership_v1) fn lower_private_string_function<'a>(

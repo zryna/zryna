@@ -1,9 +1,10 @@
 use std::collections::VecDeque;
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::function_catalog::{FunctionCatalog, FunctionResolution};
 use super::type_model::{RootBorrowBudgetLimit, RootBorrowResources};
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 use zryna_ir::data_ownership_v1 as ir;
 use zryna_syntax::v4::RawExpressionKind;
 

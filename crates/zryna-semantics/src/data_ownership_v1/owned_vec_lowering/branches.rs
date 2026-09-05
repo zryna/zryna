@@ -5,9 +5,9 @@ use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawStatementKind};
 
 use super::super::owned_lowering_resources::{OwnedCleanupAccounting, OwnedCleanupActionContext};
 use super::super::owner_state::{OwnedVecBranchState, apply_owner_delta};
-use super::super::span;
 use super::super::type_model::Ty;
 use super::PrivateVecLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateVecLowerer<'_, '_, '_> {
     pub(super) fn condition(&mut self, id: u32, bool_ty: Ty) -> Option<raw::ValueId> {

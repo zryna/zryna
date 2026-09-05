@@ -5,9 +5,9 @@ use zryna_source::Span;
 use super::super::aggregate_resource_formulas::{
     projected_subobject_move_budget_violation, projected_subobject_return_budget_violation,
 };
-use super::super::span;
 use super::super::type_model::{ProjectedAggregateMoveContext, Ty};
 use super::PrivateOwnedAggregateLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn preflight_aggregate_subobject_move_site(&mut self, at: Span) -> bool {

@@ -3,7 +3,8 @@ use std::collections::BTreeMap;
 use zryna_source::{SourceMap, Span};
 use zryna_syntax::v4::{self as syntax, RawFieldInitializerKind};
 
-use crate::data_ownership_v1::{Errors, span};
+use crate::data_ownership_v1::Errors;
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) fn struct_initializers(
     sources: &SourceMap,

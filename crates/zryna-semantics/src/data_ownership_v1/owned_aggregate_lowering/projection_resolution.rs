@@ -6,8 +6,9 @@ use zryna_syntax::v4::{self as syntax, RawDataDeclarationKind, RawExpressionKind
 
 use super::super::layout_graph::{Decl, semantic_type};
 use super::super::type_model::{Binding, OwnedAggregatePlace, Ty};
-use super::super::{Errors, SemanticInput, span};
+use super::super::{Errors, SemanticInput};
 use super::projection_topology::{ProjectionDescriptor, ProjectionTopology, project};
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) struct ProjectionResolver<'a, 'f, 'b, 'e> {
     pub(super) input: SemanticInput<'a>,

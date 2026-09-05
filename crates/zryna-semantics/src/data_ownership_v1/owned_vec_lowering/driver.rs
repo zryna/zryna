@@ -4,6 +4,7 @@ use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::{self as layout, TypeCategory, raw as raw_layout};
 use zryna_syntax::v4::{self as syntax, RawStatementKind};
 
+use super::super::SemanticInput;
 use super::super::diagnostics::Errors;
 use super::super::function_catalog::FunctionCatalog;
 use super::super::layout_graph::{Decl, semantic_type};
@@ -12,8 +13,8 @@ use super::super::owned_control_flow_resources::preflight_owned_place_capacity;
 use super::super::owned_control_flow_shape::{root_is_terminal_if, terminal_owned_if};
 use super::super::owner_state::{OwnedVecBranchState, OwnerState};
 use super::super::type_model::{Binding, Ty};
-use super::super::{SemanticInput, span};
 use super::PrivateVecLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(in crate::data_ownership_v1) fn lower_private_vec_function<'a>(

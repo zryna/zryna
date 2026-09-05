@@ -6,9 +6,10 @@ use zryna_syntax::v4::{
     self as syntax, RawDataDeclarationKind, RawExpressionKind, RawStatementKind, RawTypeSyntaxKind,
 };
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::type_model::Ty;
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[derive(Clone)]
 pub(super) struct Decl {

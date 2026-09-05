@@ -7,13 +7,13 @@ use super::super::owned_lowering_resources::{
     OwnedCleanupAccounting, OwnedCleanupPlanContext, OwnedCleanupReservationContext,
     OwnedStringPreparationBudget, preflight_owned_string_preparation,
 };
-use super::super::span;
 use super::super::string_vec_resource_estimates::{
     OwnedStringEstimateContext, OwnedStringEstimateError, OwnedStringEstimateOutcome,
     estimate_owned_string_expression,
 };
 use super::super::type_model::Ty;
 use super::PrivateStringLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateStringLowerer<'_, '_, '_> {
     pub(super) fn expression(&self, id: u32) -> Option<&syntax::RawExpressionSyntax> {

@@ -5,6 +5,7 @@ use zryna_layout::{self as layout, TypeCategory, raw as raw_layout};
 use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawStatementKind, RawTypeSyntaxKind};
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::function_catalog::{FunctionCatalog, FunctionResolution};
 use super::layout_graph::{Decl, semantic_type};
@@ -13,7 +14,7 @@ use super::root_borrow_value_planning::{plan_root_borrow_initializer, plan_root_
 use super::type_model::{
     RootBorrowAlias, RootBorrowArmPlan, RootBorrowPlacePlan, RootBorrowStep, Ty,
 };
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) fn root_borrow_paths_overlap(
     left: &RootBorrowPlacePlan,

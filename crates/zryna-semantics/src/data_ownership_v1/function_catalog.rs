@@ -5,10 +5,11 @@ use zryna_layout::raw as raw_layout;
 use zryna_source::Span;
 use zryna_syntax::v4::RawTypeSyntaxKind;
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::layout_graph::{Decl, semantic_type};
 use super::type_model::Ty;
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[derive(Clone)]
 pub(super) struct FunctionSignature {

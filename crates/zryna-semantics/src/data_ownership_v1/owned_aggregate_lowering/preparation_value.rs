@@ -1,4 +1,3 @@
-use super::super::super::span;
 use super::super::expression_decisions::ExpressionDecisions;
 use super::super::mixed_shape;
 use super::super::preparation_state::PreparationState;
@@ -6,6 +5,7 @@ use super::{
     PreparationContext, PreparationPlan, PreparedValue, PrivateOwnedAggregateLowerer, Ty,
     resource_replay,
 };
+use crate::data_ownership_v1::diagnostics::span;
 
 #[derive(Clone, Copy)]
 enum PreparationSite {

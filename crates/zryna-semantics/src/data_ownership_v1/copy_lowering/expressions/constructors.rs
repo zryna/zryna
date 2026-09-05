@@ -1,5 +1,6 @@
-use super::super::super::{RawDataDeclarationKind, Span, Ty, raw, semantic_type, span, syntax};
+use super::super::super::{RawDataDeclarationKind, Span, Ty, raw, semantic_type, syntax};
 use super::{FunctionLowerer, planning};
+use crate::data_ownership_v1::diagnostics::span;
 
 impl FunctionLowerer<'_, '_, '_> {
     pub(super) fn struct_value(

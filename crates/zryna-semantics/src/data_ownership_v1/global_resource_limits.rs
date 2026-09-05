@@ -1,5 +1,6 @@
-use super::{SemanticInput, span};
+use super::SemanticInput;
 use crate::data_ownership_v1::diagnostics::Errors;
+use crate::data_ownership_v1::diagnostics::span;
 use zryna_ir::data_ownership_v1::{self as ir, raw};
 use zryna_ownership_runtime_abi as ownership_runtime_abi;
 use zryna_source::Span;

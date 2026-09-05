@@ -4,8 +4,10 @@ use super::copy_lowering::{BorrowBinding, FunctionLowerer};
 use super::function_catalog::FunctionParameterOrder;
 use super::{
     Binding, Decl, Errors, FunctionCatalog, RawStatementKind, SemanticInput, Ty, TypeCategory,
-    layout, raw, raw_layout, require_current_type_only_boundary, semantic_type, span, syntax,
+    layout, raw, raw_layout, semantic_type, syntax,
 };
+use crate::data_ownership_v1::diagnostics::span;
+use crate::data_ownership_v1::type_model::require_current_type_only_boundary;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn lower_copy_function<'a>(

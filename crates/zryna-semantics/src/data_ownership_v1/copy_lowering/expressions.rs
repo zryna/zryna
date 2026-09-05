@@ -1,7 +1,8 @@
 use super::super::function_catalog::{FunctionParameterOrder, FunctionSignature};
 use super::super::scalar_operations::{self, ScalarOperation};
-use super::super::{RawExpressionKind, Span, Ty, TypeCategory, raw, span, syntax};
+use super::super::{RawExpressionKind, Span, Ty, TypeCategory, raw, syntax};
 use super::FunctionLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 mod constructors;
 mod planning;

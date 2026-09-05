@@ -4,10 +4,10 @@ use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 
 use super::super::owner_state::{OwnerDelta, apply_owner_delta};
-use super::super::span;
 use super::super::string_vec_resource_estimates::cleanup_actions_after_transfer;
 use super::super::type_model::Ty;
 use super::PrivateVecLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateVecLowerer<'_, '_, '_> {
     fn string_place_for_read(&mut self, id: u32) -> Option<(raw::PlaceId, u64)> {

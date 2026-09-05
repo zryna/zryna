@@ -7,9 +7,10 @@ use super::super::aggregate_resource_formulas::{
     aggregate_clone_budget_violation, projected_string_clone_budget_violation,
 };
 use super::super::type_model::OwnedAggregatePlace;
-use super::super::{Binding, Ty, span};
+use super::super::{Binding, Ty};
 use super::PrivateOwnedAggregateLowerer;
 use super::operand_decisions::OperandDecisions;
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) fn nonaddressable_clone(at: Span, errors: &mut super::super::Errors<'_>) {
     errors.at(

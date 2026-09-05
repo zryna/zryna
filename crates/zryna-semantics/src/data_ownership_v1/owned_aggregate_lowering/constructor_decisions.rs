@@ -6,7 +6,8 @@ use zryna_syntax::v4::{self as syntax, RawDataDeclarationKind, RawFieldInitializ
 
 use super::super::super::layout_graph::semantic_type;
 use super::super::{aggregate_graph_is_supported, owned_enum_graph_is_supported};
-use super::{ArrayDecision, EnumDecision, ExpressionDecisions, StructDecision, Ty, span};
+use super::{ArrayDecision, EnumDecision, ExpressionDecisions, StructDecision, Ty};
+use crate::data_ownership_v1::diagnostics::span;
 
 impl<'f> ExpressionDecisions<'_, 'f, '_> {
     fn ty_for_layout(&self, id: layout::TypeId) -> Option<Ty> {

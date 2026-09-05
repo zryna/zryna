@@ -7,7 +7,7 @@ use zryna_diagnostics::{Diagnostic, Severity};
 use zryna_ir::data_ownership_v1::{self as ir, RuntimeContractIdentity, raw};
 use zryna_layout::{self as layout, StorageTarget, TypeCategory, raw as raw_layout};
 use zryna_ownership_runtime_abi as ownership_runtime_abi;
-use zryna_source::{FileId, MAX_SOURCE_FILES, SourceMap, Span, UntrustedSpan};
+use zryna_source::{FileId, MAX_SOURCE_FILES, SourceMap, Span};
 use zryna_syntax::v4::{
     self as syntax, RawDataDeclarationKind, RawExpressionKind, RawStatementKind,
 };
@@ -68,7 +68,7 @@ use aggregate_resource_formulas::{
 };
 use borrow_call_resources::preflight_program_borrow_calls;
 use copy_lowering::{BorrowBinding, FunctionLowerer};
-use diagnostics::Errors;
+use diagnostics::{Errors, span};
 use function_catalog::{FunctionCatalog, build_function_catalog};
 #[cfg(test)]
 use function_catalog::{FunctionParameterOrder, FunctionSignature};
@@ -347,43 +347,7 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
     Ok(VerifiedProgram { ir: verified_ir, runtime_abi })
 }
 
-fn span(sources: &SourceMap, value: UntrustedSpan) -> Span {
-    sources.verify_span(value).expect("verified v4 span")
-}
-
-fn require_current_type_only_boundary(
-    ty: Ty,
-    at: Span,
-    public: bool,
-    errors: &mut Errors<'_>,
-) -> Option<Ty> {
-    if ty.is_copy() && ty.is_clone() {
-        return Some(ty);
-    }
-    if public {
-        errors.at(
-            "ZRYNA-M3010",
-            at,
-            "public owned signatures are outside scalar ABI v1",
-            "keep owned functions internal and export only bool/i32 signatures",
-        );
-    } else {
-        let message = if ty.runtime_kind == 0 {
-            "owned aggregate operations are not yet admitted by this lowering slice"
-        } else {
-            "owned String and Vec operations are not yet admitted by this lowering slice"
-        };
-        errors.at(
-            "ZRYNA-M3003",
-            at,
-            message,
-            "use the authenticated owned type only after owned-operation lowering is enabled",
-        );
-    }
-    None
-}
-
-#[allow(dead_code)]
+#[cfg(test)]
 fn authenticated_type_capabilities(
     input: SemanticInput<'_>,
     module: usize,

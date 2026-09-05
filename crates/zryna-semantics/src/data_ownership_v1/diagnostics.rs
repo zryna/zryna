@@ -1,9 +1,13 @@
 use std::cmp::Ordering;
 
 use zryna_diagnostics::Diagnostic;
-use zryna_source::{SourceMap, Span};
+use zryna_source::{SourceMap, Span, UntrustedSpan};
 
 use super::MAX_SEMANTIC_DIAGNOSTICS;
+
+pub(super) fn span(sources: &SourceMap, value: UntrustedSpan) -> Span {
+    sources.verify_span(value).expect("verified v4 span")
+}
 
 pub(super) struct Errors<'a> {
     pub(super) sources: &'a SourceMap,
