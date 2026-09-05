@@ -7,8 +7,8 @@ use super::super::owned_control_flow_shape::{
     preflight_owned_loop_body, preflight_owned_loop_exit,
 };
 use super::super::owner_state::OwnedVecBranchState;
-use super::super::span;
 use super::PrivateVecLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateVecLowerer<'_, '_, '_> {
     fn lower_loop_push(

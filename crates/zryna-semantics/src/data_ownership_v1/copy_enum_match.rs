@@ -2,9 +2,10 @@ use std::collections::BTreeMap;
 
 use super::{
     Binding, Decl, Errors, RawDataDeclarationKind, RawExpressionKind, RawStatementKind,
-    SemanticInput, Ty, TypeCategory, layout, raw, raw_layout, require_current_type_only_boundary,
-    semantic_type, span, syntax,
+    SemanticInput, Ty, TypeCategory, layout, raw, raw_layout, semantic_type, syntax,
 };
+use crate::data_ownership_v1::diagnostics::span;
+use crate::data_ownership_v1::type_model::require_current_type_only_boundary;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn lower_enum_match_function<'a>(

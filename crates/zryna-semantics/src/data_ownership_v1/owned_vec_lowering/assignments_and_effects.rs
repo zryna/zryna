@@ -8,10 +8,10 @@ use super::super::owned_cfg_state::{
     release_owned_commit_transition, reserve_owned_commit_transition,
 };
 use super::super::owner_state::{OwnedVecBranchState, apply_owner_delta};
-use super::super::span;
 use super::super::string_vec_resource_estimates::vec_push_target_invalid;
 use super::super::type_model::Binding;
 use super::PrivateVecLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateVecLowerer<'_, '_, '_> {
     fn push_scope_error(

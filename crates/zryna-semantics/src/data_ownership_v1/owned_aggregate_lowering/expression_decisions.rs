@@ -3,7 +3,8 @@ use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 
 use super::super::layout_graph::semantic_type;
-use super::super::{Decl, Errors, SemanticInput, Ty, span};
+use super::super::{Decl, Errors, SemanticInput, Ty};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[path = "constructor_decisions.rs"]
 mod constructors;

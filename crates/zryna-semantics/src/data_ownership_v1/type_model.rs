@@ -5,6 +5,38 @@ use zryna_syntax::v4 as syntax;
 
 use super::diagnostics::Errors;
 
+pub(super) fn require_current_type_only_boundary(
+    ty: Ty,
+    at: Span,
+    public: bool,
+    errors: &mut Errors<'_>,
+) -> Option<Ty> {
+    if ty.is_copy() && ty.is_clone() {
+        return Some(ty);
+    }
+    if public {
+        errors.at(
+            "ZRYNA-M3010",
+            at,
+            "public owned signatures are outside scalar ABI v1",
+            "keep owned functions internal and export only bool/i32 signatures",
+        );
+    } else {
+        let message = if ty.runtime_kind == 0 {
+            "owned aggregate operations are not yet admitted by this lowering slice"
+        } else {
+            "owned String and Vec operations are not yet admitted by this lowering slice"
+        };
+        errors.at(
+            "ZRYNA-M3003",
+            at,
+            message,
+            "use the authenticated owned type only after owned-operation lowering is enabled",
+        );
+    }
+    None
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct Ty {
     pub(super) layout: layout::TypeId,

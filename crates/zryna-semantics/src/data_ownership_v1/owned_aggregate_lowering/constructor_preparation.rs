@@ -154,7 +154,10 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
 
     fn expression_span(&self, id: u32) -> Option<Span> {
         let expression = self.decisions.function.body.expressions.get(usize::try_from(id).ok()?)?;
-        Some(super::super::span(self.decisions.input.sources(), expression.span))
+        Some(crate::data_ownership_v1::diagnostics::span(
+            self.decisions.input.sources(),
+            expression.span,
+        ))
     }
 
     fn visit(

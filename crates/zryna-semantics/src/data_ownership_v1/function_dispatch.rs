@@ -19,9 +19,10 @@ use super::owned_vec_lowering::lower_private_vec_function;
 use super::root_borrow_function_lowering::lower_private_root_borrow_function;
 use super::{
     Decl, Errors, FunctionCatalog, RawExpressionKind, RawStatementKind, SemanticInput, SourceMap,
-    Ty, TypeCategory, layout, raw, raw_layout, require_current_type_only_boundary, semantic_type,
-    span, syntax,
+    Ty, TypeCategory, layout, raw, raw_layout, semantic_type, syntax,
 };
+use crate::data_ownership_v1::diagnostics::span;
+use crate::data_ownership_v1::type_model::require_current_type_only_boundary;
 
 #[allow(clippy::too_many_arguments)]
 fn lower_private_owned_root_borrow_function<'a>(

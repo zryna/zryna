@@ -5,13 +5,14 @@ use zryna_syntax::v4::{
     self as syntax, RawDataDeclarationKind, RawExpressionKind, RawFieldInitializerKind,
 };
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::layout_graph::{Decl, semantic_type};
 use super::type_model::{
     RootBorrowInitializer, RootBorrowLiteral, RootBorrowPlacePlan, RootBorrowProjection,
     RootBorrowProjectionKey, Ty,
 };
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn plan_root_borrow_initializer<'a>(

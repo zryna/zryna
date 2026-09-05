@@ -4,9 +4,9 @@ use zryna_source::Span;
 use zryna_syntax::v4::{RawExpressionKind, RawStatementKind, RawStatementSyntax};
 
 use super::super::layout_graph::semantic_type;
-use super::super::span;
 use super::super::type_model::{Binding, ProjectedAggregateMoveContext, Ty};
 use super::PrivateOwnedAggregateLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) enum StatementOutcome {
     Continue,

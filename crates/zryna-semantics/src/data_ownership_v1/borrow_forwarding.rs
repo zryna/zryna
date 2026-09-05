@@ -4,9 +4,10 @@ use zryna_ir::data_ownership_v1::raw;
 use zryna_source::SourceMap;
 use zryna_syntax::v4::{RawExpressionKind, RawFunctionSyntax};
 
+use super::BorrowBinding;
 use super::diagnostics::Errors;
 use super::function_catalog::{FunctionParameterOrder, FunctionSignature};
-use super::{BorrowBinding, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 /// Seals the non-evaluating borrow suffix of one source-ordered direct call.
 ///

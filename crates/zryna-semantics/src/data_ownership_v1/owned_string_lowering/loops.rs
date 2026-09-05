@@ -14,12 +14,12 @@ use super::super::owned_control_flow_shape::{
 };
 use super::super::owned_lowering_resources::OwnedCleanupAccounting;
 use super::super::owner_state::{OwnedStringBranchState, OwnerDelta, apply_owner_delta};
-use super::super::span;
 use super::super::string_vec_resource_estimates::{
     OwnedStringEstimateContext, OwnedStringEstimateOutcome,
 };
 use super::super::type_model::Binding;
 use super::{PrivateStringLowerer, StringBranchTypes};
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(in crate::data_ownership_v1) fn preflight_owned_string_loop_skeleton(
     cfg: &OwnedCfgState,

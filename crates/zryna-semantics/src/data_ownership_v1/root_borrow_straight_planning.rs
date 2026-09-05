@@ -2,6 +2,7 @@ use zryna_layout::{self as layout, TypeCategory, raw as raw_layout};
 use zryna_source::SourceMap;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawStatementKind};
 
+use super::SemanticInput;
 use super::borrow_call_resources::checked_straight_borrow_call_resources;
 use super::diagnostics::Errors;
 use super::function_catalog::FunctionCatalog;
@@ -15,7 +16,7 @@ use super::root_borrow_value_planning::plan_root_borrow_initializer;
 use super::type_model::{
     RootBorrowArmPlan, RootBorrowBudgetLimit, RootBorrowPlan, RootBorrowShape, RootBorrowStep, Ty,
 };
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn plan_private_straight_root_borrow_function<'a>(

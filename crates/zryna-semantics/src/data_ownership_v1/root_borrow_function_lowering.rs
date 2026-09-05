@@ -2,13 +2,14 @@ use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::{self as layout, raw as raw_layout};
 use zryna_syntax::v4 as syntax;
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::function_catalog::FunctionCatalog;
 use super::layout_graph::Decl;
 use super::root_borrow_execution::{emit_root_borrow_arm, emit_root_borrow_initializer};
 use super::root_borrow_shape_planning::plan_private_root_borrow_function;
 use super::type_model::{RootBorrowPlan, RootBorrowShape, RootBorrowStep, Ty};
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn lower_private_root_borrow_function<'a>(

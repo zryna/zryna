@@ -1,8 +1,9 @@
+use super::super::super::Ty;
 use super::super::super::owned_string_read::StringBytes;
-use super::super::super::{Ty, span};
 use super::super::preparation_operations::PreparationContext;
 use super::super::preparation_plan::{Leaf, Operation, StringOperation, StringRead};
 use super::{Frame, StringFrame};
+use crate::data_ownership_v1::diagnostics::span;
 use zryna_ir::data_ownership_v1::raw;
 use zryna_source::Span;
 use zryna_syntax::v4::RawExpressionKind;

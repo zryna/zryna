@@ -192,7 +192,10 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
                 &self.state.owners,
                 &self.state.facts.string_bytes,
                 Some(ty),
-                super::super::span(self.decisions.input.sources(), name.span),
+                crate::data_ownership_v1::diagnostics::span(
+                    self.decisions.input.sources(),
+                    name.span,
+                ),
                 self.decisions.errors,
             )?;
             let source =

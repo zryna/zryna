@@ -1,7 +1,8 @@
 use super::super::{
-    RawDataDeclarationKind, RawExpressionKind, Span, Ty, TypeCategory, semantic_type, span,
+    RawDataDeclarationKind, RawExpressionKind, Span, Ty, TypeCategory, semantic_type,
 };
 use super::FunctionLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl FunctionLowerer<'_, '_, '_> {
     pub(in crate::data_ownership_v1) fn primitive(&self, category: TypeCategory) -> Option<Ty> {

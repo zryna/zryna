@@ -3,9 +3,9 @@ use zryna_layout::TypeCategory;
 use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 
-use super::super::super::span;
 use super::super::super::type_model::{ProjectedAggregateAssignmentSource, Ty};
 use super::super::PrivateOwnedAggregateLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     fn projected_aggregate_assignment_source(

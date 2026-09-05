@@ -6,9 +6,9 @@ use zryna_syntax::v4::RawExpressionKind;
 use super::super::owned_lowering_resources::{
     OwnedCleanupAccounting, checked_vec_clone_prefix_action_count,
 };
-use super::super::span;
 use super::super::type_model::Ty;
 use super::PrivateVecLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateVecLowerer<'_, '_, '_> {
     #[allow(clippy::too_many_lines)]

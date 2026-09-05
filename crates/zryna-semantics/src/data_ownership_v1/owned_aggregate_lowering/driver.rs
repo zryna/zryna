@@ -4,15 +4,16 @@ use zryna_ir::data_ownership_v1::{self as ir, raw};
 use zryna_layout::{self as layout, TypeCategory, raw as raw_layout};
 use zryna_syntax::v4::{self as syntax, RawStatementKind};
 
+use super::super::SemanticInput;
 use super::super::diagnostics::Errors;
 use super::super::layout_graph::{Decl, semantic_type};
 use super::super::owner_state::OwnerState;
 use super::super::type_model::{Binding, Ty};
-use super::super::{SemanticInput, span};
 use super::{
     PrivateOwnedAggregateLowerer, StatementOutcome, aggregate_graph_is_supported,
     owned_enum_graph_is_supported,
 };
+use crate::data_ownership_v1::diagnostics::span;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn lower_owned_aggregate_function_impl<'a>(

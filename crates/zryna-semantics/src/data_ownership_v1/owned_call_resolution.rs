@@ -1,7 +1,8 @@
 use zryna_syntax::v4 as syntax;
 
 use super::function_catalog::{FunctionCatalog, FunctionResolution, FunctionSignature};
-use super::{Errors, SemanticInput, Ty, span};
+use super::{Errors, SemanticInput, Ty};
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) struct OwnedCallResolution<'s, 'a, 'e> {
     pub(super) input: SemanticInput<'a>,

@@ -6,9 +6,10 @@ use super::super::owned_cfg_state::{
     release_owned_commit_transition, reserve_owned_commit_transition,
 };
 use super::super::owner_state::{OwnerDelta, apply_owner_delta};
+use super::super::semantic_type;
 use super::super::type_model::Binding;
-use super::super::{semantic_type, span};
 use super::{PrivateStringLowerer, StringBranchTypes};
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateStringLowerer<'_, '_, '_> {
     pub(super) fn lower_string_local(

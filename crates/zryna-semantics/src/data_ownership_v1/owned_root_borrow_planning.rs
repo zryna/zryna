@@ -1,10 +1,11 @@
 use zryna_layout::{TypeCategory, raw as raw_layout};
 use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawStatementKind, RawTypeSyntaxKind};
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::layout_graph::{Decl, semantic_type};
 use super::type_model::{OwnedRootBorrowSyntax, Ty};
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 fn direct_reference_name(function: &syntax::RawFunctionSyntax, expression: u32) -> Option<&str> {
     let expression =

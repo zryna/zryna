@@ -3,8 +3,8 @@ use zryna_source::SourceMap;
 use zryna_syntax::v4::{self as syntax, RawStatementKind};
 
 use super::diagnostics::Errors;
-use super::span;
 use super::type_model::TerminalOwnedIf;
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) fn root_is_terminal_if(function: &syntax::RawFunctionSyntax) -> bool {
     let Some(root) = usize::try_from(function.body.root_block)

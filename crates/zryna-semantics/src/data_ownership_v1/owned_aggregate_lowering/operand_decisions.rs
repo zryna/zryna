@@ -5,11 +5,12 @@ use zryna_source::Span;
 use zryna_syntax::v4 as syntax;
 
 use super::super::type_model::{OwnedAggregatePlace, ProjectedAggregateMoveContext};
-use super::super::{Binding, Errors, SemanticInput, Ty, span};
+use super::super::{Binding, Errors, SemanticInput, Ty};
 use super::availability::{AvailabilityView, materialized_availability};
 use super::{
     PrivateOwnedAggregateLowerer, aggregate_graph_is_supported, owned_enum_graph_is_supported,
 };
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) enum ReferenceKind {
     Copy,

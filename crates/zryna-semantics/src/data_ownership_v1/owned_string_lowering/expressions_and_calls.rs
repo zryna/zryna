@@ -7,11 +7,11 @@ use super::super::owned_lowering_resources::{
     OwnedStringPreparationBudget, preflight_owned_string_preparation,
 };
 use super::super::owner_state::{OwnerDelta, apply_owner_delta};
-use super::super::span;
 use super::super::string_vec_resource_estimates::{
     OwnedStringEstimateError, OwnedStringPreparationEstimate, estimate_owned_string_call_arguments,
 };
 use super::PrivateStringLowerer;
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateStringLowerer<'_, '_, '_> {
     fn readable_reference(

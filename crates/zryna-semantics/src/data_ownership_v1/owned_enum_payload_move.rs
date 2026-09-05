@@ -6,6 +6,7 @@ use zryna_syntax::v4::{
     self as syntax, RawDataDeclarationKind, RawExpressionKind, RawStatementKind,
 };
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::layout_graph::{Decl, semantic_type};
 use super::owned_aggregate_lowering::{
@@ -13,7 +14,7 @@ use super::owned_aggregate_lowering::{
 };
 use super::owned_control_flow_resources::enum_payload_move_resource_violation;
 use super::type_model::{OwnedStaticProjectionKind, Ty};
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 pub(super) fn is_private_owned_enum_payload_move_candidate(
     function: &syntax::RawFunctionSyntax,

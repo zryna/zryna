@@ -5,6 +5,7 @@ use zryna_layout::TypeCategory;
 use zryna_source::Span;
 use zryna_syntax::v4::{self as syntax, RawExpressionKind, RawFieldInitializerKind};
 
+use super::FunctionLowerer;
 use super::borrow_call_resources::{
     BorrowCallPreflightError, checked_add_resources, checked_call_delta, checked_merge_estimates,
     one_value_transition,
@@ -13,7 +14,7 @@ use super::borrow_forwarding::plan_forwarded_borrow_arguments;
 use super::function_catalog::{FunctionParameterOrder, FunctionResolution, FunctionSignature};
 use super::layout_graph::semantic_type;
 use super::type_model::{RootBorrowBudgetLimit, RootBorrowResources, Ty};
-use super::{FunctionLowerer, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 struct BorrowCallExpressionPreflight {
     resources: RootBorrowResources,

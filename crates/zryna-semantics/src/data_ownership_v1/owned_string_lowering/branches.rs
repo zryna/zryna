@@ -5,8 +5,8 @@ use zryna_syntax::v4::{RawExpressionKind, RawStatementKind};
 
 use super::super::owned_lowering_resources::{OwnedCleanupAccounting, OwnedCleanupActionContext};
 use super::super::owner_state::{OwnedStringBranchState, apply_owner_delta};
-use super::super::span;
 use super::{PrivateStringLowerer, StringBranchTypes};
+use crate::data_ownership_v1::diagnostics::span;
 
 impl PrivateStringLowerer<'_, '_, '_> {
     pub(super) fn condition(

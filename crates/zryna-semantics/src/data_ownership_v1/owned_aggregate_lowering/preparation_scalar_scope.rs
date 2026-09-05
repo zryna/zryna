@@ -52,7 +52,10 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             }
             _ => {
                 super::super::clone_decisions::nonaddressable_clone(
-                    super::super::super::span(self.decisions.input.sources(), expression.span),
+                    crate::data_ownership_v1::diagnostics::span(
+                        self.decisions.input.sources(),
+                        expression.span,
+                    ),
                     self.decisions.errors,
                 );
                 return None;
@@ -89,7 +92,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         }
         scalar_operations::missing_reference(
             &name.text,
-            super::super::super::span(self.decisions.input.sources(), name.span),
+            crate::data_ownership_v1::diagnostics::span(self.decisions.input.sources(), name.span),
             self.decisions.errors,
         );
         None

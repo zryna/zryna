@@ -3,13 +3,14 @@ use std::collections::{BTreeMap, BTreeSet};
 use zryna_layout::{self as layout, raw as raw_layout};
 use zryna_syntax::v4::{self as syntax, RawExpressionKind};
 
+use super::SemanticInput;
 use super::diagnostics::Errors;
 use super::function_catalog::{FunctionCatalog, FunctionParameterOrder, FunctionResolution};
 use super::layout_graph::Decl;
 use super::root_borrow_arm_planning::root_borrow_paths_overlap;
 use super::root_borrow_value_planning::plan_root_borrow_initializer;
 use super::type_model::{RootBorrowAlias, RootBorrowCallArgumentPlan, RootBorrowCallPlan, Ty};
-use super::{SemanticInput, span};
+use crate::data_ownership_v1::diagnostics::span;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn plan_root_borrow_call<'a>(
