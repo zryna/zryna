@@ -32,6 +32,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Start: [M3 composition](M3_OWNERSHIP_COMPOSITION.md), its [evidence map](M3_OWNERSHIP_COMPOSITION_EVIDENCE.md), and [Copy aggregate semantics](M3_COPY_AGGREGATE_SEMANTICS.md).
 - Entry: `crates/zryna-semantics/src/data_ownership_v1.rs::{SemanticInput::try_new,lower}`; follow the selected private lowering route, not every child module.
 - Aggregate preparation: `src/data_ownership_v1/owned_aggregate_lowering/{driver,constructor_preparation,constructor_resources}.rs`; Vec route: `owned_vec_lowering/{driver,constructors}.rs`.
+- Preparation lifecycle: `owned_aggregate_lowering/preparation_value.rs` builds the bound plan; `preparation_execution.rs` consumes it and `preparation_local_commit.rs` commits the local destination. `constructor_preparation.rs` owns the expression walk.
 - Shared typed constructor authority: `owned_constructor_plan.rs`; relevant tests live under `src/data_ownership_v1/tests/` and are registered by its parent tests module.
 - Focus: `pnpm m3:data:quick`; for authority changes also `pnpm m3:owned:quick` and `pnpm m3:contract`. Find the exact neighboring constructor/borrow/cleanup test before selecting a filter.
 - Mixed-construction preparation and its bounded evidence are described in the composition map above; this is internal work, not public M3 activation. Preserve both legacy and mixed diagnostic schedules, failure state and resource evidence; finish with full gates.

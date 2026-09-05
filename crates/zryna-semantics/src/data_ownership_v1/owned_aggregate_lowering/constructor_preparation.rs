@@ -5,13 +5,10 @@ use super::super::Ty;
 use super::super::owned_constructor_plan::ConstructorKind;
 use super::PrivateOwnedAggregateLowerer;
 use super::constructor_resources::ConstructorCommitReservation;
-use super::expression_decisions::{
-    ArrayDecision, ExpressionDecisions, ExpressionKind, StructDecision,
-};
+use super::expression_decisions::{ArrayDecision, ExpressionKind, StructDecision};
 use super::preparation_operations::PreparationContext;
 use super::preparation_plan::{Leaf, Operation, PreparationPlan};
 use super::preparation_plan::{StringOperation, StringRead};
-use super::preparation_state::PreparationState;
 
 #[cfg(test)]
 #[path = "../tests/mixed_byte_facts.rs"]
@@ -379,107 +376,6 @@ pub(super) struct PreparedValue<'l, 'a, 'f, 'e> {
     plan: PreparationPlan<'f>,
 }
 
-#[derive(Clone, Copy)]
-enum PreparationSite {
-    RootTopology,
-    LocalInitializer,
-}
-
-impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
-    pub(super) fn prepare(
-        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
-        id: u32,
-        expected: Ty,
-    ) -> Option<Self> {
-        Self::prepare_at(lowerer, id, expected, PreparationSite::RootTopology)
-    }
-
-    pub(super) fn prepare_local(
-        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
-        id: u32,
-        expected: Ty,
-    ) -> Option<Self> {
-        Self::prepare_at(lowerer, id, expected, PreparationSite::LocalInitializer)
-    }
-
-    fn prepare_at(
-        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
-        id: u32,
-        expected: Ty,
-        site: PreparationSite,
-    ) -> Option<Self> {
-        let start = lowerer.preparation_checkpoint();
-        let route = match site {
-            PreparationSite::RootTopology => super::mixed_shape::route(expected, lowerer.layouts),
-            PreparationSite::LocalInitializer => lowerer.local_preparation_route(expected),
-        };
-        if route == super::mixed_shape::PreparationRoute::LegacyVec {
-            lowerer.errors.at(
-                "ZRYNA-M3016",
-                super::super::span(
-                    lowerer.input.sources(),
-                    lowerer.function.body.expressions.get(id as usize)?.span,
-                ),
-                "scalar and String Vec roots require their existing ordered lowering route",
-                "keep this Vec root on its established construction authority",
-            );
-            return None;
-        }
-        let summary = route == super::mixed_shape::PreparationRoute::MixedSummary;
-        let storage = lowerer.preparation_storage();
-        let mut context = PreparationContext {
-            catalog: lowerer.catalog,
-            decisions: ExpressionDecisions {
-                input: lowerer.input,
-                file: lowerer.file,
-                function: lowerer.function,
-                module: lowerer.module,
-                declarations: lowerer.declarations,
-                graph: lowerer.graph,
-                node_types: lowerer.node_types,
-                layouts: lowerer.layouts,
-                errors: lowerer.errors,
-            },
-            bindings: &lowerer.bindings,
-            state: PreparationState {
-                original_places: &lowerer.places,
-                places: Vec::new(),
-                projections: lowerer.projections.clone(),
-                moved: lowerer.moved_projections.clone(),
-                partial: lowerer.partial_roots.clone(),
-                owners: lowerer.owners.clone(),
-                counts: start.counts,
-                storage,
-                transitions: lowerer.reserved_transitions,
-                types: lowerer.constructor_types.observed_snapshot(&lowerer.instructions),
-                cache: lowerer.constructor_types.checkpoint(),
-                summary,
-                facts: lowerer.preparation_facts.clone(),
-            },
-            aggregate_subobject_moves: lowerer.aggregate_subobject_moves,
-            steps: Vec::new(),
-            visits: 0,
-        };
-        let result = context.walk(id, expected)?;
-        let mut plan = PreparationPlan {
-            start,
-            steps: context.steps,
-            result,
-            result_type: expected,
-            owners: context.state.owners,
-            projections: context.state.projections,
-            moved: context.state.moved,
-            partial: context.state.partial,
-            places: context.state.places,
-            visits: context.visits,
-            facts: context.state.facts,
-        };
-        if summary {
-            resource_replay::validate(&mut plan, lowerer.layouts, lowerer.errors)?;
-        }
-        Some(Self { lowerer, plan })
-    }
-}
 #[path = "preparation_local_commit.rs"]
 mod local_commit;
 #[cfg(test)]
@@ -497,6 +393,8 @@ mod scalar_private_controls;
 #[cfg(test)]
 #[path = "../tests/scalar_resource_controls.rs"]
 mod scalar_resource_controls;
+#[path = "preparation_value.rs"]
+mod value;
 pub(super) use local_commit::PreparedLocal;
 #[cfg(test)]
 #[path = "../tests/local_tail_supplement_controls.rs"]
