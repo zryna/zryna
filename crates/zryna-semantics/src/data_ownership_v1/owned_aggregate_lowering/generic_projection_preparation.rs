@@ -96,6 +96,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             .any(|binding| binding.place == source.root && binding.ty.is_copy());
         let state = &self.state;
         copy_root
+            || self.state.facts.initialized_copy_roots.contains(&source.root)
             || AvailabilityView::new(&state.owners, &state.moved, &state.partial, |id| {
                 state.parent(id)
             })

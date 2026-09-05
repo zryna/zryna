@@ -29,8 +29,28 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(JoinState {
             bindings: self.bindings.clone(),
             owners: self.owners.clone(),
-            moved: self.moved_projections.clone(),
-            partial: self.partial_roots.clone(),
+            moved: self
+                .moved_projections
+                .iter()
+                .copied()
+                .filter(|place| {
+                    let mut root = *place;
+                    while let Some(parent) = self
+                        .places
+                        .get(root.0 as usize)
+                        .and_then(|place| super::availability::parent_kind(&place.kind))
+                    {
+                        root = parent;
+                    }
+                    self.owners.contains(root)
+                })
+                .collect(),
+            partial: self
+                .partial_roots
+                .iter()
+                .copied()
+                .filter(|root| self.owners.contains(*root))
+                .collect(),
             bytes: self.preparation_facts.string_bytes.clone(),
         })
     }

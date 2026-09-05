@@ -151,6 +151,25 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
         ty: Ty,
         at: Span,
     ) -> Option<raw::ValueId> {
+        if let Some(binding) = self.bindings.get(&name.text).cloned()
+            && self.state.parent(binding.place).is_some()
+        {
+            let mut root = binding.place;
+            while let Some(parent) = self.state.parent(root) {
+                root = parent;
+            }
+            return self.resolved_projection(
+                OwnedAggregatePlace {
+                    ty: binding.ty,
+                    place: binding.place,
+                    root,
+                    mutable: binding.mutable,
+                    is_root: false,
+                },
+                ty,
+                at,
+            );
+        }
         let decision = self.operands().reference_decision(name, ty)?;
         self.emit_leaf(Leaf::Reference(decision), ty, at)
     }
@@ -181,7 +200,13 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
                 after,
             });
         }
-        result
+        result.map(|mut source| {
+            while let Some(parent) = self.state.parent(source.root) {
+                source.root = parent;
+            }
+            source.is_root = source.place == source.root;
+            source
+        })
     }
 
     pub(super) fn projection(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
@@ -218,6 +243,10 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
         if self.state.summary
             && let syntax::RawExpressionKind::Reference { name } =
                 &self.decisions.function.body.expressions.get(id as usize)?.kind
+            && self
+                .bindings
+                .get(&name.text)
+                .is_none_or(|binding| self.state.parent(binding.place).is_none())
         {
             let (place, bytes) = super::super::owned_string_read::local_source(
                 name,

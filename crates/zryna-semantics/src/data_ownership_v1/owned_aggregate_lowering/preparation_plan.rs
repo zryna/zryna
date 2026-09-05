@@ -13,6 +13,7 @@ use super::projection_topology::ProjectionDescriptor;
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub(super) struct PreparationFacts {
+    pub(super) initialized_copy_roots: BTreeSet<raw::PlaceId>,
     pub(super) parameter_borrows: BTreeSet<raw::BorrowId>,
     pub(super) aliases: BTreeMap<String, LexicalAlias>,
     pub(super) next_borrow: u32,

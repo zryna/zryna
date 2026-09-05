@@ -6,6 +6,7 @@ use super::super::owned_cfg_state::OwnedCfgState;
 use super::PrivateOwnedAggregateLowerer;
 
 pub(super) struct StructuredBlock {
+    parameters: Vec<raw::ValueDefinition>,
     start: usize,
     range: Range<usize>,
     pub(super) terminator: Option<raw::SpannedTerminator>,
@@ -21,7 +22,12 @@ pub(super) struct StructuredGraph {
 impl StructuredGraph {
     pub(super) fn new() -> Self {
         Self {
-            blocks: vec![StructuredBlock { start: 0, range: 0..0, terminator: None }],
+            blocks: vec![StructuredBlock {
+                parameters: Vec::new(),
+                start: 0,
+                range: 0..0,
+                terminator: None,
+            }],
             current: 0,
             edges: 0,
             held_terminators: 0,
@@ -45,7 +51,12 @@ impl StructuredGraph {
         let id = raw::BlockId(u32::try_from(self.blocks.len()).ok()?);
         self.current = self.blocks.len();
         let start = lowerer.instructions.len();
-        self.blocks.push(StructuredBlock { start, range: start..start, terminator: None });
+        self.blocks.push(StructuredBlock {
+            parameters: Vec::new(),
+            start,
+            range: start..start,
+            terminator: None,
+        });
         Some(id)
     }
 
@@ -106,6 +117,38 @@ impl StructuredGraph {
         edge.target = target;
     }
 
+    pub(super) fn result_parameter(
+        &mut self,
+        lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
+        ty: super::Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        if !lowerer.resource_usage().value(at, lowerer.errors)
+            || !lowerer.resource_usage().places(usize::from(!ty.is_copy()), at, lowerer.errors)
+        {
+            return None;
+        }
+        let value = raw::ValueId(lowerer.next_value);
+        let definition = raw::ValueDefinition { id: value, ty: ty.ir, span: at };
+        lowerer
+            .constructor_types
+            .record_block_parameter(&lowerer.instructions, &definition)
+            .ok()?;
+        lowerer.next_value += 1;
+        if !ty.is_copy() {
+            let owner = raw::PlaceId(u32::try_from(lowerer.places.len()).ok()?);
+            lowerer.places.push(raw::Place {
+                id: owner,
+                ty: ty.ir,
+                span: at,
+                kind: raw::PlaceKind::Temporary(value),
+            });
+            lowerer.owners.register(value, owner)?;
+        }
+        self.blocks[self.current].parameters.push(definition);
+        Some(value)
+    }
+
     pub(super) fn finish(
         self,
         lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
@@ -126,7 +169,7 @@ impl StructuredGraph {
             if index != 0 {
                 cfg.begin_block(
                     raw::BlockId(u32::try_from(index).ok()?),
-                    Vec::new(),
+                    block.parameters,
                     at,
                     lowerer.errors,
                 )?;

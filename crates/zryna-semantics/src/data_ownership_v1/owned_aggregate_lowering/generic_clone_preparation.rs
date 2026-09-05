@@ -17,7 +17,8 @@ impl PreparationContext<'_, '_, '_, '_> {
         if matches!(
             expression.kind,
             RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. }
-        ) {
+        ) || matches!(&expression.kind, RawExpressionKind::Reference { name } if self.bindings.get(&name.text).is_some_and(|binding| self.state.parent(binding.place).is_some()))
+        {
             let source = self.resolve(id)?;
             let state = &self.state;
             let available =

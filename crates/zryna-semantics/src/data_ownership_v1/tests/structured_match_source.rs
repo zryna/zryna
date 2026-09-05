@@ -1,0 +1,173 @@
+use super::*;
+
+#[test]
+fn structured_match_owned_payloads_join_one_result_and_continue() {
+    use structured_owned_fixture::Payload;
+    for payload in [
+        Payload::String,
+        Payload::Array(0),
+        Payload::Array(2),
+        Payload::Vec,
+        Payload::Nested,
+        Payload::Struct,
+        Payload::Enum,
+    ] {
+        for cloned in [false, true] {
+            for local in [false, true] {
+                let (text, raw) = structured_owned_fixture::match_fixture(payload, cloned, local);
+                let sources = sources_for(&text);
+                let syntax =
+                    verify_snapshot(raw, &sources).expect("authenticated two-arm owned match");
+                let program = lower(pair_input(&syntax, &sources))
+                    .expect("owned match continuation verifies");
+                let function = program
+                    .verified_ir()
+                    .modules()
+                    .next()
+                    .expect("module")
+                    .functions()
+                    .next()
+                    .expect("function");
+                let blocks = function.blocks().collect::<Vec<_>>();
+                assert_eq!(blocks.len(), 4);
+                assert_eq!(blocks[0].terminator().kind(), VerifiedTerminatorKind::EnumMatch);
+                assert_eq!(blocks[3].parameters().len(), 1);
+                for (ordinal, arm) in blocks[1..3].iter().enumerate() {
+                    assert_eq!(
+                        arm.terminator()
+                            .edges()
+                            .next()
+                            .expect("continuation edge")
+                            .arguments()
+                            .len(),
+                        1
+                    );
+                    let expected = if !cloned {
+                        VerifiedInstructionKind::GenericMoveFromPlace
+                    } else if matches!(payload, Payload::String) {
+                        VerifiedInstructionKind::StringClone
+                    } else {
+                        VerifiedInstructionKind::GenericClonePlace
+                    };
+                    assert_eq!(
+                        arm.instructions().map(FaultVerifiedInstruction::kind).collect::<Vec<_>>(),
+                        vec![expected, VerifiedInstructionKind::DropPlace]
+                    );
+                    let dropped = arm
+                        .instructions()
+                        .last()
+                        .expect("enum cleanup")
+                        .derived_drop_actions()
+                        .collect::<Vec<_>>();
+                    assert_eq!(dropped.len(), 1);
+                    assert_eq!(
+                        dropped[0].active_variant(),
+                        Some(u32::try_from(ordinal).expect("two variants"))
+                    );
+                    assert_eq!(dropped[0].moved_projections().len(), usize::from(!cloned));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn structured_match_bad_arm_values_reject_and_replay_exact_diagnostics() {
+    use zryna_syntax::v4::RawExpressionKind;
+    for wrong_type in [false, true] {
+        let (mut text, mut raw) = structured_owned_fixture::match_fixture(
+            structured_owned_fixture::Payload::String,
+            false,
+            true,
+        );
+        let expression = raw.files[0].functions[0].body.expressions.iter_mut().find(|expression| matches!(&expression.kind, RawExpressionKind::Reference { name } if name.text == "first")).expect("first payload use");
+        let untrusted = expression.span;
+        let replacement = if wrong_type { "false" } else { "third" };
+        text.replace_range(untrusted.start as usize..untrusted.end as usize, replacement);
+        expression.kind = if wrong_type {
+            RawExpressionKind::BoolLiteral { value: false }
+        } else {
+            RawExpressionKind::Reference {
+                name: RawIdentifierSyntax { text: replacement.into(), span: untrusted },
+            }
+        };
+        let sources = sources_for(&text);
+        let syntax = verify_snapshot(raw, &sources).expect("authenticated bad arm expression");
+        let first = lower(pair_input(&syntax, &sources)).expect_err("bad arm rejects");
+        assert_eq!(
+            first,
+            lower(pair_input(&syntax, &sources)).expect_err("deterministic rejection")
+        );
+        assert_eq!(first.len(), 1);
+        assert_eq!(first[0].code(), if wrong_type { "ZRYNA-M3016" } else { "ZRYNA-M3002" });
+        assert_eq!(first[0].primary_span(), Some(span(&sources, untrusted)));
+    }
+}
+
+#[test]
+fn structured_match_copy_payload_continuation_retains_surrounding_owned_parameter() {
+    let (text, raw) = structured_owned_fixture::match_fixture(
+        structured_owned_fixture::Payload::I32,
+        false,
+        true,
+    );
+    let sources = sources_for(&text);
+    let syntax = verify_snapshot(raw, &sources)
+        .expect("authenticated Copy match with owned surrounding state");
+    let program = lower(pair_input(&syntax, &sources)).expect("Copy payload continuation");
+    let function = program
+        .verified_ir()
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function");
+    let blocks = function.blocks().collect::<Vec<_>>();
+    assert_eq!(blocks.len(), 4);
+    assert_eq!(
+        blocks[0].instructions().map(FaultVerifiedInstruction::kind).collect::<Vec<_>>(),
+        vec![VerifiedInstructionKind::CopyFromPlace, VerifiedInstructionKind::InitializePlace]
+    );
+    for (ordinal, arm) in blocks[1..3].iter().enumerate() {
+        assert_eq!(
+            arm.instructions().map(FaultVerifiedInstruction::kind).collect::<Vec<_>>(),
+            vec![
+                VerifiedInstructionKind::CopyFromPlace,
+                VerifiedInstructionKind::BeginBorrow,
+                VerifiedInstructionKind::BorrowWrite,
+                VerifiedInstructionKind::EndBorrow
+            ]
+        );
+        let instructions = arm.instructions().collect::<Vec<_>>();
+        let original = blocks[0]
+            .instructions()
+            .next()
+            .expect("once-evaluated Copy scrutinee")
+            .result()
+            .expect("Copy result");
+        assert_eq!(instructions[2].value_operands().collect::<Vec<_>>(), vec![original]);
+        let temporary = blocks[0]
+            .instructions()
+            .nth(1)
+            .expect("private initialization")
+            .place_operands()
+            .next()
+            .expect("temporary");
+        assert_eq!(instructions[1].place_operands().collect::<Vec<_>>(), vec![temporary]);
+        let borrow = instructions[1].borrow().expect("private exclusive authority");
+        assert_eq!(borrow.index(), u32::try_from(ordinal).expect("two arm authorities"));
+        assert_eq!(instructions[2].borrow(), Some(borrow));
+        assert_eq!(instructions[3].borrow(), Some(borrow));
+        assert_eq!(
+            arm.terminator().edges().next().expect("join edge").arguments().collect::<Vec<_>>(),
+            vec![instructions[0].result().expect("payload Copy value")]
+        );
+        for instruction in instructions {
+            assert_eq!(instruction.derived_drop_actions().len(), 0);
+        }
+    }
+    assert_eq!(blocks[3].terminator().derived_drop_actions().len(), 1);
+    let replay = lower(pair_input(&syntax, &sources)).expect("deterministic Copy match replay");
+    assert_eq!(format!("{:?}", program.verified_ir()), format!("{:?}", replay.verified_ir()));
+}

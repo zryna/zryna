@@ -226,9 +226,6 @@ fn lower_function_impl<'a>(
     });
     let terminal_owned_phi_candidate =
         is_terminal_owned_phi_candidate(function, result.category, has_vec_operation);
-    if !terminal_owned_phi_candidate {
-        verify_single_final_return(function, input.sources(), errors)?;
-    }
     let generic_function = catalog
         .modules
         .get(module)
@@ -246,8 +243,19 @@ fn lower_function_impl<'a>(
         });
     let existing_payload_move = function.export_span.is_none()
         && matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
+        && !function.body.expressions.iter().any(|expression| matches!(&expression.kind, RawExpressionKind::Match { arms, .. } if arms.len() > 1))
         && is_private_owned_enum_payload_move_candidate(function);
     if generic_function && !existing_payload_move {
+        if !function.body.statements.iter().any(|statement| {
+            matches!(statement.kind, RawStatementKind::If { .. } | RawStatementKind::While { .. })
+        }) && !function
+            .body
+            .expressions
+            .iter()
+            .any(|expression| matches!(expression.kind, RawExpressionKind::Match { .. }))
+        {
+            verify_single_final_return(function, input.sources(), errors)?;
+        }
         return lower_private_owned_aggregate_function(
             input,
             module,
@@ -261,6 +269,9 @@ fn lower_function_impl<'a>(
             result,
             errors,
         );
+    }
+    if !terminal_owned_phi_candidate {
+        verify_single_final_return(function, input.sources(), errors)?;
     }
     if result.category == TypeCategory::String
         && function.export_span.is_none()

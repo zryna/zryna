@@ -235,9 +235,17 @@ fn lower_owned_aggregate_function_impl<'a>(
         }
     }
     if generic_function
-        && function.body.statements.iter().any(|statement| {
-            matches!(statement.kind, RawStatementKind::If { .. } | RawStatementKind::While { .. })
-        })
+        && (function
+            .body
+            .expressions
+            .iter()
+            .any(|expression| matches!(expression.kind, syntax::RawExpressionKind::Match { .. }))
+            || function.body.statements.iter().any(|statement| {
+                matches!(
+                    statement.kind,
+                    RawStatementKind::If { .. } | RawStatementKind::While { .. }
+                )
+            }))
     {
         let blocks = lowerer.lower_structured_cfg(&parameters, result)?;
         assert!(lowerer.constructor_storage_is_clear(), "structured constructor credits released");

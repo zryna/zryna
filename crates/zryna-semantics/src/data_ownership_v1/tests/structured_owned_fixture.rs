@@ -2,6 +2,11 @@ use super::*;
 use zryna_source::UntrustedSpan;
 use zryna_syntax::v4::{RawElseSyntax, RawExpressionKind};
 
+#[path = "structured_match_fixture.rs"]
+mod match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::Payload;
+pub(in crate::data_ownership_v1) use match_fixture::fixture as match_fixture;
+
 pub(super) enum Statement {
     Local(&'static str, &'static str, bool),
     Return(&'static str),
@@ -11,6 +16,7 @@ pub(super) enum Statement {
 
 #[derive(Default)]
 struct Builder {
+    owned_payload: Option<Payload>,
     text: String,
     types: Vec<RawTypeSyntax>,
     blocks: Vec<RawBlockSyntax>,
@@ -35,6 +41,11 @@ impl Builder {
         RawIdentifierSyntax { text: text.into(), span: self.text(text) }
     }
     fn ty(&mut self, owned: bool) -> u32 {
+        if owned && let Some(payload) = self.owned_payload.take() {
+            let id = self.payload_type(payload);
+            self.owned_payload = Some(payload);
+            return id;
+        }
         let start = self.text.len();
         let kind = if owned {
             RawTypeSyntaxKind::String { keyword_span: self.text("String") }
@@ -181,7 +192,20 @@ impl Builder {
 }
 
 pub(super) fn fixture(statements: &[Statement]) -> (String, RawProjectSyntaxSnapshot) {
+    payload_fixture(statements, Payload::String)
+}
+
+pub(super) fn payload_fixture(
+    statements: &[Statement],
+    payload: Payload,
+) -> (String, RawProjectSyntaxSnapshot) {
     let mut builder = Builder::default();
+    let declarations = builder.payload_declaration(payload).into_iter().collect::<Vec<_>>();
+    if !declarations.is_empty() {
+        builder.text("\n");
+    }
+    builder.owned_payload = Some(payload);
+    let function_start = builder.text.len();
     let function_span = builder.text("function");
     builder.text(" ");
     let name = builder.name("compose");
@@ -202,7 +226,7 @@ pub(super) fn fixture(statements: &[Statement]) -> (String, RawProjectSyntaxSnap
     builder.text(" ");
     let root_block = builder.block(statements);
     let function = RawFunctionSyntax {
-        span: builder.span(0),
+        span: builder.span(function_start),
         export_span: None,
         function_span,
         name,
@@ -225,7 +249,7 @@ pub(super) fn fixture(statements: &[Statement]) -> (String, RawProjectSyntaxSnap
                 path: "src/main.zry".into(),
                 imports: Vec::new(),
                 type_syntax: builder.types,
-                data_declarations: Vec::new(),
+                data_declarations: declarations,
                 functions: vec![function],
             }],
             diagnostics: Vec::new(),

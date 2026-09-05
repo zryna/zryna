@@ -68,7 +68,12 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         let expression = self.decisions.function.body.expressions.get(usize::try_from(id).ok()?)?;
         let at = span(self.decisions.input.sources(), expression.span);
         let (place, root, bytes) = match &expression.kind {
-            RawExpressionKind::Reference { name } => {
+            RawExpressionKind::Reference { name }
+                if self
+                    .bindings
+                    .get(&name.text)
+                    .is_none_or(|binding| self.state.parent(binding.place).is_none()) =>
+            {
                 let (place, bytes) = super::super::super::owned_string_read::local_source(
                     name,
                     self.bindings,
@@ -80,7 +85,9 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 )?;
                 (place, place, bytes)
             }
-            RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. } => {
+            RawExpressionKind::Reference { .. }
+            | RawExpressionKind::FieldAccess { .. }
+            | RawExpressionKind::Index { .. } => {
                 let source = self.string_read_projection(id, ty, at)?;
                 (
                     source.place,

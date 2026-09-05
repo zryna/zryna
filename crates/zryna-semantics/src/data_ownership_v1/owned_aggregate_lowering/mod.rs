@@ -49,7 +49,10 @@ mod shape;
 mod state;
 mod statements;
 mod structured_cfg;
+mod structured_checkpoint;
 mod structured_graph;
+mod structured_match;
+mod structured_match_local;
 mod structured_state;
 mod vec_push_preparation;
 

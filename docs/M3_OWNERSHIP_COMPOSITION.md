@@ -161,8 +161,15 @@ It records dense instruction ranges, explicitly restores branch planning state, 
 fallthrough ownership and loop-header masks, inserts lexical cleanup, and replays the completed
 graph through `OwnedCfgState`. Authenticated `structured_owned_` tests cover nested/repeated
 String-owner branches, a nested branch in a loop, terminal branch returns, unequal-state rejection,
-and deterministic replay. This checkpoint is not #279 completion: multi-arm/nonterminal C6 match
-continuations, the complete mixed-graph C7 matrix, and independent hostile/resource evidence remain.
+and deterministic replay. `structured_match_` adds exhaustive multi-arm owned payload transfer or
+clone into one typed continuation parameter, both direct-return and local-initializer forms. Copy
+scrutinees use a compiler-private initialized temporary: each arm restores its original once-evaluated
+SSA value through exclusive `BeginBorrow`/`BorrowWrite`/`EndBorrow`, so ordinary verifier refinement
+rules admit the join without owner effects. Mixed Struct/Enum/Array/Vec scope graphs and checked
+value/place/transition/cleanup exact, first-extra, overflow and pristine recovery have focused tests.
+Rejected CFG preparation restores its full source planning checkpoint. This is not #279 completion:
+matches nested inside arbitrary constructor/call operands, the complete C7 interaction matrix, and
+independent hostile evidence remain; no source handle or runtime-execution support is claimed.
 
 ## C8: Upgrade-success edge signature
 

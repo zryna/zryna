@@ -8,8 +8,25 @@ use super::super::layout_graph::semantic_type;
 use super::structured_graph::StructuredGraph;
 use super::{PrivateOwnedAggregateLowerer, StatementOutcome, Ty};
 
+#[cfg(test)]
+#[path = "../tests/structured_cfg_resources.rs"]
+mod resources;
+
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn lower_structured_cfg(
+        &mut self,
+        parameters: &[raw::ValueDefinition],
+        result: Ty,
+    ) -> Option<Vec<raw::Block>> {
+        let checkpoint = super::structured_checkpoint::StructuredCheckpoint::capture(self);
+        let outcome = self.lower_structured_cfg_inner(parameters, result);
+        if outcome.is_none() {
+            checkpoint.restore(self);
+        }
+        outcome
+    }
+
+    fn lower_structured_cfg_inner(
         &mut self,
         parameters: &[raw::ValueDefinition],
         result: Ty,
@@ -67,7 +84,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     self.structured_loop(condition, body_block, result, statement_span, graph)?;
                 }
                 RawStatementKind::Return { value, .. } => {
-                    let value = self.value(value, result)?;
+                    for _ in 0..scope.drop_credits {
+                        self.release_transition();
+                    }
+                    scope.drop_credits = 0;
+                    let value = self.structured_value(value, result, graph)?;
                     let mut ended: Vec<_> =
                         self.preparation_facts.active_borrows.keys().copied().collect();
                     ended.reverse();
@@ -110,6 +131,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                             }
                             scope.drop_credits += 1;
                         }
+                        if self.structured_match_local(&statement, ty, graph)? {
+                            continue;
+                        }
                     }
                     if !matches!(
                         self.lower_statement(id, &statement, result, None, 0)?,
@@ -120,8 +144,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 }
             }
         }
+        self.finish_structured_scope(&scope, fallthrough)
+    }
+
+    fn finish_structured_scope(
+        &mut self,
+        scope: &super::lexical_indexed_scope::Scope,
+        fallthrough: bool,
+    ) -> Option<bool> {
         if fallthrough {
-            self.end_lexical_scope(&scope)?;
+            self.end_lexical_scope(scope)?;
         } else {
             for _ in 0..scope.drop_credits {
                 self.release_transition();

@@ -50,3 +50,40 @@ fn structured_owned_unequal_branches_and_loop_header_moves_reject_deterministica
         assert_eq!(first[0].code(), "ZRYNA-M3015");
     }
 }
+
+#[test]
+fn structured_owned_mixed_graphs_compose_nested_scopes_loops_and_returns() {
+    use structured_owned_fixture::{Payload, payload_fixture};
+    for payload in [
+        Payload::Array(0),
+        Payload::Array(2),
+        Payload::Vec,
+        Payload::Nested,
+        Payload::Struct,
+        Payload::Enum,
+    ] {
+        let body = [
+            While(vec![If(vec![Local("inner", "seed", true)], vec![])]),
+            If(vec![Local("last", "seed", true), Return("last")], vec![Return("seed")]),
+        ];
+        let (text, raw) = payload_fixture(&body, payload);
+        let sources = sources_for(&text);
+        let syntax = verify_snapshot(raw, &sources).expect("authenticated mixed graph CFG");
+        let program = lower(pair_input(&syntax, &sources)).expect("mixed ownership flow verifies");
+        let function = program
+            .verified_ir()
+            .modules()
+            .next()
+            .expect("module")
+            .functions()
+            .next()
+            .expect("function");
+        assert_eq!(
+            function
+                .blocks()
+                .filter(|block| block.terminator().kind() == VerifiedTerminatorKind::Return)
+                .count(),
+            2
+        );
+    }
+}
