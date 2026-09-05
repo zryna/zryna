@@ -147,7 +147,7 @@ fn nested_shared_payload_moves_into_outer_control_without_implicit_clone() {
     assert_eq!(block.terminator().derived_drop_actions().count(), 3);
 }
 
-fn rejected(case: Case, message: &str, guidance: &str) {
+fn rejected(case: Case, code: &str, message: &str, guidance: &str) {
     let (source, raw) = fixture_case(case);
     let body = &raw.files[0].functions[0].body;
     let expression = body
@@ -164,12 +164,7 @@ fn rejected(case: Case, message: &str, guidance: &str) {
     assert!(source[operation_at.start as usize..operation_at.end as usize].starts_with("clone("));
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("authenticated rejected handle source");
-    let expected = vec![Diagnostic::error_at(
-        if matches!(case, Case::MovedReuse) { "ZRYNA-M3014" } else { "ZRYNA-M3013" },
-        span(&sources, at),
-        message,
-        guidance,
-    )];
+    let expected = vec![Diagnostic::error_at(code, span(&sources, at), message, guidance)];
     for _ in 0..2 {
         assert_eq!(lower(pair_input(&syntax, &sources)).expect_err("handle rejection"), expected);
     }
@@ -179,6 +174,7 @@ fn rejected(case: Case, message: &str, guidance: &str) {
 fn moved_handle_clone_reports_exact_diagnostic_and_replays() {
     rejected(
         Case::MovedReuse,
+        "ZRYNA-M3014",
         "shared or weak handle is moved or unavailable",
         "use one complete initialized handle before moving it",
     );
@@ -188,7 +184,18 @@ fn moved_handle_clone_reports_exact_diagnostic_and_replays() {
 fn wrong_handle_clone_type_reports_exact_diagnostic_and_replays() {
     rejected(
         Case::WrongCloneType,
+        "ZRYNA-M3013",
         "shared or weak operation has the wrong exact handle type",
         "clone one exact handle or downgrade Shared<T> to Weak<T>",
+    );
+}
+
+#[test]
+fn missing_handle_source_reports_exact_diagnostic_and_replays() {
+    rejected(
+        Case::MissingHandle,
+        "ZRYNA-M3002",
+        "aggregate value 'ghost' is not declared",
+        "reference one exact preceding local using its declared spelling",
     );
 }
