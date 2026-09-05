@@ -31,6 +31,20 @@ by these symbolic tests. Existing independent IR resource and ABI transition sui
 required alongside this matrix. Full gate/CI receipts must be recorded separately when run;
 listing an executable here is not a claim that Linux/Windows integration gates already passed.
 
+## Issue #261 source integration checkpoint
+
+The semantic source route now maps authenticated `Shared<T>`/`Weak<T>` types and lowers direct
+straight-line `shared(value)`, explicit handle `clone`, and `downgrade` expressions through
+mandatory IR verification. Named source tests cover bool, i32, String, nominal Struct/Enum,
+zero/nonzero fixed arrays, positive-stride Vec, and nested Shared payloads. They also pin source
+order, reverse failure cleanup, moved/wrong-type diagnostics, deterministic rejection replay, and
+the exact/first-extra cleanup-action frontier with pristine recovery.
+
+This is a bounded #261 progress checkpoint, not issue or #83 closure. Temporary handle operands,
+generic structural clones containing handle leaves, full count/allocation execution faults, and
+CFG upgrade/call/match composition still require their #260–#263 authorities and named evidence
+below. No target runtime or public profile is enabled.
+
 ## Existing evidence and its limits
 
 All names below are existing tests in

@@ -30,6 +30,29 @@ fn shared_and_weak_source_operations_preserve_exact_handle_ownership() {
             VerifiedInstructionKind::WeakClone,
         ]
     );
+    let cleanup_roots = instructions
+        .iter()
+        .filter(|instruction| {
+            matches!(
+                instruction.kind(),
+                VerifiedInstructionKind::SharedConstruct
+                    | VerifiedInstructionKind::SharedClone
+                    | VerifiedInstructionKind::WeakDowngrade
+                    | VerifiedInstructionKind::WeakClone
+            )
+        })
+        .map(|instruction| {
+            instruction
+                .derived_drop_actions()
+                .map(|action| action.root().index())
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        cleanup_roots,
+        [vec![1], vec![3], vec![5, 3], vec![7, 5, 3]],
+        "allocation/count failures retain each source and release earlier owners in reverse order"
+    );
     assert_eq!(
         function.blocks().next().expect("block").terminator().derived_drop_actions().count(),
         3,
@@ -48,8 +71,16 @@ fn shared_and_weak_source_lowering_replays_identically() {
 }
 
 #[test]
-fn shared_and_weak_scalar_payload_categories_lower_through_verified_ir() {
-    for case in [Case::ScalarBool, Case::ScalarI32] {
+fn shared_and_weak_structural_payload_categories_lower_through_verified_ir() {
+    for case in [
+        Case::ScalarBool,
+        Case::ScalarI32,
+        Case::NominalEnum,
+        Case::NominalStruct,
+        Case::StringArrayZero,
+        Case::StringArrayOne,
+        Case::StringVec,
+    ] {
         let (source, raw) = fixture_case(case);
         let sources = sources_for(&source);
         let syntax = verify_snapshot(raw, &sources).expect("authenticated scalar handle fixture");
@@ -118,15 +149,19 @@ fn nested_shared_payload_moves_into_outer_control_without_implicit_clone() {
 
 fn rejected(case: Case, message: &str, guidance: &str) {
     let (source, raw) = fixture_case(case);
-    let expression = raw.files[0].functions[0]
-        .body
+    let body = &raw.files[0].functions[0].body;
+    let expression = body
         .expressions
         .iter()
         .rev()
         .find(|expression| matches!(expression.kind, RawExpressionKind::Clone { .. }))
         .expect("rejected clone expression");
-    let at = expression.span;
-    assert!(source[at.start as usize..at.end as usize].starts_with("clone("));
+    let RawExpressionKind::Clone { value, .. } = expression.kind else {
+        unreachable!("selected clone")
+    };
+    let operation_at = expression.span;
+    let at = body.expressions[value as usize].span;
+    assert!(source[operation_at.start as usize..operation_at.end as usize].starts_with("clone("));
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("authenticated rejected handle source");
     let expected = vec![Diagnostic::error_at(

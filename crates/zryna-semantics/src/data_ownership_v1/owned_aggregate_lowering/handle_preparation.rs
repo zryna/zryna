@@ -53,6 +53,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         operation: HandleOperation,
         at: Span,
     ) -> Option<raw::ValueId> {
+        let operand_at = self.expression_span(id)?;
         let source = self.resolve(id)?;
         let valid = source.ty == operand
             && match operation {
@@ -71,13 +72,13 @@ impl PreparationContext<'_, '_, '_, '_> {
         if !valid {
             self.decisions.errors.at(
                 "ZRYNA-M3013",
-                at,
+                operand_at,
                 "shared or weak operation has the wrong exact handle type",
                 "clone one exact handle or downgrade Shared<T> to Weak<T>",
             );
             return None;
         }
-        self.available_handle(source, at)?;
+        self.available_handle(source, operand_at)?;
         let cleanup = self.reverse(result, at)?;
         let leaf = match operation {
             HandleOperation::SharedClone => Leaf::SharedClone { source: source.place, cleanup },

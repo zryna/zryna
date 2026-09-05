@@ -162,7 +162,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         }))
     }
 
-    fn expression_span(&self, id: u32) -> Option<Span> {
+    pub(super) fn expression_span(&self, id: u32) -> Option<Span> {
         let expression = self.decisions.function.body.expressions.get(usize::try_from(id).ok()?)?;
         Some(crate::data_ownership_v1::diagnostics::span(
             self.decisions.input.sources(),
@@ -480,6 +480,9 @@ mod scalar_private_controls;
 #[cfg(test)]
 #[path = "../tests/scalar_resource_controls.rs"]
 mod scalar_resource_controls;
+#[cfg(test)]
+#[path = "../tests/shared_weak_resources.rs"]
+mod shared_weak_resources;
 #[path = "preparation_value.rs"]
 mod value;
 pub(super) use local_commit::PreparedLocal;

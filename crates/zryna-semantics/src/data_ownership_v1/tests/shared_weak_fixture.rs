@@ -1,4 +1,5 @@
 use super::*;
+use zryna_syntax::v4::RawEnumVariant;
 
 fn unary(f: &mut Builder, spelling: &str, value: impl FnOnce(&mut Builder) -> u32) -> u32 {
     let start = f.source.len();
@@ -48,12 +49,75 @@ fn local(f: &mut Builder, name: &str, ty: &Ty, initializer: impl FnOnce(&mut Bui
     f.text(" ");
 }
 
+fn nominal_payload(f: &mut Builder, enum_payload: bool) -> RawDataDeclaration {
+    let start = f.source.len();
+    let interface_span = f.text("interface");
+    f.text(" ");
+    let name = f.name("Payload");
+    f.text(" ");
+    let extends_span = f.text("extends");
+    f.text(" ");
+    let marker_span = f.text(if enum_payload { "ZrynaEnum" } else { "ZrynaStruct" });
+    f.text(" ");
+    let open_brace_span = f.text("{");
+    f.text(" ");
+    let member_start = f.source.len();
+    let member = f.name("value");
+    let colon_span = f.text(":");
+    f.text(" ");
+    let string = f.ty(&Ty::String);
+    let semicolon_span = f.text(";");
+    f.text(" ");
+    let close_brace_span = f.text("}");
+    f.text("\n");
+    let kind = if enum_payload {
+        RawDataDeclarationKind::Enum {
+            interface_span,
+            name,
+            extends_span,
+            marker_span,
+            open_brace_span,
+            close_brace_span,
+            variants: vec![RawEnumVariant {
+                span: at(member_start, semicolon_span.end as usize),
+                name: member,
+                colon_span,
+                payload_type: Some(string),
+                none_span: None,
+                semicolon_span,
+            }],
+        }
+    } else {
+        RawDataDeclarationKind::Struct {
+            interface_span,
+            name,
+            extends_span,
+            marker_span,
+            open_brace_span,
+            close_brace_span,
+            fields: vec![RawDataField {
+                span: at(member_start, semicolon_span.end as usize),
+                name: member,
+                colon_span,
+                type_syntax: string,
+                semicolon_span,
+            }],
+        }
+    };
+    RawDataDeclaration { span: at(start, close_brace_span.end as usize), export_span: None, kind }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) enum Case {
     Positive,
     NestedShared,
     ScalarBool,
     ScalarI32,
+    NominalEnum,
+    NominalStruct,
+    StringArrayZero,
+    StringArrayOne,
+    StringVec,
     MovedReuse,
     WrongCloneType,
 }
@@ -69,9 +133,18 @@ pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
         expressions: Vec::new(),
         statements: Vec::new(),
     };
+    let data_declarations = match case {
+        Case::NominalEnum => vec![nominal_payload(&mut f, true)],
+        Case::NominalStruct => vec![nominal_payload(&mut f, false)],
+        _ => Vec::new(),
+    };
     let parameter = match case {
         Case::ScalarBool => Ty::Named("bool"),
         Case::ScalarI32 => Ty::Named("i32"),
+        Case::StringArrayZero => Ty::Array(Box::new(Ty::String), 0),
+        Case::StringArrayOne => Ty::Array(Box::new(Ty::String), 1),
+        Case::StringVec => Ty::Vec(Box::new(Ty::String)),
+        Case::NominalEnum | Case::NominalStruct => Ty::Named("Payload"),
         _ => Ty::String,
     };
     let payload = if matches!(case, Case::NestedShared) {
@@ -99,7 +172,15 @@ pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
         local(&mut f, "owner", &shared, |f| unary(f, "shared", |f| f.reference("payload")));
     }
     match case {
-        Case::Positive | Case::NestedShared | Case::ScalarBool | Case::ScalarI32 => {
+        Case::Positive
+        | Case::NestedShared
+        | Case::ScalarBool
+        | Case::ScalarI32
+        | Case::NominalEnum
+        | Case::NominalStruct
+        | Case::StringArrayZero
+        | Case::StringArrayOne
+        | Case::StringVec => {
             local(&mut f, "copy", &shared, |f| unary(f, "clone", |f| f.reference("owner")));
             local(&mut f, "weak", &weak, |f| unary(f, "downgrade", |f| f.reference("copy")));
             local(&mut f, "weakCopy", &weak, |f| unary(f, "clone", |f| f.reference("weak")));
@@ -157,7 +238,7 @@ pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
                 path: "src/main.zry".into(),
                 imports: Vec::new(),
                 type_syntax: f.types,
-                data_declarations: Vec::new(),
+                data_declarations,
                 functions: vec![function],
             }],
             diagnostics: Vec::new(),
