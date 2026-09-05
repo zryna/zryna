@@ -15,9 +15,14 @@ use zryna_source::{FileId, SourceMap, SourceMapIdentity, Span};
 
 mod generic_clone;
 mod generic_static_places;
+mod handle_aware_clone;
 mod weak_upgrade_shape;
 pub use generic_clone::{
     VerifiedGenericClone, VerifiedGenericCloneFrontier, VerifiedGenericCloneSource,
+};
+pub use handle_aware_clone::{
+    VerifiedHandleAwareClone, VerifiedHandleAwareCloneFrontier, VerifiedHandleAwareCloneSource,
+    VerifiedHandleCloneRecipeKind, VerifiedHandleCloneRecipeNode,
 };
 pub use weak_upgrade_shape::WeakUpgradeShape;
 
@@ -276,6 +281,16 @@ pub mod raw {
             prefix_cleanup: CleanupPlanId,
         },
         GenericCloneBorrow {
+            borrow: BorrowId,
+            cleanup: CleanupPlanId,
+            prefix_cleanup: CleanupPlanId,
+        },
+        HandleAwareClonePlace {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+            prefix_cleanup: CleanupPlanId,
+        },
+        HandleAwareCloneBorrow {
             borrow: BorrowId,
             cleanup: CleanupPlanId,
             prefix_cleanup: CleanupPlanId,
@@ -973,6 +988,8 @@ pub enum VerifiedInstructionKind {
     ClonePlace,
     GenericClonePlace,
     GenericCloneBorrow,
+    HandleAwareClonePlace,
+    HandleAwareCloneBorrow,
     InitializePlace,
     ReplacePlace,
     GenericReplacePlace,
@@ -1038,6 +1055,8 @@ impl<'a> VerifiedInstruction<'a> {
             I::ClonePlace { .. } => VerifiedInstructionKind::ClonePlace,
             I::GenericClonePlace { .. } => VerifiedInstructionKind::GenericClonePlace,
             I::GenericCloneBorrow { .. } => VerifiedInstructionKind::GenericCloneBorrow,
+            I::HandleAwareClonePlace { .. } => VerifiedInstructionKind::HandleAwareClonePlace,
+            I::HandleAwareCloneBorrow { .. } => VerifiedInstructionKind::HandleAwareCloneBorrow,
             I::InitializePlace { .. } => VerifiedInstructionKind::InitializePlace,
             I::ReplacePlace { .. } => VerifiedInstructionKind::ReplacePlace,
             I::GenericReplacePlace { .. } => VerifiedInstructionKind::GenericReplacePlace,
@@ -1209,6 +1228,7 @@ impl<'a> VerifiedInstruction<'a> {
             | raw::InstructionKind::BindIndexedBorrow { borrow, .. }
             | raw::InstructionKind::BorrowRead { borrow }
             | raw::InstructionKind::GenericCloneBorrow { borrow, .. }
+            | raw::InstructionKind::HandleAwareCloneBorrow { borrow, .. }
             | raw::InstructionKind::BorrowWrite { borrow, .. }
             | raw::InstructionKind::BorrowReplace { borrow, .. }
             | raw::InstructionKind::EndBorrow { borrow } => *borrow,
@@ -2219,6 +2239,7 @@ fn verify_borrow_parameter_usage(function: &raw::Function, errors: &mut Errors) 
         match &instruction.kind {
             raw::InstructionKind::BorrowRead { borrow }
             | raw::InstructionKind::GenericCloneBorrow { borrow, .. }
+            | raw::InstructionKind::HandleAwareCloneBorrow { borrow, .. }
             | raw::InstructionKind::BorrowWrite { borrow, .. }
             | raw::InstructionKind::BorrowReplace { borrow, .. } => {
                 if let Some(slot) = used.get_mut(borrow.0 as usize) {
@@ -3087,6 +3108,7 @@ fn instruction_place_operands(kind: &raw::InstructionKind) -> Vec<raw::PlaceId> 
         | I::GenericMoveFromPlace { place }
         | I::ClonePlace { place, .. }
         | I::GenericClonePlace { place, .. }
+        | I::HandleAwareClonePlace { place, .. }
         | I::InitializePlace { place, .. }
         | I::ReplacePlace { place, .. }
         | I::GenericReplacePlace { place, .. }
@@ -3556,7 +3578,8 @@ fn derive_state_before(
                         flow.variants[owner.0 as usize] = Some(variant);
                     }
                     raw::InstructionKind::ClonePlace { place, .. }
-                    | raw::InstructionKind::GenericClonePlace { place, .. } => {
+                    | raw::InstructionKind::GenericClonePlace { place, .. }
+                    | raw::InstructionKind::HandleAwareClonePlace { place, .. } => {
                         flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
                     }
                     raw::InstructionKind::MoveFromPlace { .. }
@@ -3835,6 +3858,14 @@ fn verify_ownership_dataflow(
                 &flow,
                 errors,
             );
+            handle_aware_clone::verify_prefix_cleanup(
+                instruction,
+                value_owners,
+                function,
+                borrows,
+                &flow,
+                errors,
+            );
             apply_ownership_instruction(
                 instruction,
                 function,
@@ -3869,7 +3900,8 @@ fn verify_ownership_dataflow(
                         flow.variants[owner.0 as usize] = Some(variant);
                     }
                     raw::InstructionKind::ClonePlace { place, .. }
-                    | raw::InstructionKind::GenericClonePlace { place, .. } => {
+                    | raw::InstructionKind::GenericClonePlace { place, .. }
+                    | raw::InstructionKind::HandleAwareClonePlace { place, .. } => {
                         flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
                     }
                     raw::InstructionKind::MoveFromPlace { .. }
@@ -4017,6 +4049,17 @@ fn cleanup_references(function: &raw::Function) -> Vec<CleanupReference> {
                     role: VerifiedCleanupRole::GenericClonePrefixFailure,
                 });
             }
+            if let raw::InstructionKind::HandleAwareClonePlace { prefix_cleanup: plan, .. }
+            | raw::InstructionKind::HandleAwareCloneBorrow { prefix_cleanup: plan, .. } =
+                instruction.kind
+            {
+                references.push(CleanupReference {
+                    plan,
+                    block: block_index,
+                    instruction: Some(instruction_index),
+                    role: VerifiedCleanupRole::GenericClonePrefixFailure,
+                });
+            }
         }
         if let Some(terminator) = block.terminators.first() {
             let site = match terminator.kind {
@@ -4056,6 +4099,8 @@ fn instruction_cleanup(kind: &raw::InstructionKind) -> Option<raw::CleanupPlanId
         | I::ClonePlace { cleanup, .. }
         | I::GenericClonePlace { cleanup, .. }
         | I::GenericCloneBorrow { cleanup, .. }
+        | I::HandleAwareClonePlace { cleanup, .. }
+        | I::HandleAwareCloneBorrow { cleanup, .. }
         | I::FixedArrayIndexCopy { cleanup, .. }
         | I::VecIndexCopy { cleanup, .. }
         | I::StringFromUtf8 { cleanup, .. }
@@ -4742,6 +4787,7 @@ fn apply_ownership_instruction(
         }
         I::ClonePlace { place, .. }
         | I::GenericClonePlace { place, .. }
+        | I::HandleAwareClonePlace { place, .. }
         | I::EnumDiscriminant { place }
         | I::FixedArrayIndexCopy { place, .. }
         | I::VecIndexCopy { place, .. }
@@ -4881,7 +4927,9 @@ fn apply_ownership_instruction(
                 errors,
             );
         }
-        I::BorrowRead { borrow } | I::GenericCloneBorrow { borrow, .. } => {
+        I::BorrowRead { borrow }
+        | I::GenericCloneBorrow { borrow, .. }
+        | I::HandleAwareCloneBorrow { borrow, .. } => {
             if active.get(borrow.0 as usize).is_none_or(Option::is_none) {
                 errors.push(error_at(
                     "ZRYNA-I3011",
@@ -5605,6 +5653,15 @@ fn verify_operation_types(
                     && generic_clone_types.get(referent.0 as usize).copied().unwrap_or(false)
             })
         }
+        I::HandleAwareClonePlace { place, .. } => {
+            place_type(*place) == result_type
+                && result_type.is_some_and(|ty| handle_aware_clone::valid_type(ty, layouts))
+        }
+        I::HandleAwareCloneBorrow { borrow, .. } => {
+            borrows.definition(*borrow).is_some_and(|(referent, _)| {
+                Some(referent) == result_type && handle_aware_clone::valid_type(referent, layouts)
+            })
+        }
         I::GenericMoveFromPlace { place } => {
             place_type(*place) == result_type
                 && generic_static_places::valid_move_type(*place, function, generic_clone_types)
@@ -5930,6 +5987,12 @@ fn verify_instruction_shape(
             !place_valid(*place) || !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
         }
         I::GenericCloneBorrow { cleanup, prefix_cleanup, .. } => {
+            !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
+        }
+        I::HandleAwareClonePlace { place, cleanup, prefix_cleanup } => {
+            !place_valid(*place) || !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
+        }
+        I::HandleAwareCloneBorrow { cleanup, prefix_cleanup, .. } => {
             !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
         }
         I::FixedArrayIndexCopy { place, cleanup, .. }
