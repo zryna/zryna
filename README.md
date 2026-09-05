@@ -205,6 +205,12 @@ The repository currently establishes and tests:
   commits one deterministic `zryna-manifest-v2.json` atomic bundle. Omitting `--profile` preserves
   every M1 CLI and manifest-v1 contract.
 
+The internal #278 mixed-data route additionally supports repeated whole-root replacement of
+mutable fully initialized mixed Struct/Enum/FixedArray/Vec locals. It prepares the RHS before
+dropping the old value and retains the destination on rejected preparation. This is a bounded
+private straight-line source/verified-IR capability, not public M3 or target execution; see the
+[composition evidence](docs/M3_OWNERSHIP_COMPOSITION_EVIDENCE.md).
+
 ### Default M1 profile
 
 When `--profile` is omitted, the TypeScript adapter emits protocol v2 and rejects parse errors or unsupported syntax without
