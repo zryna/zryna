@@ -40,10 +40,19 @@ zero/nonzero fixed arrays, positive-stride Vec, and nested Shared payloads. They
 order, reverse failure cleanup, moved/wrong-type diagnostics, deterministic rejection replay, and
 the exact/first-extra cleanup-action frontier with pristine recovery.
 
-This is a bounded #261 progress checkpoint, not issue or #83 closure. Temporary handle operands,
-generic structural clones containing handle leaves, full count/allocation execution faults, and
-CFG upgrade/call/match composition still require their #260–#263 authorities and named evidence
-below. No target runtime or public profile is enabled.
+The source route also materializes non-addressable clone/downgrade operands, retains the exact
+temporary in failure cleanup, and emits its successful `DropPlace` at the expression boundary.
+Authenticated composition evidence constructs handle-containing Struct, Enum, fixed-array and Vec
+values, clones static handle projections, replaces a static handle field, and transfers a nested
+handle aggregate through one internal straight-line call. These paths use explicit
+`SharedClone`/`WeakClone` count operations; they do not reinterpret handle leaves as Copy.
+
+This is a bounded #261 progress checkpoint, not issue or #83 closure. Opaque structural clone of
+runtime-active Enum payloads or dynamic Vec elements containing handles cannot express per-leaf
+count operations in the current generic-clone IR and is rejected deterministically; it requires a
+separately reviewed sealed recursive handle-clone contract or later CFG iteration. Full
+count/allocation execution faults and CFG upgrade/match composition still require their #260–#263
+authorities and named evidence below. No target runtime or public profile is enabled.
 
 ## Existing evidence and its limits
 
