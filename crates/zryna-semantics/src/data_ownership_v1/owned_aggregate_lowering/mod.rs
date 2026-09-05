@@ -22,6 +22,7 @@ mod fresh_indexed_preparation;
 mod generic_clone_preparation;
 mod generic_function_shape;
 mod generic_projection_preparation;
+mod handle_preparation;
 mod indexed_vec_preparation;
 mod lexical_chained_preparation;
 mod lexical_indexed_preparation;

@@ -11,6 +11,9 @@ mod nonindexed_owned_borrow;
 #[path = "ordinary_array_composition_fixture.rs"]
 pub(in crate::data_ownership_v1) mod ordinary_array_composition_fixture;
 
+#[path = "shared_weak_fixture.rs"]
+pub(in crate::data_ownership_v1) mod shared_weak_fixture;
+
 #[derive(Clone, Debug)]
 pub(in crate::data_ownership_v1) enum Element {
     I32,
@@ -39,6 +42,8 @@ enum Ty {
     String,
     Vec(Box<Self>),
     Array(Box<Self>, u32),
+    Shared(Box<Self>),
+    Weak(Box<Self>),
 }
 
 struct Builder {
@@ -123,13 +128,32 @@ impl Builder {
         let kind = match ty {
             Ty::Named(name) => RawTypeSyntaxKind::Named { name: self.name(name) },
             Ty::String => RawTypeSyntaxKind::String { keyword_span: self.text("String") },
-            Ty::Vec(element) | Ty::Array(element, _) => {
-                let keyword_span =
-                    self.text(if matches!(ty, Ty::Vec(_)) { "Vec" } else { "FixedArray" });
+            Ty::Vec(element) | Ty::Array(element, _) | Ty::Shared(element) | Ty::Weak(element) => {
+                let keyword_span = self.text(match ty {
+                    Ty::Vec(_) => "Vec",
+                    Ty::Array(_, _) => "FixedArray",
+                    Ty::Shared(_) => "Shared",
+                    Ty::Weak(_) => "Weak",
+                    _ => unreachable!("generic type"),
+                });
                 let less_than_span = self.text("<");
                 let argument = self.ty(element);
                 if matches!(ty, Ty::Vec(_)) {
                     RawTypeSyntaxKind::Vec {
+                        keyword_span,
+                        less_than_span,
+                        argument,
+                        greater_than_span: self.text(">"),
+                    }
+                } else if matches!(ty, Ty::Shared(_)) {
+                    RawTypeSyntaxKind::Shared {
+                        keyword_span,
+                        less_than_span,
+                        argument,
+                        greater_than_span: self.text(">"),
+                    }
+                } else if matches!(ty, Ty::Weak(_)) {
+                    RawTypeSyntaxKind::Weak {
                         keyword_span,
                         less_than_span,
                         argument,

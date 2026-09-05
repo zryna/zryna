@@ -6,6 +6,7 @@ use super::super::owned_constructor_plan::ConstructorKind;
 use super::PrivateOwnedAggregateLowerer;
 use super::constructor_resources::ConstructorCommitReservation;
 use super::expression_decisions::{ArrayDecision, ExpressionKind, StructDecision};
+use super::handle_preparation::HandleOperation;
 use super::preparation_operations::PreparationContext;
 use super::preparation_plan::{Leaf, Operation, PreparationPlan};
 use super::preparation_plan::{StringOperation, StringRead};
@@ -99,9 +100,15 @@ enum Frame<'f> {
     Visit(u32, Option<Ty>),
     Scalar(scalar_scope::ScalarFrame),
     Constructor(ConstructorFrame<'f>),
+    Handle(HandleFrame),
     String(StringFrame),
     Read(u32, Ty),
     ReadResult(Ty, Span),
+}
+
+struct HandleFrame {
+    result: Ty,
+    at: Span,
 }
 
 enum VisitOutcome {
@@ -235,6 +242,37 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 return Some(VisitOutcome::Deferred);
             }
             ExpressionKind::AggregateClone(id) => self.aggregate_clone(id, ty, at),
+            ExpressionKind::HandleClone(id) => self.handle_read(
+                id,
+                ty,
+                ty,
+                if ty.category == zryna_layout::TypeCategory::Shared {
+                    HandleOperation::SharedClone
+                } else {
+                    HandleOperation::WeakClone
+                },
+                at,
+            ),
+            ExpressionKind::Shared(id) => {
+                let payload = self.handle_payload(ty)?;
+                frames.push(Frame::Handle(HandleFrame { result: ty, at }));
+                frames.push(Frame::Visit(id, Some(payload)));
+                return Some(VisitOutcome::Deferred);
+            }
+            ExpressionKind::Downgrade(id) => {
+                let payload = self.handle_payload(ty)?;
+                let shared = self
+                    .decisions
+                    .node_types
+                    .iter()
+                    .flatten()
+                    .find(|candidate| {
+                        candidate.category == zryna_layout::TypeCategory::Shared
+                            && self.handle_payload(**candidate) == Some(payload)
+                    })
+                    .copied()?;
+                self.handle_read(id, shared, ty, HandleOperation::WeakDowngrade, at)
+            }
             ExpressionKind::Call { .. } => unreachable!("call frame entered"),
             ExpressionKind::Struct(decision) => {
                 frames.push(self.enter(
@@ -361,6 +399,9 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                     } else {
                         result = Some(self.finish(frame)?);
                     }
+                }
+                Frame::Handle(frame) => {
+                    result = Some(self.shared_construct(result.take()?, frame.result, frame.at)?);
                 }
                 Frame::String(mut frame) => {
                     if frame.waiting {

@@ -123,7 +123,10 @@ impl PreparationContext<'_, '_, '_, '_> {
             Leaf::StringClone { source, .. } => self.check_access(source.place, true, at),
             Leaf::AggregateClone { source, .. }
             | Leaf::GenericClone { source, .. }
-            | Leaf::IndexedCopy { source, .. } => self.check_access(*source, true, at),
+            | Leaf::IndexedCopy { source, .. }
+            | Leaf::SharedClone { source, .. }
+            | Leaf::WeakDowngrade { source, .. }
+            | Leaf::WeakClone { source, .. } => self.check_access(*source, true, at),
             Leaf::StringConcat { left, right, .. } => {
                 self.check_access(*left, true, at)?;
                 self.check_access(*right, true, at)

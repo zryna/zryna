@@ -81,6 +81,22 @@ pub(super) enum Leaf<'f> {
         cleanup: raw::CleanupPlanId,
         prefix: raw::CleanupPlanId,
     },
+    SharedConstruct {
+        value: raw::ValueId,
+        cleanup: raw::CleanupPlanId,
+    },
+    SharedClone {
+        source: raw::PlaceId,
+        cleanup: raw::CleanupPlanId,
+    },
+    WeakDowngrade {
+        source: raw::PlaceId,
+        cleanup: raw::CleanupPlanId,
+    },
+    WeakClone {
+        source: raw::PlaceId,
+        cleanup: raw::CleanupPlanId,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

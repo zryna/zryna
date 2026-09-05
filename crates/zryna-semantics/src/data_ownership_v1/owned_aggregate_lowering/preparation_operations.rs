@@ -92,6 +92,13 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
                 self.state.moved.insert(source.place);
                 self.state.partial.insert(source.root);
             }
+            Leaf::SharedConstruct { value, .. } => {
+                if let Some(delta) =
+                    self.state.owners.owner(*value).and_then(|_| self.state.owners.transfer(*value))
+                {
+                    emission.owners.push(delta);
+                }
+            }
             _ => {}
         }
         for delta in &emission.owners {

@@ -96,6 +96,19 @@ pub(super) fn map_node_types(
                     ty.category() == TypeCategory::Vec && ty.referenced_type() == element_id
                 })
             }
+            raw_layout::TypeKind::Shared { payload } | raw_layout::TypeKind::Weak { payload } => {
+                let payload_index = usize::try_from(payload.0).ok();
+                let payload_id =
+                    payload_index.and_then(|i| result.get(i)).and_then(|v| *v).map(|v| v.layout);
+                let category = if matches!(node.kind, raw_layout::TypeKind::Shared { .. }) {
+                    TypeCategory::Shared
+                } else {
+                    TypeCategory::Weak
+                };
+                layouts
+                    .types()
+                    .find(|ty| ty.category() == category && ty.referenced_type() == payload_id)
+            }
             _ => None,
         };
         if let Some(found) = found {

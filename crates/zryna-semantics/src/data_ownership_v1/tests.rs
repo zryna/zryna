@@ -165,6 +165,7 @@ mod projected_aggregate_validation;
 mod projected_borrows;
 mod projected_string_assignment;
 mod projected_string_assignment_fixture_support;
+mod shared_weak_source;
 mod static_subobject_locals;
 mod static_subobject_returns;
 mod straight_root_borrows;
