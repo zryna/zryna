@@ -1,6 +1,8 @@
 use super::super::super::super::{Ty, owner_state::OwnerDelta};
 use super::super::super::constructor_resources::ConstructorCommitReservation;
-use super::super::super::preparation_plan::{CallKind, CallSignature};
+use super::super::super::preparation_plan::{
+    CallKind, CallParameter, CallSignature, call_parameters,
+};
 use super::Consumption;
 use zryna_ir::data_ownership_v1::raw;
 use zryna_source::Span;
@@ -10,9 +12,10 @@ struct OpenCall {
     end: usize,
     depth: usize,
     signature: CallSignature,
-    arguments: Vec<raw::ValueId>,
+    arguments: Vec<raw::CallArgument>,
+    values: Vec<raw::ValueId>,
     actual: Vec<raw::ValueId>,
-    parameters: Vec<Ty>,
+    parameters: Vec<CallParameter>,
     owned_arguments: Vec<(raw::ValueId, Ty)>,
     transfers: usize,
     reservation: Option<ConstructorCommitReservation>,
@@ -34,7 +37,7 @@ impl CallScopes {
         if call.depth != depth {
             return true;
         }
-        assert!(call.actual.len() < call.arguments.len(), "call has no extra argument result");
+        assert!(call.actual.len() < call.values.len(), "call has no extra argument result");
         call.actual.push(value);
         false
     }
@@ -47,33 +50,15 @@ impl CallScopes {
 }
 
 impl Consumption<'_, '_, '_, '_> {
-    pub(super) fn enter_call(
-        &mut self,
-        range: (usize, usize, usize),
+    fn validate_call_signature(
+        &self,
         signature: CallSignature,
-        arguments: Vec<raw::ValueId>,
-        (ty, at): (Ty, Span),
-        actions: usize,
+        actual: &super::super::super::super::function_catalog::FunctionSignature,
+        ty: Ty,
+        arguments: &[raw::CallArgument],
     ) {
-        let (start, end, length) = range;
-        assert!(self.cleanups.is_empty(), "call cannot interrupt cleanup");
-        assert!(self.calls.released.is_none(), "call release must finish before another scope");
-        assert!(end > start + 3 && end <= length, "call exact range");
-        assert_eq!(
-            signature.id.module.0 as usize, self.lowerer.module,
-            "call same module authority"
-        );
-        let actual = self
-            .lowerer
-            .catalog
-            .modules
-            .get(signature.id.module.0 as usize)
-            .and_then(|module| module.get(signature.id.declaration as usize))
-            .and_then(Option::as_ref)
-            .cloned()
-            .expect("call catalog identity");
         assert_eq!(actual.id, signature.id, "call actual callee identity");
-        assert!(actual.private && !actual.has_borrow_parameters(), "call private value signature");
+        assert!(actual.private, "call private signature");
         assert_eq!(actual.result, ty, "call actual result type");
         assert_eq!(signature.result, ty, "call recorded result type");
         if signature.kind == CallKind::Generic {
@@ -86,6 +71,7 @@ impl Consumption<'_, '_, '_, '_> {
                 "generic exact non-handle parameters"
             );
         } else {
+            assert!(!actual.has_borrow_parameters(), "legacy call has no borrowed parameters");
             assert_eq!(
                 actual.parameters.as_slice(),
                 signature.parameter.as_slice(),
@@ -97,7 +83,7 @@ impl Consumption<'_, '_, '_, '_> {
             signature.parameter.is_none_or(|parameter| parameter == ty),
             "call exact identity parameter"
         );
-        assert_eq!(signature.arity, actual.parameters.len(), "exact catalog arity");
+        assert_eq!(signature.arity, actual.parameter_order.len(), "exact catalog arity");
         if signature.kind != CallKind::Generic {
             assert_eq!(
                 signature.kind == CallKind::String,
@@ -119,6 +105,34 @@ impl Consumption<'_, '_, '_, '_> {
                 .then_some(super::super::super::super::owned_string_read::StringBytes::Unknown),
             "call opaque result byte witness"
         );
+    }
+
+    pub(super) fn enter_call(
+        &mut self,
+        range: (usize, usize, usize),
+        signature: CallSignature,
+        arguments: Vec<raw::CallArgument>,
+        (ty, at): (Ty, Span),
+        actions: usize,
+    ) {
+        let (start, end, length) = range;
+        assert!(self.cleanups.is_empty(), "call cannot interrupt cleanup");
+        assert!(self.calls.released.is_none(), "call release must finish before another scope");
+        assert!(end > start + 3 && end <= length, "call exact range");
+        assert_eq!(
+            signature.id.module.0 as usize, self.lowerer.module,
+            "call same module authority"
+        );
+        let actual = self
+            .lowerer
+            .catalog
+            .modules
+            .get(signature.id.module.0 as usize)
+            .and_then(|module| module.get(signature.id.declaration as usize))
+            .and_then(Option::as_ref)
+            .cloned()
+            .expect("call catalog identity");
+        self.validate_call_signature(signature, &actual, ty, &arguments);
         if let Some(parent) = self.calls.open.last() {
             assert!(end < parent.end, "nested call range");
         }
@@ -134,12 +148,45 @@ impl Consumption<'_, '_, '_, '_> {
             self.lowerer.errors,
         )
         .expect("prepared call cleanup reservation");
-        let parameters = actual.parameters.clone();
+        let parameters = call_parameters(&actual);
+        for (argument, parameter) in arguments.iter().zip(&parameters) {
+            if let CallParameter::Borrow { ty, access } = parameter {
+                let raw::CallArgument::Borrow(borrow) = argument else {
+                    panic!("typed borrowed call argument")
+                };
+                assert!(
+                    self.lowerer.preparation_facts.borrow_active(*borrow),
+                    "active call authority"
+                );
+                assert!(
+                    self.lowerer.preparation_facts.aliases.values().any(|alias| {
+                        alias.borrow == *borrow && alias.ty == *ty && alias.access == *access
+                    }),
+                    "exact call referent and access"
+                );
+            } else {
+                assert!(
+                    matches!(argument, raw::CallArgument::Value(_)),
+                    "typed value call argument"
+                );
+            }
+        }
+        let values = arguments
+            .iter()
+            .filter_map(|argument| match argument {
+                raw::CallArgument::Value(value) => Some(*value),
+                raw::CallArgument::Borrow(_) => None,
+            })
+            .collect();
         let owned_arguments = arguments
             .iter()
-            .copied()
             .zip(parameters.iter().copied())
-            .filter(|(_, ty)| !ty.is_copy())
+            .filter_map(|(argument, parameter)| match (argument, parameter) {
+                (raw::CallArgument::Value(value), CallParameter::Value(ty)) if !ty.is_copy() => {
+                    Some((*value, ty))
+                }
+                _ => None,
+            })
             .collect();
         self.calls.open.push(OpenCall {
             start,
@@ -147,6 +194,7 @@ impl Consumption<'_, '_, '_, '_> {
             depth: self.open.len(),
             signature,
             arguments,
+            values,
             actual: Vec::new(),
             parameters,
             owned_arguments,
@@ -167,7 +215,7 @@ impl Consumption<'_, '_, '_, '_> {
         let call = self.calls.open.last_mut().expect("call transfer has a scope");
         assert_eq!(call.depth, self.open.len(), "call transfer constructor depth");
         assert_eq!(call.signature.result, ty, "call transfer exact type");
-        assert_eq!(call.actual, call.arguments, "call ordered immediate argument results");
+        assert_eq!(call.actual, call.values, "call ordered immediate argument results");
         let (expected_value, parameter) =
             call.owned_arguments.get(call.transfers).expect("call owned transfer position");
         assert_eq!(*expected_value, value, "call ordered transfer value");
@@ -195,15 +243,23 @@ impl Consumption<'_, '_, '_, '_> {
             (index + 3, ty, self.open.len()),
             "call release exact range type and parent"
         );
-        assert_eq!(call.actual, call.arguments, "call complete ordered arguments");
+        assert_eq!(call.actual, call.values, "call complete ordered arguments");
         assert_eq!(call.transfers, call.owned_arguments.len(), "call complete argument transfer");
         let types = self
             .lowerer
             .constructor_types
             .observed_snapshot(&self.lowerer.instructions)
             .expect("prepared exact emitted argument types");
-        for (value, parameter) in call.arguments.iter().zip(&call.parameters) {
-            assert_eq!(types.get(*value), Some(parameter.ir), "call actual exact argument type");
+        for (argument, parameter) in call.arguments.iter().zip(&call.parameters) {
+            if let (raw::CallArgument::Value(value), CallParameter::Value(parameter)) =
+                (argument, parameter)
+            {
+                assert_eq!(
+                    types.get(*value),
+                    Some(parameter.ir),
+                    "call actual exact argument type"
+                );
+            }
         }
         self.lowerer.preparation_facts.held_cleanup =
             super::super::super::super::owned_lowering_resources::CleanupUsage::release(
@@ -218,7 +274,7 @@ impl Consumption<'_, '_, '_, '_> {
         &mut self,
         index: usize,
         signature: CallSignature,
-        arguments: Vec<raw::ValueId>,
+        arguments: Vec<raw::CallArgument>,
         cleanup: raw::CleanupPlanId,
         (ty, at): (Ty, Span),
     ) -> super::super::super::state::Emission {
@@ -232,6 +288,12 @@ impl Consumption<'_, '_, '_, '_> {
         assert_eq!(call.arguments, arguments, "call committed ordered operands");
         assert_eq!(self.cleanups, [(cleanup, None)], "call cleanup linkage");
         self.cleanups.clear();
+        // Source preparation follows declaration order; IR signatures store value inputs
+        // before call-frame borrows. Partition only after every argument is prepared.
+        let (mut values, borrows): (Vec<_>, Vec<_>) = arguments
+            .into_iter()
+            .partition(|argument| matches!(argument, raw::CallArgument::Value(_)));
+        values.extend(borrows);
         let emission = self
             .lowerer
             .emit_recorded(
@@ -239,7 +301,7 @@ impl Consumption<'_, '_, '_, '_> {
                 at,
                 raw::InstructionKind::DirectCall {
                     callee: signature.id,
-                    arguments: arguments.into_iter().map(raw::CallArgument::Value).collect(),
+                    arguments: values,
                     cleanup,
                 },
             )

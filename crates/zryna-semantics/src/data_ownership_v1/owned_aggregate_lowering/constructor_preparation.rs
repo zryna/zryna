@@ -169,6 +169,12 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         self.visits = self.visits.checked_add(1)?;
         if self.state.summary
             && let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+                self.lexical_alias_read(id, expected)?
+        {
+            return Some(VisitOutcome::Value(value));
+        }
+        if self.state.summary
+            && let super::indexed_vec_preparation::IndexedObservation::Value(value) =
                 self.indexed_read(id, expected)?
         {
             return Some(VisitOutcome::Value(value));
@@ -280,14 +286,24 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 }
                 Frame::Call(mut frame) => {
                     if frame.waiting {
-                        frame.values.push(result.take()?);
+                        frame.values.push(raw::CallArgument::Value(result.take()?));
+                        frame.waiting = false;
                     }
                     if let Some(&id) = frame.inputs.get(frame.next) {
-                        let ty = *frame.parameters.get(frame.next)?;
+                        let parameter = *frame.parameters.get(frame.next)?;
                         frame.next += 1;
-                        frame.waiting = true;
-                        frames.push(Frame::Call(frame));
-                        frames.push(Frame::Visit(id, Some(ty)));
+                        match parameter {
+                            super::preparation_plan::CallParameter::Value(ty) => {
+                                frame.waiting = true;
+                                frames.push(Frame::Call(frame));
+                                frames.push(Frame::Visit(id, Some(ty)));
+                            }
+                            super::preparation_plan::CallParameter::Borrow { ty, access } => {
+                                let borrow = self.call_borrow_argument(id, ty, access)?;
+                                frame.values.push(raw::CallArgument::Borrow(borrow));
+                                frames.push(Frame::Call(frame));
+                            }
+                        }
                     } else {
                         result = Some(self.finish_call(frame)?);
                     }
@@ -417,6 +433,9 @@ mod generic_static_resources;
 #[cfg(test)]
 #[path = "../tests/generic_vec_resources.rs"]
 mod generic_vec_resources;
+#[cfg(test)]
+#[path = "../tests/lexical_indexed_resources.rs"]
+mod lexical_indexed_resources;
 #[cfg(test)]
 #[path = "../tests/local_tail_supplement_controls.rs"]
 mod local_tail_supplement_controls;

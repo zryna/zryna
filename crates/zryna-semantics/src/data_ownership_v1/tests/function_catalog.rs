@@ -219,13 +219,12 @@ fn invalid_borrow_signature_keeps_slot_and_exact_sorted_diagnostics() {
     let (catalog, diagnostics) =
         catalog(SOURCE, snapshot(SOURCE, "invalid", Some(export_span), types, parameters, 6));
     assert!(catalog.modules[0][0].is_none());
-    assert_eq!(diagnostics.len(), 4);
+    assert_eq!(diagnostics.len(), 3);
     assert!(diagnostics.iter().all(|diagnostic| diagnostic.code() == "ZRYNA-M3016"));
     assert_eq!(
         diagnostics.iter().map(zryna_diagnostics::Diagnostic::message).collect::<Vec<_>>(),
         vec![
             "borrow-parameter functions must remain private",
-            "borrow parameters require one direct Copy referent",
             "borrow parameters require one direct Copy referent",
             "borrow results are outside the nonescaping ownership profile",
         ]
@@ -235,13 +234,11 @@ fn invalid_borrow_signature_keeps_slot_and_exact_sorted_diagnostics() {
         vec![
             "remove export because borrow authority cannot cross the public ABI",
             "borrow bool, i32, or a recursively Copy aggregate type",
-            "borrow bool, i32, or a recursively Copy aggregate type",
             "return an exact Copy value read through the borrow instead",
         ]
     );
     let expected = [
         export_span,
-        nth_untrusted_span(SOURCE, "Borrow<String>", 0),
         nth_untrusted_span(SOURCE, "Borrow<Borrow<i32>>", 0),
         nth_untrusted_span(SOURCE, "BorrowMut<bool>", 0),
     ];
@@ -255,6 +252,57 @@ fn invalid_borrow_signature_keeps_slot_and_exact_sorted_diagnostics() {
             .collect::<Vec<_>>(),
         expected.iter().map(|at| (at.start, at.end)).collect::<Vec<_>>()
     );
+}
+
+#[test]
+fn private_owned_borrow_catalog_authenticates_shared_and_exclusive_exact_referents() {
+    const SOURCE: &str =
+        "function inspect(shared: Borrow<String>, exclusive: BorrowMut<String>): bool {}";
+    let types = vec![
+        type_syntax(
+            SOURCE,
+            "String",
+            0,
+            RawTypeSyntaxKind::String { keyword_span: nth_untrusted_span(SOURCE, "String", 0) },
+        ),
+        borrow_type(SOURCE, "Borrow<String>", 0, 0, false),
+        type_syntax(
+            SOURCE,
+            "String",
+            1,
+            RawTypeSyntaxKind::String { keyword_span: nth_untrusted_span(SOURCE, "String", 1) },
+        ),
+        borrow_type(SOURCE, "BorrowMut<String>", 0, 2, true),
+        named_type(SOURCE, "bool", 0),
+    ];
+    let parameters = vec![
+        parameter(SOURCE, "shared", "Borrow<String>", 1),
+        parameter(SOURCE, "exclusive", "BorrowMut<String>", 3),
+    ];
+    let raw = snapshot(SOURCE, "inspect", None, types, parameters, 4);
+    for _ in 0..2 {
+        let (catalog, diagnostics) = catalog(SOURCE, raw.clone());
+        assert!(diagnostics.is_empty());
+        let signature = catalog.modules[0][0].as_ref().expect("private owned borrow signature");
+        assert!(signature.parameters.is_empty());
+        assert_eq!(
+            signature.parameter_order,
+            [FunctionParameterOrder::Borrow(0), FunctionParameterOrder::Borrow(1)]
+        );
+        assert_eq!(signature.borrow_parameters.len(), 2);
+        for (index, access) in
+            [raw::BorrowAccess::Shared, raw::BorrowAccess::Exclusive].into_iter().enumerate()
+        {
+            let parameter = signature.borrow_parameters[index];
+            assert_eq!(parameter.access, access);
+            assert_eq!(parameter.referent.category, zryna_layout::TypeCategory::String);
+            assert!(!parameter.referent.is_copy());
+        }
+        assert_eq!(
+            signature.borrow_parameters[0].referent,
+            signature.borrow_parameters[1].referent
+        );
+    }
 }
 
 #[test]

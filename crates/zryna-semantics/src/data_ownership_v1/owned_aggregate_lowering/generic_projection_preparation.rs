@@ -27,7 +27,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         if let Some(delta) = delta {
             self.state.facts.apply(delta);
         }
-        self.state.counts[2] = self.state.counts[2].checked_add(1)?;
+        self.state.effect()?;
         self.push(Operation::ReplaceProjection { place: source.place, value }, ty, at, None);
         self.steps.last_mut()?.owners.extend(delta);
         Some(value)

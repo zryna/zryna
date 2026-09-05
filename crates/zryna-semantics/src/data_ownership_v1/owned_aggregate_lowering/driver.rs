@@ -108,8 +108,63 @@ fn lower_owned_aggregate_function_impl<'a>(
         next_value: 0,
         next_local: 0,
     };
-    let mut parameters = Vec::with_capacity(function.parameters.len());
-    for (index, parameter) in function.parameters.iter().enumerate() {
+    let mut parameters = Vec::with_capacity(signature.parameters.len());
+    let mut borrow_parameters = Vec::with_capacity(signature.borrow_parameters.len());
+    if signature.borrow_parameters.len() > ir::MAX_ACTIVE_BORROWS_PER_FUNCTION {
+        lowerer.errors.at(
+            "ZRYNA-M3201",
+            span(input.sources(), function.span),
+            "formal borrow parameters exceed the active authority limit",
+            "reduce borrow parameters",
+        );
+        return None;
+    }
+    for (parameter, order) in function.parameters.iter().zip(&signature.parameter_order) {
+        if lowerer
+            .bindings
+            .keys()
+            .chain(lowerer.preparation_facts.aliases.keys())
+            .any(|name| name.eq_ignore_ascii_case(&parameter.name.text))
+        {
+            lowerer.errors.at(
+                "ZRYNA-M3002",
+                span(input.sources(), parameter.name.span),
+                "parameter collides with an existing value or borrow binding",
+                "use portable distinct parameter names",
+            );
+            return None;
+        }
+        if let super::super::function_catalog::FunctionParameterOrder::Borrow(index) = *order {
+            let descriptor = *signature.borrow_parameters.get(index as usize)?;
+            if !generic_function || !super::mixed_shape::supported(descriptor.referent, layouts) {
+                lowerer.errors.at(
+                    "ZRYNA-M3017",
+                    descriptor.span,
+                    "borrow parameter is outside the exact non-handle signature",
+                    "use a supported exact non-escaping referent",
+                );
+                return None;
+            }
+            let id = raw::BorrowId(index);
+            borrow_parameters.push(raw::BorrowParameter {
+                id,
+                referent: descriptor.referent.ir,
+                access: descriptor.access,
+                span: descriptor.span,
+            });
+            lowerer.preparation_facts.parameter_borrows.insert(id);
+            lowerer.preparation_facts.next_borrow = index.checked_add(1)?;
+            lowerer.preparation_facts.aliases.insert(
+                parameter.name.text.clone(),
+                super::preparation_plan::LexicalAlias {
+                    borrow: id,
+                    ty: descriptor.referent,
+                    access: descriptor.access,
+                },
+            );
+            continue;
+        }
+        let index = parameters.len();
         let ty = semantic_type(
             file,
             parameter.type_syntax,
@@ -218,7 +273,7 @@ fn lower_owned_aggregate_function_impl<'a>(
         entry_export: None,
         span: span(input.sources(), function.span),
         parameters,
-        borrow_parameters: Vec::new(),
+        borrow_parameters,
         result: result.ir,
         places: lowerer.places,
         blocks: vec![raw::Block {

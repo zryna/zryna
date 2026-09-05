@@ -131,6 +131,17 @@ impl PreparationState<'_> {
         Some(Emission { value, owners })
     }
 
+    pub(super) fn effect(&mut self) -> Option<()> {
+        let instruction = self.counts[2];
+        self.counts[2] = instruction.checked_add(1)?;
+        if let Ok(types) = &mut self.types
+            && let Err(error) = types.append_predicted_effect(instruction)
+        {
+            self.types = Err(error);
+        }
+        Some(())
+    }
+
     pub(super) fn reverse_cleanup(
         &mut self,
         at: Span,

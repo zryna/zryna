@@ -147,16 +147,6 @@ fn function_parameters(
         if let Some(access) = access {
             has_resolved_borrow = true;
             let at = span(input.sources(), syntax.span);
-            if !ty.is_copy() {
-                errors.at(
-                    "ZRYNA-M3016",
-                    at,
-                    "borrow parameters require one direct Copy referent",
-                    "borrow bool, i32, or a recursively Copy aggregate type",
-                );
-                valid = false;
-                continue;
-            }
             let index = u32::try_from(borrow_parameters.len()).unwrap_or(u32::MAX);
             borrow_parameters.push(FunctionBorrowParameter { referent: ty, access, span: at });
             parameter_order.push(FunctionParameterOrder::Borrow(index));

@@ -235,7 +235,7 @@ fn aggregate_assignment_rejects_owned_projection_consumption_from_destination() 
     );
 }
 #[test]
-fn fixed_array_assignment_reports_invalid_projection_before_consumption() {
+fn fixed_array_assignment_rejects_independent_owned_index_move_before_consumption() {
     let (source, raw) = fixed_array_oob_assignment_snapshot();
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources)
@@ -243,7 +243,7 @@ fn fixed_array_assignment_reports_invalid_projection_before_consumption() {
     let diagnostics =
         lower(pair_input(&syntax, &sources)).expect_err("out-of-bounds assignment projection");
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3006");
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3013");
     let projection = nth_untrusted_span(&source, "a[2]", 0);
     assert_eq!(
         diagnostics[0].primary_span(),
@@ -251,8 +251,8 @@ fn fixed_array_assignment_reports_invalid_projection_before_consumption() {
             &sources,
             zryna_source::UntrustedSpan {
                 file: projection.file,
-                start: projection.start + 2,
-                end: projection.start + 3,
+                start: projection.start,
+                end: projection.end,
             },
         )),
     );

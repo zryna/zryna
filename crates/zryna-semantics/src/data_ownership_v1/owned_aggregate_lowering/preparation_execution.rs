@@ -349,7 +349,8 @@ impl Consumption<'_, '_, '_, '_> {
     }
 
     fn record_result(&mut self, index: usize, value: raw::ValueId, ty: Ty) {
-        if !self.indexed.outward(index, self.open.len()) {
+        let consumer = self.scalars.start().max(self.calls.start()).max(self.strings.start());
+        if !self.indexed.outward(index, self.open.len(), consumer) {
             return;
         }
         let outward = if self.scalars.start() > self.calls.start().max(self.strings.start()) {

@@ -338,7 +338,7 @@ complete. Bounded #122 closure must preserve the distinction and its actual veri
 
 The checked M3 registry records this dependency order rather than assuming that an earlier GitHub
 issue number cannot depend on later-discovered work. Its current SHA-256 is
-`4840114001e53f510a285114a33fb15e3a9599067473e8707d2607333c339d18`.
+`dfa23281785a225042f32c082abef0f1cb61dd5971bb713625995d5ee0f51d22`.
 The original #119 provenance and unchanged borrow-call fixture digest remain historical evidence;
 updating the graph does not implement any of its planned capabilities.
 

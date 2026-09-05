@@ -2,11 +2,33 @@ use super::{Consumption, Operation, Span, raw};
 use crate::data_ownership_v1::owner_state::OwnerDelta;
 
 #[derive(Default)]
-pub(super) struct IndexedScopes(Vec<(usize, usize, usize)>);
+pub(super) struct IndexedScopes(Vec<IndexedScope>);
+
+struct IndexedScope {
+    start: usize,
+    end: usize,
+    result: usize,
+    depth: usize,
+}
+
+#[test]
+fn indexed_result_routing_respects_nested_expression_consumers() {
+    let mut scopes = IndexedScopes(vec![IndexedScope { start: 2, end: 12, result: 10, depth: 0 }]);
+    assert!(scopes.outward(4, 0, Some(3)), "nested scalar/call receives its operand");
+    assert!(!scopes.outward(5, 0, Some(1)), "completed index is not an outer operand");
+    assert!(scopes.outward(10, 0, Some(1)), "selected element is an outer operand");
+    assert!(scopes.outward(4, 1, None), "nested constructor records its own children");
+    scopes.0.push(IndexedScope { start: 5, end: 9, result: 8, depth: 0 });
+    assert!(!scopes.outward(6, 0, Some(3)), "inner index is hidden from enclosing scalar");
+    assert!(scopes.outward(8, 0, Some(3)), "inner selected value reaches enclosing scalar");
+    assert!(!scopes.outward(8, 0, Some(1)), "outer index scope still hides inner results");
+}
 
 impl IndexedScopes {
-    pub(super) fn outward(&self, index: usize, depth: usize) -> bool {
-        self.0.iter().all(|(_, result, parent)| *parent != depth || *result == index)
+    pub(super) fn outward(&self, index: usize, depth: usize, consumer: Option<usize>) -> bool {
+        self.0.iter().all(|scope| {
+            scope.depth != depth || consumer > Some(scope.start) || scope.result == index
+        })
     }
     pub(super) fn complete(&self) -> bool {
         self.0.is_empty()
@@ -24,11 +46,20 @@ impl Consumption<'_, '_, '_, '_> {
         match operation {
             Operation::IndexedEnter { end, result } => {
                 assert!(index < result && result < end, "indexed result lies inside scope");
-                self.indexed.0.push((end, result, self.open.len()));
+                self.indexed.0.push(IndexedScope {
+                    start: index,
+                    end,
+                    result,
+                    depth: self.open.len(),
+                });
             }
             Operation::IndexedExit => {
-                let (end, _, depth) = self.indexed.0.pop().expect("indexed scope");
-                assert_eq!((end, depth), (index, self.open.len()), "indexed scope exact end");
+                let scope = self.indexed.0.pop().expect("indexed scope");
+                assert_eq!(
+                    (scope.end, scope.depth),
+                    (index, self.open.len()),
+                    "indexed scope exact end"
+                );
             }
             Operation::IndexedEffect(kind) => {
                 match &kind {

@@ -253,7 +253,7 @@ cases, and 13 exclusions. Its merged registry SHA-256 is
 section SHA-256 is `ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20`.
 The current registry additionally tracks normative indexed-borrow prerequisites #254–#256 and
 source-completion #269 before complete target support; its SHA-256 is
-`4840114001e53f510a285114a33fb15e3a9599067473e8707d2607333c339d18`.
+`dfa23281785a225042f32c082abef0f1cb61dd5971bb713625995d5ee0f51d22`.
 This updates planned dependencies, not implemented capability. The #119 commit and digest above
 remain immutable historical provenance; the borrow-call section and fixture bytes are unchanged.
 The planned #277 integration contract, #278 non-handle owned core and #279 ownership CFG core

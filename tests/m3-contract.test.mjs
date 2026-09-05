@@ -20,6 +20,24 @@ function clonedContract() {
   return structuredClone(loadAndValidateM3Contract());
 }
 
+test("owned call shape retains its legacy caller exclusion without rejecting the admitted callee", () => {
+  const section = clonedContract().borrowCallConformance;
+  const fixture = section.exclusions.find(({ id }) => id === "borrow-call-owned-shape");
+  assert.deepEqual(fixture.diagnostics, [{
+    code: "ZRYNA-M3016",
+    message: "lexical borrow calls require a Copy signature with borrow authority",
+    guidance: "call a private Copy-result function with at least one Borrow or BorrowMut parameter",
+    span: { path: "src/main.zry", start: 229, end: 234 },
+  }]);
+  fixture.diagnostics.unshift({
+    code: "ZRYNA-M3003",
+    message: "owned String and Vec operations are not yet admitted by this lowering slice",
+    guidance: "use the authenticated owned type only after owned-operation lowering is enabled",
+    span: { path: "src/main.zry", start: 68, end: 78 },
+  });
+  assert.throws(() => validateM3BorrowCallConformance(section), /oracle drifted/);
+});
+
 test("digest-pins the real M3 issue graph and regression authorities", () => {
   const contract = loadAndValidateM3Contract();
   assert.equal(expectedRegistrySha256.length, 64);

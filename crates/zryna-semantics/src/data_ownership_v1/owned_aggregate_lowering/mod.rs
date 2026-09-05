@@ -21,8 +21,12 @@ mod generic_clone_preparation;
 mod generic_function_shape;
 mod generic_projection_preparation;
 mod indexed_vec_preparation;
+mod lexical_indexed_preparation;
+mod lexical_indexed_scope;
+mod lexical_indexed_statements;
 mod mixed_shape;
 mod operand_decisions;
+mod ordinary_indexed_array_preparation;
 mod partial_transfers;
 mod preparation_operations;
 mod preparation_plan;
@@ -45,6 +49,7 @@ pub(super) use driver::{
     lower_private_owned_aggregate_function,
 };
 pub(super) use generic_function_shape::requires_generic_function;
+pub(super) use lexical_indexed_statements::has_indexed_borrow;
 use statements::StatementOutcome;
 
 use shape::owned_enum_graph_is_supported;

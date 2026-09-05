@@ -168,7 +168,7 @@ fn projected_string_clone_rejects_a_moved_overlapping_leaf() {
     );
 }
 #[test]
-fn projected_string_clone_rejects_copy_and_nonconstant_array_leaves() {
+fn projected_string_clone_checks_exact_types_and_runtime_array_bounds() {
     let (copy_source, copy_raw) = owned_pair_copy_projection_clone_snapshot();
     let copy_sources = sources_for(&copy_source);
     let copy_syntax =
@@ -191,9 +191,23 @@ fn projected_string_clone_rejects_copy_and_nonconstant_array_leaves() {
         let sources = sources_for(&source);
         let syntax =
             verify_snapshot(raw, &sources).expect("source-faithful invalid projected clone");
+        if !matches!(case, OwnedArrayProjectionCase::Dynamic) {
+            let program =
+                lower(pair_input(&syntax, &sources)).expect("runtime checked clone index");
+            let function =
+                program.modules().next().expect("module").functions().next().expect("function");
+            let begin = function
+                .blocks()
+                .flat_map(zryna_ir::data_ownership_v1::VerifiedBlock::instructions)
+                .find_map(|instruction| instruction.indexed_borrow())
+                .expect("checked array authority");
+            assert_eq!(begin.trap_identity(), VerifiedTrapIdentity::BoundsV1);
+            assert_eq!(begin.array_length(), Some(2));
+            continue;
+        }
         let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(label);
         assert_eq!(diagnostics.len(), 1, "{label}");
-        assert_eq!(diagnostics[0].code(), "ZRYNA-M3006", "{label}");
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3016", "{label}");
         let projection = nth_untrusted_span(&source, needle, 0);
         let child = zryna_source::UntrustedSpan {
             file: projection.file,
@@ -219,7 +233,7 @@ fn owned_projection_repeat_is_m3014() {
     );
 }
 #[test]
-fn owned_projection_invalid_field_and_index_diagnostics_use_the_projection_child() {
+fn owned_projection_rejects_invalid_field_and_independent_index_move_at_exact_spans() {
     let (field_source, field_raw) = owned_pair_projected_return_snapshot("nope");
     let field_sources = sources_for(&field_source);
     let field_syntax =
@@ -240,12 +254,12 @@ fn owned_projection_invalid_field_and_index_diagnostics_use_the_projection_child
         let sources = sources_for(&source);
         let syntax = verify_snapshot(raw, &sources).expect("source-faithful invalid owned index");
         let diagnostics = lower(pair_input(&syntax, &sources)).expect_err(label);
-        assert_eq!(diagnostics[0].code(), "ZRYNA-M3006", "{label}");
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3013", "{label}");
         let projection = nth_untrusted_span(&source, needle, 0);
         let expected = zryna_source::UntrustedSpan {
             file: projection.file,
-            start: projection.start + 2,
-            end: projection.end - 1,
+            start: projection.start,
+            end: projection.end,
         };
         assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, expected)), "{label}");
     }

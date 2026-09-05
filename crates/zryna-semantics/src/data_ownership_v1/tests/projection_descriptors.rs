@@ -156,10 +156,19 @@ fn projection_descriptors_preserve_index_and_base_diagnostics() {
             "expected {message:?} for {source:?}; actual {:?}",
             result.diagnostics,
         );
-        let errors = lower(input).expect_err("unchanged full source admission gate");
+        let errors = lower(input).expect_err("invalid base or independent owned element move");
+        let dynamic_owned = message.starts_with("owned fixed-array");
+        let (code, source_message) = if dynamic_owned {
+            (
+                "ZRYNA-M3013",
+                "array observation requires its exact Copy element or an explicit owned clone",
+            )
+        } else {
+            ("ZRYNA-M3006", message)
+        };
         assert!(
-            errors.iter().any(|error| error.code() == "ZRYNA-M3006" && error.message() == message),
-            "expected {message:?} for {source:?}; actual {errors:?}",
+            errors.iter().any(|error| error.code() == code && error.message() == source_message),
+            "expected {source_message:?} for {source:?}; actual {errors:?}",
         );
     }
 }

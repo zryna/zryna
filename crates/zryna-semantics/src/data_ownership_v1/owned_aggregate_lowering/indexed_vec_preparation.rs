@@ -5,7 +5,6 @@ use zryna_syntax::v4::RawExpressionKind;
 
 use super::super::Ty;
 use super::super::diagnostics::span;
-use super::super::owned_lowering_resources::CleanupRecipe;
 use super::super::type_model::OwnedAggregatePlace;
 use super::availability::AvailabilityView;
 use super::operand_decisions::{ProjectionOperation, ReferenceKind};
@@ -120,7 +119,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         }
     }
 
-    fn available_vector(
+    pub(super) fn available_vector(
         &mut self,
         source: OwnedAggregatePlace,
         write: bool,
@@ -131,15 +130,27 @@ impl PreparationContext<'_, '_, '_, '_> {
             AvailabilityView::new(&state.owners, &state.moved, &state.partial, |id| {
                 state.parent(id)
             });
+        let copy_root = self
+            .bindings
+            .values()
+            .any(|binding| binding.place == source.root && binding.ty.is_copy());
         if (write && !source.mutable)
-            || !availability.projection_available(source.place, source.root)
+            || !(copy_root || availability.projection_available(source.place, source.root))
             || state.moved.iter().any(|moved| availability.places_overlap(*moved, source.place))
         {
             self.decisions.errors.at(
                 "ZRYNA-M3014",
                 at,
-                "indexed Vec is immutable for mutation, unavailable, or partially moved",
-                "use one complete initialized Vec with exclusive mutation access",
+                if source.ty.category == TypeCategory::FixedArray {
+                    "indexed array is immutable for mutation, unavailable, or partially moved"
+                } else {
+                    "indexed Vec is immutable for mutation, unavailable, or partially moved"
+                },
+                if source.ty.category == TypeCategory::FixedArray {
+                    "use one complete initialized array with exclusive mutation access"
+                } else {
+                    "use one complete initialized Vec with exclusive mutation access"
+                },
             );
             return None;
         }
@@ -152,7 +163,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         ty: Ty,
         at: Span,
     ) -> Option<()> {
-        self.state.counts[2] = self.state.counts[2].checked_add(1)?;
+        self.state.effect()?;
         match &kind {
             raw::InstructionKind::BeginIndexedBorrow { definition, .. }
             | raw::InstructionKind::BeginBorrow(definition) => {
@@ -171,7 +182,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         Some(())
     }
 
-    fn begin_indexed(
+    pub(super) fn begin_indexed(
         &mut self,
         source: OwnedAggregatePlace,
         index: raw::ValueId,
@@ -180,7 +191,9 @@ impl PreparationContext<'_, '_, '_, '_> {
         at: Span,
     ) -> Option<raw::BorrowId> {
         self.available_vector(source, write, at)?;
-        if self.state.facts.active_borrows.len() >= ir::MAX_ACTIVE_BORROWS_PER_FUNCTION {
+        if self.state.facts.active_borrows.len() + self.state.facts.parameter_borrows.len()
+            >= ir::MAX_ACTIVE_BORROWS_PER_FUNCTION
+        {
             self.decisions.errors.at(
                 "ZRYNA-M3201",
                 at,
@@ -229,7 +242,16 @@ impl PreparationContext<'_, '_, '_, '_> {
             return Some(IndexedObservation::Unselected);
         };
         let source = self.resolve(base)?;
-        if source.ty.category != TypeCategory::Vec {
+        let array = source.ty.category == TypeCategory::FixedArray;
+        if array
+            && !super::ordinary_indexed_array_preparation::checked_index(
+                &self.decisions.function.body.expressions.get(index as usize)?.kind,
+                self.decisions.layouts.type_by_id(source.ty.layout)?.array_length()?,
+            )
+        {
+            return Some(IndexedObservation::Unselected);
+        }
+        if !array && source.ty.category != TypeCategory::Vec {
             return Some(IndexedObservation::Unselected);
         }
         let element = self.decisions.layouts.type_by_id(source.ty.layout)?.referenced_type()?;
@@ -239,7 +261,11 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.errors.at(
                 "ZRYNA-M3013",
                 at,
-                "Vec observation requires its exact Copy element or an explicit owned clone",
+                if array {
+                    "array observation requires its exact Copy element or an explicit owned clone"
+                } else {
+                    "Vec observation requires its exact Copy element or an explicit owned clone"
+                },
                 "read the exact Copy element type or explicitly clone the owned indexed element",
             );
             return None;
@@ -250,24 +276,16 @@ impl PreparationContext<'_, '_, '_, '_> {
         let integer = self.decisions.primitive(TypeCategory::I32)?;
         let index = self.walk(index, integer)?;
         self.available_vector(source, false, at)?;
-        let value = if ty.is_copy() {
+        let value = if ty.is_copy() && !array {
             let cleanup = self.reverse(ty, at)?;
             self.emit_leaf(Leaf::IndexedCopy { source: source.place, index, cleanup }, ty, at)?
         } else {
             let borrow = self.begin_indexed(source, index, false, ty, at)?;
-            self.push(Operation::CloneCapacity { aggregate: true }, ty, at, None);
-            let cleanup = self.reverse(ty, at)?;
-            let owner = raw::PlaceId(u32::try_from(self.state.counts[1]).ok()?);
-            let recipe = CleanupRecipe::generic_clone_prefix(
-                self.state.counts[4],
-                self.state.owners.pending(),
-                owner,
-            )?;
-            let (prefix, actions) = (recipe.id, recipe.action_count);
-            self.state.counts[4] = self.state.counts[4].checked_add(1)?;
-            self.state.counts[5] = self.state.counts[5].checked_add(actions)?;
-            self.push(Operation::GenericClonePrefix { id: prefix, owner, actions }, ty, at, None);
-            let value = self.emit_leaf(Leaf::IndexedClone { borrow, cleanup, prefix }, ty, at)?;
+            let value = if ty.is_copy() {
+                self.emit_leaf(Leaf::BorrowRead(borrow), ty, at)?
+            } else {
+                self.clone_indexed_borrow(borrow, ty, at)?
+            };
             self.indexed_effect(raw::InstructionKind::EndBorrow { borrow }, ty, at)?;
             value
         };

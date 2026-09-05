@@ -23,7 +23,23 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         final_statement: Option<u32>,
         return_count: usize,
     ) -> Option<StatementOutcome> {
+        if self.mixed_function && self.is_lexical_declaration(statement) {
+            if final_statement.is_some() {
+                self.errors.at(
+                    "ZRYNA-M3017",
+                    span(self.input.sources(), statement.span),
+                    "indexed aliases require an explicit lexical block",
+                    "place the alias inside a block and end it before returning",
+                );
+                return None;
+            }
+            self.lower_lexical_declaration(statement)?;
+            return Some(StatementOutcome::Continue);
+        }
         match &statement.kind {
+            RawStatementKind::Block { block } if self.mixed_function => {
+                self.lower_lexical_scope(*block, result)?;
+            }
             RawStatementKind::ExpressionStatement { expression, .. }
                 if self.mixed_function
                     && self.expression(*expression).is_some_and(|expression| {
@@ -35,7 +51,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             RawStatementKind::LocalDeclaration {
                 mutable, name, type_syntax, initializer, ..
             } => {
-                if self.bindings.keys().any(|key| key.eq_ignore_ascii_case(&name.text)) {
+                if self
+                    .bindings
+                    .keys()
+                    .chain(self.preparation_facts.aliases.keys())
+                    .any(|key| key.eq_ignore_ascii_case(&name.text))
+                {
                     self.errors.at(
                         "ZRYNA-M3002",
                         span(self.input.sources(), name.span),
@@ -206,7 +227,12 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 return Some(StatementOutcome::Return(value, return_span));
             }
             RawStatementKind::Assignment { target, value, .. } => {
-                if self.mixed_function && self.is_vec_index(*target) {
+                if self.mixed_function && self.lexical_assignment(*target, *value)? {
+                    return Some(StatementOutcome::Continue);
+                }
+                if self.mixed_function
+                    && (self.is_vec_index(*target) || self.is_checked_array_index(*target))
+                {
                     self.lower_vec_replacement(*target, *value)?;
                     return Some(StatementOutcome::Continue);
                 }
