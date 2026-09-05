@@ -327,6 +327,15 @@ pub mod raw {
             cleanup: CleanupPlanId,
         },
         BeginBorrow(BorrowDefinition),
+        BeginIndexedBorrow {
+            definition: BorrowDefinition,
+            index: ValueId,
+            cleanup: CleanupPlanId,
+        },
+        BorrowReplace {
+            borrow: BorrowId,
+            value: ValueId,
+        },
         BorrowRead {
             borrow: BorrowId,
         },
@@ -931,6 +940,8 @@ pub enum VerifiedInstructionKind {
     WeakDowngrade,
     WeakClone,
     BeginBorrow,
+    BeginIndexedBorrow,
+    BorrowReplace,
     BorrowRead,
     BorrowWrite,
     EndBorrow,
@@ -987,6 +998,8 @@ impl<'a> VerifiedInstruction<'a> {
             I::WeakDowngrade { .. } => VerifiedInstructionKind::WeakDowngrade,
             I::WeakClone { .. } => VerifiedInstructionKind::WeakClone,
             I::BeginBorrow(_) => VerifiedInstructionKind::BeginBorrow,
+            I::BeginIndexedBorrow { .. } => VerifiedInstructionKind::BeginIndexedBorrow,
+            I::BorrowReplace { .. } => VerifiedInstructionKind::BorrowReplace,
             I::BorrowRead { .. } => VerifiedInstructionKind::BorrowRead,
             I::BorrowWrite { .. } => VerifiedInstructionKind::BorrowWrite,
             I::EndBorrow { .. } => VerifiedInstructionKind::EndBorrow,
@@ -1127,9 +1140,11 @@ impl<'a> VerifiedInstruction<'a> {
     #[must_use]
     pub const fn borrow(self) -> Option<BorrowIdentity> {
         let id = match &self.instruction.kind {
-            raw::InstructionKind::BeginBorrow(definition) => definition.id,
+            raw::InstructionKind::BeginBorrow(definition)
+            | raw::InstructionKind::BeginIndexedBorrow { definition, .. } => definition.id,
             raw::InstructionKind::BorrowRead { borrow }
             | raw::InstructionKind::BorrowWrite { borrow, .. }
+            | raw::InstructionKind::BorrowReplace { borrow, .. }
             | raw::InstructionKind::EndBorrow { borrow } => *borrow,
             _ => return None,
         };
@@ -1138,10 +1153,13 @@ impl<'a> VerifiedInstruction<'a> {
     #[must_use]
     pub const fn borrow_access(self) -> Option<VerifiedBorrowAccess> {
         match &self.instruction.kind {
-            raw::InstructionKind::BeginBorrow(definition) => Some(match definition.access {
-                raw::BorrowAccess::Shared => VerifiedBorrowAccess::Shared,
-                raw::BorrowAccess::Exclusive => VerifiedBorrowAccess::Exclusive,
-            }),
+            raw::InstructionKind::BeginBorrow(definition)
+            | raw::InstructionKind::BeginIndexedBorrow { definition, .. } => {
+                Some(match definition.access {
+                    raw::BorrowAccess::Shared => VerifiedBorrowAccess::Shared,
+                    raw::BorrowAccess::Exclusive => VerifiedBorrowAccess::Exclusive,
+                })
+            }
             _ => None,
         }
     }
@@ -1595,7 +1613,7 @@ pub fn verify(
     if !errors.is_empty() {
         return Err(errors.finish());
     }
-    verify_calls(&program, &mut errors);
+    verify_calls(&program, &linear32, &mut errors);
     if !errors.is_empty() {
         return Err(errors.finish());
     }
@@ -1723,7 +1741,8 @@ fn preflight(program: &raw::Program, layouts: &VerifiedLayouts, errors: &mut Err
                 );
                 for instruction in &block.instructions {
                     match instruction.kind {
-                        raw::InstructionKind::BeginBorrow(_) => {
+                        raw::InstructionKind::BeginBorrow(_)
+                        | raw::InstructionKind::BeginIndexedBorrow { .. } => {
                             active_borrows = active_borrows.saturating_add(1);
                             peak_borrows = peak_borrows.max(active_borrows);
                         }
@@ -2043,7 +2062,10 @@ fn verify_structure(
                             errors,
                         );
                     }
-                    if let raw::InstructionKind::BeginBorrow(definition) = &instruction.kind {
+                    if let raw::InstructionKind::BeginBorrow(definition)
+                    | raw::InstructionKind::BeginIndexedBorrow { definition, .. } =
+                        &instruction.kind
+                    {
                         if definition.id.0 != next_borrow {
                             errors.push(error_at(
                                 "ZRYNA-I3011",
@@ -2103,7 +2125,8 @@ fn verify_borrow_parameter_usage(function: &raw::Function, errors: &mut Errors) 
     for instruction in function.blocks.iter().flat_map(|block| &block.instructions) {
         match &instruction.kind {
             raw::InstructionKind::BorrowRead { borrow }
-            | raw::InstructionKind::BorrowWrite { borrow, .. } => {
+            | raw::InstructionKind::BorrowWrite { borrow, .. }
+            | raw::InstructionKind::BorrowReplace { borrow, .. } => {
                 if let Some(slot) = used.get_mut(borrow.0 as usize) {
                     *slot = true;
                 }
@@ -2127,7 +2150,7 @@ fn verify_borrow_parameter_usage(function: &raw::Function, errors: &mut Errors) 
                 "ZRYNA-I3011",
                 parameter.span,
                 "borrow parameter is not used by an access or direct call",
-                "use every borrow authority through BorrowRead, BorrowWrite, or one exact borrow argument",
+                "use every borrow authority through BorrowRead, BorrowWrite, BorrowReplace, or one exact borrow argument",
             ));
         }
     }
@@ -2967,7 +2990,9 @@ fn instruction_place_operands(kind: &raw::InstructionKind) -> Vec<raw::PlaceId> 
         | I::WeakClone { place, .. } => vec![*place],
         I::StringConcat { left, right, .. } => vec![*left, *right],
         I::VecPush { vector, .. } => vec![*vector],
-        I::BeginBorrow(definition) => vec![definition.place],
+        I::BeginBorrow(definition) | I::BeginIndexedBorrow { definition, .. } => {
+            vec![definition.place]
+        }
         _ => vec![],
     }
 }
@@ -3061,7 +3086,8 @@ fn consuming_instruction_operands(kind: &raw::InstructionKind) -> Vec<raw::Value
         | I::ReplacePlace { value, .. }
         | I::VecPush { value, .. }
         | I::SharedConstruct { value, .. }
-        | I::BorrowWrite { value, .. } => vec![*value],
+        | I::BorrowWrite { value, .. }
+        | I::BorrowReplace { value, .. } => vec![*value],
         _ => vec![],
     }
 }
@@ -3349,11 +3375,21 @@ fn derive_state_before(
                         instruction.span,
                         &mut replay_errors,
                     );
+                    indexed_borrows::invalidate_call_variants(
+                        instruction,
+                        function,
+                        &mut flow.variants,
+                    );
                 }
                 return Some((flow.states, flow.variants));
             }
             let call = matches!(instruction.kind, raw::InstructionKind::DirectCall { .. });
             if call {
+                indexed_borrows::invalidate_call_variants(
+                    instruction,
+                    function,
+                    &mut flow.variants,
+                );
                 transfer_consumed_values(
                     &consuming_instruction_operands(&instruction.kind),
                     &owners,
@@ -3618,8 +3654,14 @@ fn verify_ownership_dataflow(
         }
         let block = &function.blocks[block_index];
         for instruction in &block.instructions {
+            indexed_borrows::verify_consumption(instruction, function, layouts, &active, errors);
             let call = matches!(instruction.kind, raw::InstructionKind::DirectCall { .. });
             if call {
+                indexed_borrows::invalidate_call_variants(
+                    instruction,
+                    function,
+                    &mut flow.variants,
+                );
                 transfer_consumed_values(
                     &consuming_instruction_operands(&instruction.kind),
                     value_owners,
@@ -3870,7 +3912,8 @@ fn instruction_cleanup(kind: &raw::InstructionKind) -> Option<raw::CleanupPlanId
         | I::SharedConstruct { cleanup, .. }
         | I::SharedClone { cleanup, .. }
         | I::WeakDowngrade { cleanup, .. }
-        | I::WeakClone { cleanup, .. } => Some(*cleanup),
+        | I::WeakClone { cleanup, .. }
+        | I::BeginIndexedBorrow { cleanup, .. } => Some(*cleanup),
         _ => None,
     }
 }
@@ -4623,7 +4666,7 @@ fn apply_ownership_instruction(
                 mark_ancestors_partial(*place, function, states);
             }
         }
-        I::BeginBorrow(definition) => {
+        I::BeginBorrow(definition) | I::BeginIndexedBorrow { definition, .. } => {
             let index = definition.id.0 as usize;
             if state(definition.place, states)
                 .is_none_or(|state| state.kind != PlaceStateKind::Initialized)
@@ -4661,7 +4704,7 @@ fn apply_ownership_instruction(
                 ));
             }
         }
-        I::BorrowWrite { borrow, .. } => {
+        I::BorrowWrite { borrow, .. } | I::BorrowReplace { borrow, .. } => {
             if active
                 .get(borrow.0 as usize)
                 .and_then(|entry| *entry)
@@ -4674,6 +4717,7 @@ fn apply_ownership_instruction(
                     "write only through one active exclusive borrow",
                 ));
             }
+            indexed_borrows::invalidate_borrow_variants(function, *borrow, active_variants);
         }
         I::DirectCall { arguments, .. } => {
             if arguments.iter().any(|argument| {
@@ -5360,11 +5404,30 @@ fn verify_operation_types(
         }
         I::BorrowWrite { borrow, value } => {
             instruction.result.is_none()
-                && borrow_definition(function, *borrow).is_some_and(|(referent, access)| {
-                    access == raw::BorrowAccess::Exclusive
-                        && layout_type(layouts, referent).is_some_and(|ty| ty.drop_kind() == 0)
-                        && value_info(values, *value).is_some_and(|info| info.ty == referent)
-                })
+                && borrow_definition(function, *borrow, layouts).is_some_and(
+                    |(referent, access)| {
+                        access == raw::BorrowAccess::Exclusive
+                            && layout_type(layouts, referent).is_some_and(|ty| ty.drop_kind() == 0)
+                            && value_info(values, *value).is_some_and(|info| info.ty == referent)
+                    },
+                )
+        }
+        I::BeginIndexedBorrow { definition, index, .. } => {
+            instruction.result.is_none()
+                && indexed_borrows::element_type(function, definition.place, layouts).is_some()
+                && value_info(values, *index)
+                    .and_then(|info| layout_type(layouts, info.ty))
+                    .is_some_and(|ty| ty.category() == TypeCategory::I32)
+        }
+        I::BorrowReplace { borrow, value } => {
+            instruction.result.is_none()
+                && borrow_definition(function, *borrow, layouts).is_some_and(
+                    |(referent, access)| {
+                        access == raw::BorrowAccess::Exclusive
+                            && layout_type(layouts, referent).is_some_and(|ty| ty.drop_kind() != 0)
+                            && value_info(values, *value).is_some_and(|info| info.ty == referent)
+                    },
+                )
         }
         I::DropPlace { .. } | I::BeginBorrow(_) | I::EndBorrow { .. } => {
             instruction.result.is_none()
@@ -5462,10 +5525,12 @@ fn verify_operation_types(
         I::WeakClone { place, .. } => {
             place_type(*place) == result_type && result == Some(TypeCategory::Weak)
         }
-        I::BorrowRead { borrow } => borrow_definition(function, *borrow).is_some_and(|(ty, _)| {
-            result_type == Some(ty)
-                && layout_type(layouts, ty).is_some_and(|ty| ty.drop_kind() == 0)
-        }),
+        I::BorrowRead { borrow } => {
+            borrow_definition(function, *borrow, layouts).is_some_and(|(ty, _)| {
+                result_type == Some(ty)
+                    && layout_type(layouts, ty).is_some_and(|ty| ty.drop_kind() == 0)
+            })
+        }
         I::DirectCall { .. } => true,
     };
     if !valid {
@@ -5528,6 +5593,7 @@ fn container_elements(
 fn borrow_definition(
     function: &raw::Function,
     id: raw::BorrowId,
+    layouts: &VerifiedLayouts,
 ) -> Option<(raw::TypeId, raw::BorrowAccess)> {
     if let Some(parameter) = function.borrow_parameters.iter().find(|value| value.id == id) {
         return Some((parameter.referent, parameter.access));
@@ -5538,6 +5604,10 @@ fn borrow_definition(
                 .places
                 .get(definition.place.0 as usize)
                 .map(|place| (place.ty, definition.access)),
+            raw::InstructionKind::BeginIndexedBorrow { definition, .. } if definition.id == id => {
+                indexed_borrows::element_type(function, definition.place, layouts)
+                    .map(|ty| (ty, definition.access))
+            }
             _ => None,
         }
     })
@@ -5546,7 +5616,10 @@ fn borrow_definition(
 fn lexical_borrow_place(function: &raw::Function, id: raw::BorrowId) -> Option<raw::PlaceId> {
     function.blocks.iter().flat_map(|block| &block.instructions).find_map(|instruction| {
         match &instruction.kind {
-            raw::InstructionKind::BeginBorrow(definition) if definition.id == id => {
+            raw::InstructionKind::BeginBorrow(definition)
+            | raw::InstructionKind::BeginIndexedBorrow { definition, .. }
+                if definition.id == id =>
+            {
                 Some(definition.place)
             }
             _ => None,
@@ -5593,8 +5666,11 @@ fn instruction_operands(kind: &raw::InstructionKind) -> Vec<raw::ValueId> {
         | I::ReplacePlace { value, .. }
         | I::VecPush { value, .. }
         | I::SharedConstruct { value, .. }
-        | I::BorrowWrite { value, .. } => vec![*value],
-        I::FixedArrayIndexCopy { index, .. } | I::VecIndexCopy { index, .. } => vec![*index],
+        | I::BorrowWrite { value, .. }
+        | I::BorrowReplace { value, .. } => vec![*value],
+        I::FixedArrayIndexCopy { index, .. }
+        | I::VecIndexCopy { index, .. }
+        | I::BeginIndexedBorrow { index, .. } => vec![*index],
         _ => vec![],
     }
 }
@@ -5625,6 +5701,8 @@ fn verify_instruction_shape(
             | I::DropPlace { .. }
             | I::VecPush { .. }
             | I::BeginBorrow(_)
+            | I::BeginIndexedBorrow { .. }
+            | I::BorrowReplace { .. }
             | I::BorrowWrite { .. }
             | I::EndBorrow { .. }
     );
@@ -5669,6 +5747,9 @@ fn verify_instruction_shape(
         }
         I::VecPush { vector, cleanup, .. } => !place_valid(*vector) || !cleanup_valid(*cleanup),
         I::BeginBorrow(def) => !place_valid(def.place),
+        I::BeginIndexedBorrow { definition, cleanup, .. } => {
+            !place_valid(definition.place) || !cleanup_valid(*cleanup)
+        }
         _ => false,
     };
     if bad {
@@ -5792,7 +5873,7 @@ fn verify_projection(
 }
 
 #[allow(clippy::too_many_lines)]
-fn verify_calls(program: &raw::Program, errors: &mut Errors) {
+fn verify_calls(program: &raw::Program, layouts: &VerifiedLayouts, errors: &mut Errors) {
     let function_count = program.modules.iter().map(|module| module.functions.len()).sum();
     let mut offsets = Vec::with_capacity(program.modules.len());
     let mut next = 0usize;
@@ -5847,10 +5928,11 @@ fn verify_calls(program: &raw::Program, errors: &mut Errors) {
                         valid = false;
                         break;
                     };
-                    valid &=
-                        borrow_definition(function, *borrow).is_some_and(|(referent, access)| {
+                    valid &= borrow_definition(function, *borrow, layouts).is_some_and(
+                        |(referent, access)| {
                             referent == parameter.referent && access == parameter.access
-                        });
+                        },
+                    );
                     if parameter.access == raw::BorrowAccess::Exclusive {
                         let place = lexical_borrow_place(function, *borrow);
                         if exclusive_arguments.iter().any(|(prior, prior_place)| {
@@ -6155,6 +6237,11 @@ impl Errors {
         self.diagnostics
     }
 }
+
+mod indexed_borrows;
+pub use indexed_borrows::{
+    VerifiedBorrowReferentDrop, VerifiedBorrowReplacement, VerifiedIndexedBorrow,
+};
 
 #[cfg(test)]
 mod tests;

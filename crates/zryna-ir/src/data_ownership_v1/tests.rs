@@ -6,6 +6,15 @@ use std::collections::BTreeSet;
 
 mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
+mod indexed_borrow_call_cleanup;
+mod indexed_borrow_conflicts;
+mod indexed_borrow_copy_refinement;
+mod indexed_borrow_fixture;
+mod indexed_borrow_hostile;
+mod indexed_borrow_owned;
+mod indexed_borrow_positive;
+mod indexed_borrow_refinement;
+mod indexed_borrow_resources;
 mod mixed_constructor_authority;
 mod mixed_enum_authority;
 mod mixed_replacement_authority;
