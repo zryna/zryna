@@ -262,11 +262,22 @@ fn structural_handle_clone_seals_struct_enum_array_and_vec_count_recipes() {
             instruction.handle_aware_clone().map(|clone| (instruction, clone))
         })
         .collect::<Vec<_>>();
-    assert_eq!(clones.len(), 5, "place and indexed Struct, Enum, fixed array, and Vec clones");
-    assert!(clones.iter().any(|(_, clone)| matches!(
-        clone.source(),
-        zryna_ir::data_ownership_v1::VerifiedHandleAwareCloneSource::Borrow(_)
-    )));
+    assert_eq!(
+        clones.len(),
+        6,
+        "place/indexed Struct, indexed Shared leaf, Enum, fixed array, and Vec clones"
+    );
+    assert_eq!(
+        clones
+            .iter()
+            .filter(|(_, clone)| matches!(
+                clone.source(),
+                zryna_ir::data_ownership_v1::VerifiedHandleAwareCloneSource::Borrow(_)
+            ))
+            .count(),
+        2,
+        "indexed aggregate and direct Shared leaf retain borrow authority"
+    );
     assert!(clones.iter().all(|(instruction, clone)| {
         let prefix =
             instruction.handle_aware_clone_prefix_failure_drop_actions().collect::<Vec<_>>();

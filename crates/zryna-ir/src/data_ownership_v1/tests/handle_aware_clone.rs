@@ -1,4 +1,6 @@
 use super::generic_clone_fixture::{Fixture, GraphKind};
+use super::generic_vec_observation;
+use super::indexed_borrow_fixture::{Container, Element, Fixture as IndexedFixture};
 use super::*;
 use crate::data_ownership_v1::{VerifiedHandleAwareCloneSource, VerifiedHandleCloneRecipeKind};
 use zryna_layout::TypeCategory;
@@ -85,4 +87,46 @@ fn rejects_non_handle_roots_and_inexact_prefix_cleanup_deterministically() {
 fn retains_generic_clone_handle_exclusion_as_a_separate_contract() {
     let fixture = Fixture::with_graph(TypeCategory::Struct, GraphKind::Shared);
     fixture.rejects_case(fixture.seed(), "ZRYNA-I3005", "generic clone remains handle-free");
+}
+
+#[test]
+fn indexed_shared_and_weak_leaves_retain_exact_borrow_count_authority() {
+    for element in [Element::Shared, Element::Weak] {
+        let fixture = IndexedFixture::new(Container::Vec, element);
+        let mut raw = generic_vec_observation::clone_seed(&fixture, raw::BorrowAccess::Shared);
+        let raw::InstructionKind::GenericCloneBorrow { borrow, cleanup, prefix_cleanup } =
+            raw.modules[0].functions[0].blocks[0].instructions[1].kind
+        else {
+            panic!("indexed clone fixture");
+        };
+        raw.modules[0].functions[0].blocks[0].instructions[1].kind =
+            raw::InstructionKind::HandleAwareCloneBorrow { borrow, cleanup, prefix_cleanup };
+        let verified = fixture.verify(raw);
+        let instructions = verified
+            .modules()
+            .next()
+            .expect("module")
+            .functions()
+            .next()
+            .expect("function")
+            .blocks()
+            .next()
+            .expect("block")
+            .instructions()
+            .collect::<Vec<_>>();
+        let begin = instructions[0].indexed_borrow().expect("indexed authority");
+        let clone = instructions[1].handle_aware_clone().expect("handle leaf clone");
+        assert!(matches!(
+            clone.source(),
+            VerifiedHandleAwareCloneSource::Borrow(source) if source == begin.borrow()
+        ));
+        assert_eq!(clone.ty(), begin.referent());
+        let nodes = clone.frontier().nodes().collect::<Vec<_>>();
+        assert_eq!(nodes.len(), 1);
+        assert!(matches!(
+            nodes[0].kind(),
+            VerifiedHandleCloneRecipeKind::SharedCountClone
+                | VerifiedHandleCloneRecipeKind::WeakCountClone
+        ));
+    }
 }

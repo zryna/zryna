@@ -13,10 +13,12 @@ use zryna_layout::{
 };
 use zryna_source::{FileId, SourceMap, SourceMapIdentity, Span};
 
+mod cleanup_references;
 mod generic_clone;
 mod generic_static_places;
 mod handle_aware_clone;
 mod weak_upgrade_shape;
+use cleanup_references::{cleanup_references, instruction_cleanup};
 pub use generic_clone::{
     VerifiedGenericClone, VerifiedGenericCloneFrontier, VerifiedGenericCloneSource,
 };
@@ -1993,6 +1995,7 @@ fn verify_structure(
     errors: &mut Errors,
 ) {
     let generic_clone_types = generic_clone::classify_program(program, layouts);
+    let handle_clone_types = handle_aware_clone::classify_program(program, layouts);
     for (module_index, module) in program.modules.iter().enumerate() {
         borrow_indices.push(Vec::new());
         if module.id.0 as usize != module_index
@@ -2219,7 +2222,14 @@ fn verify_structure(
                 return;
             }
             let borrows = BorrowIndex::new(function, layouts);
-            verify_function_graph(function, layouts, &generic_clone_types, &borrows, errors);
+            verify_function_graph(
+                function,
+                layouts,
+                &generic_clone_types,
+                &handle_clone_types,
+                &borrows,
+                errors,
+            );
             borrow_indices[module_index].push(borrows);
             if !errors.is_empty() {
                 return;
@@ -2289,6 +2299,7 @@ fn verify_function_graph(
     function: &raw::Function,
     layouts: &VerifiedLayouts,
     generic_clone_types: &[bool],
+    handle_clone_types: &[bool],
     borrows: &BorrowIndex,
     errors: &mut Errors,
 ) {
@@ -2413,6 +2424,7 @@ fn verify_function_graph(
                 &values,
                 layouts,
                 generic_clone_types,
+                handle_clone_types,
                 borrows,
                 errors,
             );
@@ -3993,133 +4005,6 @@ fn verify_ownership_dataflow(
     }
 }
 
-#[derive(Clone, Copy)]
-struct CleanupReference {
-    plan: raw::CleanupPlanId,
-    block: usize,
-    instruction: Option<usize>,
-    role: VerifiedCleanupRole,
-}
-
-fn cleanup_references(function: &raw::Function) -> Vec<CleanupReference> {
-    let mut references = Vec::new();
-    for (block_index, block) in function.blocks.iter().enumerate() {
-        for (instruction_index, instruction) in block.instructions.iter().enumerate() {
-            if let Some(plan) = instruction_cleanup(&instruction.kind) {
-                let role = if matches!(instruction.kind, raw::InstructionKind::DirectCall { .. }) {
-                    VerifiedCleanupRole::CallTrap
-                } else {
-                    VerifiedCleanupRole::PrepareFailure
-                };
-                references.push(CleanupReference {
-                    plan,
-                    block: block_index,
-                    instruction: Some(instruction_index),
-                    role,
-                });
-            }
-            if let raw::InstructionKind::VecClone { element_cleanup: Some(plan), .. } =
-                instruction.kind
-            {
-                references.push(CleanupReference {
-                    plan,
-                    block: block_index,
-                    instruction: Some(instruction_index),
-                    role: VerifiedCleanupRole::VecCloneElementFailure,
-                });
-            }
-            if let raw::InstructionKind::ClonePlace { element_cleanup: Some(plan), .. } =
-                instruction.kind
-            {
-                references.push(CleanupReference {
-                    plan,
-                    block: block_index,
-                    instruction: Some(instruction_index),
-                    role: VerifiedCleanupRole::AggregateCloneElementFailure,
-                });
-            }
-            if let raw::InstructionKind::GenericClonePlace { prefix_cleanup: plan, .. }
-            | raw::InstructionKind::GenericCloneBorrow { prefix_cleanup: plan, .. } =
-                instruction.kind
-            {
-                references.push(CleanupReference {
-                    plan,
-                    block: block_index,
-                    instruction: Some(instruction_index),
-                    role: VerifiedCleanupRole::GenericClonePrefixFailure,
-                });
-            }
-            if let raw::InstructionKind::HandleAwareClonePlace { prefix_cleanup: plan, .. }
-            | raw::InstructionKind::HandleAwareCloneBorrow { prefix_cleanup: plan, .. } =
-                instruction.kind
-            {
-                references.push(CleanupReference {
-                    plan,
-                    block: block_index,
-                    instruction: Some(instruction_index),
-                    role: VerifiedCleanupRole::GenericClonePrefixFailure,
-                });
-            }
-        }
-        if let Some(terminator) = block.terminators.first() {
-            let site = match terminator.kind {
-                raw::Terminator::Return { cleanup, .. } => {
-                    Some((cleanup, VerifiedCleanupRole::Return))
-                }
-                raw::Terminator::WeakUpgradeBranch { cleanup, .. } => {
-                    Some((cleanup, VerifiedCleanupRole::PrepareFailure))
-                }
-                raw::Terminator::Trap { cleanup, .. } => {
-                    Some((cleanup, VerifiedCleanupRole::ControlledTrap))
-                }
-                raw::Terminator::Jump(_)
-                | raw::Terminator::Branch { .. }
-                | raw::Terminator::EnumMatch { .. } => None,
-            };
-            if let Some((plan, role)) = site {
-                references.push(CleanupReference {
-                    plan,
-                    block: block_index,
-                    instruction: None,
-                    role,
-                });
-            }
-        }
-    }
-    references
-}
-
-fn instruction_cleanup(kind: &raw::InstructionKind) -> Option<raw::CleanupPlanId> {
-    use raw::InstructionKind as I;
-    match kind {
-        I::StructConstruct { cleanup, .. }
-        | I::EnumConstruct { cleanup, .. }
-        | I::FixedArrayConstruct { cleanup, .. } => *cleanup,
-        I::DirectCall { cleanup, .. }
-        | I::ClonePlace { cleanup, .. }
-        | I::GenericClonePlace { cleanup, .. }
-        | I::GenericCloneBorrow { cleanup, .. }
-        | I::HandleAwareClonePlace { cleanup, .. }
-        | I::HandleAwareCloneBorrow { cleanup, .. }
-        | I::FixedArrayIndexCopy { cleanup, .. }
-        | I::VecIndexCopy { cleanup, .. }
-        | I::StringFromUtf8 { cleanup, .. }
-        | I::StringClone { cleanup, .. }
-        | I::StringConcat { cleanup, .. }
-        | I::VecClone { cleanup, .. }
-        | I::VecConstruct { cleanup, .. }
-        | I::VecPush { cleanup, .. }
-        | I::SharedConstruct { cleanup, .. }
-        | I::SharedClone { cleanup, .. }
-        | I::WeakDowngrade { cleanup, .. }
-        | I::WeakClone { cleanup, .. }
-        | I::BeginIndexedBorrow { cleanup, .. }
-        | I::BeginIndexedAccess { cleanup, .. }
-        | I::ProjectIndexedBorrow { cleanup, .. } => Some(*cleanup),
-        _ => None,
-    }
-}
-
 fn root_place(mut place: raw::PlaceId, function: &raw::Function) -> raw::PlaceId {
     let mut seen = BTreeSet::new();
     while seen.insert(place) {
@@ -5550,6 +5435,7 @@ fn verify_operation_types(
     values: &[ValueInfo],
     layouts: &VerifiedLayouts,
     generic_clone_types: &[bool],
+    handle_clone_types: &[bool],
     borrows: &BorrowIndex,
     errors: &mut Errors,
 ) {
@@ -5655,11 +5541,14 @@ fn verify_operation_types(
         }
         I::HandleAwareClonePlace { place, .. } => {
             place_type(*place) == result_type
-                && result_type.is_some_and(|ty| handle_aware_clone::valid_type(ty, layouts))
+                && result_type.is_some_and(|ty| {
+                    handle_clone_types.get(ty.0 as usize).copied().unwrap_or(false)
+                })
         }
         I::HandleAwareCloneBorrow { borrow, .. } => {
             borrows.definition(*borrow).is_some_and(|(referent, _)| {
-                Some(referent) == result_type && handle_aware_clone::valid_type(referent, layouts)
+                Some(referent) == result_type
+                    && handle_clone_types.get(referent.0 as usize).copied().unwrap_or(false)
             })
         }
         I::GenericMoveFromPlace { place } => {

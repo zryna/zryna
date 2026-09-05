@@ -396,6 +396,9 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
         container_value(f, &shared_vec, true, "fieldCopy")
     });
     if structural_clone_source.is_some() {
+        local(&mut f, "strongIndexedCopy", &shared, |f| {
+            unary(f, "clone", |f| index(f, "strongItems"))
+        });
         local(&mut f, "strongItemsCopy", &shared_vec, |f| {
             unary(f, "clone", |f| f.reference("strongItems"))
         });

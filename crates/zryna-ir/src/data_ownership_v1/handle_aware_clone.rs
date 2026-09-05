@@ -24,9 +24,9 @@ pub enum VerifiedHandleCloneRecipeKind {
     /// Independently allocated String clone.
     StringClone,
     /// Fields are prepared in declaration order.
-    Struct(Vec<LayoutTypeId>),
+    Struct(Vec<(u32, LayoutTypeId)>),
     /// Only the runtime-active payload is prepared; entries retain source order.
-    Enum(Vec<Option<LayoutTypeId>>),
+    Enum(Vec<(u32, Option<LayoutTypeId>)>),
     /// Elements are prepared in ascending index order.
     FixedArray {
         /// Exact element type.
@@ -199,25 +199,69 @@ impl<'a> VerifiedHandleAwareCloneFrontier<'a> {
     }
 }
 
-pub(super) fn valid_type(root: raw::TypeId, layouts: &VerifiedLayouts) -> bool {
-    let Some(root) = layout_type(layouts, root).map(|record| record.id()) else { return false };
-    layout_type(layouts, raw::TypeId(root.index())).is_some_and(|record| {
-        matches!(
-            record.category(),
-            TypeCategory::Struct
-                | TypeCategory::Enum
-                | TypeCategory::FixedArray
-                | TypeCategory::Vec
-        )
-    }) && recipe(root, layouts).is_some_and(|nodes| {
-        nodes.iter().any(|node| {
+pub(super) fn classify_program(program: &raw::Program, layouts: &VerifiedLayouts) -> Vec<bool> {
+    let used = program.modules.iter().flat_map(|module| &module.functions).any(|function| {
+        function.blocks.iter().flat_map(|block| &block.instructions).any(|instruction| {
             matches!(
-                node.kind,
-                VerifiedHandleCloneRecipeKind::SharedCountClone
-                    | VerifiedHandleCloneRecipeKind::WeakCountClone
+                instruction.kind,
+                raw::InstructionKind::HandleAwareClonePlace { .. }
+                    | raw::InstructionKind::HandleAwareCloneBorrow { .. }
             )
         })
-    })
+    });
+    if !used {
+        return Vec::new();
+    }
+    let mut parents = vec![Vec::new(); layouts.types().len()];
+    let mut contains = vec![false; parents.len()];
+    let mut invalid = vec![false; parents.len()];
+    for record in layouts.types() {
+        let index = record.id().index() as usize;
+        let mut add_child = |child: LayoutTypeId| parents[child.index() as usize].push(index);
+        match record.category() {
+            TypeCategory::Struct => {
+                for field in record.fields() {
+                    add_child(field.ty());
+                }
+            }
+            TypeCategory::Enum => {
+                for payload in record.variants().iter().filter_map(|variant| variant.payload()) {
+                    add_child(payload);
+                }
+            }
+            TypeCategory::FixedArray => add_child(record.referenced_type().expect("sealed array")),
+            TypeCategory::Vec => {
+                let element = record.referenced_type().expect("sealed Vec");
+                add_child(element);
+                invalid[index] = layouts.type_by_id(element).is_none_or(|ty| ty.size() == 0);
+            }
+            TypeCategory::Shared | TypeCategory::Weak => contains[index] = true,
+            TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String => {}
+        }
+    }
+    let mut pending = contains
+        .iter()
+        .enumerate()
+        .filter_map(|(index, value)| value.then_some(index))
+        .collect::<Vec<_>>();
+    while let Some(child) = pending.pop() {
+        for &parent in &parents[child] {
+            if !contains[parent] {
+                contains[parent] = true;
+                pending.push(parent);
+            }
+        }
+    }
+    pending.extend(invalid.iter().enumerate().filter_map(|(index, value)| value.then_some(index)));
+    while let Some(child) = pending.pop() {
+        for &parent in &parents[child] {
+            if !invalid[parent] {
+                invalid[parent] = true;
+                pending.push(parent);
+            }
+        }
+    }
+    contains.into_iter().zip(invalid).map(|(has_handle, bad)| has_handle && !bad).collect()
 }
 
 fn recipe(
@@ -259,10 +303,14 @@ fn recipe(
                 TypeCategory::Bool | TypeCategory::I32 => VerifiedHandleCloneRecipeKind::Copy,
                 TypeCategory::String => VerifiedHandleCloneRecipeKind::StringClone,
                 TypeCategory::Struct => VerifiedHandleCloneRecipeKind::Struct(
-                    record.fields().iter().map(|field| field.ty()).collect(),
+                    record.fields().iter().map(|field| (field.ordinal(), field.ty())).collect(),
                 ),
                 TypeCategory::Enum => VerifiedHandleCloneRecipeKind::Enum(
-                    record.variants().iter().map(|variant| variant.payload()).collect(),
+                    record
+                        .variants()
+                        .iter()
+                        .map(|variant| (variant.ordinal(), variant.payload()))
+                        .collect(),
                 ),
                 TypeCategory::FixedArray => VerifiedHandleCloneRecipeKind::FixedArray {
                     element: record.referenced_type()?,
