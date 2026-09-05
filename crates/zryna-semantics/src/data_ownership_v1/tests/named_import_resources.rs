@@ -7,18 +7,21 @@ use crate::data_ownership_v1::import_resolution;
 use crate::data_ownership_v1::layout_graph::{build_graph, semantic_type};
 use crate::data_ownership_v1::owned_constructor_plan::ConstructorValueTypes;
 use crate::data_ownership_v1::string_vec_resource_estimates::owned_call_cleanup_budget_violation;
-use crate::data_ownership_v1::tests::named_import_calls::imported_zero_argument_fixture;
+use crate::data_ownership_v1::tests::named_import_calls::{
+    imported_fallible_arguments_fixture, imported_zero_argument_fixture,
+};
 use crate::data_ownership_v1::type_model::map_node_types;
 use crate::data_ownership_v1::{Errors, OwnerState, SemanticInput, semantic_preflight};
 use std::collections::{BTreeMap, BTreeSet};
 use zryna_ir::data_ownership_v1 as ir;
-use zryna_source::NormalizedSourcePath;
-use zryna_syntax::v4::verify_snapshot;
+use zryna_source::{NormalizedSourcePath, SourceMap};
+use zryna_syntax::v4::{RawProjectSyntaxSnapshot, verify_snapshot};
 
 fn with_imported(
+    fixture: fn() -> (SourceMap, RawProjectSyntaxSnapshot),
     exercise: impl FnOnce(&mut PrivateOwnedAggregateLowerer<'_, '_, '_>, Ty),
 ) -> Vec<zryna_diagnostics::Diagnostic> {
-    let (sources, raw) = imported_zero_argument_fixture();
+    let (sources, raw) = fixture();
     let syntax = verify_snapshot(raw, &sources).expect("authenticated imported source");
     let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
     let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
@@ -84,7 +87,7 @@ fn with_imported(
 #[test]
 fn named_import_preparation_resources_are_exact_atomic_overflow_checked_and_recoverable() {
     for extra in [false, true] {
-        let errors = with_imported(|lowerer, ty| {
+        let errors = with_imported(imported_zero_argument_fixture, |lowerer, ty| {
             assert!(run_statement(lowerer, 0, ty));
             let root = root_value(lowerer, 1);
             let held = ir::MAX_VALUES_PER_FUNCTION - 2 + usize::from(extra);
@@ -125,7 +128,7 @@ fn named_import_preparation_resources_are_exact_atomic_overflow_checked_and_reco
     assert!(owned_call_cleanup_budget_violation(0, usize::MAX, 2, 1));
 
     for extra in [false, true] {
-        let errors = with_imported(|lowerer, ty| {
+        let errors = with_imported(imported_zero_argument_fixture, |lowerer, ty| {
             assert!(run_statement(lowerer, 0, ty));
             let root = root_value(lowerer, 1);
             seed_external(lowerer, ir::MAX_CLEANUP_PLANS_PER_FUNCTION - 2 + usize::from(extra), 0);
@@ -144,4 +147,36 @@ fn named_import_preparation_resources_are_exact_atomic_overflow_checked_and_reco
             assert_eq!(errors[0].code, "ZRYNA-M3201");
         }
     }
+}
+
+#[test]
+fn named_import_later_argument_cleanup_action_frontier_is_exact_and_recovers() {
+    for extra in [false, true] {
+        let errors = with_imported(imported_fallible_arguments_fixture, |lowerer, ty| {
+            let root = root_value(lowerer, 0);
+            seed_external(lowerer, 0, ir::MAX_DROP_ACTIONS_PER_FUNCTION - 4 + usize::from(extra));
+            let before = state(lowerer);
+            if extra {
+                assert!(PreparedValue::prepare(lowerer, root, ty).is_none());
+                assert_eq!(state(lowerer), before);
+            } else {
+                PreparedValue::prepare(lowerer, root, ty)
+                    .expect("exact imported later-argument cleanup frontier")
+                    .consume();
+            }
+        });
+        assert_eq!(errors.len(), usize::from(extra));
+        if extra {
+            assert_eq!(errors[0].code, "ZRYNA-M3201");
+        }
+    }
+
+    let errors = with_imported(imported_fallible_arguments_fixture, |lowerer, ty| {
+        let root = root_value(lowerer, 0);
+        PreparedValue::prepare(lowerer, root, ty)
+            .expect("pristine imported argument recovery")
+            .consume();
+        assert!(lowerer.constructor_storage_is_clear());
+    });
+    assert!(errors.is_empty());
 }

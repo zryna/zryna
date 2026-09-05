@@ -47,32 +47,55 @@ fn named_import_alias_binding_does_not_create_a_declaration_identity() {
 #[test]
 fn named_import_alias_cannot_be_reexported_as_a_target_declaration() {
     let (sources, mut raw) = multi_hop_fixture();
-    let main = raw.files.iter_mut().find(|file| file.path == "src/main.zry").unwrap();
+    for file in &mut raw.files {
+        let (path, id) = match file.path.as_str() {
+            "src/mid.zry" => ("src/aaa.zry", 0),
+            "src/lib.zry" => ("src/lib.zry", 1),
+            "src/main.zry" => ("src/zzz.zry", 2),
+            path => panic!("unexpected path {path}"),
+        };
+        let mut value = serde_json::to_value(&*file).unwrap();
+        rewrite_spans(&mut value, id, u32::MAX, 0);
+        *file = serde_json::from_value(value).unwrap();
+        file.id = id;
+        file.path = path.into();
+    }
+    raw.files.sort_by_key(|file| file.id);
+    let main = raw.files.iter_mut().find(|file| file.path == "src/zzz.zry").unwrap();
     main.imports[0].bindings[0].imported.text = "select".into();
+    main.imports[0].specifier.text = "./aaa.zry".into();
     let expected_span = main.imports[0].bindings[0].imported.span;
-    let inputs = ["src/lib.zry", "src/main.zry", "src/mid.zry"]
-        .into_iter()
-        .map(|path| {
-            let normalized = NormalizedSourcePath::new(path).unwrap();
-            let source = sources.source(sources.file_id(&normalized).unwrap()).unwrap();
-            SourceFileInput {
-                path: path.into(),
-                text: if path == "src/main.zry" {
-                    source.text().replacen("caller as bridge", "select as bridge", 1)
-                } else {
-                    source.text().to_owned()
-                },
-            }
-        })
-        .collect();
+    let inputs = [
+        ("src/aaa.zry", "src/mid.zry"),
+        ("src/lib.zry", "src/lib.zry"),
+        ("src/zzz.zry", "src/main.zry"),
+    ]
+    .into_iter()
+    .map(|(path, old_path)| {
+        let normalized = NormalizedSourcePath::new(old_path).unwrap();
+        let source = sources.source(sources.file_id(&normalized).unwrap()).unwrap();
+        SourceFileInput {
+            path: path.into(),
+            text: if path == "src/zzz.zry" {
+                source.text().replacen("caller as bridge", "select as bridge", 1).replacen(
+                    "./mid.zry",
+                    "./aaa.zry",
+                    1,
+                )
+            } else {
+                source.text().to_owned()
+            },
+        }
+    })
+    .collect();
     let sources = SourceMap::build(inputs).unwrap();
     let syntax = verify_snapshot(raw, &sources).expect("authenticated re-export attempt");
-    let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
+    let entry = sources.file_id(&NormalizedSourcePath::new("src/zzz.zry").unwrap()).unwrap();
     let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
     let expected = lower(input).expect_err("aliases are not declarations");
     assert_eq!(expected.len(), 1);
     assert_eq!(expected[0].code, "ZRYNA-M3016");
-    assert_eq!(expected[0].message, "module 'src/mid.zry' does not export function 'select'");
+    assert_eq!(expected[0].message, "module 'src/aaa.zry' does not export function 'select'");
     assert_eq!(
         expected[0].primary_span(),
         Some(crate::data_ownership_v1::span(&sources, expected_span))

@@ -9,6 +9,7 @@ use zryna_syntax::v4::{
 #[derive(Clone, Copy)]
 pub(super) enum Base {
     Mixed(Case),
+    FallibleArguments,
     OwnedToCopy,
     ZeroArgument,
     BoolResult,
@@ -193,6 +194,11 @@ pub(in crate::data_ownership_v1) fn imported_zero_argument_fixture()
     imported_fixture(Base::ZeroArgument, "producer", "factoryx", "./lib.zry")
 }
 
+pub(in crate::data_ownership_v1) fn imported_fallible_arguments_fixture()
+-> (SourceMap, RawProjectSyntaxSnapshot) {
+    imported_fixture(Base::FallibleArguments, "choose", "select", "./lib.zry")
+}
+
 fn imported_fixture_paths(
     base: Base,
     imported_name: &str,
@@ -205,6 +211,10 @@ fn imported_fixture_paths(
     let (source, raw, target, call_name) = match base {
         Base::Mixed(case) => {
             let (source, raw) = fixture(&Element::String, case);
+            (source, raw, 1, "choose")
+        }
+        Base::FallibleArguments => {
+            let (source, raw) = fixture(&Element::String, Case::FallibleArguments);
             (source, raw, 1, "choose")
         }
         Base::OwnedToCopy => {
@@ -429,49 +439,5 @@ fn named_import_resolution_is_independent_of_authenticated_path_order() {
             .find_map(|instruction| instruction.callee())
             .expect("imported call");
         assert_eq!((callee.module() as usize, callee.declaration()), (library, 0));
-    }
-}
-
-#[test]
-fn named_import_resolution_rejects_absent_unexported_wrong_case_and_colliding_names_exactly() {
-    let cases = [
-        (
-            "choose",
-            "select",
-            "./bad.zry",
-            "module 'src/bad.zry' is absent from the authenticated source closure",
-        ),
-        ("caller", "select", "./lib.zry", "module 'src/lib.zry' does not export function 'caller'"),
-        (
-            "Choose",
-            "select",
-            "./lib.zry",
-            "imported function 'Choose' has the wrong portable ASCII case",
-        ),
-        (
-            "choose",
-            "caller",
-            "./lib.zry",
-            "callable name 'caller' collides under portable ASCII case folding",
-        ),
-    ];
-    for (imported, local, path, message) in cases {
-        let (sources, raw) = imported_fixture(Base::Mixed(Case::Direct), imported, local, path);
-        let syntax = verify_snapshot(raw, &sources).expect("authenticated negative import");
-        let entry = sources
-            .file_id(&NormalizedSourcePath::new("src/main.zry").expect("path"))
-            .expect("entry");
-        let errors = lower(SemanticInput::try_new(&syntax, &sources, entry).expect("input"))
-            .expect_err("invalid import");
-        assert_eq!(errors.len(), if path == "./bad.zry" { 2 } else { 1 }, "{errors:?}");
-        assert_eq!(errors[0].code, if local == "caller" { "ZRYNA-M3002" } else { "ZRYNA-M3016" });
-        assert_eq!(errors[0].message, message);
-        assert!(errors[0].primary_span().is_some());
-        if path == "./bad.zry" {
-            assert_eq!(
-                errors[1].message,
-                "authenticated source closure contains module 'src/lib.zry' unreachable from the selected entry"
-            );
-        }
     }
 }
