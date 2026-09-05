@@ -19,6 +19,10 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     if !signature.private {
         return false;
     }
+    // A dependency export grants module visibility, not public entry ABI authority.
+    if function.export_span.is_some() {
+        return true;
+    }
     if super::has_nonindexed_owned_borrow(
         function,
         file,

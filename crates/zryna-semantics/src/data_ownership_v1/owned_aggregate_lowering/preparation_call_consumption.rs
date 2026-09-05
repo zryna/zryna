@@ -119,9 +119,9 @@ impl Consumption<'_, '_, '_, '_> {
         assert!(self.cleanups.is_empty(), "call cannot interrupt cleanup");
         assert!(self.calls.released.is_none(), "call release must finish before another scope");
         assert!(end > start + 3 && end <= length, "call exact range");
-        assert_eq!(
-            signature.id.module.0 as usize, self.lowerer.module,
-            "call same module authority"
+        assert!(
+            self.lowerer.catalog.admits(self.lowerer.module, signature.id),
+            "call catalog visibility authority"
         );
         let actual = self
             .lowerer

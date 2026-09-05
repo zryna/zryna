@@ -46,7 +46,7 @@ fn damage_entry(
     match damage {
         Damage::ForeignModule => {
             signature.id.module = raw::ModuleId(1);
-            Some("call same module authority")
+            Some("call catalog visibility authority")
         }
         Damage::WrongKind => {
             signature.kind = CallKind::Vec;

@@ -23,6 +23,7 @@ mod diagnostics;
 mod function_catalog;
 mod function_dispatch;
 mod global_resource_limits;
+mod import_resolution;
 mod layout_graph;
 mod owned_aggregate_lowering;
 mod owned_call_resolution;
@@ -254,7 +255,9 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
         return Err(errors.finish());
     }
 
-    let catalog = build_function_catalog(input, &declarations, &graph, &node_types, &mut errors);
+    let mut catalog =
+        build_function_catalog(input, &declarations, &graph, &node_types, &mut errors);
+    import_resolution::resolve_imports(input, &mut catalog, &mut errors);
     if !errors.is_empty() {
         return Err(errors.finish());
     }
@@ -263,15 +266,6 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
     let mut generated_blocks = 0_usize;
     let mut generated_edges = 0_usize;
     'modules: for (module_index, file) in input.syntax().files().iter().enumerate() {
-        if !file.imports().is_empty() {
-            errors.at(
-                "ZRYNA-M3002",
-                span(input.sources(), file.imports()[0].span),
-                "aggregate M3 does not admit imported aggregate names",
-                "declare the Copy aggregate in the same module",
-            );
-            continue;
-        }
         let mut functions = Vec::with_capacity(file.functions().len());
         for (function_index, function) in file.functions().iter().enumerate() {
             let diagnostics_before = errors.len();
