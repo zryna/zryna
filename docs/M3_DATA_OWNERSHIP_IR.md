@@ -99,10 +99,17 @@ StringFromUtf8, StringClone, StringConcat,
 VecClone, VecConstruct, VecPush,
 SharedConstruct, SharedClone,
 WeakDowngrade, WeakClone,
-BeginBorrow, BorrowRead, BorrowWrite, EndBorrow
+BeginBorrow, BeginIndexedBorrow, BorrowRead, BorrowWrite, BorrowReplace, EndBorrow
 ```
 
 `BeginBorrow` contains one dense `BorrowDefinition` with `Shared` or `Exclusive` access.
+`BeginIndexedBorrow` binds an exact FixedArray/Vec container and evaluated i32 index to an
+element-typed authority whose conflict region is the complete container. Its bounds check precedes
+successful borrow creation and carries a site-bound pre-state cleanup. `BorrowReplace` consumes a
+prepared exact non-Copy RHS through exclusive authority; its old-value drop is the complete
+referent, not the conflict container. The dedicated opaque access and replacement views preserve
+that distinction. The complete contract is in
+[`M3_INDEXED_BORROW_AUTHORITY.md`](M3_INDEXED_BORROW_AUTHORITY.md).
 `BorrowRead` remains restricted to Copy referents and produces the exact Copy type; it does not
 transfer an owned value or cleanup obligation. The completed Issue #116 semantic checkpoint brackets
 existing String clone/concat, exact Vec Copy-index, and supported whole-aggregate clone operations

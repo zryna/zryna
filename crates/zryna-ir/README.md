@@ -132,6 +132,14 @@ with one shared `BeginBorrow`/`EndBorrow`. Existing verifier rules keep the sour
 require distinct owned result places where applicable, and retain the existing site-bound
 cleanup/fault authority.
 
+The indexed-borrow prerequisite binds a FixedArray/Vec element to an evaluated i32 index while
+retaining the complete container as its conservative conflict region. Bounds failure is a sealed
+pre-begin cleanup site, not a target-selected trap. `BorrowReplace` supplies exact non-Copy
+replacement through exclusive authority without creating a dynamic element owner place or dropping
+the conflict container. Copy-only `BorrowRead`/`BorrowWrite` are unchanged. See the
+[indexed authority contract](../../docs/M3_INDEXED_BORROW_AUTHORITY.md) for evaluation, mutation,
+cleanup, call and resource rules. This does not activate the dependent source producers or targets.
+
 The Issue #81 verifier foundations additionally admit bounded immutable UTF-8 bytes through
 `StringFromUtf8`, derive exactly one non-Copy owner place per owned value, preserve Copy
 parameter/local/temporary storage without adding Copy cleanup obligations, and transfer pending
