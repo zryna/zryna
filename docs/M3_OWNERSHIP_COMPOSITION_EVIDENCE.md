@@ -303,6 +303,12 @@ ordinary observation, transient child transfer and persistent lexical authority.
   reverse lexical end order and final-child call authority.
 - `ordinary_array_composition_resources.rs` keeps exact/first-extra held-credit, overflow
   and rejected-state/recovery controls separate from authenticated source/full-IR positives.
+- `ordinary_array_clone_base_resources.rs` composes owned-array clone reservation with
+  the subsequent indexed observation. Its authenticated source control checks source-only
+  clone failure cleanup, destination-prefix cleanup and one cloned-temporary drop at bounds
+  failure. Separate synthetic credits exercise exact/first-extra/overflow and same-state
+  recovery across values, places, transitions, cleanup plans and cleanup actions. These are
+  verified failure plans and preparation controls, not injected runtime allocator execution.
 - Source `explicit_indexed_source.rs`, `explicit_indexed_siblings.rs`,
   `explicit_indexed_calls.rs` and their rejection modules cover lexical identity, exact owned/Copy
   access, static sibling versus dynamic conflicts and canonical call-argument authority.

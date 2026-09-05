@@ -445,3 +445,7 @@ mod mixed_root_replacement_controls;
 #[cfg(test)]
 #[path = "../tests/ordinary_array_composition_resources.rs"]
 mod ordinary_array_composition_resources;
+
+#[cfg(test)]
+#[path = "../tests/ordinary_array_clone_base_resources.rs"]
+mod ordinary_array_clone_base_resources;

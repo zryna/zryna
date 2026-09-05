@@ -8,7 +8,7 @@ use crate::data_ownership_v1::tests::generic_vec_fixture::ordinary_array_composi
 use crate::data_ownership_v1::type_model::Binding;
 use zryna_ir::data_ownership_v1 as ir;
 
-fn parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
+pub(super) fn parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
     lowerer.mixed_function = true;
     for (index, parameter) in lowerer.function.parameters.iter().enumerate() {
         let ty = semantic_type(
@@ -64,7 +64,7 @@ fn demand(owned: bool, shape: Shape) -> [usize; 5] {
     }
 }
 
-const LIMITS: [usize; 5] = [
+pub(super) const LIMITS: [usize; 5] = [
     ir::MAX_VALUES_PER_FUNCTION,
     ir::MAX_PLACES_PER_FUNCTION,
     ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION,
@@ -72,7 +72,7 @@ const LIMITS: [usize; 5] = [
     ir::MAX_DROP_ACTIONS_PER_FUNCTION,
 ];
 
-fn counts(lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>) -> [usize; 5] {
+pub(super) fn counts(lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>) -> [usize; 5] {
     [
         lowerer.next_value as usize,
         lowerer.places.len(),
@@ -82,7 +82,11 @@ fn counts(lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>) -> [usize; 5] {
     ]
 }
 
-fn reserve(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>, dimension: usize, held: usize) {
+pub(super) fn reserve(
+    lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
+    dimension: usize,
+    held: usize,
+) {
     match dimension {
         0 => lowerer.set_reserved_constructor_values_for_test(held),
         1 => lowerer.set_reserved_constructor_places_for_test(held),
