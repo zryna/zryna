@@ -281,6 +281,33 @@ fn opaque_structural_handle_clone_rejects_before_unverified_ir_and_recovers() {
     lower(pair_input(&valid_syntax, &valid_sources)).expect("valid composition after rejection");
 }
 
+#[test]
+fn structural_handle_clone_reports_missing_source_before_capability_boundary() {
+    let (source, raw) =
+        generic_vec_fixture::shared_weak_fixture::composition_fixture::missing_clone_source_fixture(
+        );
+    let missing_at = raw.files[0]
+        .functions
+        .iter()
+        .flat_map(|function| &function.body.expressions)
+        .find_map(|expression| match &expression.kind {
+            RawExpressionKind::Reference { name } if name.text == "ghostx" => Some(name.span),
+            _ => None,
+        })
+        .expect("missing structural clone source");
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated missing source fixture");
+    let expected = vec![Diagnostic::error_at(
+        "ZRYNA-M3002",
+        span(&sources, missing_at),
+        "aggregate binding 'ghostx' is not declared in this function",
+        "clone one preceding available aggregate local",
+    )];
+    for _ in 0..2 {
+        assert_eq!(lower(pair_input(&syntax, &sources)).expect_err("missing source"), expected);
+    }
+}
+
 fn rejected(case: Case, code: &str, message: &str, guidance: &str) {
     let (source, raw) = fixture_case(case);
     let body = &raw.files[0].functions[0].body;

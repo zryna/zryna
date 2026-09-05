@@ -310,14 +310,18 @@ fn mutable_local(
 }
 
 pub(crate) fn fixture() -> (String, RawProjectSyntaxSnapshot) {
-    build(false)
+    build(None)
 }
 
 pub(crate) fn clone_rejection_fixture() -> (String, RawProjectSyntaxSnapshot) {
-    build(true)
+    build(Some("bundle"))
 }
 
-fn build(reject_structural_clone: bool) -> (String, RawProjectSyntaxSnapshot) {
+pub(crate) fn missing_clone_source_fixture() -> (String, RawProjectSyntaxSnapshot) {
+    build(Some("ghostx"))
+}
+
+fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnapshot) {
     let mut f = Builder {
         source: String::new(),
         types: Vec::new(),
@@ -352,8 +356,8 @@ fn build(reject_structural_clone: bool) -> (String, RawProjectSyntaxSnapshot) {
     local(&mut f, "copy", &shared, |f| unary(f, "clone", |f| f.reference("owner")));
     local(&mut f, "weak", &weak, |f| unary(f, "downgrade", |f| f.reference("owner")));
     mutable_local(&mut f, "bundle", &bundle, |f| struct_value(f, "copy", "spare"));
-    if reject_structural_clone {
-        local(&mut f, "bundleCopy", &bundle, |f| unary(f, "clone", |f| f.reference("bundle")));
+    if let Some(source) = structural_clone_source {
+        local(&mut f, "bundleCopy", &bundle, |f| unary(f, "clone", |f| f.reference(source)));
     }
     local(&mut f, "fieldCopy", &shared, |f| unary(f, "clone", |f| field(f, "bundle", "strong")));
     let assignment_start = f.source.len();

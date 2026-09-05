@@ -13,15 +13,6 @@ use super::preparation_plan::{Leaf, Operation};
 
 impl PreparationContext<'_, '_, '_, '_> {
     pub(super) fn generic_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
-        if contains_handle(ty.layout, self.decisions.layouts, &mut BTreeSet::new()) {
-            self.decisions.errors.at(
-                "ZRYNA-M3016",
-                at,
-                "structural clone containing shared or weak handles requires explicit count operations",
-                "clone each handle leaf explicitly before rebuilding a static aggregate; dynamic Enum and Vec clone composition is not yet admitted",
-            );
-            return None;
-        }
         let expression = self.decisions.function.body.expressions.get(id as usize)?;
         if matches!(
             expression.kind,
@@ -45,6 +36,7 @@ impl PreparationContext<'_, '_, '_, '_> {
                 );
                 return None;
             }
+            self.reject_handle_structural_clone(ty, at)?;
             return self.generic_clone_from_place(source.place, ty, at);
         }
         let RawExpressionKind::Reference { name } = &expression.kind else {
@@ -86,7 +78,21 @@ impl PreparationContext<'_, '_, '_, '_> {
             );
             return None;
         }
+        self.reject_handle_structural_clone(ty, at)?;
         self.generic_clone_from_place(binding.place, ty, at)
+    }
+
+    fn reject_handle_structural_clone(&mut self, ty: Ty, at: Span) -> Option<()> {
+        if !contains_handle(ty.layout, self.decisions.layouts, &mut BTreeSet::new()) {
+            return Some(());
+        }
+        self.decisions.errors.at(
+            "ZRYNA-M3016",
+            at,
+            "structural clone containing shared or weak handles requires explicit count operations",
+            "clone each handle leaf explicitly before rebuilding a static aggregate; dynamic Enum and Vec clone composition is not yet admitted",
+        );
+        None
     }
 
     fn generic_clone_from_place(
