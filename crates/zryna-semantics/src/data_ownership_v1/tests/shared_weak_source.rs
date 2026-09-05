@@ -292,8 +292,8 @@ fn structural_handle_clone_seals_struct_enum_array_and_vec_count_recipes() {
         clone.frontier().nodes().any(|node| {
             matches!(
                 node.kind(),
-                zryna_ir::data_ownership_v1::VerifiedHandleCloneRecipeKind::SharedCountClone
-                    | zryna_ir::data_ownership_v1::VerifiedHandleCloneRecipeKind::WeakCountClone
+                VerifiedHandleCloneRecipeKind::SharedCountClone
+                    | VerifiedHandleCloneRecipeKind::WeakCountClone
             )
         })
     }));

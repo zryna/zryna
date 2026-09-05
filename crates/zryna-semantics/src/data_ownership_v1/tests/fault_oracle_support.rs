@@ -1,8 +1,10 @@
+use super::handle_fault_oracle_support::{handle_clone_operations, validate_handle_failure};
 use super::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum OwnedFaultInjection {
     Runtime { operation: LogicalOperation, status: RuntimeStatus },
+    HandleCloneStep { operation: LogicalOperation, status: RuntimeStatus, fault_ordinal: u32 },
     VecCloneElement { status: RuntimeStatus, source_length: u64, completed_prefix: u64 },
     AggregateCloneElement { status: RuntimeStatus, completed_prefix: u64 },
     Bounds,
@@ -20,6 +22,9 @@ pub(super) struct OwnedFaultTrace {
     span: FaultSpan,
     pub(super) block: u32,
     pub(super) instruction: u32,
+    pub(super) operation: Option<LogicalOperation>,
+    pub(super) status: Option<RuntimeStatus>,
+    pub(super) fault_ordinal: Option<u32>,
     pub(super) disposition: OwnedFaultDisposition,
     pub(super) result_committed: bool,
     pub(super) uncommitted_result: Option<FaultValueIdentity>,
@@ -38,6 +43,7 @@ pub(super) enum OwnedFaultOracleError {
     EventLimit,
     InvalidVecClonePrefix,
     InvalidAggregateClonePrefix,
+    InvalidHandleCloneOrdinal,
 }
 
 fn runtime_operation(kind: VerifiedInstructionKind) -> Option<LogicalOperation> {
@@ -49,6 +55,10 @@ fn runtime_operation(kind: VerifiedInstructionKind) -> Option<LogicalOperation> 
             Some(LogicalOperation::VecAllocate)
         }
         VerifiedInstructionKind::VecPush => Some(LogicalOperation::VecReserve),
+        VerifiedInstructionKind::SharedConstruct => Some(LogicalOperation::Allocate),
+        VerifiedInstructionKind::SharedClone => Some(LogicalOperation::StrongClone),
+        VerifiedInstructionKind::WeakDowngrade => Some(LogicalOperation::WeakDowngrade),
+        VerifiedInstructionKind::WeakClone => Some(LogicalOperation::WeakClone),
         _ => None,
     }
 }
@@ -121,6 +131,9 @@ pub(super) fn owned_fault_trace(
             }
             usize::try_from(completed_prefix).map_err(|_| OwnedFaultOracleError::EventLimit)?
         }
+        OwnedFaultInjection::HandleCloneStep { fault_ordinal, .. } => {
+            usize::try_from(fault_ordinal).map_err(|_| OwnedFaultOracleError::EventLimit)?
+        }
         _ => 0,
     };
     let new_events = prefix_events.checked_add(1).ok_or(OwnedFaultOracleError::EventLimit)?;
@@ -135,7 +148,8 @@ pub(super) fn owned_fault_trace(
         OwnedFaultInjection::Bounds => return Err(OwnedFaultOracleError::StatusMismatch),
         OwnedFaultInjection::Runtime { status: RuntimeStatus::Ok, .. }
         | OwnedFaultInjection::VecCloneElement { status: RuntimeStatus::Ok, .. }
-        | OwnedFaultInjection::AggregateCloneElement { status: RuntimeStatus::Ok, .. } => {
+        | OwnedFaultInjection::AggregateCloneElement { status: RuntimeStatus::Ok, .. }
+        | OwnedFaultInjection::HandleCloneStep { status: RuntimeStatus::Ok, .. } => {
             return Err(OwnedFaultOracleError::SuccessStatus);
         }
         OwnedFaultInjection::Runtime { operation, status } => {
@@ -145,8 +159,26 @@ pub(super) fn owned_fault_trace(
             if operation != expected || !operation_accepts_status(operation, status) {
                 return Err(OwnedFaultOracleError::StatusMismatch);
             }
-            validate_failure_atomic_transition(operation, status, true, true)
-                .map_err(|_| OwnedFaultOracleError::AtomicityMismatch)?;
+            if matches!(
+                operation,
+                LogicalOperation::StrongClone
+                    | LogicalOperation::WeakDowngrade
+                    | LogicalOperation::WeakClone
+            ) {
+                validate_handle_failure(operation, status)?;
+            } else {
+                validate_failure_atomic_transition(operation, status, true, true)
+                    .map_err(|_| OwnedFaultOracleError::AtomicityMismatch)?;
+            }
+            runtime_fault_disposition(abi, status).ok_or(OwnedFaultOracleError::StatusMismatch)?
+        }
+        OwnedFaultInjection::HandleCloneStep { operation, status, fault_ordinal } => {
+            let operations = handle_clone_operations(instruction)
+                .ok_or(OwnedFaultOracleError::StatusMismatch)?;
+            if operations.get(fault_ordinal as usize).copied() != Some(operation) {
+                return Err(OwnedFaultOracleError::InvalidHandleCloneOrdinal);
+            }
+            validate_handle_failure(operation, status)?;
             runtime_fault_disposition(abi, status).ok_or(OwnedFaultOracleError::StatusMismatch)?
         }
         OwnedFaultInjection::VecCloneElement { status, .. } => {
@@ -173,7 +205,8 @@ pub(super) fn owned_fault_trace(
     let vec_element_failure = matches!(injection, OwnedFaultInjection::VecCloneElement { .. });
     let aggregate_element_failure =
         matches!(injection, OwnedFaultInjection::AggregateCloneElement { .. });
-    let element_failure = vec_element_failure || aggregate_element_failure;
+    let handle_clone_failure = matches!(injection, OwnedFaultInjection::HandleCloneStep { .. });
+    let element_failure = vec_element_failure || aggregate_element_failure || handle_clone_failure;
     let cleanup = if vec_element_failure {
         instruction
             .vec_clone_element_cleanup()
@@ -181,6 +214,11 @@ pub(super) fn owned_fault_trace(
     } else if aggregate_element_failure {
         instruction
             .aggregate_clone_element_cleanup()
+            .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
+    } else if handle_clone_failure {
+        instruction
+            .handle_aware_clone()
+            .map(|clone| clone.prefix_cleanup())
             .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
     } else {
         instruction.cleanup().ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
@@ -194,6 +232,8 @@ pub(super) fn owned_fault_trace(
         VerifiedCleanupRole::VecCloneElementFailure
     } else if aggregate_element_failure {
         VerifiedCleanupRole::AggregateCloneElementFailure
+    } else if handle_clone_failure {
+        VerifiedCleanupRole::GenericClonePrefixFailure
     } else {
         VerifiedCleanupRole::PrepareFailure
     };
@@ -204,6 +244,8 @@ pub(super) fn owned_fault_trace(
         instruction.vec_clone_element_failure_drop_actions().collect::<Vec<_>>()
     } else if aggregate_element_failure {
         instruction.aggregate_clone_element_failure_drop_actions().collect::<Vec<_>>()
+    } else if handle_clone_failure {
+        instruction.handle_aware_clone_prefix_failure_drop_actions().collect::<Vec<_>>()
     } else {
         instruction.derived_drop_actions().collect::<Vec<_>>()
     };
@@ -213,6 +255,8 @@ pub(super) fn owned_fault_trace(
         };
         let expected_prefix = if vec_element_failure {
             VerifiedDropActionKind::VecInitializedPrefix
+        } else if handle_clone_failure {
+            VerifiedDropActionKind::GenericCloneInitializedPrefix
         } else {
             VerifiedDropActionKind::AggregateInitializedPrefix
         };
@@ -253,7 +297,17 @@ pub(super) fn owned_fault_trace(
             .filter(|place| place.kind() == VerifiedPlaceKind::Temporary(value))
             .collect::<Vec<_>>();
         match candidates.as_slice() {
-            [] => {}
+            [] => {
+                if let Some((ordinal, _)) =
+                    function.parameters().enumerate().find(|(_, parameter)| parameter.id() == value)
+                    && let Some(owner) = function
+                        .places()
+                        .find(|place| place.kind() == VerifiedPlaceKind::Parameter(ordinal as u32))
+                    && !retained_roots.contains(&owner.id())
+                {
+                    retained_roots.push(owner.id());
+                }
+            }
             [candidate] if candidate.is_copy() => {}
             [candidate] => {
                 let owner = candidate.id();
@@ -262,6 +316,12 @@ pub(super) fn owned_fault_trace(
                 }
             }
             _ => return Err(OwnedFaultOracleError::AtomicityMismatch),
+        }
+    }
+    if let Some(clone) = instruction.handle_aware_clone() {
+        let source = clone.source_root();
+        if !retained_roots.contains(&source) {
+            retained_roots.push(source);
         }
     }
     if retained_roots.iter().any(|owner| !reverse_cleanup.contains(owner)) {
@@ -288,7 +348,25 @@ pub(super) fn owned_fault_trace(
         | OwnedFaultInjection::AggregateCloneElement { completed_prefix, .. } => {
             (0..completed_prefix).rev().collect()
         }
+        OwnedFaultInjection::HandleCloneStep { fault_ordinal, .. } => {
+            (0..u64::from(fault_ordinal)).rev().collect()
+        }
         _ => Vec::new(),
+    };
+    let (operation, status, fault_ordinal) = match injection {
+        OwnedFaultInjection::Runtime { operation, status } => {
+            (Some(operation), Some(status), Some(0))
+        }
+        OwnedFaultInjection::HandleCloneStep { operation, status, fault_ordinal } => {
+            (Some(operation), Some(status), Some(fault_ordinal))
+        }
+        OwnedFaultInjection::VecCloneElement { status, completed_prefix, .. }
+        | OwnedFaultInjection::AggregateCloneElement { status, completed_prefix } => (
+            Some(LogicalOperation::StringClone),
+            Some(status),
+            u32::try_from(completed_prefix).ok(),
+        ),
+        OwnedFaultInjection::Bounds => (None, None, Some(0)),
     };
     Ok(OwnedFaultTrace {
         kind,
@@ -297,6 +375,9 @@ pub(super) fn owned_fault_trace(
         instruction: site
             .instruction_index()
             .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?,
+        operation,
+        status,
+        fault_ordinal,
         disposition,
         result_committed: false,
         uncommitted_result: instruction.result(),

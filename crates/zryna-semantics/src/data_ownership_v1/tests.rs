@@ -92,13 +92,14 @@ use super::{
 use zryna_ir::data_ownership_v1::{
     PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
     VerifiedActiveVariant, VerifiedBorrowAccess, VerifiedCallArgument, VerifiedCleanupRole,
-    VerifiedDropActionKind, VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction,
-    VerifiedInstructionKind, VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
+    VerifiedDropActionKind, VerifiedFunction, VerifiedHandleCloneRecipeKind,
+    VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind, VerifiedPlaceKind,
+    VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
 };
 use zryna_ownership_runtime_abi::{
-    LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, VerifiedOwnershipRuntimeAbi,
-    VerifiedStatusDisposition, VerifiedStatusTrapIdentity, operation_accepts_status,
-    validate_failure_atomic_transition,
+    ControlState, LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, TransitionClaim,
+    VerifiedOwnershipRuntimeAbi, VerifiedStatusDisposition, VerifiedStatusTrapIdentity,
+    operation_accepts_status, validate_failure_atomic_transition, validate_transition,
 };
 use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap, Span as FaultSpan};
 use zryna_syntax::v4::{
@@ -137,6 +138,8 @@ mod fixed_array_partial_fixture_support;
 mod fixed_arrays;
 mod function_catalog;
 mod generation_budgets;
+mod handle_fault_oracle;
+mod handle_fault_oracle_support;
 mod lexical_borrow_calls;
 mod loop_fixture_support;
 mod loop_root_borrows;

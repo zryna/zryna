@@ -47,6 +47,14 @@ values, clones static handle projections, replaces a static handle field, and tr
 handle aggregate through one internal straight-line call. These paths use explicit
 `SharedClone`/`WeakClone` count operations; they do not reinterpret handle leaves as Copy.
 
+Source-authenticated symbolic fault-oracle evidence binds each emitted Shared allocation/count
+instruction to the exact frozen ABI logical operation, admitted status and trap disposition.
+Handle-aware structural clones additionally bind a canonical recipe-step ordinal to their exact
+unpublished destination prefix, retained source root and reverse cleanup. Rejection replay and a
+fresh valid lowering are deterministic. This reuses #260 transition authority and is compiler
+evidence only: it does not claim an allocator, count mutation, fault injection or cleanup was
+executed by a target runtime; those observations remain #263 work.
+
 This is a bounded #261 progress checkpoint, not issue or #83 closure. A distinct verified
 handle-aware clone contract now retains exact place/indexed-borrow source authority, a distinct
 destination, and a finite canonical recipe graph. That recipe requires declaration-order Struct,

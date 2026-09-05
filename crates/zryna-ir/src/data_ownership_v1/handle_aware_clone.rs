@@ -142,6 +142,23 @@ impl<'a> VerifiedHandleAwareClone<'a> {
     pub const fn source(self) -> VerifiedHandleAwareCloneSource {
         self.source
     }
+    /// Exact complete owner retaining the source value across any clone failure.
+    #[must_use]
+    pub fn source_root(self) -> PlaceIdentity {
+        let place = match self.source {
+            VerifiedHandleAwareCloneSource::Place(place) => raw::PlaceId(place.index),
+            VerifiedHandleAwareCloneSource::Borrow(borrow) => self
+                .instruction
+                .function
+                .borrows()
+                .region(raw::BorrowId(borrow.index))
+                .expect("verified clone borrow region"),
+        };
+        PlaceIdentity {
+            owner: self.instruction.function.id(),
+            index: super::root_place(place, self.instruction.function.function).0,
+        }
+    }
     /// Distinct temporary destination, unpublished until the clone completes.
     #[must_use]
     pub const fn destination(self) -> PlaceIdentity {
