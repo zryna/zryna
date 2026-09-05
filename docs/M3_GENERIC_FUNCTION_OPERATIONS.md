@@ -31,7 +31,13 @@ the remaining initialized owners with their current masks and enum refinements.
 
 ## Calls and transfer boundaries
 
-A generic call resolves one exact private same-module catalog signature. Borrow arguments require
+A generic call resolves one exact internal catalog signature. The bounded named-import route also
+resolves an explicit relative `.zry` alias inside the authenticated, acyclic source closure. The
+alias retains the dependency declaration's canonical module/declaration `FunctionId`; an export in
+a dependency grants module visibility, while only entry-module exports enter the public scalar ABI.
+Imported signatures are limited here to by-value `bool`, `i32`, and `String`; nominal/container
+imports, borrowed imports, broader CFG, handles, and public owned ABI remain outside #315.
+Borrow arguments require
 matching live aliases with exact referent/access and cannot escape the call; unsupported graph
 categories, mismatched result type and wrong arity remain rejected. Its ordered
 argument plan uses each declared parameter type, not the result type as a shorthand for all

@@ -133,6 +133,12 @@ reports it as `ZRYNA-M3014`; unresolved binding names report `ZRYNA-M3002`. Excl
 `ZRYNA-M3012`, and cumulative String-literal bytes are checked against the exact 8 MiB limit before
 lowering.
 
+M3 also admits the bounded #315 named-import call slice: explicit relative `.zry` aliases resolve
+only within the authenticated acyclic closure and retain the callee's canonical `FunctionId`.
+Dependency exports remain internal calls; only entry exports are public ABI candidates. Imported
+signatures are restricted to straight-line by-value `bool`, `i32`, and `String`; #272 remains open
+for nominal/container imports and broader control flow.
+
 The separate #278 mixed-result function route also prepares and commits fully initialized mutable
 mixed Struct/Enum/FixedArray/Vec root replacement. Its affine plan proves exact destination
 retention, RHS owner transfer and final transition capacity before materializing the RHS. Repeated

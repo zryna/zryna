@@ -35,6 +35,7 @@ pub(in crate::data_ownership_v1) mod mixed_unknown_projected;
 pub(in crate::data_ownership_v1) mod mixed_vec_calls;
 pub(in crate::data_ownership_v1) mod mixed_vec_siblings;
 mod mixed_zero_array_vec;
+mod named_import_calls;
 pub(super) mod nested_mixed_construction;
 mod projection_descriptors;
 pub(in crate::data_ownership_v1) mod scalar_operator_matrix;
