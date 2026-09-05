@@ -378,6 +378,9 @@ pub(super) struct PreparedValue<'l, 'a, 'f, 'e> {
 
 #[path = "preparation_local_commit.rs"]
 mod local_commit;
+#[path = "preparation_replacement_commit.rs"]
+mod replacement_commit;
+pub(super) use replacement_commit::PreparedReplacement;
 #[cfg(test)]
 #[path = "../tests/local_commit_controls.rs"]
 mod local_commit_controls;

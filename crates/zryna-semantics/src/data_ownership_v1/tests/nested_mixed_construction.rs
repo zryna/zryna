@@ -372,6 +372,8 @@ mod faults;
 pub(in crate::data_ownership_v1) mod local_commit_fixture;
 #[path = "local_tail_supplement.rs"]
 pub(in crate::data_ownership_v1) mod local_tail_supplement;
+#[path = "mixed_root_replacement.rs"]
+pub(in crate::data_ownership_v1) mod root_replacement;
 #[path = "mixed_struct_whole_moves.rs"]
 mod struct_whole_moves;
 #[path = "mixed_type_negatives.rs"]

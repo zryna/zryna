@@ -309,12 +309,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     );
                     return None;
                 };
-                if binding.ty.is_copy()
-                    || !matches!(
-                        binding.ty.category,
-                        TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray
-                    )
-                    || !self.supported(binding.ty)
+                let mixed_replacement = self.mixed_replacement_target(binding.ty);
+                if !mixed_replacement
+                    && (binding.ty.is_copy()
+                        || !matches!(
+                            binding.ty.category,
+                            TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray
+                        )
+                        || !self.supported(binding.ty))
                 {
                     self.errors.at(
                         "ZRYNA-M3013",
@@ -332,6 +334,18 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         "assign only to an initialized mutable aggregate root before moving any projection",
                     );
                     return None;
+                }
+                if mixed_replacement {
+                    let assignment_span = span(self.input.sources(), statement.span);
+                    super::constructor_preparation::PreparedReplacement::prepare(
+                        self,
+                        *value,
+                        binding.ty,
+                        binding.place,
+                        assignment_span,
+                    )?
+                    .consume();
+                    return Some(StatementOutcome::Continue);
                 }
                 if let Some(reference_span) =
                     self.target_consumption_span(*value, binding.place, true)
