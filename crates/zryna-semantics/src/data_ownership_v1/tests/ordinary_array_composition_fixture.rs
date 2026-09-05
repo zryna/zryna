@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "copy_match_expression_fixture.rs"]
+pub(crate) mod copy_match_expression_fixture;
+
 #[path = "ordinary_static_prefix_fixture.rs"]
 pub(crate) mod ordinary_static_prefix_fixture;
 

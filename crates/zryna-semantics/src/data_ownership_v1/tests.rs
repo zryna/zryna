@@ -120,6 +120,8 @@ mod cfg_validation;
 mod common_fixture_support;
 mod conditional_root_borrows;
 mod copy_calls;
+mod copy_match_expressions;
+mod copy_match_resources;
 mod derived_value_budgets;
 mod enum_payloads;
 mod enum_validation;

@@ -377,6 +377,7 @@ fn lower_function_impl<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             errors,
         );
