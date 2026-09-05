@@ -129,3 +129,33 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
         }
     }
 }
+
+#[test]
+fn structured_cfg_scratch_shares_authenticated_authority_and_stages_diagnostics() {
+    let (source, snapshot) = nested_match_fixture(true, true);
+    let errors = with_snapshot(&source, snapshot, |lowerer, _| {
+        parameter(lowerer);
+        let mut staged = super::super::Errors::new(lowerer.input.sources());
+        let mut scratch = lowerer.structured_scratch(&mut staged);
+        assert!(std::ptr::eq(scratch.function, lowerer.function));
+        assert!(std::ptr::eq(scratch.file, lowerer.file));
+        assert!(std::ptr::eq(scratch.layouts, lowerer.layouts));
+        assert!(std::ptr::eq(scratch.catalog, lowerer.catalog));
+        assert_eq!(scratch.places, lowerer.places);
+        assert_eq!(scratch.instructions, lowerer.instructions);
+        assert_eq!(scratch.preparation_checkpoint(), lowerer.preparation_checkpoint());
+        assert_eq!(scratch.places.len(), 1);
+        assert!(scratch.instructions.is_empty());
+        scratch.places.clear();
+        scratch.errors.at(
+            "ZRYNA-M3015",
+            span(scratch.input.sources(), scratch.function.span),
+            "speculative rejection",
+            "discard the speculative state",
+        );
+        assert_eq!(lowerer.places.len(), 1);
+        assert!(lowerer.errors.is_empty());
+        assert_eq!(staged.len(), 1);
+    });
+    assert!(errors.is_empty());
+}

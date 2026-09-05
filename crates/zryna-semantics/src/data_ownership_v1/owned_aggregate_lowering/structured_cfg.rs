@@ -18,11 +18,13 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         parameters: &[raw::ValueDefinition],
         result: Ty,
     ) -> Option<Vec<raw::Block>> {
-        let checkpoint = super::structured_checkpoint::StructuredCheckpoint::capture(self);
-        let outcome = self.lower_structured_cfg_inner(parameters, result);
-        if outcome.is_none() {
-            checkpoint.restore(self);
+        let mut errors = super::Errors::new(self.input.sources());
+        let mut scratch = self.structured_scratch(&mut errors);
+        let outcome = scratch.lower_structured_cfg_inner(parameters, result);
+        if outcome.is_some() {
+            super::structured_checkpoint::StructuredCheckpoint::capture(&scratch).restore(self);
         }
+        self.errors.append(errors);
         outcome
     }
 
