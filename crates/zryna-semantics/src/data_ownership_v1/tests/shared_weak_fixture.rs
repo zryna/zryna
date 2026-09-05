@@ -126,6 +126,7 @@ pub(crate) fn fixture() -> (String, RawProjectSyntaxSnapshot) {
     fixture_case(Case::Positive)
 }
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
     let mut f = Builder {
         source: String::new(),

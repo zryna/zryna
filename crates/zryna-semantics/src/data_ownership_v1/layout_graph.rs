@@ -271,6 +271,7 @@ fn add_root(
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn resolve_graph_type(
     file: &syntax::SourceUnit,
     id: u32,

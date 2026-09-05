@@ -109,7 +109,7 @@ pub(super) fn map_node_types(
                     .types()
                     .find(|ty| ty.category() == category && ty.referenced_type() == payload_id)
             }
-            _ => None,
+            raw_layout::TypeKind::Borrow { .. } => None,
         };
         if let Some(found) = found {
             let index = usize::try_from(node.id.0).expect("bounded node");

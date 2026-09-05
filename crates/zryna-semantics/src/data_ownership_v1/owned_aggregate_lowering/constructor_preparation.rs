@@ -170,6 +170,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         ))
     }
 
+    #[allow(clippy::too_many_lines)]
     fn visit(
         &mut self,
         id: u32,

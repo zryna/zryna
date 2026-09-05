@@ -55,6 +55,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         assert_eq!(actual, id, "prepared projection identity");
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn consume_prepared_leaf(
         &mut self,
         leaf: Leaf<'_>,

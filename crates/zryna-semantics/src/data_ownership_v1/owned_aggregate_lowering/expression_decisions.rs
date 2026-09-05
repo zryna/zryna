@@ -108,6 +108,7 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         })
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn classify_prepared(
         &mut self,
         id: u32,
