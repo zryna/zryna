@@ -49,13 +49,19 @@ pub(super) fn resolve_imports(
                 span: span(input.sources(), import.specifier.token_span),
             });
             for binding in &import.bindings {
+                // Imports bind declarations exported by the named module. Imported aliases are
+                // callable there, but are not declarations and cannot be re-exported implicitly.
                 let target = catalog.modules[target_module]
                     .iter()
+                    .take(input.syntax().files()[target_module].functions().len())
                     .flatten()
                     .find(|signature| signature.name == binding.imported.text);
                 let Some(target) = target else {
-                    let wrong_case =
-                        catalog.modules[target_module].iter().flatten().any(|signature| {
+                    let wrong_case = catalog.modules[target_module]
+                        .iter()
+                        .take(input.syntax().files()[target_module].functions().len())
+                        .flatten()
+                        .any(|signature| {
                             signature.name.eq_ignore_ascii_case(&binding.imported.text)
                         });
                     errors.at(
