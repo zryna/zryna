@@ -172,7 +172,7 @@ fn case(shape: Shape, owned: bool, replace: bool, empty: Option<usize>, bad: Opt
         let calls = instructions
             .iter()
             .filter_map(|i| i.callee())
-            .map(|callee| callee.declaration())
+            .map(zryna_ir::data_ownership_v1::FunctionIdentity::declaration)
             .collect::<Vec<_>>();
         let mut expected = vec![1];
         expected.extend(

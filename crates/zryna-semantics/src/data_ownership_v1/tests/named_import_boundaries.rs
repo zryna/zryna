@@ -54,14 +54,15 @@ fn named_import_alias_cannot_be_reexported_as_a_target_declaration() {
             "src/main.zry" => ("src/zzz.zry", 2),
             path => panic!("unexpected path {path}"),
         };
-        let mut value = serde_json::to_value(&*file).unwrap();
+        let mut value = serde_json::to_value(&*file).expect("serializable fixture syntax");
         rewrite_spans(&mut value, id, u32::MAX, 0);
-        *file = serde_json::from_value(value).unwrap();
+        *file = serde_json::from_value(value).expect("rebound fixture syntax");
         file.id = id;
         file.path = path.into();
     }
     raw.files.sort_by_key(|file| file.id);
-    let main = raw.files.iter_mut().find(|file| file.path == "src/zzz.zry").unwrap();
+    let main =
+        raw.files.iter_mut().find(|file| file.path == "src/zzz.zry").expect("fixture element");
     main.imports[0].bindings[0].imported.text = "select".into();
     main.imports[0].specifier.text = "./aaa.zry".into();
     let expected_span = main.imports[0].bindings[0].imported.span;
@@ -72,8 +73,10 @@ fn named_import_alias_cannot_be_reexported_as_a_target_declaration() {
     ]
     .into_iter()
     .map(|(path, old_path)| {
-        let normalized = NormalizedSourcePath::new(old_path).unwrap();
-        let source = sources.source(sources.file_id(&normalized).unwrap()).unwrap();
+        let normalized = NormalizedSourcePath::new(old_path).expect("fixture path");
+        let source = sources
+            .source(sources.file_id(&normalized).expect("source-map-bound fixture text"))
+            .expect("source-map-bound fixture text");
         SourceFileInput {
             path: path.into(),
             text: if path == "src/zzz.zry" {
@@ -88,10 +91,13 @@ fn named_import_alias_cannot_be_reexported_as_a_target_declaration() {
         }
     })
     .collect();
-    let sources = SourceMap::build(inputs).unwrap();
+    let sources = SourceMap::build(inputs).expect("fixture element");
     let syntax = verify_snapshot(raw, &sources).expect("authenticated re-export attempt");
-    let entry = sources.file_id(&NormalizedSourcePath::new("src/zzz.zry").unwrap()).unwrap();
-    let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+    let entry = sources
+        .file_id(&NormalizedSourcePath::new("src/zzz.zry").expect("fixture path"))
+        .expect("fixture path");
+    let input =
+        SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input");
     let expected = lower(input).expect_err("aliases are not declarations");
     assert_eq!(expected.len(), 1);
     assert_eq!(expected[0].code, "ZRYNA-M3016");
@@ -107,17 +113,22 @@ fn named_import_alias_cannot_be_reexported_as_a_target_declaration() {
 fn named_import_rejects_an_existing_nonexported_declaration_exactly() {
     let (sources, mut raw) =
         imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
-    let library = raw.files.iter_mut().find(|file| file.path == "src/lib.zry").unwrap();
+    let library =
+        raw.files.iter_mut().find(|file| file.path == "src/lib.zry").expect("fixture element");
     library.functions[0].export_span = None;
     let binding_span =
-        raw.files.iter().find(|file| file.path == "src/main.zry").unwrap().imports[0].bindings[0]
+        raw.files.iter().find(|file| file.path == "src/main.zry").expect("fixture element").imports
+            [0]
+        .bindings[0]
             .imported
             .span;
     let inputs = ["src/lib.zry", "src/main.zry"]
         .into_iter()
         .map(|path| {
-            let normalized = NormalizedSourcePath::new(path).unwrap();
-            let source = sources.source(sources.file_id(&normalized).unwrap()).unwrap();
+            let normalized = NormalizedSourcePath::new(path).expect("fixture path");
+            let source = sources
+                .source(sources.file_id(&normalized).expect("source-map-bound fixture text"))
+                .expect("source-map-bound fixture text");
             SourceFileInput {
                 path: path.into(),
                 text: if path == "src/lib.zry" {
@@ -128,10 +139,13 @@ fn named_import_rejects_an_existing_nonexported_declaration_exactly() {
             }
         })
         .collect();
-    let sources = SourceMap::build(inputs).unwrap();
+    let sources = SourceMap::build(inputs).expect("fixture element");
     let syntax = verify_snapshot(raw, &sources).expect("authenticated private declaration");
-    let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
-    let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+    let entry = sources
+        .file_id(&NormalizedSourcePath::new("src/main.zry").expect("fixture path"))
+        .expect("fixture path");
+    let input =
+        SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input");
     let expected = lower(input).expect_err("private target");
     assert_eq!(expected.len(), 1);
     assert_eq!(expected[0].code, "ZRYNA-M3016");
@@ -147,7 +161,8 @@ fn named_import_rejects_an_existing_nonexported_declaration_exactly() {
 fn named_import_calls_preserve_exact_type_and_affine_rejections_with_recovery() {
     for (case, code) in [(Case::WrongType, "ZRYNA-M3016"), (Case::RepeatedOwner, "ZRYNA-M3014")] {
         let (sources, raw) = imported_fixture(Base::Mixed(case), "choose", "select", "./lib.zry");
-        let caller = raw.files.iter().find(|file| file.path == "src/main.zry").unwrap();
+        let caller =
+            raw.files.iter().find(|file| file.path == "src/main.zry").expect("fixture element");
         let arguments = caller.functions[0]
             .body
             .expressions
@@ -156,12 +171,15 @@ fn named_import_calls_preserve_exact_type_and_affine_rejections_with_recovery() 
                 RawExpressionKind::Call { arguments, .. } => Some(arguments),
                 _ => None,
             })
-            .unwrap();
+            .expect("fixture element");
         let argument = if matches!(case, Case::WrongType) { arguments[0] } else { arguments[2] };
         let expected_span = caller.functions[0].body.expressions[argument as usize].span;
         let syntax = verify_snapshot(raw, &sources).expect("authenticated invalid imported call");
-        let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
-        let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+        let entry = sources
+            .file_id(&NormalizedSourcePath::new("src/main.zry").expect("fixture path"))
+            .expect("fixture path");
+        let input =
+            SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input");
         let expected = lower(input).expect_err("invalid imported call");
         assert_eq!(expected.len(), 1);
         assert_eq!(expected[0].code, code);
@@ -193,7 +211,7 @@ fn named_import_malformed_path_is_rejected_by_syntax_exactly() {
         "module specifier is not canonical explicit-relative .zry syntax"
     );
     assert_eq!(expected[0].guidance, "return source-faithful canonical protocol-v4 syntax");
-    let encoded = serde_json::to_value(&expected[0]).unwrap();
+    let encoded = serde_json::to_value(&expected[0]).expect("serializable fixture syntax");
     assert_eq!(encoded["primary"]["kind"], "workspace-path");
     assert_eq!(encoded["primary"]["path"], "src/main.zry");
     assert_eq!(
@@ -210,31 +228,40 @@ fn named_import_malformed_path_is_rejected_by_syntax_exactly() {
 fn named_import_visibility_does_not_enable_owned_entry_abi() {
     let (sources, mut raw) =
         imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
-    let main = raw.files.iter_mut().find(|file| file.path == "src/main.zry").unwrap();
+    let main =
+        raw.files.iter_mut().find(|file| file.path == "src/main.zry").expect("fixture element");
     let insertion = main.functions[0].span.start;
     let main_id = main.id;
-    let mut value = serde_json::to_value(&*main).unwrap();
+    let mut value = serde_json::to_value(&*main).expect("serializable fixture syntax");
     rewrite_spans(&mut value, main_id, insertion, 7);
-    *main = serde_json::from_value(value).unwrap();
+    *main = serde_json::from_value(value).expect("rebound fixture syntax");
     main.functions[0].span.start = insertion;
     main.functions[0].export_span = Some(span(main_id, insertion as usize, insertion as usize + 6));
     let expected_span = main.functions[0].span;
-    let main_path = NormalizedSourcePath::new("src/main.zry").unwrap();
-    let library_path = NormalizedSourcePath::new("src/lib.zry").unwrap();
-    let mut main_text =
-        sources.source(sources.file_id(&main_path).unwrap()).unwrap().text().to_owned();
+    let main_path = NormalizedSourcePath::new("src/main.zry").expect("fixture path");
+    let library_path = NormalizedSourcePath::new("src/lib.zry").expect("fixture path");
+    let mut main_text = sources
+        .source(sources.file_id(&main_path).expect("source-map-bound fixture text"))
+        .expect("source-map-bound fixture text")
+        .text()
+        .to_owned();
     main_text.insert_str(insertion as usize, "export ");
-    let library_text =
-        sources.source(sources.file_id(&library_path).unwrap()).unwrap().text().to_owned();
+    let library_text = sources
+        .source(sources.file_id(&library_path).expect("source-map-bound fixture text"))
+        .expect("source-map-bound fixture text")
+        .text()
+        .to_owned();
     let sources = SourceMap::build(vec![
         SourceFileInput { path: main_path.as_str().into(), text: main_text },
         SourceFileInput { path: library_path.as_str().into(), text: library_text },
     ])
-    .unwrap();
+    .expect("fixture element");
     let syntax = verify_snapshot(raw, &sources).expect("authenticated public entry");
-    let entry = sources.file_id(&main_path).unwrap();
-    let errors = lower(SemanticInput::try_new(&syntax, &sources, entry).unwrap())
-        .expect_err("owned entry ABI remains excluded");
+    let entry = sources.file_id(&main_path).expect("authenticated file identity");
+    let errors = lower(
+        SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input"),
+    )
+    .expect_err("owned entry ABI remains excluded");
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].code, "ZRYNA-M3010");
     assert_eq!(
@@ -246,7 +273,8 @@ fn named_import_visibility_does_not_enable_owned_entry_abi() {
 #[test]
 fn named_import_call_rejects_wrong_arity_before_argument_preparation() {
     let (sources, raw) = imported_fixture(Base::WrongArity, "choose", "select", "./lib.zry");
-    let caller = raw.files.iter().find(|file| file.path == "src/main.zry").unwrap();
+    let caller =
+        raw.files.iter().find(|file| file.path == "src/main.zry").expect("fixture element");
     let call_span = caller.functions[0]
         .body
         .expressions
@@ -254,10 +282,13 @@ fn named_import_call_rejects_wrong_arity_before_argument_preparation() {
         .find_map(|expression| {
             matches!(expression.kind, RawExpressionKind::Call { .. }).then_some(expression.span)
         })
-        .unwrap();
+        .expect("fixture element");
     let syntax = verify_snapshot(raw, &sources).expect("authenticated wrong arity");
-    let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
-    let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+    let entry = sources
+        .file_id(&NormalizedSourcePath::new("src/main.zry").expect("fixture path"))
+        .expect("fixture path");
+    let input =
+        SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input");
     let expected = lower(input).expect_err("wrong arity");
     assert_eq!(expected.len(), 1);
     assert_eq!(expected[0].code, "ZRYNA-M3016");
@@ -277,21 +308,29 @@ fn named_import_call_rejects_wrong_arity_before_argument_preparation() {
 fn named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly() {
     let (sources, mut raw) =
         imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
-    let library_path = NormalizedSourcePath::new("src/lib.zry").unwrap();
-    let main_path = NormalizedSourcePath::new("src/main.zry").unwrap();
-    let library_id = sources.file_id(&library_path).unwrap();
-    let main_id = sources.file_id(&main_path).unwrap();
-    let old_library = sources.source(library_id).unwrap().text().to_owned();
-    let main_text = sources.source(main_id).unwrap().text().to_owned();
+    let library_path = NormalizedSourcePath::new("src/lib.zry").expect("fixture path");
+    let main_path = NormalizedSourcePath::new("src/main.zry").expect("fixture path");
+    let library_id = sources.file_id(&library_path).expect("authenticated file identity");
+    let main_id = sources.file_id(&main_path).expect("authenticated file identity");
+    let old_library =
+        sources.source(library_id).expect("source-map-bound fixture text").text().to_owned();
+    let main_text =
+        sources.source(main_id).expect("source-map-bound fixture text").text().to_owned();
     let prefix = "import { choose as cyclex } from './lib.zry';\n";
-    let file = raw.files.iter_mut().find(|file| file.path == "src/lib.zry").unwrap();
-    let mut value = serde_json::to_value(&*file).unwrap();
-    rewrite_spans(&mut value, file.id, 0, prefix.len() as u32);
-    *file = serde_json::from_value(value).unwrap();
-    let imported = prefix.find("choose").unwrap();
-    let local = prefix.find("cyclex").unwrap();
-    let from = prefix.find("from").unwrap();
-    let token = prefix.find("'./lib.zry'").unwrap();
+    let file =
+        raw.files.iter_mut().find(|file| file.path == "src/lib.zry").expect("fixture element");
+    let mut value = serde_json::to_value(&*file).expect("serializable fixture syntax");
+    rewrite_spans(
+        &mut value,
+        file.id,
+        0,
+        u32::try_from(prefix.len()).expect("bounded import prefix"),
+    );
+    *file = serde_json::from_value(value).expect("rebound fixture syntax");
+    let imported = prefix.find("choose").expect("fixture element");
+    let local = prefix.find("cyclex").expect("fixture element");
+    let from = prefix.find("from").expect("fixture element");
+    let token = prefix.find("'./lib.zry'").expect("fixture element");
     let expected_cycle_span = span(file.id, token, token + 11);
     file.imports.push(RawImportSyntax {
         span: span(file.id, 0, prefix.len() - 1),
@@ -323,10 +362,11 @@ fn named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly() {
         },
         SourceFileInput { path: main_path.as_str().into(), text: main_text },
     ])
-    .unwrap();
+    .expect("fixture element");
     let syntax = verify_snapshot(raw, &sources).expect("authenticated cyclic closure");
-    let entry = sources.file_id(&main_path).unwrap();
-    let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+    let entry = sources.file_id(&main_path).expect("authenticated file identity");
+    let input =
+        SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input");
     let expected = lower(input).expect_err("cycle");
     assert_eq!(expected.len(), 1);
     assert_eq!(expected[0].code, "ZRYNA-M3016");
@@ -340,34 +380,42 @@ fn named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly() {
     let (valid_sources, valid_raw) =
         imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
     let valid_syntax = verify_snapshot(valid_raw, &valid_sources).expect("valid recovery syntax");
-    let valid_entry =
-        valid_sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
-    lower(SemanticInput::try_new(&valid_syntax, &valid_sources, valid_entry).unwrap())
-        .expect("valid recovery after cyclic closure");
+    let valid_entry = valid_sources
+        .file_id(&NormalizedSourcePath::new("src/main.zry").expect("fixture path"))
+        .expect("fixture path");
+    lower(
+        SemanticInput::try_new(&valid_syntax, &valid_sources, valid_entry)
+            .expect("source-bound semantic input"),
+    )
+    .expect("valid recovery after cyclic closure");
 }
 
 #[test]
 fn named_import_target_still_obeys_the_direct_call_cycle_verifier() {
     let (sources, mut raw) =
         imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
-    let library_path = NormalizedSourcePath::new("src/lib.zry").unwrap();
-    let main_path = NormalizedSourcePath::new("src/main.zry").unwrap();
-    let library_id = sources.file_id(&library_path).unwrap();
-    let main_id = sources.file_id(&main_path).unwrap();
-    let mut library_text = sources.source(library_id).unwrap().text().to_owned();
-    let main_text = sources.source(main_id).unwrap().text().to_owned();
-    let file = raw.files.iter_mut().find(|file| file.path == "src/lib.zry").unwrap();
+    let library_path = NormalizedSourcePath::new("src/lib.zry").expect("fixture path");
+    let main_path = NormalizedSourcePath::new("src/main.zry").expect("fixture path");
+    let library_id = sources.file_id(&library_path).expect("authenticated file identity");
+    let main_id = sources.file_id(&main_path).expect("authenticated file identity");
+    let mut library_text =
+        sources.source(library_id).expect("source-map-bound fixture text").text().to_owned();
+    let main_text =
+        sources.source(main_id).expect("source-map-bound fixture text").text().to_owned();
+    let file =
+        raw.files.iter_mut().find(|file| file.path == "src/lib.zry").expect("fixture element");
     let function = &mut file.functions[0];
     let old = function.body.expressions[0].span;
     let replacement = "choose(left, count, right)";
     library_text.replace_range(old.start as usize..old.end as usize, replacement);
-    let delta = replacement.len() as u32 - (old.end - old.start);
-    let mut value = serde_json::to_value(&*file).unwrap();
+    let delta =
+        u32::try_from(replacement.len()).expect("bounded replacement") - (old.end - old.start);
+    let mut value = serde_json::to_value(&*file).expect("serializable fixture syntax");
     rewrite_spans(&mut value, file.id, old.end, delta);
-    *file = serde_json::from_value(value).unwrap();
+    *file = serde_json::from_value(value).expect("rebound fixture syntax");
     let function = &mut file.functions[0];
     let id = file.id;
-    let left = old.start as usize + replacement.find("left").unwrap();
+    let left = old.start as usize + replacement.find("left").expect("fixture element");
     function.body.expressions[0].span = span(id, left, left + 4);
     let left_span = function.body.expressions[0].span;
     let RawExpressionKind::Reference { name } = &mut function.body.expressions[0].kind else {
@@ -375,8 +423,8 @@ fn named_import_target_still_obeys_the_direct_call_cycle_verifier() {
     };
     name.span = left_span;
     let start = old.start as usize;
-    let count = start + replacement.find("count").unwrap();
-    let right = start + replacement.find("right").unwrap();
+    let count = start + replacement.find("count").expect("fixture element");
+    let right = start + replacement.find("right").expect("fixture element");
     function.body.expressions.push(RawExpressionSyntax {
         span: span(id, count, count + 5),
         kind: RawExpressionKind::Reference {
@@ -407,11 +455,13 @@ fn named_import_target_still_obeys_the_direct_call_cycle_verifier() {
         SourceFileInput { path: library_path.as_str().into(), text: library_text },
         SourceFileInput { path: main_path.as_str().into(), text: main_text },
     ])
-    .unwrap();
+    .expect("fixture element");
     let syntax = verify_snapshot(raw, &sources).expect("authenticated recursive callee");
-    let entry = sources.file_id(&main_path).unwrap();
-    let errors =
-        lower(SemanticInput::try_new(&syntax, &sources, entry).unwrap()).expect_err("call cycle");
+    let entry = sources.file_id(&main_path).expect("authenticated file identity");
+    let errors = lower(
+        SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input"),
+    )
+    .expect_err("call cycle");
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].code, "ZRYNA-I3009");
     assert_eq!(errors[0].message, "direct call graph contains a cycle");

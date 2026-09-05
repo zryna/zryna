@@ -136,7 +136,7 @@ fn cross_module_scalar_chain(
     for (index, function) in functions.iter_mut().enumerate() {
         function.id = raw::FunctionId {
             module: raw::ModuleId(1),
-            declaration: u32::try_from(index).unwrap(),
+            declaration: u32::try_from(index).expect("bounded library declaration"),
         };
         function.entry_export = None;
         rebind_spans(function, sources.span(library, 0, 53).expect("library span"));
@@ -146,7 +146,7 @@ fn cross_module_scalar_chain(
             };
             *callee = raw::FunctionId {
                 module: raw::ModuleId(1),
-                declaration: u32::try_from(index + 1).unwrap(),
+                declaration: u32::try_from(index + 1).expect("bounded next declaration"),
             };
         }
     }
@@ -212,9 +212,9 @@ fn named_import_cross_module_function_ids_and_cleanup_are_verified_independently
         .insert(0, raw::DropAction::DropPlace(raw::PlaceId(0)));
     mutations.push((caller_cleanup, "ZRYNA-I3012"));
 
-    let mut callee_cleanup = program.clone();
-    callee_cleanup.modules[1].functions[0].cleanup_plans[0].actions.pop();
-    mutations.push((callee_cleanup, "ZRYNA-I3012"));
+    let mut missing_parameter_drop = program.clone();
+    missing_parameter_drop.modules[1].functions[0].cleanup_plans[0].actions.pop();
+    mutations.push((missing_parameter_drop, "ZRYNA-I3012"));
 
     for (mutation, code) in mutations {
         let diagnostics = verify(mutation.clone(), &sources, entry, linear.clone(), linux.clone())

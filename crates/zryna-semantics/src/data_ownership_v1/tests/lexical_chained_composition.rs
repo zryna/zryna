@@ -17,8 +17,11 @@ fn lexical_chained_static_siblings_keep_exact_disjoint_regions_and_reverse_end_o
                 program.modules().next().expect("module").functions().next().expect("caller");
             let instructions =
                 function.blocks().next().expect("block").instructions().collect::<Vec<_>>();
-            let bindings =
-                instructions.iter().filter_map(|i| i.indexed_binding()).collect::<Vec<_>>();
+            let bindings = instructions
+                .iter()
+                .copied()
+                .filter_map(zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_binding)
+                .collect::<Vec<_>>();
             assert_eq!(bindings.len(), 2);
             assert_ne!(bindings[0].container(), bindings[1].container());
             let mut roots = Vec::new();
@@ -46,7 +49,8 @@ fn lexical_chained_static_siblings_keep_exact_disjoint_regions_and_reverse_end_o
                 instructions
                     .iter()
                     .filter(|i| i.kind() == VerifiedInstructionKind::EndBorrow)
-                    .map(|i| i.borrow())
+                    .copied()
+                    .map(zryna_ir::data_ownership_v1::VerifiedInstruction::borrow)
                     .collect::<Vec<_>>(),
                 [Some(bindings[1].borrow()), Some(bindings[0].borrow())]
             );
@@ -85,7 +89,9 @@ fn lexical_chained_dynamic_regions_reject_unequal_exclusive_indices_but_allow_sh
                         .next()
                         .expect("block")
                         .instructions()
-                        .filter_map(|i| i.indexed_binding())
+                        .filter_map(
+                            zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_binding,
+                        )
                         .collect::<Vec<_>>();
                     assert_eq!(bindings.len(), 2);
                     assert!(bindings.iter().all(|b| b.access() == VerifiedBorrowAccess::Shared));
@@ -96,6 +102,7 @@ fn lexical_chained_dynamic_regions_reject_unequal_exclusive_indices_but_allow_sh
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn lexical_chained_calls_pass_only_final_bound_child_after_source_ordered_rhs() {
     for vector in [false, true] {
         for owned in [false, true] {

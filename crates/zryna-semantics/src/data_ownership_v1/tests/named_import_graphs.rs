@@ -6,22 +6,31 @@ use zryna_syntax::v4::RawExpressionKind;
 pub(super) fn multi_hop_fixture() -> (SourceMap, RawProjectSyntaxSnapshot) {
     let (sources, raw) =
         imported_fixture(Base::Mixed(Case::Direct), "choose", "select", "./lib.zry");
-    let library_path = NormalizedSourcePath::new("src/lib.zry").unwrap();
-    let entry_path = NormalizedSourcePath::new("src/main.zry").unwrap();
-    let library_text =
-        sources.source(sources.file_id(&library_path).unwrap()).unwrap().text().to_owned();
-    let original = sources.source(sources.file_id(&entry_path).unwrap()).unwrap().text().to_owned();
-    let library = raw.files.iter().find(|file| file.path == "src/lib.zry").unwrap().clone();
-    let original_main = raw.files.iter().find(|file| file.path == "src/main.zry").unwrap().clone();
+    let library_path = NormalizedSourcePath::new("src/lib.zry").expect("fixture path");
+    let entry_path = NormalizedSourcePath::new("src/main.zry").expect("fixture path");
+    let library_text = sources
+        .source(sources.file_id(&library_path).expect("source-map-bound fixture text"))
+        .expect("source-map-bound fixture text")
+        .text()
+        .to_owned();
+    let original = sources
+        .source(sources.file_id(&entry_path).expect("source-map-bound fixture text"))
+        .expect("source-map-bound fixture text")
+        .text()
+        .to_owned();
+    let library =
+        raw.files.iter().find(|file| file.path == "src/lib.zry").expect("fixture element").clone();
+    let original_main =
+        raw.files.iter().find(|file| file.path == "src/main.zry").expect("fixture element").clone();
 
     let mut mid = original_main.clone();
     mid.id = 2;
     mid.path = "src/mid.zry".into();
     let insertion = mid.functions[0].span.start;
-    let mut value = serde_json::to_value(mid).unwrap();
+    let mut value = serde_json::to_value(mid).expect("serializable fixture syntax");
     rewrite_spans(&mut value, 2, u32::MAX, 0);
     rewrite_spans(&mut value, 2, insertion, 7);
-    let mut mid: RawSourceUnit = serde_json::from_value(value).unwrap();
+    let mut mid: RawSourceUnit = serde_json::from_value(value).expect("rebound fixture syntax");
     mid.functions[0].span.start = insertion;
     mid.functions[0].export_span = Some(span(2, insertion as usize, insertion as usize + 6));
     let mut mid_text = original.clone();
@@ -55,20 +64,20 @@ pub(super) fn multi_hop_fixture() -> (SourceMap, RawProjectSyntaxSnapshot) {
             RawExpressionKind::Call { callee, .. } => Some(callee),
             _ => None,
         })
-        .unwrap();
+        .expect("fixture element");
     call.text = "bridge".into();
     let entry_text = original
         .replacen("choose as select", "caller as bridge", 1)
         .replacen("./lib.zry", "./mid.zry", 1)
         .replacen("select(", "bridge(", 1);
 
-    let mid_path = NormalizedSourcePath::new("src/mid.zry").unwrap();
+    let mid_path = NormalizedSourcePath::new("src/mid.zry").expect("fixture path");
     let sources = SourceMap::build(vec![
         SourceFileInput { path: library_path.as_str().into(), text: library_text },
         SourceFileInput { path: entry_path.as_str().into(), text: entry_text },
         SourceFileInput { path: mid_path.as_str().into(), text: mid_text },
     ])
-    .unwrap();
+    .expect("fixture element");
     (
         sources,
         RawProjectSyntaxSnapshot {
@@ -83,31 +92,33 @@ pub(super) fn multi_hop_fixture() -> (SourceMap, RawProjectSyntaxSnapshot) {
 fn named_import_calls_follow_a_canonical_acyclic_multi_hop_chain() {
     let (sources, raw) = multi_hop_fixture();
     let syntax = verify_snapshot(raw, &sources).expect("authenticated multi-hop closure");
-    let entry_path = NormalizedSourcePath::new("src/main.zry").unwrap();
-    let entry_id = sources.file_id(&entry_path).unwrap();
-    let program = lower(SemanticInput::try_new(&syntax, &sources, entry_id).unwrap())
-        .unwrap_or_else(|errors| panic!("{errors:?}"));
+    let entry_path = NormalizedSourcePath::new("src/main.zry").expect("fixture path");
+    let entry_id = sources.file_id(&entry_path).expect("authenticated file identity");
+    let program = lower(
+        SemanticInput::try_new(&syntax, &sources, entry_id).expect("source-bound semantic input"),
+    )
+    .unwrap_or_else(|errors| panic!("{errors:?}"));
     let modules = program.modules().collect::<Vec<_>>();
     let entry_call = modules[1]
         .functions()
         .next()
-        .unwrap()
+        .expect("fixture element")
         .blocks()
         .next()
-        .unwrap()
+        .expect("fixture element")
         .instructions()
-        .find_map(|instruction| instruction.callee())
-        .unwrap();
+        .find_map(FaultVerifiedInstruction::callee)
+        .expect("fixture element");
     let mid_call = modules[2]
         .functions()
         .next()
-        .unwrap()
+        .expect("fixture element")
         .blocks()
         .next()
-        .unwrap()
+        .expect("fixture element")
         .instructions()
-        .find_map(|instruction| instruction.callee())
-        .unwrap();
+        .find_map(FaultVerifiedInstruction::callee)
+        .expect("fixture element");
     assert_eq!((entry_call.module(), entry_call.declaration()), (2, 0));
     assert_eq!((mid_call.module(), mid_call.declaration()), (0, 0));
 }

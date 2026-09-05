@@ -48,7 +48,13 @@ fn indexed_access_child_retains_region_access_and_failure_parent() {
         assert_eq!(view.index().index(), 3);
         assert_eq!(view.array_length(), Some(2));
         assert_eq!(view.access(), access.into());
-        assert_eq!(child.failure_ended_borrows().map(|id| id.index()).collect::<Vec<_>>(), [0]);
+        assert_eq!(
+            child
+                .failure_ended_borrows()
+                .map(super::super::BorrowIdentity::index)
+                .collect::<Vec<_>>(),
+            [0]
+        );
         assert_eq!(child.derived_drop_actions().count(), 3);
     }
 }

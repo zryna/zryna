@@ -17,10 +17,10 @@ pub(in crate::data_ownership_v1) fn has_indexed_borrow(function: &RawFunctionSyn
         .iter()
         .any(|expression| matches!(expression.kind, RawExpressionKind::VecConstruction { .. }));
     function.body.expressions.iter().any(|expression| {
-        let value = match expression.kind {
-            RawExpressionKind::Borrow { value, .. }
-            | RawExpressionKind::BorrowMut { value, .. } => value,
-            _ => return false,
+        let (RawExpressionKind::Borrow { value, .. } | RawExpressionKind::BorrowMut { value, .. }) =
+            expression.kind
+        else {
+            return false;
         };
         function.body.expressions.get(value as usize).is_some_and(|expression| {
             let RawExpressionKind::Index { index, .. } = expression.kind else { return false };

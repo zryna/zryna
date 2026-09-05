@@ -101,11 +101,11 @@ fn fixed_array_index_equal_to_length_retains_checked_bounds() {
         .expect("source-faithful fixed array v4");
     let program =
         lower(pair_input(&syntax, &sources)).expect("out-of-range access retains runtime bounds");
-    let function = program.modules().next().unwrap().functions().next().unwrap();
-    let block = function.blocks().next().unwrap();
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
     let begin = block
         .instructions()
-        .find_map(|instruction| instruction.indexed_borrow())
+        .find_map(zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_borrow)
         .expect("checked begin");
     assert_eq!(begin.array_length(), Some(2));
 }
@@ -161,11 +161,11 @@ fn negative_fixed_array_index_retains_checked_bounds() {
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful negative index");
     let program =
         lower(pair_input(&syntax, &sources)).expect("negative access retains runtime bounds");
-    let function = program.modules().next().unwrap().functions().next().unwrap();
-    let block = function.blocks().next().unwrap();
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
     let begin = block
         .instructions()
-        .find_map(|instruction| instruction.indexed_borrow())
+        .find_map(zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_borrow)
         .expect("checked begin");
     assert_eq!(begin.array_length(), Some(2));
 }

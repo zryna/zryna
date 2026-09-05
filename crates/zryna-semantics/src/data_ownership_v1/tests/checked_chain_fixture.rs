@@ -23,7 +23,7 @@ fn construction(f: &mut Builder, ty: &Ty, depth: usize, empty: Option<usize>) ->
         Ty::Vec(element) => (element, u32::from(empty != Some(depth)), true),
         Ty::String => return literal(f, true),
         Ty::Named("i32") => return literal(f, false),
-        _ => unreachable!("fixture leaf"),
+        Ty::Named(_) => unreachable!("fixture leaf"),
     };
     let start = f.source.len();
     let type_syntax = f.ty(ty);

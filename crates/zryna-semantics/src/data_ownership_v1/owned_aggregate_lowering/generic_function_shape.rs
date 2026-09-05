@@ -69,16 +69,7 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     if indexed_container_call_base(function, signature.id.module.0 as usize, catalog) {
         return true;
     }
-    if function.body.expressions.iter().any(|expression| {
-        let RawExpressionKind::Index { base, .. } = expression.kind else { return false };
-        function.body.expressions.get(base as usize).is_some_and(|base| {
-            matches!(
-                base.kind,
-                RawExpressionKind::FixedArrayConstruction { .. }
-                    | RawExpressionKind::VecConstruction { .. }
-            )
-        })
-    }) {
+    if indexed_constructor_base(function) {
         return true;
     }
     if generic_call(function, signature.id.module.0 as usize, catalog, layouts) {
@@ -122,6 +113,19 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
             };
         }
         false
+    })
+}
+
+fn indexed_constructor_base(function: &RawFunctionSyntax) -> bool {
+    function.body.expressions.iter().any(|expression| {
+        let RawExpressionKind::Index { base, .. } = expression.kind else { return false };
+        function.body.expressions.get(base as usize).is_some_and(|base| {
+            matches!(
+                base.kind,
+                RawExpressionKind::FixedArrayConstruction { .. }
+                    | RawExpressionKind::VecConstruction { .. }
+            )
+        })
     })
 }
 
@@ -196,14 +200,15 @@ fn checked_array_shape(
         } else {
             base
         };
-        while cloned {
-            let parent = match base.kind {
-                RawExpressionKind::FieldAccess { base, .. } => base,
-                RawExpressionKind::Index { base, .. } => base,
-                _ => break,
-            };
-            let Some(parent) = function.body.expressions.get(parent as usize) else { return false };
-            base = parent;
+        if cloned {
+            while let RawExpressionKind::FieldAccess { base: parent, .. }
+            | RawExpressionKind::Index { base: parent, .. } = base.kind
+            {
+                let Some(parent) = function.body.expressions.get(parent as usize) else {
+                    return false;
+                };
+                base = parent;
+            }
         }
         let RawExpressionKind::Reference { name } = &base.kind else { return false };
         let parameter_type = function

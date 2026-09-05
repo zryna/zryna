@@ -5,6 +5,7 @@ use super::*;
 use zryna_ir::data_ownership_v1::VerifiedGenericCloneSource;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn fresh_vec_source_retains_real_owner_through_once_evaluated_index_bounds_and_clone() {
     for base in [Base::Call, Base::Construction] {
         for owned in [false, true] {

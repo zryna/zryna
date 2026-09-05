@@ -100,7 +100,8 @@ pub(super) fn rewrite_spans(value: &mut serde_json::Value, file: u32, cutoff: u3
         {
             *object.get_mut("file").expect("file") = file.into();
             for key in ["start", "end"] {
-                let current = object[key].as_u64().expect("offset") as u32;
+                let current = u32::try_from(object[key].as_u64().expect("offset"))
+                    .expect("bounded span offset");
                 if current >= cutoff {
                     *object.get_mut(key).expect("offset") = (current + shift).into();
                 }
@@ -199,16 +200,8 @@ pub(in crate::data_ownership_v1) fn imported_fallible_arguments_fixture()
     imported_fixture(Base::FallibleArguments, "choose", "select", "./lib.zry")
 }
 
-fn imported_fixture_paths(
-    base: Base,
-    imported_name: &str,
-    local_name: &str,
-    import_path: &str,
-    main_path: &str,
-    library_path: &str,
-) -> (SourceMap, RawProjectSyntaxSnapshot, usize, usize) {
-    let (main_id, library_id) = if main_path < library_path { (0_u32, 1_u32) } else { (1, 0) };
-    let (source, raw, target, call_name) = match base {
+fn base_fixture(base: Base) -> (String, RawProjectSyntaxSnapshot, usize, &'static str) {
+    match base {
         Base::Mixed(case) => {
             let (source, raw) = fixture(&Element::String, case);
             (source, raw, 1, "choose")
@@ -233,9 +226,24 @@ fn imported_fixture_paths(
             let (source, raw) = wrong_arity_fixture();
             (source, raw, 1, "choose")
         }
-    };
+    }
+}
+
+fn imported_fixture_paths(
+    base: Base,
+    imported_name: &str,
+    local_name: &str,
+    import_path: &str,
+    main_path: &str,
+    library_path: &str,
+) -> (SourceMap, RawProjectSyntaxSnapshot, usize, usize) {
+    let (main_id, library_id) = if main_path < library_path { (0_u32, 1_u32) } else { (1, 0) };
+    let (source, raw, target, call_name) = base_fixture(base);
     let prefix = format!("import {{ {imported_name} as {local_name} }} from '{import_path}';\n");
-    let mut main = shift_snapshot(raw.clone(), 0, prefix.len() as u32).files.remove(0);
+    let mut main =
+        shift_snapshot(raw.clone(), 0, u32::try_from(prefix.len()).expect("bounded import prefix"))
+            .files
+            .remove(0);
     let call = main.functions[0]
         .body
         .expressions
@@ -283,9 +291,14 @@ fn imported_fixture_paths(
     let insertion = library.functions[target].span.start as usize;
     retain_function(&mut library, target);
     let mut library_value = serde_json::to_value(library).expect("library");
-    rewrite_spans(&mut library_value, library_id, insertion as u32, 7);
+    rewrite_spans(
+        &mut library_value,
+        library_id,
+        u32::try_from(insertion).expect("bounded export insertion"),
+        7,
+    );
     let mut library: RawSourceUnit = serde_json::from_value(library_value).expect("library");
-    library.functions[0].span.start = insertion as u32;
+    library.functions[0].span.start = u32::try_from(insertion).expect("bounded export insertion");
     library.functions[0].export_span = Some(span(library_id, insertion, insertion + 6));
 
     main.id = main_id;
@@ -331,8 +344,8 @@ fn named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup(
         .instructions()
         .find(|instruction| instruction.callee().is_some())
         .expect("call");
-    let callee = call.callee().expect("callee");
-    assert_eq!((callee.module(), callee.declaration()), (0, 0));
+    let destination = call.callee().expect("callee");
+    assert_eq!((destination.module(), destination.declaration()), (0, 0));
     let arguments = call
         .call_arguments()
         .map(|argument| match argument {
@@ -346,15 +359,17 @@ fn named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup(
         [3],
         "CallTrap retains only the untransferred caller survivor"
     );
-    let call_cleanup =
-        caller.cleanup_plans().find(|plan| Some(plan.id()) == call.cleanup()).unwrap();
+    let call_cleanup = caller
+        .cleanup_plans()
+        .find(|plan| Some(plan.id()) == call.cleanup())
+        .expect("fixture element");
     assert_eq!(call_cleanup.site().role(), VerifiedCleanupRole::CallTrap);
-    let callee_function = modules[0].functions().next().unwrap();
+    let callee_function = modules[0].functions().next().expect("fixture function");
     assert_eq!(
         callee_function
             .blocks()
             .next()
-            .unwrap()
+            .expect("fixture element")
             .terminator()
             .derived_drop_actions()
             .map(|action| action.root().index())
@@ -366,7 +381,7 @@ fn named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup(
         caller
             .blocks()
             .next()
-            .unwrap()
+            .expect("fixture element")
             .terminator()
             .derived_drop_actions()
             .map(|action| action.root().index())
@@ -430,14 +445,20 @@ fn named_import_resolution_is_independent_of_authenticated_path_order() {
             sources.file_id(&NormalizedSourcePath::new(main_path).expect("path")).expect("entry");
         let program = lower(SemanticInput::try_new(&syntax, &sources, entry).expect("input"))
             .unwrap_or_else(|errors| panic!("{errors:?}"));
-        let caller = program.modules().nth(main).expect("entry module").functions().next().unwrap();
-        let callee = caller
+        let caller = program
+            .modules()
+            .nth(main)
+            .expect("entry module")
+            .functions()
+            .next()
+            .expect("fixture function");
+        let destination = caller
             .blocks()
             .next()
-            .unwrap()
+            .expect("fixture element")
             .instructions()
-            .find_map(|instruction| instruction.callee())
+            .find_map(FaultVerifiedInstruction::callee)
             .expect("imported call");
-        assert_eq!((callee.module() as usize, callee.declaration()), (library, 0));
+        assert_eq!((destination.module() as usize, destination.declaration()), (library, 0));
     }
 }

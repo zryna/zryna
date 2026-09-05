@@ -16,7 +16,11 @@ fn ordinary_array_source_checked_copy_reads_include_negative_upper_and_zero_leng
                     program.modules().next().expect("module").functions().next().expect("function");
                 let block = function.blocks().next().expect("block");
                 let instructions = block.instructions().collect::<Vec<_>>();
-                let begin = instructions.iter().find_map(|i| i.indexed_borrow()).expect("bounds");
+                let begin = instructions
+                    .iter()
+                    .copied()
+                    .find_map(zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_borrow)
+                    .expect("bounds");
                 assert_eq!(begin.array_length(), Some(u64::from(length)));
                 assert_eq!(begin.trap_identity(), VerifiedTrapIdentity::BoundsV1);
                 assert_eq!(begin.access(), VerifiedBorrowAccess::Shared);
@@ -85,7 +89,7 @@ fn ordinary_array_source_owned_clone_retains_container_and_common_recursive_fron
             assert_eq!(
                 instructions[clone_at]
                     .failure_ended_borrows()
-                    .map(|b| b.index())
+                    .map(zryna_ir::data_ownership_v1::BorrowIdentity::index)
                     .collect::<Vec<_>>(),
                 [begin.borrow().index()]
             );

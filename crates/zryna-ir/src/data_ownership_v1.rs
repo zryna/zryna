@@ -1204,8 +1204,8 @@ impl<'a> VerifiedInstruction<'a> {
             | raw::InstructionKind::BeginIndexedBorrow { definition, .. }
             | raw::InstructionKind::BeginIndexedAccess { definition, .. } => definition.id,
             raw::InstructionKind::ProjectIndexedBorrow { borrow, .. }
-            | raw::InstructionKind::BindIndexedBorrow { borrow, .. } => *borrow,
-            raw::InstructionKind::BorrowRead { borrow }
+            | raw::InstructionKind::BindIndexedBorrow { borrow, .. }
+            | raw::InstructionKind::BorrowRead { borrow }
             | raw::InstructionKind::GenericCloneBorrow { borrow, .. }
             | raw::InstructionKind::BorrowWrite { borrow, .. }
             | raw::InstructionKind::BorrowReplace { borrow, .. }
@@ -5953,13 +5953,13 @@ fn verify_instruction_shape(
         I::StringFromUtf8 { cleanup, .. }
         | I::DirectCall { cleanup, .. }
         | I::VecConstruct { cleanup, .. }
+        | I::ProjectIndexedBorrow { cleanup, .. }
         | I::SharedConstruct { cleanup, .. } => !cleanup_valid(*cleanup),
         I::StringConcat { left, right, cleanup } => {
             !place_valid(*left) || !place_valid(*right) || !cleanup_valid(*cleanup)
         }
         I::VecPush { vector, cleanup, .. } => !place_valid(*vector) || !cleanup_valid(*cleanup),
         I::BeginBorrow(def) => !place_valid(def.place),
-        I::ProjectIndexedBorrow { cleanup, .. } => !cleanup_valid(*cleanup),
         I::BeginIndexedBorrow { definition, cleanup, .. }
         | I::BeginIndexedAccess { definition, cleanup, .. } => {
             !place_valid(definition.place) || !cleanup_valid(*cleanup)

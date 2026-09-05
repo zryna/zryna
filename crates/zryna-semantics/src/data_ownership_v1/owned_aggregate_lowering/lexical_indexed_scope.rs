@@ -43,7 +43,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             let block = self.function.body.blocks.get(scope.block as usize)?;
             let Some(&id) = block.statements.get(scope.next) else {
                 let scope = scopes.pop()?;
-                self.end_lexical_scope(scope)?;
+                self.end_lexical_scope(&scope)?;
                 continue;
             };
             scope.next += 1;
@@ -91,7 +91,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(())
     }
 
-    fn end_lexical_scope(&mut self, scope: Scope) -> Option<()> {
+    fn end_lexical_scope(&mut self, scope: &Scope) -> Option<()> {
         let at =
             span(self.input.sources(), self.function.body.blocks.get(scope.block as usize)?.span);
         let mut ended: Vec<_> = self

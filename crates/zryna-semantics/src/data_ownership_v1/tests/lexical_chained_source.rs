@@ -3,6 +3,7 @@ use super::*;
 use zryna_ir::data_ownership_v1::VerifiedGenericCloneSource;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn lexical_chained_source_binds_final_exact_child_and_restores_complete_container() {
     for vector in [false, true] {
         for owned in [false, true] {

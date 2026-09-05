@@ -193,21 +193,31 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             facts: context.state.facts,
         };
         if let PreparationSite::Replacement { target } = site {
-            let mut owners = plan.owners.clone();
-            if plan.partial.contains(&target) || owners.replace(result, target).is_none() {
-                lowerer.errors.at(
-                    "ZRYNA-M3014",
-                    span(lowerer.input.sources(), lowerer.function.body.expressions.get(id as usize)?.span),
-                    "owned aggregate assignment cannot consume its destination while preparing its replacement",
-                    "clone the destination or prepare a distinct aggregate value before replacement",
-                );
-                return None;
-            }
+            Self::validate_replacement(lowerer, &plan, target, id)?;
         }
         if summary {
             resource_replay::validate(&mut plan, lowerer.layouts, lowerer.errors)?;
         }
         Some(Self { lowerer, plan })
+    }
+
+    fn validate_replacement(
+        lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
+        plan: &PreparationPlan<'_>,
+        target: zryna_ir::data_ownership_v1::raw::PlaceId,
+        id: u32,
+    ) -> Option<()> {
+        let mut owners = plan.owners.clone();
+        if plan.partial.contains(&target) || owners.replace(plan.result, target).is_none() {
+            lowerer.errors.at(
+                "ZRYNA-M3014",
+                span(lowerer.input.sources(), lowerer.function.body.expressions.get(id as usize)?.span),
+                "owned aggregate assignment cannot consume its destination while preparing its replacement",
+                "clone the destination or prepare a distinct aggregate value before replacement",
+            );
+            return None;
+        }
+        Some(())
     }
 }
 

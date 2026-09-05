@@ -3,6 +3,7 @@ use super::generic_vec_fixture::Element;
 use super::*;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn explicit_indexed_calls_retain_caller_container_and_transfer_only_value_arguments() {
     for container in [Container::Array(2), Container::Vec] {
         for element in [

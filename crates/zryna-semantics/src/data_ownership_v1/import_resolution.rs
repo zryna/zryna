@@ -16,13 +16,7 @@ pub(super) fn resolve_imports(
     catalog: &mut FunctionCatalog,
     errors: &mut Errors<'_>,
 ) {
-    let paths = input
-        .syntax()
-        .files()
-        .iter()
-        .enumerate()
-        .map(|(index, file)| (file.path().clone(), index))
-        .collect::<BTreeMap<NormalizedSourcePath, usize>>();
+    let paths = module_paths(input);
     let mut edges = vec![Vec::new(); input.syntax().files().len()];
     for (module, file) in input.syntax().files().iter().enumerate() {
         for import in file.imports() {
@@ -98,20 +92,11 @@ pub(super) fn resolve_imports(
                     );
                     continue;
                 }
-                let supported = !target.has_borrow_parameters()
-                    && target.parameters.iter().chain(std::iter::once(&target.result)).all(|ty| {
-                        matches!(
-                            ty.category,
-                            TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String
-                        )
-                    });
-                if !supported {
-                    errors.at(
-                        "ZRYNA-M3016",
-                        span(input.sources(), binding.imported.span),
-                        "named-import calls admit only exact bool, i32, and String by-value signatures",
-                        "keep imported nominal, container, and borrowed signatures outside this checkpoint",
-                    );
+                if !supported_signature(
+                    target,
+                    span(input.sources(), binding.imported.span),
+                    errors,
+                ) {
                     continue;
                 }
                 let local = &binding.local.text;
@@ -130,6 +115,36 @@ pub(super) fn resolve_imports(
         }
     }
     verify_graph(input, &edges, errors);
+}
+
+fn module_paths(input: SemanticInput<'_>) -> BTreeMap<NormalizedSourcePath, usize> {
+    input
+        .syntax()
+        .files()
+        .iter()
+        .enumerate()
+        .map(|(index, file)| (file.path().clone(), index))
+        .collect()
+}
+
+fn supported_signature(
+    target: &super::function_catalog::FunctionSignature,
+    at: zryna_source::Span,
+    errors: &mut Errors<'_>,
+) -> bool {
+    let supported = !target.has_borrow_parameters()
+        && target.parameters.iter().chain(std::iter::once(&target.result)).all(|ty| {
+            matches!(ty.category, TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String)
+        });
+    if !supported {
+        errors.at(
+            "ZRYNA-M3016",
+            at,
+            "named-import calls admit only exact bool, i32, and String by-value signatures",
+            "keep imported nominal, container, and borrowed signatures outside this checkpoint",
+        );
+    }
+    supported
 }
 
 fn verify_graph(input: SemanticInput<'_>, edges: &[Vec<ImportEdge>], errors: &mut Errors<'_>) {

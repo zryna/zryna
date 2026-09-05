@@ -1,5 +1,6 @@
 use zryna_ir::data_ownership_v1::raw;
 use zryna_layout::TypeCategory;
+use zryna_source::Span;
 use zryna_syntax::v4::RawExpressionKind;
 
 use super::super::Ty;
@@ -85,12 +86,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.function.body.expressions.get(id as usize)?.span,
         );
         if fresh.is_some() && replacement.is_some() {
-            self.decisions.errors.at(
-                "ZRYNA-M3014",
-                at,
-                "fresh indexed base is not a mutable assignment place",
-                "assign through a mutable initialized binding",
-            );
+            self.fresh_assignment_error(at);
             return None;
         }
         if expected.is_some_and(|expected| expected != ty)
@@ -145,6 +141,15 @@ impl PreparationContext<'_, '_, '_, '_> {
         Some(IndexedObservation::Value(value))
     }
 
+    fn fresh_assignment_error(&mut self, at: Span) {
+        self.decisions.errors.at(
+            "ZRYNA-M3014",
+            at,
+            "fresh indexed base is not a mutable assignment place",
+            "assign through a mutable initialized binding",
+        );
+    }
+
     fn indexed_chain(&self, mut base: u32) -> Option<(u32, Vec<(u32, u32)>)> {
         let mut indices = Vec::new();
         while let RawExpressionKind::Index { base: next, index, .. } =
@@ -161,7 +166,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         &mut self,
         borrow: raw::BorrowId,
         ty: Ty,
-        at: zryna_source::Span,
+        at: Span,
         replacement: Option<u32>,
     ) -> Option<raw::ValueId> {
         let value = if let Some(rhs) = replacement {

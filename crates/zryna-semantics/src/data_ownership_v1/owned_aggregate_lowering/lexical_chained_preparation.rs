@@ -9,6 +9,11 @@ use super::indexed_vec_preparation::IndexedObservation;
 use super::preparation_operations::PreparationContext;
 use super::preparation_plan::Operation;
 
+enum ChainBoundary {
+    Static,
+    Checked(usize),
+}
+
 impl PreparationContext<'_, '_, '_, '_> {
     pub(super) fn chained_lexical_begin(
         &mut self,
@@ -34,7 +39,9 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.function.body.expressions.get(target as usize)?.span,
         );
         let first = self.lexical_chain_boundary(&path, root.ty, expected, at)?;
-        let Some(first) = first else { return Some(IndexedObservation::Unselected) };
+        let ChainBoundary::Checked(first) = first else {
+            return Some(IndexedObservation::Unselected);
+        };
         // A static prefix remains the conflict region, preserving proven sibling disjointness.
         let source = self.resolve(path[first].0)?;
         self.available_vector(source, write, at)?;
@@ -84,7 +91,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         mut ty: Ty,
         expected: Ty,
         at: Span,
-    ) -> Option<Option<usize>> {
+    ) -> Option<ChainBoundary> {
         let mut first = None;
         for (ordinal, (_, index)) in path.iter().enumerate() {
             let record = self.decisions.layouts.type_by_id(ty.layout)?;
@@ -117,7 +124,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.lexical_chain_type_error(at);
             return None;
         }
-        Some(first)
+        Some(first.map_or(ChainBoundary::Static, ChainBoundary::Checked))
     }
 
     fn lexical_chain_type_error(&mut self, at: Span) {

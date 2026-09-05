@@ -3,6 +3,7 @@ use super::generic_vec_fixture::ordinary_array_composition_fixture::ordinary_arr
 use super::generic_vec_fixture::ordinary_array_composition_fixture::ordinary_array_clone_base_fixture::{Source, sourced_fixture};
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn ordinary_array_clone_base_preserves_once_only_materialization_and_bounds_cleanup() {
     for owned in [false, true] {
         for (length, index) in [(2, None), (2, Some(0)), (2, Some(-1)), (2, Some(2)), (0, Some(0))]

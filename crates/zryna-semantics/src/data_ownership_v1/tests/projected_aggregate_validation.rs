@@ -199,7 +199,7 @@ fn projected_string_clone_checks_exact_types_and_runtime_array_bounds() {
             let begin = function
                 .blocks()
                 .flat_map(zryna_ir::data_ownership_v1::VerifiedBlock::instructions)
-                .find_map(|instruction| instruction.indexed_borrow())
+                .find_map(zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_borrow)
                 .expect("checked array authority");
             assert_eq!(begin.trap_identity(), VerifiedTrapIdentity::BoundsV1);
             assert_eq!(begin.array_length(), Some(2));

@@ -23,8 +23,11 @@ fn with_imported(
 ) -> Vec<zryna_diagnostics::Diagnostic> {
     let (sources, raw) = fixture();
     let syntax = verify_snapshot(raw, &sources).expect("authenticated imported source");
-    let entry = sources.file_id(&NormalizedSourcePath::new("src/main.zry").unwrap()).unwrap();
-    let input = SemanticInput::try_new(&syntax, &sources, entry).unwrap();
+    let entry = sources
+        .file_id(&NormalizedSourcePath::new("src/main.zry").expect("fixture path"))
+        .expect("fixture path");
+    let input =
+        SemanticInput::try_new(&syntax, &sources, entry).expect("source-bound semantic input");
     let mut errors = Errors::new(&sources);
     semantic_preflight(input, &mut errors);
     let (graph, declarations) = build_graph(input, &mut errors);
@@ -34,7 +37,7 @@ fn with_imported(
     let mut catalog =
         build_function_catalog(input, &declarations, &graph, &node_types, &mut errors);
     import_resolution::resolve_imports(input, &mut catalog, &mut errors);
-    let module = usize::try_from(entry.index()).unwrap();
+    let module = usize::try_from(entry.index()).expect("bounded fixture index");
     let file = &syntax.files()[module];
     let function = &file.functions()[0];
     let result = semantic_type(
@@ -67,7 +70,7 @@ fn with_imported(
         places: vec![],
         instructions: vec![],
         constructor_types: ConstructorValueTypes::default(),
-        constructor_storage: Default::default(),
+        constructor_storage: super::super::constructor_resources::ConstructorStorage::default(),
         preparation_facts: super::super::preparation_plan::PreparationFacts::default(),
         cleanup_plans: vec![],
         cleanup_actions: 0,
@@ -99,12 +102,13 @@ fn with_imported(
             span: crate::data_ownership_v1::span(input.sources(), parameter.span),
         };
         lowerer.constructor_types.record_parameter(&definition).expect("dense parameter identity");
-        let place = raw::PlaceId(u32::try_from(lowerer.places.len()).unwrap());
+        let place =
+            raw::PlaceId(u32::try_from(lowerer.places.len()).expect("bounded fixture index"));
         lowerer.places.push(raw::Place {
             id: place,
             ty: ty.ir,
             span: definition.span,
-            kind: raw::PlaceKind::Parameter(u32::try_from(index).unwrap()),
+            kind: raw::PlaceKind::Parameter(u32::try_from(index).expect("bounded fixture index")),
         });
         lowerer.bindings.insert(parameter.name.text.clone(), Binding { ty, place, mutable: false });
         if !ty.is_copy() {
@@ -123,7 +127,12 @@ fn named_import_preparation_resources_are_exact_atomic_overflow_checked_and_reco
             let root = root_value(lowerer, 1);
             let held = ir::MAX_VALUES_PER_FUNCTION - 2 + usize::from(extra);
             let tickets = (0..held)
-                .map(|_| lowerer.credit_ledger().acquire_constructor(0, 0).unwrap())
+                .map(|_| {
+                    lowerer
+                        .credit_ledger()
+                        .acquire_constructor(0, 0)
+                        .expect("checked constructor reservation")
+                })
                 .collect::<Vec<_>>();
             let before = state(lowerer);
             let facts = lowerer.preparation_facts.clone();

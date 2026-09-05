@@ -264,18 +264,7 @@ impl Consumption<'_, '_, '_, '_> {
                 None
             }
             Operation::IndexedCopyStorage { place, value } => {
-                assert!(step.ty.is_copy());
-                assert_eq!(place.0 as usize, self.lowerer.places.len());
-                self.lowerer.places.push(raw::Place {
-                    id: place,
-                    ty: step.ty.ir,
-                    span: step.at,
-                    kind: raw::PlaceKind::Temporary(value),
-                });
-                self.lowerer.emit_prepared_effect(
-                    step.at,
-                    raw::InstructionKind::InitializePlace { place, value },
-                );
+                self.indexed_copy_storage(place, value, step.ty, step.at);
                 None
             }
             operation @ (Operation::IndexedEnter { .. }
@@ -361,6 +350,19 @@ impl Consumption<'_, '_, '_, '_> {
         }
         assert_eq!(self.lowerer.preparation_checkpoint(), step.after, "prepared step effects");
         value
+    }
+
+    fn indexed_copy_storage(&mut self, place: raw::PlaceId, value: raw::ValueId, ty: Ty, at: Span) {
+        assert!(ty.is_copy());
+        assert_eq!(place.0 as usize, self.lowerer.places.len());
+        self.lowerer.places.push(raw::Place {
+            id: place,
+            ty: ty.ir,
+            span: at,
+            kind: raw::PlaceKind::Temporary(value),
+        });
+        self.lowerer
+            .emit_prepared_effect(at, raw::InstructionKind::InitializePlace { place, value });
     }
 
     fn record_result(&mut self, index: usize, value: raw::ValueId, ty: Ty) {

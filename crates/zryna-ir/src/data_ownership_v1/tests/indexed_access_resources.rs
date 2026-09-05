@@ -61,7 +61,10 @@ fn indexed_access_projection_balances_resources_without_element_places() {
     let block = function.blocks().next().expect("block");
     let projection = block.instructions().nth(8).expect("projection");
     assert_eq!(
-        projection.failure_ended_borrows().map(|id| id.index()).collect::<Vec<_>>(),
+        projection
+            .failure_ended_borrows()
+            .map(super::super::BorrowIdentity::index)
+            .collect::<Vec<_>>(),
         (0..8).rev().collect::<Vec<_>>()
     );
     assert_eq!(block.instructions().count(), 17);

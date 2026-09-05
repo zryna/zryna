@@ -96,6 +96,7 @@ fn ordinary_array_composition_fresh_call_is_retained_through_index_bounds_and_cl
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn ordinary_array_composition_chained_access_preserves_region_and_atomic_authority_order() {
     for owned in [false, true] {
         for replace in [false, true] {

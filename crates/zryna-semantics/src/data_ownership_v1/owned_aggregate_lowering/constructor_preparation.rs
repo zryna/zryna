@@ -170,15 +170,8 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         frames: &mut Vec<Frame<'f>>,
     ) -> Option<VisitOutcome> {
         self.visits = self.visits.checked_add(1)?;
-        if self.state.summary
-            && let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-                self.lexical_alias_read(id, expected)?
-        {
-            return Some(VisitOutcome::Value(value));
-        }
-        if self.state.summary
-            && let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-                self.indexed_read(id, expected)?
+        if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+            self.prepared_observation(id, expected)?
         {
             return Some(VisitOutcome::Value(value));
         }
@@ -274,6 +267,28 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         Some(VisitOutcome::Value(value?))
     }
 
+    fn prepared_observation(
+        &mut self,
+        id: u32,
+        expected: Option<Ty>,
+    ) -> Option<super::indexed_vec_preparation::IndexedObservation> {
+        if self.state.summary {
+            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+                self.lexical_alias_read(id, expected)?
+            {
+                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
+            }
+            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+                self.indexed_read(id, expected)?
+            {
+                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
+            }
+        }
+        Some(super::indexed_vec_preparation::IndexedObservation::Unselected)
+    }
+
+    // Keep the iterative frame dispatcher together so result handoff order stays explicit.
+    #[allow(clippy::too_many_lines)]
     pub(super) fn walk(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
         let mut frames = vec![Frame::Visit(id, Some(expected))];
         let mut result = None;

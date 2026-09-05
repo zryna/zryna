@@ -3,6 +3,7 @@ use super::generic_vec_fixture::Element;
 use super::*;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn explicit_indexed_source_exact_referent_bounds_and_lexical_restoration() {
     for container in [Container::Array(2), Container::Array(0), Container::Vec] {
         for element in [

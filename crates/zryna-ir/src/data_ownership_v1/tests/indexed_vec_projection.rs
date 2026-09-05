@@ -48,7 +48,10 @@ fn indexed_vec_projection_retains_bounds_region_and_exact_owned_replacement() {
             assert_eq!(view.access(), access.into());
             assert_eq!(view.trap_identity(), super::super::VerifiedTrapIdentity::BoundsV1);
             assert_eq!(
-                projection.failure_ended_borrows().map(|id| id.index()).collect::<Vec<_>>(),
+                projection
+                    .failure_ended_borrows()
+                    .map(super::super::BorrowIdentity::index)
+                    .collect::<Vec<_>>(),
                 [0]
             );
             assert_eq!(
