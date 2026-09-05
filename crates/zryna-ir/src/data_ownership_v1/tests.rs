@@ -5,6 +5,7 @@ use zryna_source::{SourceFileInput, SourceMap};
 use std::collections::BTreeSet;
 
 mod borrow_index_work;
+mod shared_weak_authority;
 mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
 mod generic_clone_fixture;
