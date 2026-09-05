@@ -255,6 +255,17 @@ impl Consumption<'_, '_, '_, '_> {
         self.require_next(&step.operation);
         let mut effects = Vec::new();
         let emission = match step.operation {
+            Operation::DropTemporary { place } => {
+                self.lowerer
+                    .emit_prepared_effect(step.at, raw::InstructionKind::DropPlace { place });
+                effects.push(
+                    self.lowerer.owners.consume_owner(place).expect("prepared temporary owner"),
+                );
+                for delta in &effects {
+                    self.lowerer.preparation_facts.apply(*delta);
+                }
+                None
+            }
             Operation::ReplaceProjection { place, value } => {
                 effects = self.replace_projection(place, value, step.ty, step.at);
                 None

@@ -18,6 +18,13 @@ pub(super) struct HandleFrame {
     pub(super) at: Span,
 }
 
+pub(super) struct HandleReadFrame {
+    pub(super) operand: Ty,
+    pub(super) result: Ty,
+    pub(super) operation: HandleOperation,
+    pub(super) at: Span,
+}
+
 impl PreparationContext<'_, '_, '_, '_> {
     fn available_handle(
         &mut self,
@@ -104,6 +111,31 @@ impl PreparationContext<'_, '_, '_, '_> {
             HandleOperation::WeakClone => Leaf::WeakClone { source: source.place, cleanup },
         };
         self.emit_leaf(leaf, result, at)
+    }
+
+    pub(super) fn temporary_handle_read(
+        &mut self,
+        value: raw::ValueId,
+        frame: HandleReadFrame,
+    ) -> Option<raw::ValueId> {
+        let source = self.state.owners.owner(value)?;
+        let place = super::super::type_model::OwnedAggregatePlace {
+            ty: frame.operand,
+            place: source,
+            root: source,
+            mutable: false,
+            is_root: true,
+        };
+        self.available_handle(place, frame.at)?;
+        let cleanup = self.reverse(frame.result, frame.at)?;
+        let leaf = match frame.operation {
+            HandleOperation::SharedClone => Leaf::SharedClone { source, cleanup },
+            HandleOperation::WeakDowngrade => Leaf::WeakDowngrade { source, cleanup },
+            HandleOperation::WeakClone => Leaf::WeakClone { source, cleanup },
+        };
+        let result = self.emit_leaf(leaf, frame.result, frame.at)?;
+        self.drop_temporary(value, frame.operand, frame.at)?;
+        Some(result)
     }
 
     pub(super) fn shared_construct(

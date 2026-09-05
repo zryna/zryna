@@ -6,7 +6,7 @@ use super::super::owned_constructor_plan::ConstructorKind;
 use super::PrivateOwnedAggregateLowerer;
 use super::constructor_resources::ConstructorCommitReservation;
 use super::expression_decisions::{ArrayDecision, ExpressionKind, StructDecision};
-use super::handle_preparation::{HandleFrame, HandleOperation};
+use super::handle_preparation::{HandleFrame, HandleOperation, HandleReadFrame};
 use super::preparation_operations::PreparationContext;
 use super::preparation_plan::{Leaf, Operation, PreparationPlan};
 use super::preparation_plan::{StringOperation, StringRead};
@@ -101,6 +101,7 @@ enum Frame<'f> {
     Scalar(scalar_scope::ScalarFrame),
     Constructor(ConstructorFrame<'f>),
     Handle(HandleFrame),
+    HandleRead(HandleReadFrame),
     String(StringFrame),
     Read(u32, Ty),
     ReadResult(Ty, Span),
@@ -163,6 +164,17 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             self.decisions.input.sources(),
             expression.span,
         ))
+    }
+
+    fn handle_operand_is_place(&self, id: u32) -> bool {
+        self.decisions.function.body.expressions.get(id as usize).is_some_and(|expression| {
+            matches!(
+                expression.kind,
+                zryna_syntax::v4::RawExpressionKind::Reference { .. }
+                    | zryna_syntax::v4::RawExpressionKind::FieldAccess { .. }
+                    | zryna_syntax::v4::RawExpressionKind::Index { .. }
+            )
+        })
     }
 
     #[allow(clippy::too_many_lines)]
@@ -238,17 +250,25 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 return Some(VisitOutcome::Deferred);
             }
             ExpressionKind::AggregateClone(id) => self.aggregate_clone(id, ty, at),
-            ExpressionKind::HandleClone(id) => self.handle_read(
-                id,
-                ty,
-                ty,
-                if ty.category == zryna_layout::TypeCategory::Shared {
+            ExpressionKind::HandleClone(id) => {
+                let operation = if ty.category == zryna_layout::TypeCategory::Shared {
                     HandleOperation::SharedClone
                 } else {
                     HandleOperation::WeakClone
-                },
-                at,
-            ),
+                };
+                if self.handle_operand_is_place(id) {
+                    self.handle_read(id, ty, ty, operation, at)
+                } else {
+                    frames.push(Frame::HandleRead(HandleReadFrame {
+                        operand: ty,
+                        result: ty,
+                        operation,
+                        at,
+                    }));
+                    frames.push(Frame::Visit(id, Some(ty)));
+                    return Some(VisitOutcome::Deferred);
+                }
+            }
             ExpressionKind::Shared(id) => {
                 let payload = self.handle_payload(ty)?;
                 frames.push(Frame::Handle(HandleFrame { result: ty, at }));
@@ -257,7 +277,18 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             }
             ExpressionKind::Downgrade(id) => {
                 let shared = self.shared_for_weak(ty)?;
-                self.handle_read(id, shared, ty, HandleOperation::WeakDowngrade, at)
+                if self.handle_operand_is_place(id) {
+                    self.handle_read(id, shared, ty, HandleOperation::WeakDowngrade, at)
+                } else {
+                    frames.push(Frame::HandleRead(HandleReadFrame {
+                        operand: shared,
+                        result: ty,
+                        operation: HandleOperation::WeakDowngrade,
+                        at,
+                    }));
+                    frames.push(Frame::Visit(id, Some(shared)));
+                    return Some(VisitOutcome::Deferred);
+                }
             }
             ExpressionKind::Call { .. } => unreachable!("call frame entered"),
             ExpressionKind::Struct(decision) => {
@@ -388,6 +419,9 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 }
                 Frame::Handle(frame) => {
                     result = Some(self.shared_construct(result.take()?, frame.result, frame.at)?);
+                }
+                Frame::HandleRead(frame) => {
+                    result = Some(self.temporary_handle_read(result.take()?, frame)?);
                 }
                 Frame::String(mut frame) => {
                     if frame.waiting {

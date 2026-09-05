@@ -114,6 +114,9 @@ pub(super) struct StringRead {
 }
 
 pub(super) enum Operation<'f> {
+    DropTemporary {
+        place: raw::PlaceId,
+    },
     ReplaceProjection {
         place: raw::PlaceId,
         value: raw::ValueId,

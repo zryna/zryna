@@ -122,6 +122,11 @@ pub(super) fn validate(
         let step = &plan.steps[index];
         let resources = usage(before);
         match &step.operation {
+            Operation::DropTemporary { .. } => {
+                if !resources.transition(1, step.at, errors) {
+                    return None;
+                }
+            }
             Operation::IndexedCopyStorage { .. } => {
                 if !resources.places(1, step.at, errors)
                     || !resources.transition(1, step.at, errors)

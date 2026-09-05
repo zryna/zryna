@@ -147,6 +147,52 @@ fn nested_shared_payload_moves_into_outer_control_without_implicit_clone() {
     assert_eq!(block.terminator().derived_drop_actions().count(), 3);
 }
 
+#[test]
+fn temporary_handle_operands_drop_at_the_exact_expression_boundary() {
+    let (source, raw) = fixture_case(Case::TemporaryOperands);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated temporary handle fixture");
+    let program = lower(pair_input(&syntax, &sources)).expect("temporary handle lowering");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let kinds = function
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .map(|instruction| instruction.kind())
+        .collect::<Vec<_>>();
+    let handle_or_drop = kinds
+        .iter()
+        .copied()
+        .filter(|kind| {
+            matches!(
+                kind,
+                VerifiedInstructionKind::SharedConstruct
+                    | VerifiedInstructionKind::SharedClone
+                    | VerifiedInstructionKind::WeakDowngrade
+                    | VerifiedInstructionKind::WeakClone
+                    | VerifiedInstructionKind::DropPlace
+            )
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        handle_or_drop,
+        [
+            VerifiedInstructionKind::SharedConstruct,
+            VerifiedInstructionKind::SharedClone,
+            VerifiedInstructionKind::SharedClone,
+            VerifiedInstructionKind::DropPlace,
+            VerifiedInstructionKind::SharedClone,
+            VerifiedInstructionKind::WeakDowngrade,
+            VerifiedInstructionKind::DropPlace,
+            VerifiedInstructionKind::WeakDowngrade,
+            VerifiedInstructionKind::WeakClone,
+            VerifiedInstructionKind::DropPlace,
+        ],
+        "each non-addressable operand is counted before its temporary is released"
+    );
+}
+
 fn rejected(case: Case, code: &str, message: &str, guidance: &str) {
     let (source, raw) = fixture_case(case);
     let body = &raw.files[0].functions[0].body;

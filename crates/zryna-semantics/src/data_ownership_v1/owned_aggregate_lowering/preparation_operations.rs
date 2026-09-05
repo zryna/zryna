@@ -129,6 +129,22 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
         Some(value)
     }
 
+    pub(super) fn drop_temporary(&mut self, value: raw::ValueId, ty: Ty, at: Span) -> Option<()> {
+        let place = self.state.owners.owner(value)?;
+        self.state.effect()?;
+        let delta = self.state.owners.consume_owner(place)?;
+        self.state.facts.apply(delta);
+        self.steps.push(Step {
+            operation: Operation::DropTemporary { place },
+            ty,
+            at,
+            value: None,
+            owners: vec![delta],
+            after: self.state.checkpoint(),
+        });
+        Some(())
+    }
+
     pub(super) fn reference(
         &mut self,
         name: &syntax::RawIdentifierSyntax,

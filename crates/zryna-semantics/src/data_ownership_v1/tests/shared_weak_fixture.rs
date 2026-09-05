@@ -118,6 +118,7 @@ pub(crate) enum Case {
     StringArrayZero,
     StringArrayOne,
     StringVec,
+    TemporaryOperands,
     MissingHandle,
     MovedReuse,
     WrongCloneType,
@@ -186,6 +187,17 @@ pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
             local(&mut f, "copy", &shared, |f| unary(f, "clone", |f| f.reference("owner")));
             local(&mut f, "weak", &weak, |f| unary(f, "downgrade", |f| f.reference("copy")));
             local(&mut f, "weakCopy", &weak, |f| unary(f, "clone", |f| f.reference("weak")));
+        }
+        Case::TemporaryOperands => {
+            local(&mut f, "copy", &shared, |f| {
+                unary(f, "clone", |f| unary(f, "clone", |f| f.reference("owner")))
+            });
+            local(&mut f, "weak", &weak, |f| {
+                unary(f, "downgrade", |f| unary(f, "clone", |f| f.reference("owner")))
+            });
+            local(&mut f, "weakCopy", &weak, |f| {
+                unary(f, "clone", |f| unary(f, "downgrade", |f| f.reference("owner")))
+            });
         }
         Case::MissingHandle => {
             local(&mut f, "copy", &shared, |f| unary(f, "clone", |f| f.reference("ghost")));
