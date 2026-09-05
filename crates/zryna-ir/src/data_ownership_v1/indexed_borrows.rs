@@ -1,10 +1,10 @@
 //! Sealed dynamic element borrowing and prepared referent replacement.
 
 use super::{
-    BorrowIdentity, CleanupPlanIdentity, Errors, LayoutTypeId, PlaceIdentity, TypeCategory,
-    ValueIdentity, VerifiedBorrowAccess, VerifiedInstruction, VerifiedLayouts,
-    VerifiedTrapIdentity, borrow_definition, consuming_instruction_operands, instruction_cleanup,
-    is_projection_below, layout_type, lexical_borrow_place, overlaps_active, ownership_error, raw,
+    BorrowIdentity, BorrowIndex, CleanupPlanIdentity, Errors, LayoutTypeId, PlaceIdentity,
+    TypeCategory, ValueIdentity, VerifiedBorrowAccess, VerifiedInstruction, VerifiedLayouts,
+    VerifiedTrapIdentity, consuming_instruction_operands, instruction_cleanup, is_projection_below,
+    layout_type, overlaps_active, ownership_error, raw,
 };
 
 /// Exact checked element authority with a conservative whole-container conflict region.
@@ -138,11 +138,16 @@ impl VerifiedInstruction<'_> {
             {
                 match &instruction.kind {
                     raw::InstructionKind::BeginBorrow(definition)
-                    | raw::InstructionKind::BeginIndexedBorrow { definition, .. } => {
+                    | raw::InstructionKind::BeginIndexedBorrow { definition, .. }
+                    | raw::InstructionKind::BeginIndexedAccess { definition, .. } => {
                         active.push(definition.id);
                     }
                     raw::InstructionKind::EndBorrow { borrow } => {
                         active.retain(|id| id != borrow);
+                    }
+                    raw::InstructionKind::ProjectIndexedBorrow { parent, borrow, .. } => {
+                        active.retain(|id| id != parent);
+                        active.push(*borrow);
                     }
                     _ => {}
                 }
@@ -155,7 +160,8 @@ impl VerifiedInstruction<'_> {
     /// Checked signed-index access; failure precedes creation of the new borrow.
     #[must_use]
     pub fn indexed_borrow(self) -> Option<VerifiedIndexedBorrow> {
-        let raw::InstructionKind::BeginIndexedBorrow { definition, index, cleanup } =
+        let (raw::InstructionKind::BeginIndexedBorrow { definition, index, cleanup }
+        | raw::InstructionKind::BeginIndexedAccess { definition, index, cleanup }) =
             &self.instruction.kind
         else {
             return None;
@@ -183,7 +189,7 @@ impl VerifiedInstruction<'_> {
         };
         let owner = self.function.id();
         let layouts = &self.function.owner.linear32;
-        let (referent, _) = borrow_definition(self.function.function, borrow, layouts)?;
+        let (referent, _) = self.function.borrows().definition(borrow)?;
         Some(VerifiedBorrowReplacement {
             old_value_drop: VerifiedBorrowReferentDrop {
                 borrow: BorrowIdentity { owner, index: borrow.0 },
@@ -226,10 +232,11 @@ fn value_owner(function: &raw::Function, value: raw::ValueId) -> Option<raw::Pla
 
 pub(super) fn invalidate_borrow_variants(
     function: &raw::Function,
+    borrows: &BorrowIndex,
     borrow: raw::BorrowId,
     variants: &mut [Option<u32>],
 ) {
-    let Some(region) = lexical_borrow_place(function, borrow) else { return };
+    let Some(region) = borrows.region(borrow) else { return };
     for place in &function.places {
         if (place.id == region || is_projection_below(place.id, region, &function.places))
             && let Some(variant) = variants.get_mut(place.id.0 as usize)
@@ -242,24 +249,17 @@ pub(super) fn invalidate_borrow_variants(
 pub(super) fn invalidate_call_variants(
     instruction: &raw::Instruction,
     function: &raw::Function,
+    borrows: &BorrowIndex,
     variants: &mut [Option<u32>],
 ) {
     let raw::InstructionKind::DirectCall { arguments, .. } = &instruction.kind else { return };
     for argument in arguments {
         let raw::CallArgument::Borrow(borrow) = argument else { continue };
-        let exclusive = function.borrow_parameters.iter().any(|parameter| {
-            parameter.id == *borrow && parameter.access == raw::BorrowAccess::Exclusive
-        }) || function.blocks.iter().flat_map(|block| &block.instructions).any(
-            |instruction| match &instruction.kind {
-                raw::InstructionKind::BeginBorrow(definition)
-                | raw::InstructionKind::BeginIndexedBorrow { definition, .. } => {
-                    definition.id == *borrow && definition.access == raw::BorrowAccess::Exclusive
-                }
-                _ => false,
-            },
-        );
+        let exclusive = borrows
+            .definition(*borrow)
+            .is_some_and(|(_, access)| access == raw::BorrowAccess::Exclusive);
         if exclusive {
-            invalidate_borrow_variants(function, *borrow, variants);
+            invalidate_borrow_variants(function, borrows, *borrow, variants);
         }
     }
 }

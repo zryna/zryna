@@ -113,6 +113,10 @@ pub(super) enum Operation<'f> {
     },
     IndexedExit,
     IndexedEffect(raw::InstructionKind),
+    IndexedCopyStorage {
+        place: raw::PlaceId,
+        value: raw::ValueId,
+    },
     GenericClonePrefix {
         id: raw::CleanupPlanId,
         owner: raw::PlaceId,

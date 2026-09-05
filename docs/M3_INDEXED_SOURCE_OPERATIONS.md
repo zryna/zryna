@@ -17,6 +17,12 @@ an allocator, public profile selection or completion of M3.
 | Copy alias read / exclusive write | `BorrowRead` / `BorrowWrite` |
 | Owned alias observation / exclusive replacement | explicit structural clone / `BorrowReplace` |
 
+The [transient ordinary-access adapter](M3_TRANSIENT_INDEXED_ACCESS.md) admits fresh exact
+FixedArray call/construction results for observation and chained FixedArray indexing from an
+initialized binding-derived container. Ordinary dynamic access uses `BeginIndexedAccess`;
+each dynamic child uses `ProjectIndexedBorrow` without a fabricated element place or an
+intermediate allocating clone. This does not make lexical or formal aliases projectable.
+
 An in-range literal fixed-array index keeps its canonical static projection and can be
 disjoint from another static sibling. Other array indices and every Vec index use the complete
 selected container as their conflict region, irrespective of runtime index equality. Distinct
@@ -28,6 +34,13 @@ before replacement RHS preparation; RHS evaluation completes before old-value cl
 replacement commit. Negative, upper-bound and zero-length accesses keep the specified runtime
 `BoundsV1` boundary rather than being rejected merely for their numeric value. A successfully
 prepared RHS is not evidence that a borrowed owner can be moved, replaced, grown or dropped.
+
+For a chain, each bounds check precedes the next index evaluation. Projection failure unwinds
+the parent authority; success atomically retires it and issues the child with the original
+conflict region. Only the final live authority is ended. Fresh Copy results receive real
+`InitializePlace` storage with no owned cleanup root; fresh owned results stay pending through
+index/bounds/clone failure and are dropped after the final end. Fresh expressions are not
+mutable assignment targets.
 
 Owned elements cannot be implicitly copied or moved out. An explicit clone retains the source,
 produces one distinct owner and uses the same recursive initialized-prefix cleanup as ordinary
@@ -80,7 +93,9 @@ requirements; this document does not waive their interaction obligations.
 This batch is not yet a closure claim for #255, #256 or #274. The current source adapter accepts
 the supported non-handle graph. Shared/Weak referents still require the separately verified
 handle source stages; raw opaque-slot tests cannot discharge that source requirement.
-Ordinary indexing of a fresh returned array or a dynamically selected nested container still
-needs a reviewed base-value/addressable-container adapter. A hidden intermediate clone is not
-equivalent because it changes allocation and failure effects. These limitations must remain
-visible during acceptance reconciliation rather than be treated as completed generic support.
+Fresh and chained ordinary FixedArray access now use the explicit transient adapter above.
+Explicit lexical borrowing through a dynamically selected nested container remains excluded:
+the transient projection operation cannot consume a lexical or formal alias. Fresh Vec bases
+and arbitrary expression-base shapes are not implied by the FixedArray adapter. These remaining
+limitations must stay visible during acceptance reconciliation rather than be treated as
+completed generic support.

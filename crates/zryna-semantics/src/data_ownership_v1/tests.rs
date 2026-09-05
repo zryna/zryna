@@ -471,4 +471,5 @@ mod explicit_indexed_regions;
 mod explicit_indexed_rejections;
 mod explicit_indexed_siblings;
 mod explicit_indexed_source;
+mod ordinary_array_composition_source;
 mod ordinary_array_source;

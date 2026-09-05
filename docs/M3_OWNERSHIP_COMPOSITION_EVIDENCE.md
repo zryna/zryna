@@ -257,6 +257,33 @@ function operation contract rather than being silently repaired by an allocating
 
 ## Located tests, not complete composition proofs
 
+### Ordinary and lexical indexed source integration (#255/#256/#274)
+
+These candidate additions are located evidence, not execution receipts or issue closure:
+
+- Source `ordinary_array_source.rs` covers checked Copy reads, explicit owned clones,
+  replacement bounds-before-RHS and forbidden independent element moves.
+- Source `ordinary_array_composition_source.rs` names
+  `ordinary_array_composition_fresh_call_is_retained_through_index_bounds_and_clone` and
+  `ordinary_array_composition_chained_access_preserves_region_and_atomic_authority_order`.
+  They authenticate fresh call and named chained-array fixtures, inspect exactly-once call
+  order, negative/upper/zero bounds, parent/child authority and retained failure cleanup.
+- Source `explicit_indexed_source.rs`, `explicit_indexed_siblings.rs`,
+  `explicit_indexed_calls.rs` and their rejection modules cover lexical identity, exact owned/Copy
+  access, static sibling versus dynamic conflicts and canonical call-argument authority.
+  `lexical_indexed_resources.rs` keeps injected credit/state controls separate from source proofs.
+- IR `indexed_access.rs` independently checks child region/access/failure-parent identity and
+  rejects lexical/formal parents, retired/inactive authority, wrong types and reused cleanup.
+  `indexed_access_copy_storage_requires_real_initialization_without_owned_cleanup` in
+  `indexed_access_copy_storage.rs` binds Copy temporary storage to actual initialization.
+  `indexed_access_projection_balances_resources_without_element_places` and
+  `indexed_access_active_exact_projection_first_extra_and_recovery` in
+  `indexed_access_resources.rs` cover independent resource/recovery boundaries.
+
+The transient adapter does not admit explicit lexical chained borrowing or Shared/Weak source
+production. Complete gates and independent review remain required; verified cleanup descriptors
+are not runtime fault execution or backend completion.
+
 Names below are actual `#[test]` functions under the same directory's `tests/`.
 
 | File | Existing test | Proof limit |

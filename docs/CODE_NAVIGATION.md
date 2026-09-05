@@ -34,6 +34,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Aggregate preparation: `src/data_ownership_v1/owned_aggregate_lowering/{driver,constructor_preparation,constructor_resources}.rs`; Vec route: `owned_vec_lowering/{driver,constructors}.rs`.
 - Preparation lifecycle: `owned_aggregate_lowering/preparation_value.rs` builds the bound plan; `preparation_execution.rs` consumes it and `preparation_local_commit.rs` commits the local destination. `constructor_preparation.rs` owns the expression walk.
 - Shared typed constructor authority: `owned_constructor_plan.rs`; relevant tests live under `src/data_ownership_v1/tests/` and are registered by its parent tests module.
+- Indexed source: `owned_aggregate_lowering/{ordinary_indexed_array_preparation,chained_indexed_preparation,fresh_indexed_preparation}.rs` prepare ordinary access; `lexical_indexed_{statements,scope,preparation}.rs` own persistent aliases. `preparation_indexed_consumption.rs` replays both through the shared plan. See `docs/M3_INDEXED_SOURCE_OPERATIONS.md` for the operation/exclusion matrix.
 - Private helpers: `owned_cfg_finalization.rs` finalizes owned CFGs; `copy_lowering/expressions/constructors.rs` handles Copy aggregate constructors; `owned_aggregate_lowering/assignment_planning/source.rs` plans assignment sources; `owned_cleanup_contexts.rs` contains cleanup diagnostic contexts.
 - Focus: `pnpm m3:data:quick`; for authority changes also `pnpm m3:owned:quick` and `pnpm m3:contract`. Find the exact neighboring constructor/borrow/cleanup test before selecting a filter.
 - Mixed-construction preparation and its bounded evidence are described in the composition map above; this is internal work, not public M3 activation. Preserve both legacy and mixed diagnostic schedules, failure state and resource evidence; finish with full gates.
@@ -43,6 +44,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Start: [layout README](../crates/zryna-layout/README.md), [IR README](../crates/zryna-ir/README.md), [M3 IR contract](M3_DATA_OWNERSHIP_IR.md).
 - Layout authority: `crates/zryna-layout/src/lib.rs::{verify,VerifiedLayouts::type_by_id}`. Raw graphs are not sealed layouts.
 - IR authority: `crates/zryna-ir/src/lib.rs::verify`, `src/control_flow_v1.rs::verify`, or `src/data_ownership_v1.rs::verify`; select one profile, preserving the others.
+- Indexed authority: `src/data_ownership_v1/indexed_borrows.rs` retains exact container/referent bounds; `indexed_access.rs` seals transient child projection without a dynamic place. Neighboring `tests/indexed_access*.rs` provide independent malformed-input and resource evidence.
 - Focus: `pnpm m3:layout`; `cargo test --locked -p zryna-ir` and `cargo test --locked -p zryna-ir --doc`; inspect the matching profile's hostile/raw fixtures.
 - Include forged authority, resource boundaries, deterministic replay, and opaque-view tests as applicable. Full verification is not replaceable by producer checks.
 

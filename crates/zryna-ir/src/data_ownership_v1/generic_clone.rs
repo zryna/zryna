@@ -74,6 +74,7 @@ impl<'a> VerifiedInstruction<'a> {
             super::derive_state_before(
                 self.function.function,
                 &self.function.owner.linear32,
+                self.function.borrows(),
                 self.block_index,
                 self.instruction_index,
             )
@@ -271,6 +272,7 @@ pub(super) fn verify_prefix_cleanup(
     instruction: &raw::Instruction,
     owners: &[Option<raw::PlaceId>],
     function: &raw::Function,
+    borrows: &super::BorrowIndex,
     flow: &OwnershipFlow,
     errors: &mut Errors,
 ) {
@@ -279,7 +281,7 @@ pub(super) fn verify_prefix_cleanup(
             (Some(place), prefix_cleanup)
         }
         raw::InstructionKind::GenericCloneBorrow { borrow, prefix_cleanup, .. } => {
-            (super::lexical_borrow_place(function, borrow), prefix_cleanup)
+            (borrows.region(borrow), prefix_cleanup)
         }
         _ => return,
     };

@@ -12,7 +12,8 @@ scope exits or owner-carrying joins.
 The generic route accepts exact by-value parameters and results from the supported non-handle
 graph: bool/i32, String, Struct, Enum, FixedArray and positive-stride Vec compositions. Permitted
 Vec-indirected recursive graphs use sealed layout identities, not an expanded recursive syntax
-tree. Shared/Weak-containing graphs and borrow parameters do not enter this route. A function
+tree. Shared/Weak-containing graphs do not enter this route. Exact private borrow parameters
+use the indexed-source call adapter, with live authority rather than owned parameter places. A function
 with an owned input may return a Copy result; unused owned inputs still require cleanup.
 
 Selection examines authenticated signature/body shape without evaluating source or issuing a
@@ -29,8 +30,9 @@ the remaining initialized owners with their current masks and enum refinements.
 
 ## Calls and transfer boundaries
 
-A generic call resolves one exact private same-module catalog signature. It rejects borrow
-parameters, unsupported graph categories, mismatched result type and wrong arity. Its ordered
+A generic call resolves one exact private same-module catalog signature. Borrow arguments require
+matching live aliases with exact referent/access and cannot escape the call; unsupported graph
+categories, mismatched result type and wrong arity remain rejected. Its ordered
 argument plan uses each declared parameter type, not the result type as a shorthand for all
 parameters. String or `Vec<String>` results therefore still use generic call preparation when the
 parameter list is not the legacy zero/one same-type signature.
@@ -50,6 +52,11 @@ the transferred inputs and includes the caller's remaining owners. The callee is
 its inputs if it traps; successful return supplies one exact result, owned only when non-Copy.
 The mandatory IR verifier remains authority for call identity, argument types, owner exclusion,
 cleanup, acyclicity and static call-depth limits.
+
+Borrow/value argument preparation retains source declaration order. The final verified call
+encodes its canonical value prefix and borrow suffix only after preparation; that partition
+does not reorder effects. Only by-value owned operands transfer ownership. The caller retains
+lexical end responsibility, and formal borrows do not acquire fabricated local owners.
 
 Consumption rechecks the immutable catalog signature, ordered prepared result identities and
 actual emitted argument types. It replays exactly the recorded owner transfers and verifies the
@@ -78,13 +85,18 @@ its retained source and recursive destination frontier. Ordinary Vec operations 
 [Vec operation contract](M3_GENERIC_VEC_OPERATIONS.md): Copy indexing, explicit owned clone,
 checked replacement and the existing Vec push authority. Indexed replacement checks bounds
 before RHS preparation and commits only the completed exact element. Internal transient indexed
-authority is not a claim that explicit source `Borrow`/`BorrowMut` syntax is implemented here.
+authority remains distinct from persistent explicit source `Borrow`/`BorrowMut` aliases.
 
-The current static-address adapter resolves named owners and supported static field/array paths.
-It does not manufacture a place for a fresh returned container or a dynamically selected nested
-container. `produceVec()[i]` and `outer[i][j]` require a sound additional operand adapter; cloning
-an intermediate container is not equivalent because it adds allocation and effects. This source
-composition boundary must remain explicit when assessing the enclosing issue's acceptance.
+The static-address adapter resolves named owners and supported static field/array paths.
+Ordinary FixedArray access additionally admits exact fresh private-call/construction results
+for observation and chained array indices from initialized binding-derived containers.
+`BeginIndexedAccess` and `ProjectIndexedBorrow` preserve the original conflict region without
+inventing a dynamic place or cloning an intermediate container. Each bounds check precedes the
+next index; replacement checks the complete chain before RHS preparation. Fresh Copy storage is
+explicitly initialized and has no owned cleanup root; fresh owned storage is retained through
+failure and dropped after final access end. Fresh bases are not mutable assignment targets.
+`produceVec()[i]`, arbitrary fresh expression shapes and explicit lexical chained borrowing
+remain outside this adapter. Shared/Weak source integration is still separately required.
 
 ## Evidence and remaining scope
 

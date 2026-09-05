@@ -28,7 +28,7 @@ impl super::PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let RawExpressionKind::Index { base, .. } = self.expression(target)?.kind else {
             return None;
         };
-        let vector = self.projection_expression_type(base)?;
+        let vector = self.indexed_expression_type(base)?;
         let element = self.layouts.type_by_id(vector.layout)?.referenced_type()?;
         let ty = self.node_types.iter().flatten().find(|ty| ty.layout == element).copied()?;
         super::constructor_preparation::PreparedValue::prepare_indexed_replacement(
@@ -46,6 +46,11 @@ impl PreparationContext<'_, '_, '_, '_> {
         rhs: u32,
         ty: Ty,
     ) -> Option<raw::ValueId> {
+        if let IndexedObservation::Value(value) =
+            self.chained_observation(target, false, Some(ty), Some(rhs))?
+        {
+            return Some(value);
+        }
         let expression = self.decisions.function.body.expressions.get(target as usize)?;
         let at = span(self.decisions.input.sources(), expression.span);
         let RawExpressionKind::Index { base, index, .. } = expression.kind else { return None };
@@ -55,7 +60,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         self.push(Operation::IndexedEnter { end: usize::MAX, result: usize::MAX }, ty, at, None);
         let integer = self.decisions.primitive(TypeCategory::I32)?;
         let index = self.walk(index, integer)?;
-        let borrow = self.begin_indexed(source, index, true, ty, at)?;
+        let borrow = self.begin_access(source, index, true, ty, at)?;
         let value = self.walk(rhs, ty)?;
         let result = self.steps.iter().rposition(|step| step.value == Some(value))?;
         let kind = if ty.is_copy() {
@@ -133,7 +138,15 @@ impl PreparationContext<'_, '_, '_, '_> {
         let copy_root = self
             .bindings
             .values()
-            .any(|binding| binding.place == source.root && binding.ty.is_copy());
+            .any(|binding| binding.place == source.root && binding.ty.is_copy())
+            || source
+                .root
+                .0
+                .checked_sub(u32::try_from(state.original_places.len()).ok()?)
+                .and_then(|index| state.places.get(index as usize))
+                .is_some_and(|place| {
+                    place.ty.is_copy() && matches!(place.kind, raw::PlaceKind::Temporary(_))
+                });
         if (write && !source.mutable)
             || !(copy_root || availability.projection_available(source.place, source.root))
             || state.moved.iter().any(|moved| availability.places_overlap(*moved, source.place))
@@ -166,6 +179,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         self.state.effect()?;
         match &kind {
             raw::InstructionKind::BeginIndexedBorrow { definition, .. }
+            | raw::InstructionKind::BeginIndexedAccess { definition, .. }
             | raw::InstructionKind::BeginBorrow(definition) => {
                 self.state.facts.next_borrow = definition.id.0.checked_add(1)?;
                 self.state
@@ -175,6 +189,11 @@ impl PreparationContext<'_, '_, '_, '_> {
             }
             raw::InstructionKind::EndBorrow { borrow } => {
                 self.state.facts.active_borrows.remove(borrow)?;
+            }
+            raw::InstructionKind::ProjectIndexedBorrow { parent, borrow, .. } => {
+                let authority = self.state.facts.active_borrows.remove(parent)?;
+                self.state.facts.next_borrow = borrow.0.checked_add(1)?;
+                self.state.facts.active_borrows.insert(*borrow, authority);
             }
             _ => {}
         }
@@ -190,6 +209,29 @@ impl PreparationContext<'_, '_, '_, '_> {
         ty: Ty,
         at: Span,
     ) -> Option<raw::BorrowId> {
+        self.begin_indexed_kind(source, index, write, ty, at, false)
+    }
+
+    pub(super) fn begin_access(
+        &mut self,
+        source: OwnedAggregatePlace,
+        index: raw::ValueId,
+        write: bool,
+        ty: Ty,
+        at: Span,
+    ) -> Option<raw::BorrowId> {
+        self.begin_indexed_kind(source, index, write, ty, at, true)
+    }
+
+    fn begin_indexed_kind(
+        &mut self,
+        source: OwnedAggregatePlace,
+        index: raw::ValueId,
+        write: bool,
+        ty: Ty,
+        at: Span,
+        transient: bool,
+    ) -> Option<raw::BorrowId> {
         self.available_vector(source, write, at)?;
         if self.state.facts.active_borrows.len() + self.state.facts.parameter_borrows.len()
             >= ir::MAX_ACTIVE_BORROWS_PER_FUNCTION
@@ -204,24 +246,18 @@ impl PreparationContext<'_, '_, '_, '_> {
         }
         let borrow = raw::BorrowId(self.state.facts.next_borrow);
         let cleanup = self.reverse(ty, at)?;
-        self.indexed_effect(
-            raw::InstructionKind::BeginIndexedBorrow {
-                definition: raw::BorrowDefinition {
-                    id: borrow,
-                    place: source.place,
-                    access: if write {
-                        raw::BorrowAccess::Exclusive
-                    } else {
-                        raw::BorrowAccess::Shared
-                    },
-                    span: at,
-                },
-                index,
-                cleanup,
-            },
-            ty,
-            at,
-        )?;
+        let definition = raw::BorrowDefinition {
+            id: borrow,
+            place: source.place,
+            access: if write { raw::BorrowAccess::Exclusive } else { raw::BorrowAccess::Shared },
+            span: at,
+        };
+        let kind = if transient {
+            raw::InstructionKind::BeginIndexedAccess { definition, index, cleanup }
+        } else {
+            raw::InstructionKind::BeginIndexedBorrow { definition, index, cleanup }
+        };
+        self.indexed_effect(kind, ty, at)?;
         Some(borrow)
     }
 
@@ -241,6 +277,11 @@ impl PreparationContext<'_, '_, '_, '_> {
         let RawExpressionKind::Index { base, index, .. } = indexed.kind else {
             return Some(IndexedObservation::Unselected);
         };
+        if let IndexedObservation::Value(value) =
+            self.chained_observation(operand, clone, expected, None)?
+        {
+            return Some(IndexedObservation::Value(value));
+        }
         let source = self.resolve(base)?;
         let array = source.ty.category == TypeCategory::FixedArray;
         if array
@@ -280,7 +321,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             let cleanup = self.reverse(ty, at)?;
             self.emit_leaf(Leaf::IndexedCopy { source: source.place, index, cleanup }, ty, at)?
         } else {
-            let borrow = self.begin_indexed(source, index, false, ty, at)?;
+            let borrow = self.begin_access(source, index, false, ty, at)?;
             let value = if ty.is_copy() {
                 self.emit_leaf(Leaf::BorrowRead(borrow), ty, at)?
             } else {

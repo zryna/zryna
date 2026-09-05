@@ -63,7 +63,8 @@ impl Consumption<'_, '_, '_, '_> {
             }
             Operation::IndexedEffect(kind) => {
                 match &kind {
-                    raw::InstructionKind::BeginIndexedBorrow { definition, cleanup, .. } => {
+                    raw::InstructionKind::BeginIndexedBorrow { definition, cleanup, .. }
+                    | raw::InstructionKind::BeginIndexedAccess { definition, cleanup, .. } => {
                         assert_eq!(self.cleanups, [(*cleanup, None)], "indexed bounds cleanup");
                         self.cleanups.clear();
                         assert_eq!(definition.id.0, self.lowerer.preparation_facts.next_borrow);
@@ -77,6 +78,18 @@ impl Consumption<'_, '_, '_, '_> {
                         assert!(
                             self.lowerer.preparation_facts.active_borrows.remove(borrow).is_some()
                         );
+                    }
+                    raw::InstructionKind::ProjectIndexedBorrow {
+                        parent, borrow, cleanup, ..
+                    } => {
+                        assert_eq!(self.cleanups, [(*cleanup, None)], "projected bounds cleanup");
+                        self.cleanups.clear();
+                        let facts = &mut self.lowerer.preparation_facts;
+                        assert_eq!(borrow.0, facts.next_borrow);
+                        facts.next_borrow += 1;
+                        let authority =
+                            facts.active_borrows.remove(parent).expect("transient parent");
+                        assert!(facts.active_borrows.insert(*borrow, authority).is_none());
                     }
                     raw::InstructionKind::BeginBorrow(definition) => {
                         assert_eq!(definition.id.0, self.lowerer.preparation_facts.next_borrow);
@@ -96,6 +109,15 @@ impl Consumption<'_, '_, '_, '_> {
                         effects.push(delta);
                     }
                     raw::InstructionKind::BorrowWrite { .. } => {}
+                    raw::InstructionKind::DropPlace { place } => {
+                        let delta = self
+                            .lowerer
+                            .owners
+                            .consume_owner(*place)
+                            .expect("fresh indexed base owner");
+                        self.lowerer.preparation_facts.apply(delta);
+                        effects.push(delta);
+                    }
                     _ => unreachable!("indexed effect vocabulary"),
                 }
                 self.lowerer.emit_prepared_effect(at, kind);

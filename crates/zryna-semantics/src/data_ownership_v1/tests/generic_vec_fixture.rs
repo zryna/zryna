@@ -5,6 +5,9 @@ use super::*;
 use zryna_source::UntrustedSpan;
 use zryna_syntax::v4::RawExpressionKind;
 
+#[path = "ordinary_array_composition_fixture.rs"]
+pub(super) mod ordinary_array_composition_fixture;
+
 #[derive(Clone, Debug)]
 pub(in crate::data_ownership_v1) enum Element {
     I32,

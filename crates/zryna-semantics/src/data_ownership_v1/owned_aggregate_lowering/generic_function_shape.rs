@@ -53,6 +53,17 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     if checked_array_shape(function, signature, file, layouts) {
         return true;
     }
+    if indexed_array_call_base(function, signature.id.module.0 as usize, catalog) {
+        return true;
+    }
+    if function.body.expressions.iter().any(|expression| {
+        let RawExpressionKind::Index { base, .. } = expression.kind else { return false };
+        function.body.expressions.get(base as usize).is_some_and(|base| {
+            matches!(base.kind, RawExpressionKind::FixedArrayConstruction { .. })
+        })
+    }) {
+        return true;
+    }
     if generic_call(function, signature.id.module.0 as usize, catalog, layouts) {
         return true;
     }
@@ -94,6 +105,22 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
             };
         }
         false
+    })
+}
+
+fn indexed_array_call_base(
+    function: &RawFunctionSyntax,
+    module: usize,
+    catalog: &FunctionCatalog,
+) -> bool {
+    function.body.expressions.iter().any(|expression| {
+        let RawExpressionKind::Index { base, .. } = expression.kind else { return false };
+        let Some(base) = function.body.expressions.get(base as usize) else { return false };
+        let RawExpressionKind::Call { callee, .. } = &base.kind else { return false };
+        let FunctionResolution::Exact(callee) = catalog.resolve(module, &callee.text) else {
+            return false;
+        };
+        callee.private && callee.result.category == TypeCategory::FixedArray
     })
 }
 

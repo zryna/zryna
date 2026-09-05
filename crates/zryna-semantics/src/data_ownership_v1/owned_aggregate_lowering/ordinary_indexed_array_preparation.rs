@@ -18,14 +18,17 @@ impl super::PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn is_checked_array_index(&self, id: u32) -> bool {
         let Some(expression) = self.expression(id) else { return false };
         let RawExpressionKind::Index { base, index, .. } = expression.kind else { return false };
-        let Some(ty) = self.projection_expression_type(base) else { return false };
+        let Some(ty) = self.indexed_expression_type(base) else { return false };
         ty.category == TypeCategory::FixedArray
             && self
                 .layouts
                 .type_by_id(ty.layout)
                 .and_then(zryna_layout::VerifiedType::array_length)
                 .zip(self.expression(index))
-                .is_some_and(|(length, index)| checked_index(&index.kind, length))
+                .is_some_and(|(length, index)| {
+                    self.projection_expression_type(base).is_none()
+                        || checked_index(&index.kind, length)
+                })
     }
 }
 

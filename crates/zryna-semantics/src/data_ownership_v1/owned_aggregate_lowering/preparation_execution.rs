@@ -263,6 +263,21 @@ impl Consumption<'_, '_, '_, '_> {
                 effects = self.vec_push(vector, value, cleanup, step.ty, step.at);
                 None
             }
+            Operation::IndexedCopyStorage { place, value } => {
+                assert!(step.ty.is_copy());
+                assert_eq!(place.0 as usize, self.lowerer.places.len());
+                self.lowerer.places.push(raw::Place {
+                    id: place,
+                    ty: step.ty.ir,
+                    span: step.at,
+                    kind: raw::PlaceKind::Temporary(value),
+                });
+                self.lowerer.emit_prepared_effect(
+                    step.at,
+                    raw::InstructionKind::InitializePlace { place, value },
+                );
+                None
+            }
             operation @ (Operation::IndexedEnter { .. }
             | Operation::IndexedExit
             | Operation::IndexedEffect(_)) => {
