@@ -1,7 +1,7 @@
 use super::indexed_borrow_fixture::{Container, Element, Fixture};
 use super::*;
 
-fn chained(fixture: &Fixture, access: raw::BorrowAccess) -> raw::Program {
+pub(super) fn chained(fixture: &Fixture, access: raw::BorrowAccess) -> raw::Program {
     let mut program = fixture.seed(access);
     let function = &mut program.modules[0].functions[0];
     let begin = &mut function.blocks[0].instructions[0];
@@ -46,7 +46,7 @@ fn indexed_access_child_retains_region_access_and_failure_parent() {
         assert_eq!(view.borrow().index(), 1);
         assert_eq!(view.container().index(), 0);
         assert_eq!(view.index().index(), 3);
-        assert_eq!(view.array_length(), 2);
+        assert_eq!(view.array_length(), Some(2));
         assert_eq!(view.access(), access.into());
         assert_eq!(child.failure_ended_borrows().map(|id| id.index()).collect::<Vec<_>>(), [0]);
         assert_eq!(child.derived_drop_actions().count(), 3);

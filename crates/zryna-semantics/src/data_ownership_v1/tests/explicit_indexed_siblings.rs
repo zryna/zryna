@@ -89,6 +89,16 @@ fn explicit_indexed_siblings_distinct_static_vec_containers_preserve_exact_regio
             assert_eq!(begins.len(), 2);
             let first = begins[0].indexed_borrow().expect("first Vec");
             let second = begins[1].indexed_borrow().expect("second Vec");
+            let bindings =
+                instructions.iter().filter_map(|i| i.indexed_binding()).collect::<Vec<_>>();
+            assert_eq!(bindings.len(), 2);
+            for (begin, binding) in [first, second].into_iter().zip(&bindings) {
+                assert_eq!(binding.parent(), begin.borrow());
+                assert_ne!(binding.borrow(), begin.borrow());
+                assert_eq!(binding.container(), begin.container());
+                assert_eq!(binding.referent(), begin.referent());
+                assert_eq!(binding.access(), begin.access());
+            }
             assert_ne!(first.container(), second.container());
             assert_eq!(first.referent(), second.referent());
             assert_eq!(first.array_length(), None);
@@ -106,7 +116,10 @@ fn explicit_indexed_siblings_distinct_static_vec_containers_preserve_exact_regio
                 roots.push(base);
             }
             assert_eq!(roots[0], roots[1]);
-            assert_eq!(begins[1].failure_ended_borrows().collect::<Vec<_>>(), [first.borrow()]);
+            assert_eq!(
+                begins[1].failure_ended_borrows().collect::<Vec<_>>(),
+                [bindings[0].borrow()]
+            );
             assert!(
                 begins[1]
                     .derived_drop_actions()
@@ -118,7 +131,7 @@ fn explicit_indexed_siblings_distinct_static_vec_containers_preserve_exact_regio
                     .filter(|i| i.kind() == VerifiedInstructionKind::EndBorrow)
                     .map(|i| i.borrow().expect("end"))
                     .collect::<Vec<_>>(),
-                [second.borrow(), first.borrow()]
+                [bindings[1].borrow(), bindings[0].borrow()]
             );
             assert!(!block.terminator().derived_drop_actions().any(|a| a.root() == roots[0]));
         }

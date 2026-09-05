@@ -366,6 +366,10 @@ pub mod raw {
             index: ValueId,
             cleanup: CleanupPlanId,
         },
+        BindIndexedBorrow {
+            parent: BorrowId,
+            borrow: BorrowId,
+        },
         BorrowReplace {
             borrow: BorrowId,
             value: ValueId,
@@ -988,6 +992,7 @@ pub enum VerifiedInstructionKind {
     BeginIndexedBorrow,
     BeginIndexedAccess,
     ProjectIndexedBorrow,
+    BindIndexedBorrow,
     BorrowReplace,
     BorrowRead,
     BorrowWrite,
@@ -1052,6 +1057,7 @@ impl<'a> VerifiedInstruction<'a> {
             I::BeginIndexedBorrow { .. } => VerifiedInstructionKind::BeginIndexedBorrow,
             I::BeginIndexedAccess { .. } => VerifiedInstructionKind::BeginIndexedAccess,
             I::ProjectIndexedBorrow { .. } => VerifiedInstructionKind::ProjectIndexedBorrow,
+            I::BindIndexedBorrow { .. } => VerifiedInstructionKind::BindIndexedBorrow,
             I::BorrowReplace { .. } => VerifiedInstructionKind::BorrowReplace,
             I::BorrowRead { .. } => VerifiedInstructionKind::BorrowRead,
             I::BorrowWrite { .. } => VerifiedInstructionKind::BorrowWrite,
@@ -1197,7 +1203,8 @@ impl<'a> VerifiedInstruction<'a> {
             raw::InstructionKind::BeginBorrow(definition)
             | raw::InstructionKind::BeginIndexedBorrow { definition, .. }
             | raw::InstructionKind::BeginIndexedAccess { definition, .. } => definition.id,
-            raw::InstructionKind::ProjectIndexedBorrow { borrow, .. } => *borrow,
+            raw::InstructionKind::ProjectIndexedBorrow { borrow, .. }
+            | raw::InstructionKind::BindIndexedBorrow { borrow, .. } => *borrow,
             raw::InstructionKind::BorrowRead { borrow }
             | raw::InstructionKind::GenericCloneBorrow { borrow, .. }
             | raw::InstructionKind::BorrowWrite { borrow, .. }
@@ -2158,8 +2165,8 @@ fn verify_structure(
                         next_borrow = next_borrow.saturating_add(1);
                         check_span(definition.span, module.source_file, sources, errors);
                     }
-                    if let raw::InstructionKind::ProjectIndexedBorrow { borrow, .. } =
-                        instruction.kind
+                    if let raw::InstructionKind::ProjectIndexedBorrow { borrow, .. }
+                    | raw::InstructionKind::BindIndexedBorrow { borrow, .. } = instruction.kind
                     {
                         if borrow.0 != next_borrow {
                             errors.push(error_at("ZRYNA-I3011", instruction.span,
@@ -4870,7 +4877,8 @@ fn apply_ownership_instruction(
                 }
             }
         }
-        I::ProjectIndexedBorrow { parent, borrow, .. } => {
+        I::ProjectIndexedBorrow { parent, borrow, .. }
+        | I::BindIndexedBorrow { parent, borrow } => {
             indexed_access::apply_projection(
                 borrows,
                 *parent,
@@ -5637,12 +5645,17 @@ fn verify_operation_types(
                 && parent.0 < borrow.0
                 && borrows.origin(*parent).is_some()
                 && borrows.definition(*parent).is_some_and(|(ty, _)| {
-                    layout_type(layouts, ty)
-                        .is_some_and(|record| record.category() == TypeCategory::FixedArray)
+                    indexed_borrows::container_element_type(ty, layouts).is_some()
                 })
                 && value_info(values, *index)
                     .and_then(|info| layout_type(layouts, info.ty))
                     .is_some_and(|ty| ty.category() == TypeCategory::I32)
+        }
+        I::BindIndexedBorrow { parent, borrow } => {
+            instruction.result.is_none()
+                && parent.0 < borrow.0
+                && borrows.origin(*parent).is_some()
+                && borrows.definition(*parent).is_some()
         }
         I::BorrowReplace { borrow, value } => {
             instruction.result.is_none()
@@ -5892,6 +5905,7 @@ fn verify_instruction_shape(
             | I::BeginIndexedBorrow { .. }
             | I::BeginIndexedAccess { .. }
             | I::ProjectIndexedBorrow { .. }
+            | I::BindIndexedBorrow { .. }
             | I::BorrowReplace { .. }
             | I::BorrowWrite { .. }
             | I::EndBorrow { .. }
@@ -6439,7 +6453,9 @@ impl Errors {
 
 mod borrow_index;
 mod indexed_access;
+mod indexed_binding;
 use borrow_index::BorrowIndex;
+pub use indexed_binding::VerifiedIndexedBinding;
 mod indexed_borrows;
 pub use indexed_access::VerifiedIndexedProjection;
 pub use indexed_borrows::{

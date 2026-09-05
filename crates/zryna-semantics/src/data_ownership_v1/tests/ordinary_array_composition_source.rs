@@ -134,7 +134,7 @@ fn ordinary_array_composition_chained_access_preserves_region_and_atomic_authori
                         instructions[project_at].indexed_projection().expect("child authority");
                     assert!(begin_at < project_at);
                     assert_eq!(begin.array_length(), Some(u64::from(lengths[0])));
-                    assert_eq!(child.array_length(), u64::from(lengths[1]));
+                    assert_eq!(child.array_length(), Some(u64::from(lengths[1])));
                     assert_eq!(child.parent(), begin.borrow());
                     assert_eq!(child.container(), begin.container());
                     assert_eq!(child.trap_identity(), VerifiedTrapIdentity::BoundsV1);

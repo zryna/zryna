@@ -15,6 +15,9 @@ impl PreparationContext<'_, '_, '_, '_> {
         ty: Ty,
         write: bool,
     ) -> Option<raw::ValueId> {
+        if let IndexedObservation::Value(value) = self.chained_lexical_begin(target, ty, write)? {
+            return Some(value);
+        }
         let expression = self.decisions.function.body.expressions.get(target as usize)?.clone();
         let at = span(self.decisions.input.sources(), expression.span);
         let RawExpressionKind::Index { base, index, .. } = expression.kind else {

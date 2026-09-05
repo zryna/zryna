@@ -23,7 +23,7 @@ impl super::PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
         let RawExpressionKind::Index { base, .. } = self.expression(id)?.kind else { return None };
         let base = self.indexed_expression_type(base)?;
-        if base.category != TypeCategory::FixedArray {
+        if !matches!(base.category, TypeCategory::FixedArray | TypeCategory::Vec) {
             return None;
         }
         let element = self.layouts.type_by_id(base.layout)?.referenced_type()?;
@@ -47,15 +47,24 @@ impl PreparationContext<'_, '_, '_, '_> {
         let source = if fresh.is_none() { Some(self.resolve(base)?) } else { None };
         let base_ty = fresh.or(source.map(|source| source.ty))?;
         let mut ty = base_ty;
-        let mut checked = fresh.is_some();
-        for index in indices.iter().rev() {
-            if ty.category != TypeCategory::FixedArray {
+        let mut first_checked = fresh.map(|_| 0);
+        let mut selected_vec = false;
+        for (ordinal, (_, index)) in indices.iter().enumerate() {
+            if !matches!(ty.category, TypeCategory::FixedArray | TypeCategory::Vec) {
                 return Some(IndexedObservation::Unselected);
             }
-            checked |= super::ordinary_indexed_array_preparation::checked_index(
-                &self.decisions.function.body.expressions.get(*index as usize)?.kind,
-                self.decisions.layouts.type_by_id(ty.layout)?.array_length()?,
-            );
+            selected_vec = ty.category == TypeCategory::Vec;
+            let checked = if selected_vec {
+                true
+            } else {
+                super::ordinary_indexed_array_preparation::checked_index(
+                    &self.decisions.function.body.expressions.get(*index as usize)?.kind,
+                    self.decisions.layouts.type_by_id(ty.layout)?.array_length()?,
+                )
+            };
+            if checked && first_checked.is_none() {
+                first_checked = Some(ordinal);
+            }
             let element = self.decisions.layouts.type_by_id(ty.layout)?.referenced_type()?;
             ty = self
                 .decisions
@@ -65,9 +74,9 @@ impl PreparationContext<'_, '_, '_, '_> {
                 .find(|ty| ty.layout == element)
                 .copied()?;
         }
-        if !checked {
+        let Some(first_checked) = first_checked else {
             return Some(IndexedObservation::Unselected);
-        }
+        };
         let at = span(
             self.decisions.input.sources(),
             self.decisions.function.body.expressions.get(id as usize)?.span,
@@ -87,23 +96,27 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.errors.at(
                 "ZRYNA-M3013",
                 at,
-                "array observation requires its exact Copy element or an explicit owned clone",
+                if selected_vec {
+                    "Vec observation requires its exact Copy element or an explicit owned clone"
+                } else {
+                    "array observation requires its exact Copy element or an explicit owned clone"
+                },
                 "read the exact Copy element type or explicitly clone the owned indexed element",
             );
             return None;
         }
         let start = self.steps.len();
         self.push(Operation::IndexedEnter { end: usize::MAX, result: usize::MAX }, ty, at, None);
-        let source = if let Some(source) = source {
-            source
+        let source = if source.is_some() {
+            self.resolve(indices[first_checked].0)?
         } else {
             self.materialize_indexed_base(base, base_ty, at)?
         };
         self.available_vector(source, replacement.is_some(), at)?;
         let integer = self.decisions.primitive(TypeCategory::I32)?;
         let mut parent = None;
-        for expression in indices.into_iter().rev() {
-            let index = self.walk(expression, integer)?;
+        for (_, expression) in &indices[first_checked..] {
+            let index = self.walk(*expression, integer)?;
             parent = Some(if let Some(parent) = parent {
                 let borrow = raw::BorrowId(self.state.facts.next_borrow);
                 let cleanup = self.reverse(ty, at)?;
@@ -129,14 +142,15 @@ impl PreparationContext<'_, '_, '_, '_> {
         Some(IndexedObservation::Value(value))
     }
 
-    fn indexed_chain(&self, mut base: u32) -> Option<(u32, Vec<u32>)> {
+    fn indexed_chain(&self, mut base: u32) -> Option<(u32, Vec<(u32, u32)>)> {
         let mut indices = Vec::new();
         while let RawExpressionKind::Index { base: next, index, .. } =
             self.decisions.function.body.expressions.get(base as usize)?.kind
         {
-            indices.push(index);
+            indices.push((next, index));
             base = next;
         }
+        indices.reverse();
         Some((base, indices))
     }
 

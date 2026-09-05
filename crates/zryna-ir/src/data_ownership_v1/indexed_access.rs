@@ -6,7 +6,7 @@ use super::{BorrowIndex, Errors, error_at, layout_type, raw};
 ///
 /// ```compile_fail
 /// fn forge(mut view: zryna_ir::data_ownership_v1::VerifiedIndexedProjection) {
-///     view.array_length = 0;
+///     view.array_length = Some(0);
 /// }
 /// ```
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -18,7 +18,7 @@ pub struct VerifiedIndexedProjection {
     referent: super::LayoutTypeId,
     access: super::VerifiedBorrowAccess,
     cleanup: super::CleanupPlanIdentity,
-    array_length: u64,
+    array_length: Option<u64>,
 }
 
 #[allow(missing_docs)]
@@ -52,7 +52,8 @@ impl VerifiedIndexedProjection {
         self.cleanup
     }
     #[must_use]
-    pub const fn array_length(self) -> u64 {
+    /// Fixed length, or `None` when the parent referent supplies a runtime Vec length.
+    pub const fn array_length(self) -> Option<u64> {
         self.array_length
     }
     #[must_use]
@@ -84,7 +85,7 @@ impl super::VerifiedInstruction<'_> {
             referent: record.referenced_type()?,
             access: access.into(),
             cleanup: super::CleanupPlanIdentity { owner, index: cleanup.0 },
-            array_length: record.array_length()?,
+            array_length: record.array_length(),
         })
     }
 }

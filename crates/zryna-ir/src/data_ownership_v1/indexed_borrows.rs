@@ -145,7 +145,8 @@ impl VerifiedInstruction<'_> {
                     raw::InstructionKind::EndBorrow { borrow } => {
                         active.retain(|id| id != borrow);
                     }
-                    raw::InstructionKind::ProjectIndexedBorrow { parent, borrow, .. } => {
+                    raw::InstructionKind::ProjectIndexedBorrow { parent, borrow, .. }
+                    | raw::InstructionKind::BindIndexedBorrow { parent, borrow } => {
                         active.retain(|id| id != parent);
                         active.push(*borrow);
                     }
@@ -205,7 +206,14 @@ pub(super) fn element_type(
     place: raw::PlaceId,
     layouts: &VerifiedLayouts,
 ) -> Option<raw::TypeId> {
-    let record = layout_type(layouts, function.places.get(place.0 as usize)?.ty)?;
+    container_element_type(function.places.get(place.0 as usize)?.ty, layouts)
+}
+
+pub(super) fn container_element_type(
+    ty: raw::TypeId,
+    layouts: &VerifiedLayouts,
+) -> Option<raw::TypeId> {
+    let record = layout_type(layouts, ty)?;
     let element = record.referenced_type()?;
     match record.category() {
         TypeCategory::FixedArray => Some(raw::TypeId(element.index())),

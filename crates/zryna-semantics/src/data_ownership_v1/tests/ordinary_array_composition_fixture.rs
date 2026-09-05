@@ -1,5 +1,16 @@
 use super::*;
 
+#[path = "ordinary_static_prefix_fixture.rs"]
+pub(crate) mod ordinary_static_prefix_fixture;
+
+#[path = "checked_chain_fixture.rs"]
+pub(crate) mod checked_chain_fixture;
+
+#[path = "fresh_vec_fixture.rs"]
+pub(crate) mod fresh_vec_fixture;
+#[path = "lexical_chained_fixture.rs"]
+pub(crate) mod lexical_chained_fixture;
+
 #[derive(Clone, Copy)]
 pub(crate) enum Shape {
     Fresh,

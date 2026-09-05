@@ -21,8 +21,9 @@ diagnostic. The selected producer subsequently validates every operation. Existi
 String, exact-Vec and bounded aggregate routes retain their established selection where no new
 generic shape is required. This is not a blanket reinterpretation of earlier bounded CFG routes.
 
-Each parameter gets its exact declared value identity and addressable parameter place. Non-Copy
-parameters enter pending ownership in declaration order; Copy parameters are not pending owners.
+Each by-value parameter gets its exact declared value identity and addressable parameter place.
+Non-Copy parameters enter pending ownership in declaration order; Copy parameters are not pending owners.
+Formal borrow parameters carry exact call-frame authority without a fabricated value or place.
 Names retain portable case-collision and exact lookup checks. Owned parameters are immutable
 bindings: mutation requires an appropriate mutable local rather than silently making the
 parameter mutable. Return transfers its exact completed owned result, when any, and reverse-drops
@@ -88,15 +89,27 @@ before RHS preparation and commits only the completed exact element. Internal tr
 authority remains distinct from persistent explicit source `Borrow`/`BorrowMut` aliases.
 
 The static-address adapter resolves named owners and supported static field/array paths.
-Ordinary FixedArray access additionally admits exact fresh private-call/construction results
-for observation and chained array indices from initialized binding-derived containers.
+Ordinary FixedArray/Vec access additionally admits exact fresh private-call/construction results
+for observation and chained FixedArray/Vec indices from initialized binding-derived containers.
 `BeginIndexedAccess` and `ProjectIndexedBorrow` preserve the original conflict region without
 inventing a dynamic place or cloning an intermediate container. Each bounds check precedes the
 next index; replacement checks the complete chain before RHS preparation. Fresh Copy storage is
 explicitly initialized and has no owned cleanup root; fresh owned storage is retained through
 failure and dropped after final access end. Fresh bases are not mutable assignment targets.
-`produceVec()[i]`, arbitrary fresh expression shapes and explicit lexical chained borrowing
-remain outside this adapter. Shared/Weak source integration is still separately required.
+Fresh Vec observation retains its real owned container even when its elements are Copy, using
+the same checked transient begin/end and final owner drop. Checked descendants can alternate
+FixedArray and Vec referents, using sealed fixed lengths or the selected Vec's runtime length
+without creating independent element owners or allocating intermediate clones.
+
+The [indexed-source adapter](M3_INDEXED_SOURCE_OPERATIONS.md) also admits lexical nested
+borrowing from named complete containers. It builds a checked transient chain, then
+`BindIndexedBorrow` transfers the exact referent/access/region into a fresh persistent alias
+while clearing transient projectability. This infallible transfer has no owner, cleanup plan
+or active-count increase. The original static prefix remains the conflict region; after the
+first checked access, further nesting uses exact FixedArray/Vec referents. Alias replacement and calls
+reuse the existing exact ownership and cleanup contracts, and scope exit ends the bound child.
+Arbitrary fresh expression shapes, borrowing fresh temporaries and fresh mutation remain
+outside this adapter. Shared/Weak source integration still requires the separate #260/#261 stages.
 
 ## Evidence and remaining scope
 

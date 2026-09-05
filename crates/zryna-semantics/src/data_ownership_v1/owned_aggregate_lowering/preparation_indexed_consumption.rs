@@ -79,6 +79,15 @@ impl Consumption<'_, '_, '_, '_> {
                             self.lowerer.preparation_facts.active_borrows.remove(borrow).is_some()
                         );
                     }
+                    raw::InstructionKind::BindIndexedBorrow { parent, borrow } => {
+                        assert!(self.cleanups.is_empty(), "binding is infallible");
+                        let facts = &mut self.lowerer.preparation_facts;
+                        assert_eq!(borrow.0, facts.next_borrow);
+                        facts.next_borrow += 1;
+                        let authority =
+                            facts.active_borrows.remove(parent).expect("transient parent");
+                        assert!(facts.active_borrows.insert(*borrow, authority).is_none());
+                    }
                     raw::InstructionKind::ProjectIndexedBorrow {
                         parent, borrow, cleanup, ..
                     } => {

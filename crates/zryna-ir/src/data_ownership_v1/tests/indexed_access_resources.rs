@@ -1,7 +1,7 @@
 use super::indexed_borrow_fixture::{Container, Element, Fixture};
 use super::*;
 
-fn at_capacity(fixture: &Fixture, count: usize) -> raw::Program {
+pub(super) fn at_capacity(fixture: &Fixture, count: usize) -> raw::Program {
     let mut program = fixture.seed(raw::BorrowAccess::Shared);
     let function = &mut program.modules[0].functions[0];
     let span = function.span;

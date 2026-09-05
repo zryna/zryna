@@ -20,7 +20,7 @@ impl super::PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn is_vec_index(&self, id: u32) -> bool {
         self.expression(id).is_some_and(|expression| {
             matches!(expression.kind, RawExpressionKind::Index { base, .. }
-                if self.projection_expression_type(base).is_some_and(|ty| ty.category == TypeCategory::Vec))
+                if self.indexed_expression_type(base).is_some_and(|ty| ty.category == TypeCategory::Vec))
         })
     }
 
@@ -190,7 +190,8 @@ impl PreparationContext<'_, '_, '_, '_> {
             raw::InstructionKind::EndBorrow { borrow } => {
                 self.state.facts.active_borrows.remove(borrow)?;
             }
-            raw::InstructionKind::ProjectIndexedBorrow { parent, borrow, .. } => {
+            raw::InstructionKind::ProjectIndexedBorrow { parent, borrow, .. }
+            | raw::InstructionKind::BindIndexedBorrow { parent, borrow } => {
                 let authority = self.state.facts.active_borrows.remove(parent)?;
                 self.state.facts.next_borrow = borrow.0.checked_add(1)?;
                 self.state.facts.active_borrows.insert(*borrow, authority);

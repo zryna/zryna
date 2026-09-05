@@ -20,7 +20,8 @@ impl PreparationContext<'_, '_, '_, '_> {
                 };
                 Some(signature.result)
             }
-            RawExpressionKind::FixedArrayConstruction { type_syntax, .. } => {
+            RawExpressionKind::FixedArrayConstruction { type_syntax, .. }
+            | RawExpressionKind::VecConstruction { type_syntax, .. } => {
                 self.decisions.child_type(*type_syntax)
             }
             _ => None,

@@ -1,5 +1,5 @@
-use super::{indexed_borrows, layout_type, raw};
-use zryna_layout::{TypeCategory, VerifiedLayouts};
+use super::{indexed_borrows, raw};
+use zryna_layout::VerifiedLayouts;
 
 #[derive(Clone, Debug)]
 struct Entry {
@@ -68,6 +68,21 @@ impl BorrowIndex {
                         .then_some((definition.clone(), 0)),
                 }
             }
+            I::BindIndexedBorrow { parent, borrow } => {
+                #[cfg(test)]
+                {
+                    self.parent_steps += 1;
+                }
+                let parent = self
+                    .entries
+                    .get(parent.0 as usize)
+                    .filter(|entry| parent.0 < borrow.0 && entry.origin.is_some());
+                Entry {
+                    definition: parent.and_then(|entry| entry.definition),
+                    region: parent.and_then(|entry| entry.region),
+                    origin: None,
+                }
+            }
             I::ProjectIndexedBorrow { parent, borrow, .. } => {
                 #[cfg(test)]
                 {
@@ -79,11 +94,8 @@ impl BorrowIndex {
                     .map(|(origin, depth)| (origin, depth + 1));
                 let definition =
                     origin.as_ref().and_then(|_| parent?.definition).and_then(|(ty, access)| {
-                        let record = layout_type(layouts, ty)?;
-                        (record.category() == TypeCategory::FixedArray)
-                            .then(|| record.referenced_type())
-                            .flatten()
-                            .map(|element| (raw::TypeId(element.index()), access))
+                        indexed_borrows::container_element_type(ty, layouts)
+                            .map(|element| (element, access))
                     });
                 Entry {
                     definition,

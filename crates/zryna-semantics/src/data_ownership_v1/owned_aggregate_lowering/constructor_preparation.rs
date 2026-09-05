@@ -442,3 +442,6 @@ mod local_tail_supplement_controls;
 #[cfg(test)]
 #[path = "../tests/mixed_root_replacement_controls.rs"]
 mod mixed_root_replacement_controls;
+#[cfg(test)]
+#[path = "../tests/ordinary_array_composition_resources.rs"]
+mod ordinary_array_composition_resources;

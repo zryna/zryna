@@ -14,14 +14,16 @@ an allocator, public profile selection or completion of M3.
 | Explicit clone of an owned indexed element | checked begin, canonical `GenericCloneBorrow`, end |
 | Ordinary checked array replacement | checked exclusive begin, complete RHS, `BorrowWrite`/`BorrowReplace`, end |
 | Lexical `Borrow<T>` / `BorrowMut<T>` | exact referent and access, persistent scoped authority |
+| Nested lexical indexed borrow | transient checked chain, then infallible `BindIndexedBorrow` into a scoped alias |
 | Copy alias read / exclusive write | `BorrowRead` / `BorrowWrite` |
 | Owned alias observation / exclusive replacement | explicit structural clone / `BorrowReplace` |
 
-The [transient ordinary-access adapter](M3_TRANSIENT_INDEXED_ACCESS.md) admits fresh exact
-FixedArray call/construction results for observation and chained FixedArray indexing from an
-initialized binding-derived container. Ordinary dynamic access uses `BeginIndexedAccess`;
-each dynamic child uses `ProjectIndexedBorrow` without a fabricated element place or an
-intermediate allocating clone. This does not make lexical or formal aliases projectable.
+The [transient access and binding adapter](M3_TRANSIENT_INDEXED_ACCESS.md) admits fresh exact
+FixedArray/Vec call/construction results for observation and chained FixedArray/Vec indexing from an
+initialized binding-derived container. Transient ordinary access uses `BeginIndexedAccess`;
+each subsequent checked child uses `ProjectIndexedBorrow` without a fabricated element place or an
+intermediate allocating clone. Direct Copy reads from an addressable Vec retain the existing
+`VecIndexCopy` operation. This does not make lexical or formal aliases projectable.
 
 An in-range literal fixed-array index keeps its canonical static projection and can be
 disjoint from another static sibling. Other array indices and every Vec index use the complete
@@ -52,6 +54,16 @@ Aliases are const source bindings, not owned locals. Their table records the act
 borrow identity after index preparation, exact referent type and access mode. Index preparation
 may itself consume temporary borrow identities; the alias must not retain a guessed earlier ID.
 
+For a named complete container with nested checked indexing, source preparation creates a
+transient chain and then uses `BindIndexedBorrow` to issue the final lexical identity.
+The infallible binding preserves the exact type, access and original conflict region, retires
+the transient parent and clears projectability. It produces no value, owner or cleanup plan,
+and has no active-count increase. Nested referents may be FixedArray or Vec; the exact
+referent layout selects a fixed length or runtime Vec length for each bounds check.
+The first container may be a Vec reached through a fully static prefix; disjoint
+static prefixes retain their separate regions. Existing lexical/formal aliases cannot be
+consumed as transient parents. Later alias reads, replacement and calls use only the bound child.
+
 Nested lexical blocks preserve outer bindings and authorities. Scope exit ends its own aliases
 in reverse issuance order, then drops still-owned local results in reverse completion order.
 Copy locals require no drop. Outer pending owners retain their existing move and partial masks.
@@ -77,8 +89,8 @@ Caller/callee cleanup, exclusive argument reuse and call nonescape remain indepe
 
 ## Verification and boundaries
 
-Focused source fixtures are split into ordinary-array, explicit-indexed positive, rejection,
-region and sibling-container modules. They authenticate syntax before semantic checks and
+Focused source fixtures are split into ordinary-array composition, fresh-Vec, lexical-chain,
+explicit-indexed positive, rejection, region and sibling-container modules. They authenticate syntax before semantic checks and
 inspect sealed views, failure cleanup and deterministic diagnostics. Private resource controls
 label their injected counters separately from successful authenticated source proofs.
 
@@ -90,12 +102,14 @@ requirements; this document does not waive their interaction obligations.
 
 ## Outstanding full-issue requirements
 
-This batch is not yet a closure claim for #255, #256 or #274. The current source adapter accepts
-the supported non-handle graph. Shared/Weak referents still require the separately verified
-handle source stages; raw opaque-slot tests cannot discharge that source requirement.
-Fresh and chained ordinary FixedArray access now use the explicit transient adapter above.
-Explicit lexical borrowing through a dynamically selected nested container remains excluded:
-the transient projection operation cannot consume a lexical or formal alias. Fresh Vec bases
-and arbitrary expression-base shapes are not implied by the FixedArray adapter. These remaining
-limitations must stay visible during acceptance reconciliation rather than be treated as
-completed generic support.
+This batch is not by itself a closure claim for #255, #256 or #274. The current source adapter
+accepts the supported non-handle graph. Shared/Weak referents still require the separately
+verified #260/#261 handle stages; raw opaque-slot tests cannot discharge that source requirement.
+Fresh and chained ordinary FixedArray/Vec access use the explicit transient adapter above, and
+nested lexical access from named containers finalizes that transient chain with `BindIndexedBorrow`.
+Fresh Vec observation reuses one real owned temporary, even for Copy elements; it ends access
+before dropping that Vec. Checked descendants may alternate FixedArray and Vec without
+independent element ownership or intermediate clones. Arbitrary expression-base shapes,
+borrowing a fresh temporary and fresh
+mutation are not implied. These boundaries and the complete required gates must remain explicit
+during acceptance reconciliation rather than be treated as completed generic support.
