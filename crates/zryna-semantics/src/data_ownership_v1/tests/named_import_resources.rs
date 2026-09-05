@@ -11,7 +11,7 @@ use crate::data_ownership_v1::tests::named_import_calls::{
     imported_fallible_arguments_fixture, imported_zero_argument_fixture,
 };
 use crate::data_ownership_v1::type_model::map_node_types;
-use crate::data_ownership_v1::{Errors, OwnerState, SemanticInput, semantic_preflight};
+use crate::data_ownership_v1::{Binding, Errors, OwnerState, SemanticInput, semantic_preflight};
 use std::collections::{BTreeMap, BTreeSet};
 use zryna_ir::data_ownership_v1 as ir;
 use zryna_source::{NormalizedSourcePath, SourceMap};
@@ -80,6 +80,37 @@ fn with_imported(
         next_value: 0,
         next_local: 0,
     };
+    for (index, parameter) in function.parameters.iter().enumerate() {
+        let ty = semantic_type(
+            file,
+            parameter.type_syntax,
+            module,
+            &declarations,
+            &graph,
+            &node_types,
+            lowerer.errors,
+        )
+        .expect("authenticated parameter type");
+        let value = raw::ValueId(lowerer.next_value);
+        lowerer.next_value += 1;
+        let definition = raw::ValueDefinition {
+            id: value,
+            ty: ty.ir,
+            span: crate::data_ownership_v1::span(input.sources(), parameter.span),
+        };
+        lowerer.constructor_types.record_parameter(&definition).expect("dense parameter identity");
+        let place = raw::PlaceId(u32::try_from(lowerer.places.len()).unwrap());
+        lowerer.places.push(raw::Place {
+            id: place,
+            ty: ty.ir,
+            span: definition.span,
+            kind: raw::PlaceKind::Parameter(u32::try_from(index).unwrap()),
+        });
+        lowerer.bindings.insert(parameter.name.text.clone(), Binding { ty, place, mutable: false });
+        if !ty.is_copy() {
+            lowerer.owners.register_parameter(place).expect("owned parameter");
+        }
+    }
     exercise(&mut lowerer, result);
     errors.finish()
 }
@@ -151,10 +182,39 @@ fn named_import_preparation_resources_are_exact_atomic_overflow_checked_and_reco
 
 #[test]
 fn named_import_later_argument_cleanup_action_frontier_is_exact_and_recovers() {
+    let mut action_demand = 0;
+    let errors = with_imported(imported_fallible_arguments_fixture, |lowerer, ty| {
+        assert_eq!(lowerer.next_value, 4, "four authenticated value parameters");
+        assert_eq!(lowerer.places.len(), 4, "four addressable parameter places");
+        assert_eq!(
+            lowerer.owners.pending(),
+            [raw::PlaceId(0), raw::PlaceId(2), raw::PlaceId(3)],
+            "left, right, and keep are real String owners"
+        );
+        let root = root_value(lowerer, 0);
+        let before_actions = lowerer.cleanup_actions;
+        PreparedValue::prepare(lowerer, root, ty).expect("unpressured imported call").consume();
+        action_demand = lowerer.cleanup_actions - before_actions;
+        assert!(
+            action_demand >= 4,
+            "cumulative plans include the later producer's earlier literal and three survivors"
+        );
+    });
+    assert!(errors.is_empty());
+
     for extra in [false, true] {
         let errors = with_imported(imported_fallible_arguments_fixture, |lowerer, ty| {
+            assert_eq!(lowerer.next_value, 4);
+            assert_eq!(
+                lowerer.owners.pending(),
+                [raw::PlaceId(0), raw::PlaceId(2), raw::PlaceId(3)]
+            );
             let root = root_value(lowerer, 0);
-            seed_external(lowerer, 0, ir::MAX_DROP_ACTIONS_PER_FUNCTION - 4 + usize::from(extra));
+            seed_external(
+                lowerer,
+                0,
+                ir::MAX_DROP_ACTIONS_PER_FUNCTION - action_demand - 3 + usize::from(extra),
+            );
             let before = state(lowerer);
             if extra {
                 assert!(PreparedValue::prepare(lowerer, root, ty).is_none());
@@ -163,6 +223,11 @@ fn named_import_later_argument_cleanup_action_frontier_is_exact_and_recovers() {
                 PreparedValue::prepare(lowerer, root, ty)
                     .expect("exact imported later-argument cleanup frontier")
                     .consume();
+                assert_eq!(
+                    lowerer.cleanup_actions + lowerer.preparation_facts.held_cleanup[1],
+                    ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+                    "real owner cleanup plus external credits reach the exact final frontier"
+                );
             }
         });
         assert_eq!(errors.len(), usize::from(extra));
@@ -172,6 +237,8 @@ fn named_import_later_argument_cleanup_action_frontier_is_exact_and_recovers() {
     }
 
     let errors = with_imported(imported_fallible_arguments_fixture, |lowerer, ty| {
+        assert_eq!(lowerer.next_value, 4);
+        assert_eq!(lowerer.owners.pending(), [raw::PlaceId(0), raw::PlaceId(2), raw::PlaceId(3)]);
         let root = root_value(lowerer, 0);
         PreparedValue::prepare(lowerer, root, ty)
             .expect("pristine imported argument recovery")
