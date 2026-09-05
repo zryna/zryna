@@ -83,7 +83,7 @@ impl PreparationContext<'_, '_, '_, '_> {
     }
 
     fn reject_handle_structural_clone(&mut self, ty: Ty, at: Span) -> Option<()> {
-        if !contains_handle(ty.layout, self.decisions.layouts, &mut BTreeSet::new()) {
+        if !contains_handle(ty.layout, self.decisions.layouts) {
             return Some(());
         }
         self.decisions.errors.at(
@@ -117,34 +117,51 @@ impl PreparationContext<'_, '_, '_, '_> {
     }
 }
 
-fn contains_handle(
-    ty: zryna_layout::TypeId,
-    layouts: &zryna_layout::VerifiedLayouts,
-    active: &mut BTreeSet<zryna_layout::TypeId>,
-) -> bool {
-    if !active.insert(ty) {
-        return false;
-    }
-    let found = layouts.type_by_id(ty).is_some_and(|record| match record.category() {
-        zryna_layout::TypeCategory::Shared | zryna_layout::TypeCategory::Weak => true,
-        zryna_layout::TypeCategory::Struct => {
-            record.fields().iter().any(|field| contains_handle(field.ty(), layouts, active))
-        }
-        zryna_layout::TypeCategory::Enum => record
-            .variants()
-            .iter()
-            .filter_map(|variant| variant.payload())
-            .any(|payload| contains_handle(payload, layouts, active)),
-        zryna_layout::TypeCategory::FixedArray | zryna_layout::TypeCategory::Vec => record
-            .referenced_type()
-            .is_some_and(|element| contains_handle(element, layouts, active)),
-        zryna_layout::TypeCategory::Bool
-        | zryna_layout::TypeCategory::I32
-        | zryna_layout::TypeCategory::String => false,
-    });
-    active.remove(&ty);
-    found
+fn contains_handle(root: zryna_layout::TypeId, layouts: &zryna_layout::VerifiedLayouts) -> bool {
+    graph_contains_handle(root, |ty| {
+        let record = layouts.type_by_id(ty)?;
+        let handle = matches!(
+            record.category(),
+            zryna_layout::TypeCategory::Shared | zryna_layout::TypeCategory::Weak
+        );
+        let children = match record.category() {
+            zryna_layout::TypeCategory::Struct => {
+                record.fields().iter().map(|field| field.ty()).collect()
+            }
+            zryna_layout::TypeCategory::Enum => {
+                record.variants().iter().filter_map(|variant| variant.payload()).collect()
+            }
+            zryna_layout::TypeCategory::FixedArray | zryna_layout::TypeCategory::Vec => {
+                record.referenced_type().into_iter().collect()
+            }
+            _ => Vec::new(),
+        };
+        Some((handle, children))
+    })
 }
+
+fn graph_contains_handle<T: Copy + Ord>(
+    root: T,
+    mut describe: impl FnMut(T) -> Option<(bool, Vec<T>)>,
+) -> bool {
+    let mut seen = BTreeSet::new();
+    let mut pending = vec![root];
+    while let Some(node) = pending.pop() {
+        if !seen.insert(node) {
+            continue;
+        }
+        let Some((handle, children)) = describe(node) else { continue };
+        if handle {
+            return true;
+        }
+        pending.extend(children);
+    }
+    false
+}
+
+#[cfg(test)]
+#[path = "../tests/handle_reachability.rs"]
+mod reachability_tests;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn consume_generic_clone_prefix(
