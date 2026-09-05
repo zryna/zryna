@@ -33,6 +33,8 @@ const EXPECTED_COMMAND_IDS = [
   'protocol-v3-check',
   'protocol-v3-tests',
   'closure-registry-tests',
+  'repository-structure',
+  'repository-structure-tests',
 ];
 const EXPECTED_COVERAGE_IDS = [
   'architecture-scanner-manifest-and-graph',
@@ -177,7 +179,7 @@ const EXPECTED_FIXTURES = [
     expected: 'deterministic-diagnostics',
   },
 ];
-const EXPECTED_COMMANDS_SHA256 = '4f36542fb59336658cf5d8f3d1ba04ee5d55a1b301bae5d2bbc5aabf6d0960d1';
+const EXPECTED_COMMANDS_SHA256 = '051e59438e0d26a849b68d1ef4d481b9d65f82bf5d59a7c26b08ba5fcc0845cd';
 const EXPECTED_COVERAGE_SHA256 = 'c9e34908053bbd162e73a880ece6c2c8f05b22ab1f87e69a19c7d9d45ea1724a';
 const ALLOWED_EXECUTABLES = new Set(['cargo', 'node']);
 const SAFE_TOKEN = /^[\x20-\x7e]+$/;
@@ -308,6 +310,9 @@ export function validateManifestDocument(manifest, fixturePaths = actualFixtureP
 export function validatePackageDocument(packageDocument) {
   if (!packageDocument || typeof packageDocument !== 'object' || Array.isArray(packageDocument)) {
     fail('package.json root must be an object');
+  }
+  if (packageDocument.scripts?.['structure:check'] !== 'node scripts/check-repository-structure.mjs') {
+    fail('package.json structure:check must be exactly node scripts/check-repository-structure.mjs');
   }
   if (packageDocument.scripts?.preflight !== CANONICAL_PREFLIGHT_ALIAS) {
     fail(`package.json preflight must be exactly ${CANONICAL_PREFLIGHT_ALIAS}`);

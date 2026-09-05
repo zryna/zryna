@@ -24,6 +24,7 @@ test('preflight has one frozen portable command order', () => {
   assert.deepEqual(
     PREFLIGHT_COMMANDS.map(({ id, executable }) => [id, executable]),
     [
+      ['repository-structure', 'node'],
       ['portable-contract-tests', 'node'],
       ['rust-format', 'cargo'],
       ['m2-semantic-driver-tests', 'cargo'],
@@ -39,7 +40,7 @@ test('preflight has one frozen portable command order', () => {
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), '8995cc25cf331a709688d5837fd67eb804a6e30804469872b15aec71f95091cd');
+  assert.equal(preflightCommandDigest(), 'c40df677bd292852b957879e37e2aa756e82b61d267e09df45ffe20f6ea3c295');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [

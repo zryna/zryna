@@ -6,6 +6,8 @@ Start with [CONTRIBUTING](../CONTRIBUTING.md), then the selected component's REA
 [zryna.workspace.json](../zryna.workspace.json) owns registration/dependencies;
 [ARCHITECTURE](ARCHITECTURE.md) owns phase boundaries and [STRICT_WORKSPACE](STRICT_WORKSPACE.md) owns enforcement.
 Resolve disagreements there, rather than changing this index into another authority.
+Source-size policy: [reviewed inventory](../scripts/repository-structure-policy.json),
+[read-only checker](../scripts/check-repository-structure.mjs); run `pnpm structure:check` and `node --test tests/repository-structure.test.mjs`.
 
 Public execution is default M1 `I32V1` or explicit M2 `--profile control-flow-v1`.
 M3 `DataOwnershipV1` source/layout/IR/runtime-ABI work is internal: it does not activate a public CLI profile, allocator, or target runtime.

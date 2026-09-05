@@ -1,0 +1,2115 @@
+{
+  "version": 1,
+  "anchor": "885bb4d863ad112566add72fab6d2931587b71b1",
+  "baseline": [
+    {
+      "path": "adapters/typescript-6/src/worker-v3.mjs",
+      "lines": 806,
+      "production": true
+    },
+    {
+      "path": "adapters/typescript-6/src/worker-v4.mjs",
+      "lines": 1446,
+      "production": true
+    },
+    {
+      "path": "adapters/typescript-6/src/worker.mjs",
+      "lines": 1024,
+      "production": true
+    },
+    {
+      "path": "adapters/typescript-6/test/worker-v4.test.mjs",
+      "lines": 520,
+      "production": false
+    },
+    {
+      "path": "adapters/typescript-6/test/worker.test.mjs",
+      "lines": 511,
+      "production": false
+    },
+    {
+      "path": "apps/zryna/src/main.rs",
+      "lines": 501,
+      "production": true
+    },
+    {
+      "path": "apps/zryna/tests/cli.rs",
+      "lines": 1404,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-abi/src/lib.rs",
+      "lines": 1445,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-architecture/src/lib.rs",
+      "lines": 4136,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-backend-javascript/src/lib.rs",
+      "lines": 1180,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-backend-native/src/control_flow_v1.rs",
+      "lines": 1253,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-backend-native/src/lib.rs",
+      "lines": 558,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-backend-webassembly/src/lib.rs",
+      "lines": 1788,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-diagnostics/src/lib.rs",
+      "lines": 527,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/javascript.rs",
+      "lines": 693,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/lib.rs",
+      "lines": 1411,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/module_closure.rs",
+      "lines": 1034,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/module_closure_tests.rs",
+      "lines": 763,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/native.rs",
+      "lines": 2725,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/pipeline.rs",
+      "lines": 3193,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/runtime.rs",
+      "lines": 1078,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-driver/src/workspace_source.rs",
+      "lines": 991,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-frontend/src/lib.rs",
+      "lines": 846,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-frontend/src/worker.rs",
+      "lines": 2271,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-frontend/tests/worker_process.rs",
+      "lines": 761,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-ir/src/control_flow_v1.rs",
+      "lines": 2163,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-ir/src/control_flow_v1/tests.rs",
+      "lines": 1438,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1.rs",
+      "lines": 6466,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests.rs",
+      "lines": 11302,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-ir/src/lib.rs",
+      "lines": 1186,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-layout/src/lib.rs",
+      "lines": 2091,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-layout/src/tests.rs",
+      "lines": 1177,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-native-mir/src/control_flow_v1.rs",
+      "lines": 2973,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-native-mir/src/lib.rs",
+      "lines": 1353,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-ownership-runtime-abi/src/lib.rs",
+      "lines": 2520,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-ownership-runtime-abi/src/tests.rs",
+      "lines": 1853,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-semantics/src/control_flow_v1.rs",
+      "lines": 2779,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_aggregate_lowering.rs",
+      "lines": 531,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/straight_root_borrows.rs",
+      "lines": 507,
+      "production": false
+    },
+    {
+      "path": "crates/zryna-semantics/src/lib.rs",
+      "lines": 649,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-source/src/lib.rs",
+      "lines": 964,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-syntax/src/v2.rs",
+      "lines": 2203,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-syntax/src/v3.rs",
+      "lines": 3464,
+      "production": true
+    },
+    {
+      "path": "crates/zryna-syntax/src/v4.rs",
+      "lines": 3810,
+      "production": true
+    },
+    {
+      "path": "scripts/check-m3-contract.mjs",
+      "lines": 672,
+      "production": true
+    },
+    {
+      "path": "tests/m3-contract.test.mjs",
+      "lines": 835,
+      "production": false
+    }
+  ],
+  "classifications": [
+    {
+      "path": "adapters/typescript-6/test/worker-v3.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "adapters/typescript-6/test/worker-v4.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "adapters/typescript-6/test/worker.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "apps/zryna/tests/cli.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "apps/zryna/tests/m2_conformance.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-frontend/tests/worker_process.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/control_flow_v1/tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/borrow_index_work.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/borrow_loop_nesting.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/borrow_resource_boundaries.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_clone_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_clone_hostile.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_clone_positive.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_clone_projection.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_refinement.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_transfer.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_vec_hostile.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/generic_vec_observation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_access.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_access_copy_storage.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_access_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_binding.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_binding_call.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_binding_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_call_cleanup.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_conflicts.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_copy_refinement.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_hostile.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_owned.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_positive.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_refinement.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_borrow_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/indexed_vec_projection.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/mixed_constructor_authority.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/mixed_enum_authority.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/mixed_replacement_authority.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/mixed_replacement_authority_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/opaque_handle_slots.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ir/src/data_ownership_v1/tests/opaque_handle_slots_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-layout/src/tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-ownership-runtime-abi/src/tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_clone_construction.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_constructor_envelope.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_constructor_envelope_flows.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_constructor_projection_integration.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_credit_bridges.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_name_resolution.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_projection_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_projection_core.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_resource_decisions.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_root_assignment.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_root_assignment_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/borrow_call_conformance.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/borrow_forwarding_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/borrow_parameter_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/cfg_control_flow_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/cfg_owner_state.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/cfg_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/checked_chain_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/checked_chain_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/common_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/conditional_root_borrows.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_child_preparation_matrix.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_child_preparation_red.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_envelope_fixtures.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_plans.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_preparation_cleanup_boundaries.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_preparation_consumption.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_preparation_control_fixtures.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_preparation_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_preparation_copy_prefix.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_preparation_types.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_reservations.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/constructor_value_types.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/contextual_local_routing.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/copy_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/copy_match_expression_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/copy_match_expressions.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/copy_match_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/copy_nested_enum_routes.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/derived_value_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/enum_payloads.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/enum_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_additional.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_builder.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_call_builder.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_call_rejections.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_effect_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_regions.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_rejections.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_siblings.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/explicit_indexed_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/expression_preflight.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/fault_oracle_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/fixed_array_partial_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/fixed_arrays.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/fresh_vec_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/fresh_vec_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/function_catalog.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generation_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_call_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_call_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_clone_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_clone_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_copy_projection.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_route_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_route_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_static_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_static_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_static_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_push_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_source_rejections.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/lexical_borrow_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/lexical_chained_call_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/lexical_chained_composition.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/lexical_chained_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/lexical_chained_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/lexical_indexed_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/local_commit_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/local_commit_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/local_tail_supplement.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/local_tail_supplement_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/loop_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/loop_root_borrows.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_array_whole_moves.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_byte_facts.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_call_consumption_misuse.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_call_resource_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_call_resource_order.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_call_string_nesting.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_call_unknown_clone.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_cleanup_frontiers.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_construction.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_constructor_faults.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_copy_operators.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_disjoint_owned_sibling.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_disjoint_owned_sibling_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_enum_whole_moves.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_local_construction.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_optional_string_bytes.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_phase_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_phase_fixtures.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_positive_arrays.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_read_faults.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_recursive_vec.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_root_replacement.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_root_replacement_builder.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_root_replacement_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_root_replacement_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_call_facts.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_call_rejections.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_local_call.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_read_boundaries.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_read_facts.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_read_misuse.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_string_read_scopes.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_struct_whole_moves.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_two_element_faults.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_type_negative_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_type_negatives.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_unknown_projected.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_unknown_projected_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_vec_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_vec_sibling_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_vec_siblings.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/mixed_zero_array_vec.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/nested_mixed_construction.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/nested_partial_transfer_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/nested_string_mutation_loop.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/nominal_declaration_budget.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/nonindexed_owned_borrow.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/operand_clone_tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/operand_decision_tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/operand_projection_tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/ordered_expression_decisions.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/ordinary_array_composition_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/ordinary_array_composition_resources.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/ordinary_array_composition_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/ordinary_array_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/ordinary_static_prefix_fixture.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/ordinary_static_prefix_source.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/owned_cleanup_recipes.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/owned_fault_oracles.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/owned_root_borrow_boundary_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/owned_root_borrow_reads.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/pair_oracle.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/partial_array_nested_assignment.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/partial_assignment_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/partial_struct_assignment.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/partial_struct_transfer_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/partial_struct_transfers.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_aggregate_lowering.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_aggregate_lowering/constructor_order.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_loop_cleanup_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_loop_core.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_string_if.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_string_mutation_loop.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/private_vec_if.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projected_aggregate_assignments.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projected_aggregate_fixture_data.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projected_aggregate_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projected_aggregate_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projected_borrows.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projected_string_assignment.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projected_string_assignment_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projection_descriptors.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/projection_resolution_checks.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/recursive_cleanup_witness.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/recursive_cleanup_witness_tests.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/scalar_matrix_fixtures.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/scalar_matrix_negatives.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/scalar_operator_matrix.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/scalar_owned_lhs.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/scalar_owned_lhs_fixtures.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/scalar_private_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/scalar_resource_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/static_subobject_locals.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/static_subobject_returns.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/straight_root_borrows.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/string_assignment.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/string_boundary_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/string_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/string_call_core.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/string_call_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/string_call_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/string_core.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/struct_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/terminal_owned_if.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/termination_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_assignment.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_call_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_calls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_clone_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_clone_core.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_construction_core.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_fixture_support.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_nested_preflight.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_order_controls.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_resource_budgets.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/vec_validation.rs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/ci-gate-cases.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/code-navigation-cases.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/docs-bundle.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/m0-conformance.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/m2-conformance.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/m2-contract.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/m2-manifest-contract.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/m3-borrowing-evidence-cases.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/m3-contract.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/m3-issue-graph-cases.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/npm-timing-workflow-cases.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/npm-timing.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/preflight.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/syntax-protocol-v2.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/syntax-protocol-v3.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/syntax-protocol-v4.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Exact test-only source or test fixture in the reviewed initial inventory; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    },
+    {
+      "path": "tests/repository-structure.test.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Independent temporary-repository policy tests",
+      "review": "https://github.com/zryna/zryna/issues/314"
+    }
+  ],
+  "exceptions": []
+}

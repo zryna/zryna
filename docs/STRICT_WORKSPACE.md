@@ -122,6 +122,64 @@ the architecture validator. The ownership-runtime ABI authority remains in the c
 because it consumes sealed compiler-owned layouts; the dependency-free scalar `zryna-abi`
 foundation remains unchanged.
 
+## Source-size and navigation policy
+
+`pnpm structure:check` runs the read-only `scripts/check-repository-structure.mjs` checker before
+other preflight commands and as a required M0 command on Linux and Windows. It supplements, never
+replaces, `zryna-architecture`: component registration, Cargo membership, allowed paths, dependency
+direction and complete filesystem safety remain that authority's obligations. No Rust module
+regex is used or claimed to prove compilation, reachability, `cfg`, inline modules or `#[path]`.
+
+All repository files ending in `.rs`, `.mjs`, `.js`, `.cjs`, `.ts`, `.sh`, `.ps1` or `.py`
+(case-insensitively) default to production, including adapter and executable verification scripts.
+Exact test, fixture and generated classifications live in `scripts/repository-structure-policy.json`
+with an owner, reason and review reference. Directory names, generated comments and `.gitignore`
+cannot exempt new source. Mixed production/test files remain production. Only real declared
+dependency/build outputs (`.git`, root `target`/`node_modules`, adapter `node_modules`,
+`.zryna/cache` and `.zryna/out`) are excluded from traversal. Source paths are portable and
+case-unique; links, special files and stale current classification/exception paths reject.
+
+Counting uses LF terminators: CRLF has the same count as LF, every blank/comment line counts,
+empty content is zero lines, and a nonempty unterminated final line counts once. A lone CR is
+content, not a terminator. New production source must be at most 500 lines. Sizes 350–500 warn
+without failing. Existing production over 500 cannot exceed the smaller of its original inventory
+count and trusted-base content count. After reaching 500 or fewer in the trusted base it uses the
+ordinary ceiling. The immutable historical inventory records exact source paths/counts at
+`885bb4d863ad112566add72fab6d2931587b71b1`, including separately classified test sources and a frozen
+initial `production` eligibility bit; initial test records never grant grandfathering, even after
+later reclassification. The checker reproduces the complete
+inventory from Git objects and rejects attempted self-raised counts or substituted anchors.
+
+Local working trees, including linked Git worktrees, compare all current bytes (staged and
+unstaged) to `HEAD`. To check a complete branch, set `ZRYNA_STRUCTURE_BASE` to a full trusted
+ancestor commit SHA. CI must set that variable: PRs use the event's base SHA; main pushes use
+the event's previous SHA. Full checkout history supplies both comparison and initial anchor
+objects. The checker never fetches. Missing, zero, ambiguous or unrelated authority fails with
+an actionable error. During initial adoption only, when the trusted base predates the reviewed
+anchor and has no policy, that named anchor establishes the initial ceiling. Later bases retain
+the authenticated policy anchor. Reductions ratchet at accepted comparison revisions, not at
+uncommitted intermediate editor states.
+
+Git's deterministic 50%-similarity rename detection carries the old ceiling and trusted reduction
+to a new path; classification and exception paths must be updated explicitly. Stage a rename so
+Git can identify its destination. An unrecognized rename is treated as new production (500),
+never given a larger allowance. Deleted source remains in the immutable historical inventory but
+must leave no stale current policy entry or navigation link. Copying a large module does not
+inherit its allowance.
+
+Exceptions contain exactly `path`, `owner`, `reason`, numeric `ceiling` (>500), `review`, and
+`expires` (`YYYY-MM-DD`). Expiry is exclusive at 00:00 UTC on that date. Invalid dates, duplicate
+or wildcard paths, missing metadata, expired entries, and exceptions for absent, test-classified
+or ordinary-sized files reject. Exceptions do not weaken architecture/compiler checks. Policy
+edits are displayed in CI as requiring explicit maintainer review; successful parsing is not
+human approval. Neither the checker nor CI regenerates allowances or modifies inputs.
+
+The navigation check accepts the existing plain relative Markdown file-link grammar in
+`CODE_NAVIGATION.md`; every declared target must resolve inside the repository without links.
+It does not require a private-helper inventory or duplicate the component registry. The independent
+`tests/repository-structure.test.mjs` suite covers count/ratchet/exception boundaries, renames,
+deletion, worktrees, shallow history, unsafe paths, deterministic rejection and recovery.
+
 ## Stable architecture diagnostics
 
 ```text

@@ -58,11 +58,21 @@ pull request. Identify the files you expect to change and coordinate shared-file
 expanding that set. Preserve unrelated work and avoid repository-wide formatting, mechanical
 rewrites or dependency updates in a behavioral fix.
 
-Prefer small, cohesive modules with explicit ownership and private interfaces. Around 500 lines
-is a review trigger, not a hard file limit: consider whether the file contains separable
-responsibilities and explain why an exception is clearer. Split by responsibility, not arbitrary
-line counts; do not introduce a second implementation, unnecessary public API or inverted
-dependency solely to shorten a file. Update relevant navigation and imports when moving code.
+Prefer small, cohesive modules with explicit ownership and private interfaces. New production
+source files have a hard 500-physical-line limit; 350–500 lines produce a non-blocking cohesion
+review warning. Existing larger files are grandfathered at an authenticated baseline and must
+not grow; reductions in the trusted base lower the ceiling. Run `pnpm structure:check` during
+development. Blank lines and comments count. Mixed production/test files count in full.
+The exact coverage, trusted-base selection and exception schema are documented in
+[Strict workspace](docs/STRICT_WORKSPACE.md#source-size-and-navigation-policy).
+
+An exception requires an exact path, responsible owner/team, concrete reason, numeric ceiling,
+review reference and UTC expiry date in `scripts/repository-structure-policy.json`. Classifications,
+baseline and exceptions require explicit maintainer review; checker notices do not prove that
+approval occurred. Do not use minification, compressed formatting, arbitrary splitting, duplicated
+helpers, unnecessary public API or weakened visibility to satisfy a size ceiling. Split by cohesive
+responsibility and retain existing formatter/lint requirements. Update navigation when moving
+its declared targets; not every private helper needs a navigation entry.
 
 New components must be created through the planned canonical creation command once it is available.
 Until then, component additions require a focused architecture proposal and simultaneous updates
