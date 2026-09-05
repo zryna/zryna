@@ -50,6 +50,7 @@ mod state;
 mod statements;
 mod structured_cfg;
 mod structured_checkpoint;
+mod structured_constructor;
 mod structured_graph;
 mod structured_match;
 mod structured_match_local;

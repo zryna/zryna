@@ -88,6 +88,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     ) -> Option<raw::ValueId> {
         let expression = self.expression(id)?.clone();
         let RawExpressionKind::Match { scrutinee, arms, .. } = expression.kind else {
+            if graph.contains_match(expression.span.start, expression.span.end)
+                && matches!(
+                    expression.kind,
+                    RawExpressionKind::StructConstruction { .. }
+                        | RawExpressionKind::EnumConstruction { .. }
+                        | RawExpressionKind::FixedArrayConstruction { .. }
+                )
+            {
+                return self.structured_constructor(id, result, graph);
+            }
             return self.value(id, result);
         };
         let at = span(self.input.sources(), expression.span);

@@ -32,7 +32,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         result: Ty,
     ) -> Option<Vec<raw::Block>> {
         let at = span(self.input.sources(), self.function.body.span);
-        let mut graph = StructuredGraph::new();
+        let mut graph = StructuredGraph::new(self.function);
         if self.structured_scope(self.function.body.root_block, result, &mut graph)? {
             self.errors.at(
                 "ZRYNA-M3015",

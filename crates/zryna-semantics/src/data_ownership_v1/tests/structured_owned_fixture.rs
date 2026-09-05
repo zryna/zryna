@@ -6,6 +6,7 @@ use zryna_syntax::v4::{RawElseSyntax, RawExpressionKind};
 mod match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::Payload;
 pub(in crate::data_ownership_v1) use match_fixture::fixture as match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::nested_fixture as nested_match_fixture;
 
 pub(super) enum Statement {
     Local(&'static str, &'static str, bool),

@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::ops::Range;
 use zryna_ir::data_ownership_v1::{self as ir, raw};
 use zryna_source::Span;
@@ -17,10 +18,11 @@ pub(super) struct StructuredGraph {
     pub(super) current: usize,
     edges: usize,
     held_terminators: usize,
+    matches: BTreeSet<u32>,
 }
 
 impl StructuredGraph {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(function: &zryna_syntax::v4::RawFunctionSyntax) -> Self {
         Self {
             blocks: vec![StructuredBlock {
                 parameters: Vec::new(),
@@ -31,7 +33,20 @@ impl StructuredGraph {
             current: 0,
             edges: 0,
             held_terminators: 0,
+            matches: function
+                .body
+                .expressions
+                .iter()
+                .filter_map(|expression| {
+                    matches!(expression.kind, zryna_syntax::v4::RawExpressionKind::Match { .. })
+                        .then_some(expression.span.start)
+                })
+                .collect(),
         }
+    }
+
+    pub(super) fn contains_match(&self, start: u32, end: u32) -> bool {
+        self.matches.range(start..end).next().is_some()
     }
 
     pub(super) fn next(

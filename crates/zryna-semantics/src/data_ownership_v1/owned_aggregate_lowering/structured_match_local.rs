@@ -1,5 +1,5 @@
 use zryna_ir::data_ownership_v1::raw;
-use zryna_syntax::v4::{RawExpressionKind, RawStatementKind, RawStatementSyntax};
+use zryna_syntax::v4::{RawStatementKind, RawStatementSyntax};
 
 use super::super::diagnostics::span;
 use super::structured_graph::StructuredGraph;
@@ -16,7 +16,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         else {
             return Some(false);
         };
-        if !matches!(self.expression(*initializer)?.kind, RawExpressionKind::Match { .. }) {
+        let expression = self.expression(*initializer)?;
+        if !graph.contains_match(expression.span.start, expression.span.end) {
             return Some(false);
         }
         let at = span(self.input.sources(), statement.span);

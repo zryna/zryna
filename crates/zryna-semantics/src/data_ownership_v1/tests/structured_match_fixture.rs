@@ -1,6 +1,8 @@
 use super::*;
 use zryna_syntax::v4::{RawDataDeclaration, RawDataDeclarationKind, RawEnumVariant, RawMatchArm};
 
+#[path = "structured_match_operands.rs"]
+mod operands;
 #[path = "structured_match_payloads.rs"]
 mod payloads;
 pub(in crate::data_ownership_v1) use payloads::Payload;
@@ -145,6 +147,22 @@ pub(in crate::data_ownership_v1) fn fixture(
     cloned: bool,
     local: bool,
 ) -> (String, RawProjectSyntaxSnapshot) {
+    build(payload, cloned, local, false)
+}
+
+pub(in crate::data_ownership_v1) fn nested_fixture(
+    cloned: bool,
+    local: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    build(Payload::String, cloned, local, true)
+}
+
+fn build(
+    payload: Payload,
+    cloned: bool,
+    local: bool,
+    nested: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
     let mut builder = Builder::default();
     let mut declarations = builder.payload_declaration(payload).into_iter().collect::<Vec<_>>();
     if !declarations.is_empty() {
@@ -159,7 +177,8 @@ pub(in crate::data_ownership_v1) fn fixture(
     builder.text("(");
     let parameters = parameters(&mut builder, payload);
     builder.text("): ");
-    let result_type = builder.payload_type(payload);
+    let result_payload = if nested { Payload::Array(2) } else { payload };
+    let result_type = builder.payload_type(result_payload);
     builder.text(" ");
     let body_start = builder.text.len();
     let open_brace_span = builder.text("{");
@@ -170,11 +189,11 @@ pub(in crate::data_ownership_v1) fn fixture(
         builder.text(" ");
         let name = builder.name("output");
         builder.text(": ");
-        let type_syntax = builder.payload_type(payload);
+        let type_syntax = builder.payload_type(result_payload);
         builder.text(" ");
         let equals_span = builder.text("=");
         builder.text(" ");
-        let initializer = builder.matched(cloned);
+        let initializer = builder.match_operand(cloned, nested);
         let semicolon_span = builder.text(";");
         RawStatementKind::LocalDeclaration {
             keyword_span,
@@ -188,7 +207,7 @@ pub(in crate::data_ownership_v1) fn fixture(
     } else {
         let keyword_span = builder.text("return");
         builder.text(" ");
-        let value = builder.matched(cloned);
+        let value = builder.match_operand(cloned, nested);
         let semicolon_span = builder.text(";");
         RawStatementKind::Return { keyword_span, value, semicolon_span }
     };

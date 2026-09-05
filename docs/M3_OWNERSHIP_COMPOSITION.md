@@ -168,7 +168,11 @@ SSA value through exclusive `BeginBorrow`/`BorrowWrite`/`EndBorrow`, so ordinary
 rules admit the join without owner effects. Mixed Struct/Enum/Array/Vec scope graphs and checked
 value/place/transition/cleanup exact, first-extra, overflow and pristine recovery have focused tests.
 Rejected CFG preparation restores its full source planning checkpoint. This is not #279 completion:
-matches nested inside arbitrary constructor/call operands, the complete C7 interaction matrix, and
+`structured_constructor.rs` now carries the existing affine constructor commit reservation and
+ordered SSA operands through matches nested in Struct/Enum/FixedArray constructors. Earlier owned
+operands remain pending during arm failures and transfer only at the exact typed constructor commit.
+The nested FixedArray fixture repeats the same checked-resource/recovery matrix. Fallible Vec/call
+frames and String/indexed read scopes are not yet resumable; the complete C7 interaction matrix and
 independent hostile evidence remain; no source handle or runtime-execution support is claimed.
 
 ## C8: Upgrade-success edge signature

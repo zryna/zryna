@@ -1,6 +1,54 @@
 use super::*;
 
 #[test]
+fn structured_match_constructor_retains_earlier_operand_across_continuation() {
+    for cloned in [false, true] {
+        for local in [false, true] {
+            let (text, raw) = structured_owned_fixture::nested_match_fixture(cloned, local);
+            let sources = sources_for(&text);
+            let syntax =
+                verify_snapshot(raw, &sources).expect("authenticated nested constructor match");
+            let program =
+                lower(pair_input(&syntax, &sources)).expect("constructor resumes after match");
+            let function = program
+                .verified_ir()
+                .modules()
+                .next()
+                .expect("module")
+                .functions()
+                .next()
+                .expect("function");
+            let blocks = function.blocks().collect::<Vec<_>>();
+            assert_eq!(blocks.len(), 4);
+            let first = blocks[0].instructions().next().expect("earlier String operand");
+            assert_eq!(first.kind(), VerifiedInstructionKind::StringFromUtf8);
+            let commit = blocks[3].instructions().next().expect("resumed constructor");
+            assert_eq!(commit.kind(), VerifiedInstructionKind::FixedArrayConstruct);
+            assert_eq!(commit.value_operands().next(), first.result());
+            assert_eq!(commit.value_operands().len(), 2);
+            if cloned {
+                let owner = function.places().find(|place| matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if Some(value) == first.result())).expect("earlier genuine String owner").id();
+                for arm in &blocks[1..3] {
+                    let cleanup = arm
+                        .instructions()
+                        .next()
+                        .expect("fallible payload clone")
+                        .derived_drop_actions()
+                        .collect::<Vec<_>>();
+                    assert_eq!(cleanup.len(), 2);
+                    assert_eq!(cleanup[0].root(), owner);
+                    assert_ne!(cleanup[1].root(), owner);
+                }
+            }
+            assert_eq!(
+                commit.value_operands().nth(1),
+                Some(blocks[3].parameters().next().expect("match result").id())
+            );
+        }
+    }
+}
+
+#[test]
 fn structured_match_owned_payloads_join_one_result_and_continue() {
     use structured_owned_fixture::Payload;
     for payload in [
