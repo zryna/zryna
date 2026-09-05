@@ -51,6 +51,11 @@ pub(super) enum Leaf<'f> {
         cleanup: raw::CleanupPlanId,
         prefix: raw::CleanupPlanId,
     },
+    GenericClone {
+        source: raw::PlaceId,
+        cleanup: raw::CleanupPlanId,
+        prefix: raw::CleanupPlanId,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -68,6 +73,11 @@ pub(super) struct StringRead {
 }
 
 pub(super) enum Operation<'f> {
+    GenericClonePrefix {
+        id: raw::CleanupPlanId,
+        owner: raw::PlaceId,
+        actions: usize,
+    },
     ScalarEnter {
         kind: super::super::scalar_operations::ScalarOperation,
         end: usize,

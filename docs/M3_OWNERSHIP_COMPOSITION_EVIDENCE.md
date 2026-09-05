@@ -227,6 +227,27 @@ General partial/projected mixed replacement, generic Vec element replacement/obs
 structural clone, handles and CFG integration remain open under #278 and its dependent issues.
 This slice does not close #278 or activate public M3.
 
+## Internal recursive clone candidate (#278)
+
+The [generic clone contract](M3_GENERIC_CLONE_CORE.md) adds one reusable non-handle IR operation
+and a distinct recursive destination-prefix obligation. In the existing private mixed-summary
+route, an explicit clone of an available, exact-type whole local can use that operation for
+mixed Struct/Enum/FixedArray/Vec graphs. Existing String, aggregate and Vec clone routes remain
+unchanged. The same preparation, held-credit accounting and single-use consumption checks apply.
+
+`generic_clone_source.rs` authenticates mixed root source fixtures and inspects independently
+verified source retention and prefix cleanup. `generic_clone_resources.rs` separates synthetic
+held-credit frontiers and rejection-state equality from source/full-IR positive evidence.
+The IR `generic_clone_fixture.rs`, `generic_clone_positive.rs` and `generic_clone_hostile.rs`
+modules independently exercise the new authority, exact destination/site/type binding and
+malformed cleanup. Opaque-frontier tests prove a symbolic obligation, not runtime progress or
+fault-injected execution. Final command receipts must identify the tested candidate.
+
+This candidate does not close #278. Projected or indexed clone adapters, ordinary generic Vec
+observations/replacement, remaining generic operation and call integration, handles and CFG
+remain separately required. In particular, #255 cannot replace a dynamic element with a fabricated
+static place or claim owned shared reads merely from this whole-root source adapter.
+
 ## Located tests, not complete composition proofs
 
 Names below are actual `#[test]` functions under the same directory's `tests/`.

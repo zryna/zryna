@@ -227,6 +227,18 @@ impl Consumption<'_, '_, '_, '_> {
         }
     }
 
+    fn generic_clone_prefix(
+        &mut self,
+        id: raw::CleanupPlanId,
+        owner: raw::PlaceId,
+        actions: usize,
+        at: Span,
+    ) {
+        assert_eq!(self.cleanups.len(), 1, "generic prefix follows prepare cleanup");
+        self.lowerer.consume_generic_clone_prefix(id, owner, actions, at);
+        self.cleanups.push((id, Some(owner)));
+    }
+
     fn execute(
         &mut self,
         index: usize,
@@ -293,6 +305,10 @@ impl Consumption<'_, '_, '_, '_> {
                 assert!(self.cleanups.len() < 2, "at most two cleanup events per admitted leaf");
                 self.lowerer.consume_prepared_cleanup(id, actions, prefix, step.at);
                 self.cleanups.push((id, prefix));
+                None
+            }
+            Operation::GenericClonePrefix { id, owner, actions } => {
+                self.generic_clone_prefix(id, owner, actions, step.at);
                 None
             }
             Operation::Leaf(leaf) => {

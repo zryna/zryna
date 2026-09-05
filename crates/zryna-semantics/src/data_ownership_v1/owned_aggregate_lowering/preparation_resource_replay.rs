@@ -166,6 +166,7 @@ pub(super) fn validate(
             | Operation::StringEnter { .. }
             | Operation::StringRead(_)
             | Operation::StringExit
+            | Operation::GenericClonePrefix { .. }
             | Operation::Cleanup { prefix: Some(_), .. } => {}
             Operation::Cleanup { prefix: None, .. }
             | Operation::Leaf(_)

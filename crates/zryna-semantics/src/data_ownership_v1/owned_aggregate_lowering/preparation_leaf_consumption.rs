@@ -103,6 +103,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             Leaf::AggregateClone { source, cleanup, prefix } => {
                 self.emit_prepared_aggregate_clone(source, ty, at, cleanup, prefix)
             }
+            Leaf::GenericClone { source, cleanup, prefix } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::GenericClonePlace {
+                    place: source,
+                    cleanup,
+                    prefix_cleanup: prefix,
+                },
+            ),
         }?;
         for delta in &emission.owners {
             super::super::super::super::owner_state::apply_owner_delta(
@@ -172,7 +181,8 @@ pub(super) fn check_cleanup_link(
         | Leaf::StringConcat { cleanup, .. } => {
             assert_eq!(events, &[(*cleanup, None)], "fallible leaf cleanup linkage");
         }
-        Leaf::AggregateClone { cleanup, prefix, .. } => {
+        Leaf::AggregateClone { cleanup, prefix, .. }
+        | Leaf::GenericClone { cleanup, prefix, .. } => {
             let owner = raw::PlaceId(u32::try_from(places).expect("prepared clone owner identity"));
             assert_eq!(
                 events,

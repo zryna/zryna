@@ -181,6 +181,16 @@ impl<'a> CleanupRecipe<'a> {
         })
     }
 
+    pub(in crate::data_ownership_v1) fn generic_clone_prefix(
+        plans: usize,
+        pending: &'a [raw::PlaceId],
+        result_owner: raw::PlaceId,
+    ) -> Option<Self> {
+        let mut recipe = Self::aggregate_prefix(plans, pending, result_owner)?;
+        recipe.prefix = Some(raw::DropAction::DropGenericCloneInitializedPrefix(result_owner));
+        Some(recipe)
+    }
+
     pub(in crate::data_ownership_v1) fn into_actions(
         self,
     ) -> impl Iterator<Item = raw::DropAction> + 'a {

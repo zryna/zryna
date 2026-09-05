@@ -8,6 +8,7 @@ mod constructor_plans;
 mod constructor_reservations;
 mod constructor_value_types;
 mod copy_nested_enum_routes;
+pub(super) mod generic_clone_source;
 pub(in crate::data_ownership_v1) mod mixed_call_string_nesting;
 pub(in crate::data_ownership_v1) mod mixed_call_unknown_clone;
 mod mixed_construction;

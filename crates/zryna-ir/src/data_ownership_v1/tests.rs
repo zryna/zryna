@@ -6,6 +6,9 @@ use std::collections::BTreeSet;
 
 mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
+mod generic_clone_fixture;
+mod generic_clone_hostile;
+mod generic_clone_positive;
 mod indexed_borrow_call_cleanup;
 mod indexed_borrow_conflicts;
 mod indexed_borrow_copy_refinement;

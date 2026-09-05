@@ -229,6 +229,9 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
     }
 
     pub(super) fn aggregate_clone(&mut self, id: u32, ty: Ty, at: Span) -> Option<raw::ValueId> {
+        if self.state.summary && super::mixed_shape::requires_summary(ty, self.decisions.layouts) {
+            return self.generic_clone(id, ty, at);
+        }
         let usage = self.state.clone_usage();
         let binding = if self.state.summary {
             let binding = self.operands().aggregate_clone_source(id, ty, at)?;

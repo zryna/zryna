@@ -13,6 +13,9 @@ use zryna_layout::{
 };
 use zryna_source::{FileId, SourceMap, SourceMapIdentity, Span};
 
+mod generic_clone;
+pub use generic_clone::{VerifiedGenericClone, VerifiedGenericCloneFrontier};
+
 /// Maximum modules in one program.
 pub const MAX_MODULES: usize = 4_096;
 /// Maximum functions in one module.
@@ -259,6 +262,11 @@ pub mod raw {
             cleanup: CleanupPlanId,
             element_cleanup: Option<CleanupPlanId>,
         },
+        GenericClonePlace {
+            place: PlaceId,
+            cleanup: CleanupPlanId,
+            prefix_cleanup: CleanupPlanId,
+        },
         InitializePlace {
             place: PlaceId,
             value: ValueId,
@@ -399,6 +407,7 @@ pub mod raw {
         DropPlace(PlaceId),
         DropVecInitializedPrefix(PlaceId),
         DropAggregateInitializedPrefix(PlaceId),
+        DropGenericCloneInitializedPrefix(PlaceId),
     }
 }
 
@@ -513,6 +522,8 @@ pub enum VerifiedCleanupRole {
     VecCloneElementFailure,
     /// One recursive leaf clone failed after an aggregate prefix was initialized.
     AggregateCloneElementFailure,
+    /// Generic structural clone failed with a recursively partial destination.
+    GenericClonePrefixFailure,
     /// A direct callee trapped after its by-value arguments were transferred.
     CallTrap,
     /// A function returned normally after transferring its result.
@@ -923,6 +934,7 @@ pub enum VerifiedInstructionKind {
     CopyFromPlace,
     MoveFromPlace,
     ClonePlace,
+    GenericClonePlace,
     InitializePlace,
     ReplacePlace,
     DropPlace,
@@ -981,6 +993,7 @@ impl<'a> VerifiedInstruction<'a> {
             I::CopyFromPlace { .. } => VerifiedInstructionKind::CopyFromPlace,
             I::MoveFromPlace { .. } => VerifiedInstructionKind::MoveFromPlace,
             I::ClonePlace { .. } => VerifiedInstructionKind::ClonePlace,
+            I::GenericClonePlace { .. } => VerifiedInstructionKind::GenericClonePlace,
             I::InitializePlace { .. } => VerifiedInstructionKind::InitializePlace,
             I::ReplacePlace { .. } => VerifiedInstructionKind::ReplacePlace,
             I::DropPlace { .. } => VerifiedInstructionKind::DropPlace,
@@ -1455,6 +1468,8 @@ pub enum VerifiedDropActionKind {
     VecInitializedPrefix,
     /// Drop the runtime-recorded initialized structural prefix recursively.
     AggregateInitializedPrefix,
+    /// Unwind the exact generic clone's runtime frontier, releasing storage after children.
+    GenericCloneInitializedPrefix,
 }
 /// One exact active enum variant retained for recursive partial cleanup.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1555,7 +1570,8 @@ impl<'a> VerifiedCleanupPlan<'a> {
         self.plan.actions.iter().map(move |action| match action {
             raw::DropAction::DropPlace(place)
             | raw::DropAction::DropVecInitializedPrefix(place)
-            | raw::DropAction::DropAggregateInitializedPrefix(place) => {
+            | raw::DropAction::DropAggregateInitializedPrefix(place)
+            | raw::DropAction::DropGenericCloneInitializedPrefix(place) => {
                 PlaceIdentity { owner: self.function.id(), index: place.0 }
             }
         })
@@ -1895,6 +1911,7 @@ fn verify_structure(
     layouts: &VerifiedLayouts,
     errors: &mut Errors,
 ) {
+    let generic_clone_types = generic_clone::classify_program(program, layouts);
     for (module_index, module) in program.modules.iter().enumerate() {
         if module.id.0 as usize != module_index
             || sources
@@ -2009,7 +2026,8 @@ fn verify_structure(
                     || plan.actions.iter().any(|a| match a {
                         raw::DropAction::DropPlace(p)
                         | raw::DropAction::DropVecInitializedPrefix(p)
-                        | raw::DropAction::DropAggregateInitializedPrefix(p) => {
+                        | raw::DropAction::DropAggregateInitializedPrefix(p)
+                        | raw::DropAction::DropGenericCloneInitializedPrefix(p) => {
                             p.0 as usize >= function.places.len() || !dropped.insert(*p)
                         }
                     })
@@ -2107,7 +2125,7 @@ fn verify_structure(
             if !errors.is_empty() {
                 return;
             }
-            verify_function_graph(function, layouts, errors);
+            verify_function_graph(function, layouts, &generic_clone_types, errors);
             if !errors.is_empty() {
                 return;
             }
@@ -2170,7 +2188,12 @@ struct ValueInfo {
 }
 
 #[allow(clippy::too_many_lines)]
-fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, errors: &mut Errors) {
+fn verify_function_graph(
+    function: &raw::Function,
+    layouts: &VerifiedLayouts,
+    generic_clone_types: &[bool],
+    errors: &mut Errors,
+) {
     if function.blocks.is_empty() {
         return;
     }
@@ -2286,7 +2309,14 @@ fn verify_function_graph(function: &raw::Function, layouts: &VerifiedLayouts, er
                     errors,
                 );
             }
-            verify_operation_types(instruction, function, &values, layouts, errors);
+            verify_operation_types(
+                instruction,
+                function,
+                &values,
+                layouts,
+                generic_clone_types,
+                errors,
+            );
         }
         if let Some(terminator) = block.terminators.first() {
             for operand in terminator_operands(&terminator.kind) {
@@ -2977,6 +3007,7 @@ fn instruction_place_operands(kind: &raw::InstructionKind) -> Vec<raw::PlaceId> 
         I::CopyFromPlace { place }
         | I::MoveFromPlace { place }
         | I::ClonePlace { place, .. }
+        | I::GenericClonePlace { place, .. }
         | I::InitializePlace { place, .. }
         | I::ReplacePlace { place, .. }
         | I::DropPlace { place }
@@ -3434,7 +3465,8 @@ fn derive_state_before(
                     raw::InstructionKind::EnumConstruct { variant, .. } => {
                         flow.variants[owner.0 as usize] = Some(variant);
                     }
-                    raw::InstructionKind::ClonePlace { place, .. } => {
+                    raw::InstructionKind::ClonePlace { place, .. }
+                    | raw::InstructionKind::GenericClonePlace { place, .. } => {
                         flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
                     }
                     raw::InstructionKind::MoveFromPlace { .. } => {}
@@ -3504,6 +3536,9 @@ fn sealed_drop_actions(
                 }
                 raw::DropAction::DropAggregateInitializedPrefix(root) => {
                     (*root, VerifiedDropActionKind::AggregateInitializedPrefix)
+                }
+                raw::DropAction::DropGenericCloneInitializedPrefix(root) => {
+                    (*root, VerifiedDropActionKind::GenericCloneInitializedPrefix)
                 }
             };
             sealed_drop_action_with_kind(owner, function, root, states, variants, kind)
@@ -3699,6 +3734,13 @@ fn verify_ownership_dataflow(
                     errors,
                 );
             }
+            generic_clone::verify_prefix_cleanup(
+                instruction,
+                value_owners,
+                function,
+                &flow,
+                errors,
+            );
             apply_ownership_instruction(
                 instruction,
                 function,
@@ -3728,7 +3770,8 @@ fn verify_ownership_dataflow(
                     raw::InstructionKind::EnumConstruct { variant, .. } => {
                         flow.variants[owner.0 as usize] = Some(variant);
                     }
-                    raw::InstructionKind::ClonePlace { place, .. } => {
+                    raw::InstructionKind::ClonePlace { place, .. }
+                    | raw::InstructionKind::GenericClonePlace { place, .. } => {
                         flow.variants[owner.0 as usize] = flow.variants[place.0 as usize];
                     }
                     raw::InstructionKind::MoveFromPlace { .. } => {}
@@ -3864,6 +3907,16 @@ fn cleanup_references(function: &raw::Function) -> Vec<CleanupReference> {
                     role: VerifiedCleanupRole::AggregateCloneElementFailure,
                 });
             }
+            if let raw::InstructionKind::GenericClonePlace { prefix_cleanup: plan, .. } =
+                instruction.kind
+            {
+                references.push(CleanupReference {
+                    plan,
+                    block: block_index,
+                    instruction: Some(instruction_index),
+                    role: VerifiedCleanupRole::GenericClonePrefixFailure,
+                });
+            }
         }
         if let Some(terminator) = block.terminators.first() {
             let site = match terminator.kind {
@@ -3901,6 +3954,7 @@ fn instruction_cleanup(kind: &raw::InstructionKind) -> Option<raw::CleanupPlanId
         | I::FixedArrayConstruct { cleanup, .. } => *cleanup,
         I::DirectCall { cleanup, .. }
         | I::ClonePlace { cleanup, .. }
+        | I::GenericClonePlace { cleanup, .. }
         | I::FixedArrayIndexCopy { cleanup, .. }
         | I::VecIndexCopy { cleanup, .. }
         | I::StringFromUtf8 { cleanup, .. }
@@ -4568,6 +4622,7 @@ fn apply_ownership_instruction(
             }
         }
         I::ClonePlace { place, .. }
+        | I::GenericClonePlace { place, .. }
         | I::EnumDiscriminant { place }
         | I::FixedArrayIndexCopy { place, .. }
         | I::VecIndexCopy { place, .. }
@@ -5309,6 +5364,7 @@ fn verify_operation_types(
     function: &raw::Function,
     values: &[ValueInfo],
     layouts: &VerifiedLayouts,
+    generic_clone_types: &[bool],
     errors: &mut Errors,
 ) {
     use raw::InstructionKind as I;
@@ -5397,6 +5453,13 @@ fn verify_operation_types(
                         && layout_type(layouts, ty).is_some_and(|record| {
                             (record.drop_kind() == 0) == element_cleanup.is_none()
                         })
+                })
+        }
+        I::GenericClonePlace { place, .. } => {
+            place_type(*place) == result_type
+                && root_place(*place, function) == *place
+                && result_type.is_some_and(|ty| {
+                    generic_clone_types.get(ty.0 as usize).copied().unwrap_or(false)
                 })
         }
         I::InitializePlace { place, value } | I::ReplacePlace { place, value, .. } => {
@@ -5726,6 +5789,9 @@ fn verify_instruction_shape(
             !place_valid(*place)
                 || !cleanup_valid(*cleanup)
                 || element_cleanup.is_some_and(|cleanup| !cleanup_valid(cleanup))
+        }
+        I::GenericClonePlace { place, cleanup, prefix_cleanup } => {
+            !place_valid(*place) || !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
         }
         I::FixedArrayIndexCopy { place, cleanup, .. }
         | I::VecIndexCopy { place, cleanup, .. }

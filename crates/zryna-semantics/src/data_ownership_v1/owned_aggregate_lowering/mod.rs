@@ -17,6 +17,7 @@ mod constructor_resources;
 mod constructors;
 mod driver;
 mod expression_decisions;
+mod generic_clone_preparation;
 mod mixed_shape;
 mod operand_decisions;
 mod partial_transfers;

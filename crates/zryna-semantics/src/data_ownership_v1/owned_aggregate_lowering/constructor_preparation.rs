@@ -403,6 +403,9 @@ mod scalar_resource_controls;
 mod value;
 pub(super) use local_commit::PreparedLocal;
 #[cfg(test)]
+#[path = "../tests/generic_clone_resources.rs"]
+mod generic_clone_resources;
+#[cfg(test)]
 #[path = "../tests/local_tail_supplement_controls.rs"]
 mod local_tail_supplement_controls;
 #[cfg(test)]
