@@ -12,6 +12,7 @@ mod generic_clone_hostile;
 mod generic_clone_positive;
 mod generic_clone_projection;
 mod generic_static_refinement;
+mod generic_enum_payload_move;
 mod generic_static_transfer;
 mod generic_vec_hostile;
 mod generic_vec_observation;
