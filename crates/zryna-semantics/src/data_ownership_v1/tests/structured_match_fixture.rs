@@ -1,6 +1,8 @@
 use super::*;
 use zryna_syntax::v4::{RawDataDeclaration, RawDataDeclarationKind, RawEnumVariant, RawMatchArm};
 
+#[path = "structured_match_callee.rs"]
+mod callee;
 #[path = "structured_match_operands.rs"]
 mod operands;
 #[path = "structured_match_payloads.rs"]
@@ -147,22 +149,38 @@ pub(in crate::data_ownership_v1) fn fixture(
     cloned: bool,
     local: bool,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    build(payload, cloned, local, false)
+    build(payload, cloned, local, OperandKind::Plain)
 }
 
 pub(in crate::data_ownership_v1) fn nested_fixture(
     cloned: bool,
     local: bool,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    build(Payload::String, cloned, local, true)
+    build(Payload::String, cloned, local, OperandKind::Array)
+}
+
+pub(in crate::data_ownership_v1) fn call_fixture(
+    cloned: bool,
+    local: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    build(Payload::String, cloned, local, OperandKind::Call)
+}
+
+#[derive(Clone, Copy)]
+enum OperandKind {
+    Plain,
+    Array,
+    Call,
 }
 
 fn build(
     payload: Payload,
     cloned: bool,
     local: bool,
-    nested: bool,
+    operand: OperandKind,
 ) -> (String, RawProjectSyntaxSnapshot) {
+    let nested = !matches!(operand, OperandKind::Plain);
+    let call = matches!(operand, OperandKind::Call);
     let mut builder = Builder::default();
     let mut declarations = builder.payload_declaration(payload).into_iter().collect::<Vec<_>>();
     if !declarations.is_empty() {
@@ -193,7 +211,7 @@ fn build(
         builder.text(" ");
         let equals_span = builder.text("=");
         builder.text(" ");
-        let initializer = builder.match_operand(cloned, nested);
+        let initializer = builder.match_operand(cloned, nested, call);
         let semicolon_span = builder.text(";");
         RawStatementKind::LocalDeclaration {
             keyword_span,
@@ -207,7 +225,7 @@ fn build(
     } else {
         let keyword_span = builder.text("return");
         builder.text(" ");
-        let value = builder.match_operand(cloned, nested);
+        let value = builder.match_operand(cloned, nested, call);
         let semicolon_span = builder.text(";");
         RawStatementKind::Return { keyword_span, value, semicolon_span }
     };
@@ -235,10 +253,14 @@ fn build(
                 close_brace_span,
                 statements: if local { vec![0, 1] } else { vec![0] },
             }],
-            statements: builder.statements,
-            expressions: builder.expressions,
+            statements: std::mem::take(&mut builder.statements),
+            expressions: std::mem::take(&mut builder.expressions),
         },
     };
+    let mut functions = vec![function];
+    if call {
+        functions.push(builder.match_callee());
+    }
     (
         builder.text,
         RawProjectSyntaxSnapshot {
@@ -249,7 +271,7 @@ fn build(
                 imports: Vec::new(),
                 type_syntax: builder.types,
                 data_declarations: declarations,
-                functions: vec![function],
+                functions,
             }],
             diagnostics: Vec::new(),
         },

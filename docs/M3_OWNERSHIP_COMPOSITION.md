@@ -167,12 +167,18 @@ scrutinees use a compiler-private initialized temporary: each arm restores its o
 SSA value through exclusive `BeginBorrow`/`BorrowWrite`/`EndBorrow`, so ordinary verifier refinement
 rules admit the join without owner effects. Mixed Struct/Enum/Array/Vec scope graphs and checked
 value/place/transition/cleanup exact, first-extra, overflow and pristine recovery have focused tests.
-Rejected CFG preparation restores its full source planning checkpoint. This is not #279 completion:
+Structured functions are planned once in independent compiler-owned scratch state, sharing immutable
+syntax/layout/catalog authority and staging diagnostics. Rejection leaves the original untouched;
+accepted private state is published once after graph/resource checks, with mandatory full-program
+IR verification still required before producing `VerifiedProgram`.
 `structured_constructor.rs` now carries the existing affine constructor commit reservation and
 ordered SSA operands through matches nested in Struct/Enum/FixedArray constructors. Earlier owned
 operands remain pending during arm failures and transfer only at the exact typed constructor commit.
-The nested FixedArray fixture repeats the same checked-resource/recovery matrix. Fallible Vec/call
-frames and String/indexed read scopes are not yet resumable; the complete C7 interaction matrix and
+`structured_call.rs` carries the same result reservation through ordered internal value arguments,
+then derives exact CallTrap cleanup from reconciled post-argument owners in scratch, transferring
+owned arguments before the call cleanup. Nested FixedArray and two-function call fixtures repeat
+the checked-resource/recovery matrix. This is not #279 completion: fallible Vec frames,
+String/indexed read scopes, the complete C7 interaction matrix and
 independent hostile evidence remain; no source handle or runtime-execution support is claimed.
 
 ## C8: Upgrade-success edge signature

@@ -17,6 +17,28 @@ struct ConstructorFrame {
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
+    pub(super) fn structured_operand(
+        &mut self,
+        id: u32,
+        ty: Ty,
+        graph: &mut StructuredGraph,
+    ) -> Option<raw::ValueId> {
+        use zryna_syntax::v4::RawExpressionKind;
+        let expression = self.expression(id)?;
+        if graph.contains_match(expression.span.start, expression.span.end) {
+            match expression.kind {
+                RawExpressionKind::Call { .. } => return self.structured_call(id, ty, graph),
+                RawExpressionKind::StructConstruction { .. }
+                | RawExpressionKind::EnumConstruction { .. }
+                | RawExpressionKind::FixedArrayConstruction { .. } => {
+                    return self.structured_constructor(id, ty, graph);
+                }
+                _ => {}
+            }
+        }
+        self.value(id, ty)
+    }
+
     fn structured_constructor_frame(&mut self, id: u32, ty: Ty) -> Option<ConstructorFrame> {
         let mut decisions = ExpressionDecisions {
             input: self.input,

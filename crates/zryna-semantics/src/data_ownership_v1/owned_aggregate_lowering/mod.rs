@@ -48,6 +48,7 @@ mod resource_decisions;
 mod shape;
 mod state;
 mod statements;
+mod structured_call;
 mod structured_cfg;
 mod structured_checkpoint;
 mod structured_constructor;

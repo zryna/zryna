@@ -1,6 +1,86 @@
 use super::*;
 
 #[test]
+fn structured_match_call_missing_target_rejects_before_argument_effects_and_replays() {
+    let (mut text, mut raw) = structured_owned_fixture::call_match_fixture(true, true);
+    let expression = raw.files[0].functions[0]
+        .body
+        .expressions
+        .iter_mut()
+        .find(|expression| {
+            matches!(expression.kind, zryna_syntax::v4::RawExpressionKind::Call { .. })
+        })
+        .expect("internal call");
+    let zryna_syntax::v4::RawExpressionKind::Call { callee, .. } = &mut expression.kind else {
+        unreachable!("selected call")
+    };
+    let at = callee.span;
+    text.replace_range(at.start as usize..at.end as usize, "unknown");
+    callee.text = "unknown".into();
+    let sources = sources_for(&text);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated unresolved call");
+    let first = lower(pair_input(&syntax, &sources)).expect_err("missing target rejected");
+    assert_eq!(first, lower(pair_input(&syntax, &sources)).expect_err("deterministic rejection"));
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].code(), "ZRYNA-M3002");
+    assert_eq!(first[0].primary_span(), Some(span(&sources, at)));
+    assert_eq!(first[0].message(), "function 'unknown' is not declared in this module");
+    assert_eq!(first[0].guidance(), "call one exact private same-module function");
+}
+
+#[test]
+fn structured_match_call_retains_arguments_until_complete_then_transfers_before_trap() {
+    for cloned in [false, true] {
+        for local in [false, true] {
+            let (text, raw) = structured_owned_fixture::call_match_fixture(cloned, local);
+            let sources = sources_for(&text);
+            let syntax = verify_snapshot(raw, &sources)
+                .expect("authenticated private call with argument match");
+            let program = lower(pair_input(&syntax, &sources)).expect("structured call verifies");
+            let function = program
+                .verified_ir()
+                .modules()
+                .next()
+                .expect("module")
+                .functions()
+                .next()
+                .expect("caller");
+            let blocks = function.blocks().collect::<Vec<_>>();
+            assert_eq!(blocks.len(), 4);
+            let first = blocks[0].instructions().next().expect("first String argument");
+            assert_eq!(first.kind(), VerifiedInstructionKind::StringFromUtf8);
+            let call = blocks[3].instructions().next().expect("call after complete match");
+            assert_eq!(call.kind(), VerifiedInstructionKind::DirectCall);
+            assert_eq!(
+                call.value_operands().collect::<Vec<_>>(),
+                vec![
+                    first.result().expect("first argument"),
+                    blocks[3].parameters().next().expect("joined second argument").id()
+                ]
+            );
+            assert_eq!(call.derived_drop_actions().len(), 0);
+            if cloned {
+                for arm in &blocks[1..3] {
+                    assert_eq!(
+                        arm.instructions()
+                            .next()
+                            .expect("fallible second argument")
+                            .derived_drop_actions()
+                            .len(),
+                        2
+                    );
+                }
+            }
+            let replay = lower(pair_input(&syntax, &sources)).expect("deterministic call replay");
+            assert_eq!(
+                format!("{:?}", program.verified_ir()),
+                format!("{:?}", replay.verified_ir())
+            );
+        }
+    }
+}
+
+#[test]
 fn structured_match_constructor_retains_earlier_operand_across_continuation() {
     for cloned in [false, true] {
         for local in [false, true] {

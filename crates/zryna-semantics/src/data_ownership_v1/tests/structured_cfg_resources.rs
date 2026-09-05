@@ -3,7 +3,7 @@ use super::super::structured_checkpoint::StructuredCheckpoint;
 use super::*;
 use crate::data_ownership_v1::Binding;
 use crate::data_ownership_v1::tests::structured_owned_fixture::{
-    Payload, match_fixture, nested_match_fixture,
+    Payload, call_match_fixture, match_fixture, nested_match_fixture,
 };
 use zryna_ir::data_ownership_v1 as ir;
 
@@ -40,13 +40,13 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> raw::Val
 
 #[test]
 fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
-    for nested in [false, true] {
-        for resource in 0..4 {
+    for shape in 0..3 {
+        for resource in 0..5 {
             for extra in [0, 1, usize::MAX] {
-                let (source, snapshot) = if nested {
-                    nested_match_fixture(true, true)
-                } else {
-                    match_fixture(Payload::Struct, true, true)
+                let (source, snapshot) = match shape {
+                    0 => match_fixture(Payload::Struct, true, true),
+                    1 => nested_match_fixture(true, true),
+                    _ => call_match_fixture(true, true),
                 };
                 let errors = with_snapshot(&source, snapshot, |lowerer, result| {
                     let parameter = parameter(lowerer);
@@ -59,6 +59,7 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                         lowerer.places.len(),
                         lowerer.instructions.len() + pristine.len(),
                         lowerer.cleanup_actions,
+                        lowerer.cleanup_plans.len(),
                     ];
                     initial.restore(lowerer);
                     let maximum = [
@@ -66,6 +67,7 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                         ir::MAX_PLACES_PER_FUNCTION,
                         ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION,
                         ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+                        ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
                     ][resource];
                     let held =
                         if extra == usize::MAX { extra } else { maximum - used[resource] + extra };
@@ -74,7 +76,8 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                         1 => lowerer.set_reserved_constructor_places_for_test(held),
                         2 => lowerer.reserved_transitions = held,
                         3 => lowerer.preparation_facts.held_cleanup[1] = held,
-                        _ => unreachable!("four resources"),
+                        4 => lowerer.preparation_facts.held_cleanup[0] = held,
+                        _ => unreachable!("five resources"),
                     }
                     let before = format!(
                         "{:?}",
@@ -111,7 +114,7 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                         lowerer.set_reserved_constructor_values_for_test(0);
                         lowerer.set_reserved_constructor_places_for_test(0);
                         lowerer.reserved_transitions = 0;
-                        lowerer.preparation_facts.held_cleanup[1] = 0;
+                        lowerer.preparation_facts.held_cleanup = [0, 0];
                         assert_eq!(
                             lowerer.lower_structured_cfg(&[parameter], result),
                             Some(pristine),
