@@ -120,3 +120,25 @@ fn constructor_preparation_types_empty_and_effect_only_snapshots_keep_dense_zero
     assert_eq!(snapshot.checkpoint(), (1, 3));
     assert_eq!(live, ConstructorValueTypes::default());
 }
+
+#[test]
+fn constructor_preparation_types_predicted_effects_preserve_dense_values_and_checked_cursor() {
+    let mut cache = ConstructorValueTypes::default();
+    cache.append_predicted(raw::ValueId(0), raw::TypeId(7), 0).expect("first value");
+    let before = copy(&cache);
+    for index in [0, 2] {
+        assert_eq!(cache.append_predicted_effect(index), Err(ConstructorPlanError::WrongShape));
+        assert_eq!(cache, before);
+    }
+    cache.append_predicted_effect(1).expect("borrow begin effect");
+    cache.append_predicted(raw::ValueId(1), raw::TypeId(7), 2).expect("clone result after begin");
+    cache.append_predicted_effect(3).expect("borrow end effect");
+    cache.append_predicted(raw::ValueId(2), raw::TypeId(9), 4).expect("next constructor child");
+    assert_eq!(cache.checkpoint(), (3, 5));
+    assert_eq!(cache.get(raw::ValueId(1)), Some(raw::TypeId(7)));
+    let mut overflow =
+        ConstructorValueTypes { types: vec![raw::TypeId(7)], scanned_instructions: usize::MAX };
+    let before = copy(&overflow);
+    assert_eq!(overflow.append_predicted_effect(usize::MAX), Err(ConstructorPlanError::WrongShape));
+    assert_eq!(overflow, before);
+}

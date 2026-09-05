@@ -64,10 +64,15 @@ ordinal; it is never a target-language property lookup.
 
 An enum constructor names one exact variant and supplies exactly its declared payload shape. A
 match evaluates its scrutinee once, lists every variant exactly once, and makes a payload binding
-available only in the active payload arm. Arm result types must agree exactly. This Issue #79 gate
-admits match only as the returned expression of a single-statement internal function, with each arm
-producing a scalar literal, parameter, or active payload binding. General nested match expressions,
-aggregate-valued arms, and shared continuation blocks remain unavailable.
+available only in the active payload arm. Arm result types must agree exactly. The bounded
+Issue #273 Copy extension retains a parameter-reference scrutinee and match as the returned
+expression of a single-statement internal function. Each terminal arm may use the existing Copy
+expression lowerer: scalar operations, exact Copy constructors and static projections, and private
+Copy calls. Copy aggregate-valued arms are admitted without owner transfer or a shared continuation.
+Derived-value preflight sums every arm's expression cost; values, places, and site-bound call/return
+cleanup plans retain dense function-wide identities. General nested or nonterminal matches,
+owned arm-result joins, and broader active owned-payload extraction remain outside this slice.
+The separate narrow owned-payload exception below is unchanged; this does not complete Issue #273.
 
 Fixed-array construction evaluates elements in ascending index order. Issue #79 deliberately
 admits only a compile-time constant index satisfying `0 <= index < N`; negative, nonconstant,

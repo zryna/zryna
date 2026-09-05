@@ -91,6 +91,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.instructions.len().saturating_add(self.reserved_transitions)
     }
 
+    #[cfg(test)]
+    pub(super) fn set_reserved_constructor_values_for_test(&mut self, values: usize) {
+        self.constructor_storage.values = values;
+    }
+
+    #[cfg(test)]
+    pub(super) fn set_reserved_constructor_places_for_test(&mut self, places: usize) {
+        self.constructor_storage.places = places;
+    }
+
     pub(super) fn constructor_storage_is_clear(&self) -> bool {
         self.constructor_storage == ConstructorStorage::default()
     }

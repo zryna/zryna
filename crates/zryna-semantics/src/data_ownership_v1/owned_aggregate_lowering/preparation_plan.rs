@@ -13,19 +13,32 @@ use super::projection_topology::ProjectionDescriptor;
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub(super) struct PreparationFacts {
+    pub(super) parameter_borrows: BTreeSet<raw::BorrowId>,
+    pub(super) aliases: BTreeMap<String, LexicalAlias>,
     pub(super) next_borrow: u32,
     pub(super) active_borrows: BTreeMap<raw::BorrowId, (raw::PlaceId, raw::BorrowAccess)>,
     pub(super) held_cleanup: [usize; 2],
     pub(super) string_bytes: BTreeMap<raw::PlaceId, u64>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct LexicalAlias {
+    pub(super) borrow: raw::BorrowId,
+    pub(super) ty: Ty,
+    pub(super) access: raw::BorrowAccess,
+}
+
 impl PreparationFacts {
+    pub(super) fn borrow_active(&self, id: raw::BorrowId) -> bool {
+        self.parameter_borrows.contains(&id) || self.active_borrows.contains_key(&id)
+    }
     pub(super) fn apply(&mut self, delta: OwnerDelta) {
         super::super::owner_state::apply_owner_delta(&mut self.string_bytes, delta);
     }
 }
 
 pub(super) enum Leaf<'f> {
+    BorrowRead(raw::BorrowId),
     IndexedCopy {
         source: raw::PlaceId,
         index: raw::ValueId,
@@ -100,6 +113,10 @@ pub(super) enum Operation<'f> {
     },
     IndexedExit,
     IndexedEffect(raw::InstructionKind),
+    IndexedCopyStorage {
+        place: raw::PlaceId,
+        value: raw::ValueId,
+    },
     GenericClonePrefix {
         id: raw::CleanupPlanId,
         owner: raw::PlaceId,
@@ -117,7 +134,7 @@ pub(super) enum Operation<'f> {
     CallEnter {
         signature: CallSignature,
         end: usize,
-        arguments: Vec<raw::ValueId>,
+        arguments: Vec<raw::CallArgument>,
     },
     CallTransfer {
         value: raw::ValueId,
@@ -126,7 +143,7 @@ pub(super) enum Operation<'f> {
     CallRelease,
     CallCommit {
         signature: CallSignature,
-        arguments: Vec<raw::ValueId>,
+        arguments: Vec<raw::CallArgument>,
         cleanup: raw::CleanupPlanId,
     },
     StringEnter {
@@ -180,6 +197,31 @@ pub(super) struct CallSignature {
     pub(super) arity: usize,
     pub(super) kind: CallKind,
     pub(super) bytes: Option<StringBytes>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum CallParameter {
+    Value(Ty),
+    Borrow { ty: Ty, access: raw::BorrowAccess },
+}
+
+pub(super) fn call_parameters(
+    signature: &super::super::function_catalog::FunctionSignature,
+) -> Vec<CallParameter> {
+    use super::super::function_catalog::FunctionParameterOrder;
+    signature
+        .parameter_order
+        .iter()
+        .map(|parameter| match parameter {
+            FunctionParameterOrder::Value(index) => {
+                CallParameter::Value(signature.parameters[*index as usize])
+            }
+            FunctionParameterOrder::Borrow(index) => {
+                let parameter = signature.borrow_parameters[*index as usize];
+                CallParameter::Borrow { ty: parameter.referent, access: parameter.access }
+            }
+        })
+        .collect()
 }
 
 pub(super) struct Step<'f> {

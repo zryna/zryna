@@ -3,16 +3,17 @@ use zryna_layout::TypeCategory;
 use zryna_source::Span;
 use zryna_syntax::v4 as syntax;
 
+use super::super::super::function_catalog::FunctionSignature;
 use super::super::super::owned_call_resolution::OwnedCallResolution;
 use super::super::super::owner_state::OwnerDelta;
-use super::super::preparation_plan::{CallKind, CallSignature};
+use super::super::preparation_plan::{CallKind, CallParameter, CallSignature, call_parameters};
 use super::{Frame, Operation, PreparationContext, Ty};
 
 pub(super) struct CallFrame {
     pub(super) signature: CallSignature,
     pub(super) inputs: Vec<u32>,
-    pub(super) parameters: Vec<Ty>,
-    pub(super) values: Vec<raw::ValueId>,
+    pub(super) parameters: Vec<CallParameter>,
+    pub(super) values: Vec<raw::CallArgument>,
     pub(super) at: Span,
     pub(super) start: usize,
     pub(super) next: usize,
@@ -21,6 +22,34 @@ pub(super) struct CallFrame {
 }
 
 impl<'f> PreparationContext<'_, 'f, '_, '_> {
+    pub(super) fn call_borrow_argument(
+        &mut self,
+        id: u32,
+        ty: Ty,
+        access: raw::BorrowAccess,
+    ) -> Option<raw::BorrowId> {
+        let expression = self.decisions.function.body.expressions.get(id as usize)?;
+        let alias = if let syntax::RawExpressionKind::Reference { name } = &expression.kind {
+            self.state.facts.aliases.get(&name.text).copied()
+        } else {
+            None
+        };
+        if let Some(alias) = alias
+            && alias.ty == ty
+            && alias.access == access
+            && self.state.facts.borrow_active(alias.borrow)
+        {
+            return Some(alias.borrow);
+        }
+        self.decisions.errors.at(
+            "ZRYNA-M3017",
+            super::super::super::diagnostics::span(self.decisions.input.sources(), expression.span),
+            "call argument requires a live borrow alias with exact referent and access",
+            "pass a matching lexical or call-frame borrow without moving or reborrowing it",
+        );
+        None
+    }
+
     fn call_kind(&mut self, ty: Ty, at: Span) -> Option<CallKind> {
         Some(match ty.category {
             TypeCategory::String => CallKind::String,
@@ -78,7 +107,8 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         let ty = expected.or_else(|| inferred.as_ref().map(|signature| signature.result))?;
         let mut kind = self.call_kind(ty, at)?;
         if inferred.as_ref().is_some_and(|signature| {
-            signature.parameters.len() > 1
+            signature.has_borrow_parameters()
+                || signature.parameters.len() > 1
                 || signature.parameters.iter().any(|parameter| *parameter != ty)
         }) {
             kind = CallKind::Generic;
@@ -95,14 +125,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             (CallKind::String, None) => resolver.string(ty, callee),
             (CallKind::Vec, None) => resolver.vec(ty, callee, ty),
             (CallKind::Generic, Some(signature)) => {
-                if !signature.private
-                    || signature.has_borrow_parameters()
-                    || signature.result != ty
-                    || !super::super::mixed_shape::supported(ty, self.decisions.layouts)
-                    || signature.parameters.iter().any(|parameter| {
-                        !super::super::mixed_shape::supported(*parameter, self.decisions.layouts)
-                    })
-                {
+                if !generic_signature_supported(&signature, ty, self.decisions.layouts) {
                     resolver.errors.at(
                         "ZRYNA-M3016",
                         at,
@@ -118,11 +141,11 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         self.validate_call_arity(
             kind,
             &signature.name,
-            signature.parameters.len(),
+            signature.parameter_order.len(),
             arguments.len(),
             at,
         )?;
-        let parameters = signature.parameters.clone();
+        let parameters = call_parameters(&signature);
         let signature = CallSignature {
             id: signature.id,
             result: signature.result,
@@ -131,7 +154,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             } else {
                 signature.parameters.first().copied()
             },
-            arity: signature.parameters.len(),
+            arity: signature.parameter_order.len(),
             kind,
             bytes: (kind == CallKind::String)
                 .then_some(super::super::super::owned_string_read::StringBytes::Unknown),
@@ -185,7 +208,30 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
 
     pub(super) fn finish_call(&mut self, frame: CallFrame) -> Option<raw::ValueId> {
         let ty = frame.signature.result;
-        for (&value, parameter) in frame.values.iter().zip(&frame.parameters) {
+        let mut exclusive = std::collections::BTreeSet::new();
+        for (argument, parameter) in frame.values.iter().zip(&frame.parameters) {
+            if let (
+                raw::CallArgument::Borrow(borrow),
+                CallParameter::Borrow { access: raw::BorrowAccess::Exclusive, .. },
+            ) = (argument, parameter)
+                && !exclusive.insert(*borrow)
+            {
+                self.decisions.errors.at(
+                    "ZRYNA-M3017",
+                    frame.at,
+                    "call repeats one exclusive borrow authority",
+                    "pass each exclusive authority at most once per call",
+                );
+                return None;
+            }
+        }
+        for (argument, parameter) in frame.values.iter().zip(&frame.parameters) {
+            let (raw::CallArgument::Value(value), CallParameter::Value(parameter)) =
+                (argument, parameter)
+            else {
+                continue;
+            };
+            let value = *value;
             if parameter.is_copy() {
                 continue;
             }
@@ -225,4 +271,17 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         *arguments = frame.values;
         Some(emission.value)
     }
+}
+
+fn generic_signature_supported(
+    signature: &FunctionSignature,
+    ty: Ty,
+    layouts: &zryna_layout::VerifiedLayouts,
+) -> bool {
+    signature.private
+        && signature.result == ty
+        && std::iter::once(ty)
+            .chain(signature.parameters.iter().copied())
+            .chain(signature.borrow_parameters.iter().map(|parameter| parameter.referent))
+            .all(|ty| super::super::mixed_shape::supported(ty, layouts))
 }

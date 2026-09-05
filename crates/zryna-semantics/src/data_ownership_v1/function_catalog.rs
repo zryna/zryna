@@ -82,6 +82,24 @@ impl FunctionCatalog {
             FunctionResolution::Missing
         }
     }
+
+    pub(super) fn admits(&self, module: usize, id: raw::FunctionId) -> bool {
+        self.modules.get(module).is_some_and(|signatures| {
+            signatures.iter().flatten().any(|candidate| candidate.id == id)
+        })
+    }
+
+    pub(super) fn bind_import(&mut self, module: usize, name: String, target: &FunctionSignature) {
+        let mut alias = target.clone();
+        alias.name = name;
+        self.modules[module].push(Some(alias));
+    }
+
+    pub(super) fn callable_names(&self, module: usize) -> impl Iterator<Item = &str> {
+        self.modules.get(module).into_iter().flat_map(|signatures| {
+            signatures.iter().flatten().map(|signature| signature.name.as_str())
+        })
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -147,16 +165,6 @@ fn function_parameters(
         if let Some(access) = access {
             has_resolved_borrow = true;
             let at = span(input.sources(), syntax.span);
-            if !ty.is_copy() {
-                errors.at(
-                    "ZRYNA-M3016",
-                    at,
-                    "borrow parameters require one direct Copy referent",
-                    "borrow bool, i32, or a recursively Copy aggregate type",
-                );
-                valid = false;
-                continue;
-            }
             let index = u32::try_from(borrow_parameters.len()).unwrap_or(u32::MAX);
             borrow_parameters.push(FunctionBorrowParameter { referent: ty, access, span: at });
             parameter_order.push(FunctionParameterOrder::Borrow(index));
@@ -261,18 +269,19 @@ pub(super) fn build_function_catalog(
                 node_types,
                 errors,
             );
+            let id = raw::FunctionId {
+                module: raw::ModuleId(u32::try_from(module).unwrap_or(u32::MAX)),
+                declaration: u32::try_from(declaration).unwrap_or(u32::MAX),
+            };
             signatures.push(parameters.zip(result).map(
                 |((parameters, borrow_parameters, parameter_order), result)| FunctionSignature {
-                    id: raw::FunctionId {
-                        module: raw::ModuleId(u32::try_from(module).unwrap_or(u32::MAX)),
-                        declaration: u32::try_from(declaration).unwrap_or(u32::MAX),
-                    },
+                    id,
                     name: function.name.text.clone(),
                     parameters,
                     borrow_parameters,
                     parameter_order,
                     result,
-                    private: function.export_span.is_none(),
+                    private: function.export_span.is_none() || file.id() != input.entry(),
                 },
             ));
         }

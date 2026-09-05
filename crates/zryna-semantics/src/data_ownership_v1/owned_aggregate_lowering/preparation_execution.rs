@@ -263,6 +263,10 @@ impl Consumption<'_, '_, '_, '_> {
                 effects = self.vec_push(vector, value, cleanup, step.ty, step.at);
                 None
             }
+            Operation::IndexedCopyStorage { place, value } => {
+                self.indexed_copy_storage(place, value, step.ty, step.at);
+                None
+            }
             operation @ (Operation::IndexedEnter { .. }
             | Operation::IndexedExit
             | Operation::IndexedEffect(_)) => {
@@ -348,8 +352,22 @@ impl Consumption<'_, '_, '_, '_> {
         value
     }
 
+    fn indexed_copy_storage(&mut self, place: raw::PlaceId, value: raw::ValueId, ty: Ty, at: Span) {
+        assert!(ty.is_copy());
+        assert_eq!(place.0 as usize, self.lowerer.places.len());
+        self.lowerer.places.push(raw::Place {
+            id: place,
+            ty: ty.ir,
+            span: at,
+            kind: raw::PlaceKind::Temporary(value),
+        });
+        self.lowerer
+            .emit_prepared_effect(at, raw::InstructionKind::InitializePlace { place, value });
+    }
+
     fn record_result(&mut self, index: usize, value: raw::ValueId, ty: Ty) {
-        if !self.indexed.outward(index, self.open.len()) {
+        let consumer = self.scalars.start().max(self.calls.start()).max(self.strings.start());
+        if !self.indexed.outward(index, self.open.len(), consumer) {
             return;
         }
         let outward = if self.scalars.start() > self.calls.start().max(self.strings.start()) {

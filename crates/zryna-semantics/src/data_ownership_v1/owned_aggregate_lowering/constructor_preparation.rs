@@ -35,6 +35,9 @@ mod contextual_local_routing;
 #[path = "preparation_execution.rs"]
 mod execution;
 #[cfg(test)]
+#[path = "../tests/named_import_resources.rs"]
+mod named_import_resources;
+#[cfg(test)]
 #[path = "../tests/mixed_optional_string_bytes.rs"]
 mod optional_string_bytes;
 #[cfg(test)]
@@ -167,9 +170,8 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         frames: &mut Vec<Frame<'f>>,
     ) -> Option<VisitOutcome> {
         self.visits = self.visits.checked_add(1)?;
-        if self.state.summary
-            && let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-                self.indexed_read(id, expected)?
+        if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+            self.prepared_observation(id, expected)?
         {
             return Some(VisitOutcome::Value(value));
         }
@@ -265,6 +267,28 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         Some(VisitOutcome::Value(value?))
     }
 
+    fn prepared_observation(
+        &mut self,
+        id: u32,
+        expected: Option<Ty>,
+    ) -> Option<super::indexed_vec_preparation::IndexedObservation> {
+        if self.state.summary {
+            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+                self.lexical_alias_read(id, expected)?
+            {
+                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
+            }
+            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
+                self.indexed_read(id, expected)?
+            {
+                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
+            }
+        }
+        Some(super::indexed_vec_preparation::IndexedObservation::Unselected)
+    }
+
+    // Keep the iterative frame dispatcher together so result handoff order stays explicit.
+    #[allow(clippy::too_many_lines)]
     pub(super) fn walk(&mut self, id: u32, expected: Ty) -> Option<raw::ValueId> {
         let mut frames = vec![Frame::Visit(id, Some(expected))];
         let mut result = None;
@@ -280,14 +304,24 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 }
                 Frame::Call(mut frame) => {
                     if frame.waiting {
-                        frame.values.push(result.take()?);
+                        frame.values.push(raw::CallArgument::Value(result.take()?));
+                        frame.waiting = false;
                     }
                     if let Some(&id) = frame.inputs.get(frame.next) {
-                        let ty = *frame.parameters.get(frame.next)?;
+                        let parameter = *frame.parameters.get(frame.next)?;
                         frame.next += 1;
-                        frame.waiting = true;
-                        frames.push(Frame::Call(frame));
-                        frames.push(Frame::Visit(id, Some(ty)));
+                        match parameter {
+                            super::preparation_plan::CallParameter::Value(ty) => {
+                                frame.waiting = true;
+                                frames.push(Frame::Call(frame));
+                                frames.push(Frame::Visit(id, Some(ty)));
+                            }
+                            super::preparation_plan::CallParameter::Borrow { ty, access } => {
+                                let borrow = self.call_borrow_argument(id, ty, access)?;
+                                frame.values.push(raw::CallArgument::Borrow(borrow));
+                                frames.push(Frame::Call(frame));
+                            }
+                        }
                     } else {
                         result = Some(self.finish_call(frame)?);
                     }
@@ -418,8 +452,18 @@ mod generic_static_resources;
 #[path = "../tests/generic_vec_resources.rs"]
 mod generic_vec_resources;
 #[cfg(test)]
+#[path = "../tests/lexical_indexed_resources.rs"]
+mod lexical_indexed_resources;
+#[cfg(test)]
 #[path = "../tests/local_tail_supplement_controls.rs"]
 mod local_tail_supplement_controls;
 #[cfg(test)]
 #[path = "../tests/mixed_root_replacement_controls.rs"]
 mod mixed_root_replacement_controls;
+#[cfg(test)]
+#[path = "../tests/ordinary_array_composition_resources.rs"]
+mod ordinary_array_composition_resources;
+
+#[cfg(test)]
+#[path = "../tests/ordinary_array_clone_base_resources.rs"]
+mod ordinary_array_clone_base_resources;

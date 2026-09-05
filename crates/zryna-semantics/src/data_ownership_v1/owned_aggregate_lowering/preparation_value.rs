@@ -9,6 +9,8 @@ use crate::data_ownership_v1::diagnostics::span;
 
 #[derive(Clone, Copy)]
 enum PreparationSite {
+    LexicalBegin { target: u32, referent: Ty, write: bool },
+    LexicalReplacement { alias: super::super::preparation_plan::LexicalAlias },
     StaticReplacement { target: u32, at: super::Span },
     Push { vector: u32, at: super::Span },
     RootTopology,
@@ -18,6 +20,28 @@ enum PreparationSite {
 }
 
 impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_lexical_begin(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        target: u32,
+        referent: Ty,
+        write: bool,
+        integer: Ty,
+    ) -> Option<Self> {
+        Self::prepare_at(
+            lowerer,
+            target,
+            integer,
+            PreparationSite::LexicalBegin { target, referent, write },
+        )
+    }
+
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_lexical_replacement(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        value: u32,
+        alias: super::super::preparation_plan::LexicalAlias,
+    ) -> Option<Self> {
+        Self::prepare_at(lowerer, value, alias.ty, PreparationSite::LexicalReplacement { alias })
+    }
     pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_static_replacement(
         lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
         target: u32,
@@ -125,7 +149,20 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             steps: Vec::new(),
             visits: 0,
         };
+        if let PreparationSite::Replacement { target } = site {
+            let at = span(
+                lowerer.input.sources(),
+                lowerer.function.body.expressions.get(id as usize)?.span,
+            );
+            context.check_access(target, false, at)?;
+        }
         let result = match site {
+            PreparationSite::LexicalBegin { target, referent, write } => {
+                context.lexical_begin(target, referent, write)?
+            }
+            PreparationSite::LexicalReplacement { alias } => {
+                context.lexical_replacement(alias, id)?
+            }
             PreparationSite::IndexedReplacement { target } => {
                 context.indexed_replacement(target, id, expected)?
             }
@@ -135,6 +172,13 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             }
             _ => context.walk(id, expected)?,
         };
+        if let PreparationSite::Replacement { target } = site {
+            let at = span(
+                context.decisions.input.sources(),
+                context.decisions.function.body.expressions.get(id as usize)?.span,
+            );
+            context.check_access(target, false, at)?;
+        }
         let mut plan = PreparationPlan {
             start,
             steps: context.steps,
@@ -149,21 +193,31 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             facts: context.state.facts,
         };
         if let PreparationSite::Replacement { target } = site {
-            let mut owners = plan.owners.clone();
-            if plan.partial.contains(&target) || owners.replace(result, target).is_none() {
-                lowerer.errors.at(
-                    "ZRYNA-M3014",
-                    span(lowerer.input.sources(), lowerer.function.body.expressions.get(id as usize)?.span),
-                    "owned aggregate assignment cannot consume its destination while preparing its replacement",
-                    "clone the destination or prepare a distinct aggregate value before replacement",
-                );
-                return None;
-            }
+            Self::validate_replacement(lowerer, &plan, target, id)?;
         }
         if summary {
             resource_replay::validate(&mut plan, lowerer.layouts, lowerer.errors)?;
         }
         Some(Self { lowerer, plan })
+    }
+
+    fn validate_replacement(
+        lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
+        plan: &PreparationPlan<'_>,
+        target: zryna_ir::data_ownership_v1::raw::PlaceId,
+        id: u32,
+    ) -> Option<()> {
+        let mut owners = plan.owners.clone();
+        if plan.partial.contains(&target) || owners.replace(plan.result, target).is_none() {
+            lowerer.errors.at(
+                "ZRYNA-M3014",
+                span(lowerer.input.sources(), lowerer.function.body.expressions.get(id as usize)?.span),
+                "owned aggregate assignment cannot consume its destination while preparing its replacement",
+                "clone the destination or prepare a distinct aggregate value before replacement",
+            );
+            return None;
+        }
+        Some(())
     }
 }
 
@@ -174,7 +228,9 @@ impl PreparationSite {
         expected: Ty,
     ) -> mixed_shape::PreparationRoute {
         match self {
-            Self::IndexedReplacement { .. }
+            Self::LexicalBegin { .. }
+            | Self::LexicalReplacement { .. }
+            | Self::IndexedReplacement { .. }
             | Self::Push { .. }
             | Self::StaticReplacement { .. } => mixed_shape::PreparationRoute::MixedSummary,
             Self::RootTopology | Self::Replacement { .. } => {

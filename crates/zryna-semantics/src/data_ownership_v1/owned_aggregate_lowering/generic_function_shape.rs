@@ -16,8 +16,30 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     node_types: &[Option<Ty>],
     layouts: &VerifiedLayouts,
 ) -> bool {
-    if !signature.private || signature.has_borrow_parameters() {
+    if !signature.private {
         return false;
+    }
+    // A dependency export grants module visibility, not public entry ABI authority.
+    if function.export_span.is_some() {
+        return true;
+    }
+    if super::has_nonindexed_owned_borrow(
+        function,
+        file,
+        signature.id.module.0 as usize,
+        declarations,
+        node_types,
+    ) {
+        return true;
+    }
+    if signature.has_borrow_parameters() {
+        return super::has_indexed_borrow(function)
+            || signature.borrow_parameters.iter().any(|parameter| !parameter.referent.is_copy())
+            || signature.parameters.iter().any(|ty| !ty.is_copy())
+            || !signature.result.is_copy();
+    }
+    if super::has_indexed_borrow(function) {
+        return true;
     }
     if super::mixed_shape::requires_summary(signature.result, layouts)
         || signature.parameters.iter().any(|ty| !ty.is_copy() && *ty != signature.result)
@@ -39,6 +61,15 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
         .iter()
         .any(|expression| matches!(expression.kind, RawExpressionKind::Index { .. }));
     if has_index && signature.parameters.iter().any(|ty| ty.category == TypeCategory::Vec) {
+        return true;
+    }
+    if checked_array_shape(function, signature, file, layouts) {
+        return true;
+    }
+    if indexed_container_call_base(function, signature.id.module.0 as usize, catalog) {
+        return true;
+    }
+    if indexed_constructor_base(function) {
         return true;
     }
     if generic_call(function, signature.id.module.0 as usize, catalog, layouts) {
@@ -85,6 +116,36 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     })
 }
 
+fn indexed_constructor_base(function: &RawFunctionSyntax) -> bool {
+    function.body.expressions.iter().any(|expression| {
+        let RawExpressionKind::Index { base, .. } = expression.kind else { return false };
+        function.body.expressions.get(base as usize).is_some_and(|base| {
+            matches!(
+                base.kind,
+                RawExpressionKind::FixedArrayConstruction { .. }
+                    | RawExpressionKind::VecConstruction { .. }
+            )
+        })
+    })
+}
+
+fn indexed_container_call_base(
+    function: &RawFunctionSyntax,
+    module: usize,
+    catalog: &FunctionCatalog,
+) -> bool {
+    function.body.expressions.iter().any(|expression| {
+        let RawExpressionKind::Index { base, .. } = expression.kind else { return false };
+        let Some(base) = function.body.expressions.get(base as usize) else { return false };
+        let RawExpressionKind::Call { callee, .. } = &base.kind else { return false };
+        let FunctionResolution::Exact(callee) = catalog.resolve(module, &callee.text) else {
+            return false;
+        };
+        callee.private
+            && matches!(callee.result.category, TypeCategory::FixedArray | TypeCategory::Vec)
+    })
+}
+
 fn generic_call(
     function: &RawFunctionSyntax,
     module: usize,
@@ -119,5 +180,83 @@ fn simple_vec_element(file: &SourceUnit, id: u32) -> bool {
         RawTypeSyntaxKind::Named { name } => matches!(name.text.as_str(), "bool" | "i32"),
         RawTypeSyntaxKind::String { .. } => true,
         _ => false,
+    })
+}
+
+fn checked_array_shape(
+    function: &RawFunctionSyntax,
+    signature: &FunctionSignature,
+    file: &SourceUnit,
+    layouts: &VerifiedLayouts,
+) -> bool {
+    use super::super::function_catalog::FunctionParameterOrder;
+    function.body.expressions.iter().any(|expression| {
+        let RawExpressionKind::Index { base, index, .. } = expression.kind else { return false };
+        let Some(base) = function.body.expressions.get(base as usize) else { return false };
+        let cloned = matches!(base.kind, RawExpressionKind::Clone { .. });
+        let mut base = if let RawExpressionKind::Clone { value, .. } = base.kind {
+            let Some(base) = function.body.expressions.get(value as usize) else { return false };
+            base
+        } else {
+            base
+        };
+        if cloned {
+            while let RawExpressionKind::FieldAccess { base: parent, .. }
+            | RawExpressionKind::Index { base: parent, .. } = base.kind
+            {
+                let Some(parent) = function.body.expressions.get(parent as usize) else {
+                    return false;
+                };
+                base = parent;
+            }
+        }
+        let RawExpressionKind::Reference { name } = &base.kind else { return false };
+        let parameter_type = function
+            .parameters
+            .iter()
+            .zip(&signature.parameter_order)
+            .find(|(parameter, _)| parameter.name.text == name.text)
+            .and_then(|(_, order)| match *order {
+                FunctionParameterOrder::Value(index) => signature.parameters.get(index as usize),
+                FunctionParameterOrder::Borrow(_) => None,
+            });
+        if cloned
+            && parameter_type.is_some_and(|ty| {
+                matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
+            })
+        {
+            return true;
+        }
+        let parameter_length = parameter_type
+            .filter(|ty| ty.category == TypeCategory::FixedArray)
+            .and_then(|ty| layouts.type_by_id(ty.layout))
+            .and_then(zryna_layout::VerifiedType::array_length);
+        let local_type = function.body.statements.iter().find_map(|statement| {
+            let RawStatementKind::LocalDeclaration { name: local, type_syntax, .. } =
+                &statement.kind
+            else {
+                return None;
+            };
+            if local.text != name.text {
+                return None;
+            }
+            file.type_syntax().get(*type_syntax as usize)
+        });
+        if cloned
+            && local_type.is_some_and(|ty| match &ty.kind {
+                RawTypeSyntaxKind::FixedArray { .. } => true,
+                RawTypeSyntaxKind::Named { name } => !matches!(name.text.as_str(), "bool" | "i32"),
+                _ => false,
+            })
+        {
+            return true;
+        }
+        let local_length = local_type.and_then(|ty| match ty.kind {
+            RawTypeSyntaxKind::FixedArray { length, .. } => Some(u64::from(length)),
+            _ => None,
+        });
+        let Some(length) = parameter_length.or(local_length) else { return false };
+        let Some(index) = function.body.expressions.get(index as usize) else { return false };
+        cloned || super::ordinary_indexed_array_preparation::checked_index(&index.kind, length)
     })
 }

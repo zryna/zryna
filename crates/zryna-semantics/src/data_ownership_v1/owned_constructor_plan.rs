@@ -226,6 +226,18 @@ impl ConstructorValueTypes {
         (self.types.len(), self.scanned_instructions)
     }
 
+    pub(super) fn append_predicted_effect(
+        &mut self,
+        instruction_index: usize,
+    ) -> Result<(), ConstructorPlanError> {
+        if instruction_index != self.scanned_instructions {
+            return Err(ConstructorPlanError::WrongShape);
+        }
+        self.scanned_instructions =
+            self.scanned_instructions.checked_add(1).ok_or(ConstructorPlanError::WrongShape)?;
+        Ok(())
+    }
+
     pub(super) fn record_parameter(
         &mut self,
         definition: &raw::ValueDefinition,

@@ -95,18 +95,23 @@ fn fixed_array_constructor_requires_exact_count_and_element_type() {
 }
 
 #[test]
-fn fixed_array_index_equal_to_length_is_rejected() {
+fn fixed_array_index_equal_to_length_retains_checked_bounds() {
     let sources = sources_for(ARRAY_OOB_SOURCE);
     let syntax = verify_snapshot(response_snapshot(ARRAY_RESPONSE), &sources)
         .expect("source-faithful fixed array v4");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("index N is out of bounds");
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3006");
-    let primary = diagnostics[0].primary_span().expect("index child");
-    assert_eq!((primary.start(), primary.end()), (54, 55));
+    let program =
+        lower(pair_input(&syntax, &sources)).expect("out-of-range access retains runtime bounds");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let begin = block
+        .instructions()
+        .find_map(zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_borrow)
+        .expect("checked begin");
+    assert_eq!(begin.array_length(), Some(2));
 }
 
 #[test]
-fn dynamic_fixed_array_index_is_rejected() {
+fn undeclared_dynamic_fixed_array_index_is_rejected() {
     let mut source = ARRAY_OOB_SOURCE.to_owned();
     source.replace_range(54..55, "x");
     let sources = sources_for(&source);
@@ -118,13 +123,13 @@ fn dynamic_fixed_array_index_is_rejected() {
         };
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful dynamic index");
     let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("dynamic index");
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3006");
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3002");
     let primary = diagnostics[0].primary_span().expect("dynamic index child");
     assert_eq!((primary.start(), primary.end()), (54, 55));
 }
 
 #[test]
-fn negative_fixed_array_index_is_rejected() {
+fn negative_fixed_array_index_retains_checked_bounds() {
     let mut source = ARRAY_OOB_SOURCE.to_owned();
     source.replace_range(54..55, "-1");
     let sources = sources_for(&source);
@@ -154,10 +159,15 @@ fn negative_fixed_array_index_is_rejected() {
     };
     *value = 3;
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful negative index");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("negative index");
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3006");
-    let primary = diagnostics[0].primary_span().expect("negative index child");
-    assert_eq!((primary.start(), primary.end()), (54, 56));
+    let program =
+        lower(pair_input(&syntax, &sources)).expect("negative access retains runtime bounds");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let block = function.blocks().next().expect("block");
+    let begin = block
+        .instructions()
+        .find_map(zryna_ir::data_ownership_v1::VerifiedInstruction::indexed_borrow)
+        .expect("checked begin");
+    assert_eq!(begin.array_length(), Some(2));
 }
 
 #[test]

@@ -105,6 +105,8 @@ fn ordinary_step(
 
 // A successful semantic summary already owns every type, owner effect and exact cleanup
 // demand. This pass validates only recorded costs; it never visits source or changes owners.
+// Keep resource reservation and release cases in one ordered replay dispatch.
+#[allow(clippy::too_many_lines)]
 pub(super) fn validate(
     plan: &mut PreparationPlan<'_>,
     layouts: &zryna_layout::VerifiedLayouts,
@@ -120,6 +122,13 @@ pub(super) fn validate(
         let step = &plan.steps[index];
         let resources = usage(before);
         match &step.operation {
+            Operation::IndexedCopyStorage { .. } => {
+                if !resources.places(1, step.at, errors)
+                    || !resources.transition(1, step.at, errors)
+                {
+                    return None;
+                }
+            }
             Operation::IndexedEffect(_)
             | Operation::VecPush { .. }
             | Operation::ReplaceProjection { .. } => {

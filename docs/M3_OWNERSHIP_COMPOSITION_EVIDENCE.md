@@ -257,6 +257,89 @@ function operation contract rather than being silently repaired by an allocating
 
 ## Located tests, not complete composition proofs
 
+### Ordinary and lexical indexed source integration (#255/#256/#274)
+
+These candidate additions are located evidence, not execution receipts or issue closure:
+
+The [indexed source matrix](M3_INDEXED_SOURCE_OPERATIONS.md) and
+[transient access/lexical binding contract](M3_TRANSIENT_INDEXED_ACCESS.md) distinguish
+ordinary observation, transient child transfer and persistent lexical authority.
+
+- Source `ordinary_array_source.rs` covers checked Copy reads, explicit owned clones,
+  replacement bounds-before-RHS and forbidden independent element moves.
+- Source `ordinary_array_composition_source.rs` names
+  `ordinary_array_composition_fresh_call_is_retained_through_index_bounds_and_clone` and
+  `ordinary_array_composition_chained_access_preserves_region_and_atomic_authority_order`.
+  They authenticate fresh call and named chained-array fixtures, inspect exactly-once call
+  order, negative/upper/zero bounds, parent/child authority and retained failure cleanup.
+- Source `ordinary_array_clone_base_source.rs` names
+  `ordinary_array_clone_base_preserves_once_only_materialization_and_bounds_cleanup`,
+  `ordinary_array_clone_base_static_and_dynamic_subarrays_keep_source_and_temporary_distinct`
+  and `ordinary_array_clone_base_rejects_fresh_mutation_with_exact_replayed_diagnostic`.
+  These authenticate Copy/String whole and selected-subarray clone bases, inspect
+  source/index call order, negative/upper/zero bounds, distinct temporary cleanup,
+  and freeze the syntax-phase rejection of assignment through a fresh clone.
+- Source `fresh_vec_source.rs` separately locates fresh private-call/direct-construction
+  Copy reads and owned explicit clones, negative/upper/empty bounds, base/index ordering,
+  final temporary-owner drop and deterministic rejection of fresh mutation/implicit owned reads.
+- Source `checked_chain_source.rs` names
+  `checked_chain_source_mixed_vec_descendants_preserve_value_and_cleanup_order` and
+  `checked_chain_source_empty_negative_and_upper_bounds_keep_checked_authority`.
+  Its authenticated Array-to-Vec, Vec-to-Vec and alternating Array/Vec fixtures locate Copy
+  reads/writes and owned clone/replacement, explicitly constructed empty Vec stages,
+  negative/upper indices, exactly-once base/index/RHS call order, inherited conflict regions,
+  failure-ended parents, recursive clone-prefix cleanup and scoped result cleanup.
+  These are source-to-verified-IR observations, not executed runtime bounds/fault receipts.
+- Source `lexical_chained_source.rs` names
+  `lexical_chained_source_binds_final_exact_child_and_restores_complete_container`.
+  Its authenticated Array/Vec-of-FixedArray fixtures inspect ordered indices, bounds,
+  the final `BindIndexedBorrow` identity, Copy/owned alias access, replacement preparation
+  and failure-ended authority. These tests do not turn a lexical alias into a projectable parent.
+- Source `lexical_chained_composition.rs` names
+  `lexical_chained_static_siblings_keep_exact_disjoint_regions_and_reverse_end_order`,
+  `lexical_chained_dynamic_regions_reject_unequal_exclusive_indices_but_allow_shared_pairs`
+  and `lexical_chained_calls_pass_only_final_bound_child_after_source_ordered_rhs`.
+  These separately locate static-prefix disjointness, conservative dynamic conflicts,
+  reverse lexical end order and final-child call authority.
+- `ordinary_array_composition_resources.rs` keeps exact/first-extra held-credit, overflow
+  and rejected-state/recovery controls separate from authenticated source/full-IR positives.
+- `ordinary_array_clone_base_resources.rs` composes owned-array clone reservation with
+  the subsequent indexed observation. Its authenticated source control checks source-only
+  clone failure cleanup, destination-prefix cleanup and one cloned-temporary drop at bounds
+  failure. Separate synthetic credits exercise exact/first-extra/overflow and same-state
+  recovery across values, places, transitions, cleanup plans and cleanup actions. These are
+  verified failure plans and preparation controls, not injected runtime allocator execution.
+- Source `explicit_indexed_source.rs`, `explicit_indexed_siblings.rs`,
+  `explicit_indexed_calls.rs` and their rejection modules cover lexical identity, exact owned/Copy
+  access, static sibling versus dynamic conflicts and canonical call-argument authority.
+  `lexical_indexed_resources.rs` keeps injected credit/state controls separate from source proofs.
+- IR `indexed_access.rs` independently checks child region/access/failure-parent identity and
+  rejects lexical/formal parents, retired/inactive authority, wrong types and reused cleanup.
+  `indexed_access_copy_storage_requires_real_initialization_without_owned_cleanup` in
+  `indexed_access_copy_storage.rs` binds Copy temporary storage to actual initialization.
+  `indexed_access_projection_balances_resources_without_element_places` and
+  `indexed_access_active_exact_projection_first_extra_and_recovery` in
+  `indexed_access_resources.rs` cover independent resource/recovery boundaries.
+- IR `indexed_binding.rs` independently checks exact lexical type/region transfer and rejects
+  rebinding, retired/lexical parents, non-dense identities and fabricated results.
+  `indexed_binding_call.rs` checks a bound child passed to an owned callee, exact caller trap
+  cleanup and rejection of the retired parent. `indexed_binding_resources.rs` locates balanced
+  active-count checks and the separately ignored full exact/first-extra/recovery boundary.
+- IR `indexed_vec_projection.rs` names
+  `indexed_vec_projection_retains_bounds_region_and_exact_owned_replacement`,
+  `indexed_vec_projection_rejects_wrong_index_and_retired_parent_and_recovers`,
+  `indexed_vec_projection_rejects_zero_stride_parent_element` and the ignored
+  `indexed_vec_projection_active_exact_first_extra_and_recovery`.
+  These locate runtime Vec-length authority, exact replacement and retained region,
+  hostile index/parent/stride rejection and a separate full active-count boundary.
+
+Lexical chained borrowing now uses explicit infallible binding after the transient chain;
+it does not consume another lexical/formal alias. Fresh mutation and borrowing fresh temporaries
+remain excluded. Shared/Weak source production still depends on #260/#261. Complete gates and
+independent review remain required; verified cleanup descriptors are not runtime fault execution,
+backend completion or public activation. Located ignored tests must actually run before they
+are reported as boundary execution evidence.
+
 Names below are actual `#[test]` functions under the same directory's `tests/`.
 
 | File | Existing test | Proof limit |

@@ -4,6 +4,7 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 use std::collections::BTreeSet;
 
+mod borrow_index_work;
 mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
 mod generic_clone_fixture;
@@ -14,6 +15,12 @@ mod generic_static_refinement;
 mod generic_static_transfer;
 mod generic_vec_hostile;
 mod generic_vec_observation;
+mod indexed_access;
+mod indexed_access_copy_storage;
+mod indexed_access_resources;
+mod indexed_binding;
+mod indexed_binding_call;
+mod indexed_binding_resources;
 mod indexed_borrow_call_cleanup;
 mod indexed_borrow_conflicts;
 mod indexed_borrow_copy_refinement;
@@ -23,10 +30,12 @@ mod indexed_borrow_owned;
 mod indexed_borrow_positive;
 mod indexed_borrow_refinement;
 mod indexed_borrow_resources;
+mod indexed_vec_projection;
 mod mixed_constructor_authority;
 mod mixed_enum_authority;
 mod mixed_replacement_authority;
 mod mixed_replacement_authority_fixture;
+mod named_import_function_ids;
 mod opaque_handle_slots;
 mod opaque_handle_slots_fixture;
 

@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
 
 use super::{
-    Binding, Decl, Errors, RawDataDeclarationKind, RawExpressionKind, RawStatementKind,
-    SemanticInput, Ty, TypeCategory, layout, raw, raw_layout, semantic_type, syntax,
+    Binding, Decl, Errors, FunctionCatalog, RawDataDeclarationKind, RawExpressionKind,
+    RawStatementKind, SemanticInput, Ty, TypeCategory, layout, raw, raw_layout, semantic_type,
+    syntax,
 };
 use crate::data_ownership_v1::diagnostics::span;
 use crate::data_ownership_v1::type_model::require_current_type_only_boundary;
+
+mod arm;
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn lower_enum_match_function<'a>(
@@ -17,6 +20,7 @@ pub(super) fn lower_enum_match_function<'a>(
     graph: &'a raw_layout::Graph,
     node_types: &'a [Option<Ty>],
     layouts: &'a layout::VerifiedLayouts,
+    catalog: &'a FunctionCatalog,
     result: Ty,
     errors: &mut Errors<'a>,
 ) -> Option<raw::Function> {
@@ -153,6 +157,7 @@ pub(super) fn lower_enum_match_function<'a>(
     }];
     let mut enum_arms = Vec::with_capacity(arms.len());
     let mut cleanup_plans = Vec::with_capacity(arms.len());
+    let mut projections = BTreeMap::new();
     let mut seen = vec![false; variants.len()];
     let variant_ordinal = |arm: &syntax::RawMatchArm| {
         variants
@@ -248,51 +253,28 @@ pub(super) fn lower_enum_match_function<'a>(
         let arm_expr =
             usize::try_from(arm.value).ok().and_then(|i| function.body.expressions.get(i))?;
         let arm_span = span(input.sources(), arm_expr.span);
-        let (arm_ty, instruction_kind) = match &arm_expr.kind {
-            RawExpressionKind::I32Literal { spelling } => {
-                let value = spelling.parse::<i32>().ok().or_else(|| {
-                    errors.at(
-                        "ZRYNA-M3008",
-                        arm_span,
-                        "match-arm integer literal is outside i32",
-                        "use an i32 literal",
-                    );
-                    None
-                })?;
-                let ty = node_types.iter().flatten().find(|ty| ty.category == TypeCategory::I32)?;
-                let ty = *ty;
-                (ty, raw::InstructionKind::I32Literal(value))
-            }
-            RawExpressionKind::BoolLiteral { value } => {
-                let ty =
-                    node_types.iter().flatten().find(|ty| ty.category == TypeCategory::Bool)?;
-                let ty = *ty;
-                (ty, raw::InstructionKind::BoolLiteral(*value))
-            }
-            RawExpressionKind::Reference { name } => {
-                let binding = arm_bindings.get(&name.text).cloned().or_else(|| {
-                    errors.at(
-                        "ZRYNA-M3002",
-                        span(input.sources(), name.span),
-                        format!("match-arm name '{}' is not declared", name.text),
-                        "reference the payload binding or a parameter",
-                    );
-                    None
-                })?;
-                (binding.ty, raw::InstructionKind::CopyFromPlace { place: binding.place })
-            }
-            _ => {
-                errors.at(
-                    "ZRYNA-M3009",
-                    arm_span,
-                    "nested aggregate operations in match arms are outside the M3 match oracle",
-                    "return a scalar literal, parameter, or payload binding from each arm",
-                );
-                return None;
-            }
+        let mut lowerer = super::copy_lowering::FunctionLowerer {
+            input,
+            file,
+            function,
+            module,
+            declarations,
+            graph,
+            node_types,
+            layouts,
+            catalog,
+            errors,
+            bindings: arm_bindings,
+            borrow_bindings: BTreeMap::new(),
+            places: std::mem::take(&mut places),
+            projections: std::mem::take(&mut projections),
+            instructions: Vec::new(),
+            cleanup_plans: std::mem::take(&mut cleanup_plans),
+            values: next_value,
         };
+        let (arm_ty, value_id) = arm::value(&mut lowerer, arm.value)?;
         if arm_ty.layout != result.layout {
-            errors.at(
+            lowerer.errors.at(
                 "ZRYNA-M3009",
                 arm_span,
                 "enum match arms do not all have the declared result type",
@@ -300,17 +282,14 @@ pub(super) fn lower_enum_match_function<'a>(
             );
             return None;
         }
-        let value_id = raw::ValueId(next_value);
-        next_value = next_value.checked_add(1)?;
-        let definition = raw::ValueDefinition { id: value_id, ty: arm_ty.ir, span: arm_span };
+        next_value = lowerer.values;
+        places = lowerer.places;
+        projections = lowerer.projections;
+        cleanup_plans = lowerer.cleanup_plans;
         blocks.push(raw::Block {
             id: block_id,
             parameters: Vec::new(),
-            instructions: vec![raw::Instruction {
-                result: Some(definition),
-                span: arm_span,
-                kind: instruction_kind,
-            }],
+            instructions: lowerer.instructions,
             terminators: Vec::new(),
         });
         enum_arms.push(raw::EnumArm {

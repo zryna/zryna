@@ -258,7 +258,7 @@ fn projected_borrow_exclusions_are_exact_ordered_and_deterministic() {
     };
     let first = lower_trace();
     assert_eq!(first, lower_trace());
-    assert_eq!(first.len(), 13, "ordered trace: {first:#?}");
+    assert_eq!(first.len(), 11, "ordered trace: {first:#?}");
     let expected_messages = [
         "borrow access conflicts with an active alias of an overlapping place",
         "borrow access conflicts with an active alias of an overlapping place",
@@ -267,8 +267,6 @@ fn projected_borrow_exclusions_are_exact_ordered_and_deterministic() {
         "struct 'State' has no borrowable field 'missing'",
         "borrow fixed-array index 2 is outside length 2",
         "borrow fixed-array index is negative or outside u32",
-        "dynamic fixed-array borrowing conservatively overlaps the complete root and is unavailable",
-        "root borrowing requires an exact recursively Copy result",
         "root borrowing requires an exact recursively Copy result",
         "root borrowing requires an exact recursively Copy result",
         "borrow field projection does not have a Struct base",
@@ -276,7 +274,7 @@ fn projected_borrow_exclusions_are_exact_ordered_and_deterministic() {
     ];
     assert_eq!(
         first.iter().map(|(code, _, _)| code.as_str()).collect::<Vec<_>>(),
-        vec!["ZRYNA-M3017"; 13]
+        vec!["ZRYNA-M3017"; 11]
     );
     assert_eq!(
         first.iter().map(|(_, message, _)| message.as_str()).collect::<Vec<_>>(),
@@ -292,8 +290,6 @@ fn projected_borrow_exclusions_are_exact_ordered_and_deterministic() {
             Some((1_611, 1_618)),
             Some((1_867, 1_868)),
             Some((2_116, 2_118)),
-            Some((2_365, 2_376)),
-            Some((2_432, 2_609)),
             Some((2_611, 2_782)),
             Some((2_784, 2_999)),
             Some((3_183, 3_202)),

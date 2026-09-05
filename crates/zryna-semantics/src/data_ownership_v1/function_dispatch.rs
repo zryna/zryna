@@ -104,6 +104,39 @@ pub(super) fn lower_function<'a>(
     });
     let owned_root_candidate =
         !result.is_copy() && is_direct_owned_root_borrow_candidate(file, function);
+    if super::owned_aggregate_lowering::has_indexed_borrow(function)
+        || super::owned_aggregate_lowering::has_nonindexed_owned_borrow(
+            function,
+            file,
+            module,
+            declarations,
+            node_types,
+        )
+    {
+        if let Some(at) = function.export_span {
+            errors.at(
+                "ZRYNA-M3017",
+                span(input.sources(), at),
+                "indexed borrowing remains an internal private source route",
+                "keep indexed borrowing functions private until profile integration",
+            );
+            return None;
+        }
+        verify_single_final_return(function, input.sources(), errors)?;
+        return lower_private_owned_aggregate_function(
+            input,
+            module,
+            declaration,
+            function,
+            declarations,
+            graph,
+            node_types,
+            layouts,
+            catalog,
+            result,
+            errors,
+        );
+    }
     if has_root_borrow_syntax && !owned_root_candidate {
         return lower_private_root_borrow_function(
             input,
@@ -344,6 +377,7 @@ fn lower_function_impl<'a>(
             graph,
             node_types,
             layouts,
+            catalog,
             result,
             errors,
         );

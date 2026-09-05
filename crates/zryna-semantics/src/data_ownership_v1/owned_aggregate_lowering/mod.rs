@@ -10,6 +10,7 @@ use super::{Binding, Decl, Errors, OwnerState, SemanticInput, Ty};
 mod assignment_planning;
 mod assignments;
 mod availability;
+mod chained_indexed_preparation;
 mod clone;
 mod clone_decisions;
 mod constructor_preparation;
@@ -17,12 +18,20 @@ mod constructor_resources;
 mod constructors;
 mod driver;
 mod expression_decisions;
+mod fresh_indexed_preparation;
 mod generic_clone_preparation;
 mod generic_function_shape;
 mod generic_projection_preparation;
 mod indexed_vec_preparation;
+mod lexical_chained_preparation;
+mod lexical_indexed_preparation;
+mod lexical_indexed_scope;
+mod lexical_indexed_statements;
 mod mixed_shape;
+mod nonindexed_borrow_shape;
+pub(in crate::data_ownership_v1) use nonindexed_borrow_shape::has_nonindexed_owned_borrow;
 mod operand_decisions;
+mod ordinary_indexed_array_preparation;
 mod partial_transfers;
 mod preparation_operations;
 mod preparation_plan;
@@ -45,6 +54,7 @@ pub(super) use driver::{
     lower_private_owned_aggregate_function,
 };
 pub(super) use generic_function_shape::requires_generic_function;
+pub(super) use lexical_indexed_statements::has_indexed_borrow;
 use statements::StatementOutcome;
 
 use shape::owned_enum_graph_is_supported;

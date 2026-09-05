@@ -79,6 +79,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             _ => None,
         };
         let emission = match leaf {
+            Leaf::BorrowRead(borrow) => {
+                self.emit_recorded(ty, at, raw::InstructionKind::BorrowRead { borrow })
+            }
             Leaf::IndexedCopy { source, index, cleanup } => self.emit_recorded(
                 ty,
                 at,

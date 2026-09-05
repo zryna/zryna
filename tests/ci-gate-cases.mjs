@@ -311,6 +311,18 @@ test('aggregate grammar and dependency mutations fail closed', () => {
 test('parallel scheduling preserves all other pinned workflow authority', () => {
   bootstrapOrder(workflow, packageDocument);
   const original = structuredClone(workflow);
+  assert.deepEqual(original.env, {
+    ZRYNA_STRUCTURE_BASE: "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}",
+  });
+  delete original.env;
+  for (const job of Object.values(original.jobs)) {
+    for (const step of job.steps) {
+      if (step.uses?.startsWith('actions/checkout@')) {
+        assert.deepEqual(step.with, { 'fetch-depth': 0 });
+        delete step.with;
+      }
+    }
+  }
   for (const id of bootstrapJobs) {
     const steps = original.jobs[id].steps;
     const index = steps.findIndex(step => step.uses === pnpmStep.uses);

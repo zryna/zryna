@@ -380,7 +380,11 @@ pub(super) fn derived_value_count(function: &syntax::RawFunctionSyntax) -> usize
             RawExpressionKind::VecPush { value: pushed, .. } => {
                 return value(body, *pushed);
             }
-            RawExpressionKind::Match { arms, .. } => return arms.len(),
+            RawExpressionKind::Match { arms, .. } => {
+                return arms
+                    .iter()
+                    .fold(0usize, |total, arm| total.saturating_add(value(body, arm.value)));
+            }
             _ => 0,
         };
         children.saturating_add(1)

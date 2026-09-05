@@ -60,6 +60,17 @@ pub(super) enum ExpressionKind<'f> {
 }
 
 impl<'f> ExpressionDecisions<'_, 'f, '_> {
+    pub(super) fn nonindexed_owned_route(&self) -> bool {
+        !super::has_indexed_borrow(self.function)
+            && super::has_nonindexed_owned_borrow(
+                self.function,
+                self.file,
+                self.module,
+                self.declarations,
+                self.node_types,
+            )
+    }
+
     pub(super) fn child_type(&mut self, type_syntax: u32) -> Option<Ty> {
         semantic_type(
             self.file,
@@ -187,17 +198,30 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
                 ExpressionKind::Enum(decision)
             }
             _ => {
-                self.errors.at(
-                    "ZRYNA-M3016",
-                    at,
-                    "expression is outside private owned Struct/Enum/FixedArray lowering",
-                    "use literals, whole-value moves, and exact Struct/Enum/FixedArray constructors",
-                );
+                self.unsupported_prepared_expression(at);
                 return None;
             }
         };
         Some(ExpressionDecision { at, ty, kind })
     }
+    fn unsupported_prepared_expression(&mut self, at: Span) {
+        if self.nonindexed_owned_route() {
+            self.errors.at(
+                "ZRYNA-M3013",
+                at,
+                "expression does not produce the exact required owned type",
+                "prepare a value matching the borrowed String or Vec referent type",
+            );
+            return;
+        }
+        self.errors.at(
+            "ZRYNA-M3016",
+            at,
+            "expression is outside private owned Struct/Enum/FixedArray lowering",
+            "use literals, whole-value moves, and exact Struct/Enum/FixedArray constructors",
+        );
+    }
+
     fn integer(&mut self, spelling: &str, inferred: bool, at: Span) -> Option<i32> {
         if inferred {
             super::super::scalar_operations::integer(spelling, at, self.errors)

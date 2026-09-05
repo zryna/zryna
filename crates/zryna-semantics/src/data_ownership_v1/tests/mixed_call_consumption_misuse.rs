@@ -46,7 +46,7 @@ fn damage_entry(
     match damage {
         Damage::ForeignModule => {
             signature.id.module = raw::ModuleId(1);
-            Some("call same module authority")
+            Some("call catalog visibility authority")
         }
         Damage::WrongKind => {
             signature.kind = CallKind::Vec;
@@ -73,7 +73,7 @@ fn damage_entry(
         }
         Damage::EntryArity => {
             assert!(arguments.is_empty());
-            arguments.push(raw::ValueId(0));
+            arguments.push(raw::CallArgument::Value(raw::ValueId(0)));
             Some("call exact argument arity")
         }
         _ => None,
@@ -133,8 +133,8 @@ fn damage_plan(plan: &mut PreparationPlan<'_>, root_ty: Ty, damage: Damage) -> &
     match damage {
         Damage::CommitArguments => {
             assert_eq!(arguments.len(), 1);
-            assert_ne!(arguments[0], raw::ValueId(0));
-            arguments[0] = raw::ValueId(0);
+            assert_ne!(arguments[0], raw::CallArgument::Value(raw::ValueId(0)));
+            arguments[0] = raw::CallArgument::Value(raw::ValueId(0));
             "call committed ordered operands"
         }
         Damage::CommitCallee => {

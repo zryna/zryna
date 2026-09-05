@@ -100,6 +100,18 @@
       "executable": "node",
       "args": ["--test", "tests/m0-conformance.test.mjs"],
       "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "repository-structure",
+      "executable": "node",
+      "args": ["scripts/check-repository-structure.mjs"],
+      "platforms": ["linux", "windows"]
+    },
+    {
+      "id": "repository-structure-tests",
+      "executable": "node",
+      "args": ["--test", "tests/repository-structure.test.mjs"],
+      "platforms": ["linux", "windows"]
     }
   ],
   "coverage": [

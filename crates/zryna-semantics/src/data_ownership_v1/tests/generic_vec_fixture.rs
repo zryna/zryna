@@ -5,6 +5,12 @@ use super::*;
 use zryna_source::UntrustedSpan;
 use zryna_syntax::v4::RawExpressionKind;
 
+#[path = "nonindexed_owned_borrow.rs"]
+mod nonindexed_owned_borrow;
+
+#[path = "ordinary_array_composition_fixture.rs"]
+pub(in crate::data_ownership_v1) mod ordinary_array_composition_fixture;
+
 #[derive(Clone, Debug)]
 pub(in crate::data_ownership_v1) enum Element {
     I32,
@@ -32,7 +38,7 @@ enum Ty {
     Named(&'static str),
     String,
     Vec(Box<Self>),
-    Array(Box<Self>),
+    Array(Box<Self>, u32),
 }
 
 struct Builder {
@@ -117,7 +123,7 @@ impl Builder {
         let kind = match ty {
             Ty::Named(name) => RawTypeSyntaxKind::Named { name: self.name(name) },
             Ty::String => RawTypeSyntaxKind::String { keyword_span: self.text("String") },
-            Ty::Vec(element) | Ty::Array(element) => {
+            Ty::Vec(element) | Ty::Array(element, _) => {
                 let keyword_span =
                     self.text(if matches!(ty, Ty::Vec(_)) { "Vec" } else { "FixedArray" });
                 let less_than_span = self.text("<");
@@ -132,15 +138,17 @@ impl Builder {
                 } else {
                     let comma_span = self.text(",");
                     self.text(" ");
-                    let length_span = self.text("1");
+                    let Ty::Array(_, length) = ty else { unreachable!("array type") };
+                    let length_spelling = length.to_string();
+                    let length_span = self.text(&length_spelling);
                     RawTypeSyntaxKind::FixedArray {
                         keyword_span,
                         less_than_span,
                         element: argument,
                         comma_span,
                         length_span,
-                        length_spelling: "1".into(),
-                        length: 1,
+                        length_spelling,
+                        length: *length,
                         greater_than_span: self.text(">"),
                     }
                 }
@@ -248,7 +256,7 @@ fn initial(element: &Element) -> (Builder, Vec<RawDataDeclaration>, Ty) {
         Element::String => Ty::String,
         Element::Struct => Ty::Named("Parcel"),
         Element::Enum => Ty::Named("Choice"),
-        Element::Array => Ty::Array(Box::new(Ty::Vec(Box::new(Ty::String)))),
+        Element::Array => Ty::Array(Box::new(Ty::Vec(Box::new(Ty::String))), 1),
         Element::Vec => Ty::Vec(Box::new(Ty::Vec(Box::new(Ty::String)))),
     };
     (Builder { source, types, expressions: Vec::new(), statements: Vec::new() }, declarations, ty)
@@ -259,8 +267,29 @@ pub(in crate::data_ownership_v1) fn fixture(
     operation: Operation,
     index: Option<i32>,
 ) -> (String, RawProjectSyntaxSnapshot) {
+    container_fixture(element, operation, index, None)
+}
+
+pub(in crate::data_ownership_v1) fn fixture_array(
+    element: &Element,
+    operation: Operation,
+    index: Option<i32>,
+    length: u32,
+) -> (String, RawProjectSyntaxSnapshot) {
+    container_fixture(element, operation, index, Some(length))
+}
+
+fn container_fixture(
+    element: &Element,
+    operation: Operation,
+    index: Option<i32>,
+    length: Option<u32>,
+) -> (String, RawProjectSyntaxSnapshot) {
     let (mut f, declarations, element_type) = initial(element);
-    let vector = Ty::Vec(Box::new(element_type.clone()));
+    let vector = length.map_or_else(
+        || Ty::Vec(Box::new(element_type.clone())),
+        |length| Ty::Array(Box::new(element_type.clone()), length),
+    );
     let replacement = !matches!(operation, Operation::Read | Operation::Clone);
     f.text("\n");
     let start = f.source.len();

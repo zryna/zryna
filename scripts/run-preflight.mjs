@@ -5,15 +5,21 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
-const EXPECTED_COMMANDS_SHA256 = '8995cc25cf331a709688d5837fd67eb804a6e30804469872b15aec71f95091cd';
+const EXPECTED_COMMANDS_SHA256 = 'c40df677bd292852b957879e37e2aa756e82b61d267e09df45ffe20f6ea3c295';
 
 export const PREFLIGHT_COMMANDS = Object.freeze([
+  Object.freeze({
+    id: 'repository-structure',
+    executable: 'node',
+    args: Object.freeze(['scripts/check-repository-structure.mjs']),
+  }),
   Object.freeze({
     id: 'portable-contract-tests',
     executable: 'node',
     args: Object.freeze([
       '--test',
       'tests/preflight.test.mjs',
+      'tests/repository-structure.test.mjs',
       'tests/m0-conformance.test.mjs',
       'tests/docs-bundle.test.mjs',
       'tests/m2-contract.test.mjs',

@@ -20,7 +20,7 @@ const fixturePrefixes = [
   "lexical-borrow-call-",
 ];
 const expectedSectionSha256 =
-  "ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20";
+  "b87c26c61ca0ef63b89219bf3d1b23e57d6dd93d86673f005cf2dc799f0d0107";
 
 function fail(message) {
   throw new Error(`invalid M3 contract: ${message}`);

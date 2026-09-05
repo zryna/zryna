@@ -11,6 +11,7 @@ pub(super) use route::single_string_fixture;
 #[derive(Clone, Copy, Debug)]
 pub(super) enum Case {
     Direct,
+    FallibleArguments,
     Nested,
     WrongType,
     RepeatedOwner,
@@ -96,16 +97,40 @@ impl Builder {
         self.expression(start, RawExpressionKind::Reference { name })
     }
 
+    fn argument_literal(&mut self, spelling: &str, string: bool) -> u32 {
+        let start = self.source.len();
+        self.text(spelling);
+        self.expression(
+            start,
+            if string {
+                RawExpressionKind::StringLiteral { spelling: spelling.into() }
+            } else {
+                RawExpressionKind::I32Literal { spelling: spelling.into() }
+            },
+        )
+    }
+
     fn call(&mut self, case: Case) -> u32 {
         let start = self.source.len();
         let callee = self.name("choose");
         let open_paren_span = self.text("(");
-        let first = self.reference(if matches!(case, Case::WrongType) { "count" } else { "left" });
+        let first = if matches!(case, Case::FallibleArguments) {
+            self.argument_literal("\"first\"", true)
+        } else {
+            self.reference(if matches!(case, Case::WrongType) { "count" } else { "left" })
+        };
         self.text(", ");
-        let second = self.reference("count");
+        let second = if matches!(case, Case::FallibleArguments) {
+            self.argument_literal("7", false)
+        } else {
+            self.reference("count")
+        };
         self.text(", ");
-        let third =
-            self.reference(if matches!(case, Case::RepeatedOwner) { "left" } else { "right" });
+        let third = if matches!(case, Case::FallibleArguments) {
+            self.argument_literal("\"later\"", true)
+        } else {
+            self.reference(if matches!(case, Case::RepeatedOwner) { "left" } else { "right" })
+        };
         let close_paren_span = self.text(")");
         self.expression(
             start,

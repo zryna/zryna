@@ -108,7 +108,7 @@ fn indexed_borrow_owned_replacement_rejects_mode_type_reuse_and_borrowed_rhs() {
     }
 }
 
-fn call_replacement(fixture: &Fixture) -> raw::Program {
+pub(super) fn call_replacement(fixture: &Fixture) -> raw::Program {
     let mut raw = fixture.seed(raw::BorrowAccess::Exclusive);
     let span = raw.modules[0].functions[0].span;
     let callee = raw::Function {

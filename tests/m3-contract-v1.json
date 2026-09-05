@@ -835,16 +835,6 @@
         "snapshot": "tests/m3-fixtures/borrow-call-owned-shape.json",
         "diagnostics": [
           {
-            "code": "ZRYNA-M3003",
-            "message": "owned String and Vec operations are not yet admitted by this lowering slice",
-            "guidance": "use the authenticated owned type only after owned-operation lowering is enabled",
-            "span": {
-              "path": "src/main.zry",
-              "start": 68,
-              "end": 78
-            }
-          },
-          {
             "code": "ZRYNA-M3016",
             "message": "lexical borrow calls require a Copy signature with borrow authority",
             "guidance": "call a private Copy-result function with at least one Borrow or BorrowMut parameter",
