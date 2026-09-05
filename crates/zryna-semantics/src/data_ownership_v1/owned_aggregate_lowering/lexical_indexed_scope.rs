@@ -5,17 +5,17 @@ use std::collections::BTreeSet;
 use zryna_ir::data_ownership_v1::raw;
 use zryna_syntax::v4::RawStatementKind;
 
-struct Scope {
+pub(super) struct Scope {
     block: u32,
     next: usize,
     bindings: BTreeSet<String>,
     aliases: BTreeSet<String>,
     owners: BTreeSet<raw::PlaceId>,
-    drop_credits: usize,
+    pub(super) drop_credits: usize,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    fn enter_lexical_scope(&self, block: u32) -> Scope {
+    pub(super) fn enter_lexical_scope(&self, block: u32) -> Scope {
         Scope {
             block,
             next: 0,
@@ -91,7 +91,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(())
     }
 
-    fn end_lexical_scope(&mut self, scope: &Scope) -> Option<()> {
+    pub(super) fn end_lexical_scope(&mut self, scope: &Scope) -> Option<()> {
         let at =
             span(self.input.sources(), self.function.body.blocks.get(scope.block as usize)?.span);
         let mut ended: Vec<_> = self

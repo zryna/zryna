@@ -177,6 +177,8 @@ mod string_call_fixture_support;
 mod string_call_validation;
 mod string_core;
 mod struct_validation;
+mod structured_owned_fixture;
+mod structured_owned_source;
 mod terminal_owned_if;
 mod termination_validation;
 mod vec_assignment;

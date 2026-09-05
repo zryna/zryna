@@ -120,7 +120,7 @@ fn owned_cfg_upgrade_success_prefix_is_sealed_and_ordinary_arguments_remain_exac
         let mut cfg = skeleton(at, integer, shared, &mut errors);
         let mut places = places.clone();
         match mutation {
-            0 => {}
+            0 | 7 => {}
             1 => cfg.arena.blocks[1].parameters[0].ty = integer,
             2 => {
                 cfg.arena.blocks[1].parameters.remove(0);
@@ -129,7 +129,6 @@ fn owned_cfg_upgrade_success_prefix_is_sealed_and_ordinary_arguments_remain_exac
             4 => places[0].ty = integer,
             5 => places[0].id = raw::PlaceId(1),
             6 => cfg.arena.blocks[1].parameters[1].ty = shared,
-            7 => {}
             _ => unreachable!("bounded cases"),
         }
         let result = if mutation == 7 {

@@ -155,6 +155,15 @@ than inserting implicit clone/conditional-drop repair. Divergence is not a contr
 #279 supplies the reusable scope/CFG adapter; #262 integrates authenticated upgrade bodies. Required
 #83 nested payload calls/matches/returns stay within that integration, not a scalar-only fallback.
 
+The initial internal `owned_aggregate_lowering/structured_cfg.rs` adapter now routes branches and
+loops inside already-selected generic owned functions through the existing preparation machinery.
+It records dense instruction ranges, explicitly restores branch planning state, requires equal
+fallthrough ownership and loop-header masks, inserts lexical cleanup, and replays the completed
+graph through `OwnedCfgState`. Authenticated `structured_owned_` tests cover nested/repeated
+String-owner branches, a nested branch in a loop, terminal branch returns, unequal-state rejection,
+and deterministic replay. This checkpoint is not #279 completion: multi-arm/nonterminal C6 match
+continuations, the complete mixed-graph C7 matrix, and independent hostile/resource evidence remain.
+
 ## C8: Upgrade-success edge signature
 
 Producer input: the exact `Weak<T>` type from the sealed type universe and the ordinary typed

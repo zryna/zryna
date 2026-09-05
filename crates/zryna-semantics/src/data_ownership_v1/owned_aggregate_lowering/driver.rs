@@ -234,6 +234,29 @@ fn lower_owned_aggregate_function_impl<'a>(
             lowerer.owners.register_parameter(place)?;
         }
     }
+    if generic_function
+        && function.body.statements.iter().any(|statement| {
+            matches!(statement.kind, RawStatementKind::If { .. } | RawStatementKind::While { .. })
+        })
+    {
+        let blocks = lowerer.lower_structured_cfg(&parameters, result)?;
+        assert!(lowerer.constructor_storage_is_clear(), "structured constructor credits released");
+        assert_eq!(lowerer.reserved_transitions, 0, "structured transition credits released");
+        return Some(raw::Function {
+            id: raw::FunctionId {
+                module: raw::ModuleId(u32::try_from(module).ok()?),
+                declaration: u32::try_from(declaration).ok()?,
+            },
+            entry_export: None,
+            span: span(input.sources(), function.span),
+            parameters,
+            borrow_parameters,
+            result: result.ir,
+            places: lowerer.places,
+            blocks,
+            cleanup_plans: lowerer.cleanup_plans,
+        });
+    }
     let mut returned = None;
     let final_statement = root.statements.last().copied();
     let return_count = root

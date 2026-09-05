@@ -48,6 +48,9 @@ mod resource_decisions;
 mod shape;
 mod state;
 mod statements;
+mod structured_cfg;
+mod structured_graph;
+mod structured_state;
 mod vec_push_preparation;
 
 pub(super) use driver::{
