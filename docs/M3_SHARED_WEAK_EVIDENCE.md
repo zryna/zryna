@@ -1,8 +1,35 @@
 # M3 Shared and Weak evidence matrix
 
-Status: Issue #259 test/interface plan. **Planned tests below are not existing execution evidence.**
+Status: Issue #259 integration plan with #260 independent proof evidence below.
+**Planned source and target-runtime tests below are not existing execution evidence.**
 Read the [authority contract](M3_SHARED_WEAK_AUTHORITY.md) for SW1–SW5, complete payload domain,
 operation semantics and exclusions. A scalar-only checkpoint cannot discharge #83.
+
+## Independent #260 executable mapping
+
+The following tests exercise compiler/ABI proof boundaries, not source lowering or target
+execution. The broader named integration matrices later in this document remain obligations
+of their listed owners; this mapping does not claim #83 completion.
+
+| Executable family | Exact evidence |
+| --- | --- |
+| IR `data_ownership_v1::tests::shared_weak_authority` | Authenticated layout/source-backed raw programs for all payload categories, retained clone/downgrade operands, success-only synthesized ownership, typed outcomes, exact ordered cleanup, hostile types/modes/moves/borrows/edges/cleanup, rejection replay and valid recovery |
+| IR `shared_weak_authority::payload_construction` | Fully initialized owned aggregate/container/handle payload construction, nested and recursive-indirection types; not only Copy parameters |
+| IR `shared_weak_authority::upgrade_shape` and `WeakUpgradeShape` doctest | Branded reusable C8 edge schema, foreign/missing types, final mandatory verifier rejection, private-field opacity |
+| ABI `control_model_clone_expiration_and_payload_before_implicit_weak_finish` | Both target layouts; live and expired Weak cloning, expiration produces no owner, exact last-strong payload-before-implicit-weak finish, premature/replayed release rejection |
+| ABI `control_model_provenance_topology_modes_and_allocation_failures_are_atomic` | Wrong invocation/site/allocation geometry, dense identity, unissued handles, overlapping controls, wrong mode, non-success publication and deterministic valid recovery |
+| ABI `control_model_immutable_handle_graph_and_recursive_release_are_exact` | Exact nested strong/Weak payload transfer, reverse recursive release cascade; future/self/duplicate edges and reordered cleanup fail |
+| ABI `control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last` | Both targets; scalars, String, both Enum variants, array0/2, Vec0/2; omitted drops fail and Vec storage is last |
+| ABI `control_model_allocation_failure_retains_embedded_handle_until_successful_retry` | Failed publication retains source handle; successful retry transfers it exactly once; stale payload-handle access fails |
+| ABI `control_model_requires_exact_independent_surviving_owner_contract` | Omitted release and wrong expected owner/control/mode fail; exact independently expected returned owner passes |
+| ABI `control_model_internal_resource_boundaries_publish_nothing_on_rejection` | Private counter controls exercise actual allocation/node replay preflights at exact/first-extra/checked-overflow with no owner publication and valid fresh-invocation recovery; not million-allocation execution |
+| ABI `control_model_count_boundaries_remain_indivisible_existing_abi_claims`, `control_model_synthetic_refcount_failure_cannot_issue_an_owner` | Explicitly synthetic saturated count/checked-budget proofs; existing transition authority distinguishes success, expiration and unchanged overflow, and no overflow owner can be issued; not billion-owner programs |
+| ABI `VerifiedControlTrace` doctests | Caller construction/mutation of opaque proof fields fails to compile |
+
+Source evaluation/span/fault injection and executed target count/drop behavior are not supplied
+by these symbolic tests. Existing independent IR resource and ABI transition suites remain
+required alongside this matrix. Full gate/CI receipts must be recorded separately when run;
+listing an executable here is not a claim that Linux/Windows integration gates already passed.
 
 ## Existing evidence and its limits
 

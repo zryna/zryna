@@ -1,6 +1,7 @@
 # M3 Shared and Weak authority contract
 
-Status: Issue #259 implementation/interface freeze, not implemented Shared/Weak source semantics.
+Status: Issue #259 contract with #260 independent IR and symbolic ABI proof interfaces;
+not implemented Shared/Weak source semantics.
 Frozen baseline: `f1b88304e9ee918ba46808f60859097999785f1b`, after verified #82/#122 closure.
 This document enables no runtime, backend, driver route, public profile, or target execution.
 It does not close #83. The [evidence and integration matrix](M3_SHARED_WEAK_EVIDENCE.md)
@@ -11,6 +12,43 @@ especially sections 2, 5–7, 10–12, and
 [ownership runtime ABI](../spec/abi/OWNERSHIP_RUNTIME_V1.md), especially sections 2–3 and 7–8.
 The following are implementation obligations, not changes to syntax, wire schemas, ABI signatures,
 statuses, resource maxima, or the normative contract.
+
+## Independent proof interfaces
+
+`zryna_ir::data_ownership_v1::WeakUpgradeShape::derive` accepts a sealed layout and exact
+branded Weak type. It supplies the exact referent and first success-parameter Shared type.
+Ordinary success arguments follow that synthesized parameter; expired arguments contain no
+synthesized owner. The shape grants no liveness, cleanup, edge validity or runtime outcome.
+Completed programs still require mandatory independent IR verification.
+
+`zryna_ownership_runtime_abi::control_model::verify_control_trace` is a bounded symbolic
+SW1–SW5 proof model, not an allocator or runtime receipt. Its separate inputs authenticate the
+ABI, exact layout snapshot/target, invocation identity and expected surviving external owner
+identities, control identities and modes. Empty exit expectations require complete release.
+Returned `VerifiedControlTrace` fields are private; copying a proof does not execute or authorize
+any target effect. A caller-provided trace cannot declare its own expected survivors.
+
+Construction checks exact control layout, aligned nonnull representable disjoint live intervals,
+fresh dense control/owner IDs, and a complete child-before-parent typed payload tree. Non-handle
+leaves describe symbolic prepared values, not bytes proven present in memory. Handle leaves must
+be previously issued available exact-type owners; publication transfers them only on success.
+Failure produces no control or owner and retains embedded handle ownership. Since published
+payloads are immutable and may refer only to previously issued controls, both strong and Weak
+edges have construction provenance; raw self/future edges and duplicate embedded owners fail.
+
+All count/status legality delegates to the existing `validate_transition` authority. Successful
+clone/downgrade/upgrade issues exactly one fresh owner; expiration and refcount failure issue
+none. Explicit owners never represent the implicit Weak count. Last-strong release establishes
+a pending phase: the model derives reverse active payload cleanup, nests handle-release cascades
+on a LIFO stack, and finishes the control only after every obligation. Vec element cleanup precedes
+its storage marker. Pending cleanup cannot allocate, publish, or invoke unrelated operations.
+The model checks ordered symbolic destruction markers, not executed destructors or fault receipts.
+
+Event/payload-node totals and allocation claims use checked existing ABI resource bounds. Dense
+IDs are invocation-local; replay, stale ownership, wrong modes and malformed topology reject
+before proof publication. The executable and synthetic boundary evidence are distinguished in
+the [evidence matrix](M3_SHARED_WEAK_EVIDENCE.md). These interfaces add no source route, wire
+field, runtime symbol, public profile, concurrent upgrade or tracing machinery.
 
 ## Authority map
 

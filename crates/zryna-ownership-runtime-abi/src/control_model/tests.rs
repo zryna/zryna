@@ -4,6 +4,7 @@ use zryna_layout::{TypeCategory, raw as layout};
 use zryna_source::{SourceFileInput, SourceMap};
 
 mod boundaries;
+mod resources;
 
 fn authorities() -> (VerifiedOwnershipRuntimeAbi, VerifiedLayouts, VerifiedLayouts) {
     let sources =

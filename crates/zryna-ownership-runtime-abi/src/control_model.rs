@@ -106,6 +106,16 @@ pub struct ControlTrace {
 }
 
 /// Opaque complete symbolic proof. It cannot authorize concrete allocator or runtime effects.
+///
+/// ```compile_fail
+/// use zryna_ownership_runtime_abi::control_model::VerifiedControlTrace;
+/// let _ = VerifiedControlTrace { invocation: 0, states: vec![], live_owners: 0 };
+/// ```
+///
+/// ```compile_fail
+/// use zryna_ownership_runtime_abi::control_model::VerifiedControlTrace;
+/// fn alter(mut proof: VerifiedControlTrace) { proof.live_owners = 0; }
+/// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerifiedControlTrace {
     invocation: u64,
@@ -197,6 +207,9 @@ fn checked_model_count(before: u64, extra: u64, maximum: u64) -> Result<u64, Run
 }
 
 /// Verifies SW1–SW5 model provenance and exact transitions without executing an allocator.
+/// The caller supplies the independently expected invocation and surviving external owners,
+/// in increasing owner-ID order. An empty owner contract requires complete release.
+/// Neither those expectations nor this proof are evidence of actual runtime execution.
 ///
 /// # Errors
 /// Rejects foreign ABI/layout/invocation, malformed topology, stale owners, allocation overlap,

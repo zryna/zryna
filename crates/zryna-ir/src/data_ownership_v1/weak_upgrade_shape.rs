@@ -1,4 +1,18 @@
+use super::{VerifiedEdge, VerifiedTerminator, raw, verified_edge};
 use zryna_layout::{TypeCategory, TypeId, VerifiedLayouts};
+
+impl VerifiedTerminator<'_> {
+    /// Returns the verified success and expired edges of an indivisible Weak upgrade.
+    #[must_use]
+    pub fn weak_upgrade_edges(self) -> Option<(VerifiedEdge, VerifiedEdge)> {
+        let raw::Terminator::WeakUpgradeBranch { success, expired, .. } = &self.terminator.kind
+        else {
+            return None;
+        };
+        let owner = self.function.id();
+        Some((verified_edge(owner, success), verified_edge(owner, expired)))
+    }
+}
 
 /// Reusable, target-neutral type schema for planning a weak-upgrade edge.
 ///

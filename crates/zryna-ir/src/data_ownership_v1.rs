@@ -1465,15 +1465,6 @@ impl<'a> VerifiedTerminator<'a> {
         Some((verified_edge(owner, when_true), verified_edge(owner, when_false)))
     }
     #[must_use]
-    pub fn weak_upgrade_edges(self) -> Option<(VerifiedEdge, VerifiedEdge)> {
-        let raw::Terminator::WeakUpgradeBranch { success, expired, .. } = &self.terminator.kind
-        else {
-            return None;
-        };
-        let owner = self.function.id();
-        Some((verified_edge(owner, success), verified_edge(owner, expired)))
-    }
-    #[must_use]
     pub fn edges(self) -> impl ExactSizeIterator<Item = VerifiedEdge> {
         let owner = self.function.id();
         terminator_edges(&self.terminator.kind).into_iter().map(move |edge| VerifiedEdge {

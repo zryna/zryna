@@ -1,6 +1,7 @@
 use super::*;
 
 mod fixtures;
+mod joins;
 mod payload_construction;
 mod upgrade_shape;
 use fixtures::{Fixture, Payload};
