@@ -104,7 +104,15 @@ pub(super) fn lower_function<'a>(
     });
     let owned_root_candidate =
         !result.is_copy() && is_direct_owned_root_borrow_candidate(file, function);
-    if super::owned_aggregate_lowering::has_indexed_borrow(function) {
+    if super::owned_aggregate_lowering::has_indexed_borrow(function)
+        || super::owned_aggregate_lowering::has_nonindexed_owned_borrow(
+            function,
+            file,
+            module,
+            declarations,
+            node_types,
+        )
+    {
         if let Some(at) = function.export_span {
             errors.at(
                 "ZRYNA-M3017",

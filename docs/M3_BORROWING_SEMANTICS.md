@@ -547,6 +547,33 @@ conditions, extra nested blocks, nested/repeated loops, `break`, `continue`, bod
 projections, lifetime shortening, loop-carried authority, runtime flags, ABI/backend/driver/CLI
 changes, artifacts, and public profiles remain excluded.
 
+## Issue #275 parameter-fed owned-root checkpoint
+
+The private straight-line generic producer additionally admits a whole owned `String` or `Vec`
+root supplied by a by-value parameter, either directly or through a local initialized from that
+parameter. The new selector requires the alias's top-level referent to be exactly `String` or
+`Vec`, not a named Struct/Enum or FixedArray. A lexical `Borrow` or `BorrowMut` alias may explicitly
+clone the retained referent; an exclusive alias over a mutable local may replace it with a
+completely prepared exact owned value. Direct by-value parameters are immutable: shared cloning
+is admitted, but `BorrowMut` of the parameter is rejected. Preparation and
+its failure cleanup precede `BorrowReplace`, and `EndBorrow` restores ordinary owner access at
+scope exit. This reuses existing independently verified borrowing, clone, and replacement
+authority; it introduces no indexed preparation rule or public execution route.
+
+`nonindexed_owned_roots_clone_replace_and_restore` verifies String/Vec clone-before-replacement
+ordering and lexical restoration. `nonindexed_owned_direct_parameters_clone_and_reject_mutation`
+proves shared parameter cloning and rejects exclusive access to immutable parameters.
+`nonindexed_owned_roots_reject_invalid_replacements_deterministically`
+pins the code, message, guidance, and source span for owner overlap, a scalar RHS with the wrong
+owned type, and a moved source; the positive matrix also pins shared-write rejection.
+Existing locally constructed shared-root and static projected-borrow routes retain their established
+precedence and diagnostics.
+
+This is not completion of #275. General owned static projections, active enum payloads, and broader
+non-indexed expression, scope, call, and control-flow composition remain unfinished. Previously
+supported static Copy projections are unchanged. This checkpoint does not add Shared/Weak source
+support, a runtime/backend implementation, or a public profile.
+
 ## Resource and verification boundary
 
 The verifier limit remains 16,384 simultaneously active borrows per function. Function borrow

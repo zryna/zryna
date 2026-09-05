@@ -19,6 +19,15 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     if !signature.private {
         return false;
     }
+    if super::has_nonindexed_owned_borrow(
+        function,
+        file,
+        signature.id.module.0 as usize,
+        declarations,
+        node_types,
+    ) {
+        return true;
+    }
     if signature.has_borrow_parameters() {
         return super::has_indexed_borrow(function)
             || signature.borrow_parameters.iter().any(|parameter| !parameter.referent.is_copy())

@@ -28,6 +28,8 @@ mod lexical_indexed_preparation;
 mod lexical_indexed_scope;
 mod lexical_indexed_statements;
 mod mixed_shape;
+mod nonindexed_borrow_shape;
+pub(in crate::data_ownership_v1) use nonindexed_borrow_shape::has_nonindexed_owned_borrow;
 mod operand_decisions;
 mod ordinary_indexed_array_preparation;
 mod partial_transfers;

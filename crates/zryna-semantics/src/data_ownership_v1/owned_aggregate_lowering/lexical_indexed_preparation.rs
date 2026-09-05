@@ -120,7 +120,11 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.errors.at(
                 "ZRYNA-M3017",
                 at,
-                "indexed replacement requires active exclusive authority",
+                if self.decisions.nonindexed_owned_route() {
+                    "replacement through a borrow requires active exclusive authority"
+                } else {
+                    "indexed replacement requires active exclusive authority"
+                },
                 "assign through a live BorrowMut alias",
             );
             return None;

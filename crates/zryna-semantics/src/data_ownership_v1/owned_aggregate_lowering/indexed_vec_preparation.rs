@@ -94,8 +94,16 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.errors.at(
                 "ZRYNA-M3014",
                 at,
-                "Vec operation conflicts with an active whole-container access",
-                "finish the indexed operation before accessing or consuming its container",
+                if self.decisions.nonindexed_owned_route() {
+                    "owner access conflicts with an active borrow"
+                } else {
+                    "Vec operation conflicts with an active whole-container access"
+                },
+                if self.decisions.nonindexed_owned_route() {
+                    "end the conflicting borrow before accessing or consuming its owner"
+                } else {
+                    "finish the indexed operation before accessing or consuming its container"
+                },
             );
             return None;
         }
@@ -154,12 +162,16 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.errors.at(
                 "ZRYNA-M3014",
                 at,
-                if source.ty.category == TypeCategory::FixedArray {
+                if self.decisions.nonindexed_owned_route() {
+                    "borrowed owner is immutable for mutation, unavailable, or partially moved"
+                } else if source.ty.category == TypeCategory::FixedArray {
                     "indexed array is immutable for mutation, unavailable, or partially moved"
                 } else {
                     "indexed Vec is immutable for mutation, unavailable, or partially moved"
                 },
-                if source.ty.category == TypeCategory::FixedArray {
+                if self.decisions.nonindexed_owned_route() {
+                    "borrow a complete initialized owner with mutable access for BorrowMut"
+                } else if source.ty.category == TypeCategory::FixedArray {
                     "use one complete initialized array with exclusive mutation access"
                 } else {
                     "use one complete initialized Vec with exclusive mutation access"
