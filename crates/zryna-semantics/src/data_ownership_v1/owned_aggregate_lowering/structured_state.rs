@@ -11,13 +11,12 @@ pub(super) struct JoinState {
     moved: BTreeSet<raw::PlaceId>,
     partial: BTreeSet<raw::PlaceId>,
     bytes: BTreeMap<raw::PlaceId, u64>,
+    aliases: BTreeMap<String, super::preparation_plan::LexicalAlias>,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn join_state(&mut self, at: Span) -> Option<JoinState> {
-        if !self.preparation_facts.active_borrows.is_empty()
-            || !self.preparation_facts.parameter_borrows.is_empty()
-        {
+        if !self.preparation_facts.active_borrows.is_empty() {
             self.errors.at(
                 "ZRYNA-M3017",
                 at,
@@ -52,6 +51,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 .filter(|root| self.owners.contains(*root))
                 .collect(),
             bytes: self.preparation_facts.string_bytes.clone(),
+            aliases: self.preparation_facts.aliases.clone(),
         })
     }
 
@@ -61,7 +61,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.moved_projections.clone_from(&state.moved);
         self.partial_roots.clone_from(&state.partial);
         self.preparation_facts.string_bytes.clone_from(&state.bytes);
-        self.preparation_facts.aliases.clear();
+        self.preparation_facts.aliases.clone_from(&state.aliases);
         self.preparation_facts.active_borrows.clear();
     }
 
@@ -71,6 +71,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             || current.owners != state.owners
             || current.moved != state.moved
             || current.partial != state.partial
+            || current.aliases != state.aliases
         {
             self.errors.at(
                 "ZRYNA-M3015",

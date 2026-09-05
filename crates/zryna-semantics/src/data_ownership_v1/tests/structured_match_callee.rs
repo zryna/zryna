@@ -1,7 +1,7 @@
 use super::*;
 
 impl Builder {
-    pub(super) fn match_callee(&mut self) -> RawFunctionSyntax {
+    pub(super) fn match_callee(&mut self, formal: Option<bool>) -> RawFunctionSyntax {
         self.text("\n");
         let start = self.text.len();
         let function_span = self.text("function");
@@ -9,6 +9,9 @@ impl Builder {
         let name = self.name("collect");
         self.text("(");
         let mut parameters = Vec::new();
+        if let Some(exclusive) = formal {
+            self.formal_parameter(&mut parameters, exclusive);
+        }
         for name in ["first", "second"] {
             if !parameters.is_empty() {
                 self.text(", ");
@@ -25,6 +28,10 @@ impl Builder {
         let body_start = self.text.len();
         let open_brace_span = self.text("{");
         self.text(" ");
+        if formal.is_some() {
+            self.statement(&Statement::Local("observed", "loan", true));
+            self.text(" ");
+        }
         let statement_start = self.text.len();
         let keyword_span = self.text("return");
         self.text(" ");
@@ -54,6 +61,7 @@ impl Builder {
             span: self.span(statement_start),
             kind: RawStatementKind::Return { keyword_span, value, semicolon_span },
         };
+        self.statements.push(statement);
         self.text(" ");
         let close_brace_span = self.text("}");
         let body_span = self.span(body_start);
@@ -71,9 +79,11 @@ impl Builder {
                     span: body_span,
                     open_brace_span,
                     close_brace_span,
-                    statements: vec![0],
+                    statements: (0..u32::try_from(self.statements.len())
+                        .expect("callee statements"))
+                        .collect(),
                 }],
-                statements: vec![statement],
+                statements: std::mem::take(&mut self.statements),
                 expressions: std::mem::take(&mut self.expressions),
             },
         }

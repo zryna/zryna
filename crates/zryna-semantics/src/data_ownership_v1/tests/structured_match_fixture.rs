@@ -3,6 +3,8 @@ use zryna_syntax::v4::{RawDataDeclaration, RawDataDeclarationKind, RawEnumVarian
 
 #[path = "structured_match_callee.rs"]
 mod callee;
+#[path = "structured_match_formal.rs"]
+mod formal;
 #[path = "structured_match_operands.rs"]
 mod operands;
 #[path = "structured_match_payloads.rs"]
@@ -118,7 +120,11 @@ impl Builder {
     }
 }
 
-fn parameters(builder: &mut Builder, payload: Payload) -> Vec<RawParameterSyntax> {
+fn parameters(
+    builder: &mut Builder,
+    payload: Payload,
+    operand: OperandKind,
+) -> Vec<RawParameterSyntax> {
     let parameter_start = builder.text.len();
     let parameter_name = builder.name("source");
     builder.text(": ");
@@ -140,6 +146,16 @@ fn parameters(builder: &mut Builder, payload: Payload) -> Vec<RawParameterSyntax
             name,
             type_syntax,
         });
+    }
+    if matches!(operand, OperandKind::Lexical) {
+        builder.text(", ");
+        let start = builder.text.len();
+        let name = builder.name("container");
+        builder.text(": ");
+        let type_syntax = builder.ty(true);
+        parameters.push(RawParameterSyntax { span: builder.span(start), name, type_syntax });
+    } else if let Some(exclusive) = operand.formal() {
+        builder.formal_parameter(&mut parameters, exclusive);
     }
     parameters
 }
@@ -172,6 +188,9 @@ enum OperandKind {
     Array,
     Call,
     Vec,
+    FormalShared,
+    FormalExclusive,
+    Lexical,
 }
 
 impl OperandKind {
@@ -179,9 +198,34 @@ impl OperandKind {
         match self {
             Self::Plain => payload,
             Self::Vec => Payload::Vec,
-            Self::Array | Self::Call => Payload::Array(2),
+            Self::Array
+            | Self::Call
+            | Self::FormalShared
+            | Self::FormalExclusive
+            | Self::Lexical => Payload::Array(2),
         }
     }
+    fn formal(self) -> Option<bool> {
+        match self {
+            Self::FormalShared | Self::Lexical => Some(false),
+            Self::FormalExclusive => Some(true),
+            _ => None,
+        }
+    }
+    fn call(self) -> bool {
+        matches!(self, Self::Call | Self::FormalShared | Self::FormalExclusive | Self::Lexical)
+    }
+}
+
+pub(in crate::data_ownership_v1) fn formal_fixture(
+    exclusive: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    build(
+        Payload::String,
+        true,
+        true,
+        if exclusive { OperandKind::FormalExclusive } else { OperandKind::FormalShared },
+    )
 }
 
 pub(in crate::data_ownership_v1) fn vec_fixture(
@@ -191,13 +235,17 @@ pub(in crate::data_ownership_v1) fn vec_fixture(
     build(Payload::String, cloned, local, OperandKind::Vec)
 }
 
+pub(in crate::data_ownership_v1) fn lexical_fixture() -> (String, RawProjectSyntaxSnapshot) {
+    build(Payload::String, true, true, OperandKind::Lexical)
+}
+
 fn build(
     payload: Payload,
     cloned: bool,
     local: bool,
     operand: OperandKind,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    let call = matches!(operand, OperandKind::Call);
+    let call = operand.call();
     let mut builder = Builder::default();
     let mut declarations = builder.payload_declaration(payload).into_iter().collect::<Vec<_>>();
     if !declarations.is_empty() {
@@ -210,7 +258,7 @@ fn build(
     builder.text(" ");
     let name = builder.name("extract");
     builder.text("(");
-    let parameters = parameters(&mut builder, payload);
+    let parameters = parameters(&mut builder, payload, operand);
     builder.text("): ");
     let result_payload = operand.result(payload);
     let result_type = builder.payload_type(result_payload);
@@ -218,6 +266,10 @@ fn build(
     let body_start = builder.text.len();
     let open_brace_span = builder.text("{");
     builder.text(" ");
+    if matches!(operand, OperandKind::Lexical) {
+        builder.lexical_declaration();
+        builder.text(" ");
+    }
     let statement_start = builder.text.len();
     let kind = if local {
         let keyword_span = builder.text("const");
@@ -268,7 +320,9 @@ fn build(
                 span: body_span,
                 open_brace_span,
                 close_brace_span,
-                statements: if local { vec![0, 1] } else { vec![0] },
+                statements: (0..u32::try_from(builder.statements.len())
+                    .expect("body statement count"))
+                    .collect(),
             }],
             statements: std::mem::take(&mut builder.statements),
             expressions: std::mem::take(&mut builder.expressions),
@@ -276,8 +330,16 @@ fn build(
     };
     let mut functions = vec![function];
     if call {
-        functions.push(builder.match_callee());
+        functions.push(builder.match_callee(operand.formal()));
     }
+    finish(builder, declarations, functions)
+}
+
+fn finish(
+    builder: Builder,
+    declarations: Vec<RawDataDeclaration>,
+    functions: Vec<RawFunctionSyntax>,
+) -> (String, RawProjectSyntaxSnapshot) {
     (
         builder.text,
         RawProjectSyntaxSnapshot {

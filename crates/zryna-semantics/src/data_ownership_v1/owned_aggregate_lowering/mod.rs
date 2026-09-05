@@ -49,6 +49,7 @@ mod shape;
 mod state;
 mod statements;
 mod structured_call;
+mod structured_call_arguments;
 mod structured_cfg;
 mod structured_checkpoint;
 mod structured_constructor;

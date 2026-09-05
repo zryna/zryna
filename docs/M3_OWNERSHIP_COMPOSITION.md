@@ -148,7 +148,7 @@ Input: binding scope, pending completion order, masks/refinements, active borrow
 signature. Output: explicit fallthrough, return or trap, with exact successor state or cleanup.
 Nested/repeated blocks, branches and loops compose these results; termination cannot disappear
 inside an untyped optional value. Return transfers its result and reverse-cleans remaining owners.
-Joins require equal definite state, backedges restore header state, and borrows discharge before
+Joins require equal definite state, backedges restore header state, and lexical borrows discharge before
 edges/returns. Reject mismatched ownership, masks, active variants or escaping authority rather
 than inserting implicit clone/conditional-drop repair. Divergence is not a controlled trap.
 
@@ -181,6 +181,15 @@ the checked-resource/recovery matrix. Vec growth failure retains every completed
 completion order; its result is not yet pending. This is not #279 completion: String/indexed read
 scopes, the complete C7 interaction matrix and
 independent hostile evidence remain; no source handle or runtime-execution support is claimed.
+
+Existing formal borrow parameters retain their exact sealed identity/access across Match edges,
+as the IR's existing formal-parameter lifetime permits. Structured calls forward them in source
+argument order, then use the canonical value-prefix/borrow-suffix call encoding. Exact aliases are
+preserved at joins, failures end the same formal identity, and no EndBorrow/reborrow gap is emitted.
+`structured_formal_` tests pin shared/exclusive forwarding, wrong-access/missing-alias diagnostics
+and lexical-carry rejection. The resource matrix includes a genuine catalog-backed formal parameter.
+Non-formal lexical/indexed authorities still cannot cross CFG edges (`I3011`); this slice does not
+extend their lifetime or supply the broader #271 edge-borrow contract.
 
 ## C8: Upgrade-success edge signature
 

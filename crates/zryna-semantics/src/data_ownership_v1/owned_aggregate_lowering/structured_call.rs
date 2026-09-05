@@ -37,11 +37,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         .lookup(callee, "call one exact private same-module function")?;
         if !signature.private
             || signature.result != ty
-            || signature.has_borrow_parameters()
             || !signature
                 .parameters
                 .iter()
                 .chain(std::iter::once(&ty))
+                .chain(signature.borrow_parameters.iter().map(|parameter| &parameter.referent))
                 .all(|ty| super::mixed_shape::supported(*ty, self.layouts))
         {
             self.errors.at(
@@ -52,7 +52,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             return None;
         }
-        if arguments.len() != signature.parameters.len() {
+        if arguments.len() != signature.parameter_order.len() {
             self.errors.at(
                 "ZRYNA-M3016",
                 at,
@@ -60,36 +60,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     "call to '{}' has {} arguments but its signature requires {}",
                     signature.name,
                     arguments.len(),
-                    signature.parameters.len()
+                    signature.parameter_order.len()
                 ),
                 "pass every exact declared value argument in source order",
             );
             return None;
         }
         let reservation = self.reserve_constructor_commit(ty, 0, at)?;
-        let mut values = Vec::with_capacity(arguments.len());
-        for (&argument, &parameter) in arguments.iter().zip(&signature.parameters) {
-            values.push(self.structured_value(argument, parameter, graph)?);
-        }
-        let types = self.constructor_types.observed_snapshot(&self.instructions).ok()?;
-        for (&value, &parameter) in values.iter().zip(&signature.parameters) {
-            if types.get(value) != Some(parameter.ir) {
-                self.errors.at(
-                    "ZRYNA-M3016",
-                    at,
-                    "structured call operand has the wrong exact type",
-                    "pass the exact declared argument types",
-                );
-                return None;
-            }
-            if !parameter.is_copy() {
-                let Some(delta) = self.owners.transfer(value) else {
-                    self.errors.at("ZRYNA-M3014", at, "structured call operand owner is unavailable", "retain each distinct initialized argument until the complete call is prepared");
-                    return None;
-                };
-                self.preparation_facts.apply(delta);
-            }
-        }
+        let arguments = self.structured_call_arguments(&signature, arguments, at, graph)?;
         reservation.release(self);
         // This tail is still in the function's unpublished scratch graph. Its exact cleanup
         // comes from reconciled post-argument owners, never the entry pending-owner count.
@@ -97,11 +75,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let emission = self.emit_recorded(
             ty,
             at,
-            raw::InstructionKind::DirectCall {
-                callee: signature.id,
-                arguments: values.into_iter().map(raw::CallArgument::Value).collect(),
-                cleanup,
-            },
+            raw::InstructionKind::DirectCall { callee: signature.id, arguments, cleanup },
         )?;
         for delta in emission.owners {
             self.preparation_facts.apply(delta);

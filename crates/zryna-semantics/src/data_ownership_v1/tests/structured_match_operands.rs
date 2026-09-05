@@ -6,7 +6,7 @@ impl Builder {
             return self.matched(cloned);
         }
         let start = self.text.len();
-        let call = matches!(operand, OperandKind::Call);
+        let call = operand.call();
         let callee = call.then(|| self.name("collect"));
         let type_syntax = if call {
             None
@@ -19,6 +19,11 @@ impl Builder {
         };
         let open_paren_span = self.text("(");
         let open_bracket_span = if call { open_paren_span } else { self.text("[") };
+        let loan = operand.formal().map(|_| {
+            let value = self.reference("loan");
+            self.text(", ");
+            value
+        });
         let literal_start = self.text.len();
         let spelling = "\"earlier\"";
         self.text(spelling);
@@ -38,7 +43,7 @@ impl Builder {
                 RawExpressionKind::Call {
                     callee,
                     open_paren_span,
-                    arguments: vec![first, second],
+                    arguments: loan.into_iter().chain([first, second]).collect(),
                     close_paren_span,
                 }
             } else if matches!(operand, OperandKind::Vec) {

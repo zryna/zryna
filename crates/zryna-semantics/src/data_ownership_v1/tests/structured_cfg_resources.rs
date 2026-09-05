@@ -3,7 +3,8 @@ use super::super::structured_checkpoint::StructuredCheckpoint;
 use super::*;
 use crate::data_ownership_v1::Binding;
 use crate::data_ownership_v1::tests::structured_owned_fixture::{
-    Payload, call_match_fixture, match_fixture, nested_match_fixture, vec_match_fixture,
+    Payload, call_match_fixture, formal_match_fixture, match_fixture, nested_match_fixture,
+    vec_match_fixture,
 };
 use zryna_ir::data_ownership_v1 as ir;
 
@@ -35,19 +36,45 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> raw::Val
     lowerer.owners.register_parameter(raw::PlaceId(0)).expect("genuine parameter owner");
     lowerer.next_value = 1;
     lowerer.mixed_function = true;
+    if let Some(signature) = lowerer.catalog.modules[lowerer.module]
+        .iter()
+        .flatten()
+        .find(|signature| signature.name == lowerer.function.name.text)
+    {
+        for (source_index, parameter) in signature.parameter_order.iter().enumerate() {
+            let crate::data_ownership_v1::function_catalog::FunctionParameterOrder::Borrow(index) =
+                parameter
+            else {
+                continue;
+            };
+            let descriptor = signature.borrow_parameters[*index as usize];
+            let borrow = raw::BorrowId(*index);
+            lowerer.preparation_facts.parameter_borrows.insert(borrow);
+            lowerer.preparation_facts.aliases.insert(
+                lowerer.function.parameters[source_index].name.text.clone(),
+                super::super::preparation_plan::LexicalAlias {
+                    borrow,
+                    ty: descriptor.referent,
+                    access: descriptor.access,
+                },
+            );
+            lowerer.preparation_facts.next_borrow = borrow.0 + 1;
+        }
+    }
     value
 }
 
 #[test]
 fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
-    for shape in 0..4 {
+    for shape in 0..5 {
         for resource in 0..5 {
             for extra in [0, 1, usize::MAX] {
                 let (source, snapshot) = match shape {
                     0 => match_fixture(Payload::Struct, true, true),
                     1 => nested_match_fixture(true, true),
                     2 => call_match_fixture(true, true),
-                    _ => vec_match_fixture(true, true),
+                    3 => vec_match_fixture(true, true),
+                    _ => formal_match_fixture(true),
                 };
                 let errors = with_snapshot(&source, snapshot, |lowerer, result| {
                     let parameter = parameter(lowerer);
