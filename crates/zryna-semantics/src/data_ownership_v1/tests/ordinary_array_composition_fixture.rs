@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "ordinary_array_clone_base_fixture.rs"]
+pub(crate) mod ordinary_array_clone_base_fixture;
+
 #[path = "copy_match_expression_fixture.rs"]
 pub(crate) mod copy_match_expression_fixture;
 

@@ -35,6 +35,12 @@ cleanup root. Non-Copy storage remains pending throughout index/bounds/clone
 preparation and is dropped after the final access ends, while an independently
 cloned result remains pending. A fresh expression is not granted mutation rights;
 assignment still requires a mutable initialized binding-derived target.
+An explicit clone of an available whole or indexed FixedArray may also supply
+the fresh observation base: `clone(items)[i]` and `clone(items[j])[i]` evaluate
+the clone source (including `j`) before `i`, once each. Copy array clones use
+real initialized Copy storage; owned array clones retain both the original
+source and distinct cloned temporary through the final bounds check. This reuses
+the existing clone and transient-access authorities, not a new element move.
 Checked descendants may alternate FixedArray and Vec referents without moving or
 cloning intermediate containers. A Vec of Copy elements is still an owned allocation container;
 it remains pending during index/bounds failure and is dropped after the final end.

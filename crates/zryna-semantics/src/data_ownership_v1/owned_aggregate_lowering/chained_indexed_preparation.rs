@@ -13,6 +13,9 @@ impl super::PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if let Some(ty) = self.projection_expression_type(id) {
             return Some(ty);
         }
+        if let RawExpressionKind::Clone { value, .. } = self.expression(id)?.kind {
+            return self.indexed_expression_type(value);
+        }
         if let RawExpressionKind::Call { callee, .. } = &self.expression(id)?.kind {
             let super::super::function_catalog::FunctionResolution::Exact(signature) =
                 self.catalog.resolve(self.module, &callee.text)

@@ -477,6 +477,7 @@ mod explicit_indexed_source;
 mod fresh_vec_source;
 mod lexical_chained_composition;
 mod lexical_chained_source;
+mod ordinary_array_clone_base_source;
 mod ordinary_array_composition_source;
 mod ordinary_array_source;
 mod ordinary_static_prefix_source;

@@ -185,8 +185,24 @@ fn checked_array_shape(
     function.body.expressions.iter().any(|expression| {
         let RawExpressionKind::Index { base, index, .. } = expression.kind else { return false };
         let Some(base) = function.body.expressions.get(base as usize) else { return false };
+        let cloned = matches!(base.kind, RawExpressionKind::Clone { .. });
+        let mut base = if let RawExpressionKind::Clone { value, .. } = base.kind {
+            let Some(base) = function.body.expressions.get(value as usize) else { return false };
+            base
+        } else {
+            base
+        };
+        while cloned {
+            let parent = match base.kind {
+                RawExpressionKind::FieldAccess { base, .. } => base,
+                RawExpressionKind::Index { base, .. } => base,
+                _ => break,
+            };
+            let Some(parent) = function.body.expressions.get(parent as usize) else { return false };
+            base = parent;
+        }
         let RawExpressionKind::Reference { name } = &base.kind else { return false };
-        let parameter_length = function
+        let parameter_type = function
             .parameters
             .iter()
             .zip(&signature.parameter_order)
@@ -194,11 +210,19 @@ fn checked_array_shape(
             .and_then(|(_, order)| match *order {
                 FunctionParameterOrder::Value(index) => signature.parameters.get(index as usize),
                 FunctionParameterOrder::Borrow(_) => None,
+            });
+        if cloned
+            && parameter_type.is_some_and(|ty| {
+                matches!(ty.category, TypeCategory::Struct | TypeCategory::FixedArray)
             })
+        {
+            return true;
+        }
+        let parameter_length = parameter_type
             .filter(|ty| ty.category == TypeCategory::FixedArray)
             .and_then(|ty| layouts.type_by_id(ty.layout))
             .and_then(zryna_layout::VerifiedType::array_length);
-        let local_length = function.body.statements.iter().find_map(|statement| {
+        let local_type = function.body.statements.iter().find_map(|statement| {
             let RawStatementKind::LocalDeclaration { name: local, type_syntax, .. } =
                 &statement.kind
             else {
@@ -207,13 +231,23 @@ fn checked_array_shape(
             if local.text != name.text {
                 return None;
             }
-            match file.type_syntax().get(*type_syntax as usize)?.kind {
-                RawTypeSyntaxKind::FixedArray { length, .. } => Some(u64::from(length)),
-                _ => None,
-            }
+            file.type_syntax().get(*type_syntax as usize)
+        });
+        if cloned
+            && local_type.is_some_and(|ty| match &ty.kind {
+                RawTypeSyntaxKind::FixedArray { .. } => true,
+                RawTypeSyntaxKind::Named { name } => !matches!(name.text.as_str(), "bool" | "i32"),
+                _ => false,
+            })
+        {
+            return true;
+        }
+        let local_length = local_type.and_then(|ty| match ty.kind {
+            RawTypeSyntaxKind::FixedArray { length, .. } => Some(u64::from(length)),
+            _ => None,
         });
         let Some(length) = parameter_length.or(local_length) else { return false };
         let Some(index) = function.body.expressions.get(index as usize) else { return false };
-        super::ordinary_indexed_array_preparation::checked_index(&index.kind, length)
+        cloned || super::ordinary_indexed_array_preparation::checked_index(&index.kind, length)
     })
 }

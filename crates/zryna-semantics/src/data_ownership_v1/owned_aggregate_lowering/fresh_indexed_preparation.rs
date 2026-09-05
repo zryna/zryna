@@ -24,8 +24,35 @@ impl PreparationContext<'_, '_, '_, '_> {
             | RawExpressionKind::VecConstruction { type_syntax, .. } => {
                 self.decisions.child_type(*type_syntax)
             }
+            RawExpressionKind::Clone { value, .. } => {
+                let ty = self.cloned_array_source_type(*value)?;
+                (ty.category == zryna_layout::TypeCategory::FixedArray).then_some(ty)
+            }
             _ => None,
         }
+    }
+
+    fn cloned_array_source_type(&mut self, id: u32) -> Option<Ty> {
+        let expression = self.decisions.function.body.expressions.get(id as usize)?;
+        if let RawExpressionKind::Index { base, .. } = expression.kind {
+            let container = self.cloned_array_source_type(base)?;
+            let record = self.decisions.layouts.type_by_id(container.layout)?;
+            if !matches!(
+                record.category(),
+                zryna_layout::TypeCategory::FixedArray | zryna_layout::TypeCategory::Vec
+            ) {
+                return None;
+            }
+            let element = record.referenced_type()?;
+            return self
+                .decisions
+                .node_types
+                .iter()
+                .flatten()
+                .find(|ty| ty.layout == element)
+                .copied();
+        }
+        self.resolve(id).map(|source| source.ty)
     }
 
     pub(super) fn materialize_indexed_base(
@@ -34,7 +61,14 @@ impl PreparationContext<'_, '_, '_, '_> {
         ty: Ty,
         at: Span,
     ) -> Option<OwnedAggregatePlace> {
-        let value = self.walk(id, ty)?;
+        let value = if ty.is_copy()
+            && let RawExpressionKind::Clone { value, .. } =
+                self.decisions.function.body.expressions.get(id as usize)?.kind
+        {
+            self.walk(value, ty)?
+        } else {
+            self.walk(id, ty)?
+        };
         let place = if ty.is_copy() {
             let place = raw::PlaceId(u32::try_from(self.state.counts[1]).ok()?);
             self.state.counts[1] = self.state.counts[1].checked_add(1)?;

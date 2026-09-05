@@ -103,8 +103,10 @@ requirements; this document does not waive their interaction obligations.
 ## Outstanding full-issue requirements
 
 This batch is not by itself a closure claim for #255, #256 or #274. The current source adapter
-accepts the supported non-handle graph. Shared/Weak referents still require the separately
-verified #260/#261 handle stages; raw opaque-slot tests cannot discharge that source requirement.
+accepts the supported non-handle graph. Shared/Weak source producers remain owned by
+#260/#261, and lexical borrow and Vec producer completion remains owned by #255/#256.
+These separate obligations do not expand #274's ordinary fixed-array acceptance criteria;
+raw opaque-slot tests do not discharge the separate handle-source requirements.
 Fresh and chained ordinary FixedArray/Vec access use the explicit transient adapter above, and
 nested lexical access from named containers finalizes that transient chain with `BindIndexedBorrow`.
 Fresh Vec observation reuses one real owned temporary, even for Copy elements; it ends access
@@ -113,3 +115,22 @@ independent element ownership or intermediate clones. Arbitrary expression-base 
 borrowing a fresh temporary and fresh
 mutation are not implied. These boundaries and the complete required gates must remain explicit
 during acceptance reconciliation rather than be treated as completed generic support.
+
+### Ordinary fixed-array acceptance reconciliation (#274)
+
+The ordinary adapter owns Copy observations, explicit owned observations and element
+replacement, not independent owned-element moves or persistent lexical aliases.
+Fresh call/construction and explicit array-clone observation bases use genuine temporary
+storage; checked descendants retain the maximal static conflict prefix. Fresh mutation
+remains excluded. No handle producer, ownership CFG extension or public activation is implied.
+
+The five acceptance obligations map to the operation/exclusion matrix above; authenticated
+`ordinary_array_source`, `ordinary_array_composition_source`, `ordinary_array_clone_base_source`
+and `ordinary_static_prefix_source` fixtures; independent `indexed_access` and
+`indexed_access_copy_storage` malformed-input/initialization checks; and the separate
+`ordinary_array_composition_resources` and `indexed_access_resources` exact/first-extra,
+overflow and replay controls. The composition evidence document locates these tests and
+distinguishes source-to-verified-IR observations from injected resource controls.
+The final obligation still requires execution receipts for the complete applicable suites,
+ignored boundaries, preflight, M0/M2, Linux/Windows checks and independent review on the
+integrated tree. Focused clone-base tests alone are not those receipts or runtime fault execution.

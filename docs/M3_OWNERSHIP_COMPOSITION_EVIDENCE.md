@@ -272,6 +272,13 @@ ordinary observation, transient child transfer and persistent lexical authority.
   `ordinary_array_composition_chained_access_preserves_region_and_atomic_authority_order`.
   They authenticate fresh call and named chained-array fixtures, inspect exactly-once call
   order, negative/upper/zero bounds, parent/child authority and retained failure cleanup.
+- Source `ordinary_array_clone_base_source.rs` names
+  `ordinary_array_clone_base_preserves_once_only_materialization_and_bounds_cleanup`,
+  `ordinary_array_clone_base_static_and_dynamic_subarrays_keep_source_and_temporary_distinct`
+  and `ordinary_array_clone_base_rejects_fresh_mutation_with_exact_replayed_diagnostic`.
+  These authenticate Copy/String whole and selected-subarray clone bases, inspect
+  source/index call order, negative/upper/zero bounds, distinct temporary cleanup,
+  and freeze the syntax-phase rejection of assignment through a fresh clone.
 - Source `fresh_vec_source.rs` separately locates fresh private-call/direct-construction
   Copy reads and owned explicit clones, negative/upper/empty bounds, base/index ordering,
   final temporary-owner drop and deterministic rejection of fresh mutation/implicit owned reads.
