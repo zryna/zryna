@@ -11,6 +11,7 @@ use super::{
 enum PreparationSite {
     RootTopology,
     LocalInitializer,
+    Replacement { target: super::raw::PlaceId },
 }
 
 impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
@@ -30,6 +31,16 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
         Self::prepare_at(lowerer, id, expected, PreparationSite::LocalInitializer)
     }
 
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_replacement(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        id: u32,
+        expected: Ty,
+        target: super::raw::PlaceId,
+    ) -> Option<Self> {
+        assert!(lowerer.mixed_replacement_target(expected), "mixed replacement target type");
+        Self::prepare_at(lowerer, id, expected, PreparationSite::Replacement { target })
+    }
+
     fn prepare_at(
         lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
         id: u32,
@@ -38,7 +49,9 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
     ) -> Option<Self> {
         let start = lowerer.preparation_checkpoint();
         let route = match site {
-            PreparationSite::RootTopology => mixed_shape::route(expected, lowerer.layouts),
+            PreparationSite::RootTopology | PreparationSite::Replacement { .. } => {
+                mixed_shape::route(expected, lowerer.layouts)
+            }
             PreparationSite::LocalInitializer => lowerer.local_preparation_route(expected),
         };
         if route == mixed_shape::PreparationRoute::LegacyVec {
@@ -102,6 +115,18 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             visits: context.visits,
             facts: context.state.facts,
         };
+        if let PreparationSite::Replacement { target } = site {
+            let mut owners = plan.owners.clone();
+            if plan.partial.contains(&target) || owners.replace(result, target).is_none() {
+                lowerer.errors.at(
+                    "ZRYNA-M3014",
+                    span(lowerer.input.sources(), lowerer.function.body.expressions.get(id as usize)?.span),
+                    "owned aggregate assignment cannot consume its destination while preparing its replacement",
+                    "clone the destination or prepare a distinct aggregate value before replacement",
+                );
+                return None;
+            }
+        }
         if summary {
             resource_replay::validate(&mut plan, lowerer.layouts, lowerer.errors)?;
         }

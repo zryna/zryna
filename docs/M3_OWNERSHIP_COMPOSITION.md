@@ -75,6 +75,23 @@ Bounds and mutation access remain
 mandatory; this does not invent Vec holes, element move-out or pop. Explicit borrowed Vec elements
 remain #256; dynamically indexed elements conservatively belong to their complete container.
 
+The bounded #278 mixed-root replacement slice uses this contract for mutable, fully initialized
+non-Copy Struct/Enum/FixedArray/Vec locals whose target topology selects `MixedSummary`, inside
+the existing private straight-line mixed-result route. A fresh supported constructor, distinct
+whole move, or already admitted RHS operation prepares through the shared summary. Target validity
+is checked first; after RHS semantic/effect preparation, the target must still be wholly owned and
+the replacement must have a distinct exact-type owner. Destination consumption reports M3014 at
+the complete RHS span before deferred resource replay. The final replacement transition is checked
+after replay and before any real consumption. Commit emits one `ReplacePlace`, applies the proved
+owner/fact change and checks the final preparation checkpoint. Rejected preparation preserves
+earlier statements, the old destination, bindings, arenas, facts, type cache and surrounding credits.
+
+Repeated assignments compose within that same straight-line route; the verifier derives each
+old active payload and transfers pending completion order. This does not generalize partial or
+projected replacement, indexed element mutation, clone capability, function signatures or CFG.
+Legacy-shaped targets retain their prior route and diagnostic order, even in a mixed function.
+The evidence matrix distinguishes verified cleanup obligations from runtime/storage execution.
+
 ## C4: Operation effects and cleanup
 
 Input: operation/site, retained and consumed owners, exact type/layout/shape and cleanup role.

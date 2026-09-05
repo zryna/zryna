@@ -133,6 +133,13 @@ reports it as `ZRYNA-M3014`; unresolved binding names report `ZRYNA-M3002`. Excl
 `ZRYNA-M3012`, and cumulative String-literal bytes are checked against the exact 8 MiB limit before
 lowering.
 
+The separate #278 mixed-result function route also prepares and commits fully initialized mutable
+mixed Struct/Enum/FixedArray/Vec root replacement. Its affine plan proves exact destination
+retention, RHS owner transfer and final transition capacity before materializing the RHS. Repeated
+assignments retain precise old-value cleanup and pending completion order. Legacy-shaped targets,
+partial/projected replacement, generic clone, mixed call signatures and CFG remain unchanged.
+See the [composition evidence](../../docs/M3_OWNERSHIP_COMPOSITION_EVIDENCE.md) for proof limits.
+
 An internal test-only fault/drop-trace oracle covers every ABI-admitted failure of the implemented
 String construction/clone/concat and Vec allocation/reserve operations, plus the separate verified
 Vec bounds trap. It consumes authenticated status disposition/trap declarations, retains all

@@ -159,7 +159,7 @@ initialization transition, checked in that order after initializer resource repl
 consumption. Copy locals still require the destination place. Owned results retain their pending
 slot while ownership and String byte facts move to the exact local identity. Capacity rejection
 preserves arenas, bindings, local numbering, ownership, facts, cache and surrounding credits;
-legacy local routes and destination replacement are unchanged.
+legacy local routes are unchanged. The separate C3 replacement slice is recorded below.
 
 String clone/concat and supported private same-module String/Vec producer/identity calls use
 their existing typed authorities. Nested scopes forward only their final immediate result.
@@ -199,8 +199,33 @@ contracts, preflight, M0/M2 and required Linux/Windows CI before merge.
 This child does not finish #278, #83 or public M3. Generic structural clone, generalized
 initialization/replacement, generic Vec observations/replacement, mixed calls/CFG and Shared/Weak
 production remain their following issues. Constructor commitment does not activate arbitrary
-assignment RHS or mixed destination replacement. No runtime/backend/CLI/profile is enabled, and
+assignment RHS by itself; the separate bounded mixed-destination C3 slice below extends it.
+No runtime/backend/CLI/profile is enabled, and
 website publication must consume the authenticated successful main documentation artifact.
+
+## Bounded C3 mixed-root replacement (#278)
+
+`preparation_replacement_commit.rs` prepares a complete RHS through the shared mixed summary,
+proves destination retention and a distinct replacement owner, checks the final transition, then
+commits once. `mixed_shape.rs` selects only supported mixed target topologies in existing private
+straight-line mixed functions. Legacy destinations and partial/projected routes are unchanged.
+
+- `mixed_root_replacement.rs` authenticates actual Struct/Enum/FixedArray/Vec source snapshots,
+  constructor/distinct-move/repeated replacement and mandatory verified IR. It checks exact old
+  target cleanup, active enum changes, returned-owner exclusion and deterministic replay.
+- `mixed_root_replacement_controls.rs` checks the final commit transition at exact/first-extra
+  held-capacity frontiers and later semantic rejection ahead of deferred capacity checks. Full
+  prior compiler state and preparation facts remain unchanged on rejection. These are checked
+  external credit controls around real statements, not huge exact-limit source programs.
+- IR `mixed_replacement_authority.rs` independently builds a valid Enum/Vec payload replacement
+  before isolated type, owner, moved-destination, reused-RHS and cleanup corruptions. Its sealed
+  observations prove old active-payload retention, one old-root commit drop, installed variant,
+  pending completion order and exact replay. They are not allocator or recursive storage execution.
+
+The constructor-only recursive witness remains unchanged and does not accept mutation prefixes.
+General partial/projected mixed replacement, generic Vec element replacement/observation,
+structural clone, handles and CFG integration remain open under #278 and its dependent issues.
+This slice does not close #278 or activate public M3.
 
 ## Located tests, not complete composition proofs
 

@@ -8,6 +8,8 @@ mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
 mod mixed_constructor_authority;
 mod mixed_enum_authority;
+mod mixed_replacement_authority;
+mod mixed_replacement_authority_fixture;
 
 use super::{
     Errors, MAX_ACTIVE_BORROWS_PER_FUNCTION, MAX_AGGREGATE_OPERANDS, MAX_BLOCK_PARAMETERS,
