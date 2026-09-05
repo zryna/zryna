@@ -5607,7 +5607,7 @@ fn verify_operation_types(
         }
         I::GenericMoveFromPlace { place } => {
             place_type(*place) == result_type
-                && generic_static_places::valid_type(*place, function, generic_clone_types)
+                && generic_static_places::valid_move_type(*place, function, generic_clone_types)
         }
         I::GenericReplacePlace { place, value } => {
             instruction.result.is_none()

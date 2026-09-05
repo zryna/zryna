@@ -20,6 +20,30 @@ pub(super) fn valid_type(
             .is_some_and(|place| capabilities.get(place.ty.0 as usize).copied().unwrap_or(false))
 }
 
+pub(super) fn valid_move_type(
+    place: raw::PlaceId,
+    function: &raw::Function,
+    capabilities: &[bool],
+) -> bool {
+    let Some(record) = function.places.get(place.0 as usize) else { return false };
+    if !capabilities.get(record.ty.0 as usize).copied().unwrap_or(false) {
+        return false;
+    }
+    let mut current = place;
+    for _ in 0..function.places.len() {
+        let Some(record) = function.places.get(current.0 as usize) else { return false };
+        match record.kind {
+            raw::PlaceKind::StructField { base, .. }
+            | raw::PlaceKind::FixedArrayConstant { base, .. }
+            | raw::PlaceKind::EnumPayload { base, .. } => current = base,
+            raw::PlaceKind::Parameter(_)
+            | raw::PlaceKind::Local(_)
+            | raw::PlaceKind::Temporary(_) => return current != place,
+        }
+    }
+    false
+}
+
 pub(super) fn transfer_complete(
     source: raw::PlaceId,
     destination: raw::PlaceId,
