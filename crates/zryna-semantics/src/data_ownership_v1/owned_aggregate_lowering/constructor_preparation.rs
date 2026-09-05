@@ -402,3 +402,6 @@ pub(super) use local_commit::PreparedLocal;
 #[cfg(test)]
 #[path = "../tests/local_tail_supplement_controls.rs"]
 mod local_tail_supplement_controls;
+#[cfg(test)]
+#[path = "../tests/mixed_root_replacement_controls.rs"]
+mod mixed_root_replacement_controls;
