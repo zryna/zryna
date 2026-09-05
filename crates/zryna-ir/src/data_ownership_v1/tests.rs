@@ -5,7 +5,6 @@ use zryna_source::{SourceFileInput, SourceMap};
 use std::collections::BTreeSet;
 
 mod borrow_index_work;
-mod shared_weak_authority;
 mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
 mod generic_clone_fixture;
@@ -39,6 +38,7 @@ mod mixed_replacement_authority_fixture;
 mod named_import_function_ids;
 mod opaque_handle_slots;
 mod opaque_handle_slots_fixture;
+mod shared_weak_authority;
 
 use super::{
     Errors, MAX_ACTIVE_BORROWS_PER_FUNCTION, MAX_AGGREGATE_OPERANDS, MAX_BLOCK_PARAMETERS,

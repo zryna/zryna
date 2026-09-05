@@ -13,6 +13,11 @@ pub(super) enum HandleOperation {
     WeakClone,
 }
 
+pub(super) struct HandleFrame {
+    pub(super) result: Ty,
+    pub(super) at: Span,
+}
+
 impl PreparationContext<'_, '_, '_, '_> {
     fn available_handle(
         &mut self,
@@ -43,6 +48,19 @@ impl PreparationContext<'_, '_, '_, '_> {
     pub(super) fn handle_payload(&self, handle: Ty) -> Option<Ty> {
         let payload = self.decisions.layouts.type_by_id(handle.layout)?.referenced_type()?;
         self.decisions.node_types.iter().flatten().find(|ty| ty.layout == payload).copied()
+    }
+
+    pub(super) fn shared_for_weak(&self, weak: Ty) -> Option<Ty> {
+        let payload = self.handle_payload(weak)?;
+        self.decisions
+            .node_types
+            .iter()
+            .flatten()
+            .find(|candidate| {
+                candidate.category == TypeCategory::Shared
+                    && self.handle_payload(**candidate) == Some(payload)
+            })
+            .copied()
     }
 
     pub(super) fn handle_read(

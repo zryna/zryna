@@ -16,10 +16,10 @@ use zryna_source::{FileId, SourceMap, SourceMapIdentity, Span};
 mod generic_clone;
 mod generic_static_places;
 mod weak_upgrade_shape;
-pub use weak_upgrade_shape::WeakUpgradeShape;
 pub use generic_clone::{
     VerifiedGenericClone, VerifiedGenericCloneFrontier, VerifiedGenericCloneSource,
 };
+pub use weak_upgrade_shape::WeakUpgradeShape;
 
 /// Maximum modules in one program.
 pub const MAX_MODULES: usize = 4_096;

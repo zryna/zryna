@@ -6,7 +6,7 @@ use super::super::owned_constructor_plan::ConstructorKind;
 use super::PrivateOwnedAggregateLowerer;
 use super::constructor_resources::ConstructorCommitReservation;
 use super::expression_decisions::{ArrayDecision, ExpressionKind, StructDecision};
-use super::handle_preparation::HandleOperation;
+use super::handle_preparation::{HandleFrame, HandleOperation};
 use super::preparation_operations::PreparationContext;
 use super::preparation_plan::{Leaf, Operation, PreparationPlan};
 use super::preparation_plan::{StringOperation, StringRead};
@@ -104,11 +104,6 @@ enum Frame<'f> {
     String(StringFrame),
     Read(u32, Ty),
     ReadResult(Ty, Span),
-}
-
-struct HandleFrame {
-    result: Ty,
-    at: Span,
 }
 
 enum VisitOutcome {
@@ -261,17 +256,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 return Some(VisitOutcome::Deferred);
             }
             ExpressionKind::Downgrade(id) => {
-                let payload = self.handle_payload(ty)?;
-                let shared = self
-                    .decisions
-                    .node_types
-                    .iter()
-                    .flatten()
-                    .find(|candidate| {
-                        candidate.category == zryna_layout::TypeCategory::Shared
-                            && self.handle_payload(**candidate) == Some(payload)
-                    })
-                    .copied()?;
+                let shared = self.shared_for_weak(ty)?;
                 self.handle_read(id, shared, ty, HandleOperation::WeakDowngrade, at)
             }
             ExpressionKind::Call { .. } => unreachable!("call frame entered"),
