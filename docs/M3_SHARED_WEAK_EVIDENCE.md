@@ -52,7 +52,9 @@ derived from the authenticated owned declarations, not a fixed unexplained offse
 Independent IR `weak_upgrade_temporary_edges_reject_forgery_and_cleanup_corruption_then_recover`
 starts from a complete accepted temporary-release graph and rejects a forged success type,
 overflow cleanup omission/reordering and missing expired-path release, then re-verifies the
-pristine graph. This is bounded compiler evidence; executed target cleanup remains #263 work.
+pristine graph. This is bounded compiler evidence; #263 integrates the corresponding
+non-executable conformance, fault, count, and resource proof while target-runtime execution
+remains outside this child graph.
 
 `weak_upgrade_payloads` verifies addressable and temporary upgrade for exact parameter-fed bool,
 i32, String, nominal Struct/Enum, payloadless/multi-variant Enum, recursive nominal Enum through
