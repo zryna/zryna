@@ -62,7 +62,7 @@ fn assert_fresh_access_flow(
 fn assert_fresh_base_lifetime(
     instructions: &[zryna_ir::data_ownership_v1::VerifiedInstruction<'_>],
     positions: [usize; 3],
-    container: raw::PlaceId,
+    container: zryna_ir::data_ownership_v1::PlaceIdentity,
     vector: bool,
     owned: bool,
 ) {

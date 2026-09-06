@@ -3,6 +3,7 @@ use zryna_layout::TypeCategory;
 use zryna_syntax::v4::RawExpressionKind;
 
 use super::super::diagnostics::span;
+use super::super::type_model::OwnedAggregatePlace;
 use super::availability::materialized_availability;
 use super::constructor_preparation::PreparedValue;
 use super::structured_graph::StructuredGraph;
@@ -12,6 +13,11 @@ struct StructuredIndexedChain {
     indices: Vec<(u32, u32)>,
     first_checked: usize,
     fresh: Option<(u32, Ty)>,
+}
+
+struct StructuredIndexedBase {
+    source: Option<OwnedAggregatePlace>,
+    fresh_owner: Option<(raw::PlaceId, Ty)>,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
@@ -152,6 +158,25 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
     }
 
+    fn prepare_structured_indexed_base(
+        &mut self,
+        fresh: Option<(u32, Ty)>,
+        source: u32,
+        graph: &mut StructuredGraph,
+    ) -> Option<StructuredIndexedBase> {
+        let Some((base, base_ty)) = fresh else {
+            return Some(StructuredIndexedBase {
+                source: Some(self.owned_place(source)?),
+                fresh_owner: None,
+            });
+        };
+        let value = self.structured_value(base, base_ty, graph)?;
+        let fresh_owner =
+            if base_ty.is_copy() { None } else { Some((self.owners.owner(value)?, base_ty)) };
+        self.preparation_facts.structured_values.insert(base, (value, base_ty));
+        Some(StructuredIndexedBase { source: None, fresh_owner })
+    }
+
     pub(super) fn structured_indexed_operation(
         &mut self,
         indexed: u32,
@@ -172,17 +197,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             return None;
         }
-        let mut fresh_base = None;
-        let source = if let Some((base, base_ty)) = fresh {
-            let value = self.structured_value(base, base_ty, graph)?;
-            if !base_ty.is_copy() {
-                fresh_base = Some((self.owners.owner(value)?, base_ty));
-            }
-            self.preparation_facts.structured_values.insert(base, (value, base_ty));
-            None
-        } else {
-            Some(self.owned_place(indices[first_checked].0)?)
-        };
+        let StructuredIndexedBase { source, fresh_owner } =
+            self.prepare_structured_indexed_base(fresh, indices[first_checked].0, graph)?;
         let ready = source.is_none() || {
             let source = source?;
             let available = materialized_availability(
@@ -257,7 +273,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
         let borrow = parent?;
         let value =
-            PreparedValue::prepare_indexed_finish(self, result, ty, borrow, write, fresh_base)?
+            PreparedValue::prepare_indexed_finish(self, result, ty, borrow, write, fresh_owner)?
                 .consume();
         assert!(self.preparation_facts.continued_borrows.remove(&borrow));
         Some(value)

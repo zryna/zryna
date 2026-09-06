@@ -250,11 +250,13 @@ pub(in crate::data_ownership_v1) fn fresh_match_base_mismatch_fixture(
     fresh_match_base_build(container, FreshMode::Mismatched)
 }
 
+#[derive(Clone, Copy)]
 enum FreshContainer {
     FixedArray,
     Vec,
 }
 
+#[derive(Clone, Copy)]
 enum FreshMode {
     Copy,
     OwnedExplicit,

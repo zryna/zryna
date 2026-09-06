@@ -68,7 +68,9 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> Vec<raw:
     values
 }
 
-fn structured_resource_fixture(shape: usize) -> (String, RawProjectSyntaxSnapshot) {
+fn structured_resource_fixture(
+    shape: usize,
+) -> (String, zryna_syntax::v4::RawProjectSyntaxSnapshot) {
     match shape {
         0 => match_fixture(Payload::Struct, true, true),
         1 => nested_match_fixture(true, true),
