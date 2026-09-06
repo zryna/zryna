@@ -20,7 +20,13 @@ pub(super) struct ProjectionResolver<'a, 'f, 'b, 'e> {
     pub(super) node_types: &'a [Option<Ty>],
     pub(super) layouts: &'a layout::VerifiedLayouts,
     pub(super) bindings: &'b BTreeMap<String, Binding>,
+    pub(super) allow_enum_payload: bool,
     pub(super) errors: &'e mut Errors<'a>,
+}
+
+enum FieldProjection {
+    Struct(u32, Ty),
+    Enum(u32, Ty),
 }
 
 impl ProjectionResolver<'_, '_, '_, '_> {
@@ -32,7 +38,7 @@ impl ProjectionResolver<'_, '_, '_, '_> {
         &mut self,
         base: Ty,
         name: &syntax::RawIdentifierSyntax,
-    ) -> Option<(u32, Ty)> {
+    ) -> Option<FieldProjection> {
         let use_span = span(self.input.sources(), name.span);
         let Some(nominal) =
             self.layouts.type_by_id(base.layout).and_then(layout::VerifiedType::nominal_identity)
@@ -57,41 +63,71 @@ impl ProjectionResolver<'_, '_, '_, '_> {
             );
             return None;
         };
-        let RawDataDeclarationKind::Struct { fields, .. } =
-            &self.file.data_declarations()[decl.declaration].kind
-        else {
-            self.errors.at(
-                "ZRYNA-M3006",
-                use_span,
-                "owned field projection requires a struct, not an enum",
-                "project one declared field from a supported private struct",
-            );
-            return None;
-        };
-        fields
-            .iter()
-            .enumerate()
-            .find(|(_, field)| field.name.text == name.text)
-            .and_then(|(ordinal, field)| {
-                u32::try_from(ordinal).ok().zip(semantic_type(
-                    self.file,
-                    field.type_syntax,
-                    self.module,
-                    self.declarations,
-                    self.graph,
-                    self.node_types,
-                    self.errors,
-                ))
-            })
-            .or_else(|| {
+        match &self.file.data_declarations()[decl.declaration].kind {
+            RawDataDeclarationKind::Struct { fields, .. } => fields
+                .iter()
+                .enumerate()
+                .find(|(_, field)| field.name.text == name.text)
+                .and_then(|(ordinal, field)| {
+                    Some(FieldProjection::Struct(
+                        u32::try_from(ordinal).ok()?,
+                        semantic_type(
+                            self.file,
+                            field.type_syntax,
+                            self.module,
+                            self.declarations,
+                            self.graph,
+                            self.node_types,
+                            self.errors,
+                        )?,
+                    ))
+                })
+                .or_else(|| {
+                    self.errors.at(
+                        "ZRYNA-M3006",
+                        use_span,
+                        format!("struct '{}' has no field '{}'", decl.name, name.text),
+                        "use one exact declared field name",
+                    );
+                    None
+                }),
+            RawDataDeclarationKind::Enum { variants, .. } if self.allow_enum_payload => variants
+                .iter()
+                .enumerate()
+                .find(|(_, variant)| variant.name.text == name.text)
+                .and_then(|(ordinal, variant)| {
+                    Some(FieldProjection::Enum(
+                        u32::try_from(ordinal).ok()?,
+                        semantic_type(
+                            self.file,
+                            variant.payload_type?,
+                            self.module,
+                            self.declarations,
+                            self.graph,
+                            self.node_types,
+                            self.errors,
+                        )?,
+                    ))
+                })
+                .or_else(|| {
+                    self.errors.at(
+                        "ZRYNA-M3006",
+                        use_span,
+                        format!("enum '{}' has no payload variant '{}'", decl.name, name.text),
+                        "borrow the exact refined active payload variant",
+                    );
+                    None
+                }),
+            RawDataDeclarationKind::Enum { .. } => {
                 self.errors.at(
                     "ZRYNA-M3006",
                     use_span,
-                    format!("struct '{}' has no field '{}'", decl.name, name.text),
-                    "use one exact declared field name",
+                    "owned enum payload projection requires lexical borrow authority",
+                    "access the active payload only through borrow or borrowMut",
                 );
                 None
-            })
+            }
+        }
     }
 
     fn constant_projection_type(&mut self, base: Ty, index_id: u32) -> Option<(u32, Ty)> {
@@ -179,18 +215,18 @@ impl ProjectionResolver<'_, '_, '_, '_> {
                 }),
             RawExpressionKind::FieldAccess { base, field, .. } => {
                 let base = self.resolve(base, topology)?;
-                let (ordinal, ty) = self.field_projection_type(base.ty, &field)?;
-                let key = (base.place.0, 0, ordinal);
-                let place = project(
-                    topology,
-                    ProjectionDescriptor {
-                        ty,
-                        at,
-                        key,
-                        kind: raw::PlaceKind::StructField { base: base.place, ordinal },
-                    },
-                    self.errors,
-                )?;
+                let projection = self.field_projection_type(base.ty, &field)?;
+                let (tag, ordinal, ty, kind) = match projection {
+                    FieldProjection::Struct(ordinal, ty) => {
+                        (0, ordinal, ty, raw::PlaceKind::StructField { base: base.place, ordinal })
+                    }
+                    FieldProjection::Enum(variant, ty) => {
+                        (2, variant, ty, raw::PlaceKind::EnumPayload { base: base.place, variant })
+                    }
+                };
+                let key = (base.place.0, tag, ordinal);
+                let place =
+                    project(topology, ProjectionDescriptor { ty, at, key, kind }, self.errors)?;
                 Some(OwnedAggregatePlace {
                     ty,
                     place,

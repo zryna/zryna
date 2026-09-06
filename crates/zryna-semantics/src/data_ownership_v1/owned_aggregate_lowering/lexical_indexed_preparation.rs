@@ -21,7 +21,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         let expression = self.decisions.function.body.expressions.get(target as usize)?.clone();
         let at = span(self.decisions.input.sources(), expression.span);
         let RawExpressionKind::Index { base, index, .. } = expression.kind else {
-            let source = self.resolve(target)?;
+            let source = self.resolve_borrow_target(target)?;
             let integer = self.decisions.primitive(TypeCategory::I32)?;
             // The affine preparation carrier is not an address or referent value.
             self.visits = self.visits.checked_add(1)?;
@@ -29,7 +29,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.lexical_static_begin(source, ty, write, at)?;
             return Some(value);
         };
-        let source = self.resolve(base)?;
+        let source = self.resolve_borrow_target(base)?;
         let element = self.decisions.layouts.type_by_id(source.ty.layout)?.referenced_type();
         if !matches!(source.ty.category, TypeCategory::FixedArray | TypeCategory::Vec)
             || element != Some(ty.layout)
@@ -51,7 +51,7 @@ impl PreparationContext<'_, '_, '_, '_> {
                     )
                 },
             );
-        let access_source = if static_index { self.resolve(target)? } else { source };
+        let access_source = if static_index { self.resolve_borrow_target(target)? } else { source };
         self.available_vector(access_source, write, at)?;
         let integer = self.decisions.primitive(TypeCategory::I32)?;
         let value = self.walk(index, integer)?;

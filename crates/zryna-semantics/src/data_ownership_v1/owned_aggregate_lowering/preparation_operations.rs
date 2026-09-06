@@ -175,6 +175,14 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
     }
 
     pub(super) fn resolve(&mut self, id: u32) -> Option<OwnedAggregatePlace> {
+        self.resolve_with(id, false)
+    }
+
+    pub(super) fn resolve_borrow_target(&mut self, id: u32) -> Option<OwnedAggregatePlace> {
+        self.resolve_with(id, true)
+    }
+
+    fn resolve_with(&mut self, id: u32, allow_enum_payload: bool) -> Option<OwnedAggregatePlace> {
         let mut inserted = Vec::new();
         let decisions = &mut self.decisions;
         let result = ProjectionResolver {
@@ -187,6 +195,7 @@ impl<'a, 'f> PreparationContext<'a, 'f, '_, '_> {
             node_types: decisions.node_types,
             layouts: decisions.layouts,
             bindings: self.bindings,
+            allow_enum_payload,
             errors: decisions.errors,
         }
         .resolve(id, &mut PreparationTopology { state: &mut self.state, inserted: &mut inserted });

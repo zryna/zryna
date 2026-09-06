@@ -12,6 +12,11 @@ mod nonindexed_owned_borrow;
 #[path = "nonindexed_static_owned_borrow.rs"]
 mod nonindexed_static_owned_borrow;
 
+#[path = "active_enum_payload_borrow_fixture.rs"]
+mod active_enum_payload_borrow_fixture;
+#[path = "active_enum_payload_borrow_source.rs"]
+mod active_enum_payload_borrow_source;
+
 #[path = "ordinary_array_composition_fixture.rs"]
 pub(in crate::data_ownership_v1) mod ordinary_array_composition_fixture;
 

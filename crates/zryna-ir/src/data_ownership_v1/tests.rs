@@ -4,6 +4,7 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 use std::collections::BTreeSet;
 
+mod active_enum_payload_borrow;
 mod borrow_index_work;
 mod borrow_loop_nesting;
 mod borrow_nonindexed_call_scope;

@@ -12,7 +12,6 @@ pub(in crate::data_ownership_v1) fn has_nonindexed_owned_borrow(
 ) -> bool {
     // Preserve established locally constructed root and projected-borrow routes.
     if function.export_span.is_some()
-        || function.parameters.is_empty()
         || function.body.statements.iter().any(|statement| {
             !matches!(
                 statement.kind,
@@ -48,7 +47,24 @@ pub(in crate::data_ownership_v1) fn has_nonindexed_owned_borrow(
         else {
             return false;
         };
-        parameter_fed_place(function, value)
+        parameter_fed_place(function, value) || constructed_enum_payload(function, value)
+    })
+}
+
+fn constructed_enum_payload(function: &RawFunctionSyntax, id: u32) -> bool {
+    let Some(expression) = function.body.expressions.get(id as usize) else { return false };
+    let RawExpressionKind::FieldAccess { base, .. } = expression.kind else { return false };
+    let Some(base) = function.body.expressions.get(base as usize) else { return false };
+    let RawExpressionKind::Reference { name } = &base.kind else { return false };
+    function.body.statements.iter().any(|statement| {
+        let RawStatementKind::LocalDeclaration { name: local, initializer, .. } = &statement.kind
+        else {
+            return false;
+        };
+        local.text == name.text
+            && function.body.expressions.get(*initializer as usize).is_some_and(|initializer| {
+                matches!(initializer.kind, RawExpressionKind::EnumConstruction { .. })
+            })
     })
 }
 

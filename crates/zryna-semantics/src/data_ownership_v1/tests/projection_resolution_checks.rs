@@ -101,6 +101,7 @@ pub(in crate::data_ownership_v1) fn compare(
         node_types: &node_types,
         layouts: &layouts,
         bindings: &bindings,
+        allow_enum_payload: false,
         errors: &mut scratch_errors,
     };
     let expected =
