@@ -478,6 +478,9 @@ mod generic_vec_resources;
 #[path = "../tests/lexical_indexed_resources.rs"]
 mod lexical_indexed_resources;
 #[cfg(test)]
+#[path = "../tests/indexed_handle_resources.rs"]
+mod indexed_handle_resources;
+#[cfg(test)]
 #[path = "../tests/local_tail_supplement_controls.rs"]
 mod local_tail_supplement_controls;
 #[cfg(test)]

@@ -335,7 +335,15 @@ ordinary observation, transient child transfer and persistent lexical authority.
 
 Lexical chained borrowing now uses explicit infallible binding after the transient chain;
 it does not consume another lexical/formal alias. Fresh mutation and borrowing fresh temporaries
-remain excluded. Shared/Weak source production still depends on #260/#261. Complete gates and
+remain excluded. The #260/#261 handle authorities now also feed authenticated Array/Vec lexical
+fixtures in `indexed_handle_source.rs`: direct Shared/Weak and nested handle-containing
+Struct/Enum/FixedArray/Vec referents clone and replace through their exact issued authority.
+`indexed_handle_rejections.rs` pins complete diagnostics and recovery; `indexed_handle_regions.rs`
+checks static siblings, compatible root/element borrows and Vec growth after lexical restoration.
+`indexed_handle_resources.rs` separately injects private cleanup and transition counters to prove
+exact/first-extra, both cleanup-addition overflows, unchanged state and valid retry.
+The [indexed acceptance mapping](M3_INDEXED_SOURCE_OPERATIONS.md#indexed-borrowing-acceptance-reconciliation-255256)
+locates the complete evidence families without treating raw opaque slots as source support. Complete gates and
 independent review remain required; verified cleanup descriptors are not runtime fault execution,
 backend completion or public activation. Located ignored tests must actually run before they
 are reported as boundary execution evidence.

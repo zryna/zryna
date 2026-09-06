@@ -151,10 +151,7 @@ impl PreparationState<'_> {
             let recipe =
                 CleanupRecipe::describe_reverse(self.counts[4], self.owners.pending(), None)?;
             let result = (recipe.id, recipe.action_count);
-            let plans = self.counts[4].checked_add(1)?;
-            let actions = self.counts[5].checked_add(recipe.action_count)?;
-            self.counts[4] = plans;
-            self.counts[5] = actions;
+            self.advance_cleanup(recipe.action_count, at, errors)?;
             return Some(result);
         }
         let usage = CleanupUsage {
@@ -177,6 +174,28 @@ impl PreparationState<'_> {
         self.counts[4] = plans;
         self.counts[5] = actions;
         Some(result)
+    }
+
+    pub(super) fn advance_cleanup(
+        &mut self,
+        actions: usize,
+        at: Span,
+        errors: &mut Errors<'_>,
+    ) -> Option<()> {
+        let Some((plans, actions)) =
+            self.counts[4].checked_add(1).zip(self.counts[5].checked_add(actions))
+        else {
+            errors.at(
+                "ZRYNA-M3201",
+                at,
+                "owned cleanup resource accounting overflowed",
+                "reduce simultaneously live owners or cleanup sites",
+            );
+            return None;
+        };
+        self.counts[4] = plans;
+        self.counts[5] = actions;
+        Some(())
     }
 
     pub(super) fn prefix_cleanup(

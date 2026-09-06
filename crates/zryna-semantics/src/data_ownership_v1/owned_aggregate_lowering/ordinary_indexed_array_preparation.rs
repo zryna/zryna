@@ -48,8 +48,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             owner,
         )?;
         let (prefix, actions) = (recipe.id, recipe.action_count);
-        self.state.counts[4] = self.state.counts[4].checked_add(1)?;
-        self.state.counts[5] = self.state.counts[5].checked_add(actions)?;
+        self.state.advance_cleanup(actions, at, self.decisions.errors)?;
         self.push(Operation::GenericClonePrefix { id: prefix, owner, actions }, ty, at, None);
         let leaf =
             if super::generic_clone_preparation::contains_handle(ty.layout, self.decisions.layouts)

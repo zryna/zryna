@@ -23,7 +23,7 @@ cleanup and BoundsV1 trap identity without inventing a dynamic PlaceId.
 Ordinary chained source access evaluates the base once, then each index once in
 order, with each bounds check preceding evaluation of the next index. Replacement
 checks the complete target chain before preparing the RHS once. Copy reads use
-BorrowRead; explicit owned clones use the existing generic clone frontier;
+BorrowRead; explicit owned clones use the existing generic or handle-aware clone frontier;
 replacement uses BorrowWrite or BorrowReplace. The final authority ends before
 subsequent use of the containing owner. Exclusive calls and mutation invalidate
 refinements through the retained original conflict region.
@@ -48,7 +48,8 @@ it remains pending during index/bounds failure and is dropped after the final en
 These are verified static plans and opaque execution descriptors, not a claim of
 runtime execution coverage. Source and independent raw tests must authenticate
 their own syntax/layout authorities and pass the mandatory verifier. Shared/Weak
-source construction and transition work remains blocked on the separate #260/#261 stages.
+source construction and count transitions reuse the separate #260/#261 authorities;
+the adapter does not define alternative handle semantics.
 No target execution, backend implementation or public profile is activated here.
 
 ## Lexical finalization
