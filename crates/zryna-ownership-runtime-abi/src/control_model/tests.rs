@@ -4,6 +4,8 @@ use zryna_layout::{TypeCategory, raw as layout};
 use zryna_source::{SourceFileInput, SourceMap};
 
 mod boundaries;
+mod conformance_counts;
+mod conformance_graph;
 mod resources;
 
 fn authorities() -> (VerifiedOwnershipRuntimeAbi, VerifiedLayouts, VerifiedLayouts) {

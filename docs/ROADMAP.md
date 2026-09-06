@@ -380,7 +380,8 @@ integration interfaces. #260 consumes #277; #261 consumes #278; #262 consumes #2
 actual WeakUpgrade source control flow. Its compile-time closure candidate covers authenticated
 addressable and temporary Weak operands, the complete frozen payload categories, required nested
 if/while/call/match composition, sealed successor ownership, exact diagnostics and bounded
-recovery. Target execution remains #263 work, and #264 verifies the complete #83 contract before
+recovery. #263 integrates the corresponding non-executable fault, count, cycle and resource
+conformance; target execution remains downstream. #264 verifies the complete #83 contract before
 #83 closes.
 The cores use typed operation hooks without claiming source handle execution. Required #83
 payload, call, match and CFG cases cannot wait for later #270–#273 closure. Full #270/#271 then

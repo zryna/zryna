@@ -32,6 +32,107 @@ by these symbolic tests. Existing independent IR resource and ABI transition sui
 required alongside this matrix. Full gate/CI receipts must be recorded separately when run;
 listing an executable here is not a claim that Linux/Windows integration gates already passed.
 
+## Issue #263 checked resource and evidence ledger
+
+This ledger covers all seven acceptance rows in Issue #263 without upgrading compiler evidence
+into a target-runtime claim. Its four closed evidence classes have deliberately different strength:
+
+- `authenticated source program` starts with protocol-v4 source and reaches mandatory verified IR;
+- `verified IR` starts from an independently valid raw IR program and tests the verifier boundary;
+- `held-credit/planner control` exercises compiler planning or preflight by reserving otherwise
+  available credits, so it is not a fully materialized maximum-size source program; and
+- `synthetic ABI counter` exercises bounded ABI transition/control claims or private counters, so
+  it is not an executed allocator, refcount implementation, or target fault.
+
+The acceptance identifiers below are stable ledger keys, not new issue numbers.
+
+| Acceptance | Exact #263 obligation | Evidence boundary |
+| --- | --- | --- |
+| A1 | Counts 0, 1, MAX-1 and MAX; clone/downgrade/upgrade overflow preserves state and selects REFCOUNT rather than EXPIRED | Source binds upgrade outcomes; saturated strong/weak counts remain synthetic ABI evidence |
+| A2 | Allocation failure retention; last-strong begin, payload drop and finish order; implicit and final explicit Weak removal; pending exclusion | Source proves retained compiler owners; ABI traces prove symbolic transition order only |
+| A3 | Double/stale/wrong release, finish, upgrade/result/status/type/fingerprint and omitted cleanup reject without hiding ABI_VIOLATION | Source/IR diagnostics and ABI hostile claims are separate; no target host failure is executed |
+| A4 | Immutable construction excludes strong cycles; Weak does not retain payload; forged cyclic claims reject without tracing | Verified construction provenance and bounded ABI graph admission only; no runtime cycle discovery |
+| A5 | Owned/nested payloads, active variants, exact failure prefix/masks/order and recovery | Authenticated source plus verified IR and symbolic ABI cleanup; scalar-only evidence is insufficient |
+| A6 | Every exact/first-extra/overflow resource is feasible source evidence or honestly classified planner/ABI evidence | Coupled maxima and synthetic counters are named below; none represents billions of source handles |
+| A7 | Deterministic diagnostics/fault observations and successful replay after rejection/failure | Repeated source/IR/ABI proof construction; not a target execution receipt |
+
+### Executable bindings
+
+| Acceptance | Evidence class | Test source | Exact executable test | What the test proves |
+| --- | --- | --- | --- | --- |
+| A1 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_fault_oracle.rs` | `source_upgrade_binds_success_expiration_and_overflow_to_distinct_outcomes` | Verified source upgrade binds OK, EXPIRED and REFCOUNT to distinct sealed outcomes and replays |
+| A1 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` | `control_model_count_boundaries_remain_indivisible_existing_abi_claims` | Strong MAX-1/MAX, expired zero-strong upgrade and checked ABI resource counters preserve exact state |
+| A1 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/resources.rs` | `control_model_synthetic_refcount_failure_cannot_issue_an_owner` | Saturated clone, downgrade and upgrade claims issue no owner |
+| A1 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_counts.rs` | `conformance_counts_all_increment_boundaries_preserve_exact_other_state` | StrongClone, WeakClone, downgrade and upgrade cover 1/MAX-1/MAX with atomic overflow and unchanged unrelated state |
+| A1 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_counts.rs` | `conformance_counts_expired_weak_clone_is_not_upgrade_or_live_downgrade` | Zero-strong expiration remains distinct from legal explicit Weak clone and illegal live-only operations |
+| A2 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` | `direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup` | Allocation/count failures retain the authenticated source owner and exclude publication |
+| A2 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` | `control_model_clone_expiration_and_payload_before_implicit_weak_finish` | Last-strong payload-before-finish order, implicit Weak removal and final explicit Weak release |
+| A2 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` | `control_model_allocation_failure_retains_embedded_handle_until_successful_retry` | Failed construction retains embedded ownership until one successful retry |
+| A2 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `pending_last_strong_excludes_every_operation_except_finish` | WeakClone, WeakUpgrade and WeakRelease reject while last-strong completion is pending |
+| A2 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` | `conformance_graph_distinct_cloned_edges_and_weak_observer_release_completely` | Distinct cloned strong edges release completely while an explicit Weak observer survives payload destruction and releases last |
+| A3 | `verified IR` | `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` | `shared_weak_cleanup_diagnostics_have_exact_order_span_and_valid_replay` | Exact hostile cleanup diagnostics, ordering, spans and valid replay |
+| A3 | `verified IR` | `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` | `shared_weak_instruction_types_reject_wrong_payload_and_handle_categories` | Wrong payload, handle and result types reject at mandatory IR verification |
+| A3 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` | `direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup` | ABI_VIOLATION remains a host failure while language failures retain their exact trap identities |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` | `control_model_requires_exact_independent_surviving_owner_contract` | Omitted release and wrong surviving owner/control/mode fail closed |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` | `control_model_allocation_failure_retains_embedded_handle_until_successful_retry` | Stale access to transferred embedded ownership rejects |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` | `control_model_clone_expiration_and_payload_before_implicit_weak_finish` | Forged upgrade result and double release reject |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` | `control_model_provenance_topology_modes_and_allocation_failures_are_atomic` | Wrong layout geometry, invocation/site, owner, mode and failure publication reject atomically |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `all_control_transitions_and_illegal_variants_are_checked` | Invalid finish/upgrade/release transitions and statuses reject |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `non_success_control_results_are_zero_shaped` | Non-success outputs cannot smuggle a handle or Boolean result |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `failure_atomicity_is_bound_to_the_exact_operation_status_set` | Failure status remains bound to its exact operation and unchanged state |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `layout_binding_rejects_target_and_fingerprint_mismatch` | Wrong target/layout fingerprint fails before transition authority |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` | `conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly` | Future/duplicate owners, pending cleanup interposition and early finish reject with exact diagnostics and recovery |
+| A3 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` | `conformance_status_corruption_is_not_expiration_or_a_language_trap` | Corrupt status/result, stale release and replayed finish reject deterministically without reclassifying expiration |
+| A4 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` | `control_model_immutable_handle_graph_and_recursive_release_are_exact` | Construction provenance rejects future, duplicate and reordered graph claims without tracing |
+| A4 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` | `conformance_graph_distinct_cloned_edges_and_weak_observer_release_completely` | Lawful shared-target clones and a non-retaining Weak observer pass under both sealed layouts |
+| A4 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` | `conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly` | Forged future strong/Weak references and duplicated ownership reject without cycle discovery |
+| A4 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_reachability.rs` | `handle_reachability_is_linear_for_deep_diamonds_and_cycles` | Supplementary algorithmic evidence: compiler reachability terminates linearly across deep DAGs and hostile cycles; it is not control-graph admission proof |
+| A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` | `shared_and_weak_structural_payload_categories_lower_through_verified_ir` | Scalar, owned, aggregate, container and nested handle categories reach mandatory verified IR |
+| A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs` | `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` | Payloadless/multiple variants and finite recursive nominal payloads reach verified IR with exact cleanup |
+| A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` | `structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention` | Every canonical recipe-step fault ordinal retains source and reverse-cleans its completed recipe prefix; concrete repeated Vec/active-Enum frontiers require separate evidence |
+| A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_frontier_source.rs` | `handle_frontier_source_vec_enum_occurrences_retain_replacement_owners` | Concrete empty/nonempty Vec occurrences and active/payloadless Enum frontiers retain source and old target, reverse-clean exact acquired prefixes and replay |
+| A5 | `verified IR` | `crates/zryna-ir/src/data_ownership_v1/tests/handle_aware_clone.rs` | `seals_shared_and_weak_recursive_clone_recipe_without_unfolding_vec_cycles` | Sealed recursive handle-clone recipes preserve exact active layout and count operations |
+| A5 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` | `control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last` | Symbolic payload matrix derives active-variant reverse cleanup and Vec storage-last order |
+| A6 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs` | `shared_construct_cleanup_frontier_is_exact_atomic_and_recovers` | Exact/first-extra Shared construction cleanup-action frontier is atomic and recoverable |
+| A6 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs` | `temporary_handle_drop_transition_has_exact_extra_boundary_and_recovers` | Exact/first-extra temporary-handle transition credits reject without state drift |
+| A6 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs` | `handle_aware_structural_clone_has_exact_cleanup_frontier_and_pristine_retry` | Exact/first-extra recursive handle-clone cleanup frontier and pristine retry |
+| A6 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_resources.rs` | `weak_upgrade_exact_extra_overflow_resources_restore_pristine_state` | Value/place/transition/action/plan exact, first-extra and arithmetic-overflow controls restore state |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/resources.rs` | `control_model_internal_resource_boundaries_publish_nothing_on_rejection` | Private allocation/node counters prove exact/first-extra/overflow preflight without mass execution |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `vec_transitions_use_sealed_stride_and_checked_byte_amplification` | Sealed stride proves exact/first-extra dynamic-allocation byte capacity without executing allocation |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `bound_vec_claim_rejects_cross_target_and_element_replay` | Bound Vec claims prove exact/first-extra element count and reject cross-target/type replay |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `byte_amplification_violations_replay_deterministically` | Rejected first-extra byte amplification replays deterministically |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `exact_contract_seals_all_declarations_and_layout_metadata` | Verified ABI seals exact target-derived control size, alignment and payload offset |
+| A7 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` | `moved_handle_clone_reports_exact_diagnostic_and_replays` | Exact moved-handle diagnostic and deterministic source replay |
+| A7 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs` | `weak_upgrade_binding_collision_is_exact_deterministic_and_recovers` | Exact binding-collision code/message/guidance/span, repeated equality and valid recovery |
+| A7 | `verified IR` | `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` | `shared_weak_cleanup_rejects_missing_reordered_returned_and_foreign_owners` | Missing, reordered, returned and foreign cleanup owners reject independently |
+| A7 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` | `conformance_status_corruption_is_not_expiration_or_a_language_trap` | Exact hostile diagnostics repeat and the pristine lawful graph verifies identically after each rejection |
+
+### Coupled maxima and exclusions
+
+The authenticated source tests do not construct strong or weak populations approaching
+`u32::MAX`; static per-function instruction limits do not by themselves impose a dynamic
+population cap when admitted loops can execute repeatedly. One symbolic control trace is bounded
+to 4,194,304 status transitions, so A1 honestly labels MAX-1 and MAX as `synthetic ABI counter`
+evidence rather than inferring runtime reachability. The 1,048,576 allocation-operation/live-
+allocation frontier and 4,194,304 payload-node/status frontier are also private counter controls;
+their tests do not allocate a million target objects or execute millions of runtime operations.
+
+The per-function value, place, ownership-transition, cleanup-action and cleanup-plan maxima are
+coupled to the source shape and to earlier syntax/layout/IR limits. The A6 semantic tests reserve
+held credits around one authenticated operation to isolate exact and first-extra arithmetic; they
+are `held-credit/planner control`, not claims that one feasible source independently saturates all
+maxima. A6 separately binds dynamic allocation bytes and target control size/alignment to exact
+layout/ABI tests; these remain preflight facts rather than allocator observations.
+Active-borrow and diagnostic ceilings are inherited admission prerequisites and are not consumed
+by the handle operations covered here, so they are intentionally not represented as A6 demand.
+
+Target-runtime exclusions are exact: this ledger does not execute allocation, mutate a concrete
+strong or weak count, select an upgrade edge at runtime, destroy payload bytes, deallocate a
+control block, inject a target fault, or exercise backend, driver, CLI, manifest or public-profile
+behavior. Those exclusions cannot be satisfied by renaming symbolic evidence; later runtime work
+must add separately bound execution receipts. This bounded ledger does not claim Issue #263,
+Issue #83, or the M3 profile closed.
+
 ## Issue #262 source upgrade closure candidate
 
 `weak_upgrade_source` authenticates retained addressable and once-evaluated temporary Weak
@@ -112,6 +213,31 @@ non-handle clone contract and does not claim that a target backend executed the 
 count/allocation fault and resource conformance belongs to the non-executable integrated evidence
 in #263, while broader CFG upgrade/match composition remains tracked by #262/#269. Actual target
 execution remains outside this child graph. No target runtime or public profile is enabled.
+
+## Issue #263 source-bound nested frontier checkpoint
+
+`handle_frontier_source_vec_enum_occurrences_retain_replacement_owners` authenticates
+constructed `Vec<Entry>` values of length zero and three; the nonempty value contains
+`Data(Payload)`, `Empty` and `Data(Payload)`, where `Payload` owns Shared, Weak and String fields.
+The test-only `handle_frontier_model` binds the source initializer to the sealed clone root and
+walks verified constructor operands against its recursive recipe. Thus two concrete Vec iterations
+have distinct occurrence paths, while the payloadless variant contributes no initialized fields.
+This is not enumeration of unique recipe type nodes or fabricated runtime tag evidence.
+
+Across the empty and nonempty fixtures, eight bounded fault positions cover each initial Vec
+acquisition and every handle/String acquisition in the nonempty traversal. The checks preserve
+the sealed original allocation/refcount trap, reject
+the failing uncommitted leaf, unwind the active partial payload before prior elements, and release
+Vec storage last. Exact pre-commit cleanup retains both the source and old replacement target;
+successful replacement drops only the old target and later scope cleanup drops the source once.
+Wrong operation/status/ordinal/destination, omitted or reordered prefix/retained roots, and a
+wrong initializer value reject deterministically, followed by valid replay.
+
+These are bounded compiler conformance claims derived from authenticated source, verified IR,
+sealed clone/drop recipes and existing ABI transition validation. They do not execute runtime
+allocation, dynamic traversal or refcounts, and do not issue target execution receipts. Arbitrary
+runtime Vec lengths, other nested frontier shapes and the remaining #263 count/control/resource
+matrix require their separately named evidence; this checkpoint does not close #263 or #83.
 
 ## Existing evidence and its limits
 

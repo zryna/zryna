@@ -256,7 +256,8 @@ proof. Every completed program must still pass mandatory full IR verification. T
 The #262 source route now consumes that schema for an authenticated `upgradeWeak` statement.
 It retains addressable Weak operands, materializes non-addressable operands exactly once, gives
 only the success scope its synthesized Shared owner, and preserves the exact overflow cleanup.
-This is compile-time ownership evidence; target outcome execution remains the #263 boundary.
+This is compile-time ownership evidence; #263 integrates its non-executable conformance while
+target outcome execution remains downstream.
 
 ## Integration and closure
 

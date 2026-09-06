@@ -2,7 +2,7 @@
 
 Status: Issue #259 contract with #260 independent IR and symbolic ABI proof interfaces and the
 internal #261 Shared/Weak source producer. #262 is the compile-time source upgrade closure
-candidate; target execution remains owned by #263.
+candidate; #263 owns integrated non-executable fault, count, cycle, and resource conformance.
 Frozen baseline: `f1b88304e9ee918ba46808f60859097999785f1b`, after verified #82/#122 closure.
 This document enables no runtime, backend, driver route, public profile, or target execution.
 It does not close #83. The [evidence and integration matrix](M3_SHARED_WEAK_EVIDENCE.md)
@@ -62,7 +62,7 @@ profile.
 | Types/layout | `crates/zryna-layout/src/lib.rs`: sealed nominal identities, `TypeCategory`, `referenced_type`, finite by-value graph, target fingerprints | #261 maps admitted Shared/Weak instances, including finite values of recursive nominal types through handle indirection |
 | IR | `crates/zryna-ir/src/data_ownership_v1.rs`: `SharedConstruct`, `SharedClone`, `WeakDowngrade`, `WeakClone`, `WeakUpgradeBranch`, opaque instruction/terminator views | #260 freezes independent operation/state/hostile proofs consumed by the #261/#262 producers |
 | Ownership/drop | IR `InitializePlace`, `MoveFromPlace`, `ReplacePlace`, `DropPlace`, sealed site/role cleanup and derived recursive drop actions | #277/#278 provide the core, #261 integrates handle leaves, and #279/#262 integrate control flow |
-| ABI | `crates/zryna-ownership-runtime-abi/src/lib.rs`: `VerifiedControlLayout`, `ControlState`, `TransitionClaim::Control`, `validate_transition`, operation-bound failure claims | #260 supplies bounded symbolic control/handle proofs; executed target behavior remains #263 |
+| ABI | `crates/zryna-ownership-runtime-abi/src/lib.rs`: `VerifiedControlLayout`, `ControlState`, `TransitionClaim::Control`, `validate_transition`, operation-bound failure claims | #260 supplies bounded symbolic control/handle proofs; #263 integrates non-executable conformance, while executed target behavior remains downstream |
 
 The IR rejects wrong instruction payload/result types with `ZRYNA-I3005` and wrong upgrade
 successor/result shape with `ZRYNA-I3014`. The authenticated internal source producer still grants

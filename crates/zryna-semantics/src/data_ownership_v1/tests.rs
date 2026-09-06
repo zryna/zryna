@@ -143,6 +143,8 @@ mod function_catalog;
 mod generation_budgets;
 mod handle_fault_oracle;
 mod handle_fault_oracle_support;
+mod handle_frontier_model;
+mod handle_frontier_source;
 mod lexical_borrow_calls;
 mod loop_fixture_support;
 mod loop_root_borrows;

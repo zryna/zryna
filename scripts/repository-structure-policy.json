@@ -2062,6 +2062,13 @@
       "review": "https://github.com/zryna/zryna/issues/314"
     },
     {
+      "path": "tests/m3-shared-weak-resource-ledger-cases.mjs",
+      "kind": "test",
+      "owner": "compiler maintainers",
+      "reason": "Checked Issue #263 documentation evidence ledger; not an executable production module",
+      "review": "https://github.com/zryna/zryna/issues/263"
+    },
+    {
       "path": "tests/npm-timing-workflow-cases.mjs",
       "kind": "test",
       "owner": "compiler maintainers",

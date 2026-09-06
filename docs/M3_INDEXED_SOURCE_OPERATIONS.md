@@ -147,8 +147,9 @@ Resource tests inject explicitly labelled private accounting counters after an i
 successful authenticated control. They prove arithmetic/frontier rejection and unchanged
 preparation state, not that an enormous source program or target allocator executed. Both reverse
 cleanup accumulation and indexed-clone prefix accumulation diagnose checked arithmetic overflow
-before consuming preparation. Executed count/allocation faults remain #263 and downstream target
-work; no public profile, returned borrow, pointer or runtime no-alias optimization is enabled.
+before consuming preparation. Integrated non-executable count/allocation fault evidence remains
+#263; executed target faults remain downstream target work. No public profile, returned borrow,
+pointer or runtime no-alias optimization is enabled.
 
 ### Ordinary fixed-array acceptance reconciliation (#274)
 

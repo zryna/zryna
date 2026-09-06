@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import "./m3-issue-graph-cases.mjs";
 import "./m3-borrowing-evidence-cases.mjs";
-
+import "./m3-shared-weak-resource-ledger-cases.mjs";
 import {
   expectedRegistrySha256,
   loadAndValidateM3Contract,
