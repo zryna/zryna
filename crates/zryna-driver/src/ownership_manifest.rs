@@ -6,7 +6,8 @@ use zryna_abi::{ScalarOutcome, ScalarValue};
 use zryna_diagnostics::{Diagnostic, PrimaryLocation};
 
 use crate::{
-    DATA_OWNERSHIP_CANDIDATE_PROFILE, DataOwnershipCandidateSuccess, ModuleEdge, ModuleRecord,
+    DATA_OWNERSHIP_CANDIDATE_PROFILE, ModuleEdge, ModuleRecord,
+    ownership_pipeline::DataOwnershipCandidateSuccess,
 };
 
 /// Exact filename of the candidate bundle manifest.
@@ -46,7 +47,7 @@ pub struct OwnershipManifestResult {
 impl OwnershipManifestResult {
     /// Creates one target result for canonical manifest rendering.
     #[must_use]
-    pub const fn new(target: OwnershipTarget, outcome: ScalarOutcome) -> Self {
+    pub(crate) const fn new(target: OwnershipTarget, outcome: ScalarOutcome) -> Self {
         Self { target, outcome }
     }
     /// Returns the observed target.
@@ -211,7 +212,7 @@ impl OwnershipManifestV3 {
 ///
 /// # Errors
 /// Returns one stable diagnostic for incompatible results, identity, names, or resource bounds.
-pub fn render_ownership_manifest_v3(
+pub(crate) fn render_ownership_manifest_v3(
     success: &DataOwnershipCandidateSuccess,
     stem: &str,
     results: &[OwnershipManifestResult],

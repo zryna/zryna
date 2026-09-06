@@ -51,7 +51,7 @@ pub struct DataOwnershipRunRequest {
 
 /// Backend bytes prepared in canonical JavaScript, WebAssembly, native order.
 #[derive(Clone, Debug, Default)]
-pub struct PreparedDataOwnershipArtifacts {
+pub(crate) struct PreparedDataOwnershipArtifacts {
     javascript: Option<zryna_backend_javascript::JavaScriptArtifact>,
     webassembly: Option<zryna_backend_webassembly::ValidatedWebAssemblyArtifact>,
     native_object: Option<ValidatedDataOwnershipObjectArtifact>,
@@ -61,31 +61,31 @@ pub struct PreparedDataOwnershipArtifacts {
 impl PreparedDataOwnershipArtifacts {
     /// Returns prepared JavaScript when selected.
     #[must_use]
-    pub const fn javascript(&self) -> Option<&zryna_backend_javascript::JavaScriptArtifact> {
+    pub(crate) const fn javascript(&self) -> Option<&zryna_backend_javascript::JavaScriptArtifact> {
         self.javascript.as_ref()
     }
     /// Returns prepared core WebAssembly when selected.
     #[must_use]
-    pub const fn webassembly(
+    pub(crate) const fn webassembly(
         &self,
     ) -> Option<&zryna_backend_webassembly::ValidatedWebAssemblyArtifact> {
         self.webassembly.as_ref()
     }
     /// Returns the audited native object for a build request.
     #[must_use]
-    pub const fn native_object(&self) -> Option<&ValidatedDataOwnershipObjectArtifact> {
+    pub(crate) const fn native_object(&self) -> Option<&ValidatedDataOwnershipObjectArtifact> {
         self.native_object.as_ref()
     }
     /// Returns the linked audited native invocation for a run request.
     #[must_use]
-    pub const fn native_executable(&self) -> Option<&PreparedDataOwnershipExecutable> {
+    pub(crate) const fn native_executable(&self) -> Option<&PreparedDataOwnershipExecutable> {
         self.native_executable.as_ref()
     }
 }
 
 /// One fully authenticated but unpublished candidate result.
 #[derive(Debug)]
-pub struct DataOwnershipCandidateSuccess {
+pub(crate) struct DataOwnershipCandidateSuccess {
     workspace_root: PathBuf,
     node_runtime: PathBuf,
     closure: VerifiedOwnershipModuleClosure,
@@ -98,54 +98,49 @@ pub struct DataOwnershipCandidateSuccess {
 }
 
 impl DataOwnershipCandidateSuccess {
-    /// Returns the exact internal profile identity.
-    #[must_use]
-    pub const fn profile(&self) -> &'static str {
-        DATA_OWNERSHIP_CANDIDATE_PROFILE
-    }
     /// Returns the validated absolute workspace root retained for publication.
     #[must_use]
-    pub fn workspace_root(&self) -> &std::path::Path {
+    pub(crate) fn workspace_root(&self) -> &std::path::Path {
         &self.workspace_root
     }
     /// Returns the authenticated direct Node.js executable requested for this command.
     #[must_use]
-    pub fn node_runtime(&self) -> &std::path::Path {
+    pub(crate) fn node_runtime(&self) -> &std::path::Path {
         &self.node_runtime
     }
     /// Returns the single final source/syntax authority shared by every selected backend.
     #[must_use]
-    pub const fn closure(&self) -> &VerifiedOwnershipModuleClosure {
+    pub(crate) const fn closure(&self) -> &VerifiedOwnershipModuleClosure {
         &self.closure
     }
     /// Returns the single verifier-sealed semantic authority shared by every target.
     #[must_use]
-    pub const fn program(&self) -> &zryna_semantics::data_ownership_v1::VerifiedProgram {
+    pub(crate) const fn program(&self) -> &zryna_semantics::data_ownership_v1::VerifiedProgram {
         &self.program
     }
     /// Returns canonical prepared target artifacts.
     #[must_use]
-    pub const fn artifacts(&self) -> &PreparedDataOwnershipArtifacts {
+    pub(crate) const fn artifacts(&self) -> &PreparedDataOwnershipArtifacts {
         &self.artifacts
     }
     /// Returns the authenticated portable artifact stem.
     #[must_use]
-    pub fn artifact_stem(&self) -> &str {
+    pub(crate) fn artifact_stem(&self) -> &str {
         &self.artifact_stem
     }
     /// Returns the selected run export, or `None` for build requests.
     #[must_use]
-    pub fn logical_export(&self) -> Option<&str> {
+    pub(crate) fn logical_export(&self) -> Option<&str> {
         self.logical_export.as_deref()
     }
     /// Returns typed run arguments in declaration order.
     #[must_use]
-    pub fn arguments(&self) -> &[ScalarValue] {
+    pub(crate) fn arguments(&self) -> &[ScalarValue] {
         &self.arguments
     }
     /// Returns authenticated provider warnings.
     #[must_use]
-    pub fn diagnostics(&self) -> &[Diagnostic] {
+    pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }
 }
@@ -166,7 +161,7 @@ pub(crate) static OWNERSHIP_ROUTE_TEST_LOCK: std::sync::Mutex<()> = std::sync::M
 ///
 /// # Errors
 /// Returns stable phase-owned diagnostics before any final output becomes visible.
-pub fn prepare_data_ownership_build(
+pub(crate) fn prepare_data_ownership_build(
     request: &DataOwnershipBuildRequest,
 ) -> Result<DataOwnershipCandidateSuccess, CommandFailure> {
     execute(request, None, configured_frontend_v4, &|_| Ok(()), validate_request)
@@ -176,7 +171,7 @@ pub fn prepare_data_ownership_build(
 ///
 /// # Errors
 /// Returns stable source, ABI, backend, toolchain, or audit diagnostics.
-pub fn prepare_data_ownership_run(
+pub(crate) fn prepare_data_ownership_run(
     request: DataOwnershipRunRequest,
 ) -> Result<DataOwnershipCandidateSuccess, CommandFailure> {
     execute(

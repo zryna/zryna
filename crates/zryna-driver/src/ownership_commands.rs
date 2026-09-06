@@ -4,13 +4,14 @@ use zryna_abi::{Invocation, ScalarHostErrorCode, ScalarOutcome, ScalarTarget};
 use zryna_diagnostics::Diagnostic;
 
 use crate::{
-    CommandFailure, CommandFailureKind, DataOwnershipBuildRequest, DataOwnershipCandidateSuccess,
-    DataOwnershipRunRequest, NativeProcessLimits, OwnershipManifestResult, OwnershipTarget,
-    PublishedOwnershipBundle,
+    CommandFailure, CommandFailureKind, DataOwnershipBuildRequest, DataOwnershipRunRequest,
+    NativeProcessLimits, OwnershipManifestResult, OwnershipTarget, PublishedOwnershipBundle,
     native::run_prepared_native_invocation,
+    ownership_pipeline::{
+        DataOwnershipCandidateSuccess, prepare_data_ownership_build, prepare_data_ownership_run,
+    },
     ownership_publication::publish_after_staging,
     pipeline_runtime::{normalize_frame, render_javascript_harness, render_webassembly_harness},
-    prepare_data_ownership_build, prepare_data_ownership_run,
     runtime::NodeRuntimeCapability,
 };
 
@@ -24,7 +25,7 @@ pub fn build_data_ownership_candidate(
     request: &DataOwnershipBuildRequest,
 ) -> Result<PublishedOwnershipBundle, CommandFailure> {
     let success = prepare_data_ownership_build(request)?;
-    crate::publish_data_ownership_bundle(&success, &[])
+    crate::ownership_publication::publish_data_ownership_build(&success)
 }
 
 /// Authenticates, executes, and atomically publishes an internal candidate run.

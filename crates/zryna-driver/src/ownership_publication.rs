@@ -6,10 +6,10 @@ use sha2::{Digest, Sha256};
 use zryna_diagnostics::Diagnostic;
 
 use crate::{
-    ArtifactOutputRoot, CommandFailure, CommandFailureKind, CommandKind,
-    DataOwnershipCandidateSuccess, OWNERSHIP_MANIFEST_NAME, OwnershipManifestResult,
-    OwnershipTarget, decode_ownership_manifest_v3, pipeline::Transaction,
-    render_ownership_manifest_v3,
+    ArtifactOutputRoot, CommandFailure, CommandFailureKind, CommandKind, OWNERSHIP_MANIFEST_NAME,
+    OwnershipManifestResult, OwnershipTarget, decode_ownership_manifest_v3,
+    ownership_manifest::render_ownership_manifest_v3,
+    ownership_pipeline::DataOwnershipCandidateSuccess, pipeline::Transaction,
 };
 
 /// One published artifact in canonical target order.
@@ -100,20 +100,22 @@ type Checkpoint<'a> = &'a dyn Fn(PublicationPhase) -> Result<(), CommandFailure>
 ///
 /// # Errors
 /// Returns stable preparation, publication, or cleanup diagnostics without a partial final path.
-pub fn publish_data_ownership_bundle(
+pub(crate) fn publish_data_ownership_build(
     success: &DataOwnershipCandidateSuccess,
-    results: &[OwnershipManifestResult],
 ) -> Result<PublishedOwnershipBundle, CommandFailure> {
-    publish_with_checkpoint(success, results, &|_| Ok(()))
+    if success.logical_export().is_some() {
+        return Err(transaction_failure(
+            "candidate run publication requires sealed execution evidence",
+        ));
+    }
+    publish_with_checkpoint(success, &|_| Ok(()))
 }
 
 fn publish_with_checkpoint(
     success: &DataOwnershipCandidateSuccess,
-    results: &[OwnershipManifestResult],
     checkpoint: Checkpoint<'_>,
 ) -> Result<PublishedOwnershipBundle, CommandFailure> {
-    let results = results.to_vec();
-    publish_with_runner(success, checkpoint, move |_, _| Ok(results))
+    publish_with_runner(success, checkpoint, |_, _| Ok(Vec::new()))
 }
 
 pub(crate) fn publish_after_staging<Runner>(

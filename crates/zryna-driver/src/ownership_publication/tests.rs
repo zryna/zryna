@@ -72,7 +72,7 @@ fn failures_rollback_then_complete_bundle_publishes_create_only() {
         PublicationPhase::Manifest,
         PublicationPhase::Commit,
     ] {
-        let failure = publish_with_checkpoint(&success, &[], &|phase| {
+        let failure = publish_with_checkpoint(&success, &|phase| {
             if phase == injected {
                 Err(CommandFailure {
                     kind: CommandFailureKind::Preparation,
@@ -93,15 +93,14 @@ fn failures_rollback_then_complete_bundle_publishes_create_only() {
         assert_eq!(transaction_names(output.path()), baseline);
     }
 
-    let published = publish_data_ownership_bundle(&success, &[]).expect("complete bundle");
+    let published = publish_data_ownership_build(&success).expect("complete bundle");
     assert_eq!(published.path(), final_path);
     assert_eq!(published.artifacts().len(), 3);
     assert!(published.artifacts().iter().all(|artifact| artifact.path().is_file()));
     let manifest_before = fs::read(published.manifest_path()).expect("manifest bytes");
     decode_ownership_manifest_v3(&manifest_before).expect("strict published manifest");
 
-    let collision =
-        publish_data_ownership_bundle(&success, &[]).expect_err("create-only collision");
+    let collision = publish_data_ownership_build(&success).expect_err("create-only collision");
     assert_eq!(collision.kind(), CommandFailureKind::Preparation);
     assert_eq!(fs::read(published.manifest_path()).expect("retained manifest"), manifest_before);
     assert_eq!(transaction_names(output.path()), baseline);
@@ -121,7 +120,7 @@ fn complete_run_bundle_binds_typed_results() {
         OwnershipTarget::JavaScript,
         ScalarOutcome::Returned { value: ScalarValue::I32(42) },
     );
-    let published = publish_data_ownership_bundle(&success, &[result]).expect("run bundle");
+    let published = publish_after_staging(&success, |_, _| Ok(vec![result])).expect("run bundle");
     let _cleanup = BundleCleanup(published.path().to_owned());
 
     assert_eq!(published.command(), CommandKind::Run);
@@ -130,4 +129,23 @@ fn complete_run_bundle_binds_typed_results() {
     let manifest = fs::read(published.manifest_path()).expect("manifest bytes");
     let decoded = decode_ownership_manifest_v3(&manifest).expect("strict manifest");
     assert_eq!(decoded.results(), [result]);
+}
+
+#[test]
+fn build_publication_rejects_prepared_run_without_execution_evidence() {
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    let request = request(workspace.root(), TargetSelection::JavaScript);
+    let success = prepare_data_ownership_for_test(
+        &request,
+        Some(("score".to_owned(), vec![ScalarValue::I32(21)])),
+    )
+    .expect("candidate run");
+    let failure = publish_data_ownership_build(&success).expect_err("unexecuted run must fail");
+
+    assert_eq!(failure.kind(), CommandFailureKind::Preparation);
+    assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-C3201");
+    assert!(
+        !request.workspace_root.join(format!(".zryna/out/{}.run", request.artifact_stem)).exists()
+    );
 }
