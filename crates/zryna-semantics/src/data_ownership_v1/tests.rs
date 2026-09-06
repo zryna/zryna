@@ -138,6 +138,7 @@ mod expression_preflight;
 mod fault_oracle_support;
 mod fixed_array_partial_fixture_support;
 mod fixed_arrays;
+mod fresh_indexed_literal_source;
 mod function_catalog;
 mod generation_budgets;
 mod handle_fault_oracle;

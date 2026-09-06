@@ -73,7 +73,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 None
             })?;
         let base_ty = container;
-        let mut first_checked = None;
+        let mut first_checked = fresh.then_some(0);
         for (ordinal, &(_, index)) in indices.iter().enumerate() {
             let expression = self.expression(index)?;
             let record = self.layouts.type_by_id(container.layout)?;

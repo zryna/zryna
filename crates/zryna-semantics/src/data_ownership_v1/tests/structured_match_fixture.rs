@@ -5,11 +5,15 @@ use zryna_syntax::v4::{RawDataDeclaration, RawDataDeclarationKind, RawEnumVarian
 mod callee;
 #[path = "continued_indexed_fixture.rs"]
 mod continued;
+#[path = "fresh_indexed_match_fixture.rs"]
+mod fresh;
 pub(in crate::data_ownership_v1) use continued::fixture as continued_indexed_fixture;
-pub(in crate::data_ownership_v1) use continued::fresh_match_base_fixture as fresh_indexed_match_fixture;
-pub(in crate::data_ownership_v1) use continued::fresh_match_base_implicit_read_fixture as fresh_indexed_match_implicit_read_fixture;
-pub(in crate::data_ownership_v1) use continued::fresh_match_base_mismatch_fixture as fresh_indexed_match_mismatch_fixture;
 pub(in crate::data_ownership_v1) use continued::rejection_fixture as continued_indexed_rejection_fixture;
+pub(in crate::data_ownership_v1) use fresh::assignment_fixture as fresh_indexed_assignment_fixture;
+pub(in crate::data_ownership_v1) use fresh::fresh_match_base_fixture as fresh_indexed_match_fixture;
+pub(in crate::data_ownership_v1) use fresh::fresh_match_base_implicit_read_fixture as fresh_indexed_match_implicit_read_fixture;
+pub(in crate::data_ownership_v1) use fresh::fresh_match_base_mismatch_fixture as fresh_indexed_match_mismatch_fixture;
+pub(in crate::data_ownership_v1) use fresh::literal_fixture as fresh_indexed_literal_fixture;
 #[path = "structured_match_formal.rs"]
 mod formal;
 #[path = "structured_match_indexed.rs"]

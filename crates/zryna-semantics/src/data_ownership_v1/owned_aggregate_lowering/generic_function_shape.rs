@@ -69,7 +69,7 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     if indexed_container_call_base(function, signature.id.module.0 as usize, catalog) {
         return true;
     }
-    if indexed_constructor_base(function) {
+    if indexed_fresh_base(function) {
         return true;
     }
     if generic_call(function, signature.id.module.0 as usize, catalog, layouts) {
@@ -116,7 +116,7 @@ pub(in crate::data_ownership_v1) fn requires_generic_function(
     })
 }
 
-fn indexed_constructor_base(function: &RawFunctionSyntax) -> bool {
+fn indexed_fresh_base(function: &RawFunctionSyntax) -> bool {
     function.body.expressions.iter().any(|expression| {
         let RawExpressionKind::Index { base, .. } = expression.kind else { return false };
         function.body.expressions.get(base as usize).is_some_and(|base| {
@@ -124,6 +124,7 @@ fn indexed_constructor_base(function: &RawFunctionSyntax) -> bool {
                 base.kind,
                 RawExpressionKind::FixedArrayConstruction { .. }
                     | RawExpressionKind::VecConstruction { .. }
+                    | RawExpressionKind::Match { .. }
             )
         })
     })

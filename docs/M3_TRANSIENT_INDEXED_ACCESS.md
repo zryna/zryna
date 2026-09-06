@@ -94,7 +94,13 @@ after the final EndBorrow. Replacement is intentionally unavailable because a Ma
 mutable initialized source place; callers must first bind it to one. Backend execution is not
 claimed. `continued_indexed_source` authenticates named/static and fresh Array/Vec Copy/owned cases,
 a fallible index call before bounds, exact continuation identity, fresh-base and RHS failure cleanup,
-and deterministic rejection/recovery. The structured scratch resource matrix includes all twelve
+and deterministic rejection/recovery. Fresh Match storage starts traversal at index zero even
+when a FixedArray index is a statically valid literal. It cannot reuse the static-place prefix
+optimization for named containers. `fresh_indexed_literal_source` authenticates Copy reads and
+owned clones for `[0]`, `[0][0]`, and `[0][indexValue(...)]`, checking joined-base storage,
+exact index/authority order, failure retention and final end before the owned temporary's release.
+Fresh assignment remains rejected by canonical syntax as a non-place, with deterministic rejection
+and valid observation recovery. The structured scratch resource matrix includes all eighteen indexed
 shapes across values, places, transitions, cleanup actions and plans, with exact, first-extra and
 checked-overflow cases and complete state rollback. Together these form the bounded compile-time
 #279 infrastructure closure candidate without extending lexical authority or target execution.

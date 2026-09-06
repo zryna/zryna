@@ -10,6 +10,8 @@ pub(in crate::data_ownership_v1) use match_fixture::continued_indexed_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::continued_indexed_rejection_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::fixture as match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::formal_fixture as formal_match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::fresh_indexed_assignment_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::fresh_indexed_literal_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::fresh_indexed_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::fresh_indexed_match_implicit_read_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::fresh_indexed_match_mismatch_fixture;
