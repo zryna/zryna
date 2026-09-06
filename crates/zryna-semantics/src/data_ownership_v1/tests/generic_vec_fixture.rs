@@ -7,6 +7,8 @@ use zryna_syntax::v4::RawExpressionKind;
 
 #[path = "nonindexed_owned_borrow.rs"]
 mod nonindexed_owned_borrow;
+#[path = "nonindexed_static_owned_borrow.rs"]
+mod nonindexed_static_owned_borrow;
 
 #[path = "ordinary_array_composition_fixture.rs"]
 pub(in crate::data_ownership_v1) mod ordinary_array_composition_fixture;
