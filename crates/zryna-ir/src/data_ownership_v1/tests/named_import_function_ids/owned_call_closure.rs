@@ -1,4 +1,4 @@
-use super::super::{MAX_CALL_EDGES, preflight_codes};
+use super::super::{MAX_CALL_EDGES, MAX_PLACES_PER_FUNCTION, preflight_codes};
 use super::has;
 use crate::data_ownership_v1::{Errors, checked_add, raw, verify};
 use zryna_source::SourceMap;
@@ -205,7 +205,46 @@ fn cross_module_call_resource_preflight_and_checked_overflow_recover() {
     assert_eq!(diagnostics[0].code(), "ZRYNA-I3201");
 
     let entry = sources.verify_file_id(0).expect("entry");
-    verify(seed, &sources, entry, linear, linux).expect("recovery after resource rejection");
+    let mut exact_places = seed;
+    let caller = &mut exact_places.modules[0].functions[0];
+    let span = caller.span;
+    caller.places.extend((caller.places.len()..MAX_PLACES_PER_FUNCTION).map(|index| raw::Place {
+        id: raw::PlaceId(u32::try_from(index).expect("bounded place identity")),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(u32::try_from(index).expect("bounded local identity")),
+    }));
+    verify(exact_places.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("exact cross-module owned-call place frontier");
+
+    let extra = raw::Place {
+        id: raw::PlaceId(u32::try_from(MAX_PLACES_PER_FUNCTION).expect("bounded extra place")),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(
+            u32::try_from(MAX_PLACES_PER_FUNCTION).expect("bounded extra local"),
+        ),
+    };
+    exact_places.modules[0].functions[0].places.push(extra);
+    let expected = preflight_codes(&exact_places, &linear);
+    assert_eq!(expected, ["ZRYNA-I3201"]);
+    assert_eq!(preflight_codes(&exact_places, &linear), expected);
+    exact_places.modules[0].functions[0].places.pop();
+    verify(exact_places, &sources, entry, linear, linux)
+        .expect("same cross-module owned-call program recovers after first-extra place rejection");
+}
+
+fn has_test_declaration(source: &str, binding: &str) -> bool {
+    let declaration = format!("fn {binding}(");
+    source.match_indices(&declaration).any(|(at, _)| {
+        source[..at]
+            .lines()
+            .rev()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .take_while(|line| line.starts_with("#["))
+            .any(|line| line == "#[test]")
+    })
 }
 
 #[test]
@@ -242,7 +281,7 @@ fn matrix_binding_is_complete_and_keeps_public_activation_excluded() {
         )),
     ]
     .join("\n");
-    for binding in [
+    let source_bindings = [
         "named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup",
         "imported_producer_and_consumer_retain_one_foreign_nominal_identity",
         "generic_calls_transfer_multiple_owned_and_copy_arguments_in_source_order",
@@ -254,24 +293,42 @@ fn matrix_binding_is_complete_and_keeps_public_activation_excluded() {
         "named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly",
         "named_import_target_still_obeys_the_direct_call_cycle_verifier",
         "named_import_preparation_resources_are_exact_atomic_overflow_checked_and_recoverable",
-    ] {
-        assert!(matrix.contains(binding), "missing source closure binding: {binding}");
-        assert!(source_evidence.contains(binding), "stale source closure binding: {binding}");
+    ];
+    for binding in source_bindings {
+        assert!(
+            has_test_declaration(&source_evidence, binding),
+            "source binding is not a real test declaration: {binding}"
+        );
     }
     let ir_evidence =
         [include_str!("owned_call_closure.rs"), include_str!("../named_import_function_ids.rs")]
             .join("\n");
-    for binding in [
+    let ir_bindings = [
         "named_import_cross_module_function_ids_and_cleanup_are_verified_independently",
         "cross_module_aggregate_container_and_handle_call_is_verified_independently",
         "cross_module_owned_call_forgeries_reject_identity_signature_order_owner_mask_and_cleanup",
         "named_import_two_module_function_ids_do_not_bypass_call_cycle_verification",
         "named_import_cross_module_static_depth_is_exact_and_first_extra_rejected",
         "cross_module_call_resource_preflight_and_checked_overflow_recover",
-    ] {
-        assert!(matrix.contains(binding), "missing IR closure binding: {binding}");
-        assert!(ir_evidence.contains(binding), "stale IR closure binding: {binding}");
+    ];
+    for binding in ir_bindings {
+        assert!(
+            has_test_declaration(&ir_evidence, binding),
+            "IR binding is not a real test declaration: {binding}"
+        );
     }
+    let expected_rows = [
+        "| Canonical same-module and named-import identity | `named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup`; `imported_producer_and_consumer_retain_one_foreign_nominal_identity` | `named_import_cross_module_function_ids_and_cleanup_are_verified_independently` |",
+        "| Mixed Copy and owned arguments evaluate once, left to right | `generic_calls_transfer_multiple_owned_and_copy_arguments_in_source_order`; `named_import_mixed_argument_producers_are_ordered_and_later_failure_retains_earlier_owners` | `cross_module_aggregate_container_and_handle_call_is_verified_independently` |",
+        "| Aggregate, container, and handle-bearing argument/result ownership | `imported_signature_accepts_the_complete_sealed_by_value_graph`; `payload_matrix_composes_handles_vec_calls_upgrade_and_nested_cfg` | `cross_module_aggregate_container_and_handle_call_is_verified_independently` |",
+        "| Foreign identity, signature, arity, order, result, owner, and partial-mask rejection | `imported_producer_and_consumer_retain_one_foreign_nominal_identity`; `generic_calls_reject_wrong_argument_type_and_repeated_owner_deterministically` | `cross_module_owned_call_forgeries_reject_identity_signature_order_owner_mask_and_cleanup` |",
+        "| Exact caller trap, callee parameter, result, and structured cleanup | `named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup`; `payload_cfg_fallible_operations_keep_source_ordered_cleanup` | `cross_module_owned_call_forgeries_reject_identity_signature_order_owner_mask_and_cleanup` |",
+        "| Cross-module cycle and static depth | `named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly`; `named_import_target_still_obeys_the_direct_call_cycle_verifier` | `named_import_two_module_function_ids_do_not_bypass_call_cycle_verification`; `named_import_cross_module_static_depth_is_exact_and_first_extra_rejected` |",
+        "| Exact/first-extra call resources and checked overflow recovery | `named_import_preparation_resources_are_exact_atomic_overflow_checked_and_recoverable` | `cross_module_call_resource_preflight_and_checked_overflow_recover` |",
+    ];
+    let actual_rows =
+        matrix.lines().filter(|line| line.starts_with("| ")).skip(2).collect::<Vec<_>>();
+    assert_eq!(actual_rows, expected_rows, "owned-call closure rows drifted");
     for exclusion in ["driver", "CLI", "backend", "runtime", "public ABI", "#273", "#275"] {
         assert!(matrix.contains(exclusion), "missing closure exclusion: {exclusion}");
     }

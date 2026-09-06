@@ -5,9 +5,10 @@ activate `data-ownership-v1` in a driver, CLI, backend, runtime, artifact, or pu
 calls, methods, callbacks, recursion, overloads, user generics, stored or returned borrows, the
 additional match work in #273, and the lexical-access work in #275 remain excluded.
 
-The `matrix_binding_is_complete_and_keeps_public_activation_excluded` test reads this file and
-requires every row and exclusion token below. A renamed or removed evidence binding therefore
-fails the focused `zryna-ir` suite instead of silently weakening the closure claim.
+The `matrix_binding_is_complete_and_keeps_public_activation_excluded` test reads this file,
+requires these exact ordered rows and exclusions, and resolves every binding to a real Rust
+`#[test] fn` declaration. Renaming, moving, or removing evidence therefore fails the focused
+`zryna-ir` suite instead of silently weakening the closure claim.
 
 | Requirement | Source evidence after #329/#330 integration | Independent IR evidence |
 | --- | --- | --- |
