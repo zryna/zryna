@@ -154,3 +154,104 @@ test("shared and weak scope documents keep Issue #263 non-executable", () => {
   assert(scopeDocuments.every(([, text]) => text.includes("#263")));
   assert(scopeDocuments.every(([, text]) => text.includes("non-executable")));
 });
+
+const closureTests = [
+  ["crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs", "shared_weak_operations_and_upgrade_verify_the_complete_payload_type_matrix"],
+  ["crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs", "weak_upgrade_rejects_forged_success_expired_and_operand_shapes"],
+  ["crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs", "weak_upgrade_ordinary_edge_types_and_success_value_dominance_are_independent"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "shared_and_weak_structural_payload_categories_lower_through_verified_ir"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "nested_shared_payload_moves_into_outer_control_without_implicit_clone"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "structural_handle_clone_seals_struct_enum_array_and_vec_count_recipes"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs", "recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs", "weak_upgrade_source_seals_success_only_owner_and_retains_addressable_operand"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_composition.rs", "weak_upgrade_composition_nested_repeated_control_and_operand_paths_are_verified"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs", "direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/handle_frontier_source.rs", "handle_frontier_source_vec_enum_occurrences_retain_replacement_owners"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs", "shared_construct_cleanup_frontier_is_exact_atomic_and_recovers"],
+  ["crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_resources.rs", "weak_upgrade_exact_extra_overflow_resources_restore_pristine_state"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests.rs", "control_model_provenance_topology_modes_and_allocation_failures_are_atomic"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests.rs", "control_model_clone_expiration_and_payload_before_implicit_weak_finish"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests.rs", "control_model_immutable_handle_graph_and_recursive_release_are_exact"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs", "control_model_allocation_failure_retains_embedded_handle_until_successful_retry"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs", "control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_graph_distinct_cloned_edges_and_weak_observer_release_completely"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_counts.rs", "conformance_counts_all_increment_boundaries_preserve_exact_other_state"],
+  ["crates/zryna-ownership-runtime-abi/src/control_model/tests/resources.rs", "control_model_internal_resource_boundaries_publish_nothing_on_rejection"],
+];
+
+function firstCells(section) {
+  return section.split("\n")
+    .filter(line => /^\| `?[^-]/.test(line))
+    .map(line => line.split("|")[1].trim().replaceAll("`", ""));
+}
+
+export function validateSharedWeakClosureLedger(text) {
+  const closure = text.split("## Issue #264 final checked closure ledger\n")[1]
+    ?.split("## Verification and publication gate")[0];
+  assert(closure, "Issue #264 final closure ledger is missing");
+  const acceptance = closure.split("### #264 and parent #83 acceptance reconciliation\n")[1]
+    ?.split("### SW1–SW5 reconciliation")[0];
+  const interfaces = closure.split("### SW1–SW5 reconciliation\n")[1]
+    ?.split("### Complete payload-domain reconciliation")[0];
+  const payloads = closure.split("### Complete payload-domain reconciliation\n")[1]
+    ?.split("### Required named matrices: final executable mapping")[0];
+  const matrices = closure.split("### Required named matrices: final executable mapping\n")[1]
+    ?.split("### Closure boundary")[0];
+  assert(acceptance && interfaces && payloads && matrices, "Issue #264 ledger sections drifted");
+  assert.deepEqual(firstCells(acceptance), [
+    "Key", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8",
+    "P1", "P2", "P3", "P4",
+  ]);
+  assert.deepEqual(firstCells(interfaces), [
+    "Interface", "SW1 control provenance", "SW2 handle ownership",
+    "SW3 construction preparation", "SW4 last-release completion",
+    "SW5 control graph admission",
+  ]);
+  assert.deepEqual(firstCells(payloads), [
+    "Payload row", "Scalars", "String", "Struct", "Enum", "FixedArray", "Vec",
+    "Shared/Weak", "Recursive nominal types",
+  ]);
+  assert.deepEqual(firstCells(matrices), [
+    "Matrix", "shared_payload_category_matrix", "shared_construct_failure_retains_input",
+    "shared_weak_clone_does_not_clone_payload",
+    "weak_upgrade_success_only_owner_and_expired_no_value",
+    "weak_upgrade_overflow_takes_neither_successor",
+    "last_strong_payload_before_implicit_weak_finish",
+    "implicit_weak_is_not_releasable_as_explicit",
+    "handle_prefix_cleanup_is_reverse_and_exact_once",
+    "control_identity_layout_replay_rejected", "forged_control_cycles_fail_closed",
+    "handle_resource_exact_first_extra_and_overflow",
+    "handle_diagnostics_replay_after_failure", "handle_cfg_calls_match_and_scope_cleanup",
+  ]);
+  for (const receipt of ["D80", "D81", "D82", "D259", "D277", "D278", "R317", "R318", "L264"])
+    assert(closure.includes(`| \`${receipt}\` |`), `missing closure receipt ${receipt}`);
+  for (const [file, name] of closureTests) {
+    assert(closure.includes(`\`${file}\``), `closure ledger omits ${file}`);
+    assert(closure.includes(`\`${name}\``), `closure ledger omits ${name}`);
+    assert(testNames(file).has(name), `${file}: missing closure test ${name}`);
+  }
+  for (const boundary of [
+    "does not claim\nLinux/Windows CI for the closure-ledger commit",
+    "It does not\nexecute allocation, mutate concrete reference counts, run recursive destruction, select an\nupgrade outcome on a target, or issue an execution receipt.",
+    "target runtime implementations (#84–#87)",
+    "threads, atomics, synchronization, concurrent upgrade",
+    "host-GC semantics, tracing/cycle collection",
+  ]) assert(closure.includes(boundary), `closure boundary drifted: ${boundary}`);
+}
+
+test("shared and weak final closure ledger is complete and non-runtime", () => {
+  validateSharedWeakClosureLedger(document);
+});
+
+test("shared and weak final closure ledger rejects missing acceptance and evidence", () => {
+  assert.throws(() => validateSharedWeakClosureLedger(document.replace("| `C8` |", "| `C9` |")));
+  assert.throws(() => validateSharedWeakClosureLedger(document.replaceAll(
+    "weak_upgrade_overflow_takes_neither_successor",
+    "weak_upgrade_overflow_is_unmapped",
+  )));
+  assert.throws(() => validateSharedWeakClosureLedger(document.replace(
+    "does not claim\nLinux/Windows CI",
+    "claims\nLinux/Windows CI",
+  )));
+});

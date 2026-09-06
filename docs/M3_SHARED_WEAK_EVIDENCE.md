@@ -1,8 +1,7 @@
 # M3 Shared and Weak evidence matrix
 
-Status: Issue #259 integration plan with #260 independent proof evidence and the compile-time
-#261/#262 source closure candidates below. Issue #263 owns integrated non-executable conformance,
-fault, count and resource evidence; actual target-runtime execution remains outside this child graph.
+Status: checked Issue #264 closure ledger over the merged #259–#263 implementation and its
+independent compiler/ABI evidence. Actual target-runtime execution remains outside this child graph.
 Read the [authority contract](M3_SHARED_WEAK_AUTHORITY.md) for SW1–SW5, complete payload domain,
 operation semantics and exclusions. A scalar-only checkpoint cannot discharge #83.
 
@@ -337,6 +336,111 @@ are frozen; semantics and shared cleanup cannot have competing writers. Independ
 may proceed once their input interfaces are immutable. No stage can cite a later full #270–#273
 feature as missing support for an already-required #83 case. Broader #269 and normative indexed
 borrow #254–#256 chains remain separate and unchanged.
+
+## Issue #264 final checked closure ledger
+
+This reconciliation was performed on base `b54272be35987587c131ff032aad56c36b941a5b`.
+Evidence classes retain the definitions in the #263 ledger. A row marked `contract audit` checks
+documentation, inventory and provenance only; it is not semantic, IR, ABI or runtime evidence.
+
+### Immutable implementation and execution receipts
+
+| Receipt | Exact provenance and observed result |
+| --- | --- |
+| `D80` | #80 merged by PR #96 at `54289d1bb7c9ce44faca6b79f5d40a7acba96e50`; ownership-runtime ABI prerequisite |
+| `D81` | #81 closed by PR #112 at `0716b88a09befcd19971e149df4c6744bd13da78`; bounded owned-data prerequisite |
+| `D82` | #82 closed by PR #268 at `f1b88304e9ee918ba46808f60859097999785f1b`; bounded lexical-borrow prerequisite |
+| `D259` | #259 merged by PR #287 at `8cc4eed8d522976ca557a27ea54993fb0d5ebf1c`; normative Shared/Weak authority |
+| `D277` | #277 merged by PR #293 at `8461e2677b397a4cda4431197b4b2ff17237cdf4`; reusable ownership composition interfaces |
+| `D278` | #278 merged by PR #312 at `b36ed02ef2cec155516ecfcd8e860afc4372ce50`; non-handle operation core |
+| `R317` | #260/#261/#262/#279 merged by PR #317 at `fa88fdeb3c58bdcf96b16bb9ce8828cbca7ebb78`; hosted run `34012259663` passed preflight, owned-data quick, Rust/M0, M2 and adapter on Ubuntu and Windows at head `143495f219176e0b2e788a6d10c7a4e47912d620` |
+| `R318` | #263 merged by PR #318 at base `b54272be35987587c131ff032aad56c36b941a5b`; hosted run `34014688872` passed preflight, owned-data quick, Rust/M0, M2 and adapter on Ubuntu and Windows at head `819a71e2a4308eda5c7a849025a5a2e8a49970db`; the conditional documentation job was skipped, not failed |
+| `L264` | Closure-ledger commit: `node --test tests/m3-shared-weak-resource-ledger-cases.mjs`, `pnpm m3:contract` and `pnpm docs:check`; record the exact committed revision and observed counts in the commit/PR handoff rather than predicting them here |
+
+`R317` and `R318` are hosted results for the exact implementation heads merged into the stated
+commits. `L264` is local evidence for this documentation-only reconciliation. It does not claim
+Linux/Windows CI for the closure-ledger commit before such a hosted run exists.
+
+### #264 and parent #83 acceptance reconciliation
+
+| Key | Exact acceptance | Exact evidence path/test | Class and command | Provenance/result |
+| --- | --- | --- | --- | --- |
+| `C1` | Every construction, clone, release, downgrade and upgrade transition is exact and independently verified | `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` / `shared_weak_operations_and_upgrade_verify_the_complete_payload_type_matrix`; `crates/zryna-ownership-runtime-abi/src/tests.rs` / `all_control_transitions_and_illegal_variants_are_checked` | verified IR + synthetic ABI counter; `pnpm m3:owned:quick`, `pnpm m3:runtime-abi:quick` | `D80`, `R317`, `R318`: passed hosted Linux/Windows gates |
+| `C2` | Upgrade is one single-threaded indivisible result, without check-then-upgrade or forgeable handles | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs` / `weak_upgrade_source_seals_success_only_owner_and_retains_addressable_operand`; `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` / `weak_upgrade_rejects_forged_success_expired_and_operand_shapes` | authenticated source + verified IR; `pnpm m3:owned:quick` | `R317`: passed hosted Linux/Windows owned-data and Rust gates |
+| `C3` | Allocation/count overflow, double release, invalid upgrade and cleanup omission fail closed with ownership/trap order preserved | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` / `direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` / `conformance_status_corruption_is_not_expiration_or_a_language_trap` | authenticated source + synthetic ABI counter; `pnpm m3:data:quick`, `pnpm m3:runtime-abi:quick` | `R318`: passed hosted Linux/Windows owned-data and Rust gates |
+| `C4` | Cycles use explicit non-owning Weak edges and introduce neither strong-cycle construction nor tracing | `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` / `conformance_graph_distinct_cloned_edges_and_weak_observer_release_completely`, `conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly` | synthetic ABI counter; `pnpm m3:runtime-abi:quick` | `R318`: passed hosted Linux/Windows Rust gates |
+| `C5` | Full #259 payload/control-flow scope is satisfied without silent narrowing | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs` / `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay`; `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_composition.rs` / `weak_upgrade_composition_nested_repeated_control_and_operand_paths_are_verified` | authenticated source; `pnpm m3:data:quick` | `R317`, `R318`: passed hosted Linux/Windows owned-data gates |
+| `C6` | Integrated semantic/IR/ABI, hostile, overflow, resource/replay, preflight, M0/M2 and Linux/Windows evidence passes on immutable trees | This final ledger plus all exact bindings under `Issue #263 checked resource and evidence ledger` | contract audit plus listed source/IR/ABI classes; owned/ABI/preflight/M0/M2 gates | `R317`, `R318`: every executable Linux/Windows job passed; `L264` covers local ledger/docs only |
+| `C7` | Documentation distinguishes supported compiler proof from unimplemented target execution | `docs/M3_SHARED_WEAK_AUTHORITY.md`; this final ledger; `tests/m3-shared-weak-resource-ledger-cases.mjs` / `shared and weak final closure ledger is complete and non-runtime` | contract audit; dedicated Node test and `pnpm docs:check` | `D259`, `L264`; target execution remains explicitly excluded |
+| `C8` | Independent review reconciles parent criteria, dependencies and exact test/CI provenance | This section: receipts, acceptance, SW1–SW5, payload and named-matrix tables | contract audit; `pnpm m3:contract`, `pnpm docs:check` | base `b54272b`; `L264`; no missing implementation row found |
+| `P1` | #83 shared/weak transitions are exact and independently verified | Same evidence as `C1`, with SW1–SW4 rows below | verified IR + synthetic ABI counter; owned/ABI suites | `D80`, `R317`, `R318`: satisfied |
+| `P2` | #83 upgrade is a race-free single-threaded result without check-then-upgrade | Same evidence as `C2` and both upgrade matrices below | authenticated source + verified IR + synthetic ABI counter | `R317`, `R318`: satisfied; no concurrent guarantee claimed |
+| `P3` | #83 count overflow, double release, invalid upgrade and cleanup omission fail closed | Same evidence as `C3`, SW2/SW4 and #263 A1–A3/A7 | authenticated source + verified IR + synthetic ABI counter | `R318`: satisfied symbolically/compiler-side |
+| `P4` | #83 cycles require explicit Weak edges and tracing GC remains unsupported | Same evidence as `C4`, SW5 and `forged_control_cycles_fail_closed` | synthetic ABI counter | `R318`: satisfied without runtime tracing |
+
+### SW1–SW5 reconciliation
+
+| Interface | Exact evidence path/test | Evidence class and command | Provenance/result |
+| --- | --- | --- | --- |
+| `SW1` control provenance | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` / `control_model_provenance_topology_modes_and_allocation_failures_are_atomic`; `crates/zryna-ownership-runtime-abi/src/tests.rs` / `layout_binding_rejects_target_and_fingerprint_mismatch` | synthetic ABI counter; `pnpm m3:runtime-abi:quick` | `R317`, `R318`: passed hosted Rust on both OSes |
+| `SW2` handle ownership | `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` / `control_model_requires_exact_independent_surviving_owner_contract`; `crates/zryna-ownership-runtime-abi/src/tests.rs` / `pending_last_strong_excludes_every_operation_except_finish` | synthetic ABI counter; `pnpm m3:runtime-abi:quick` | `R317`, `R318`: passed hosted Rust on both OSes |
+| `SW3` construction preparation | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` / `direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` / `control_model_allocation_failure_retains_embedded_handle_until_successful_retry` | authenticated source + synthetic ABI counter; data/ABI suites | `R317`, `R318`: passed hosted owned-data/Rust on both OSes |
+| `SW4` last-release completion | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` / `control_model_clone_expiration_and_payload_before_implicit_weak_finish`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` / `control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last` | synthetic ABI counter; `pnpm m3:runtime-abi:quick` | `R317`, `R318`: passed hosted Rust on both OSes |
+| `SW5` control graph admission | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` / `control_model_immutable_handle_graph_and_recursive_release_are_exact`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` / `conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly` | synthetic ABI counter; `pnpm m3:runtime-abi:quick` | `R317`, `R318`: passed hosted Rust on both OSes |
+
+### Complete payload-domain reconciliation
+
+All rows use `pnpm m3:owned:quick` and the authenticated source test
+`crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` /
+`shared_and_weak_structural_payload_categories_lower_through_verified_ir`, supplemented as named.
+The result is `R317`/`R318`: the owned-data and Rust jobs passed on Ubuntu and Windows.
+
+| Payload row | Supplemental exact evidence | Class and implemented provenance |
+| --- | --- | --- |
+| Scalars | `shared_weak_operations_and_upgrade_verify_the_complete_payload_type_matrix` in `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` | authenticated source + verified IR; `R317` |
+| String | `structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention` in `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` | authenticated source; `R317`/`R318` |
+| Struct | `handle_leaves_compose_through_struct_array_vec_projection_and_replacement` in `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` | authenticated source; `R317` |
+| Enum | `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` in `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs` | authenticated source; `R317` |
+| FixedArray | `control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last` in `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` | authenticated source + synthetic ABI counter; `R317`/`R318` |
+| Vec | `handle_frontier_source_vec_enum_occurrences_retain_replacement_owners` in `crates/zryna-semantics/src/data_ownership_v1/tests/handle_frontier_source.rs` | authenticated source; `R318` |
+| Shared/Weak | `structural_handle_clone_seals_struct_enum_array_and_vec_count_recipes` in `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` | authenticated source; `R317` |
+| Recursive nominal types | `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` in `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs` | authenticated source; `R317` |
+
+### Required named matrices: final executable mapping
+
+Paths are repository-relative. `R317`/`R318` are the observed hosted results defined above; the
+command column names the focused local command that selects the same owning suite.
+
+| Matrix | Exact executable path/test | Class | Command | Provenance/result |
+| --- | --- | --- | --- | --- |
+| `shared_payload_category_matrix` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` / `shared_and_weak_structural_payload_categories_lower_through_verified_ir`; `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` / `shared_weak_operations_and_upgrade_verify_the_complete_payload_type_matrix` | authenticated source + verified IR | `pnpm m3:owned:quick` | `R317`: passed both OSes |
+| `shared_construct_failure_retains_input` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` / `direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` / `control_model_allocation_failure_retains_embedded_handle_until_successful_retry` | authenticated source + synthetic ABI counter | `pnpm m3:data:quick`; `pnpm m3:runtime-abi:quick` | `R317`/`R318`: passed both OSes |
+| `shared_weak_clone_does_not_clone_payload` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` / `shared_and_weak_source_operations_preserve_exact_handle_ownership`, `nested_shared_payload_moves_into_outer_control_without_implicit_clone`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_counts.rs` / `conformance_counts_all_increment_boundaries_preserve_exact_other_state` | authenticated source + synthetic ABI counter | data/ABI suites | `R317`/`R318`: passed both OSes |
+| `weak_upgrade_success_only_owner_and_expired_no_value` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs` / `weak_upgrade_source_seals_success_only_owner_and_retains_addressable_operand`; `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` / `weak_upgrade_rejects_forged_success_expired_and_operand_shapes` | authenticated source + verified IR | `pnpm m3:owned:quick` | `R317`: passed both OSes |
+| `weak_upgrade_overflow_takes_neither_successor` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_fault_oracle.rs` / `source_upgrade_binds_success_expiration_and_overflow_to_distinct_outcomes`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_counts.rs` / `conformance_counts_all_increment_boundaries_preserve_exact_other_state` | authenticated source + synthetic ABI counter | data/ABI suites | `R317`/`R318`: passed both OSes |
+| `last_strong_payload_before_implicit_weak_finish` | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` / `control_model_clone_expiration_and_payload_before_implicit_weak_finish`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` / `control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last` | synthetic ABI counter | `pnpm m3:runtime-abi:quick` | `R317`/`R318`: passed both OSes |
+| `implicit_weak_is_not_releasable_as_explicit` | `crates/zryna-ownership-runtime-abi/src/tests.rs` / `pending_last_strong_excludes_every_operation_except_finish`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` / `conformance_graph_distinct_cloned_edges_and_weak_observer_release_completely` | synthetic ABI counter | `pnpm m3:runtime-abi:quick` | `R318`: passed both OSes |
+| `handle_prefix_cleanup_is_reverse_and_exact_once` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` / `structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention`; `crates/zryna-semantics/src/data_ownership_v1/tests/handle_frontier_source.rs` / `handle_frontier_source_vec_enum_occurrences_retain_replacement_owners` | authenticated source | `pnpm m3:data:quick` | `R317`/`R318`: passed both OSes |
+| `control_identity_layout_replay_rejected` | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` / `control_model_provenance_topology_modes_and_allocation_failures_are_atomic`; `crates/zryna-ownership-runtime-abi/src/tests.rs` / `layout_binding_rejects_target_and_fingerprint_mismatch` | synthetic ABI counter | `pnpm m3:runtime-abi:quick` | `R317`/`R318`: passed both OSes |
+| `forged_control_cycles_fail_closed` | `crates/zryna-ownership-runtime-abi/src/control_model/tests.rs` / `control_model_immutable_handle_graph_and_recursive_release_are_exact`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs` / `conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly` | synthetic ABI counter | `pnpm m3:runtime-abi:quick` | `R318`: passed both OSes |
+| `handle_resource_exact_first_extra_and_overflow` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs` / `shared_construct_cleanup_frontier_is_exact_atomic_and_recovers`; `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_resources.rs` / `weak_upgrade_exact_extra_overflow_resources_restore_pristine_state`; `crates/zryna-ownership-runtime-abi/src/control_model/tests/resources.rs` / `control_model_internal_resource_boundaries_publish_nothing_on_rejection` | held-credit/planner control + synthetic ABI counter | data/ABI suites | `R317`/`R318`: passed both OSes |
+| `handle_diagnostics_replay_after_failure` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` / `moved_handle_clone_reports_exact_diagnostic_and_replays`; `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs` / `weak_upgrade_binding_collision_is_exact_deterministic_and_recovers`; `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` / `shared_weak_cleanup_diagnostics_have_exact_order_span_and_valid_replay` | authenticated source + verified IR | `pnpm m3:owned:quick` | `R317`/`R318`: passed both OSes |
+| `handle_cfg_calls_match_and_scope_cleanup` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_composition.rs` / `weak_upgrade_composition_nested_repeated_control_and_operand_paths_are_verified`, `weak_upgrade_composition_match_inference_rejects_wrong_arm_and_nonuniform_types`; `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` / `weak_upgrade_ordinary_edge_types_and_success_value_dominance_are_independent` | authenticated source + verified IR | `pnpm m3:owned:quick` | `R317`: passed both OSes |
+
+### Closure boundary
+
+All eight #264 rows, all four #83 rows, SW1–SW5, all eight payload categories and all thirteen
+named matrices resolve to existing executable assertions and merged dependencies. No compiler-side
+closure blocker remains at base `b54272b`. This conclusion is limited to authenticated source,
+mandatory verified IR, compiler planning and symbolic ABI/control-model evidence. It does not
+execute allocation, mutate concrete reference counts, run recursive destruction, select an
+upgrade outcome on a target, or issue an execution receipt.
+
+Still excluded are target runtime implementations (#84–#87), backend/public profile activation,
+three-target runtime equivalence, threads, atomics, synchronization, concurrent upgrade
+guarantees, host-GC semantics, tracing/cycle collection, implicit sharing, general generics,
+indexed-borrow closure #254–#256, broader #269 composition, and website deployment. Those
+exclusions do not narrow any #83 compiler-proof row and are not evidence owned by #264.
 
 ## Verification and publication gate
 
