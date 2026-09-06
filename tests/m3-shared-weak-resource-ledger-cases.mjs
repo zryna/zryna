@@ -37,6 +37,7 @@ const expectedBindings = [
   ["A5", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "shared_and_weak_structural_payload_categories_lower_through_verified_ir"],
   ["A5", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs", "recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay"],
   ["A5", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs", "structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention"],
+  ["A5", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/handle_frontier_source.rs", "handle_frontier_source_vec_enum_occurrences_retain_replacement_owners"],
   ["A5", "verified IR", "crates/zryna-ir/src/data_ownership_v1/tests/handle_aware_clone.rs", "seals_shared_and_weak_recursive_clone_recipe_without_unfolding_vec_cycles"],
   ["A5", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs", "control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last"],
   ["A6", "held-credit/planner control", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs", "shared_construct_cleanup_frontier_is_exact_atomic_and_recovers"],

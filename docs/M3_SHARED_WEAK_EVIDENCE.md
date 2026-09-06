@@ -90,6 +90,7 @@ The acceptance identifiers below are stable ledger keys, not new issue numbers.
 | A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` | `shared_and_weak_structural_payload_categories_lower_through_verified_ir` | Scalar, owned, aggregate, container and nested handle categories reach mandatory verified IR |
 | A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs` | `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` | Payloadless/multiple variants and finite recursive nominal payloads reach verified IR with exact cleanup |
 | A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs` | `structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention` | Every canonical recipe-step fault ordinal retains source and reverse-cleans its completed recipe prefix; concrete repeated Vec/active-Enum frontiers require separate evidence |
+| A5 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/handle_frontier_source.rs` | `handle_frontier_source_vec_enum_occurrences_retain_replacement_owners` | Concrete empty/nonempty Vec occurrences and active/payloadless Enum frontiers retain source and old target, reverse-clean exact acquired prefixes and replay |
 | A5 | `verified IR` | `crates/zryna-ir/src/data_ownership_v1/tests/handle_aware_clone.rs` | `seals_shared_and_weak_recursive_clone_recipe_without_unfolding_vec_cycles` | Sealed recursive handle-clone recipes preserve exact active layout and count operations |
 | A5 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs` | `control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last` | Symbolic payload matrix derives active-variant reverse cleanup and Vec storage-last order |
 | A6 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs` | `shared_construct_cleanup_frontier_is_exact_atomic_and_recovers` | Exact/first-extra Shared construction cleanup-action frontier is atomic and recoverable |
@@ -217,8 +218,9 @@ walks verified constructor operands against its recursive recipe. Thus two concr
 have distinct occurrence paths, while the payloadless variant contributes no initialized fields.
 This is not enumeration of unique recipe type nodes or fabricated runtime tag evidence.
 
-Eight bounded fault positions cover initial Vec acquisition and each handle/String acquisition in
-the nonempty traversal. The checks preserve the sealed original allocation/refcount trap, reject
+Across the empty and nonempty fixtures, eight bounded fault positions cover each initial Vec
+acquisition and every handle/String acquisition in the nonempty traversal. The checks preserve
+the sealed original allocation/refcount trap, reject
 the failing uncommitted leaf, unwind the active partial payload before prior elements, and release
 Vec storage last. Exact pre-commit cleanup retains both the source and old replacement target;
 successful replacement drops only the old target and later scope cleanup drops the source once.
