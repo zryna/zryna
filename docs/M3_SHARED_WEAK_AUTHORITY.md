@@ -1,7 +1,7 @@
 # M3 Shared and Weak authority contract
 
-Status: Issue #259 contract with #260 independent IR and symbolic ABI proof interfaces;
-not implemented Shared/Weak source semantics.
+Status: Issue #259 contract with #260 independent IR and symbolic ABI proof interfaces and the
+internal #261 Shared/Weak source producer. #262 adds the bounded source upgrade checkpoint.
 Frozen baseline: `f1b88304e9ee918ba46808f60859097999785f1b`, after verified #82/#122 closure.
 This document enables no runtime, backend, driver route, public profile, or target execution.
 It does not close #83. The [evidence and integration matrix](M3_SHARED_WEAK_EVIDENCE.md)
@@ -52,20 +52,21 @@ field, runtime symbol, public profile, concurrent upgrade or tracing machinery.
 
 ## Authority map
 
-Paths name current implementation authorities, not a claim of a source producer.
+Paths name current implementation authorities. They do not claim target execution or a public
+profile.
 
-| Layer | Existing authority | Missing integration owned by |
+| Layer | Existing authority | Implemented boundary / remaining owner |
 | --- | --- | --- |
-| Source | `crates/zryna-syntax/src/v4.rs`: `RawTypeSyntaxKind::Shared/Weak`, `RawExpressionKind::Shared/Clone/Downgrade`, `RawStatementKind::WeakUpgrade`; source-map-bound verified snapshot | #261 exact type mapping/operations; #262 broader upgrade composition evidence |
-| Types/layout | `crates/zryna-layout/src/lib.rs`: sealed nominal identities, `TypeCategory`, `referenced_type`, finite by-value graph, target fingerprints | #261 must map every admitted instantiated handle type; current semantic `type_model.rs::map_node_types` does not map Shared/Weak |
-| IR | `crates/zryna-ir/src/data_ownership_v1.rs`: `SharedConstruct`, `SharedClone`, `WeakDowngrade`, `WeakClone`, `WeakUpgradeBranch`, opaque instruction/terminator views | #260 independent complete operation/state/hostile proofs, then #261/#262 producers |
-| Ownership/drop | IR `InitializePlace`, `MoveFromPlace`, `ReplacePlace`, `DropPlace`, sealed site/role cleanup and derived recursive drop actions | #277 interfaces, #278 non-handle core, #261 handle leaves, #279/#262 control-flow integration |
-| ABI | `crates/zryna-ownership-runtime-abi/src/lib.rs`: `VerifiedControlLayout`, `ControlState`, `TransitionClaim::Control`, `validate_transition`, operation-bound failure claims | #260 bound control/handle authority and completion evidence below; #263 hostile integrated fixtures |
+| Source | `crates/zryna-syntax/src/v4.rs`: `RawTypeSyntaxKind::Shared/Weak`, `RawExpressionKind::Shared/Clone/Downgrade`, `RawStatementKind::WeakUpgrade`; source-map-bound verified snapshot | #261 lowers construction, clone and downgrade; #262 owns upgrade and its broader CFG composition evidence |
+| Types/layout | `crates/zryna-layout/src/lib.rs`: sealed nominal identities, `TypeCategory`, `referenced_type`, finite by-value graph, target fingerprints | #261 maps admitted Shared/Weak instances, including finite values of recursive nominal types through handle indirection |
+| IR | `crates/zryna-ir/src/data_ownership_v1.rs`: `SharedConstruct`, `SharedClone`, `WeakDowngrade`, `WeakClone`, `WeakUpgradeBranch`, opaque instruction/terminator views | #260 freezes independent operation/state/hostile proofs consumed by the #261/#262 producers |
+| Ownership/drop | IR `InitializePlace`, `MoveFromPlace`, `ReplacePlace`, `DropPlace`, sealed site/role cleanup and derived recursive drop actions | #277/#278 provide the core, #261 integrates handle leaves, and #279/#262 integrate control flow |
+| ABI | `crates/zryna-ownership-runtime-abi/src/lib.rs`: `VerifiedControlLayout`, `ControlState`, `TransitionClaim::Control`, `validate_transition`, operation-bound failure claims | #260 supplies bounded symbolic control/handle proofs; executed target behavior remains #263 |
 
-The IR already rejects wrong instruction payload/result types with `ZRYNA-I3005` and wrong upgrade
-successor/result shape with `ZRYNA-I3014`. This is not complete source support or authenticated
-runtime control ownership. The semantic structural Clone calculation admitting handles likewise
-does not establish source lowering. No backend may fill these missing compiler proofs.
+The IR rejects wrong instruction payload/result types with `ZRYNA-I3005` and wrong upgrade
+successor/result shape with `ZRYNA-I3014`. The authenticated internal source producer still grants
+no runtime control ownership, target execution, backend route or public profile. No backend may
+replace these compiler proofs.
 
 ## Complete payload domain
 
@@ -194,8 +195,8 @@ The table describes both sides of that interface, not static materialization of 
 SW1/SW2 extend proof context, not source types or target ABI bytes. Existing `ControlState` contains
 only counts/phase/initialized/allocation flags; pure transition acceptance alone supplies none of
 those identity or one-time-use bindings. Existing layout fingerprints do not authenticate a live
-allocation. #260 must independently verify hostile raw claims and supply opaque outputs before
-#261 relies on them.
+allocation. #260 independently verifies hostile raw claims and supplies the opaque outputs consumed
+by #261.
 
 The weak count includes explicit Weak owners plus one implicit owner while strong>0 **or a
 last-strong release is pending**. Pending begin makes strong=0 while payload cleanup may still be
@@ -225,10 +226,9 @@ payloads can contain only already issued handles; immutable existing Shared payl
 patched to refer to a future control. This explains why an unconstructible forged self/backedge is
 not justified merely by labeling it Weak. Ordinary observers and lawful acyclic parent/back links
 remain admitted. Do not invent a blanket source Weak-cycle prohibition or a cycle-construction API.
-#260 must independently prove this implication for its chosen symbolic/witness representation and
-reject forged same-pending-control release sequences; current count-only validation does not prove
-it. If the representation cannot establish it, that is a blocking authority gap, not permission
-to loosen the ABI's pending-phase rule. Generated verified transitions preserve admitted graph
+#260's symbolic control-model evidence proves this implication and rejects forged
+same-pending-control release sequences; count-only validation alone does not prove it. Generated
+verified transitions preserve admitted graph
 invariants; concrete target implementation/audit obligations stay with #84–#87.
 
 Recursive drop/clone plans include handle leaves under every payload row. Aggregate/Vec clone

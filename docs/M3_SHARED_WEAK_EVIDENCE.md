@@ -1,7 +1,7 @@
 # M3 Shared and Weak evidence matrix
 
-Status: Issue #259 integration plan with #260 independent proof evidence below.
-**Planned source and target-runtime tests below are not existing execution evidence.**
+Status: Issue #259 integration plan with #260 independent proof evidence and the internal
+#261/#262 source checkpoints below. Planned target-runtime tests remain future execution evidence.
 Read the [authority contract](M3_SHARED_WEAK_AUTHORITY.md) for SW1–SW5, complete payload domain,
 operation semantics and exclusions. A scalar-only checkpoint cannot discharge #83.
 
@@ -54,10 +54,11 @@ pristine graph. This is bounded compiler evidence, not full #262 closure or exec
 
 ## Issue #261 source integration checkpoint
 
-The semantic source route now maps authenticated `Shared<T>`/`Weak<T>` types and lowers direct
+The semantic source route maps authenticated `Shared<T>`/`Weak<T>` types and lowers direct
 straight-line `shared(value)`, explicit handle `clone`, and `downgrade` expressions through
 mandatory IR verification. Named source tests cover bool, i32, String, nominal Struct/Enum,
-zero/nonzero fixed arrays, positive-stride Vec, and nested Shared payloads. They also pin source
+zero/nonzero fixed arrays, positive-stride Vec, nested Shared payloads, payloadless/multi-variant
+Enums, and finite recursive nominal values through Shared indirection. They also pin source
 order, reverse failure cleanup, moved/wrong-type diagnostics, deterministic rejection replay, and
 the exact/first-extra cleanup-action frontier with pristine recovery.
 
@@ -76,14 +77,16 @@ fresh valid lowering are deterministic. This reuses #260 transition authority an
 evidence only: it does not claim an allocator, count mutation, fault injection or cleanup was
 executed by a target runtime; those observations remain #263 work.
 
-This is a bounded #261 progress checkpoint, not issue or #83 closure. A distinct verified
-handle-aware clone contract now retains exact place/indexed-borrow source authority, a distinct
-destination, and a finite canonical recipe graph. That recipe requires declaration-order Struct,
+This is the compile-time #261 closure candidate, not #83 closure or target execution. The named
+`recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` test authenticates
+the final #259 payload-domain cases through source lowering and mandatory IR verification. A
+distinct verified handle-aware clone contract retains exact place/indexed-borrow source authority,
+a distinct destination, and a finite canonical recipe graph. That recipe requires declaration-order Struct,
 runtime-active Enum, ascending fixed-array/dynamic-Vec traversal and explicit Shared/Weak count
 operations, with initialized-prefix cleanup before surviving roots. It does not relax the generic
 non-handle clone contract and does not claim that a target backend executed the recipe. Full
-count/allocation execution faults and CFG upgrade/match composition still require their #260–#263
-authorities and named evidence below. No target runtime or public profile is enabled.
+count/allocation execution faults remain #263 work, while broader CFG upgrade/match composition
+remains tracked by #262/#269. No target runtime or public profile is enabled.
 
 ## Existing evidence and its limits
 
