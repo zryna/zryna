@@ -80,6 +80,12 @@ fn source_file(path: &str) -> &'static str {
             include_str!("active_enum_payload_borrow_source.rs")
         }
         "nonindexed_borrow_calls.rs" => include_str!("nonindexed_borrow_calls.rs"),
+        "nonindexed_static_owned_borrow/calls.rs" => {
+            include_str!("nonindexed_static_owned_borrow/calls.rs")
+        }
+        "active_enum_payload_borrow_fixture/calls.rs" => {
+            include_str!("active_enum_payload_borrow_fixture/calls.rs")
+        }
         "nonindexed_borrow_resources.rs" => include_str!("nonindexed_borrow_resources.rs"),
         "lexical_borrow_calls.rs" => include_str!("lexical_borrow_calls.rs"),
         "structured_graph_resources.rs" => include_str!("structured_graph_resources.rs"),
@@ -103,6 +109,9 @@ fn ir_file(path: &str) -> &'static str {
         "nonindexed_owned_borrow_proof.rs" => ir!("tests/nonindexed_owned_borrow_proof.rs"),
         "active_enum_payload_borrow.rs" => ir!("tests/active_enum_payload_borrow.rs"),
         "borrow_nonindexed_call_scope.rs" => ir!("tests/borrow_nonindexed_call_scope.rs"),
+        "nonindexed_projection_call_scope.rs" => {
+            ir!("tests/nonindexed_projection_call_scope.rs")
+        }
         "borrow_resource_boundaries.rs" => ir!("tests/borrow_resource_boundaries.rs"),
         _ => panic!("unbound IR evidence: {path}"),
     }
