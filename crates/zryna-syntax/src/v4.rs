@@ -24,6 +24,9 @@ use zryna_source::{
     UntrustedSpan,
 };
 
+#[path = "v4_lexical_bindings.rs"]
+mod lexical_bindings;
+
 pub const PROTOCOL_VERSION: u32 = 4;
 pub const MAX_RESPONSE_BYTES: usize = 64 * 1_024 * 1_024;
 pub const MAX_AGGREGATE_SOURCE_BYTES: usize = 8 * 1_024 * 1_024;
@@ -1699,7 +1702,7 @@ fn verify_body(
             errors,
         );
     }
-    verify_lexical_binding_names(raw, locals, path, errors);
+    lexical_bindings::verify(raw, locals, path, errors);
     for block in &raw.blocks {
         if !contains_claim(raw.span, block.span) {
             errors.node(path, "block span is outside its function body");
@@ -1756,47 +1759,6 @@ fn verify_body(
     verify_arena_order(raw, path, errors);
 }
 
-fn verify_lexical_binding_names(
-    raw: &RawFunctionBodySyntax,
-    parameters: &BTreeSet<String>,
-    path: &NormalizedSourcePath,
-    errors: &mut Errors,
-) {
-    let mut names = vec![BTreeSet::new(); raw.blocks.len()];
-    if let Some(root) = names.first_mut() {
-        root.clone_from(parameters);
-    }
-    for statement in &raw.statements {
-        let RawStatementKind::WeakUpgrade { binding, success_block, .. } = &statement.kind else {
-            continue;
-        };
-        let Some(scope) = usize::try_from(*success_block).ok().and_then(|id| names.get_mut(id))
-        else {
-            continue;
-        };
-        if !scope.insert(binding.text.clone()) {
-            errors.node(path, "duplicate weak-upgrade binding name");
-        }
-    }
-    for (block_id, block) in raw.blocks.iter().enumerate() {
-        let Some(scope) = names.get_mut(block_id) else {
-            continue;
-        };
-        for statement_id in &block.statements {
-            let Some(statement) =
-                usize::try_from(*statement_id).ok().and_then(|id| raw.statements.get(id))
-            else {
-                continue;
-            };
-            let RawStatementKind::LocalDeclaration { name, .. } = &statement.kind else {
-                continue;
-            };
-            if !scope.insert(name.text.clone()) {
-                errors.node(path, "duplicate function-local binding name");
-            }
-        }
-    }
-}
 fn contains_claim(parent: UntrustedSpan, child: UntrustedSpan) -> bool {
     parent.file == child.file && child.start >= parent.start && child.end <= parent.end
 }

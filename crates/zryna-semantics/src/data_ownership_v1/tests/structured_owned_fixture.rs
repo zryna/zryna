@@ -2,6 +2,10 @@ use super::*;
 use zryna_source::UntrustedSpan;
 use zryna_syntax::v4::{RawElseSyntax, RawExpressionKind};
 
+#[path = "structured_owned_match_continuation_fixture.rs"]
+mod match_continuation;
+pub(super) use match_continuation::fixture as one_arm_match_continuation_fixture;
+
 #[path = "structured_match_fixture.rs"]
 mod match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::Payload;

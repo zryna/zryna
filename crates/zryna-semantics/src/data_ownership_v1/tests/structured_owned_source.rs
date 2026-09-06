@@ -1,5 +1,6 @@
 use super::structured_owned_fixture::{
     Payload, Statement, Statement::*, fixture, legacy_payload_fixture,
+    one_arm_match_continuation_fixture,
 };
 use super::*;
 
@@ -109,6 +110,28 @@ fn legacy_string_and_vec_signatures_route_from_shared_structured_shapes() {
         let sources = sources_for(&text);
         let syntax = verify_snapshot(raw, &sources).expect("authenticated legacy signature");
         let first = lower(pair_input(&syntax, &sources)).expect("shared structured route");
+        let second = lower(pair_input(&syntax, &sources)).expect("deterministic replay");
+        assert_eq!(format!("{:?}", first.verified_ir()), format!("{:?}", second.verified_ir()));
+    }
+}
+
+#[test]
+fn one_arm_owned_match_with_a_block_continuation_uses_structured_cfg() {
+    for payload in [Payload::Struct, Payload::Array(2)] {
+        let (text, raw) = one_arm_match_continuation_fixture(payload);
+        let sources = sources_for(&text);
+        let syntax =
+            verify_snapshot(raw, &sources).expect("authenticated one-arm Match continuation");
+        let first = lower(pair_input(&syntax, &sources)).expect("structured one-arm Match route");
+        let function = first
+            .verified_ir()
+            .modules()
+            .next()
+            .expect("module")
+            .functions()
+            .next()
+            .expect("function");
+        assert!(function.blocks().count() >= 3, "Match refinement preserves its continuation");
         let second = lower(pair_input(&syntax, &sources)).expect("deterministic replay");
         assert_eq!(format!("{:?}", first.verified_ir()), format!("{:?}", second.verified_ir()));
     }
