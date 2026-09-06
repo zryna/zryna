@@ -181,8 +181,10 @@ The repository currently establishes and tests:
   state models, and it supplies no allocator, runtime, backend, artifact, driver route, CLI selector,
   or public aggregate ABI;
 - internal deterministic `DataOwnershipV1` JavaScript and memory-bearing core WebAssembly
-  emission, plus an independently reverified Linux x86-64 native MIR boundary. These consume only
-  the exact sealed IR/layout/runtime authorities and do not activate a driver or public profile;
+  emission, plus independently verified Linux x86-64 native MIR, deterministic audited objects,
+  an exact C11 ownership runtime, sealed linking, create-only artifact publication, and typed
+  execution. These consume only exact sealed IR/layout/runtime authorities and do not activate a
+  public driver profile;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and

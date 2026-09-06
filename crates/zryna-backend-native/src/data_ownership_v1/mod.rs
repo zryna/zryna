@@ -27,6 +27,8 @@ use zryna_native_mir::data_ownership_v1::{VerifiedFunction, VerifiedMirModule};
 
 use crate::{LinuxX8664ObjectTarget, MAX_NATIVE_OBJECT_BYTES, NATIVE_OBJECT_TARGET};
 
+const MAX_CODEGEN_UNITS: u64 = 1_000_000;
+
 /// Audited DataOwnershipV1 ELF relocatable bytes.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ValidatedDataOwnershipObjectArtifact {
@@ -49,6 +51,7 @@ pub fn emit_object(
     program: &VerifiedMirModule,
     _target: LinuxX8664ObjectTarget,
 ) -> Result<ValidatedDataOwnershipObjectArtifact, Diagnostic> {
+    preflight_codegen(program)?;
     let mut flags = settings::builder();
     flags.set("opt_level", "none").map_err(codegen_error)?;
     flags.set("is_pic", "false").map_err(codegen_error)?;
@@ -117,6 +120,53 @@ pub fn emit_object(
     let bytes = object.finish().emit().map_err(codegen_error)?;
     audit_object(&bytes, program)?;
     Ok(ValidatedDataOwnershipObjectArtifact { bytes })
+}
+
+fn preflight_codegen(program: &VerifiedMirModule) -> Result<(), Diagnostic> {
+    let mut budget = CodegenBudget::new();
+    for ty in program.types() {
+        budget.take(32)?;
+        budget.take(u64::try_from(ty.fields().len()).map_err(|_| resource_error())? * 16)?;
+        budget.take(u64::try_from(ty.variants().len()).map_err(|_| resource_error())? * 16)?;
+        if ty.category() == zryna_native_mir::data_ownership_v1::raw::TypeCategory::FixedArray {
+            budget.take(ty.array_length().ok_or_else(invariant_error)?.saturating_mul(2))?;
+        }
+    }
+    for function in program.functions() {
+        budget.take(32)?;
+        budget.take(
+            u64::try_from(function.parameters().len() + function.borrow_parameters().len())
+                .map_err(|_| resource_error())?,
+        )?;
+        budget.take(u64::try_from(function.place_count()).map_err(|_| resource_error())? * 2)?;
+        for block in function.blocks() {
+            budget.take(8)?;
+            budget
+                .take(u64::try_from(block.operation_count()).map_err(|_| resource_error())? * 16)?;
+        }
+        for plan in (0..function.cleanup_plan_count())
+            .filter_map(|id| u32::try_from(id).ok().and_then(|id| function.cleanup_plan(id)))
+        {
+            budget
+                .take(u64::try_from(plan.actions().count()).map_err(|_| resource_error())? * 8)?;
+        }
+    }
+    Ok(())
+}
+
+struct CodegenBudget {
+    used: u64,
+}
+
+impl CodegenBudget {
+    const fn new() -> Self {
+        Self { used: 0 }
+    }
+
+    fn take(&mut self, units: u64) -> Result<(), Diagnostic> {
+        self.used = self.used.checked_add(units).ok_or_else(resource_error)?;
+        if self.used > MAX_CODEGEN_UNITS { Err(resource_error()) } else { Ok(()) }
+    }
 }
 
 fn declare_helpers(
@@ -343,4 +393,28 @@ fn audit_error() -> Diagnostic {
         "DataOwnershipV1 object failed the closed Linux x86-64 ELF audit",
         "report this compiler failure with the smallest reproducible source",
     )
+}
+
+fn resource_error() -> Diagnostic {
+    Diagnostic::error(
+        "ZRYNA-N3304",
+        None,
+        "DataOwnershipV1 native code generation exceeds its fixed resource budget",
+        "reduce functions, places, operations, cleanup actions, or expanded fixed-array layouts",
+    )
+}
+
+#[cfg(test)]
+mod resource_tests {
+    use super::{CodegenBudget, MAX_CODEGEN_UNITS};
+
+    #[test]
+    fn codegen_budget_accepts_exact_and_rejects_first_extra() {
+        let mut exact = CodegenBudget::new();
+        exact.take(MAX_CODEGEN_UNITS).expect("exact native codegen budget");
+
+        let mut extra = CodegenBudget::new();
+        let error = extra.take(MAX_CODEGEN_UNITS + 1).expect_err("first extra native unit");
+        assert_eq!(error.code(), "ZRYNA-N3304");
+    }
 }

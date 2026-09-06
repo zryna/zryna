@@ -316,10 +316,10 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | complete    |
 |   #82 | bounded nonescaping lexical borrowing                                | #81                     | complete    |
 |   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | complete    |
-|   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | planned     |
-|   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | planned     |
-|   #86 | independently verified native MIR                                    | #78, #80, #81, #82, #83 | planned     |
-|   #87 | audited Linux x86-64 object, runtime, link, and execution            | #77, #80, #86           | planned     |
+|   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | complete    |
+|   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | complete    |
+|   #86 | independently verified native MIR                                    | #78, #80, #81, #82, #83 | complete    |
+|   #87 | audited Linux x86-64 object, runtime, link, and execution            | #77, #80, #86           | complete    |
 |   #88 | candidate driver integration and atomic manifest v3 bundles          | #76, #84, #85, #87      | planned     |
 |   #89 | fixed-oracle three-target conformance and resource gates             | #88                     | planned     |
 |   #90 | public profile activation, authenticated docs, website, and provenance | #89                     | planned     |

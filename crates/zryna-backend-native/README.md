@@ -33,3 +33,47 @@ observed `R_X86_64_PLT32`/`X86Branch`/32-bit/addend-`-4` relocation at the expec
 the exact verified local callee, one-for-one with the MIR call graph and wrapper inventory. See
 [M2 Linux x86-64 native backend](../../docs/M2_NATIVE_BACKEND.md). This internal evidence does not
 activate the public M2 CLI or alter the M1 emitter and hash.
+
+## Internal DataOwnershipV1 boundary
+
+The M3 path consumes only independently verified `DataOwnershipV1` native MIR. It lowers the
+closed instruction inventory to deterministic, non-PIC Linux x86-64 ELF objects and admits only
+the MIR's global program symbols, local per-type clone/drop helpers, exact runtime imports, and
+relocations to those definitions or imports. Aggregate and owned values use verified Linux layout
+records; scalar public exports remain `bool`/`i32` only. A checked one-million-unit preflight
+accounts for functions, parameters, places, blocks, operations, cleanup actions, type members, and
+expanded fixed arrays before Cranelift allocation; exact limit succeeds and the first extra reports
+`ZRYNA-N3304`.
+
+The driver compiles the repository-owned C11 ownership runtime with sealed flags and the validated
+GNU toolchain. A second audit requires the exact 17 runtime definitions, the closed ambient
+`malloc`/`free`/`memcpy`/`memset` import set, approved ELF sections, and symbol-bound relocations.
+It then links that runtime object, one audited program object, and one typed invocation harness.
+The completed ELF must be 64-bit little-endian x86-64, non-writable/executable, contain a nonzero
+entrypoint, define the selected MIR function and every runtime symbol, and use only the sealed C
+startup and result-channel imports. Object and executable publication are independently
+create-only through the validated `.zryna/out` capability.
+
+Verified exit cleanup is executable, not documentary: `Return` and explicit `Trap` run their exact
+cleanup plan, while an unexpected Weak upgrade status releases its prepared result and runs the
+same failure plan before trapping. Runtime-status traps are terminal process failures; the runtime
+never publishes an output pointer or handle on a rejected allocation, growth, clone, concat,
+reserve, or transition.
+
+The named evidence is:
+
+- `zryna-native-mir/tests/data_ownership_v1.rs` for exact MIR retention and hostile independent
+  verification;
+- `zryna-backend-native/tests/data_ownership_v1.rs` for deterministic object bytes, closed symbols
+  and all semantically admitted repository fixtures;
+- `ownership_runtime_v1::tests` for strict C, sanitizer execution, exact exports, hostile pointers,
+  injected allocation failure, and atomic output state;
+- `native::ownership::tests` for the fixed Pair oracle from published ELF files, deterministic
+  relinking, typed execution, runtime allocation-ledger cleanup, hostile invocation/executable
+  rejection, target rejection, and create-only collisions;
+- the existing DataOwnershipV1 IR/semantic exact-limit and first-extra suites for type, function,
+  block, edge, value, place, cleanup, borrow, and diagnostic budgets.
+
+This remains an internal candidate capability. Public `--profile data-ownership-v1`, manifest v3,
+multi-target transactions, non-Linux execution, dynamic libraries, general FFI, raw pointers,
+custom linkers, performance claims, and three-target M3 conformance remain outside this boundary.

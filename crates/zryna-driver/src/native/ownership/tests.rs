@@ -13,6 +13,10 @@ use super::*;
 
 const SOURCE: &str = include_str!("../../../../../tests/m3-fixtures/pair-score-v4.zry");
 const SNAPSHOT: &str = include_str!("../../../../../tests/m3-fixtures/pair-score-v4.json");
+const PAIR_ORACLE: &str = include_str!("../../../../../tests/m3-fixtures/pair-oracle-v1.json");
+const OWNED_TYPES_SOURCE: &str = "interface OwnedBox extends ZrynaStruct { value: String; }\ninterface Node extends ZrynaStruct { children: Vec<Node>; }\nfunction inspect(a: Vec<String>, b: Vec<String>, box: OwnedBox, node: Node): i32 { const xs: Vec<String> = Vec<String>([\"x\"]); return 0; }";
+const OWNED_CONTRACTS: &str =
+    include_str!("../../../../zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs");
 static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
 
 struct TestRoot {
@@ -38,21 +42,31 @@ impl Drop for TestRoot {
 }
 
 fn verified() -> zryna_semantics::data_ownership_v1::VerifiedProgram {
-    const FUNCTION_START: u64 = 62;
+    verified_export(SOURCE, SNAPSHOT, 0, 62)
+}
+
+fn verified_export(
+    original_source: &str,
+    original_snapshot: &str,
+    function_index: usize,
+    function_start: u64,
+) -> zryna_semantics::data_ownership_v1::VerifiedProgram {
     const EXPORT_BYTES: u64 = 7;
     let source = format!(
         "{}export {}",
-        &SOURCE[..FUNCTION_START as usize],
-        &SOURCE[FUNCTION_START as usize..]
+        &original_source[..function_start as usize],
+        &original_source[function_start as usize..]
     );
-    let mut snapshot: serde_json::Value = serde_json::from_str(SNAPSHOT).expect("JSON snapshot");
-    shift_spans(&mut snapshot, FUNCTION_START, EXPORT_BYTES);
-    snapshot["files"][0]["functions"][0]["export_span"] = serde_json::json!({
+    let mut snapshot: serde_json::Value =
+        serde_json::from_str(original_snapshot).expect("JSON snapshot");
+    shift_spans(&mut snapshot, function_start, EXPORT_BYTES);
+    snapshot["files"][0]["functions"][function_index]["export_span"] = serde_json::json!({
         "file": 0,
-        "start": FUNCTION_START,
-        "end": FUNCTION_START + 6,
+        "start": function_start,
+        "end": function_start + 6,
     });
-    snapshot["files"][0]["functions"][0]["span"]["start"] = serde_json::Value::from(FUNCTION_START);
+    snapshot["files"][0]["functions"][function_index]["span"]["start"] =
+        serde_json::Value::from(function_start);
     let snapshot = serde_json::to_vec(&snapshot).expect("shifted snapshot");
     let sources =
         SourceMap::build(vec![SourceFileInput { path: "src/main.zry".to_owned(), text: source }])
@@ -63,6 +77,47 @@ fn verified() -> zryna_semantics::data_ownership_v1::VerifiedProgram {
         sources.file_id(&NormalizedSourcePath::new("src/main.zry").expect("path")).expect("entry");
     lower(SemanticInput::try_new(&syntax, &sources, entry).expect("semantic input"))
         .expect("verified program")
+}
+
+fn verified_private(
+    source: &str,
+    snapshot: &str,
+) -> zryna_semantics::data_ownership_v1::VerifiedProgram {
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "src/main.zry".to_owned(),
+        text: source.to_owned(),
+    }])
+    .expect("source map");
+    let syntax = verify_snapshot(decode_snapshot(snapshot.as_bytes()).expect("snapshot"), &sources)
+        .expect("verified syntax");
+    let entry =
+        sources.file_id(&NormalizedSourcePath::new("src/main.zry").expect("path")).expect("entry");
+    lower(SemanticInput::try_new(&syntax, &sources, entry).expect("semantic input"))
+        .expect("verified program")
+}
+
+fn owned_contract_program() -> zryna_semantics::data_ownership_v1::VerifiedProgram {
+    const PREFIX: &str = "const OWNED_TYPES_RESPONSE: &str = r#\"";
+    let response = OWNED_CONTRACTS
+        .split_once(PREFIX)
+        .expect("owned response prefix")
+        .1
+        .split_once("\"#;")
+        .expect("owned response suffix")
+        .0
+        .replacen(
+            "\"end\":192}}},{\"span\":{\"file\":0,\"start\":195",
+            "\"end\":192}}}},{\"span\":{\"file\":0,\"start\":195",
+            1,
+        )
+        .replacen(
+            "\"end\":198}}},{\"span\":{\"file\":0,\"start\":215",
+            "\"end\":198}}}},{\"span\":{\"file\":0,\"start\":215",
+            1,
+        );
+    let response: serde_json::Value = serde_json::from_str(&response).expect("owned response");
+    let snapshot = serde_json::to_string(&response["result"]).expect("owned snapshot");
+    verified_private(OWNED_TYPES_SOURCE, &snapshot)
 }
 
 fn shift_spans(value: &mut serde_json::Value, threshold: u64, shift: u64) {
@@ -155,6 +210,50 @@ fn ownership_objects_link_publish_create_only_and_execute() {
     }));
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn published_executables_match_the_fixed_pair_oracle() {
+    let root = TestRoot::new();
+    let program = verified();
+    let limits = NativeProcessLimits::default();
+    let toolchain = discover_linux_native_toolchain(limits).expect("toolchain");
+    let oracle: serde_json::Value = serde_json::from_str(PAIR_ORACLE).expect("pair oracle");
+    for case in oracle["cases"].as_array().expect("oracle cases") {
+        let arguments = case["arguments"]
+            .as_array()
+            .expect("arguments")
+            .iter()
+            .map(|argument| {
+                ScalarValue::I32(
+                    i32::try_from(argument["value"].as_i64().expect("i32 value"))
+                        .expect("bounded i32"),
+                )
+            })
+            .collect();
+        let expected = ScalarValue::I32(
+            i32::try_from(case["expected"]["value"].as_i64().expect("expected value"))
+                .expect("bounded expected i32"),
+        );
+        let prepared = prepare_data_ownership_executable(
+            &program,
+            Invocation::new("pairScore".to_owned(), arguments),
+            &root.output,
+            zryna_backend_native::NATIVE_OBJECT_TARGET,
+            &toolchain,
+            limits,
+        )
+        .expect("oracle executable");
+        let stem = case["id"].as_str().expect("case id");
+        let executable = publish_data_ownership_executable(&prepared, &root.output, stem)
+            .expect("published oracle executable");
+        assert_eq!(
+            run_native_invocation(&executable, limits).expect("oracle observation"),
+            ScalarOutcome::Returned { value: expected },
+            "oracle case {stem}"
+        );
+    }
+}
+
 #[test]
 fn unsupported_target_fails_before_staging_or_publication() {
     let root = TestRoot::new();
@@ -173,4 +272,114 @@ fn unsupported_target_fails_before_staging_or_publication() {
         assert_eq!(failure[0].code(), "ZRYNA-N3001");
     }
     assert_eq!(fs::read_dir(root.output.path()).expect("output entries").count(), 0);
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn hostile_invocation_and_executable_publish_nothing() {
+    let root = TestRoot::new();
+    let program = verified();
+    let limits = NativeProcessLimits::default();
+    let toolchain = discover_linux_native_toolchain(limits).expect("toolchain");
+    let wrong_type = prepare_data_ownership_executable(
+        &program,
+        Invocation::new("pairScore".to_owned(), vec![ScalarValue::Bool(true), ScalarValue::I32(3)]),
+        &root.output,
+        zryna_backend_native::NATIVE_OBJECT_TARGET,
+        &toolchain,
+        limits,
+    )
+    .expect_err("wrong typed invocation");
+    assert_eq!(wrong_type[0].code(), "ZRYNA-B2103");
+
+    let mut tampered = prepare_data_ownership_executable(
+        &program,
+        invocation(),
+        &root.output,
+        zryna_backend_native::NATIVE_OBJECT_TARGET,
+        &toolchain,
+        limits,
+    )
+    .expect("prepared executable");
+    tampered.executable.bytes = Arc::from(b"not an ELF".as_slice());
+    let rejected = publish_data_ownership_executable(&tampered, &root.output, "tampered")
+        .expect_err("tampered executable");
+    assert_eq!(rejected[0].code(), "ZRYNA-N4018");
+    assert_eq!(fs::read_dir(root.output.path()).expect("output entries").count(), 0);
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn generated_owned_cleanup_executes_before_scalar_return() {
+    let program = owned_contract_program();
+    let mir =
+        zryna_native_mir::data_ownership_v1::lower(program.verified_ir(), program.runtime_abi())
+            .expect("native MIR");
+    let target = select_object_target(zryna_backend_native::NATIVE_OBJECT_TARGET).expect("target");
+    let object =
+        zryna_backend_native::data_ownership_v1::emit_object(&mir, target).expect("program object");
+    let function = mir.functions().next().expect("inspect function");
+    let mut declarations = String::new();
+    let mut arguments = String::new();
+    for (index, parameter) in function.parameters().enumerate() {
+        let layout = mir.types().find(|ty| ty.id() == parameter.ty()).expect("parameter layout");
+        declarations.push_str(&format!(
+            "  uintptr_t p{index} = 0; if (zryna_rt_o1_allocate({}, {}, &p{index}) != 0) return {}; memset((void *)p{index}, 0, {});\n",
+            layout.size(),
+            layout.alignment(),
+            index + 10,
+            layout.size(),
+        ));
+        if index != 0 {
+            arguments.push_str(", ");
+        }
+        arguments.push_str(&format!("p{index}"));
+    }
+    let mut runtime = crate::ownership_runtime_v1::render_source(&mir);
+    runtime.extend_from_slice(
+        format!(
+            r#"
+#include <stdio.h>
+extern int32_t zryna_m3_m0_f0(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+int main(void) {{
+{declarations}  if (zryna_m3_m0_f0({arguments}) != 0) return 1;
+  if (allocation_head != NULL) return 2;
+  return 0;
+}}
+"#
+        )
+        .as_bytes(),
+    );
+
+    let root = TestRoot::new();
+    let source = root.workspace.join("cleanup.c");
+    let object_path = root.workspace.join("program.o");
+    let executable = root.workspace.join("cleanup.elf");
+    fs::write(&source, runtime).expect("runtime harness");
+    fs::write(&object_path, object.bytes()).expect("object bytes");
+    let output = std::process::Command::new("/usr/bin/gcc")
+        .args([
+            "-std=c11",
+            "-pedantic",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-O2",
+            "-fno-stack-protector",
+            "-fno-pie",
+            "-no-pie",
+        ])
+        .arg(&source)
+        .arg(&object_path)
+        .arg("-o")
+        .arg(&executable)
+        .output()
+        .expect("cleanup verifier compile");
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        std::process::Command::new(&executable)
+            .status()
+            .expect("cleanup verifier execute")
+            .success()
+    );
 }

@@ -12,7 +12,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use zryna_diagnostics::Diagnostic;
 use zryna_native_mir::data_ownership_v1::{
     VerifiedFunction, VerifiedMirModule,
-    raw::{PlaceKind, TypeCategory},
+    raw::{DropKind, PlaceKind, TypeCategory},
 };
 
 use super::{
@@ -77,6 +77,27 @@ pub(super) fn drop_contents(
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     call_helper(drops, ty, address, builder)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn execute_cleanup_plan(
+    program: &VerifiedMirModule,
+    function: VerifiedFunction<'_>,
+    cleanup: Option<u32>,
+    slots: &[Option<cranelift_codegen::ir::StackSlot>],
+    runtime: &BTreeMap<&str, FuncRef>,
+    drops: &BTreeMap<u32, FuncRef>,
+    builder: &mut FunctionBuilder<'_>,
+) -> Result<(), Diagnostic> {
+    let Some(cleanup) = cleanup else { return Ok(()) };
+    let plan = function.cleanup_plan(cleanup).ok_or_else(invariant_error)?;
+    for action in plan.actions() {
+        if action.kind() != DropKind::Place {
+            return Err(invariant_error());
+        }
+        drop_place(program, function, action.place(), slots, runtime, drops, builder)?;
+    }
+    Ok(())
 }
 
 fn drop_contents_impl(

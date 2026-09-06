@@ -12,7 +12,7 @@ use zryna_native_mir::data_ownership_v1::{
 };
 
 use super::{
-    invariant_error,
+    drop as drop_ops, invariant_error,
     runtime::{allocate_record, release_record},
     state::{edge_arguments, encoded_block, get_value, runtime_function},
     storage::{place_storage_address, place_type, type_record},
@@ -23,15 +23,22 @@ pub(super) fn lower_terminator(
     program: &VerifiedMirModule,
     function: VerifiedFunction<'_>,
     terminator: &Terminator,
-    _cleanup: Option<u32>,
+    cleanup: Option<u32>,
     blocks: &[Block],
     slots: &[Option<StackSlot>],
     values: &[Option<cranelift_codegen::ir::Value>],
     runtime: &BTreeMap<&str, FuncRef>,
+    drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     match terminator {
-        Terminator::Return(id) => builder.ins().return_(&[get_value(values, *id)?]),
+        Terminator::Return(id) => {
+            let result = get_value(values, *id)?;
+            drop_ops::execute_cleanup_plan(
+                program, function, cleanup, slots, runtime, drops, builder,
+            )?;
+            builder.ins().return_(&[result])
+        }
         Terminator::Jump(edge) => {
             let arguments = edge_arguments(values, &edge.arguments)?;
             builder.ins().jump(encoded_block(blocks, edge.target)?, &arguments)
@@ -61,15 +68,20 @@ pub(super) fn lower_terminator(
                 success,
                 expired,
                 runtime_symbol,
+                cleanup,
                 blocks,
                 slots,
                 values,
                 runtime,
+                drops,
                 builder,
             )?;
             return Ok(());
         }
         Terminator::Trap(identity) => {
+            drop_ops::execute_cleanup_plan(
+                program, function, cleanup, slots, runtime, drops, builder,
+            )?;
             builder.ins().trap(TrapCode::unwrap_user(identity.saturating_add(10)))
         }
     };
@@ -113,10 +125,12 @@ fn lower_weak_upgrade(
     success: &Edge,
     expired: &Edge,
     runtime_symbol: &str,
+    cleanup: Option<u32>,
     blocks: &[Block],
     slots: &[Option<StackSlot>],
     values: &[Option<cranelift_codegen::ir::Value>],
     runtime: &BTreeMap<&str, FuncRef>,
+    drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let weak_type = type_record(program, place_type(function, weak)?)?;
@@ -164,6 +178,7 @@ fn lower_weak_upgrade(
 
     builder.switch_to_block(failed);
     release_record(program, target.ty(), result, runtime, builder)?;
+    drop_ops::execute_cleanup_plan(program, function, cleanup, slots, runtime, drops, builder)?;
     builder.ins().trap(TrapCode::unwrap_user(2));
     Ok(())
 }

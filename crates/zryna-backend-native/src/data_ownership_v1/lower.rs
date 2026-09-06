@@ -115,6 +115,7 @@ pub(super) fn build_function(
             &slots,
             &values,
             runtime,
+            drops,
             &mut builder,
         )?;
     }
