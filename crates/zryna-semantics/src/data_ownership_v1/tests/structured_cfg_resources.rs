@@ -367,3 +367,55 @@ fn structured_indexed_handoff_rejects_absent_stale_and_hostile_tickets_atomicall
     });
     assert!(errors.is_empty());
 }
+
+#[test]
+fn structured_indexed_handoff_ticket_is_consumed_once() {
+    let (source, snapshot) = indexed_match_fixture(false, true);
+    let errors = with_snapshot(&source, snapshot, |lowerer, result| {
+        let _parameters = parameter(lowerer);
+        let integer = lowerer
+            .node_types
+            .iter()
+            .flatten()
+            .find(|ty| ty.category == TypeCategory::I32)
+            .copied()
+            .expect("i32 type");
+        let at = span(lowerer.input.sources(), lowerer.function.span);
+        let value = lowerer
+            .emit(integer, at, raw::InstructionKind::I32Literal(0))
+            .expect("genuine existing Copy value");
+        let index = lowerer
+            .function
+            .body
+            .expressions
+            .iter()
+            .position(|expression| {
+                matches!(expression.kind, zryna_syntax::v4::RawExpressionKind::Match { .. })
+            })
+            .and_then(|index| u32::try_from(index).ok())
+            .expect("Match index");
+        let RawStatementKind::LocalDeclaration { initializer, .. } =
+            lowerer.function.body.statements[0].kind
+        else {
+            panic!("authenticated initializer")
+        };
+        lowerer.preparation_facts.structured_values.insert(index, (value, integer));
+        super::super::constructor_preparation::PreparedValue::prepare(lowerer, initializer, result)
+            .expect("first ticket use")
+            .consume();
+        assert!(!lowerer.preparation_facts.structured_values.contains_key(&index));
+        let before = lowerer.preparation_checkpoint();
+        assert!(
+            super::super::constructor_preparation::PreparedValue::prepare(
+                lowerer,
+                initializer,
+                result
+            )
+            .is_none(),
+            "consumed ticket cannot be replayed"
+        );
+        assert_eq!(lowerer.preparation_checkpoint(), before);
+        lowerer.reserved_transitions = 0;
+    });
+    assert_eq!(errors.len(), 1);
+}
