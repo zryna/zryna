@@ -207,6 +207,30 @@ count/allocation fault and resource conformance belongs to the non-executable in
 in #263, while broader CFG upgrade/match composition remains tracked by #262/#269. Actual target
 execution remains outside this child graph. No target runtime or public profile is enabled.
 
+## Issue #263 source-bound nested frontier checkpoint
+
+`handle_frontier_source_vec_enum_occurrences_retain_replacement_owners` authenticates
+constructed `Vec<Entry>` values of length zero and three; the nonempty value contains
+`Data(Payload)`, `Empty` and `Data(Payload)`, where `Payload` owns Shared, Weak and String fields.
+The test-only `handle_frontier_model` binds the source initializer to the sealed clone root and
+walks verified constructor operands against its recursive recipe. Thus two concrete Vec iterations
+have distinct occurrence paths, while the payloadless variant contributes no initialized fields.
+This is not enumeration of unique recipe type nodes or fabricated runtime tag evidence.
+
+Eight bounded fault positions cover initial Vec acquisition and each handle/String acquisition in
+the nonempty traversal. The checks preserve the sealed original allocation/refcount trap, reject
+the failing uncommitted leaf, unwind the active partial payload before prior elements, and release
+Vec storage last. Exact pre-commit cleanup retains both the source and old replacement target;
+successful replacement drops only the old target and later scope cleanup drops the source once.
+Wrong operation/status/ordinal/destination, omitted or reordered prefix/retained roots, and a
+wrong initializer value reject deterministically, followed by valid replay.
+
+These are bounded compiler conformance claims derived from authenticated source, verified IR,
+sealed clone/drop recipes and existing ABI transition validation. They do not execute runtime
+allocation, dynamic traversal or refcounts, and do not issue target execution receipts. Arbitrary
+runtime Vec lengths, other nested frontier shapes and the remaining #263 count/control/resource
+matrix require their separately named evidence; this checkpoint does not close #263 or #83.
+
 ## Existing evidence and its limits
 
 All names below are existing tests in

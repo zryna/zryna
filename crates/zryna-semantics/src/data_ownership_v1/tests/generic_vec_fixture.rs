@@ -63,6 +63,9 @@ struct Builder {
     statements: Vec<RawStatementSyntax>,
 }
 
+#[path = "handle_frontier_fixture.rs"]
+pub(in crate::data_ownership_v1) mod handle_frontier_fixture;
+
 fn at(start: usize, end: usize) -> UntrustedSpan {
     UntrustedSpan {
         file: 0,

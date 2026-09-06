@@ -25,7 +25,12 @@ fn unary(f: &mut Builder, spelling: &str, value: impl FnOnce(&mut Builder) -> u3
     f.expression(start, kind)
 }
 
-fn local(f: &mut Builder, name: &str, ty: &Ty, initializer: impl FnOnce(&mut Builder) -> u32) {
+pub(super) fn local(
+    f: &mut Builder,
+    name: &str,
+    ty: &Ty,
+    initializer: impl FnOnce(&mut Builder) -> u32,
+) {
     let start = f.source.len();
     let keyword_span = f.text("const");
     f.text(" ");
