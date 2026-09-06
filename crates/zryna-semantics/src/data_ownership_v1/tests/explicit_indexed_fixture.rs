@@ -23,6 +23,8 @@ pub(in crate::data_ownership_v1) enum Action {
     Collision,
     Escape,
     Call,
+    GrowthInside,
+    GrowthAfter,
 }
 
 pub(super) fn call_fixture(

@@ -26,6 +26,12 @@ pub(in crate::data_ownership_v1) enum Element {
     Enum,
     Array,
     Vec,
+    Shared,
+    Weak,
+    HandleStruct,
+    HandleEnum,
+    HandleArray,
+    HandleVec,
 }
 #[derive(Clone, Copy, Debug)]
 pub(in crate::data_ownership_v1) enum Operation {
@@ -265,8 +271,12 @@ fn initial(element: &Element) -> (Builder, Vec<RawDataDeclaration>, Ty) {
         Element::Enum => Some(ReplacementRoot::Enum),
         _ => None,
     };
-    let (source, types, declarations) = if let Some(root) = root {
-        let (source, raw) = replacement_fixture(root, ReplacementCase::Constructor);
+    let nominal =
+        root.map(|root| replacement_fixture(root, ReplacementCase::Constructor)).or_else(|| {
+            matches!(element, Element::HandleStruct | Element::HandleEnum)
+                .then(shared_weak_fixture::composition_fixture::fixture)
+        });
+    let (source, types, declarations) = if let Some((source, raw)) = nominal {
         let file = &raw.files[0];
         let end = file.data_declarations.last().expect("declaration").span.end;
         (
@@ -285,6 +295,12 @@ fn initial(element: &Element) -> (Builder, Vec<RawDataDeclaration>, Ty) {
         Element::Enum => Ty::Named("Choice"),
         Element::Array => Ty::Array(Box::new(Ty::Vec(Box::new(Ty::String))), 1),
         Element::Vec => Ty::Vec(Box::new(Ty::Vec(Box::new(Ty::String)))),
+        Element::Shared => Ty::Shared(Box::new(Ty::String)),
+        Element::Weak => Ty::Weak(Box::new(Ty::String)),
+        Element::HandleStruct => Ty::Named("Bundle"),
+        Element::HandleEnum => Ty::Named("Envelope"),
+        Element::HandleArray => Ty::Array(Box::new(Ty::Weak(Box::new(Ty::String))), 2),
+        Element::HandleVec => Ty::Vec(Box::new(Ty::Shared(Box::new(Ty::String)))),
     };
     (Builder { source, types, expressions: Vec::new(), statements: Vec::new() }, declarations, ty)
 }

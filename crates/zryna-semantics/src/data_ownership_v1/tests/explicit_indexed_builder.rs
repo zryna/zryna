@@ -65,6 +65,8 @@ impl Builder<'_> {
         let mut copied: RawTypeSyntax = serde_json::from_value(json).expect("shifted type");
         match &mut copied.kind {
             RawTypeSyntaxKind::Vec { argument, .. }
+            | RawTypeSyntaxKind::Shared { argument, .. }
+            | RawTypeSyntaxKind::Weak { argument, .. }
             | RawTypeSyntaxKind::FixedArray { element: argument, .. } => {
                 *argument = self.copied_type(*argument, delta);
             }
@@ -186,6 +188,31 @@ impl Builder<'_> {
     }
     fn action(&mut self, element: u32, action: Action) -> u32 {
         let start = self.position();
+        if matches!(action, Action::GrowthInside | Action::GrowthAfter) {
+            let keyword_span = self.text("push");
+            let open_paren_span = self.text("(");
+            let vector = self.reference("items");
+            let comma_span = self.text(",");
+            self.text(" ");
+            let value = self.reference("next");
+            let close_paren_span = self.text(")");
+            let expression = self.expression(
+                start,
+                RawExpressionKind::VecPush {
+                    keyword_span,
+                    open_paren_span,
+                    vector,
+                    comma_span,
+                    value,
+                    close_paren_span,
+                },
+            );
+            let semicolon_span = self.text(";");
+            return self.statement(
+                start,
+                RawStatementKind::ExpressionStatement { expression, semicolon_span },
+            );
+        }
         let kind =
             if matches!(action, Action::Replace | Action::ReplaceClone | Action::OwnerReplace) {
                 let target = self.reference(if matches!(action, Action::OwnerReplace) {
@@ -284,7 +311,7 @@ impl Builder<'_> {
                 };
                 self.alias(type_syntax, false, None, "whole", true)
             }
-            Action::Escape => self.action(element, Action::Clone),
+            Action::Escape | Action::GrowthAfter => self.action(element, Action::Clone),
             _ => self.action(element, action),
         });
         let close_brace_span = self.text("}");
@@ -298,7 +325,7 @@ impl Builder<'_> {
             at(open_brace_span.start, close_brace_span.end);
         self.text(" ");
         self.body.blocks[0].statements = vec![0, 1, statement];
-        if matches!(action, Action::Escape) {
+        if matches!(action, Action::Escape | Action::GrowthAfter) {
             let escaped = self.action(element, action);
             self.body.blocks[0].statements.push(escaped);
         }
