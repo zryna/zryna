@@ -17,6 +17,7 @@ pub(in crate::data_ownership_v1::owned_aggregate_lowering) struct PreparedLocal<
 }
 
 impl<'l, 'a, 'f, 'e> PreparedLocal<'l, 'a, 'f, 'e> {
+    #[cfg(test)]
     pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare(
         lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
         id: u32,
