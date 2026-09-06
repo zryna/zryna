@@ -47,13 +47,23 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         graph.finish(self, parameters, at)
     }
 
-    fn structured_scope(
+    pub(super) fn structured_scope(
         &mut self,
         block: u32,
         result: Ty,
         graph: &mut StructuredGraph,
     ) -> Option<bool> {
-        let mut scope = self.enter_lexical_scope(block);
+        let scope = self.enter_lexical_scope(block);
+        self.structured_scope_from(block, result, graph, scope)
+    }
+
+    fn structured_scope_from(
+        &mut self,
+        block: u32,
+        result: Ty,
+        graph: &mut StructuredGraph,
+        mut scope: super::lexical_indexed_scope::Scope,
+    ) -> Option<bool> {
         let body = self.function.body.blocks.get(block as usize)?.clone();
         let mut fallthrough = true;
         for id in body.statements {
@@ -84,6 +94,23 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 }
                 RawStatementKind::While { condition, body_block, .. } => {
                     self.structured_loop(condition, body_block, result, statement_span, graph)?;
+                }
+                RawStatementKind::WeakUpgrade {
+                    weak,
+                    binding,
+                    success_block,
+                    failure_block,
+                    ..
+                } => {
+                    fallthrough = self.structured_weak_upgrade(
+                        weak,
+                        &binding,
+                        success_block,
+                        failure_block,
+                        result,
+                        statement_span,
+                        graph,
+                    )?;
                 }
                 RawStatementKind::Return { value, .. } => {
                     for _ in 0..scope.drop_credits {
@@ -162,6 +189,24 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             }
         }
         Some(fallthrough)
+    }
+
+    pub(super) fn structured_scope_with_owned_binding(
+        &mut self,
+        block: u32,
+        result: Ty,
+        name: String,
+        binding: super::Binding,
+        at: Span,
+        graph: &mut StructuredGraph,
+    ) -> Option<bool> {
+        let mut scope = self.enter_lexical_scope(block);
+        if !self.reserve_transition(at) {
+            return None;
+        }
+        scope.add_owned_binding(&name, binding.place);
+        self.bindings.insert(name, binding);
+        self.structured_scope_from(block, result, graph, scope)
     }
 
     fn structured_condition(&mut self, condition: u32) -> Option<raw::ValueId> {

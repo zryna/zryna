@@ -14,6 +14,9 @@ pub(in crate::data_ownership_v1) mod ordinary_array_composition_fixture;
 #[path = "shared_weak_fixture.rs"]
 pub(in crate::data_ownership_v1) mod shared_weak_fixture;
 
+#[path = "weak_upgrade_fixture.rs"]
+pub(in crate::data_ownership_v1) mod weak_upgrade_fixture;
+
 #[derive(Clone, Debug)]
 pub(in crate::data_ownership_v1) enum Element {
     I32,

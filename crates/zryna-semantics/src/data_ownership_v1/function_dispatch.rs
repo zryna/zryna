@@ -247,7 +247,12 @@ fn lower_function_impl<'a>(
         && is_private_owned_enum_payload_move_candidate(function);
     if generic_function && !existing_payload_move {
         if !function.body.statements.iter().any(|statement| {
-            matches!(statement.kind, RawStatementKind::If { .. } | RawStatementKind::While { .. })
+            matches!(
+                statement.kind,
+                RawStatementKind::If { .. }
+                    | RawStatementKind::While { .. }
+                    | RawStatementKind::WeakUpgrade { .. }
+            )
         }) && !function
             .body
             .expressions

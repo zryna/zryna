@@ -14,6 +14,14 @@ pub(super) struct Scope {
     pub(super) drop_credits: usize,
 }
 
+impl Scope {
+    pub(super) fn add_owned_binding(&mut self, name: &str, owner: raw::PlaceId) {
+        self.bindings.remove(name);
+        self.owners.remove(&owner);
+        self.drop_credits += 1;
+    }
+}
+
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn enter_lexical_scope(&self, block: u32) -> Scope {
         Scope {

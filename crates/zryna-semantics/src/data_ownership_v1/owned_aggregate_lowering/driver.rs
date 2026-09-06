@@ -243,7 +243,9 @@ fn lower_owned_aggregate_function_impl<'a>(
             || function.body.statements.iter().any(|statement| {
                 matches!(
                     statement.kind,
-                    RawStatementKind::If { .. } | RawStatementKind::While { .. }
+                    RawStatementKind::If { .. }
+                        | RawStatementKind::While { .. }
+                        | RawStatementKind::WeakUpgrade { .. }
                 )
             }))
     {
