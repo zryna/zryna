@@ -33,7 +33,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         &mut self,
         indexed: u32,
         ty: Ty,
-    ) -> Option<(Vec<(u32, u32)>, usize)> {
+        graph: &StructuredGraph,
+    ) -> Option<(Vec<(u32, u32)>, usize, Option<(u32, Ty)>)> {
         let at = span(self.input.sources(), self.expression(indexed)?.span);
         let mut base = indexed;
         let mut indices = Vec::new();
@@ -43,15 +44,23 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             base = parent;
         }
         indices.reverse();
-        let mut container = self.indexed_expression_type(base).or_else(|| {
-            self.errors.at(
-                "ZRYNA-M3017",
-                at,
-                "indexed Match base is not yet a prepared exact container",
-                "complete the container Match in an explicit local before indexed access",
-            );
-            None
-        })?;
+        let fresh = graph
+            .contains_match(self.expression(base)?.span.start, self.expression(base)?.span.end);
+        let mut container = self
+            .indexed_expression_type(base)
+            .or_else(|| {
+                fresh.then(|| self.inferred_indexed_type_in(base, &mut Vec::new())).flatten()
+            })
+            .or_else(|| {
+                self.errors.at(
+                    "ZRYNA-M3017",
+                    at,
+                    "indexed Match base is not yet a prepared exact container",
+                    "complete the container Match in an explicit local before indexed access",
+                );
+                None
+            })?;
+        let base_ty = container;
         let mut first_checked = None;
         for (ordinal, &(_, index)) in indices.iter().enumerate() {
             let expression = self.expression(index)?;
@@ -77,7 +86,60 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             return None;
         }
-        Some((indices, first_checked?))
+        Some((indices, first_checked?, fresh.then_some((base, base_ty))))
+    }
+
+    fn inferred_indexed_type_in(
+        &mut self,
+        id: u32,
+        bindings: &mut Vec<(String, Ty)>,
+    ) -> Option<Ty> {
+        if let RawExpressionKind::Reference { ref name } = self.expression(id)?.kind
+            && let Some((_, ty)) = bindings.iter().rev().find(|(binding, _)| *binding == name.text)
+        {
+            return Some(*ty);
+        }
+        if let Some(ty) = self.indexed_expression_type(id) {
+            return Some(ty);
+        }
+        let expression = self.expression(id)?.clone();
+        match expression.kind {
+            RawExpressionKind::FixedArrayConstruction { type_syntax, .. }
+            | RawExpressionKind::VecConstruction { type_syntax, .. } => {
+                crate::data_ownership_v1::layout_graph::semantic_type(
+                    self.file,
+                    type_syntax,
+                    self.module,
+                    self.declarations,
+                    self.graph,
+                    self.node_types,
+                    self.errors,
+                )
+            }
+            RawExpressionKind::Clone { value, .. } => {
+                self.inferred_indexed_type_in(value, bindings)
+            }
+            RawExpressionKind::Match { ref arms, .. } => {
+                let at = span(self.input.sources(), expression.span);
+                let plan = self.match_plan(arms, at)?;
+                let mut result = None;
+                for (_, arm, payload) in plan.arms {
+                    let outer = bindings.len();
+                    if let (Some(binding), Some(ty)) = (arm.binding, payload) {
+                        bindings.push((binding.text, ty));
+                    }
+                    let inferred = self.inferred_indexed_type_in(arm.value, bindings);
+                    bindings.truncate(outer);
+                    let inferred = inferred?;
+                    if result.is_some_and(|result| result != inferred) {
+                        return None;
+                    }
+                    result = Some(inferred);
+                }
+                result
+            }
+            _ => None,
+        }
     }
 
     pub(super) fn structured_indexed_operation(
@@ -89,9 +151,29 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         graph: &mut StructuredGraph,
     ) -> Option<raw::ValueId> {
         let at = span(self.input.sources(), self.expression(indexed)?.span);
-        let (indices, first_checked) = self.structured_indexed_chain(indexed, ty)?;
-        let source = self.owned_place(indices[first_checked].0)?;
-        let ready = {
+        let (indices, first_checked, fresh) = self.structured_indexed_chain(indexed, ty, graph)?;
+        if write && fresh.is_some() {
+            self.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "fresh indexed base is not a mutable assignment place",
+                "assign through a mutable initialized binding",
+            );
+            return None;
+        }
+        let mut fresh_base = None;
+        let source = if let Some((base, base_ty)) = fresh {
+            let value = self.structured_value(base, base_ty, graph)?;
+            if !base_ty.is_copy() {
+                fresh_base = Some((self.owners.owner(value)?, base_ty));
+            }
+            self.preparation_facts.structured_values.insert(base, (value, base_ty));
+            None
+        } else {
+            Some(self.owned_place(indices[first_checked].0)?)
+        };
+        let ready = source.is_none() || {
+            let source = source?;
             let available = materialized_availability(
                 &self.owners,
                 &self.moved_projections,
@@ -108,7 +190,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         && available.places_overlap(*place, source.place)
                 })
         };
-        if !ready || (write && !source.mutable) {
+        if !ready || source.is_some_and(|source| write && !source.mutable) {
             self.errors.at("ZRYNA-M3014", at,
                 "indexed container is unavailable before its Match operand",
                 "retain one complete initialized container with the required access while evaluating its index");
@@ -120,10 +202,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             .flatten()
             .find(|ty| ty.category == TypeCategory::I32)
             .copied()?;
-        if !write && first_checked + 1 == indices.len() {
+        if fresh.is_none() && !write && first_checked + 1 == indices.len() {
             let index = indices[first_checked].1;
             let incoming = self.preparation_facts.retained_indexed_reads.clone();
-            self.preparation_facts.retained_indexed_reads.insert(source.place);
+            self.preparation_facts.retained_indexed_reads.insert(source?.place);
             let value = self.structured_value(index, integer, graph)?;
             self.preparation_facts.structured_values.insert(index, (value, integer));
             let value = self.value(result, ty)?;
@@ -137,7 +219,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             }
         }
         let incoming = self.preparation_facts.retained_indexed_reads.clone();
-        self.preparation_facts.retained_indexed_reads.insert(source.place);
+        if let Some(source) = source {
+            self.preparation_facts.retained_indexed_reads.insert(source.place);
+        }
         let mut parent = None;
         for &(prefix, index) in &indices[first_checked..] {
             let value = self.structured_value(index, integer, graph)?;
@@ -162,7 +246,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         }
         let borrow = parent?;
         let value =
-            PreparedValue::prepare_indexed_finish(self, result, ty, borrow, write)?.consume();
+            PreparedValue::prepare_indexed_finish(self, result, ty, borrow, write, fresh_base)?
+                .consume();
         assert!(self.preparation_facts.continued_borrows.remove(&borrow));
         Some(value)
     }

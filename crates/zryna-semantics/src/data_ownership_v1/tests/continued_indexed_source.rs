@@ -1,6 +1,162 @@
 use super::*;
 
 #[test]
+fn fresh_indexed_match_base_preserves_owner_through_index_bounds_and_observation() {
+    for vector in [false, true] {
+        for owned in [false, true] {
+            let (text, raw) = structured_owned_fixture::fresh_indexed_match_fixture(vector, owned);
+            let sources = sources_for(&text);
+            let syntax = verify_snapshot(raw, &sources).expect("authenticated fresh Match base");
+            let program = lower(pair_input(&syntax, &sources))
+                .unwrap_or_else(|errors| panic!("{text}\n{errors:?}"));
+            let replay = lower(pair_input(&syntax, &sources)).expect("deterministic replay");
+            assert_eq!(
+                format!("{:?}", program.verified_ir()),
+                format!("{:?}", replay.verified_ir())
+            );
+            let function =
+                program.modules().next().expect("module").functions().next().expect("function");
+            let blocks = function.blocks().collect::<Vec<_>>();
+            assert_eq!(blocks.len(), 4, "one Match and one continuation");
+            assert_eq!(
+                blocks
+                    .iter()
+                    .filter(|block| block.terminator().kind() == VerifiedTerminatorKind::EnumMatch)
+                    .count(),
+                1
+            );
+            let continuation = blocks.last().expect("joined container continuation");
+            let instructions = continuation.instructions().collect::<Vec<_>>();
+            let call = instructions
+                .iter()
+                .position(|instruction| instruction.kind() == VerifiedInstructionKind::DirectCall)
+                .expect("index producer");
+            let begin = instructions
+                .iter()
+                .position(|instruction| {
+                    instruction.kind() == VerifiedInstructionKind::BeginIndexedAccess
+                })
+                .expect("single bounds operation");
+            let finish = instructions
+                .iter()
+                .position(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
+                .expect("single final end");
+            assert!(call < begin && begin < finish);
+            assert_eq!(
+                instructions
+                    .iter()
+                    .filter(|instruction| {
+                        instruction.kind() == VerifiedInstructionKind::BeginIndexedAccess
+                    })
+                    .count(),
+                1
+            );
+            assert_eq!(
+                instructions
+                    .iter()
+                    .filter(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
+                    .count(),
+                1,
+                "fresh Match storage is never ended and reborrowed"
+            );
+            let access = instructions[begin].indexed_borrow().expect("indexed authority");
+            assert_eq!(instructions[finish].borrow(), Some(access.borrow()));
+            assert_eq!(instructions[call].result(), Some(access.index()));
+            let base_is_owned = vector || owned;
+            if base_is_owned {
+                for index in [call, begin] {
+                    assert!(
+                        instructions[index]
+                            .derived_drop_actions()
+                            .any(|action| action.root() == access.container()),
+                        "fresh base survives preparation failure"
+                    );
+                }
+                assert_eq!(instructions[finish + 1].kind(), VerifiedInstructionKind::DropPlace);
+                assert_eq!(
+                    instructions[finish + 1].place_operands().collect::<Vec<_>>(),
+                    [access.container()]
+                );
+            } else {
+                assert_eq!(
+                    instructions
+                        .iter()
+                        .filter(|instruction| {
+                            instruction.kind() == VerifiedInstructionKind::InitializePlace
+                        })
+                        .count(),
+                    1,
+                    "Copy array Match result receives real temporary storage"
+                );
+            }
+            let observation = if owned {
+                VerifiedInstructionKind::GenericCloneBorrow
+            } else {
+                VerifiedInstructionKind::BorrowRead
+            };
+            let observed = instructions
+                .iter()
+                .find(|instruction| instruction.kind() == observation)
+                .expect("exact final observation");
+            assert_eq!(observed.borrow(), Some(access.borrow()));
+            if owned {
+                assert_eq!(observed.failure_ended_borrows().collect::<Vec<_>>(), [access.borrow()]);
+                assert!(
+                    observed
+                        .derived_drop_actions()
+                        .any(|action| action.root() == access.container())
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn fresh_indexed_match_base_hostiles_are_exact_deterministic_and_recover() {
+    for vector in [false, true] {
+        for mismatch in [false, true] {
+            let (text, raw) = if mismatch {
+                structured_owned_fixture::fresh_indexed_match_mismatch_fixture(vector)
+            } else {
+                structured_owned_fixture::fresh_indexed_match_implicit_read_fixture(vector)
+            };
+            let sources = sources_for(&text);
+            let syntax = verify_snapshot(raw, &sources).expect("authenticated rejected Match base");
+            let reject =
+                || lower(pair_input(&syntax, &sources)).expect_err("fresh Match rejection");
+            let errors = reject();
+            assert_eq!(errors, reject());
+            assert_eq!(errors.len(), 1);
+            assert_eq!(errors[0].code(), if mismatch { "ZRYNA-M3017" } else { "ZRYNA-M3013" });
+            assert_eq!(
+                errors[0].message(),
+                if mismatch {
+                    "indexed Match base is not yet a prepared exact container"
+                } else {
+                    "indexed observation requires an explicit clone of its owned element"
+                }
+            );
+            assert_eq!(
+                errors[0].guidance(),
+                if mismatch {
+                    "complete the container Match in an explicit local before indexed access"
+                } else {
+                    "read a Copy element or explicitly clone the exact owned element"
+                }
+            );
+            let start = text.find("return ").expect("return") + "return ".len();
+            let end = text[start..].find(';').expect("terminator") + start;
+            let span = errors[0].primary_span().expect("exact indexed expression span");
+            assert_eq!((span.start() as usize, span.end() as usize), (start, end));
+        }
+        let (text, raw) = structured_owned_fixture::fresh_indexed_match_fixture(vector, true);
+        let sources = sources_for(&text);
+        let syntax = verify_snapshot(raw, &sources).expect("authenticated recovery fixture");
+        lower(pair_input(&syntax, &sources)).expect("valid recovery after hostile Match bases");
+    }
+}
+
+#[test]
 fn continued_indexed_source_rejects_immutable_target_and_wrong_exact_rhs() {
     for vector in [false, true] {
         for immutable in [false, true] {

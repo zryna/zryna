@@ -4,8 +4,8 @@ use super::*;
 use crate::data_ownership_v1::Binding;
 use crate::data_ownership_v1::tests::structured_owned_fixture::{
     Payload, call_match_fixture, continued_indexed_fixture, formal_match_fixture,
-    indexed_match_fixture, match_fixture, nested_match_fixture, string_match_fixture,
-    vec_match_fixture,
+    fresh_indexed_match_fixture, indexed_match_fixture, match_fixture, nested_match_fixture,
+    string_match_fixture, vec_match_fixture,
 };
 use zryna_ir::data_ownership_v1 as ir;
 
@@ -70,7 +70,7 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> Vec<raw:
 
 #[test]
 fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
-    for shape in 0..16 {
+    for shape in 0..20 {
         for resource in 0..5 {
             for extra in [0, 1, usize::MAX] {
                 let (source, snapshot) = match shape {
@@ -82,7 +82,13 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                     5 => string_match_fixture(0),
                     6 => string_match_fixture(1),
                     7 => indexed_match_fixture(false, true),
-                    _ => continued_indexed_fixture(shape & 1 != 0, shape & 2 != 0, shape & 4 != 0),
+                    8..=15 => {
+                        continued_indexed_fixture(shape & 1 != 0, shape & 2 != 0, shape & 4 != 0)
+                    }
+                    _ => {
+                        let fresh = shape - 16;
+                        fresh_indexed_match_fixture(fresh & 1 != 0, fresh & 2 != 0)
+                    }
                 };
                 let errors = with_snapshot(&source, snapshot, |lowerer, result| {
                     let parameter = parameter(lowerer);

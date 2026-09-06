@@ -9,16 +9,40 @@ use crate::data_ownership_v1::diagnostics::span;
 
 #[derive(Clone, Copy)]
 enum PreparationSite {
-    IndexedStep { source: u32, parent: Option<super::raw::BorrowId>, write: bool },
-    IndexedFinish { borrow: super::raw::BorrowId, replacement: bool },
-    LexicalBegin { target: u32, referent: Ty, write: bool },
-    LexicalReplacement { alias: super::super::preparation_plan::LexicalAlias },
-    StaticReplacement { target: u32, at: super::Span },
-    Push { vector: u32, at: super::Span },
+    IndexedStep {
+        source: u32,
+        parent: Option<super::raw::BorrowId>,
+        write: bool,
+    },
+    IndexedFinish {
+        borrow: super::raw::BorrowId,
+        replacement: bool,
+        fresh_base: Option<(super::raw::PlaceId, Ty)>,
+    },
+    LexicalBegin {
+        target: u32,
+        referent: Ty,
+        write: bool,
+    },
+    LexicalReplacement {
+        alias: super::super::preparation_plan::LexicalAlias,
+    },
+    StaticReplacement {
+        target: u32,
+        at: super::Span,
+    },
+    Push {
+        vector: u32,
+        at: super::Span,
+    },
     RootTopology,
     LocalInitializer,
-    Replacement { target: super::raw::PlaceId },
-    IndexedReplacement { target: u32 },
+    Replacement {
+        target: super::raw::PlaceId,
+    },
+    IndexedReplacement {
+        target: u32,
+    },
 }
 
 impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
@@ -44,8 +68,14 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
         ty: Ty,
         borrow: super::raw::BorrowId,
         replacement: bool,
+        fresh_base: Option<(super::raw::PlaceId, Ty)>,
     ) -> Option<Self> {
-        Self::prepare_at(lowerer, id, ty, PreparationSite::IndexedFinish { borrow, replacement })
+        Self::prepare_at(
+            lowerer,
+            id,
+            ty,
+            PreparationSite::IndexedFinish { borrow, replacement, fresh_base },
+        )
     }
     pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_lexical_begin(
         lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
@@ -244,8 +274,8 @@ impl PreparationSite {
             PreparationSite::IndexedStep { source, parent, write } => {
                 context.continued_index_step(source, id, parent, write, expected)?
             }
-            PreparationSite::IndexedFinish { borrow, replacement } => {
-                context.continued_index_finish(id, expected, borrow, replacement)?
+            PreparationSite::IndexedFinish { borrow, replacement, fresh_base } => {
+                context.continued_index_finish(id, expected, borrow, replacement, fresh_base)?
             }
             PreparationSite::LexicalBegin { target, referent, write } => {
                 context.lexical_begin(target, referent, write)?

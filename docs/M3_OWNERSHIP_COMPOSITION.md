@@ -178,9 +178,10 @@ operands remain pending during arm failures and transfer only at the exact typed
 then derives exact CallTrap cleanup from reconciled post-argument owners in scratch, transferring
 owned arguments before the call cleanup. Nested FixedArray and two-function call fixtures repeat
 the checked-resource/recovery matrix. Vec growth failure retains every completed child in reverse
-completion order; its result is not yet pending. This is not #279 completion: the remaining indexed
-composition boundaries, the complete C7 interaction matrix and
-independent hostile evidence remain; no source handle or runtime-execution support is claimed.
+completion order; its result is not yet pending. At that stage #279 still required the indexed
+composition boundaries described below, the complete C7 interaction matrix and independent hostile
+evidence. With those bounded compile-time rows present, this is a #279 closure candidate; no source
+handle or runtime-execution support is claimed.
 
 Existing formal borrow parameters retain their exact sealed identity/access across Match edges,
 as the IR's existing formal-parameter lifetime permits. Structured calls forward them in source
@@ -213,8 +214,12 @@ container while Match arms run; the final typed SSA handoff performs one read, c
 and one end. Owned RHS ownership remains pending until replacement. Lexical authority still obeys
 I3011 edge prohibition. `continued_indexed_source` and the expanded structured resource matrix pin
 Array/Vec Copy/owned ordering, failure cleanup, exact/first-extra/overflow rollback and recovery.
-Fresh container Match operands are not admitted by this slice; no end/reborrow or target execution
-is claimed.
+Fresh FixedArray/Vec Match results are also admitted as read-only observation bases. Copy results
+receive genuine initialized temporary storage; owned results retain their exact joined owner
+through index and bounds preparation and the final Copy read or explicit clone, then drop only
+after the final EndBorrow. A Match result is not a mutable initialized source place, so replacement
+through it remains invalid rather than receiving invented mutation authority. No end/reborrow or
+target execution is claimed.
 
 ## C8: Upgrade-success edge signature
 

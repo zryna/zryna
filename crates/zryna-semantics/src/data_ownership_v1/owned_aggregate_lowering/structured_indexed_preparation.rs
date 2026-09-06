@@ -17,7 +17,16 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.input.sources(),
             self.decisions.function.body.expressions.get(index as usize)?.span,
         );
-        let source = if parent.is_none() { Some(self.resolve(source)?) } else { None };
+        let structured =
+            parent.is_none() && self.state.facts.structured_values.contains_key(&source);
+        let source = if parent.is_some() {
+            None
+        } else if structured {
+            let ty = self.state.facts.structured_values.get(&source)?.1;
+            Some(self.materialize_indexed_base(source, ty, at)?)
+        } else {
+            Some(self.resolve(source)?)
+        };
         if let Some(source) = source {
             self.available_vector(source, write, at)?;
         }
@@ -55,6 +64,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         ty: Ty,
         borrow: raw::BorrowId,
         replacement: bool,
+        fresh_base: Option<(raw::PlaceId, Ty)>,
     ) -> Option<raw::ValueId> {
         let at = span(
             self.decisions.input.sources(),
@@ -66,6 +76,18 @@ impl PreparationContext<'_, '_, '_, '_> {
         let start = self.steps.len();
         self.push(Operation::IndexedEnter { end: usize::MAX, result: usize::MAX }, ty, at, None);
         let value = self.finish_chained_access(borrow, ty, at, replacement.then_some(id))?;
+        if let Some((place, ty)) = fresh_base {
+            self.drop_indexed_base(
+                super::super::type_model::OwnedAggregatePlace {
+                    ty,
+                    place,
+                    root: place,
+                    mutable: false,
+                    is_root: true,
+                },
+                at,
+            )?;
+        }
         self.finish_continued_scope(start, value, ty, at)?;
         Some(value)
     }

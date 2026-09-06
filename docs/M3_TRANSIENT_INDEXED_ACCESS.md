@@ -28,7 +28,7 @@ replacement uses BorrowWrite or BorrowReplace. The final authority ends before
 subsequent use of the containing owner. Exclusive calls and mutation invalidate
 refinements through the retained original conflict region.
 
-Fresh complete FixedArray or Vec call/construction results used for observation are
+Fresh complete FixedArray or Vec call/construction/Match results used for observation are
 evaluated into genuine temporary storage. Copy FixedArray storage has an explicit InitializePlace
 effect, charged as one place and one transition, and is not registered as an owned
 cleanup root. Non-Copy storage remains pending throughout index/bounds/clone
@@ -82,18 +82,22 @@ covers machine-integer overflow without pretending it is source execution.
 lexical exclusion, return/backedge rejection and owner-transfer exclusion.
 `transient_indexed_upgrade` tests both ordinary upgrade outcomes and count failure.
 
-The #279 source adapter stages named/static-container access through begin/project,
+The #279 source adapter stages named/static/fresh-container access through begin/project,
 expression continuation and finish. Later-index Match evaluates after preceding
 bounds; replacement RHS Match evaluates after the complete bounds chain. Exact
 Copy and owned SSA handoffs are consumed once without cloning or moving a container
 to resume it. Owned RHS results retain their pending owner until BorrowReplace.
-The existing first-checked-index route stays unchanged. Fresh container Match bases
-are not admitted by this adapter, and backend execution is not claimed.
-`continued_indexed_source` authenticates Array/Vec Copy/owned cases, a fallible
-index call before bounds, exact continuation identity, RHS failure cleanup and
-deterministic rejection/recovery. The structured scratch resource matrix includes
-all eight shapes across values, places, transitions, cleanup actions and plans,
-with exact, first-extra and checked-overflow cases and complete state rollback.
+The existing named/static first-checked-index route stays unchanged. A fresh FixedArray/Vec Match
+base is evaluated once before its index; Copy arrays receive genuine initialized temporary storage,
+while owned arrays and Vecs retain the exact joined owner through bounds and observation and drop it
+after the final EndBorrow. Replacement is intentionally unavailable because a Match result is not a
+mutable initialized source place; callers must first bind it to one. Backend execution is not
+claimed. `continued_indexed_source` authenticates named/static and fresh Array/Vec Copy/owned cases,
+a fallible index call before bounds, exact continuation identity, fresh-base and RHS failure cleanup,
+and deterministic rejection/recovery. The structured scratch resource matrix includes all twelve
+shapes across values, places, transitions, cleanup actions and plans, with exact, first-extra and
+checked-overflow cases and complete state rollback. Together these form the bounded compile-time
+#279 infrastructure closure candidate without extending lexical authority or target execution.
 
 ## Lexical finalization
 
