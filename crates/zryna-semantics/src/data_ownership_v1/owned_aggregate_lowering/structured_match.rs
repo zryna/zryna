@@ -14,7 +14,15 @@ pub(super) struct MatchPlan {
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn match_plan(&mut self, arms: &[RawMatchArm], at: Span) -> Option<MatchPlan> {
-        let first = arms.first()?;
+        let Some(first) = arms.first() else {
+            self.errors.at(
+                "ZRYNA-M3009",
+                at,
+                "match does not cover any enum variant",
+                "provide one arm for every declared variant",
+            );
+            return None;
+        };
         let Some(declaration) = self.declarations.iter().find(|declaration| {
             declaration.module == self.module && declaration.name == first.type_name.text
         }) else {

@@ -22,7 +22,9 @@ pub(in crate::data_ownership_v1) use match_fixture::fresh_indexed_match_mismatch
 pub(in crate::data_ownership_v1) use match_fixture::indexed_fixture as indexed_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::indexed_nested_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::lexical_fixture as lexical_match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::mixed_variant_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::nested_fixture as nested_match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::nested_variant_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::string_fixture as string_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::string_move_fixture as string_move_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::vec_fixture as vec_match_fixture;

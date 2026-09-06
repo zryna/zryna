@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "structured_match_complete_source.rs"]
+mod complete;
+
 #[test]
 fn structured_match_vec_growth_cleanup_retains_both_completed_operands() {
     for cloned in [false, true] {
