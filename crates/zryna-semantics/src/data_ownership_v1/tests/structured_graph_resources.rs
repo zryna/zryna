@@ -1,3 +1,4 @@
+use super::PrivateOwnedAggregateLowerer;
 use super::constructor_resources::tests::with_snapshot;
 use super::structured_cfg::resources::parameter;
 use super::structured_checkpoint::StructuredCheckpoint;
@@ -17,6 +18,21 @@ fn edge_count(blocks: &[raw::Block]) -> usize {
         .sum()
 }
 
+fn lowerer_state(lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>) -> String {
+    format!(
+        "{:?}",
+        (
+            lowerer.preparation_checkpoint(),
+            &lowerer.bindings,
+            &lowerer.places,
+            &lowerer.instructions,
+            &lowerer.constructor_types,
+            &lowerer.owners,
+            &lowerer.preparation_facts,
+        )
+    )
+}
+
 #[test]
 fn structured_graph_held_blocks_and_edges_are_checked_and_recover_on_the_same_lowerer() {
     let (source, snapshot) = match_fixture(Payload::Struct, true, true);
@@ -34,17 +50,25 @@ fn structured_graph_held_blocks_and_edges_are_checked_and_recover_on_the_same_lo
             for extra in [0, 1, usize::MAX] {
                 let held =
                     if extra == usize::MAX { extra } else { maximum - used[resource] + extra };
+                let before_state = lowerer_state(lowerer);
                 let before = StructuredCheckpoint::capture(lowerer);
                 let mut held_resources = [0, 0];
                 held_resources[resource] = held;
                 let output = with_held_resources(held_resources, || {
                     lowerer.lower_structured_cfg(&parameters, result)
                 });
-                before.restore(lowerer);
                 if extra == 0 {
                     assert_eq!(output, Some(pristine.clone()), "exact resource {resource}");
+                    before.restore(lowerer);
                 } else {
                     assert!(output.is_none(), "resource {resource}, extra {extra}");
+                    assert_eq!(lowerer_state(lowerer), before_state, "atomic resource {resource}");
+                    assert_eq!(
+                        lowerer.lower_structured_cfg(&parameters, result),
+                        Some(pristine.clone()),
+                        "valid graph recovers without test-side repair"
+                    );
+                    before.restore(lowerer);
                 }
             }
         }
