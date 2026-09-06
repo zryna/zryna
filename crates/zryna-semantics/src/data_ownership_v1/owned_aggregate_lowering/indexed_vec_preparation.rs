@@ -124,11 +124,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.errors.at(
                 "ZRYNA-M3014",
                 at,
-                if self.decisions.nonindexed_owned_route() {
-                    "owner access conflicts with an active borrow"
-                } else {
-                    "Vec operation conflicts with an active whole-container access"
-                },
+                "owner access conflicts with an active borrow",
                 if self.decisions.nonindexed_owned_route() {
                     "end the conflicting borrow before accessing or consuming its owner"
                 } else {

@@ -4,8 +4,10 @@ Issue #278 composes ordinary non-handle Vec observations and replacement from th
 [indexed authority](M3_INDEXED_BORROW_AUTHORITY.md) and
 [canonical structural clone core](M3_GENERIC_CLONE_CORE.md). This adds no element move-out,
 container hole, independent dynamic `PlaceId`, runtime execution or public profile. Explicit
-source `Borrow`/`BorrowMut` Vec elements remain #256; internal transient access does not claim
-that producer.
+source `Borrow`/`BorrowMut` Vec elements are implemented by the shared #255/#256 lexical producer,
+documented in the [indexed source contract](M3_INDEXED_SOURCE_OPERATIONS.md). Its authenticated
+evidence is separate from the ordinary transient operation tests described here; neither enables
+target execution or public activation.
 
 ## Exact read roles
 
@@ -28,6 +30,11 @@ All non-handle String/Struct/Enum/FixedArray/positive-stride Vec graphs supporte
 classifier are supported here, including permitted finite values through container indirection.
 The existing per-verification amortized classifier sees both clone operand forms. There is no
 second graph traversal policy, budget, handle transition or borrowed-element prefix role.
+The subsequent #261 handle-aware adapter also admits direct Shared/Weak and handle-containing
+referents through `HandleAwareCloneBorrow`, preserving the count-only handle leaf semantics.
+It does not widen `GenericCloneBorrow` to handles. Lexical alias and formal-borrow replacement
+reuse `BorrowReplace`; the #255/#256 matrices cover exact source type, bounds, owner exclusion,
+failure retention and restoration for both arrays and Vecs.
 
 ## Clone cleanup and sealed views
 

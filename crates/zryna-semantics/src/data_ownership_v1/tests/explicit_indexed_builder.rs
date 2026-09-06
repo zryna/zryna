@@ -213,68 +213,69 @@ impl Builder<'_> {
                 RawStatementKind::ExpressionStatement { expression, semicolon_span },
             );
         }
-        let kind =
-            if matches!(action, Action::Replace | Action::ReplaceClone | Action::OwnerReplace) {
-                let target = self.reference(if matches!(action, Action::OwnerReplace) {
-                    "items"
-                } else {
-                    "loan"
-                });
-                self.text(" ");
-                let equals_span = self.text("=");
-                self.text(" ");
-                let value = if matches!(action, Action::OwnerReplace) {
-                    self.cloned("items")
-                } else if matches!(action, Action::ReplaceClone) {
-                    self.cloned("next")
-                } else {
-                    self.reference("next")
-                };
-                RawStatementKind::Assignment {
-                    target,
-                    equals_span,
-                    value,
-                    semicolon_span: self.text(";"),
-                }
+        let kind = if matches!(
+            action,
+            Action::Replace | Action::WrongOwnedType | Action::ReplaceClone | Action::OwnerReplace
+        ) {
+            let target = self.reference(if matches!(action, Action::OwnerReplace) {
+                "items"
             } else {
-                let keyword_span = self.text("const");
-                self.text(" ");
-                let name =
-                    self.name(if matches!(action, Action::Escape) { "escaped" } else { "seen" });
-                self.text(": ");
-                let selected = if matches!(action, Action::OwnerMove) {
-                    let RawStatementKind::LocalDeclaration { type_syntax, .. } =
-                        self.body.statements[0].kind
-                    else {
-                        panic!("container local");
-                    };
-                    type_syntax
-                } else {
-                    element
-                };
-                let type_syntax = self.ty(selected);
-                self.text(" ");
-                let equals_span = self.text("=");
-                self.text(" ");
-                let initializer = if matches!(action, Action::OwnerMove) {
-                    self.reference("items")
-                } else if matches!(action, Action::Clone | Action::Escape) {
-                    self.cloned("loan")
-                } else if matches!(action, Action::Call) {
-                    calls::call(self)
-                } else {
-                    self.reference("loan")
-                };
-                RawStatementKind::LocalDeclaration {
-                    keyword_span,
-                    mutable: false,
-                    name,
-                    type_syntax,
-                    equals_span,
-                    initializer,
-                    semicolon_span: self.text(";"),
-                }
+                "loan"
+            });
+            self.text(" ");
+            let equals_span = self.text("=");
+            self.text(" ");
+            let value = if matches!(action, Action::OwnerReplace) {
+                self.cloned("items")
+            } else if matches!(action, Action::ReplaceClone) {
+                self.cloned("next")
+            } else {
+                self.reference("next")
             };
+            RawStatementKind::Assignment {
+                target,
+                equals_span,
+                value,
+                semicolon_span: self.text(";"),
+            }
+        } else {
+            let keyword_span = self.text("const");
+            self.text(" ");
+            let name = self.name(if matches!(action, Action::Escape) { "escaped" } else { "seen" });
+            self.text(": ");
+            let selected = if matches!(action, Action::OwnerMove) {
+                let RawStatementKind::LocalDeclaration { type_syntax, .. } =
+                    self.body.statements[0].kind
+                else {
+                    panic!("container local");
+                };
+                type_syntax
+            } else {
+                element
+            };
+            let type_syntax = self.ty(selected);
+            self.text(" ");
+            let equals_span = self.text("=");
+            self.text(" ");
+            let initializer = if matches!(action, Action::OwnerMove) {
+                self.reference("items")
+            } else if matches!(action, Action::Clone | Action::Escape) {
+                self.cloned("loan")
+            } else if matches!(action, Action::Call) {
+                calls::call(self)
+            } else {
+                self.reference("loan")
+            };
+            RawStatementKind::LocalDeclaration {
+                keyword_span,
+                mutable: false,
+                name,
+                type_syntax,
+                equals_span,
+                initializer,
+                semicolon_span: self.text(";"),
+            }
+        };
         self.statement(start, kind)
     }
     pub(super) fn lexical(

@@ -1,4 +1,5 @@
 use super::explicit_indexed_fixture::{Action, Container, fixture};
+use super::generic_vec_fixture::Element;
 use super::indexed_handle_source::elements;
 use super::*;
 use zryna_diagnostics::Diagnostic;
@@ -18,7 +19,7 @@ fn expected(action: Action) -> (&'static str, &'static str, &'static str) {
         ),
         _ => (
             "ZRYNA-M3014",
-            "Vec operation conflicts with an active whole-container access",
+            "owner access conflicts with an active borrow",
             "finish the indexed operation before accessing or consuming its container",
         ),
     }
@@ -101,6 +102,48 @@ fn indexed_handle_rejections_wrong_rhs_type_is_source_authenticated() {
                 errors,
                 lower(pair_input(&syntax, &sources)).expect_err("deterministic rejection")
             );
+        }
+    }
+}
+
+#[test]
+fn indexed_handle_rejections_lowerable_owned_rhs_requires_exact_referent_type() {
+    for container in [Container::Array(2), Container::Vec] {
+        let (source, raw) =
+            fixture(container, &Element::String, true, Action::WrongOwnedType, None);
+        let sources = sources_for(&source);
+        let syntax = verify_snapshot(raw, &sources).expect("authenticated String RHS control");
+        lower(pair_input(&syntax, &sources))
+            .expect("identical owned RHS lowers for String referent");
+        for element in elements() {
+            let (source, raw) = fixture(container, &element, true, Action::WrongOwnedType, None);
+            let body = &raw.files[0].functions[0].body;
+            let RawStatementKind::Assignment { value, .. } =
+                body.statements[body.blocks[1].statements[1] as usize].kind
+            else {
+                panic!("owned replacement");
+            };
+            let at = body.expressions[value as usize].span;
+            assert_eq!(&source[at.start as usize..at.end as usize], "next");
+            let sources = sources_for(&source);
+            let syntax = verify_snapshot(raw, &sources).expect("authenticated owned type mismatch");
+            let expected = vec![Diagnostic::error_at(
+                "ZRYNA-M3016",
+                span(&sources, at),
+                "aggregate operand has the wrong exact type",
+                "use the exact declared field, element, local, or result type",
+            )];
+            for _ in 0..2 {
+                assert_eq!(
+                    lower(pair_input(&syntax, &sources)).expect_err("wrong exact referent"),
+                    expected
+                );
+            }
+            let (source, raw) = fixture(container, &element, true, Action::Replace, None);
+            let sources = sources_for(&source);
+            let syntax = verify_snapshot(raw, &sources).expect("authenticated exact-type recovery");
+            lower(pair_input(&syntax, &sources))
+                .expect("valid same-type replacement after rejection");
         }
     }
 }

@@ -13,6 +13,7 @@ pub(in crate::data_ownership_v1) enum Action {
     Read,
     Clone,
     Replace,
+    WrongOwnedType,
     ReplaceClone,
     OwnerMove,
     OwnerReplace,
@@ -150,7 +151,12 @@ pub(in crate::data_ownership_v1) fn fixture(
     action: Action,
     index: Option<i32>,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    let (mut source, mut raw) = generic_vec_fixture::fixture(element, Operation::Replace, index);
+    let operation = if matches!(action, Action::WrongOwnedType) {
+        Operation::ReplaceString
+    } else {
+        Operation::Replace
+    };
+    let (mut source, mut raw) = generic_vec_fixture::fixture(element, operation, index);
     if let Container::Array(length) = container {
         array_container(&mut source, &mut raw, length);
     }
@@ -167,7 +173,12 @@ pub(in crate::data_ownership_v1) fn fixture(
     };
     function.body.expressions.truncate(base as usize);
     function.body.statements.truncate(2);
-    let mut element_type = function.parameters[2].type_syntax;
+    let mut element_type = match file.type_syntax[function.parameters[0].type_syntax as usize].kind
+    {
+        RawTypeSyntaxKind::Vec { argument, .. } => argument,
+        RawTypeSyntaxKind::FixedArray { element, .. } => element,
+        _ => panic!("array or Vec parameter"),
+    };
     if matches!(action, Action::SiblingVec | Action::SameVec) {
         let RawTypeSyntaxKind::Vec { argument, .. } = file.type_syntax[element_type as usize].kind
         else {

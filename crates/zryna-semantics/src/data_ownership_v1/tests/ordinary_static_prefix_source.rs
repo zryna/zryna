@@ -82,7 +82,7 @@ fn ordinary_static_prefix_same_vec_rhs_clone_remains_a_conservative_conflict() {
     assert_eq!(errors[0].code(), "ZRYNA-M3014");
     assert_eq!(
         errors[0].message(),
-        "Vec operation conflicts with an active whole-container access"
+        "owner access conflicts with an active borrow"
     );
     assert_eq!(errors, reject());
 }

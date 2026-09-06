@@ -73,7 +73,7 @@ fn indexed_handle_regions_vec_growth_rejects_before_move_and_recovers_after_end(
         let expected = vec![Diagnostic::error_at(
             "ZRYNA-M3014",
             span(&sources, at),
-            "Vec operation conflicts with an active whole-container access",
+            "owner access conflicts with an active borrow",
             "finish the indexed operation before accessing or consuming its container",
         )];
         for _ in 0..2 {

@@ -38,6 +38,7 @@ pub(in crate::data_ownership_v1) enum Operation {
     Read,
     Clone,
     Replace,
+    ReplaceString,
     ReplaceClone,
     ReplaceSelfClone,
     Push,
@@ -334,6 +335,11 @@ fn container_fixture(
         |length| Ty::Array(Box::new(element_type.clone()), length),
     );
     let replacement = !matches!(operation, Operation::Read | Operation::Clone);
+    let replacement_type = if matches!(operation, Operation::ReplaceString) {
+        Ty::String
+    } else {
+        element_type.clone()
+    };
     f.text("\n");
     let start = f.source.len();
     let function_span = f.text("function");
@@ -345,7 +351,7 @@ fn container_fixture(
     parameters.push(f.parameter("index", &Ty::Named("i32")));
     if replacement {
         f.text(", ");
-        parameters.push(f.parameter("replacement", &element_type));
+        parameters.push(f.parameter("replacement", &replacement_type));
     }
     f.text("): ");
     let result_type = f.ty(if replacement { &vector } else { &element_type });
@@ -354,7 +360,7 @@ fn container_fixture(
     f.text(" ");
     f.local("items", &vector, true, "incoming");
     if replacement {
-        f.local("next", &element_type, false, "replacement");
+        f.local("next", &replacement_type, false, "replacement");
         f.mutation(operation, index);
     }
     let return_start = f.source.len();
