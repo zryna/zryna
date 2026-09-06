@@ -4,6 +4,11 @@ Status: implemented for the default M1 `I32V1` slice and the explicit M2 `Contro
 The CLI is a thin request parser and renderer over `zryna-driver`; it does not own compiler
 semantics, module resolution, backend behavior, or bundle publication.
 
+The internal `DataOwnershipV1` candidate is not a public CLI profile. Exact
+`--profile data-ownership-v1` and `--profile=data-ownership-v1` fail before workspace effects with
+exit status `2` and `ZRYNA-C3401`; they do not create an output root or bundle. The internal route
+and manifest v3 are documented in [M3 candidate driver](M3_CANDIDATE_DRIVER.md).
+
 ## Commands
 
 ```text

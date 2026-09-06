@@ -126,6 +126,9 @@ impl PreparedDataOwnershipExecutable {
     pub const fn result_type(&self) -> ScalarType {
         self.executable.result_type()
     }
+    pub(crate) const fn prepared_executable(&self) -> &PreparedNativeExecutable {
+        &self.executable
+    }
 }
 
 /// Lowers, emits, links, and audits one authenticated DataOwnershipV1 invocation.

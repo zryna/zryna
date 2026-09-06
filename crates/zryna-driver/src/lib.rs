@@ -18,21 +18,23 @@ mod module_closure;
 #[cfg(test)]
 mod module_closure_tests;
 mod native;
+mod ownership_api;
 mod ownership_closure;
+mod ownership_commands;
 mod ownership_manifest;
 mod ownership_pipeline;
 mod ownership_publication;
 mod ownership_runtime_v1;
 mod pipeline;
+mod pipeline_runtime;
 mod runtime;
+mod source_api;
 mod webassembly;
 mod workspace_source;
 
 use std::{error::Error, fmt, path::Path};
 
 use zryna_architecture::ValidationReport;
-use zryna_backend_javascript::JavaScriptArtifact;
-use zryna_backend_native::LlvmIrArtifact;
 use zryna_diagnostics::{Diagnostic, Severity};
 use zryna_ir::VerifiedProgram;
 use zryna_source::SourceMap;
@@ -51,80 +53,29 @@ pub use module_closure::{
     discover_module_closure,
 };
 pub use native::{
-    DataOwnershipExecutableIdentity, LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES,
-    MAX_NATIVE_LINK_TIMEOUT, MAX_NATIVE_OBJECT_ARTIFACT_STEM_BYTES, MAX_NATIVE_PROBE_TIMEOUT,
-    MAX_NATIVE_RUN_STDERR_BYTES, MAX_NATIVE_RUN_TIMEOUT, MAX_NATIVE_TOOL_OUTPUT_BYTES,
-    NATIVE_EXECUTABLE_ARTIFACT_EXTENSION, NATIVE_OBJECT_ARTIFACT_EXTENSION,
-    NativeExecutableBuildError, NativeExecutableBuildSuccess, NativeObjectBuildError,
-    NativeObjectBuildSuccess, NativeObjectOutputRoot, NativeProcessLimits, NativeRunError,
-    PreparedDataOwnershipExecutable, PublishedNativeExecutableArtifact,
-    PublishedNativeObjectArtifact, compile_native_invocation, compile_native_object,
-    discover_linux_native_toolchain, prepare_data_ownership_executable,
-    publish_data_ownership_executable, publish_data_ownership_object, publish_native_object,
-    run_native_invocation, select_native_object_target,
+    LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES, MAX_NATIVE_LINK_TIMEOUT,
+    MAX_NATIVE_OBJECT_ARTIFACT_STEM_BYTES, MAX_NATIVE_PROBE_TIMEOUT, MAX_NATIVE_RUN_STDERR_BYTES,
+    MAX_NATIVE_RUN_TIMEOUT, MAX_NATIVE_TOOL_OUTPUT_BYTES, NATIVE_EXECUTABLE_ARTIFACT_EXTENSION,
+    NATIVE_OBJECT_ARTIFACT_EXTENSION, NativeExecutableBuildError, NativeExecutableBuildSuccess,
+    NativeObjectBuildError, NativeObjectBuildSuccess, NativeObjectOutputRoot, NativeProcessLimits,
+    NativeRunError, PublishedNativeExecutableArtifact, PublishedNativeObjectArtifact,
+    compile_native_invocation, compile_native_object, discover_linux_native_toolchain,
+    publish_native_object, run_native_invocation, select_native_object_target,
 };
-pub use ownership_closure::{VerifiedOwnershipModuleClosure, discover_ownership_module_closure};
-pub use ownership_manifest::{
-    MAX_OWNERSHIP_MANIFEST_BYTES, OWNERSHIP_MANIFEST_NAME, OwnershipManifestResult,
-    OwnershipManifestV3, OwnershipTarget, decode_ownership_manifest_v3,
-    render_ownership_manifest_v3,
-};
-pub use ownership_pipeline::{
-    DATA_OWNERSHIP_CANDIDATE_PROFILE, DataOwnershipBuildRequest, DataOwnershipCandidateSuccess,
-    DataOwnershipRunRequest, PreparedDataOwnershipArtifacts, prepare_data_ownership_build,
-    prepare_data_ownership_run,
-};
-pub use ownership_publication::{
-    PublishedOwnershipArtifact, PublishedOwnershipBundle, publish_data_ownership_bundle,
-};
+pub use ownership_api::*;
 pub use pipeline::{
     BuildRequest, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,
     ControlFlowBuildRequest, ControlFlowRunRequest, PublishedTargetArtifact, RunRequest,
     TargetResult, TargetSelection, build_control_flow_workspace, build_workspace,
     run_control_flow_workspace, run_workspace,
 };
+pub use source_api::{DualTargetArtifacts, SourceToIrSuccess};
 pub use webassembly::{
     MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,
     WEBASSEMBLY_ARTIFACT_EXTENSION, WebAssemblyBuildError, WebAssemblyBuildSuccess,
     WebAssemblyOutputRoot, compile_webassembly, publish_webassembly,
 };
 pub use workspace_source::WorkspaceSourceRoot;
-
-/// Artifacts emitted by the first verified dual-target slice.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct DualTargetArtifacts {
-    /// Direct ECMAScript output.
-    pub javascript: JavaScriptArtifact,
-    /// Textual LLVM IR validating the native backend boundary.
-    pub llvm_ir: LlvmIrArtifact,
-}
-
-/// Successful source analysis with its verified IR and non-fatal provider diagnostics.
-#[derive(Clone, Debug)]
-pub struct SourceToIrSuccess {
-    program: VerifiedProgram,
-    diagnostics: Vec<Diagnostic>,
-}
-
-impl SourceToIrSuccess {
-    /// Returns the backend-safe verified program.
-    #[must_use]
-    pub const fn program(&self) -> &VerifiedProgram {
-        &self.program
-    }
-
-    /// Consumes the result and returns the backend-safe verified program.
-    #[must_use]
-    pub fn into_program(self) -> VerifiedProgram {
-        self.program
-    }
-
-    /// Returns deterministic non-fatal provider diagnostics.
-    #[must_use]
-    pub fn diagnostics(&self) -> &[Diagnostic] {
-        &self.diagnostics
-    }
-}
 
 /// Failure before source can become backend-safe verified IR.
 #[derive(Debug)]

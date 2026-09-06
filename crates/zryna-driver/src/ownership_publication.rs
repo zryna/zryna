@@ -116,21 +116,50 @@ fn publish_with_checkpoint(
     results: &[OwnershipManifestResult],
     checkpoint: Checkpoint<'_>,
 ) -> Result<PublishedOwnershipBundle, CommandFailure> {
+    let results = results.to_vec();
+    publish_with_runner(success, checkpoint, move |_, _| Ok(results))
+}
+
+pub(crate) fn publish_after_staging<Runner>(
+    success: &DataOwnershipCandidateSuccess,
+    runner: Runner,
+) -> Result<PublishedOwnershipBundle, CommandFailure>
+where
+    Runner: FnOnce(
+        &Transaction,
+        &ArtifactOutputRoot,
+    ) -> Result<Vec<OwnershipManifestResult>, CommandFailure>,
+{
+    publish_with_runner(success, &allow_phase, runner)
+}
+
+fn publish_with_runner<Runner>(
+    success: &DataOwnershipCandidateSuccess,
+    checkpoint: Checkpoint<'_>,
+    runner: Runner,
+) -> Result<PublishedOwnershipBundle, CommandFailure>
+where
+    Runner: FnOnce(
+        &Transaction,
+        &ArtifactOutputRoot,
+    ) -> Result<Vec<OwnershipManifestResult>, CommandFailure>,
+{
     let command =
         if success.logical_export().is_some() { CommandKind::Run } else { CommandKind::Build };
     let suffix = match command {
         CommandKind::Build => "build",
         CommandKind::Run => "run",
     };
-    let manifest = render_ownership_manifest_v3(success, success.artifact_stem(), results)
-        .map_err(preparation_failure)?;
-    decode_ownership_manifest_v3(&manifest).map_err(preparation_failure)?;
     let output = ArtifactOutputRoot::prepare_for_workspace(success.workspace_root())
         .map_err(preparation_failure)?;
     let bundle = output.path().join(format!("{}.{suffix}", success.artifact_stem()));
     let mut transaction = Transaction::create(&output)?;
     let operation: Result<PublishedOwnershipBundle, CommandFailure> = (|| {
         let artifacts = stage_artifacts(&transaction, success, &bundle, checkpoint)?;
+        let results = runner(&transaction, &output)?;
+        let manifest = render_ownership_manifest_v3(success, success.artifact_stem(), &results)
+            .map_err(preparation_failure)?;
+        decode_ownership_manifest_v3(&manifest).map_err(preparation_failure)?;
         transaction.write_manifest(OWNERSHIP_MANIFEST_NAME, &manifest)?;
         checkpoint(PublicationPhase::Manifest)?;
         checkpoint(PublicationPhase::Commit)?;
@@ -140,7 +169,7 @@ fn publish_with_checkpoint(
             manifest_path: bundle.join(OWNERSHIP_MANIFEST_NAME),
             path: bundle,
             artifacts,
-            results: results.to_vec(),
+            results,
         })
     })();
     match operation {

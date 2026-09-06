@@ -87,6 +87,7 @@ impl PreparedDataOwnershipArtifacts {
 #[derive(Debug)]
 pub struct DataOwnershipCandidateSuccess {
     workspace_root: PathBuf,
+    node_runtime: PathBuf,
     closure: VerifiedOwnershipModuleClosure,
     program: zryna_semantics::data_ownership_v1::VerifiedProgram,
     artifacts: PreparedDataOwnershipArtifacts,
@@ -106,6 +107,11 @@ impl DataOwnershipCandidateSuccess {
     #[must_use]
     pub fn workspace_root(&self) -> &std::path::Path {
         &self.workspace_root
+    }
+    /// Returns the authenticated direct Node.js executable requested for this command.
+    #[must_use]
+    pub fn node_runtime(&self) -> &std::path::Path {
+        &self.node_runtime
     }
     /// Returns the single final source/syntax authority shared by every selected backend.
     #[must_use]
@@ -250,6 +256,7 @@ where
         run.map_or((None, Vec::new()), |(name, args)| (Some(name), args));
     Ok(DataOwnershipCandidateSuccess {
         workspace_root: request.workspace_root.clone(),
+        node_runtime: request.node_runtime.clone(),
         closure,
         program,
         artifacts,

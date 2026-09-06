@@ -290,6 +290,15 @@ fixed-oracle aggregate M2 comparison without adding a runtime semantics authorit
 See the [CLI reference](CLI.md) and [manifest-v2 contract](M2_MANIFEST_V2.md) for the exact command, layout, manifest,
 exit-status, runtime, and platform contracts.
 
+The internal M3 candidate uses a separate protocol-v4 and `DataOwnershipV1` route. The driver
+authenticates one final module closure, lowers one verifier-sealed program retaining exact layout
+and ownership-runtime ABI identities, and dispatches selected JavaScript, WebAssembly, and Linux
+x86-64 native targets in fixed order. Run requests validate one typed invocation before any target
+execution. Execution, strict manifest-v3 construction, artifact audit, and create-only whole-bundle
+publication share one private transaction, so failure cannot advertise a partial result. This
+library-only composition does not activate `--profile data-ownership-v1`; see the
+[candidate driver contract](M3_CANDIDATE_DRIVER.md).
+
 ## Initial numeric contract
 
 The first vertical slice defines signed 32-bit wrapping addition:

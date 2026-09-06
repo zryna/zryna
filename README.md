@@ -185,6 +185,10 @@ The repository currently establishes and tests:
   an exact C11 ownership runtime, sealed linking, create-only artifact publication, and typed
   execution. These consume only exact sealed IR/layout/runtime authorities and do not activate a
   public driver profile;
+- an internal authenticated `DataOwnershipV1` driver route that shares one final protocol-v4
+  closure and verified program across selected targets, executes runs inside one private
+  transaction, and publishes a strict manifest-v3 bundle with one create-only commit. The public
+  CLI still rejects exact `--profile data-ownership-v1` before workspace effects;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and
@@ -398,6 +402,7 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M3 opaque typed handle slots](docs/M3_OPAQUE_HANDLE_SLOTS.md),
 [M3 Copy aggregate semantics](docs/M3_COPY_AGGREGATE_SEMANTICS.md),
 [M3 owned-data semantic design contract](docs/M3_OWNED_DATA_SEMANTICS.md),
+[M3 candidate driver and manifest](docs/M3_CANDIDATE_DRIVER.md),
 [M0 conformance](docs/M0_CONFORMANCE.md), and
 [compiler documentation bundles](docs/DOCUMENTATION_BUNDLES.md).
 

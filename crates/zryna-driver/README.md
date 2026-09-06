@@ -89,3 +89,10 @@ expected values, and committed manifest. The equivalent
 [CLI reference](../../docs/CLI.md), [manifest-v2 contract](../../docs/M2_MANIFEST_V2.md), and
 [`EXECUTABLE.md`](../../spec/native-semantics/EXECUTABLE.md) for the normative security and behavior
 contract.
+
+The internal M3 candidate route separately authenticates one protocol-v4 module closure and lowers
+it once to one verifier-sealed `DataOwnershipV1` program. Selected JavaScript, WebAssembly, and
+Linux x86-64 native artifacts execute and publish through one private transaction with strict
+manifest v3 identity. The library entrypoints do not activate a public CLI profile; exact
+`--profile data-ownership-v1` remains rejected before workspace effects. See the
+[candidate driver and manifest contract](../../docs/M3_CANDIDATE_DRIVER.md).

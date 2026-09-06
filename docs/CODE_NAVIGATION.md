@@ -10,7 +10,8 @@ Source-size policy: [reviewed inventory](../scripts/repository-structure-policy.
 [read-only checker](../scripts/check-repository-structure.mjs); run `pnpm structure:check` and `node --test tests/repository-structure.test.mjs`.
 
 Public execution is default M1 `I32V1` or explicit M2 `--profile control-flow-v1`.
-M3 `DataOwnershipV1` source/layout/IR/runtime-ABI work is internal: it does not activate a public CLI profile, allocator, or target runtime.
+M3 `DataOwnershipV1` remains an internal candidate: it has audited target/runtime and atomic bundle
+boundaries but does not activate a public CLI profile or general-purpose allocator.
 Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI](CLI.md) for exact command/platform contracts.
 
 ## 1. Syntax recognition, source spans, or frontend transport
@@ -77,8 +78,12 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 ## 8. CLI options, manifests, or create-only publication
 
-- Start: [CLI reference](CLI.md), [driver README](../crates/zryna-driver/README.md), [manifest v2](M2_MANIFEST_V2.md).
-- CLI parsing/rendering: `apps/zryna/src/main.rs::main`; orchestration: `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`.
+- Start: [CLI reference](CLI.md), [driver README](../crates/zryna-driver/README.md), [manifest v2](M2_MANIFEST_V2.md), or the internal [M3 candidate driver and manifest](M3_CANDIDATE_DRIVER.md).
+- CLI parsing/rendering: `apps/zryna/src/main.rs::main`; explicit profile preselection:
+  `apps/zryna/src/profile.rs::select_control_flow`; orchestration:
+  `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and
+  `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`.
+- M3 candidate closure and dispatch: `crates/zryna-driver/src/{ownership_closure,ownership_pipeline}.rs`; strict manifest and transaction: `src/{ownership_manifest,ownership_publication}.rs`; complete internal build/run entrypoints: `src/ownership_commands.rs`.
 - Focus: `cargo test --locked -p zryna --test cli`, `cargo test --locked -p zryna-driver`; use pipeline fault/publication tests for transaction changes.
 - Keep architecture validation first, one verified program per request, and create-only whole-bundle commit. Finish with full gates.
 

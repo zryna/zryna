@@ -320,7 +320,7 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | complete    |
 |   #86 | independently verified native MIR                                    | #78, #80, #81, #82, #83 | complete    |
 |   #87 | audited Linux x86-64 object, runtime, link, and execution            | #77, #80, #86           | complete    |
-|   #88 | candidate driver integration and atomic manifest v3 bundles          | #76, #84, #85, #87      | planned     |
+|   #88 | candidate driver integration and atomic manifest v3 bundles          | #76, #84, #85, #87      | complete    |
 |   #89 | fixed-oracle three-target conformance and resource gates             | #88                     | planned     |
 |   #90 | public profile activation, authenticated docs, website, and provenance | #89                     | planned     |
 
@@ -408,10 +408,11 @@ integrates #337 owned roots/static projections, #338 active payload refinement, 
 and #340 hostile/resource closure. Together these completed children feed the checked #269
 source-completion integration proof.
 
-Issues #84–#86 now provide the internal target boundaries described in
-`M3_TARGET_BACKENDS.md`: deterministic ESM, validated memory-bearing core WebAssembly and
-independently verified Linux x86-64 native MIR. #87 still owns native object/runtime execution;
-#88–#90 retain candidate integration, conformance and public activation in order.
+Issues #84–#86 provide the internal target boundaries described in `M3_TARGET_BACKENDS.md`:
+deterministic ESM, validated memory-bearing core WebAssembly and independently verified Linux
+x86-64 native MIR. #87 completes native object/runtime execution and #88 completes candidate
+integration plus atomic manifest-v3 bundles. #89 and #90 retain conformance and public activation
+in order.
 
 #254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
 semantics. The new source work invents no type-import syntax, break/continue, Vec pop, implicit
