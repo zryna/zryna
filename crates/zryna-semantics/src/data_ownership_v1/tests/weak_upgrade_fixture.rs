@@ -61,7 +61,20 @@ fn returned(f: &mut Builder, name: &str) {
     f.text(" ");
 }
 
+#[derive(Clone, Copy)]
+pub(in crate::data_ownership_v1) enum Case {
+    Addressable,
+    Temporary,
+    WrongType,
+    Missing,
+    ExpiredBindingUse,
+}
+
 pub(in crate::data_ownership_v1) fn fixture(temporary: bool) -> (String, RawProjectSyntaxSnapshot) {
+    fixture_case(if temporary { Case::Temporary } else { Case::Addressable })
+}
+
+pub(in crate::data_ownership_v1) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
     let mut f = Builder {
         source: String::new(),
         types: Vec::new(),
@@ -89,10 +102,11 @@ pub(in crate::data_ownership_v1) fn fixture(temporary: bool) -> (String, RawProj
     let upgrade_start = f.source.len();
     let keyword_span = f.text("upgradeWeak");
     f.text(" ");
-    let weak = if temporary {
-        unary(&mut f, "clone", |f| f.reference("weak"))
-    } else {
-        f.reference("weak")
+    let weak = match case {
+        Case::Temporary => unary(&mut f, "clone", |f| f.reference("weak")),
+        Case::WrongType => f.reference("owner"),
+        Case::Missing => f.reference("ghost"),
+        Case::Addressable | Case::ExpiredBindingUse => f.reference("weak"),
     };
     f.text(" ");
     let binding = f.name("upgraded");
@@ -110,7 +124,7 @@ pub(in crate::data_ownership_v1) fn fixture(temporary: bool) -> (String, RawProj
     let expired_open = f.text("{");
     f.text(" ");
     let expired_statement = u32::try_from(f.statements.len() + 1).expect("expired statement");
-    returned(&mut f, "owner");
+    returned(&mut f, if matches!(case, Case::ExpiredBindingUse) { "upgraded" } else { "owner" });
     let expired_close = f.text("}");
     let upgrade = RawStatementSyntax {
         span: at(upgrade_start, f.source.len()),

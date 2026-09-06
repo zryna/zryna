@@ -1,5 +1,6 @@
-use super::generic_vec_fixture::weak_upgrade_fixture::fixture;
+use super::generic_vec_fixture::weak_upgrade_fixture::{Case, fixture, fixture_case};
 use super::*;
+use zryna_diagnostics::Diagnostic;
 
 #[test]
 fn weak_upgrade_source_seals_success_only_owner_and_retains_addressable_operand() {
@@ -49,4 +50,65 @@ fn temporary_weak_upgrade_operand_is_prepared_once_and_released_on_both_outcomes
         }));
     }
     assert!(upgrade.derived_drop_actions().any(|action| action.root() == operand));
+}
+
+#[test]
+fn weak_upgrade_source_diagnostics_are_exact_deterministic_and_recover() {
+    for (case, code, message, guidance, selected) in [
+        (
+            Case::WrongType,
+            "ZRYNA-M3013",
+            "weak upgrade operand does not have one exact Weak type",
+            "upgrade one available Weak<T> handle",
+            "owner",
+        ),
+        (
+            Case::Missing,
+            "ZRYNA-M3002",
+            "aggregate value 'ghost' is not declared",
+            "reference one exact preceding local using its declared spelling",
+            "ghost",
+        ),
+        (
+            Case::ExpiredBindingUse,
+            "ZRYNA-M3002",
+            "aggregate value 'upgraded' is not declared",
+            "reference one exact preceding local using its declared spelling",
+            "upgraded",
+        ),
+    ] {
+        let (source, raw) = fixture_case(case);
+        let body = &raw.files[0].functions[0].body;
+        let expression = if matches!(case, Case::ExpiredBindingUse) {
+            let RawStatementKind::Return { value, .. } = body.statements[4].kind else {
+                panic!("expired return");
+            };
+            value
+        } else {
+            let RawStatementKind::WeakUpgrade { weak, .. } = body.statements[2].kind else {
+                panic!("upgrade statement");
+            };
+            weak
+        };
+        let zryna_syntax::v4::RawExpressionKind::Reference { ref name } =
+            body.expressions[expression as usize].kind
+        else {
+            panic!("selected reference");
+        };
+        assert_eq!(name.text, selected);
+        let at = name.span;
+        let sources = sources_for(&source);
+        let syntax = verify_snapshot(raw, &sources).expect("authenticated rejected upgrade");
+        let expected = vec![Diagnostic::error_at(code, span(&sources, at), message, guidance)];
+        for _ in 0..2 {
+            assert_eq!(
+                lower(pair_input(&syntax, &sources)).expect_err("upgrade rejection"),
+                expected
+            );
+        }
+    }
+    let (source, raw) = fixture(false);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated recovery upgrade");
+    lower(pair_input(&syntax, &sources)).expect("valid lowering after rejections");
 }

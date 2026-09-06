@@ -260,8 +260,9 @@ Weak upgrade does not depend on an unspecified generic `Option<T>`. Verified IR 
 performs one checked strong-count increment and passes a new `Shared<T>` only to the success
 successor. If no strong owner exists, it passes no value to the failure successor. The decision and
 increment are one indivisible language operation in the single-threaded v1 execution model. Count
-overflow traps instead of taking either successor. A future source syntax must expose both branches
-without constructing a nullable or forgeable handle.
+overflow traps instead of taking either successor. The authenticated `upgradeWeak` source statement
+exposes both branches without constructing a nullable or forgeable handle; its success binding is
+available only inside the success block.
 
 The immutable, fully initialized Shared construction model provides no operation that can construct
 a strong-reference cycle in v1. There is no partial Shared initialization, interior mutation, or

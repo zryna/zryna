@@ -56,7 +56,7 @@ Paths name current implementation authorities, not a claim of a source producer.
 
 | Layer | Existing authority | Missing integration owned by |
 | --- | --- | --- |
-| Source | `crates/zryna-syntax/src/v4.rs`: `RawTypeSyntaxKind::Shared/Weak`, `RawExpressionKind::Shared/Clone/Downgrade`, `RawStatementKind::WeakUpgrade`; source-map-bound verified snapshot | #261 exact type mapping/operations; #262 upgrade statement |
+| Source | `crates/zryna-syntax/src/v4.rs`: `RawTypeSyntaxKind::Shared/Weak`, `RawExpressionKind::Shared/Clone/Downgrade`, `RawStatementKind::WeakUpgrade`; source-map-bound verified snapshot | #261 exact type mapping/operations; #262 broader upgrade composition evidence |
 | Types/layout | `crates/zryna-layout/src/lib.rs`: sealed nominal identities, `TypeCategory`, `referenced_type`, finite by-value graph, target fingerprints | #261 must map every admitted instantiated handle type; current semantic `type_model.rs::map_node_types` does not map Shared/Weak |
 | IR | `crates/zryna-ir/src/data_ownership_v1.rs`: `SharedConstruct`, `SharedClone`, `WeakDowngrade`, `WeakClone`, `WeakUpgradeBranch`, opaque instruction/terminator views | #260 independent complete operation/state/hostile proofs, then #261/#262 producers |
 | Ownership/drop | IR `InitializePlace`, `MoveFromPlace`, `ReplacePlace`, `DropPlace`, sealed site/role cleanup and derived recursive drop actions | #277 interfaces, #278 non-handle core, #261 handle leaves, #279/#262 control-flow integration |
@@ -150,6 +150,13 @@ The first success block parameter is the synthesized `Shared<T>` for the exact `
 remaining success parameters correspond to ordinary explicit edge arguments. The expired edge
 has only its ordinary arguments and no synthesized handle. Expiration skips only upgrade's trap
 cleanup, not normal cleanup later in the expired body. Overflow takes neither successor.
+
+The authenticated source producer lowers exact `Weak<T>` operands to this sealed branch. An
+addressable operand is retained; a non-addressable operand is evaluated once and its temporary is
+cleaned independently on both successors. The synthesized owner is bound only in the success
+scope. Source diagnostics reject non-Weak operands and uses of that binding on the expired path.
+The compiler records the overflow cleanup plan, but actual outcome selection and count mutation
+remain target-runtime work owned by #263.
 
 Every edge still proves complete definite owner/initialization state, dominance, exact argument
 types and unique owner transfer. Branch locals reverse-drop before exits; joins require equal

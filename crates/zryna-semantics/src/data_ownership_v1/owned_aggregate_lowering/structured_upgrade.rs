@@ -8,6 +8,10 @@ use super::availability::materialized_availability;
 use super::structured_graph::StructuredGraph;
 use super::{Binding, PrivateOwnedAggregateLowerer, Ty};
 
+#[cfg(test)]
+#[path = "../tests/weak_upgrade_resources.rs"]
+mod resources;
+
 #[derive(Clone, Copy)]
 struct UpgradeOperand {
     place: raw::PlaceId,
@@ -83,12 +87,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         shared
     }
 
-    fn upgrade_operand(
-        &mut self,
-        id: u32,
-        at: Span,
-        graph: &mut StructuredGraph,
-    ) -> Option<UpgradeOperand> {
+    fn upgrade_operand(&mut self, id: u32, graph: &mut StructuredGraph) -> Option<UpgradeOperand> {
         let expression_at = span(self.input.sources(), self.expression(id)?.span);
         let addressable = matches!(
             self.expression(id)?.kind,
@@ -96,26 +95,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 | RawExpressionKind::FieldAccess { .. }
                 | RawExpressionKind::Index { .. }
         );
-        let weak = self.inferred_upgrade_type(id).or_else(|| {
-            self.errors.at(
-                "ZRYNA-M3013",
-                expression_at,
-                "weak upgrade operand does not produce an exact handle type",
-                "produce one exact Weak<T> handle before upgrading it",
-            );
-            None
-        })?;
-        let shared = self.upgrade_shared_type(weak, expression_at)?;
         if addressable {
             let source = self.owned_place(id)?;
-            if source.ty != weak
-                || !materialized_availability(
-                    &self.owners,
-                    &self.moved_projections,
-                    &self.partial_roots,
-                    &self.places,
-                )
-                .projection_available(source.place, source.root)
+            let shared = self.upgrade_shared_type(source.ty, expression_at)?;
+            if !materialized_availability(
+                &self.owners,
+                &self.moved_projections,
+                &self.partial_roots,
+                &self.places,
+            )
+            .projection_available(source.place, source.root)
             {
                 self.errors.at(
                     "ZRYNA-M3014",
@@ -127,6 +116,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             }
             return Some(UpgradeOperand { place: source.place, temporary: false, shared });
         }
+        let weak = self.inferred_upgrade_type(id).or_else(|| {
+            self.errors.at(
+                "ZRYNA-M3013",
+                expression_at,
+                "weak upgrade operand does not produce an exact handle type",
+                "produce one exact Weak<T> handle before upgrading it",
+            );
+            None
+        })?;
+        let shared = self.upgrade_shared_type(weak, expression_at)?;
         let value = self.structured_value(id, weak, graph)?;
         let place = self.owners.owner(value).or_else(|| {
             self.errors.at(
@@ -137,7 +136,6 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             None
         })?;
-        let _ = at;
         Some(UpgradeOperand { place, temporary: true, shared })
     }
 
@@ -180,7 +178,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             return None;
         }
         self.join_state(at)?;
-        let operand = self.upgrade_operand(weak, at, graph)?;
+        let operand = self.upgrade_operand(weak, graph)?;
         let incoming = self.join_state(at)?;
         let cleanup = self.push_cleanup(at, None)?;
         let origin = graph.terminate(

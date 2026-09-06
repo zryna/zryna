@@ -31,6 +31,15 @@ by these symbolic tests. Existing independent IR resource and ABI transition sui
 required alongside this matrix. Full gate/CI receipts must be recorded separately when run;
 listing an executable here is not a claim that Linux/Windows integration gates already passed.
 
+## Issue #262 source upgrade checkpoint
+
+`weak_upgrade_source` authenticates retained addressable and once-evaluated temporary Weak
+operands, success-only Shared binding scope, exact wrong-type/missing-name diagnostics, rejection
+replay and valid recovery. `weak_upgrade_fault_oracle` binds the verified terminator to the sealed
+#260 success/expired/refcount-overflow claims without pretending to execute a target runtime.
+`weak_upgrade_exact_and_first_extra_resources_restore_pristine_state` covers exact and first-extra
+value, place, transition, cleanup-action and cleanup-plan limits with pristine recovery.
+
 ## Issue #261 source integration checkpoint
 
 The semantic source route now maps authenticated `Shared<T>`/`Weak<T>` types and lowers direct

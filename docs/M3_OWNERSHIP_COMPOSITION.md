@@ -232,6 +232,11 @@ This is producer schema evidence only, not source upgrade support or a full-prog
 proof. Every completed program must still pass mandatory full IR verification. The remaining
 #279 C6/C7 structured ownership composition is not completed by this adapter.
 
+The #262 source route now consumes that schema for an authenticated `upgradeWeak` statement.
+It retains addressable Weak operands, materializes non-addressable operands exactly once, gives
+only the success scope its synthesized Shared owner, and preserves the exact overflow cleanup.
+This is compile-time ownership evidence; target outcome execution remains the #263 boundary.
+
 ## Integration and closure
 
 #277 requires #77/#78/#80/#82/#259, not parent #269 closure. #278 follows #277;

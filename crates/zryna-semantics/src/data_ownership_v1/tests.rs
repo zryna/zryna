@@ -198,6 +198,7 @@ mod vec_fixture_support;
 mod vec_nested_preflight;
 mod vec_resource_budgets;
 mod vec_validation;
+mod weak_upgrade_fault_oracle;
 mod weak_upgrade_source;
 
 use aggregate_fixture_support::{
