@@ -157,8 +157,9 @@ The authenticated source producer lowers exact `Weak<T>` operands to this sealed
 addressable operand is retained; a non-addressable operand is evaluated once and its temporary is
 cleaned independently on both successors. The synthesized owner is bound only in the success
 scope. Source diagnostics reject non-Weak operands and uses of that binding on the expired path.
-The compiler records the overflow cleanup plan, but actual outcome selection and count mutation
-remain target-runtime work owned by #263.
+The compiler records the overflow cleanup plan. Issue #263 owns integrated non-executable
+conformance, fault, count and resource evidence; actual target-runtime outcome selection and
+count mutation remain outside this child graph.
 
 Every edge still proves complete definite owner/initialization state, dominance, exact argument
 types and unique owner transfer. Branch locals reverse-drop before exits; joins require equal

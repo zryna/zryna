@@ -1,8 +1,8 @@
 # M3 Shared and Weak evidence matrix
 
 Status: Issue #259 integration plan with #260 independent proof evidence and the compile-time
-#261/#262 source closure candidates below. Planned target-runtime tests remain future execution
-evidence owned by #263.
+#261/#262 source closure candidates below. Issue #263 owns integrated non-executable conformance,
+fault, count and resource evidence; actual target-runtime execution remains outside this child graph.
 Read the [authority contract](M3_SHARED_WEAK_AUTHORITY.md) for SW1–SW5, complete payload domain,
 operation semantics and exclusions. A scalar-only checkpoint cannot discharge #83.
 
@@ -96,7 +96,8 @@ Handle-aware structural clones additionally bind a canonical recipe-step ordinal
 unpublished destination prefix, retained source root and reverse cleanup. Rejection replay and a
 fresh valid lowering are deterministic. This reuses #260 transition authority and is compiler
 evidence only: it does not claim an allocator, count mutation, fault injection or cleanup was
-executed by a target runtime; those observations remain #263 work.
+executed by a target runtime. Issue #263 integrates non-executable conformance, fault, count and
+resource evidence; target-runtime observations remain outside this child graph.
 
 This is the compile-time #261 closure candidate, not #83 closure or target execution. The named
 `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` test authenticates
@@ -106,8 +107,9 @@ a distinct destination, and a finite canonical recipe graph. That recipe require
 runtime-active Enum, ascending fixed-array/dynamic-Vec traversal and explicit Shared/Weak count
 operations, with initialized-prefix cleanup before surviving roots. It does not relax the generic
 non-handle clone contract and does not claim that a target backend executed the recipe. Full
-count/allocation execution faults remain #263 work, while broader CFG upgrade/match composition
-remains tracked by #262/#269. No target runtime or public profile is enabled.
+count/allocation fault and resource conformance belongs to the non-executable integrated evidence
+in #263, while broader CFG upgrade/match composition remains tracked by #262/#269. Actual target
+execution remains outside this child graph. No target runtime or public profile is enabled.
 
 ## Existing evidence and its limits
 
