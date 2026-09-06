@@ -437,7 +437,8 @@ payloads, #339 nested lexical and direct-call use, and #340 hostile/resource clo
 lowering emits only the existing borrow, owned-clone and prepare-before-replace operations; the
 mandatory IR verifier independently seals exact place, mode, region, refinement, overlap, cleanup,
 nonescape and resource authority. This compiler-only #275 candidate adds no runtime alias checks,
-backend, driver, CLI, artifact, public ABI/profile, or target execution. Parent #269 remains open.
+backend, driver, CLI, artifact, public ABI/profile, or target execution. The combined compiler
+authority is reconciled by the [#269 source-completion proof](M3_SOURCE_COMPLETION.md).
 
 The checked [internal owned-call closure matrix](M3_OWNED_CALL_CLOSURE_MATRIX.md) integrates #329
 imported signature and canonical identity resolution, #330 structured transfer and exact cleanup,
@@ -459,8 +460,13 @@ payload/fault/resource evidence. It makes #271 a compiler-only closure candidate
 repeated Block/If/While/WeakUpgrade and admitted Match occupants lower to mandatory verified IR,
 with exact joins, backedges, cleanup and checked graph budgets. These verified traces do not
 execute allocation, refcount, drop, calls, upgrades, or faults. #275 is completed separately at its
-compiler boundary and parent #269 remains open, as do break/continue, exceptions, runtime,
-backends, CLI and public activation.
+compiler boundary and is included in the #269 source-completion proof. Break/continue, exceptions,
+driver integration, CLI and public activation remain open.
+
+The [internal M3 target backends](M3_TARGET_BACKENDS.md) consume the resulting closed operand and
+terminator views. JavaScript emits bounded self-contained ESM, core WebAssembly emits validated
+import-free bytes with private bounded memory, and native lowering independently reseals Linux
+x86-64 layout-bound MIR. Object/link execution and public routing remain downstream boundaries.
 
 The internal [`M3 Copy aggregate semantic boundary`](M3_COPY_AGGREGATE_SEMANTICS.md) consumes the
 exact source-map-bound protocol-v4 authority, resolves canonical nominal identities and exact

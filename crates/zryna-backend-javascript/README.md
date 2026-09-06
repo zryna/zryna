@@ -2,6 +2,11 @@
 
 Direct JavaScript lowering from sealed M1 and M2 verified programs.
 
+The internal M3 `emit_data_ownership` entrypoint additionally accepts only a sealed
+`DataOwnershipV1` program and its matching ownership-runtime ABI. It emits bounded deterministic
+self-contained ESM with private aggregate/String/Vec/borrow/Shared/Weak helpers, explicit release
+transitions, failure cleanup and no ambient capability. See `docs/M3_TARGET_BACKENDS.md`.
+
 The backend consumes only sealed function views and uses each export's sealed scalar ABI
 JavaScript name. It emits a deterministic ECMAScript module with LF line endings and a final
 newline. One local temporary is emitted for every canonical arena expression, in arena order,

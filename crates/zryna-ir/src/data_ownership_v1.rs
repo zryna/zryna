@@ -4,7 +4,6 @@
 //! [`crate::data_ownership_v1::raw`] are
 //! untrusted claims. Only [`verify`] can bind them to the exact source, layout, scalar-ABI, CFG,
 //! ownership, and cleanup authorities exposed through opaque immutable views.
-
 use std::collections::{BTreeSet, VecDeque};
 use zryna_abi::{raw as raw_abi, verify_v1};
 use zryna_diagnostics::Diagnostic;
@@ -12,13 +11,14 @@ use zryna_layout::{
     StorageTarget, TypeCategory, TypeId as LayoutTypeId, TypeUniverseIdentity, VerifiedLayouts,
 };
 use zryna_source::{FileId, SourceMap, SourceMapIdentity, Span};
-
+mod backend_view;
 mod cleanup_references;
 mod generic_clone;
 mod generic_static_places;
 mod handle_aware_clone;
 mod transient_edges;
 mod weak_upgrade_shape;
+pub use backend_view::*;
 use cleanup_references::{cleanup_references, instruction_cleanup};
 pub use generic_clone::{
     VerifiedGenericClone, VerifiedGenericCloneFrontier, VerifiedGenericCloneSource,

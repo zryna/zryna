@@ -1,7 +1,5 @@
 //! Deterministic core WebAssembly emission from verified Zryna IR.
-
 #![forbid(unsafe_code)]
-
 use std::collections::BTreeMap;
 
 use wasm_encoder::{
@@ -15,6 +13,8 @@ use zryna_ir::control_flow_v1::{
     VerifiedInstructionKind, VerifiedProgram as VerifiedControlFlowProgram, VerifiedTerminatorKind,
 };
 use zryna_ir::{ExprKind, Type, VerifiedFunction, VerifiedProgram};
+mod data_ownership_v1;
+pub use data_ownership_v1::emit_data_ownership;
 
 const MAX_CONTROL_FLOW_WEBASSEMBLY_BYTES: usize = 32 * 1024 * 1024;
 

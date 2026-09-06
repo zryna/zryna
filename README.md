@@ -172,14 +172,17 @@ The repository currently establishes and tests:
   construction and transfer, structural clone, ordinary Vec observation/replacement/push,
   handle-containing static subobjects, and finite Vec-indirection recursion. Exact source,
   hostile-IR and resource/replay bindings are checked without claiming runtime execution,
-  backend support or public activation; #271–#273 and #275 are now separately checked
-  compiler-only closure candidates, while parent #269 remains open;
+  backend support or public activation; #271–#273 and #275 are separately checked and their
+  combined source/IR authority is closed by the #269 integration matrix;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
   immutable views; raw-storage and String behavior remain sealed declarations rather than executed
   state models, and it supplies no allocator, runtime, backend, artifact, driver route, CLI selector,
   or public aggregate ABI;
+- internal deterministic `DataOwnershipV1` JavaScript and memory-bearing core WebAssembly
+  emission, plus an independently reverified Linux x86-64 native MIR boundary. These consume only
+  the exact sealed IR/layout/runtime authorities and do not activate a driver or public profile;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and

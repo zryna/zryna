@@ -77,15 +77,15 @@
       "id": "zryna-backend-javascript",
       "root": "crates/zryna-backend-javascript",
       "kind": "backend",
-      "dependencies": ["zryna-diagnostics", "zryna-ir", "zryna-source"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "dependencies": ["zryna-diagnostics", "zryna-ir", "zryna-layout", "zryna-ownership-runtime-abi", "zryna-semantics", "zryna-source", "zryna-syntax"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-native-mir",
       "root": "crates/zryna-native-mir",
       "kind": "compiler",
-      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir", "zryna-source"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir", "zryna-layout", "zryna-ownership-runtime-abi", "zryna-semantics", "zryna-source", "zryna-syntax"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-backend-native",
@@ -98,8 +98,8 @@
       "id": "zryna-backend-webassembly",
       "root": "crates/zryna-backend-webassembly",
       "kind": "backend",
-      "dependencies": ["zryna-diagnostics", "zryna-ir", "zryna-source"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "dependencies": ["zryna-diagnostics", "zryna-ir", "zryna-layout", "zryna-ownership-runtime-abi", "zryna-semantics", "zryna-source", "zryna-syntax"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-driver",

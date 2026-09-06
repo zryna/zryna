@@ -4,7 +4,8 @@ Issue #273 owns authenticated exhaustive enum matching and active-payload owners
 generic ownership and structured-CFG authorities from Issues #270 and #271. The integrated #333
 source, #334 independent-IR and #335 resource/evidence work makes it a checked compiler-only
 closure candidate. It does not claim target execution, runtime behavior, public profile
-activation, or completion of the parent Issue #269.
+activation, or independent completion of the parent Issue #269; the later integration proof now
+records the combined child authority.
 
 ## Source and ownership contract
 

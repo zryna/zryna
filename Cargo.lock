@@ -1140,7 +1140,11 @@ version = "0.1.0"
 dependencies = [
  "zryna-diagnostics",
  "zryna-ir",
+ "zryna-layout",
+ "zryna-ownership-runtime-abi",
+ "zryna-semantics",
  "zryna-source",
+ "zryna-syntax",
 ]
 
 [[package]]
@@ -1164,11 +1168,16 @@ dependencies = [
 name = "zryna-backend-webassembly"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "wasm-encoder",
  "wasmparser",
  "zryna-diagnostics",
  "zryna-ir",
+ "zryna-layout",
+ "zryna-ownership-runtime-abi",
+ "zryna-semantics",
  "zryna-source",
+ "zryna-syntax",
 ]
 
 [[package]]
@@ -1253,7 +1262,11 @@ dependencies = [
  "zryna-abi",
  "zryna-diagnostics",
  "zryna-ir",
+ "zryna-layout",
+ "zryna-ownership-runtime-abi",
+ "zryna-semantics",
  "zryna-source",
+ "zryna-syntax",
 ]
 
 [[package]]

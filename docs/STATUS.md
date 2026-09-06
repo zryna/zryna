@@ -233,9 +233,9 @@ roots, non-Copy roots, and unsupported projections fail before raw IR constructi
 projected resource formulas, complete replay traces, and independent IR move/replace/drop/call
 tests retain the verifier as the final authority. One canonical bool-root loop now uses fixed preheader/header/body/exit blocks and discharges its
 body-local authority before every backedge and restores exact root owner/initialization state at
-the header. It carries no borrow authority, value block parameter, or edge argument. This adds no
-runtime, ABI, backend, driver, CLI, artifact, or public-profile
-capability. The completed Issue #116 implementation additionally admits exactly one
+the header. It carries no borrow authority, value block parameter, or edge argument. This adds no runtime,
+ABI, backend, driver, CLI, artifact, website-support, or public-profile capability. The
+completed Issue #116 implementation additionally admits exactly one
 private parameter-free whole non-Copy root and one const shared alias in one lexical block. Reads
 are limited to String clone/checked concat, exact `Vec<bool>`/`Vec<i32>` Copy indexing, and
 supported whole Struct/root-Enum/fixed-array clone. Existing owned instructions and cleanup/fault
@@ -254,9 +254,10 @@ cases, and 13 exclusions. Its merged registry SHA-256 is
 `d61d1ec50005bbed7d86f029fa6ece5efa7517d495b6aed6e9b0f1c15f69e20f`; its canonical borrow-call
 section SHA-256 is `ca7ca013771f8ebb0ddc3f7791bc46db6378892e89f3e8e570a44e42e687fc20`.
 The current registry additionally tracks normative indexed-borrow prerequisites #254–#256 and
-source-completion #269 before complete target support; its SHA-256 is
+the now-integrated source-completion #269 authority before target support; its SHA-256 is
 `dfa23281785a225042f32c082abef0f1cb61dd5971bb713625995d5ee0f51d22`.
-This updates planned dependencies, not implemented capability. The #119 commit and digest above
+This preserves the dependency identities; #269 closure is documented in
+`M3_SOURCE_COMPLETION.md`. The #119 commit and digest above
 remain immutable historical provenance; the borrow-call section and fixture bytes are unchanged.
 The completed #277 integration contract, #278 non-handle owned core and #279 ownership CFG core
 provided the reusable foundation for the completed #259–#264/#83 internal Shared/Weak compiler
@@ -274,17 +275,19 @@ resource/overflow evidence; `M3_COMPLETE_ENUM_MATCHING_MATRIX.md` binds its exac
 is now a checked compiler-only closure candidate through #337 owned roots/static projections, #338
 active enum payloads, #339 lexical calls, and #340 hostile/resource evidence. Its exact enabled
 bindings and retained exclusions are in `M3_NONINDEXED_OWNED_BORROWING_MATRIX.md`; #274 remains
-separately completed and #269 remains the parent. Verified
-instruction, cleanup and fault traces are not target execution. Runtime, backend, CLI and public
-activation remain open, so complete #84/#85/#86 support is not claimed.
+separately completed and #269 now reconciles the complete compiler source/IR authority. Verified
+instruction, cleanup and fault traces alone are not target execution. The internal #84/#85/#86
+boundaries now add deterministic JavaScript, audited memory-bearing core WebAssembly and
+independently verified Linux x86-64 native MIR as documented in `M3_TARGET_BACKENDS.md`. Driver,
+native object/link execution, aggregate conformance and public activation remain open.
 Protocol v4 is unchanged; projected forwarding, call recursion, public borrow signatures and
-retained borrow authority remain later or unavailable child work. This adds no runtime,
-ABI, backend, driver, CLI, artifact, website-support, or public-profile capability.
+retained borrow authority remain later or unavailable child work. The source-completion closure
+itself added no driver, CLI, published artifact, website-support or public-profile capability.
 
-The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
-route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory-bearing M3
-JavaScript/WebAssembly/native artifacts, or accept `--profile data-ownership-v1`. Default M1 and
-explicit `control-flow-v1` M2 remain the only public profiles.
+The public compiler still does not select syntax protocol v4, route DataOwnershipV1 IR, publish
+M3 artifacts, or accept `--profile data-ownership-v1`. The internal JavaScript/WebAssembly/MIR
+entrypoints are not public driver capability. Default M1 and explicit `control-flow-v1` M2 remain
+the only public profiles.
 
 The internal #83 compiler boundary now provides explicit Shared/Weak construction, clone,
 downgrade, deterministic release cleanup and one indivisible success/expired/overflow upgrade

@@ -280,7 +280,7 @@ fn complete_enum_matching_matrix_binds_exact_test_inventory_and_boundaries() {
             "- Issue: #273",
             "- Integrated children: #333, #334, #335",
             "- Status: compiler-only closure candidate",
-            "- Parent remaining: #269",
+            "- Parent integration: completed by #269 after all source/IR children",
         ]
     );
 }

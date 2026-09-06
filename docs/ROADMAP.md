@@ -358,12 +358,12 @@ indivisible upgrade control flow, #263 proved failure/count/resource boundaries,
 reconciled the integrated closure. Full payload support and all parent acceptance criteria are
 mapped to executable source/IR tests or explicitly labelled symbolic ABI evidence.
 
-Issue #269 tracks the remaining normative M3 source and independently verified IR composition.
-It is an additional completion prerequisite for #84/#85/#86, retaining every existing dependency;
-neither backend implementation nor #89 conformance supplies missing source semantics. These are
-planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoints:
+Issue #269 reconciles the completed normative M3 source and independently verified IR composition.
+It remains an explicit prerequisite for #84/#85/#86 and retains every existing dependency;
+neither backend implementation nor #89 conformance supplies source semantics. The completed
+capabilities do not change the bounded #79/#81/#82 checkpoints:
 
-| Issue | Planned source-completion responsibility | Completion prerequisites |
+| Issue | Source-completion responsibility | Completion prerequisites |
 | ---: | --- | --- |
 | #277 | generic ownership integration contract and operation/CFG hooks | #259, retaining #77/#78/#80/#82 |
 | #278 | non-handle generic owned operation core | #277 |
@@ -374,7 +374,7 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 | #273 | checked exhaustive enum matching and active-payload closure candidate | #270/#271; integrated by #333/#334/#335 |
 | #274 | ordinary dynamic fixed-array access using the indexed authority | #254/#270; coordinate #255 |
 | #275 | non-indexed owned/static/active-payload lexical borrowing | #82/#254/#270/#271/#272/#273 |
-| #269 | complete source-composition integration | #83/#254/#255/#256 and every child above |
+| #269 | completed source-composition integration | #83/#254/#255/#256 and every child above |
 
 Stages #277/#278/#279 closed separately as children of #269, not dependents of its closure.
 #259 froze full Shared/Weak meaning and required payload/CFG contexts; #277 fixed reusable
@@ -388,23 +388,30 @@ its immutable verification provenance.
 The current #270 integration reconciles #320's checked matrix with #321 handle-containing static
 transfers, #322 ordinary handle-aware Vec operations and #323 finite recursive composition.
 Exact source, hostile-IR and bounded resource/replay bindings make it a compiler-only closure
-candidate; full/ignored suites, preflight, M0/M2, independent review and hosted CI remain required
-merge gates. It does not complete #273, #275, #269 or any target/runtime/public-profile work.
+candidate; full/ignored suites, preflight, M0/M2, independent review and hosted CI were required
+merge gates. Its historical scope did not independently complete #273, #275, #269 or
+target/runtime/public-profile work.
 The cores use typed operation hooks without claiming source handle execution. Required #83
 payload, call, match and CFG cases could not wait for every source-completion parent. #271 now has a
 checked compiler-only closure matrix: #325 completes source routing and lexical state, #326 pins
 independent hostile-IR authority, and #327 integrates the #270 payload/fault and block/edge resource
 rows. Required full/ignored suites, preflight, M0/M2, review and hosted CI remain closure gates.
 The checked #272 owned-call matrix integrates #329 signature/identity resolution, #330 structured
-transfer/cleanup and #331 hostile-IR/resource evidence. It does not close #273/#275/#269, execute
+transfer/cleanup and #331 hostile-IR/resource evidence. Its historical scope did not close #273/#275/#269, execute
 runtime handle behavior, add break/continue or exceptions,
 or enable a runtime, backend, CLI or public profile.
 The checked #273 complete enum matching matrix integrates #333 authenticated source/exhaustiveness,
 #334 independent refinement/ownership verification and #335 resource/overflow evidence. It does
-not itself implement #275/#269, add terminating or wildcard arms, expose inactive payloads, or
+did not itself implement #275/#269, add terminating or wildcard arms, expose inactive payloads, or
 enable runtime, backend, CLI or public-profile behavior. The checked #275 matrix separately
 integrates #337 owned roots/static projections, #338 active payload refinement, #339 lexical calls,
-and #340 hostile/resource closure. It is a compiler-only closure candidate; #269 remains open.
+and #340 hostile/resource closure. Together these completed children feed the checked #269
+source-completion integration proof.
+
+Issues #84–#86 now provide the internal target boundaries described in
+`M3_TARGET_BACKENDS.md`: deterministic ESM, validated memory-bearing core WebAssembly and
+independently verified Linux x86-64 native MIR. #87 still owns native object/runtime execution;
+#88–#90 retain candidate integration, conformance and public activation in order.
 
 #254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
 semantics. The new source work invents no type-import syntax, break/continue, Vec pop, implicit
