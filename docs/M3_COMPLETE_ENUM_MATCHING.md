@@ -1,9 +1,10 @@
-# M3 complete enum matching lane
+# M3 complete enum matching
 
 Issue #273 owns authenticated exhaustive enum matching and active-payload ownership on top of the
-generic ownership and structured-CFG authorities from Issues #270 and #271. This document records
-the isolated match-lane contract. It does not claim target execution, runtime behavior, public
-profile activation, or completion of the parent Issue #269.
+generic ownership and structured-CFG authorities from Issues #270 and #271. The integrated #333
+source, #334 independent-IR and #335 resource/evidence work makes it a checked compiler-only
+closure candidate. It does not claim target execution, runtime behavior, public profile
+activation, or completion of the parent Issue #269.
 
 ## Source and ownership contract
 
@@ -24,7 +25,7 @@ profile activation, or completion of the parent Issue #269.
   cleanup state. Unequal ownership, mask, refinement, or borrow state is rejected rather than
   repaired by an implicit clone or conditional drop.
 
-## Isolated executable evidence
+## Executable evidence
 
 | Boundary | Focused evidence |
 | --- | --- |
@@ -35,16 +36,16 @@ profile activation, or completion of the parent Issue #269.
 | Existing owned result matrix | `structured_match_owned_payloads_join_one_result_and_continue` covers String, FixedArray, Vec, nested container, Struct, and Enum results through move and structural-clone arms. |
 | Existing composition and failure | The remaining `structured_match_source` tests cover constructor, Vec, direct-call, String, indexed, formal-borrow, and deterministic invalid-arm boundaries without granting new call or lexical-borrow syntax. |
 
-The fixture and test modules are deliberately match-owned and isolated from the shared dispatcher,
-central test registry, checked issue graph, roadmap, and status documents so Issue #272 can proceed
-in a separate worktree. Final integration must bind these exact test names into the checked #273
-matrix, add independent hostile raw-IR evidence for discriminant/refinement/cleanup/resource
-forgeries, and run the full repository and hosted platform gates.
+The checked [complete enum matching closure matrix](M3_COMPLETE_ENUM_MATCHING_MATRIX.md) binds the
+canonical source, independent-IR and resource rows to real test functions. It covers exact
+discriminant/refinement dominance, payload ownership and cleanup forgeries, graph and ownership
+resource boundaries, checked overflow, atomic rejection and deterministic recovery. Complete and
+ignored suites, preflight, M0/M2 regressions, independent review and hosted Linux/Windows gates
+remain merge requirements rather than capabilities supplied by the matrix.
 
 ## Retained boundaries
 
 There are no source-selected discriminants, wildcard or terminating arms, implicit clones,
 inactive payload access, stored or returned borrows, borrow-carrying CFG edges, runtime/backend
 behavior, public aggregate ABI, or public `data-ownership-v1` selection. Non-indexed active-payload
-borrowing remains Issue #275 and consumes this lane only after the final #273 refinement interface
-is integrated.
+borrowing remains Issue #275 and consumes this sealed refinement interface.
