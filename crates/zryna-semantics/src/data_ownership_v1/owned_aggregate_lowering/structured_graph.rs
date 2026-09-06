@@ -9,11 +9,22 @@ use super::PrivateOwnedAggregateLowerer;
 #[cfg(test)]
 thread_local! {
     static HELD_RESOURCES: std::cell::Cell<[usize; 2]> = const { std::cell::Cell::new([0, 0]) };
+    static RESOURCE_LIMITS: std::cell::Cell<[usize; 2]> = const {
+        std::cell::Cell::new([
+            ir::MAX_BLOCKS_PER_FUNCTION,
+            ir::MAX_CFG_EDGES_PER_FUNCTION,
+        ])
+    };
 }
 
 #[cfg(not(test))]
 pub(super) const fn held_resources() -> [usize; 2] {
     [0, 0]
+}
+
+#[cfg(not(test))]
+const fn resource_limits() -> [usize; 2] {
+    [ir::MAX_BLOCKS_PER_FUNCTION, ir::MAX_CFG_EDGES_PER_FUNCTION]
 }
 
 #[cfg(test)]
@@ -22,9 +33,24 @@ pub(super) fn held_resources() -> [usize; 2] {
 }
 
 #[cfg(test)]
+fn resource_limits() -> [usize; 2] {
+    RESOURCE_LIMITS.get()
+}
+
+#[cfg(test)]
 pub(super) fn with_held_resources<T>(held: [usize; 2], f: impl FnOnce() -> T) -> T {
     HELD_RESOURCES.with(|resources| {
         let previous = resources.replace(held);
+        let result = f();
+        resources.set(previous);
+        result
+    })
+}
+
+#[cfg(test)]
+pub(super) fn with_resource_limits<T>(limits: [usize; 2], f: impl FnOnce() -> T) -> T {
+    RESOURCE_LIMITS.with(|resources| {
+        let previous = resources.replace(limits);
         let result = f();
         resources.set(previous);
         result
@@ -56,11 +82,12 @@ impl StructuredGraph {
         at: Span,
         lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
     ) -> Option<Self> {
-        if held_blocks.checked_add(1).is_none_or(|blocks| blocks > ir::MAX_BLOCKS_PER_FUNCTION) {
+        let [block_limit, edge_limit] = resource_limits();
+        if held_blocks.checked_add(1).is_none_or(|blocks| blocks > block_limit) {
             Self::limit(lowerer, at, "blocks");
             return None;
         }
-        if held_edges > ir::MAX_CFG_EDGES_PER_FUNCTION {
+        if held_edges > edge_limit {
             Self::limit(lowerer, at, "edges");
             return None;
         }
@@ -110,7 +137,7 @@ impl StructuredGraph {
             .held_blocks
             .checked_add(self.blocks.len())
             .and_then(|blocks| blocks.checked_add(1));
-        if blocks.is_none_or(|blocks| blocks > ir::MAX_BLOCKS_PER_FUNCTION) {
+        if blocks.is_none_or(|blocks| blocks > resource_limits()[0]) {
             Self::limit(lowerer, at, "blocks");
             return None;
         }
@@ -140,7 +167,7 @@ impl StructuredGraph {
         };
         let edges =
             self.held_edges.checked_add(self.edges).and_then(|edges| edges.checked_add(additional));
-        if edges.is_none_or(|edges| edges > ir::MAX_CFG_EDGES_PER_FUNCTION) {
+        if edges.is_none_or(|edges| edges > resource_limits()[1]) {
             Self::limit(lowerer, at, "edges");
             return None;
         }
