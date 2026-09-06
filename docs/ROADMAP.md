@@ -401,8 +401,10 @@ runtime handle behavior, add break/continue or exceptions,
 or enable a runtime, backend, CLI or public profile.
 The checked #273 complete enum matching matrix integrates #333 authenticated source/exhaustiveness,
 #334 independent refinement/ownership verification and #335 resource/overflow evidence. It does
-not close #275/#269, add terminating or wildcard arms, expose inactive payloads, or enable runtime,
-backend, CLI or public-profile behavior.
+not itself implement #275/#269, add terminating or wildcard arms, expose inactive payloads, or
+enable runtime, backend, CLI or public-profile behavior. The checked #275 matrix separately
+integrates #337 owned roots/static projections, #338 active payload refinement, #339 lexical calls,
+and #340 hostile/resource closure. It is a compiler-only closure candidate; #269 remains open.
 
 #254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
 semantics. The new source work invents no type-import syntax, break/continue, Vec pop, implicit

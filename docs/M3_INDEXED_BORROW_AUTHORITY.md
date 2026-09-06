@@ -96,7 +96,7 @@ source-producer or target-execution proofs.
 #255 owns dynamic fixed-array borrowing source production; #256 owns Vec-element borrowing.
 #274 owns ordinary array indexing outside explicit borrow creation. These producers must consume
 this exact index/bounds/conflict contract; none may substitute a container-typed element referent.
-#275 retains the broader non-indexed source operation matrix. Generic clone-through-borrow,
+#275 separately completes the broader non-indexed source operation matrix. Generic clone-through-borrow,
 new source syntax, raw pointers, no-alias runtime checks, allocation/runtime implementations,
 backends and public activation are not supplied by this authority.
 

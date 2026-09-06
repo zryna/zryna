@@ -154,9 +154,14 @@ M3 also completes the #273 exhaustive enum-match boundary as a checked compiler-
 candidate. Authenticated matches evaluate one scrutinee, cover each sealed variant exactly once,
 expose only the active payload and join exact Copy or owned results through the structured CFG.
 The [complete enum matching matrix](../../docs/M3_COMPLETE_ENUM_MATCHING_MATRIX.md) binds source,
-independent-IR and resource/overflow evidence. Terminating or wildcard arms, inactive payload
-access, non-indexed payload borrowing, runtime/backend behavior and public activation remain
-excluded.
+independent-IR and resource/overflow evidence. Terminating or wildcard arms and inactive payload
+access remain excluded from that matrix.
+
+The completed #275 compiler boundary adds non-indexed shared/exclusive borrowing for admitted
+owned roots, static Struct/FixedArray projections and refined active enum payloads, including
+nested lexical/direct-call use, exact cleanup and deterministic hostile/resource rejection. The
+[checked borrowing matrix](../../docs/M3_NONINDEXED_OWNED_BORROWING_MATRIX.md) binds enabled source
+and independent-IR evidence. Runtime/backend behavior and public activation remain excluded.
 
 The separate #278 mixed-result function route also prepares and commits fully initialized mutable
 mixed Struct/Enum/FixedArray/Vec root replacement. Its affine plan proves exact destination

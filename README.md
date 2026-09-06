@@ -172,8 +172,8 @@ The repository currently establishes and tests:
   construction and transfer, structural clone, ordinary Vec observation/replacement/push,
   handle-containing static subobjects, and finite Vec-indirection recursion. Exact source,
   hostile-IR and resource/replay bindings are checked without claiming runtime execution,
-  backend support, public activation, or the remaining #272/#273/#275 source boundaries; #271 is
-  now a checked compiler-only structured-control-flow closure candidate;
+  backend support or public activation; #271–#273 and #275 are now separately checked
+  compiler-only closure candidates, while parent #269 remains open;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
