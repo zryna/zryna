@@ -1219,6 +1219,7 @@ dependencies = [
  "zryna-native-mir",
  "zryna-semantics",
  "zryna-source",
+ "zryna-syntax",
 ]
 
 [[package]]

@@ -47,14 +47,17 @@ pub use module_closure::{
     discover_module_closure,
 };
 pub use native::{
-    LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES, MAX_NATIVE_LINK_TIMEOUT,
-    MAX_NATIVE_OBJECT_ARTIFACT_STEM_BYTES, MAX_NATIVE_PROBE_TIMEOUT, MAX_NATIVE_RUN_STDERR_BYTES,
-    MAX_NATIVE_RUN_TIMEOUT, MAX_NATIVE_TOOL_OUTPUT_BYTES, NATIVE_EXECUTABLE_ARTIFACT_EXTENSION,
-    NATIVE_OBJECT_ARTIFACT_EXTENSION, NativeExecutableBuildError, NativeExecutableBuildSuccess,
-    NativeObjectBuildError, NativeObjectBuildSuccess, NativeObjectOutputRoot, NativeProcessLimits,
-    NativeRunError, PublishedNativeExecutableArtifact, PublishedNativeObjectArtifact,
-    compile_native_invocation, compile_native_object, discover_linux_native_toolchain,
-    publish_native_object, run_native_invocation, select_native_object_target,
+    DataOwnershipExecutableIdentity, LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES,
+    MAX_NATIVE_LINK_TIMEOUT, MAX_NATIVE_OBJECT_ARTIFACT_STEM_BYTES, MAX_NATIVE_PROBE_TIMEOUT,
+    MAX_NATIVE_RUN_STDERR_BYTES, MAX_NATIVE_RUN_TIMEOUT, MAX_NATIVE_TOOL_OUTPUT_BYTES,
+    NATIVE_EXECUTABLE_ARTIFACT_EXTENSION, NATIVE_OBJECT_ARTIFACT_EXTENSION,
+    NativeExecutableBuildError, NativeExecutableBuildSuccess, NativeObjectBuildError,
+    NativeObjectBuildSuccess, NativeObjectOutputRoot, NativeProcessLimits, NativeRunError,
+    PreparedDataOwnershipExecutable, PublishedNativeExecutableArtifact,
+    PublishedNativeObjectArtifact, compile_native_invocation, compile_native_object,
+    discover_linux_native_toolchain, prepare_data_ownership_executable,
+    publish_data_ownership_executable, publish_data_ownership_object, publish_native_object,
+    run_native_invocation, select_native_object_target,
 };
 pub use pipeline::{
     BuildRequest, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,

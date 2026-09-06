@@ -1,5 +1,21 @@
 //! Linux x86-64 native object emission, sealed invocation linking, and bounded execution.
 
+mod ownership;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod stage_support;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use stage_support::{
+    NativeStageIdentity, native_stage_error, native_stage_identity, stage_cleanup_warning,
+    staging_write_error,
+};
+
+pub use ownership::{
+    DataOwnershipExecutableIdentity, PreparedDataOwnershipExecutable,
+    prepare_data_ownership_executable, publish_data_ownership_executable,
+    publish_data_ownership_object,
+};
+
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 #[path = "native_process_diagnostics.rs"]
 mod process_diagnostics;
@@ -410,6 +426,7 @@ pub(crate) struct PreparedNativeExecutable {
     bytes: Arc<[u8]>,
     result_type: zryna_abi::ScalarType,
     expected_symbol: Box<str>,
+    ownership_identity: Option<DataOwnershipExecutableIdentity>,
     diagnostics: Vec<Diagnostic>,
 }
 
@@ -428,6 +445,11 @@ impl PreparedNativeExecutable {
     pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }
+
+    #[must_use]
+    pub(crate) const fn ownership_identity(&self) -> Option<&DataOwnershipExecutableIdentity> {
+        self.ownership_identity.as_ref()
+    }
 }
 
 impl fmt::Debug for PreparedNativeExecutable {
@@ -437,6 +459,7 @@ impl fmt::Debug for PreparedNativeExecutable {
             .field("bytes", &self.bytes.len())
             .field("result_type", &self.result_type)
             .field("expected_symbol", &self.expected_symbol)
+            .field("ownership_identity", &self.ownership_identity)
             .field("diagnostics", &self.diagnostics)
             .finish()
     }
@@ -459,6 +482,12 @@ impl PublishedNativeExecutableArtifact {
     #[must_use]
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
+    }
+
+    /// Returns the sealed DataOwnershipV1 identity when this is an ownership executable.
+    #[must_use]
+    pub const fn data_ownership_identity(&self) -> Option<&DataOwnershipExecutableIdentity> {
+        self.prepared.ownership_identity()
     }
 }
 
@@ -1112,16 +1141,10 @@ struct NativeStage {
     directory: PathBuf,
     object: PathBuf,
     harness: PathBuf,
+    runtime_source: PathBuf,
     executable: PathBuf,
     directory_handle: cap_std::fs::Dir,
     directory_identity: NativeStageIdentity,
-}
-
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-#[derive(Clone, Copy)]
-struct NativeStageIdentity {
-    device: u64,
-    inode: u64,
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1150,6 +1173,7 @@ impl NativeStage {
                     return Ok(Self {
                         object: directory.join("program.o"),
                         harness: directory.join("invocation.c"),
+                        runtime_source: directory.join("runtime.c"),
                         executable: directory.join("invocation.elf"),
                         directory,
                         directory_handle,
@@ -1204,7 +1228,10 @@ impl NativeStage {
     }
 
     fn capability_file_path(&self, name: &str) -> Result<PathBuf, Diagnostic> {
-        if !matches!(name, "program.o" | "invocation.c" | "invocation.elf") {
+        if !matches!(
+            name,
+            "program.o" | "invocation.c" | "runtime.c" | "runtime.o" | "invocation.elf"
+        ) {
             return Err(native_stage_error());
         }
         Ok(self.capability_directory_path().join(name))
@@ -1237,7 +1264,7 @@ impl NativeStage {
             return vec![stage_cleanup_warning()];
         }
         let mut failed = false;
-        for name in ["invocation.elf", "invocation.c", "program.o"] {
+        for name in ["invocation.elf", "invocation.c", "runtime.o", "runtime.c", "program.o"] {
             match self.directory_handle.remove_file(name) {
                 Ok(()) => {}
                 Err(error) if error.kind() == io::ErrorKind::NotFound => {}
@@ -1255,44 +1282,6 @@ impl NativeStage {
         }
         if failed { vec![stage_cleanup_warning()] } else { Vec::new() }
     }
-}
-
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn native_stage_identity(metadata: &fs::Metadata) -> Result<NativeStageIdentity, Diagnostic> {
-    use std::os::unix::fs::MetadataExt;
-
-    if !metadata.is_dir() {
-        return Err(native_stage_error());
-    }
-    Ok(NativeStageIdentity { device: metadata.dev(), inode: metadata.ino() })
-}
-
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn native_stage_error() -> Diagnostic {
-    native_error(
-        "ZRYNA-N4015",
-        "native private staging directory identity changed during the operation",
-        "retry without another process modifying the compiler-owned staging directory",
-    )
-}
-
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn stage_cleanup_warning() -> Diagnostic {
-    Diagnostic::warning(
-        "ZRYNA-N4016",
-        None,
-        "native operation finished but its private staging directory could not be fully removed",
-        "inspect and remove the exact sibling .zryna-link staging directory after confirming no operation is using it",
-    )
-}
-
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn staging_write_error() -> Diagnostic {
-    native_error(
-        "ZRYNA-N4015",
-        "native private staging input could not be written and synchronized",
-        "use a writable declared output root with sufficient space",
-    )
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1336,6 +1325,7 @@ pub(crate) fn prepare_native_invocation_from_verified(
         bytes: Arc::from(sealed_bytes),
         result_type: invocation_export.result(),
         expected_symbol: Box::from(expected_symbol),
+        ownership_identity: None,
         diagnostics,
     })
 }
@@ -1373,6 +1363,7 @@ pub(crate) fn prepare_control_flow_native_invocation(
         bytes: Arc::from(sealed_bytes),
         result_type: export.result(),
         expected_symbol: Box::from(expected_symbol),
+        ownership_identity: None,
         diagnostics,
     })
 }
@@ -1423,6 +1414,7 @@ pub(crate) fn prepare_control_flow_native_invocation_from_verified(
         bytes: Arc::from(sealed_bytes),
         result_type: export.result(),
         expected_symbol: Box::from(expected_symbol),
+        ownership_identity: None,
         diagnostics,
     })
 }

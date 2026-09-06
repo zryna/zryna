@@ -31,5 +31,8 @@ zryna-native-mir = { path = "../zryna-native-mir" }
 zryna-semantics = { path = "../zryna-semantics" }
 zryna-source = { path = "../zryna-source" }
 
+[dev-dependencies]
+zryna-syntax = { path = "../zryna-syntax" }
+
 [lints]
 workspace = true
