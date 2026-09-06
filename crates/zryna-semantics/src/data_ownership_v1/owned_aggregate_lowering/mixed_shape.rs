@@ -12,7 +12,7 @@ pub(super) enum PreparationRoute {
     Unsupported,
 }
 
-pub(super) fn supported(ty: Ty, layouts: &layout::VerifiedLayouts) -> bool {
+pub(in crate::data_ownership_v1) fn supported(ty: Ty, layouts: &layout::VerifiedLayouts) -> bool {
     let mut visited = BTreeSet::new();
     let mut pending = vec![ty.layout];
     while let Some(id) = pending.pop() {

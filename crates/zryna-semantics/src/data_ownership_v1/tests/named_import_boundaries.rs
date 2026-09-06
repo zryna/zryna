@@ -29,7 +29,7 @@ fn named_import_alias_binding_does_not_create_a_declaration_identity() {
     let node_types = map_node_types(&graph, &layouts, &mut errors);
     let mut catalog =
         build_function_catalog(input, &declarations, &graph, &node_types, &mut errors);
-    import_resolution::resolve_imports(input, &mut catalog, &mut errors);
+    import_resolution::resolve_imports(input, &layouts, &mut catalog, &mut errors);
     assert!(errors.finish().is_empty());
     let main = usize::try_from(entry.index()).expect("module");
     assert!(matches!(catalog.resolve(main, "select"), FunctionResolution::Exact(_)));

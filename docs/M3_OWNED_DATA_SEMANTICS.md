@@ -116,7 +116,8 @@ outside one exact-type direct local declaration, final exact-reference return, o
 whole-root assignment, general owned phi joins, owned loop-carried phi joins, runtime/backend
 lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
-to zero arguments or one exact owned/bool argument. Their no-phi branch must leave incoming owners
+to zero arguments or one exact owned/bool argument in the legacy selectors; the completed generic #272 route
+handles broader exact internal by-value signatures. Their no-phi branch must leave incoming owners
 unchanged, while each terminal owned branch directly returns one owned-producing expression. The
 bounded loop preserves the exact incoming owner stack. Its stable-place String replacement
 and Copy-element Vec push retain the same outer place identity across the backedge; all other

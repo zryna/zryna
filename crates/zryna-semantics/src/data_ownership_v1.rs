@@ -257,7 +257,7 @@ pub fn lower(input: SemanticInput<'_>) -> SemanticResult {
 
     let mut catalog =
         build_function_catalog(input, &declarations, &graph, &node_types, &mut errors);
-    import_resolution::resolve_imports(input, &mut catalog, &mut errors);
+    import_resolution::resolve_imports(input, &linear, &mut catalog, &mut errors);
     if !errors.is_empty() {
         return Err(errors.finish());
     }

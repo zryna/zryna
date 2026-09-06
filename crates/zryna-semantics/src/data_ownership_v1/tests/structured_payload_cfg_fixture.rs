@@ -111,18 +111,22 @@ impl Composer {
         self.f.expression(start, kind)
     }
 
-    fn call(&mut self, source: &str) -> u32 {
+    fn call(&mut self, source: &str, flag: &str, owner: &str) -> u32 {
         let start = self.f.source.len();
         let callee = self.f.name("relay");
         let open_paren_span = self.f.text("(");
-        let argument = self.unary("clone", |c| c.f.reference(source));
+        let value = self.unary("clone", |c| c.f.reference(source));
+        self.f.text(", ");
+        let flag = self.f.reference(flag);
+        self.f.text(", ");
+        let owner = self.unary("clone", |c| c.f.reference(owner));
         let close_paren_span = self.f.text(")");
         self.f.expression(
             start,
             RawExpressionKind::Call {
                 callee,
                 open_paren_span,
-                arguments: vec![argument],
+                arguments: vec![value, flag, owner],
                 close_paren_span,
             },
         )
@@ -202,7 +206,7 @@ pub(in crate::data_ownership_v1) fn fixture(
     let declarations = declarations::for_payload(&mut c.f, payload);
     let payload_ty = payload.ty();
     let weak = Ty::Weak(Box::new(payload_ty.clone()));
-    let relay = relay(&mut c, &weak);
+    let relay = relay(&mut c, &payload_ty, &weak);
     let compose = compose(&mut c, &payload_ty, &weak);
     (
         c.f.source,
@@ -221,13 +225,18 @@ pub(in crate::data_ownership_v1) fn fixture(
     )
 }
 
-fn relay(c: &mut Composer, weak: &Ty) -> RawFunctionSyntax {
+fn relay(c: &mut Composer, payload: &Ty, weak: &Ty) -> RawFunctionSyntax {
+    let shared = Ty::Shared(Box::new(payload.clone()));
     let start = c.f.source.len();
     let function_span = c.f.text("function");
     c.f.text(" ");
     let name = c.f.name("relay");
     c.f.text("(");
-    let parameters = vec![c.f.parameter("value", weak)];
+    let mut parameters = vec![c.f.parameter("value", weak)];
+    c.f.text(", ");
+    parameters.push(c.f.parameter("flag", &Ty::Named("bool")));
+    c.f.text(", ");
+    parameters.push(c.f.parameter("discarded", &shared));
     c.f.text("): ");
     let result_type = c.f.ty(weak);
     c.f.text(" ");
@@ -262,7 +271,7 @@ fn compose(c: &mut Composer, payload: &Ty, weak: &Ty) -> RawFunctionSyntax {
             let body_block = c.block(|c, statements| {
                 c.statement(statements, |c| {
                     let block = c.block(|c, statements| {
-                        c.local(statements, "called", weak, |c| c.call("weak"));
+                        c.local(statements, "called", weak, |c| c.call("weak", "flag", "owner"));
                         c.local(statements, "owners", &shared_vec, |c| c.vector(&shared, "owner"));
                     });
                     RawStatementKind::Block { block }

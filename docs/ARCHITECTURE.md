@@ -428,15 +428,21 @@ The internal #270 closure candidate composes that handle authority with the gene
 core. A checked matrix binds nested aggregate/container construction and transfer, structural clone,
 ordinary Vec observation/replacement/push, handle-containing static subobjects and finite values
 through legal Vec-indirection recursion to authenticated source, mandatory verified IR, hostile IR,
-resource and replay evidence. This is compiler authority only: #272/#273 and #275 retain their
-source-composition boundaries, while runtime execution, backends and public activation remain open.
+resource and replay evidence. This is compiler authority only: #273 and #275 retain their source-
+composition boundaries, while runtime execution, backends and public activation remain open.
+
+The checked [internal owned-call closure matrix](M3_OWNED_CALL_CLOSURE_MATRIX.md) integrates #329
+imported signature and canonical identity resolution, #330 structured transfer and exact cleanup,
+and #331 independent hostile-IR and resource proofs. Internal same-module and named-import calls
+admit the sealed by-value ownership graph without adding nominal type-import syntax. Borrowed
+imports, indirect calls, recursion, runtime execution, backends and public activation remain open.
 
 The checked [structured owned control-flow matrix](M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md)
 integrates #325 source routing and lexical state, #326 independent hostile-IR authority, and #327
 payload/fault/resource evidence. It makes #271 a compiler-only closure candidate: nested and
 repeated Block/If/While/WeakUpgrade and admitted Match occupants lower to mandatory verified IR,
 with exact joins, backedges, cleanup and checked graph budgets. These verified traces do not
-execute allocation, refcount, drop, calls, upgrades, or faults. #272, #273, #275 and parent #269
+execute allocation, refcount, drop, calls, upgrades, or faults. #273, #275 and parent #269
 remain open, as do break/continue, exceptions, runtime, backends, CLI and public activation.
 
 The internal [`M3 Copy aggregate semantic boundary`](M3_COPY_AGGREGATE_SEMANTICS.md) consumes the
