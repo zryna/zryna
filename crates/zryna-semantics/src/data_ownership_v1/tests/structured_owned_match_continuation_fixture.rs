@@ -159,16 +159,14 @@ pub(in crate::data_ownership_v1::tests) fn fixture(
         },
     });
     builder.text(" ");
-    let block_id = builder.statement(&Statement::Block(Vec::new()));
-    builder.text(" ");
-    let return_id = builder.statement(&Statement::Return("output"));
+    let block_id = builder.statement(&Statement::Block(vec![Statement::Return("output")]));
     builder.text(" ");
     let root_close = builder.text("}");
     builder.blocks[0] = RawBlockSyntax {
         span: builder.span(body_start),
         open_brace_span,
         close_brace_span: root_close,
-        statements: vec![local_id, block_id, return_id],
+        statements: vec![local_id, block_id],
     };
     let function = RawFunctionSyntax {
         span: builder.span(function_start),

@@ -274,11 +274,6 @@ fn lower_function_impl<'a>(
     let existing_payload_move = function.export_span.is_none()
         && matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
         && !function.body.expressions.iter().any(|expression| matches!(&expression.kind, RawExpressionKind::Match { arms, .. } if arms.len() > 1))
-        && function
-            .body
-            .blocks
-            .get(usize::try_from(function.body.root_block).ok()?)
-            .is_some_and(|root| root.statements.len() == 2)
         && is_private_owned_enum_payload_move_candidate(function);
     if (generic_function || structured_owned_function) && !existing_payload_move {
         if !requires_structured_cfg(function) {

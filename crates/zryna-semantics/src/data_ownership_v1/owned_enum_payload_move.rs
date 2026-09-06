@@ -25,21 +25,37 @@ pub(super) fn is_private_owned_enum_payload_move_candidate(
     else {
         return false;
     };
-    let Some(statement) = root
-        .statements
-        .first()
-        .and_then(|id| usize::try_from(*id).ok())
-        .and_then(|index| function.body.statements.get(index))
+    let [local_id, return_id] = root.statements.as_slice() else {
+        return false;
+    };
+    let Some(local) =
+        usize::try_from(*local_id).ok().and_then(|index| function.body.statements.get(index))
     else {
         return false;
     };
-    let RawStatementKind::LocalDeclaration { initializer, .. } = statement.kind else {
+    let RawStatementKind::LocalDeclaration { name: local_name, initializer, .. } = &local.kind
+    else {
         return false;
     };
-    usize::try_from(initializer)
+    let Some(returned) =
+        usize::try_from(*return_id).ok().and_then(|index| function.body.statements.get(index))
+    else {
+        return false;
+    };
+    let RawStatementKind::Return { value, .. } = returned.kind else {
+        return false;
+    };
+    let direct_return = usize::try_from(value)
         .ok()
         .and_then(|index| function.body.expressions.get(index))
-        .is_some_and(|expression| matches!(expression.kind, RawExpressionKind::Match { .. }))
+        .is_some_and(|expression| {
+            matches!(&expression.kind, RawExpressionKind::Reference { name } if name.text == local_name.text)
+        });
+    direct_return
+        && usize::try_from(*initializer)
+            .ok()
+            .and_then(|index| function.body.expressions.get(index))
+            .is_some_and(|expression| matches!(expression.kind, RawExpressionKind::Match { .. }))
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
