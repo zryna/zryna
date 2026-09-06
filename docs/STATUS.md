@@ -266,10 +266,12 @@ ordinary handle-aware Vec observation/replacement/push through mandatory verifie
 matrix binds exact source, hostile-IR, resource and replay tests from #320–#323. Issue #271 is now
 a checked compiler-only closure candidate: its exact #325 source/lexical, #326 hostile-IR, and #327
 payload/fault/resource bindings are recorded in `M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md`.
-Issues #272/#273 and #275 retain call, complete match and non-indexed-borrow completion; #274
-remains separately completed and #269 remains the parent. Verified instruction, cleanup and fault
-traces are not target execution. Runtime, backend, CLI, public activation and final #271 merge
-gates remain open, so complete #84/#85/#86 support is not claimed.
+Issue #272 is now a checked compiler-only closure candidate through #329 signature/identity,
+#330 structured transfer/cleanup and #331 hostile-IR/resource evidence. Its exact bindings are in
+`M3_OWNED_CALL_CLOSURE_MATRIX.md`. Issues #273 and #275 retain complete match and non-indexed-
+borrow completion; #274 remains separately completed and #269 remains the parent. Verified
+instruction, cleanup and fault traces are not target execution. Runtime, backend, CLI and public
+activation remain open, so complete #84/#85/#86 support is not claimed.
 Protocol v4 is unchanged; projected forwarding, repeated calls, call recursion, owned aggregate
 call shapes, public borrow signatures and retained borrow authority remain later or unavailable
 child work. This adds no runtime,

@@ -141,11 +141,14 @@ reports it as `ZRYNA-M3014`; unresolved binding names report `ZRYNA-M3002`. Excl
 `ZRYNA-M3012`, and cumulative String-literal bytes are checked against the exact 8 MiB limit before
 lowering.
 
-M3 also admits the bounded #315 named-import call slice: explicit relative `.zry` aliases resolve
+M3 now completes the #272 internal owned-call boundary: explicit relative `.zry` aliases resolve
 only within the authenticated acyclic closure and retain the callee's canonical `FunctionId`.
 Dependency exports remain internal calls; only entry exports are public ABI candidates. Imported
-signatures are restricted to straight-line by-value `bool`, `i32`, and `String`; #272 remains open
-for nominal/container imports and broader control flow.
+signatures admit the complete sealed by-value ownership graph, including containers, aggregates,
+handles and finite indirection. Foreign nominal identity is preserved without adding type-import
+syntax; borrowed imports, owned public ABI, indirect calls and recursion remain excluded. The
+checked [owned-call closure matrix](../../docs/M3_OWNED_CALL_CLOSURE_MATRIX.md) binds source,
+structured-CFG, hostile-IR and resource evidence.
 
 The separate #278 mixed-result function route also prepares and commits fully initialized mutable
 mixed Struct/Enum/FixedArray/Vec root replacement. Its affine plan proves exact destination
@@ -177,8 +180,9 @@ the exact-type direct-local,
 final-return, or whole-root assignment Struct/FixedArray exceptions, general owned phi joins and
 owned loop-carried phi joins remain unavailable. The #271 route separately admits repeated/nested
 branches and loops, general scope-drop insertion, loop-body return and post-loop continuation;
-`break` and `continue` remain excluded. Owned String/Vec signatures remain limited to zero or one
-exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
+`break` and `continue` remain excluded. The legacy String/Vec selectors retain their zero/one-
+argument checkpoints, while the generic #272 route handles broader exact internal signatures.
+The legacy owned aggregate route is parameter-free, private, and straight-line;
 its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, one
 direct-local supported Struct/FixedArray subobject move, one final-return supported
 Struct/FixedArray subobject move, String-leaf clone, one direct-local

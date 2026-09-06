@@ -370,7 +370,7 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 | #279 | compositional ownership CFG core | #277/#278/#260 |
 | #270 | full generic owned composition, structural clone, ordinary generic Vec reads/replacement | #83/#277/#278, retaining #76–#81 |
 | #271 | checked compiler-only structured owned control flow and lexical cleanup closure candidate | #270/#279; integrated by #325/#326/#327 |
-| #272 | internal owned calls and inherited imported-function resolution | #270/#271 |
+| #272 | checked internal owned calls and imported-function closure candidate | #270/#271; integrated by #329/#330/#331 |
 | #273 | exhaustive enum matching and active-payload composition | #270/#271 |
 | #274 | ordinary dynamic fixed-array access using the indexed authority | #254/#270; coordinate #255 |
 | #275 | non-indexed owned/static/active-payload lexical borrowing | #82/#254/#270/#271/#272/#273 |
@@ -389,13 +389,15 @@ The current #270 integration reconciles #320's checked matrix with #321 handle-c
 transfers, #322 ordinary handle-aware Vec operations and #323 finite recursive composition.
 Exact source, hostile-IR and bounded resource/replay bindings make it a compiler-only closure
 candidate; full/ignored suites, preflight, M0/M2, independent review and hosted CI remain required
-merge gates. It does not complete #272/#273, #275, #269 or any target/runtime/public-profile work.
+merge gates. It does not complete #273, #275, #269 or any target/runtime/public-profile work.
 The cores use typed operation hooks without claiming source handle execution. Required #83
 payload, call, match and CFG cases could not wait for every source-completion parent. #271 now has a
 checked compiler-only closure matrix: #325 completes source routing and lexical state, #326 pins
 independent hostile-IR authority, and #327 integrates the #270 payload/fault and block/edge resource
 rows. Required full/ignored suites, preflight, M0/M2, review and hosted CI remain closure gates.
-This does not close #272/#273/#275/#269, execute handle behavior, add break/continue or exceptions,
+The checked #272 owned-call matrix integrates #329 signature/identity resolution, #330 structured
+transfer/cleanup and #331 hostile-IR/resource evidence. It does not close #273/#275/#269, execute
+runtime handle behavior, add break/continue or exceptions,
 or enable a runtime, backend, CLI or public profile.
 
 #254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
