@@ -4,6 +4,15 @@ impl Builder {
     pub(super) fn match_operand(&mut self, cloned: bool, operand: OperandKind) -> u32 {
         if matches!(
             operand,
+            OperandKind::IndexedArray
+                | OperandKind::IndexedVec
+                | OperandKind::IndexedOwnedArray
+                | OperandKind::IndexedOwnedVec
+        ) {
+            return self.indexed_match_operand(operand);
+        }
+        if matches!(
+            operand,
             OperandKind::StringClone | OperandKind::StringConcat | OperandKind::StringNamed
         ) {
             return self.string_match_operand(operand, cloned);

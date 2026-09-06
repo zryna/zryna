@@ -27,6 +27,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         let expression = self.expression(id)?;
         if graph.contains_match(expression.span.start, expression.span.end) {
             match expression.kind {
+                RawExpressionKind::Index { .. } => {
+                    return self.structured_indexed(id, id, ty, graph);
+                }
+                RawExpressionKind::Clone { value, .. }
+                    if matches!(self.expression(value)?.kind, RawExpressionKind::Index { .. }) =>
+                {
+                    return self.structured_indexed(id, value, ty, graph);
+                }
                 RawExpressionKind::Call { .. } => return self.structured_call(id, ty, graph),
                 RawExpressionKind::Clone { .. }
                     if ty.category == zryna_layout::TypeCategory::String =>

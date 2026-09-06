@@ -37,6 +37,20 @@ pub(super) fn parameters(
     {
         builder.formal_parameter(&mut parameters, exclusive);
     }
+    if matches!(
+        operand,
+        OperandKind::IndexedArray
+            | OperandKind::IndexedVec
+            | OperandKind::IndexedOwnedArray
+            | OperandKind::IndexedOwnedVec
+    ) {
+        builder.text(", ");
+        let start = builder.text.len();
+        let name = builder.name("items");
+        builder.text(": ");
+        let type_syntax = builder.indexed_container_type(operand);
+        parameters.push(RawParameterSyntax { span: builder.span(start), name, type_syntax });
+    }
     parameters
 }
 

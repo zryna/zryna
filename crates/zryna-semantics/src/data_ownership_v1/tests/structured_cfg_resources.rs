@@ -3,38 +3,13 @@ use super::super::structured_checkpoint::StructuredCheckpoint;
 use super::*;
 use crate::data_ownership_v1::Binding;
 use crate::data_ownership_v1::tests::structured_owned_fixture::{
-    Payload, call_match_fixture, formal_match_fixture, match_fixture, nested_match_fixture,
-    string_match_fixture, vec_match_fixture,
+    Payload, call_match_fixture, formal_match_fixture, indexed_match_fixture, match_fixture,
+    nested_match_fixture, string_match_fixture, vec_match_fixture,
 };
 use zryna_ir::data_ownership_v1 as ir;
 
-fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> raw::ValueDefinition {
-    let parameter = &lowerer.function.parameters[0];
-    let ty = semantic_type(
-        lowerer.file,
-        parameter.type_syntax,
-        lowerer.module,
-        lowerer.declarations,
-        lowerer.graph,
-        lowerer.node_types,
-        lowerer.errors,
-    )
-    .expect("exact parameter type");
-    let at = span(lowerer.input.sources(), parameter.span);
-    let value = raw::ValueDefinition { id: raw::ValueId(0), ty: ty.ir, span: at };
-    lowerer.constructor_types.record_parameter(&value).expect("dense parameter type");
-    lowerer.places.push(raw::Place {
-        id: raw::PlaceId(0),
-        ty: ty.ir,
-        span: at,
-        kind: raw::PlaceKind::Parameter(0),
-    });
-    lowerer.bindings.insert(
-        parameter.name.text.clone(),
-        Binding { ty, place: raw::PlaceId(0), mutable: false },
-    );
-    lowerer.owners.register_parameter(raw::PlaceId(0)).expect("genuine parameter owner");
-    lowerer.next_value = 1;
+fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> Vec<raw::ValueDefinition> {
+    let mut values = Vec::new();
     lowerer.mixed_function = true;
     if let Some(signature) = lowerer.catalog.modules[lowerer.module]
         .iter()
@@ -42,6 +17,33 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> raw::Val
         .find(|signature| signature.name == lowerer.function.name.text)
     {
         for (source_index, parameter) in signature.parameter_order.iter().enumerate() {
+            if let crate::data_ownership_v1::function_catalog::FunctionParameterOrder::Value(
+                index,
+            ) = parameter
+            {
+                let syntax = &lowerer.function.parameters[source_index];
+                let ty = signature.parameters[*index as usize];
+                let at = span(lowerer.input.sources(), syntax.span);
+                let value = raw::ValueDefinition { id: raw::ValueId(*index), ty: ty.ir, span: at };
+                lowerer.constructor_types.record_parameter(&value).expect("dense parameter type");
+                let place = raw::PlaceId(
+                    u32::try_from(lowerer.places.len()).expect("parameter place count"),
+                );
+                lowerer.places.push(raw::Place {
+                    id: place,
+                    ty: ty.ir,
+                    span: at,
+                    kind: raw::PlaceKind::Parameter(*index),
+                });
+                lowerer
+                    .bindings
+                    .insert(syntax.name.text.clone(), Binding { ty, place, mutable: false });
+                if !ty.is_copy() {
+                    lowerer.owners.register_parameter(place).expect("genuine owned parameter");
+                }
+                values.push(value);
+                continue;
+            }
             let crate::data_ownership_v1::function_catalog::FunctionParameterOrder::Borrow(index) =
                 parameter
             else {
@@ -61,12 +63,13 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> raw::Val
             lowerer.preparation_facts.next_borrow = borrow.0 + 1;
         }
     }
-    value
+    lowerer.next_value = u32::try_from(values.len()).expect("parameter value count");
+    values
 }
 
 #[test]
 fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
-    for shape in 0..7 {
+    for shape in 0..8 {
         for resource in 0..5 {
             for extra in [0, 1, usize::MAX] {
                 let (source, snapshot) = match shape {
@@ -76,13 +79,14 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                     3 => vec_match_fixture(true, true),
                     4 => formal_match_fixture(true),
                     5 => string_match_fixture(0),
-                    _ => string_match_fixture(1),
+                    6 => string_match_fixture(1),
+                    _ => indexed_match_fixture(false, true),
                 };
                 let errors = with_snapshot(&source, snapshot, |lowerer, result| {
                     let parameter = parameter(lowerer);
                     let initial = StructuredCheckpoint::capture(lowerer);
                     let pristine = lowerer
-                        .lower_structured_cfg(&[parameter], result)
+                        .lower_structured_cfg(&parameter, result)
                         .expect("pristine authenticated match");
                     let used = [
                         lowerer.next_value as usize,
@@ -121,7 +125,7 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                             &lowerer.preparation_facts
                         )
                     );
-                    let output = lowerer.lower_structured_cfg(&[parameter], result);
+                    let output = lowerer.lower_structured_cfg(&parameter, result);
                     if extra == 0 {
                         assert_eq!(output, Some(pristine));
                     } else {
@@ -146,7 +150,7 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                         lowerer.reserved_transitions = 0;
                         lowerer.preparation_facts.held_cleanup = [0, 0];
                         assert_eq!(
-                            lowerer.lower_structured_cfg(&[parameter], result),
+                            lowerer.lower_structured_cfg(&parameter, result),
                             Some(pristine),
                             "pristine same-state recovery"
                         );
@@ -191,4 +195,80 @@ fn structured_cfg_scratch_shares_authenticated_authority_and_stages_diagnostics(
         assert_eq!(staged.len(), 1);
     });
     assert!(errors.is_empty());
+}
+
+#[test]
+fn structured_indexed_handoff_rejects_wrong_ssa_type_without_changing_state() {
+    let (source, snapshot) = indexed_match_fixture(false, true);
+    let errors = with_snapshot(&source, snapshot, |lowerer, result| {
+        let parameters = parameter(lowerer);
+        let initial = StructuredCheckpoint::capture(lowerer);
+        let pristine = lowerer
+            .lower_structured_cfg(&parameters, result)
+            .expect("authenticated indexed baseline");
+        initial.restore(lowerer);
+        let index = lowerer
+            .function
+            .body
+            .expressions
+            .iter()
+            .position(|expression| {
+                matches!(expression.kind, zryna_syntax::v4::RawExpressionKind::Match { .. })
+            })
+            .expect("Match index");
+        let integer = lowerer
+            .node_types
+            .iter()
+            .flatten()
+            .find(|ty| ty.category == TypeCategory::I32)
+            .copied()
+            .expect("i32 type");
+        lowerer
+            .preparation_facts
+            .structured_values
+            .insert(u32::try_from(index).expect("expression id"), (raw::ValueId(0), integer));
+        let RawStatementKind::LocalDeclaration { initializer, .. } =
+            lowerer.function.body.statements[0].kind
+        else {
+            panic!("authenticated initializer")
+        };
+        let before = format!(
+            "{:?}",
+            (
+                &lowerer.preparation_facts,
+                lowerer.preparation_checkpoint(),
+                &lowerer.instructions,
+                &lowerer.places,
+                &lowerer.owners
+            )
+        );
+        for _ in 0..2 {
+            assert!(
+                super::super::constructor_preparation::PreparedValue::prepare(
+                    lowerer,
+                    initializer,
+                    result
+                )
+                .is_none()
+            );
+            assert_eq!(
+                format!(
+                    "{:?}",
+                    (
+                        &lowerer.preparation_facts,
+                        lowerer.preparation_checkpoint(),
+                        &lowerer.instructions,
+                        &lowerer.places,
+                        &lowerer.owners
+                    )
+                ),
+                before
+            );
+        }
+        lowerer.preparation_facts.structured_values.clear();
+        assert_eq!(lowerer.lower_structured_cfg(&parameters, result), Some(pristine));
+    });
+    assert_eq!(errors.len(), 2);
+    assert_eq!(errors[0], errors[1]);
+    assert_eq!(errors[0].code(), "ZRYNA-M3016");
 }

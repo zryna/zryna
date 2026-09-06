@@ -5,6 +5,8 @@ use zryna_syntax::v4::{RawDataDeclaration, RawDataDeclarationKind, RawEnumVarian
 mod callee;
 #[path = "structured_match_formal.rs"]
 mod formal;
+#[path = "structured_match_indexed.rs"]
+mod indexed;
 #[path = "structured_match_operands.rs"]
 mod operands;
 #[path = "structured_match_payloads.rs"]
@@ -156,6 +158,10 @@ enum OperandKind {
     StringClone,
     StringConcat,
     StringNamed,
+    IndexedArray,
+    IndexedVec,
+    IndexedOwnedArray,
+    IndexedOwnedVec,
 }
 
 impl OperandKind {
@@ -163,7 +169,12 @@ impl OperandKind {
         match self {
             Self::Plain => payload,
             Self::Vec => Payload::Vec,
-            Self::StringClone | Self::StringConcat | Self::StringNamed => Payload::String,
+            Self::StringClone
+            | Self::StringConcat
+            | Self::StringNamed
+            | Self::IndexedOwnedArray
+            | Self::IndexedOwnedVec => Payload::String,
+            Self::IndexedArray | Self::IndexedVec => Payload::I32,
             Self::Array
             | Self::Call
             | Self::FormalShared
@@ -181,6 +192,23 @@ impl OperandKind {
     fn call(self) -> bool {
         matches!(self, Self::Call | Self::FormalShared | Self::FormalExclusive | Self::Lexical)
     }
+}
+
+pub(in crate::data_ownership_v1) fn indexed_fixture(
+    vector: bool,
+    owned: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    build(
+        Payload::I32,
+        false,
+        true,
+        match (vector, owned) {
+            (false, false) => OperandKind::IndexedArray,
+            (true, false) => OperandKind::IndexedVec,
+            (false, true) => OperandKind::IndexedOwnedArray,
+            (true, true) => OperandKind::IndexedOwnedVec,
+        },
+    )
 }
 
 pub(in crate::data_ownership_v1) fn formal_fixture(

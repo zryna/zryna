@@ -266,6 +266,9 @@ impl Consumption<'_, '_, '_, '_> {
                 }
                 None
             }
+            Operation::StructuredCopy { expression, value } => {
+                Some(self.lowerer.consume_structured_copy(expression, value, step.ty))
+            }
             Operation::ReplaceProjection { place, value } => {
                 effects = self.replace_projection(place, value, step.ty, step.at);
                 None
@@ -337,9 +340,7 @@ impl Consumption<'_, '_, '_, '_> {
                 None
             }
             Operation::Cleanup { id, actions, prefix } => {
-                assert!(self.cleanups.len() < 2, "at most two cleanup events per admitted leaf");
-                self.lowerer.consume_prepared_cleanup(id, actions, prefix, step.at);
-                self.cleanups.push((id, prefix));
+                self.prepared_cleanup(id, actions, prefix, step.at);
                 None
             }
             Operation::GenericClonePrefix { id, owner, actions } => {
@@ -361,6 +362,18 @@ impl Consumption<'_, '_, '_, '_> {
         }
         assert_eq!(self.lowerer.preparation_checkpoint(), step.after, "prepared step effects");
         value
+    }
+
+    fn prepared_cleanup(
+        &mut self,
+        id: raw::CleanupPlanId,
+        actions: usize,
+        prefix: Option<raw::PlaceId>,
+        at: Span,
+    ) {
+        assert!(self.cleanups.len() < 2, "at most two cleanup events per admitted leaf");
+        self.lowerer.consume_prepared_cleanup(id, actions, prefix, at);
+        self.cleanups.push((id, prefix));
     }
 
     fn indexed_copy_storage(&mut self, place: raw::PlaceId, value: raw::ValueId, ty: Ty, at: Span) {

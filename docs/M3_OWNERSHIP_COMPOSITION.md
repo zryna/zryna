@@ -178,8 +178,8 @@ operands remain pending during arm failures and transfer only at the exact typed
 then derives exact CallTrap cleanup from reconciled post-argument owners in scratch, transferring
 owned arguments before the call cleanup. Nested FixedArray and two-function call fixtures repeat
 the checked-resource/recovery matrix. Vec growth failure retains every completed child in reverse
-completion order; its result is not yet pending. This is not #279 completion: indexed read
-scopes, the complete C7 interaction matrix and
+completion order; its result is not yet pending. This is not #279 completion: the remaining indexed
+composition boundaries, the complete C7 interaction matrix and
 independent hostile evidence remain; no source handle or runtime-execution support is claimed.
 
 Existing formal borrow parameters retain their exact sealed identity/access across Match edges,
@@ -199,6 +199,16 @@ state and byte facts before releasing its own exclusions. `structured_string_` t
 move/clone for named reads, arm/tail cleanup, read-only overlap, forbidden moves, post-operation
 release, deterministic diagnostics and replay. Clone/concat shapes join the checked-resource matrix.
 These exclusions do not grant IR borrow authority or extend lexical/indexed borrow lifetimes.
+
+`structured_indexed.rs` admits a Match in the first checked index of a named/static Array or Vec
+observation, including explicit owned element clone. An exact compiler-only container exclusion
+survives the arms; a typed Copy handoff reuses the once-evaluated joined index in the existing
+indexed preparation plan. Bounds and transient authority begin only after the join. The
+`structured_indexed_` tests pin Array/Vec Copy/owned paths, unchanged SSA index identity, one bounds
+site, hostile handoff rejection and pristine recovery; the resource matrix includes indexed clone.
+Fresh container Match operands are not admitted by this slice. Later-index and post-bounds RHS
+Match composition cannot carry transient authority under the current `I3011` contract; it requires
+separately verified indexed lifetime work in #255/#256/#271, not an end/reborrow workaround.
 
 ## C8: Upgrade-success edge signature
 

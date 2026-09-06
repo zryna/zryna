@@ -7,6 +7,7 @@ use super::PrivateOwnedAggregateLowerer;
 use super::constructor_resources::ConstructorCommitReservation;
 use super::expression_decisions::{ArrayDecision, ExpressionKind, StructDecision};
 use super::handle_preparation::{HandleFrame, HandleOperation, HandleReadFrame};
+use super::indexed_vec_preparation::IndexedObservation;
 use super::preparation_operations::PreparationContext;
 use super::preparation_plan::{Leaf, Operation, PreparationPlan};
 use super::preparation_plan::{StringOperation, StringRead};
@@ -174,9 +175,10 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         frames: &mut Vec<Frame<'f>>,
     ) -> Option<VisitOutcome> {
         self.visits = self.visits.checked_add(1)?;
-        if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-            self.prepared_observation(id, expected)?
-        {
+        if let IndexedObservation::Value(value) = self.structured_copy(id, expected)? {
+            return Some(VisitOutcome::Value(value));
+        }
+        if let IndexedObservation::Value(value) = self.prepared_observation(id, expected)? {
             return Some(VisitOutcome::Value(value));
         }
         let decision = self.decisions.classify_prepared(id, expected, self.state.summary)?;

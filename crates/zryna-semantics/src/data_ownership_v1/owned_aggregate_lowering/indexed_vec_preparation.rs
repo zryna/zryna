@@ -102,6 +102,21 @@ impl PreparationContext<'_, '_, '_, '_> {
             );
             return None;
         }
+        if !read
+            && state
+                .facts
+                .retained_indexed_reads
+                .iter()
+                .any(|region| availability.places_overlap(place, *region))
+        {
+            self.decisions.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "owned access conflicts with a retained indexed container",
+                "finish the indexed operand before consuming or mutating its container",
+            );
+            return None;
+        }
         if state.facts.active_borrows.values().any(|(region, access)| {
             availability.places_overlap(place, *region)
                 && (!read || *access == raw::BorrowAccess::Exclusive)

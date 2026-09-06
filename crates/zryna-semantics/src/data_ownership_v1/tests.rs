@@ -182,6 +182,7 @@ mod string_call_validation;
 mod string_core;
 mod struct_validation;
 mod structured_formal_source;
+mod structured_indexed_source;
 mod structured_match_source;
 pub(super) mod structured_owned_fixture;
 mod structured_owned_source;
