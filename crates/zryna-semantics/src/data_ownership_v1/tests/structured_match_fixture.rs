@@ -162,6 +162,8 @@ enum OperandKind {
     IndexedVec,
     IndexedOwnedArray,
     IndexedOwnedVec,
+    IndexedNestedArray,
+    IndexedNestedVec,
 }
 
 impl OperandKind {
@@ -174,7 +176,10 @@ impl OperandKind {
             | Self::StringNamed
             | Self::IndexedOwnedArray
             | Self::IndexedOwnedVec => Payload::String,
-            Self::IndexedArray | Self::IndexedVec => Payload::I32,
+            Self::IndexedArray
+            | Self::IndexedVec
+            | Self::IndexedNestedArray
+            | Self::IndexedNestedVec => Payload::I32,
             Self::Array
             | Self::Call
             | Self::FormalShared
@@ -208,6 +213,17 @@ pub(in crate::data_ownership_v1) fn indexed_fixture(
             (false, true) => OperandKind::IndexedOwnedArray,
             (true, true) => OperandKind::IndexedOwnedVec,
         },
+    )
+}
+
+pub(in crate::data_ownership_v1) fn indexed_nested_fixture(
+    vector: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    build(
+        Payload::I32,
+        false,
+        true,
+        if vector { OperandKind::IndexedNestedVec } else { OperandKind::IndexedNestedArray },
     )
 }
 

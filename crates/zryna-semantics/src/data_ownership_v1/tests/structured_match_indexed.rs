@@ -2,6 +2,31 @@ use super::*;
 
 impl Builder {
     pub(super) fn indexed_container_type(&mut self, kind: OperandKind) -> u32 {
+        if matches!(kind, OperandKind::IndexedNestedArray | OperandKind::IndexedNestedVec) {
+            let start = self.text.len();
+            let keyword_span = self.text("FixedArray");
+            let less_than_span = self.text("<");
+            let element = self.simple_indexed_type(matches!(kind, OperandKind::IndexedNestedVec));
+            let comma_span = self.text(",");
+            self.text(" ");
+            let length_span = self.text("2");
+            let greater_than_span = self.text(">");
+            let id = u32::try_from(self.types.len()).expect("nested container type count");
+            self.types.push(RawTypeSyntax {
+                span: self.span(start),
+                kind: RawTypeSyntaxKind::FixedArray {
+                    keyword_span,
+                    less_than_span,
+                    element,
+                    comma_span,
+                    length_span,
+                    length_spelling: "2".into(),
+                    length: 2,
+                    greater_than_span,
+                },
+            });
+            return id;
+        }
         let start = self.text.len();
         let vector = matches!(kind, OperandKind::IndexedVec | OperandKind::IndexedOwnedVec);
         let keyword_span = self.text(if vector { "Vec" } else { "FixedArray" });
@@ -41,6 +66,38 @@ impl Builder {
         id
     }
 
+    fn simple_indexed_type(&mut self, vector: bool) -> u32 {
+        let start = self.text.len();
+        let keyword_span = self.text(if vector { "Vec" } else { "FixedArray" });
+        let less_than_span = self.text("<");
+        let element = self.named_type("i32");
+        let kind = if vector {
+            RawTypeSyntaxKind::Vec {
+                keyword_span,
+                less_than_span,
+                argument: element,
+                greater_than_span: self.text(">"),
+            }
+        } else {
+            let comma_span = self.text(",");
+            self.text(" ");
+            let length_span = self.text("2");
+            RawTypeSyntaxKind::FixedArray {
+                keyword_span,
+                less_than_span,
+                element,
+                comma_span,
+                length_span,
+                length_spelling: "2".into(),
+                length: 2,
+                greater_than_span: self.text(">"),
+            }
+        };
+        let id = u32::try_from(self.types.len()).expect("inner container type count");
+        self.types.push(RawTypeSyntax { span: self.span(start), kind });
+        id
+    }
+
     pub(super) fn indexed_match_operand(&mut self, kind: OperandKind) -> u32 {
         let start = self.text.len();
         let clone = if matches!(kind, OperandKind::IndexedOwnedArray | OperandKind::IndexedOwnedVec)
@@ -52,7 +109,29 @@ impl Builder {
             None
         };
         let indexed_start = self.text.len();
-        let base = self.reference("items");
+        let mut base = self.reference("items");
+        if matches!(kind, OperandKind::IndexedNestedArray | OperandKind::IndexedNestedVec) {
+            let open_bracket_span = self.text("[");
+            let literal_start = self.text.len();
+            self.text("0");
+            let index = u32::try_from(self.expressions.len()).expect("static index expression");
+            self.expressions.push(RawExpressionSyntax {
+                span: self.span(literal_start),
+                kind: RawExpressionKind::I32Literal { spelling: "0".into() },
+            });
+            let close_bracket_span = self.text("]");
+            let nested = u32::try_from(self.expressions.len()).expect("static prefix expression");
+            self.expressions.push(RawExpressionSyntax {
+                span: self.span(indexed_start),
+                kind: RawExpressionKind::Index {
+                    base,
+                    open_bracket_span,
+                    index,
+                    close_bracket_span,
+                },
+            });
+            base = nested;
+        }
         let open_bracket_span = self.text("[");
         let index = self.matched(false);
         let close_bracket_span = self.text("]");

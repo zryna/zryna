@@ -43,6 +43,8 @@ pub(super) fn parameters(
             | OperandKind::IndexedVec
             | OperandKind::IndexedOwnedArray
             | OperandKind::IndexedOwnedVec
+            | OperandKind::IndexedNestedArray
+            | OperandKind::IndexedNestedVec
     ) {
         builder.text(", ");
         let start = builder.text.len();

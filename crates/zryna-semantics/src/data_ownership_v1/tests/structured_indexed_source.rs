@@ -78,3 +78,35 @@ fn structured_indexed_match_evaluates_once_before_the_only_bounds_site() {
         }
     }
 }
+
+#[test]
+fn structured_indexed_static_prefix_precedes_match_and_single_dynamic_bounds() {
+    for vector in [false, true] {
+        let (text, raw) = structured_owned_fixture::indexed_nested_fixture(vector);
+        let sources = sources_for(&text);
+        let syntax = verify_snapshot(raw, &sources).expect("authenticated nested Match index");
+        let program =
+            lower(pair_input(&syntax, &sources)).expect("static prefix then Match bounds");
+        let function =
+            program.modules().next().expect("module").functions().next().expect("function");
+        let blocks = function.blocks().collect::<Vec<_>>();
+        let continuation = blocks.last().expect("continuation");
+        let instructions = continuation.instructions().collect::<Vec<_>>();
+        assert_eq!(
+            blocks
+                .iter()
+                .flat_map(|block| block.instructions())
+                .filter(
+                    |instruction| instruction.kind() == VerifiedInstructionKind::BeginIndexedAccess
+                )
+                .count(),
+            1,
+            "the static prefix adds no runtime bounds operation"
+        );
+        let joined = continuation.parameters().next().expect("joined Match index").id();
+        assert_eq!(instructions[0].value_operands().collect::<Vec<_>>(), [joined]);
+        assert_eq!(instructions[0].kind(), VerifiedInstructionKind::BeginIndexedAccess);
+        assert_eq!(instructions[1].kind(), VerifiedInstructionKind::BorrowRead);
+        assert_eq!(instructions[2].kind(), VerifiedInstructionKind::EndBorrow);
+    }
+}

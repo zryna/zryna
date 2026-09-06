@@ -8,6 +8,8 @@ impl Builder {
                 | OperandKind::IndexedVec
                 | OperandKind::IndexedOwnedArray
                 | OperandKind::IndexedOwnedVec
+                | OperandKind::IndexedNestedArray
+                | OperandKind::IndexedNestedVec
         ) {
             return self.indexed_match_operand(operand);
         }

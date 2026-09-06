@@ -9,6 +9,7 @@ pub(in crate::data_ownership_v1) use match_fixture::call_fixture as call_match_f
 pub(in crate::data_ownership_v1) use match_fixture::fixture as match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::formal_fixture as formal_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::indexed_fixture as indexed_match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::indexed_nested_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::lexical_fixture as lexical_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::nested_fixture as nested_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::string_fixture as string_match_fixture;
