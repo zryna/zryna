@@ -181,7 +181,7 @@ pub(super) fn validate(
             Operation::CloneCapacity { aggregate } => {
                 clone_capacity(before, *aggregate, step.at, errors)?;
             }
-            Operation::StructuredCopy { .. }
+            Operation::StructuredValue { .. }
             | Operation::IndexedEnter { .. }
             | Operation::IndexedExit
             | Operation::CallTransfer { .. }

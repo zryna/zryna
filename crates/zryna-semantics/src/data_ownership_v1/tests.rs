@@ -127,6 +127,7 @@ mod cfg_upgrade_shapes;
 mod cfg_validation;
 mod common_fixture_support;
 mod conditional_root_borrows;
+mod continued_indexed_source;
 mod copy_calls;
 mod copy_match_expressions;
 mod copy_match_resources;

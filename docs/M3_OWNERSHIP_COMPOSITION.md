@@ -206,9 +206,15 @@ survives the arms; a typed Copy handoff reuses the once-evaluated joined index i
 indexed preparation plan. Bounds and transient authority begin only after the join. The
 `structured_indexed_` tests pin Array/Vec Copy/owned paths, unchanged SSA index identity, one bounds
 site, hostile handoff rejection and pristine recovery; the resource matrix includes indexed clone.
-Fresh container Match operands are not admitted by this slice. Later-index and post-bounds RHS
-Match composition cannot carry transient authority under the current `I3011` contract; it requires
-separately verified indexed lifetime work in #255/#256/#271, not an end/reborrow workaround.
+Later-index and post-bounds RHS Match now use the separately verified internal transient
+continuation contract in [M3_TRANSIENT_INDEXED_ACCESS.md](M3_TRANSIENT_INDEXED_ACCESS.md).
+Staged preparation preserves each completed bounds check, the exact live authority and original
+container while Match arms run; the final typed SSA handoff performs one read, clone or replacement
+and one end. Owned RHS ownership remains pending until replacement. Lexical authority still obeys
+I3011 edge prohibition. `continued_indexed_source` and the expanded structured resource matrix pin
+Array/Vec Copy/owned ordering, failure cleanup, exact/first-extra/overflow rollback and recovery.
+Fresh container Match operands are not admitted by this slice; no end/reborrow or target execution
+is claimed.
 
 ## C8: Upgrade-success edge signature
 

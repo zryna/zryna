@@ -175,7 +175,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         frames: &mut Vec<Frame<'f>>,
     ) -> Option<VisitOutcome> {
         self.visits = self.visits.checked_add(1)?;
-        if let IndexedObservation::Value(value) = self.structured_copy(id, expected)? {
+        if let IndexedObservation::Value(value) = self.structured_handoff(id, expected)? {
             return Some(VisitOutcome::Value(value));
         }
         if let IndexedObservation::Value(value) = self.prepared_observation(id, expected)? {

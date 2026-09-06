@@ -14,11 +14,18 @@ pub(super) struct JoinState {
     aliases: BTreeMap<String, super::preparation_plan::LexicalAlias>,
     reads: BTreeSet<raw::PlaceId>,
     indexed_reads: BTreeSet<raw::PlaceId>,
+    active: BTreeMap<raw::BorrowId, (raw::PlaceId, raw::BorrowAccess)>,
+    continued: BTreeSet<raw::BorrowId>,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn join_state(&mut self, at: Span) -> Option<JoinState> {
-        if !self.preparation_facts.active_borrows.is_empty() {
+        if self
+            .preparation_facts
+            .active_borrows
+            .keys()
+            .any(|id| !self.preparation_facts.continued_borrows.contains(id))
+        {
             self.errors.at(
                 "ZRYNA-M3017",
                 at,
@@ -28,6 +35,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             return None;
         }
         Some(JoinState {
+            active: self.preparation_facts.active_borrows.clone(),
+            continued: self.preparation_facts.continued_borrows.clone(),
             bindings: self.bindings.clone(),
             owners: self.owners.clone(),
             moved: self
@@ -68,7 +77,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.preparation_facts.aliases.clone_from(&state.aliases);
         self.preparation_facts.retained_string_reads.clone_from(&state.reads);
         self.preparation_facts.retained_indexed_reads.clone_from(&state.indexed_reads);
-        self.preparation_facts.active_borrows.clear();
+        self.preparation_facts.active_borrows.clone_from(&state.active);
+        self.preparation_facts.continued_borrows.clone_from(&state.continued);
     }
 
     pub(super) fn reconcile_join(&mut self, state: &JoinState, at: Span) -> Option<()> {
@@ -80,6 +90,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             || current.aliases != state.aliases
             || current.reads != state.reads
             || current.indexed_reads != state.indexed_reads
+            || current.active != state.active
+            || current.continued != state.continued
         {
             self.errors.at(
                 "ZRYNA-M3015",

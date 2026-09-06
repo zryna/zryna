@@ -159,7 +159,11 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             bytes: (kind == CallKind::String)
                 .then_some(super::super::super::owned_string_read::StringBytes::Unknown),
         };
-        let reservation = self.state.ledger().acquire_constructor(0, usize::from(!ty.is_copy()))?;
+        let reservation = self
+            .state
+            .ledger()
+            .acquire_constructor(0, usize::from(!ty.is_copy()))
+            .or_else(|| call_reservation_overflow(self.decisions.errors, at))?;
         let start = self.steps.len();
         self.push(
             Operation::CallEnter { signature, end: usize::MAX, arguments: Vec::new() },
@@ -271,6 +275,19 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         *arguments = frame.values;
         Some(emission.value)
     }
+}
+
+fn call_reservation_overflow<T>(
+    errors: &mut super::super::super::Errors<'_>,
+    at: Span,
+) -> Option<T> {
+    errors.at(
+        "ZRYNA-M3201",
+        at,
+        "call result resource reservation overflowed",
+        "reduce simultaneously reserved values, owners, or transitions",
+    );
+    None
 }
 
 fn generic_signature_supported(

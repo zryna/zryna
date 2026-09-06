@@ -13,6 +13,7 @@ use super::projection_topology::ProjectionDescriptor;
 
 #[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub(super) struct PreparationFacts {
+    pub(super) continued_borrows: BTreeSet<raw::BorrowId>,
     pub(super) structured_values: BTreeMap<u32, (raw::ValueId, Ty)>,
     pub(super) retained_indexed_reads: BTreeSet<raw::PlaceId>,
     pub(super) retained_string_reads: BTreeSet<raw::PlaceId>,
@@ -131,7 +132,7 @@ pub(super) enum Operation<'f> {
     DropTemporary {
         place: raw::PlaceId,
     },
-    StructuredCopy {
+    StructuredValue {
         expression: u32,
         value: raw::ValueId,
     },

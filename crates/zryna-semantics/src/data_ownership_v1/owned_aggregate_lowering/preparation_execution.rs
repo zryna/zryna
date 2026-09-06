@@ -266,8 +266,8 @@ impl Consumption<'_, '_, '_, '_> {
                 }
                 None
             }
-            Operation::StructuredCopy { expression, value } => {
-                Some(self.lowerer.consume_structured_copy(expression, value, step.ty))
+            Operation::StructuredValue { expression, value } => {
+                Some(self.lowerer.consume_structured_handoff(expression, value, step.ty))
             }
             Operation::ReplaceProjection { place, value } => {
                 effects = self.replace_projection(place, value, step.ty, step.at);

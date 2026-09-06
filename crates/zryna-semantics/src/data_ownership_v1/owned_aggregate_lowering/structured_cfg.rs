@@ -117,29 +117,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         self.release_transition();
                     }
                     scope.drop_credits = 0;
-                    let value = self.structured_value(value, result, graph)?;
-                    let mut ended: Vec<_> =
-                        self.preparation_facts.active_borrows.keys().copied().collect();
-                    ended.reverse();
-                    for borrow in ended {
-                        self.release_transition();
-                        if !self
-                            .emit_effect(statement_span, raw::InstructionKind::EndBorrow { borrow })
-                        {
-                            return None;
-                        }
-                        self.preparation_facts.active_borrows.remove(&borrow);
-                    }
-                    self.preparation_facts.aliases.retain(|_, alias| {
-                        self.preparation_facts.parameter_borrows.contains(&alias.borrow)
-                    });
-                    let cleanup = self.push_cleanup(statement_span, self.owners.owner(value))?;
-                    graph.terminate(
-                        self,
-                        statement_span,
-                        raw::Terminator::Return { value, cleanup },
-                    )?;
+                    self.structured_return(value, result, statement_span, graph)?;
                     fallthrough = false;
+                }
+                RawStatementKind::Assignment { target, value, .. }
+                    if (self.is_vec_index(target) || self.is_checked_array_index(target))
+                        && graph.contains_match(statement.span.start, statement.span.end) =>
+                {
+                    let ty = self.indexed_expression_type(target)?;
+                    self.structured_indexed_operation(target, value, ty, true, graph)?;
                 }
                 _ => {
                     if let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind
@@ -174,6 +160,31 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             }
         }
         self.finish_structured_scope(&scope, fallthrough)
+    }
+
+    fn structured_return(
+        &mut self,
+        value: u32,
+        result: Ty,
+        at: Span,
+        graph: &mut StructuredGraph,
+    ) -> Option<()> {
+        let value = self.structured_value(value, result, graph)?;
+        let mut ended: Vec<_> = self.preparation_facts.active_borrows.keys().copied().collect();
+        ended.reverse();
+        for borrow in ended {
+            self.release_transition();
+            if !self.emit_effect(at, raw::InstructionKind::EndBorrow { borrow }) {
+                return None;
+            }
+            self.preparation_facts.active_borrows.remove(&borrow);
+        }
+        self.preparation_facts
+            .aliases
+            .retain(|_, alias| self.preparation_facts.parameter_borrows.contains(&alias.borrow));
+        let cleanup = self.push_cleanup(at, self.owners.owner(value))?;
+        graph.terminate(self, at, raw::Terminator::Return { value, cleanup })?;
+        Some(())
     }
 
     fn finish_structured_scope(

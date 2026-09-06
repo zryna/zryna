@@ -162,7 +162,7 @@ impl PreparationContext<'_, '_, '_, '_> {
         Some((base, indices))
     }
 
-    fn finish_chained_access(
+    pub(super) fn finish_chained_access(
         &mut self,
         borrow: raw::BorrowId,
         ty: Ty,

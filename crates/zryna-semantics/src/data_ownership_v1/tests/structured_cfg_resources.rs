@@ -3,8 +3,9 @@ use super::super::structured_checkpoint::StructuredCheckpoint;
 use super::*;
 use crate::data_ownership_v1::Binding;
 use crate::data_ownership_v1::tests::structured_owned_fixture::{
-    Payload, call_match_fixture, formal_match_fixture, indexed_match_fixture, match_fixture,
-    nested_match_fixture, string_match_fixture, vec_match_fixture,
+    Payload, call_match_fixture, continued_indexed_fixture, formal_match_fixture,
+    indexed_match_fixture, match_fixture, nested_match_fixture, string_match_fixture,
+    vec_match_fixture,
 };
 use zryna_ir::data_ownership_v1 as ir;
 
@@ -69,7 +70,7 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> Vec<raw:
 
 #[test]
 fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
-    for shape in 0..8 {
+    for shape in 0..16 {
         for resource in 0..5 {
             for extra in [0, 1, usize::MAX] {
                 let (source, snapshot) = match shape {
@@ -80,7 +81,8 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                     4 => formal_match_fixture(true),
                     5 => string_match_fixture(0),
                     6 => string_match_fixture(1),
-                    _ => indexed_match_fixture(false, true),
+                    7 => indexed_match_fixture(false, true),
+                    _ => continued_indexed_fixture(shape & 1 != 0, shape & 2 != 0, shape & 4 != 0),
                 };
                 let errors = with_snapshot(&source, snapshot, |lowerer, result| {
                     let parameter = parameter(lowerer);
@@ -96,13 +98,7 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                         lowerer.cleanup_plans.len(),
                     ];
                     initial.restore(lowerer);
-                    let maximum = [
-                        ir::MAX_VALUES_PER_FUNCTION,
-                        ir::MAX_PLACES_PER_FUNCTION,
-                        ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION,
-                        ir::MAX_DROP_ACTIONS_PER_FUNCTION,
-                        ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
-                    ][resource];
+                    let maximum = resource_limit(resource);
                     let held =
                         if extra == usize::MAX { extra } else { maximum - used[resource] + extra };
                     match resource {
@@ -159,8 +155,13 @@ fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
                 if extra == 0 {
                     assert!(errors.is_empty());
                 } else {
-                    assert_eq!(errors.len(), 1);
+                    assert_eq!(
+                        errors.len(),
+                        1,
+                        "shape {shape}, resource {resource}, extra {extra}"
+                    );
                     assert_eq!(errors[0].code(), "ZRYNA-M3201");
+                    assert_call_overflow(shape, resource, extra, &source, &errors);
                 }
             }
         }
@@ -418,4 +419,45 @@ fn structured_indexed_handoff_ticket_is_consumed_once() {
         lowerer.reserved_transitions = 0;
     });
     assert_eq!(errors.len(), 1);
+}
+
+fn assert_call_overflow(
+    shape: usize,
+    resource: usize,
+    extra: usize,
+    source: &str,
+    errors: &[zryna_diagnostics::Diagnostic],
+) {
+    if (8..12).contains(&shape) && extra == usize::MAX && matches!(resource, 0 | 4) {
+        assert_eq!(
+            errors[0].message(),
+            if resource == 0 {
+                "call result resource reservation overflowed"
+            } else {
+                "call cleanup resource reservation overflowed"
+            }
+        );
+        assert_eq!(
+            errors[0].guidance(),
+            if resource == 0 {
+                "reduce simultaneously reserved values, owners, or transitions"
+            } else {
+                "reduce simultaneously reserved cleanup plans or actions"
+            }
+        );
+        let at = errors[0].primary_span().expect("source call span");
+        let text = "indexValue(offset, \"index\")";
+        let offset = source.find(text).expect("effectful index call");
+        assert_eq!((at.start() as usize, at.end() as usize), (offset, offset + text.len()));
+    }
+}
+
+fn resource_limit(resource: usize) -> usize {
+    [
+        ir::MAX_VALUES_PER_FUNCTION,
+        ir::MAX_PLACES_PER_FUNCTION,
+        ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION,
+        ir::MAX_DROP_ACTIONS_PER_FUNCTION,
+        ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
+    ][resource]
 }

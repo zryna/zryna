@@ -6,6 +6,8 @@ use zryna_syntax::v4::{RawElseSyntax, RawExpressionKind};
 mod match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::Payload;
 pub(in crate::data_ownership_v1) use match_fixture::call_fixture as call_match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::continued_indexed_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::continued_indexed_rejection_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::fixture as match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::formal_fixture as formal_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::indexed_fixture as indexed_match_fixture;

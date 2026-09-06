@@ -82,11 +82,18 @@ covers machine-integer overflow without pretending it is source execution.
 lexical exclusion, return/backedge rejection and owner-transfer exclusion.
 `transient_indexed_upgrade` tests both ordinary upgrade outcomes and count failure.
 
-This is the IR checkpoint for #279. Source lowering of Match in a later index or
-post-bounds replacement RHS remains a separate integration step. It must keep
-base/index evaluation once, each bounds check before the next index, and the
-complete bounds chain before RHS evaluation and final mutation. This checkpoint
-does not claim that source integration or backend execution is complete.
+The #279 source adapter stages named/static-container access through begin/project,
+expression continuation and finish. Later-index Match evaluates after preceding
+bounds; replacement RHS Match evaluates after the complete bounds chain. Exact
+Copy and owned SSA handoffs are consumed once without cloning or moving a container
+to resume it. Owned RHS results retain their pending owner until BorrowReplace.
+The existing first-checked-index route stays unchanged. Fresh container Match bases
+are not admitted by this adapter, and backend execution is not claimed.
+`continued_indexed_source` authenticates Array/Vec Copy/owned cases, a fallible
+index call before bounds, exact continuation identity, RHS failure cleanup and
+deterministic rejection/recovery. The structured scratch resource matrix includes
+all eight shapes across values, places, transitions, cleanup actions and plans,
+with exact, first-extra and checked-overflow cases and complete state rollback.
 
 ## Lexical finalization
 

@@ -9,6 +9,8 @@ use crate::data_ownership_v1::diagnostics::span;
 
 #[derive(Clone, Copy)]
 enum PreparationSite {
+    IndexedStep { source: u32, parent: Option<super::raw::BorrowId>, write: bool },
+    IndexedFinish { borrow: super::raw::BorrowId, replacement: bool },
     LexicalBegin { target: u32, referent: Ty, write: bool },
     LexicalReplacement { alias: super::super::preparation_plan::LexicalAlias },
     StaticReplacement { target: u32, at: super::Span },
@@ -20,6 +22,31 @@ enum PreparationSite {
 }
 
 impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_indexed_step(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        source: u32,
+        index: u32,
+        parent: Option<super::raw::BorrowId>,
+        write: bool,
+        integer: Ty,
+    ) -> Option<Self> {
+        Self::prepare_at(
+            lowerer,
+            index,
+            integer,
+            PreparationSite::IndexedStep { source, parent, write },
+        )
+    }
+
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_indexed_finish(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        id: u32,
+        ty: Ty,
+        borrow: super::raw::BorrowId,
+        replacement: bool,
+    ) -> Option<Self> {
+        Self::prepare_at(lowerer, id, ty, PreparationSite::IndexedFinish { borrow, replacement })
+    }
     pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_lexical_begin(
         lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
         target: u32,
@@ -156,22 +183,7 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
             );
             context.check_access(target, false, at)?;
         }
-        let result = match site {
-            PreparationSite::LexicalBegin { target, referent, write } => {
-                context.lexical_begin(target, referent, write)?
-            }
-            PreparationSite::LexicalReplacement { alias } => {
-                context.lexical_replacement(alias, id)?
-            }
-            PreparationSite::IndexedReplacement { target } => {
-                context.indexed_replacement(target, id, expected)?
-            }
-            PreparationSite::Push { vector, at } => context.vec_push(vector, id, expected, at)?,
-            PreparationSite::StaticReplacement { target, at } => {
-                context.static_replacement(target, id, expected, at)?
-            }
-            _ => context.walk(id, expected)?,
-        };
+        let result = site.result(&mut context, id, expected)?;
         if let PreparationSite::Replacement { target } = site {
             let at = span(
                 context.decisions.input.sources(),
@@ -222,12 +234,45 @@ impl<'l, 'a, 'f, 'e> PreparedValue<'l, 'a, 'f, 'e> {
 }
 
 impl PreparationSite {
+    fn result(
+        self,
+        context: &mut PreparationContext<'_, '_, '_, '_>,
+        id: u32,
+        expected: Ty,
+    ) -> Option<super::raw::ValueId> {
+        Some(match self {
+            PreparationSite::IndexedStep { source, parent, write } => {
+                context.continued_index_step(source, id, parent, write, expected)?
+            }
+            PreparationSite::IndexedFinish { borrow, replacement } => {
+                context.continued_index_finish(id, expected, borrow, replacement)?
+            }
+            PreparationSite::LexicalBegin { target, referent, write } => {
+                context.lexical_begin(target, referent, write)?
+            }
+            PreparationSite::LexicalReplacement { alias } => {
+                context.lexical_replacement(alias, id)?
+            }
+            PreparationSite::IndexedReplacement { target } => {
+                context.indexed_replacement(target, id, expected)?
+            }
+            PreparationSite::Push { vector, at } => context.vec_push(vector, id, expected, at)?,
+            PreparationSite::StaticReplacement { target, at } => {
+                context.static_replacement(target, id, expected, at)?
+            }
+            _ => context.walk(id, expected)?,
+        })
+    }
+
     fn route(
         self,
         lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>,
         expected: Ty,
     ) -> mixed_shape::PreparationRoute {
         match self {
+            Self::IndexedStep { .. } | Self::IndexedFinish { .. } => {
+                mixed_shape::PreparationRoute::MixedSummary
+            }
             Self::LexicalBegin { .. }
             | Self::LexicalReplacement { .. }
             | Self::IndexedReplacement { .. }

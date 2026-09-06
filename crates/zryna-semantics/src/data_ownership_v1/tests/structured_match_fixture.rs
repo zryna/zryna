@@ -3,6 +3,10 @@ use zryna_syntax::v4::{RawDataDeclaration, RawDataDeclarationKind, RawEnumVarian
 
 #[path = "structured_match_callee.rs"]
 mod callee;
+#[path = "continued_indexed_fixture.rs"]
+mod continued;
+pub(in crate::data_ownership_v1) use continued::fixture as continued_indexed_fixture;
+pub(in crate::data_ownership_v1) use continued::rejection_fixture as continued_indexed_rejection_fixture;
 #[path = "structured_match_formal.rs"]
 mod formal;
 #[path = "structured_match_indexed.rs"]
