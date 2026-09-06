@@ -337,11 +337,11 @@ fn private_vec_if_rejects_push_into_incoming_vec_before_rhs() {
     let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("outer Vec push must reject");
     let diagnostic = diagnostics
         .iter()
-        .find(|diagnostic| diagnostic.code() == "ZRYNA-M3015")
-        .expect("join-safety diagnostic");
+        .find(|diagnostic| diagnostic.code() == "ZRYNA-M3014")
+        .expect("immutable push diagnostic");
     assert_eq!(
         diagnostic.primary_span(),
-        Some(span(&sources, nth_untrusted_span(&source, "own", 1)))
+        Some(span(&sources, untrusted_range(&source, ("push", 0), (")", 4))))
     );
 }
 

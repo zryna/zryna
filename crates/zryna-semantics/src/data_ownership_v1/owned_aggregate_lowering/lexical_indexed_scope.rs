@@ -16,8 +16,7 @@ pub(super) struct Scope {
 }
 
 impl Scope {
-    pub(super) fn add_owned_binding(&mut self, name: &str, owner: raw::PlaceId) {
-        self.bindings.remove(name);
+    pub(super) fn add_owned_binding(&mut self, owner: raw::PlaceId) {
         self.owners.remove(&owner);
         self.drop_credits += 1;
     }
@@ -113,6 +112,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     pub(super) fn end_lexical_scope(&mut self, scope: &Scope) -> Option<()> {
+        self.end_scope(scope, true)
+    }
+
+    pub(super) fn end_structured_scope(&mut self, scope: &Scope) -> Option<()> {
+        self.end_scope(scope, false)
+    }
+
+    fn end_scope(&mut self, scope: &Scope, require_reserved_drops: bool) -> Option<()> {
         let at =
             span(self.input.sources(), self.function.body.blocks.get(scope.block as usize)?.span);
         let mut ended: Vec<_> = self
@@ -131,7 +138,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             .copied()
             .filter(|owner| !scope.owners.contains(owner))
             .collect();
-        assert!(dropped.len() <= scope.drop_credits, "each scoped owner reserves its drop");
+        assert!(
+            !require_reserved_drops || dropped.len() <= scope.drop_credits,
+            "each legacy scoped owner reserves its drop"
+        );
         for _ in 0..ended.len().checked_add(scope.drop_credits)? {
             self.release_transition();
         }

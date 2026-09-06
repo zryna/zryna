@@ -374,13 +374,13 @@ fn private_vec_loop_pushes_into_one_stable_outer_place_with_failure_cleanup() {
 }
 
 #[test]
-fn private_vec_mutation_loop_rejects_immutable_target_at_exact_reference() {
+fn private_vec_mutation_loop_rejects_immutable_target_at_exact_operation() {
     let (source, raw) = private_vec_push_loop_fixture_with_mutability(false);
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful immutable Vec loop");
     let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("immutable Vec must reject");
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
-    let target = nth_untrusted_span(&source, "outer", 1);
+    let target = untrusted_range(&source, ("push", 0), (")", 3));
     assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, target)));
 }

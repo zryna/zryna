@@ -285,7 +285,7 @@ fn private_string_mutation_loop_rejects_immutable_and_self_move_before_rhs() {
         let syntax = verify_snapshot(raw, &sources).expect("source-faithful mutation negative");
         let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("mutation must reject");
         assert_eq!(diagnostics.len(), 1);
-        assert_eq!(diagnostics[0].code(), "ZRYNA-M3015");
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3014");
         let target = nth_untrusted_span(
             &source,
             "outer",
@@ -299,15 +299,15 @@ fn private_string_mutation_loop_rejects_immutable_and_self_move_before_rhs() {
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful consuming-call negative");
     let diagnostics =
-        lower(pair_input(&syntax, &sources)).expect_err("incoming call move must reject");
+        lower(pair_input(&syntax, &sources)).expect_err("undeclared consuming call must reject");
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3015");
-    let argument = nth_untrusted_span(&source, "outer", 2);
-    assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, argument)));
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3002");
+    let callee = nth_untrusted_span(&source, "take", 0);
+    assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, callee)));
 }
 
 #[test]
-fn private_string_mutation_loop_finds_nested_consumers_but_allows_direct_reads() {
+fn private_string_mutation_loop_resolves_nested_callees_but_allows_direct_reads() {
     for replacement in [StringLoopReplacement::CloneCall, StringLoopReplacement::ConcatCall] {
         let (source, raw) = private_string_mutation_loop_fixture_with_options(true, replacement);
         let sources = sources_for(&source);
@@ -315,9 +315,9 @@ fn private_string_mutation_loop_finds_nested_consumers_but_allows_direct_reads()
         let diagnostics =
             lower(pair_input(&syntax, &sources)).expect_err("nested move must reject");
         assert_eq!(diagnostics.len(), 1);
-        assert_eq!(diagnostics[0].code(), "ZRYNA-M3015");
-        let inner = nth_untrusted_span(&source, "outer", 2);
-        assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, inner)));
+        assert_eq!(diagnostics[0].code(), "ZRYNA-M3002");
+        let callee = nth_untrusted_span(&source, "take", 0);
+        assert_eq!(diagnostics[0].primary_span(), Some(span(&sources, callee)));
     }
 
     for replacement in [StringLoopReplacement::CloneRead, StringLoopReplacement::ConcatRead] {

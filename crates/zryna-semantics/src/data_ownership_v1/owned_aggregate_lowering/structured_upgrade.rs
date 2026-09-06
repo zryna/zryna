@@ -190,12 +190,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         at: Span,
         graph: &mut StructuredGraph,
     ) -> Option<bool> {
-        if self
-            .bindings
+        let shadows_outer = self.bindings.contains_key(&binding.text);
+        let binding_collision = self.bindings.keys().any(|name| {
+            name.eq_ignore_ascii_case(&binding.text) && !(shadows_outer && name == &binding.text)
+        });
+        let alias_collision = self
+            .preparation_facts
+            .aliases
             .keys()
-            .chain(self.preparation_facts.aliases.keys())
-            .any(|name| name.eq_ignore_ascii_case(&binding.text))
-        {
+            .any(|name| name.eq_ignore_ascii_case(&binding.text));
+        if binding_collision || alias_collision {
             self.errors.at(
                 "ZRYNA-M3002",
                 span(self.input.sources(), binding.span),

@@ -2,15 +2,15 @@ use super::super::owned_string_lowering::PrivateStringLowerer;
 use super::*;
 
 #[test]
-fn private_string_loop_rejects_incoming_owner_move_at_reference_before_lowering() {
+fn private_string_loop_rejects_incoming_owner_move_at_loop_join() {
     let (source, raw) = private_string_loop_fixture_with_incoming_move(true);
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful incoming loop move");
     let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("incoming move must reject");
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].code(), "ZRYNA-M3015");
-    let primary = diagnostics[0].primary_span().expect("incoming reference span");
-    let expected = nth_untrusted_span(&source, "outer", 1);
+    let primary = diagnostics[0].primary_span().expect("loop join span");
+    let expected = untrusted_range(&source, ("while", 0), ("}", 0));
     assert_eq!((primary.start(), primary.end()), (expected.start, expected.end));
 }
 #[test]
@@ -20,7 +20,7 @@ fn private_string_loop_rejects_non_bool_condition_at_exact_reference() {
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful non-bool loop condition");
     let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("non-bool loop must reject");
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code(), "ZRYNA-M3012");
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3016");
     let primary = diagnostics[0].primary_span().expect("condition reference span");
     let expected = nth_untrusted_span(&source, "outer", 1);
     assert_eq!((primary.start(), primary.end()), (expected.start, expected.end));

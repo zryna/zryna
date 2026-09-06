@@ -212,7 +212,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         fallthrough: bool,
     ) -> Option<bool> {
         if fallthrough {
-            self.end_lexical_scope(scope)?;
+            self.end_structured_scope(scope)?;
         } else {
             for _ in 0..scope.drop_credits {
                 self.release_transition();
@@ -234,7 +234,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if !self.reserve_transition(at) {
             return None;
         }
-        scope.add_owned_binding(&name, binding.place);
+        scope.add_owned_binding(binding.place);
         self.bindings.insert(name, binding);
         self.structured_scope_from(block, result, graph, scope)
     }
