@@ -189,7 +189,7 @@ fn checked_type(
     Ok(record)
 }
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub(super) struct ConstructorValueTypes {
     types: Vec<raw::TypeId>,
     scanned_instructions: usize,
@@ -246,6 +246,20 @@ impl ConstructorValueTypes {
             return Err(ConstructorPlanError::WrongShape);
         }
         self.types.push(definition.ty);
+        Ok(())
+    }
+
+    pub(super) fn record_block_parameter(
+        &mut self,
+        instructions: &[raw::Instruction],
+        definition: &raw::ValueDefinition,
+    ) -> Result<(), ConstructorPlanError> {
+        let mut next = self.observed_snapshot(instructions)?;
+        if definition.id.0 as usize != next.types.len() {
+            return Err(ConstructorPlanError::WrongShape);
+        }
+        next.types.push(definition.ty);
+        *self = next;
         Ok(())
     }
 

@@ -130,29 +130,11 @@ impl VerifiedInstruction<'_> {
     pub fn failure_ended_borrows(self) -> impl ExactSizeIterator<Item = BorrowIdentity> {
         let mut active = Vec::new();
         if instruction_cleanup(&self.instruction.kind).is_some() {
-            active.extend(self.function.function.borrow_parameters.iter().map(|value| value.id));
-            for instruction in self.function.function.blocks[self.block_index]
-                .instructions
-                .iter()
-                .take(self.instruction_index)
-            {
-                match &instruction.kind {
-                    raw::InstructionKind::BeginBorrow(definition)
-                    | raw::InstructionKind::BeginIndexedBorrow { definition, .. }
-                    | raw::InstructionKind::BeginIndexedAccess { definition, .. } => {
-                        active.push(definition.id);
-                    }
-                    raw::InstructionKind::EndBorrow { borrow } => {
-                        active.retain(|id| id != borrow);
-                    }
-                    raw::InstructionKind::ProjectIndexedBorrow { parent, borrow, .. }
-                    | raw::InstructionKind::BindIndexedBorrow { parent, borrow } => {
-                        active.retain(|id| id != parent);
-                        active.push(*borrow);
-                    }
-                    _ => {}
-                }
-            }
+            active = self.function.borrows().active_before(
+                self.function.function,
+                self.block_index,
+                self.instruction_index,
+            );
         }
         let owner = self.function.id();
         active.into_iter().rev().map(move |id| BorrowIdentity { owner, index: id.0 })

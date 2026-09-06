@@ -319,9 +319,14 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #89 | fixed-oracle three-target conformance and resource gates             | #88                     | planned     |
 |   #90 | public profile activation, authenticated docs, website, and provenance | #89                     | planned     |
 
-The bounded #82/#120 checkpoint rejects dynamic-index and Vec-element source borrows. This does
-not implement or waive the normative complete-container overlap rule. The remaining M3 capability
-is explicitly tracked before complete target support and public activation:
+The historical #82/#120 checkpoint rejected dynamic-index and Vec-element source borrows.
+The current authenticated #255/#256 producer now uses #254 exact referent and conservative
+complete-container authority for shared reads and exclusive replacement, including Copy,
+String, aggregates, Shared/Weak and nested handle-containing elements. Named source, hostile-IR,
+cleanup and resource evidence is mapped in the
+[indexed source contract](M3_INDEXED_SOURCE_OPERATIONS.md#indexed-borrowing-acceptance-reconciliation-255256).
+The owning issues and required integration gates remain tracked independently of target support
+and public activation:
 
 | Issue | Normative completion work | Dependencies |
 | ---: | --- | --- |
@@ -332,7 +337,7 @@ is explicitly tracked before complete target support and public activation:
 Issues #84, #85, and #86 retain their existing dependencies and also require this chain before
 claiming complete M3 target support. #89/#90 remain conformance and activation gates, not owners
 of missing source semantics. Copy-only staged evidence cannot close generic owned-element
-requirements; any staged remainder needs explicit blocking work. These tracked gaps do not
+requirements; any staged remainder needs explicit blocking work. These source capabilities do not
 activate new syntax or a public profile, and do not certify all other normative M3 requirements
 complete. Bounded #122 closure must preserve the distinction and its actual verification gates.
 
@@ -372,7 +377,11 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 Stages #277/#278/#279 are separately closeable children of #269, not dependents of its closure.
 #259 freezes full Shared/Weak meaning and required payload/CFG contexts; #277 fixes reusable
 integration interfaces. #260 consumes #277; #261 consumes #278; #262 consumes #279 and implements
-actual WeakUpgrade source control flow. #264 verifies the complete #83 contract before #83 closes.
+actual WeakUpgrade source control flow. Its compile-time closure candidate covers authenticated
+addressable and temporary Weak operands, the complete frozen payload categories, required nested
+if/while/call/match composition, sealed successor ownership, exact diagnostics and bounded
+recovery. Target execution remains #263 work, and #264 verifies the complete #83 contract before
+#83 closes.
 The cores use typed operation hooks without claiming source handle execution. Required #83
 payload, call, match and CFG cases cannot wait for later #270–#273 closure. Full #270/#271 then
 integrate actual handles into broader generic behavior; no parent-completion dependency cycle is

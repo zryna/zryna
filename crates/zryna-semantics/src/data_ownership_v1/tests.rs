@@ -90,15 +90,17 @@ use super::{
     projected_subobject_return_budget_violation, semantic_preflight, span, vec_push_target_invalid,
 };
 use zryna_ir::data_ownership_v1::{
-    PlaceIdentity as FaultPlaceIdentity, ValueIdentity as FaultValueIdentity,
-    VerifiedActiveVariant, VerifiedBorrowAccess, VerifiedCallArgument, VerifiedCleanupRole,
-    VerifiedDropActionKind, VerifiedFunction, VerifiedInstruction as FaultVerifiedInstruction,
-    VerifiedInstructionKind, VerifiedPlaceKind, VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
+    BorrowIdentity as FaultBorrowIdentity, PlaceIdentity as FaultPlaceIdentity,
+    ValueIdentity as FaultValueIdentity, VerifiedActiveVariant, VerifiedBorrowAccess,
+    VerifiedCallArgument, VerifiedCleanupRole, VerifiedDropActionKind, VerifiedFunction,
+    VerifiedHandleAwareCloneSourceAuthority, VerifiedHandleCloneRecipeKind,
+    VerifiedInstruction as FaultVerifiedInstruction, VerifiedInstructionKind, VerifiedPlaceKind,
+    VerifiedTerminatorKind, VerifiedTrapIdentity, raw,
 };
 use zryna_ownership_runtime_abi::{
-    LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, VerifiedOwnershipRuntimeAbi,
-    VerifiedStatusDisposition, VerifiedStatusTrapIdentity, operation_accepts_status,
-    validate_failure_atomic_transition,
+    ControlState, LogicalOperation, MAX_VEC_ELEMENTS, RuntimeStatus, TransitionClaim,
+    VerifiedOwnershipRuntimeAbi, VerifiedStatusDisposition, VerifiedStatusTrapIdentity,
+    operation_accepts_status, validate_failure_atomic_transition, validate_transition,
 };
 use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap, Span as FaultSpan};
 use zryna_syntax::v4::{
@@ -121,9 +123,11 @@ mod borrow_forwarding_calls;
 mod borrow_parameter_calls;
 mod cfg_control_flow_budgets;
 mod cfg_owner_state;
+mod cfg_upgrade_shapes;
 mod cfg_validation;
 mod common_fixture_support;
 mod conditional_root_borrows;
+mod continued_indexed_source;
 mod copy_calls;
 mod copy_match_expressions;
 mod copy_match_resources;
@@ -134,8 +138,11 @@ mod expression_preflight;
 mod fault_oracle_support;
 mod fixed_array_partial_fixture_support;
 mod fixed_arrays;
+mod fresh_indexed_literal_source;
 mod function_catalog;
 mod generation_budgets;
+mod handle_fault_oracle;
+mod handle_fault_oracle_support;
 mod lexical_borrow_calls;
 mod loop_fixture_support;
 mod loop_root_borrows;
@@ -164,6 +171,8 @@ mod projected_aggregate_validation;
 mod projected_borrows;
 mod projected_string_assignment;
 mod projected_string_assignment_fixture_support;
+mod shared_weak_payload_closure;
+mod shared_weak_source;
 mod static_subobject_locals;
 mod static_subobject_returns;
 mod straight_root_borrows;
@@ -175,6 +184,12 @@ mod string_call_fixture_support;
 mod string_call_validation;
 mod string_core;
 mod struct_validation;
+mod structured_formal_source;
+mod structured_indexed_source;
+mod structured_match_source;
+pub(super) mod structured_owned_fixture;
+mod structured_owned_source;
+mod structured_string_source;
 mod terminal_owned_if;
 mod termination_validation;
 mod vec_assignment;
@@ -187,6 +202,11 @@ mod vec_fixture_support;
 mod vec_nested_preflight;
 mod vec_resource_budgets;
 mod vec_validation;
+mod weak_upgrade_composition;
+mod weak_upgrade_fault_oracle;
+mod weak_upgrade_payloads;
+mod weak_upgrade_source;
+mod weak_upgrade_state;
 
 use aggregate_fixture_support::{
     ARRAY_OOB_SOURCE, ARRAY_RESPONSE, ARRAY_VALID_SOURCE, ENUM_RESPONSE, ENUM_SOURCE,
@@ -480,6 +500,9 @@ mod explicit_indexed_rejections;
 mod explicit_indexed_siblings;
 mod explicit_indexed_source;
 mod fresh_vec_source;
+mod indexed_handle_regions;
+mod indexed_handle_rejections;
+mod indexed_handle_source;
 mod lexical_chained_composition;
 mod lexical_chained_source;
 mod ordinary_array_clone_base_source;

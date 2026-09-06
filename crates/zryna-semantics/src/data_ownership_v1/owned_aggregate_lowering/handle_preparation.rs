@@ -1,0 +1,183 @@
+use zryna_ir::data_ownership_v1::raw;
+use zryna_layout::TypeCategory;
+use zryna_source::Span;
+
+use super::Ty;
+use super::preparation_operations::PreparationContext;
+use super::preparation_plan::Leaf;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum HandleOperation {
+    SharedClone,
+    WeakDowngrade,
+    WeakClone,
+}
+
+pub(super) struct HandleFrame {
+    pub(super) result: Ty,
+    pub(super) at: Span,
+}
+
+pub(super) struct HandleReadFrame {
+    pub(super) operand: Ty,
+    pub(super) result: Ty,
+    pub(super) operation: HandleOperation,
+    pub(super) at: Span,
+}
+
+pub(super) enum HandleReadSelection {
+    Value(raw::ValueId),
+    Deferred(HandleReadFrame),
+}
+
+impl PreparationContext<'_, '_, '_, '_> {
+    pub(super) fn select_handle_read(
+        &mut self,
+        id: u32,
+        operand: Ty,
+        result: Ty,
+        operation: HandleOperation,
+        at: Span,
+    ) -> Option<HandleReadSelection> {
+        let addressable =
+            self.decisions.function.body.expressions.get(id as usize).is_some_and(|expression| {
+                matches!(
+                    expression.kind,
+                    zryna_syntax::v4::RawExpressionKind::Reference { .. }
+                        | zryna_syntax::v4::RawExpressionKind::FieldAccess { .. }
+                        | zryna_syntax::v4::RawExpressionKind::Index { .. }
+                )
+            });
+        if addressable {
+            return self
+                .handle_read(id, operand, result, operation, at)
+                .map(HandleReadSelection::Value);
+        }
+        Some(HandleReadSelection::Deferred(HandleReadFrame { operand, result, operation, at }))
+    }
+
+    fn available_handle(
+        &mut self,
+        source: super::super::type_model::OwnedAggregatePlace,
+        at: Span,
+    ) -> Option<()> {
+        let state = &self.state;
+        let availability = super::availability::AvailabilityView::new(
+            &state.owners,
+            &state.moved,
+            &state.partial,
+            |id| state.parent(id),
+        );
+        if !availability.projection_available(source.place, source.root)
+            || state.moved.iter().any(|moved| availability.places_overlap(*moved, source.place))
+        {
+            self.decisions.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "shared or weak handle is moved or unavailable",
+                "use one complete initialized handle before moving it",
+            );
+            return None;
+        }
+        self.check_access(source.place, true, at)
+    }
+
+    pub(super) fn handle_payload(&self, handle: Ty) -> Option<Ty> {
+        let payload = self.decisions.layouts.type_by_id(handle.layout)?.referenced_type()?;
+        self.decisions.node_types.iter().flatten().find(|ty| ty.layout == payload).copied()
+    }
+
+    pub(super) fn shared_for_weak(&self, weak: Ty) -> Option<Ty> {
+        let payload = self.handle_payload(weak)?;
+        self.decisions
+            .node_types
+            .iter()
+            .flatten()
+            .find(|candidate| {
+                candidate.category == TypeCategory::Shared
+                    && self.handle_payload(**candidate) == Some(payload)
+            })
+            .copied()
+    }
+
+    pub(super) fn handle_read(
+        &mut self,
+        id: u32,
+        operand: Ty,
+        result: Ty,
+        operation: HandleOperation,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        let operand_at = self.expression_span(id)?;
+        let source = self.resolve(id)?;
+        let valid = source.ty == operand
+            && match operation {
+                HandleOperation::SharedClone => {
+                    operand.category == TypeCategory::Shared && result == operand
+                }
+                HandleOperation::WeakClone => {
+                    operand.category == TypeCategory::Weak && result == operand
+                }
+                HandleOperation::WeakDowngrade => {
+                    operand.category == TypeCategory::Shared
+                        && result.category == TypeCategory::Weak
+                        && self.handle_payload(operand) == self.handle_payload(result)
+                }
+            };
+        if !valid {
+            self.decisions.errors.at(
+                "ZRYNA-M3013",
+                operand_at,
+                "shared or weak operation has the wrong exact handle type",
+                "clone one exact handle or downgrade Shared<T> to Weak<T>",
+            );
+            return None;
+        }
+        self.available_handle(source, operand_at)?;
+        let cleanup = self.reverse(result, at)?;
+        let leaf = match operation {
+            HandleOperation::SharedClone => Leaf::SharedClone { source: source.place, cleanup },
+            HandleOperation::WeakDowngrade => Leaf::WeakDowngrade { source: source.place, cleanup },
+            HandleOperation::WeakClone => Leaf::WeakClone { source: source.place, cleanup },
+        };
+        self.emit_leaf(leaf, result, at)
+    }
+
+    pub(super) fn temporary_handle_read(
+        &mut self,
+        value: raw::ValueId,
+        frame: &HandleReadFrame,
+    ) -> Option<raw::ValueId> {
+        let source = self.state.owners.owner(value)?;
+        let place = super::super::type_model::OwnedAggregatePlace {
+            ty: frame.operand,
+            place: source,
+            root: source,
+            mutable: false,
+            is_root: true,
+        };
+        self.available_handle(place, frame.at)?;
+        let cleanup = self.reverse(frame.result, frame.at)?;
+        let leaf = match frame.operation {
+            HandleOperation::SharedClone => Leaf::SharedClone { source, cleanup },
+            HandleOperation::WeakDowngrade => Leaf::WeakDowngrade { source, cleanup },
+            HandleOperation::WeakClone => Leaf::WeakClone { source, cleanup },
+        };
+        let result = self.emit_leaf(leaf, frame.result, frame.at)?;
+        self.drop_temporary(value, frame.operand, frame.at)?;
+        Some(result)
+    }
+
+    pub(super) fn shared_construct(
+        &mut self,
+        value: raw::ValueId,
+        result: Ty,
+        at: Span,
+    ) -> Option<raw::ValueId> {
+        if result.category != TypeCategory::Shared {
+            return None;
+        }
+        let cleanup = self.reverse(result, at)?;
+        self.emit_leaf(Leaf::SharedConstruct { value, cleanup }, result, at)
+    }
+}

@@ -26,6 +26,15 @@ impl OwnedCfgState {
         at: Span,
         errors: &mut Errors<'_>,
     ) -> Option<Vec<raw::Block>> {
+        self.finish_with_layouts(None, at, errors)
+    }
+
+    pub(in super::super) fn finish_with_layouts(
+        self,
+        context: Option<(&zryna_layout::VerifiedLayouts, &[raw::Place])>,
+        at: Span,
+        errors: &mut Errors<'_>,
+    ) -> Option<Vec<raw::Block>> {
         if self.arena.blocks.is_empty() {
             Self::shape_error(at, "owned CFG has no entry block", errors);
             return None;
@@ -80,8 +89,43 @@ impl OwnedCfgState {
             Self::shape_error(at, "owned CFG contains blocks disconnected from its entry", errors);
             return None;
         }
+        self.validate_edge_signatures(context, at, errors)?;
+        Some(self.arena.finish().expect("populated dense blocks checked"))
+    }
+
+    fn validate_edge_signatures(
+        &self,
+        context: Option<(&zryna_layout::VerifiedLayouts, &[raw::Place])>,
+        at: Span,
+        errors: &mut Errors<'_>,
+    ) -> Option<()> {
+        let mut shapes = std::collections::BTreeMap::new();
         for block in &self.arena.blocks {
             let terminator = block.terminator.as_ref().expect("terminated blocks checked");
+            let upgrade = if let raw::Terminator::WeakUpgradeBranch { weak, .. } = &terminator.kind
+            {
+                let shape = context.and_then(|(layouts, places)| {
+                    let place = places.get(usize::try_from(weak.0).ok()?)?;
+                    if place.id != *weak {
+                        return None;
+                    }
+                    *shapes.entry(place.ty).or_insert_with(|| {
+                        let ty = layouts.types().find(|ty| ty.id().index() == place.ty.0)?.id();
+                        zryna_ir::data_ownership_v1::WeakUpgradeShape::derive(layouts, ty)
+                    })
+                });
+                let Some(shape) = shape else {
+                    Self::shape_error(
+                        at,
+                        "owned CFG upgrade requires an exact sealed Weak shape",
+                        errors,
+                    );
+                    return None;
+                };
+                Some(raw::TypeId(shape.success_parameter_type().index()))
+            } else {
+                None
+            };
             let edges = match &terminator.kind {
                 raw::Terminator::Return { .. } | raw::Terminator::Trap { .. } => Vec::new(),
                 raw::Terminator::Jump(edge) => vec![edge],
@@ -95,11 +139,34 @@ impl OwnedCfgState {
                     vec![success, expired]
                 }
             };
-            for edge in edges {
+            for (ordinal, edge) in edges.into_iter().enumerate() {
                 let target = &self.arena.blocks
                     [usize::try_from(edge.target.0).expect("reserved target index")];
-                if edge.arguments.len() != target.parameters.len()
-                    || edge.arguments.iter().zip(&target.parameters).any(|(argument, parameter)| {
+                let parameters = if ordinal == 0
+                    && let Some(shared) = upgrade
+                {
+                    let Some((synthetic, ordinary)) = target.parameters.split_first() else {
+                        Self::shape_error(
+                            at,
+                            "owned CFG upgrade success lacks its Shared parameter",
+                            errors,
+                        );
+                        return None;
+                    };
+                    if synthetic.ty != shared {
+                        Self::shape_error(
+                            at,
+                            "owned CFG upgrade success has the wrong Shared parameter",
+                            errors,
+                        );
+                        return None;
+                    }
+                    ordinary
+                } else {
+                    &target.parameters
+                };
+                if edge.arguments.len() != parameters.len()
+                    || edge.arguments.iter().zip(parameters).any(|(argument, parameter)| {
                         usize::try_from(argument.0)
                             .ok()
                             .and_then(|index| self.value_types.get(index))
@@ -115,6 +182,6 @@ impl OwnedCfgState {
                 }
             }
         }
-        Some(self.arena.finish().expect("populated dense blocks checked"))
+        Some(())
     }
 }

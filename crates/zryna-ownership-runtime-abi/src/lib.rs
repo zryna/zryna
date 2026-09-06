@@ -10,6 +10,9 @@ use std::collections::BTreeSet;
 use sha2::{Digest, Sha256};
 use zryna_layout::{StorageTarget, TypeCategory, TypeId, TypeUniverseIdentity, VerifiedLayouts};
 
+pub mod control_model;
+pub use control_model::ControlState;
+
 /// Exact frozen ABI identifier.
 pub const OWNERSHIP_RUNTIME_V1_IDENTIFIER: &str = "zryna-ownership-runtime-v1";
 /// Exact serialized declaration schema version.
@@ -1006,20 +1009,6 @@ pub struct VerifiedControlLayout<'a> {
     record: &'a ControlLayoutRecord,
 }
 
-/// Complete logical state of one Shared/Weak control allocation.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct ControlState {
-    /// Strong-owner count.
-    pub strong_count: u32,
-    /// Explicit weak handles plus the implicit weak owner while strong owners exist or release is pending.
-    pub weak_count: u32,
-    /// Whether last-strong release has begun but not finished.
-    pub pending_last_strong: bool,
-    /// Whether the payload remains initialized.
-    pub payload_initialized: bool,
-    /// Whether the control allocation remains allocated.
-    pub allocated: bool,
-}
 impl VerifiedControlLayout<'_> {
     /// Returns the storage target.
     #[must_use]

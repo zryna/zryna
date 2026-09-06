@@ -165,11 +165,15 @@ source shapes may hit another resource limit before a nominal maximum is reachab
 walks over verified views prove scope topology, not execution by a JavaScript, WebAssembly, or
 native runtime. The final closure report must preserve these evidence distinctions.
 
-Normative indexed borrowing remains separately tracked: #254 owns the verified element-access
+Normative indexed borrowing has its own implemented authority and source route: #254 owns the verified element-access
 and complete-container conflict authority; #255 and #256 own dynamic fixed-array and Vec-element
-source producers. They must preserve the specification's referent, overlap, evaluation, bounds,
-and cleanup rules before complete target support and #89/#90 public activation. Closing the
-bounded #82 checkpoint does not implement or waive that chain.
+source producers. The current authenticated route covers Copy and owned shared observations and
+exclusive replacement, including direct Shared/Weak and nested handle-containing aggregates.
+Its named evidence and required final gates are mapped in the
+[indexed source contract](M3_INDEXED_SOURCE_OPERATIONS.md#indexed-borrowing-acceptance-reconciliation-255256).
+Exact referent, overlap, evaluation, bounds and cleanup rules remain prerequisites for complete
+target support and #89/#90 public activation. The historical bounded #82 checkpoint alone did not
+implement or waive that chain; current compiler evidence is not target execution.
 
 Issue #250 adds the following tests in
 `crates/zryna-ir/src/data_ownership_v1/tests/borrow_loop_nesting.rs`:
@@ -216,10 +220,12 @@ distinctions instead of treating every helper test as an executable target progr
 
 ## Issue #122 closure scope
 
-The bounded internal borrowing implementation is complete; Shared/Weak source production is the
-next dependency-ready work in #83, not an implemented capability. The tracked #254–#256 indexed
-borrowing chain and all runtime, target, driver, conformance and public-profile gates remain open.
-This checkpoint does not certify the entire normative M3 profile or enable a public CLI profile.
+The bounded internal borrowing implementation is complete. Subsequent #261 work adds authenticated
+Shared/Weak source production, and #254–#256 add exact indexed borrowing with owned-element clone
+and replacement. Those later capabilities and their verification receipts are distinct from #122
+closure. Runtime, target, driver, conformance and public-profile gates remain separate; none of
+these internal source checkpoints certifies the entire normative M3 profile or enables a public
+CLI profile.
 
 Issue #269 additionally tracks full normative source composition through #270–#275, including
 ordinary dynamic-array access and non-indexed owned/static/active-enum borrowing. #254–#256
@@ -515,13 +521,16 @@ proves projected move, replace, drop, direct-call, and hostile replay behavior.
 `projected_borrows_preserve_exact_static_paths_and_disjoint_authority` and
 `overlapping_shared_parent_and_child_keep_independent_verified_authority` prove admitted static
 access; `projected_borrow_exclusions_are_exact_ordered_and_deterministic` pins the rejected dynamic
-and Vec source forms. These tests do not claim implemented full-container dynamic/Vec borrowing;
-that remains the normative rule in `DATA_OWNERSHIP_V1.md` sections 5 and 9, not a new static-only rule.
+and Vec source forms. These historical tests do not themselves prove full-container dynamic/Vec
+borrowing; the separate #255/#256 producer and indexed evidence now implement that normative rule
+in `DATA_OWNERSHIP_V1.md` sections 5 and 9 without making it static-only.
 
 This checkpoint adds no runtime address, pointer, lifetime token, garbage collection, ABI,
 backend, driver route, CLI selection, target artifact, or public profile. Dynamic index reasoning,
-Vec/enum projected borrowing, non-Copy referents, stored references, and lifetime shortening remain
-unavailable.
+Vec/enum projected borrowing and non-Copy referents lay outside the historical #120 route.
+The later indexed producer now supplies dynamic array/Vec access and exact owned referents.
+Stored references and lifetime shortening remain excluded. Broader enum and
+non-indexed borrowing composition retains its own acceptance work.
 
 ## Issue #121 loop-edge checkpoint
 

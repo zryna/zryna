@@ -1,8 +1,7 @@
 # M3 ownership composition evidence
 
-Status: Issue #277 planned generic evidence and integration matrix, with the internal #278
-constructor-preparation and #296 mixed-construction work described below; not implemented generic
-source capability.
+Status: Issue #277's generic evidence and integration matrix with implemented internal ownership
+composition checkpoints described below. No public profile or target execution is enabled.
 Read the [eight interface contracts](M3_OWNERSHIP_COMPOSITION.md) and
 [Shared/Weak evidence](M3_SHARED_WEAK_EVIDENCE.md). Normative language/ABI authority remains
 unchanged. Existing tests below are located evidence, not newly executed by this document.
@@ -15,7 +14,7 @@ named IR file. The declarations and named tests below are also checked against t
 
 | Existing declaration | Reuse and missing interface |
 | --- | --- |
-| `type_model.rs::map_node_types` | Sealed identity mapping; does not map Shared/Weak or establish general recursive-indirection mapping |
+| `type_model.rs::map_node_types` | Sealed identity mapping includes admitted Shared/Weak instances and finite recursive nominal values through indirection; it grants no runtime control identity |
 | `owner_state.rs::OwnerState` and `OwnerDelta` | Pending order/value association/effects; not complete masks, variants, borrow or CFG provenance |
 | `owned_lowering_resources.rs::OwnedCleanupAccounting` | Exact excluded owner and reserved cleanup costs; needs generic site/shape composition |
 | `owned_cfg_state.rs::OwnedCfgState` | Dense arenas/reservations; `finish` requires upgrade-success adaptation, not a substitute for independent IR |
@@ -335,7 +334,15 @@ ordinary observation, transient child transfer and persistent lexical authority.
 
 Lexical chained borrowing now uses explicit infallible binding after the transient chain;
 it does not consume another lexical/formal alias. Fresh mutation and borrowing fresh temporaries
-remain excluded. Shared/Weak source production still depends on #260/#261. Complete gates and
+remain excluded. The #260/#261 handle authorities now also feed authenticated Array/Vec lexical
+fixtures in `indexed_handle_source.rs`: direct Shared/Weak and nested handle-containing
+Struct/Enum/FixedArray/Vec referents clone and replace through their exact issued authority.
+`indexed_handle_rejections.rs` pins complete diagnostics and recovery; `indexed_handle_regions.rs`
+checks static siblings, compatible root/element borrows and Vec growth after lexical restoration.
+`indexed_handle_resources.rs` separately injects private cleanup and transition counters to prove
+exact/first-extra, both cleanup-addition overflows, unchanged state and valid retry.
+The [indexed acceptance mapping](M3_INDEXED_SOURCE_OPERATIONS.md#indexed-borrowing-acceptance-reconciliation-255256)
+locates the complete evidence families without treating raw opaque slots as source support. Complete gates and
 independent review remain required; verified cleanup descriptors are not runtime fault execution,
 backend completion or public activation. Located ignored tests must actually run before they
 are reported as boundary execution evidence.
@@ -388,8 +395,8 @@ a larger cohesive module is allowed with a documented rationale. Minimize actual
 | #278 | `owned_operation_planning.rs`, `owned_operation_lowering/` children for constructors/projections/clone/replacement/calls | No handle count semantics, upgrade syntax or second verifier |
 | #279 | `owned_cfg_state.rs` adapter, `owned_block_lowering/` scope/branch/loop/match/continuation children | No source handle operations or dependence on #262 |
 | #260 | Separate bounded IR/ABI operation/control verification and hostile model fixtures | No generic source producer or executed runtime |
-| #261 | `shared_weak_lowering/` expressions/type adapter and real handle leaves in #278 | No duplicate aggregate/Vec/drop core |
-| #262 | `shared_weak_lowering/upgrade.rs`, narrow adapter to #279/#260 continuation/outcomes | No second CFG verifier or reusable upgrade ticket |
+| #261 | `owned_aggregate_lowering/` handle preparation/type adapter and real handle leaves over #278 | No duplicate aggregate/Vec/drop core or target count execution |
+| #262 | `owned_aggregate_lowering/structured_upgrade.rs`, narrow adapter to #279/#260 continuation/outcomes | No second CFG verifier or reusable upgrade ticket |
 
 One designated integrator owns shared type mapping, `owner_state.rs`, `owned_cfg_state.rs`, cleanup
 accounting and actual dispatcher/registration files at a time. Independent workers may own distinct

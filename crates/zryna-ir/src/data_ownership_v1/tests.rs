@@ -7,14 +7,17 @@ use std::collections::BTreeSet;
 mod borrow_index_work;
 mod borrow_loop_nesting;
 mod borrow_resource_boundaries;
+mod copy_enum_join;
 mod generic_clone_fixture;
 mod generic_clone_hostile;
 mod generic_clone_positive;
 mod generic_clone_projection;
+mod generic_enum_payload_move;
 mod generic_static_refinement;
 mod generic_static_transfer;
 mod generic_vec_hostile;
 mod generic_vec_observation;
+mod handle_aware_clone;
 mod indexed_access;
 mod indexed_access_copy_storage;
 mod indexed_access_resources;
@@ -38,6 +41,10 @@ mod mixed_replacement_authority_fixture;
 mod named_import_function_ids;
 mod opaque_handle_slots;
 mod opaque_handle_slots_fixture;
+mod shared_weak_authority;
+mod transient_indexed_edges;
+mod transient_indexed_resources;
+mod transient_indexed_upgrade;
 
 use super::{
     Errors, MAX_ACTIVE_BORROWS_PER_FUNCTION, MAX_AGGREGATE_OPERANDS, MAX_BLOCK_PARAMETERS,

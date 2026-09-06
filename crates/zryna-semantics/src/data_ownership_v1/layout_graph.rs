@@ -24,6 +24,8 @@ pub(super) struct Decl {
 struct TypeInterners {
     arrays: BTreeMap<(u32, u64), raw_layout::NodeId>,
     vectors: BTreeMap<u32, raw_layout::NodeId>,
+    shared: BTreeMap<u32, raw_layout::NodeId>,
+    weak: BTreeMap<u32, raw_layout::NodeId>,
 }
 
 fn storage_type_syntax(file: &syntax::SourceUnit, mut id: u32) -> u32 {
@@ -269,6 +271,7 @@ fn add_root(
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn resolve_graph_type(
     file: &syntax::SourceUnit,
     id: u32,
@@ -332,6 +335,37 @@ fn resolve_graph_type(
                 kind: raw_layout::TypeKind::Vec { element },
             });
             interners.vectors.insert(element.0, id);
+            Some(id)
+        }
+        RawTypeSyntaxKind::Shared { argument, .. } | RawTypeSyntaxKind::Weak { argument, .. } => {
+            let payload = resolve_graph_type(
+                file,
+                *argument,
+                module,
+                declarations,
+                graph,
+                interners,
+                errors,
+            )?;
+            let (interner, shared) = match ty.kind {
+                RawTypeSyntaxKind::Shared { .. } => (&mut interners.shared, true),
+                RawTypeSyntaxKind::Weak { .. } => (&mut interners.weak, false),
+                _ => unreachable!("matched handle type"),
+            };
+            if let Some(id) = interner.get(&payload.0).copied() {
+                return Some(id);
+            }
+            let id = raw_layout::NodeId(u32::try_from(graph.types.len()).ok()?);
+            graph.types.push(raw_layout::TypeNode {
+                id,
+                span: None,
+                kind: if shared {
+                    raw_layout::TypeKind::Shared { payload }
+                } else {
+                    raw_layout::TypeKind::Weak { payload }
+                },
+            });
+            interner.insert(payload.0, id);
             Some(id)
         }
         RawTypeSyntaxKind::Missing => {
@@ -404,6 +438,12 @@ pub(super) fn semantic_type(
             }
             raw_layout::TypeKind::Vec { element } => {
                 interners.vectors.insert(element.0, node.id);
+            }
+            raw_layout::TypeKind::Shared { payload } => {
+                interners.shared.insert(payload.0, node.id);
+            }
+            raw_layout::TypeKind::Weak { payload } => {
+                interners.weak.insert(payload.0, node.id);
             }
             _ => {}
         }

@@ -65,6 +65,8 @@ impl Builder<'_> {
         let mut copied: RawTypeSyntax = serde_json::from_value(json).expect("shifted type");
         match &mut copied.kind {
             RawTypeSyntaxKind::Vec { argument, .. }
+            | RawTypeSyntaxKind::Shared { argument, .. }
+            | RawTypeSyntaxKind::Weak { argument, .. }
             | RawTypeSyntaxKind::FixedArray { element: argument, .. } => {
                 *argument = self.copied_type(*argument, delta);
             }
@@ -186,68 +188,94 @@ impl Builder<'_> {
     }
     fn action(&mut self, element: u32, action: Action) -> u32 {
         let start = self.position();
-        let kind =
-            if matches!(action, Action::Replace | Action::ReplaceClone | Action::OwnerReplace) {
-                let target = self.reference(if matches!(action, Action::OwnerReplace) {
-                    "items"
-                } else {
-                    "loan"
-                });
-                self.text(" ");
-                let equals_span = self.text("=");
-                self.text(" ");
-                let value = if matches!(action, Action::OwnerReplace) {
-                    self.cloned("items")
-                } else if matches!(action, Action::ReplaceClone) {
-                    self.cloned("next")
-                } else {
-                    self.reference("next")
-                };
-                RawStatementKind::Assignment {
-                    target,
-                    equals_span,
-                    value,
-                    semicolon_span: self.text(";"),
-                }
-            } else {
-                let keyword_span = self.text("const");
-                self.text(" ");
-                let name =
-                    self.name(if matches!(action, Action::Escape) { "escaped" } else { "seen" });
-                self.text(": ");
-                let selected = if matches!(action, Action::OwnerMove) {
-                    let RawStatementKind::LocalDeclaration { type_syntax, .. } =
-                        self.body.statements[0].kind
-                    else {
-                        panic!("container local");
-                    };
-                    type_syntax
-                } else {
-                    element
-                };
-                let type_syntax = self.ty(selected);
-                self.text(" ");
-                let equals_span = self.text("=");
-                self.text(" ");
-                let initializer = if matches!(action, Action::OwnerMove) {
-                    self.reference("items")
-                } else if matches!(action, Action::Clone | Action::Escape) {
-                    self.cloned("loan")
-                } else if matches!(action, Action::Call) {
-                    calls::call(self)
-                } else {
-                    self.reference("loan")
-                };
-                RawStatementKind::LocalDeclaration {
+        if matches!(action, Action::GrowthInside | Action::GrowthAfter) {
+            let keyword_span = self.text("push");
+            let open_paren_span = self.text("(");
+            let vector = self.reference("items");
+            let comma_span = self.text(",");
+            self.text(" ");
+            let value = self.reference("next");
+            let close_paren_span = self.text(")");
+            let expression = self.expression(
+                start,
+                RawExpressionKind::VecPush {
                     keyword_span,
-                    mutable: false,
-                    name,
-                    type_syntax,
-                    equals_span,
-                    initializer,
-                    semicolon_span: self.text(";"),
-                }
+                    open_paren_span,
+                    vector,
+                    comma_span,
+                    value,
+                    close_paren_span,
+                },
+            );
+            let semicolon_span = self.text(";");
+            return self.statement(
+                start,
+                RawStatementKind::ExpressionStatement { expression, semicolon_span },
+            );
+        }
+        let kind = if matches!(
+            action,
+            Action::Replace | Action::WrongOwnedType | Action::ReplaceClone | Action::OwnerReplace
+        ) {
+            let target = self.reference(if matches!(action, Action::OwnerReplace) {
+                "items"
+            } else {
+                "loan"
+            });
+            self.text(" ");
+            let equals_span = self.text("=");
+            self.text(" ");
+            let value = if matches!(action, Action::OwnerReplace) {
+                self.cloned("items")
+            } else if matches!(action, Action::ReplaceClone) {
+                self.cloned("next")
+            } else {
+                self.reference("next")
             };
+            RawStatementKind::Assignment {
+                target,
+                equals_span,
+                value,
+                semicolon_span: self.text(";"),
+            }
+        } else {
+            let keyword_span = self.text("const");
+            self.text(" ");
+            let name = self.name(if matches!(action, Action::Escape) { "escaped" } else { "seen" });
+            self.text(": ");
+            let selected = if matches!(action, Action::OwnerMove) {
+                let RawStatementKind::LocalDeclaration { type_syntax, .. } =
+                    self.body.statements[0].kind
+                else {
+                    panic!("container local");
+                };
+                type_syntax
+            } else {
+                element
+            };
+            let type_syntax = self.ty(selected);
+            self.text(" ");
+            let equals_span = self.text("=");
+            self.text(" ");
+            let initializer = if matches!(action, Action::OwnerMove) {
+                self.reference("items")
+            } else if matches!(action, Action::Clone | Action::Escape) {
+                self.cloned("loan")
+            } else if matches!(action, Action::Call) {
+                calls::call(self)
+            } else {
+                self.reference("loan")
+            };
+            RawStatementKind::LocalDeclaration {
+                keyword_span,
+                mutable: false,
+                name,
+                type_syntax,
+                equals_span,
+                initializer,
+                semicolon_span: self.text(";"),
+            }
+        };
         self.statement(start, kind)
     }
     pub(super) fn lexical(
@@ -284,7 +312,7 @@ impl Builder<'_> {
                 };
                 self.alias(type_syntax, false, None, "whole", true)
             }
-            Action::Escape => self.action(element, Action::Clone),
+            Action::Escape | Action::GrowthAfter => self.action(element, Action::Clone),
             _ => self.action(element, action),
         });
         let close_brace_span = self.text("}");
@@ -298,7 +326,7 @@ impl Builder<'_> {
             at(open_brace_span.start, close_brace_span.end);
         self.text(" ");
         self.body.blocks[0].statements = vec![0, 1, statement];
-        if matches!(action, Action::Escape) {
+        if matches!(action, Action::Escape | Action::GrowthAfter) {
             let escaped = self.action(element, action);
             self.body.blocks[0].statements.push(escaped);
         }

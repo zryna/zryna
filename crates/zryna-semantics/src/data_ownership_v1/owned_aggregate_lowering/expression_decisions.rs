@@ -53,6 +53,9 @@ pub(super) enum ExpressionKind<'f> {
     StringConcat { arguments: &'f [u32], callee: Span },
     Call { arguments: &'f [u32], callee: &'f syntax::RawIdentifierSyntax },
     AggregateClone(u32),
+    HandleClone(u32),
+    Shared(u32),
+    Downgrade(u32),
     Struct(StructDecision),
     Array(ArrayDecision<'f>),
     Vec(ArrayDecision<'f>),
@@ -105,6 +108,7 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
         })
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn classify_prepared(
         &mut self,
         id: u32,
@@ -151,7 +155,24 @@ impl<'f> ExpressionDecisions<'_, 'f, '_> {
             {
                 ExpressionKind::StringClone(*value)
             }
+            RawExpressionKind::Clone { value, .. }
+                if expected.is_some_and(|ty| {
+                    matches!(ty.category, TypeCategory::Shared | TypeCategory::Weak)
+                }) =>
+            {
+                ExpressionKind::HandleClone(*value)
+            }
             RawExpressionKind::Clone { value, .. } => ExpressionKind::AggregateClone(*value),
+            RawExpressionKind::Shared { value, .. }
+                if expected.is_some_and(|ty| ty.category == TypeCategory::Shared) =>
+            {
+                ExpressionKind::Shared(*value)
+            }
+            RawExpressionKind::Downgrade { value, .. }
+                if expected.is_some_and(|ty| ty.category == TypeCategory::Weak) =>
+            {
+                ExpressionKind::Downgrade(*value)
+            }
             RawExpressionKind::Call { callee, arguments, .. }
                 if expected.is_none_or(|ty| ty.category == TypeCategory::String)
                     && callee.text == "concat" =>

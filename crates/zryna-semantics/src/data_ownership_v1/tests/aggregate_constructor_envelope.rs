@@ -39,6 +39,15 @@ pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_snapshot(
     snapshot: RawProjectSyntaxSnapshot,
     exercise: impl FnOnce(&mut PrivateOwnedAggregateLowerer<'_, '_, '_>, Ty),
 ) -> Vec<Diagnostic> {
+    with_snapshot_function(source, snapshot, 0, exercise)
+}
+
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_snapshot_function(
+    source: &str,
+    snapshot: RawProjectSyntaxSnapshot,
+    function_index: usize,
+    exercise: impl FnOnce(&mut PrivateOwnedAggregateLowerer<'_, '_, '_>, Ty),
+) -> Vec<Diagnostic> {
     let sources = fixtures::sources(source);
     let syntax = verify_snapshot(snapshot, &sources).expect("authenticated source fixture");
     let input = fixtures::input(&syntax, &sources);
@@ -56,7 +65,7 @@ pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn with_snapshot(
         &mut errors,
     );
     let file = &syntax.files()[0];
-    let function = &file.functions()[0];
+    let function = &file.functions()[function_index];
     let result = semantic_type(
         file,
         function.result_type,

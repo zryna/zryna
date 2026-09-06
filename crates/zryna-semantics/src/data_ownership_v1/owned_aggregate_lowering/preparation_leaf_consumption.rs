@@ -55,7 +55,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         assert_eq!(actual, id, "prepared projection identity");
     }
 
-    pub(super) fn consume_prepared_leaf(
+    #[allow(clippy::too_many_lines)]
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn consume_prepared_leaf(
         &mut self,
         leaf: Leaf<'_>,
         ty: Ty,
@@ -78,7 +79,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             Leaf::StringConcat { bytes, .. } => bytes.known(),
             _ => None,
         };
-        let emission = match leaf {
+        let shared_value = match &leaf {
+            Leaf::SharedConstruct { value, .. } => Some(*value),
+            _ => None,
+        };
+        let mut emission = match leaf {
             Leaf::BorrowRead(borrow) => {
                 self.emit_recorded(ty, at, raw::InstructionKind::BorrowRead { borrow })
             }
@@ -91,6 +96,15 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 ty,
                 at,
                 raw::InstructionKind::GenericCloneBorrow {
+                    borrow,
+                    cleanup,
+                    prefix_cleanup: prefix,
+                },
+            ),
+            Leaf::HandleAwareIndexedClone { borrow, cleanup, prefix } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::HandleAwareCloneBorrow {
                     borrow,
                     cleanup,
                     prefix_cleanup: prefix,
@@ -129,7 +143,39 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     prefix_cleanup: prefix,
                 },
             ),
+            Leaf::HandleAwareClone { source, cleanup, prefix } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::HandleAwareClonePlace {
+                    place: source,
+                    cleanup,
+                    prefix_cleanup: prefix,
+                },
+            ),
+            Leaf::SharedConstruct { value, cleanup } => {
+                self.emit_recorded(ty, at, raw::InstructionKind::SharedConstruct { value, cleanup })
+            }
+            Leaf::SharedClone { source, cleanup } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::SharedClone { place: source, cleanup },
+            ),
+            Leaf::WeakDowngrade { source, cleanup } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::WeakDowngrade { place: source, cleanup },
+            ),
+            Leaf::WeakClone { source, cleanup } => self.emit_recorded(
+                ty,
+                at,
+                raw::InstructionKind::WeakClone { place: source, cleanup },
+            ),
         }?;
+        if let Some(value) = shared_value
+            && self.owners.owner(value).is_some()
+        {
+            emission.owners.push(self.owners.transfer(value)?);
+        }
         for delta in &emission.owners {
             super::super::super::super::owner_state::apply_owner_delta(
                 &mut self.preparation_facts.string_bytes,
@@ -201,13 +247,21 @@ pub(super) fn check_cleanup_link(
         }
         Leaf::AggregateClone { cleanup, prefix, .. }
         | Leaf::IndexedClone { cleanup, prefix, .. }
-        | Leaf::GenericClone { cleanup, prefix, .. } => {
+        | Leaf::HandleAwareIndexedClone { cleanup, prefix, .. }
+        | Leaf::GenericClone { cleanup, prefix, .. }
+        | Leaf::HandleAwareClone { cleanup, prefix, .. } => {
             let owner = raw::PlaceId(u32::try_from(places).expect("prepared clone owner identity"));
             assert_eq!(
                 events,
                 &[(*cleanup, None), (*prefix, Some(owner))],
                 "clone cleanup role linkage"
             );
+        }
+        Leaf::SharedConstruct { cleanup, .. }
+        | Leaf::SharedClone { cleanup, .. }
+        | Leaf::WeakDowngrade { cleanup, .. }
+        | Leaf::WeakClone { cleanup, .. } => {
+            assert_eq!(events, &[(*cleanup, None)], "handle failure cleanup linkage");
         }
         _ => assert!(events.is_empty(), "infallible leaf has no cleanup events"),
     }

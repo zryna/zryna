@@ -57,6 +57,11 @@ impl<'a> Errors<'a> {
     pub(super) fn is_empty(&self) -> bool {
         self.diagnostics.is_empty()
     }
+    pub(super) fn append(&mut self, other: Self) {
+        for diagnostic in other.diagnostics {
+            self.push(diagnostic);
+        }
+    }
     pub(super) fn len(&self) -> usize {
         self.diagnostics.len()
     }

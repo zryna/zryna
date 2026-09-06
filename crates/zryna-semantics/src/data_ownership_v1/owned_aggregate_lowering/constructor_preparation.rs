@@ -6,6 +6,8 @@ use super::super::owned_constructor_plan::ConstructorKind;
 use super::PrivateOwnedAggregateLowerer;
 use super::constructor_resources::ConstructorCommitReservation;
 use super::expression_decisions::{ArrayDecision, ExpressionKind, StructDecision};
+use super::handle_preparation::{HandleFrame, HandleOperation, HandleReadFrame};
+use super::indexed_vec_preparation::IndexedObservation;
 use super::preparation_operations::PreparationContext;
 use super::preparation_plan::{Leaf, Operation, PreparationPlan};
 use super::preparation_plan::{StringOperation, StringRead};
@@ -99,6 +101,8 @@ enum Frame<'f> {
     Visit(u32, Option<Ty>),
     Scalar(scalar_scope::ScalarFrame),
     Constructor(ConstructorFrame<'f>),
+    Handle(HandleFrame),
+    HandleRead(HandleReadFrame),
     String(StringFrame),
     Read(u32, Ty),
     ReadResult(Ty, Span),
@@ -155,7 +159,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         }))
     }
 
-    fn expression_span(&self, id: u32) -> Option<Span> {
+    pub(super) fn expression_span(&self, id: u32) -> Option<Span> {
         let expression = self.decisions.function.body.expressions.get(usize::try_from(id).ok()?)?;
         Some(crate::data_ownership_v1::diagnostics::span(
             self.decisions.input.sources(),
@@ -163,6 +167,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         ))
     }
 
+    #[allow(clippy::too_many_lines)]
     fn visit(
         &mut self,
         id: u32,
@@ -170,9 +175,10 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
         frames: &mut Vec<Frame<'f>>,
     ) -> Option<VisitOutcome> {
         self.visits = self.visits.checked_add(1)?;
-        if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-            self.prepared_observation(id, expected)?
-        {
+        if let IndexedObservation::Value(value) = self.structured_handoff(id, expected)? {
+            return Some(VisitOutcome::Value(value));
+        }
+        if let IndexedObservation::Value(value) = self.prepared_observation(id, expected)? {
             return Some(VisitOutcome::Value(value));
         }
         let decision = self.decisions.classify_prepared(id, expected, self.state.summary)?;
@@ -235,6 +241,31 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                 return Some(VisitOutcome::Deferred);
             }
             ExpressionKind::AggregateClone(id) => self.aggregate_clone(id, ty, at),
+            ExpressionKind::HandleClone(id) => {
+                let operation = if ty.category == zryna_layout::TypeCategory::Shared {
+                    HandleOperation::SharedClone
+                } else {
+                    HandleOperation::WeakClone
+                };
+                return self.visit_handle_read(id, ty, ty, operation, at, frames);
+            }
+            ExpressionKind::Shared(id) => {
+                let payload = self.handle_payload(ty)?;
+                frames.push(Frame::Handle(HandleFrame { result: ty, at }));
+                frames.push(Frame::Visit(id, Some(payload)));
+                return Some(VisitOutcome::Deferred);
+            }
+            ExpressionKind::Downgrade(id) => {
+                let shared = self.shared_for_weak(ty)?;
+                return self.visit_handle_read(
+                    id,
+                    shared,
+                    ty,
+                    HandleOperation::WeakDowngrade,
+                    at,
+                    frames,
+                );
+            }
             ExpressionKind::Call { .. } => unreachable!("call frame entered"),
             ExpressionKind::Struct(decision) => {
                 frames.push(self.enter(
@@ -265,26 +296,6 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             }
         };
         Some(VisitOutcome::Value(value?))
-    }
-
-    fn prepared_observation(
-        &mut self,
-        id: u32,
-        expected: Option<Ty>,
-    ) -> Option<super::indexed_vec_preparation::IndexedObservation> {
-        if self.state.summary {
-            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-                self.lexical_alias_read(id, expected)?
-            {
-                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
-            }
-            if let super::indexed_vec_preparation::IndexedObservation::Value(value) =
-                self.indexed_read(id, expected)?
-            {
-                return Some(super::indexed_vec_preparation::IndexedObservation::Value(value));
-            }
-        }
-        Some(super::indexed_vec_preparation::IndexedObservation::Unselected)
     }
 
     // Keep the iterative frame dispatcher together so result handoff order stays explicit.
@@ -362,6 +373,12 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                         result = Some(self.finish(frame)?);
                     }
                 }
+                Frame::Handle(frame) => {
+                    result = Some(self.shared_construct(result.take()?, frame.result, frame.at)?);
+                }
+                Frame::HandleRead(frame) => {
+                    result = Some(self.temporary_handle_read(result.take()?, &frame)?);
+                }
                 Frame::String(mut frame) => {
                     if frame.waiting {
                         frame.reads.push(read_result.take()?);
@@ -412,6 +429,11 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
     }
 }
 
+#[path = "handle_frame_dispatch.rs"]
+mod handle_frame_dispatch;
+#[path = "preparation_observation.rs"]
+mod preparation_observation;
+
 // The exclusive borrow binds preparation and consumption to one real lowerer state.
 // Rejection drops scratch metadata only; no rollback of real arenas or cache is needed.
 pub(super) struct PreparedValue<'l, 'a, 'f, 'e> {
@@ -439,6 +461,9 @@ mod scalar_private_controls;
 #[cfg(test)]
 #[path = "../tests/scalar_resource_controls.rs"]
 mod scalar_resource_controls;
+#[cfg(test)]
+#[path = "../tests/shared_weak_resources.rs"]
+mod shared_weak_resources;
 #[path = "preparation_value.rs"]
 mod value;
 pub(super) use local_commit::PreparedLocal;
@@ -451,6 +476,9 @@ mod generic_static_resources;
 #[cfg(test)]
 #[path = "../tests/generic_vec_resources.rs"]
 mod generic_vec_resources;
+#[cfg(test)]
+#[path = "../tests/indexed_handle_resources.rs"]
+mod indexed_handle_resources;
 #[cfg(test)]
 #[path = "../tests/lexical_indexed_resources.rs"]
 mod lexical_indexed_resources;

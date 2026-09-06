@@ -11,7 +11,7 @@ an allocator, public profile selection or completion of M3.
 | Source operation | Required authority |
 | --- | --- |
 | Ordinary checked array Copy read | checked indexed begin, `BorrowRead`, end |
-| Explicit clone of an owned indexed element | checked begin, canonical `GenericCloneBorrow`, end |
+| Explicit clone of an owned indexed element | checked begin, canonical `GenericCloneBorrow` or `HandleAwareCloneBorrow`, end |
 | Ordinary checked array replacement | checked exclusive begin, complete RHS, `BorrowWrite`/`BorrowReplace`, end |
 | Lexical `Borrow<T>` / `BorrowMut<T>` | exact referent and access, persistent scoped authority |
 | Nested lexical indexed borrow | transient checked chain, then infallible `BindIndexedBorrow` into a scoped alias |
@@ -47,6 +47,10 @@ mutable assignment targets.
 Owned elements cannot be implicitly copied or moved out. An explicit clone retains the source,
 produces one distinct owner and uses the same recursive initialized-prefix cleanup as ordinary
 generic clone. Replacement retains the container's initialized range and creates no hole.
+Handle-containing referents use the distinct handle-aware recipe: Shared and Weak leaves clone
+their counts, never their payloads. Direct handle referents and Struct/Enum/FixedArray/Vec graphs
+containing handles use the same exact lexical authority and `BorrowReplace` commit. A formal
+borrow retains caller-owned authority rather than inventing a callee-local source root.
 
 ## Lexical identity and cleanup
 
@@ -96,17 +100,17 @@ label their injected counters separately from successful authenticated source pr
 
 Final acceptance still requires the complete declared issue matrix, applicable hostile IR and
 resource proofs, documentation/contracts, preflight, M0/M2 and required Linux/Windows checks.
-Passing focused examples alone does not close any of these issues. Shared/Weak source producers,
+Passing focused examples alone does not close any of these issues. Shared/Weak transition authority,
 broader ownership CFG, backend execution and public activation retain their existing separate
 requirements; this document does not waive their interaction obligations.
 
 ## Outstanding full-issue requirements
 
-This batch is not by itself a closure claim for #255, #256 or #274. The current source adapter
-accepts the supported non-handle graph. Shared/Weak source producers remain owned by
-#260/#261, and lexical borrow and Vec producer completion remains owned by #255/#256.
-These separate obligations do not expand #274's ordinary fixed-array acceptance criteria;
-raw opaque-slot tests do not discharge the separate handle-source requirements.
+The source adapter consumes the #260/#261 Shared/Weak authorities as well as the non-handle
+operation core. The #255/#256 reconciliation below includes authenticated handle source evidence;
+raw opaque-slot tests alone would not discharge that obligation. Final closure still requires the
+complete integrated verification receipts, not only this focused evidence. These obligations do
+not expand #274's ordinary fixed-array acceptance criteria.
 Fresh and chained ordinary FixedArray/Vec access use the explicit transient adapter above, and
 nested lexical access from named containers finalizes that transient chain with `BindIndexedBorrow`.
 Fresh Vec observation reuses one real owned temporary, even for Copy elements; it ends access
@@ -115,6 +119,36 @@ independent element ownership or intermediate clones. Arbitrary expression-base 
 borrowing a fresh temporary and fresh
 mutation are not implied. These boundaries and the complete required gates must remain explicit
 during acceptance reconciliation rather than be treated as completed generic support.
+
+### Indexed borrowing acceptance reconciliation (#255/#256)
+
+Both producers use one exact referent/whole-container-conflict implementation. The named evidence
+is split by responsibility rather than by duplicating array and Vec lowering:
+
+| Acceptance | Executable evidence |
+| --- | --- |
+| Copy and owned reads, writes and lexical restoration | `explicit_indexed_source`, `explicit_indexed_additional`, `indexed_handle_source` |
+| Direct Shared/Weak and nested handle-containing Struct/Enum/FixedArray/Vec elements | `indexed_handle_source_shared_and_exclusive_clones_preserve_exact_authority`, `indexed_handle_source_replacement_prepares_rhs_before_exact_referent_drop` |
+| Exact caller/formal access and cleanup | `explicit_indexed_calls`, `indexed_handle_source_calls_preserve_caller_owned_formal_clone_and_replacement` |
+| Bounds, empty Vec/zero-length array, signed indices, effect ordering and chained containers | `explicit_indexed_additional`, `checked_chain_source`, `indexed_handle_source` |
+| Static/dynamic siblings, compatible shared roots, owner exclusion and Vec growth restoration | `explicit_indexed_regions`, `explicit_indexed_siblings`, `indexed_handle_regions` |
+| Exact diagnostic spans/messages, deterministic rejection and valid recovery | `indexed_handle_rejections`, `explicit_indexed_call_rejections` |
+| Independent forged authority, type, ownership, initialized-mask and cleanup rejection | IR `indexed_borrow_hostile`, `indexed_borrow_owned`, `indexed_borrow_refinement`, `indexed_access`, `handle_aware_clone` |
+| Exact/first-extra resource admission, checked overflow and pristine retry | `lexical_indexed_resources`, `indexed_handle_resources`, IR `indexed_borrow_resources`, `indexed_access_resources` |
+
+The handle source matrix authenticates v4 syntax before lowering, then inspects mandatory verified
+IR. Clone-failure cleanup retains the complete source container and unwinds the unpublished
+destination prefix first. Replacement tests check the dedicated old-referent drop authority,
+never a whole-container `DropPlace`; a failed RHS retains both the container and its separate
+source. Vec reserve failure after lexical end likewise retains the original Vec and prepared
+element, with no moved-element mask.
+
+Resource tests inject explicitly labelled private accounting counters after an independently
+successful authenticated control. They prove arithmetic/frontier rejection and unchanged
+preparation state, not that an enormous source program or target allocator executed. Both reverse
+cleanup accumulation and indexed-clone prefix accumulation diagnose checked arithmetic overflow
+before consuming preparation. Executed count/allocation faults remain #263 and downstream target
+work; no public profile, returned borrow, pointer or runtime no-alias optimization is enabled.
 
 ### Ordinary fixed-array acceptance reconciliation (#274)
 

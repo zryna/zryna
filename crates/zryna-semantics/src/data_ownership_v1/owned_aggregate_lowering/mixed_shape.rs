@@ -35,7 +35,10 @@ pub(super) fn supported(ty: Ty, layouts: &layout::VerifiedLayouts) -> bool {
                 }
                 pending.push(element);
             }
-            TypeCategory::Shared | TypeCategory::Weak => return false,
+            TypeCategory::Shared | TypeCategory::Weak => {
+                let Some(payload) = record.referenced_type() else { return false };
+                pending.push(payload);
+            }
         }
     }
     true

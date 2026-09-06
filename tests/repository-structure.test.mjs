@@ -229,3 +229,66 @@ test('diagnostics and recovery are deterministic and checker never mutates input
   f.write('src/main.rs', lines(599));
   assert.equal(f.check().ok, true);
 });
+
+test('squashed adoption works in a fresh full clone without the bootstrap object', t => {
+  const f = fixture(t);
+  // The reviewed branch reduced the file before its policy was squash-adopted.
+  f.write('src/main.rs', lines(550));
+  f.save();
+  const tree = git(f.root, ['rev-parse', 'HEAD^{tree}']).trim();
+  const squash = git(f.root, ['commit-tree', tree, '-m', 'Squash adopted policy']).trim();
+  git(f.root, ['checkout', '-qb', 'adopted', squash]);
+  const cloned = join(f.root, '..', `${f.root.split(/[\\/]/).at(-1)}-clone`);
+  t.after(() => rmSync(cloned, { recursive: true, force: true }));
+  git(f.root, ['clone', '--no-local', '--single-branch', '--branch', 'adopted', f.root, cloned]);
+  assert.throws(() => git(cloned, ['cat-file', '-e', f.anchor]), /authority unavailable/);
+  const check = () => checkRepository({ root: cloned, base: squash, today });
+  assert.equal(check().ok, true);
+  assert.deepEqual(check(), check());
+  writeFileSync(join(cloned, 'src/main.rs'), lines(551));
+  assert.match(check().messages.join('\n'), /exceeds 550/);
+  writeFileSync(join(cloned, 'src/main.rs'), lines(550));
+  git(cloned, ['mv', 'src/main.rs', 'src/renamed.rs']);
+  writeFileSync(join(cloned, 'docs/CODE_NAVIGATION.md'), '[source](../src/renamed.rs)\n');
+  assert.equal(check().ok, true);
+  writeFileSync(join(cloned, 'src/renamed.rs'), lines(551));
+  assert.match(check().messages.join('\n'), /exceeds 550/);
+  writeFileSync(join(cloned, 'src/renamed.rs'), lines(550));
+  assert.equal(check().ok, true);
+});
+
+test('adopted inventory and anchor cannot be changed even in a later comparison commit', t => {
+  for (const mutate of [
+    p => { p.baseline[0].lines = 601; },
+    p => { p.baseline[0].production = false; },
+    p => { p.anchor = 'a'.repeat(40); },
+  ]) {
+    const f = fixture(t);
+    mutate(f.policy);
+    f.savePolicy();
+    assert.throws(() => f.check(), /baseline differs|anchor differs/);
+    f.save();
+    assert.throws(() => f.check(), /differs from original trusted policy adoption/);
+  }
+});
+
+test('bootstrap still authenticates exact inventory and rejects invented anchors', t => {
+  const f = fixture(t);
+  assert.equal(f.check({ base: f.anchor }).ok, true);
+  f.policy.baseline[0].lines = 601;
+  f.savePolicy();
+  assert.throws(() => f.check({ base: f.anchor }), /exact anchored source inventory/);
+  f.policy.baseline[0].lines = 600;
+  f.policy.anchor = 'a'.repeat(40);
+  f.savePolicy();
+  assert.throws(() => f.check({ base: f.anchor }), /anchor differs/);
+});
+
+test('deleted and reintroduced policy has ambiguous adoption and cannot reset ceilings', t => {
+  const f = fixture(t);
+  unlinkSync(join(f.root, POLICY_PATH));
+  f.save();
+  f.savePolicy();
+  f.save();
+  assert.throws(() => f.check(), /adoption history is absent or ambiguous/);
+});

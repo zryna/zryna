@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use zryna_ir::data_ownership_v1::raw;
 use zryna_source::Span;
 use zryna_syntax::v4::RawExpressionKind;
@@ -16,7 +17,8 @@ impl PreparationContext<'_, '_, '_, '_> {
         if matches!(
             expression.kind,
             RawExpressionKind::FieldAccess { .. } | RawExpressionKind::Index { .. }
-        ) {
+        ) || matches!(&expression.kind, RawExpressionKind::Reference { name } if self.bindings.get(&name.text).is_some_and(|binding| self.state.parent(binding.place).is_some()))
+        {
             let source = self.resolve(id)?;
             let state = &self.state;
             let available =
@@ -97,9 +99,63 @@ impl PreparationContext<'_, '_, '_, '_> {
         self.state.counts[4] = self.state.counts[4].checked_add(1)?;
         self.state.counts[5] = self.state.counts[5].checked_add(actions)?;
         self.push(Operation::GenericClonePrefix { id: prefix, owner, actions }, ty, at, None);
-        self.emit_leaf(Leaf::GenericClone { source, cleanup, prefix }, ty, at)
+        let leaf = if contains_handle(ty.layout, self.decisions.layouts) {
+            Leaf::HandleAwareClone { source, cleanup, prefix }
+        } else {
+            Leaf::GenericClone { source, cleanup, prefix }
+        };
+        self.emit_leaf(leaf, ty, at)
     }
 }
+
+pub(super) fn contains_handle(
+    root: zryna_layout::TypeId,
+    layouts: &zryna_layout::VerifiedLayouts,
+) -> bool {
+    graph_contains_handle(root, |ty| {
+        let record = layouts.type_by_id(ty)?;
+        let handle = matches!(
+            record.category(),
+            zryna_layout::TypeCategory::Shared | zryna_layout::TypeCategory::Weak
+        );
+        let children = match record.category() {
+            zryna_layout::TypeCategory::Struct => {
+                record.fields().iter().map(|field| field.ty()).collect()
+            }
+            zryna_layout::TypeCategory::Enum => {
+                record.variants().iter().filter_map(|variant| variant.payload()).collect()
+            }
+            zryna_layout::TypeCategory::FixedArray | zryna_layout::TypeCategory::Vec => {
+                record.referenced_type().into_iter().collect()
+            }
+            _ => Vec::new(),
+        };
+        Some((handle, children))
+    })
+}
+
+fn graph_contains_handle<T: Copy + Ord>(
+    root: T,
+    mut describe: impl FnMut(T) -> Option<(bool, Vec<T>)>,
+) -> bool {
+    let mut seen = BTreeSet::new();
+    let mut pending = vec![root];
+    while let Some(node) = pending.pop() {
+        if !seen.insert(node) {
+            continue;
+        }
+        let Some((handle, children)) = describe(node) else { continue };
+        if handle {
+            return true;
+        }
+        pending.extend(children);
+    }
+    false
+}
+
+#[cfg(test)]
+#[path = "../tests/handle_reachability.rs"]
+mod reachability_tests;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn consume_generic_clone_prefix(

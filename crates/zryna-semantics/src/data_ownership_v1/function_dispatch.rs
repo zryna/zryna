@@ -83,27 +83,26 @@ pub(super) fn lower_function<'a>(
     let file = &input.syntax().files()[module];
     let result =
         semantic_type(file, function.result_type, module, declarations, graph, node_types, errors)?;
-    let has_root_borrow_syntax = function.body.statements.iter().any(|statement| {
-        let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind else {
-            return false;
-        };
-        usize::try_from(type_syntax)
-            .ok()
-            .and_then(|index| file.type_syntax().get(index))
-            .is_some_and(|ty| {
-                matches!(
-                    ty.kind,
-                    RawTypeSyntaxKind::Borrow { .. } | RawTypeSyntaxKind::BorrowMut { .. }
-                )
-            })
-    }) || function.body.expressions.iter().any(|expression| {
-        matches!(
-            expression.kind,
-            RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
-        )
-    });
-    let owned_root_candidate =
-        !result.is_copy() && is_direct_owned_root_borrow_candidate(file, function);
+    if function
+        .body
+        .statements
+        .iter()
+        .any(|statement| matches!(statement.kind, RawStatementKind::WeakUpgrade { .. }))
+    {
+        return lower_private_owned_aggregate_function(
+            input,
+            module,
+            declaration,
+            function,
+            declarations,
+            graph,
+            node_types,
+            layouts,
+            catalog,
+            result,
+            errors,
+        );
+    }
     if super::owned_aggregate_lowering::has_indexed_borrow(function)
         || super::owned_aggregate_lowering::has_nonindexed_owned_borrow(
             function,
@@ -137,7 +136,9 @@ pub(super) fn lower_function<'a>(
             errors,
         );
     }
-    if has_root_borrow_syntax && !owned_root_candidate {
+    if has_root_borrow_syntax(file, function)
+        && (result.is_copy() || !is_direct_owned_root_borrow_candidate(file, function))
+    {
         return lower_private_root_borrow_function(
             input,
             module,
@@ -152,7 +153,7 @@ pub(super) fn lower_function<'a>(
             errors,
         );
     }
-    if has_root_borrow_syntax {
+    if has_root_borrow_syntax(file, function) {
         return lower_private_owned_root_borrow_function(
             input,
             module,
@@ -179,6 +180,28 @@ pub(super) fn lower_function<'a>(
         catalog,
         errors,
     )
+}
+
+fn has_root_borrow_syntax(file: &syntax::SourceUnit, function: &syntax::RawFunctionSyntax) -> bool {
+    function.body.statements.iter().any(|statement| {
+        let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind else {
+            return false;
+        };
+        usize::try_from(type_syntax)
+            .ok()
+            .and_then(|index| file.type_syntax().get(index))
+            .is_some_and(|ty| {
+                matches!(
+                    ty.kind,
+                    RawTypeSyntaxKind::Borrow { .. } | RawTypeSyntaxKind::BorrowMut { .. }
+                )
+            })
+    }) || function.body.expressions.iter().any(|expression| {
+        matches!(
+            expression.kind,
+            RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
+        )
+    })
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
@@ -226,9 +249,6 @@ fn lower_function_impl<'a>(
     });
     let terminal_owned_phi_candidate =
         is_terminal_owned_phi_candidate(function, result.category, has_vec_operation);
-    if !terminal_owned_phi_candidate {
-        verify_single_final_return(function, input.sources(), errors)?;
-    }
     let generic_function = catalog
         .modules
         .get(module)
@@ -246,8 +266,24 @@ fn lower_function_impl<'a>(
         });
     let existing_payload_move = function.export_span.is_none()
         && matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
+        && !function.body.expressions.iter().any(|expression| matches!(&expression.kind, RawExpressionKind::Match { arms, .. } if arms.len() > 1))
         && is_private_owned_enum_payload_move_candidate(function);
     if generic_function && !existing_payload_move {
+        if !function.body.statements.iter().any(|statement| {
+            matches!(
+                statement.kind,
+                RawStatementKind::If { .. }
+                    | RawStatementKind::While { .. }
+                    | RawStatementKind::WeakUpgrade { .. }
+            )
+        }) && !function
+            .body
+            .expressions
+            .iter()
+            .any(|expression| matches!(expression.kind, RawExpressionKind::Match { .. }))
+        {
+            verify_single_final_return(function, input.sources(), errors)?;
+        }
         return lower_private_owned_aggregate_function(
             input,
             module,
@@ -261,6 +297,9 @@ fn lower_function_impl<'a>(
             result,
             errors,
         );
+    }
+    if !terminal_owned_phi_candidate {
+        verify_single_final_return(function, input.sources(), errors)?;
     }
     if result.category == TypeCategory::String
         && function.export_span.is_none()

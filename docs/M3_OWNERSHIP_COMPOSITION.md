@@ -148,12 +148,78 @@ Input: binding scope, pending completion order, masks/refinements, active borrow
 signature. Output: explicit fallthrough, return or trap, with exact successor state or cleanup.
 Nested/repeated blocks, branches and loops compose these results; termination cannot disappear
 inside an untyped optional value. Return transfers its result and reverse-cleans remaining owners.
-Joins require equal definite state, backedges restore header state, and borrows discharge before
+Joins require equal definite state, backedges restore header state, and lexical borrows discharge before
 edges/returns. Reject mismatched ownership, masks, active variants or escaping authority rather
 than inserting implicit clone/conditional-drop repair. Divergence is not a controlled trap.
 
 #279 supplies the reusable scope/CFG adapter; #262 integrates authenticated upgrade bodies. Required
 #83 nested payload calls/matches/returns stay within that integration, not a scalar-only fallback.
+
+The initial internal `owned_aggregate_lowering/structured_cfg.rs` adapter now routes branches and
+loops inside already-selected generic owned functions through the existing preparation machinery.
+It records dense instruction ranges, explicitly restores branch planning state, requires equal
+fallthrough ownership and loop-header masks, inserts lexical cleanup, and replays the completed
+graph through `OwnedCfgState`. Authenticated `structured_owned_` tests cover nested/repeated
+String-owner branches, a nested branch in a loop, terminal branch returns, unequal-state rejection,
+and deterministic replay. `structured_match_` adds exhaustive multi-arm owned payload transfer or
+clone into one typed continuation parameter, both direct-return and local-initializer forms. Copy
+scrutinees use a compiler-private initialized temporary: each arm restores its original once-evaluated
+SSA value through exclusive `BeginBorrow`/`BorrowWrite`/`EndBorrow`, so ordinary verifier refinement
+rules admit the join without owner effects. Mixed Struct/Enum/Array/Vec scope graphs and checked
+value/place/transition/cleanup exact, first-extra, overflow and pristine recovery have focused tests.
+Structured functions are planned once in independent compiler-owned scratch state, sharing immutable
+syntax/layout/catalog authority and staging diagnostics. Rejection leaves the original untouched;
+accepted private state is published once after graph/resource checks, with mandatory full-program
+IR verification still required before producing `VerifiedProgram`.
+`structured_constructor.rs` now carries the existing affine constructor commit reservation and
+ordered SSA operands through matches nested in Struct/Enum/FixedArray/Vec constructors. Earlier owned
+operands remain pending during arm failures and transfer only at the exact typed constructor commit.
+`structured_call.rs` carries the same result reservation through ordered internal value arguments,
+then derives exact CallTrap cleanup from reconciled post-argument owners in scratch, transferring
+owned arguments before the call cleanup. Nested FixedArray and two-function call fixtures repeat
+the checked-resource/recovery matrix. Vec growth failure retains every completed child in reverse
+completion order; its result is not yet pending. At that stage #279 still required the indexed
+composition boundaries described below, the complete C7 interaction matrix and independent hostile
+evidence. With those bounded compile-time rows present, this is a #279 closure candidate; no source
+handle or runtime-execution support is claimed.
+
+Existing formal borrow parameters retain their exact sealed identity/access across Match edges,
+as the IR's existing formal-parameter lifetime permits. Structured calls forward them in source
+argument order, then use the canonical value-prefix/borrow-suffix call encoding. Exact aliases are
+preserved at joins, failures end the same formal identity, and no EndBorrow/reborrow gap is emitted.
+`structured_formal_` tests pin shared/exclusive forwarding, wrong-access/missing-alias diagnostics
+and lexical-carry rejection. The resource matrix includes a genuine catalog-backed formal parameter.
+Non-formal lexical/indexed authorities still cannot cross CFG edges (`I3011`); this slice does not
+extend their lifetime or supply the broader #271 edge-borrow contract.
+
+`structured_string.rs` preserves named/static String read places and genuine expression-result
+owners through nested matches, then uses existing StringClone/StringConcat opcodes. Compiler-only
+retained-read exclusions are exact overlapping places, carried unchanged through joins; consuming
+or mutating access rejects while read-only clones remain allowed. The tail revalidates initialized
+state and byte facts before releasing its own exclusions. `structured_string_` tests pin no extra
+move/clone for named reads, arm/tail cleanup, read-only overlap, forbidden moves, post-operation
+release, deterministic diagnostics and replay. Clone/concat shapes join the checked-resource matrix.
+These exclusions do not grant IR borrow authority or extend lexical/indexed borrow lifetimes.
+
+`structured_indexed.rs` admits a Match in the first checked index of a named/static Array or Vec
+observation, including explicit owned element clone. An exact compiler-only container exclusion
+survives the arms; a typed Copy handoff reuses the once-evaluated joined index in the existing
+indexed preparation plan. Bounds and transient authority begin only after the join. The
+`structured_indexed_` tests pin Array/Vec Copy/owned paths, unchanged SSA index identity, one bounds
+site, hostile handoff rejection and pristine recovery; the resource matrix includes indexed clone.
+Later-index and post-bounds RHS Match now use the separately verified internal transient
+continuation contract in [M3_TRANSIENT_INDEXED_ACCESS.md](M3_TRANSIENT_INDEXED_ACCESS.md).
+Staged preparation preserves each completed bounds check, the exact live authority and original
+container while Match arms run; the final typed SSA handoff performs one read, clone or replacement
+and one end. Owned RHS ownership remains pending until replacement. Lexical authority still obeys
+I3011 edge prohibition. `continued_indexed_source` and the expanded structured resource matrix pin
+Array/Vec Copy/owned ordering, failure cleanup, exact/first-extra/overflow rollback and recovery.
+Fresh FixedArray/Vec Match results are also admitted as read-only observation bases. Copy results
+receive genuine initialized temporary storage; owned results retain their exact joined owner
+through index and bounds preparation and the final Copy read or explicit clone, then drop only
+after the final EndBorrow. A Match result is not a mutable initialized source place, so replacement
+through it remains invalid rather than receiving invented mutation authority. No end/reborrow or
+target execution is claimed.
 
 ## C8: Upgrade-success edge signature
 
@@ -178,13 +244,19 @@ descriptor does not decide which outcome will execute. Bounded #260 transition-m
 separate from real target/runtime execution. No reusable Boolean ticket, nullable handle or
 preliminary count test is introduced.
 
-At the frozen baseline, `OwnedCfgState::finish` checks explicit edge arguments against every target
-parameter, even for `WeakUpgradeBranch`. The independent IR instead requires success arguments + 1
-to equal success parameters, issues the first owner and matches remaining arguments to parameters
-after it. This is an unused future-producer adapter gap, not a failing supported source program.
-#279 must implement that distinction using the #260 producer-facing shape before #262 emits
-upgrade programs; every completed program must still pass mandatory full IR verification. Do not
-weaken IR validation or manufacture a value on the expired edge.
+`OwnedCfgState::finish_with_layouts` now derives the exact #260 `WeakUpgradeShape` from the
+operand place and sealed layout. It matches success arguments after the synthetic first Shared
+parameter and matches expired arguments without a prefix. Ordinary finalization remains unchanged;
+an upgrade without layout context fails closed. The named `owned_cfg_upgrade_success_prefix_is_sealed_and_ordinary_arguments_remain_exact`
+test covers both schemas, malformed prefixes and operands, missing context, and pristine recovery.
+This is producer schema evidence only, not source upgrade support or a full-program ownership
+proof. Every completed program must still pass mandatory full IR verification. The remaining
+#279 C6/C7 structured ownership composition is not completed by this adapter.
+
+The #262 source route now consumes that schema for an authenticated `upgradeWeak` statement.
+It retains addressable Weak operands, materializes non-addressable operands exactly once, gives
+only the success scope its synthesized Shared owner, and preserves the exact overflow cleanup.
+This is compile-time ownership evidence; target outcome execution remains the #263 boundary.
 
 ## Integration and closure
 

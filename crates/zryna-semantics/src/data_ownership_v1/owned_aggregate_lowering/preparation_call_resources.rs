@@ -40,12 +40,18 @@ pub(super) fn enter(
     let budget = OwnedStringPreparationBudget {
         cleanup_plans: before.counts[4],
         cleanup_actions: before.counts[5],
-        reserved_cleanup_plans: before.held_cleanup[0].checked_add(own_cleanup)?,
-        reserved_cleanup_actions: before.held_cleanup[1].checked_add(if own_cleanup == 1 {
-            actions
-        } else {
-            0
-        })?,
+        reserved_cleanup_plans: checked_reservation(
+            before.held_cleanup[0],
+            own_cleanup,
+            step.at,
+            errors,
+        )?,
+        reserved_cleanup_actions: checked_reservation(
+            before.held_cleanup[1],
+            if own_cleanup == 1 { actions } else { 0 },
+            step.at,
+            errors,
+        )?,
         places: before.counts[1],
         reserved_places: before.held[3],
     };
@@ -66,6 +72,23 @@ pub(super) fn enter(
     }
     let held = reserve(before, actions, signature.kind, step.at, errors)?;
     Some((actions, held))
+}
+
+fn checked_reservation(
+    count: usize,
+    extra: usize,
+    at: Span,
+    errors: &mut Errors<'_>,
+) -> Option<usize> {
+    count.checked_add(extra).or_else(|| {
+        errors.at(
+            "ZRYNA-M3201",
+            at,
+            "call cleanup resource reservation overflowed",
+            "reduce simultaneously reserved cleanup plans or actions",
+        );
+        None
+    })
 }
 
 pub(super) fn reserve(

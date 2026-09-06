@@ -58,7 +58,7 @@ fn generic_vec_source_replacement_blocks_same_container_clone_before_nested_inde
             raw,
             "ZRYNA-M3014",
             at,
-            "Vec operation conflicts with an active whole-container access",
+            "owner access conflicts with an active borrow",
             "finish the indexed operation before accessing or consuming its container",
         );
     }

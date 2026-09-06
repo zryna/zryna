@@ -129,7 +129,8 @@ pub(super) fn validate(
                     return None;
                 }
             }
-            Operation::IndexedEffect(_)
+            Operation::DropTemporary { .. }
+            | Operation::IndexedEffect(_)
             | Operation::VecPush { .. }
             | Operation::ReplaceProjection { .. } => {
                 if !resources.transition(1, step.at, errors) {
@@ -176,7 +177,8 @@ pub(super) fn validate(
             Operation::CloneCapacity { aggregate } => {
                 clone_capacity(before, *aggregate, step.at, errors)?;
             }
-            Operation::IndexedEnter { .. }
+            Operation::StructuredValue { .. }
+            | Operation::IndexedEnter { .. }
             | Operation::IndexedExit
             | Operation::CallTransfer { .. }
             | Operation::ScalarEnter { .. }

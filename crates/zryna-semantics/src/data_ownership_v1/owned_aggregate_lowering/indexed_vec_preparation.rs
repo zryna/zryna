@@ -87,6 +87,36 @@ impl PreparationContext<'_, '_, '_, '_> {
             AvailabilityView::new(&state.owners, &state.moved, &state.partial, |id| {
                 state.parent(id)
             });
+        if !read
+            && state
+                .facts
+                .retained_string_reads
+                .iter()
+                .any(|region| availability.places_overlap(place, *region))
+        {
+            self.decisions.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "owned access conflicts with a retained String operand",
+                "finish the String operation before consuming or mutating its retained operand",
+            );
+            return None;
+        }
+        if !read
+            && state
+                .facts
+                .retained_indexed_reads
+                .iter()
+                .any(|region| availability.places_overlap(place, *region))
+        {
+            self.decisions.errors.at(
+                "ZRYNA-M3014",
+                at,
+                "owned access conflicts with a retained indexed container",
+                "finish the indexed operand before consuming or mutating its container",
+            );
+            return None;
+        }
         if state.facts.active_borrows.values().any(|(region, access)| {
             availability.places_overlap(place, *region)
                 && (!read || *access == raw::BorrowAccess::Exclusive)
@@ -94,11 +124,7 @@ impl PreparationContext<'_, '_, '_, '_> {
             self.decisions.errors.at(
                 "ZRYNA-M3014",
                 at,
-                if self.decisions.nonindexed_owned_route() {
-                    "owner access conflicts with an active borrow"
-                } else {
-                    "Vec operation conflicts with an active whole-container access"
-                },
+                "owner access conflicts with an active borrow",
                 if self.decisions.nonindexed_owned_route() {
                     "end the conflicting borrow before accessing or consuming its owner"
                 } else {
@@ -123,7 +149,11 @@ impl PreparationContext<'_, '_, '_, '_> {
             Leaf::StringClone { source, .. } => self.check_access(source.place, true, at),
             Leaf::AggregateClone { source, .. }
             | Leaf::GenericClone { source, .. }
-            | Leaf::IndexedCopy { source, .. } => self.check_access(*source, true, at),
+            | Leaf::HandleAwareClone { source, .. }
+            | Leaf::IndexedCopy { source, .. }
+            | Leaf::SharedClone { source, .. }
+            | Leaf::WeakDowngrade { source, .. }
+            | Leaf::WeakClone { source, .. } => self.check_access(*source, true, at),
             Leaf::StringConcat { left, right, .. } => {
                 self.check_access(*left, true, at)?;
                 self.check_access(*right, true, at)

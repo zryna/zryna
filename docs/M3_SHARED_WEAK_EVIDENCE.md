@@ -1,8 +1,117 @@
 # M3 Shared and Weak evidence matrix
 
-Status: Issue #259 test/interface plan. **Planned tests below are not existing execution evidence.**
+Status: Issue #259 integration plan with #260 independent proof evidence and the compile-time
+#261/#262 source closure candidates below. Issue #263 owns integrated non-executable conformance,
+fault, count and resource evidence; actual target-runtime execution remains outside this child graph.
 Read the [authority contract](M3_SHARED_WEAK_AUTHORITY.md) for SW1–SW5, complete payload domain,
 operation semantics and exclusions. A scalar-only checkpoint cannot discharge #83.
+
+## Independent #260 executable mapping
+
+The following tests exercise compiler/ABI proof boundaries, not source lowering or target
+execution. The broader named integration matrices later in this document remain obligations
+of their listed owners; this mapping does not claim #83 completion.
+
+| Executable family | Exact evidence |
+| --- | --- |
+| IR `data_ownership_v1::tests::shared_weak_authority` | Authenticated layout/source-backed raw programs for all payload categories, retained clone/downgrade operands, success-only synthesized ownership, typed outcomes, exact ordered cleanup, hostile types/modes/moves/borrows/edges/cleanup, rejection replay and valid recovery |
+| IR `shared_weak_authority::payload_construction` | Fully initialized owned aggregate/container/handle payload construction, nested and recursive-indirection types; not only Copy parameters |
+| IR `shared_weak_authority::upgrade_shape` and `WeakUpgradeShape` doctest | Branded reusable C8 edge schema, foreign/missing types, final mandatory verifier rejection, private-field opacity |
+| ABI `control_model_clone_expiration_and_payload_before_implicit_weak_finish` | Both target layouts; live and expired Weak cloning, expiration produces no owner, exact last-strong payload-before-implicit-weak finish, premature/replayed release rejection |
+| ABI `control_model_provenance_topology_modes_and_allocation_failures_are_atomic` | Wrong invocation/site/allocation geometry, dense identity, unissued handles, overlapping controls, wrong mode, non-success publication and deterministic valid recovery |
+| ABI `control_model_immutable_handle_graph_and_recursive_release_are_exact` | Exact nested strong/Weak payload transfer, reverse recursive release cascade; future/self/duplicate edges and reordered cleanup fail |
+| ABI `control_model_payload_shapes_derive_reverse_active_cleanup_and_vec_storage_last` | Both targets; scalars, String, both Enum variants, array0/2, Vec0/2; omitted drops fail and Vec storage is last |
+| ABI `control_model_allocation_failure_retains_embedded_handle_until_successful_retry` | Failed publication retains source handle; successful retry transfers it exactly once; stale payload-handle access fails |
+| ABI `control_model_requires_exact_independent_surviving_owner_contract` | Omitted release and wrong expected owner/control/mode fail; exact independently expected returned owner passes |
+| ABI `control_model_internal_resource_boundaries_publish_nothing_on_rejection` | Private counter controls exercise actual allocation/node replay preflights at exact/first-extra/checked-overflow with no owner publication and valid fresh-invocation recovery; not million-allocation execution |
+| ABI `control_model_count_boundaries_remain_indivisible_existing_abi_claims`, `control_model_synthetic_refcount_failure_cannot_issue_an_owner` | Explicitly synthetic saturated count/checked-budget proofs; existing transition authority distinguishes success, expiration and unchanged overflow, and no overflow owner can be issued; not billion-owner programs |
+| ABI `VerifiedControlTrace` doctests | Caller construction/mutation of opaque proof fields fails to compile |
+
+Source evaluation/span/fault injection and executed target count/drop behavior are not supplied
+by these symbolic tests. Existing independent IR resource and ABI transition suites remain
+required alongside this matrix. Full gate/CI receipts must be recorded separately when run;
+listing an executable here is not a claim that Linux/Windows integration gates already passed.
+
+## Issue #262 source upgrade closure candidate
+
+`weak_upgrade_source` authenticates retained addressable and once-evaluated temporary Weak
+operands, success-only Shared binding scope, exact wrong-type/missing-name and portable
+case-insensitive binding-collision diagnostics, rejection replay and valid recovery.
+`weak_upgrade_fault_oracle` binds the verified terminator to the sealed
+#260 success/expired/refcount-overflow claims without pretending to execute a target runtime.
+`weak_upgrade_state` additionally freezes complete moved/reuse, live-borrow edge and unequal-join
+diagnostics, with an authenticated equal-join control proving the original Weak root remains live
+until later cleanup. Upgrade statements select structured lowering before legacy borrow-only gates;
+this does not extend borrow lifetimes across edges. Temporary source tests pin producer-failure
+cleanup without the uncommitted result, overflow cleanup with that completed temporary first, and
+one release before each outcome body followed by exact survivor cleanup.
+`weak_upgrade_exact_extra_overflow_resources_restore_pristine_state` covers exact, first-extra and
+`usize::MAX` held credits for value, place, transition, cleanup-action and cleanup-plan limits with
+unchanged rejected state and pristine recovery. Transition demand includes root-scope drop credits
+derived from the authenticated owned declarations, not a fixed unexplained offset.
+Independent IR `weak_upgrade_temporary_edges_reject_forgery_and_cleanup_corruption_then_recover`
+starts from a complete accepted temporary-release graph and rejects a forged success type,
+overflow cleanup omission/reordering and missing expired-path release, then re-verifies the
+pristine graph. This is bounded compiler evidence; #263 integrates the corresponding
+non-executable conformance, fault, count, and resource proof while target-runtime execution
+remains outside this child graph.
+
+`weak_upgrade_payloads` verifies addressable and temporary upgrade for exact parameter-fed bool,
+i32, String, nominal Struct/Enum, payloadless/multi-variant Enum, recursive nominal Enum through
+Shared indirection, zero/nonzero String fixed arrays, String Vec, Shared, Weak and nested
+`Vec<Array<Handle>>` payloads, where `Handle` is `Shared<Inner>` and `Inner` is `Weak<String>`.
+It pins the exact synthesized Shared type, empty expired parameter list, reverse overflow/return
+cleanup and deterministic replay. These parameters represent initialized incoming values. The
+prerequisite #261 matrix supplies parameter-fed sealed variant and recursive type-domain evidence,
+not construction receipts for every variant; upgrade itself never reads or clones the payload.
+
+`weak_upgrade_composition` authenticates nested/repeated upgrades, nested and repeated upgrades
+inside if/while, a once-evaluated private call-produced Weak, and a two-arm active Weak-payload Match
+operand. Exact cleanup assertions retain outer success bindings, transfer call arguments before
+CallTrap cleanup, retain each active match scrutinee on clone failure, and release the original Weak
+at final return. Match result inference consumes the existing validated Match plan in a type-only
+scope; it creates no place, owner or borrow. Wrong-arm and nonuniform-result diagnostics are exact
+and replayed, followed by valid recovery. Completed IR still passes the independent verifier.
+This is the compile-time #262 closure candidate. It does not claim arbitrary control combinations
+beyond the frozen matrix, target execution, runtime fault observation or public activation.
+
+## Issue #261 source integration checkpoint
+
+The semantic source route maps authenticated `Shared<T>`/`Weak<T>` types and lowers direct
+straight-line `shared(value)`, explicit handle `clone`, and `downgrade` expressions through
+mandatory IR verification. Named source tests cover bool, i32, String, nominal Struct/Enum,
+zero/nonzero fixed arrays, positive-stride Vec, nested Shared payloads, payloadless/multi-variant
+Enums, and finite recursive nominal values through Shared indirection. They also pin source
+order, reverse failure cleanup, moved/wrong-type diagnostics, deterministic rejection replay, and
+the exact/first-extra cleanup-action frontier with pristine recovery.
+
+The source route also materializes non-addressable clone/downgrade operands, retains the exact
+temporary in failure cleanup, and emits its successful `DropPlace` at the expression boundary.
+Authenticated composition evidence constructs handle-containing Struct, Enum, fixed-array and Vec
+values, clones static handle projections, replaces a static handle field, and transfers a nested
+handle aggregate through one internal straight-line call. These paths use explicit
+`SharedClone`/`WeakClone` count operations; they do not reinterpret handle leaves as Copy.
+
+Source-authenticated symbolic fault-oracle evidence binds each emitted Shared allocation/count
+instruction to the exact frozen ABI logical operation, admitted status and trap disposition.
+Handle-aware structural clones additionally bind a canonical recipe-step ordinal to their exact
+unpublished destination prefix, retained source root and reverse cleanup. Rejection replay and a
+fresh valid lowering are deterministic. This reuses #260 transition authority and is compiler
+evidence only: it does not claim an allocator, count mutation, fault injection or cleanup was
+executed by a target runtime. Issue #263 integrates non-executable conformance, fault, count and
+resource evidence; target-runtime observations remain outside this child graph.
+
+This is the compile-time #261 closure candidate, not #83 closure or target execution. The named
+`recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` test authenticates
+the final #259 payload-domain cases through source lowering and mandatory IR verification. A
+distinct verified handle-aware clone contract retains exact place/indexed-borrow source authority,
+a distinct destination, and a finite canonical recipe graph. That recipe requires declaration-order Struct,
+runtime-active Enum, ascending fixed-array/dynamic-Vec traversal and explicit Shared/Weak count
+operations, with initialized-prefix cleanup before surviving roots. It does not relax the generic
+non-handle clone contract and does not claim that a target backend executed the recipe. Full
+count/allocation fault and resource conformance belongs to the non-executable integrated evidence
+in #263, while broader CFG upgrade/match composition remains tracked by #262/#269. Actual target
+execution remains outside this child graph. No target runtime or public profile is enabled.
 
 ## Existing evidence and its limits
 

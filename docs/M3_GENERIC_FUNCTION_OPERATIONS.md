@@ -1,4 +1,4 @@
-# Private generic non-handle function operations
+# Private generic function operations
 
 Issue #278 extends the existing private straight-line owned-data producer using the shared
 [composition contracts](M3_OWNERSHIP_COMPOSITION.md), especially C1–C5. This is source-to-verified-IR
@@ -9,10 +9,11 @@ scope exits or owner-carrying joins.
 
 ## Exact signatures and routing
 
-The generic route accepts exact by-value parameters and results from the supported non-handle
-graph: bool/i32, String, Struct, Enum, FixedArray and positive-stride Vec compositions. Permitted
-Vec-indirected recursive graphs use sealed layout identities, not an expanded recursive syntax
-tree. Shared/Weak-containing graphs do not enter this route. Exact private borrow parameters
+The generic route accepts exact by-value parameters and results from bool/i32, String, Struct,
+Enum, FixedArray and positive-stride Vec compositions. The #261 adapter also admits exact
+Shared/Weak-containing graphs through the same typed preparation and ownership boundaries.
+Permitted recursive graphs through Vec or handle indirection use sealed layout identities, not
+an expanded recursive syntax tree. Exact private borrow parameters
 use the indexed-source call adapter, with live authority rather than owned parameter places. A function
 with an owned input may return a Copy result; unused owned inputs still require cleanup.
 
@@ -78,7 +79,8 @@ as its ordinary exact child; it does not create a second ownership or cleanup co
 ## Shared preparation and static operations
 
 The generic route uses the existing typed decisions and shared preparation summary for nested
-non-handle construction, movement, explicit clone, calls and replacement. Semantic validation
+construction, movement, explicit clone, calls and replacement, including admitted #261 handle
+operands. Semantic validation
 and resource replay complete before actual source-state mutation. Held ancestor credits and
 future commit transitions remain part of the same plan; allocation of a result identity is not
 permission to consume an input early. Rejected preparation leaves the original bindings,
@@ -92,8 +94,11 @@ requires an exact complete mutable target both before and after RHS preparation,
 prepared value and drops only the old target subtree. Unavailable or overlapping subobjects are
 not repaired by a whole-root move or implicit initialization.
 
-Explicit structural clone reuses the [canonical clone core](M3_GENERIC_CLONE_CORE.md), including
-its retained source and recursive destination frontier. Ordinary Vec operations reuse the
+Non-handle structural clone reuses the [canonical clone core](M3_GENERIC_CLONE_CORE.md), including
+its retained source and recursive destination frontier. Handle-containing graphs instead use the
+distinct verified handle-aware clone contract: Shared/Weak leaves perform explicit count clones,
+not payload clones, with exact initialized-prefix cleanup. The non-handle clone contract remains
+unchanged. Ordinary Vec operations reuse the
 [Vec operation contract](M3_GENERIC_VEC_OPERATIONS.md): Copy indexing, explicit owned clone,
 checked replacement and the existing Vec push authority. Indexed replacement checks bounds
 before RHS preparation and commits only the completed exact element. Internal transient indexed
@@ -120,7 +125,8 @@ or active-count increase. The original static prefix remains the conflict region
 first checked access, further nesting uses exact FixedArray/Vec referents. Alias replacement and calls
 reuse the existing exact ownership and cleanup contracts, and scope exit ends the bound child.
 Arbitrary fresh expression shapes, borrowing fresh temporaries and fresh mutation remain
-outside this adapter. Shared/Weak source integration still requires the separate #260/#261 stages.
+outside this adapter. Implemented Shared/Weak source operations reuse #260's sealed authority
+through the #261 adapter; this does not grant target runtime or public-profile support.
 
 ## Evidence and remaining scope
 
@@ -131,7 +137,13 @@ rejection. `aggregate_contracts` additionally checks recursive owned parameters 
 result and complete reverse cleanup. Ordinary Vec and shared-summary resource tests provide
 separate operation and exact/first-extra state-retention evidence.
 
+The #261 `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` test
+provides parameter-fed type-domain evidence: exact incoming recursive/multi-variant enum values
+reach handle operations and mandatory verified IR. It checks payloadless-variant metadata and
+recursive Shared indirection, not fresh construction of each variant or a recursive value chain.
+
 These are compiler proofs, not allocator fault-execution receipts. The complete #278 assessment
 must also account for its operation/extraction and reusable-composition obligations; passing the
-call matrix alone does not close that issue. Handle integration, broader CFG composition and
-later runtime consumers retain their existing ownership in the composition plan.
+call matrix alone does not close that issue. Broader CFG composition, #263 fault evidence and
+later runtime consumers retain their existing ownership in the composition plan. No target
+runtime, backend route or public profile is enabled by the handle adapter.
