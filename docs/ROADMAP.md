@@ -195,6 +195,11 @@ checked header evidence, and pure transitions; it implements no allocator or hel
 selected by the public driver and exposes no runtime, backend, CLI, public aggregate ABI, target
 artifact, or host capability.
 
+Internal explicit Shared/Weak construction, clone, downgrade, release and sealed upgrade lowering
+are complete across the frozen payload and control-flow matrix. Mandatory verified IR plus
+non-executable ABI/control/fault/resource evidence proves the compiler boundary without claiming an
+allocator, target runtime, backend, driver, CLI, public profile, or target execution.
+
 Issue #81 is complete at a bounded internal compiler checkpoint. Private functions cover String
 literals, explicit clone, checked concatenation, moves, return cleanup, and root-local replacement,
 plus Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves,
@@ -310,7 +315,7 @@ retain nested/repeated control flow, runtime, backend, and public-profile work.
 |   #80 | versioned ownership runtime ABI authority                            | #75, #77                | complete    |
 |   #81 | owned String/Vec, move checking, and deterministic drop              | #78, #79, #80           | complete    |
 |   #82 | bounded nonescaping lexical borrowing                                | #81                     | complete    |
-|   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | planned     |
+|   #83 | explicit shared and weak reference semantics                         | #80, #81, #82           | complete    |
 |   #84 | deterministic JavaScript and sealed helpers                          | #79, #80, #81, #82, #83 | planned     |
 |   #85 | audited memory-bearing core WebAssembly                              | #79, #80, #81, #82, #83 | planned     |
 |   #86 | independently verified native MIR                                    | #78, #80, #81, #82, #83 | planned     |
@@ -347,14 +352,11 @@ issue number cannot depend on later-discovered work. Its current SHA-256 is
 The original #119 provenance and unchanged borrow-call fixture digest remain historical evidence;
 updating the graph does not implement any of its planned capabilities.
 
-Issue #83 has six tracked sub-issues: #259 freezes the shared/weak interface, #260 verifies
-transition and upgrade graphs, #261 implements source handles and cleanup, #262 implements
-indivisible upgrade control flow, #263 proves failure/count/resource boundaries, and #264 owns
-integrated closure. Issue #83 is dependency-ready after the verified #82 closure change merges.
-Existing IR/ABI
-operations are reusable authority, not evidence that these source producers are implemented.
-Independent proof work may proceed after its interface is frozen; full payload support and all
-parent acceptance criteria remain required before #83 closes.
+Issue #83's six tracked sub-issues are complete: #259 froze the shared/weak interface, #260 verified
+transition and upgrade graphs, #261 implemented source handles and cleanup, #262 implemented
+indivisible upgrade control flow, #263 proved failure/count/resource boundaries, and #264
+reconciled the integrated closure. Full payload support and all parent acceptance criteria are
+mapped to executable source/IR tests or explicitly labelled symbolic ABI evidence.
 
 Issue #269 tracks the remaining normative M3 source and independently verified IR composition.
 It is an additional completion prerequisite for #84/#85/#86, retaining every existing dependency;
@@ -374,15 +376,15 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 | #275 | non-indexed owned/static/active-payload lexical borrowing | #82/#254/#270/#271/#272/#273 |
 | #269 | complete source-composition integration | #83/#254/#255/#256 and every child above |
 
-Stages #277/#278/#279 are separately closeable children of #269, not dependents of its closure.
-#259 freezes full Shared/Weak meaning and required payload/CFG contexts; #277 fixes reusable
-integration interfaces. #260 consumes #277; #261 consumes #278; #262 consumes #279 and implements
-actual WeakUpgrade source control flow. Its compile-time closure candidate covers authenticated
+Stages #277/#278/#279 closed separately as children of #269, not dependents of its closure.
+#259 froze full Shared/Weak meaning and required payload/CFG contexts; #277 fixed reusable
+integration interfaces. #260 consumed #277; #261 consumed #278; #262 consumed #279 and implemented
+actual WeakUpgrade source control flow. Its completed compile-time closure covers authenticated
 addressable and temporary Weak operands, the complete frozen payload categories, required nested
 if/while/call/match composition, sealed successor ownership, exact diagnostics and bounded
-recovery. #263 integrates the corresponding non-executable fault, count, cycle and resource
-conformance; target execution remains downstream. #264 verifies the complete #83 contract before
-#83 closes.
+recovery. #263 integrated the corresponding non-executable fault, count, cycle and resource
+conformance; target execution remains downstream. #264 reconciles the complete #83 contract and
+its immutable verification provenance.
 The cores use typed operation hooks without claiming source handle execution. Required #83
 payload, call, match and CFG cases cannot wait for later #270–#273 closure. Full #270/#271 then
 integrate actual handles into broader generic behavior; no parent-completion dependency cycle is
