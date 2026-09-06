@@ -10,10 +10,13 @@ const expectedBindings = [
   ["A1", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_fault_oracle.rs", "source_upgrade_binds_success_expiration_and_overflow_to_distinct_outcomes"],
   ["A1", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs", "control_model_count_boundaries_remain_indivisible_existing_abi_claims"],
   ["A1", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/resources.rs", "control_model_synthetic_refcount_failure_cannot_issue_an_owner"],
+  ["A1", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_counts.rs", "conformance_counts_all_increment_boundaries_preserve_exact_other_state"],
+  ["A1", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_counts.rs", "conformance_counts_expired_weak_clone_is_not_upgrade_or_live_downgrade"],
   ["A2", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs", "direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup"],
   ["A2", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests.rs", "control_model_clone_expiration_and_payload_before_implicit_weak_finish"],
   ["A2", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/boundaries.rs", "control_model_allocation_failure_retains_embedded_handle_until_successful_retry"],
   ["A2", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "pending_last_strong_excludes_every_operation_except_finish"],
+  ["A2", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_graph_distinct_cloned_edges_and_weak_observer_release_completely"],
   ["A3", "verified IR", "crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs", "shared_weak_cleanup_diagnostics_have_exact_order_span_and_valid_replay"],
   ["A3", "verified IR", "crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs", "shared_weak_instruction_types_reject_wrong_payload_and_handle_categories"],
   ["A3", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/handle_fault_oracle.rs", "direct_handle_faults_bind_source_operations_statuses_and_atomic_cleanup"],
@@ -25,7 +28,11 @@ const expectedBindings = [
   ["A3", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "non_success_control_results_are_zero_shaped"],
   ["A3", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "failure_atomicity_is_bound_to_the_exact_operation_status_set"],
   ["A3", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "layout_binding_rejects_target_and_fingerprint_mismatch"],
+  ["A3", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly"],
+  ["A3", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_status_corruption_is_not_expiration_or_a_language_trap"],
   ["A4", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests.rs", "control_model_immutable_handle_graph_and_recursive_release_are_exact"],
+  ["A4", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_graph_distinct_cloned_edges_and_weak_observer_release_completely"],
+  ["A4", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_graph_forged_future_cycles_and_pending_interposition_reject_exactly"],
   ["A4", "held-credit/planner control", "crates/zryna-semantics/src/data_ownership_v1/tests/handle_reachability.rs", "handle_reachability_is_linear_for_deep_diamonds_and_cycles"],
   ["A5", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "shared_and_weak_structural_payload_categories_lower_through_verified_ir"],
   ["A5", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs", "recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay"],
@@ -40,6 +47,7 @@ const expectedBindings = [
   ["A7", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "moved_handle_clone_reports_exact_diagnostic_and_replays"],
   ["A7", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs", "weak_upgrade_binding_collision_is_exact_deterministic_and_recovers"],
   ["A7", "verified IR", "crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs", "shared_weak_cleanup_rejects_missing_reordered_returned_and_foreign_owners"],
+  ["A7", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/conformance_graph.rs", "conformance_status_corruption_is_not_expiration_or_a_language_trap"],
 ];
 
 function tableRows(section) {
@@ -90,10 +98,9 @@ export function validateSharedWeakResourceLedger(text) {
   }
 
   for (const claim of [
-    "unreachable as authenticated source-owner populations",
-    "per-function ownership transitions stop at 262,144",
-    "one symbolic control trace stops at\n4,194,304 status transitions",
-    "1,048,576 allocation-operation/live-allocation",
+    "static per-function instruction limits do not by themselves impose a dynamic\npopulation cap",
+    "One symbolic control trace is bounded\nto 4,194,304 status transitions",
+    "1,048,576 allocation-operation/live-\nallocation",
     "per-function value, place, ownership-transition, cleanup-action and cleanup-plan maxima are\ncoupled",
     "does not execute allocation, mutate a concrete\nstrong or weak count",
     "does not claim Issue #263,\nIssue #83, or the M3 profile closed",
@@ -118,7 +125,7 @@ test("shared and weak resource ledger fails closed on stale evidence or boundary
     "may execute allocation",
   )), /boundary claim drifted/);
   assert.throws(() => validateSharedWeakResourceLedger(document.replace(
-    "per-function ownership transitions stop at 262,144",
-    "resource limits apply",
+    "static per-function instruction limits do not by themselves impose a dynamic",
+    "static instruction limits impose a dynamic",
   )), /boundary claim drifted/);
 });
