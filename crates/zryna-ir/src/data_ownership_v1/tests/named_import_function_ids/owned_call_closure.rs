@@ -211,6 +211,56 @@ fn cross_module_call_resource_preflight_and_checked_overflow_recover() {
 #[test]
 fn matrix_binding_is_complete_and_keeps_public_activation_excluded() {
     let matrix = include_str!("../../../../../../docs/M3_OWNED_CALL_CLOSURE_MATRIX.md");
+    let source_evidence = [
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-semantics/src/data_ownership_v1/tests/imported_owned_signatures.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-semantics/src/data_ownership_v1/tests/generic_call_source.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-semantics/src/data_ownership_v1/tests/named_import_argument_order.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-semantics/src/data_ownership_v1/tests/named_import_boundaries.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-semantics/src/data_ownership_v1/tests/named_import_calls.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-semantics/src/data_ownership_v1/tests/named_import_resources.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-semantics/src/data_ownership_v1/tests/structured_payload_cfg.rs"
+        )),
+    ]
+    .join("\n");
+    for binding in [
+        "named_import_alias_retains_canonical_cross_module_identity_and_owned_cleanup",
+        "imported_producer_and_consumer_retain_one_foreign_nominal_identity",
+        "generic_calls_transfer_multiple_owned_and_copy_arguments_in_source_order",
+        "named_import_mixed_argument_producers_are_ordered_and_later_failure_retains_earlier_owners",
+        "imported_signature_accepts_the_complete_sealed_by_value_graph",
+        "payload_matrix_composes_handles_vec_calls_upgrade_and_nested_cfg",
+        "generic_calls_reject_wrong_argument_type_and_repeated_owner_deterministically",
+        "payload_cfg_fallible_operations_keep_source_ordered_cleanup",
+        "named_import_graph_rejects_a_cycle_at_the_closing_edge_exactly",
+        "named_import_target_still_obeys_the_direct_call_cycle_verifier",
+        "named_import_preparation_resources_are_exact_atomic_overflow_checked_and_recoverable",
+    ] {
+        assert!(matrix.contains(binding), "missing source closure binding: {binding}");
+        assert!(source_evidence.contains(binding), "stale source closure binding: {binding}");
+    }
+    let ir_evidence =
+        [include_str!("owned_call_closure.rs"), include_str!("../named_import_function_ids.rs")]
+            .join("\n");
     for binding in [
         "named_import_cross_module_function_ids_and_cleanup_are_verified_independently",
         "cross_module_aggregate_container_and_handle_call_is_verified_independently",
@@ -218,11 +268,9 @@ fn matrix_binding_is_complete_and_keeps_public_activation_excluded() {
         "named_import_two_module_function_ids_do_not_bypass_call_cycle_verification",
         "named_import_cross_module_static_depth_is_exact_and_first_extra_rejected",
         "cross_module_call_resource_preflight_and_checked_overflow_recover",
-        "imported_owned_signatures_preserve_canonical_function_and_type_identity",
-        "mixed_owned_call_arguments_evaluate_left_to_right_once",
-        "owned_call_cleanup_is_exact_across_straight_line_branch_and_loop",
     ] {
-        assert!(matrix.contains(binding), "missing closure binding: {binding}");
+        assert!(matrix.contains(binding), "missing IR closure binding: {binding}");
+        assert!(ir_evidence.contains(binding), "stale IR closure binding: {binding}");
     }
     for exclusion in ["driver", "CLI", "backend", "runtime", "public ABI", "#273", "#275"] {
         assert!(matrix.contains(exclusion), "missing closure exclusion: {exclusion}");
