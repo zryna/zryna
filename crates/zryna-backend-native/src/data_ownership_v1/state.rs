@@ -2,19 +2,21 @@ use std::collections::BTreeMap;
 
 use cranelift_codegen::ir::{Block, BlockArg, FuncRef};
 use zryna_diagnostics::Diagnostic;
-use zryna_native_mir::data_ownership_v1::VerifiedFunction;
+use zryna_native_mir::data_ownership_v1::{
+    VerifiedBlock, VerifiedBorrowParameter, VerifiedFunction, VerifiedValue,
+};
 
 use super::invariant_error;
 
 pub(super) fn value_capacity(function: VerifiedFunction<'_>) -> Result<usize, Diagnostic> {
     function
         .parameters()
-        .map(|value| value.id())
+        .map(VerifiedValue::id)
         .chain(function.blocks().flat_map(|block| {
-            block.parameters().map(|value| value.id()).chain(
+            block.parameters().map(VerifiedValue::id).chain(
                 block
                     .operations()
-                    .filter_map(|operation| operation.result().map(|value| value.id())),
+                    .filter_map(|operation| operation.result().map(VerifiedValue::id)),
             )
         }))
         .max()
@@ -27,11 +29,11 @@ pub(super) fn value_capacity(function: VerifiedFunction<'_>) -> Result<usize, Di
 pub(super) fn borrow_capacity(function: VerifiedFunction<'_>) -> Result<usize, Diagnostic> {
     function
         .borrow_parameters()
-        .map(|parameter| parameter.id())
+        .map(VerifiedBorrowParameter::id)
         .chain(
             function
                 .blocks()
-                .flat_map(|block| block.operations())
+                .flat_map(VerifiedBlock::operations)
                 .flat_map(|operation| operation.borrows().iter().copied()),
         )
         .max()

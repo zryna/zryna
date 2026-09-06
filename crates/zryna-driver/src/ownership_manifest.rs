@@ -1,4 +1,4 @@
-//! Strict deterministic manifest v3 for internal DataOwnershipV1 candidate bundles.
+//! Strict deterministic manifest v3 for internal `DataOwnershipV1` candidate bundles.
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -89,9 +89,12 @@ struct ManifestEdge {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LayoutIdentity {
-    type_universe_sha256: String,
-    linear32_sha256: String,
-    linux_x86_64_sha256: String,
+    #[serde(rename = "type_universe_sha256")]
+    type_universe: String,
+    #[serde(rename = "linear32_sha256")]
+    linear32: String,
+    #[serde(rename = "linux_x86_64_sha256")]
+    linux_x86_64: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -227,9 +230,9 @@ pub fn render_ownership_manifest_v3(
     let ir = success.program().verified_ir();
     let abi = success.program().runtime_abi();
     let layouts = LayoutIdentity {
-        type_universe_sha256: hex(&ir.type_universe_identity().as_bytes()),
-        linear32_sha256: hex(ir.linear32_layouts().fingerprint()),
-        linux_x86_64_sha256: hex(ir.linux_x86_64_layouts().fingerprint()),
+        type_universe: hex(&ir.type_universe_identity().as_bytes()),
+        linear32: hex(ir.linear32_layouts().fingerprint()),
+        linux_x86_64: hex(ir.linux_x86_64_layouts().fingerprint()),
     };
     let runtime_abi = RuntimeAbiIdentity {
         identifier: abi.identifier().to_owned(),

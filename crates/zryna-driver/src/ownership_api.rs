@@ -1,4 +1,4 @@
-//! Public library surface for the internal DataOwnershipV1 candidate.
+//! Public library surface for the internal `DataOwnershipV1` candidate.
 
 pub use crate::native::{
     DataOwnershipExecutableIdentity, PreparedDataOwnershipExecutable,

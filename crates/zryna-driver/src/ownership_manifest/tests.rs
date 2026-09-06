@@ -1,39 +1,18 @@
-use std::{env, path::PathBuf};
-
 use zryna_abi::{ScalarOutcome, ScalarValue};
 
 use super::*;
 use crate::{
     DataOwnershipBuildRequest, TargetSelection,
-    ownership_pipeline::{OWNERSHIP_ROUTE_TEST_LOCK, prepare_data_ownership_for_test},
+    ownership_pipeline::{
+        prepare_data_ownership_for_test,
+        test_support::{fixture_workspace, node_executable, route_guard},
+    },
 };
 
-fn root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repository root")
-}
-
-fn node_executable() -> PathBuf {
-    let executable = if cfg!(windows) { "node.exe" } else { "node" };
-    ["ZRYNA_TEST_NODE", "NODE"]
-        .into_iter()
-        .filter_map(env::var_os)
-        .map(PathBuf::from)
-        .chain(
-            env::var_os("PATH")
-                .into_iter()
-                .flat_map(|path| env::split_paths(&path).collect::<Vec<_>>())
-                .map(move |directory| directory.join(executable)),
-        )
-        .find(|path| path.is_file())
-        .expect("Node.js")
-        .canonicalize()
-        .expect("canonical Node.js")
-}
-
-fn request(targets: TargetSelection) -> DataOwnershipBuildRequest {
+fn request(root: &std::path::Path, targets: TargetSelection) -> DataOwnershipBuildRequest {
     DataOwnershipBuildRequest {
-        workspace_root: root(),
-        entrypoint: "tests/m3-fixtures/candidate-modules/main.zry".to_owned(),
+        workspace_root: root.to_owned(),
+        entrypoint: "main.zry".to_owned(),
         artifact_stem: "ownership-score".to_owned(),
         targets,
         node_runtime: node_executable(),
@@ -43,9 +22,11 @@ fn request(targets: TargetSelection) -> DataOwnershipBuildRequest {
 #[test]
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn canonical_build_manifest_repeats_and_round_trips_exactly() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
-    let success = prepare_data_ownership_for_test(&request(TargetSelection::All), None)
-        .expect("candidate build");
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    let success =
+        prepare_data_ownership_for_test(&request(workspace.root(), TargetSelection::All), None)
+            .expect("candidate build");
     let first =
         render_ownership_manifest_v3(&success, "ownership-score", &[]).expect("manifest v3");
     let second =
@@ -65,8 +46,9 @@ fn canonical_build_manifest_repeats_and_round_trips_exactly() {
 
 #[test]
 fn run_manifest_requires_ordered_typed_results() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
-    let request = request(TargetSelection::JavaScript);
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    let request = request(workspace.root(), TargetSelection::JavaScript);
     let success = prepare_data_ownership_for_test(
         &request,
         Some(("score".to_owned(), vec![ScalarValue::I32(21)])),
@@ -86,9 +68,13 @@ fn run_manifest_requires_ordered_typed_results() {
 
 #[test]
 fn hostile_schema_and_identity_changes_are_rejected() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
-    let success = prepare_data_ownership_for_test(&request(TargetSelection::JavaScript), None)
-        .expect("candidate build");
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    let success = prepare_data_ownership_for_test(
+        &request(workspace.root(), TargetSelection::JavaScript),
+        None,
+    )
+    .expect("candidate build");
     let bytes =
         render_ownership_manifest_v3(&success, "ownership-score", &[]).expect("manifest v3");
     let canonical = String::from_utf8(bytes.clone()).expect("UTF-8 manifest");

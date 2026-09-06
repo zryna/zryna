@@ -484,7 +484,7 @@ impl PublishedNativeExecutableArtifact {
         &self.diagnostics
     }
 
-    /// Returns the sealed DataOwnershipV1 identity when this is an ownership executable.
+    /// Returns the sealed `DataOwnershipV1` identity when this is an ownership executable.
     #[must_use]
     pub const fn data_ownership_identity(&self) -> Option<&DataOwnershipExecutableIdentity> {
         self.prepared.ownership_identity()
@@ -818,7 +818,6 @@ fn ensure_destination_absent(destination: &Path, artifact_stem: &str) -> Result<
     }
 }
 
-#[cfg(any(all(target_os = "linux", target_arch = "x86_64"), test))]
 const MAX_NATIVE_HARNESS_BYTES: usize = 128 * 1_024;
 
 #[cfg(any(all(target_os = "linux", target_arch = "x86_64"), test))]
@@ -2702,6 +2701,7 @@ mod link_run_tests {
                 bytes: Arc::from([]),
                 result_type: zryna_abi::ScalarType::I32,
                 expected_symbol: Box::from("zryna_v1_e_probe"),
+                ownership_identity: None,
                 diagnostics: Vec::new(),
             },
         };

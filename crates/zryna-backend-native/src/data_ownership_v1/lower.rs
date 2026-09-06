@@ -362,9 +362,8 @@ fn construct(
     builder.ins().trapnz(status, TrapCode::unwrap_user(2));
     let pointer = builder.ins().stack_load(types::I64, types::I64, output, 0);
     if layout.category() == TypeCategory::Enum {
-        let variant = match operation.immediate() {
-            VerifiedImmediate::Variant(value) => value,
-            _ => return Err(invariant_error()),
+        let VerifiedImmediate::Variant(variant) = operation.immediate() else {
+            return Err(invariant_error());
         };
         let tag = builder.ins().iconst(types::I32, i64::from(variant));
         builder.ins().store(MemFlagsData::new(), tag, pointer, 0);

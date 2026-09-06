@@ -1,5 +1,7 @@
+#![cfg(all(target_os = "linux", target_arch = "x86_64"))]
+
 use std::{
-    env, fs,
+    fs,
     path::PathBuf,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -9,7 +11,10 @@ use zryna_abi::{ScalarOutcome, ScalarValue};
 use super::*;
 use crate::{
     TargetSelection,
-    ownership_pipeline::{OWNERSHIP_ROUTE_TEST_LOCK, prepare_data_ownership_for_test},
+    ownership_pipeline::{
+        prepare_data_ownership_for_test,
+        test_support::{fixture_workspace, node_executable, route_guard},
+    },
 };
 
 static NEXT_STEM: AtomicUsize = AtomicUsize::new(0);
@@ -24,19 +29,15 @@ impl Drop for BundleCleanup {
     }
 }
 
-fn request() -> DataOwnershipRunRequest {
+fn request(root: &std::path::Path) -> DataOwnershipRunRequest {
     let sequence = NEXT_STEM.fetch_add(1, Ordering::Relaxed);
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("repository root");
     DataOwnershipRunRequest {
         build: DataOwnershipBuildRequest {
-            workspace_root: root,
-            entrypoint: "tests/m3-fixtures/candidate-modules/main.zry".to_owned(),
+            workspace_root: root.to_owned(),
+            entrypoint: "main.zry".to_owned(),
             artifact_stem: format!("ownership-command-{}-{sequence}", std::process::id()),
             targets: TargetSelection::All,
-            node_runtime: PathBuf::from("/usr/bin/node"),
+            node_runtime: node_executable(),
         },
         logical_export: "score".to_owned(),
         arguments: vec![ScalarValue::I32(21)],
@@ -45,8 +46,9 @@ fn request() -> DataOwnershipRunRequest {
 
 #[test]
 fn all_targets_execute_and_publish_one_typed_candidate_run() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
-    let request = request();
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    let request = request(workspace.root());
     let success = prepare_data_ownership_for_test(
         &request.build,
         Some((request.logical_export, request.arguments)),

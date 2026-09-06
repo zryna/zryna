@@ -115,10 +115,9 @@ fn place_address(
         PlaceKind::Parameter(_) | PlaceKind::Local(_) | PlaceKind::Temporary(_) => {
             root_address(slots, id, builder)
         }
-        PlaceKind::Field { base, offset } | PlaceKind::ArrayElement { base, offset } => {
-            offset_address(program, function, *base, *offset, slots, builder)
-        }
-        PlaceKind::EnumPayload { base, offset, .. } => {
+        PlaceKind::Field { base, offset }
+        | PlaceKind::ArrayElement { base, offset }
+        | PlaceKind::EnumPayload { base, offset, .. } => {
             offset_address(program, function, *base, *offset, slots, builder)
         }
     }
@@ -397,7 +396,7 @@ pub(super) fn place_type(function: VerifiedFunction<'_>, id: u32) -> Result<u32,
     function
         .places()
         .find(|place| place.id() == id)
-        .map(|place| place.ty())
+        .map(zryna_native_mir::data_ownership_v1::VerifiedPlace::ty)
         .ok_or_else(invariant_error)
 }
 

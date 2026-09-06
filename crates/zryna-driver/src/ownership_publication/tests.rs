@@ -1,16 +1,20 @@
 use std::{
-    env, fs,
+    fs,
     path::{Path, PathBuf},
     sync::atomic::{AtomicUsize, Ordering},
 };
 
 use zryna_abi::{ScalarOutcome, ScalarValue};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use zryna_diagnostics::Diagnostic;
 
 use super::*;
 use crate::{
     DataOwnershipBuildRequest, TargetSelection,
-    ownership_pipeline::{OWNERSHIP_ROUTE_TEST_LOCK, prepare_data_ownership_for_test},
+    ownership_pipeline::{
+        prepare_data_ownership_for_test,
+        test_support::{fixture_workspace, node_executable, route_guard},
+    },
 };
 
 static NEXT_STEM: AtomicUsize = AtomicUsize::new(0);
@@ -25,33 +29,18 @@ impl Drop for BundleCleanup {
     }
 }
 
-fn root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repository root")
-}
-
-fn node_executable() -> PathBuf {
-    let executable = if cfg!(windows) { "node.exe" } else { "node" };
-    env::var_os("PATH")
-        .into_iter()
-        .flat_map(|path| env::split_paths(&path).collect::<Vec<_>>())
-        .map(move |directory| directory.join(executable))
-        .find(|path| path.is_file())
-        .expect("Node.js")
-        .canonicalize()
-        .expect("canonical Node.js")
-}
-
-fn request(targets: TargetSelection) -> DataOwnershipBuildRequest {
+fn request(root: &Path, targets: TargetSelection) -> DataOwnershipBuildRequest {
     let sequence = NEXT_STEM.fetch_add(1, Ordering::Relaxed);
     DataOwnershipBuildRequest {
-        workspace_root: root(),
-        entrypoint: "tests/m3-fixtures/candidate-modules/main.zry".to_owned(),
+        workspace_root: root.to_owned(),
+        entrypoint: "main.zry".to_owned(),
         artifact_stem: format!("ownership-publication-{}-{sequence}", std::process::id()),
         targets,
         node_runtime: node_executable(),
     }
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn transaction_names(output: &Path) -> Vec<String> {
     let mut names = fs::read_dir(output)
         .expect("output directory")
@@ -66,8 +55,9 @@ fn transaction_names(output: &Path) -> Vec<String> {
 #[test]
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn failures_rollback_then_complete_bundle_publishes_create_only() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
-    let request = request(TargetSelection::All);
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    let request = request(workspace.root(), TargetSelection::All);
     let success = prepare_data_ownership_for_test(&request, None).expect("candidate build");
     let output =
         ArtifactOutputRoot::prepare_for_workspace(&request.workspace_root).expect("output");
@@ -119,8 +109,9 @@ fn failures_rollback_then_complete_bundle_publishes_create_only() {
 
 #[test]
 fn complete_run_bundle_binds_typed_results() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
-    let request = request(TargetSelection::JavaScript);
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    let request = request(workspace.root(), TargetSelection::JavaScript);
     let success = prepare_data_ownership_for_test(
         &request,
         Some(("score".to_owned(), vec![ScalarValue::I32(21)])),

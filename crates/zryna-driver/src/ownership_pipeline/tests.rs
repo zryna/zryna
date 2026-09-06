@@ -9,6 +9,7 @@ use std::{
 use zryna_frontend::{VerifiedFrontendProviderV4, WorkerError, syntax_v4};
 use zryna_source::SourceMap;
 
+use super::test_support::{fixture_workspace, node_executable, route_guard};
 use super::*;
 
 #[derive(Clone)]
@@ -40,31 +41,32 @@ impl VerifiedFrontendProviderV4 for CountingFrontend {
     }
 }
 
-fn root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repository root")
-}
-
-fn request(entrypoint: &str, targets: TargetSelection) -> DataOwnershipBuildRequest {
+fn request(
+    root: &std::path::Path,
+    entrypoint: &str,
+    targets: TargetSelection,
+) -> DataOwnershipBuildRequest {
     DataOwnershipBuildRequest {
-        workspace_root: root(),
+        workspace_root: root.to_owned(),
         entrypoint: entrypoint.to_owned(),
         artifact_stem: "candidate".to_owned(),
         targets,
-        node_runtime: PathBuf::from("/usr/bin/node"),
+        node_runtime: node_executable(),
     }
 }
 
 #[test]
 fn one_final_authority_dispatches_all_targets_in_canonical_order() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
     let calls = Arc::new(AtomicUsize::new(0));
     let observed = Arc::new(Mutex::new(Vec::new()));
     let phase_observer = Arc::clone(&observed);
     let result = execute(
-        &request("tests/m3-fixtures/candidate-modules/main.zry", TargetSelection::All),
+        &request(workspace.root(), "main.zry", TargetSelection::All),
         None,
         |request, node| {
-            configured_frontend_v4(request, node)
+            configured_test_frontend_v4(request, node)
                 .map(|inner| CountingFrontend { inner, calls: Arc::clone(&calls) })
         },
         &move |phase| {
@@ -94,17 +96,18 @@ fn one_final_authority_dispatches_all_targets_in_canonical_order() {
 
 #[test]
 fn typed_run_prepares_the_selected_native_executable() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
     let run = DataOwnershipRunRequest {
-        build: request("tests/m3-fixtures/candidate-modules/main.zry", TargetSelection::Native),
+        build: request(workspace.root(), "main.zry", TargetSelection::Native),
         logical_export: "score".to_owned(),
         arguments: vec![ScalarValue::I32(21)],
     };
     let result = execute(
         &run.build,
         Some((run.logical_export, run.arguments)),
-        configured_frontend_v4,
-        &allow_phase,
+        configured_test_frontend_v4,
+        &|_| Ok(()),
         validate_request_shape,
     )
     .expect("candidate run");
@@ -118,13 +121,14 @@ fn typed_run_prepares_the_selected_native_executable() {
 
 #[test]
 fn invocation_mismatch_stops_before_backend_dispatch() {
-    let _guard = OWNERSHIP_ROUTE_TEST_LOCK.lock().expect("route test lock");
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
     let phases = Arc::new(AtomicUsize::new(0));
     let observed = Arc::clone(&phases);
     let failure = execute(
-        &request("tests/m3-fixtures/candidate-modules/main.zry", TargetSelection::All),
+        &request(workspace.root(), "main.zry", TargetSelection::All),
         Some(("score".to_owned(), vec![ScalarValue::Bool(true)])),
-        configured_frontend_v4,
+        configured_test_frontend_v4,
         &move |_| {
             observed.fetch_add(1, Ordering::SeqCst);
             Ok(())

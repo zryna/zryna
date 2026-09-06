@@ -29,7 +29,7 @@ use crate::{LinuxX8664ObjectTarget, MAX_NATIVE_OBJECT_BYTES, NATIVE_OBJECT_TARGE
 
 const MAX_CODEGEN_UNITS: u64 = 1_000_000;
 
-/// Audited DataOwnershipV1 ELF relocatable bytes.
+/// Audited `DataOwnershipV1` ELF relocatable bytes.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ValidatedDataOwnershipObjectArtifact {
     bytes: Vec<u8>,
@@ -43,7 +43,7 @@ impl ValidatedDataOwnershipObjectArtifact {
     }
 }
 
-/// Emits deterministic DataOwnershipV1 Linux x86-64 object bytes.
+/// Emits deterministic `DataOwnershipV1` Linux x86-64 object bytes.
 ///
 /// # Errors
 /// Returns a stable diagnostic when code generation or the closed object audit fails.
@@ -298,15 +298,15 @@ fn runtime_signature(symbol: &str) -> Result<Signature, Diagnostic> {
             let parameters = if symbol.ends_with("concat") { vec![p, p, p] } else { vec![p, p] };
             i32s(&mut signature, &parameters);
         }
-        "string_release" => i32s(&mut signature, &[p]),
-        "vec_allocate" => i32s(&mut signature, &[types::I32, types::I64, p]),
-        "vec_reserve" => i32s(&mut signature, &[types::I32, p, types::I64, p]),
-        "vec_release_storage" => i32s(&mut signature, &[types::I32, p]),
-        "strong_clone"
+        "string_release"
+        | "strong_clone"
         | "weak_downgrade"
         | "weak_clone"
         | "weak_upgrade"
         | "strong_release_finish" => i32s(&mut signature, &[p]),
+        "vec_allocate" => i32s(&mut signature, &[types::I32, types::I64, p]),
+        "vec_reserve" => i32s(&mut signature, &[types::I32, p, types::I64, p]),
+        "vec_release_storage" => i32s(&mut signature, &[types::I32, p]),
         "strong_release_begin" | "weak_release" => i32s(&mut signature, &[p, p]),
         _ => return Err(invariant_error()),
     }
@@ -327,7 +327,7 @@ fn audit_object(bytes: &[u8], program: &VerifiedMirModule) -> Result<(), Diagnos
         return Err(audit_error());
     }
     let approved_runtime = program.runtime_symbols().collect::<BTreeSet<_>>();
-    let expected_functions = program.functions().map(|function| function.symbol()).collect();
+    let expected_functions = program.functions().map(VerifiedFunction::symbol).collect();
     let mut defined = BTreeSet::new();
     let mut all_defined = BTreeSet::new();
     let mut undefined = BTreeSet::new();

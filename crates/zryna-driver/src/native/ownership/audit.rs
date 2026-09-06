@@ -1,6 +1,11 @@
-use std::{collections::BTreeSet, io::Read as _, os::unix::fs::OpenOptionsExt as _};
+use std::{
+    collections::BTreeSet, fs, io::Read as _, os::unix::fs::OpenOptionsExt as _, path::Path,
+};
 
-use super::*;
+use object::{BinaryFormat, Endianness, Object, ObjectKind, ObjectSection, ObjectSymbol};
+use zryna_diagnostics::Diagnostic;
+
+use super::super::{native_error, regular_file_identity, tool_identity_from_metadata};
 
 pub(super) fn read_stable_file(path: &Path, maximum: usize) -> Result<Box<[u8]>, Diagnostic> {
     let before = regular_file_identity(path).map_err(|()| ownership_object_audit_error())?;
@@ -127,7 +132,7 @@ pub(super) fn audit_completed_executable(
         "memset",
         "stdout",
     ];
-    if file.symbols().filter(|item| item.is_undefined()).any(|item| {
+    if file.symbols().filter(ObjectSymbol::is_undefined).any(|item| {
         item.name().map_or(true, |name| {
             let base = name.split_once('@').map_or(name, |(base, _)| base);
             !approved_imports.contains(&base)

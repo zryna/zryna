@@ -1,4 +1,4 @@
-//! Audited source for the Linux x86-64 OwnershipRuntimeAbiV1 object.
+//! Audited source for the Linux x86-64 `OwnershipRuntimeAbiV1` object.
 
 use std::{collections::BTreeSet, fmt::Write as _};
 
@@ -11,10 +11,10 @@ pub(crate) fn render_source(
 ) -> Vec<u8> {
     let mut elements = BTreeSet::new();
     for ty in program.types() {
-        if ty.category() == zryna_native_mir::data_ownership_v1::raw::TypeCategory::Vec {
-            if let Some(element) = ty.referenced_type() {
-                elements.insert(element);
-            }
+        if ty.category() == zryna_native_mir::data_ownership_v1::raw::TypeCategory::Vec
+            && let Some(element) = ty.referenced_type()
+        {
+            elements.insert(element);
         }
     }
     let layouts = elements.into_iter().filter_map(|id| {
@@ -46,6 +46,7 @@ fn align_up(value: u64, alignment: u64) -> Option<u64> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     use std::{
         collections::BTreeSet,
         fs,
@@ -53,10 +54,15 @@ mod tests {
         sync::atomic::{AtomicU64, Ordering},
     };
 
-    use super::{SOURCE, render_layouts};
+    use super::SOURCE;
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    use super::render_layouts;
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     use object::{Object, ObjectSymbol};
 
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     static NEXT_TEST: AtomicU64 = AtomicU64::new(0);
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     const SYMBOLS: [&str; 17] = [
         "zryna_rt_o1_allocate",
         "zryna_rt_o1_grow",
@@ -76,6 +82,7 @@ mod tests {
         "zryna_rt_o1_strong_release_finish",
         "zryna_rt_o1_weak_release",
     ];
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     const HARNESS: &str = r#"
 #include <stdint.h>
 #include <string.h>
@@ -130,6 +137,7 @@ int main(void) {
 }
 "#;
 
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     const FAILURE_HARNESS: &str = r#"
 #include <stdint.h>
 #include "zryna_ownership_runtime_v1.h"
@@ -259,7 +267,7 @@ int main(void) {
         assert_eq!(defined, SYMBOLS.into_iter().collect());
         let ambient = object
             .symbols()
-            .filter(|symbol| symbol.is_undefined())
+            .filter(ObjectSymbol::is_undefined)
             .filter_map(|symbol| symbol.name().ok())
             .collect::<BTreeSet<_>>();
         assert!(

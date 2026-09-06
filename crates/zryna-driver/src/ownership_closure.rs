@@ -2,6 +2,7 @@
 
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
+    path::Path,
     time::Instant,
 };
 
@@ -13,7 +14,7 @@ use crate::{
     MAX_MODULE_DISCOVERY_ROUNDS, MAX_MODULE_DISCOVERY_WALL_TIME, MAX_MODULE_FILES,
     MAX_MODULE_IMPORT_DECLARATIONS, MAX_MODULE_IMPORT_EDGES, MAX_MODULE_PROVIDER_CALLS,
     MAX_MODULE_PROVIDER_SOURCE_BYTES, MAX_MODULE_SOURCE_BYTES, ModuleClosureError, ModuleEdge,
-    ModuleRecord, WorkspaceSourceRoot,
+    ModuleRecord, WorkspaceSourceRoot, workspace_source::WorkspaceSourceSession,
 };
 
 const GRAPH_DOMAIN: &[u8] = b"ZRYNA-M3-GRAPH\0";
@@ -54,6 +55,14 @@ struct EdgeIdentity {
     specifier: String,
     imported: String,
     local: String,
+}
+
+struct ClosureInputs {
+    discovered: BTreeMap<NormalizedSourcePath, DiscoveredSource>,
+    edge_ids: HashSet<EdgeIdentity>,
+    aggregate_bytes: usize,
+    provider_bytes: usize,
+    provider_calls: usize,
 }
 
 /// Driver-owned protocol-v4 source closure used by the internal candidate route.
@@ -154,7 +163,7 @@ where
     Clock: FnMut() -> Instant,
 {
     let started = now();
-    if !entrypoint.as_str().ends_with(".zry") {
+    if Path::new(entrypoint.as_str()).extension().and_then(|value| value.to_str()) != Some("zry") {
         return Err(rejected(diagnostic(
             "ZRYNA-D3301",
             Some(&entrypoint),
@@ -247,15 +256,43 @@ where
         }
     }
 
+    finalize_closure(
+        &mut session,
+        entrypoint,
+        frontend,
+        started,
+        &mut now,
+        ClosureInputs { discovered, edge_ids, aggregate_bytes, provider_bytes, provider_calls },
+    )
+}
+
+fn finalize_closure<Provider, Clock>(
+    session: &mut WorkspaceSourceSession<'_>,
+    entrypoint: NormalizedSourcePath,
+    frontend: &Provider,
+    started: Instant,
+    now: &mut Clock,
+    mut inputs: ClosureInputs,
+) -> Result<VerifiedOwnershipModuleClosure, ModuleClosureError>
+where
+    Provider: VerifiedFrontendProviderV4 + ?Sized,
+    Clock: FnMut() -> Instant,
+{
     session.revalidate_all().map_err(rejected)?;
-    let final_inputs = discovered
+    let final_inputs = inputs
+        .discovered
         .iter()
         .map(|(path, source)| SourceFileInput {
             path: path.as_str().to_owned(),
             text: source.text.clone(),
         })
         .collect();
-    account_provider(&mut provider_calls, &mut provider_bytes, aggregate_bytes, true)?;
+    account_provider(
+        &mut inputs.provider_calls,
+        &mut inputs.provider_bytes,
+        inputs.aggregate_bytes,
+        true,
+    )?;
     let sources = SourceMap::build(final_inputs).map_err(|_| invariant())?;
     let syntax = frontend
         .analyze_verified_v4_with_timeout(
@@ -270,8 +307,11 @@ where
         return Err(invariant());
     }
     let final_imports = imports(&syntax);
-    if final_imports.len() != discovered.len()
-        || discovered.iter().any(|(path, source)| final_imports.get(path) != Some(&source.imports))
+    if final_imports.len() != inputs.discovered.len()
+        || inputs
+            .discovered
+            .iter()
+            .any(|(path, source)| final_imports.get(path) != Some(&source.imports))
     {
         return Err(rejected(diagnostic(
             "ZRYNA-D3302",
@@ -279,7 +319,8 @@ where
             "final authenticated ownership imports differ from fixed-point discovery",
         )));
     }
-    let modules = discovered
+    let modules = inputs
+        .discovered
         .iter()
         .enumerate()
         .map(|(index, (path, source))| {
@@ -300,7 +341,7 @@ where
             local: edge.local.clone(),
         })
         .collect::<HashSet<_>>();
-    if actual != edge_ids {
+    if actual != inputs.edge_ids {
         return Err(invariant());
     }
     reject_cycles(&modules, &edges)?;

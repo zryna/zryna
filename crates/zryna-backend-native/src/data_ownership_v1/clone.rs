@@ -72,8 +72,14 @@ fn clone_into(
 ) -> Result<(), Diagnostic> {
     let layout = type_record(program, ty)?;
     match layout.category() {
-        TypeCategory::Bool => copy_scalar(types::I8, source, destination, builder),
-        TypeCategory::I32 => copy_scalar(types::I32, source, destination, builder),
+        TypeCategory::Bool => {
+            copy_scalar(types::I8, source, destination, builder);
+            Ok(())
+        }
+        TypeCategory::I32 => {
+            copy_scalar(types::I32, source, destination, builder);
+            Ok(())
+        }
         TypeCategory::String => {
             call_ok(runtime, "zryna_rt_o1_string_clone", &[source, destination], builder)
         }
@@ -234,10 +240,9 @@ fn copy_scalar(
     source: cranelift_codegen::ir::Value,
     destination: cranelift_codegen::ir::Value,
     builder: &mut FunctionBuilder<'_>,
-) -> Result<(), Diagnostic> {
+) {
     let value = builder.ins().load(ty, MemFlagsData::new(), source, 0);
     builder.ins().store(MemFlagsData::new(), value, destination, 0);
-    Ok(())
 }
 
 fn offset(

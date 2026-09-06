@@ -4,17 +4,28 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
-use zryna_abi::{Invocation, ScalarOutcome, ScalarValue};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use std::fmt::Write as _;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use zryna_abi::ScalarOutcome;
+use zryna_abi::{Invocation, ScalarValue};
 use zryna_semantics::data_ownership_v1::{SemanticInput, lower};
 use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 use zryna_syntax::v4::{decode_snapshot, verify_snapshot};
 
 use super::*;
+use crate::discover_linux_native_toolchain;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use crate::run_native_invocation;
 
 const SOURCE: &str = include_str!("../../../../../tests/m3-fixtures/pair-score-v4.zry");
 const SNAPSHOT: &str = include_str!("../../../../../tests/m3-fixtures/pair-score-v4.json");
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 const PAIR_ORACLE: &str = include_str!("../../../../../tests/m3-fixtures/pair-oracle-v1.json");
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 const OWNED_TYPES_SOURCE: &str = "interface OwnedBox extends ZrynaStruct { value: String; }\ninterface Node extends ZrynaStruct { children: Vec<Node>; }\nfunction inspect(a: Vec<String>, b: Vec<String>, box: OwnedBox, node: Node): i32 { const xs: Vec<String> = Vec<String>([\"x\"]); return 0; }";
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 const OWNED_CONTRACTS: &str =
     include_str!("../../../../zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs");
 static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
@@ -54,8 +65,8 @@ fn verified_export(
     const EXPORT_BYTES: u64 = 7;
     let source = format!(
         "{}export {}",
-        &original_source[..function_start as usize],
-        &original_source[function_start as usize..]
+        &original_source[..usize::try_from(function_start).expect("function offset")],
+        &original_source[usize::try_from(function_start).expect("function offset")..]
     );
     let mut snapshot: serde_json::Value =
         serde_json::from_str(original_snapshot).expect("JSON snapshot");
@@ -79,6 +90,7 @@ fn verified_export(
         .expect("verified program")
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn verified_private(
     source: &str,
     snapshot: &str,
@@ -96,6 +108,7 @@ fn verified_private(
         .expect("verified program")
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn owned_contract_program() -> zryna_semantics::data_ownership_v1::VerifiedProgram {
     const PREFIX: &str = "const OWNED_TYPES_RESPONSE: &str = r#\"";
     let response = OWNED_CONTRACTS
@@ -323,22 +336,24 @@ fn generated_owned_cleanup_executes_before_scalar_return() {
     let mut arguments = String::new();
     for (index, parameter) in function.parameters().enumerate() {
         let layout = mir.types().find(|ty| ty.id() == parameter.ty()).expect("parameter layout");
-        declarations.push_str(&format!(
-            "  uintptr_t p{index} = 0; if (zryna_rt_o1_allocate({}, {}, &p{index}) != 0) return {}; memset((void *)p{index}, 0, {});\n",
+        writeln!(
+            declarations,
+            "  uintptr_t p{index} = 0; if (zryna_rt_o1_allocate({}, {}, &p{index}) != 0) return {}; memset((void *)p{index}, 0, {});",
             layout.size(),
             layout.alignment(),
             index + 10,
             layout.size(),
-        ));
+        )
+        .expect("in-memory declaration rendering");
         if index != 0 {
             arguments.push_str(", ");
         }
-        arguments.push_str(&format!("p{index}"));
+        write!(arguments, "p{index}").expect("in-memory argument rendering");
     }
     let mut runtime = crate::ownership_runtime_v1::render_source(&mir);
     runtime.extend_from_slice(
         format!(
-            r#"
+            r"
 #include <stdio.h>
 extern int32_t zryna_m3_m0_f0(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 int main(void) {{
@@ -346,7 +361,7 @@ int main(void) {{
   if (allocation_head != NULL) return 2;
   return 0;
 }}
-"#
+"
         )
         .as_bytes(),
     );

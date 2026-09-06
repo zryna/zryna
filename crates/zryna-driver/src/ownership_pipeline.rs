@@ -1,4 +1,4 @@
-//! Internal candidate dispatch for authenticated DataOwnershipV1 builds and runs.
+//! Internal candidate dispatch for authenticated `DataOwnershipV1` builds and runs.
 
 use std::{fs, path::PathBuf};
 
@@ -23,7 +23,7 @@ use crate::{
 pub const DATA_OWNERSHIP_CANDIDATE_PROFILE: &str = "zryna-data-ownership-v1-candidate";
 const NATIVE_TARGET: &str = "x86_64-unknown-linux-gnu";
 
-/// One explicit internal DataOwnershipV1 build request.
+/// One explicit internal `DataOwnershipV1` build request.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DataOwnershipBuildRequest {
     /// Absolute canonical workspace root.
@@ -38,7 +38,7 @@ pub struct DataOwnershipBuildRequest {
     pub node_runtime: PathBuf,
 }
 
-/// One explicit internal DataOwnershipV1 run request.
+/// One explicit internal `DataOwnershipV1` run request.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DataOwnershipRunRequest {
     /// Shared authenticated build request.
@@ -169,7 +169,7 @@ pub(crate) static OWNERSHIP_ROUTE_TEST_LOCK: std::sync::Mutex<()> = std::sync::M
 pub fn prepare_data_ownership_build(
     request: &DataOwnershipBuildRequest,
 ) -> Result<DataOwnershipCandidateSuccess, CommandFailure> {
-    execute(request, None, configured_frontend_v4, &allow_phase, validate_request)
+    execute(request, None, configured_frontend_v4, &|_| Ok(()), validate_request)
 }
 
 /// Authenticates and prepares one internal candidate run without publishing it.
@@ -183,7 +183,7 @@ pub fn prepare_data_ownership_run(
         &request.build,
         Some((request.logical_export, request.arguments)),
         configured_frontend_v4,
-        &allow_phase,
+        &|_| Ok(()),
         validate_request,
     )
 }
@@ -193,11 +193,7 @@ pub(crate) fn prepare_data_ownership_for_test(
     request: &DataOwnershipBuildRequest,
     run: Option<(String, Vec<ScalarValue>)>,
 ) -> Result<DataOwnershipCandidateSuccess, CommandFailure> {
-    execute(request, run, configured_frontend_v4, &allow_phase, validate_request_shape)
-}
-
-fn allow_phase(_phase: DispatchPhase) -> Result<(), CommandFailure> {
-    Ok(())
+    execute(request, run, configured_test_frontend_v4, &|_| Ok(()), validate_request_shape)
 }
 
 fn execute<Provider, Factory>(
@@ -224,7 +220,7 @@ where
         .map_err(|item| failure(CommandFailureKind::Preparation, item))?;
     let frontend = frontend_factory(request, &node)?;
     let closure = discover_ownership_module_closure(&source_root, entrypoint, &frontend)
-        .map_err(closure_failure)?;
+        .map_err(|error| closure_failure(&error))?;
     let program = closure
         .lower_data_ownership_v1()
         .map_err(|items| CommandFailure { kind: CommandFailureKind::Source, diagnostics: items })?;
@@ -340,12 +336,27 @@ fn configured_frontend_v4(
     node: &NodeRuntimeCapability,
 ) -> Result<WorkerFrontendV4, CommandFailure> {
     let adapter = request.workspace_root.join("adapters/typescript-6");
+    configured_frontend_at(&adapter, node)
+}
+
+#[cfg(test)]
+fn configured_test_frontend_v4(
+    _request: &DataOwnershipBuildRequest,
+    node: &NodeRuntimeCapability,
+) -> Result<WorkerFrontendV4, CommandFailure> {
+    configured_frontend_at(&test_support::adapter_root(), node)
+}
+
+fn configured_frontend_at(
+    adapter: &std::path::Path,
+    node: &NodeRuntimeCapability,
+) -> Result<WorkerFrontendV4, CommandFailure> {
     let worker = adapter.join("src/worker-v4.mjs");
-    for (path, label) in [(&adapter, "adapter directory"), (&worker, "worker entrypoint")] {
+    for (path, label) in [(adapter, "adapter directory"), (worker.as_path(), "worker entrypoint")] {
         let metadata = fs::symlink_metadata(path)
             .map_err(|_| preparation_error(format!("DataOwnershipV1 {label} is unavailable")))?;
-        if (path == &adapter && !metadata.is_dir())
-            || (path == &worker && !metadata.is_file())
+        if (path == adapter && !metadata.is_dir())
+            || (path == worker && !metadata.is_file())
             || is_link_like(&metadata)
         {
             return Err(preparation_error(format!("DataOwnershipV1 {label} is not a real path")));
@@ -359,7 +370,7 @@ fn configured_frontend_v4(
     let spec = WorkerSpecV4::new(
         node.executable().map_err(|item| failure(CommandFailureKind::Preparation, item))?,
         vec![node_compatible_path(&worker).into_os_string()],
-        node_compatible_path(&adapter),
+        node_compatible_path(adapter),
         expected,
         WorkerLimitsV4::default(),
     )
@@ -394,7 +405,7 @@ fn validate_request_shape(request: &DataOwnershipBuildRequest) -> Result<(), Com
     Ok(())
 }
 
-fn closure_failure(error: ModuleClosureError) -> CommandFailure {
+fn closure_failure(error: &ModuleClosureError) -> CommandFailure {
     let diagnostics = match &error {
         ModuleClosureError::Frontend(worker) if worker.diagnostics().is_empty() => {
             vec![Diagnostic::error(
@@ -449,5 +460,7 @@ fn is_link_like(metadata: &fs::Metadata) -> bool {
 
 use crate::ModuleClosureError;
 
+#[cfg(test)]
+pub(crate) mod test_support;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;

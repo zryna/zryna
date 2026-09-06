@@ -3,7 +3,12 @@ use zryna_diagnostics::Diagnostic;
 use zryna_diagnostics::Severity;
 use zryna_source::NormalizedSourcePath;
 
-use super::*;
+use super::{
+    DATA_OWNERSHIP_CANDIDATE_PROFILE, GRAPH_DOMAIN, MANIFEST_VERSION, ManifestArtifact,
+    ManifestCommand, ManifestEdge, ManifestLocation, OwnershipManifestResult, OwnershipManifestV3,
+    OwnershipTarget, PROTOCOL_VERSION, TargetMetadata, decode_hex, error, hex, is_hex, push_text,
+    push_u32,
+};
 
 pub(super) fn validate(manifest: &OwnershipManifestV3) -> Result<(), Diagnostic> {
     if manifest.version != MANIFEST_VERSION
@@ -29,9 +34,9 @@ pub(super) fn validate(manifest: &OwnershipManifestV3) -> Result<(), Diagnostic>
     }) || !manifest.sources.windows(2).all(|pair| pair[0].path < pair[1].path)
         || !manifest.sources.iter().any(|source| source.path == entry.as_str())
         || !is_hex(&manifest.graph_sha256)
-        || !is_hex(&manifest.layouts.type_universe_sha256)
-        || !is_hex(&manifest.layouts.linear32_sha256)
-        || !is_hex(&manifest.layouts.linux_x86_64_sha256)
+        || !is_hex(&manifest.layouts.type_universe)
+        || !is_hex(&manifest.layouts.linear32)
+        || !is_hex(&manifest.layouts.linux_x86_64)
         || manifest.runtime_abi.identifier != "zryna-ownership-runtime-v1"
         || manifest.runtime_abi.version != 1
         || !is_hex(&manifest.runtime_abi.sha256)

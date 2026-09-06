@@ -1,4 +1,4 @@
-//! Audited DataOwnershipV1 program, runtime, harness, and executable capabilities.
+//! Audited `DataOwnershipV1` program, runtime, harness, and executable capabilities.
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod audit;
@@ -14,7 +14,20 @@ use zryna_diagnostics::Diagnostic;
 use zryna_ir::data_ownership_v1::{FunctionIdentity, ProgramIdentity};
 use zryna_source::SourceMapIdentity;
 
-use super::*;
+use super::{
+    ArtifactOutputRoot, LinuxX8664LinkToolchain, MAX_NATIVE_HARNESS_BYTES,
+    NATIVE_OBJECT_ARTIFACT_EXTENSION, NativeProcessLimits, PreparedNativeExecutable,
+    PublishedNativeExecutableArtifact, PublishedNativeObjectArtifact, ensure_linux_x86_64_host,
+    invocation_error, native_error, publish_complete_artifact, publish_prepared_native_invocation,
+    select_object_target,
+};
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use super::{
+    NativeStage, ProcessPhase, audit_staged_executable, revalidate_tool, run_bounded_process,
+};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use std::ffi::OsString;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use audit::{
@@ -22,9 +35,10 @@ use audit::{
 };
 
 const OWNERSHIP_OBJECT_LABEL: &str = "DataOwnershipV1 native object";
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 const RUNTIME_OBJECT_LIMIT: usize = 2 * 1_024 * 1_024;
 
-/// Identity sealed to one prepared DataOwnershipV1 executable.
+/// Identity sealed to one prepared `DataOwnershipV1` executable.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DataOwnershipExecutableIdentity {
     source_map: SourceMapIdentity,
@@ -98,18 +112,19 @@ impl DataOwnershipExecutableIdentity {
     }
 }
 
-/// Fully linked but unpublished DataOwnershipV1 executable and its audited inputs.
+/// Fully linked but unpublished `DataOwnershipV1` executable and its audited inputs.
 #[derive(Clone, Debug)]
 pub struct PreparedDataOwnershipExecutable {
     object: ValidatedDataOwnershipObjectArtifact,
     executable: PreparedNativeExecutable,
+    identity: DataOwnershipExecutableIdentity,
 }
 
 impl PreparedDataOwnershipExecutable {
     /// Returns the sealed identity covering every executable input and output.
     #[must_use]
     pub fn identity(&self) -> &DataOwnershipExecutableIdentity {
-        self.executable.ownership_identity().expect("ownership identity")
+        &self.identity
     }
     /// Returns the independently audited program object bytes.
     #[must_use]
@@ -131,7 +146,7 @@ impl PreparedDataOwnershipExecutable {
     }
 }
 
-/// Lowers, emits, links, and audits one authenticated DataOwnershipV1 invocation.
+/// Lowers, emits, links, and audits one authenticated `DataOwnershipV1` invocation.
 ///
 /// This prepares bytes only. Public object and executable names remain absent until callers use
 /// the create-only publication functions.
@@ -208,13 +223,14 @@ pub fn prepare_data_ownership_executable(
             bytes: Arc::from(executable_bytes),
             result_type: export.result(),
             expected_symbol: symbol.into_boxed_str(),
-            ownership_identity: Some(identity),
+            ownership_identity: Some(identity.clone()),
             diagnostics: Vec::new(),
         },
+        identity,
     })
 }
 
-/// Publishes the audited DataOwnershipV1 program object at one absent destination.
+/// Publishes the audited `DataOwnershipV1` program object at one absent destination.
 ///
 /// # Errors
 /// Returns a stable create-only publication diagnostic without replacing an existing artifact.
@@ -233,7 +249,7 @@ pub fn publish_data_ownership_object(
     Ok(PublishedNativeObjectArtifact { path: published.path, diagnostics: published.diagnostics })
 }
 
-/// Publishes the completed audited DataOwnershipV1 executable at one absent destination.
+/// Publishes the completed audited `DataOwnershipV1` executable at one absent destination.
 ///
 /// # Errors
 /// Returns stable audit or create-only publication diagnostics without replacing a destination.
@@ -280,11 +296,11 @@ fn render_harness(
         }
         match argument {
             ScalarValue::Bool(value) => {
-                source.push_str(if value { "UINT8_C(1)" } else { "UINT8_C(0)" })
+                source.push_str(if value { "UINT8_C(1)" } else { "UINT8_C(0)" });
             }
             ScalarValue::I32(i32::MIN) => source.push_str("INT32_MIN"),
             ScalarValue::I32(value) => {
-                write!(source, "INT32_C({value})").map_err(|_| vec![ownership_harness_error()])?
+                write!(source, "INT32_C({value})").map_err(|_| vec![ownership_harness_error()])?;
             }
         }
     }
@@ -305,6 +321,8 @@ fn ownership_harness_error() -> Diagnostic {
     )
 }
 
+type LinkedOwnershipArtifacts = (Box<[u8]>, Box<[u8]>, Vec<Diagnostic>);
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[allow(clippy::too_many_arguments)]
 fn link_and_audit(
@@ -316,7 +334,7 @@ fn link_and_audit(
     output_root: &ArtifactOutputRoot,
     toolchain: &LinuxX8664LinkToolchain,
     limits: NativeProcessLimits,
-) -> Result<(Box<[u8]>, Box<[u8]>, Vec<Diagnostic>), Vec<Diagnostic>> {
+) -> Result<LinkedOwnershipArtifacts, Vec<Diagnostic>> {
     let stage = NativeStage::create(output_root, "ownership").map_err(|error| vec![error])?;
     let operation = (|| {
         stage.write_input(&stage.object, object)?;
@@ -427,7 +445,7 @@ fn link_and_audit(
     _output_root: &ArtifactOutputRoot,
     _toolchain: &LinuxX8664LinkToolchain,
     _limits: NativeProcessLimits,
-) -> Result<(Box<[u8]>, Box<[u8]>, Vec<Diagnostic>), Vec<Diagnostic>> {
+) -> Result<LinkedOwnershipArtifacts, Vec<Diagnostic>> {
     Err(vec![native_error(
         "ZRYNA-N4002",
         "native linking and invocation require a Linux x86-64 host",

@@ -104,11 +104,7 @@ pub fn publish_data_ownership_bundle(
     success: &DataOwnershipCandidateSuccess,
     results: &[OwnershipManifestResult],
 ) -> Result<PublishedOwnershipBundle, CommandFailure> {
-    publish_with_checkpoint(success, results, &allow_phase)
-}
-
-fn allow_phase(_phase: PublicationPhase) -> Result<(), CommandFailure> {
-    Ok(())
+    publish_with_checkpoint(success, results, &|_| Ok(()))
 }
 
 fn publish_with_checkpoint(
@@ -130,7 +126,7 @@ where
         &ArtifactOutputRoot,
     ) -> Result<Vec<OwnershipManifestResult>, CommandFailure>,
 {
-    publish_with_runner(success, &allow_phase, runner)
+    publish_with_runner(success, &|_| Ok(()), runner)
 }
 
 fn publish_with_runner<Runner>(
