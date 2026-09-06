@@ -40,7 +40,7 @@ fn projected(fixture: &Fixture, nested: bool) -> raw::Program {
     raw
 }
 
-fn moved(fixture: &Fixture, nested: bool) -> raw::Program {
+pub(super) fn moved(fixture: &Fixture, nested: bool) -> raw::Program {
     let mut raw = projected(fixture, nested);
     let function = &mut raw.modules[0].functions[0];
     function.blocks[0].instructions[0].kind = raw::InstructionKind::GenericMoveFromPlace {
@@ -52,7 +52,7 @@ fn moved(fixture: &Fixture, nested: bool) -> raw::Program {
     raw
 }
 
-fn replaced(fixture: &Fixture, nested: bool) -> raw::Program {
+pub(super) fn replaced(fixture: &Fixture, nested: bool) -> raw::Program {
     let mut raw = projected(fixture, nested);
     let function = &mut raw.modules[0].functions[0];
     function.result = fixture.integer;

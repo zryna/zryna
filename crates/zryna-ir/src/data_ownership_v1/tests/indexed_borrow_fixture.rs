@@ -18,6 +18,7 @@ pub(super) enum Element {
     Weak,
     Vec,
     Array,
+    Recursive,
 }
 
 pub(super) const ELEMENTS: [Element; 9] = [
@@ -41,6 +42,7 @@ pub(super) struct Fixture {
     pub(super) integer: raw::TypeId,
     pub(super) boolean: raw::TypeId,
     pub(super) wrapper: raw::TypeId,
+    data_declarations: u32,
 }
 
 impl Fixture {
@@ -92,9 +94,27 @@ impl Fixture {
             Element::Weak => 6,
             Element::Vec => 7,
             Element::Array => 8,
+            Element::Recursive => {
+                let node = u32::try_from(kinds.len()).expect("recursive Node");
+                let children = node + 1;
+                kinds.push(raw_layout::TypeKind::Enum {
+                    module: raw_layout::ModuleId(0),
+                    declaration: 3,
+                    variants: vec![
+                        raw_layout::Variant { ordinal: 0, payload: Some(raw_layout::NodeId(2)) },
+                        raw_layout::Variant {
+                            ordinal: 1,
+                            payload: Some(raw_layout::NodeId(children)),
+                        },
+                    ],
+                });
+                kinds.push(raw_layout::TypeKind::Vec { element: raw_layout::NodeId(node) });
+                node
+            }
         };
         let root = match (container, element) {
             (Container::Vec, Element::String) => 7,
+            (Container::Vec, Element::Recursive) => 10,
             (Container::Array, Element::String) if length == nested_length => 8,
             _ => {
                 kinds.push(match container {
@@ -121,6 +141,43 @@ impl Fixture {
         (kinds, wrapper_node)
     }
 
+    fn element_id(layouts: &VerifiedLayouts, element: Element) -> zryna_layout::TypeId {
+        let category = |category| {
+            layouts.types().find(|ty| ty.category() == category).expect("unique category").id()
+        };
+        match element {
+            Element::Bool => category(TypeCategory::Bool),
+            Element::I32 => category(TypeCategory::I32),
+            Element::String => category(TypeCategory::String),
+            Element::Struct => category(TypeCategory::Struct),
+            Element::Enum => layouts
+                .types()
+                .find(|ty| ty.nominal_identity() == Some((0, 1)))
+                .expect("element Enum")
+                .id(),
+            Element::Shared => category(TypeCategory::Shared),
+            Element::Weak => category(TypeCategory::Weak),
+            Element::Vec | Element::Array => layouts
+                .types()
+                .find(|ty| {
+                    ty.category()
+                        == if matches!(element, Element::Vec) {
+                            TypeCategory::Vec
+                        } else {
+                            TypeCategory::FixedArray
+                        }
+                        && ty.referenced_type() == Some(category(TypeCategory::String))
+                })
+                .expect("nested String container")
+                .id(),
+            Element::Recursive => layouts
+                .types()
+                .find(|ty| ty.nominal_identity() == Some((0, 3)))
+                .expect("recursive Node")
+                .id(),
+        }
+    }
+
     pub(super) fn with_lengths(
         container: Container,
         element: Element,
@@ -138,7 +195,7 @@ impl Fixture {
             modules: vec![raw_layout::Module {
                 id: raw_layout::ModuleId(0),
                 source_file: file,
-                data_declarations: 3,
+                data_declarations: if matches!(element, Element::Recursive) { 4 } else { 3 },
             }],
             types: kinds
                 .into_iter()
@@ -148,6 +205,9 @@ impl Fixture {
                     span: match id {
                         3 => Some(sources.span(file, 0, 6).expect("Struct span")),
                         4 => Some(sources.span(file, 7, 13).expect("Enum span")),
+                        9 if matches!(element, Element::Recursive) => {
+                            Some(sources.span(file, 21, 27).expect("recursive Enum span"))
+                        }
                         _ if id == wrapper_node as usize => {
                             Some(sources.span(file, 14, 20).expect("wrapper span"))
                         }
@@ -165,32 +225,7 @@ impl Fixture {
         let category = |category| {
             linear.types().find(|ty| ty.category() == category).expect("unique category").id()
         };
-        let element_id = match element {
-            Element::Bool => category(TypeCategory::Bool),
-            Element::I32 => category(TypeCategory::I32),
-            Element::String => category(TypeCategory::String),
-            Element::Struct => category(TypeCategory::Struct),
-            Element::Enum => linear
-                .types()
-                .find(|ty| ty.nominal_identity() == Some((0, 1)))
-                .expect("element Enum")
-                .id(),
-            Element::Shared => category(TypeCategory::Shared),
-            Element::Weak => category(TypeCategory::Weak),
-            Element::Vec | Element::Array => linear
-                .types()
-                .find(|ty| {
-                    ty.category()
-                        == if matches!(element, Element::Vec) {
-                            TypeCategory::Vec
-                        } else {
-                            TypeCategory::FixedArray
-                        }
-                        && ty.referenced_type() == Some(category(TypeCategory::String))
-                })
-                .expect("nested String container")
-                .id(),
-        };
+        let element_id = Self::element_id(&linear, element);
         let root = linear
             .types()
             .find(|ty| {
@@ -220,6 +255,7 @@ impl Fixture {
             integer,
             boolean,
             wrapper,
+            data_declarations: if matches!(element, Element::Recursive) { 4 } else { 3 },
             sources,
             linear,
             linux,
@@ -237,7 +273,7 @@ impl Fixture {
 
     pub(super) fn seed(&self, access: raw::BorrowAccess) -> raw::Program {
         let mut raw = program(&self.sources, &self.linear, &self.linux);
-        raw.modules[0].data_declarations = 3;
+        raw.modules[0].data_declarations = self.data_declarations;
         let function = &mut raw.modules[0].functions[0];
         let span = function.span;
         let value = |id, ty| raw::ValueDefinition { id: raw::ValueId(id), ty, span };

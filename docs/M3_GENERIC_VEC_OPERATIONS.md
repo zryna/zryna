@@ -41,7 +41,10 @@ than inferring it from nested `Vec<Vec<String>>` evidence. Its `Vec<Node>` conta
 recursive Enum, and prepared push receives an explicit structural clone whose destination-prefix
 failure first releases that partial result before the unchanged Vec, clone source and earlier root.
 Exact, first-extra and checked-overflow cleanup controls preserve pre-operation state and replay the
-same diagnostic. No element move-out, persistent borrow or runtime recursion guarantee is added.
+same diagnostic, then a same-lowerer retry binds the recovered prepared owner and push-failure
+order. A separate authenticated source proves indexed clone observation and exact replacement of
+the recursive `Node` referent. No element move-out, persistent borrow or runtime recursion
+guarantee is added.
 
 ## Clone cleanup and sealed views
 

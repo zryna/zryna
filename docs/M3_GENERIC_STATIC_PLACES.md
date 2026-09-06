@@ -68,3 +68,9 @@ same-lowerer recovery evidence; it does not claim a full maximal source program.
 Dynamic element move-out, hole repair, new public entry shapes and target-runtime
 execution remain outside this adapter. The existing handle-aware clone and
 symbolic shared/weak conformance contracts are not runtime execution receipts.
+
+Issue #323 additionally authenticates both a Struct wrapper and a two-element FixedArray whose
+static subobject is the finite `Node` Enum recursively linked through `Vec<Node>`. Exact source and
+verified-IR evidence binds projected move results and parent masks, prepared clone owners,
+old-target replacement cleanup and returned owners. Recursive-specific hostile IR rejects wrong
+paths, owner reuse and cleanup forgery without claiming by-value recursion or target traversal.

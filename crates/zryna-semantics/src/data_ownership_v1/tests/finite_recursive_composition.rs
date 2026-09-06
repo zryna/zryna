@@ -1,7 +1,8 @@
 use super::finite_recursive_fixture::{SOURCE, snapshot};
 use super::*;
 use zryna_ir::data_ownership_v1::{
-    VerifiedDropAction, VerifiedDropActionKind, VerifiedGenericCloneSource, VerifiedInstructionKind,
+    PlaceIdentity, VerifiedDropAction, VerifiedDropActionKind, VerifiedGenericCloneSource,
+    VerifiedInstructionKind, VerifiedPlaceKind,
 };
 use zryna_layout::TypeCategory;
 
@@ -36,10 +37,10 @@ const EXPECTED_KINDS: [VerifiedInstructionKind; 23] = [
 ];
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn finite_recursive_composition_reaches_verified_ir() {
     let sources = sources_for(SOURCE);
-    let syntax =
-        verify_snapshot(snapshot(), &sources).expect("authenticated finite recursive source");
+    let syntax = verify_snapshot(snapshot(), &sources).expect("authenticated recursive source");
     let mut previous = None;
     for _ in 0..2 {
         let program = lower(pair_input(&syntax, &sources)).expect("finite recursive composition");
@@ -52,7 +53,25 @@ fn finite_recursive_composition_reaches_verified_ir() {
             EXPECTED_KINDS
         );
 
+        for (instruction_at, source, result, destination) in
+            [(9, 8, 6, 9), (14, 10, 9, 14), (22, 16, 13, 20)]
+        {
+            let moved = instructions[instruction_at];
+            assert_eq!(moved.kind(), VerifiedInstructionKind::MoveFromPlace);
+            assert_eq!(moved.place_operands().next().expect("exact move source").index(), source);
+            assert_eq!(moved.result().expect("exact move result").index(), result);
+            assert!(matches!(
+                function
+                    .places()
+                    .find(|place| place.id().index() == destination)
+                    .expect("move destination")
+                    .kind(),
+                VerifiedPlaceKind::Temporary(value) if value.index() == result
+            ));
+        }
         let replacement = instructions[15];
+        assert_eq!(replacement.place_operands().next().expect("old target").index(), 13);
+        assert_eq!(replacement.value_operands().next().expect("prepared move").index(), 9);
         let old = replacement.derived_drop_actions().collect::<Vec<_>>();
         assert_eq!(old.len(), 1);
         assert_eq!(old[0].active_variant(), Some(0), "old leaf variant drops at commit");
@@ -108,11 +127,18 @@ fn finite_recursive_composition_reaches_verified_ir() {
             "push failure first releases its prepared clone, then prior roots in reverse order"
         );
         assert!(masks_are_empty(&push_cleanup));
+        assert_eq!(block.terminator().value_operands().next().expect("return").index(), 13);
+        let returned_cleanup = block.terminator().derived_drop_actions().collect::<Vec<_>>();
         assert_eq!(
-            block.terminator().derived_drop_actions().count(),
-            2,
+            returned_cleanup
+                .iter()
+                .map(VerifiedDropAction::root)
+                .map(PlaceIdentity::index)
+                .collect::<Vec<_>>(),
+            [18, 13],
             "returned clone is excluded while target and pushed forest remain"
         );
+        assert!(masks_are_empty(&returned_cleanup));
         let observation = format!("{program:?}");
         if let Some(previous) = previous.replace(observation.clone()) {
             assert_eq!(previous, observation, "verified recursive lowering replays exactly");

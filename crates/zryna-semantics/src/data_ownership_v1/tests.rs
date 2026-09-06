@@ -10,6 +10,7 @@ mod constructor_value_types;
 mod copy_nested_enum_routes;
 mod finite_recursive_composition;
 pub(in crate::data_ownership_v1) mod finite_recursive_fixture;
+mod finite_recursive_projections;
 mod generic_call_fixture;
 mod generic_call_source;
 pub(super) mod generic_clone_source;

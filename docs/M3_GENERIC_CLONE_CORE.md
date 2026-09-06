@@ -44,6 +44,10 @@ root-replaces that branch, explicitly clones it, then prepares a second clone fo
 clone frontiers contain exactly the reachable String, Enum and Vec identities once; the Vec record
 points back to the Enum rather than unfolding the type cycle. This is source-to-verified-IR and
 symbolic failure evidence only, not recursive target execution.
+Separate authenticated wrapper and fixed-array functions move and replace exact static `Node`
+subobjects, while Vec functions clone an indexed `Node` and replace that exact referent. Their
+verified views bind the concrete producer, result and destination owners, parent masks, old-target
+drop and final return cleanup; recursive-specific raw-IR mutations cover every claimed operation.
 
 ## Preparation, frontier and failure
 

@@ -1,7 +1,7 @@
 use super::super::super::constructor_resources::tests::child_preparation_red::state;
 use super::super::super::constructor_resources::tests::{run_statement, with_snapshot};
 use crate::data_ownership_v1::tests::finite_recursive_fixture::{SOURCE, snapshot};
-use zryna_ir::data_ownership_v1 as ir;
+use zryna_ir::data_ownership_v1::{self as ir, raw};
 
 #[derive(Clone, Copy, Debug)]
 enum Boundary {
@@ -49,6 +49,7 @@ fn exercise(boundary: Boundary, extra: bool, overflow: bool) -> Vec<zryna_diagno
         let before = state(lowerer);
         let checkpoint = lowerer.preparation_checkpoint();
         let facts = lowerer.preparation_facts.clone();
+        let instruction_start = lowerer.instructions.len();
         let succeeded = run_statement(lowerer, boundary.statement(), ty);
         assert_eq!(succeeded, !extra && !overflow);
         if succeeded {
@@ -59,6 +60,40 @@ fn exercise(boundary: Boundary, extra: bool, overflow: bool) -> Vec<zryna_diagno
             assert_eq!(lowerer.preparation_facts, facts);
         }
         lowerer.preparation_facts.held_cleanup[1] = 0;
+        if !succeeded {
+            assert!(run_statement(lowerer, boundary.statement(), ty));
+            assert!(lowerer.moved_projections.is_empty());
+            assert!(lowerer.partial_roots.is_empty());
+            let recovered = &lowerer.instructions[instruction_start..];
+            let clone = recovered
+                .iter()
+                .find(|instruction| {
+                    matches!(instruction.kind, raw::InstructionKind::GenericClonePlace { .. })
+                })
+                .expect("recovered recursive clone");
+            let result = clone.result.as_ref().expect("clone result").id;
+            let destination = lowerer
+                .places
+                .iter()
+                .find(|place| place.kind == raw::PlaceKind::Temporary(result))
+                .expect("exact prepared owner")
+                .id;
+            if matches!(boundary, Boundary::Push) {
+                let push = recovered
+                    .iter()
+                    .find(|instruction| {
+                        matches!(instruction.kind, raw::InstructionKind::VecPush { .. })
+                    })
+                    .expect("recovered push");
+                let raw::InstructionKind::VecPush { vector, value, cleanup } = push.kind else {
+                    unreachable!("VecPush selected")
+                };
+                assert_eq!(value, result);
+                let actions = &lowerer.cleanup_plans[cleanup.0 as usize].actions;
+                assert_eq!(actions[0], raw::DropAction::DropPlace(destination));
+                assert_eq!(actions[1], raw::DropAction::DropPlace(vector));
+            }
+        }
         assert!(lowerer.constructor_storage_is_clear());
     })
 }
