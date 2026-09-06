@@ -4,6 +4,8 @@ use zryna_ownership_runtime_abi::{LogicalOperation, VerifiedOwnershipRuntimeAbi}
 
 use super::{VerifiedMirModule, error, raw};
 
+mod operation;
+
 const MAX_DIAGNOSTICS: usize = 256;
 
 /// Independently verifies untrusted Linux x86-64 `DataOwnershipV1` MIR claims.
@@ -69,6 +71,29 @@ fn verify_types(
             || claim.alignment != sealed.alignment()
             || claim.drop_kind != sealed.drop_kind()
             || claim.runtime_kind != sealed.runtime_kind()
+            || claim.fields
+                != sealed
+                    .fields()
+                    .iter()
+                    .map(|field| raw::Field {
+                        ordinal: field.ordinal(),
+                        ty: field.ty().index(),
+                        offset: field.offset(),
+                    })
+                    .collect::<Vec<_>>()
+            || claim.variants
+                != sealed
+                    .variants()
+                    .iter()
+                    .map(|variant| raw::Variant {
+                        ordinal: variant.ordinal(),
+                        payload: variant.payload().map(zryna_layout::TypeId::index),
+                    })
+                    .collect::<Vec<_>>()
+            || claim.array_stride != sealed.array_stride()
+            || claim.array_length != sealed.array_length()
+            || claim.enum_payload != sealed.enum_payload_layout()
+            || claim.referenced_type != sealed.referenced_type().map(zryna_layout::TypeId::index)
         {
             errors.push(
                 "ZRYNA-N3102",
@@ -121,6 +146,7 @@ fn verify_functions(
         .zip(runtime.native_linux_x86_64_functions())
         .map(|(operation, function)| (operation.operation(), function.symbol()))
         .collect::<BTreeMap<_, _>>();
+    let mut string_literal_bytes = 0_usize;
     for function in &program.functions {
         if function.symbol != format!("zryna_m3_m{}_f{}", function.module, function.declaration)
             || !valid_symbol(&function.symbol)
@@ -138,11 +164,16 @@ fn verify_functions(
             next_value = next_value.saturating_add(1);
         }
         let mut next_borrow = 0_u32;
+        let mut borrow_types = Vec::new();
         for parameter in &function.borrow_parameters {
             if parameter.id != next_borrow || type_at(program, parameter.referent).is_none() {
                 errors.push("ZRYNA-N3105", "native MIR borrow parameter is not dense and typed");
             }
             next_borrow = next_borrow.saturating_add(1);
+            borrow_types.push(Some(operation::BorrowInfo {
+                ty: parameter.referent,
+                access: parameter.access,
+            }));
         }
         verify_places(program, function, layouts, errors);
         if function.blocks.len() > zryna_ir::data_ownership_v1::MAX_BLOCKS_PER_FUNCTION {
@@ -159,7 +190,19 @@ fn verify_functions(
                 next_value = next_value.saturating_add(1);
             }
             for operation in &block.operations {
-                verify_operation_shape(operation, errors);
+                if let raw::Immediate::Utf8(bytes) = &operation.immediate {
+                    string_literal_bytes = string_literal_bytes.saturating_add(bytes.len());
+                    if string_literal_bytes > zryna_ir::data_ownership_v1::MAX_STRING_LITERAL_BYTES
+                    {
+                        errors
+                            .push("ZRYNA-N3201", "native MIR String literal byte budget exceeded");
+                    }
+                }
+                operation::verify_shape(operation, errors);
+                operation::verify_types(program, function, operation, &borrow_types, errors);
+                if operation.borrow_type.is_some_and(|ty| type_at(program, ty).is_none()) {
+                    errors.push("ZRYNA-N3107", "native MIR borrow type is unknown");
+                }
                 for value in &operation.values {
                     if *value >= next_value {
                         errors.push("ZRYNA-N3107", "native MIR operation uses an undefined value");
@@ -181,6 +224,25 @@ fn verify_functions(
                         errors.push("ZRYNA-N3107", "native MIR operation uses an invalid borrow");
                     }
                     if definition {
+                        let info = if defines_borrow {
+                            operation
+                                .borrow_type
+                                .zip(operation.borrow_access)
+                                .map(|(ty, access)| operation::BorrowInfo { ty, access })
+                        } else {
+                            operation
+                                .borrows
+                                .first()
+                                .and_then(|borrow| borrow_types.get(*borrow as usize))
+                                .copied()
+                                .flatten()
+                                .zip(operation.borrow_type)
+                                .map(|(parent, ty)| operation::BorrowInfo {
+                                    ty,
+                                    access: parent.access,
+                                })
+                        };
+                        borrow_types.push(info);
                         next_borrow = next_borrow.saturating_add(1);
                     }
                 }
@@ -198,7 +260,7 @@ fn verify_functions(
                 if operation.callee.is_some_and(|callee| !identities.contains(&callee)) {
                     errors.push("ZRYNA-N3108", "native MIR call target is unknown");
                 }
-                verify_runtime_operation(operation, &runtime_symbols, errors);
+                operation::verify_runtime(operation, &runtime_symbols, errors);
                 if operation
                     .cleanup
                     .is_some_and(|plan| plan as usize >= function.cleanup_plans.len())
@@ -206,7 +268,15 @@ fn verify_functions(
                     errors.push("ZRYNA-N3112", "native MIR operation cleanup is unknown");
                 }
             }
-            verify_terminator(block, function, &identities, &runtime_symbols, next_value, errors);
+            verify_terminator(
+                program,
+                block,
+                function,
+                &identities,
+                &runtime_symbols,
+                next_value,
+                errors,
+            );
             if block.cleanup.is_some_and(|plan| plan as usize >= function.cleanup_plans.len()) {
                 errors.push("ZRYNA-N3112", "native MIR terminator cleanup is unknown");
             }
@@ -283,80 +353,8 @@ fn verify_places(
     }
 }
 
-fn verify_runtime_operation(
-    operation: &raw::Operation,
-    symbols: &BTreeMap<LogicalOperation, &str>,
-    errors: &mut Errors,
-) {
-    let expected = match operation.opcode {
-        raw::Opcode::String => Some(LogicalOperation::StringFromUtf8Copy),
-        raw::Opcode::StringConcat => Some(LogicalOperation::StringConcat),
-        raw::Opcode::VecConstruct => Some(LogicalOperation::VecAllocate),
-        raw::Opcode::VecPush => Some(LogicalOperation::VecReserve),
-        raw::Opcode::SharedClone => Some(LogicalOperation::StrongClone),
-        raw::Opcode::WeakDowngrade => Some(LogicalOperation::WeakDowngrade),
-        raw::Opcode::WeakClone => Some(LogicalOperation::WeakClone),
-        _ => None,
-    };
-    if expected.and_then(|kind| symbols.get(&kind).copied()) != operation.runtime_symbol.as_deref()
-    {
-        errors.push("ZRYNA-N3110", "native MIR operation has a missing or unapproved runtime call");
-    }
-}
-
-fn verify_operation_shape(operation: &raw::Operation, errors: &mut Errors) {
-    let (values, places, borrows, result) = match operation.opcode {
-        raw::Opcode::BoolLiteral | raw::Opcode::I32Literal | raw::Opcode::String => {
-            (Some(0), Some(0), Some(0), true)
-        }
-        raw::Opcode::I32Add
-        | raw::Opcode::I32Sub
-        | raw::Opcode::I32Mul
-        | raw::Opcode::Eq
-        | raw::Opcode::Ne
-        | raw::Opcode::I32LtS
-        | raw::Opcode::I32LeS
-        | raw::Opcode::I32GtS
-        | raw::Opcode::I32GeS => (Some(2), Some(0), Some(0), true),
-        raw::Opcode::I32Neg | raw::Opcode::SharedConstruct => (Some(1), Some(0), Some(0), true),
-        raw::Opcode::Call | raw::Opcode::Construct | raw::Opcode::VecConstruct => {
-            (None, Some(0), None, true)
-        }
-        raw::Opcode::Copy | raw::Opcode::Move | raw::Opcode::Clone => (Some(0), None, None, true),
-        raw::Opcode::Initialize | raw::Opcode::Replace | raw::Opcode::VecPush => {
-            (Some(1), Some(1), Some(0), false)
-        }
-        raw::Opcode::Drop => (Some(0), Some(1), Some(0), false),
-        raw::Opcode::Discriminant => (Some(0), Some(1), Some(0), true),
-        raw::Opcode::Index => (Some(1), Some(1), Some(0), true),
-        raw::Opcode::StringConcat => (Some(0), Some(2), Some(0), true),
-        raw::Opcode::SharedClone | raw::Opcode::WeakDowngrade | raw::Opcode::WeakClone => {
-            (Some(0), Some(1), Some(0), true)
-        }
-        raw::Opcode::BeginBorrow => (Some(0), Some(1), Some(1), false),
-        raw::Opcode::BeginIndexedBorrow => (Some(1), Some(1), Some(1), false),
-        raw::Opcode::ProjectBorrow => (Some(1), Some(0), Some(2), false),
-        raw::Opcode::BindBorrow => (Some(0), Some(0), Some(2), false),
-        raw::Opcode::BorrowReplace | raw::Opcode::BorrowWrite => (Some(1), Some(0), Some(1), false),
-        raw::Opcode::BorrowRead => (Some(0), Some(0), Some(1), true),
-        raw::Opcode::EndBorrow => (Some(0), Some(0), Some(1), false),
-    };
-    let one_source = operation.opcode != raw::Opcode::Copy
-        && operation.opcode != raw::Opcode::Move
-        && operation.opcode != raw::Opcode::Clone
-        || operation.places.len() + operation.borrows.len() == 1;
-    if values.is_some_and(|count| operation.values.len() != count)
-        || places.is_some_and(|count| operation.places.len() != count)
-        || borrows.is_some_and(|count| operation.borrows.len() != count)
-        || operation.result.is_some() != result
-        || operation.callee.is_some() != (operation.opcode == raw::Opcode::Call)
-        || !one_source
-    {
-        errors.push("ZRYNA-N3107", "native MIR operation operand shape is not canonical");
-    }
-}
-
 fn verify_terminator(
+    program: &raw::Program,
     block: &raw::Block,
     function: &raw::Function,
     _: &BTreeSet<(u32, u32)>,
@@ -364,26 +362,47 @@ fn verify_terminator(
     values: u32,
     errors: &mut Errors,
 ) {
-    let edge = |edge: &raw::Edge, synthesized: usize| {
-        function.blocks.get(edge.target as usize).is_some_and(|target| {
-            edge.arguments.len() + synthesized == target.parameters.len()
-                && edge.arguments.iter().all(|value| *value < values)
-        })
-    };
+    let edge =
+        |edge: &raw::Edge, synthesized: usize| typed_edge(function, edge, synthesized, values);
     let valid = match &block.terminator {
-        raw::Terminator::Return(value) => *value < values,
+        raw::Terminator::Return(value) => {
+            *value < values && value_type(function, *value) == Some(function.result_type)
+        }
         raw::Terminator::Jump(target) => edge(target, 0),
         raw::Terminator::Branch { condition, when_true, when_false } => {
-            *condition < values && edge(when_true, 0) && edge(when_false, 0)
+            *condition < values
+                && value_type(function, *condition)
+                    .and_then(|ty| type_at(program, ty))
+                    .map(|ty| ty.category)
+                    == Some(raw::TypeCategory::Bool)
+                && edge(when_true, 0)
+                && edge(when_false, 0)
         }
         raw::Terminator::EnumMatch { place, arms } => {
-            (*place as usize) < function.places.len()
-                && !arms.is_empty()
-                && arms.iter().all(|(_, target)| edge(target, 0))
+            function.places.get(*place as usize).is_some_and(|place| {
+                type_at(program, place.ty).is_some_and(|ty| {
+                    ty.category == raw::TypeCategory::Enum
+                        && arms.len() == ty.variants.len()
+                        && arms.iter().zip(&ty.variants).all(|((ordinal, target), variant)| {
+                            *ordinal == variant.ordinal && edge(target, 0)
+                        })
+                })
+            })
         }
         raw::Terminator::WeakUpgrade { weak, success, expired, runtime_symbol } => {
-            (*weak as usize) < function.places.len()
-                && edge(success, 1)
+            function.places.get(*weak as usize).is_some_and(|place| {
+                type_at(program, place.ty).is_some_and(|weak_ty| {
+                    weak_ty.category == raw::TypeCategory::Weak
+                        && function.blocks.get(success.target as usize).is_some_and(|target| {
+                            target.parameters.first().is_some_and(|parameter| {
+                                type_at(program, parameter.ty).is_some_and(|shared| {
+                                    shared.category == raw::TypeCategory::Shared
+                                        && shared.referenced_type == weak_ty.referenced_type
+                                })
+                            })
+                        })
+                })
+            }) && edge(success, 1)
                 && edge(expired, 0)
                 && symbols.get(&LogicalOperation::WeakUpgrade).copied()
                     == Some(runtime_symbol.as_str())
@@ -396,6 +415,29 @@ fn verify_terminator(
             "native MIR terminator has an invalid operand, edge, or runtime call",
         );
     }
+}
+
+fn typed_edge(function: &raw::Function, edge: &raw::Edge, synthesized: usize, values: u32) -> bool {
+    function.blocks.get(edge.target as usize).is_some_and(|target| {
+        edge.arguments.len() + synthesized == target.parameters.len()
+            && edge.arguments.iter().zip(target.parameters.iter().skip(synthesized)).all(
+                |(value, parameter)| {
+                    *value < values && value_type(function, *value) == Some(parameter.ty)
+                },
+            )
+    })
+}
+
+fn value_type(function: &raw::Function, id: u32) -> Option<u32> {
+    function
+        .parameters
+        .iter()
+        .chain(function.blocks.iter().flat_map(|block| block.parameters.iter()))
+        .chain(function.blocks.iter().flat_map(|block| {
+            block.operations.iter().filter_map(|operation| operation.result.as_ref())
+        }))
+        .find(|value| value.id == id)
+        .map(|value| value.ty)
 }
 
 fn verify_cleanup(program: &raw::Program, function: &raw::Function, errors: &mut Errors) {
@@ -435,7 +477,7 @@ fn verify_cleanup(program: &raw::Program, function: &raw::Function, errors: &mut
     }
 }
 
-fn type_at(program: &raw::Program, id: u32) -> Option<&raw::Type> {
+pub(super) fn type_at(program: &raw::Program, id: u32) -> Option<&raw::Type> {
     program.types.get(id as usize).filter(|ty| ty.id == id)
 }
 fn valid_symbol(symbol: &str) -> bool {
@@ -445,11 +487,11 @@ fn valid_symbol(symbol: &str) -> bool {
 }
 
 #[derive(Default)]
-struct Errors {
+pub(super) struct Errors {
     items: Vec<zryna_diagnostics::Diagnostic>,
 }
 impl Errors {
-    fn push(&mut self, code: &'static str, message: impl Into<String>) {
+    pub(super) fn push(&mut self, code: &'static str, message: impl Into<String>) {
         if self.items.len() < MAX_DIAGNOSTICS {
             self.items.push(error(code, message));
         }

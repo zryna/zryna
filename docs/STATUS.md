@@ -277,31 +277,35 @@ active enum payloads, #339 lexical calls, and #340 hostile/resource evidence. It
 bindings and retained exclusions are in `M3_NONINDEXED_OWNED_BORROWING_MATRIX.md`; #274 remains
 separately completed and #269 now reconciles the complete compiler source/IR authority. Verified
 instruction, cleanup and fault traces alone are not target execution. The internal #84/#85/#86
-boundaries now add deterministic JavaScript, audited memory-bearing core WebAssembly and
-independently verified Linux x86-64 native MIR as documented in `M3_TARGET_BACKENDS.md`. Driver,
-native object/link execution, aggregate conformance and public activation remain open.
+boundaries add deterministic JavaScript, audited memory-bearing core WebAssembly and independently
+verified Linux x86-64 native MIR as documented in `M3_TARGET_BACKENDS.md`. Issue #87 now adds the
+audited native object, exact ownership runtime, sealed link and real executable boundary. Issue #88
+adds one authenticated internal driver route, strict manifest v3, actual three-target candidate
+execution, and create-only whole-bundle publication. Aggregate conformance and public activation
+remain open as #89 and #90.
 Protocol v4 is unchanged; projected forwarding, call recursion, public borrow signatures and
 retained borrow authority remain later or unavailable child work. The source-completion closure
 itself added no driver, CLI, published artifact, website-support or public-profile capability.
 
-The public compiler still does not select syntax protocol v4, route DataOwnershipV1 IR, publish
-M3 artifacts, or accept `--profile data-ownership-v1`. The internal JavaScript/WebAssembly/MIR
-entrypoints are not public driver capability. Default M1 and explicit `control-flow-v1` M2 remain
-the only public profiles.
+The public compiler still does not select syntax protocol v4 or accept
+`--profile data-ownership-v1`. That exact selector is deterministically rejected before workspace
+effects with `ZRYNA-C3401`. The internal candidate can route `DataOwnershipV1`, execute selected
+targets, and publish strict manifest-v3 bundles through library entrypoints, but it is not public
+driver capability. Default M1 and explicit `control-flow-v1` M2 remain the only public profiles.
 
 The internal #83 compiler boundary now provides explicit Shared/Weak construction, clone,
 downgrade, deterministic release cleanup and one indivisible success/expired/overflow upgrade
-contract across the frozen payload/control-flow matrix. Mandatory verified IR and symbolic,
-non-executable ABI/fault/resource/cycle evidence preserve source ownership, original traps and
-deterministic replay. Target allocation, concrete count mutation and outcome selection remain
-unimplemented.
+contract across the frozen payload/control-flow matrix. Mandatory verified IR preserves source
+ownership, original traps and deterministic replay. The internal target/runtime chain now executes
+the supported bounded ownership surface; general aggregate ABI and public-profile claims remain
+excluded.
 
-The first planned executable slice remains an internal scalarizable `Pair` struct observed through
-a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. The
-completed bounded owned String/Vec and lexical-borrow compiler boundaries remain internal;
-#122 consolidates borrowing closure evidence. Issue #83 internal compile-time semantics are
-complete. Later issues add three target implementations, an atomic manifest v3 CLI,
-fixed-oracle conformance, and authenticated website publication. Tracing GC,
+The first executable slice remains an internal scalarizable `Pair` struct observed through scalar
+ABI v1. Its candidate route now executes JavaScript, WebAssembly, and Linux x86-64 native artifacts
+and publishes one atomic manifest-v3 bundle. The completed bounded owned String/Vec and lexical-borrow compiler boundaries remain internal;
+#122 consolidates borrowing closure evidence.
+Issue #83 internal compile-time semantics are complete. Later issues add fixed-oracle conformance
+and authenticated public/website activation. Tracing GC,
 public aggregate ABI,
 raw pointers, unsafe, FFI, threads, WASI, Components, custom allocators, and freestanding targets
 remain outside M3.

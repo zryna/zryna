@@ -91,8 +91,8 @@
       "id": "zryna-backend-native",
       "root": "crates/zryna-backend-native",
       "kind": "backend",
-      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir", "zryna-native-mir"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir", "zryna-native-mir", "zryna-semantics", "zryna-source", "zryna-syntax"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-backend-webassembly",
@@ -116,7 +116,8 @@
         "zryna-ir",
         "zryna-native-mir",
         "zryna-semantics",
-        "zryna-source"
+        "zryna-source",
+        "zryna-syntax"
       ],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },

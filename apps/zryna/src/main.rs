@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+mod profile;
+
 use std::{ffi::OsString, path::PathBuf, process::ExitCode};
 
 use clap::error::ErrorKind;
@@ -138,9 +140,7 @@ where
     T: Into<OsString> + Clone,
 {
     let arguments = arguments.into_iter().map(Into::into).collect::<Vec<_>>();
-    let control_flow =
-        arguments.windows(2).any(|pair| pair[0] == "--profile" && pair[1] == "control-flow-v1")
-            || arguments.iter().any(|argument| argument == "--profile=control-flow-v1");
+    let control_flow = profile::select_control_flow(&arguments)?;
     if !control_flow {
         return Cli::try_parse_from(arguments);
     }

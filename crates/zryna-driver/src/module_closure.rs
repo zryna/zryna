@@ -41,9 +41,9 @@ const GRAPH_VERSION: u32 = 1;
 /// One canonical module identity in normalized path order.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ModuleRecord {
-    id: u32,
-    path: NormalizedSourcePath,
-    source_sha256: [u8; 32],
+    pub(crate) id: u32,
+    pub(crate) path: NormalizedSourcePath,
+    pub(crate) source_sha256: [u8; 32],
 }
 
 impl ModuleRecord {
@@ -69,15 +69,15 @@ impl ModuleRecord {
 /// One canonical named-import binding edge carrying only final-map spans.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ModuleEdge {
-    importer: NormalizedSourcePath,
-    target: NormalizedSourcePath,
-    specifier: String,
-    imported: String,
-    local: String,
-    declaration_span: Span,
-    specifier_span: Span,
-    imported_span: Span,
-    local_span: Span,
+    pub(crate) importer: NormalizedSourcePath,
+    pub(crate) target: NormalizedSourcePath,
+    pub(crate) specifier: String,
+    pub(crate) imported: String,
+    pub(crate) local: String,
+    pub(crate) declaration_span: Span,
+    pub(crate) specifier_span: Span,
+    pub(crate) imported_span: Span,
+    pub(crate) local_span: Span,
 }
 
 impl ModuleEdge {

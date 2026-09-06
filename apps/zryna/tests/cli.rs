@@ -727,6 +727,26 @@ fn control_flow_profile_is_exact_and_selects_boolean_argument_parsing() {
 }
 
 #[test]
+fn data_ownership_candidate_profile_is_rejected_before_workspace_effects() {
+    for spelling in [vec!["--profile", "data-ownership-v1"], vec!["--profile=data-ownership-v1"]] {
+        let mut command = zryna();
+        command.args(["build", "src/main.zry", "--target", "javascript"]);
+        command.args(spelling);
+        command.arg("--node").arg(dummy_absolute_node());
+        let output = command.output().expect("candidate rejection command must start");
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        let stderr = String::from_utf8(output.stderr).expect("UTF-8 rejection");
+        assert_eq!(
+            stderr.matches("ZRYNA-C3401").count(),
+            1,
+            "one stable candidate rejection diagnostic"
+        );
+        assert!(stderr.contains("not a supported public profile"));
+    }
+}
+
+#[test]
 fn control_flow_multifile_build_records_canonical_manifest_v2() {
     let mut workspace = WorkspaceCase::control_flow();
     let stem = workspace.stem("m2_multifile_all", "build");
