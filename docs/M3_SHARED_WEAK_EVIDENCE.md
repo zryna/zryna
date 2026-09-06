@@ -54,7 +54,8 @@ pristine graph. This is bounded compiler evidence, not full #262 closure or exec
 
 `weak_upgrade_payloads` verifies addressable and temporary upgrade for exact parameter-fed bool,
 i32, String, nominal Struct/Enum, zero/nonzero String fixed arrays, String Vec, Shared, Weak and
-nested `Vec<Array<Shared<Weak<String>>>>` payloads. It pins the exact synthesized Shared type,
+nested `Vec<Array<Handle>>` payloads, where `Handle` is `Shared<Inner>` and `Inner` is
+`Weak<String>`. It pins the exact synthesized Shared type,
 empty expired parameter list, reverse overflow/return cleanup and deterministic replay. These
 parameters represent initialized incoming values; recursive nominal construction and complete
 per-variant construction evidence remain distinct #261 obligations, not receipts supplied here.
