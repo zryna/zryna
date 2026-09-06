@@ -55,6 +55,9 @@ mod structured_cfg;
 mod structured_checkpoint;
 mod structured_constructor;
 mod structured_graph;
+#[cfg(test)]
+#[path = "../tests/structured_graph_resources.rs"]
+mod structured_graph_resources;
 mod structured_handoff;
 mod structured_indexed;
 mod structured_indexed_preparation;

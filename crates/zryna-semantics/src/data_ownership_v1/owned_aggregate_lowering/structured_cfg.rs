@@ -10,7 +10,7 @@ use super::{PrivateOwnedAggregateLowerer, StatementOutcome, Ty};
 
 #[cfg(test)]
 #[path = "../tests/structured_cfg_resources.rs"]
-mod resources;
+pub(super) mod resources;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn lower_structured_cfg(
@@ -34,7 +34,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         result: Ty,
     ) -> Option<Vec<raw::Block>> {
         let at = span(self.input.sources(), self.function.body.span);
-        let mut graph = StructuredGraph::new(self.function);
+        let [held_blocks, held_edges] = super::structured_graph::held_resources();
+        let mut graph = StructuredGraph::new(self.function, held_blocks, held_edges, at, self)?;
         if self.structured_scope(self.function.body.root_block, result, &mut graph)? {
             self.errors.at(
                 "ZRYNA-M3015",

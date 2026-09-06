@@ -6,6 +6,31 @@ use zryna_source::Span;
 use super::super::owned_cfg_state::OwnedCfgState;
 use super::PrivateOwnedAggregateLowerer;
 
+#[cfg(test)]
+thread_local! {
+    static HELD_RESOURCES: std::cell::Cell<[usize; 2]> = const { std::cell::Cell::new([0, 0]) };
+}
+
+#[cfg(not(test))]
+pub(super) const fn held_resources() -> [usize; 2] {
+    [0, 0]
+}
+
+#[cfg(test)]
+pub(super) fn held_resources() -> [usize; 2] {
+    HELD_RESOURCES.get()
+}
+
+#[cfg(test)]
+pub(super) fn with_held_resources<T>(held: [usize; 2], f: impl FnOnce() -> T) -> T {
+    HELD_RESOURCES.with(|resources| {
+        let previous = resources.replace(held);
+        let result = f();
+        resources.set(previous);
+        result
+    })
+}
+
 pub(super) struct StructuredBlock {
     parameters: Vec<raw::ValueDefinition>,
     start: usize,
@@ -17,13 +42,29 @@ pub(super) struct StructuredGraph {
     pub(super) blocks: Vec<StructuredBlock>,
     pub(super) current: usize,
     edges: usize,
+    held_blocks: usize,
+    held_edges: usize,
     held_terminators: usize,
     matches: BTreeSet<u32>,
 }
 
 impl StructuredGraph {
-    pub(super) fn new(function: &zryna_syntax::v4::RawFunctionSyntax) -> Self {
-        Self {
+    pub(super) fn new(
+        function: &zryna_syntax::v4::RawFunctionSyntax,
+        held_blocks: usize,
+        held_edges: usize,
+        at: Span,
+        lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
+    ) -> Option<Self> {
+        if held_blocks.checked_add(1).is_none_or(|blocks| blocks > ir::MAX_BLOCKS_PER_FUNCTION) {
+            Self::limit(lowerer, at, "blocks");
+            return None;
+        }
+        if held_edges > ir::MAX_CFG_EDGES_PER_FUNCTION {
+            Self::limit(lowerer, at, "edges");
+            return None;
+        }
+        Some(Self {
             blocks: vec![StructuredBlock {
                 parameters: Vec::new(),
                 start: 0,
@@ -32,6 +73,8 @@ impl StructuredGraph {
             }],
             current: 0,
             edges: 0,
+            held_blocks,
+            held_edges,
             held_terminators: 0,
             matches: function
                 .body
@@ -42,7 +85,16 @@ impl StructuredGraph {
                         .then_some(expression.span.start)
                 })
                 .collect(),
-        }
+        })
+    }
+
+    fn limit(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>, at: Span, resource: &str) {
+        lowerer.errors.at(
+            "ZRYNA-M3201",
+            at,
+            format!("structured ownership {resource} exceed the checked limit"),
+            "reduce structured control flow",
+        );
     }
 
     pub(super) fn contains_match(&self, start: u32, end: u32) -> bool {
@@ -54,13 +106,12 @@ impl StructuredGraph {
         lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
         at: Span,
     ) -> Option<raw::BlockId> {
-        if self.blocks.len() >= ir::MAX_BLOCKS_PER_FUNCTION {
-            lowerer.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "structured ownership blocks exceed the checked limit",
-                "reduce structured control flow",
-            );
+        let blocks = self
+            .held_blocks
+            .checked_add(self.blocks.len())
+            .and_then(|blocks| blocks.checked_add(1));
+        if blocks.is_none_or(|blocks| blocks > ir::MAX_BLOCKS_PER_FUNCTION) {
+            Self::limit(lowerer, at, "blocks");
             return None;
         }
         let id = raw::BlockId(u32::try_from(self.blocks.len()).ok()?);
@@ -87,20 +138,17 @@ impl StructuredGraph {
             raw::Terminator::Branch { .. } | raw::Terminator::WeakUpgradeBranch { .. } => 2,
             raw::Terminator::EnumMatch { arms, .. } => arms.len(),
         };
-        let edges = self.edges.checked_add(additional)?;
-        if edges > ir::MAX_CFG_EDGES_PER_FUNCTION {
-            lowerer.errors.at(
-                "ZRYNA-M3201",
-                at,
-                "structured ownership edges exceed the checked limit",
-                "reduce structured control flow",
-            );
+        let edges =
+            self.held_edges.checked_add(self.edges).and_then(|edges| edges.checked_add(additional));
+        if edges.is_none_or(|edges| edges > ir::MAX_CFG_EDGES_PER_FUNCTION) {
+            Self::limit(lowerer, at, "edges");
             return None;
         }
         if !lowerer.reserve_transition(at) {
             return None;
         }
-        self.edges = edges;
+        self.edges =
+            self.edges.checked_add(additional).expect("held total checked generated edges");
         self.held_terminators += 1;
         let index = self.current;
         let block = self.blocks.get_mut(index)?;

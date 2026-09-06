@@ -9,7 +9,9 @@ use crate::data_ownership_v1::tests::structured_owned_fixture::{
 };
 use zryna_ir::data_ownership_v1 as ir;
 
-fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> Vec<raw::ValueDefinition> {
+pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn parameter(
+    lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
+) -> Vec<raw::ValueDefinition> {
     let mut values = Vec::new();
     lowerer.mixed_function = true;
     if let Some(signature) = lowerer.catalog.modules[lowerer.module]
