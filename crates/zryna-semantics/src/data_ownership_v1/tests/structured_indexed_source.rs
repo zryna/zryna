@@ -30,9 +30,28 @@ fn structured_indexed_match_evaluates_once_before_the_only_bounds_site() {
             } else {
                 VerifiedInstructionKind::BeginIndexedAccess
             };
+            assert_eq!(
+                blocks
+                    .iter()
+                    .flat_map(|block| block.instructions())
+                    .filter(|instruction| instruction.kind() == expected)
+                    .count(),
+                1,
+                "one bounds operation for the once-evaluated index"
+            );
             assert_eq!(instructions[0].kind(), expected);
             let joined = blocks[3].parameters().next().expect("once-evaluated index").id();
+            assert_eq!(blocks[3].parameters().count(), 1, "one exact Match handoff");
             assert_eq!(instructions[0].value_operands().collect::<Vec<_>>(), vec![joined]);
+            assert_eq!(
+                blocks
+                    .iter()
+                    .flat_map(|block| block.instructions())
+                    .filter(|instruction| instruction.result() == Some(joined))
+                    .count(),
+                0,
+                "the joined parameter is reused, not recomputed"
+            );
             if owned || !vector {
                 assert_eq!(
                     instructions[1].kind(),
@@ -44,6 +63,12 @@ fn structured_indexed_match_evaluates_once_before_the_only_bounds_site() {
                 );
                 assert_eq!(instructions[2].kind(), VerifiedInstructionKind::EndBorrow);
                 assert_eq!(instructions[2].borrow(), instructions[0].borrow());
+                if owned {
+                    let root = instructions[0].place_operands().next().expect("indexed container");
+                    let cleanup = instructions[1].derived_drop_actions().collect::<Vec<_>>();
+                    assert!(cleanup.iter().any(|action| action.root() == root));
+                    assert!(cleanup.iter().all(|action| action.moved_projections().len() == 0));
+                }
             }
             let replay = lower(pair_input(&syntax, &sources)).expect("indexed replay");
             assert_eq!(
