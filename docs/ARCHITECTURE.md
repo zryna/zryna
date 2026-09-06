@@ -361,12 +361,14 @@ verified protocol-v4 syntax
 compiler-owned nominal/type/ownership semantics
     ├── implemented Copy aggregate lowering
     ├── private straight-line String/Vec ownership checkpoint
+    ├── explicit Shared/Weak producers and sealed WeakUpgrade control flow
     ├── verified aggregate-layout authority
     └── retained sealed ownership-runtime ABI declaration authority
     ↓
 raw DataOwnershipV1 IR
     ↓ independent exhaustive verifier
 opaque verified DataOwnershipV1 views
+    ├── symbolic control/fault/resource proof only
     ├── deterministic JavaScript + private helpers
     ├── audited memory-bearing core WebAssembly
     └── independently verified native MIR → audited Linux x86-64 artifact
@@ -415,6 +417,12 @@ The separate [`ownership-runtime ABI authority`](M3_OWNERSHIP_RUNTIME_ABI.md) no
 records, checked header evidence, and pure transition evidence behind opaque immutable views. It is
 not an allocator or runtime implementation and supplies no target object, backend, driver, CLI, or
 public aggregate ABI.
+
+The completed internal #83 compiler boundary covers the frozen Shared/Weak payload categories,
+exact handle transitions and owner identities, indivisible success/expired/overflow upgrade
+outcomes, failure-prefix cleanup and replay, and explicit Weak cycle breaking without tracing.
+Its ABI evidence is symbolic and non-executable: it performs no allocation, concrete target count
+mutation or outcome selection and enables no backend, driver, CLI, or public profile.
 
 The internal [`M3 Copy aggregate semantic boundary`](M3_COPY_AGGREGATE_SEMANTICS.md) consumes the
 exact source-map-bound protocol-v4 authority, resolves canonical nominal identities and exact
@@ -551,8 +559,9 @@ authority, retains the source, gives each owned result a distinct owner, and reu
 cleanup/fault plans; `BorrowRead` remains Copy-only. It adds no projection, mutation, move,
 runtime, backend, or public capability. Issue #116 passed independent verification and required
 merge gates. Issue #122 consolidates the complete bounded internal borrowing boundary, its named
-resource/negative evidence and integrated regressions. Shared/Weak production and the normative
-#254–#256 indexed-borrowing chain remain separate work; this enables no public profile or runtime.
+resource/negative evidence and integrated regressions. The #83 internal Shared/Weak compiler and
+proof boundary is complete; the #254–#256 indexed-borrowing chain remains separately tracked. This
+enables no public profile or runtime.
 
 `zryna-syntax::v4` is the provider-neutral M3 syntax boundary. Its closed JSON schema, bounded raw
 DTOs, pinned TypeScript 6 syntax-only worker, strict process handshake, and Rust verifier preserve

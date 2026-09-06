@@ -512,7 +512,7 @@ test("bounded borrowing contract freezes the graph and root Copy producers", asy
   );
   assert.match(roadmap, /Issue #119 completes the bounded private straight-line\s+whole-root call-only nonescape slice/);
   assert.match(roadmap, /\|\s+#82 \| bounded nonescaping lexical borrowing\s+\| #81\s+\| complete\s+\|/);
-  assert.match(status, /Issue #83 is the next dependency-ready work/);
+  assert.match(status, /Issue #83 internal compile-time semantics are\s+complete/);
   assert.match(document, /## Issue #122 closure scope/);
   assert.match(
     architecture,

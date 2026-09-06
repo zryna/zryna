@@ -256,9 +256,9 @@ source-completion #269 before complete target support; its SHA-256 is
 `dfa23281785a225042f32c082abef0f1cb61dd5971bb713625995d5ee0f51d22`.
 This updates planned dependencies, not implemented capability. The #119 commit and digest above
 remain immutable historical provenance; the borrow-call section and fixture bytes are unchanged.
-The planned #277 integration contract, #278 non-handle owned core and #279 ownership CFG core
-are separately closeable prerequisites for the full Shared/Weak producers, not dependents of
-#83 or #269 closure. #259–#264 retain full payload and control-flow obligations. Later #270–#275
+The completed #277 integration contract, #278 non-handle owned core and #279 ownership CFG core
+provided the reusable foundation for the completed #259–#264/#83 internal Shared/Weak compiler
+chain. Later #270–#275
 complete generic ownership, CFG, calls, enums, ordinary dynamic-array access and non-indexed
 owned borrowing; #270 also owns ordinary generic Vec reads and replacement. These source/IR
 requirements remain mandatory and block complete #84/#85/#86 support alongside existing gates.
@@ -272,11 +272,18 @@ route DataOwnershipV1 IR, provide an allocator or ownership runtime, emit memory
 JavaScript/WebAssembly/native artifacts, or accept `--profile data-ownership-v1`. Default M1 and
 explicit `control-flow-v1` M2 remain the only public profiles.
 
+The internal #83 compiler boundary now provides explicit Shared/Weak construction, clone,
+downgrade, deterministic release cleanup and one indivisible success/expired/overflow upgrade
+contract across the frozen payload/control-flow matrix. Mandatory verified IR and symbolic,
+non-executable ABI/fault/resource/cycle evidence preserve source ownership, original traps and
+deterministic replay. Target allocation, concrete count mutation and outcome selection remain
+unimplemented.
+
 The first planned executable slice remains an internal scalarizable `Pair` struct observed through
 a scalar ABI v1 result. Its semantic oracle is implemented, but target execution is not. The
 completed bounded owned String/Vec and lexical-borrow compiler boundaries remain internal;
-#122 consolidates borrowing closure evidence. Issue #83 is the next dependency-ready work. Later issues add
-explicit shared/weak references, three target implementations, an atomic manifest v3 CLI,
+#122 consolidates borrowing closure evidence. Issue #83 internal compile-time semantics are
+complete. Later issues add three target implementations, an atomic manifest v3 CLI,
 fixed-oracle conformance, and authenticated website publication. Tracing GC,
 public aggregate ABI,
 raw pointers, unsafe, FFI, threads, WASI, Components, custom allocators, and freestanding targets

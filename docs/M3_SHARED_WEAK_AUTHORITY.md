@@ -1,12 +1,11 @@
 # M3 Shared and Weak authority contract
 
-Status: Issue #259 contract with #260 independent IR and symbolic ABI proof interfaces and the
-internal #261 Shared/Weak source producer. #262 is the compile-time source upgrade closure
-candidate; #263 owns integrated non-executable fault, count, cycle, and resource conformance.
-Frozen baseline: `f1b88304e9ee918ba46808f60859097999785f1b`, after verified #82/#122 closure.
-This document enables no runtime, backend, driver route, public profile, or target execution.
-It does not close #83. The [evidence and integration matrix](M3_SHARED_WEAK_EVIDENCE.md)
-distinguishes existing tests from required future tests.
+Status: Issues #259–#263 are complete; #264 reconciles their integrated source, verified-IR and
+symbolic-ABI evidence for #83 closure. Original contract baseline:
+`f1b88304e9ee918ba46808f60859097999785f1b`, after verified #82/#122 closure.
+The completed integration closes the internal compile-time #83 contract through the
+[evidence and integration matrix](M3_SHARED_WEAK_EVIDENCE.md). It enables no runtime, backend,
+driver route, public profile, or target execution.
 
 The normative authorities remain [data ownership](../spec/language/DATA_OWNERSHIP_V1.md),
 especially sections 2, 5–7, 10–12, and
@@ -157,17 +156,17 @@ The authenticated source producer lowers exact `Weak<T>` operands to this sealed
 addressable operand is retained; a non-addressable operand is evaluated once and its temporary is
 cleaned independently on both successors. The synthesized owner is bound only in the success
 scope. Source diagnostics reject non-Weak operands and uses of that binding on the expired path.
-The compiler records the overflow cleanup plan. Issue #263 owns integrated non-executable
+The compiler records the overflow cleanup plan. Issue #263 supplies integrated non-executable
 conformance, fault, count and resource evidence; actual target-runtime outcome selection and
 count mutation remain outside this child graph.
 
 Every edge still proves complete definite owner/initialization state, dominance, exact argument
 types and unique owner transfer. Branch locals reverse-drop before exits; joins require equal
 incoming state. Loop backedges restore exact header state; borrows do not cross edges. Returned
-owners are excluded from local cleanup and transferred once. Required #83 contexts include nested
-and repeated branches/loops, call operands/results and exhaustive match payloads wherever the
-normative language admits them. The current bounded #81/#82 source subsets do not discharge these
-cases; #277/#279 infrastructure and #261/#262 integration must implement them before #264 closes.
+owners are excluded from local cleanup and transferred once. The required nested and repeated
+branches/loops, call operands/results and exhaustive match payloads admitted by the normative
+language are implemented by #261/#262 on #277/#279 infrastructure and mapped in the evidence
+matrix.
 
 Single-threaded indivisibility means no observable gap between deciding success and incrementing.
 It does not authorize threads, atomics, synchronization, host reentrancy or memory-ordering claims.
@@ -251,11 +250,11 @@ unreachable source test or silent skip.
 
 ## Integration gate
 
-#259 depends on completed #80/#81/#82, never on #277/#278/#279 or #83 completion. #277 adapts
-SW1–SW5 and required composition hooks; #260 verifies handle/upgrade authority; #278 supplies
-non-handle owned operations; #279 supplies CFG using verified #260 edges. #261 integrates handle
-producers after #278; #262 integrates upgrade after #279; #263 adds adversarial/failure/resource
-proofs; #264 independently reconciles every evidence row before #83 closes.
+#259 froze the contract after #80/#81/#82; #277 adapted SW1–SW5 and the required composition hooks;
+#260 verified handle/upgrade authority; #278 supplied non-handle owned operations; and #279
+supplied CFG using verified #260 edges. #261 integrated handle producers, #262 integrated upgrade,
+#263 added adversarial/failure/resource proofs, and #264 reconciles every evidence row for #83
+closure on one immutable candidate.
 
 No required #83 payload, call, match, cleanup or control-flow case is deferred to later
 #270–#273 completion. #269's broader source closure and #254–#256 indexed borrowing remain
