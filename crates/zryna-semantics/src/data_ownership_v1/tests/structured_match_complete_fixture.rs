@@ -1,7 +1,76 @@
 use super::*;
 
+#[derive(Clone, Copy, Debug)]
+pub(in crate::data_ownership_v1) enum InvalidMatch {
+    Empty,
+    Missing,
+    Duplicate,
+    Unknown,
+    PayloadlessBinding,
+    MissingPayloadBinding,
+}
+
 #[allow(clippy::too_many_lines)]
 pub(in crate::data_ownership_v1) fn mixed_variant_fixture() -> (String, RawProjectSyntaxSnapshot) {
+    mixed_variant_fixture_with_arms(
+        &[
+            ("empty", None, "fallback"),
+            ("text", Some("text"), "fallback"),
+            ("number", Some("number"), "number"),
+        ],
+        false,
+    )
+}
+
+pub(in crate::data_ownership_v1) fn reordered_mixed_variant_fixture()
+-> (String, RawProjectSyntaxSnapshot) {
+    mixed_variant_fixture_with_arms(
+        &[
+            ("number", Some("number"), "number"),
+            ("empty", None, "fallback"),
+            ("text", Some("text"), "fallback"),
+        ],
+        true,
+    )
+}
+
+pub(in crate::data_ownership_v1) fn invalid_mixed_variant_fixture(
+    invalid: InvalidMatch,
+) -> (String, RawProjectSyntaxSnapshot) {
+    let arms = match invalid {
+        InvalidMatch::Empty => vec![],
+        InvalidMatch::Missing => {
+            vec![("empty", None, "fallback"), ("text", Some("text"), "fallback")]
+        }
+        InvalidMatch::Duplicate => vec![
+            ("empty", None, "fallback"),
+            ("text", Some("text"), "fallback"),
+            ("text", Some("again"), "fallback"),
+        ],
+        InvalidMatch::Unknown => vec![
+            ("empty", None, "fallback"),
+            ("text", Some("text"), "fallback"),
+            ("absent", Some("unknown"), "fallback"),
+        ],
+        InvalidMatch::PayloadlessBinding => vec![
+            ("empty", Some("invalid"), "fallback"),
+            ("text", Some("text"), "fallback"),
+            ("number", Some("number"), "number"),
+        ],
+        InvalidMatch::MissingPayloadBinding => vec![
+            ("empty", None, "fallback"),
+            ("text", None, "fallback"),
+            ("number", Some("number"), "number"),
+        ],
+    };
+    mixed_variant_fixture_with_arms(&arms, false)
+}
+
+#[allow(clippy::too_many_lines)]
+fn mixed_variant_fixture_with_arms(
+    arm_specs: &[(&str, Option<&str>, &str)],
+    constructed_scrutinee: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
     let mut builder = Builder::default();
     let declaration_start = builder.text.len();
     let interface_span = builder.text("interface");
@@ -89,15 +158,15 @@ pub(in crate::data_ownership_v1) fn mixed_variant_fixture() -> (String, RawProje
     let match_start = builder.text.len();
     let match_keyword_span = builder.text("match");
     let open_paren_span = builder.text("(");
-    let scrutinee = builder.reference("source");
+    let scrutinee = if constructed_scrutinee {
+        constructed_choice(&mut builder)
+    } else {
+        builder.reference("source")
+    };
     builder.text(", ");
     let match_open_brace_span = builder.text("{");
     let mut arms = Vec::new();
-    for (variant_name, binding_name, value_name) in [
-        ("empty", None, "fallback"),
-        ("text", Some("text"), "fallback"),
-        ("number", Some("number"), "number"),
-    ] {
+    for &(variant_name, binding_name, value_name) in arm_specs {
         if !arms.is_empty() {
             builder.text(",");
         }
@@ -170,6 +239,36 @@ pub(in crate::data_ownership_v1) fn mixed_variant_fixture() -> (String, RawProje
     builder.statements = Vec::new();
     builder.expressions = Vec::new();
     finish(builder, vec![declaration], vec![function])
+}
+
+fn constructed_choice(builder: &mut Builder) -> u32 {
+    let start = builder.text.len();
+    let type_name = builder.name("Choice");
+    let dot_span = builder.text(".");
+    let variant = builder.name("text");
+    let open_paren_span = builder.text("(");
+    let literal_start = builder.text.len();
+    let spelling = "\"once\"";
+    builder.text(spelling);
+    let payload = u32::try_from(builder.expressions.len()).expect("constructed payload");
+    builder.expressions.push(RawExpressionSyntax {
+        span: builder.span(literal_start),
+        kind: RawExpressionKind::StringLiteral { spelling: spelling.into() },
+    });
+    let close_paren_span = builder.text(")");
+    let id = u32::try_from(builder.expressions.len()).expect("constructed choice");
+    builder.expressions.push(RawExpressionSyntax {
+        span: builder.span(start),
+        kind: RawExpressionKind::EnumConstruction {
+            type_name,
+            dot_span,
+            variant,
+            open_paren_span,
+            payload: Some(payload),
+            close_paren_span,
+        },
+    });
+    id
 }
 
 pub(in crate::data_ownership_v1) fn nested_variant_fixture() -> (String, RawProjectSyntaxSnapshot) {

@@ -28,6 +28,9 @@ pub(in crate::data_ownership_v1) use match_fixture::nested_variant_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::string_fixture as string_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::string_move_fixture as string_move_match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::vec_fixture as vec_match_fixture;
+pub(in crate::data_ownership_v1) use match_fixture::{
+    InvalidMatch, invalid_mixed_variant_fixture, reordered_mixed_variant_fixture,
+};
 
 pub(super) enum Statement {
     Local(&'static str, &'static str, bool),

@@ -26,7 +26,10 @@ mod operands;
 mod payloads;
 #[path = "structured_match_string.rs"]
 mod string;
-pub(in crate::data_ownership_v1) use complete::{mixed_variant_fixture, nested_variant_fixture};
+pub(in crate::data_ownership_v1) use complete::{
+    InvalidMatch, invalid_mixed_variant_fixture, mixed_variant_fixture, nested_variant_fixture,
+    reordered_mixed_variant_fixture,
+};
 pub(in crate::data_ownership_v1) use payloads::Payload;
 
 impl Builder {
