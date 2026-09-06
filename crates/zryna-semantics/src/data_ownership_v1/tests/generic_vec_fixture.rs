@@ -33,6 +33,13 @@ pub(in crate::data_ownership_v1) fn active_enum_resource_fixture()
     active_enum_payload_borrow_fixture::fixture(active_enum_payload_borrow_fixture::Case::Shared)
 }
 
+pub(in crate::data_ownership_v1) fn exhaustive_enum_borrow_resource_fixture()
+-> (String, RawProjectSyntaxSnapshot) {
+    enum_match_payload_borrow_fixture::match_borrow_fixture(
+        enum_match_payload_borrow_fixture::MatchBorrowCase::Shared,
+    )
+}
+
 #[path = "ordinary_array_composition_fixture.rs"]
 pub(in crate::data_ownership_v1) mod ordinary_array_composition_fixture;
 

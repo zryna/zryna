@@ -19,6 +19,7 @@ fn only(dimension: RootBorrowBudgetLimit, count: usize) -> RootBorrowResources {
 #[test]
 fn nonindexed_owned_borrow_resource_dimensions_accept_exact_and_reject_first_extra() {
     for (dimension, limit) in [
+        (RootBorrowBudgetLimit::Values, ir::MAX_VALUES_PER_FUNCTION),
         (RootBorrowBudgetLimit::Places, ir::MAX_PLACES_PER_FUNCTION),
         (RootBorrowBudgetLimit::Transitions, ir::MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION),
         (RootBorrowBudgetLimit::Blocks, ir::MAX_BLOCKS_PER_FUNCTION),

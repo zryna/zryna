@@ -18,6 +18,25 @@ enum RefinedBorrowShape {
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
+    fn refined_clone_resources_fit(&self) -> bool {
+        let values = self.budget_values().checked_add(1);
+        let transitions = self
+            .instructions
+            .len()
+            .checked_add(self.reserved_transitions)
+            .and_then(|transitions| transitions.checked_add(3));
+        values.is_some()
+            && transitions.is_some()
+            && !aggregate_clone_budget_violation(
+                values.unwrap_or(usize::MAX),
+                self.budget_places(),
+                transitions.unwrap_or(usize::MAX),
+                self.cleanup_plans.len(),
+                self.cleanup_actions,
+                self.owners.pending().len(),
+            )
+    }
+
     fn refined_borrow_shape(&self, id: u32) -> Option<RefinedBorrowShape> {
         let expression = self.expression(id)?;
         let RawExpressionKind::Clone { value, .. } = expression.kind else {
@@ -96,14 +115,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             .find(|ty| ty.category == zryna_layout::TypeCategory::I32)
             .copied()?;
         let binding_name = self.refined_payload_binding(target, at)?;
-        if aggregate_clone_budget_violation(
-            self.budget_values(),
-            self.budget_places(),
-            self.instructions.len(),
-            self.cleanup_plans.len(),
-            self.cleanup_actions,
-            self.owners.pending().len(),
-        ) {
+        if !self.refined_clone_resources_fit() {
             self.errors.at(
                 "ZRYNA-M3201",
                 at,
