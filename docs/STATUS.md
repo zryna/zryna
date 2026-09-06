@@ -129,8 +129,9 @@ owned identity calls are available internally. String/Vec functions also admit o
 top-level no-phi `if`/`else` from a bool literal or Copy bool parameter; branch-local owners drop in
 reverse, incoming owners are restored exactly, and mutation of an incoming Vec fails before its
 right-hand side. Private String and exact Vec result functions additionally admit one bounded
-terminal `if`/`else`: each arm returns one owned-producing expression through a canonical
-one-parameter owned join, and return cleanup excludes the joined value. One bounded top-level
+terminal `if`/`else` as exactly three entry/then/else blocks: each arm returns one owned-producing
+expression directly, no join block or parameter is created, and cleanup excludes the returned
+owner. One bounded top-level
 no-carried-owner `while` evaluates its bool condition in a canonical header, reverse-drops
 iteration-local owners before the backedge, restores incoming ownership state on the backedge and
 false exit, and permits only the final return afterward. Its stable-place subset supports prepared
@@ -208,10 +209,11 @@ enum-payload moves, dynamic or Vec-element projections, projected aggregate assi
 exact static-subobject-move-or-clone-or-whole-root-move-or-clone-to-static-projection site, projected aggregate
 clone outside the direct-local or distinct-root static-replacement exceptions, partial Enum
 transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
-contexts, or non-final/non-reference returns, general owned phi joins,
-owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
-deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
-effects remain excluded. Issue #82 is complete at its bounded internal lexical-borrowing boundary.
+contexts, or non-final/non-reference returns, general owned phi joins and owned loop-carried phi
+joins remain deliberately unavailable future extensions. The checked #271 route separately admits
+repeated/nested branches and loops, general lexical scope exits, loop-body return and post-loop
+continuation; `break` and `continue` remain excluded.
+Issue #82 is complete at its bounded internal lexical-borrowing boundary.
 Issues #113 through #117, #119, #120, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
 authority, and implement one internal private parameter-free literal-initialized `bool`/`i32` root
 with shared or exclusive aliases. Straight-line aliases use one nested lexical block, conditional

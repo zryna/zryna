@@ -450,7 +450,8 @@ checked concatenation, moves, return cleanup, and mutable root-local replacement
 Vec construction, explicit clone for exact `Vec<bool>`, `Vec<i32>`, and `Vec<String>`, moves,
 return, push, checked Copy-element indexing, and supported root-local replacement. Bounded private owned functions
 support exact owned parameters and internal calls,
-one top-level branch or while loop, terminal owned branch-result joins, reverse-order cleanup of
+one top-level branch or while loop, terminal owned `if` as exactly three entry/then/else blocks
+with direct returns from both arms and no join block or parameter, reverse-order cleanup of
 branch/iteration locals, and a single stable mutable String or Vec root across the admitted loop
 mutation shape. A separate parameter-free private straight-line route constructs, moves,
 explicitly clones, returns, and reverse-order drops bounded owned Struct, FixedArray, and root Enum
@@ -513,9 +514,9 @@ Vec-element projections, projected aggregate assignment outside the exact static
 or-clone-or-whole-root-move-or-clone-to-static-projection exception, projected aggregate clone outside the exact
 direct-local or distinct-root static-replacement exceptions, partial
 Enum transfer or partial-root transfer outside the exact
-direct-local, final-return, or whole-root assignment forms, general nested or repeated owned control flow, loop-carried owned
-phi values, `break`, `continue`, body returns, and general scope-drop insertion are not yet
-admitted. The assignment exception does not extend to fresh sources, partial/moved projected
+direct-local, final-return, or whole-root assignment forms and loop-carried owned phi values are
+not admitted. The #271 route separately admits general nested/repeated owned control flow, body
+returns and scope-drop insertion; `break` and `continue` remain excluded. The assignment exception does not extend to fresh sources, partial/moved projected
 subtrees, broader projected clone contexts, same-root/overlapping paths, or dynamic/Vec/Enum targets,
 calls,
 direct projected-clone or payload returns, owner-carrying CFG transfer, public functions,

@@ -12,7 +12,7 @@ allocation/refcount mutation, backend lowering, or an observed target outcome.
 | --- | --- | --- |
 | `S1` | #325 | One shared structured route covers lexical Block, If with explicit or omitted else, While, WeakUpgrade and admitted Match occupants across nested/repeated flow, early return, loop return and reachable post-loop continuation. |
 | `S2` | #325 | Nearest lexical shadowing, mutable Copy assignment, source order, exact join/backedge state, unreachable/type/mutability rejection and deterministic replay remain explicit. |
-| `B1` | #325 | Root-owned structured routing preserves established private String/Vec branch and loop boundaries; nested arena statements cannot steal a legacy route, and direct terminal branch returns retain exact owners and diagnostics. |
+| `B1` | #325 | Root-owned structured routing preserves established private String/Vec branch and loop boundaries; nested arena statements cannot steal a legacy route. Terminal owned `if` replaces the former join shape with exactly three entry/then/else blocks, direct Return in each arm, and no join parameter. |
 | `I1` | #326 | Independent raw IR seals mixed owners, masks, enum variants, edge values, loop headers, returns, traps and reverse cleanup across nested/repeated CFG. |
 | `I2` | #326 | Hostile state, mask, variant, owner, result, edge, cleanup and lexical-borrow forgeries reject with exact code/message/count/order/span traces and recover on replay. |
 | `P1` | #327 | The #270 String/Struct/Enum/FixedArray/Vec, Shared/Weak-bearing and finite Vec-indirection payload matrix composes calls, WeakUpgrade and nested CFG through verified IR. |

@@ -207,8 +207,8 @@ return, push, checked Copy-element indexing, and supported exact
 root-local replacement. Zero-argument producers and one-argument owned identity calls transfer
 owners through independently verified direct-call boundaries. One canonical top-level no-phi
 String/Vec branch restores its incoming owner state after reverse-dropping branch locals, and one
-bounded terminal branch transfers either owned arm result through a canonical block-parameter
-join. One bounded top-level no-carried-owner loop reevaluates its condition in a canonical header,
+bounded terminal branch uses exactly three entry/then/else blocks, returning the owned result
+directly from each arm with no join block or parameter. One bounded top-level no-carried-owner loop reevaluates its condition in a canonical header,
 reverse-drops iteration locals before the backedge, and restores its exact incoming state on both
 the backedge and false exit. Its stable-place subset replaces one mutable outer String after full
 RHS preparation or pushes a Copy element into one mutable outer exact Vec without an owned header

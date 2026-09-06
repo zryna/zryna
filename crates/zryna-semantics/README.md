@@ -86,8 +86,8 @@ lower one top-level no-phi `if`/`else` from a bool literal or Copy bool paramete
 entry/then/else/join blocks. Branch-local owned roots drop once in reverse order; incoming owners
 must be restored exactly, and mutation of an incoming Vec is rejected before lowering its value.
 Private String and exact Vec result functions additionally admit one terminal `if`/`else` whose
-arms each return one owned-producing expression through a canonical one-parameter join. The join
-owns the selected value exactly once and return cleanup excludes that carried value.
+canonical graph has exactly three entry/then/else blocks. Each arm directly returns its owned-producing
+expression with no join block or parameter, and cleanup excludes that returned owner.
 Both routes also admit one top-level no-carried-owner `while` after supported declarations and
 before the sole final return. Its condition is emitted in the canonical header, iteration-local
 owners drop in reverse before the backedge, and both backedge and false exit restore the exact
@@ -174,10 +174,10 @@ direct-local or distinct-root static-projection forms, projected aggregate assig
 complete-static-subobject-move-or-clone-or-whole-root-move-or-clone-to-static-projection site,
 whole-partial-owner transfer outside
 the exact-type direct-local,
-final-return, or whole-root assignment Struct/FixedArray exceptions, general owned phi joins,
-owned loop-carried phi joins,
-repeated/nested branches or loops, and general scope-drop insertion remain unavailable. `break`,
-`continue`, loop-body return, and post-loop effects are also excluded. Owned String/Vec signatures remain limited to zero or one
+final-return, or whole-root assignment Struct/FixedArray exceptions, general owned phi joins and
+owned loop-carried phi joins remain unavailable. The #271 route separately admits repeated/nested
+branches and loops, general scope-drop insertion, loop-body return and post-loop continuation;
+`break` and `continue` remain excluded. Owned String/Vec signatures remain limited to zero or one
 exact owned/bool argument. The owned aggregate route is parameter-free, private, and straight-line;
 its projection subset is limited to static Struct/FixedArray Copy reads, String-leaf moves, one
 direct-local supported Struct/FixedArray subobject move, one final-return supported

@@ -333,6 +333,21 @@ const structuredMatrixDocument = readFileSync(
   new URL("../docs/M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md", import.meta.url),
   "utf8",
 );
+const terminalOwnedIfDocuments = [
+  ["README.md", readFileSync(new URL("../README.md", import.meta.url), "utf8")],
+  ["docs/M3_OWNED_DATA_SEMANTICS.md", readFileSync(
+    new URL("../docs/M3_OWNED_DATA_SEMANTICS.md", import.meta.url), "utf8",
+  )],
+  ["docs/STATUS.md", readFileSync(new URL("../docs/STATUS.md", import.meta.url), "utf8")],
+  ["docs/ROADMAP.md", readFileSync(new URL("../docs/ROADMAP.md", import.meta.url), "utf8")],
+  ["docs/ARCHITECTURE.md", readFileSync(
+    new URL("../docs/ARCHITECTURE.md", import.meta.url), "utf8",
+  )],
+  ["crates/zryna-semantics/README.md", readFileSync(
+    new URL("../crates/zryna-semantics/README.md", import.meta.url), "utf8",
+  )],
+  ["docs/M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md", structuredMatrixDocument],
+];
 const structuredMatrixBindings = [
   ["S1", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_owned_source.rs", "structured_owned_nested_repeated_branches_and_loops_verify_without_owner_repair"],
   ["S1", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_owned_source.rs", "structured_owned_mixed_graphs_compose_nested_scopes_loops_and_returns"],
@@ -403,6 +418,7 @@ export function validateStructuredOwnedControlFlowMatrix(text) {
     "#275 remains responsible",
     "authenticated source-produced graph reaches exact block/edge ceilings and rejects first-extra",
     "separate synthetic held-resource case proves checked overflow",
+    "exactly three entry/then/else blocks, direct Return in each arm, and no join parameter",
   ]) assert(text.includes(phrase), `structured matrix boundary drifted: ${phrase}`);
   assert.deepEqual(
     structuredMatrixEvidenceBindings(text),
@@ -432,4 +448,24 @@ test("structured owned control-flow matrix rejects evidence and boundary drift",
   ]) assert.throws(() => validateStructuredOwnedControlFlowMatrix(
     structuredMatrixDocument.replace(from, to),
   ));
+});
+
+test("terminal owned if documentation rejects the retired one-parameter join contract", () => {
+  const stale = [
+    "canonical owned join",
+    "canonical one-parameter join",
+    "one-parameter owned join",
+    "terminal owned block-parameter join",
+    "terminal owned join accepts",
+    "terminal-join `if`/`else`",
+  ];
+  for (const [path, document] of terminalOwnedIfDocuments) {
+    assert.match(document, /(?:three-block|exactly three)/, `${path}: missing three-block shape`);
+    assert.match(document, /direct/i, `${path}: missing direct-return qualifier`);
+    assert.match(document, /return/i, `${path}: missing direct returns`);
+    assert.match(document, /no join (?:block or (?:block )?parameter|parameter)/,
+      `${path}: missing no-join boundary`);
+    for (const phrase of stale)
+      assert(!document.includes(phrase), `${path}: retains stale terminal-if claim: ${phrase}`);
+  }
 });

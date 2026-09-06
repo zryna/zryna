@@ -587,7 +587,8 @@ test("completed owned-data semantics preserve the bounded internal boundary", as
   assert.match(document, /one bounded top-level no-phi `if`\/`else` for String and exact Vec functions/);
   assert.match(document, /reverse drops\s+of branch-local owners, and exact restoration of every incoming owner/);
   assert.match(document, /one bounded terminal owned `if`\/`else` for private String and exact Vec results/);
-  assert.match(document, /canonical one-parameter join; the join owns the\s+selected value exactly once and excludes it from return-site cleanup/);
+  assert.match(document, /exactly three blocks \(entry, then, else\), where each arm directly returns one owned-producing\s+expression with no join block or block parameter and excludes its returned owner from cleanup/);
+  assert.doesNotMatch(document, /canonical one-parameter join/);
   assert.match(document, /one bounded top-level no-carried-owner `while` for private String and exact Vec functions/);
   assert.match(document, /condition evaluation in a canonical loop header, reverse drops of every\s+iteration-local owner before the backedge, exact restoration of incoming ownership state/);
   assert.match(document, /push or replacement of an incoming Vec is rejected before its right-hand side/);
@@ -652,7 +653,7 @@ test("completed owned-data semantics preserve the bounded internal boundary", as
   assert.match(document, /source-to-temporary-to-destination mask migration, old-destination recursive drop at commit/);
   assert.match(document, /`3N - E_source - E_target \+ 1` places/);
   assert.match(document, /## Future extensions/);
-  assert.match(document, /These extensions require their own dependency-ordered child issues and acceptance evidence/);
+  assert.match(document, /Remaining extensions require their own dependency-ordered\s+child issues and acceptance evidence/);
   assert.match(document, /`D \+ 1`\s+places/);
   assert.match(document, /projected aggregate clone with `M` missing source-path places and `P` pending owners/);
   assert.match(document, /final-return form of that static subobject move/);

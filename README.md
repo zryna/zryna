@@ -67,8 +67,9 @@ The repository currently establishes and tests:
   one-argument owned identity calls are supported internally,
   together with one canonical top-level no-phi `if`/`else`; branch-local owners drop in reverse and
   incoming Vec mutation fails before right-hand-side evaluation. A separate bounded terminal
-  String/exact-Vec `if`/`else` carries one owned-producing arm result through a canonical owned join
-  and excludes the joined value from return cleanup. One bounded top-level no-carried-owner
+  String/exact-Vec `if`/`else` uses a canonical three-block entry/then/else graph; each arm returns
+  its owned-producing result directly with no join block or block parameter and excludes that
+  returned owner from cleanup. One bounded top-level no-carried-owner
   `while` reevaluates its bool condition in a canonical header, reverse-drops iteration-local
   owners before its backedge, restores the exact incoming state on both loop edges, and then
   reaches one final return. Its stable-place subset may replace one mutable outer String after
@@ -123,10 +124,11 @@ The repository currently establishes and tests:
   projections, projected aggregate clone outside the exact direct-local or distinct-root
   static-projection forms, and projected aggregate assignment outside the one static-subobject-
   move-or-clone-or-whole-root-move-or-clone-to-static-projection checkpoint,
-  whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
-  repeated/nested branches or loops, general scope exits, and public owned values remain
-  deliberately unavailable future extensions; Vec loop replacement, owned-element Vec loop push,
-  `break`, `continue`, loop-body return, and post-loop effects remain excluded;
+  whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins, and public
+  owned values remain deliberately unavailable future extensions; Vec loop replacement and
+  owned-element Vec loop push remain excluded. The #271 route separately admits nested/repeated
+  branches and loops, lexical scope exits, loop-body return and post-loop continuation; `break`
+  and `continue` remain excluded;
 - a first internal shared-borrow semantic checkpoint for one private parameter-free literal-
   initialized `bool` or `i32` root: const aliases in one nested block lower to dense shared begin
   and Copy-read authority, end in reverse lexical order, and leave the root readable afterward.
