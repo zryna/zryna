@@ -319,6 +319,23 @@ pub(super) fn push_aggregate_clone_prefix_cleanup(
     Some(id)
 }
 
+pub(super) fn push_generic_clone_prefix_cleanup(
+    plans: &mut Vec<raw::CleanupPlan>,
+    committed_actions: &mut usize,
+    owners: &OwnerState,
+    result_owner: raw::PlaceId,
+    at: Span,
+) -> Option<raw::CleanupPlanId> {
+    let recipe = CleanupRecipe::generic_clone_prefix(plans.len(), owners.pending(), result_owner)?;
+    let id = recipe.id;
+    let action_count = recipe.action_count;
+    let actions = recipe.into_actions().collect();
+    plans.push(raw::CleanupPlan { id, span: at, actions });
+    commit_cleanup_actions(committed_actions, action_count)
+        .expect("preflighted generic clone cleanup action count");
+    Some(id)
+}
+
 pub(super) fn checked_vec_clone_prefix_action_count(
     pending_count: usize,
     at: Span,

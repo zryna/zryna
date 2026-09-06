@@ -25,7 +25,7 @@ pub(in crate::data_ownership_v1) fn has_nonindexed_owned_borrow(
     {
         return false;
     }
-    function.body.statements.iter().any(|statement| {
+    let lexical = function.body.statements.iter().any(|statement| {
         let RawStatementKind::LocalDeclaration { type_syntax, initializer, .. } = statement.kind
         else {
             return false;
@@ -48,7 +48,22 @@ pub(in crate::data_ownership_v1) fn has_nonindexed_owned_borrow(
             return false;
         };
         parameter_fed_place(function, value) || constructed_enum_payload(function, value)
-    })
+    });
+    lexical
+        || (function
+            .body
+            .expressions
+            .iter()
+            .any(|expression| matches!(expression.kind, RawExpressionKind::Match { .. }))
+            && function.body.expressions.iter().any(|expression| {
+                let RawExpressionKind::Clone { value, .. } = expression.kind else { return false };
+                function.body.expressions.get(value as usize).is_some_and(|value| {
+                    matches!(
+                        value.kind,
+                        RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
+                    )
+                })
+            }))
 }
 
 fn constructed_enum_payload(function: &RawFunctionSyntax, id: u32) -> bool {

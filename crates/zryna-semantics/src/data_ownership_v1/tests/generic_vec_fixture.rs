@@ -16,6 +16,10 @@ mod nonindexed_static_owned_borrow;
 mod active_enum_payload_borrow_fixture;
 #[path = "active_enum_payload_borrow_source.rs"]
 mod active_enum_payload_borrow_source;
+#[path = "enum_match_payload_borrow_fixture.rs"]
+mod enum_match_payload_borrow_fixture;
+#[path = "enum_match_payload_borrow_source.rs"]
+mod enum_match_payload_borrow_source;
 
 pub(in crate::data_ownership_v1) fn nonindexed_static_resource_fixture()
 -> (String, RawProjectSyntaxSnapshot) {
