@@ -16,6 +16,7 @@ mod clone_decisions;
 mod constructor_preparation;
 mod constructor_resources;
 mod constructors;
+mod copy_statements;
 mod driver;
 mod expression_decisions;
 mod fresh_indexed_preparation;
@@ -54,12 +55,16 @@ mod structured_cfg;
 mod structured_checkpoint;
 mod structured_constructor;
 mod structured_graph;
+#[cfg(test)]
+#[path = "../tests/structured_graph_resources.rs"]
+mod structured_graph_resources;
 mod structured_handoff;
 mod structured_indexed;
 mod structured_indexed_preparation;
 mod structured_match;
 mod structured_match_local;
 mod structured_scratch;
+mod structured_shape;
 mod structured_state;
 mod structured_string;
 mod structured_upgrade;
@@ -72,6 +77,7 @@ pub(super) use driver::{
 pub(super) use generic_function_shape::requires_generic_function;
 pub(super) use lexical_indexed_statements::has_indexed_borrow;
 use statements::StatementOutcome;
+pub(super) use structured_shape::requires_structured_cfg;
 
 use shape::owned_enum_graph_is_supported;
 pub(super) use shape::{aggregate_graph_is_supported, complete_owned_projection_shape};

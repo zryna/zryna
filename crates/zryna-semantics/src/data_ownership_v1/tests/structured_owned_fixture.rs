@@ -2,6 +2,10 @@ use super::*;
 use zryna_source::UntrustedSpan;
 use zryna_syntax::v4::{RawElseSyntax, RawExpressionKind};
 
+#[path = "structured_owned_match_continuation_fixture.rs"]
+mod match_continuation;
+pub(super) use match_continuation::fixture as one_arm_match_continuation_fixture;
+
 #[path = "structured_match_fixture.rs"]
 mod match_fixture;
 pub(in crate::data_ownership_v1) use match_fixture::Payload;
@@ -25,14 +29,21 @@ pub(in crate::data_ownership_v1) use match_fixture::vec_fixture as vec_match_fix
 
 pub(super) enum Statement {
     Local(&'static str, &'static str, bool),
+    BoolLocal(&'static str, bool, bool),
+    AssignBool(&'static str, bool),
+    AssignReference(&'static str, &'static str),
     Return(&'static str),
+    Block(Vec<Self>),
     If(Vec<Self>, Vec<Self>),
+    IfWithoutElse(Vec<Self>),
     While(Vec<Self>),
+    WhileOn(&'static str, Vec<Self>),
 }
 
 #[derive(Default)]
 struct Builder {
     owned_payload: Option<Payload>,
+    use_flag_parameter: bool,
     text: String,
     types: Vec<RawTypeSyntax>,
     blocks: Vec<RawBlockSyntax>,
@@ -81,6 +92,19 @@ impl Builder {
         });
         id
     }
+    fn bool_literal(&mut self, value: bool) -> u32 {
+        let start = self.text.len();
+        self.text(if value { "true" } else { "false" });
+        let id = u32::try_from(self.expressions.len()).expect("expression count");
+        self.expressions.push(RawExpressionSyntax {
+            span: self.span(start),
+            kind: RawExpressionKind::BoolLiteral { value },
+        });
+        id
+    }
+    fn condition(&mut self) -> u32 {
+        if self.use_flag_parameter { self.reference("flag") } else { self.bool_literal(true) }
+    }
     fn clone_value(&mut self, text: &str) -> u32 {
         let start = self.text.len();
         let keyword_span = self.text("clone");
@@ -126,6 +150,7 @@ impl Builder {
         };
         id
     }
+    #[allow(clippy::too_many_lines)]
     fn statement(&mut self, statement: &Statement) -> u32 {
         let start = self.text.len();
         let placeholder = self.span(start);
@@ -157,6 +182,45 @@ impl Builder {
                     semicolon_span,
                 }
             }
+            Statement::BoolLocal(binding, mutable, value) => {
+                let keyword_span = self.text(if *mutable { "let" } else { "const" });
+                self.text(" ");
+                let name = self.name(binding);
+                self.text(": ");
+                let type_syntax = self.ty(false);
+                self.text(" ");
+                let equals_span = self.text("=");
+                self.text(" ");
+                let initializer = self.bool_literal(*value);
+                let semicolon_span = self.text(";");
+                RawStatementKind::LocalDeclaration {
+                    keyword_span,
+                    mutable: *mutable,
+                    name,
+                    type_syntax,
+                    equals_span,
+                    initializer,
+                    semicolon_span,
+                }
+            }
+            Statement::AssignBool(target, value) => {
+                let target = self.reference(target);
+                self.text(" ");
+                let equals_span = self.text("=");
+                self.text(" ");
+                let value = self.bool_literal(*value);
+                let semicolon_span = self.text(";");
+                RawStatementKind::Assignment { target, equals_span, value, semicolon_span }
+            }
+            Statement::AssignReference(target, source) => {
+                let target = self.reference(target);
+                self.text(" ");
+                let equals_span = self.text("=");
+                self.text(" ");
+                let value = self.reference(source);
+                let semicolon_span = self.text(";");
+                RawStatementKind::Assignment { target, equals_span, value, semicolon_span }
+            }
             Statement::Return(source) => {
                 let keyword_span = self.text("return");
                 self.text(" ");
@@ -164,11 +228,15 @@ impl Builder {
                 let semicolon_span = self.text(";");
                 RawStatementKind::Return { keyword_span, value, semicolon_span }
             }
+            Statement::Block(statements) => {
+                let block = self.block(statements);
+                RawStatementKind::Block { block }
+            }
             Statement::If(yes, no) => {
                 let keyword_span = self.text("if");
                 self.text(" ");
                 let open_paren_span = self.text("(");
-                let condition = self.reference("flag");
+                let condition = self.condition();
                 let close_paren_span = self.text(")");
                 self.text(" ");
                 let then_block = self.block(yes);
@@ -185,11 +253,44 @@ impl Builder {
                     else_clause: Some(RawElseSyntax { keyword_span: else_keyword, block }),
                 }
             }
+            Statement::IfWithoutElse(yes) => {
+                let keyword_span = self.text("if");
+                self.text(" ");
+                let open_paren_span = self.text("(");
+                let condition = self.condition();
+                let close_paren_span = self.text(")");
+                self.text(" ");
+                let then_block = self.block(yes);
+                RawStatementKind::If {
+                    keyword_span,
+                    open_paren_span,
+                    condition,
+                    close_paren_span,
+                    then_block,
+                    else_clause: None,
+                }
+            }
             Statement::While(body) => {
                 let keyword_span = self.text("while");
                 self.text(" ");
                 let open_paren_span = self.text("(");
-                let condition = self.reference("flag");
+                let condition = self.condition();
+                let close_paren_span = self.text(")");
+                self.text(" ");
+                let body_block = self.block(body);
+                RawStatementKind::While {
+                    keyword_span,
+                    open_paren_span,
+                    condition,
+                    close_paren_span,
+                    body_block,
+                }
+            }
+            Statement::WhileOn(condition_name, body) => {
+                let keyword_span = self.text("while");
+                self.text(" ");
+                let open_paren_span = self.text("(");
+                let condition = self.reference(condition_name);
                 let close_paren_span = self.text(")");
                 self.text(" ");
                 let body_block = self.block(body);
@@ -215,7 +316,22 @@ pub(super) fn payload_fixture(
     statements: &[Statement],
     payload: Payload,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    let mut builder = Builder::default();
+    build_fixture(statements, payload, true)
+}
+
+pub(super) fn legacy_payload_fixture(
+    statements: &[Statement],
+    payload: Payload,
+) -> (String, RawProjectSyntaxSnapshot) {
+    build_fixture(statements, payload, false)
+}
+
+fn build_fixture(
+    statements: &[Statement],
+    payload: Payload,
+    use_flag_parameter: bool,
+) -> (String, RawProjectSyntaxSnapshot) {
+    let mut builder = Builder { use_flag_parameter, ..Builder::default() };
     let declarations = builder.payload_declaration(payload).into_iter().collect::<Vec<_>>();
     if !declarations.is_empty() {
         builder.text("\n");
@@ -227,7 +343,12 @@ pub(super) fn payload_fixture(
     let name = builder.name("compose");
     builder.text("(");
     let mut parameters = Vec::new();
-    for (index, (name, owned)) in [("flag", false), ("seed", true)].into_iter().enumerate() {
+    let parameter_specs = if use_flag_parameter {
+        vec![("flag", false), ("seed", true)]
+    } else {
+        vec![("seed", true)]
+    };
+    for (index, (name, owned)) in parameter_specs.into_iter().enumerate() {
         if index != 0 {
             builder.text(", ");
         }

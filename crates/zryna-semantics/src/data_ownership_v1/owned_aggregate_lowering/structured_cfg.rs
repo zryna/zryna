@@ -10,7 +10,7 @@ use super::{PrivateOwnedAggregateLowerer, StatementOutcome, Ty};
 
 #[cfg(test)]
 #[path = "../tests/structured_cfg_resources.rs"]
-mod resources;
+pub(super) mod resources;
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn lower_structured_cfg(
@@ -34,7 +34,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         result: Ty,
     ) -> Option<Vec<raw::Block>> {
         let at = span(self.input.sources(), self.function.body.span);
-        let mut graph = StructuredGraph::new(self.function);
+        let [held_blocks, held_edges] = super::structured_graph::held_resources();
+        let mut graph = StructuredGraph::new(self.function, held_blocks, held_edges, at, self)?;
         if self.structured_scope(self.function.body.root_block, result, &mut graph)? {
             self.errors.at(
                 "ZRYNA-M3015",
@@ -57,6 +58,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.structured_scope_from(block, result, graph, scope)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn structured_scope_from(
         &mut self,
         block: u32,
@@ -128,9 +130,19 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     self.structured_indexed_operation(target, value, ty, true, graph)?;
                 }
                 _ => {
+                    let mut shadow_outer = false;
                     if let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind
                         && !self.is_lexical_declaration(&statement)
                     {
+                        let RawStatementKind::LocalDeclaration { ref name, .. } = statement.kind
+                        else {
+                            unreachable!("local declaration selected")
+                        };
+                        shadow_outer = scope.shadows_outer(
+                            &name.text,
+                            self.function.body.root_block,
+                            &self.bindings,
+                        );
                         let ty = semantic_type(
                             self.file,
                             type_syntax,
@@ -151,7 +163,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         }
                     }
                     if !matches!(
-                        self.lower_statement(id, &statement, result, None, 0)?,
+                        self.lower_statement_with_shadow(
+                            id,
+                            &statement,
+                            result,
+                            None,
+                            0,
+                            shadow_outer,
+                        )?,
                         StatementOutcome::Continue
                     ) {
                         return None;
@@ -193,7 +212,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         fallthrough: bool,
     ) -> Option<bool> {
         if fallthrough {
-            self.end_lexical_scope(scope)?;
+            self.end_structured_scope(scope)?;
         } else {
             for _ in 0..scope.drop_credits {
                 self.release_transition();
@@ -215,7 +234,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         if !self.reserve_transition(at) {
             return None;
         }
-        scope.add_owned_binding(&name, binding.place);
+        scope.add_owned_binding(binding.place);
         self.bindings.insert(name, binding);
         self.structured_scope_from(block, result, graph, scope)
     }

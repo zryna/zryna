@@ -179,9 +179,10 @@ then derives exact CallTrap cleanup from reconciled post-argument owners in scra
 owned arguments before the call cleanup. Nested FixedArray and two-function call fixtures repeat
 the checked-resource/recovery matrix. Vec growth failure retains every completed child in reverse
 completion order; its result is not yet pending. At that stage #279 still required the indexed
-composition boundaries described below, the complete C7 interaction matrix and independent hostile
-evidence. With those bounded compile-time rows present, this is a #279 closure candidate; no source
-handle or runtime-execution support is claimed.
+composition boundaries described below. The later checked
+[#271 closure matrix](M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md) now binds the complete C7 source
+interaction, independent hostile IR, payload/fault cleanup and graph-resource evidence. That
+remains compiler authority only; no runtime execution is claimed.
 
 Existing formal borrow parameters retain their exact sealed identity/access across Match edges,
 as the IR's existing formal-parameter lifetime permits. Structured calls forward them in source

@@ -73,6 +73,7 @@ pub(in crate::data_ownership_v1) enum Case {
     WrongType,
     Missing,
     ExpiredBindingUse,
+    ExactShadow,
     BindingCollision,
     Moved,
     Reused,
@@ -183,7 +184,11 @@ fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, Raw
         _ => f.reference("weak"),
     };
     f.text(" ");
-    let binding = f.name(if matches!(case, Case::BindingCollision) { "Owner" } else { "upgraded" });
+    let binding = f.name(match case {
+        Case::ExactShadow => "owner",
+        Case::BindingCollision => "Owner",
+        _ => "upgraded",
+    });
     f.text(" ");
     let as_span = f.text("=>");
     f.text(" ");
@@ -192,6 +197,8 @@ fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, Raw
     let success_statement = u32::try_from(f.statements.len() + 1).expect("success statement");
     if matches!(case, Case::UnequalJoin) {
         local(f, "taken", &weak_type(), |f| f.reference("weak"));
+    } else if matches!(case, Case::ExactShadow) {
+        local(f, "observed", &shared_type(), |f| unary(f, "clone", |f| f.reference("owner")));
     } else if !matches!(case, Case::RetainedJoin) {
         returned(f, "upgraded");
     }
@@ -202,7 +209,7 @@ fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, Raw
     let expired_open = f.text("{");
     f.text(" ");
     let expired_statement = u32::try_from(f.statements.len() + 1).expect("expired statement");
-    if !matches!(case, Case::UnequalJoin | Case::RetainedJoin) {
+    if !matches!(case, Case::UnequalJoin | Case::RetainedJoin | Case::ExactShadow) {
         returned(f, if matches!(case, Case::ExpiredBindingUse) { "upgraded" } else { "owner" });
     }
     let expired_close = f.text("}");
@@ -221,7 +228,7 @@ fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, Raw
     f.statements.insert(upgrade_id, upgrade);
     let mut root_statements =
         (0..=u32::try_from(upgrade_id).expect("upgrade id")).collect::<Vec<_>>();
-    if matches!(case, Case::UnequalJoin | Case::RetainedJoin) {
+    if matches!(case, Case::UnequalJoin | Case::RetainedJoin | Case::ExactShadow) {
         f.text(" ");
         root_statements.push(u32::try_from(f.statements.len()).expect("return id"));
         returned(f, "owner");
@@ -241,7 +248,10 @@ fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, Raw
         RawBlockSyntax {
             span: at(expired_open.start as usize, expired_close.end as usize),
             open_brace_span: expired_open,
-            statements: if matches!(case, Case::UnequalJoin | Case::RetainedJoin) {
+            statements: if matches!(
+                case,
+                Case::UnequalJoin | Case::RetainedJoin | Case::ExactShadow
+            ) {
                 vec![]
             } else {
                 vec![expired_statement]
@@ -253,6 +263,10 @@ fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, Raw
 
 fn weak_type() -> Ty {
     Ty::Weak(Box::new(Ty::String))
+}
+
+fn shared_type() -> Ty {
+    Ty::Shared(Box::new(Ty::String))
 }
 
 fn active_borrow(f: &mut Builder, weak: &Ty) {

@@ -108,6 +108,13 @@ construction failure.
 
 ## Isolated `DataOwnershipV1` verifier component
 
+The independent hostile structured-CFG evidence for Issue #271 is indexed by the
+[structured owned control-flow matrix](../../docs/M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md).
+It pins exact ownership, initialization, projection masks, active variants, edge arguments,
+loop-header state, result owners, return/trap cleanup, diagnostic order and spans. Successful
+verification exposes an immutable compiler trace; it does not execute cleanup, calls, upgrades,
+allocation, refcount operations, or target code.
+
 The `data_ownership_v1` module is the separate internal M3 Universal IR trust boundary. It does
 not extend the M1 `I32V1` program or the M2 `ControlFlowV1` program. Its verifier accepts raw M3
 claims only with the independently supplied final `SourceMap`, expected entry file, and verified

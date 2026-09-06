@@ -24,6 +24,9 @@ use zryna_source::{
     UntrustedSpan,
 };
 
+#[path = "v4_lexical_bindings.rs"]
+mod lexical_bindings;
+
 pub const PROTOCOL_VERSION: u32 = 4;
 pub const MAX_RESPONSE_BYTES: usize = 64 * 1_024 * 1_024;
 pub const MAX_AGGREGATE_SOURCE_BYTES: usize = 8 * 1_024 * 1_024;
@@ -1693,13 +1696,13 @@ fn verify_body(
             path,
             sources,
             type_owners,
-            locals,
             raw.expressions.len(),
             &mut expression_owners,
             &mut block_owners,
             errors,
         );
     }
+    lexical_bindings::verify(raw, locals, path, errors);
     for block in &raw.blocks {
         if !contains_claim(raw.span, block.span) {
             errors.node(path, "block span is outside its function body");
@@ -1755,6 +1758,7 @@ fn verify_body(
     }
     verify_arena_order(raw, path, errors);
 }
+
 fn contains_claim(parent: UntrustedSpan, child: UntrustedSpan) -> bool {
     parent.file == child.file && child.start >= parent.start && child.end <= parent.end
 }
@@ -2361,7 +2365,6 @@ fn verify_statement(
     path: &NormalizedSourcePath,
     sources: &SourceMap,
     type_owners: &mut [u32],
-    locals: &mut BTreeSet<String>,
     expression_count: usize,
     expression_owners: &mut [u32],
     block_owners: &mut [u32],
@@ -2400,9 +2403,6 @@ fn verify_statement(
                 "local keyword",
             );
             identifier(name, file, path, sources, errors, "local name");
-            if !locals.insert(name.text.clone()) {
-                errors.node(path, "duplicate function-local binding name");
-            }
             own_type(*type_syntax, type_owners, path, errors);
             token(*equals_span, file, path, sources, errors, "=", "initializer equals");
             expression(*initializer);
@@ -2476,9 +2476,6 @@ fn verify_statement(
             expression(*weak);
             token(*as_span, file, path, sources, errors, "=>", "success arrow");
             identifier(binding, file, path, sources, errors, "weak-upgrade binding");
-            if !locals.insert(binding.text.clone()) {
-                errors.node(path, "duplicate weak-upgrade binding name");
-            }
             block(*success_block);
             token(*else_span, file, path, sources, errors, "=>", "failure arrow");
             block(*failure_block);

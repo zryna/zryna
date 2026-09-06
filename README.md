@@ -67,8 +67,9 @@ The repository currently establishes and tests:
   one-argument owned identity calls are supported internally,
   together with one canonical top-level no-phi `if`/`else`; branch-local owners drop in reverse and
   incoming Vec mutation fails before right-hand-side evaluation. A separate bounded terminal
-  String/exact-Vec `if`/`else` carries one owned-producing arm result through a canonical owned join
-  and excludes the joined value from return cleanup. One bounded top-level no-carried-owner
+  String/exact-Vec `if`/`else` uses a canonical three-block entry/then/else graph; each arm returns
+  its owned-producing result directly with no join block or block parameter and excludes that
+  returned owner from cleanup. One bounded top-level no-carried-owner
   `while` reevaluates its bool condition in a canonical header, reverse-drops iteration-local
   owners before its backedge, restores the exact incoming state on both loop edges, and then
   reaches one final return. Its stable-place subset may replace one mutable outer String after
@@ -123,10 +124,11 @@ The repository currently establishes and tests:
   projections, projected aggregate clone outside the exact direct-local or distinct-root
   static-projection forms, and projected aggregate assignment outside the one static-subobject-
   move-or-clone-or-whole-root-move-or-clone-to-static-projection checkpoint,
-  whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins,
-  repeated/nested branches or loops, general scope exits, and public owned values remain
-  deliberately unavailable future extensions; Vec loop replacement, owned-element Vec loop push,
-  `break`, `continue`, loop-body return, and post-loop effects remain excluded;
+  whole-partial-owner transfer, general owned phi joins, owned loop-carried phi joins, and public
+  owned values remain deliberately unavailable future extensions; Vec loop replacement and
+  owned-element Vec loop push remain excluded. The #271 route separately admits nested/repeated
+  branches and loops, lexical scope exits, loop-body return and post-loop continuation; `break`
+  and `continue` remain excluded;
 - a first internal shared-borrow semantic checkpoint for one private parameter-free literal-
   initialized `bool` or `i32` root: const aliases in one nested block lower to dense shared begin
   and Copy-read authority, end in reverse lexical order, and leave the root readable afterward.
@@ -170,7 +172,8 @@ The repository currently establishes and tests:
   construction and transfer, structural clone, ordinary Vec observation/replacement/push,
   handle-containing static subobjects, and finite Vec-indirection recursion. Exact source,
   hostile-IR and resource/replay bindings are checked without claiming runtime execution,
-  backend support, public activation, or the remaining #271–#273/#275 source boundaries;
+  backend support, public activation, or the remaining #272/#273/#275 source boundaries; #271 is
+  now a checked compiler-only structured-control-flow closure candidate;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
@@ -382,6 +385,7 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M3 Shared/Weak evidence ledger](docs/M3_SHARED_WEAK_EVIDENCE.md),
 [M3 planned ownership composition](docs/M3_OWNERSHIP_COMPOSITION.md),
 [M3 generic owned composition closure matrix](docs/M3_GENERIC_OWNED_COMPOSITION_MATRIX.md),
+[M3 structured owned control-flow closure matrix](docs/M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md),
 [M3 private generic function operations](docs/M3_GENERIC_FUNCTION_OPERATIONS.md),
 [M3 canonical structural clone](docs/M3_GENERIC_CLONE_CORE.md),
 [M3 complete static subobjects](docs/M3_GENERIC_STATIC_PLACES.md),

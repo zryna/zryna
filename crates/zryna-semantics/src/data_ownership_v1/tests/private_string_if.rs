@@ -440,7 +440,7 @@ fn private_string_if_rejects_non_bool_reference_condition() {
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful i32 branch condition");
     let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("i32 condition must reject");
     assert!(
-        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-M3012"),
+        diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-M3016"),
         "{diagnostics:?}"
     );
 }
@@ -466,10 +466,32 @@ fn private_string_if_without_else_synthesizes_empty_false_path() {
 }
 
 #[test]
-fn private_string_if_rejects_nested_owned_control_flow() {
+fn private_string_if_accepts_nested_owned_control_flow() {
     let (source, raw) = private_string_if_nested_fixture();
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful nested owned if");
-    let diagnostics = lower(pair_input(&syntax, &sources)).expect_err("nested owned if rejects");
-    assert!(diagnostics.iter().any(|diagnostic| diagnostic.code() == "ZRYNA-M3016"));
+    let program = lower(pair_input(&syntax, &sources)).expect("nested owned if verifies");
+    let function = program
+        .verified_ir()
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function");
+    assert_eq!(
+        function
+            .blocks()
+            .filter(|block| block.terminator().kind() == VerifiedTerminatorKind::Branch)
+            .count(),
+        2,
+        "outer and nested source branches remain independently represented"
+    );
+    assert_eq!(
+        function
+            .blocks()
+            .filter(|block| block.terminator().kind() == VerifiedTerminatorKind::Return)
+            .count(),
+        1
+    );
 }

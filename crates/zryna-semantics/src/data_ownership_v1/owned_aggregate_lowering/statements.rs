@@ -14,7 +14,6 @@ pub(super) enum StatementOutcome {
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    #[allow(clippy::too_many_lines)]
     pub(super) fn lower_statement(
         &mut self,
         statement_id: u32,
@@ -22,6 +21,26 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         result: Ty,
         final_statement: Option<u32>,
         return_count: usize,
+    ) -> Option<StatementOutcome> {
+        self.lower_statement_with_shadow(
+            statement_id,
+            statement,
+            result,
+            final_statement,
+            return_count,
+            false,
+        )
+    }
+
+    #[allow(clippy::too_many_lines)]
+    pub(super) fn lower_statement_with_shadow(
+        &mut self,
+        statement_id: u32,
+        statement: &RawStatementSyntax,
+        result: Ty,
+        final_statement: Option<u32>,
+        return_count: usize,
+        shadow_outer: bool,
     ) -> Option<StatementOutcome> {
         if self.mixed_function && self.is_lexical_declaration(statement) {
             if final_statement.is_some() {
@@ -51,12 +70,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             RawStatementKind::LocalDeclaration {
                 mutable, name, type_syntax, initializer, ..
             } => {
-                if self
-                    .bindings
-                    .keys()
-                    .chain(self.preparation_facts.aliases.keys())
-                    .any(|key| key.eq_ignore_ascii_case(&name.text))
-                {
+                if self.bindings.keys().chain(self.preparation_facts.aliases.keys()).any(|key| {
+                    key.eq_ignore_ascii_case(&name.text) && !(shadow_outer && key == &name.text)
+                }) {
                     self.errors.at(
                         "ZRYNA-M3002",
                         span(self.input.sources(), name.span),
@@ -136,13 +152,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 } else if self.local_preparation_route(ty)
                     == super::mixed_shape::PreparationRoute::MixedSummary
                 {
-                    super::constructor_preparation::PreparedLocal::prepare(
+                    super::constructor_preparation::PreparedLocal::prepare_with_shadow(
                         self,
                         *initializer,
                         ty,
                         statement_span,
                         &name.text,
                         *mutable,
+                        shadow_outer,
                     )?
                     .consume();
                     return Some(StatementOutcome::Continue);
@@ -227,6 +244,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 return Some(StatementOutcome::Return(value, return_span));
             }
             RawStatementKind::Assignment { target, value, .. } => {
+                if self.lower_copy_assignment(*target, *value)? {
+                    return Some(StatementOutcome::Continue);
+                }
                 if self.mixed_function && self.lexical_assignment(*target, *value)? {
                     return Some(StatementOutcome::Continue);
                 }

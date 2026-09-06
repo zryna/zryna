@@ -307,7 +307,7 @@ fn terminal_vec_if_fixture() -> (String, RawProjectSyntaxSnapshot) {
 }
 
 #[test]
-fn terminal_string_if_joins_owned_results_through_one_block_parameter() {
+fn terminal_string_if_returns_owned_results_directly_from_each_arm() {
     let (source, raw) = terminal_string_if_fixture();
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful terminal String if");
@@ -321,13 +321,12 @@ fn terminal_string_if_joins_owned_results_through_one_block_parameter() {
         .next()
         .expect("function");
     let blocks = function.blocks().collect::<Vec<_>>();
-    assert_eq!(blocks.len(), 4);
+    assert_eq!(blocks.len(), 3);
     assert_eq!(
         blocks.iter().map(|block| block.terminator().kind()).collect::<Vec<_>>(),
         vec![
             VerifiedTerminatorKind::Branch,
-            VerifiedTerminatorKind::Jump,
-            VerifiedTerminatorKind::Jump,
+            VerifiedTerminatorKind::Return,
             VerifiedTerminatorKind::Return,
         ]
     );
@@ -341,31 +340,23 @@ fn terminal_string_if_joins_owned_results_through_one_block_parameter() {
     let else_value =
         blocks[2].instructions().next().expect("else String").result().expect("result");
     assert_eq!((then_value.index(), else_value.index()), (2, 3));
-    let then_jump = blocks[1].terminator().edges().next().expect("then jump");
-    let else_jump = blocks[2].terminator().edges().next().expect("else jump");
-    assert_eq!((then_jump.target().index(), else_jump.target().index()), (3, 3));
-    assert_eq!(then_jump.arguments().next(), Some(then_value));
-    assert_eq!(else_jump.arguments().next(), Some(else_value));
-    let joined = blocks[3].parameters().next().expect("String join parameter").id();
-    assert_eq!(joined.index(), 4);
-    assert_eq!(blocks[3].instructions().count(), 0);
-    assert_eq!(blocks[3].terminator().value_operands().next(), Some(joined));
-    assert_eq!(blocks[3].terminator().derived_drop_actions().count(), 0);
-    assert!(function.places().any(
-        |place| matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == joined)
-    ));
+    assert_eq!(blocks[1].terminator().value_operands().next(), Some(then_value));
+    assert_eq!(blocks[2].terminator().value_operands().next(), Some(else_value));
+    assert!(blocks.iter().all(|block| block.parameters().count() == 0));
+    assert_eq!(blocks[1].terminator().derived_drop_actions().count(), 0);
+    assert_eq!(blocks[2].terminator().derived_drop_actions().count(), 0);
     assert_eq!(
         function
             .places()
             .filter(|place| matches!(place.kind(), VerifiedPlaceKind::Temporary(_)))
             .count(),
-        3
+        2
     );
-    assert_eq!(function.cleanup_plans().last().expect("join return cleanup").actions().count(), 0);
+    assert!(function.cleanup_plans().all(|plan| plan.actions().count() == 0));
 }
 
 #[test]
-fn terminal_vec_if_joins_exact_vec_results_through_one_block_parameter() {
+fn terminal_vec_if_returns_exact_vec_results_directly_from_each_arm() {
     let (source, raw) = terminal_vec_if_fixture();
     let sources = sources_for(&source);
     let syntax = verify_snapshot(raw, &sources).expect("source-faithful terminal Vec if");
@@ -379,14 +370,13 @@ fn terminal_vec_if_joins_exact_vec_results_through_one_block_parameter() {
         .next()
         .expect("function");
     let blocks = function.blocks().collect::<Vec<_>>();
-    assert_eq!(blocks.len(), 4);
+    assert_eq!(blocks.len(), 3);
     assert_eq!(function.parameters().next().expect("bool parameter").id().index(), 0);
     assert_eq!(
         blocks.iter().map(|block| block.terminator().kind()).collect::<Vec<_>>(),
         vec![
             VerifiedTerminatorKind::Branch,
-            VerifiedTerminatorKind::Jump,
-            VerifiedTerminatorKind::Jump,
+            VerifiedTerminatorKind::Return,
             VerifiedTerminatorKind::Return,
         ]
     );
@@ -405,25 +395,26 @@ fn terminal_vec_if_joins_exact_vec_results_through_one_block_parameter() {
         .collect::<Vec<_>>();
     assert_eq!(then_results, vec![2, 3]);
     assert_eq!(else_results, vec![4, 5]);
-    let then_jump = blocks[1].terminator().edges().next().expect("then jump");
-    let else_jump = blocks[2].terminator().edges().next().expect("else jump");
-    assert_eq!((then_jump.target().index(), else_jump.target().index()), (3, 3));
     assert_eq!(
-        then_jump.arguments().next().map(zryna_ir::data_ownership_v1::ValueIdentity::index),
+        blocks[1]
+            .terminator()
+            .value_operands()
+            .next()
+            .map(zryna_ir::data_ownership_v1::ValueIdentity::index),
         Some(3)
     );
     assert_eq!(
-        else_jump.arguments().next().map(zryna_ir::data_ownership_v1::ValueIdentity::index),
+        blocks[2]
+            .terminator()
+            .value_operands()
+            .next()
+            .map(zryna_ir::data_ownership_v1::ValueIdentity::index),
         Some(5)
     );
-    let joined = blocks[3].parameters().next().expect("owned Vec join parameter").id();
-    assert_eq!(joined.index(), 6);
-    assert!(function.places().any(|place| {
-        matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == joined)
-    }));
-    assert_eq!(blocks[3].terminator().value_operands().next(), Some(joined));
-    assert_eq!(blocks[3].terminator().derived_drop_actions().count(), 0);
-    assert_eq!(function.cleanup_plans().last().expect("join return cleanup").actions().count(), 0);
+    assert!(blocks.iter().all(|block| block.parameters().count() == 0));
+    assert_eq!(blocks[1].terminator().derived_drop_actions().count(), 0);
+    assert_eq!(blocks[2].terminator().derived_drop_actions().count(), 0);
+    assert!(function.cleanup_plans().all(|plan| plan.actions().count() == 0));
 }
 
 #[test]

@@ -184,3 +184,70 @@ fn weak_upgrade_binding_collision_is_exact_deterministic_and_recovers() {
     let syntax = verify_snapshot(raw, &sources).expect("authenticated recovery upgrade");
     lower(pair_input(&syntax, &sources)).expect("valid recovery after binding collision");
 }
+
+#[test]
+fn weak_upgrade_exact_shadow_is_scoped_and_case_fold_collision_still_rejects() {
+    let (source, raw) = fixture_case(Case::ExactShadow);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated exact shadow");
+    let program = lower(pair_input(&syntax, &sources)).expect("exact success shadow verifies");
+    let function = program.modules().next().expect("module").functions().next().expect("function");
+    let blocks = function.blocks().collect::<Vec<_>>();
+    let upgrade = blocks
+        .iter()
+        .find(|block| block.terminator().kind() == VerifiedTerminatorKind::WeakUpgradeBranch)
+        .expect("upgrade origin");
+    let outer_owner = upgrade
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::WeakDowngrade)
+        .and_then(|instruction| instruction.place_operands().next())
+        .expect("outer Shared owner");
+    let (success, expired) = upgrade.terminator().weak_upgrade_edges().expect("upgrade outcomes");
+    let success =
+        blocks.iter().find(|block| block.id() == success.target()).expect("success block");
+    let parameter = success.parameters().next().expect("shadowed success binding").id();
+    let success_owner = function
+        .places()
+        .find(|place| matches!(place.kind(), VerifiedPlaceKind::Temporary(value) if value == parameter))
+        .expect("success parameter owner")
+        .id();
+    assert_eq!(
+        success
+            .instructions()
+            .find(|instruction| instruction.kind() == VerifiedInstructionKind::SharedClone)
+            .and_then(|instruction| instruction.place_operands().next()),
+        Some(success_owner),
+        "success reference resolves to the nearest exact-name binding"
+    );
+    assert!(success.instructions().any(|instruction| {
+        instruction.kind() == VerifiedInstructionKind::DropPlace
+            && instruction.place_operands().next() == Some(success_owner)
+    }));
+    let expired =
+        blocks.iter().find(|block| block.id() == expired.target()).expect("expired block");
+    assert_eq!(
+        expired.parameters().count(),
+        0,
+        "expired scope never receives the success-only shadow"
+    );
+    let continuation = blocks
+        .iter()
+        .find(|block| block.terminator().kind() == VerifiedTerminatorKind::Return)
+        .expect("post-upgrade return");
+    assert_eq!(
+        continuation
+            .instructions()
+            .find(|instruction| instruction.kind() == VerifiedInstructionKind::MoveFromPlace)
+            .and_then(|instruction| instruction.place_operands().next()),
+        Some(outer_owner),
+        "post-upgrade continuation restores the shadowed outer binding"
+    );
+
+    let (source, raw) = fixture_case(Case::BindingCollision);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated case-fold collision");
+    let diagnostics =
+        lower(pair_input(&syntax, &sources)).expect_err("case-fold collision rejects");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-M3002");
+}

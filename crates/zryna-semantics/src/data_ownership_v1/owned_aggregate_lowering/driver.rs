@@ -39,7 +39,9 @@ fn lower_owned_aggregate_function_impl<'a>(
         node_types,
         layouts,
     );
-    if !if generic_function {
+    let structured_function = signature.private && super::requires_structured_cfg(function);
+    let generic_surface = generic_function || structured_function;
+    if !if generic_surface {
         super::mixed_shape::supported(result, layouts)
     } else if super::mixed_shape::requires_summary(result, layouts) {
         true
@@ -83,7 +85,7 @@ fn lower_owned_aggregate_function_impl<'a>(
         node_types,
         layouts,
         catalog,
-        mixed_function: generic_function
+        mixed_function: generic_surface
             || (signature.private
                 && !result.is_copy()
                 && super::mixed_shape::requires_summary(result, layouts)),
@@ -136,7 +138,7 @@ fn lower_owned_aggregate_function_impl<'a>(
         }
         if let super::super::function_catalog::FunctionParameterOrder::Borrow(index) = *order {
             let descriptor = *signature.borrow_parameters.get(index as usize)?;
-            if !generic_function || !super::mixed_shape::supported(descriptor.referent, layouts) {
+            if !generic_surface || !super::mixed_shape::supported(descriptor.referent, layouts) {
                 lowerer.errors.at(
                     "ZRYNA-M3017",
                     descriptor.span,
@@ -174,7 +176,7 @@ fn lower_owned_aggregate_function_impl<'a>(
             node_types,
             lowerer.errors,
         )?;
-        let admitted = if generic_function {
+        let admitted = if generic_surface {
             super::mixed_shape::supported(ty, layouts)
         } else {
             ty.is_copy() && matches!(ty.category, TypeCategory::Bool | TypeCategory::I32)
@@ -234,21 +236,7 @@ fn lower_owned_aggregate_function_impl<'a>(
             lowerer.owners.register_parameter(place)?;
         }
     }
-    if generic_function
-        && (function
-            .body
-            .expressions
-            .iter()
-            .any(|expression| matches!(expression.kind, syntax::RawExpressionKind::Match { .. }))
-            || function.body.statements.iter().any(|statement| {
-                matches!(
-                    statement.kind,
-                    RawStatementKind::If { .. }
-                        | RawStatementKind::While { .. }
-                        | RawStatementKind::WeakUpgrade { .. }
-                )
-            }))
-    {
+    if structured_function {
         let blocks = lowerer.lower_structured_cfg(&parameters, result)?;
         assert!(lowerer.constructor_storage_is_clear(), "structured constructor credits released");
         assert_eq!(lowerer.reserved_transitions, 0, "structured transition credits released");

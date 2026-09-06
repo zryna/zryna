@@ -129,8 +129,9 @@ owned identity calls are available internally. String/Vec functions also admit o
 top-level no-phi `if`/`else` from a bool literal or Copy bool parameter; branch-local owners drop in
 reverse, incoming owners are restored exactly, and mutation of an incoming Vec fails before its
 right-hand side. Private String and exact Vec result functions additionally admit one bounded
-terminal `if`/`else`: each arm returns one owned-producing expression through a canonical
-one-parameter owned join, and return cleanup excludes the joined value. One bounded top-level
+terminal `if`/`else` as exactly three entry/then/else blocks: each arm returns one owned-producing
+expression directly, no join block or parameter is created, and cleanup excludes the returned
+owner. One bounded top-level
 no-carried-owner `while` evaluates its bool condition in a canonical header, reverse-drops
 iteration-local owners before the backedge, restores incoming ownership state on the backedge and
 false exit, and permits only the final return afterward. Its stable-place subset supports prepared
@@ -208,10 +209,11 @@ enum-payload moves, dynamic or Vec-element projections, projected aggregate assi
 exact static-subobject-move-or-clone-or-whole-root-move-or-clone-to-static-projection site, projected aggregate
 clone outside the direct-local or distinct-root static-replacement exceptions, partial Enum
 transfer or partial-root transfer in call/CFG contexts, direct projected-clone returns, public
-contexts, or non-final/non-reference returns, general owned phi joins,
-owned loop-carried phi joins, repeated or nested branches or loops, and general scope exits remain
-deliberately unavailable future extensions; `break`, `continue`, loop-body return, and post-loop
-effects remain excluded. Issue #82 is complete at its bounded internal lexical-borrowing boundary.
+contexts, or non-final/non-reference returns, general owned phi joins and owned loop-carried phi
+joins remain deliberately unavailable future extensions. The checked #271 route separately admits
+repeated/nested branches and loops, general lexical scope exits, loop-body return and post-loop
+continuation; `break` and `continue` remain excluded.
+Issue #82 is complete at its bounded internal lexical-borrowing boundary.
 Issues #113 through #117, #119, #120, and #121 freeze the bounded borrowing contract, retain the independent verified-IR
 authority, and implement one internal private parameter-free literal-initialized `bool`/`i32` root
 with shared or exclusive aliases. Straight-line aliases use one nested lexical block, conditional
@@ -261,13 +263,16 @@ provided the reusable foundation for the completed #259–#264/#83 internal Shar
 chain. The current #270 closure candidate composes nested Struct/Enum/FixedArray/Vec ownership,
 finite Vec-indirection recursion, structural clone, handle-containing static transfers, and
 ordinary handle-aware Vec observation/replacement/push through mandatory verified IR. Its checked
-matrix binds exact source, hostile-IR, resource and replay tests from #320–#323. Issues #271–#273
-and #275 retain full CFG, call, match and non-indexed-borrow completion; #274 remains separately
-completed. These internal source/IR requirements and final #270 merge gates still block complete
-#84/#85/#86 support.
-Protocol v4 is unchanged; projected forwarding, repeated calls, CFG
-crossing, call recursion, owned aggregate call shapes, public borrow signatures, retained authority,
-and nested/repeated control flow remain later or unavailable child work. This adds no runtime,
+matrix binds exact source, hostile-IR, resource and replay tests from #320–#323. Issue #271 is now
+a checked compiler-only closure candidate: its exact #325 source/lexical, #326 hostile-IR, and #327
+payload/fault/resource bindings are recorded in `M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md`.
+Issues #272/#273 and #275 retain call, complete match and non-indexed-borrow completion; #274
+remains separately completed and #269 remains the parent. Verified instruction, cleanup and fault
+traces are not target execution. Runtime, backend, CLI, public activation and final #271 merge
+gates remain open, so complete #84/#85/#86 support is not claimed.
+Protocol v4 is unchanged; projected forwarding, repeated calls, call recursion, owned aggregate
+call shapes, public borrow signatures and retained borrow authority remain later or unavailable
+child work. This adds no runtime,
 ABI, backend, driver, CLI, artifact, website-support, or public-profile capability.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,

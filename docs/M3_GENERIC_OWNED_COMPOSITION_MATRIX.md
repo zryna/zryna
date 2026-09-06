@@ -89,8 +89,8 @@ completes only the finite recursive source/IR matrix under `R1`.
 
 ## Preserved sibling and downstream boundaries
 
-- #271 retains full structured owned control flow and lexical cleanup. This matrix does not claim
-  unrestricted repeated/nested CFG, early-return or post-loop composition.
+- #271's separate checked structured-control-flow matrix now makes it a compiler-only closure
+  candidate; this #270 matrix does not independently claim that closure.
 - #272 retains complete internal owned calls and inherited named-import resolution. Existing
   bounded generic/handle calls do not close its multi-argument/result/module matrix.
 - #273 retains exhaustive enum match and active-payload composition beyond existing bounded cases.

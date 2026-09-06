@@ -1,24 +1,35 @@
 use super::super::diagnostics::span;
 use super::super::layout_graph::semantic_type;
 use super::{PrivateOwnedAggregateLowerer, StatementOutcome, Ty};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use zryna_ir::data_ownership_v1::raw;
 use zryna_syntax::v4::RawStatementKind;
 
 pub(super) struct Scope {
     block: u32,
     next: usize,
-    bindings: BTreeSet<String>,
+    bindings: BTreeMap<String, super::Binding>,
+    declared: BTreeSet<String>,
     aliases: BTreeSet<String>,
     owners: BTreeSet<raw::PlaceId>,
     pub(super) drop_credits: usize,
 }
 
 impl Scope {
-    pub(super) fn add_owned_binding(&mut self, name: &str, owner: raw::PlaceId) {
-        self.bindings.remove(name);
+    pub(super) fn add_owned_binding(&mut self, owner: raw::PlaceId) {
         self.owners.remove(&owner);
         self.drop_credits += 1;
+    }
+
+    pub(super) fn shadows_outer(
+        &mut self,
+        name: &str,
+        root: u32,
+        bindings: &BTreeMap<String, super::Binding>,
+    ) -> bool {
+        let duplicate = self.declared.iter().any(|declared| declared.eq_ignore_ascii_case(name));
+        self.declared.insert(name.to_owned());
+        !duplicate && self.block != root && bindings.contains_key(name)
     }
 }
 
@@ -27,7 +38,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Scope {
             block,
             next: 0,
-            bindings: self.bindings.keys().cloned().collect(),
+            bindings: self.bindings.clone(),
+            declared: BTreeSet::new(),
             aliases: self.preparation_facts.aliases.keys().cloned().collect(),
             owners: self.owners.pending().iter().copied().collect(),
             drop_credits: 0,
@@ -100,6 +112,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     }
 
     pub(super) fn end_lexical_scope(&mut self, scope: &Scope) -> Option<()> {
+        self.end_scope(scope, true)
+    }
+
+    pub(super) fn end_structured_scope(&mut self, scope: &Scope) -> Option<()> {
+        self.end_scope(scope, false)
+    }
+
+    fn end_scope(&mut self, scope: &Scope, require_reserved_drops: bool) -> Option<()> {
         let at =
             span(self.input.sources(), self.function.body.blocks.get(scope.block as usize)?.span);
         let mut ended: Vec<_> = self
@@ -118,7 +138,10 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             .copied()
             .filter(|owner| !scope.owners.contains(owner))
             .collect();
-        assert!(dropped.len() <= scope.drop_credits, "each scoped owner reserves its drop");
+        assert!(
+            !require_reserved_drops || dropped.len() <= scope.drop_credits,
+            "each legacy scoped owner reserves its drop"
+        );
         for _ in 0..ended.len().checked_add(scope.drop_credits)? {
             self.release_transition();
         }
@@ -135,7 +158,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             let delta = self.owners.consume_owner(place)?;
             self.preparation_facts.apply(delta);
         }
-        self.bindings.retain(|name, _| scope.bindings.contains(name));
+        self.bindings.clone_from(&scope.bindings);
         Some(())
     }
 }

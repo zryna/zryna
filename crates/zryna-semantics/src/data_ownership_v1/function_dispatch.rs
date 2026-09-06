@@ -4,7 +4,7 @@ use super::copy_enum_match::lower_enum_match_function;
 use super::copy_function_lowering::lower_copy_function;
 use super::owned_aggregate_lowering::{
     is_private_mixed_constructor_candidate, is_private_owned_aggregate_candidate,
-    lower_private_owned_aggregate_function, requires_generic_function,
+    lower_private_owned_aggregate_function, requires_generic_function, requires_structured_cfg,
 };
 use super::owned_control_flow_shape::is_terminal_owned_phi_candidate;
 use super::owned_enum_payload_move::{
@@ -264,24 +264,19 @@ fn lower_function_impl<'a>(
                 layouts,
             )
         });
+    let structured_owned_function = function.export_span.is_none()
+        && requires_structured_cfg(function)
+        && (generic_function
+            || !result.is_copy()
+            || has_vec_signature
+            || has_vec_local
+            || has_vec_operation);
     let existing_payload_move = function.export_span.is_none()
         && matches!(result.category, TypeCategory::Struct | TypeCategory::FixedArray)
         && !function.body.expressions.iter().any(|expression| matches!(&expression.kind, RawExpressionKind::Match { arms, .. } if arms.len() > 1))
         && is_private_owned_enum_payload_move_candidate(function);
-    if generic_function && !existing_payload_move {
-        if !function.body.statements.iter().any(|statement| {
-            matches!(
-                statement.kind,
-                RawStatementKind::If { .. }
-                    | RawStatementKind::While { .. }
-                    | RawStatementKind::WeakUpgrade { .. }
-            )
-        }) && !function
-            .body
-            .expressions
-            .iter()
-            .any(|expression| matches!(expression.kind, RawExpressionKind::Match { .. }))
-        {
+    if (generic_function || structured_owned_function) && !existing_payload_move {
+        if !requires_structured_cfg(function) {
             verify_single_final_return(function, input.sources(), errors)?;
         }
         return lower_private_owned_aggregate_function(

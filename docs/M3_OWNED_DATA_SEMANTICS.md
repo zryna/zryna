@@ -36,9 +36,9 @@ document. Its private owned String/Vec route currently proves:
 - one bounded top-level no-phi `if`/`else` for String and exact Vec functions, using a bool literal
   or Copy bool parameter, canonical entry/then/else/join blocks, empty typed edges, reverse drops
   of branch-local owners, and exact restoration of every incoming owner before the join;
-- one bounded terminal owned `if`/`else` for private String and exact Vec results, where both arms
-  return one owned-producing expression through a canonical one-parameter join; the join owns the
-  selected value exactly once and excludes it from return-site cleanup;
+- one bounded terminal owned `if`/`else` for private String and exact Vec results, represented by
+  exactly three blocks (entry, then, else), where each arm directly returns one owned-producing
+  expression with no join block or block parameter and excludes its returned owner from cleanup;
 - one bounded top-level no-carried-owner `while` for private String and exact Vec functions, with
   pre-loop declarations, condition evaluation in a canonical loop header, reverse drops of every
   iteration-local owner before the backedge, exact restoration of incoming ownership state on the
@@ -113,16 +113,16 @@ projections, projected aggregate clone outside the exact direct-local or distinc
 replacement forms, projected aggregate assignment outside the exact static-subobject-move-or-
 clone-or-whole-root-move-or-clone-to-static-projection form, partial-root transfer for Enum or
 outside one exact-type direct local declaration, final exact-reference return, or distinct
-whole-root assignment, general owned phi joins,
-owned loop-carried phi joins, repeated or nested branches or loops, general lexical scope exits,
-runtime/backend lowering, CLI
+whole-root assignment, general owned phi joins, owned loop-carried phi joins, runtime/backend
+lowering, CLI
 selection, and public owned values remain unavailable. Owned String/Vec signatures remain bounded
 to zero arguments or one exact owned/bool argument. Their no-phi branch must leave incoming owners
-unchanged, while the terminal owned join accepts only one owned-producing return expression per
-arm. The bounded loop preserves the exact incoming owner stack. Its stable-place String replacement
+unchanged, while each terminal owned branch directly returns one owned-producing expression. The
+bounded loop preserves the exact incoming owner stack. Its stable-place String replacement
 and Copy-element Vec push retain the same outer place identity across the backedge; all other
-incoming owners remain unchanged. Vec replacement, `Vec<String>` push, `break`, `continue`, body
-returns, and effects after the loop remain excluded. The aggregate route remains parameter-free,
+incoming owners remain unchanged. Vec replacement and `Vec<String>` push remain excluded. The
+later checked #271 route admits nested/repeated control flow, general lexical exits, loop-body
+returns and post-loop continuation while retaining the `break` and `continue` exclusions. The aggregate route remains parameter-free,
 private, and straight-line. Its partial-move subset is limited to exact String leaves and supported
 Struct/FixedArray subobjects reached through static StructField or FixedArrayConstant paths; an
 aggregate subobject may move into one exact directly initialized same-type local, move into one
@@ -143,7 +143,7 @@ work.
 | verified DataOwnershipV1 IR and runtime ABI authority | complete | mandatory sealed verification and exact declaration authority |
 | String/Vec construction, moves, replacement, calls, and reverse return cleanup | complete | bounded private functions with exact resource ledgers |
 | owned Struct/FixedArray/Enum construction and whole-value moves | complete | bounded private straight-line graphs |
-| no-phi branches and terminal owned block-parameter join | complete | canonical bounded String/exact-Vec CFGs |
+| no-phi branches and terminal owned direct-arm returns | complete | canonical three-block String/exact-Vec CFGs with no join parameter |
 | no-carried-owner loop/backedge cleanup | complete | one top-level loop with exact incoming-state restoration |
 | stable-place loop mutation | complete | String replacement and Copy-element Vec push retain one exact outer place across repeated execution |
 | exact `Vec<bool>`/`Vec<i32>`/`Vec<String>` clone | complete | distinct result owner, retained source, authenticated allocation and element-clone failures, prefix-safe reverse cleanup, and exact resource rollback |
@@ -167,13 +167,15 @@ driver, and CLI profile.
 
 ## Future extensions
 
-Issue #81 deliberately does not generalize owned header phi values, arbitrary or nested control
+Issue #81 deliberately did not generalize owned header phi values, arbitrary or nested control
 flow and lexical exits, Vec replacement or owned-element push in loops, general structural
 `Vec<T>` clone, recursive aggregate graphs containing Vec/Enum/Shared/Weak, multi-variant or
 non-local enum payload transfer, dynamic projections, parameterized or public aggregate routes,
 or broader projected clone and replacement contexts. Borrowing and shared ownership remain owned
 by Issues #82 and #83. Executable allocator/runtime fault injection belongs to later target work.
-These extensions require their own dependency-ordered child issues and acceptance evidence.
+The later checked #271 compiler route supplies nested/repeated control flow and lexical exits
+without changing the other exclusions. Remaining extensions require their own dependency-ordered
+child issues and acceptance evidence.
 
 ## Authority boundary
 
@@ -548,7 +550,7 @@ that compiler-internal boundary; the exclusions in this document remain normativ
 - non-`Copy` aggregate construction, active enum payloads, prefix-safe aggregate clone and cleanup,
   statically resolved place projections, and fixed-array checked indexing;
 - local declarations, mutable assignment, bounded internal direct calls, one admitted no-phi or
-  terminal-join `if`/`else`, one admitted no-carried-owner `while`, one admitted single-variant enum
+  direct-arm-return terminal `if`/`else`, one admitted no-carried-owner `while`, one admitted single-variant enum
   match-local transfer, return, and controlled bounds/allocation/capacity/UTF-8 traps; and
 - existing scalar and Copy aggregate behavior without an ownership obligation.
 
