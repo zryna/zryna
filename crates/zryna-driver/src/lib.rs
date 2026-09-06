@@ -21,6 +21,7 @@ mod native;
 mod ownership_closure;
 mod ownership_manifest;
 mod ownership_pipeline;
+mod ownership_publication;
 mod ownership_runtime_v1;
 mod pipeline;
 mod runtime;
@@ -72,6 +73,9 @@ pub use ownership_pipeline::{
     DATA_OWNERSHIP_CANDIDATE_PROFILE, DataOwnershipBuildRequest, DataOwnershipCandidateSuccess,
     DataOwnershipRunRequest, PreparedDataOwnershipArtifacts, prepare_data_ownership_build,
     prepare_data_ownership_run,
+};
+pub use ownership_publication::{
+    PublishedOwnershipArtifact, PublishedOwnershipBundle, publish_data_ownership_bundle,
 };
 pub use pipeline::{
     BuildRequest, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,

@@ -86,6 +86,7 @@ impl PreparedDataOwnershipArtifacts {
 /// One fully authenticated but unpublished candidate result.
 #[derive(Debug)]
 pub struct DataOwnershipCandidateSuccess {
+    workspace_root: PathBuf,
     closure: VerifiedOwnershipModuleClosure,
     program: zryna_semantics::data_ownership_v1::VerifiedProgram,
     artifacts: PreparedDataOwnershipArtifacts,
@@ -100,6 +101,11 @@ impl DataOwnershipCandidateSuccess {
     #[must_use]
     pub const fn profile(&self) -> &'static str {
         DATA_OWNERSHIP_CANDIDATE_PROFILE
+    }
+    /// Returns the validated absolute workspace root retained for publication.
+    #[must_use]
+    pub fn workspace_root(&self) -> &std::path::Path {
+        &self.workspace_root
     }
     /// Returns the single final source/syntax authority shared by every selected backend.
     #[must_use]
@@ -243,6 +249,7 @@ where
     let (logical_export, arguments) =
         run.map_or((None, Vec::new()), |(name, args)| (Some(name), args));
     Ok(DataOwnershipCandidateSuccess {
+        workspace_root: request.workspace_root.clone(),
         closure,
         program,
         artifacts,

@@ -1709,7 +1709,7 @@ fn normalize_carrier(
     }
 }
 
-struct Transaction {
+pub(crate) struct Transaction {
     path: PathBuf,
     stage_name: String,
     identity: Handle,
@@ -1734,7 +1734,7 @@ struct StagedPrivateFile {
 }
 
 impl Transaction {
-    fn create(output_root: &ArtifactOutputRoot) -> Result<Self, CommandFailure> {
+    pub(crate) fn create(output_root: &ArtifactOutputRoot) -> Result<Self, CommandFailure> {
         output_root.revalidate().map_err(preparation_failure)?;
         let output_directory = Dir::open_ambient_dir(output_root.path(), ambient_authority())
             .map_err(|_| transaction_error("could not retain the output-root capability"))?;
@@ -1821,6 +1821,22 @@ impl Transaction {
         })
     }
 
+    pub(crate) fn write_ownership_artifact(
+        &self,
+        target: crate::OwnershipTarget,
+        kind: &'static str,
+        stem: &str,
+        extension: &str,
+        bytes: &[u8],
+    ) -> Result<(), CommandFailure> {
+        let target = match target {
+            crate::OwnershipTarget::JavaScript => ManifestTarget::JavaScript,
+            crate::OwnershipTarget::WebAssembly => ManifestTarget::WebAssembly,
+            crate::OwnershipTarget::Native => ManifestTarget::Native,
+        };
+        self.write_artifact(target, kind, stem, extension, bytes).map(|_| ())
+    }
+
     fn write_runtime_harness(&self, target: &str, bytes: &[u8]) -> Result<PathBuf, CommandFailure> {
         self.revalidate_stage()?;
         let name = format!(".{target}-runtime.mjs");
@@ -1835,10 +1851,16 @@ impl Transaction {
         Ok(path)
     }
 
-    fn write_manifest(&self, manifest_name: &str, bytes: &[u8]) -> Result<(), CommandFailure> {
+    pub(crate) fn write_manifest(
+        &self,
+        manifest_name: &str,
+        bytes: &[u8],
+    ) -> Result<(), CommandFailure> {
         self.revalidate_stage()?;
-        if !matches!(manifest_name, MANIFEST_NAME | CONTROL_FLOW_MANIFEST_NAME)
-            || self.manifest.borrow().is_some()
+        if !matches!(
+            manifest_name,
+            MANIFEST_NAME | CONTROL_FLOW_MANIFEST_NAME | crate::OWNERSHIP_MANIFEST_NAME
+        ) || self.manifest.borrow().is_some()
         {
             return Err(transaction_error("manifest name is not a closed unique version"));
         }
@@ -1870,7 +1892,7 @@ impl Transaction {
         self.audit_inventory(true)
     }
 
-    fn commit(
+    pub(crate) fn commit(
         &mut self,
         output_root: &ArtifactOutputRoot,
         final_bundle: &Path,
@@ -1926,7 +1948,10 @@ impl Transaction {
         Ok(())
     }
 
-    fn cleanup(&mut self, output_root: &ArtifactOutputRoot) -> Result<(), CommandFailure> {
+    pub(crate) fn cleanup(
+        &mut self,
+        output_root: &ArtifactOutputRoot,
+    ) -> Result<(), CommandFailure> {
         if self.committed {
             return Ok(());
         }
