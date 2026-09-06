@@ -157,7 +157,7 @@ fn structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention() {
             let injection = OwnedFaultInjection::HandleCloneStep {
                 operation,
                 status,
-                fault_ordinal: ordinal as u32,
+                fault_ordinal: u32::try_from(ordinal).expect("bounded fault ordinal"),
             };
             let first =
                 owned_fault_trace(abi, function, clone_instruction, injection, 0, ordinal + 1)
@@ -168,7 +168,11 @@ fn structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention() {
             assert_eq!(first, second);
             assert_eq!(
                 (first.operation, first.status, first.fault_ordinal),
-                (Some(operation), Some(status), Some(ordinal as u32))
+                (
+                    Some(operation),
+                    Some(status),
+                    Some(u32::try_from(ordinal).expect("bounded fault ordinal"))
+                )
             );
             assert_eq!(first.disposition, disposition(status));
             assert_eq!(first.prefix_owner, Some(clone.destination()));
@@ -190,7 +194,7 @@ fn structural_handle_fault_ordinals_bind_prefix_cleanup_and_source_retention() {
         let invalid = OwnedFaultInjection::HandleCloneStep {
             operation: operations[0],
             status: operation_fault(operations[0]),
-            fault_ordinal: operations.len() as u32,
+            fault_ordinal: u32::try_from(operations.len()).expect("bounded operation count"),
         };
         assert_eq!(
             owned_fault_trace(abi, function, clone_instruction, invalid, 0, operations.len() + 1),

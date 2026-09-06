@@ -31,6 +31,8 @@ mod indexed_consumption;
 use indexed_consumption::IndexedScopes;
 #[path = "preparation_push_consumption.rs"]
 mod push_consumption;
+#[path = "preparation_step_execution.rs"]
+mod step_execution;
 
 struct OpenConstructor {
     end: usize,
@@ -243,125 +245,6 @@ impl Consumption<'_, '_, '_, '_> {
         assert_eq!(self.cleanups.len(), 1, "generic prefix follows prepare cleanup");
         self.lowerer.consume_generic_clone_prefix(id, owner, actions, at);
         self.cleanups.push((id, Some(owner)));
-    }
-
-    fn execute(
-        &mut self,
-        index: usize,
-        length: usize,
-        step: Step<'_>,
-        vec_actions: Option<usize>,
-    ) -> Option<raw::ValueId> {
-        self.require_next(&step.operation);
-        let mut effects = Vec::new();
-        let emission = match step.operation {
-            Operation::DropTemporary { place } => {
-                self.lowerer
-                    .emit_prepared_effect(step.at, raw::InstructionKind::DropPlace { place });
-                effects.push(
-                    self.lowerer.owners.consume_owner(place).expect("prepared temporary owner"),
-                );
-                for delta in &effects {
-                    self.lowerer.preparation_facts.apply(*delta);
-                }
-                None
-            }
-            Operation::StructuredValue { expression, value } => {
-                Some(self.lowerer.consume_structured_handoff(expression, value, step.ty))
-            }
-            Operation::ReplaceProjection { place, value } => {
-                effects = self.replace_projection(place, value, step.ty, step.at);
-                None
-            }
-            Operation::VecPush { vector, value, cleanup } => {
-                effects = self.vec_push(vector, value, cleanup, step.ty, step.at);
-                None
-            }
-            Operation::IndexedCopyStorage { place, value } => {
-                self.indexed_copy_storage(place, value, step.ty, step.at);
-                None
-            }
-            operation @ (Operation::IndexedEnter { .. }
-            | Operation::IndexedExit
-            | Operation::IndexedEffect(_)) => {
-                effects = self.indexed_step(index, operation, step.at);
-                None
-            }
-            Operation::ScalarEnter { kind, end, operands } => {
-                assert!(self.cleanups.is_empty(), "scalar entry cannot interrupt cleanup");
-                self.scalars.enter((index, end, length), self.open.len(), step.ty, kind, operands);
-                None
-            }
-            Operation::ScalarCommit { kind, operands } => {
-                Some(self.scalar_commit(index, step.ty, step.at, kind, &operands))
-            }
-            Operation::CallEnter { signature, end, arguments } => {
-                self.enter_call(
-                    (index, end, length),
-                    signature,
-                    arguments,
-                    (step.ty, step.at),
-                    vec_actions.expect("call cleanup demand"),
-                );
-                None
-            }
-            Operation::CallTransfer { value, owner } => {
-                effects.push(self.transfer_call(index, value, owner, step.ty));
-                None
-            }
-            Operation::CallRelease => {
-                self.release_call(index, step.ty);
-                None
-            }
-            Operation::CallCommit { signature, arguments, cleanup } => {
-                Some(self.commit_call(index, signature, arguments, cleanup, (step.ty, step.at)))
-            }
-            operation @ (Operation::StringEnter { .. }
-            | Operation::StringRead(_)
-            | Operation::StringExit) => {
-                self.string_step(index, length, step.ty, operation);
-                None
-            }
-            Operation::Enter { arity, kind, end } => {
-                self.enter(index, length, (step.ty, step.at), (arity, kind, end), vec_actions);
-                None
-            }
-            Operation::Release => {
-                self.release(index, step.ty);
-                None
-            }
-            Operation::Prefix { id, descriptor } => {
-                assert!(self.cleanups.is_empty(), "projection cannot interrupt cleanup effects");
-                self.lowerer.consume_prepared_prefix(id, descriptor);
-                None
-            }
-            Operation::CloneCapacity { aggregate } => {
-                self.clone_capacity(aggregate, step.at);
-                None
-            }
-            Operation::Cleanup { id, actions, prefix } => {
-                self.prepared_cleanup(id, actions, prefix, step.at);
-                None
-            }
-            Operation::GenericClonePrefix { id, owner, actions } => {
-                self.generic_clone_prefix(id, owner, actions, step.at);
-                None
-            }
-            Operation::Leaf(leaf) => Some(self.consume_leaf(index, leaf, step.ty, step.at)),
-            operation @ (Operation::Commit { .. } | Operation::VecCommit { .. }) => {
-                Some(self.commit_step(index, (step.ty, step.at), operation))
-            }
-        };
-        let value = emission.as_ref().map(|emission| emission.value);
-        let owners =
-            emission.as_ref().map_or(effects.as_slice(), |emission| emission.owners.as_slice());
-        assert_eq!(value, step.value, "prepared value identity");
-        assert_eq!(owners, step.owners, "prepared ordered owner effects");
-        if let Some(value) = value {
-            self.record_result(index, value, step.ty);
-        }
-        assert_eq!(self.lowerer.preparation_checkpoint(), step.after, "prepared step effects");
-        value
     }
 
     fn prepared_cleanup(

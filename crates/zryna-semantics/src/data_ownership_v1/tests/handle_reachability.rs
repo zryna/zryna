@@ -6,7 +6,7 @@ fn handle_reachability_is_linear_for_deep_diamonds_and_cycles() {
     let mut visits = 0usize;
     let found = graph_contains_handle(0usize, |node| {
         visits += 1;
-        let children = (node + 1 < DEPTH).then(|| vec![node + 1, node + 1]).unwrap_or_default();
+        let children = if node + 1 < DEPTH { vec![node + 1, node + 1] } else { Vec::new() };
         Some((false, children))
     });
     assert!(!found);

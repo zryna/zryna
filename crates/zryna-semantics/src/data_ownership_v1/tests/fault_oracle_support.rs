@@ -219,7 +219,7 @@ pub(super) fn owned_fault_trace(
     } else if handle_clone_failure {
         instruction
             .handle_aware_clone()
-            .map(|clone| clone.prefix_cleanup())
+            .map(zryna_ir::data_ownership_v1::VerifiedHandleAwareClone::prefix_cleanup)
             .ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
     } else {
         instruction.cleanup().ok_or(OwnedFaultOracleError::MissingPrepareCleanup)?
@@ -301,9 +301,12 @@ pub(super) fn owned_fault_trace(
             [] => {
                 if let Some((ordinal, _)) =
                     function.parameters().enumerate().find(|(_, parameter)| parameter.id() == value)
-                    && let Some(owner) = function
-                        .places()
-                        .find(|place| place.kind() == VerifiedPlaceKind::Parameter(ordinal as u32))
+                    && let Some(owner) = function.places().find(|place| {
+                        place.kind()
+                            == VerifiedPlaceKind::Parameter(
+                                u32::try_from(ordinal).expect("bounded parameter ordinal"),
+                            )
+                    })
                     && !retained_roots.contains(&owner.id())
                 {
                     retained_roots.push(owner.id());

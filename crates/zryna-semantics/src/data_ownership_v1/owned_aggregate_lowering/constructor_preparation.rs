@@ -377,7 +377,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
                     result = Some(self.shared_construct(result.take()?, frame.result, frame.at)?);
                 }
                 Frame::HandleRead(frame) => {
-                    result = Some(self.temporary_handle_read(result.take()?, frame)?);
+                    result = Some(self.temporary_handle_read(result.take()?, &frame)?);
                 }
                 Frame::String(mut frame) => {
                     if frame.waiting {

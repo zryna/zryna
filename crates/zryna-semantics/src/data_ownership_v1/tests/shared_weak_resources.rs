@@ -75,7 +75,8 @@ fn register_all_parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_
             lowerer.owners.register_parameter(place).expect("owned parameter");
         }
     }
-    lowerer.next_value = lowerer.function.parameters.len() as u32;
+    lowerer.next_value =
+        u32::try_from(lowerer.function.parameters.len()).expect("bounded fixture parameters");
 }
 
 #[test]

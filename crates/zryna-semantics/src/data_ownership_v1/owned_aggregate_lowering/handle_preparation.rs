@@ -146,7 +146,7 @@ impl PreparationContext<'_, '_, '_, '_> {
     pub(super) fn temporary_handle_read(
         &mut self,
         value: raw::ValueId,
-        frame: HandleReadFrame,
+        frame: &HandleReadFrame,
     ) -> Option<raw::ValueId> {
         let source = self.state.owners.owner(value)?;
         let place = super::super::type_model::OwnedAggregatePlace {

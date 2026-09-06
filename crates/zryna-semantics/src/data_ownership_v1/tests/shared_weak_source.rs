@@ -224,7 +224,7 @@ fn handle_leaves_compose_through_struct_array_vec_projection_and_replacement() {
         .next()
         .expect("block")
         .instructions()
-        .map(|instruction| instruction.kind())
+        .map(zryna_ir::data_ownership_v1::VerifiedInstruction::kind)
         .collect::<Vec<_>>();
     assert!(kinds.contains(&VerifiedInstructionKind::StructConstruct));
     assert!(kinds.contains(&VerifiedInstructionKind::EnumConstruct));

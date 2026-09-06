@@ -367,17 +367,7 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
         });
     }
     local(&mut f, "fieldCopy", &shared, |f| unary(f, "clone", |f| field(f, "bundle", "strong")));
-    let assignment_start = f.source.len();
-    let target = field(&mut f, "bundle", "strong");
-    f.text(" = ");
-    let equals_span = at(f.source.len() - 2, f.source.len() - 1);
-    let value = f.reference("replacement");
-    let semicolon_span = f.text(";");
-    f.statements.push(RawStatementSyntax {
-        span: at(assignment_start, f.source.len()),
-        kind: RawStatementKind::Assignment { target, equals_span, value, semicolon_span },
-    });
-    f.text(" ");
+    replace_strong_field(&mut f);
     local(&mut f, "envelope", &envelope, |f| enum_value(f, "bundle"));
     if structural_clone_source.is_some() {
         local(&mut f, "envelopeCopy", &envelope, |f| {
@@ -403,19 +393,11 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
             unary(f, "clone", |f| f.reference("strongItems"))
         });
     }
-    let return_start = f.source.len();
-    let keyword_span = f.text("return");
-    f.text(" ");
-    let value = f.reference("owner");
-    let semicolon_span = f.text(";");
-    f.statements.push(RawStatementSyntax {
-        span: at(return_start, f.source.len()),
-        kind: RawStatementKind::Return { keyword_span, value, semicolon_span },
-    });
+    return_owner(&mut f);
     f.text(" }");
     let close_brace_span = at(f.source.len() - 1, f.source.len());
     let body_span = at(open_brace_span.start as usize, f.source.len());
-    let statements = std::mem::take(&mut f.statements);
+    let body = finish_body(&mut f, body_span, open_brace_span, close_brace_span);
     let function = RawFunctionSyntax {
         span: at(start, f.source.len()),
         export_span: None,
@@ -423,18 +405,7 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
         name,
         parameters,
         result_type,
-        body: RawFunctionBodySyntax {
-            span: body_span,
-            root_block: 0,
-            blocks: vec![RawBlockSyntax {
-                span: body_span,
-                open_brace_span,
-                statements: (0..statements.len()).map(|id| id as u32).collect(),
-                close_brace_span,
-            }],
-            statements,
-            expressions: f.expressions,
-        },
+        body,
     };
     (
         f.source,
@@ -451,4 +422,53 @@ fn build(structural_clone_source: Option<&str>) -> (String, RawProjectSyntaxSnap
             diagnostics: Vec::new(),
         },
     )
+}
+
+fn replace_strong_field(f: &mut Builder) {
+    let assignment_start = f.source.len();
+    let target = field(f, "bundle", "strong");
+    f.text(" = ");
+    let equals_span = at(f.source.len() - 2, f.source.len() - 1);
+    let value = f.reference("replacement");
+    let semicolon_span = f.text(";");
+    f.statements.push(RawStatementSyntax {
+        span: at(assignment_start, f.source.len()),
+        kind: RawStatementKind::Assignment { target, equals_span, value, semicolon_span },
+    });
+    f.text(" ");
+}
+
+fn return_owner(f: &mut Builder) {
+    let return_start = f.source.len();
+    let keyword_span = f.text("return");
+    f.text(" ");
+    let value = f.reference("owner");
+    let semicolon_span = f.text(";");
+    f.statements.push(RawStatementSyntax {
+        span: at(return_start, f.source.len()),
+        kind: RawStatementKind::Return { keyword_span, value, semicolon_span },
+    });
+}
+
+fn finish_body(
+    f: &mut Builder,
+    body_span: UntrustedSpan,
+    open_brace_span: UntrustedSpan,
+    close_brace_span: UntrustedSpan,
+) -> RawFunctionBodySyntax {
+    let statements = std::mem::take(&mut f.statements);
+    RawFunctionBodySyntax {
+        span: body_span,
+        root_block: 0,
+        blocks: vec![RawBlockSyntax {
+            span: body_span,
+            open_brace_span,
+            statements: (0..statements.len())
+                .map(|id| u32::try_from(id).expect("bounded statement identity"))
+                .collect(),
+            close_brace_span,
+        }],
+        statements,
+        expressions: std::mem::take(&mut f.expressions),
+    }
 }
