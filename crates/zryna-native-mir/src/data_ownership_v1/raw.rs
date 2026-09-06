@@ -42,6 +42,27 @@ pub struct Type {
     pub alignment: u64,
     pub drop_kind: u32,
     pub runtime_kind: u32,
+    pub fields: Vec<Field>,
+    pub variants: Vec<Variant>,
+    pub array_stride: Option<u64>,
+    pub array_length: Option<u64>,
+    pub enum_payload: Option<(u64, u64)>,
+    pub referenced_type: Option<u32>,
+}
+
+/// Claimed struct field layout.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Field {
+    pub ordinal: u32,
+    pub ty: u32,
+    pub offset: u64,
+}
+
+/// Claimed enum variant layout.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Variant {
+    pub ordinal: u32,
+    pub payload: Option<u32>,
 }
 
 /// One untrusted function.
@@ -129,6 +150,8 @@ pub enum Opcode {
     Copy,
     Move,
     Clone,
+    StringClone,
+    VecClone,
     Initialize,
     Replace,
     Drop,
@@ -163,6 +186,26 @@ pub struct Operation {
     pub callee: Option<(u32, u32)>,
     pub runtime_symbol: Option<String>,
     pub cleanup: Option<u32>,
+    pub immediate: Immediate,
+    pub call_arguments: Vec<CallArgument>,
+    pub borrow_type: Option<u32>,
+}
+
+/// Exact source-signature order for a direct call.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CallArgument {
+    Value(u32),
+    Borrow(u32),
+}
+
+/// Closed literal or constructor payload retained for code generation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Immediate {
+    None,
+    Bool(bool),
+    I32(i32),
+    Utf8(Vec<u8>),
+    Variant(u32),
 }
 
 /// One target edge and parallel value arguments.

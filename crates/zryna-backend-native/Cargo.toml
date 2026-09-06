@@ -20,6 +20,9 @@ zryna-native-mir = { path = "../zryna-native-mir" }
 
 [dev-dependencies]
 sha2.workspace = true
+zryna-semantics = { path = "../zryna-semantics" }
+zryna-source = { path = "../zryna-source" }
+zryna-syntax = { path = "../zryna-syntax" }
 
 [lints]
 workspace = true

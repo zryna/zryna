@@ -4,6 +4,8 @@ use zryna_ownership_runtime_abi::{LogicalOperation, VerifiedOwnershipRuntimeAbi}
 
 use super::{VerifiedMirModule, error, raw};
 
+mod operation;
+
 const MAX_DIAGNOSTICS: usize = 256;
 
 /// Independently verifies untrusted Linux x86-64 `DataOwnershipV1` MIR claims.
@@ -69,6 +71,29 @@ fn verify_types(
             || claim.alignment != sealed.alignment()
             || claim.drop_kind != sealed.drop_kind()
             || claim.runtime_kind != sealed.runtime_kind()
+            || claim.fields
+                != sealed
+                    .fields()
+                    .iter()
+                    .map(|field| raw::Field {
+                        ordinal: field.ordinal(),
+                        ty: field.ty().index(),
+                        offset: field.offset(),
+                    })
+                    .collect::<Vec<_>>()
+            || claim.variants
+                != sealed
+                    .variants()
+                    .iter()
+                    .map(|variant| raw::Variant {
+                        ordinal: variant.ordinal(),
+                        payload: variant.payload().map(zryna_layout::TypeId::index),
+                    })
+                    .collect::<Vec<_>>()
+            || claim.array_stride != sealed.array_stride()
+            || claim.array_length != sealed.array_length()
+            || claim.enum_payload != sealed.enum_payload_layout()
+            || claim.referenced_type != sealed.referenced_type().map(zryna_layout::TypeId::index)
         {
             errors.push(
                 "ZRYNA-N3102",
@@ -138,11 +163,13 @@ fn verify_functions(
             next_value = next_value.saturating_add(1);
         }
         let mut next_borrow = 0_u32;
+        let mut borrow_types = Vec::new();
         for parameter in &function.borrow_parameters {
             if parameter.id != next_borrow || type_at(program, parameter.referent).is_none() {
                 errors.push("ZRYNA-N3105", "native MIR borrow parameter is not dense and typed");
             }
             next_borrow = next_borrow.saturating_add(1);
+            borrow_types.push(parameter.referent);
         }
         verify_places(program, function, layouts, errors);
         if function.blocks.len() > zryna_ir::data_ownership_v1::MAX_BLOCKS_PER_FUNCTION {
@@ -159,7 +186,11 @@ fn verify_functions(
                 next_value = next_value.saturating_add(1);
             }
             for operation in &block.operations {
-                verify_operation_shape(operation, errors);
+                operation::verify_shape(operation, errors);
+                operation::verify_types(program, function, operation, &borrow_types, errors);
+                if operation.borrow_type.is_some_and(|ty| type_at(program, ty).is_none()) {
+                    errors.push("ZRYNA-N3107", "native MIR borrow type is unknown");
+                }
                 for value in &operation.values {
                     if *value >= next_value {
                         errors.push("ZRYNA-N3107", "native MIR operation uses an undefined value");
@@ -181,6 +212,9 @@ fn verify_functions(
                         errors.push("ZRYNA-N3107", "native MIR operation uses an invalid borrow");
                     }
                     if definition {
+                        if let Some(ty) = operation.borrow_type {
+                            borrow_types.push(ty);
+                        }
                         next_borrow = next_borrow.saturating_add(1);
                     }
                 }
@@ -198,7 +232,7 @@ fn verify_functions(
                 if operation.callee.is_some_and(|callee| !identities.contains(&callee)) {
                     errors.push("ZRYNA-N3108", "native MIR call target is unknown");
                 }
-                verify_runtime_operation(operation, &runtime_symbols, errors);
+                operation::verify_runtime(operation, &runtime_symbols, errors);
                 if operation
                     .cleanup
                     .is_some_and(|plan| plan as usize >= function.cleanup_plans.len())
@@ -283,79 +317,6 @@ fn verify_places(
     }
 }
 
-fn verify_runtime_operation(
-    operation: &raw::Operation,
-    symbols: &BTreeMap<LogicalOperation, &str>,
-    errors: &mut Errors,
-) {
-    let expected = match operation.opcode {
-        raw::Opcode::String => Some(LogicalOperation::StringFromUtf8Copy),
-        raw::Opcode::StringConcat => Some(LogicalOperation::StringConcat),
-        raw::Opcode::VecConstruct => Some(LogicalOperation::VecAllocate),
-        raw::Opcode::VecPush => Some(LogicalOperation::VecReserve),
-        raw::Opcode::SharedClone => Some(LogicalOperation::StrongClone),
-        raw::Opcode::WeakDowngrade => Some(LogicalOperation::WeakDowngrade),
-        raw::Opcode::WeakClone => Some(LogicalOperation::WeakClone),
-        _ => None,
-    };
-    if expected.and_then(|kind| symbols.get(&kind).copied()) != operation.runtime_symbol.as_deref()
-    {
-        errors.push("ZRYNA-N3110", "native MIR operation has a missing or unapproved runtime call");
-    }
-}
-
-fn verify_operation_shape(operation: &raw::Operation, errors: &mut Errors) {
-    let (values, places, borrows, result) = match operation.opcode {
-        raw::Opcode::BoolLiteral | raw::Opcode::I32Literal | raw::Opcode::String => {
-            (Some(0), Some(0), Some(0), true)
-        }
-        raw::Opcode::I32Add
-        | raw::Opcode::I32Sub
-        | raw::Opcode::I32Mul
-        | raw::Opcode::Eq
-        | raw::Opcode::Ne
-        | raw::Opcode::I32LtS
-        | raw::Opcode::I32LeS
-        | raw::Opcode::I32GtS
-        | raw::Opcode::I32GeS => (Some(2), Some(0), Some(0), true),
-        raw::Opcode::I32Neg | raw::Opcode::SharedConstruct => (Some(1), Some(0), Some(0), true),
-        raw::Opcode::Call | raw::Opcode::Construct | raw::Opcode::VecConstruct => {
-            (None, Some(0), None, true)
-        }
-        raw::Opcode::Copy | raw::Opcode::Move | raw::Opcode::Clone => (Some(0), None, None, true),
-        raw::Opcode::Initialize | raw::Opcode::Replace | raw::Opcode::VecPush => {
-            (Some(1), Some(1), Some(0), false)
-        }
-        raw::Opcode::Drop => (Some(0), Some(1), Some(0), false),
-        raw::Opcode::Discriminant => (Some(0), Some(1), Some(0), true),
-        raw::Opcode::Index => (Some(1), Some(1), Some(0), true),
-        raw::Opcode::StringConcat => (Some(0), Some(2), Some(0), true),
-        raw::Opcode::SharedClone | raw::Opcode::WeakDowngrade | raw::Opcode::WeakClone => {
-            (Some(0), Some(1), Some(0), true)
-        }
-        raw::Opcode::BeginBorrow => (Some(0), Some(1), Some(1), false),
-        raw::Opcode::BeginIndexedBorrow => (Some(1), Some(1), Some(1), false),
-        raw::Opcode::ProjectBorrow => (Some(1), Some(0), Some(2), false),
-        raw::Opcode::BindBorrow => (Some(0), Some(0), Some(2), false),
-        raw::Opcode::BorrowReplace | raw::Opcode::BorrowWrite => (Some(1), Some(0), Some(1), false),
-        raw::Opcode::BorrowRead => (Some(0), Some(0), Some(1), true),
-        raw::Opcode::EndBorrow => (Some(0), Some(0), Some(1), false),
-    };
-    let one_source = operation.opcode != raw::Opcode::Copy
-        && operation.opcode != raw::Opcode::Move
-        && operation.opcode != raw::Opcode::Clone
-        || operation.places.len() + operation.borrows.len() == 1;
-    if values.is_some_and(|count| operation.values.len() != count)
-        || places.is_some_and(|count| operation.places.len() != count)
-        || borrows.is_some_and(|count| operation.borrows.len() != count)
-        || operation.result.is_some() != result
-        || operation.callee.is_some() != (operation.opcode == raw::Opcode::Call)
-        || !one_source
-    {
-        errors.push("ZRYNA-N3107", "native MIR operation operand shape is not canonical");
-    }
-}
-
 fn verify_terminator(
     block: &raw::Block,
     function: &raw::Function,
@@ -435,7 +396,7 @@ fn verify_cleanup(program: &raw::Program, function: &raw::Function, errors: &mut
     }
 }
 
-fn type_at(program: &raw::Program, id: u32) -> Option<&raw::Type> {
+pub(super) fn type_at(program: &raw::Program, id: u32) -> Option<&raw::Type> {
     program.types.get(id as usize).filter(|ty| ty.id == id)
 }
 fn valid_symbol(symbol: &str) -> bool {
@@ -445,11 +406,11 @@ fn valid_symbol(symbol: &str) -> bool {
 }
 
 #[derive(Default)]
-struct Errors {
+pub(super) struct Errors {
     items: Vec<zryna_diagnostics::Diagnostic>,
 }
 impl Errors {
-    fn push(&mut self, code: &'static str, message: impl Into<String>) {
+    pub(super) fn push(&mut self, code: &'static str, message: impl Into<String>) {
         if self.items.len() < MAX_DIAGNOSTICS {
             self.items.push(error(code, message));
         }

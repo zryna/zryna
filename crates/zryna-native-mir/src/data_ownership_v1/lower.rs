@@ -74,6 +74,27 @@ fn lower_type(ty: zryna_layout::VerifiedType<'_>) -> raw::Type {
         alignment: ty.alignment(),
         drop_kind: ty.drop_kind(),
         runtime_kind: ty.runtime_kind(),
+        fields: ty
+            .fields()
+            .iter()
+            .map(|field| raw::Field {
+                ordinal: field.ordinal(),
+                ty: field.ty().index(),
+                offset: field.offset(),
+            })
+            .collect(),
+        variants: ty
+            .variants()
+            .iter()
+            .map(|variant| raw::Variant {
+                ordinal: variant.ordinal(),
+                payload: variant.payload().map(zryna_layout::TypeId::index),
+            })
+            .collect(),
+        array_stride: ty.array_stride(),
+        array_length: ty.array_length(),
+        enum_payload: ty.enum_payload_layout(),
+        referenced_type: ty.referenced_type().map(zryna_layout::TypeId::index),
     }
 }
 
@@ -137,7 +158,7 @@ fn lower_function(
                         .collect(),
                     operations: block
                         .instructions()
-                        .map(|instruction| lower_operation(instruction, symbols))
+                        .map(|instruction| lower_operation(function, instruction, symbols))
                         .collect::<Result<_, _>>()?,
                     terminator: lower_terminator(block.terminator(), symbols)?,
                     cleanup: block
@@ -213,6 +234,7 @@ fn lower_place(
 }
 
 fn lower_operation(
+    function: VerifiedFunction<'_>,
     instruction: zryna_ir::data_ownership_v1::VerifiedInstruction<'_>,
     symbols: &BTreeMap<LogicalOperation, String>,
 ) -> Result<raw::Operation, Vec<zryna_diagnostics::Diagnostic>> {
@@ -238,9 +260,9 @@ fn lower_operation(
         | K::GenericClonePlace
         | K::GenericCloneBorrow
         | K::HandleAwareClonePlace
-        | K::HandleAwareCloneBorrow
-        | K::StringClone
-        | K::VecClone => raw::Opcode::Clone,
+        | K::HandleAwareCloneBorrow => raw::Opcode::Clone,
+        K::StringClone => raw::Opcode::StringClone,
+        K::VecClone => raw::Opcode::VecClone,
         K::InitializePlace => raw::Opcode::Initialize,
         K::ReplacePlace | K::GenericReplacePlace => raw::Opcode::Replace,
         K::DropPlace => raw::Opcode::Drop,
@@ -266,7 +288,15 @@ fn lower_operation(
     let runtime = runtime_operation(kind)
         .map(|operation| symbols.get(&operation).cloned().ok_or_else(lowering_error))
         .transpose()?;
-    let (values, places, borrows, callee) = lower_operands(instruction.backend_instruction());
+    let backend = instruction.backend_instruction();
+    let (values, places, borrows, callee, call_arguments) = lower_operands(backend.clone());
+    let immediate = match backend {
+        B::BoolLiteral(value) => raw::Immediate::Bool(value),
+        B::I32Literal(value) => raw::Immediate::I32(value),
+        B::String(bytes) => raw::Immediate::Utf8(bytes.to_vec()),
+        B::Construct { variant: Some(variant), .. } => raw::Immediate::Variant(variant),
+        _ => raw::Immediate::None,
+    };
     Ok(raw::Operation {
         opcode,
         result: instruction.result().map(|id| raw::Value {
@@ -279,16 +309,23 @@ fn lower_operation(
         callee,
         runtime_symbol: runtime,
         cleanup: instruction.cleanup().map(zryna_ir::data_ownership_v1::CleanupPlanIdentity::index),
+        immediate,
+        call_arguments,
+        borrow_type: instruction
+            .borrow()
+            .and_then(|borrow| function.backend_borrow_type(borrow.index()))
+            .map(zryna_layout::TypeId::index),
     })
 }
 
-type LoweredOperands = (Vec<u32>, Vec<u32>, Vec<u32>, Option<(u32, u32)>);
+type LoweredOperands = (Vec<u32>, Vec<u32>, Vec<u32>, Option<(u32, u32)>, Vec<raw::CallArgument>);
 
 fn lower_operands(instruction: B<'_>) -> LoweredOperands {
     let mut values = Vec::new();
     let mut places = Vec::new();
     let mut borrows = Vec::new();
     let mut callee = None;
+    let mut call_arguments = Vec::new();
     match instruction {
         B::BoolLiteral(_) | B::I32Literal(_) | B::String(_) => {}
         B::Binary(left, right) => values.extend([left.index(), right.index()]),
@@ -297,8 +334,14 @@ fn lower_operands(instruction: B<'_>) -> LoweredOperands {
             callee = Some((target.module(), target.declaration()));
             for argument in arguments {
                 match argument {
-                    VerifiedCallArgument::Value(value) => values.push(value.index()),
-                    VerifiedCallArgument::Borrow(borrow) => borrows.push(borrow.index()),
+                    VerifiedCallArgument::Value(value) => {
+                        values.push(value.index());
+                        call_arguments.push(raw::CallArgument::Value(value.index()));
+                    }
+                    VerifiedCallArgument::Borrow(borrow) => {
+                        borrows.push(borrow.index());
+                        call_arguments.push(raw::CallArgument::Borrow(borrow.index()));
+                    }
                 }
             }
         }
@@ -343,7 +386,7 @@ fn lower_operands(instruction: B<'_>) -> LoweredOperands {
         }
         B::BorrowUse(borrow) => borrows.push(borrow.index()),
     }
-    (values, places, borrows, callee)
+    (values, places, borrows, callee, call_arguments)
 }
 
 fn lower_terminator(
