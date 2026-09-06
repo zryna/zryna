@@ -1,7 +1,8 @@
 # M3 Shared and Weak authority contract
 
 Status: Issue #259 contract with #260 independent IR and symbolic ABI proof interfaces and the
-internal #261 Shared/Weak source producer. #262 adds the bounded source upgrade checkpoint.
+internal #261 Shared/Weak source producer. #262 is the compile-time source upgrade closure
+candidate; target execution remains owned by #263.
 Frozen baseline: `f1b88304e9ee918ba46808f60859097999785f1b`, after verified #82/#122 closure.
 This document enables no runtime, backend, driver route, public profile, or target execution.
 It does not close #83. The [evidence and integration matrix](M3_SHARED_WEAK_EVIDENCE.md)

@@ -155,3 +155,32 @@ fn weak_upgrade_source_diagnostics_are_exact_deterministic_and_recover() {
     let syntax = verify_snapshot(raw, &sources).expect("authenticated recovery upgrade");
     lower(pair_input(&syntax, &sources)).expect("valid lowering after rejections");
 }
+
+#[test]
+fn weak_upgrade_binding_collision_is_exact_deterministic_and_recovers() {
+    let (source, raw) = fixture_case(Case::BindingCollision);
+    let binding_span = {
+        let body = &raw.files[0].functions[0].body;
+        let RawStatementKind::WeakUpgrade { ref binding, .. } = body.statements[2].kind else {
+            panic!("upgrade statement");
+        };
+        assert_eq!(binding.text, "Owner");
+        binding.span
+    };
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated colliding binding");
+    let expected = vec![Diagnostic::error_at(
+        "ZRYNA-M3002",
+        span(&sources, binding_span),
+        "weak-upgrade binding collides with a preceding binding",
+        "choose one portable distinct success binding",
+    )];
+    for _ in 0..2 {
+        assert_eq!(lower(pair_input(&syntax, &sources)).expect_err("binding collision"), expected);
+    }
+
+    let (source, raw) = fixture(false);
+    let sources = sources_for(&source);
+    let syntax = verify_snapshot(raw, &sources).expect("authenticated recovery upgrade");
+    lower(pair_input(&syntax, &sources)).expect("valid recovery after binding collision");
+}

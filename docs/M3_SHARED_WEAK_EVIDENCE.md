@@ -1,7 +1,8 @@
 # M3 Shared and Weak evidence matrix
 
-Status: Issue #259 integration plan with #260 independent proof evidence and the internal
-#261/#262 source checkpoints below. Planned target-runtime tests remain future execution evidence.
+Status: Issue #259 integration plan with #260 independent proof evidence and the compile-time
+#261/#262 source closure candidates below. Planned target-runtime tests remain future execution
+evidence owned by #263.
 Read the [authority contract](M3_SHARED_WEAK_AUTHORITY.md) for SW1–SW5, complete payload domain,
 operation semantics and exclusions. A scalar-only checkpoint cannot discharge #83.
 
@@ -31,11 +32,12 @@ by these symbolic tests. Existing independent IR resource and ABI transition sui
 required alongside this matrix. Full gate/CI receipts must be recorded separately when run;
 listing an executable here is not a claim that Linux/Windows integration gates already passed.
 
-## Issue #262 source upgrade checkpoint
+## Issue #262 source upgrade closure candidate
 
 `weak_upgrade_source` authenticates retained addressable and once-evaluated temporary Weak
-operands, success-only Shared binding scope, exact wrong-type/missing-name diagnostics, rejection
-replay and valid recovery. `weak_upgrade_fault_oracle` binds the verified terminator to the sealed
+operands, success-only Shared binding scope, exact wrong-type/missing-name and portable
+case-insensitive binding-collision diagnostics, rejection replay and valid recovery.
+`weak_upgrade_fault_oracle` binds the verified terminator to the sealed
 #260 success/expired/refcount-overflow claims without pretending to execute a target runtime.
 `weak_upgrade_state` additionally freezes complete moved/reuse, live-borrow edge and unequal-join
 diagnostics, with an authenticated equal-join control proving the original Weak root remains live
@@ -50,15 +52,16 @@ derived from the authenticated owned declarations, not a fixed unexplained offse
 Independent IR `weak_upgrade_temporary_edges_reject_forgery_and_cleanup_corruption_then_recover`
 starts from a complete accepted temporary-release graph and rejects a forged success type,
 overflow cleanup omission/reordering and missing expired-path release, then re-verifies the
-pristine graph. This is bounded compiler evidence, not full #262 closure or executed target cleanup.
+pristine graph. This is bounded compiler evidence; executed target cleanup remains #263 work.
 
 `weak_upgrade_payloads` verifies addressable and temporary upgrade for exact parameter-fed bool,
-i32, String, nominal Struct/Enum, zero/nonzero String fixed arrays, String Vec, Shared, Weak and
-nested `Vec<Array<Handle>>` payloads, where `Handle` is `Shared<Inner>` and `Inner` is
-`Weak<String>`. It pins the exact synthesized Shared type,
-empty expired parameter list, reverse overflow/return cleanup and deterministic replay. These
-parameters represent initialized incoming values; recursive nominal construction and complete
-per-variant construction evidence remain distinct #261 obligations, not receipts supplied here.
+i32, String, nominal Struct/Enum, payloadless/multi-variant Enum, recursive nominal Enum through
+Shared indirection, zero/nonzero String fixed arrays, String Vec, Shared, Weak and nested
+`Vec<Array<Handle>>` payloads, where `Handle` is `Shared<Inner>` and `Inner` is `Weak<String>`.
+It pins the exact synthesized Shared type, empty expired parameter list, reverse overflow/return
+cleanup and deterministic replay. These parameters represent initialized incoming values;
+complete constructed per-variant ownership evidence is supplied by the prerequisite #261 matrix
+rather than reimplemented by upgrade, which never reads or clones the payload.
 
 `weak_upgrade_composition` authenticates nested/repeated upgrades, nested and repeated upgrades
 inside if/while, a once-evaluated private call-produced Weak, and a two-arm active Weak-payload Match
@@ -67,7 +70,8 @@ CallTrap cleanup, retain each active match scrutinee on clone failure, and relea
 at final return. Match result inference consumes the existing validated Match plan in a type-only
 scope; it creates no place, owner or borrow. Wrong-arm and nonuniform-result diagnostics are exact
 and replayed, followed by valid recovery. Completed IR still passes the independent verifier.
-This matrix does not claim arbitrary recursive control combinations, target execution or #262 closure.
+This is the compile-time #262 closure candidate. It does not claim arbitrary control combinations
+beyond the frozen matrix, target execution, runtime fault observation or public activation.
 
 ## Issue #261 source integration checkpoint
 

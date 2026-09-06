@@ -73,6 +73,7 @@ pub(in crate::data_ownership_v1) enum Case {
     WrongType,
     Missing,
     ExpiredBindingUse,
+    BindingCollision,
     Moved,
     Reused,
     ActiveBorrow,
@@ -182,7 +183,7 @@ fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, Raw
         _ => f.reference("weak"),
     };
     f.text(" ");
-    let binding = f.name("upgraded");
+    let binding = f.name(if matches!(case, Case::BindingCollision) { "Owner" } else { "upgraded" });
     f.text(" ");
     let as_span = f.text("=>");
     f.text(" ");

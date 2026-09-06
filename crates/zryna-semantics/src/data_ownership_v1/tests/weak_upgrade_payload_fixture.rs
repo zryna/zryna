@@ -7,6 +7,8 @@ pub(in crate::data_ownership_v1) enum Payload {
     String,
     Struct,
     Enum,
+    MultiVariantEnum,
+    RecursiveEnum,
     EmptyArray,
     Array,
     Vec,
@@ -16,12 +18,14 @@ pub(in crate::data_ownership_v1) enum Payload {
 }
 
 impl Payload {
-    pub(in crate::data_ownership_v1) const ALL: [Self; 11] = [
+    pub(in crate::data_ownership_v1) const ALL: [Self; 13] = [
         Self::Bool,
         Self::I32,
         Self::String,
         Self::Struct,
         Self::Enum,
+        Self::MultiVariantEnum,
+        Self::RecursiveEnum,
         Self::EmptyArray,
         Self::Array,
         Self::Vec,
@@ -35,11 +39,13 @@ impl Payload {
             Self::Bool => Ty::Named("bool"),
             Self::I32 => Ty::Named("i32"),
             Self::String => Ty::String,
-            Self::Struct | Self::Enum => {
-                let shape = if matches!(self, Self::Enum) {
-                    shared_weak_fixture::NominalPayload::Enum
-                } else {
-                    shared_weak_fixture::NominalPayload::Struct
+            Self::Struct | Self::Enum | Self::MultiVariantEnum | Self::RecursiveEnum => {
+                let shape = match self {
+                    Self::Struct => shared_weak_fixture::NominalPayload::Struct,
+                    Self::Enum => shared_weak_fixture::NominalPayload::Enum,
+                    Self::MultiVariantEnum => shared_weak_fixture::NominalPayload::MultiVariantEnum,
+                    Self::RecursiveEnum => shared_weak_fixture::NominalPayload::RecursiveEnum,
+                    _ => unreachable!("four nominal payloads"),
                 };
                 let declaration = shared_weak_fixture::nominal_payload(f, shape);
                 return (Ty::Named("Payload"), vec![declaration]);

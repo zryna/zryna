@@ -377,10 +377,11 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 Stages #277/#278/#279 are separately closeable children of #269, not dependents of its closure.
 #259 freezes full Shared/Weak meaning and required payload/CFG contexts; #277 fixes reusable
 integration interfaces. #260 consumes #277; #261 consumes #278; #262 consumes #279 and implements
-actual WeakUpgrade source control flow. The current checkpoint covers authenticated addressable
-and temporary Weak operands, sealed successor ownership, exact diagnostics and bounded recovery;
-broader payload and nested composition remain closure work. #264 verifies the complete #83
-contract before #83 closes.
+actual WeakUpgrade source control flow. Its compile-time closure candidate covers authenticated
+addressable and temporary Weak operands, the complete frozen payload categories, required nested
+if/while/call/match composition, sealed successor ownership, exact diagnostics and bounded
+recovery. Target execution remains #263 work, and #264 verifies the complete #83 contract before
+#83 closes.
 The cores use typed operation hooks without claiming source handle execution. Required #83
 payload, call, match and CFG cases cannot wait for later #270–#273 closure. Full #270/#271 then
 integrate actual handles into broader generic behavior; no parent-completion dependency cycle is
