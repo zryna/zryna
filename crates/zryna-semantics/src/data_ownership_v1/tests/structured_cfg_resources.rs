@@ -272,3 +272,98 @@ fn structured_indexed_handoff_rejects_wrong_ssa_type_without_changing_state() {
     assert_eq!(errors[0], errors[1]);
     assert_eq!(errors[0].code(), "ZRYNA-M3016");
 }
+
+#[test]
+fn structured_indexed_handoff_rejects_absent_stale_and_hostile_tickets_atomically() {
+    for hostile in 0..4 {
+        let (source, snapshot) = indexed_match_fixture(false, true);
+        let errors = with_snapshot(&source, snapshot, |lowerer, result| {
+            let _parameters = parameter(lowerer);
+            let integer = lowerer
+                .node_types
+                .iter()
+                .flatten()
+                .find(|ty| ty.category == TypeCategory::I32)
+                .copied()
+                .expect("i32 type");
+            let at = span(lowerer.input.sources(), lowerer.function.span);
+            let valid = lowerer
+                .emit(integer, at, raw::InstructionKind::I32Literal(0))
+                .expect("genuine existing Copy value");
+            let index = lowerer
+                .function
+                .body
+                .expressions
+                .iter()
+                .position(|expression| {
+                    matches!(expression.kind, zryna_syntax::v4::RawExpressionKind::Match { .. })
+                })
+                .and_then(|index| u32::try_from(index).ok())
+                .expect("Match index");
+            let RawStatementKind::LocalDeclaration { initializer, .. } =
+                lowerer.function.body.statements[0].kind
+            else {
+                panic!("authenticated initializer")
+            };
+            match hostile {
+                0 => {}
+                1 => {
+                    lowerer.preparation_facts.structured_values.insert(index + 1, (valid, integer));
+                }
+                2 => {
+                    lowerer
+                        .preparation_facts
+                        .structured_values
+                        .insert(index, (raw::ValueId(0), integer));
+                }
+                _ => {
+                    lowerer.preparation_facts.structured_values.insert(index, (valid, result));
+                }
+            }
+            let before = format!(
+                "{:?}",
+                (
+                    &lowerer.preparation_facts,
+                    lowerer.preparation_checkpoint(),
+                    &lowerer.instructions,
+                    &lowerer.places,
+                    &lowerer.owners
+                )
+            );
+            assert!(
+                super::super::constructor_preparation::PreparedValue::prepare(
+                    lowerer,
+                    initializer,
+                    result
+                )
+                .is_none(),
+                "hostile ticket {hostile}"
+            );
+            assert_eq!(
+                format!(
+                    "{:?}",
+                    (
+                        &lowerer.preparation_facts,
+                        lowerer.preparation_checkpoint(),
+                        &lowerer.instructions,
+                        &lowerer.places,
+                        &lowerer.owners
+                    )
+                ),
+                before,
+                "hostile ticket {hostile}"
+            );
+            lowerer.reserved_transitions = 0;
+        });
+        assert_eq!(errors.len(), 1, "hostile ticket {hostile}");
+    }
+
+    let (source, snapshot) = indexed_match_fixture(false, true);
+    let errors = with_snapshot(&source, snapshot, |lowerer, result| {
+        let parameters = parameter(lowerer);
+        lowerer
+            .lower_structured_cfg(&parameters, result)
+            .expect("pristine lowering after hostile tickets");
+    });
+    assert!(errors.is_empty());
+}
