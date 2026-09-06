@@ -57,6 +57,24 @@ static allocation_header *header_for(uintptr_t pointer) {
   return NULL;
 }
 
+static int valid_string_storage(const zryna_rt_o1_handle *value) {
+  allocation_header *header;
+  if (value == NULL || value->length > value->capacity) {
+    return 0;
+  }
+  if (value->capacity == 0) {
+    return value->pointer == 0;
+  }
+  header = header_for(value->pointer);
+  return header != NULL && header->size == value->capacity &&
+         header->alignment == 1 && header->pending_last_strong == 0;
+}
+
+static int valid_control_storage(const allocation_header *header) {
+  return header != NULL && header->size >= 2U * sizeof(uint32_t) &&
+         header->alignment >= _Alignof(uint32_t);
+}
+
 static uint32_t allocate_bytes(uint64_t byte_size, uint32_t alignment,
                                uintptr_t *out_pointer) {
   size_t total;
@@ -266,8 +284,7 @@ uint32_t zryna_rt_o1_string_clone(const zryna_rt_o1_handle *source,
   if (out_string == source) {
     return RT_ABI;
   }
-  if (source == NULL || source->length > source->capacity ||
-      (source->capacity != 0 && header_for(source->pointer) == NULL)) {
+  if (!valid_string_storage(source)) {
     if (out_string != NULL) {
       memset(out_string, 0, sizeof(*out_string));
     }
@@ -286,10 +303,8 @@ uint32_t zryna_rt_o1_string_concat(const zryna_rt_o1_handle *left,
   if (out_string == left || out_string == right) {
     return RT_ABI;
   }
-  if (left == NULL || right == NULL || out_string == NULL ||
-      left->length > left->capacity || right->length > right->capacity ||
-      (left->capacity != 0 && header_for(left->pointer) == NULL) ||
-      (right->capacity != 0 && header_for(right->pointer) == NULL)) {
+  if (out_string == NULL || !valid_string_storage(left) ||
+      !valid_string_storage(right)) {
     if (out_string != NULL) {
       memset(out_string, 0, sizeof(*out_string));
     }
@@ -334,6 +349,22 @@ static int vec_layout(uint32_t id, uint64_t *stride, uint32_t *alignment) {
   }
 }
 
+static int valid_vec_storage(const zryna_rt_o1_handle *storage,
+                             uint64_t stride, uint32_t alignment) {
+  allocation_header *header;
+  if (storage == NULL || stride == 0 || storage->length > storage->capacity ||
+      storage->capacity > MAX_VEC_ELEMENTS ||
+      storage->capacity > MAX_ALLOCATION_BYTES / stride) {
+    return 0;
+  }
+  if (storage->capacity == 0) {
+    return storage->pointer == 0;
+  }
+  header = header_for(storage->pointer);
+  return header != NULL && header->size == storage->capacity * stride &&
+         header->alignment == alignment && header->pending_last_strong == 0;
+}
+
 uint32_t zryna_rt_o1_vec_allocate(uint32_t element_layout_id,
                                   uint64_t required_capacity,
                                   zryna_rt_o1_handle *out_storage) {
@@ -373,9 +404,9 @@ uint32_t zryna_rt_o1_vec_reserve(uint32_t element_layout_id,
   if (storage == out_storage) {
     return RT_ABI;
   }
-  if (storage == NULL || out_storage == NULL ||
-      !vec_layout(element_layout_id, &stride, &alignment) ||
-      storage->length > storage->capacity || required_length < storage->length) {
+  if (out_storage == NULL || !vec_layout(element_layout_id, &stride, &alignment) ||
+      !valid_vec_storage(storage, stride, alignment) ||
+      required_length < storage->length) {
     if (out_storage != NULL) {
       memset(out_storage, 0, sizeof(*out_storage));
     }
@@ -411,8 +442,8 @@ uint32_t zryna_rt_o1_vec_release_storage(uint32_t element_layout_id,
                                          const zryna_rt_o1_handle *storage) {
   uint64_t stride;
   uint32_t alignment;
-  if (storage == NULL || !vec_layout(element_layout_id, &stride, &alignment) ||
-      storage->length > storage->capacity) {
+  if (!vec_layout(element_layout_id, &stride, &alignment) ||
+      !valid_vec_storage(storage, stride, alignment)) {
     return RT_ABI;
   }
   return zryna_rt_o1_release(storage->pointer, storage->capacity * stride,
@@ -422,7 +453,8 @@ uint32_t zryna_rt_o1_vec_release_storage(uint32_t element_layout_id,
 uint32_t zryna_rt_o1_strong_clone(uintptr_t control) {
   allocation_header *header = header_for(control);
   uint32_t *strong = (uint32_t *)control;
-  if (header == NULL || header->pending_last_strong != 0 || *strong == 0) {
+  if (!valid_control_storage(header) || header->pending_last_strong != 0 ||
+      *strong == 0) {
     return RT_ABI;
   }
   if (*strong == UINT32_MAX) {
@@ -435,7 +467,8 @@ uint32_t zryna_rt_o1_strong_clone(uintptr_t control) {
 uint32_t zryna_rt_o1_weak_downgrade(uintptr_t control) {
   allocation_header *header = header_for(control);
   uint32_t *counts = (uint32_t *)control;
-  if (header == NULL || header->pending_last_strong != 0 || counts[0] == 0) {
+  if (!valid_control_storage(header) || header->pending_last_strong != 0 ||
+      counts[0] == 0) {
     return RT_ABI;
   }
   if (counts[1] == UINT32_MAX) {
@@ -448,7 +481,8 @@ uint32_t zryna_rt_o1_weak_downgrade(uintptr_t control) {
 uint32_t zryna_rt_o1_weak_clone(uintptr_t control) {
   allocation_header *header = header_for(control);
   uint32_t *counts = (uint32_t *)control;
-  if (header == NULL || header->pending_last_strong != 0 || counts[1] == 0) {
+  if (!valid_control_storage(header) || header->pending_last_strong != 0 ||
+      counts[1] == 0) {
     return RT_ABI;
   }
   if (counts[1] == UINT32_MAX) {
@@ -461,7 +495,7 @@ uint32_t zryna_rt_o1_weak_clone(uintptr_t control) {
 uint32_t zryna_rt_o1_weak_upgrade(uintptr_t control) {
   allocation_header *header = header_for(control);
   uint32_t *strong = (uint32_t *)control;
-  if (header == NULL || header->pending_last_strong != 0) {
+  if (!valid_control_storage(header) || header->pending_last_strong != 0) {
     return RT_ABI;
   }
   if (*strong == 0) {
@@ -478,7 +512,7 @@ uint32_t zryna_rt_o1_strong_release_begin(uintptr_t control,
                                           uint32_t *out_is_last_strong) {
   allocation_header *header = header_for(control);
   uint32_t *strong = (uint32_t *)control;
-  if (out_is_last_strong == NULL || header == NULL ||
+  if (out_is_last_strong == NULL || !valid_control_storage(header) ||
       header->pending_last_strong != 0 || *strong == 0) {
     return RT_ABI;
   }
@@ -491,8 +525,8 @@ uint32_t zryna_rt_o1_strong_release_begin(uintptr_t control,
 uint32_t zryna_rt_o1_strong_release_finish(uintptr_t control) {
   allocation_header *header = header_for(control);
   uint32_t *counts = (uint32_t *)control;
-  if (header == NULL || header->pending_last_strong == 0 || counts[0] != 0 ||
-      counts[1] == 0) {
+  if (!valid_control_storage(header) || header->pending_last_strong == 0 ||
+      counts[0] != 0 || counts[1] == 0) {
     return RT_ABI;
   }
   --counts[1];
@@ -507,7 +541,7 @@ uint32_t zryna_rt_o1_weak_release(uintptr_t control,
                                   uint32_t *out_deallocated) {
   allocation_header *header = header_for(control);
   uint32_t *counts = (uint32_t *)control;
-  if (out_deallocated == NULL || header == NULL ||
+  if (out_deallocated == NULL || !valid_control_storage(header) ||
       header->pending_last_strong != 0 || counts[1] == 0 ||
       (counts[0] != 0 && counts[1] == 1)) {
     return RT_ABI;

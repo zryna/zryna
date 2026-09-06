@@ -120,6 +120,13 @@ int main(void) {
       copy.pointer != text.pointer || copy.length != 2 || copy.capacity != 2) return 25;
   if (zryna_rt_o1_vec_reserve(7, &text, 2, &text) != 255 || text.length != 2) return 26;
   if (zryna_rt_o1_vec_release_storage(7, &text) != 0) return 13;
+  if (zryna_rt_o1_allocate(1, 1, &pointer) != 0 || pointer == 0) return 27;
+  rejected = (zryna_rt_o1_handle){pointer, 2, 2};
+  if (zryna_rt_o1_string_clone(&rejected, &copy) != 255 || copy.pointer != 0) return 28;
+  rejected = (zryna_rt_o1_handle){pointer, 1, 1};
+  if (zryna_rt_o1_vec_reserve(7, &rejected, 1, &copy) != 255 || copy.pointer != 0) return 29;
+  if (zryna_rt_o1_strong_clone(pointer) != 255) return 30;
+  if (zryna_rt_o1_release(pointer, 1, 1) != 0) return 31;
   if (zryna_rt_o1_allocate(16, 4, &pointer) != 0) return 5;
   counts = (uint32_t *)pointer;
   counts[0] = 1; counts[1] = 1;
