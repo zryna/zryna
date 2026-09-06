@@ -89,6 +89,9 @@ fn source_file(path: &str) -> &'static str {
         "active_enum_payload_borrow_fixture/calls.rs" => {
             include_str!("active_enum_payload_borrow_fixture/calls.rs")
         }
+        "enum_match_payload_borrow_fixture/calls.rs" => {
+            include_str!("enum_match_payload_borrow_fixture/calls.rs")
+        }
         "nonindexed_borrow_resources.rs" => include_str!("nonindexed_borrow_resources.rs"),
         "nonindexed_borrow_resource_frontiers.rs" => {
             include_str!("nonindexed_borrow_resource_frontiers.rs")
@@ -119,6 +122,7 @@ fn ir_file(path: &str) -> &'static str {
         "nonindexed_projection_call_scope.rs" => {
             ir!("tests/nonindexed_projection_call_scope.rs")
         }
+        "enum_match_payload_call_ir.rs" => ir!("tests/enum_match_payload_call_ir.rs"),
         "borrow_resource_boundaries.rs" => ir!("tests/borrow_resource_boundaries.rs"),
         _ => panic!("unbound IR evidence: {path}"),
     }
@@ -176,6 +180,8 @@ fn nonindexed_borrowing_matrix_binds_enabled_evidence_and_exact_boundaries() {
                 item("nonindexed_borrow_calls.rs", "nested_nonindexed_call_does_not_clone_authority_or_fabricate_owned_results"),
                 item("nonindexed_static_owned_borrow/calls.rs", "static_owned_borrows_pass_shared_and_exclusive_authority_to_direct_calls"),
                 item("active_enum_payload_borrow_fixture/calls.rs", "refined_payload_borrows_pass_shared_and_exclusive_authority_to_direct_calls"),
+                item("enum_match_payload_borrow_fixture/calls.rs", "exhaustive_match_payload_calls_preserve_shared_and_exclusive_arm_authority"),
+                item("enum_match_payload_borrow_fixture/calls.rs", "exhaustive_match_payload_calls_reject_inactive_and_wrong_access_then_recover"),
             ],
             ir: vec![
                 item("borrow_nonindexed_call_scope.rs", "nonindexed_lexical_call_is_verified_as_nonescaping_authority"),
@@ -184,12 +190,16 @@ fn nonindexed_borrowing_matrix_binds_enabled_evidence_and_exact_boundaries() {
                 item("nonindexed_projection_call_scope.rs", "refined_enum_payload_calls_preserve_lexical_authority"),
                 item("nonindexed_projection_call_scope.rs", "projection_calls_reject_wrong_region_and_repeated_exclusive_then_recover"),
                 item("nonindexed_projection_call_scope.rs", "enum_payload_calls_reject_wrong_region_and_repeated_exclusive_then_recover"),
+                item("enum_match_payload_call_ir.rs", "exhaustive_enum_match_arm_calls_preserve_exact_borrow_region_and_cleanup"),
+                item("enum_match_payload_call_ir.rs", "exhaustive_enum_match_calls_reject_arm_access_region_and_cleanup_forgeries"),
             ],
         },
         Row {
             requirement: "Exact and first-extra resource dimensions, overflow, atomic rejection, and deterministic replay are checked".into(),
             source: vec![
                 item("nonindexed_borrow_resource_frontiers.rs", "static_and_active_enum_borrow_lowering_hit_exact_transition_capacity_and_recover"),
+                item("nonindexed_borrow_resource_frontiers.rs", "exhaustive_match_payload_borrow_clone_hits_exact_resource_costs_and_first_extra_recovers"),
+                item("nonindexed_borrow_resource_frontiers.rs", "exhaustive_match_payload_borrow_clone_overflow_is_atomic_and_recovers"),
                 item("nonindexed_borrow_resources.rs", "nonindexed_owned_borrow_resource_dimensions_accept_exact_and_reject_first_extra"),
                 item("nonindexed_borrow_resources.rs", "nonindexed_owned_borrow_resource_overflow_is_checked_and_recovery_is_stable"),
                 item("lexical_borrow_calls.rs", "borrow_call_resource_preflight_accepts_exact_limits_and_rejects_first_extra_in_order"),
