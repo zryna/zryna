@@ -131,21 +131,90 @@ fn section_items<'a>(matrix: &'a str, heading: &str) -> Vec<&'a str> {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn nonindexed_borrowing_matrix_binds_enabled_evidence_and_exact_boundaries() {
     let matrix = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../docs/M3_NONINDEXED_OWNED_BORROWING_MATRIX.md"
     ));
+    let expected = vec![
+        Row {
+            requirement: "Owned roots and static Struct/FixedArray places retain exact ownership, masks, overlap, clone, replacement, and recovery".into(),
+            source: vec![
+                item("nonindexed_static_owned_borrow.rs", "nonindexed_owned_struct_and_array_places_clone_replace_and_restore"),
+                item("nonindexed_static_owned_borrow.rs", "nonindexed_owned_static_places_reject_partial_wrong_mode_and_wrong_type_then_recover"),
+                item("nonindexed_static_owned_borrow.rs", "nonindexed_owned_parent_and_subobject_borrows_overlap_exactly"),
+            ],
+            ir: vec![
+                item("nonindexed_owned_borrow_proof.rs", "nonindexed_owned_root_and_static_subobject_borrows_have_independent_ir_authority"),
+                item("nonindexed_owned_borrow_proof.rs", "nonindexed_owned_root_static_overlap_rejects_atomically_and_recovers"),
+                item("nonindexed_owned_borrow_proof.rs", "nonindexed_owned_static_place_and_lifetime_forgery_replay_deterministically"),
+                item("tests.rs", "direct_call_accepts_two_exclusive_disjoint_projected_authorities"),
+                item("tests.rs", "projected_borrow_does_not_change_owner_masks_or_cleanup"),
+            ],
+        },
+        Row {
+            requirement: "Refined active enum payloads preserve exact variant, referent, parent cleanup, replacement, and lexical restoration".into(),
+            source: vec![
+                item("enum_match_payload_borrow_source.rs", "exhaustive_match_arms_borrow_only_the_refined_active_owned_payload"),
+                item("enum_match_payload_borrow_source.rs", "inactive_match_payload_borrow_rejects_deterministically_then_recovers"),
+                item("active_enum_payload_borrow_source.rs", "refined_active_enum_payload_shared_and_exclusive_borrows_restore_parent"),
+                item("active_enum_payload_borrow_source.rs", "refined_enum_payload_borrow_rejects_inactive_and_foreign_variants_then_recovers"),
+            ],
+            ir: vec![
+                item("enum_match_payload_borrow_ir.rs", "enum_match_arm_borrow_is_bound_to_exact_variant_region_and_cleanup"),
+                item("enum_match_payload_borrow_ir.rs", "enum_match_payload_borrow_rejects_variant_nominal_region_and_cleanup_forgeries"),
+                item("active_enum_payload_borrow.rs", "active_enum_payload_borrow_seals_refinement_mode_replacement_and_parent_cleanup"),
+                item("active_enum_payload_borrow.rs", "enum_payload_borrow_rejects_inactive_foreign_type_and_mode_forgeries_then_recovers"),
+                item("active_enum_payload_borrow.rs", "enum_payload_borrow_rejects_moved_overlap_disjoint_and_ended_authority_then_recovers"),
+            ],
+        },
+        Row {
+            requirement: "Nested lexical and direct-call use neither clones authority nor permits escape and restores the exact owner".into(),
+            source: vec![
+                item("nonindexed_borrow_calls.rs", "nested_nonindexed_lexical_call_preserves_authority_and_restores_owner"),
+                item("nonindexed_borrow_calls.rs", "nested_nonindexed_call_does_not_clone_authority_or_fabricate_owned_results"),
+                item("nonindexed_static_owned_borrow/calls.rs", "static_owned_borrows_pass_shared_and_exclusive_authority_to_direct_calls"),
+                item("active_enum_payload_borrow_fixture/calls.rs", "refined_payload_borrows_pass_shared_and_exclusive_authority_to_direct_calls"),
+            ],
+            ir: vec![
+                item("borrow_nonindexed_call_scope.rs", "nonindexed_lexical_call_is_verified_as_nonescaping_authority"),
+                item("borrow_nonindexed_call_scope.rs", "nonindexed_call_rejects_inactive_wrong_region_and_escape_then_recovers"),
+                item("nonindexed_projection_call_scope.rs", "static_struct_and_array_projection_calls_preserve_lexical_authority"),
+                item("nonindexed_projection_call_scope.rs", "refined_enum_payload_calls_preserve_lexical_authority"),
+                item("nonindexed_projection_call_scope.rs", "projection_calls_reject_wrong_region_and_repeated_exclusive_then_recover"),
+                item("nonindexed_projection_call_scope.rs", "enum_payload_calls_reject_wrong_region_and_repeated_exclusive_then_recover"),
+            ],
+        },
+        Row {
+            requirement: "Exact and first-extra resource dimensions, overflow, atomic rejection, and deterministic replay are checked".into(),
+            source: vec![
+                item("nonindexed_borrow_resource_frontiers.rs", "static_and_active_enum_borrow_lowering_hit_exact_transition_capacity_and_recover"),
+                item("nonindexed_borrow_resources.rs", "nonindexed_owned_borrow_resource_dimensions_accept_exact_and_reject_first_extra"),
+                item("nonindexed_borrow_resources.rs", "nonindexed_owned_borrow_resource_overflow_is_checked_and_recovery_is_stable"),
+                item("lexical_borrow_calls.rs", "borrow_call_resource_preflight_accepts_exact_limits_and_rejects_first_extra_in_order"),
+                item("lexical_borrow_calls.rs", "borrow_call_resource_overflow_precedes_limit_selection_and_preserves_authority_cost"),
+                item("structured_graph_resources.rs", "complete_enum_matches_bound_graph_resources_atomically_and_recover"),
+            ],
+            ir: vec![
+                item("nonindexed_owned_borrow_proof.rs", "nonindexed_owned_borrow_places_reach_exact_limit_and_reject_first_extra"),
+                item("borrow_resource_boundaries.rs", "dense_lexical_active_borrow_exact_and_first_extra_are_fully_verified"),
+                item("nonindexed_owned_borrow_proof.rs", "nonindexed_owned_root_static_overlap_rejects_atomically_and_recovers"),
+                item("active_enum_payload_borrow.rs", "enum_payload_borrow_rejects_moved_overlap_disjoint_and_ended_authority_then_recovers"),
+                item("borrow_nonindexed_call_scope.rs", "nonindexed_call_rejects_inactive_wrong_region_and_escape_then_recovers"),
+            ],
+        },
+    ];
     let parsed = rows(matrix);
-    assert_eq!(parsed.len(), 4);
-    assert_eq!(
-        parsed.iter().map(|row| row.requirement.as_str()).collect::<Vec<_>>(),
-        [
-            "Owned roots and static Struct/FixedArray places retain exact ownership, masks, overlap, clone, replacement, and recovery",
-            "Refined active enum payloads preserve exact variant, referent, parent cleanup, replacement, and lexical restoration",
-            "Nested lexical and direct-call use neither clones authority nor permits escape and restores the exact owner",
-            "Exact and first-extra resource dimensions, overflow, atomic rejection, and deterministic replay are checked",
-        ]
+    assert_eq!(parsed, expected);
+    let drifted = matrix.replace(
+        "nonindexed_owned_root_static_overlap_rejects_atomically_and_recovers",
+        "nonindexed_owned_static_place_and_lifetime_forgery_replay_deterministically",
+    );
+    assert_ne!(
+        rows(&drifted),
+        expected,
+        "an enabled but substituted test must not satisfy the matrix"
     );
     for row in &parsed {
         assert!(!row.source.is_empty() && !row.ir.is_empty());
