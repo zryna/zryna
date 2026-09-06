@@ -114,3 +114,39 @@ fn generic_vec_handle_replacement_rejects_wrong_exact_owned_type_and_recovers() 
         lower(pair_input(&syntax, &sources)).expect("exact handle replacement recovers");
     }
 }
+
+#[test]
+fn generic_vec_moved_handle_rhs_rejects_before_replace_or_push_and_recovers() {
+    for element in [Element::Shared, Element::Weak] {
+        for (operation, recovery) in
+            [(Operation::ReplaceMoved, Operation::Replace), (Operation::PushMoved, Operation::Push)]
+        {
+            let (source, raw) = fixture(&element, operation, None);
+            let body = &raw.files[0].functions[0].body;
+            let at = body
+                .expressions
+                .iter()
+                .rev()
+                .find_map(|expression| match &expression.kind {
+                    RawExpressionKind::Reference { name } if name.text == "next" => {
+                        Some(expression.span)
+                    }
+                    _ => None,
+                })
+                .expect("moved handle reuse");
+            reject(
+                &source,
+                raw,
+                "ZRYNA-M3014",
+                at,
+                "aggregate value 'next' is moved or only partially available",
+                "move a whole owned aggregate only before moving any of its projections",
+            );
+
+            let (source, raw) = fixture(&element, recovery, None);
+            let sources = sources_for(&source);
+            let syntax = verify_snapshot(raw, &sources).expect("authenticated moved recovery");
+            lower(pair_input(&syntax, &sources)).expect("available handle recovers");
+        }
+    }
+}

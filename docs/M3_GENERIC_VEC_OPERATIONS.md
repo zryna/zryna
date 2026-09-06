@@ -94,10 +94,15 @@ complete container, transfer only a successfully prepared replacement/push owner
 original bounds, growth and prefix-cleanup ordering.
 
 The named `generic_vec_handle_` source tests bind all six element categories to mandatory verified
-IR, exact owner/count-clone authority, deterministic replay and exact rejection diagnostics. The
-separate raw-IR hostile tests reject stale/foreign borrows, wrong result types and missing or
-duplicate cleanup. The generic Vec resource controls include direct and structural handle clone
-replacement plus indexed-clone push at exact, first-extra and checked-overflow cleanup frontiers
-with unchanged rejected state and recovery. These remain compiler proofs: no element move-out,
-hole, pop, persistent source borrow, allocator/runtime execution, backend, CLI or public profile is
-enabled.
+IR, the exact prepared RHS identity, bounds-before-preparation order, complete retained cleanup,
+and byte-for-byte stable verified-program debug evidence when replayed against one authenticated
+source authority. The enum case also binds the sealed runtime-active payload recipe to both of its
+ordered handle-count leaves. Exact source diagnostics cover implicit move, moved replacement/push
+operands, overlap and wrong types. Separate raw-IR hostile tests reject stale/foreign borrows,
+wrong result types and missing or duplicate cleanup.
+
+The generic Vec resource controls include direct Shared/Weak and structural handle clone routes
+for replacement and ordinary-place push, plus indexed-clone push. They exercise exact,
+first-extra and checked-overflow cleanup frontiers, preserve rejected state, and prove a pristine
+same-lowerer retry. These remain compiler proofs: no element move-out, hole, pop, persistent source
+borrow, allocator/runtime execution, backend, CLI or public profile is enabled.

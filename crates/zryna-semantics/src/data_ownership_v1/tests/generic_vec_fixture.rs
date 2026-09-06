@@ -41,9 +41,11 @@ pub(in crate::data_ownership_v1) enum Operation {
     ReplaceString,
     ReplaceClone,
     ReplaceSelfClone,
+    ReplaceMoved,
     Push,
     PushClone,
     PushIndexedClone,
+    PushMoved,
 }
 
 #[derive(Clone)]
@@ -79,7 +81,10 @@ impl Builder {
         let start = self.source.len();
         let kind = if matches!(
             operation,
-            Operation::Push | Operation::PushClone | Operation::PushIndexedClone
+            Operation::Push
+                | Operation::PushClone
+                | Operation::PushIndexedClone
+                | Operation::PushMoved
         ) {
             let keyword_span = self.text("push");
             let open_paren_span = self.text("(");
@@ -364,6 +369,9 @@ fn container_fixture(
     f.local("items", &vector, true, "incoming");
     if replacement {
         f.local("next", &replacement_type, false, "replacement");
+        if matches!(operation, Operation::ReplaceMoved | Operation::PushMoved) {
+            f.local("spent", &replacement_type, false, "next");
+        }
         f.mutation(operation, index);
     }
     let return_start = f.source.len();
