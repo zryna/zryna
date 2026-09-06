@@ -97,3 +97,41 @@ fn nonindexed_owned_static_place_and_lifetime_forgery_replay_deterministically()
             .expect("valid authority remains independently recoverable");
     }
 }
+
+#[test]
+fn nonindexed_owned_borrow_places_reach_exact_limit_and_reject_first_extra() {
+    let (sources, linear, linux) = authorities();
+    let mut exact = shared_borrow_read_program(&sources, &linear, &linux);
+    let span = exact.modules[0].functions[0].span;
+    let places = &mut exact.modules[0].functions[0].places;
+    places.extend((1..MAX_PLACES_PER_FUNCTION).map(|index| raw::Place {
+        id: raw::PlaceId(u32::try_from(index).expect("place limit fits u32")),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(u32::try_from(index).expect("local limit fits u32")),
+    }));
+    assert_eq!(places.len(), MAX_PLACES_PER_FUNCTION);
+    verify_program(exact.clone(), &sources, &linear, &linux).expect("exact place frontier");
+
+    let mut extra = exact.clone();
+    extra.modules[0].functions[0].places.push(raw::Place {
+        id: raw::PlaceId(u32::try_from(MAX_PLACES_PER_FUNCTION).expect("place limit fits u32")),
+        ty: raw::TypeId(1),
+        span,
+        kind: raw::PlaceKind::Local(
+            u32::try_from(MAX_PLACES_PER_FUNCTION).expect("local limit fits u32"),
+        ),
+    });
+    let reject = || {
+        diagnostic_trace(
+            verify_program(extra.clone(), &sources, &linear, &linux)
+                .expect_err("first extra place"),
+        )
+    };
+    let first = reject();
+    assert_eq!(first, reject());
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].0, "ZRYNA-I3201");
+    verify_program(exact, &sources, &linear, &linux)
+        .expect("exact place frontier recovers after rejection");
+}

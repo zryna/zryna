@@ -213,3 +213,36 @@ fn sequential_dense_lexical_sites_may_exceed_the_active_borrow_limit() {
         1,
     );
 }
+
+#[test]
+#[ignore = "complete exact transition frontier runs in the proportional M3 resource gate"]
+fn sequential_nonindexed_borrows_reach_the_exact_transition_limit_and_reject_first_extra() {
+    let (sources, linear, linux) = authorities();
+    let lexical = (MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 2) / 2;
+    let exact = dense_borrow_program(&sources, &linear, &linux, lexical, false, true);
+    assert_eq!(
+        exact.modules[0].functions[0].blocks[0].instructions.len(),
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
+    );
+    assert_verified_trace(exact.clone(), &sources, &linear, &linux, lexical, false, 1);
+
+    let mut extra = exact.clone();
+    let span = extra.modules[0].functions[0].span;
+    extra.modules[0].functions[0].blocks[0].instructions.push(raw::Instruction {
+        result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(1), span }),
+        span,
+        kind: raw::InstructionKind::I32Literal(0),
+    });
+    let entry = sources.verify_file_id(0).expect("entry");
+    let reject = || {
+        diagnostic_trace(
+            verify(extra.clone(), &sources, entry, linear.clone(), linux.clone())
+                .expect_err("first extra ownership transition"),
+        )
+    };
+    let first = reject();
+    assert_eq!(first, reject());
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].0, "ZRYNA-I3201");
+    assert_verified_trace(exact, &sources, &linear, &linux, lexical, false, 1);
+}

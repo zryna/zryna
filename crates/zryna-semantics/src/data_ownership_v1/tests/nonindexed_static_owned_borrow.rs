@@ -4,7 +4,7 @@ use super::*;
 mod calls;
 
 #[derive(Clone, Copy)]
-enum BorrowedPlace {
+pub(super) enum BorrowedPlace {
     StructRoot,
     StructField,
     ArrayRoot,
@@ -294,6 +294,10 @@ fn fixture(
             diagnostics: Vec::new(),
         },
     )
+}
+
+pub(super) fn resource_fixture(place: BorrowedPlace) -> (String, RawProjectSyntaxSnapshot) {
+    fixture(place, false, false, false, None, None)
 }
 
 #[test]
