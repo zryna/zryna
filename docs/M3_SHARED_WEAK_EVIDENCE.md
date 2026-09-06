@@ -59,9 +59,9 @@ i32, String, nominal Struct/Enum, payloadless/multi-variant Enum, recursive nomi
 Shared indirection, zero/nonzero String fixed arrays, String Vec, Shared, Weak and nested
 `Vec<Array<Handle>>` payloads, where `Handle` is `Shared<Inner>` and `Inner` is `Weak<String>`.
 It pins the exact synthesized Shared type, empty expired parameter list, reverse overflow/return
-cleanup and deterministic replay. These parameters represent initialized incoming values;
-complete constructed per-variant ownership evidence is supplied by the prerequisite #261 matrix
-rather than reimplemented by upgrade, which never reads or clones the payload.
+cleanup and deterministic replay. These parameters represent initialized incoming values. The
+prerequisite #261 matrix supplies parameter-fed sealed variant and recursive type-domain evidence,
+not construction receipts for every variant; upgrade itself never reads or clones the payload.
 
 `weak_upgrade_composition` authenticates nested/repeated upgrades, nested and repeated upgrades
 inside if/while, a once-evaluated private call-produced Weak, and a two-arm active Weak-payload Match
