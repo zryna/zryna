@@ -52,6 +52,22 @@ starts from a complete accepted temporary-release graph and rejects a forged suc
 overflow cleanup omission/reordering and missing expired-path release, then re-verifies the
 pristine graph. This is bounded compiler evidence, not full #262 closure or executed target cleanup.
 
+`weak_upgrade_payloads` verifies addressable and temporary upgrade for exact parameter-fed bool,
+i32, String, nominal Struct/Enum, zero/nonzero String fixed arrays, String Vec, Shared, Weak and
+nested `Vec<Array<Shared<Weak<String>>>>` payloads. It pins the exact synthesized Shared type,
+empty expired parameter list, reverse overflow/return cleanup and deterministic replay. These
+parameters represent initialized incoming values; recursive nominal construction and complete
+per-variant construction evidence remain distinct #261 obligations, not receipts supplied here.
+
+`weak_upgrade_composition` authenticates nested/repeated upgrades, nested and repeated upgrades
+inside if/while, a once-evaluated private call-produced Weak, and a two-arm active Weak-payload Match
+operand. Exact cleanup assertions retain outer success bindings, transfer call arguments before
+CallTrap cleanup, retain each active match scrutinee on clone failure, and release the original Weak
+at final return. Match result inference consumes the existing validated Match plan in a type-only
+scope; it creates no place, owner or borrow. Wrong-arm and nonuniform-result diagnostics are exact
+and replayed, followed by valid recovery. Completed IR still passes the independent verifier.
+This matrix does not claim arbitrary recursive control combinations, target execution or #262 closure.
+
 ## Issue #261 source integration checkpoint
 
 The semantic source route maps authenticated `Shared<T>`/`Weak<T>` types and lowers direct

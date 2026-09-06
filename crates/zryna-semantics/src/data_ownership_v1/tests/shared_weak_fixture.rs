@@ -53,7 +53,7 @@ fn local(f: &mut Builder, name: &str, ty: &Ty, initializer: impl FnOnce(&mut Bui
 }
 
 #[derive(Clone, Copy)]
-enum NominalPayload {
+pub(super) enum NominalPayload {
     Struct,
     Enum,
     MultiVariantEnum,
@@ -81,7 +81,7 @@ fn enum_variant(f: &mut Builder, name: &str, payload: Option<&Ty>) -> RawEnumVar
     }
 }
 
-fn nominal_payload(f: &mut Builder, shape: NominalPayload) -> RawDataDeclaration {
+pub(super) fn nominal_payload(f: &mut Builder, shape: NominalPayload) -> RawDataDeclaration {
     let start = f.source.len();
     let interface_span = f.text("interface");
     f.text(" ");

@@ -200,7 +200,9 @@ mod vec_fixture_support;
 mod vec_nested_preflight;
 mod vec_resource_budgets;
 mod vec_validation;
+mod weak_upgrade_composition;
 mod weak_upgrade_fault_oracle;
+mod weak_upgrade_payloads;
 mod weak_upgrade_source;
 mod weak_upgrade_state;
 

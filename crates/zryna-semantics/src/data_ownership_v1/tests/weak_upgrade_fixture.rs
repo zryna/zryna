@@ -1,5 +1,10 @@
 use super::*;
 
+#[path = "weak_upgrade_composition_fixture.rs"]
+pub(in crate::data_ownership_v1) mod composition_fixture;
+#[path = "weak_upgrade_payload_fixture.rs"]
+pub(in crate::data_ownership_v1) mod payload_fixture;
+
 fn unary(f: &mut Builder, spelling: &str, value: impl FnOnce(&mut Builder) -> u32) -> u32 {
     let start = f.source.len();
     let keyword_span = f.text(spelling);
@@ -80,21 +85,28 @@ pub(in crate::data_ownership_v1) fn fixture(temporary: bool) -> (String, RawProj
 }
 
 pub(in crate::data_ownership_v1) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
+    payload_fixture(case, payload_fixture::Payload::String)
+}
+
+pub(in crate::data_ownership_v1) fn payload_fixture(
+    case: Case,
+    payload: payload_fixture::Payload,
+) -> (String, RawProjectSyntaxSnapshot) {
     let mut f = Builder {
         source: String::new(),
         types: Vec::new(),
         expressions: Vec::new(),
         statements: Vec::new(),
     };
-    let string = Ty::String;
-    let shared = Ty::Shared(Box::new(string.clone()));
-    let weak = Ty::Weak(Box::new(string.clone()));
+    let (payload, data_declarations) = payload.setup(&mut f);
+    let shared = Ty::Shared(Box::new(payload.clone()));
+    let weak = Ty::Weak(Box::new(payload.clone()));
     let start = f.source.len();
     let function_span = f.text("function");
     f.text(" ");
     let name = f.name("upgrade");
     f.text("(");
-    let parameters = vec![f.parameter("payload", &string)];
+    let parameters = vec![f.parameter("payload", &payload)];
     f.text("): ");
     let result_type = f.ty(&shared);
     f.text(" ");
@@ -149,7 +161,7 @@ pub(in crate::data_ownership_v1) fn fixture_case(case: Case) -> (String, RawProj
                 path: "src/main.zry".into(),
                 imports: Vec::new(),
                 type_syntax: f.types,
-                data_declarations: Vec::new(),
+                data_declarations,
                 functions: vec![function],
             }],
             diagnostics: Vec::new(),

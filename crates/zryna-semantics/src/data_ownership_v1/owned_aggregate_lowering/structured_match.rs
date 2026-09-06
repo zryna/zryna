@@ -7,13 +7,13 @@ use super::super::diagnostics::span;
 use super::structured_graph::StructuredGraph;
 use super::{Binding, PrivateOwnedAggregateLowerer, Ty};
 
-struct MatchPlan {
+pub(super) struct MatchPlan {
     ty: Ty,
-    arms: Vec<(u32, RawMatchArm, Option<Ty>)>,
+    pub(super) arms: Vec<(u32, RawMatchArm, Option<Ty>)>,
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
-    fn match_plan(&mut self, arms: &[RawMatchArm], at: Span) -> Option<MatchPlan> {
+    pub(super) fn match_plan(&mut self, arms: &[RawMatchArm], at: Span) -> Option<MatchPlan> {
         let first = arms.first()?;
         let Some(declaration) = self.declarations.iter().find(|declaration| {
             declaration.module == self.module && declaration.name == first.type_name.text

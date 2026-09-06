@@ -21,14 +21,29 @@ struct UpgradeOperand {
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     fn inferred_upgrade_type(&mut self, id: u32) -> Option<Ty> {
+        self.inferred_upgrade_type_in(id, &mut Vec::new())
+    }
+
+    fn inferred_upgrade_type_in(
+        &mut self,
+        id: u32,
+        bindings: &mut Vec<(String, Ty)>,
+    ) -> Option<Ty> {
+        if let RawExpressionKind::Reference { ref name } = self.expression(id)?.kind
+            && let Some((_, ty)) = bindings.iter().rev().find(|(binding, _)| *binding == name.text)
+        {
+            return Some(*ty);
+        }
         if let Some(ty) = self.projection_expression_type(id) {
             return Some(ty);
         }
         let expression = self.expression(id)?.clone();
         match expression.kind {
-            RawExpressionKind::Clone { value, .. } => self.inferred_upgrade_type(value),
+            RawExpressionKind::Clone { value, .. } => {
+                self.inferred_upgrade_type_in(value, bindings)
+            }
             RawExpressionKind::Downgrade { value, .. } => {
-                let shared = self.inferred_upgrade_type(value)?;
+                let shared = self.inferred_upgrade_type_in(value, bindings)?;
                 let payload = self.layouts.type_by_id(shared.layout)?.referenced_type()?;
                 self.node_types
                     .iter()
@@ -38,7 +53,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                             && self
                                 .layouts
                                 .type_by_id(candidate.layout)
-                                .and_then(|ty| ty.referenced_type())
+                                .and_then(zryna_layout::VerifiedType::referenced_type)
                                 == Some(payload)
                     })
                     .copied()
@@ -52,9 +67,17 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 Some(signature.result)
             }
             RawExpressionKind::Match { ref arms, .. } => {
+                let at = span(self.input.sources(), expression.span);
+                let plan = self.match_plan(arms, at)?;
                 let mut result = None;
-                for arm in arms {
-                    let ty = self.inferred_upgrade_type(arm.value)?;
+                for (_, arm, payload) in plan.arms {
+                    let outer = bindings.len();
+                    if let (Some(binding), Some(ty)) = (arm.binding, payload) {
+                        bindings.push((binding.text, ty));
+                    }
+                    let inferred = self.inferred_upgrade_type_in(arm.value, bindings);
+                    bindings.truncate(outer);
+                    let ty = inferred?;
                     if result.is_some_and(|result| result != ty) {
                         return None;
                     }
@@ -116,7 +139,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             }
             return Some(UpgradeOperand { place: source.place, temporary: false, shared });
         }
+        let before_inference = self.errors.len();
         let weak = self.inferred_upgrade_type(id).or_else(|| {
+            if self.errors.len() != before_inference {
+                return None;
+            }
             self.errors.at(
                 "ZRYNA-M3013",
                 expression_at,
