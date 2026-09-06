@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use zryna_source::{NormalizedSourcePath, resolve_explicit_zry_import};
 
 use super::diagnostics::{Errors, span};
-use super::{FunctionCatalog, SemanticInput, TypeCategory};
+use super::{FunctionCatalog, SemanticInput};
 
 #[derive(Clone, Copy)]
 struct ImportEdge {
@@ -13,6 +13,7 @@ struct ImportEdge {
 
 pub(super) fn resolve_imports(
     input: SemanticInput<'_>,
+    layouts: &zryna_layout::VerifiedLayouts,
     catalog: &mut FunctionCatalog,
     errors: &mut Errors<'_>,
 ) {
@@ -94,6 +95,7 @@ pub(super) fn resolve_imports(
                 }
                 if !supported_signature(
                     target,
+                    layouts,
                     span(input.sources(), binding.imported.span),
                     errors,
                 ) {
@@ -129,23 +131,30 @@ fn module_paths(input: SemanticInput<'_>) -> BTreeMap<NormalizedSourcePath, usiz
 
 fn supported_signature(
     target: &super::function_catalog::FunctionSignature,
+    layouts: &zryna_layout::VerifiedLayouts,
     at: zryna_source::Span,
     errors: &mut Errors<'_>,
 ) -> bool {
     let supported = !target.has_borrow_parameters()
-        && target.parameters.iter().chain(std::iter::once(&target.result)).all(|ty| {
-            matches!(ty.category, TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String)
-        });
+        && target
+            .parameters
+            .iter()
+            .chain(std::iter::once(&target.result))
+            .all(|ty| super::owned_aggregate_lowering::supported_mixed_shape(*ty, layouts));
     if !supported {
         errors.at(
             "ZRYNA-M3016",
             at,
-            "named-import calls admit only exact bool, i32, and String by-value signatures",
-            "keep imported nominal, container, and borrowed signatures outside this checkpoint",
+            "named-import call signature is outside the sealed by-value ownership graph",
+            "import only exact supported by-value signatures without borrow parameters",
         );
     }
     supported
 }
+
+#[cfg(test)]
+#[path = "tests/imported_owned_signatures.rs"]
+mod tests;
 
 fn verify_graph(input: SemanticInput<'_>, edges: &[Vec<ImportEdge>], errors: &mut Errors<'_>) {
     let Some(entry) = input.syntax().files().iter().position(|file| file.id() == input.entry())

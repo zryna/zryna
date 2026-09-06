@@ -36,7 +36,7 @@ fn with_imported(
     let node_types = map_node_types(&graph, &layouts, &mut errors);
     let mut catalog =
         build_function_catalog(input, &declarations, &graph, &node_types, &mut errors);
-    import_resolution::resolve_imports(input, &mut catalog, &mut errors);
+    import_resolution::resolve_imports(input, &layouts, &mut catalog, &mut errors);
     let module = usize::try_from(entry.index()).expect("bounded fixture index");
     let file = &syntax.files()[module];
     let function = &file.functions()[0];

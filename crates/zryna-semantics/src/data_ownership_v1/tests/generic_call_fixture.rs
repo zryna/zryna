@@ -9,7 +9,7 @@ pub(super) use route::fixture as route_fixture;
 pub(super) use route::single_string_fixture;
 
 #[derive(Clone, Copy, Debug)]
-pub(super) enum Case {
+pub(in crate::data_ownership_v1) enum Case {
     Direct,
     FallibleArguments,
     Nested,
@@ -231,7 +231,10 @@ impl Builder {
     }
 }
 
-pub(super) fn fixture(element: &Element, case: Case) -> (String, RawProjectSyntaxSnapshot) {
+pub(in crate::data_ownership_v1) fn fixture(
+    element: &Element,
+    case: Case,
+) -> (String, RawProjectSyntaxSnapshot) {
     let (source, mut raw) = vector_fixture(element, Operation::Clone, None);
     let file = &mut raw.files[0];
     let end = file.data_declarations.last().map_or(0, |declaration| declaration.span.end);
