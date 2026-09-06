@@ -52,7 +52,36 @@ fn local(f: &mut Builder, name: &str, ty: &Ty, initializer: impl FnOnce(&mut Bui
     f.text(" ");
 }
 
-fn nominal_payload(f: &mut Builder, enum_payload: bool) -> RawDataDeclaration {
+#[derive(Clone, Copy)]
+enum NominalPayload {
+    Struct,
+    Enum,
+    MultiVariantEnum,
+    RecursiveEnum,
+}
+
+fn enum_variant(f: &mut Builder, name: &str, payload: Option<&Ty>) -> RawEnumVariant {
+    let start = f.source.len();
+    let name = f.name(name);
+    let colon_span = f.text(":");
+    f.text(" ");
+    let (payload_type, none_span) = if let Some(payload) = payload {
+        (Some(f.ty(payload)), None)
+    } else {
+        (None, Some(f.text("ZrynaNone")))
+    };
+    let semicolon_span = f.text(";");
+    RawEnumVariant {
+        span: at(start, semicolon_span.end as usize),
+        name,
+        colon_span,
+        payload_type,
+        none_span,
+        semicolon_span,
+    }
+}
+
+fn nominal_payload(f: &mut Builder, shape: NominalPayload) -> RawDataDeclaration {
     let start = f.source.len();
     let interface_span = f.text("interface");
     f.text(" ");
@@ -60,20 +89,41 @@ fn nominal_payload(f: &mut Builder, enum_payload: bool) -> RawDataDeclaration {
     f.text(" ");
     let extends_span = f.text("extends");
     f.text(" ");
-    let marker_span = f.text(if enum_payload { "ZrynaEnum" } else { "ZrynaStruct" });
+    let is_enum = !matches!(shape, NominalPayload::Struct);
+    let marker_span = f.text(if is_enum { "ZrynaEnum" } else { "ZrynaStruct" });
     f.text(" ");
     let open_brace_span = f.text("{");
     f.text(" ");
     let member_start = f.source.len();
-    let member = f.name("value");
-    let colon_span = f.text(":");
-    f.text(" ");
-    let string = f.ty(&Ty::String);
-    let semicolon_span = f.text(";");
+    let (member, colon_span, string, semicolon_span, variants) = if is_enum {
+        let mut variants = Vec::new();
+        if matches!(shape, NominalPayload::MultiVariantEnum | NominalPayload::RecursiveEnum) {
+            variants.push(enum_variant(f, "Empty", None));
+            f.text(" ");
+        }
+        let payload = if matches!(shape, NominalPayload::RecursiveEnum) {
+            Ty::Shared(Box::new(Ty::Named("Payload")))
+        } else {
+            Ty::String
+        };
+        variants.push(enum_variant(f, "Value", Some(&payload)));
+        if matches!(shape, NominalPayload::MultiVariantEnum | NominalPayload::RecursiveEnum) {
+            f.text(" ");
+            variants.push(enum_variant(f, "Text", Some(&Ty::String)));
+        }
+        (None, None, None, None, Some(variants))
+    } else {
+        let member = f.name("value");
+        let colon_span = f.text(":");
+        f.text(" ");
+        let string = f.ty(&Ty::String);
+        let semicolon_span = f.text(";");
+        (Some(member), Some(colon_span), Some(string), Some(semicolon_span), None)
+    };
     f.text(" ");
     let close_brace_span = f.text("}");
     f.text("\n");
-    let kind = if enum_payload {
+    let kind = if let Some(variants) = variants {
         RawDataDeclarationKind::Enum {
             interface_span,
             name,
@@ -81,14 +131,7 @@ fn nominal_payload(f: &mut Builder, enum_payload: bool) -> RawDataDeclaration {
             marker_span,
             open_brace_span,
             close_brace_span,
-            variants: vec![RawEnumVariant {
-                span: at(member_start, semicolon_span.end as usize),
-                name: member,
-                colon_span,
-                payload_type: Some(string),
-                none_span: None,
-                semicolon_span,
-            }],
+            variants,
         }
     } else {
         RawDataDeclarationKind::Struct {
@@ -99,11 +142,11 @@ fn nominal_payload(f: &mut Builder, enum_payload: bool) -> RawDataDeclaration {
             open_brace_span,
             close_brace_span,
             fields: vec![RawDataField {
-                span: at(member_start, semicolon_span.end as usize),
-                name: member,
-                colon_span,
-                type_syntax: string,
-                semicolon_span,
+                span: at(member_start, semicolon_span.expect("struct terminator").end as usize),
+                name: member.expect("struct member"),
+                colon_span: colon_span.expect("struct colon"),
+                type_syntax: string.expect("struct type"),
+                semicolon_span: semicolon_span.expect("struct terminator"),
             }],
         }
     };
@@ -117,6 +160,8 @@ pub(crate) enum Case {
     ScalarBool,
     ScalarI32,
     NominalEnum,
+    MultiVariantEnum,
+    RecursiveEnum,
     NominalStruct,
     StringArrayZero,
     StringArrayOne,
@@ -140,8 +185,12 @@ pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
         statements: Vec::new(),
     };
     let data_declarations = match case {
-        Case::NominalEnum => vec![nominal_payload(&mut f, true)],
-        Case::NominalStruct => vec![nominal_payload(&mut f, false)],
+        Case::NominalEnum => vec![nominal_payload(&mut f, NominalPayload::Enum)],
+        Case::MultiVariantEnum => {
+            vec![nominal_payload(&mut f, NominalPayload::MultiVariantEnum)]
+        }
+        Case::RecursiveEnum => vec![nominal_payload(&mut f, NominalPayload::RecursiveEnum)],
+        Case::NominalStruct => vec![nominal_payload(&mut f, NominalPayload::Struct)],
         _ => Vec::new(),
     };
     let parameter = match case {
@@ -150,7 +199,9 @@ pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
         Case::StringArrayZero => Ty::Array(Box::new(Ty::String), 0),
         Case::StringArrayOne => Ty::Array(Box::new(Ty::String), 1),
         Case::StringVec => Ty::Vec(Box::new(Ty::String)),
-        Case::NominalEnum | Case::NominalStruct => Ty::Named("Payload"),
+        Case::NominalEnum | Case::MultiVariantEnum | Case::RecursiveEnum | Case::NominalStruct => {
+            Ty::Named("Payload")
+        }
         _ => Ty::String,
     };
     let payload = if matches!(case, Case::NestedShared) {
@@ -183,6 +234,8 @@ pub(crate) fn fixture_case(case: Case) -> (String, RawProjectSyntaxSnapshot) {
         | Case::ScalarBool
         | Case::ScalarI32
         | Case::NominalEnum
+        | Case::MultiVariantEnum
+        | Case::RecursiveEnum
         | Case::NominalStruct
         | Case::StringArrayZero
         | Case::StringArrayOne
