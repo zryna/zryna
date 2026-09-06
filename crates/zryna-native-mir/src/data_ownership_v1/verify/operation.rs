@@ -2,63 +2,10 @@ use std::collections::BTreeMap;
 
 use zryna_ownership_runtime_abi::LogicalOperation;
 
-use super::{Errors, raw, type_at};
+use super::{Errors, raw};
 
-pub(super) fn verify_types(
-    program: &raw::Program,
-    function: &raw::Function,
-    operation: &raw::Operation,
-    borrow_types: &[u32],
-    errors: &mut Errors,
-) {
-    let result_type = operation.result.as_ref().map(|value| value.ty);
-    let first_value_type = operation.values.first().and_then(|id| value_type(function, *id));
-    let first_place_type = operation
-        .places
-        .first()
-        .and_then(|id| function.places.get(*id as usize))
-        .map(|place| place.ty);
-    let first_borrow_type =
-        operation.borrows.first().and_then(|id| borrow_types.get(*id as usize)).copied();
-    let valid = match operation.opcode {
-        raw::Opcode::BeginBorrow => operation.borrow_type == first_place_type,
-        raw::Opcode::BeginIndexedBorrow => {
-            first_place_type.and_then(|ty| type_at(program, ty)).and_then(|ty| ty.referenced_type)
-                == operation.borrow_type
-        }
-        raw::Opcode::ProjectBorrow => {
-            first_borrow_type.and_then(|ty| type_at(program, ty)).and_then(|ty| ty.referenced_type)
-                == operation.borrow_type
-        }
-        raw::Opcode::BindBorrow => first_borrow_type == operation.borrow_type,
-        raw::Opcode::BorrowRead => first_borrow_type == result_type,
-        raw::Opcode::BorrowWrite | raw::Opcode::BorrowReplace => {
-            first_borrow_type == first_value_type && operation.borrow_type == first_borrow_type
-        }
-        raw::Opcode::EndBorrow => operation.borrow_type == first_borrow_type,
-        raw::Opcode::Clone | raw::Opcode::StringClone | raw::Opcode::VecClone
-            if !operation.borrows.is_empty() =>
-        {
-            first_borrow_type == result_type
-        }
-        _ => true,
-    };
-    if !valid {
-        errors.push("ZRYNA-N3107", "native MIR operation type relation is not exact");
-    }
-}
-
-fn value_type(function: &raw::Function, id: u32) -> Option<u32> {
-    function
-        .parameters
-        .iter()
-        .chain(function.blocks.iter().flat_map(|block| block.parameters.iter()))
-        .chain(function.blocks.iter().flat_map(|block| {
-            block.operations.iter().filter_map(|operation| operation.result.as_ref())
-        }))
-        .find(|value| value.id == id)
-        .map(|value| value.ty)
-}
+mod types;
+pub(super) use types::{BorrowInfo, verify_types};
 
 pub(super) fn verify_runtime(
     operation: &raw::Operation,
@@ -99,10 +46,15 @@ pub(super) fn verify_shape(operation: &raw::Operation, errors: &mut Errors) {
         || !one_source
         || !has_canonical_call_arguments(operation)
         || operation.borrow_type.is_some() != needs_borrow_type(operation)
+        || operation.borrow_access.is_some() != needs_borrow_access(operation)
         || !has_canonical_immediate(operation)
     {
         errors.push("ZRYNA-N3107", "native MIR operation operand shape is not canonical");
     }
+}
+
+fn needs_borrow_access(operation: &raw::Operation) -> bool {
+    matches!(operation.opcode, raw::Opcode::BeginBorrow | raw::Opcode::BeginIndexedBorrow)
 }
 
 fn expected_shape(opcode: raw::Opcode) -> (Option<usize>, Option<usize>, Option<usize>, bool) {

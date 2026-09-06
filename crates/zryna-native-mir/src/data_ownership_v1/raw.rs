@@ -189,6 +189,7 @@ pub struct Operation {
     pub immediate: Immediate,
     pub call_arguments: Vec<CallArgument>,
     pub borrow_type: Option<u32>,
+    pub borrow_access: Option<BorrowAccess>,
 }
 
 /// Exact source-signature order for a direct call.

@@ -315,6 +315,10 @@ fn lower_operation(
             .borrow()
             .and_then(|borrow| function.backend_borrow_type(borrow.index()))
             .map(zryna_layout::TypeId::index),
+        borrow_access: instruction.borrow_access().map(|access| match access {
+            VerifiedBorrowAccess::Shared => raw::BorrowAccess::Shared,
+            VerifiedBorrowAccess::Exclusive => raw::BorrowAccess::Exclusive,
+        }),
     })
 }
 

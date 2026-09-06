@@ -146,6 +146,7 @@ fn verify_functions(
         .zip(runtime.native_linux_x86_64_functions())
         .map(|(operation, function)| (operation.operation(), function.symbol()))
         .collect::<BTreeMap<_, _>>();
+    let mut string_literal_bytes = 0_usize;
     for function in &program.functions {
         if function.symbol != format!("zryna_m3_m{}_f{}", function.module, function.declaration)
             || !valid_symbol(&function.symbol)
@@ -169,7 +170,10 @@ fn verify_functions(
                 errors.push("ZRYNA-N3105", "native MIR borrow parameter is not dense and typed");
             }
             next_borrow = next_borrow.saturating_add(1);
-            borrow_types.push(parameter.referent);
+            borrow_types.push(Some(operation::BorrowInfo {
+                ty: parameter.referent,
+                access: parameter.access,
+            }));
         }
         verify_places(program, function, layouts, errors);
         if function.blocks.len() > zryna_ir::data_ownership_v1::MAX_BLOCKS_PER_FUNCTION {
@@ -186,6 +190,14 @@ fn verify_functions(
                 next_value = next_value.saturating_add(1);
             }
             for operation in &block.operations {
+                if let raw::Immediate::Utf8(bytes) = &operation.immediate {
+                    string_literal_bytes = string_literal_bytes.saturating_add(bytes.len());
+                    if string_literal_bytes > zryna_ir::data_ownership_v1::MAX_STRING_LITERAL_BYTES
+                    {
+                        errors
+                            .push("ZRYNA-N3201", "native MIR String literal byte budget exceeded");
+                    }
+                }
                 operation::verify_shape(operation, errors);
                 operation::verify_types(program, function, operation, &borrow_types, errors);
                 if operation.borrow_type.is_some_and(|ty| type_at(program, ty).is_none()) {
@@ -212,9 +224,25 @@ fn verify_functions(
                         errors.push("ZRYNA-N3107", "native MIR operation uses an invalid borrow");
                     }
                     if definition {
-                        if let Some(ty) = operation.borrow_type {
-                            borrow_types.push(ty);
-                        }
+                        let info = if defines_borrow {
+                            operation
+                                .borrow_type
+                                .zip(operation.borrow_access)
+                                .map(|(ty, access)| operation::BorrowInfo { ty, access })
+                        } else {
+                            operation
+                                .borrows
+                                .first()
+                                .and_then(|borrow| borrow_types.get(*borrow as usize))
+                                .copied()
+                                .flatten()
+                                .zip(operation.borrow_type)
+                                .map(|(parent, ty)| operation::BorrowInfo {
+                                    ty,
+                                    access: parent.access,
+                                })
+                        };
+                        borrow_types.push(info);
                         next_borrow = next_borrow.saturating_add(1);
                     }
                 }
@@ -240,7 +268,15 @@ fn verify_functions(
                     errors.push("ZRYNA-N3112", "native MIR operation cleanup is unknown");
                 }
             }
-            verify_terminator(block, function, &identities, &runtime_symbols, next_value, errors);
+            verify_terminator(
+                program,
+                block,
+                function,
+                &identities,
+                &runtime_symbols,
+                next_value,
+                errors,
+            );
             if block.cleanup.is_some_and(|plan| plan as usize >= function.cleanup_plans.len()) {
                 errors.push("ZRYNA-N3112", "native MIR terminator cleanup is unknown");
             }
@@ -318,6 +354,7 @@ fn verify_places(
 }
 
 fn verify_terminator(
+    program: &raw::Program,
     block: &raw::Block,
     function: &raw::Function,
     _: &BTreeSet<(u32, u32)>,
@@ -325,26 +362,47 @@ fn verify_terminator(
     values: u32,
     errors: &mut Errors,
 ) {
-    let edge = |edge: &raw::Edge, synthesized: usize| {
-        function.blocks.get(edge.target as usize).is_some_and(|target| {
-            edge.arguments.len() + synthesized == target.parameters.len()
-                && edge.arguments.iter().all(|value| *value < values)
-        })
-    };
+    let edge =
+        |edge: &raw::Edge, synthesized: usize| typed_edge(function, edge, synthesized, values);
     let valid = match &block.terminator {
-        raw::Terminator::Return(value) => *value < values,
+        raw::Terminator::Return(value) => {
+            *value < values && value_type(function, *value) == Some(function.result_type)
+        }
         raw::Terminator::Jump(target) => edge(target, 0),
         raw::Terminator::Branch { condition, when_true, when_false } => {
-            *condition < values && edge(when_true, 0) && edge(when_false, 0)
+            *condition < values
+                && value_type(function, *condition)
+                    .and_then(|ty| type_at(program, ty))
+                    .map(|ty| ty.category)
+                    == Some(raw::TypeCategory::Bool)
+                && edge(when_true, 0)
+                && edge(when_false, 0)
         }
         raw::Terminator::EnumMatch { place, arms } => {
-            (*place as usize) < function.places.len()
-                && !arms.is_empty()
-                && arms.iter().all(|(_, target)| edge(target, 0))
+            function.places.get(*place as usize).is_some_and(|place| {
+                type_at(program, place.ty).is_some_and(|ty| {
+                    ty.category == raw::TypeCategory::Enum
+                        && arms.len() == ty.variants.len()
+                        && arms.iter().zip(&ty.variants).all(|((ordinal, target), variant)| {
+                            *ordinal == variant.ordinal && edge(target, 0)
+                        })
+                })
+            })
         }
         raw::Terminator::WeakUpgrade { weak, success, expired, runtime_symbol } => {
-            (*weak as usize) < function.places.len()
-                && edge(success, 1)
+            function.places.get(*weak as usize).is_some_and(|place| {
+                type_at(program, place.ty).is_some_and(|weak_ty| {
+                    weak_ty.category == raw::TypeCategory::Weak
+                        && function.blocks.get(success.target as usize).is_some_and(|target| {
+                            target.parameters.first().is_some_and(|parameter| {
+                                type_at(program, parameter.ty).is_some_and(|shared| {
+                                    shared.category == raw::TypeCategory::Shared
+                                        && shared.referenced_type == weak_ty.referenced_type
+                                })
+                            })
+                        })
+                })
+            }) && edge(success, 1)
                 && edge(expired, 0)
                 && symbols.get(&LogicalOperation::WeakUpgrade).copied()
                     == Some(runtime_symbol.as_str())
@@ -357,6 +415,29 @@ fn verify_terminator(
             "native MIR terminator has an invalid operand, edge, or runtime call",
         );
     }
+}
+
+fn typed_edge(function: &raw::Function, edge: &raw::Edge, synthesized: usize, values: u32) -> bool {
+    function.blocks.get(edge.target as usize).is_some_and(|target| {
+        edge.arguments.len() + synthesized == target.parameters.len()
+            && edge.arguments.iter().zip(target.parameters.iter().skip(synthesized)).all(
+                |(value, parameter)| {
+                    *value < values && value_type(function, *value) == Some(parameter.ty)
+                },
+            )
+    })
+}
+
+fn value_type(function: &raw::Function, id: u32) -> Option<u32> {
+    function
+        .parameters
+        .iter()
+        .chain(function.blocks.iter().flat_map(|block| block.parameters.iter()))
+        .chain(function.blocks.iter().flat_map(|block| {
+            block.operations.iter().filter_map(|operation| operation.result.as_ref())
+        }))
+        .find(|value| value.id == id)
+        .map(|value| value.ty)
 }
 
 fn verify_cleanup(program: &raw::Program, function: &raw::Function, errors: &mut Errors) {

@@ -95,6 +95,41 @@ fn owned_string_and_vec_borrow_reads_emit() {
 }
 
 #[test]
+fn string_literal_codegen_cost_is_bounded_before_emission() {
+    use zryna_native_mir::data_ownership_v1::raw::{Immediate, Opcode};
+
+    let program = verified(
+        include_str!("../../../tests/m3-fixtures/owned-root-borrow-reads.zry"),
+        include_str!("../../../tests/m3-fixtures/owned-root-borrow-reads.json"),
+    );
+    let mut raw = zryna_native_mir::data_ownership_v1::lower_unverified(
+        program.verified_ir(),
+        program.runtime_abi(),
+    )
+    .expect("raw MIR");
+    let literal = raw
+        .functions
+        .iter_mut()
+        .flat_map(|function| &mut function.blocks)
+        .flat_map(|block| &mut block.operations)
+        .find(|operation| operation.opcode == Opcode::String)
+        .expect("String literal");
+    literal.immediate = Immediate::Utf8(vec![b'x'; 1_000_001]);
+    let mir = zryna_native_mir::data_ownership_v1::verify(
+        raw,
+        program.verified_ir().linux_x86_64_layouts(),
+        program.runtime_abi(),
+    )
+    .expect("bounded verified MIR");
+    let target =
+        zryna_backend_native::select_object_target(zryna_backend_native::NATIVE_OBJECT_TARGET)
+            .expect("target");
+    let error = zryna_backend_native::data_ownership_v1::emit_object(&mir, target)
+        .expect_err("literal must exceed codegen budget");
+    assert_eq!(error.code(), "ZRYNA-N3304");
+}
+
+#[test]
 fn every_semantically_valid_m3_fixture_emits() {
     let root = std::path::Path::new("../../tests/m3-fixtures");
     let mut failures = Vec::new();

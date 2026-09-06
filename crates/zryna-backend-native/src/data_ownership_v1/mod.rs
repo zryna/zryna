@@ -23,7 +23,7 @@ use object::{
     BinaryFormat, Endianness, Object, ObjectKind, ObjectSection, ObjectSymbol, RelocationTarget,
 };
 use zryna_diagnostics::Diagnostic;
-use zryna_native_mir::data_ownership_v1::{VerifiedFunction, VerifiedMirModule};
+use zryna_native_mir::data_ownership_v1::{VerifiedFunction, VerifiedImmediate, VerifiedMirModule};
 
 use crate::{LinuxX8664ObjectTarget, MAX_NATIVE_OBJECT_BYTES, NATIVE_OBJECT_TARGET};
 
@@ -143,6 +143,11 @@ fn preflight_codegen(program: &VerifiedMirModule) -> Result<(), Diagnostic> {
             budget.take(8)?;
             budget
                 .take(u64::try_from(block.operation_count()).map_err(|_| resource_error())? * 16)?;
+            for operation in block.operations() {
+                if let VerifiedImmediate::Utf8(bytes) = operation.immediate() {
+                    budget.take(u64::try_from(bytes.len()).map_err(|_| resource_error())?)?;
+                }
+            }
         }
         for plan in (0..function.cleanup_plan_count())
             .filter_map(|id| u32::try_from(id).ok().and_then(|id| function.cleanup_plan(id)))
