@@ -3,6 +3,37 @@ use super::indexed_access::chained;
 use super::indexed_borrow_fixture::{Container, Element, Fixture};
 use super::*;
 
+#[test]
+fn transient_indexed_edges_one_arm_begin_has_exact_nondominating_join_diagnostic() {
+    let fixture = Fixture::new(Container::Array, Element::Array);
+    let mut program = diamond(&fixture, raw::BorrowAccess::Shared);
+    let function = &mut program.modules[0].functions[0];
+    let at = function.span;
+    let begin = function.blocks[0].instructions.remove(0);
+    function.blocks[1].instructions.push(begin);
+    fixture.rejects(program.clone(), "ZRYNA-I3011");
+    let diagnostics = verify(
+        program,
+        &fixture.sources,
+        fixture.sources.verify_file_id(0).unwrap(),
+        fixture.linear.clone(),
+        fixture.linux.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code(), "ZRYNA-I3011");
+    assert_eq!(
+        diagnostics[0].message(),
+        "transient indexed identities or issuance order differ across a continuation"
+    );
+    assert_eq!(
+        diagnostics[0].guidance(),
+        "preserve the same live indexed authority on every incoming edge"
+    );
+    assert_eq!(diagnostics[0].primary_span(), Some(at));
+    fixture.verify(diamond(&fixture, raw::BorrowAccess::Shared));
+}
+
 fn edge(target: u32) -> raw::Edge {
     raw::Edge { target: raw::BlockId(target), arguments: vec![] }
 }
