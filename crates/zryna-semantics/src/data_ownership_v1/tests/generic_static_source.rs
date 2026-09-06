@@ -3,7 +3,7 @@ use super::*;
 
 #[test]
 fn generic_static_source_subtree_clone_and_move_keep_exact_parent_masks() {
-    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct] {
+    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct, Shape::HandleStruct] {
         for case in [Case::Clone, Case::Move] {
             let (source, raw) = fixture(shape, case);
             let sources = sources_for(&source);
@@ -45,6 +45,14 @@ fn generic_static_source_subtree_clone_and_move_keep_exact_parent_masks() {
                     assert_eq!(operation.kind(), VerifiedInstructionKind::GenericMoveFromPlace);
                     assert_eq!(cleanup.moved_projections().collect::<Vec<_>>(), [projection]);
                 } else {
+                    if matches!(shape, Shape::HandleStruct) {
+                        assert_eq!(
+                            operation.kind(),
+                            VerifiedInstructionKind::HandleAwareClonePlace
+                        );
+                        assert_eq!(cleanup.moved_projections().len(), 0);
+                        continue;
+                    }
                     let clone = operation.generic_clone().expect("structural projected clone");
                     assert_eq!(clone.ty(), place.ty());
                     assert_ne!(clone.destination(), projection);
@@ -106,7 +114,7 @@ fn generic_static_source_sibling_clone_retains_moved_subtree_mask_on_failure() {
 
 #[test]
 fn generic_static_source_repeated_and_self_clone_replacements_retain_target_until_commit() {
-    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct] {
+    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct, Shape::HandleStruct] {
         for case in [Case::Replace, Case::Repeat, Case::SelfClone] {
             let (source, raw) = fixture(shape, case);
             let sources = sources_for(&source);
@@ -153,7 +161,7 @@ fn generic_static_source_repeated_and_self_clone_replacements_retain_target_unti
 
 #[test]
 fn generic_static_source_partial_root_and_self_consuming_rhs_are_stable_rejections() {
-    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct] {
+    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct, Shape::HandleStruct] {
         for case in [Case::Partial, Case::SelfMove] {
             let (source, raw) = fixture(shape, case);
             let body = &raw.files[0].functions[0].body;

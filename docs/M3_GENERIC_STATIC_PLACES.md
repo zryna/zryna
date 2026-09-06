@@ -8,8 +8,9 @@ They do not relax the reviewed context restrictions of `MoveFromPlace` or
 ## Admission and state
 
 The target is a non-root path containing only exact Struct fields and constant
-FixedArray indices. Its sealed type must pass the shared non-handle generic
-graph classifier. Enum values and Vec values may be complete referents; an
+FixedArray indices. Its sealed type must pass complete-transfer eligibility:
+either the cached non-handle graph classification or the cached handle-containing
+graph classification, with their existing layout restrictions. Enum values and Vec values may be complete referents; an
 Enum payload path or dynamically indexed Vec element is not this authority.
 Dynamic elements use the separate indexed-borrow operations.
 
@@ -17,7 +18,10 @@ Both adapters retain the existing exact type, function ownership, place shape,
 active-borrow exclusion, and ownership-flow checks. They cannot transfer a
 partial subobject or reinitialize a moved target. Classification is computed
 once per program verification when a generic operation requires it, using the
-same bounded graph classifier as generic clone preparation.
+same bounded graph classifications as clone preparation. Transfer-only programs
+also compute the handle-containing classification; no clone site is required.
+`GenericClonePlace` and `GenericCloneBorrow` remain handle-excluding. Explicit
+handle-containing clones use the separate handle-aware clone authority.
 
 ## Move and replacement
 
@@ -42,3 +46,25 @@ drop action before replacement. Old-value destruction is the existing
 infallible commit operation; these adapters add no allocation, failure cleanup
 role, runtime implementation, or handle transition. Normal verification and
 sealed-state replay use the same transfer routines.
+
+## Handle-containing static transfer evidence
+
+Issue #321 admits authenticated private `Struct { value: Vec<Shared<String>> }`
+field moves, replacement, repeated replacement, self-clone replacement and return
+through these existing adapters. Source ordering and cleanup are unchanged:
+the RHS finishes before the old target is dropped, including every fallible
+handle-aware clone step. No handle count is changed by the transfer itself.
+
+`generic_static_source` and `handle_static_source` cover exact parent masks,
+old-target retention, wrong lowerable RHS type, repeated move, moved target,
+self-consumption and deterministic diagnostics. Independent
+`generic_static_transfer::handles` raw-IR tests cover Shared, Weak and recursive
+handle graphs, exact owner/result types, borrow conflicts, consumed RHS reuse,
+moved targets, cleanup replay and continued generic-clone exclusion.
+`generic_static_resources` uses authenticated fixture envelopes with controlled
+held cleanup/transition credits for exact, first-extra, checked-overflow and
+same-lowerer recovery evidence; it does not claim a full maximal source program.
+
+Dynamic element move-out, hole repair, new public entry shapes and target-runtime
+execution remain outside this adapter. The existing handle-aware clone and
+symbolic shared/weak conformance contracts are not runtime execution receipts.

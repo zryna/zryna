@@ -2,6 +2,8 @@ use super::generic_clone_fixture::Fixture;
 use super::*;
 use zryna_layout::TypeCategory;
 
+mod handles;
+
 fn projected(fixture: &Fixture, nested: bool) -> raw::Program {
     let mut raw = fixture.seed();
     let array =

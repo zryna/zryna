@@ -235,6 +235,8 @@ pub(super) fn classify_program(program: &raw::Program, layouts: &VerifiedLayouts
                 instruction.kind,
                 raw::InstructionKind::HandleAwareClonePlace { .. }
                     | raw::InstructionKind::HandleAwareCloneBorrow { .. }
+                    | raw::InstructionKind::GenericMoveFromPlace { .. }
+                    | raw::InstructionKind::GenericReplacePlace { .. }
             )
         })
     });

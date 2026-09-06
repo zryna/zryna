@@ -19,6 +19,7 @@ pub(super) mod generic_vec_fixture;
 mod generic_vec_push_source;
 mod generic_vec_source;
 mod generic_vec_source_rejections;
+mod handle_static_source;
 pub(in crate::data_ownership_v1) mod mixed_call_string_nesting;
 pub(in crate::data_ownership_v1) mod mixed_call_unknown_clone;
 mod mixed_construction;
