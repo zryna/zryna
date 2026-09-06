@@ -60,6 +60,39 @@ fn nested_match_rejects_wrong_ordinal_absent_refinement_and_foreign_or_inactive_
     arms[1].variant = 9;
     reject(&authority, &valid, ordinal, "ZRYNA-I3014");
 
+    let mut shortened = valid.clone();
+    let raw::Terminator::EnumMatch { arms, .. } =
+        &mut shortened.modules[0].functions[0].blocks[0].terminators[0].kind
+    else {
+        unreachable!()
+    };
+    arms.pop();
+    let raw::Terminator::Jump(edge) =
+        &mut shortened.modules[0].functions[0].blocks[1].terminators[0].kind
+    else {
+        unreachable!()
+    };
+    edge.target = raw::BlockId(2);
+    reject(&authority, &valid, shortened, "ZRYNA-I3014");
+
+    let mut empty = valid.clone();
+    let raw::Terminator::EnumMatch { arms, .. } =
+        &mut empty.modules[0].functions[0].blocks[0].terminators[0].kind
+    else {
+        unreachable!()
+    };
+    arms.clear();
+    reject(&authority, &valid, empty, "ZRYNA-I3007");
+
+    let mut duplicate = valid.clone();
+    let raw::Terminator::EnumMatch { arms, .. } =
+        &mut duplicate.modules[0].functions[0].blocks[0].terminators[0].kind
+    else {
+        unreachable!()
+    };
+    arms[1].variant = arms[0].variant;
+    reject(&authority, &valid, duplicate, "ZRYNA-I3014");
+
     let mut absent = valid.clone();
     let raw::Terminator::EnumMatch { place, .. } =
         &mut absent.modules[0].functions[0].blocks[0].terminators[0].kind
