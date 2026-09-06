@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "active_enum_payload_borrow_fixture/calls.rs"]
+mod calls;
+
 #[derive(Clone, Copy)]
 pub(super) enum Case {
     Shared,

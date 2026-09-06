@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "nonindexed_static_owned_borrow/calls.rs"]
+mod calls;
+
 #[derive(Clone, Copy)]
 enum BorrowedPlace {
     StructRoot,

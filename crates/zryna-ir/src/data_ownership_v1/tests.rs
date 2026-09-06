@@ -46,6 +46,7 @@ mod mixed_replacement_authority;
 mod mixed_replacement_authority_fixture;
 mod named_import_function_ids;
 mod nonindexed_owned_borrow_proof;
+mod nonindexed_projection_call_scope;
 mod opaque_handle_slots;
 mod opaque_handle_slots_fixture;
 mod shared_weak_authority;

@@ -1,4 +1,4 @@
-mod fixture;
+pub(super) mod fixture;
 
 use self::fixture::{Mode, Seed};
 use super::*;

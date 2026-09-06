@@ -3,13 +3,13 @@ use super::super::*;
 use zryna_layout::TypeCategory;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Mode {
+pub(in crate::data_ownership_v1::tests) enum Mode {
     Shared,
     Exclusive,
 }
 
 impl Mode {
-    pub(super) fn access(self) -> raw::BorrowAccess {
+    pub(in crate::data_ownership_v1::tests) fn access(self) -> raw::BorrowAccess {
         match self {
             Self::Shared => raw::BorrowAccess::Shared,
             Self::Exclusive => raw::BorrowAccess::Exclusive,
@@ -17,15 +17,15 @@ impl Mode {
     }
 }
 
-pub(super) struct Seed {
+pub(in crate::data_ownership_v1::tests) struct Seed {
     fixture: Fixture,
     mode: Mode,
-    pub(super) root: raw::TypeId,
-    pub(super) string: raw::TypeId,
+    pub(in crate::data_ownership_v1::tests) root: raw::TypeId,
+    pub(in crate::data_ownership_v1::tests) string: raw::TypeId,
 }
 
 impl Seed {
-    pub(super) fn new(mode: Mode) -> Self {
+    pub(in crate::data_ownership_v1::tests) fn new(mode: Mode) -> Self {
         let fixture = Fixture::new(Container::Vec, Element::String);
         let string = raw::TypeId(
             fixture
@@ -40,7 +40,7 @@ impl Seed {
         Self { fixture, mode, root, string }
     }
 
-    pub(super) fn program(&self) -> raw::Program {
+    pub(in crate::data_ownership_v1::tests) fn program(&self) -> raw::Program {
         let mut raw = self.fixture.seed(self.mode.access());
         let function = &mut raw.modules[0].functions[0];
         let span = function.span;
@@ -117,7 +117,7 @@ impl Seed {
         raw
     }
 
-    pub(super) fn check(
+    pub(in crate::data_ownership_v1::tests) fn check(
         &self,
         raw: raw::Program,
     ) -> Result<super::super::super::VerifiedProgram, Vec<zryna_diagnostics::Diagnostic>> {
