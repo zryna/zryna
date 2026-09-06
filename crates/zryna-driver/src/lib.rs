@@ -18,6 +18,7 @@ mod module_closure;
 #[cfg(test)]
 mod module_closure_tests;
 mod native;
+mod ownership_runtime_v1;
 mod pipeline;
 mod runtime;
 mod webassembly;
