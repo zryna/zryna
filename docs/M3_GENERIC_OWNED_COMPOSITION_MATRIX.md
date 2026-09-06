@@ -98,8 +98,8 @@ completes only the finite recursive source/IR matrix under `R1`.
   not duplicate or weaken #254/#255 indexed ownership.
 - #275 non-indexed owned lexical borrowing is outside this matrix and completed separately. #255/#256 retain dynamic array/Vec borrowing;
   no persistent alias, borrowed move-out or borrow-carrying CFG edge is added here.
-- #269 remains the parent integration gate after #270–#275. #320 remains planning provenance and
-  does not by itself close #270, #269 or any target issue.
+- #269 is the completed parent integration proof after #270–#275. #320 remains planning provenance
+  and did not by itself close #270, #269 or any target issue.
 
 Still excluded are user generics, by-value recursive layout, zero-sized Vec elements, implicit
 clone, Vec pop, element move-out, holes, raw pointers, tracing GC, runtime allocation/refcount/drop,
@@ -115,7 +115,7 @@ implementation; listing existing tests here is not a new execution receipt.
 | Complete normative matrix | `E1`–`E5`, `H1`–`H4` and `R1` bind every admitted type/operation cell to exact executable tests |
 | Handle delegation | `H1`–`H4` delegate Shared/Weak count/clone/release meaning to completed #83 |
 | Machine-checked paths/names | `tests/m3-issue-graph-cases.mjs` resolves every exact Rust path and `#[test]` name and rejects matrix/key drift |
-| Exclusions | The sibling/downstream section retains #271–#275, #269, runtime, targets and public activation |
+| Exclusions | The historical sibling/downstream section retained #271–#275, #269, runtime, targets and public activation |
 | Focused gates | Run `node --test tests/m3-issue-graph-cases.mjs`, `pnpm m3:contract`, `pnpm docs:check` and `pnpm structure:check`; report only observed results |
 
 The integrated compiler evidence is a #270 closure candidate when this checked matrix and its

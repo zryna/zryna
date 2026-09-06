@@ -63,14 +63,14 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 6. JavaScript or core WebAssembly output
 
 - Start: [JavaScript README](../crates/zryna-backend-javascript/README.md) or [WebAssembly README](../crates/zryna-backend-webassembly/README.md).
-- Entries: each backend's `src/lib.rs::{emit,emit_control_flow}` consumes the corresponding sealed IR, never source syntax.
-- Focus: `cargo test --locked -p zryna-backend-javascript` or `cargo test --locked -p zryna-backend-webassembly`; then `pnpm m2:quick` for executed cross-phase behavior.
+- Entries: each backend's `src/lib.rs::{emit,emit_control_flow,emit_data_ownership}` consumes the corresponding sealed IR, never source syntax. M3 code is isolated under `src/data_ownership_v1/`.
+- Focus: `cargo test --locked -p zryna-backend-javascript` or `cargo test --locked -p zryna-backend-webassembly`; use [the M3 target contract](M3_TARGET_BACKENDS.md) for the new focused execution and audit cases.
 - Publication and runtime invocation belong to the driver. Preserve byte/capability audits, scalar carriers, and deterministic output; finish with full gates.
 
 ## 7. Native lowering, object audit, linking, or process execution
 
 - Start: [native MIR README](../crates/zryna-native-mir/README.md), [native backend README](../crates/zryna-backend-native/README.md), [M2 native contract](M2_NATIVE_BACKEND.md).
-- MIR `src/lib.rs::{lower,verify}` independently seals claims; backend `src/lib.rs::{select_object_target,emit_object}` emits/audits objects. M2 has separate profile modules.
+- MIR `src/lib.rs::{lower,verify}` independently seals claims; `src/data_ownership_v1/` owns the M3 raw-to-verified profile; backend `src/lib.rs::{select_object_target,emit_object}` emits/audits objects. M2 has separate profile modules.
 - Linking/execution: `crates/zryna-driver/src/native.rs::{discover_linux_native_toolchain,compile_native_invocation,run_native_invocation}`; process failures belong here, not in code generation.
 - Focus: `cargo test --locked -p zryna-native-mir`, `cargo test --locked -p zryna-backend-native`, then the relevant driver native tests and `pnpm m2:quick`.
 - Object emission and Linux GNU link/run have different prerequisites. Do not infer Windows native support from Windows Rust tests; finish with full gates.

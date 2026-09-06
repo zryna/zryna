@@ -5,7 +5,7 @@
 - Issue: #273
 - Integrated children: #333, #334, #335
 - Status: compiler-only closure candidate
-- Parent remaining: #269
+- Parent integration: completed by #269 after all source/IR children
 
 The rows below bind the complete protocol-v4 enum-match boundary to authenticated source lowering
 and independently constructed Universal IR. They are parsed exactly by

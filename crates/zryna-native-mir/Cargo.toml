@@ -10,9 +10,13 @@ repository.workspace = true
 zryna-abi.workspace = true
 zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-ir = { path = "../zryna-ir" }
+zryna-layout = { path = "../zryna-layout" }
+zryna-ownership-runtime-abi = { path = "../zryna-ownership-runtime-abi" }
 
 [dev-dependencies]
 zryna-source = { path = "../zryna-source" }
+zryna-semantics = { path = "../zryna-semantics" }
+zryna-syntax = { path = "../zryna-syntax" }
 
 [lints]
 workspace = true

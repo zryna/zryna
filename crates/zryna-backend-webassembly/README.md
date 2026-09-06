@@ -3,6 +3,12 @@
 Direct core WebAssembly lowering from the M1 `VerifiedProgram` and the isolated M2
 `control_flow_v1::VerifiedProgram`.
 
+The internal M3 `emit_data_ownership` entrypoint emits one validated, import-free core module with
+private bounded Linear32 memory and sealed layout-derived address operations. It does not expose
+memory or activate the M3 driver profile. Its private type-indexed helpers perform recursive
+clone/drop, String/Vec operations, checked indexing and Shared/Weak transitions; scalar wrappers
+bound allocation lifetime to one invocation. See `docs/M3_TARGET_BACKENDS.md`.
+
 The backend consumes only sealed verified function views and exact scalar ABI WebAssembly export
 names. It emits deterministic, import-free WebAssembly 1.0 modules for the current `I32V1`
 profile and validates every completed binary with the exactly pinned validator before returning an

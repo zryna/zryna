@@ -252,7 +252,7 @@ fn nonindexed_borrowing_matrix_binds_enabled_evidence_and_exact_boundaries() {
             "- #338 supplies refined active-enum payload authority.",
             "- #339 supplies lexical and direct-call composition.",
             "- #340 supplies hostile IR, resource, documentation, and checked-matrix evidence.",
-            "- #275 is a compiler-only closure candidate; parent #269 remains open.",
+            "- #275 is the completed compiler-only child consumed by the #269 integration proof.",
         ]
     );
 }

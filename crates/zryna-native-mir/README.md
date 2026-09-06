@@ -3,6 +3,10 @@
 Typed straight-line native values lowered from `VerifiedProgram` or supplied as explicit raw
 compiler claims. This root API is the complete implemented M1 profile.
 
+The separate internal `data_ownership_v1` module lowers sealed M3 IR into Linux x86-64
+layout-bound raw MIR and independently verifies types, places, CFG edges, cleanup and the exact
+ownership-runtime symbol inventory. It emits no object and grants no link or process capability.
+
 `raw::Module` and its nested raw types are never backend-authoritative. `verify` consumes those
 claims and is the only constructor of `VerifiedMirModule`; the verified wrapper exposes only
 immutable function/value/operation views and cannot be recovered as raw or mutated. `lower` sees
