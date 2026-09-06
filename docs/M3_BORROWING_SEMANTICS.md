@@ -556,7 +556,7 @@ conditions, extra nested blocks, nested/repeated loops, `break`, `continue`, bod
 projections, lifetime shortening, loop-carried authority, runtime flags, ABI/backend/driver/CLI
 changes, artifacts, and public profiles remain excluded.
 
-## Issue #275 parameter-fed owned-root checkpoint
+## Issue #275 non-indexed owned borrowing closure
 
 The private straight-line generic producer additionally admits a whole owned `String` or `Vec`
 root supplied by a by-value parameter, either directly or through a local initialized from that
@@ -578,10 +578,19 @@ owned type, and a moved source; the positive matrix also pins shared-write rejec
 Existing locally constructed shared-root and static projected-borrow routes retain their established
 precedence and diagnostics.
 
-This is not completion of #275. General owned static projections, active enum payloads, and broader
-non-indexed expression, scope, call, and control-flow composition remain unfinished. Previously
-supported static Copy projections are unchanged. This checkpoint does not add Shared/Weak source
-support, a runtime/backend implementation, or a public profile.
+The integrated #337–#340 closure extends that historical parameter-fed checkpoint to admitted
+owned roots, static Struct/FixedArray projections, refined active enum payloads, and nested lexical
+or direct-call use. Shared access retains its source and creates distinct owned clone results;
+exclusive replacement prepares the new owner before committing old-value cleanup. The verifier
+seals exact referent, mode, region, initialized masks, variant refinement, parent/subobject overlap,
+call nonescape and lexical restoration. The checked
+[`M3_NONINDEXED_OWNED_BORROWING_MATRIX.md`](M3_NONINDEXED_OWNED_BORROWING_MATRIX.md) binds exact
+enabled source, hostile IR and resource evidence.
+
+Dynamic-index and Vec producers remain in #254–#256/#274. Stored, returned or captured borrows,
+borrow-carrying CFG edges, implicit lifetime shortening, arbitrary reborrow, moving through live
+authority, runtime/backend implementation, public ABI and public profile activation remain
+unavailable.
 
 ## Resource and verification boundary
 

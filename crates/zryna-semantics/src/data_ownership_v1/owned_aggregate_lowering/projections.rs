@@ -169,6 +169,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             node_types: self.node_types,
             layouts: self.layouts,
             bindings: &self.bindings,
+            allow_enum_payload: false,
             errors: self.errors,
         };
         let mut topology = MaterializedProjectionTopology {

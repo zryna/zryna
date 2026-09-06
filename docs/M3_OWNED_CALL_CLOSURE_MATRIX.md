@@ -3,7 +3,7 @@
 This matrix binds Issue #272 to exact compiler-only source and Universal IR evidence. It does not
 activate `data-ownership-v1` in a driver, CLI, backend, runtime, artifact, or public ABI. Indirect
 calls, methods, callbacks, recursion, overloads, user generics, stored or returned borrows, the
-additional match work in #273, and the lexical-access work in #275 remain excluded.
+additional match work in #273, and the lexical-access work completed separately in #275 are excluded.
 
 The `matrix_binding_is_complete_and_keeps_public_activation_excluded` test reads this file,
 requires these exact ordered rows and exclusions, and resolves every binding to a real Rust

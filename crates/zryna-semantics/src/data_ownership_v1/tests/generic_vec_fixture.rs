@@ -5,8 +5,40 @@ use super::*;
 use zryna_source::UntrustedSpan;
 use zryna_syntax::v4::RawExpressionKind;
 
+#[path = "nonindexed_borrow_calls.rs"]
+mod nonindexed_borrow_calls;
 #[path = "nonindexed_owned_borrow.rs"]
 mod nonindexed_owned_borrow;
+#[path = "nonindexed_static_owned_borrow.rs"]
+mod nonindexed_static_owned_borrow;
+
+#[path = "active_enum_payload_borrow_fixture.rs"]
+mod active_enum_payload_borrow_fixture;
+#[path = "active_enum_payload_borrow_source.rs"]
+mod active_enum_payload_borrow_source;
+#[path = "enum_match_payload_borrow_fixture.rs"]
+mod enum_match_payload_borrow_fixture;
+#[path = "enum_match_payload_borrow_source.rs"]
+mod enum_match_payload_borrow_source;
+
+pub(in crate::data_ownership_v1) fn nonindexed_static_resource_fixture()
+-> (String, RawProjectSyntaxSnapshot) {
+    nonindexed_static_owned_borrow::resource_fixture(
+        nonindexed_static_owned_borrow::BorrowedPlace::StructField,
+    )
+}
+
+pub(in crate::data_ownership_v1) fn active_enum_resource_fixture()
+-> (String, RawProjectSyntaxSnapshot) {
+    active_enum_payload_borrow_fixture::fixture(active_enum_payload_borrow_fixture::Case::Shared)
+}
+
+pub(in crate::data_ownership_v1) fn exhaustive_enum_borrow_resource_fixture()
+-> (String, RawProjectSyntaxSnapshot) {
+    enum_match_payload_borrow_fixture::match_borrow_fixture(
+        enum_match_payload_borrow_fixture::MatchBorrowCase::Shared,
+    )
+}
 
 #[path = "ordinary_array_composition_fixture.rs"]
 pub(in crate::data_ownership_v1) mod ordinary_array_composition_fixture;

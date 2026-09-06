@@ -64,6 +64,8 @@ mod structured_indexed;
 mod structured_indexed_preparation;
 mod structured_match;
 mod structured_match_local;
+mod structured_refined_borrow;
+mod structured_refined_call;
 mod structured_scratch;
 mod structured_shape;
 mod structured_state;

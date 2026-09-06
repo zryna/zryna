@@ -8,6 +8,11 @@ use super::preparation_plan::{CallParameter, call_parameters};
 use super::structured_graph::StructuredGraph;
 use super::{PrivateOwnedAggregateLowerer, Ty};
 
+pub(super) struct StructuredCallArguments {
+    pub(super) ordered: Vec<raw::CallArgument>,
+    pub(super) temporary_borrows: Vec<raw::BorrowId>,
+}
+
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn structured_call_arguments(
         &mut self,
@@ -15,10 +20,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         arguments: &[u32],
         at: Span,
         graph: &mut StructuredGraph,
-    ) -> Option<Vec<raw::CallArgument>> {
+    ) -> Option<StructuredCallArguments> {
         let mut ordered = Vec::with_capacity(arguments.len());
         let mut owned = Vec::new();
         let mut exclusive = BTreeSet::new();
+        let mut temporary_borrows = Vec::new();
         for (&id, parameter) in arguments.iter().zip(call_parameters(signature)) {
             match parameter {
                 CallParameter::Value(ty) => {
@@ -27,7 +33,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     owned.push((value, ty));
                 }
                 CallParameter::Borrow { ty, access } => {
-                    let borrow = self.structured_formal_argument(id, ty, access)?;
+                    let (borrow, temporary) = self.structured_borrow_argument(id, ty, access)?;
                     if access == raw::BorrowAccess::Exclusive && !exclusive.insert(borrow) {
                         self.errors.at(
                             "ZRYNA-M3017",
@@ -38,6 +44,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         return None;
                     }
                     ordered.push(raw::CallArgument::Borrow(borrow));
+                    if temporary {
+                        temporary_borrows.push(borrow);
+                    }
                 }
             }
         }
@@ -64,24 +73,30 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             .into_iter()
             .partition(|argument| matches!(argument, raw::CallArgument::Value(_)));
         values.extend(borrows);
-        Some(values)
+        Some(StructuredCallArguments { ordered: values, temporary_borrows })
     }
 
-    fn structured_formal_argument(
+    fn structured_borrow_argument(
         &mut self,
         id: u32,
         ty: Ty,
         access: raw::BorrowAccess,
-    ) -> Option<raw::BorrowId> {
+    ) -> Option<(raw::BorrowId, bool)> {
         let expression = self.expression(id)?;
         let at = super::super::diagnostics::span(self.input.sources(), expression.span);
         if let RawExpressionKind::Reference { name } = &expression.kind
             && let Some(alias) = self.preparation_facts.aliases.get(&name.text)
             && alias.ty == ty
             && alias.access == access
-            && self.preparation_facts.parameter_borrows.contains(&alias.borrow)
+            && self.preparation_facts.borrow_active(alias.borrow)
         {
-            return Some(alias.borrow);
+            return Some((alias.borrow, false));
+        }
+        match self.structured_refined_call_borrow(id, ty, access)? {
+            super::structured_refined_call::RefinedCallBorrow::NotApplicable => {}
+            super::structured_refined_call::RefinedCallBorrow::Begun(borrow) => {
+                return Some((borrow, true));
+            }
         }
         self.errors.at(
             "ZRYNA-M3017",

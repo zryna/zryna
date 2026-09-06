@@ -56,6 +56,32 @@ fn dense_borrow_program(
     raw
 }
 
+fn transition_frontier_borrow_program(
+    sources: &SourceMap,
+    linear: &zryna_layout::VerifiedLayouts,
+    linux: &zryna_layout::VerifiedLayouts,
+) -> raw::Program {
+    let mut raw = shared_borrow_read_program(sources, linear, linux);
+    let function = &mut raw.modules[0].functions[0];
+    let span = function.span;
+    function.blocks[0].instructions.truncate(1);
+    let instructions = &mut function.blocks[0].instructions;
+    instructions.push(begin_borrow(0, 0, raw::BorrowAccess::Exclusive, span));
+    let write = raw::Instruction {
+        result: None,
+        span,
+        kind: raw::InstructionKind::BorrowWrite {
+            borrow: raw::BorrowId(0),
+            value: raw::ValueId(0),
+        },
+    };
+    instructions.resize(MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1, write);
+    instructions.push(end_borrow(0, span));
+    function.blocks[0].terminators[0].kind =
+        raw::Terminator::Return { value: raw::ValueId(0), cleanup: raw::CleanupPlanId(0) };
+    raw
+}
+
 fn read_borrow(id: u32, value: u32, span: zryna_source::Span) -> raw::Instruction {
     raw::Instruction {
         result: Some(raw::ValueDefinition { id: raw::ValueId(value), ty: raw::TypeId(1), span }),
@@ -212,4 +238,57 @@ fn sequential_dense_lexical_sites_may_exceed_the_active_borrow_limit() {
         false,
         1,
     );
+}
+
+#[test]
+#[ignore = "complete exact transition frontier runs in the proportional M3 resource gate"]
+fn nonindexed_borrow_reaches_the_exact_transition_limit_and_rejects_first_extra() {
+    let (sources, linear, linux) = authorities();
+    let exact = transition_frontier_borrow_program(&sources, &linear, &linux);
+    assert_eq!(
+        exact.modules[0].functions[0].blocks[0].instructions.len(),
+        MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION
+    );
+    let entry = sources.verify_file_id(0).expect("entry");
+    let verified = verify(exact.clone(), &sources, entry, linear.clone(), linux.clone())
+        .expect("one non-indexed authority remains valid at the exact transition frontier");
+    let instructions = verified
+        .modules()
+        .next()
+        .expect("module")
+        .functions()
+        .next()
+        .expect("function")
+        .blocks()
+        .next()
+        .expect("block")
+        .instructions()
+        .collect::<Vec<_>>();
+    assert_eq!(instructions.len(), MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION);
+    assert_eq!(instructions[1].kind(), VerifiedInstructionKind::BeginBorrow);
+    assert_eq!(instructions[2].kind(), VerifiedInstructionKind::BorrowWrite);
+    assert_eq!(
+        instructions[MAX_OWNERSHIP_TRANSITIONS_PER_FUNCTION - 1].kind(),
+        VerifiedInstructionKind::EndBorrow
+    );
+
+    let mut extra = exact.clone();
+    let span = extra.modules[0].functions[0].span;
+    extra.modules[0].functions[0].blocks[0].instructions.push(raw::Instruction {
+        result: Some(raw::ValueDefinition { id: raw::ValueId(2), ty: raw::TypeId(1), span }),
+        span,
+        kind: raw::InstructionKind::I32Literal(0),
+    });
+    let reject = || {
+        diagnostic_trace(
+            verify(extra.clone(), &sources, entry, linear.clone(), linux.clone())
+                .expect_err("first extra ownership transition"),
+        )
+    };
+    let first = reject();
+    assert_eq!(first, reject());
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].0, "ZRYNA-I3201");
+    verify(exact, &sources, entry, linear, linux)
+        .expect("exact non-indexed transition frontier recovers after rejection");
 }

@@ -24,7 +24,16 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         graph: &mut StructuredGraph,
     ) -> Option<raw::ValueId> {
         use zryna_syntax::v4::RawExpressionKind;
-        let expression = self.expression(id)?;
+        let expression = self.expression(id)?.clone();
+        match self.structured_refined_borrow_clone(id, ty)? {
+            super::structured_refined_borrow::StructuredBorrowOutcome::NotApplicable => {}
+            super::structured_refined_borrow::StructuredBorrowOutcome::Emitted(value) => {
+                return Some(value);
+            }
+        }
+        if self.has_inline_refined_call_borrow(&expression.kind) {
+            return self.structured_call(id, ty, graph);
+        }
         if graph.contains_match(expression.span.start, expression.span.end) {
             match expression.kind {
                 RawExpressionKind::Index { .. } => {

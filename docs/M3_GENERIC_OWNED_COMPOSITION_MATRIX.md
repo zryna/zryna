@@ -96,7 +96,7 @@ completes only the finite recursive source/IR matrix under `R1`.
 - #273 retains exhaustive enum match and active-payload composition beyond existing bounded cases.
 - #274 remains the separately completed ordinary dynamic FixedArray authority; this document does
   not duplicate or weaken #254/#255 indexed ownership.
-- #275 retains non-indexed owned lexical borrowing. #255/#256 retain dynamic array/Vec borrowing;
+- #275 non-indexed owned lexical borrowing is outside this matrix and completed separately. #255/#256 retain dynamic array/Vec borrowing;
   no persistent alias, borrowed move-out or borrow-carrying CFG edge is added here.
 - #269 remains the parent integration gate after #270–#275. #320 remains planning provenance and
   does not by itself close #270, #269 or any target issue.

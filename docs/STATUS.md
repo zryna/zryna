@@ -271,8 +271,10 @@ Issue #272 is a checked compiler-only closure candidate through #329 signature/i
 `M3_OWNED_CALL_CLOSURE_MATRIX.md`. Issue #273 is now a checked compiler-only closure candidate
 through #333 source/exhaustiveness, #334 independent refinement/ownership verification and #335
 resource/overflow evidence; `M3_COMPLETE_ENUM_MATCHING_MATRIX.md` binds its exact rows. Issue #275
-retains non-indexed active-payload borrowing; #274 remains separately completed and #269 remains
-the parent. Verified
+is now a checked compiler-only closure candidate through #337 owned roots/static projections, #338
+active enum payloads, #339 lexical calls, and #340 hostile/resource evidence. Its exact enabled
+bindings and retained exclusions are in `M3_NONINDEXED_OWNED_BORROWING_MATRIX.md`; #274 remains
+separately completed and #269 remains the parent. Verified
 instruction, cleanup and fault traces are not target execution. Runtime, backend, CLI and public
 activation remain open, so complete #84/#85/#86 support is not claimed.
 Protocol v4 is unchanged; projected forwarding, call recursion, public borrow signatures and

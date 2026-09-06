@@ -428,8 +428,16 @@ The internal #270 closure candidate composes that handle authority with the gene
 core. A checked matrix binds nested aggregate/container construction and transfer, structural clone,
 ordinary Vec observation/replacement/push, handle-containing static subobjects and finite values
 through legal Vec-indirection recursion to authenticated source, mandatory verified IR, hostile IR,
-resource and replay evidence. This is compiler authority only: #275 retains its lexical-access
-boundary, while runtime execution, backends and public activation remain open.
+resource and replay evidence. This is compiler authority only; runtime execution, backends and
+public activation remain open.
+
+The checked [non-indexed owned borrowing matrix](M3_NONINDEXED_OWNED_BORROWING_MATRIX.md)
+integrates #337 owned roots and static Struct/FixedArray projections, #338 refined active-enum
+payloads, #339 nested lexical and direct-call use, and #340 hostile/resource closure. Source
+lowering emits only the existing borrow, owned-clone and prepare-before-replace operations; the
+mandatory IR verifier independently seals exact place, mode, region, refinement, overlap, cleanup,
+nonescape and resource authority. This compiler-only #275 candidate adds no runtime alias checks,
+backend, driver, CLI, artifact, public ABI/profile, or target execution. Parent #269 remains open.
 
 The checked [internal owned-call closure matrix](M3_OWNED_CALL_CLOSURE_MATRIX.md) integrates #329
 imported signature and canonical identity resolution, #330 structured transfer and exact cleanup,
@@ -441,17 +449,18 @@ The checked [complete enum matching closure matrix](M3_COMPLETE_ENUM_MATCHING_MA
 #333 authenticated exhaustive source lowering, #334 independently constructed refinement and
 payload ownership verification, and #335 exact resource/overflow evidence. It makes #273 a
 compiler-only closure candidate for sealed multi-variant and nested matches with exact active-
-payload cleanup and Copy or owned result continuations. Terminating and wildcard arms, inactive
-payload access, #275 non-indexed payload borrowing, runtime, backends and public activation remain
-open.
+payload cleanup and Copy or owned result continuations. Terminating and wildcard arms and inactive
+payload access remain outside that matrix; #275 is completed separately at its compiler boundary.
+Runtime, backends and public activation remain open.
 
 The checked [structured owned control-flow matrix](M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md)
 integrates #325 source routing and lexical state, #326 independent hostile-IR authority, and #327
 payload/fault/resource evidence. It makes #271 a compiler-only closure candidate: nested and
 repeated Block/If/While/WeakUpgrade and admitted Match occupants lower to mandatory verified IR,
 with exact joins, backedges, cleanup and checked graph budgets. These verified traces do not
-execute allocation, refcount, drop, calls, upgrades, or faults. #275 and parent #269
-remain open, as do break/continue, exceptions, runtime, backends, CLI and public activation.
+execute allocation, refcount, drop, calls, upgrades, or faults. #275 is completed separately at its
+compiler boundary and parent #269 remains open, as do break/continue, exceptions, runtime,
+backends, CLI and public activation.
 
 The internal [`M3 Copy aggregate semantic boundary`](M3_COPY_AGGREGATE_SEMANTICS.md) consumes the
 exact source-map-bound protocol-v4 authority, resolves canonical nominal identities and exact

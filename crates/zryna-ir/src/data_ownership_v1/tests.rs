@@ -4,11 +4,15 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 use std::collections::BTreeSet;
 
+mod active_enum_payload_borrow;
 mod borrow_index_work;
 mod borrow_loop_nesting;
+mod borrow_nonindexed_call_scope;
 mod borrow_resource_boundaries;
 mod cfg_authority_hostile;
 mod copy_enum_join;
+mod enum_match_payload_borrow_ir;
+mod enum_match_payload_call_ir;
 mod generic_clone_fixture;
 mod generic_clone_hostile;
 mod generic_clone_positive;
@@ -43,6 +47,8 @@ mod mixed_enum_authority;
 mod mixed_replacement_authority;
 mod mixed_replacement_authority_fixture;
 mod named_import_function_ids;
+mod nonindexed_owned_borrow_proof;
+mod nonindexed_projection_call_scope;
 mod opaque_handle_slots;
 mod opaque_handle_slots_fixture;
 mod shared_weak_authority;

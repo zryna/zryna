@@ -157,6 +157,8 @@ mod loop_root_borrows;
 mod nested_partial_transfer_fixture_support;
 mod nested_string_mutation_loop;
 mod nominal_declaration_budget;
+mod nonindexed_borrow_resources;
+mod nonindexed_borrowing_matrix;
 mod owned_fault_oracles;
 mod owned_root_borrow_boundary_fixture_support;
 mod owned_root_borrow_reads;

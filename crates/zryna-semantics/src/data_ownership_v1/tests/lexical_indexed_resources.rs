@@ -7,6 +7,9 @@ use crate::data_ownership_v1::tests::generic_vec_fixture::Element;
 use crate::data_ownership_v1::type_model::Binding;
 use zryna_ir::data_ownership_v1 as ir;
 
+#[path = "nonindexed_borrow_resource_frontiers.rs"]
+mod nonindexed_borrow_resource_frontiers;
+
 pub(super) fn parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
     for (index, parameter) in lowerer.function.parameters.iter().enumerate() {
         let ty = semantic_type(

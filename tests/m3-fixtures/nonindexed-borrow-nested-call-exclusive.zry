@@ -1,0 +1,1 @@
+function relay(loan: BorrowMut<String>): String { return clone(loan); } function caller(incoming: String): String { let items: String = incoming; { const loan: BorrowMut<String> = borrowMut(items); const seen: String = relay(loan); } return items; }
