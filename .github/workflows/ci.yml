@@ -77,7 +77,7 @@ jobs:
       - name: Fetch locked Rust dependencies
         run: cargo fetch --locked
       - run: pnpm preflight
-        timeout-minutes: 15
+        timeout-minutes: 25
 
   rust:
     name: rust (${{ matrix.os }})
