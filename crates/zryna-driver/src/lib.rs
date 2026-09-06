@@ -19,6 +19,7 @@ mod module_closure;
 mod module_closure_tests;
 mod native;
 mod ownership_closure;
+mod ownership_manifest;
 mod ownership_pipeline;
 mod ownership_runtime_v1;
 mod pipeline;
@@ -62,6 +63,11 @@ pub use native::{
     run_native_invocation, select_native_object_target,
 };
 pub use ownership_closure::{VerifiedOwnershipModuleClosure, discover_ownership_module_closure};
+pub use ownership_manifest::{
+    MAX_OWNERSHIP_MANIFEST_BYTES, OWNERSHIP_MANIFEST_NAME, OwnershipManifestResult,
+    OwnershipManifestV3, OwnershipTarget, decode_ownership_manifest_v3,
+    render_ownership_manifest_v3,
+};
 pub use ownership_pipeline::{
     DATA_OWNERSHIP_CANDIDATE_PROFILE, DataOwnershipBuildRequest, DataOwnershipCandidateSuccess,
     DataOwnershipRunRequest, PreparedDataOwnershipArtifacts, prepare_data_ownership_build,

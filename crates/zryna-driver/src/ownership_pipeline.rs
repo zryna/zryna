@@ -30,6 +30,8 @@ pub struct DataOwnershipBuildRequest {
     pub workspace_root: PathBuf,
     /// Portable workspace-relative `.zry` entry module.
     pub entrypoint: String,
+    /// Portable artifact stem retained by manifest and publication layers.
+    pub artifact_stem: String,
     /// Exact selected target set.
     pub targets: TargetSelection,
     /// Absolute direct Node.js executable used by the authenticated frontend.
@@ -87,6 +89,7 @@ pub struct DataOwnershipCandidateSuccess {
     closure: VerifiedOwnershipModuleClosure,
     program: zryna_semantics::data_ownership_v1::VerifiedProgram,
     artifacts: PreparedDataOwnershipArtifacts,
+    artifact_stem: String,
     logical_export: Option<String>,
     arguments: Vec<ScalarValue>,
     diagnostics: Vec<Diagnostic>,
@@ -112,6 +115,11 @@ impl DataOwnershipCandidateSuccess {
     #[must_use]
     pub const fn artifacts(&self) -> &PreparedDataOwnershipArtifacts {
         &self.artifacts
+    }
+    /// Returns the authenticated portable artifact stem.
+    #[must_use]
+    pub fn artifact_stem(&self) -> &str {
+        &self.artifact_stem
     }
     /// Returns the selected run export, or `None` for build requests.
     #[must_use]
@@ -139,6 +147,9 @@ enum DispatchPhase {
 
 type Checkpoint<'a> = &'a dyn Fn(DispatchPhase) -> Result<(), CommandFailure>;
 
+#[cfg(test)]
+pub(crate) static OWNERSHIP_ROUTE_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// Authenticates and prepares one internal candidate build without publishing it.
 ///
 /// # Errors
@@ -163,6 +174,14 @@ pub fn prepare_data_ownership_run(
         &allow_phase,
         validate_request,
     )
+}
+
+#[cfg(test)]
+pub(crate) fn prepare_data_ownership_for_test(
+    request: &DataOwnershipBuildRequest,
+    run: Option<(String, Vec<ScalarValue>)>,
+) -> Result<DataOwnershipCandidateSuccess, CommandFailure> {
+    execute(request, run, configured_frontend_v4, &allow_phase, validate_request_shape)
 }
 
 fn allow_phase(_phase: DispatchPhase) -> Result<(), CommandFailure> {
@@ -227,6 +246,7 @@ where
         closure,
         program,
         artifacts,
+        artifact_stem: request.artifact_stem.clone(),
         logical_export,
         arguments,
         diagnostics,
@@ -355,6 +375,8 @@ fn validate_request_shape(request: &DataOwnershipBuildRequest) -> Result<(), Com
     NormalizedSourcePath::new(request.entrypoint.clone()).map_err(|error| {
         failure(CommandFailureKind::Request, Diagnostic::from_source_error(&error))
     })?;
+    crate::javascript::validate_artifact_stem(&request.artifact_stem)
+        .map_err(|item| failure(CommandFailureKind::Request, item))?;
     Ok(())
 }
 
