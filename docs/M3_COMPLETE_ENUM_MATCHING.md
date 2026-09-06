@@ -20,10 +20,11 @@ activation, or completion of the parent Issue #269.
 - Moving the active payload masks only that payload before the remaining enum root is cleaned.
   Copy payload reads retain their source. An unused owned payload is cleaned through the refined
   enum root, and no inactive payload is read or dropped.
-- Nested matches and matches used within admitted constructors, calls, indexed operations,
-  String operations, lexical scopes, branches, loops, and returns reuse the same continuation and
+- Nested matches and matches used within admitted constructors, calls, indexed operations, String
+  operations, formal-authority continuations, and direct returns reuse the same continuation and
   cleanup state. Unequal ownership, mask, refinement, or borrow state is rejected rather than
-  repaired by an implicit clone or conditional drop.
+  repaired by an implicit clone or conditional drop. Complete multi-arm matches nested directly in
+  branch or loop bodies require separate evidence and are not claimed by this closure.
 
 ## Executable evidence
 
