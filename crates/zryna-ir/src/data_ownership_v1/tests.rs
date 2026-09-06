@@ -45,6 +45,7 @@ mod mixed_enum_authority;
 mod mixed_replacement_authority;
 mod mixed_replacement_authority_fixture;
 mod named_import_function_ids;
+mod nonindexed_owned_borrow_proof;
 mod opaque_handle_slots;
 mod opaque_handle_slots_fixture;
 mod shared_weak_authority;
