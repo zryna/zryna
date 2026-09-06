@@ -42,6 +42,9 @@ mod named_import_function_ids;
 mod opaque_handle_slots;
 mod opaque_handle_slots_fixture;
 mod shared_weak_authority;
+mod transient_indexed_edges;
+mod transient_indexed_resources;
+mod transient_indexed_upgrade;
 
 use super::{
     Errors, MAX_ACTIVE_BORROWS_PER_FUNCTION, MAX_AGGREGATE_OPERANDS, MAX_BLOCK_PARAMETERS,

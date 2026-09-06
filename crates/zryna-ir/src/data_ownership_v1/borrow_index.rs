@@ -13,6 +13,7 @@ struct Entry {
 #[derive(Clone, Debug, Default)]
 pub(super) struct BorrowIndex {
     entries: Vec<Entry>,
+    pub(super) incoming: Vec<Vec<raw::BorrowId>>,
     #[cfg(test)]
     pub(super) construction_steps: usize,
     #[cfg(test)]
@@ -114,6 +115,37 @@ impl BorrowIndex {
 
     pub(super) fn region(&self, id: raw::BorrowId) -> Option<raw::PlaceId> {
         self.entries.get(id.0 as usize)?.region
+    }
+
+    pub(super) fn entry_active(
+        &self,
+        function: &raw::Function,
+        block: usize,
+    ) -> Vec<Option<(raw::PlaceId, raw::BorrowAccess)>> {
+        let mut active = vec![None; self.entries.len()];
+        for parameter in &function.borrow_parameters {
+            active[parameter.id.0 as usize] = Some((raw::PlaceId(u32::MAX), parameter.access));
+        }
+        for &id in &self.incoming[block] {
+            active[id.0 as usize] =
+                self.region(id).zip(self.definition(id).map(|(_, access)| access));
+        }
+        active
+    }
+
+    pub(super) fn active_before(
+        &self,
+        function: &raw::Function,
+        block: usize,
+        instruction: usize,
+    ) -> Vec<raw::BorrowId> {
+        let mut active =
+            function.borrow_parameters.iter().map(|parameter| parameter.id).collect::<Vec<_>>();
+        active.extend(self.incoming[block].iter().copied());
+        for instruction in function.blocks[block].instructions.iter().take(instruction) {
+            super::transient_edges::advance(&mut active, &instruction.kind);
+        }
+        active
     }
 
     pub(super) fn origin(&self, id: raw::BorrowId) -> Option<(&raw::BorrowDefinition, usize)> {

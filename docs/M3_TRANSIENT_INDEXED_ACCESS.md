@@ -52,6 +52,42 @@ source construction and count transitions reuse the separate #260/#261 authoriti
 the adapter does not define alternative handle semantics.
 No target execution, backend implementation or public profile is activated here.
 
+## Acyclic internal continuations
+
+The independent IR authority permits an unfinished transient indexed operation
+to cross acyclic expression continuations without ending and reborrowing. The
+per-function dense borrow index caches incoming identities once. Every predecessor
+must supply exactly the same live identities in issuance order; each keeps its
+original region, exact referent and access mode. Branches may perform arm-local
+operations but must restore that exact state before joining. Borrowed owners
+cannot be renamed through by-value edge arguments. No borrowed edge argument or
+phi-like authority is introduced.
+
+`VerifiedTerminator::continued_indexed_accesses` seals these identities on every
+ordinary success edge, including both success and expired Weak upgrade outcomes.
+Instruction failure views include incoming identities; terminator
+`failure_ended_borrows` describes reverse-issued unwind on controlled trap or Weak
+upgrade count failure. Bounds failure retains the current parent until this
+unwind; successful projection retires it exactly once. Owner cleanup follows
+authority discharge. Return and loop backedges reject unfinished operations with
+I3011. Lexical begins and `BindIndexedBorrow` results still cannot cross edges.
+
+The cache admits at most 262,144 total incoming identities per function, with
+checked accounting before allocation. Existing active-borrow, transition, place,
+edge and cleanup budgets still apply, including inherited active identities.
+`transient_indexed_resources_cache_exact_first_extra_and_recovery` authenticates
+the exact cache boundary and first extra identity; a separate accounting test
+covers machine-integer overflow without pretending it is source execution.
+`transient_indexed_edges` tests exact joins, owned replacement, failure unwind,
+lexical exclusion, return/backedge rejection and owner-transfer exclusion.
+`transient_indexed_upgrade` tests both ordinary upgrade outcomes and count failure.
+
+This is the IR checkpoint for #279. Source lowering of Match in a later index or
+post-bounds replacement RHS remains a separate integration step. It must keep
+base/index evaluation once, each bounds check before the next index, and the
+complete bounds chain before RHS evaluation and final mutation. This checkpoint
+does not claim that source integration or backend execution is complete.
+
 ## Lexical finalization
 
 `BindIndexedBorrow` is an infallible, effect-only transfer from one active

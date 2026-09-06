@@ -173,7 +173,9 @@ forbidden by its active borrow.
 
 Every reachable control-flow edge carries the complete definite state of live places. A merge is
 valid only when each live place has the same ownership and initialization state on every incoming
-edge. Borrow state may not cross a branch, loop header, loop backedge, or function return in v1.
+edge. Lexical borrow state may not cross a branch, loop header, loop backedge, or function return in v1.
+An unfinished internal indexed operation may retain its exact transient authority across acyclic
+expression continuations as specified in section 9; this is not a lexical borrow or edge argument.
 Loop bodies must therefore restore every loop-carried place to the exact header state before the
 backedge. The compiler does not insert an implicit clone or conditional drop to repair mismatched
 states.
@@ -244,6 +246,16 @@ M3 v1 borrows are non-escaping and scoped:
 Borrow checking is a compiler proof and has no runtime reference-count or tracing requirement.
 Backends may erase a borrow only after verified IR retains the exact place, access mode, region,
 and dominance proof needed to prevent use-after-move or conflicting access.
+
+Internal `BeginIndexedAccess` and `ProjectIndexedBorrow` authorities may continue an unfinished
+indexed operation across acyclic expression edges. Every incoming edge must retain the same
+dominating identities in the same issuance order, with their original conflict regions, exact
+referents and access modes. No owner overlapping those regions may be moved through an edge.
+There are no borrowed edge arguments, implicit ends, reborrows, repeated bounds checks or reordered
+RHS evaluations. Return and loop backedges require completion; controlled failure ends retained
+authorities before owner cleanup. `BeginBorrow`, `BeginIndexedBorrow` and the lexical result of
+`BindIndexedBorrow` retain the lexical edge prohibition above. This internal proof does not enable
+escaping references, public borrow signatures or target execution.
 
 ## 10. Shared and weak ownership
 

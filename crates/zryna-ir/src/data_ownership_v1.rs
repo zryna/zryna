@@ -17,6 +17,7 @@ mod cleanup_references;
 mod generic_clone;
 mod generic_static_places;
 mod handle_aware_clone;
+mod transient_edges;
 mod weak_upgrade_shape;
 use cleanup_references::{cleanup_references, instruction_cleanup};
 pub use generic_clone::{
@@ -26,6 +27,9 @@ pub use handle_aware_clone::{
     VerifiedHandleAwareClone, VerifiedHandleAwareCloneFrontier, VerifiedHandleAwareCloneSource,
     VerifiedHandleAwareCloneSourceAuthority, VerifiedHandleCloneRecipeKind,
     VerifiedHandleCloneRecipeNode,
+};
+pub use transient_edges::{
+    MAX_CONTINUED_INDEXED_IDENTITIES_PER_FUNCTION, VerifiedContinuedIndexedAccess,
 };
 pub use weak_upgrade_shape::WeakUpgradeShape;
 
@@ -2222,13 +2226,13 @@ fn verify_structure(
             if !errors.is_empty() {
                 return;
             }
-            let borrows = BorrowIndex::new(function, layouts);
+            let mut borrows = BorrowIndex::new(function, layouts);
             verify_function_graph(
                 function,
                 layouts,
                 &generic_clone_types,
                 &handle_clone_types,
-                &borrows,
+                &mut borrows,
                 errors,
             );
             borrow_indices[module_index].push(borrows);
@@ -2301,7 +2305,7 @@ fn verify_function_graph(
     layouts: &VerifiedLayouts,
     generic_clone_types: &[bool],
     handle_clone_types: &[bool],
-    borrows: &BorrowIndex,
+    borrows: &mut BorrowIndex,
     errors: &mut Errors,
 ) {
     if function.blocks.is_empty() {
@@ -2457,7 +2461,10 @@ fn verify_function_graph(
     if !errors.is_empty() {
         return;
     }
-    verify_ownership_dataflow(function, &value_owners, layouts, &successors, borrows, errors);
+    borrows.incoming = transient_edges::derive(function, &successors, &dominators, borrows, errors);
+    if errors.is_empty() {
+        verify_ownership_dataflow(function, &value_owners, layouts, &successors, borrows, errors);
+    }
 }
 
 fn static_projection_path(mut place: raw::PlaceId, function: &raw::Function) -> bool {
@@ -3512,7 +3519,7 @@ fn derive_state_before(
     while let Some(block_index) = queue.pop_front() {
         let mut flow = entries[block_index].clone()?;
         let block = &function.blocks[block_index];
-        let mut active = vec![];
+        let mut active = borrows.entry_active(function, block_index);
         let mut replay_errors = Errors::default();
         for (instruction_index, instruction) in block.instructions.iter().enumerate() {
             if block_index == target_block && instruction_index == target_instruction {
@@ -3804,17 +3811,7 @@ fn verify_ownership_dataflow(
         let Some(mut flow) = entries[block_index].clone() else {
             continue;
         };
-        let mut active = vec![
-            None::<(raw::PlaceId, raw::BorrowAccess)>;
-            function.borrow_parameters.len().saturating_add(
-                function.blocks.iter().map(|block| block.instructions.len()).sum::<usize>(),
-            )
-        ];
-        for parameter in &function.borrow_parameters {
-            if let Some(slot) = active.get_mut(parameter.id.0 as usize) {
-                *slot = Some((raw::PlaceId(u32::MAX), parameter.access));
-            }
-        }
+        let mut active = borrows.entry_active(function, block_index);
         let block = &function.blocks[block_index];
         for instruction in &block.instructions {
             indexed_borrows::verify_consumption(instruction, function, layouts, &active, errors);
@@ -3923,15 +3920,8 @@ fn verify_ownership_dataflow(
                 }
             }
         }
-        if active.iter().skip(function.borrow_parameters.len()).any(Option::is_some) {
-            errors.push(error_at(
-                "ZRYNA-I3011",
-                block.terminators[0].span,
-                "borrow remains active at a control-flow edge",
-                "end every borrow before a branch, jump, loop edge, return, or trap",
-            ));
-        }
         if let Some(terminator) = block.terminators.first() {
+            transient_edges::verify_completion(function, borrows, &active, terminator, errors);
             let place_read = match terminator.kind {
                 raw::Terminator::EnumMatch { place, .. }
                 | raw::Terminator::WeakUpgradeBranch { weak: place, .. } => Some(place),
@@ -3983,6 +3973,14 @@ fn verify_ownership_dataflow(
             if let Some(terminator) = block.terminators.first()
                 && let Some(edge) = terminator_edges(&terminator.kind).get(edge_index)
             {
+                transient_edges::verify_edge_consumption(
+                    edge,
+                    value_owners,
+                    function,
+                    &active,
+                    terminator.span,
+                    errors,
+                );
                 transfer_edge_owners(
                     edge,
                     &terminator.kind,
