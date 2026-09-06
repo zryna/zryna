@@ -41,13 +41,56 @@ fn temporary_weak_upgrade_operand_is_prepared_once_and_released_on_both_outcomes
     );
     let upgrade = blocks[0].terminator();
     let operand = upgrade.place_operands().next().expect("temporary operand");
+    let clone = blocks[0]
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::WeakClone)
+        .expect("single weak clone");
+    let source_weak = clone.place_operands().next().expect("retained Weak source");
+    let shared = blocks[0]
+        .instructions()
+        .find(|instruction| instruction.kind() == VerifiedInstructionKind::WeakDowngrade)
+        .expect("source downgrade")
+        .place_operands()
+        .next()
+        .expect("retained Shared");
+    assert_ne!(operand, source_weak, "producer owns one distinct temporary");
+    assert_eq!(
+        clone.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [source_weak, shared],
+        "producer failure retains both sources and excludes its uncommitted result"
+    );
+    assert_eq!(
+        upgrade.derived_drop_actions().map(|action| action.root()).collect::<Vec<_>>(),
+        [operand, source_weak, shared],
+        "overflow releases completed temporary before preceding roots"
+    );
     let (success, expired) = upgrade.weak_upgrade_edges().expect("upgrade outcomes");
     for target in [success.target(), expired.target()] {
         let block = blocks.iter().find(|block| block.id() == target).expect("outcome block");
-        assert!(block.instructions().any(|instruction| {
-            instruction.kind() == VerifiedInstructionKind::DropPlace
-                && instruction.place_operands().next() == Some(operand)
-        }));
+        let first = block.instructions().next().expect("temporary release before body");
+        assert_eq!(first.kind(), VerifiedInstructionKind::DropPlace);
+        assert_eq!(first.place_operands().collect::<Vec<_>>(), [operand]);
+        assert_eq!(
+            block
+                .instructions()
+                .filter(|instruction| {
+                    instruction.kind() == VerifiedInstructionKind::DropPlace
+                        && instruction.place_operands().next() == Some(operand)
+                })
+                .count(),
+            1
+        );
+        let expected =
+            if target == success.target() { vec![source_weak, shared] } else { vec![source_weak] };
+        assert_eq!(
+            block
+                .terminator()
+                .derived_drop_actions()
+                .map(|action| action.root())
+                .collect::<Vec<_>>(),
+            expected,
+            "normal outcome cleanup excludes released temporary and returned handle"
+        );
     }
     assert!(upgrade.derived_drop_actions().any(|action| action.root() == operand));
 }

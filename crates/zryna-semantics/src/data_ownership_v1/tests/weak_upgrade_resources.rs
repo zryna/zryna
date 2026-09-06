@@ -38,10 +38,10 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> raw::Val
 }
 
 #[test]
-fn weak_upgrade_exact_and_first_extra_resources_restore_pristine_state() {
+fn weak_upgrade_exact_extra_overflow_resources_restore_pristine_state() {
     for temporary in [false, true] {
         for resource in 0..5 {
-            for extra in 0..=1 {
+            for extra in [0, 1, usize::MAX] {
                 let (source, snapshot) = fixture(temporary);
                 let errors = with_snapshot(&source, snapshot, |lowerer, result| {
                     let parameter = parameter(lowerer);
@@ -52,7 +52,7 @@ fn weak_upgrade_exact_and_first_extra_resources_restore_pristine_state() {
                     let used = [
                         lowerer.next_value as usize,
                         lowerer.places.len(),
-                        lowerer.instructions.len() + pristine.len() + 2,
+                        transition_demand(lowerer, &pristine),
                         lowerer.cleanup_actions,
                         lowerer.cleanup_plans.len(),
                     ];
@@ -64,7 +64,11 @@ fn weak_upgrade_exact_and_first_extra_resources_restore_pristine_state() {
                         ir::MAX_DROP_ACTIONS_PER_FUNCTION,
                         ir::MAX_CLEANUP_PLANS_PER_FUNCTION,
                     ][resource];
-                    let held = maximum - used[resource] + extra;
+                    let held = if extra == usize::MAX {
+                        usize::MAX
+                    } else {
+                        maximum - used[resource] + extra
+                    };
                     match resource {
                         0 => lowerer.set_reserved_constructor_values_for_test(held),
                         1 => lowerer.set_reserved_constructor_places_for_test(held),
@@ -129,4 +133,29 @@ fn weak_upgrade_exact_and_first_extra_resources_restore_pristine_state() {
             }
         }
     }
+}
+
+fn transition_demand(
+    lowerer: &PrivateOwnedAggregateLowerer<'_, '_, '_>,
+    blocks: &[raw::Block],
+) -> usize {
+    let body = &lowerer.function.body;
+    let root = &body.blocks[body.root_block as usize];
+    let retained_root_drop_credits = root
+        .statements
+        .iter()
+        .filter(|id| {
+            let zryna_syntax::v4::RawStatementKind::LocalDeclaration { ref name, .. } =
+                body.statements[**id as usize].kind
+            else {
+                return false;
+            };
+            let binding = lowerer.bindings.get(&name.text).expect("root declaration binding");
+            assert!(!binding.ty.is_copy(), "fixture root locals each reserve one drop");
+            true
+        })
+        .count();
+    // Root scope credits remain held while its terminal upgrade arms are emitted.
+    // Each finished block contributes its independently reserved terminator.
+    lowerer.instructions.len() + blocks.len() + retained_root_drop_credits
 }

@@ -37,8 +37,20 @@ listing an executable here is not a claim that Linux/Windows integration gates a
 operands, success-only Shared binding scope, exact wrong-type/missing-name diagnostics, rejection
 replay and valid recovery. `weak_upgrade_fault_oracle` binds the verified terminator to the sealed
 #260 success/expired/refcount-overflow claims without pretending to execute a target runtime.
-`weak_upgrade_exact_and_first_extra_resources_restore_pristine_state` covers exact and first-extra
-value, place, transition, cleanup-action and cleanup-plan limits with pristine recovery.
+`weak_upgrade_state` additionally freezes complete moved/reuse, live-borrow edge and unequal-join
+diagnostics, with an authenticated equal-join control proving the original Weak root remains live
+until later cleanup. Upgrade statements select structured lowering before legacy borrow-only gates;
+this does not extend borrow lifetimes across edges. Temporary source tests pin producer-failure
+cleanup without the uncommitted result, overflow cleanup with that completed temporary first, and
+one release before each outcome body followed by exact survivor cleanup.
+`weak_upgrade_exact_extra_overflow_resources_restore_pristine_state` covers exact, first-extra and
+`usize::MAX` held credits for value, place, transition, cleanup-action and cleanup-plan limits with
+unchanged rejected state and pristine recovery. Transition demand includes root-scope drop credits
+derived from the authenticated owned declarations, not a fixed unexplained offset.
+Independent IR `weak_upgrade_temporary_edges_reject_forgery_and_cleanup_corruption_then_recover`
+starts from a complete accepted temporary-release graph and rejects a forged success type,
+overflow cleanup omission/reordering and missing expired-path release, then re-verifies the
+pristine graph. This is bounded compiler evidence, not full #262 closure or executed target cleanup.
 
 ## Issue #261 source integration checkpoint
 

@@ -4,6 +4,7 @@ mod fixtures;
 mod joins;
 mod payload_construction;
 mod upgrade_shape;
+mod upgrade_temporary;
 use fixtures::{Fixture, Payload};
 
 fn sealed_trace(fixture: &Fixture, raw: raw::Program) -> String {

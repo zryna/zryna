@@ -103,7 +103,6 @@ pub(super) fn lower_function<'a>(
             errors,
         );
     }
-    let has_root_borrow_syntax = has_root_borrow_syntax(file, function);
     if super::owned_aggregate_lowering::has_indexed_borrow(function)
         || super::owned_aggregate_lowering::has_nonindexed_owned_borrow(
             function,
@@ -137,7 +136,7 @@ pub(super) fn lower_function<'a>(
             errors,
         );
     }
-    if has_root_borrow_syntax
+    if has_root_borrow_syntax(file, function)
         && (result.is_copy() || !is_direct_owned_root_borrow_candidate(file, function))
     {
         return lower_private_root_borrow_function(
@@ -154,7 +153,7 @@ pub(super) fn lower_function<'a>(
             errors,
         );
     }
-    if has_root_borrow_syntax {
+    if has_root_borrow_syntax(file, function) {
         return lower_private_owned_root_borrow_function(
             input,
             module,
