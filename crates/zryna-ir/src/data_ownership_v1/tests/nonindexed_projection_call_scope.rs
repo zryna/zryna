@@ -235,7 +235,7 @@ fn static_struct_and_array_projection_calls_preserve_lexical_authority() {
     }
 }
 
-fn enum_call_program(seed: &Seed, mode: Mode) -> raw::Program {
+pub(super) fn enum_call_program(seed: &Seed, mode: Mode) -> raw::Program {
     let mut raw = seed.program();
     let caller = &mut raw.modules[0].functions[0];
     let span = caller.span;

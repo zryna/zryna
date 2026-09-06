@@ -31,6 +31,9 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                 return Some(value);
             }
         }
+        if self.has_inline_refined_call_borrow(&expression.kind) {
+            return self.structured_call(id, ty, graph);
+        }
         if graph.contains_match(expression.span.start, expression.span.end) {
             match expression.kind {
                 RawExpressionKind::Index { .. } => {

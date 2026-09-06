@@ -1,44 +1,86 @@
 use super::*;
 use zryna_syntax::v4::RawMatchArm;
 
+#[path = "enum_match_payload_borrow_fixture/calls.rs"]
+mod calls;
+
 #[derive(Clone, Copy)]
 pub(super) enum MatchBorrowCase {
     Shared,
     Exclusive,
     Inactive,
+    CallShared,
+    CallExclusive,
+    CallInactive,
+    CallWrongAccess,
+}
+
+impl MatchBorrowCase {
+    fn is_call(self) -> bool {
+        matches!(
+            self,
+            Self::CallShared | Self::CallExclusive | Self::CallInactive | Self::CallWrongAccess
+        )
+    }
+
+    fn borrow_exclusive(self) -> bool {
+        matches!(self, Self::Exclusive | Self::CallExclusive)
+    }
+
+    fn callee_exclusive(self) -> bool {
+        matches!(self, Self::CallExclusive | Self::CallWrongAccess)
+    }
 }
 
 impl Builder {
+    fn inline_borrow(&mut self, target: impl FnOnce(&mut Self) -> u32, exclusive: bool) -> u32 {
+        let start = self.source.len();
+        let keyword_span = self.text(if exclusive { "borrowMut" } else { "borrow" });
+        let open_paren_span = self.text("(");
+        let value = target(self);
+        let close_paren_span = self.text(")");
+        self.expression(
+            start,
+            if exclusive {
+                RawExpressionKind::BorrowMut {
+                    keyword_span,
+                    open_paren_span,
+                    value,
+                    close_paren_span,
+                }
+            } else {
+                RawExpressionKind::Borrow { keyword_span, open_paren_span, value, close_paren_span }
+            },
+        )
+    }
+
     fn inline_borrow_clone(
         &mut self,
         target: impl FnOnce(&mut Self) -> u32,
         exclusive: bool,
     ) -> u32 {
-        self.clone_value(|builder| {
-            let start = builder.source.len();
-            let keyword_span = builder.text(if exclusive { "borrowMut" } else { "borrow" });
-            let open_paren_span = builder.text("(");
-            let value = target(builder);
-            let close_paren_span = builder.text(")");
-            builder.expression(
-                start,
-                if exclusive {
-                    RawExpressionKind::BorrowMut {
-                        keyword_span,
-                        open_paren_span,
-                        value,
-                        close_paren_span,
-                    }
-                } else {
-                    RawExpressionKind::Borrow {
-                        keyword_span,
-                        open_paren_span,
-                        value,
-                        close_paren_span,
-                    }
-                },
-            )
-        })
+        self.clone_value(|builder| builder.inline_borrow(target, exclusive))
+    }
+
+    fn inline_borrow_call(
+        &mut self,
+        target: impl FnOnce(&mut Self) -> u32,
+        exclusive: bool,
+    ) -> u32 {
+        let start = self.source.len();
+        let callee = self.name("relay");
+        let open_paren_span = self.text("(");
+        let argument = self.inline_borrow(target, exclusive);
+        let close_paren_span = self.text(")");
+        self.expression(
+            start,
+            RawExpressionKind::Call {
+                callee,
+                open_paren_span,
+                arguments: vec![argument],
+                close_paren_span,
+            },
+        )
     }
 
     fn source_variant(&mut self, variant: &str) -> u32 {
@@ -67,7 +109,9 @@ fn match_expression(f: &mut Builder, case: MatchBorrowCase) -> u32 {
     f.text("\": () ");
     let none_arrow = f.text("=>");
     f.text(" ");
-    let none_value = if matches!(case, MatchBorrowCase::Inactive) {
+    let none_value = if matches!(case, MatchBorrowCase::CallInactive) {
+        f.inline_borrow_call(|builder| builder.source_variant("some"), false)
+    } else if matches!(case, MatchBorrowCase::Inactive) {
         f.inline_borrow_clone(|builder| builder.source_variant("some"), false)
     } else {
         f.clone_value(|builder| builder.reference("fallback"))
@@ -92,10 +136,12 @@ fn match_expression(f: &mut Builder, case: MatchBorrowCase) -> u32 {
     f.text(") ");
     let some_arrow = f.text("=>");
     f.text(" ");
-    let some_value = f.inline_borrow_clone(
-        |builder| builder.reference("payload"),
-        matches!(case, MatchBorrowCase::Exclusive),
-    );
+    let exclusive = case.borrow_exclusive();
+    let some_value = if case.is_call() {
+        f.inline_borrow_call(|builder| builder.reference("payload"), exclusive)
+    } else {
+        f.inline_borrow_clone(|builder| builder.reference("payload"), exclusive)
+    };
     let some_arm = RawMatchArm {
         span: at(some_start, f.source.len()),
         type_name: some_type,
@@ -168,10 +214,14 @@ pub(super) fn match_borrow_fixture(case: MatchBorrowCase) -> (String, RawProject
                 statements: vec![0],
                 close_brace_span,
             }],
-            statements: f.statements,
-            expressions: f.expressions,
+            statements: std::mem::take(&mut f.statements),
+            expressions: std::mem::take(&mut f.expressions),
         },
     };
+    let mut functions = vec![function];
+    if case.is_call() {
+        functions.push(calls::callee(&mut f, &payload, case.callee_exclusive()));
+    }
     (
         f.source,
         RawProjectSyntaxSnapshot {
@@ -182,7 +232,7 @@ pub(super) fn match_borrow_fixture(case: MatchBorrowCase) -> (String, RawProject
                 imports: Vec::new(),
                 type_syntax: f.types,
                 data_declarations: declarations,
-                functions: vec![function],
+                functions,
             }],
             diagnostics: Vec::new(),
         },

@@ -55,7 +55,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         })
     }
 
-    fn refined_payload_binding(&mut self, target: u32, at: zryna_source::Span) -> Option<String> {
+    pub(super) fn refined_payload_binding(
+        &mut self,
+        target: u32,
+        at: zryna_source::Span,
+    ) -> Option<String> {
         let RawExpressionKind::Reference { name } = &self.expression(target)?.kind else {
             self.errors.at(
                 "ZRYNA-M3017",

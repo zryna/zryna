@@ -56,13 +56,10 @@ pub(in crate::data_ownership_v1) fn has_nonindexed_owned_borrow(
             .iter()
             .any(|expression| matches!(expression.kind, RawExpressionKind::Match { .. }))
             && function.body.expressions.iter().any(|expression| {
-                let RawExpressionKind::Clone { value, .. } = expression.kind else { return false };
-                function.body.expressions.get(value as usize).is_some_and(|value| {
-                    matches!(
-                        value.kind,
-                        RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
-                    )
-                })
+                matches!(
+                    expression.kind,
+                    RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
+                )
             }))
 }
 
