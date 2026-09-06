@@ -344,6 +344,13 @@ const structuredMatrixBindings = [
   ["S2", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_owned_source.rs", "mutable_copy_statement_updates_a_loop_condition_exactly_once"],
   ["S2", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_owned_source.rs", "structured_copy_mutability_type_and_unreachable_errors_replay_without_repair"],
   ["S2", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_owned_source.rs", "lexical_shadowing_does_not_admit_a_same_block_duplicate"],
+  ["S2", "crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs", "weak_upgrade_exact_shadow_is_scoped_and_case_fold_collision_still_rejects"],
+  ["B1", "crates/zryna-semantics/src/data_ownership_v1/tests/private_loop_cleanup_budgets.rs", "private_string_loop_rejects_incoming_owner_move_at_loop_join"],
+  ["B1", "crates/zryna-semantics/src/data_ownership_v1/tests/private_loop_core.rs", "private_vec_mutation_loop_rejects_immutable_target_at_exact_operation"],
+  ["B1", "crates/zryna-semantics/src/data_ownership_v1/tests/private_string_if.rs", "private_string_if_accepts_nested_owned_control_flow"],
+  ["B1", "crates/zryna-semantics/src/data_ownership_v1/tests/private_string_mutation_loop.rs", "private_string_mutation_loop_resolves_nested_callees_but_allows_direct_reads"],
+  ["B1", "crates/zryna-semantics/src/data_ownership_v1/tests/terminal_owned_if.rs", "terminal_string_if_returns_owned_results_directly_from_each_arm"],
+  ["B1", "crates/zryna-semantics/src/data_ownership_v1/tests/terminal_owned_if.rs", "terminal_vec_if_returns_exact_vec_results_directly_from_each_arm"],
   ["I1", "crates/zryna-ir/src/data_ownership_v1/tests/cfg_authority_hostile.rs", "mixed_owner_nested_repeated_cfg_seals_transfers_variants_and_cleanup"],
   ["I2", "crates/zryna-ir/src/data_ownership_v1/tests/cfg_authority_hostile.rs", "mixed_cfg_rejects_state_mask_variant_owner_edge_and_cleanup_forgeries"],
   ["I2", "crates/zryna-ir/src/data_ownership_v1/tests/cfg_authority_hostile.rs", "mixed_cfg_rejects_a_foreign_result_owner_identity"],
@@ -352,7 +359,8 @@ const structuredMatrixBindings = [
   ["I2", "crates/zryna-ir/src/data_ownership_v1/tests/cfg_authority_hostile.rs", "mixed_cfg_join_diagnostic_is_independent_of_branch_target_order"],
   ["P1", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_payload_cfg.rs", "payload_matrix_composes_handles_vec_calls_upgrade_and_nested_cfg"],
   ["F1", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_payload_cfg.rs", "payload_cfg_fallible_operations_keep_source_ordered_cleanup"],
-  ["R1", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_graph_resources.rs", "structured_graph_held_blocks_and_edges_are_checked_and_recover_on_the_same_lowerer"],
+  ["R1", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_graph_resources.rs", "authenticated_graph_hits_exact_and_first_extra_block_and_edge_limits"],
+  ["R1", "crates/zryna-semantics/src/data_ownership_v1/tests/structured_graph_resources.rs", "synthetic_held_block_and_edge_overflow_is_checked_and_recovers"],
 ];
 
 function structuredMatrixEvidenceBindings(text) {
@@ -360,19 +368,27 @@ function structuredMatrixEvidenceBindings(text) {
     ?.split("## Closure boundary")[0];
   assert(section, "structured owned evidence bindings are missing");
   return section.split("\n")
-    .filter(line => /^\| `(?:S1|S2|I1|I2|P1|F1|R1)` \|/.test(line))
+    .filter(line => /^\| `(?:S1|S2|B1|I1|I2|P1|F1|R1)` \|/.test(line))
     .flatMap(line => {
       const tokens = [...line.matchAll(/`([^`]+)`/g)].map(match => match[1]);
       const key = tokens.shift();
-      const file = tokens.shift();
-      assert(file?.endsWith(".rs"), `${key}: missing exact Rust path`);
-      return tokens.map(name => [key, file, name]);
+      let file;
+      const bindings = [];
+      for (const token of tokens) {
+        if (token.endsWith(".rs")) {
+          file = token;
+        } else {
+          assert(file, `${key}: test name appears before its Rust path`);
+          bindings.push([key, file, token]);
+        }
+      }
+      return bindings;
     });
 }
 
 export function validateStructuredOwnedControlFlowMatrix(text) {
   assert(!/\b(?:placeholder|TBD|TODO)\b/i.test(text), "structured matrix contains a placeholder");
-  for (const [key, issue] of [["S1", 325], ["S2", 325], ["I1", 326], ["I2", 326], ["P1", 327], ["F1", 327], ["R1", 327]])
+  for (const [key, issue] of [["S1", 325], ["S2", 325], ["B1", 325], ["I1", 326], ["I2", 326], ["P1", 327], ["F1", 327], ["R1", 327]])
     assert(text.includes(`| \`${key}\` | #${issue} |`), `structured matrix omits ${key}/#${issue}`);
   for (const issue of [269, 271, 272, 273, 275, 325, 326, 327])
     assert(text.includes(`#${issue}`), `structured matrix omits boundary #${issue}`);
@@ -385,6 +401,8 @@ export function validateStructuredOwnedControlFlowMatrix(text) {
     "public `data-ownership-v1` activation",
     "not an execution receipt",
     "#275 remains responsible",
+    "authenticated source-produced graph reaches exact block/edge ceilings and rejects first-extra",
+    "separate synthetic held-resource case proves checked overflow",
   ]) assert(text.includes(phrase), `structured matrix boundary drifted: ${phrase}`);
   assert.deepEqual(
     structuredMatrixEvidenceBindings(text),
@@ -408,6 +426,7 @@ test("structured owned control-flow matrix rejects evidence and boundary drift",
   for (const [from, to] of [
     ["| `I2` | #326 |", "| `I2` | #325 |"],
     ["mixed_cfg_rejects_a_foreign_result_owner_identity", "missing_hostile_test"],
+    ["synthetic_held_block_and_edge_overflow_is_checked_and_recovers", "missing_overflow_test"],
     ["runtime allocation/refcount/drop", "runtime ownership execution"],
     ["#275 remains responsible", "#275 is complete"],
   ]) assert.throws(() => validateStructuredOwnedControlFlowMatrix(
