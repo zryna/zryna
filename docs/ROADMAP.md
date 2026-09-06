@@ -371,7 +371,7 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 | #270 | full generic owned composition, structural clone, ordinary generic Vec reads/replacement | #83/#277/#278, retaining #76–#81 |
 | #271 | checked compiler-only structured owned control flow and lexical cleanup closure candidate | #270/#279; integrated by #325/#326/#327 |
 | #272 | checked internal owned calls and imported-function closure candidate | #270/#271; integrated by #329/#330/#331 |
-| #273 | exhaustive enum matching and active-payload composition | #270/#271 |
+| #273 | checked exhaustive enum matching and active-payload closure candidate | #270/#271; integrated by #333/#334/#335 |
 | #274 | ordinary dynamic fixed-array access using the indexed authority | #254/#270; coordinate #255 |
 | #275 | non-indexed owned/static/active-payload lexical borrowing | #82/#254/#270/#271/#272/#273 |
 | #269 | complete source-composition integration | #83/#254/#255/#256 and every child above |
@@ -399,6 +399,10 @@ The checked #272 owned-call matrix integrates #329 signature/identity resolution
 transfer/cleanup and #331 hostile-IR/resource evidence. It does not close #273/#275/#269, execute
 runtime handle behavior, add break/continue or exceptions,
 or enable a runtime, backend, CLI or public profile.
+The checked #273 complete enum matching matrix integrates #333 authenticated source/exhaustiveness,
+#334 independent refinement/ownership verification and #335 resource/overflow evidence. It does
+not close #275/#269, add terminating or wildcard arms, expose inactive payloads, or enable runtime,
+backend, CLI or public-profile behavior.
 
 #254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
 semantics. The new source work invents no type-import syntax, break/continue, Vec pop, implicit

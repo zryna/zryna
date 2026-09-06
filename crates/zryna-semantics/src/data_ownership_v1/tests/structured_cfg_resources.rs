@@ -5,9 +5,13 @@ use crate::data_ownership_v1::Binding;
 use crate::data_ownership_v1::tests::structured_owned_fixture::{
     Payload, call_match_fixture, continued_indexed_fixture, formal_match_fixture,
     fresh_indexed_literal_fixture, fresh_indexed_match_fixture, indexed_match_fixture,
-    match_fixture, nested_match_fixture, string_match_fixture, vec_match_fixture,
+    match_fixture, mixed_variant_fixture, nested_match_fixture, nested_variant_fixture,
+    string_match_fixture, vec_match_fixture,
 };
 use zryna_ir::data_ownership_v1 as ir;
+
+#[path = "structured_match_resources.rs"]
+mod complete_enum;
 
 pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn parameter(
     lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
@@ -87,7 +91,10 @@ fn structured_resource_fixture(
             let fresh = shape - 16;
             fresh_indexed_match_fixture(fresh & 1 != 0, fresh & 2 != 0)
         }
-        _ => fresh_indexed_literal_fixture(shape & 1 != 0, (shape - 20) / 2),
+        20..=25 => fresh_indexed_literal_fixture(shape & 1 != 0, (shape - 20) / 2),
+        26 => mixed_variant_fixture(),
+        27 => nested_variant_fixture(),
+        _ => unreachable!("twenty-eight structured resource shapes"),
     }
 }
 

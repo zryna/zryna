@@ -3,6 +3,8 @@ use zryna_syntax::v4::{RawDataDeclaration, RawDataDeclarationKind, RawEnumVarian
 
 #[path = "structured_match_callee.rs"]
 mod callee;
+#[path = "structured_match_complete_fixture.rs"]
+mod complete;
 #[path = "continued_indexed_fixture.rs"]
 mod continued;
 #[path = "fresh_indexed_match_fixture.rs"]
@@ -24,6 +26,10 @@ mod operands;
 mod payloads;
 #[path = "structured_match_string.rs"]
 mod string;
+pub(in crate::data_ownership_v1) use complete::{
+    InvalidMatch, invalid_mixed_variant_fixture, mixed_variant_fixture, nested_variant_fixture,
+    reordered_mixed_variant_fixture,
+};
 pub(in crate::data_ownership_v1) use payloads::Payload;
 
 impl Builder {

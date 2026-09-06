@@ -150,6 +150,14 @@ syntax; borrowed imports, owned public ABI, indirect calls and recursion remain 
 checked [owned-call closure matrix](../../docs/M3_OWNED_CALL_CLOSURE_MATRIX.md) binds source,
 structured-CFG, hostile-IR and resource evidence.
 
+M3 also completes the #273 exhaustive enum-match boundary as a checked compiler-only closure
+candidate. Authenticated matches evaluate one scrutinee, cover each sealed variant exactly once,
+expose only the active payload and join exact Copy or owned results through the structured CFG.
+The [complete enum matching matrix](../../docs/M3_COMPLETE_ENUM_MATCHING_MATRIX.md) binds source,
+independent-IR and resource/overflow evidence. Terminating or wildcard arms, inactive payload
+access, non-indexed payload borrowing, runtime/backend behavior and public activation remain
+excluded.
+
 The separate #278 mixed-result function route also prepares and commits fully initialized mutable
 mixed Struct/Enum/FixedArray/Vec root replacement. Its affine plan proves exact destination
 retention, RHS owner transfer and final transition capacity before materializing the RHS. Repeated
