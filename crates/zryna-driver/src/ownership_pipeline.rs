@@ -1,0 +1,417 @@
+//! Internal candidate dispatch for authenticated DataOwnershipV1 builds and runs.
+
+use std::{fs, path::PathBuf};
+
+use zryna_abi::{Invocation, ScalarValue};
+use zryna_backend_native::data_ownership_v1::ValidatedDataOwnershipObjectArtifact;
+use zryna_diagnostics::Diagnostic;
+use zryna_frontend::{
+    ProviderExpectationV4, VerifiedFrontendProviderV4, WorkerFrontendV4, WorkerLimitsV4,
+    WorkerSpecV4,
+};
+use zryna_source::NormalizedSourcePath;
+
+use crate::{
+    ArtifactOutputRoot, CommandFailure, CommandFailureKind, NativeProcessLimits,
+    PreparedDataOwnershipExecutable, TargetSelection, VerifiedOwnershipModuleClosure,
+    WorkspaceSourceRoot, check_workspace, discover_linux_native_toolchain,
+    discover_ownership_module_closure, prepare_data_ownership_executable,
+    runtime::{NodeRuntimeCapability, node_compatible_path},
+};
+
+/// Exact profile identity retained by every internal candidate request.
+pub const DATA_OWNERSHIP_CANDIDATE_PROFILE: &str = "zryna-data-ownership-v1-candidate";
+const NATIVE_TARGET: &str = "x86_64-unknown-linux-gnu";
+
+/// One explicit internal DataOwnershipV1 build request.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DataOwnershipBuildRequest {
+    /// Absolute canonical workspace root.
+    pub workspace_root: PathBuf,
+    /// Portable workspace-relative `.zry` entry module.
+    pub entrypoint: String,
+    /// Exact selected target set.
+    pub targets: TargetSelection,
+    /// Absolute direct Node.js executable used by the authenticated frontend.
+    pub node_runtime: PathBuf,
+}
+
+/// One explicit internal DataOwnershipV1 run request.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DataOwnershipRunRequest {
+    /// Shared authenticated build request.
+    pub build: DataOwnershipBuildRequest,
+    /// Exact scalar export selected after semantic and ABI verification.
+    pub logical_export: String,
+    /// Ordered typed scalar arguments.
+    pub arguments: Vec<ScalarValue>,
+}
+
+/// Backend bytes prepared in canonical JavaScript, WebAssembly, native order.
+#[derive(Clone, Debug, Default)]
+pub struct PreparedDataOwnershipArtifacts {
+    javascript: Option<zryna_backend_javascript::JavaScriptArtifact>,
+    webassembly: Option<zryna_backend_webassembly::ValidatedWebAssemblyArtifact>,
+    native_object: Option<ValidatedDataOwnershipObjectArtifact>,
+    native_executable: Option<PreparedDataOwnershipExecutable>,
+}
+
+impl PreparedDataOwnershipArtifacts {
+    /// Returns prepared JavaScript when selected.
+    #[must_use]
+    pub const fn javascript(&self) -> Option<&zryna_backend_javascript::JavaScriptArtifact> {
+        self.javascript.as_ref()
+    }
+    /// Returns prepared core WebAssembly when selected.
+    #[must_use]
+    pub const fn webassembly(
+        &self,
+    ) -> Option<&zryna_backend_webassembly::ValidatedWebAssemblyArtifact> {
+        self.webassembly.as_ref()
+    }
+    /// Returns the audited native object for a build request.
+    #[must_use]
+    pub const fn native_object(&self) -> Option<&ValidatedDataOwnershipObjectArtifact> {
+        self.native_object.as_ref()
+    }
+    /// Returns the linked audited native invocation for a run request.
+    #[must_use]
+    pub const fn native_executable(&self) -> Option<&PreparedDataOwnershipExecutable> {
+        self.native_executable.as_ref()
+    }
+}
+
+/// One fully authenticated but unpublished candidate result.
+#[derive(Debug)]
+pub struct DataOwnershipCandidateSuccess {
+    closure: VerifiedOwnershipModuleClosure,
+    program: zryna_semantics::data_ownership_v1::VerifiedProgram,
+    artifacts: PreparedDataOwnershipArtifacts,
+    logical_export: Option<String>,
+    arguments: Vec<ScalarValue>,
+    diagnostics: Vec<Diagnostic>,
+}
+
+impl DataOwnershipCandidateSuccess {
+    /// Returns the exact internal profile identity.
+    #[must_use]
+    pub const fn profile(&self) -> &'static str {
+        DATA_OWNERSHIP_CANDIDATE_PROFILE
+    }
+    /// Returns the single final source/syntax authority shared by every selected backend.
+    #[must_use]
+    pub const fn closure(&self) -> &VerifiedOwnershipModuleClosure {
+        &self.closure
+    }
+    /// Returns the single verifier-sealed semantic authority shared by every target.
+    #[must_use]
+    pub const fn program(&self) -> &zryna_semantics::data_ownership_v1::VerifiedProgram {
+        &self.program
+    }
+    /// Returns canonical prepared target artifacts.
+    #[must_use]
+    pub const fn artifacts(&self) -> &PreparedDataOwnershipArtifacts {
+        &self.artifacts
+    }
+    /// Returns the selected run export, or `None` for build requests.
+    #[must_use]
+    pub fn logical_export(&self) -> Option<&str> {
+        self.logical_export.as_deref()
+    }
+    /// Returns typed run arguments in declaration order.
+    #[must_use]
+    pub fn arguments(&self) -> &[ScalarValue] {
+        &self.arguments
+    }
+    /// Returns authenticated provider warnings.
+    #[must_use]
+    pub fn diagnostics(&self) -> &[Diagnostic] {
+        &self.diagnostics
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DispatchPhase {
+    JavaScript,
+    WebAssembly,
+    Native,
+}
+
+type Checkpoint<'a> = &'a dyn Fn(DispatchPhase) -> Result<(), CommandFailure>;
+
+/// Authenticates and prepares one internal candidate build without publishing it.
+///
+/// # Errors
+/// Returns stable phase-owned diagnostics before any final output becomes visible.
+pub fn prepare_data_ownership_build(
+    request: &DataOwnershipBuildRequest,
+) -> Result<DataOwnershipCandidateSuccess, CommandFailure> {
+    execute(request, None, configured_frontend_v4, &allow_phase, validate_request)
+}
+
+/// Authenticates and prepares one internal candidate run without publishing it.
+///
+/// # Errors
+/// Returns stable source, ABI, backend, toolchain, or audit diagnostics.
+pub fn prepare_data_ownership_run(
+    request: DataOwnershipRunRequest,
+) -> Result<DataOwnershipCandidateSuccess, CommandFailure> {
+    execute(
+        &request.build,
+        Some((request.logical_export, request.arguments)),
+        configured_frontend_v4,
+        &allow_phase,
+        validate_request,
+    )
+}
+
+fn allow_phase(_phase: DispatchPhase) -> Result<(), CommandFailure> {
+    Ok(())
+}
+
+fn execute<Provider, Factory>(
+    request: &DataOwnershipBuildRequest,
+    run: Option<(String, Vec<ScalarValue>)>,
+    frontend_factory: Factory,
+    checkpoint: Checkpoint<'_>,
+    validator: fn(&DataOwnershipBuildRequest) -> Result<(), CommandFailure>,
+) -> Result<DataOwnershipCandidateSuccess, CommandFailure>
+where
+    Provider: VerifiedFrontendProviderV4,
+    Factory: FnOnce(
+        &DataOwnershipBuildRequest,
+        &NodeRuntimeCapability,
+    ) -> Result<Provider, CommandFailure>,
+{
+    validator(request)?;
+    let source_root = WorkspaceSourceRoot::capture(&request.workspace_root)
+        .map_err(|item| failure(CommandFailureKind::Source, item))?;
+    let entrypoint = NormalizedSourcePath::new(request.entrypoint.clone()).map_err(|error| {
+        failure(CommandFailureKind::Request, Diagnostic::from_source_error(&error))
+    })?;
+    let node = NodeRuntimeCapability::discover(&request.node_runtime, &request.workspace_root)
+        .map_err(|item| failure(CommandFailureKind::Preparation, item))?;
+    let frontend = frontend_factory(request, &node)?;
+    let closure = discover_ownership_module_closure(&source_root, entrypoint, &frontend)
+        .map_err(closure_failure)?;
+    let program = closure
+        .lower_data_ownership_v1()
+        .map_err(|items| CommandFailure { kind: CommandFailureKind::Source, diagnostics: items })?;
+    let invocation =
+        run.as_ref().map(|(name, arguments)| Invocation::new(name.clone(), arguments.clone()));
+    if let Some(invocation) = invocation.clone() {
+        program.verified_ir().scalar_abi().prepare_invocation(invocation).map_err(|error| {
+            failure(
+                CommandFailureKind::Source,
+                Diagnostic::error(
+                    error.code(),
+                    None,
+                    "candidate invocation does not match the verified DataOwnershipV1 scalar ABI",
+                    "use the exact entry export, arity, and typed scalar arguments",
+                ),
+            )
+        })?;
+    }
+    node.revalidate().map_err(|item| failure(CommandFailureKind::Preparation, item))?;
+    let artifacts = compile_selected(&program, request, invocation, checkpoint)?;
+    let diagnostics = closure
+        .syntax()
+        .diagnostics()
+        .iter()
+        .filter(|item| item.severity() == zryna_diagnostics::Severity::Warning)
+        .cloned()
+        .collect();
+    let (logical_export, arguments) =
+        run.map_or((None, Vec::new()), |(name, args)| (Some(name), args));
+    Ok(DataOwnershipCandidateSuccess {
+        closure,
+        program,
+        artifacts,
+        logical_export,
+        arguments,
+        diagnostics,
+    })
+}
+
+fn compile_selected(
+    program: &zryna_semantics::data_ownership_v1::VerifiedProgram,
+    request: &DataOwnershipBuildRequest,
+    invocation: Option<Invocation>,
+    checkpoint: Checkpoint<'_>,
+) -> Result<PreparedDataOwnershipArtifacts, CommandFailure> {
+    let mut artifacts = PreparedDataOwnershipArtifacts::default();
+    if request.targets.javascript() {
+        checkpoint(DispatchPhase::JavaScript)?;
+        artifacts.javascript = Some(
+            zryna_backend_javascript::emit_data_ownership(
+                program.verified_ir(),
+                program.runtime_abi(),
+            )
+            .map_err(|item| failure(CommandFailureKind::Preparation, item))?,
+        );
+    }
+    if request.targets.webassembly() {
+        checkpoint(DispatchPhase::WebAssembly)?;
+        artifacts.webassembly = Some(
+            zryna_backend_webassembly::emit_data_ownership(
+                program.verified_ir(),
+                program.runtime_abi(),
+            )
+            .map_err(|item| failure(CommandFailureKind::Preparation, item))?,
+        );
+    }
+    if request.targets.native() {
+        checkpoint(DispatchPhase::Native)?;
+        if let Some(invocation) = invocation {
+            let output = ArtifactOutputRoot::prepare_for_workspace(&request.workspace_root)
+                .map_err(|item| failure(CommandFailureKind::Preparation, item))?;
+            let toolchain = discover_linux_native_toolchain(NativeProcessLimits::default())
+                .map_err(|item| failure(CommandFailureKind::Preparation, item))?;
+            artifacts.native_executable = Some(
+                prepare_data_ownership_executable(
+                    program,
+                    invocation,
+                    &output,
+                    NATIVE_TARGET,
+                    &toolchain,
+                    NativeProcessLimits::default(),
+                )
+                .map_err(|items| CommandFailure {
+                    kind: CommandFailureKind::Preparation,
+                    diagnostics: items,
+                })?,
+            );
+        } else {
+            let target = crate::select_native_object_target(NATIVE_TARGET)
+                .map_err(|item| failure(CommandFailureKind::Preparation, item))?;
+            let mir = zryna_native_mir::data_ownership_v1::lower(
+                program.verified_ir(),
+                program.runtime_abi(),
+            )
+            .map_err(|items| CommandFailure {
+                kind: CommandFailureKind::Preparation,
+                diagnostics: items,
+            })?;
+            artifacts.native_object = Some(
+                zryna_backend_native::data_ownership_v1::emit_object(&mir, target)
+                    .map_err(|item| failure(CommandFailureKind::Preparation, item))?,
+            );
+        }
+    }
+    Ok(artifacts)
+}
+
+fn configured_frontend_v4(
+    request: &DataOwnershipBuildRequest,
+    node: &NodeRuntimeCapability,
+) -> Result<WorkerFrontendV4, CommandFailure> {
+    let adapter = request.workspace_root.join("adapters/typescript-6");
+    let worker = adapter.join("src/worker-v4.mjs");
+    for (path, label) in [(&adapter, "adapter directory"), (&worker, "worker entrypoint")] {
+        let metadata = fs::symlink_metadata(path)
+            .map_err(|_| preparation_error(format!("DataOwnershipV1 {label} is unavailable")))?;
+        if (path == &adapter && !metadata.is_dir())
+            || (path == &worker && !metadata.is_file())
+            || is_link_like(&metadata)
+        {
+            return Err(preparation_error(format!("DataOwnershipV1 {label} is not a real path")));
+        }
+    }
+    let expected =
+        ProviderExpectationV4::new("typescript-6", "6.0.3").map_err(|error| CommandFailure {
+            kind: CommandFailureKind::Preparation,
+            diagnostics: error.diagnostics().to_vec(),
+        })?;
+    let spec = WorkerSpecV4::new(
+        node.executable().map_err(|item| failure(CommandFailureKind::Preparation, item))?,
+        vec![node_compatible_path(&worker).into_os_string()],
+        node_compatible_path(&adapter),
+        expected,
+        WorkerLimitsV4::default(),
+    )
+    .map_err(|error| CommandFailure {
+        kind: CommandFailureKind::Preparation,
+        diagnostics: error.diagnostics().to_vec(),
+    })?;
+    Ok(WorkerFrontendV4::new(spec))
+}
+
+fn validate_request(request: &DataOwnershipBuildRequest) -> Result<(), CommandFailure> {
+    validate_request_shape(request)?;
+    let report = check_workspace(&request.workspace_root);
+    if !report.is_valid() {
+        return Err(CommandFailure {
+            kind: CommandFailureKind::Architecture,
+            diagnostics: report.diagnostics,
+        });
+    }
+    Ok(())
+}
+
+fn validate_request_shape(request: &DataOwnershipBuildRequest) -> Result<(), CommandFailure> {
+    if !request.workspace_root.is_absolute() {
+        return Err(request_error("candidate workspace root must be absolute"));
+    }
+    NormalizedSourcePath::new(request.entrypoint.clone()).map_err(|error| {
+        failure(CommandFailureKind::Request, Diagnostic::from_source_error(&error))
+    })?;
+    Ok(())
+}
+
+fn closure_failure(error: ModuleClosureError) -> CommandFailure {
+    let diagnostics = match &error {
+        ModuleClosureError::Frontend(worker) if worker.diagnostics().is_empty() => {
+            vec![Diagnostic::error(
+                worker.code(),
+                None,
+                worker.to_string(),
+                "verify the pinned Node.js runtime and exact-v4 TypeScript frontend",
+            )]
+        }
+        _ => error.diagnostics().to_vec(),
+    };
+    CommandFailure { kind: CommandFailureKind::Source, diagnostics }
+}
+
+fn request_error(message: impl Into<String>) -> CommandFailure {
+    failure(
+        CommandFailureKind::Request,
+        Diagnostic::error(
+            "ZRYNA-C3001",
+            None,
+            message,
+            "use the exact internal DataOwnershipV1 candidate configuration",
+        ),
+    )
+}
+
+fn preparation_error(message: impl Into<String>) -> CommandFailure {
+    let mut error = request_error(message);
+    error.kind = CommandFailureKind::Preparation;
+    error
+}
+
+fn failure(kind: CommandFailureKind, item: Diagnostic) -> CommandFailure {
+    CommandFailure { kind, diagnostics: vec![item] }
+}
+
+#[cfg(unix)]
+fn is_link_like(metadata: &fs::Metadata) -> bool {
+    metadata.file_type().is_symlink()
+}
+
+#[cfg(windows)]
+fn is_link_like(metadata: &fs::Metadata) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    metadata.file_type().is_symlink() || metadata.file_attributes() & 0x400 != 0
+}
+
+#[cfg(not(any(unix, windows)))]
+fn is_link_like(metadata: &fs::Metadata) -> bool {
+    metadata.file_type().is_symlink()
+}
+
+use crate::ModuleClosureError;
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;

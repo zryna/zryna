@@ -116,7 +116,8 @@
         "zryna-ir",
         "zryna-native-mir",
         "zryna-semantics",
-        "zryna-source"
+        "zryna-source",
+        "zryna-syntax"
       ],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },

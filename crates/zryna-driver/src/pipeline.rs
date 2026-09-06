@@ -56,15 +56,15 @@ pub enum TargetSelection {
 }
 
 impl TargetSelection {
-    fn javascript(self) -> bool {
+    pub(crate) fn javascript(self) -> bool {
         matches!(self, Self::JavaScript | Self::All)
     }
 
-    fn webassembly(self) -> bool {
+    pub(crate) fn webassembly(self) -> bool {
         matches!(self, Self::WebAssembly | Self::All)
     }
 
-    fn native(self) -> bool {
+    pub(crate) fn native(self) -> bool {
         matches!(self, Self::Native | Self::All)
     }
 
@@ -203,8 +203,8 @@ impl CommandFailureKind {
 /// Failed command with deterministic diagnostics.
 #[derive(Clone, Debug)]
 pub struct CommandFailure {
-    kind: CommandFailureKind,
-    diagnostics: Vec<Diagnostic>,
+    pub(crate) kind: CommandFailureKind,
+    pub(crate) diagnostics: Vec<Diagnostic>,
 }
 
 impl CommandFailure {

@@ -18,6 +18,8 @@ mod module_closure;
 #[cfg(test)]
 mod module_closure_tests;
 mod native;
+mod ownership_closure;
+mod ownership_pipeline;
 mod ownership_runtime_v1;
 mod pipeline;
 mod runtime;
@@ -58,6 +60,12 @@ pub use native::{
     discover_linux_native_toolchain, prepare_data_ownership_executable,
     publish_data_ownership_executable, publish_data_ownership_object, publish_native_object,
     run_native_invocation, select_native_object_target,
+};
+pub use ownership_closure::{VerifiedOwnershipModuleClosure, discover_ownership_module_closure};
+pub use ownership_pipeline::{
+    DATA_OWNERSHIP_CANDIDATE_PROFILE, DataOwnershipBuildRequest, DataOwnershipCandidateSuccess,
+    DataOwnershipRunRequest, PreparedDataOwnershipArtifacts, prepare_data_ownership_build,
+    prepare_data_ownership_run,
 };
 pub use pipeline::{
     BuildRequest, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,
