@@ -258,12 +258,15 @@ This updates planned dependencies, not implemented capability. The #119 commit a
 remain immutable historical provenance; the borrow-call section and fixture bytes are unchanged.
 The completed #277 integration contract, #278 non-handle owned core and #279 ownership CFG core
 provided the reusable foundation for the completed #259–#264/#83 internal Shared/Weak compiler
-chain. Later #270–#275
-complete generic ownership, CFG, calls, enums, ordinary dynamic-array access and non-indexed
-owned borrowing; #270 also owns ordinary generic Vec reads and replacement. These source/IR
-requirements remain mandatory and block complete #84/#85/#86 support alongside existing gates.
+chain. The current #270 closure candidate composes nested Struct/Enum/FixedArray/Vec ownership,
+finite Vec-indirection recursion, structural clone, handle-containing static transfers, and
+ordinary handle-aware Vec observation/replacement/push through mandatory verified IR. Its checked
+matrix binds exact source, hostile-IR, resource and replay tests from #320–#323. Issues #271–#273
+and #275 retain full CFG, call, match and non-indexed-borrow completion; #274 remains separately
+completed. These internal source/IR requirements and final #270 merge gates still block complete
+#84/#85/#86 support.
 Protocol v4 is unchanged; projected forwarding, repeated calls, CFG
-crossing, recursion, owned aggregate call shapes, public borrow signatures, retained authority,
+crossing, call recursion, owned aggregate call shapes, public borrow signatures, retained authority,
 and nested/repeated control flow remain later or unavailable child work. This adds no runtime,
 ABI, backend, driver, CLI, artifact, website-support, or public-profile capability.
 

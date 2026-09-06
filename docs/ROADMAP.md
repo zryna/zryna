@@ -385,10 +385,15 @@ if/while/call/match composition, sealed successor ownership, exact diagnostics a
 recovery. #263 integrated the corresponding non-executable fault, count, cycle and resource
 conformance; target execution remains downstream. #264 reconciles the complete #83 contract and
 its immutable verification provenance.
+The current #270 integration reconciles #320's checked matrix with #321 handle-containing static
+transfers, #322 ordinary handle-aware Vec operations and #323 finite recursive composition.
+Exact source, hostile-IR and bounded resource/replay bindings make it a compiler-only closure
+candidate; full/ignored suites, preflight, M0/M2, independent review and hosted CI remain required
+merge gates. It does not complete #271–#273, #275, #269 or any target/runtime/public-profile work.
 The cores use typed operation hooks without claiming source handle execution. Required #83
-payload, call, match and CFG cases cannot wait for later #270–#273 closure. Full #270/#271 then
-integrate actual handles into broader generic behavior; no parent-completion dependency cycle is
-permitted. Large children retain explicit bounded implementation sub-issues and integration gates.
+payload, call, match and CFG cases could not wait for later #270–#273 closure. #271 now retains
+actual-handle integration into broader structured CFG behavior; no parent-completion dependency
+cycle is permitted. Large children retain explicit bounded implementation sub-issues and gates.
 
 #254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
 semantics. The new source work invents no type-import syntax, break/continue, Vec pop, implicit

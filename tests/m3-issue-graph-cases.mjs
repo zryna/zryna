@@ -207,6 +207,29 @@ const genericMatrixBindings = [
   ["H2", "crates/zryna-ir/src/data_ownership_v1/tests/handle_aware_clone.rs", "rejects_non_handle_roots_and_inexact_prefix_cleanup_deterministically"],
   ["H2", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs", "handle_aware_structural_clone_has_exact_cleanup_frontier_and_pristine_retry"],
   ["H2", "crates/zryna-semantics/src/data_ownership_v1/tests/handle_frontier_source.rs", "handle_frontier_source_vec_enum_occurrences_retain_replacement_owners"],
+  ["H3", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_static_source.rs", "generic_static_source_subtree_clone_and_move_keep_exact_parent_masks"],
+  ["H3", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_static_source.rs", "generic_static_source_repeated_and_self_clone_replacements_retain_target_until_commit"],
+  ["H3", "crates/zryna-semantics/src/data_ownership_v1/tests/handle_static_source.rs", "handle_static_source_rejects_wrong_rhs_repeated_move_and_moved_target"],
+  ["H3", "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_transfer/handles.rs", "handle_static_transfer_without_clone_preserves_recursive_masks_and_owner_identity"],
+  ["H3", "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_transfer/handles.rs", "handle_static_transfer_replacement_retains_old_target_through_count_failure"],
+  ["H3", "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_transfer/handles.rs", "handle_static_transfer_rejects_exact_type_borrow_and_consumption_forgery_then_recovers"],
+  ["H3", "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_transfer/handles.rs", "handle_static_transfer_rejects_repeated_move_forged_path_and_omitted_parent_cleanup"],
+  ["H3", "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_transfer/handles.rs", "handle_static_transfer_rejects_partial_target_and_wrong_move_result"],
+  ["H3", "crates/zryna-ir/src/data_ownership_v1/tests/generic_static_transfer/handles.rs", "handle_static_transfer_resource_preflight_exact_extra_overflow_and_recovery"],
+  ["H3", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_static_resources.rs", "generic_static_replacement_resources_exact_extra_overflow_and_recovery_are_transactional"],
+  ["H3", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_static_resources.rs", "generic_static_move_resources_exact_extra_overflow_and_recovery_do_not_leak_masks"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_handle_source.rs", "generic_vec_handle_observation_clones_counts_and_retains_the_complete_container"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_handle_source.rs", "generic_vec_handle_replacement_checks_bounds_then_commits_one_exact_owner"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_handle_source.rs", "generic_vec_handle_push_prepares_once_and_transfers_only_after_success"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_handle_source.rs", "generic_vec_handle_source_replays_identically"],
+  ["H4", "crates/zryna-ir/src/data_ownership_v1/tests/generic_vec_handle_hostile.rs", "generic_vec_handle_ir_rejects_stale_or_foreign_borrow_then_recovers"],
+  ["H4", "crates/zryna-ir/src/data_ownership_v1/tests/generic_vec_handle_hostile.rs", "generic_vec_handle_ir_rejects_wrong_result_and_cleanup_identity_then_recovers"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_handle_rejections.rs", "generic_vec_handle_bare_observation_rejects_implicit_move_and_recovers"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_handle_rejections.rs", "generic_vec_handle_replacement_rejects_overlap_before_nested_index_effects"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_handle_rejections.rs", "generic_vec_handle_replacement_rejects_wrong_exact_owned_type_and_recovers"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_resources.rs", "generic_vec_handle_push_resource_exact_first_extra_overflow_and_recovery"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_resources.rs", "generic_vec_place_handle_push_clone_has_exact_direct_and_structural_resource_frontiers"],
+  ["H4", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_resources.rs", "generic_vec_place_handle_push_clone_overflow_replays_and_recovers"],
 ];
 
 function rustTests(file) {
@@ -227,10 +250,10 @@ function genericMatrixRows(text) {
 
 function genericMatrixEvidenceBindings(text) {
   const section = text.split("## Exact existing evidence bindings\n")[1]
-    ?.split("## Concrete blocking implementation gaps")[0];
+    ?.split("## Implemented child integration")[0];
   assert(section, "generic owned evidence bindings are missing");
   return section.split("\n")
-    .filter(line => /^\| `(?:E[1-5]|H[12]|R1)` \|/.test(line))
+    .filter(line => /^\| `(?:E[1-5]|H[1-4]|R1)` \|/.test(line))
     .flatMap(line => {
       const tokens = [...line.matchAll(/`([^`]+)`/g)].map(match => match[1]);
       const key = tokens.shift();
@@ -255,16 +278,15 @@ export function validateGenericOwnedCompositionMatrix(text) {
     ["Zero/nonzero FixedArray with non-handle elements", "E1", "E2", "E3", "E4", "E5"],
     ["Empty/nonempty positive-stride Vec with non-handle elements", "E1", "E2", "E3", "E4", "E5"],
     ["Finite values through legal non-handle Vec indirection recursion", "R1", "R1", "R1", "R1", "R1"],
-    ["Direct Shared/Weak", "H1", "H1", "G321", "H2", "G322"],
-    ["Struct/Enum/FixedArray/Vec containing Shared/Weak leaves", "H1", "H1", "G321", "H2", "G322"],
-    ["Finite values through legal Shared/Weak indirection recursion", "H1", "H1", "G321", "H2", "G322"],
+    ["Direct Shared/Weak", "H1", "H1", "H3", "H2", "H4"],
+    ["Struct/Enum/FixedArray/Vec containing Shared/Weak leaves", "H1", "H1", "H3", "H2", "H4"],
+    ["Finite values through legal Shared/Weak indirection recursion", "H1", "H1", "H3", "H2", "H4"],
   ]);
-  for (const key of ["E1", "E2", "E3", "E4", "E5", "H1", "H2", "R1"])
+  for (const key of ["E1", "E2", "E3", "E4", "E5", "H1", "H2", "H3", "H4", "R1"])
     assert(text.includes(`| \`${key}\` |`), `generic matrix omits evidence key ${key}`);
-  for (const [key, issue] of [["G321", 321], ["G322", 322]]) {
-    assert(text.includes(`| \`${key}\` | #${issue} |`), `generic matrix omits gap ${key}`);
-  }
-  assert(text.includes("#321 and #322 plus"), "generic matrix must keep both gaps blocking #270");
+  for (const [key, issue] of [["H3", 321], ["H4", 322], ["R1", 323]])
+    assert(text.includes(`| \`${key}\` | #${issue} |`), `generic matrix omits child ${key}`);
+  assert(!text.includes("G321") && !text.includes("G322"), "generic matrix retains a resolved gap");
   for (const issue of [269, 270, 271, 272, 273, 274, 275])
     assert(text.includes(`#${issue}`), `generic matrix omits sibling/downstream #${issue}`);
   for (const phrase of [
@@ -286,13 +308,13 @@ export function validateGenericOwnedCompositionMatrix(text) {
   }
 }
 
-test("generic owned composition matrix maps evidence and all blocking gaps exactly", () => {
+test("generic owned composition matrix maps every implemented cell exactly", () => {
   validateGenericOwnedCompositionMatrix(genericMatrixDocument);
 });
 
-test("generic owned composition matrix rejects evidence, gap and exclusion drift", () => {
+test("generic owned composition matrix rejects evidence and exclusion drift", () => {
   assert.throws(() => validateGenericOwnedCompositionMatrix(genericMatrixDocument.replace(
-    "| `G321` | #321 |", "| `E3` | #321 |",
+    "| `H3` | #321 |", "| `E3` | #321 |",
   )));
   assert.throws(() => validateGenericOwnedCompositionMatrix(genericMatrixDocument.replace(
     "generic_clone_source_mixed_roots_retain_source_and_seal_recursive_prefix_cleanup",
