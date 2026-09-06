@@ -36,6 +36,13 @@ It does not widen `GenericCloneBorrow` to handles. Lexical alias and formal-borr
 reuse `BorrowReplace`; the #255/#256 matrices cover exact source type, bounds, owner exclusion,
 failure retention and restoration for both arrays and Vecs.
 
+Issue #323 binds that recursive classification to an authenticated nonempty source value rather
+than inferring it from nested `Vec<Vec<String>>` evidence. Its `Vec<Node>` contains a leaf of the
+recursive Enum, and prepared push receives an explicit structural clone whose destination-prefix
+failure first releases that partial result before the unchanged Vec, clone source and earlier root.
+Exact, first-extra and checked-overflow cleanup controls preserve pre-operation state and replay the
+same diagnostic. No element move-out, persistent borrow or runtime recursion guarantee is added.
+
 ## Clone cleanup and sealed views
 
 The existing `PrepareFailure` and `GenericClonePrefixFailure` sites remain separate and mandatory.

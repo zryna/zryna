@@ -7,6 +7,9 @@ use crate::data_ownership_v1::type_model::Binding;
 use zryna_ir::data_ownership_v1 as ir;
 use zryna_syntax::v4::RawStatementKind;
 
+#[path = "finite_recursive_resources.rs"]
+mod finite_recursive_resources;
+
 fn parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
     for (index, parameter) in lowerer.function.parameters.iter().enumerate() {
         let ty = semantic_type(

@@ -187,6 +187,10 @@ const genericMatrixBindings = [
   ["E5", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_resources.rs", "generic_vec_replacement_resource_exact_first_extra_reserves_bounds_rhs_commit_and_end"],
   ["E5", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_source_rejections.rs", "generic_vec_source_owned_bare_index_never_moves_an_element_or_leaves_a_hole"],
   ["E5", "crates/zryna-semantics/src/data_ownership_v1/tests/generic_vec_source_rejections.rs", "generic_vec_source_replacement_blocks_same_container_clone_before_nested_index_evaluation"],
+  ["R1", "crates/zryna-semantics/src/data_ownership_v1/tests/finite_recursive_composition.rs", "finite_recursive_composition_reaches_verified_ir"],
+  ["R1", "crates/zryna-ir/src/data_ownership_v1/tests/generic_recursive_composition.rs", "recursive_clone_rejects_wrong_identity_prefix_and_cleanup_order_then_recovers"],
+  ["R1", "crates/zryna-semantics/src/data_ownership_v1/tests/finite_recursive_resources.rs", "finite_recursive_clone_and_push_resources_are_exact_atomic_and_recoverable"],
+  ["R1", "crates/zryna-ir/src/data_ownership_v1/tests/generic_recursive_composition.rs", "recursive_clone_resource_preflight_is_exact_checked_and_replay_stable"],
   ["H1", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "shared_and_weak_structural_payload_categories_lower_through_verified_ir"],
   ["H1", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "handle_leaves_compose_through_struct_array_vec_projection_and_replacement"],
   ["H1", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_payload_closure.rs", "recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay"],
@@ -220,7 +224,7 @@ function genericMatrixEvidenceBindings(text) {
     ?.split("## Concrete blocking implementation gaps")[0];
   assert(section, "generic owned evidence bindings are missing");
   return section.split("\n")
-    .filter(line => /^\| `(?:E[1-5]|H[12])` \|/.test(line))
+    .filter(line => /^\| `(?:E[1-5]|H[12]|R1)` \|/.test(line))
     .flatMap(line => {
       const tokens = [...line.matchAll(/`([^`]+)`/g)].map(match => match[1]);
       const key = tokens.shift();
@@ -244,17 +248,17 @@ export function validateGenericOwnedCompositionMatrix(text) {
     ["Nested non-handle Enum, every active variant", "E1", "E2", "E3", "E4", "E5"],
     ["Zero/nonzero FixedArray with non-handle elements", "E1", "E2", "E3", "E4", "E5"],
     ["Empty/nonempty positive-stride Vec with non-handle elements", "E1", "E2", "E3", "E4", "E5"],
-    ["Finite values through legal non-handle Vec indirection recursion", "E1", "G323", "G323", "G323", "G323"],
+    ["Finite values through legal non-handle Vec indirection recursion", "R1", "R1", "R1", "R1", "R1"],
     ["Direct Shared/Weak", "H1", "H1", "G321", "H2", "G322"],
     ["Struct/Enum/FixedArray/Vec containing Shared/Weak leaves", "H1", "H1", "G321", "H2", "G322"],
     ["Finite values through legal Shared/Weak indirection recursion", "H1", "H1", "G321", "H2", "G322"],
   ]);
-  for (const key of ["E1", "E2", "E3", "E4", "E5", "H1", "H2"])
+  for (const key of ["E1", "E2", "E3", "E4", "E5", "H1", "H2", "R1"])
     assert(text.includes(`| \`${key}\` |`), `generic matrix omits evidence key ${key}`);
-  for (const [key, issue] of [["G321", 321], ["G322", 322], ["G323", 323]]) {
+  for (const [key, issue] of [["G321", 321], ["G322", 322]]) {
     assert(text.includes(`| \`${key}\` | #${issue} |`), `generic matrix omits gap ${key}`);
   }
-  assert(text.includes("#321, #322 and #323 plus"), "generic matrix must keep every gap blocking #270");
+  assert(text.includes("#321 and #322 plus"), "generic matrix must keep both gaps blocking #270");
   for (const issue of [269, 270, 271, 272, 273, 274, 275])
     assert(text.includes(`#${issue}`), `generic matrix omits sibling/downstream #${issue}`);
   for (const phrase of [
