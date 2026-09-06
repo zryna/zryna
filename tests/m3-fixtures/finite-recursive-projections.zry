@@ -1,0 +1,35 @@
+interface Node extends ZrynaEnum { leaf: String; branch: Vec<Node>; }
+interface Wrapper extends ZrynaStruct { value: Node; spare: String; }
+
+function moveWrapper(incoming: Wrapper): Node {
+  let item: Wrapper = incoming;
+  return item.value;
+}
+
+function replaceWrapper(incoming: Wrapper, next: Node): Wrapper {
+  let item: Wrapper = incoming;
+  item.value = clone(next);
+  return item;
+}
+
+function moveArray(incoming: FixedArray<Node, 2>): Node {
+  let item: FixedArray<Node, 2> = incoming;
+  return item[0];
+}
+
+function replaceArray(incoming: FixedArray<Node, 2>, next: Node): FixedArray<Node, 2> {
+  let item: FixedArray<Node, 2> = incoming;
+  item[0] = clone(next);
+  return item;
+}
+
+function observeVec(incoming: Vec<Node>, index: i32): Node {
+  let items: Vec<Node> = incoming;
+  return clone(items[index]);
+}
+
+function replaceVec(incoming: Vec<Node>, index: i32, next: Node): Vec<Node> {
+  let items: Vec<Node> = incoming;
+  items[index] = clone(next);
+  return items;
+}

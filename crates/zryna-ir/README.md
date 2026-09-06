@@ -192,7 +192,10 @@ subobject move or clone retains both local roots, pending order, and sibling mas
 retains source and destination; whole-root move consumes its source and retains the destination.
 Same-root or overlapping paths, incomplete/partial/moved projected sources, Enum/Vec/dynamic paths,
 public or CFG use, alternate ordering/use, and second sites fail closed.
-Nested Enum, Vec, Shared, Weak, recursive, and cyclic graphs remain outside this checkpoint.
+Nested Enum, Vec, Shared and Weak graphs remain outside this projected-transfer checkpoint. The
+separate generic clone authority admits finite non-handle values whose type recursion crosses Vec
+indirection and visits each reachable type identity once; it does not admit by-value cycles or
+claim runtime traversal.
 
 Every raw cleanup plan is bound to exactly one verified site and one closed role:
 `PrepareFailure`, `VecCloneElementFailure`, `AggregateCloneElementFailure`, `CallTrap`, `Return`, or

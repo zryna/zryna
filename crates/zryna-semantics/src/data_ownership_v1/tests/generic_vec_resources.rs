@@ -7,6 +7,9 @@ use crate::data_ownership_v1::type_model::Binding;
 use zryna_ir::data_ownership_v1 as ir;
 use zryna_syntax::v4::RawStatementKind;
 
+#[path = "finite_recursive_resources.rs"]
+mod finite_recursive_resources;
+
 fn parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
     for (index, parameter) in lowerer.function.parameters.iter().enumerate() {
         let ty = semantic_type(
@@ -43,7 +46,18 @@ fn parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
 
 #[test]
 fn generic_vec_replacement_resource_exact_first_extra_reserves_bounds_rhs_commit_and_end() {
-    for element in [Element::Struct, Element::Enum, Element::Array, Element::Vec] {
+    for element in [
+        Element::Struct,
+        Element::Enum,
+        Element::Array,
+        Element::Vec,
+        Element::Shared,
+        Element::Weak,
+        Element::HandleStruct,
+        Element::HandleEnum,
+        Element::HandleArray,
+        Element::HandleVec,
+    ] {
         for extra in [false, true, false] {
             let (source, snapshot) = fixture(&element, Operation::ReplaceClone, None);
             let mut expected = None;
@@ -52,7 +66,11 @@ fn generic_vec_replacement_resource_exact_first_extra_reserves_bounds_rhs_commit
                 assert!(run_statement(lowerer, 0, ty));
                 assert!(run_statement(lowerer, 1, ty));
                 let pending = lowerer.owners.pending().to_vec();
-                let demand = 3 * pending.len() + 1;
+                let demand = if matches!(element, Element::Shared | Element::Weak) {
+                    2 * pending.len()
+                } else {
+                    3 * pending.len() + 1
+                };
                 let reserved = ir::MAX_DROP_ACTIONS_PER_FUNCTION - lowerer.cleanup_actions - demand
                     + usize::from(extra);
                 lowerer.preparation_facts.held_cleanup[1] = reserved;
@@ -73,18 +91,33 @@ fn generic_vec_replacement_resource_exact_first_extra_reserves_bounds_rhs_commit
                         panic!("assignment");
                     };
                     let at = lowerer.function.body.expressions[value as usize].span;
+                    let (message, guidance) = if matches!(element, Element::Shared | Element::Weak)
+                    {
+                        (
+                            "derived cleanup actions exceed the per-function M3 limit of 262144",
+                            "reduce simultaneously live owned aggregates and String leaves",
+                        )
+                    } else {
+                        (
+                            "structural clone exceeds a checked value, place, or cleanup resource limit",
+                            "reduce simultaneously live owned aggregates or clone sites",
+                        )
+                    };
                     expected = Some(zryna_diagnostics::Diagnostic::error_at(
                         "ZRYNA-M3201",
                         crate::data_ownership_v1::span(lowerer.input.sources(), at),
-                        "structural clone exceeds a checked value, place, or cleanup resource limit",
-                        "reduce simultaneously live owned aggregates or clone sites",
+                        message,
+                        guidance,
                     ));
                 } else {
                     assert_eq!(
                         lowerer.cleanup_actions + reserved,
                         ir::MAX_DROP_ACTIONS_PER_FUNCTION
                     );
-                    assert_eq!(lowerer.cleanup_plans.len() - plans, 3);
+                    assert_eq!(
+                        lowerer.cleanup_plans.len() - plans,
+                        if matches!(element, Element::Shared | Element::Weak) { 2 } else { 3 }
+                    );
                     assert_eq!(lowerer.instructions.len() - transitions, 5);
                     assert_eq!(lowerer.owners.pending(), pending.as_slice());
                     assert_eq!(lowerer.preparation_facts.held_cleanup[1], reserved);
@@ -98,5 +131,187 @@ fn generic_vec_replacement_resource_exact_first_extra_reserves_bounds_rhs_commit
             });
             assert_eq!(errors, expected.into_iter().collect::<Vec<_>>());
         }
+    }
+}
+
+#[test]
+fn generic_vec_handle_push_resource_exact_first_extra_overflow_and_recovery() {
+    for extra in [false, true, false] {
+        let (source, snapshot) = fixture(&Element::HandleVec, Operation::PushIndexedClone, None);
+        let errors = with_snapshot(&source, snapshot, |lowerer, ty| {
+            parameters(lowerer);
+            assert!(run_statement(lowerer, 0, ty));
+            assert!(run_statement(lowerer, 1, ty));
+            let pending = lowerer.owners.pending().to_vec();
+            let demand = 4 * pending.len() + 2;
+            let reserved = ir::MAX_DROP_ACTIONS_PER_FUNCTION - lowerer.cleanup_actions - demand
+                + usize::from(extra);
+            lowerer.preparation_facts.held_cleanup[1] = reserved;
+            let before = state(lowerer);
+            let checkpoint = lowerer.preparation_checkpoint();
+            let facts = lowerer.preparation_facts.clone();
+            let succeeded = run_statement(lowerer, 2, ty);
+            assert_eq!(succeeded, !extra);
+            if extra {
+                assert_eq!(state(lowerer), before);
+                assert_eq!(lowerer.preparation_checkpoint(), checkpoint);
+                assert_eq!(lowerer.preparation_facts, facts);
+            } else {
+                assert_eq!(lowerer.cleanup_actions + reserved, ir::MAX_DROP_ACTIONS_PER_FUNCTION);
+                assert!(matches!(
+                    lowerer.instructions.last().expect("verified generic Vec handle shape").kind,
+                    raw::InstructionKind::VecPush { .. }
+                ));
+            }
+            lowerer.preparation_facts.held_cleanup[1] = 0;
+            assert!(lowerer.constructor_storage_is_clear());
+            if extra {
+                assert!(run_statement(lowerer, 2, ty));
+            }
+        });
+        assert_eq!(errors.len(), usize::from(extra));
+        if extra {
+            assert_eq!(errors[0].code, "ZRYNA-M3201");
+        }
+    }
+
+    let (source, snapshot) = fixture(&Element::HandleVec, Operation::PushIndexedClone, None);
+    let errors = with_snapshot(&source, snapshot, |lowerer, ty| {
+        parameters(lowerer);
+        assert!(run_statement(lowerer, 0, ty));
+        assert!(run_statement(lowerer, 1, ty));
+        lowerer.preparation_facts.held_cleanup[1] = usize::MAX;
+        let before = state(lowerer);
+        let checkpoint = lowerer.preparation_checkpoint();
+        let facts = lowerer.preparation_facts.clone();
+        assert!(!run_statement(lowerer, 2, ty));
+        assert_eq!(state(lowerer), before);
+        assert_eq!(lowerer.preparation_checkpoint(), checkpoint);
+        assert_eq!(lowerer.preparation_facts, facts);
+        lowerer.preparation_facts.held_cleanup[1] = 0;
+        assert!(lowerer.constructor_storage_is_clear());
+        assert!(run_statement(lowerer, 2, ty));
+    });
+    assert_eq!(errors.len(), 1);
+    assert_eq!(errors[0].code, "ZRYNA-M3201");
+}
+
+#[test]
+fn generic_vec_place_handle_push_clone_has_exact_direct_and_structural_resource_frontiers() {
+    for element in [Element::Shared, Element::Weak, Element::HandleEnum] {
+        for extra in [false, true, false] {
+            let (source, snapshot) = fixture(&element, Operation::PushClone, None);
+            let mut expected = None;
+            let errors = with_snapshot(&source, snapshot, |lowerer, ty| {
+                parameters(lowerer);
+                assert!(run_statement(lowerer, 0, ty));
+                assert!(run_statement(lowerer, 1, ty));
+                let pending = lowerer.owners.pending().to_vec();
+                let demand = if matches!(element, Element::Shared | Element::Weak) {
+                    2 * pending.len() + 1
+                } else {
+                    3 * pending.len() + 2
+                };
+                let reserved = ir::MAX_DROP_ACTIONS_PER_FUNCTION - lowerer.cleanup_actions - demand
+                    + usize::from(extra);
+                lowerer.preparation_facts.held_cleanup[1] = reserved;
+                let before = state(lowerer);
+                let checkpoint = lowerer.preparation_checkpoint();
+                let facts = lowerer.preparation_facts.clone();
+                let succeeded = run_statement(lowerer, 2, ty);
+                assert_eq!(succeeded, !extra);
+                if extra {
+                    assert_eq!(state(lowerer), before);
+                    assert_eq!(lowerer.preparation_checkpoint(), checkpoint);
+                    assert_eq!(lowerer.preparation_facts, facts);
+                    let RawStatementKind::ExpressionStatement { expression, .. } =
+                        lowerer.function.body.statements[2].kind
+                    else {
+                        panic!("push statement")
+                    };
+                    expected = Some(zryna_diagnostics::Diagnostic::error_at(
+                        "ZRYNA-M3201",
+                        crate::data_ownership_v1::span(
+                            lowerer.input.sources(),
+                            lowerer.function.body.expressions[expression as usize].span,
+                        ),
+                        "derived cleanup actions exceed the per-function M3 limit of 262144",
+                        "reduce simultaneously live owned aggregates and String leaves",
+                    ));
+                    lowerer.preparation_facts.held_cleanup[1] = 0;
+                    assert!(run_statement(lowerer, 2, ty));
+                } else {
+                    assert_eq!(
+                        lowerer.cleanup_actions + reserved,
+                        ir::MAX_DROP_ACTIONS_PER_FUNCTION
+                    );
+                }
+                assert!(lowerer.constructor_storage_is_clear());
+            });
+            assert_eq!(errors, expected.into_iter().collect::<Vec<_>>());
+        }
+    }
+}
+
+#[test]
+fn generic_vec_place_handle_push_clone_overflow_replays_and_recovers() {
+    for element in [Element::Shared, Element::Weak, Element::HandleEnum] {
+        let (source, snapshot) = fixture(&element, Operation::PushClone, None);
+        let mut overflow_expected = None;
+        let first = with_snapshot(&source, snapshot.clone(), |lowerer, ty| {
+            parameters(lowerer);
+            assert!(run_statement(lowerer, 0, ty));
+            assert!(run_statement(lowerer, 1, ty));
+            lowerer.preparation_facts.held_cleanup[1] = usize::MAX;
+            let before = state(lowerer);
+            let checkpoint = lowerer.preparation_checkpoint();
+            let facts = lowerer.preparation_facts.clone();
+            assert!(!run_statement(lowerer, 2, ty));
+            assert_eq!(state(lowerer), before);
+            assert_eq!(lowerer.preparation_checkpoint(), checkpoint);
+            assert_eq!(lowerer.preparation_facts, facts);
+            let clone_at = lowerer.function.body.expressions.iter().find_map(|expression| {
+                matches!(expression.kind, zryna_syntax::v4::RawExpressionKind::Clone { .. })
+                    .then_some(expression.span)
+            });
+            let (message, guidance) = if matches!(element, Element::Shared | Element::Weak) {
+                (
+                    "derived cleanup actions exceed the per-function M3 limit of 262144",
+                    "reduce simultaneously live owned aggregates and String leaves",
+                )
+            } else {
+                (
+                    "structural clone exceeds a checked value, place, or cleanup resource limit",
+                    "reduce simultaneously live owned aggregates or clone sites",
+                )
+            };
+            overflow_expected = Some(zryna_diagnostics::Diagnostic::error_at(
+                "ZRYNA-M3201",
+                crate::data_ownership_v1::span(
+                    lowerer.input.sources(),
+                    clone_at.expect("clone expression"),
+                ),
+                message,
+                guidance,
+            ));
+            lowerer.preparation_facts.held_cleanup[1] = 0;
+            assert!(run_statement(lowerer, 2, ty));
+        });
+        let second = with_snapshot(&source, snapshot, |lowerer, ty| {
+            parameters(lowerer);
+            assert!(run_statement(lowerer, 0, ty));
+            assert!(run_statement(lowerer, 1, ty));
+            lowerer.preparation_facts.held_cleanup[1] = usize::MAX;
+            assert!(!run_statement(lowerer, 2, ty));
+        });
+        assert_eq!(first, overflow_expected.into_iter().collect::<Vec<_>>());
+        assert_eq!(second.len(), 1);
+        assert_eq!(second[0].code(), first[0].code());
+        assert_eq!(second[0].message(), first[0].message());
+        assert_eq!(second[0].guidance(), first[0].guidance());
+        assert_eq!(
+            second[0].primary_span().map(|span| (span.start(), span.end())),
+            first[0].primary_span().map(|span| (span.start(), span.end()))
+        );
     }
 }

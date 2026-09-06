@@ -36,6 +36,16 @@ It does not widen `GenericCloneBorrow` to handles. Lexical alias and formal-borr
 reuse `BorrowReplace`; the #255/#256 matrices cover exact source type, bounds, owner exclusion,
 failure retention and restoration for both arrays and Vecs.
 
+Issue #323 binds that recursive classification to an authenticated nonempty source value rather
+than inferring it from nested `Vec<Vec<String>>` evidence. Its `Vec<Node>` contains a leaf of the
+recursive Enum, and prepared push receives an explicit structural clone whose destination-prefix
+failure first releases that partial result before the unchanged Vec, clone source and earlier root.
+Exact, first-extra and checked-overflow cleanup controls preserve pre-operation state and replay the
+same diagnostic, then a same-lowerer retry binds the recovered prepared owner and push-failure
+order. A separate authenticated source proves indexed clone observation and exact replacement of
+the recursive `Node` referent. No element move-out, persistent borrow or runtime recursion
+guarantee is added.
+
 ## Clone cleanup and sealed views
 
 The existing `PrepareFailure` and `GenericClonePrefixFailure` sites remain separate and mandatory.
@@ -85,6 +95,24 @@ Replacement has no fallible commit site. Planning reserves end/commit resources 
 source mutation, preserves source evaluation and diagnostic ordering, and retains the existing
 limits and mandatory full verifier. No element-count-sized place expansion is introduced.
 
-This is reusable operation authority for #278, not closure evidence by itself. Full source,
-hostile raw IR, retention, exact/first-extra resources, replay and independent review remain
-required, as do the enclosing issue's other operation and composition obligations.
+Issue #322 authenticates the ordinary handle-containing Vec integration on top of this reusable
+authority. Direct Shared/Weak elements and nested handle-bearing Struct, Enum, FixedArray and Vec
+elements support explicit clone observation, exact replacement and prepared push. Indexed
+observation uses `HandleAwareCloneBorrow`; clone operands prepared from ordinary places use either
+the exact direct Shared/Weak count operation or `HandleAwareClonePlace`. Both routes preserve the
+complete container, transfer only a successfully prepared replacement/push owner, and retain the
+original bounds, growth and prefix-cleanup ordering.
+
+The named `generic_vec_handle_` source tests bind all six element categories to mandatory verified
+IR, the exact prepared RHS identity, bounds-before-preparation order, complete retained cleanup,
+and byte-for-byte stable verified-program debug evidence when replayed against one authenticated
+source authority. The enum case also binds the sealed runtime-active payload recipe to both of its
+ordered handle-count leaves. Exact source diagnostics cover implicit move, moved replacement/push
+operands, overlap and wrong types. Separate raw-IR hostile tests reject stale/foreign borrows,
+wrong result types and missing or duplicate cleanup.
+
+The generic Vec resource controls include direct Shared/Weak and structural handle clone routes
+for replacement and ordinary-place push, plus indexed-clone push. They exercise exact,
+first-extra and checked-overflow cleanup frontiers, preserve rejected state, and prove a pristine
+same-lowerer retry. These remain compiler proofs: no element move-out, hole, pop, persistent source
+borrow, allocator/runtime execution, backend, CLI or public profile is enabled.

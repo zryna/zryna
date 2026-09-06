@@ -1,0 +1,14 @@
+interface Node extends ZrynaEnum { leaf: String; branch: Vec<Node>; }
+
+function compose(): Node {
+  const leaf: Node = Node.leaf("leaf");
+  const children: Vec<Node> = Vec<Node>([leaf]);
+  let root: Node = Node.branch(children);
+  const moved: Node = root;
+  let target: Node = Node.leaf("old");
+  target = moved;
+  const copy: Node = clone(target);
+  let forest: Vec<Node> = Vec<Node>([]);
+  push(forest, clone(copy));
+  return copy;
+}

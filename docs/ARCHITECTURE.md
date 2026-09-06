@@ -424,6 +424,13 @@ outcomes, failure-prefix cleanup and replay, and explicit Weak cycle breaking wi
 Its ABI evidence is symbolic and non-executable: it performs no allocation, concrete target count
 mutation or outcome selection and enables no backend, driver, CLI, or public profile.
 
+The internal #270 closure candidate composes that handle authority with the generic owned operation
+core. A checked matrix binds nested aggregate/container construction and transfer, structural clone,
+ordinary Vec observation/replacement/push, handle-containing static subobjects and finite values
+through legal Vec-indirection recursion to authenticated source, mandatory verified IR, hostile IR,
+resource and replay evidence. This is compiler authority only: #271–#273 and #275 retain their
+source-composition boundaries, while runtime execution, backends and public activation remain open.
+
 The internal [`M3 Copy aggregate semantic boundary`](M3_COPY_AGGREGATE_SEMANTICS.md) consumes the
 exact source-map-bound protocol-v4 authority, resolves canonical nominal identities and exact
 types, verifies one type graph for both layout targets, and lowers recursively Copy structs, enums,

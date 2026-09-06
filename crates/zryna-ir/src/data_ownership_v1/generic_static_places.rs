@@ -1,4 +1,4 @@
-//! Complete static non-handle subobjects reuse the ordinary ownership flow and drop model.
+//! Complete static subobjects transfer ownership without performing a structural clone.
 
 use std::collections::BTreeMap;
 
@@ -11,22 +11,29 @@ use super::{
 pub(super) fn valid_type(
     place: raw::PlaceId,
     function: &raw::Function,
-    capabilities: &[bool],
+    capabilities: (&[bool], &[bool]),
 ) -> bool {
     static_projection_path(place, function)
         && function
             .places
             .get(place.0 as usize)
-            .is_some_and(|place| capabilities.get(place.ty.0 as usize).copied().unwrap_or(false))
+            .is_some_and(|place| transferable(place.ty, capabilities))
+}
+
+fn transferable(ty: raw::TypeId, (ordinary, handles): (&[bool], &[bool])) -> bool {
+    // Both cached graph classifications retain layout restrictions. Moving a complete value
+    // needs neither clone recipe, and must not inherit either recipe's handle exclusion.
+    ordinary.get(ty.0 as usize).copied().unwrap_or(false)
+        || handles.get(ty.0 as usize).copied().unwrap_or(false)
 }
 
 pub(super) fn valid_move_type(
     place: raw::PlaceId,
     function: &raw::Function,
-    capabilities: &[bool],
+    capabilities: (&[bool], &[bool]),
 ) -> bool {
     let Some(record) = function.places.get(place.0 as usize) else { return false };
-    if !capabilities.get(record.ty.0 as usize).copied().unwrap_or(false) {
+    if !transferable(record.ty, capabilities) {
         return false;
     }
     let mut current = place;

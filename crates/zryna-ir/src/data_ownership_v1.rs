@@ -5432,7 +5432,7 @@ fn verify_operation_types(
     function: &raw::Function,
     values: &[ValueInfo],
     layouts: &VerifiedLayouts,
-    (generic_clone_types, handle_clone_types): (&[bool], &[bool]),
+    clone_types: (&[bool], &[bool]),
     borrows: &BorrowIndex,
     errors: &mut Errors,
 ) {
@@ -5526,36 +5526,34 @@ fn verify_operation_types(
         }
         I::GenericClonePlace { place, .. } => {
             place_type(*place) == result_type
-                && result_type.is_some_and(|ty| {
-                    generic_clone_types.get(ty.0 as usize).copied().unwrap_or(false)
-                })
+                && result_type
+                    .is_some_and(|ty| clone_types.0.get(ty.0 as usize).copied().unwrap_or(false))
         }
         I::GenericCloneBorrow { borrow, .. } => {
             borrows.definition(*borrow).is_some_and(|(referent, _)| {
                 Some(referent) == result_type
-                    && generic_clone_types.get(referent.0 as usize).copied().unwrap_or(false)
+                    && clone_types.0.get(referent.0 as usize).copied().unwrap_or(false)
             })
         }
         I::HandleAwareClonePlace { place, .. } => {
             place_type(*place) == result_type
-                && result_type.is_some_and(|ty| {
-                    handle_clone_types.get(ty.0 as usize).copied().unwrap_or(false)
-                })
+                && result_type
+                    .is_some_and(|ty| clone_types.1.get(ty.0 as usize).copied().unwrap_or(false))
         }
         I::HandleAwareCloneBorrow { borrow, .. } => {
             borrows.definition(*borrow).is_some_and(|(referent, _)| {
                 Some(referent) == result_type
-                    && handle_clone_types.get(referent.0 as usize).copied().unwrap_or(false)
+                    && clone_types.1.get(referent.0 as usize).copied().unwrap_or(false)
             })
         }
         I::GenericMoveFromPlace { place } => {
             place_type(*place) == result_type
-                && generic_static_places::valid_move_type(*place, function, generic_clone_types)
+                && generic_static_places::valid_move_type(*place, function, clone_types)
         }
         I::GenericReplacePlace { place, value } => {
             instruction.result.is_none()
                 && place_type(*place) == value_info(values, *value).map(|info| info.ty)
-                && generic_static_places::valid_type(*place, function, generic_clone_types)
+                && generic_static_places::valid_type(*place, function, clone_types)
         }
         I::InitializePlace { place, value } | I::ReplacePlace { place, value, .. } => {
             place_type(*place) == value_info(values, *value).map(|info| info.ty)

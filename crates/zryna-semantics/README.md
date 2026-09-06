@@ -208,6 +208,10 @@ This does not extend `BorrowRead` beyond Copy or transfer an owner through the a
 owned projections, multiple aliases, mutation, moves, calls, general control flow, stored
 references, shared or weak references, and public owned parameters or results remain unavailable.
 Issue #116 passed independent verification and required merge gates.
+The Issue #323 private straight-line evidence additionally constructs one nonempty finite recursive
+Enum through `Vec<Node>` indirection, moves and root-replaces it, explicitly clones it and pushes a
+prepared clone. Mandatory verified IR retains active variants, exact owners and a finite symbolic
+clone frontier. This adds no by-value recursion, runtime/backend route or public profile.
 The Pair scalar oracle
 is observed only by a test evaluator over opaque verified views. Enum matching is limited to an
 internal single-return function with scalar literal, parameter, or active-payload arms; this is not

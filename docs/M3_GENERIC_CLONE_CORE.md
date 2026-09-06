@@ -38,6 +38,17 @@ references, never recursively expanded. The layout authority remains responsible
 by-value cycles. Runtime traversal of a finite constructed value is distinct from this static
 graph traversal.
 
+Issue #323 authenticates one nonempty finite recursive Enum value whose branch payload is
+`Vec<Node>`. The private straight-line source constructs a leaf and a nonempty branch, moves and
+root-replaces that branch, explicitly clones it, then prepares a second clone for Vec push. Both
+clone frontiers contain exactly the reachable String, Enum and Vec identities once; the Vec record
+points back to the Enum rather than unfolding the type cycle. This is source-to-verified-IR and
+symbolic failure evidence only, not recursive target execution.
+Separate authenticated wrapper and fixed-array functions move and replace exact static `Node`
+subobjects, while Vec functions clone an indexed `Node` and replace that exact referent. Their
+verified views bind the concrete producer, result and destination owners, parent masks, old-target
+drop and final return cleanup; recursive-specific raw-IR mutations cover every claimed operation.
+
 ## Preparation, frontier and failure
 
 Both cleanup identities are mandatory and unique to their exact instruction and role.

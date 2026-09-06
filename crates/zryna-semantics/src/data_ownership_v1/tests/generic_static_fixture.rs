@@ -8,6 +8,7 @@ use zryna_syntax::v4::RawExpressionKind;
 #[derive(Clone, Copy, Debug)]
 pub(in crate::data_ownership_v1) enum Shape {
     Struct,
+    HandleStruct,
     Array,
     ArrayStruct,
     CopyStruct,
@@ -25,12 +26,16 @@ pub(in crate::data_ownership_v1) enum Case {
     SelfMove,
     SelfClone,
     CopyReplace,
+    WrongType,
+    RepeatedMove,
+    MovedTarget,
 }
 #[derive(Clone, Copy)]
 enum Ty {
     Root,
     Element,
     String,
+    Shared,
     Vector,
     Parcel,
     Integer,
@@ -65,7 +70,12 @@ impl Builder {
     fn ty(&mut self, ty: Ty) -> u32 {
         let start = self.source.len();
         let kind = match ty {
-            Ty::Root if matches!(self.shape, Shape::Struct | Shape::CopyStruct) => {
+            Ty::Root
+                if matches!(
+                    self.shape,
+                    Shape::Struct | Shape::HandleStruct | Shape::CopyStruct
+                ) =>
+            {
                 return self.ty(Ty::Parcel);
             }
             Ty::Element => {
@@ -78,11 +88,26 @@ impl Builder {
             }
             Ty::Integer => RawTypeSyntaxKind::Named { name: self.name("i32") },
             Ty::String => RawTypeSyntaxKind::String { keyword_span: self.text("String") },
+            Ty::Shared => {
+                let keyword_span = self.text("Shared");
+                let less_than_span = self.text("<");
+                let argument = self.ty(Ty::String);
+                RawTypeSyntaxKind::Shared {
+                    keyword_span,
+                    less_than_span,
+                    argument,
+                    greater_than_span: self.text(">"),
+                }
+            }
             Ty::Parcel => RawTypeSyntaxKind::Named { name: self.name("Parcel") },
             Ty::Vector => {
                 let keyword_span = self.text("Vec");
                 let less_than_span = self.text("<");
-                let argument = self.ty(Ty::String);
+                let argument = self.ty(if matches!(self.shape, Shape::HandleStruct) {
+                    Ty::Shared
+                } else {
+                    Ty::String
+                });
                 RawTypeSyntaxKind::Vec {
                     keyword_span,
                     less_than_span,
@@ -127,7 +152,8 @@ impl Builder {
     fn projection(&mut self, sibling: bool) -> u32 {
         let start = self.source.len();
         let base = self.reference("item");
-        let kind = if matches!(self.shape, Shape::Struct | Shape::CopyStruct) {
+        let kind = if matches!(self.shape, Shape::Struct | Shape::HandleStruct | Shape::CopyStruct)
+        {
             let dot_span = self.text(".");
             RawExpressionKind::FieldAccess { base, dot_span, field: self.name("value") }
         } else {
@@ -201,6 +227,7 @@ impl Builder {
         self.text(" ");
         let value = match case {
             Case::CopyReplace => self.reference("next"),
+            Case::WrongType => self.reference("wrong"),
             Case::SelfMove => self.projection(false),
             Case::SelfClone => self.clone_value(|f| f.projection(false)),
             _ => self.clone_value(|f| f.reference("next")),
@@ -218,7 +245,7 @@ impl Builder {
         self.text(" ");
         let value = match case {
             Case::Clone => self.clone_value(|f| f.projection(false)),
-            Case::Move => self.projection(false),
+            Case::Move | Case::RepeatedMove => self.projection(false),
             Case::Sibling => self.clone_value(|f| f.projection(true)),
             Case::Partial => self.clone_value(|f| f.reference("item")),
             _ => self.reference("item"),
@@ -233,7 +260,10 @@ impl Builder {
 }
 
 fn initial(shape: Shape) -> (Builder, Vec<RawDataDeclaration>) {
-    if !matches!(shape, Shape::CopyStruct | Shape::CopyArray | Shape::CopyNestedArray) {
+    if !matches!(
+        shape,
+        Shape::HandleStruct | Shape::CopyStruct | Shape::CopyArray | Shape::CopyNestedArray
+    ) {
         let (source, raw) =
             replacement_fixture(ReplacementRoot::Struct, ReplacementCase::Constructor);
         let file = &raw.files[0];
@@ -270,7 +300,8 @@ fn initial(shape: Shape) -> (Builder, Vec<RawDataDeclaration>) {
     let field_name = f.name("value");
     let colon_span = f.text(":");
     f.text(" ");
-    let type_syntax = f.ty(Ty::Integer);
+    let type_syntax =
+        f.ty(if matches!(shape, Shape::HandleStruct) { Ty::Vector } else { Ty::Integer });
     let semicolon_span = f.text(";");
     let fields = vec![RawDataField {
         span: at(start, f.source.len()),
@@ -311,11 +342,21 @@ pub(in crate::data_ownership_v1) fn fixture(
     let mut parameters = vec![f.parameter("incoming", Ty::Root)];
     let replacement = matches!(
         case,
-        Case::Replace | Case::Repeat | Case::SelfMove | Case::SelfClone | Case::CopyReplace
+        Case::Replace
+            | Case::Repeat
+            | Case::SelfMove
+            | Case::SelfClone
+            | Case::CopyReplace
+            | Case::WrongType
+            | Case::MovedTarget
     );
     if replacement {
         f.text(", ");
         parameters.push(f.parameter("next", Ty::Element));
+    }
+    if matches!(case, Case::WrongType) {
+        f.text(", ");
+        parameters.push(f.parameter("wrong", Ty::String));
     }
     if matches!(shape, Shape::CopyStruct | Shape::CopyArray | Shape::CopyNestedArray) {
         f.text(", ");
@@ -328,7 +369,7 @@ pub(in crate::data_ownership_v1) fn fixture(
     let open_brace_span = f.text("{");
     f.text(" ");
     f.local("item", Ty::Root, |f| f.reference("incoming"));
-    if matches!(case, Case::Sibling | Case::Partial) {
+    if matches!(case, Case::Sibling | Case::Partial | Case::RepeatedMove | Case::MovedTarget) {
         f.local("taken", Ty::Element, |f| f.projection(false));
     }
     if replacement {

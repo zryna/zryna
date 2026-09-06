@@ -44,7 +44,7 @@ fn parameters(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) {
 
 #[test]
 fn generic_static_replacement_resources_exact_extra_overflow_and_recovery_are_transactional() {
-    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct] {
+    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct, Shape::HandleStruct] {
         for pressure in [0, 1, 2, 0] {
             let (source, snapshot) = fixture(shape, Case::Replace);
             let mut expected = None;
@@ -126,7 +126,7 @@ fn generic_static_replacement_resources_exact_extra_overflow_and_recovery_are_tr
 
 #[test]
 fn generic_static_move_resources_exact_extra_overflow_and_recovery_do_not_leak_masks() {
-    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct] {
+    for shape in [Shape::Struct, Shape::Array, Shape::ArrayStruct, Shape::HandleStruct] {
         for pressure in [0, 1, 2, 0] {
             let (source, snapshot) = fixture(shape, Case::Move);
             let mut expected = None;
