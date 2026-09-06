@@ -5,6 +5,12 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = file => readFileSync(new URL(file, root), "utf8");
 const document = read("docs/M3_SHARED_WEAK_EVIDENCE.md");
+const scopeDocuments = [
+  "docs/M3_SHARED_WEAK_AUTHORITY.md",
+  "docs/M3_INDEXED_SOURCE_OPERATIONS.md",
+  "docs/M3_OWNERSHIP_COMPOSITION.md",
+  "docs/ROADMAP.md",
+].map(file => [file, read(file)]);
 
 const expectedBindings = [
   ["A1", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_fault_oracle.rs", "source_upgrade_binds_success_expiration_and_overflow_to_distinct_outcomes"],
@@ -45,6 +51,10 @@ const expectedBindings = [
   ["A6", "held-credit/planner control", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs", "handle_aware_structural_clone_has_exact_cleanup_frontier_and_pristine_retry"],
   ["A6", "held-credit/planner control", "crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_resources.rs", "weak_upgrade_exact_extra_overflow_resources_restore_pristine_state"],
   ["A6", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/control_model/tests/resources.rs", "control_model_internal_resource_boundaries_publish_nothing_on_rejection"],
+  ["A6", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "vec_transitions_use_sealed_stride_and_checked_byte_amplification"],
+  ["A6", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "bound_vec_claim_rejects_cross_target_and_element_replay"],
+  ["A6", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "byte_amplification_violations_replay_deterministically"],
+  ["A6", "synthetic ABI counter", "crates/zryna-ownership-runtime-abi/src/tests.rs", "exact_contract_seals_all_declarations_and_layout_metadata"],
   ["A7", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs", "moved_handle_clone_reports_exact_diagnostic_and_replays"],
   ["A7", "authenticated source program", "crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs", "weak_upgrade_binding_collision_is_exact_deterministic_and_recovers"],
   ["A7", "verified IR", "crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs", "shared_weak_cleanup_rejects_missing_reordered_returned_and_foreign_owners"],
@@ -129,4 +139,18 @@ test("shared and weak resource ledger fails closed on stale evidence or boundary
     "static per-function instruction limits do not by themselves impose a dynamic",
     "static instruction limits impose a dynamic",
   )), /boundary claim drifted/);
+});
+
+test("shared and weak scope documents keep Issue #263 non-executable", () => {
+  for (const [file, text] of scopeDocuments) {
+    for (const stale of [
+      "target execution remains owned by #263",
+      "executed target behavior remains #263",
+      "Executed count/allocation faults remain #263",
+      "target outcome execution remains the #263 boundary",
+      "Target execution remains #263 work",
+    ]) assert(!text.includes(stale), `${file}: stale Issue #263 target claim`);
+  }
+  assert(scopeDocuments.every(([, text]) => text.includes("#263")));
+  assert(scopeDocuments.every(([, text]) => text.includes("non-executable")));
 });

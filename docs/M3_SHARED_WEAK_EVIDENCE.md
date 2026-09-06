@@ -98,6 +98,10 @@ The acceptance identifiers below are stable ledger keys, not new issue numbers.
 | A6 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_resources.rs` | `handle_aware_structural_clone_has_exact_cleanup_frontier_and_pristine_retry` | Exact/first-extra recursive handle-clone cleanup frontier and pristine retry |
 | A6 | `held-credit/planner control` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_resources.rs` | `weak_upgrade_exact_extra_overflow_resources_restore_pristine_state` | Value/place/transition/action/plan exact, first-extra and arithmetic-overflow controls restore state |
 | A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/control_model/tests/resources.rs` | `control_model_internal_resource_boundaries_publish_nothing_on_rejection` | Private allocation/node counters prove exact/first-extra/overflow preflight without mass execution |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `vec_transitions_use_sealed_stride_and_checked_byte_amplification` | Sealed stride proves exact/first-extra dynamic-allocation byte capacity without executing allocation |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `bound_vec_claim_rejects_cross_target_and_element_replay` | Bound Vec claims prove exact/first-extra element count and reject cross-target/type replay |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `byte_amplification_violations_replay_deterministically` | Rejected first-extra byte amplification replays deterministically |
+| A6 | `synthetic ABI counter` | `crates/zryna-ownership-runtime-abi/src/tests.rs` | `exact_contract_seals_all_declarations_and_layout_metadata` | Verified ABI seals exact target-derived control size, alignment and payload offset |
 | A7 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/shared_weak_source.rs` | `moved_handle_clone_reports_exact_diagnostic_and_replays` | Exact moved-handle diagnostic and deterministic source replay |
 | A7 | `authenticated source program` | `crates/zryna-semantics/src/data_ownership_v1/tests/weak_upgrade_source.rs` | `weak_upgrade_binding_collision_is_exact_deterministic_and_recovers` | Exact binding-collision code/message/guidance/span, repeated equality and valid recovery |
 | A7 | `verified IR` | `crates/zryna-ir/src/data_ownership_v1/tests/shared_weak_authority.rs` | `shared_weak_cleanup_rejects_missing_reordered_returned_and_foreign_owners` | Missing, reordered, returned and foreign cleanup owners reject independently |
@@ -117,8 +121,10 @@ The per-function value, place, ownership-transition, cleanup-action and cleanup-
 coupled to the source shape and to earlier syntax/layout/IR limits. The A6 semantic tests reserve
 held credits around one authenticated operation to isolate exact and first-extra arithmetic; they
 are `held-credit/planner control`, not claims that one feasible source independently saturates all
-maxima. Dynamic allocation bytes and target control size/alignment remain checked layout/ABI
-preflight facts rather than allocator observations.
+maxima. A6 separately binds dynamic allocation bytes and target control size/alignment to exact
+layout/ABI tests; these remain preflight facts rather than allocator observations.
+Active-borrow and diagnostic ceilings are inherited admission prerequisites and are not consumed
+by the handle operations covered here, so they are intentionally not represented as A6 demand.
 
 Target-runtime exclusions are exact: this ledger does not execute allocation, mutate a concrete
 strong or weak count, select an upgrade edge at runtime, destroy payload bytes, deallocate a
