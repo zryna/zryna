@@ -85,6 +85,19 @@ Replacement has no fallible commit site. Planning reserves end/commit resources 
 source mutation, preserves source evaluation and diagnostic ordering, and retains the existing
 limits and mandatory full verifier. No element-count-sized place expansion is introduced.
 
-This is reusable operation authority for #278, not closure evidence by itself. Full source,
-hostile raw IR, retention, exact/first-extra resources, replay and independent review remain
-required, as do the enclosing issue's other operation and composition obligations.
+Issue #322 authenticates the ordinary handle-containing Vec integration on top of this reusable
+authority. Direct Shared/Weak elements and nested handle-bearing Struct, Enum, FixedArray and Vec
+elements support explicit clone observation, exact replacement and prepared push. Indexed
+observation uses `HandleAwareCloneBorrow`; clone operands prepared from ordinary places use either
+the exact direct Shared/Weak count operation or `HandleAwareClonePlace`. Both routes preserve the
+complete container, transfer only a successfully prepared replacement/push owner, and retain the
+original bounds, growth and prefix-cleanup ordering.
+
+The named `generic_vec_handle_` source tests bind all six element categories to mandatory verified
+IR, exact owner/count-clone authority, deterministic replay and exact rejection diagnostics. The
+separate raw-IR hostile tests reject stale/foreign borrows, wrong result types and missing or
+duplicate cleanup. The generic Vec resource controls include direct and structural handle clone
+replacement plus indexed-clone push at exact, first-extra and checked-overflow cleanup frontiers
+with unchanged rejected state and recovery. These remain compiler proofs: no element move-out,
+hole, pop, persistent source borrow, allocator/runtime execution, backend, CLI or public profile is
+enabled.

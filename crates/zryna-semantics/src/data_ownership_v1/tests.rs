@@ -16,6 +16,8 @@ mod generic_route_source;
 pub(super) mod generic_static_fixture;
 mod generic_static_source;
 pub(super) mod generic_vec_fixture;
+mod generic_vec_handle_rejections;
+mod generic_vec_handle_source;
 mod generic_vec_push_source;
 mod generic_vec_source;
 mod generic_vec_source_rejections;
