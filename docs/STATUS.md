@@ -272,9 +272,8 @@ Issue #272 is now a checked compiler-only closure candidate through #329 signatu
 borrow completion; #274 remains separately completed and #269 remains the parent. Verified
 instruction, cleanup and fault traces are not target execution. Runtime, backend, CLI and public
 activation remain open, so complete #84/#85/#86 support is not claimed.
-Protocol v4 is unchanged; projected forwarding, repeated calls, call recursion, owned aggregate
-call shapes, public borrow signatures and retained borrow authority remain later or unavailable
-child work. This adds no runtime,
+Protocol v4 is unchanged; projected forwarding, call recursion, public borrow signatures and
+retained borrow authority remain later or unavailable child work. This adds no runtime,
 ABI, backend, driver, CLI, artifact, website-support, or public-profile capability.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
