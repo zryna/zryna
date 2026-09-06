@@ -231,27 +231,48 @@ pub(in crate::data_ownership_v1) fn fresh_match_base_fixture(
     vector: bool,
     owned: bool,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    fresh_match_base_build(vector, owned, true, false)
+    let container = if vector { FreshContainer::Vec } else { FreshContainer::FixedArray };
+    let mode = if owned { FreshMode::OwnedExplicit } else { FreshMode::Copy };
+    fresh_match_base_build(container, mode)
 }
 
 pub(in crate::data_ownership_v1) fn fresh_match_base_implicit_read_fixture(
     vector: bool,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    fresh_match_base_build(vector, true, false, false)
+    let container = if vector { FreshContainer::Vec } else { FreshContainer::FixedArray };
+    fresh_match_base_build(container, FreshMode::OwnedImplicit)
 }
 
 pub(in crate::data_ownership_v1) fn fresh_match_base_mismatch_fixture(
     vector: bool,
 ) -> (String, RawProjectSyntaxSnapshot) {
-    fresh_match_base_build(vector, false, true, true)
+    let container = if vector { FreshContainer::Vec } else { FreshContainer::FixedArray };
+    fresh_match_base_build(container, FreshMode::Mismatched)
+}
+
+enum FreshContainer {
+    FixedArray,
+    Vec,
+}
+
+enum FreshMode {
+    Copy,
+    OwnedExplicit,
+    OwnedImplicit,
+    Mismatched,
 }
 
 fn fresh_match_base_build(
-    vector: bool,
-    owned: bool,
-    clone_owned: bool,
-    mismatched: bool,
+    container: FreshContainer,
+    mode: FreshMode,
 ) -> (String, RawProjectSyntaxSnapshot) {
+    let vector = matches!(container, FreshContainer::Vec);
+    let (owned, clone_owned, mismatched) = match mode {
+        FreshMode::Copy => (false, true, false),
+        FreshMode::OwnedExplicit => (true, true, false),
+        FreshMode::OwnedImplicit => (true, false, false),
+        FreshMode::Mismatched => (false, true, true),
+    };
     let mut builder = Builder::default();
     let declaration = builder.fresh_container_choice(vector, owned, mismatched);
     builder.text("\n");

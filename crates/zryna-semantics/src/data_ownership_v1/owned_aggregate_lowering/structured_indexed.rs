@@ -8,6 +8,12 @@ use super::constructor_preparation::PreparedValue;
 use super::structured_graph::StructuredGraph;
 use super::{PrivateOwnedAggregateLowerer, Ty};
 
+struct StructuredIndexedChain {
+    indices: Vec<(u32, u32)>,
+    first_checked: usize,
+    fresh: Option<(u32, Ty)>,
+}
+
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
     pub(super) fn structured_indexed(
         &mut self,
@@ -34,7 +40,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         indexed: u32,
         ty: Ty,
         graph: &StructuredGraph,
-    ) -> Option<(Vec<(u32, u32)>, usize, Option<(u32, Ty)>)> {
+    ) -> Option<StructuredIndexedChain> {
         let at = span(self.input.sources(), self.expression(indexed)?.span);
         let mut base = indexed;
         let mut indices = Vec::new();
@@ -86,7 +92,11 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             );
             return None;
         }
-        Some((indices, first_checked?, fresh.then_some((base, base_ty))))
+        Some(StructuredIndexedChain {
+            indices,
+            first_checked: first_checked?,
+            fresh: fresh.then_some((base, base_ty)),
+        })
     }
 
     fn inferred_indexed_type_in(
@@ -151,7 +161,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         graph: &mut StructuredGraph,
     ) -> Option<raw::ValueId> {
         let at = span(self.input.sources(), self.expression(indexed)?.span);
-        let (indices, first_checked, fresh) = self.structured_indexed_chain(indexed, ty, graph)?;
+        let StructuredIndexedChain { indices, first_checked, fresh } =
+            self.structured_indexed_chain(indexed, ty, graph)?;
         if write && fresh.is_some() {
             self.errors.at(
                 "ZRYNA-M3014",

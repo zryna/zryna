@@ -68,107 +68,116 @@ fn parameter(lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>) -> Vec<raw:
     values
 }
 
+fn structured_resource_fixture(shape: usize) -> (String, RawProjectSyntaxSnapshot) {
+    match shape {
+        0 => match_fixture(Payload::Struct, true, true),
+        1 => nested_match_fixture(true, true),
+        2 => call_match_fixture(true, true),
+        3 => vec_match_fixture(true, true),
+        4 => formal_match_fixture(true),
+        5 => string_match_fixture(0),
+        6 => string_match_fixture(1),
+        7 => indexed_match_fixture(false, true),
+        8..=15 => continued_indexed_fixture(shape & 1 != 0, shape & 2 != 0, shape & 4 != 0),
+        _ => {
+            let fresh = shape - 16;
+            fresh_indexed_match_fixture(fresh & 1 != 0, fresh & 2 != 0)
+        }
+    }
+}
+
+fn exercise_structured_resource(
+    lowerer: &mut PrivateOwnedAggregateLowerer<'_, '_, '_>,
+    result: Ty,
+    resource: usize,
+    extra: usize,
+) {
+    let parameter = parameter(lowerer);
+    let initial = StructuredCheckpoint::capture(lowerer);
+    let pristine =
+        lowerer.lower_structured_cfg(&parameter, result).expect("pristine authenticated match");
+    let used = [
+        lowerer.next_value as usize,
+        lowerer.places.len(),
+        lowerer.instructions.len() + pristine.len(),
+        lowerer.cleanup_actions,
+        lowerer.cleanup_plans.len(),
+    ];
+    initial.restore(lowerer);
+    let maximum = resource_limit(resource);
+    let held = if extra == usize::MAX { extra } else { maximum - used[resource] + extra };
+    match resource {
+        0 => lowerer.set_reserved_constructor_values_for_test(held),
+        1 => lowerer.set_reserved_constructor_places_for_test(held),
+        2 => lowerer.reserved_transitions = held,
+        3 => lowerer.preparation_facts.held_cleanup[1] = held,
+        4 => lowerer.preparation_facts.held_cleanup[0] = held,
+        _ => unreachable!("five resources"),
+    }
+    let before = format!(
+        "{:?}",
+        (
+            lowerer.preparation_checkpoint(),
+            &lowerer.bindings,
+            &lowerer.places,
+            &lowerer.instructions,
+            &lowerer.constructor_types,
+            &lowerer.owners,
+            &lowerer.preparation_facts
+        )
+    );
+    let output = lowerer.lower_structured_cfg(&parameter, result);
+    if extra == 0 {
+        assert_eq!(output, Some(pristine));
+        return;
+    }
+    assert!(output.is_none(), "resource {resource}, extra {extra}");
+    assert_eq!(
+        format!(
+            "{:?}",
+            (
+                lowerer.preparation_checkpoint(),
+                &lowerer.bindings,
+                &lowerer.places,
+                &lowerer.instructions,
+                &lowerer.constructor_types,
+                &lowerer.owners,
+                &lowerer.preparation_facts
+            )
+        ),
+        before
+    );
+    lowerer.set_reserved_constructor_values_for_test(0);
+    lowerer.set_reserved_constructor_places_for_test(0);
+    lowerer.reserved_transitions = 0;
+    lowerer.preparation_facts.held_cleanup = [0, 0];
+    assert_eq!(
+        lowerer.lower_structured_cfg(&parameter, result),
+        Some(pristine),
+        "pristine same-state recovery"
+    );
+}
+
+fn assert_structured_resource_case(shape: usize, resource: usize, extra: usize) {
+    let (source, snapshot) = structured_resource_fixture(shape);
+    let errors = with_snapshot(&source, snapshot, |lowerer, result| {
+        exercise_structured_resource(lowerer, result, resource, extra);
+    });
+    if extra == 0 {
+        assert!(errors.is_empty());
+        return;
+    }
+    assert_eq!(errors.len(), 1, "shape {shape}, resource {resource}, extra {extra}");
+    assert_eq!(errors[0].code(), "ZRYNA-M3201");
+    assert_call_overflow(shape, resource, extra, &source, &errors);
+}
+
 #[test]
 fn structured_cfg_resources_exact_extra_overflow_preserve_state_and_recover() {
     for shape in 0..20 {
         for resource in 0..5 {
             for extra in [0, 1, usize::MAX] {
-                let (source, snapshot) = match shape {
-                    0 => match_fixture(Payload::Struct, true, true),
-                    1 => nested_match_fixture(true, true),
-                    2 => call_match_fixture(true, true),
-                    3 => vec_match_fixture(true, true),
-                    4 => formal_match_fixture(true),
-                    5 => string_match_fixture(0),
-                    6 => string_match_fixture(1),
-                    7 => indexed_match_fixture(false, true),
-                    8..=15 => {
-                        continued_indexed_fixture(shape & 1 != 0, shape & 2 != 0, shape & 4 != 0)
-                    }
-                    _ => {
-                        let fresh = shape - 16;
-                        fresh_indexed_match_fixture(fresh & 1 != 0, fresh & 2 != 0)
-                    }
-                };
-                let errors = with_snapshot(&source, snapshot, |lowerer, result| {
-                    let parameter = parameter(lowerer);
-                    let initial = StructuredCheckpoint::capture(lowerer);
-                    let pristine = lowerer
-                        .lower_structured_cfg(&parameter, result)
-                        .expect("pristine authenticated match");
-                    let used = [
-                        lowerer.next_value as usize,
-                        lowerer.places.len(),
-                        lowerer.instructions.len() + pristine.len(),
-                        lowerer.cleanup_actions,
-                        lowerer.cleanup_plans.len(),
-                    ];
-                    initial.restore(lowerer);
-                    let maximum = resource_limit(resource);
-                    let held =
-                        if extra == usize::MAX { extra } else { maximum - used[resource] + extra };
-                    match resource {
-                        0 => lowerer.set_reserved_constructor_values_for_test(held),
-                        1 => lowerer.set_reserved_constructor_places_for_test(held),
-                        2 => lowerer.reserved_transitions = held,
-                        3 => lowerer.preparation_facts.held_cleanup[1] = held,
-                        4 => lowerer.preparation_facts.held_cleanup[0] = held,
-                        _ => unreachable!("five resources"),
-                    }
-                    let before = format!(
-                        "{:?}",
-                        (
-                            lowerer.preparation_checkpoint(),
-                            &lowerer.bindings,
-                            &lowerer.places,
-                            &lowerer.instructions,
-                            &lowerer.constructor_types,
-                            &lowerer.owners,
-                            &lowerer.preparation_facts
-                        )
-                    );
-                    let output = lowerer.lower_structured_cfg(&parameter, result);
-                    if extra == 0 {
-                        assert_eq!(output, Some(pristine));
-                    } else {
-                        assert!(output.is_none(), "resource {resource}, extra {extra}");
-                        assert_eq!(
-                            format!(
-                                "{:?}",
-                                (
-                                    lowerer.preparation_checkpoint(),
-                                    &lowerer.bindings,
-                                    &lowerer.places,
-                                    &lowerer.instructions,
-                                    &lowerer.constructor_types,
-                                    &lowerer.owners,
-                                    &lowerer.preparation_facts
-                                )
-                            ),
-                            before
-                        );
-                        lowerer.set_reserved_constructor_values_for_test(0);
-                        lowerer.set_reserved_constructor_places_for_test(0);
-                        lowerer.reserved_transitions = 0;
-                        lowerer.preparation_facts.held_cleanup = [0, 0];
-                        assert_eq!(
-                            lowerer.lower_structured_cfg(&parameter, result),
-                            Some(pristine),
-                            "pristine same-state recovery"
-                        );
-                    }
-                });
-                if extra == 0 {
-                    assert!(errors.is_empty());
-                } else {
-                    assert_eq!(
-                        errors.len(),
-                        1,
-                        "shape {shape}, resource {resource}, extra {extra}"
-                    );
-                    assert_eq!(errors[0].code(), "ZRYNA-M3201");
-                    assert_call_overflow(shape, resource, extra, &source, &errors);
-                }
+                assert_structured_resource_case(shape, resource, extra);
             }
         }
     }

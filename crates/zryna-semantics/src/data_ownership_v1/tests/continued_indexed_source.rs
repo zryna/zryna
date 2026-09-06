@@ -1,5 +1,95 @@
 use super::*;
 
+fn assert_fresh_access_flow(
+    instructions: &[zryna_ir::data_ownership_v1::VerifiedInstruction<'_>],
+    vector: bool,
+    owned: bool,
+) {
+    let call = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::DirectCall)
+        .expect("index producer");
+    let begin = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::BeginIndexedAccess)
+        .expect("single bounds operation");
+    let finish = instructions
+        .iter()
+        .position(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
+        .expect("single final end");
+    assert!(call < begin && begin < finish);
+    assert_eq!(
+        instructions
+            .iter()
+            .filter(|instruction| instruction.kind() == VerifiedInstructionKind::BeginIndexedAccess)
+            .count(),
+        1
+    );
+    assert_eq!(
+        instructions
+            .iter()
+            .filter(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
+            .count(),
+        1,
+        "fresh Match storage is never ended and reborrowed"
+    );
+    let access = instructions[begin].indexed_borrow().expect("indexed authority");
+    assert_eq!(instructions[finish].borrow(), Some(access.borrow()));
+    assert_eq!(instructions[call].result(), Some(access.index()));
+    assert_fresh_base_lifetime(
+        instructions,
+        [call, begin, finish],
+        access.container(),
+        vector,
+        owned,
+    );
+    let observation = if owned {
+        VerifiedInstructionKind::GenericCloneBorrow
+    } else {
+        VerifiedInstructionKind::BorrowRead
+    };
+    let observed = instructions
+        .iter()
+        .find(|instruction| instruction.kind() == observation)
+        .expect("exact final observation");
+    assert_eq!(observed.borrow(), Some(access.borrow()));
+    if owned {
+        assert_eq!(observed.failure_ended_borrows().collect::<Vec<_>>(), [access.borrow()]);
+        assert!(observed.derived_drop_actions().any(|action| action.root() == access.container()));
+    }
+}
+
+fn assert_fresh_base_lifetime(
+    instructions: &[zryna_ir::data_ownership_v1::VerifiedInstruction<'_>],
+    positions: [usize; 3],
+    container: raw::PlaceId,
+    vector: bool,
+    owned: bool,
+) {
+    let [call, begin, finish] = positions;
+    if vector || owned {
+        for index in [call, begin] {
+            assert!(
+                instructions[index].derived_drop_actions().any(|action| action.root() == container),
+                "fresh base survives preparation failure"
+            );
+        }
+        assert_eq!(instructions[finish + 1].kind(), VerifiedInstructionKind::DropPlace);
+        assert_eq!(instructions[finish + 1].place_operands().collect::<Vec<_>>(), [container]);
+    } else {
+        assert_eq!(
+            instructions
+                .iter()
+                .filter(|instruction| {
+                    instruction.kind() == VerifiedInstructionKind::InitializePlace
+                })
+                .count(),
+            1,
+            "Copy array Match result receives real temporary storage"
+        );
+    }
+}
+
 #[test]
 fn fresh_indexed_match_base_preserves_owner_through_index_bounds_and_observation() {
     for vector in [false, true] {
@@ -27,86 +117,7 @@ fn fresh_indexed_match_base_preserves_owner_through_index_bounds_and_observation
             );
             let continuation = blocks.last().expect("joined container continuation");
             let instructions = continuation.instructions().collect::<Vec<_>>();
-            let call = instructions
-                .iter()
-                .position(|instruction| instruction.kind() == VerifiedInstructionKind::DirectCall)
-                .expect("index producer");
-            let begin = instructions
-                .iter()
-                .position(|instruction| {
-                    instruction.kind() == VerifiedInstructionKind::BeginIndexedAccess
-                })
-                .expect("single bounds operation");
-            let finish = instructions
-                .iter()
-                .position(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
-                .expect("single final end");
-            assert!(call < begin && begin < finish);
-            assert_eq!(
-                instructions
-                    .iter()
-                    .filter(|instruction| {
-                        instruction.kind() == VerifiedInstructionKind::BeginIndexedAccess
-                    })
-                    .count(),
-                1
-            );
-            assert_eq!(
-                instructions
-                    .iter()
-                    .filter(|instruction| instruction.kind() == VerifiedInstructionKind::EndBorrow)
-                    .count(),
-                1,
-                "fresh Match storage is never ended and reborrowed"
-            );
-            let access = instructions[begin].indexed_borrow().expect("indexed authority");
-            assert_eq!(instructions[finish].borrow(), Some(access.borrow()));
-            assert_eq!(instructions[call].result(), Some(access.index()));
-            let base_is_owned = vector || owned;
-            if base_is_owned {
-                for index in [call, begin] {
-                    assert!(
-                        instructions[index]
-                            .derived_drop_actions()
-                            .any(|action| action.root() == access.container()),
-                        "fresh base survives preparation failure"
-                    );
-                }
-                assert_eq!(instructions[finish + 1].kind(), VerifiedInstructionKind::DropPlace);
-                assert_eq!(
-                    instructions[finish + 1].place_operands().collect::<Vec<_>>(),
-                    [access.container()]
-                );
-            } else {
-                assert_eq!(
-                    instructions
-                        .iter()
-                        .filter(|instruction| {
-                            instruction.kind() == VerifiedInstructionKind::InitializePlace
-                        })
-                        .count(),
-                    1,
-                    "Copy array Match result receives real temporary storage"
-                );
-            }
-            let observation = if owned {
-                VerifiedInstructionKind::GenericCloneBorrow
-            } else {
-                VerifiedInstructionKind::BorrowRead
-            };
-            let observed = instructions
-                .iter()
-                .find(|instruction| instruction.kind() == observation)
-                .expect("exact final observation");
-            assert_eq!(observed.borrow(), Some(access.borrow()));
-            if owned {
-                assert_eq!(observed.failure_ended_borrows().collect::<Vec<_>>(), [access.borrow()]);
-                assert!(
-                    observed
-                        .derived_drop_actions()
-                        .any(|action| action.root() == access.container())
-                );
-            }
+            assert_fresh_access_flow(&instructions, vector, owned);
         }
     }
 }
