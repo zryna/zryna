@@ -13,9 +13,10 @@ claim target execution.
 | Exact and first-extra resource dimensions, overflow, atomic rejection, and deterministic replay are checked | `nonindexed_borrow_resource_frontiers.rs::static_and_active_enum_borrow_lowering_hit_exact_transition_capacity_and_recover`; `nonindexed_borrow_resource_frontiers.rs::exhaustive_match_payload_borrow_clone_hits_exact_resource_costs_and_first_extra_recovers`; `nonindexed_borrow_resource_frontiers.rs::exhaustive_match_payload_borrow_clone_overflow_is_atomic_and_recovers`; `nonindexed_borrow_resources.rs::nonindexed_owned_borrow_resource_dimensions_accept_exact_and_reject_first_extra`; `nonindexed_borrow_resources.rs::nonindexed_owned_borrow_resource_overflow_is_checked_and_recovery_is_stable`; `lexical_borrow_calls.rs::borrow_call_resource_preflight_accepts_exact_limits_and_rejects_first_extra_in_order`; `lexical_borrow_calls.rs::borrow_call_resource_overflow_precedes_limit_selection_and_preserves_authority_cost`; `structured_graph_resources.rs::complete_enum_matches_bound_graph_resources_atomically_and_recover` | `nonindexed_owned_borrow_proof.rs::nonindexed_owned_borrow_places_reach_exact_limit_and_reject_first_extra`; `borrow_resource_boundaries.rs::dense_lexical_active_borrow_exact_and_first_extra_are_fully_verified`; `nonindexed_owned_borrow_proof.rs::nonindexed_owned_root_static_overlap_rejects_atomically_and_recovers`; `active_enum_payload_borrow.rs::enum_payload_borrow_rejects_moved_overlap_disjoint_and_ended_authority_then_recovers`; `borrow_nonindexed_call_scope.rs::nonindexed_call_rejects_inactive_wrong_region_and_escape_then_recovers` |
 
 The proportional ignored gate
-`borrow_resource_boundaries.rs::sequential_nonindexed_borrows_reach_the_exact_transition_limit_and_reject_first_extra`
-constructs and verifies the complete 262,144-transition exact and first-extra programs. It is run
-by the required include-ignored closure suite, but is not used as ordinary enabled matrix evidence.
+`borrow_resource_boundaries.rs::nonindexed_borrow_reaches_the_exact_transition_limit_and_rejects_first_extra`
+keeps one real exclusive non-indexed authority live across repeated writes and verifies the complete
+262,144-transition exact and first-extra programs. It is run by the required include-ignored closure
+suite, but is not used as ordinary enabled matrix evidence.
 
 ## Retained boundaries
 
