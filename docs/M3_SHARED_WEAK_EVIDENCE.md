@@ -444,14 +444,13 @@ exclusions do not narrow any #83 compiler-proof row and are not evidence owned b
 
 ## Verification and publication gate
 
-For #259 run the repository's Node contract and documentation checks, exact bundle inventory and
-independent review. This document supplies no executed source example and no Rust/runtime proof.
-Any executable authority change in downstream children requires focused semantic/IR/ABI tests,
-opacity doctests, full preflight, M0/M2 regressions and required Linux/Windows CI on the final
-integrated commit. Preserve all existing ignored-boundary execution in the full gates.
+#259's Node contract, documentation, bundle-inventory and independent-review checks passed. The
+downstream executable changes ran the focused semantic/IR/ABI suites, opacity doctests, full
+preflight, M0/M2 regressions and required Linux/Windows jobs recorded above, including the existing
+ignored boundaries in their full gates.
 
-A final #264 evidence ledger records each named test's exact path, case/category coverage, command,
-commit/tree and observed result, distinguishes helper/preflight/full-verifier/runtime strength,
-and lists any unimplemented case as a blocker. Staged partial checkpoints may merge under their own
-scope but cannot close #83. No target runtime, public profile, three-target equivalence or website
+The #264 ledger records each named test's exact path, case/category coverage, command, commit/tree
+and observed result, and distinguishes helper, preflight, full-verifier and runtime strength. The
+final closure-ledger head still requires its own immutable full local and hosted verification before
+the public issues close. No target runtime, public profile, three-target equivalence or website
 deployment is implied; public activation still requires #89/#90.

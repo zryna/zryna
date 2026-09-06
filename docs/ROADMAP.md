@@ -376,13 +376,13 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 | #275 | non-indexed owned/static/active-payload lexical borrowing | #82/#254/#270/#271/#272/#273 |
 | #269 | complete source-composition integration | #83/#254/#255/#256 and every child above |
 
-Stages #277/#278/#279 are separately closeable children of #269, not dependents of its closure.
-#259 freezes full Shared/Weak meaning and required payload/CFG contexts; #277 fixes reusable
-integration interfaces. #260 consumes #277; #261 consumes #278; #262 consumes #279 and implements
-actual WeakUpgrade source control flow. Its compile-time closure candidate covers authenticated
+Stages #277/#278/#279 closed separately as children of #269, not dependents of its closure.
+#259 froze full Shared/Weak meaning and required payload/CFG contexts; #277 fixed reusable
+integration interfaces. #260 consumed #277; #261 consumed #278; #262 consumed #279 and implemented
+actual WeakUpgrade source control flow. Its completed compile-time closure covers authenticated
 addressable and temporary Weak operands, the complete frozen payload categories, required nested
 if/while/call/match composition, sealed successor ownership, exact diagnostics and bounded
-recovery. #263 integrates the corresponding non-executable fault, count, cycle and resource
+recovery. #263 integrated the corresponding non-executable fault, count, cycle and resource
 conformance; target execution remains downstream. #264 reconciles the complete #83 contract and
 its immutable verification provenance.
 The cores use typed operation hooks without claiming source handle execution. Required #83
