@@ -1,14 +1,15 @@
 use super::super::diagnostics::span;
 use super::super::layout_graph::semantic_type;
 use super::{PrivateOwnedAggregateLowerer, StatementOutcome, Ty};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use zryna_ir::data_ownership_v1::raw;
 use zryna_syntax::v4::RawStatementKind;
 
 pub(super) struct Scope {
     block: u32,
     next: usize,
-    bindings: BTreeSet<String>,
+    bindings: BTreeMap<String, super::Binding>,
+    declared: BTreeSet<String>,
     aliases: BTreeSet<String>,
     owners: BTreeSet<raw::PlaceId>,
     pub(super) drop_credits: usize,
@@ -20,6 +21,17 @@ impl Scope {
         self.owners.remove(&owner);
         self.drop_credits += 1;
     }
+
+    pub(super) fn shadows_outer(
+        &mut self,
+        name: &str,
+        root: u32,
+        bindings: &BTreeMap<String, super::Binding>,
+    ) -> bool {
+        let duplicate = self.declared.iter().any(|declared| declared.eq_ignore_ascii_case(name));
+        self.declared.insert(name.to_owned());
+        !duplicate && self.block != root && bindings.contains_key(name)
+    }
 }
 
 impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
@@ -27,7 +39,8 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Scope {
             block,
             next: 0,
-            bindings: self.bindings.keys().cloned().collect(),
+            bindings: self.bindings.clone(),
+            declared: BTreeSet::new(),
             aliases: self.preparation_facts.aliases.keys().cloned().collect(),
             owners: self.owners.pending().iter().copied().collect(),
             drop_credits: 0,
@@ -135,7 +148,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             let delta = self.owners.consume_owner(place)?;
             self.preparation_facts.apply(delta);
         }
-        self.bindings.retain(|name, _| scope.bindings.contains(name));
+        self.bindings.clone_from(&scope.bindings);
         Some(())
     }
 }

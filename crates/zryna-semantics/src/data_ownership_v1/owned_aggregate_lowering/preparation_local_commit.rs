@@ -25,6 +25,18 @@ impl<'l, 'a, 'f, 'e> PreparedLocal<'l, 'a, 'f, 'e> {
         name: &str,
         mutable: bool,
     ) -> Option<Self> {
+        Self::prepare_with_shadow(lowerer, id, ty, at, name, mutable, false)
+    }
+
+    pub(in crate::data_ownership_v1::owned_aggregate_lowering) fn prepare_with_shadow(
+        lowerer: &'l mut PrivateOwnedAggregateLowerer<'a, 'f, 'e>,
+        id: u32,
+        ty: Ty,
+        at: Span,
+        name: &str,
+        mutable: bool,
+        shadow_outer: bool,
+    ) -> Option<Self> {
         assert_eq!(
             lowerer.local_preparation_route(ty),
             super::super::mixed_shape::PreparationRoute::MixedSummary
@@ -45,6 +57,9 @@ impl<'l, 'a, 'f, 'e> PreparedLocal<'l, 'a, 'f, 'e> {
         } else {
             Some(value.plan.owners.rename_effect(value.plan.result, place)?.1)
         };
+        if shadow_outer {
+            value.lowerer.bindings.remove(name);
+        }
         assert!(!value.lowerer.bindings.contains_key(name), "prepared local name is fresh");
         Some(Self {
             value,

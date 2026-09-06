@@ -57,6 +57,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         self.structured_scope_from(block, result, graph, scope)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn structured_scope_from(
         &mut self,
         block: u32,
@@ -128,9 +129,19 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     self.structured_indexed_operation(target, value, ty, true, graph)?;
                 }
                 _ => {
+                    let mut shadow_outer = false;
                     if let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind
                         && !self.is_lexical_declaration(&statement)
                     {
+                        let RawStatementKind::LocalDeclaration { ref name, .. } = statement.kind
+                        else {
+                            unreachable!("local declaration selected")
+                        };
+                        shadow_outer = scope.shadows_outer(
+                            &name.text,
+                            self.function.body.root_block,
+                            &self.bindings,
+                        );
                         let ty = semantic_type(
                             self.file,
                             type_syntax,
@@ -151,7 +162,14 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                         }
                     }
                     if !matches!(
-                        self.lower_statement(id, &statement, result, None, 0)?,
+                        self.lower_statement_with_shadow(
+                            id,
+                            &statement,
+                            result,
+                            None,
+                            0,
+                            shadow_outer,
+                        )?,
                         StatementOutcome::Continue
                     ) {
                         return None;

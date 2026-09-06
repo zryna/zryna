@@ -1693,13 +1693,13 @@ fn verify_body(
             path,
             sources,
             type_owners,
-            locals,
             raw.expressions.len(),
             &mut expression_owners,
             &mut block_owners,
             errors,
         );
     }
+    verify_lexical_binding_names(raw, locals, path, errors);
     for block in &raw.blocks {
         if !contains_claim(raw.span, block.span) {
             errors.node(path, "block span is outside its function body");
@@ -1754,6 +1754,48 @@ fn verify_body(
         errors.limit("expression nesting exceeds the protocol-v4 limit");
     }
     verify_arena_order(raw, path, errors);
+}
+
+fn verify_lexical_binding_names(
+    raw: &RawFunctionBodySyntax,
+    parameters: &BTreeSet<String>,
+    path: &NormalizedSourcePath,
+    errors: &mut Errors,
+) {
+    let mut names = vec![BTreeSet::new(); raw.blocks.len()];
+    if let Some(root) = names.first_mut() {
+        root.clone_from(parameters);
+    }
+    for statement in &raw.statements {
+        let RawStatementKind::WeakUpgrade { binding, success_block, .. } = &statement.kind else {
+            continue;
+        };
+        let Some(scope) = usize::try_from(*success_block).ok().and_then(|id| names.get_mut(id))
+        else {
+            continue;
+        };
+        if !scope.insert(binding.text.clone()) {
+            errors.node(path, "duplicate weak-upgrade binding name");
+        }
+    }
+    for (block_id, block) in raw.blocks.iter().enumerate() {
+        let Some(scope) = names.get_mut(block_id) else {
+            continue;
+        };
+        for statement_id in &block.statements {
+            let Some(statement) =
+                usize::try_from(*statement_id).ok().and_then(|id| raw.statements.get(id))
+            else {
+                continue;
+            };
+            let RawStatementKind::LocalDeclaration { name, .. } = &statement.kind else {
+                continue;
+            };
+            if !scope.insert(name.text.clone()) {
+                errors.node(path, "duplicate function-local binding name");
+            }
+        }
+    }
 }
 fn contains_claim(parent: UntrustedSpan, child: UntrustedSpan) -> bool {
     parent.file == child.file && child.start >= parent.start && child.end <= parent.end
@@ -2361,7 +2403,6 @@ fn verify_statement(
     path: &NormalizedSourcePath,
     sources: &SourceMap,
     type_owners: &mut [u32],
-    locals: &mut BTreeSet<String>,
     expression_count: usize,
     expression_owners: &mut [u32],
     block_owners: &mut [u32],
@@ -2400,9 +2441,6 @@ fn verify_statement(
                 "local keyword",
             );
             identifier(name, file, path, sources, errors, "local name");
-            if !locals.insert(name.text.clone()) {
-                errors.node(path, "duplicate function-local binding name");
-            }
             own_type(*type_syntax, type_owners, path, errors);
             token(*equals_span, file, path, sources, errors, "=", "initializer equals");
             expression(*initializer);
@@ -2476,9 +2514,6 @@ fn verify_statement(
             expression(*weak);
             token(*as_span, file, path, sources, errors, "=>", "success arrow");
             identifier(binding, file, path, sources, errors, "weak-upgrade binding");
-            if !locals.insert(binding.text.clone()) {
-                errors.node(path, "duplicate weak-upgrade binding name");
-            }
             block(*success_block);
             token(*else_span, file, path, sources, errors, "=>", "failure arrow");
             block(*failure_block);
