@@ -1,9 +1,17 @@
 use super::*;
 
 #[test]
-fn structured_formal_lexical_authority_is_not_retired_and_reborrowed_across_match() {
+fn lexical_authority_is_rejected_before_crossing_a_match_edge() {
     let (text, raw) = structured_owned_fixture::lexical_match_fixture();
-    let at = raw.files[0].functions[0].body.expressions.iter().find(|expression| matches!(&expression.kind, zryna_syntax::v4::RawExpressionKind::Reference { name } if name.text == "loan")).expect("call lexical alias").span;
+    let at = raw.files[0].functions[0]
+        .body
+        .expressions
+        .iter()
+        .find(|expression| {
+            matches!(expression.kind, zryna_syntax::v4::RawExpressionKind::Match { .. })
+        })
+        .expect("match expression")
+        .span;
     let sources = sources_for(&text);
     let syntax =
         verify_snapshot(raw, &sources).expect("authenticated lexical authority around match call");
@@ -16,13 +24,10 @@ fn structured_formal_lexical_authority_is_not_retired_and_reborrowed_across_matc
     assert_eq!(first.len(), 1);
     assert_eq!(first[0].code(), "ZRYNA-M3017");
     assert_eq!(first[0].primary_span(), Some(span(&sources, at)));
-    assert_eq!(
-        first[0].message(),
-        "structured call requires an exact live call-frame borrow parameter"
-    );
+    assert_eq!(first[0].message(), "borrow authority cannot cross a structured ownership edge");
     assert_eq!(
         first[0].guidance(),
-        "forward one matching formal authority without ending or reborrowing it across a match"
+        "end lexical borrows before a branch, loop edge, or continuation"
     );
 }
 

@@ -6,6 +6,7 @@ use std::collections::BTreeSet;
 
 mod borrow_index_work;
 mod borrow_loop_nesting;
+mod borrow_nonindexed_call_scope;
 mod borrow_resource_boundaries;
 mod cfg_authority_hostile;
 mod copy_enum_join;

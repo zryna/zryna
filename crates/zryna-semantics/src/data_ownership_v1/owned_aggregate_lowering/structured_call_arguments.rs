@@ -27,7 +27,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
                     owned.push((value, ty));
                 }
                 CallParameter::Borrow { ty, access } => {
-                    let borrow = self.structured_formal_argument(id, ty, access)?;
+                    let borrow = self.structured_borrow_argument(id, ty, access)?;
                     if access == raw::BorrowAccess::Exclusive && !exclusive.insert(borrow) {
                         self.errors.at(
                             "ZRYNA-M3017",
@@ -67,7 +67,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
         Some(values)
     }
 
-    fn structured_formal_argument(
+    fn structured_borrow_argument(
         &mut self,
         id: u32,
         ty: Ty,
@@ -79,7 +79,7 @@ impl PrivateOwnedAggregateLowerer<'_, '_, '_> {
             && let Some(alias) = self.preparation_facts.aliases.get(&name.text)
             && alias.ty == ty
             && alias.access == access
-            && self.preparation_facts.parameter_borrows.contains(&alias.borrow)
+            && self.preparation_facts.borrow_active(alias.borrow)
         {
             return Some(alias.borrow);
         }

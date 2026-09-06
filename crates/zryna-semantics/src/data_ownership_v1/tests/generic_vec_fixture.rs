@@ -5,6 +5,8 @@ use super::*;
 use zryna_source::UntrustedSpan;
 use zryna_syntax::v4::RawExpressionKind;
 
+#[path = "nonindexed_borrow_calls.rs"]
+mod nonindexed_borrow_calls;
 #[path = "nonindexed_owned_borrow.rs"]
 mod nonindexed_owned_borrow;
 #[path = "nonindexed_static_owned_borrow.rs"]
