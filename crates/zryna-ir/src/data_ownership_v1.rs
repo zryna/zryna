@@ -2428,8 +2428,7 @@ fn verify_function_graph(
                 function,
                 &values,
                 layouts,
-                generic_clone_types,
-                handle_clone_types,
+                (generic_clone_types, handle_clone_types),
                 borrows,
                 errors,
             );
@@ -5433,8 +5432,7 @@ fn verify_operation_types(
     function: &raw::Function,
     values: &[ValueInfo],
     layouts: &VerifiedLayouts,
-    generic_clone_types: &[bool],
-    handle_clone_types: &[bool],
+    (generic_clone_types, handle_clone_types): (&[bool], &[bool]),
     borrows: &BorrowIndex,
     errors: &mut Errors,
 ) {
@@ -5871,16 +5869,12 @@ fn verify_instruction_shape(
                 || !cleanup_valid(*cleanup)
                 || element_cleanup.is_some_and(|cleanup| !cleanup_valid(cleanup))
         }
-        I::GenericClonePlace { place, cleanup, prefix_cleanup } => {
+        I::GenericClonePlace { place, cleanup, prefix_cleanup }
+        | I::HandleAwareClonePlace { place, cleanup, prefix_cleanup } => {
             !place_valid(*place) || !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
         }
-        I::GenericCloneBorrow { cleanup, prefix_cleanup, .. } => {
-            !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
-        }
-        I::HandleAwareClonePlace { place, cleanup, prefix_cleanup } => {
-            !place_valid(*place) || !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
-        }
-        I::HandleAwareCloneBorrow { cleanup, prefix_cleanup, .. } => {
+        I::GenericCloneBorrow { cleanup, prefix_cleanup, .. }
+        | I::HandleAwareCloneBorrow { cleanup, prefix_cleanup, .. } => {
             !cleanup_valid(*cleanup) || !cleanup_valid(*prefix_cleanup)
         }
         I::FixedArrayIndexCopy { place, cleanup, .. }

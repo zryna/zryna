@@ -15,11 +15,11 @@ fn transient_indexed_edges_one_arm_begin_has_exact_nondominating_join_diagnostic
     let diagnostics = verify(
         program,
         &fixture.sources,
-        fixture.sources.verify_file_id(0).unwrap(),
+        fixture.sources.verify_file_id(0).expect("fixture source file"),
         fixture.linear.clone(),
         fixture.linux.clone(),
     )
-    .unwrap_err();
+    .expect_err("hostile authority must be rejected");
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].code(), "ZRYNA-I3011");
     assert_eq!(
@@ -89,11 +89,22 @@ fn transient_indexed_edges_owned_commit_keeps_old_container_until_join() {
             end_borrow(0, function.span),
         ];
         let verified = fixture.verify(program.clone());
-        let function = verified.modules().next().unwrap().functions().next().unwrap();
-        let block = function.blocks().nth(3).unwrap();
-        let commit = block.instructions().next().unwrap();
+        let function = verified
+            .modules()
+            .next()
+            .expect("verified fixture module")
+            .functions()
+            .next()
+            .expect("verified fixture function");
+        let block = function.blocks().nth(3).expect("joined continuation block");
+        let commit = block.instructions().next().expect("continuation instruction");
         assert_eq!(
-            commit.borrow_replacement().unwrap().old_value_drop().referent().index(),
+            commit
+                .borrow_replacement()
+                .expect("owned replacement")
+                .old_value_drop()
+                .referent()
+                .index(),
             fixture.element.0
         );
         assert_eq!(commit.derived_drop_actions().count(), 0);
@@ -123,8 +134,14 @@ fn transient_indexed_edges_trap_ends_retained_authority_before_owner_cleanup() {
         cleanup: raw::CleanupPlanId(3),
     };
     let verified = fixture.verify(program.clone());
-    let function = verified.modules().next().unwrap().functions().next().unwrap();
-    let terminator = function.blocks().nth(1).unwrap().terminator();
+    let function = verified
+        .modules()
+        .next()
+        .expect("verified fixture module")
+        .functions()
+        .next()
+        .expect("verified fixture function");
+    let terminator = function.blocks().nth(1).expect("first outcome block").terminator();
     assert_eq!(
         terminator.failure_ended_borrows().map(BorrowIdentity::index).collect::<Vec<_>>(),
         [0]
@@ -186,11 +203,11 @@ fn transient_indexed_edges_reject_borrowed_owner_edge_transfer() {
     let errors = verify(
         program,
         &fixture.sources,
-        fixture.sources.verify_file_id(0).unwrap(),
+        fixture.sources.verify_file_id(0).expect("fixture source file"),
         fixture.linear.clone(),
         fixture.linux.clone(),
     )
-    .unwrap_err();
+    .expect_err("hostile authority must be rejected");
     assert!(
         errors
             .iter()
@@ -207,7 +224,13 @@ fn transient_indexed_edges_preserve_exact_identity_and_failure_cleanup() {
             let verified = fixture.verify(raw.clone());
             let replay = fixture.verify(raw);
             assert_eq!(format!("{verified:?}"), format!("{replay:?}"));
-            let function = verified.modules().next().unwrap().functions().next().unwrap();
+            let function = verified
+                .modules()
+                .next()
+                .expect("verified fixture module")
+                .functions()
+                .next()
+                .expect("verified fixture function");
             for block in function.blocks().take(3) {
                 let retained = block.terminator().continued_indexed_accesses().collect::<Vec<_>>();
                 assert_eq!(retained.len(), 1);
@@ -215,8 +238,8 @@ fn transient_indexed_edges_preserve_exact_identity_and_failure_cleanup() {
                 assert_eq!(retained[0].region().index(), 0);
                 assert_eq!(retained[0].access(), access.into());
             }
-            let block = function.blocks().nth(3).unwrap();
-            let project = block.instructions().next().unwrap();
+            let block = function.blocks().nth(3).expect("joined continuation block");
+            let project = block.instructions().next().expect("continuation instruction");
             assert_eq!(
                 project.failure_ended_borrows().map(BorrowIdentity::index).collect::<Vec<_>>(),
                 [0]

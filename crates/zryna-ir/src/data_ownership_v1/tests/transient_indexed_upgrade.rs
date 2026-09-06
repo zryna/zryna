@@ -10,7 +10,7 @@ fn transient_indexed_upgrade_preserves_both_outcomes_and_unwinds_count_failure()
         .linear
         .types()
         .find(|ty| ty.category() == zryna_layout::TypeCategory::Shared)
-        .unwrap()
+        .expect("fixture Shared type")
         .id()
         .index();
     let mut program = diamond(&fixture, raw::BorrowAccess::Shared);
@@ -45,13 +45,45 @@ fn transient_indexed_upgrade_preserves_both_outcomes_and_unwinds_count_failure()
         };
     }
     let verified = fixture.verify(program.clone());
-    let function = verified.modules().next().unwrap().functions().next().unwrap();
-    let branch = function.blocks().next().unwrap().terminator();
-    assert_eq!(branch.continued_indexed_accesses().next().unwrap().borrow().index(), 0);
+    let function = verified
+        .modules()
+        .next()
+        .expect("verified fixture module")
+        .functions()
+        .next()
+        .expect("verified fixture function");
+    let branch = function.blocks().next().expect("entry block").terminator();
+    assert_eq!(
+        branch
+            .continued_indexed_accesses()
+            .next()
+            .expect("retained indexed authority")
+            .borrow()
+            .index(),
+        0
+    );
     assert_eq!(branch.failure_ended_borrows().map(BorrowIdentity::index).collect::<Vec<_>>(), [0]);
     assert_eq!(branch.derived_drop_actions().count(), 3);
-    assert_eq!(function.blocks().nth(1).unwrap().terminator().derived_drop_actions().count(), 4);
-    assert_eq!(function.blocks().nth(2).unwrap().terminator().derived_drop_actions().count(), 3);
+    assert_eq!(
+        function
+            .blocks()
+            .nth(1)
+            .expect("first outcome block")
+            .terminator()
+            .derived_drop_actions()
+            .count(),
+        4
+    );
+    assert_eq!(
+        function
+            .blocks()
+            .nth(2)
+            .expect("second outcome block")
+            .terminator()
+            .derived_drop_actions()
+            .count(),
+        3
+    );
     for block in [1, 2] {
         let mut hostile = program.clone();
         hostile.modules[0].functions[0].blocks[block].instructions.clear();
