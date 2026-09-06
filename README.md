@@ -170,7 +170,8 @@ The repository currently establishes and tests:
   construction and transfer, structural clone, ordinary Vec observation/replacement/push,
   handle-containing static subobjects, and finite Vec-indirection recursion. Exact source,
   hostile-IR and resource/replay bindings are checked without claiming runtime execution,
-  backend support, public activation, or the remaining #271–#273/#275 source boundaries;
+  backend support, public activation, or the remaining #272/#273/#275 source boundaries; #271 is
+  now a checked compiler-only structured-control-flow closure candidate;
 - an internal ownership-runtime ABI v1 authority that verifies the exact 17-operation declaration
   set, target symbols and signatures, authenticated layout-derived records, checked header evidence,
   Vec allocation/reserve rules, and all 12 canonical Shared/Weak control transitions behind opaque
@@ -382,6 +383,7 @@ See [CLI reference](docs/CLI.md), [Architecture](docs/ARCHITECTURE.md), [Syntax 
 [M3 Shared/Weak evidence ledger](docs/M3_SHARED_WEAK_EVIDENCE.md),
 [M3 planned ownership composition](docs/M3_OWNERSHIP_COMPOSITION.md),
 [M3 generic owned composition closure matrix](docs/M3_GENERIC_OWNED_COMPOSITION_MATRIX.md),
+[M3 structured owned control-flow closure matrix](docs/M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md),
 [M3 private generic function operations](docs/M3_GENERIC_FUNCTION_OPERATIONS.md),
 [M3 canonical structural clone](docs/M3_GENERIC_CLONE_CORE.md),
 [M3 complete static subobjects](docs/M3_GENERIC_STATIC_PLACES.md),

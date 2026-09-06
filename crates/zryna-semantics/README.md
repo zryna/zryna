@@ -66,6 +66,14 @@ arrays. The sealed semantic `VerifiedProgram` retains both mandatory-verifier-ap
 `zryna_ir::data_ownership_v1::VerifiedProgram` and the exact verified ownership-runtime ABI
 declaration authority; neither raw IR nor raw runtime declarations can be recovered.
 
+Its structured owned route now composes lexical Block, If, While, WeakUpgrade and admitted Match
+occupants across nested/repeated flow, early return, loop backedges and post-loop continuation.
+Joins and backedges require exact ownership state; lexical shadowing restores the nearest outer
+binding; fallible occupants retain verified reverse-prefix cleanup. The checked
+[#271 closure matrix](../../docs/M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md) binds every claimed
+source, hostile-IR and block/edge resource row. This is compiler-only lowering into mandatory
+verified IR, not runtime execution or public profile support.
+
 Fixed-array access in this internal gate is limited to a compile-time in-range constant. The
 completed internal Issue #81 boundary recognizes canonical String and `Vec<T>` type graphs and lowers
 bounded private functions. String supports UTF-8 literals through

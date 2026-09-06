@@ -369,7 +369,7 @@ planned capabilities, not changes to the completed bounded #79/#81/#82 checkpoin
 | #278 | non-handle generic owned operation core | #277 |
 | #279 | compositional ownership CFG core | #277/#278/#260 |
 | #270 | full generic owned composition, structural clone, ordinary generic Vec reads/replacement | #83/#277/#278, retaining #76–#81 |
-| #271 | full structured owned control flow and lexical cleanup | #270/#279 |
+| #271 | checked compiler-only structured owned control flow and lexical cleanup closure candidate | #270/#279; integrated by #325/#326/#327 |
 | #272 | internal owned calls and inherited imported-function resolution | #270/#271 |
 | #273 | exhaustive enum matching and active-payload composition | #270/#271 |
 | #274 | ordinary dynamic fixed-array access using the indexed authority | #254/#270; coordinate #255 |
@@ -389,11 +389,14 @@ The current #270 integration reconciles #320's checked matrix with #321 handle-c
 transfers, #322 ordinary handle-aware Vec operations and #323 finite recursive composition.
 Exact source, hostile-IR and bounded resource/replay bindings make it a compiler-only closure
 candidate; full/ignored suites, preflight, M0/M2, independent review and hosted CI remain required
-merge gates. It does not complete #271–#273, #275, #269 or any target/runtime/public-profile work.
+merge gates. It does not complete #272/#273, #275, #269 or any target/runtime/public-profile work.
 The cores use typed operation hooks without claiming source handle execution. Required #83
-payload, call, match and CFG cases could not wait for later #270–#273 closure. #271 now retains
-actual-handle integration into broader structured CFG behavior; no parent-completion dependency
-cycle is permitted. Large children retain explicit bounded implementation sub-issues and gates.
+payload, call, match and CFG cases could not wait for every source-completion parent. #271 now has a
+checked compiler-only closure matrix: #325 completes source routing and lexical state, #326 pins
+independent hostile-IR authority, and #327 integrates the #270 payload/fault and block/edge resource
+rows. Required full/ignored suites, preflight, M0/M2, review and hosted CI remain closure gates.
+This does not close #272/#273/#275/#269, execute handle behavior, add break/continue or exceptions,
+or enable a runtime, backend, CLI or public profile.
 
 #254–#256 keep indexed-borrow ownership; #274 does not duplicate it. #83 keeps handle/count
 semantics. The new source work invents no type-import syntax, break/continue, Vec pop, implicit

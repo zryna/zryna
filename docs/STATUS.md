@@ -261,13 +261,16 @@ provided the reusable foundation for the completed #259–#264/#83 internal Shar
 chain. The current #270 closure candidate composes nested Struct/Enum/FixedArray/Vec ownership,
 finite Vec-indirection recursion, structural clone, handle-containing static transfers, and
 ordinary handle-aware Vec observation/replacement/push through mandatory verified IR. Its checked
-matrix binds exact source, hostile-IR, resource and replay tests from #320–#323. Issues #271–#273
-and #275 retain full CFG, call, match and non-indexed-borrow completion; #274 remains separately
-completed. These internal source/IR requirements and final #270 merge gates still block complete
-#84/#85/#86 support.
-Protocol v4 is unchanged; projected forwarding, repeated calls, CFG
-crossing, call recursion, owned aggregate call shapes, public borrow signatures, retained authority,
-and nested/repeated control flow remain later or unavailable child work. This adds no runtime,
+matrix binds exact source, hostile-IR, resource and replay tests from #320–#323. Issue #271 is now
+a checked compiler-only closure candidate: its exact #325 source/lexical, #326 hostile-IR, and #327
+payload/fault/resource bindings are recorded in `M3_STRUCTURED_OWNED_CONTROL_FLOW_MATRIX.md`.
+Issues #272/#273 and #275 retain call, complete match and non-indexed-borrow completion; #274
+remains separately completed and #269 remains the parent. Verified instruction, cleanup and fault
+traces are not target execution. Runtime, backend, CLI, public activation and final #271 merge
+gates remain open, so complete #84/#85/#86 support is not claimed.
+Protocol v4 is unchanged; projected forwarding, repeated calls, call recursion, owned aggregate
+call shapes, public borrow signatures and retained borrow authority remain later or unavailable
+child work. This adds no runtime,
 ABI, backend, driver, CLI, artifact, website-support, or public-profile capability.
 
 The public compiler still does not accept M3 declarations or values, select syntax protocol v4,
