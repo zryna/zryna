@@ -3,6 +3,8 @@ use crate::data_ownership_v1::{raw, verify};
 use zryna_layout::{StorageTarget, raw as raw_layout};
 use zryna_source::{SourceFileInput, SourceMap, Span};
 
+mod owned_call_closure;
+
 fn authorities_for_two_modules()
 -> (SourceMap, zryna_layout::VerifiedLayouts, zryna_layout::VerifiedLayouts) {
     let text = "export function id(value: i32): i32 { return value; }";
