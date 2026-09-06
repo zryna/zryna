@@ -68,6 +68,11 @@ pub(in crate::data_ownership_v1) enum Case {
     WrongType,
     Missing,
     ExpiredBindingUse,
+    Moved,
+    Reused,
+    ActiveBorrow,
+    UnequalJoin,
+    RetainedJoin,
 }
 
 pub(in crate::data_ownership_v1) fn fixture(temporary: bool) -> (String, RawProjectSyntaxSnapshot) {
@@ -99,46 +104,16 @@ pub(in crate::data_ownership_v1) fn fixture_case(case: Case) -> (String, RawProj
     local(&mut f, "owner", &shared, |f| unary(f, "shared", |f| f.reference("payload")));
     local(&mut f, "weak", &weak, |f| unary(f, "downgrade", |f| f.reference("owner")));
 
-    let upgrade_start = f.source.len();
-    let keyword_span = f.text("upgradeWeak");
-    f.text(" ");
-    let weak = match case {
-        Case::Temporary => unary(&mut f, "clone", |f| f.reference("weak")),
-        Case::WrongType => f.reference("owner"),
-        Case::Missing => f.reference("ghost"),
-        Case::Addressable | Case::ExpiredBindingUse => f.reference("weak"),
-    };
-    f.text(" ");
-    let binding = f.name("upgraded");
-    f.text(" ");
-    let as_span = f.text("=>");
-    f.text(" ");
-    let success_open = f.text("{");
-    f.text(" ");
-    let success_statement = u32::try_from(f.statements.len() + 1).expect("success statement");
-    returned(&mut f, "upgraded");
-    let success_close = f.text("}");
-    f.text(" ");
-    let else_span = f.text("=>");
-    f.text(" ");
-    let expired_open = f.text("{");
-    f.text(" ");
-    let expired_statement = u32::try_from(f.statements.len() + 1).expect("expired statement");
-    returned(&mut f, if matches!(case, Case::ExpiredBindingUse) { "upgraded" } else { "owner" });
-    let expired_close = f.text("}");
-    let upgrade = RawStatementSyntax {
-        span: at(upgrade_start, f.source.len()),
-        kind: RawStatementKind::WeakUpgrade {
-            keyword_span,
-            weak,
-            as_span,
-            binding,
-            success_block: 1,
-            else_span,
-            failure_block: 2,
-        },
-    };
-    f.statements.insert(2, upgrade);
+    if matches!(case, Case::Moved | Case::Reused) {
+        local(&mut f, "saved", &weak, |f| f.reference("weak"));
+    }
+    if matches!(case, Case::Reused) {
+        local(&mut f, "again", &weak, |f| f.reference("weak"));
+    }
+    if matches!(case, Case::ActiveBorrow) {
+        active_borrow(&mut f, &weak);
+    }
+    let (root_statements, success_block, expired_block) = upgrade_blocks(&mut f, case);
     let close_brace_span = f.text("}");
     let body_span = at(open_brace_span.start as usize, f.source.len());
     let function = RawFunctionSyntax {
@@ -155,21 +130,11 @@ pub(in crate::data_ownership_v1) fn fixture_case(case: Case) -> (String, RawProj
                 RawBlockSyntax {
                     span: body_span,
                     open_brace_span,
-                    statements: vec![0, 1, 2],
+                    statements: root_statements,
                     close_brace_span,
                 },
-                RawBlockSyntax {
-                    span: at(success_open.start as usize, success_close.end as usize),
-                    open_brace_span: success_open,
-                    statements: vec![success_statement],
-                    close_brace_span: success_close,
-                },
-                RawBlockSyntax {
-                    span: at(expired_open.start as usize, expired_close.end as usize),
-                    open_brace_span: expired_open,
-                    statements: vec![expired_statement],
-                    close_brace_span: expired_close,
-                },
+                success_block,
+                expired_block,
             ],
             statements: f.statements,
             expressions: f.expressions,
@@ -190,4 +155,143 @@ pub(in crate::data_ownership_v1) fn fixture_case(case: Case) -> (String, RawProj
             diagnostics: Vec::new(),
         },
     )
+}
+
+fn upgrade_blocks(f: &mut Builder, case: Case) -> (Vec<u32>, RawBlockSyntax, RawBlockSyntax) {
+    let upgrade_id = f.statements.len();
+
+    let upgrade_start = f.source.len();
+    let keyword_span = f.text("upgradeWeak");
+    f.text(" ");
+    let weak = match case {
+        Case::Temporary => unary(f, "clone", |f| f.reference("weak")),
+        Case::WrongType => f.reference("owner"),
+        Case::Missing => f.reference("ghost"),
+        _ => f.reference("weak"),
+    };
+    f.text(" ");
+    let binding = f.name("upgraded");
+    f.text(" ");
+    let as_span = f.text("=>");
+    f.text(" ");
+    let success_open = f.text("{");
+    f.text(" ");
+    let success_statement = u32::try_from(f.statements.len() + 1).expect("success statement");
+    if matches!(case, Case::UnequalJoin) {
+        local(f, "taken", &weak_type(), |f| f.reference("weak"));
+    } else if !matches!(case, Case::RetainedJoin) {
+        returned(f, "upgraded");
+    }
+    let success_close = f.text("}");
+    f.text(" ");
+    let else_span = f.text("=>");
+    f.text(" ");
+    let expired_open = f.text("{");
+    f.text(" ");
+    let expired_statement = u32::try_from(f.statements.len() + 1).expect("expired statement");
+    if !matches!(case, Case::UnequalJoin | Case::RetainedJoin) {
+        returned(f, if matches!(case, Case::ExpiredBindingUse) { "upgraded" } else { "owner" });
+    }
+    let expired_close = f.text("}");
+    let upgrade = RawStatementSyntax {
+        span: at(upgrade_start, f.source.len()),
+        kind: RawStatementKind::WeakUpgrade {
+            keyword_span,
+            weak,
+            as_span,
+            binding,
+            success_block: 1,
+            else_span,
+            failure_block: 2,
+        },
+    };
+    f.statements.insert(upgrade_id, upgrade);
+    let mut root_statements =
+        (0..=u32::try_from(upgrade_id).expect("upgrade id")).collect::<Vec<_>>();
+    if matches!(case, Case::UnequalJoin | Case::RetainedJoin) {
+        f.text(" ");
+        root_statements.push(u32::try_from(f.statements.len()).expect("return id"));
+        returned(f, "owner");
+    }
+    (
+        root_statements,
+        RawBlockSyntax {
+            span: at(success_open.start as usize, success_close.end as usize),
+            open_brace_span: success_open,
+            statements: if matches!(case, Case::RetainedJoin) {
+                vec![]
+            } else {
+                vec![success_statement]
+            },
+            close_brace_span: success_close,
+        },
+        RawBlockSyntax {
+            span: at(expired_open.start as usize, expired_close.end as usize),
+            open_brace_span: expired_open,
+            statements: if matches!(case, Case::UnequalJoin | Case::RetainedJoin) {
+                vec![]
+            } else {
+                vec![expired_statement]
+            },
+            close_brace_span: expired_close,
+        },
+    )
+}
+
+fn weak_type() -> Ty {
+    Ty::Weak(Box::new(Ty::String))
+}
+
+fn active_borrow(f: &mut Builder, weak: &Ty) {
+    let start = f.source.len();
+    let keyword_span = f.text("const");
+    f.text(" ");
+    let name = f.name("loan");
+    f.text(": ");
+    let type_start = f.source.len();
+    let borrow_keyword = f.text("Borrow");
+    let open_angle_span = f.text("<");
+    let referent = f.ty(weak);
+    let close_angle_span = f.text(">");
+    let type_syntax = u32::try_from(f.types.len()).expect("borrow type");
+    f.types.push(RawTypeSyntax {
+        span: at(type_start, f.source.len()),
+        kind: RawTypeSyntaxKind::Borrow {
+            keyword_span: borrow_keyword,
+            less_than_span: open_angle_span,
+            argument: referent,
+            greater_than_span: close_angle_span,
+        },
+    });
+    f.text(" ");
+    let equals_span = f.text("=");
+    f.text(" ");
+    let borrow_start = f.source.len();
+    let keyword = f.text("borrow");
+    let open_paren_span = f.text("(");
+    let value = f.reference("weak");
+    let close_paren_span = f.text(")");
+    let initializer = f.expression(
+        borrow_start,
+        RawExpressionKind::Borrow {
+            keyword_span: keyword,
+            open_paren_span,
+            value,
+            close_paren_span,
+        },
+    );
+    let semicolon_span = f.text(";");
+    f.statements.push(RawStatementSyntax {
+        span: at(start, f.source.len()),
+        kind: RawStatementKind::LocalDeclaration {
+            keyword_span,
+            mutable: false,
+            name,
+            type_syntax,
+            equals_span,
+            initializer,
+            semicolon_span,
+        },
+    });
+    f.text(" ");
 }

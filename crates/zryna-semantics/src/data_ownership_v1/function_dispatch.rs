@@ -83,27 +83,27 @@ pub(super) fn lower_function<'a>(
     let file = &input.syntax().files()[module];
     let result =
         semantic_type(file, function.result_type, module, declarations, graph, node_types, errors)?;
-    let has_root_borrow_syntax = function.body.statements.iter().any(|statement| {
-        let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind else {
-            return false;
-        };
-        usize::try_from(type_syntax)
-            .ok()
-            .and_then(|index| file.type_syntax().get(index))
-            .is_some_and(|ty| {
-                matches!(
-                    ty.kind,
-                    RawTypeSyntaxKind::Borrow { .. } | RawTypeSyntaxKind::BorrowMut { .. }
-                )
-            })
-    }) || function.body.expressions.iter().any(|expression| {
-        matches!(
-            expression.kind,
-            RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
-        )
-    });
-    let owned_root_candidate =
-        !result.is_copy() && is_direct_owned_root_borrow_candidate(file, function);
+    if function
+        .body
+        .statements
+        .iter()
+        .any(|statement| matches!(statement.kind, RawStatementKind::WeakUpgrade { .. }))
+    {
+        return lower_private_owned_aggregate_function(
+            input,
+            module,
+            declaration,
+            function,
+            declarations,
+            graph,
+            node_types,
+            layouts,
+            catalog,
+            result,
+            errors,
+        );
+    }
+    let has_root_borrow_syntax = has_root_borrow_syntax(file, function);
     if super::owned_aggregate_lowering::has_indexed_borrow(function)
         || super::owned_aggregate_lowering::has_nonindexed_owned_borrow(
             function,
@@ -137,7 +137,9 @@ pub(super) fn lower_function<'a>(
             errors,
         );
     }
-    if has_root_borrow_syntax && !owned_root_candidate {
+    if has_root_borrow_syntax
+        && (result.is_copy() || !is_direct_owned_root_borrow_candidate(file, function))
+    {
         return lower_private_root_borrow_function(
             input,
             module,
@@ -179,6 +181,28 @@ pub(super) fn lower_function<'a>(
         catalog,
         errors,
     )
+}
+
+fn has_root_borrow_syntax(file: &syntax::SourceUnit, function: &syntax::RawFunctionSyntax) -> bool {
+    function.body.statements.iter().any(|statement| {
+        let RawStatementKind::LocalDeclaration { type_syntax, .. } = statement.kind else {
+            return false;
+        };
+        usize::try_from(type_syntax)
+            .ok()
+            .and_then(|index| file.type_syntax().get(index))
+            .is_some_and(|ty| {
+                matches!(
+                    ty.kind,
+                    RawTypeSyntaxKind::Borrow { .. } | RawTypeSyntaxKind::BorrowMut { .. }
+                )
+            })
+    }) || function.body.expressions.iter().any(|expression| {
+        matches!(
+            expression.kind,
+            RawExpressionKind::Borrow { .. } | RawExpressionKind::BorrowMut { .. }
+        )
+    })
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]

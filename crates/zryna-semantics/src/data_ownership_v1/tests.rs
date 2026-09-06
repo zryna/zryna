@@ -201,6 +201,7 @@ mod vec_resource_budgets;
 mod vec_validation;
 mod weak_upgrade_fault_oracle;
 mod weak_upgrade_source;
+mod weak_upgrade_state;
 
 use aggregate_fixture_support::{
     ARRAY_OOB_SOURCE, ARRAY_RESPONSE, ARRAY_VALID_SOURCE, ENUM_RESPONSE, ENUM_SOURCE,
