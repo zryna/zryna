@@ -31,7 +31,7 @@ fn cases() -> Vec<Value> {
         .expect("fixed allocation oracles")
 }
 
-fn request(root: &std::path::Path, targets: TargetSelection) -> DataOwnershipBuildRequest {
+fn request(root: &Path, targets: TargetSelection) -> DataOwnershipBuildRequest {
     DataOwnershipBuildRequest {
         workspace_root: root.to_owned(),
         entrypoint: "main.zry".to_owned(),
@@ -41,7 +41,7 @@ fn request(root: &std::path::Path, targets: TargetSelection) -> DataOwnershipBui
     }
 }
 
-fn install(root: &std::path::Path, name: &str) {
+fn install(root: &Path, name: &str) {
     fs::copy(corpus().join(format!("{name}.zry")), root.join("main.zry"))
         .expect("isolated allocation source");
     let dependency = format!("{name}-body.zry");
@@ -137,15 +137,16 @@ fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
             _ => return Ok(()),
         };
         let layouts = prepared.program().verified_ir().linear32_layouts();
-        let category = match case["storage"].as_str().expect("inspection storage") {
-            "string" => zryna_layout::TypeCategory::String,
-            "vec" => zryna_layout::TypeCategory::Vec,
+        let storage = case["storage"].as_str().expect("inspection storage");
+        let runtime_kind = match storage {
+            "string" => 2,
+            "vec" => 3,
             other => return Err(format!("unsupported inspection storage: {other}")),
         };
         let ty = layouts
             .types()
-            .find(|ty| ty.category() == category)
-            .ok_or_else(|| format!("missing {category:?} inspection layout"))?;
+            .find(|ty| ty.runtime_kind() == runtime_kind)
+            .ok_or_else(|| format!("missing {storage} inspection layout"))?;
         let drop_index = 2_u32
             .checked_add(u32::try_from(layouts.types().len()).expect("bounded type count"))
             .and_then(|index| index.checked_add(ty.id().index()))
