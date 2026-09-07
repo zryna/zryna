@@ -19,11 +19,39 @@ DEADLINE_SECONDS = 120
 REPOSITORY = Path(__file__).resolve().parents[2]
 
 
-def digest(path):
+def check_deadline(deadline):
+    if time.monotonic() >= deadline:
+        raise TimeoutError("browser acquisition exceeded 120 seconds")
+
+
+class PublisherRedirects(urllib.request.HTTPRedirectHandler):
+    def __init__(self, allowed_urls, deadline):
+        super().__init__()
+        self.allowed_urls = allowed_urls
+        self.deadline = deadline
+
+    def verify(self, url):
+        check_deadline(self.deadline)
+        if url not in self.allowed_urls:
+            raise ValueError("browser destination is not a reviewed publisher URL")
+
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        self.verify(new_url)
+        return super().redirect_request(request, response, code, message, headers, new_url)
+
+
+def digest(path, deadline):
+    check_deadline(deadline)
     value = hashlib.sha256()
     with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+        while True:
+            check_deadline(deadline)
+            chunk = stream.read(1024 * 1024)
+            check_deadline(deadline)
+            if not chunk:
+                break
             value.update(chunk)
+    check_deadline(deadline)
     return value.hexdigest()
 
 
@@ -44,6 +72,7 @@ def portable(name):
 
 
 def main():
+    deadline = time.monotonic() + DEADLINE_SECONDS
     if len(sys.argv) != 1:
         raise ValueError("no URL, output, platform or installer overrides are accepted")
     host = {"Linux": "linux", "Windows": "win32"}.get(platform.system())
@@ -52,6 +81,8 @@ def main():
     key = f"{host}-x64"
     pin = json.loads((REPOSITORY / "tests/scalar-host/browser-pin.json").read_text())
     selected = pin["platforms"][key]
+    redirects = PublisherRedirects({selected["url"], selected["publisherUrl"]}, deadline)
+    redirects.verify(selected["url"])
     cache = REPOSITORY / ".zryna/cache"
     cache.mkdir(parents=True, exist_ok=True)
     if cache.is_symlink() or cache.resolve() != cache.absolute():
@@ -59,32 +90,39 @@ def main():
     output = cache / f"scalar-browser-{key}-{pin['browserVersion']}"
     output.mkdir()  # create-only; failures deliberately retain a bounded diagnostic receipt
     archive = output / "archive.zip"
-    deadline = time.monotonic() + DEADLINE_SECONDS
-    with urllib.request.urlopen(selected["url"], timeout=10) as response, archive.open("xb") as target:
-        if not response.url.startswith("https://"):
-            raise ValueError("browser acquisition requires official HTTPS transport")
+    check_deadline(deadline)
+    opener = urllib.request.build_opener(redirects)
+    with opener.open(selected["url"], timeout=min(10, deadline - time.monotonic())) as response, archive.open("xb") as target:
+        final_url = response.geturl()
+        redirects.verify(final_url)
+        if final_url != selected["publisherUrl"]:
+            raise ValueError("final browser destination differs from the reviewed publisher URL")
         advertised = response.headers.get("Content-Length")
         if advertised is not None and int(advertised) > MAX_ARCHIVE:
             raise ValueError("compressed browser exceeds 256 MiB")
         total = 0
         while True:
-            if time.monotonic() >= deadline:
-                raise TimeoutError("browser acquisition exceeded 120 seconds")
+            check_deadline(deadline)
             chunk = response.read(1024 * 1024)
+            check_deadline(deadline)
             if not chunk:
                 break
             total += len(chunk)
             if total > MAX_ARCHIVE:
                 raise ValueError("compressed browser exceeds 256 MiB")
             target.write(chunk)
+            check_deadline(deadline)
+    check_deadline(deadline)
     browser = output / "browser"
     browser.mkdir()
     with zipfile.ZipFile(archive) as bundle:
         entries = bundle.infolist()
+        check_deadline(deadline)
         if len(entries) > MAX_ENTRIES or sum(item.file_size for item in entries) > MAX_EXPANDED:
             raise ValueError("browser archive exceeds expansion budgets")
         seen = set()
         for item in entries:
+            check_deadline(deadline)
             parts = portable(item.filename)
             key = "/".join(parts).casefold()
             if key in seen:
@@ -101,33 +139,46 @@ def main():
             with bundle.open(item) as source, destination.open("xb") as target:
                 written = 0
                 while chunk := source.read(1024 * 1024):
-                    if time.monotonic() >= deadline:
-                        raise TimeoutError("browser acquisition exceeded 120 seconds")
+                    check_deadline(deadline)
                     written += len(chunk)
                     if written > item.file_size:
                         raise ValueError("archive expanded beyond declared size")
                     target.write(chunk)
+                    check_deadline(deadline)
             if written != item.file_size:
                 raise ValueError("truncated archive entry")
             if os.name != "nt" and mode & 0o111:
                 destination.chmod(0o700)
-    files = [{"path": path.relative_to(browser).as_posix(), "bytes": path.stat().st_size,
-              "sha256": digest(path)} for path in sorted(browser.rglob("*")) if path.is_file()]
+    check_deadline(deadline)
+    files = []
+    for path in browser.rglob("*"):
+        check_deadline(deadline)
+        if path.is_file():
+            files.append({"path": path.relative_to(browser).as_posix(),
+                          "bytes": path.stat().st_size, "sha256": digest(path, deadline)})
+        check_deadline(deadline)
     files.sort(key=lambda entry: entry["path"])
+    check_deadline(deadline)
     notices = [entry["path"] for entry in files
                if any(word in entry["path"].lower() for word in ("license", "notice", "credits"))
                or entry["path"].endswith("/ABOUT")]
     if not notices or not (browser / selected["executable"]).is_file():
         raise ValueError("browser executable or bundled license inventory missing")
     inventory = json.dumps(files, separators=(",", ":"), ensure_ascii=True).encode()
+    check_deadline(deadline)
     (output / "inventory.json").write_bytes(inventory)
-    receipt = {"state": "unreviewed-official-https-acquisition", "url": selected["url"],
-               "archiveSha256": digest(archive),
+    check_deadline(deadline)
+    receipt = {"state": "unreviewed-publisher-https-acquisition", "url": selected["url"],
+               "finalUrl": final_url, "archiveSha256": digest(archive, deadline),
                "inventorySha256": hashlib.sha256(inventory).hexdigest(),
                "archiveBytes": archive.stat().st_size, "fileCount": len(files),
                "expandedBytes": sum(entry["bytes"] for entry in files), "notices": notices}
-    (output / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    print(json.dumps(receipt, indent=2))
+    receipt_text = json.dumps(receipt, indent=2)
+    check_deadline(deadline)
+    (output / "receipt.json").write_text(receipt_text + "\n")
+    check_deadline(deadline)
+    print(receipt_text)
+    check_deadline(deadline)
 
 
 if __name__ == "__main__":

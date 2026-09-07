@@ -57,16 +57,27 @@ do not commit or redistribute browser binaries. Upstream sources:
 Only after the separate acquisition grant, run `python scripts/scalar-host/acquire-browser.py`.
 It accepts no URL/path/platform overrides and uses the two fixed upstream HTTPS URLs. Acquisition
 is create-only under this tree's `.zryna/cache`, bounded to 256 MiB compressed, 1 GiB expanded,
-30,000 entries, depth 32 and 120 seconds. Unsafe paths, links, special entries, encryption,
+30,000 entries and depth 32. A shared 120-second elapsed deadline starts before preparation and
+is checked throughout transfer, extraction, inventory traversal, every file/archive hash and
+receipt generation/write. These are cooperative checks: blocking I/O may return after the
+deadline, but late completion fails rather than being reported as successful acquisition.
+Unsafe paths, links, special entries, encryption,
 duplicate identities and expansion overruns reject. No browser, dependency installer, package
 script or system setup command executes. A failed acquisition retains its bounded private
 directory for inspection; remove only that verified task-local directory before retrying.
 
 The initial trust is the official HTTPS source, **not an upstream browser digest**: upstream
 publishes a version/revision, but no browser cryptographic hash in the runner manifest. Review the
-resulting archive SHA-256, full file inventory SHA-256, executable and notices before copying the
+receipt's configured and final response URLs, resulting archive SHA-256, full file inventory
+SHA-256, executable and notices before copying the
 two approved hashes into the platform pin. Until then, null hashes deliberately prevent launch.
 No channel selection, system-browser fallback, headless-shell replacement or shared cache is used.
+Redirects are restricted before following them to the exact initial URL and the corresponding
+Google `chrome-for-testing-public` URL recorded as `publisherUrl` in the pin; the final response
+must match that publisher URL exactly. Both destinations match the
+[Google version manifest](https://googlechromelabs.github.io/chrome-for-testing/153.0.8010.12.json).
+Any new redirect destination requires review, even if it uses HTTPS. URL provenance does not
+replace the pending archive/inventory integrity review.
 
 The runner checks every inventoried file before and after execution, exact runner/browser versions,
 and the artifact hash in both the parent Node process and the real browser page. It uses one

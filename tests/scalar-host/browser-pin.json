@@ -8,12 +8,14 @@
   "platforms": {
     "linux-x64": {
       "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip",
+      "publisherUrl": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/linux64/chrome-linux64.zip",
       "executable": "chrome-linux64/chrome",
       "archiveSha256": null,
       "inventorySha256": null
     },
     "win32-x64": {
       "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/win64/chrome-win64.zip",
+      "publisherUrl": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/win64/chrome-win64.zip",
       "executable": "chrome-win64/chrome.exe",
       "archiveSha256": null,
       "inventorySha256": null
