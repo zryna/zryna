@@ -1156,6 +1156,7 @@ dependencies = [
  "cranelift-module",
  "cranelift-object",
  "object",
+ "serde_json",
  "sha2",
  "target-lexicon",
  "zryna-abi",

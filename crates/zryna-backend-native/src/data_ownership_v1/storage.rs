@@ -1,8 +1,5 @@
-use std::collections::BTreeMap;
-
 use cranelift_codegen::ir::{
-    FuncRef, InstBuilder, MemFlagsData, StackSlot, StackSlotData, StackSlotKind, condcodes::IntCC,
-    types,
+    InstBuilder, MemFlagsData, StackSlot, StackSlotData, StackSlotKind, condcodes::IntCC, types,
 };
 use cranelift_frontend::FunctionBuilder;
 use zryna_diagnostics::Diagnostic;
@@ -141,7 +138,7 @@ pub(super) fn store_place(
     id: u32,
     value: cranelift_codegen::ir::Value,
     slots: &[Option<StackSlot>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let ty = place_type(function, id)?;
@@ -164,7 +161,7 @@ pub(super) fn copy_place_value(
     function: VerifiedFunction<'_>,
     id: u32,
     slots: &[Option<StackSlot>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
     let ty = place_type(function, id)?;
@@ -177,7 +174,7 @@ pub(super) fn move_place_value(
     function: VerifiedFunction<'_>,
     id: u32,
     slots: &[Option<StackSlot>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
     let place = function.places().find(|place| place.id() == id).ok_or_else(invariant_error)?;
@@ -201,7 +198,7 @@ pub(super) fn copy_from_address(
     program: &VerifiedMirModule,
     ty: u32,
     address: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
     let layout = type_record(program, ty)?;
@@ -247,7 +244,7 @@ pub(super) fn store_owned_typed(
     ty: u32,
     address: cranelift_codegen::ir::Value,
     value: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     store_typed(program, ty, address, value, builder)?;
@@ -378,7 +375,7 @@ pub(super) fn index_value(
     place: u32,
     index: cranelift_codegen::ir::Value,
     slots: &[Option<StackSlot>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     failed: cranelift_codegen::ir::Block,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {

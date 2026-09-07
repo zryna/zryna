@@ -109,7 +109,7 @@ pub(super) fn string_value(
     let size = i32::try_from(12_usize.checked_add(bytes.len()).ok_or_else(index_error)?)
         .map_err(|_| index_error())?;
     body.instruction(&Instruction::I32Const(size));
-    body.instruction(&Instruction::Call(0));
+    super::failure::operation_call(0, body);
     body.instruction(&Instruction::LocalSet(temporary));
     write_header(temporary, bytes.len(), bytes.len(), body)?;
     for (index, byte) in bytes.iter().enumerate() {
@@ -146,12 +146,22 @@ pub(super) fn string_concat(
     body.instruction(&Instruction::LocalGet(locals.heap + 3));
     body.instruction(&Instruction::I32LtU);
     body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::Unreachable);
+    body.instruction(&Instruction::I32Const(3));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
+    body.instruction(&Instruction::End);
+    body.instruction(&Instruction::LocalGet(locals.heap + 2));
+    body.instruction(&Instruction::I32Const(67_108_864));
+    body.instruction(&Instruction::I32GtU);
+    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+    body.instruction(&Instruction::I32Const(3));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
     body.instruction(&Instruction::End);
     body.instruction(&Instruction::LocalGet(locals.heap + 2));
     body.instruction(&Instruction::I32Const(12));
     body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::Call(0));
+    super::failure::operation_call(0, body);
     body.instruction(&Instruction::LocalSet(locals.scratch));
     write_header_from_local(locals.scratch, locals.heap + 2, body);
     copy_string_bytes(locals.scratch, locals.heap, 0, body);
@@ -182,7 +192,7 @@ pub(super) fn vec_value(
     let bytes =
         values.len().checked_mul(stride).and_then(|n| n.checked_add(12)).ok_or_else(index_error)?;
     body.instruction(&Instruction::I32Const(i32::try_from(bytes).map_err(|_| index_error())?));
-    body.instruction(&Instruction::Call(0));
+    super::failure::operation_call(0, body);
     body.instruction(&Instruction::LocalSet(temporary));
     write_header(temporary, values.len(), values.len(), body)?;
     for (index, value) in values.iter().enumerate() {
@@ -220,7 +230,9 @@ pub(super) fn vec_push(
     body.instruction(&Instruction::I32Const(1_048_576));
     body.instruction(&Instruction::I32GeU);
     body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::Unreachable);
+    body.instruction(&Instruction::I32Const(3));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
     body.instruction(&Instruction::End);
     body.instruction(&Instruction::LocalGet(locals.heap + 1));
     body.instruction(&Instruction::LocalGet(locals.heap + 2));
@@ -272,14 +284,16 @@ fn grow_vec(
     body.instruction(&Instruction::I32Const(1_048_576));
     body.instruction(&Instruction::I32GtU);
     body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::Unreachable);
+    body.instruction(&Instruction::I32Const(3));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
     body.instruction(&Instruction::End);
     body.instruction(&Instruction::LocalGet(locals.heap + 2));
     body.instruction(&Instruction::I32Const(stride));
     body.instruction(&Instruction::I32Mul);
     body.instruction(&Instruction::I32Const(12));
     body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::Call(0));
+    super::failure::operation_call(0, body);
     body.instruction(&Instruction::LocalSet(locals.heap + 3));
     write_header_from_local(locals.heap + 3, locals.heap + 1, body);
     body.instruction(&Instruction::LocalGet(locals.heap + 3));
@@ -317,7 +331,7 @@ pub(super) fn shared_value(
     let offset = memory::align_up(8, payload.alignment()).ok_or_else(index_error)?;
     let size = offset.checked_add(payload.size()).ok_or_else(index_error)?.max(1);
     body.instruction(&Instruction::I32Const(i32::try_from(size).map_err(|_| index_error())?));
-    body.instruction(&Instruction::Call(0));
+    super::failure::operation_call(0, body);
     body.instruction(&Instruction::LocalSet(temporary));
     store_const(temporary, 0, 1, body);
     store_const(temporary, 4, 1, body);

@@ -64,7 +64,9 @@ fn validate_authority(
 
 fn render(program: &VerifiedProgram, out: &mut impl Write) -> Result<(), Diagnostic> {
     out.write_str(super::JAVASCRIPT_PRELUDE).map_err(format_error)?;
+    out.write_str(runtime::OBSERVATION).map_err(format_error)?;
     out.write_str(runtime::PRELUDE).map_err(format_error)?;
+    out.write_str("export { $zryna$observation };\n").map_err(format_error)?;
     let mut exports = Vec::new();
     for module in program.modules() {
         for function in module.functions() {

@@ -47,6 +47,8 @@ pub(super) fn emit_function(
         .map_err(format_error)?;
     }
     out.write_str("];\n").map_err(format_error)?;
+    writeln!(out, "  const cleanup = id => {{ $zryna$record({}); $zryna$record({}); $zryna$record(id); $zryna$drop($zryna$take(p,r,v,id)); }};",
+        0x20000000_u32 + function.id().module(), function.id().declaration()).map_err(format_error)?;
     for (index, parameter) in value_parameters.iter().enumerate() {
         writeln!(out, "  v[{}] = a{index};", parameter.id().index()).map_err(format_error)?;
     }
@@ -95,6 +97,20 @@ fn emit_instruction(
         );
     if catches {
         out.write_str("        try { ").map_err(format_error)?;
+    }
+    let probes: &[u32] = match kind {
+        K::StringFromUtf8 => &[5, 2],
+        K::StringConcat | K::VecPush => &[3, 2],
+        K::StructConstruct
+        | K::FixedArrayConstruct
+        | K::EnumConstruct
+        | K::VecConstruct
+        | K::SharedConstruct => &[2],
+        K::WeakDowngrade => &[4],
+        _ => &[],
+    };
+    for code in probes {
+        write!(out, "$zryna$probe({code}); ").map_err(format_error)?;
     }
     if let Some(result) = instruction.result() {
         if !catches {
@@ -170,7 +186,7 @@ fn emit_instruction(
             )
         }
         (K::DropPlace, B::Place(place)) => {
-            write!(out, "$zryna$drop($zryna$take(p,r,v,{}))", place.index())
+            write!(out, "cleanup({})", place.index())
         }
         (K::EnumDiscriminant, B::Place(place)) => {
             write!(out, "$zryna$read(p,r,v,{}).$t", place.index())
@@ -180,7 +196,7 @@ fn emit_instruction(
             B::PlaceValue { place, value },
         ) => {
             if kind != K::InitializePlace {
-                write!(out, "$zryna$drop($zryna$read(p,r,v,{})); ", place.index())?;
+                write!(out, "cleanup({}); ", place.index())?;
             }
             write!(out, "$zryna$write(p,r,v,{},v[{}])", place.index(), value.index())
         }
@@ -199,7 +215,7 @@ fn emit_instruction(
         }
         (K::StringConcat, B::StringConcat { left, right }) => write!(
             out,
-            "{{$k:1,$v:$zryna$read(p,r,v,{}).$v+$zryna$read(p,r,v,{}).$v}}",
+            "$zryna$concat($zryna$read(p,r,v,{}),$zryna$read(p,r,v,{}))",
             left.index(),
             right.index()
         ),
@@ -207,7 +223,7 @@ fn emit_instruction(
             emit_sequence(&values, "{$k:2,$v:[", "]}", out)
         }
         (K::VecPush, B::VecPush { vector, value }) => {
-            write!(out, "$zryna$read(p,r,v,{}).$v.push(v[{}])", vector.index(), value.index())
+            write!(out, "$zryna$push($zryna$read(p,r,v,{}),v[{}])", vector.index(), value.index())
         }
         (K::SharedConstruct, B::Unary(value)) => {
             write!(out, "{{$k:4,$c:{{$s:1,$w:1,$p:v[{}]}}}}", value.index())
@@ -254,8 +270,7 @@ fn emit_instruction(
     if catches {
         out.write_str("        } catch ($failure) {\n").map_err(format_error)?;
         for action in failure_actions {
-            writeln!(out, "          $zryna$drop($zryna$take(p,r,v,{}));", action.root().index())
-                .map_err(format_error)?;
+            writeln!(out, "          cleanup({});", action.root().index()).map_err(format_error)?;
         }
         out.write_str("          throw $failure;\n        }\n").map_err(format_error)?;
     }
@@ -296,7 +311,10 @@ fn emit_terminator(
         T::WeakUpgrade { weak, success, expired } => {
             writeln!(out, "        {{ const c=$zryna$read(p,r,v,{}).$c;", weak.index())
                 .map_err(format_error)?;
-            out.write_str("          if (c.$s > 0) { if(c.$s===4294967295)$zryna$trap(\"REFCOUNT\"); c.$s++; const u={$k:4,$c:c};\n").map_err(format_error)?;
+            out.write_str("          if (c.$s > 0) { try { $zryna$probe(4); if(c.$s===4294967295)$zryna$trap(\"REFCOUNT\"); } catch(failure) {\n").map_err(format_error)?;
+            emit_drops(terminator, out)?;
+            out.write_str("            throw failure; } c.$s++; const u={$k:4,$c:c};\n")
+                .map_err(format_error)?;
             emit_edge(&success, &parameters[success.target().index() as usize], 1, out)?;
             out.write_str("          } else {\n").map_err(format_error)?;
             emit_edge(&expired, &parameters[expired.target().index() as usize], 0, out)?;
@@ -304,7 +322,14 @@ fn emit_terminator(
         }
         T::Trap(identity) => {
             emit_drops(terminator, out)?;
-            writeln!(out, "        $zryna$trap(\"{identity:?}\");").map_err(format_error)?;
+            let name = match identity {
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::BoundsV1 => "BOUNDS",
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::AllocationV1 => "ALLOCATION",
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::CapacityV1 => "CAPACITY",
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::RefcountV1 => "REFCOUNT",
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::Utf8V1 => "UTF8",
+            };
+            writeln!(out, "        $zryna$trap(\"{name}\");").map_err(format_error)?;
         }
     }
     Ok(())
@@ -338,8 +363,7 @@ fn emit_drops(
     out: &mut impl Write,
 ) -> Result<(), zryna_diagnostics::Diagnostic> {
     for action in terminator.derived_drop_actions() {
-        writeln!(out, "        $zryna$drop($zryna$take(p,r,v,{}));", action.root().index())
-            .map_err(format_error)?;
+        writeln!(out, "        cleanup({});", action.root().index()).map_err(format_error)?;
     }
     Ok(())
 }
@@ -405,8 +429,12 @@ pub(super) fn emit_wrapper(
         writeln!(out, "  a{i}={validator}(a{i});").map_err(format_error)?;
     }
     let result = validator(layouts, function.result_type())?;
-    write!(out, "  $zryna$status = 0;\n  try {{ return {result}({}(", private_name(function))
-        .map_err(format_error)?;
+    write!(
+        out,
+        "  $zryna$status = 0; $zryna$trace = []; $zryna$attempt = 0;\n  try {{ return {result}({}(",
+        private_name(function)
+    )
+    .map_err(format_error)?;
     for i in 0..parameters.len() {
         if i > 0 {
             out.write_str(", ").map_err(format_error)?;

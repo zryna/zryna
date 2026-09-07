@@ -27,7 +27,7 @@ pub(super) fn lower_terminator(
     blocks: &[Block],
     slots: &[Option<StackSlot>],
     values: &[Option<cranelift_codegen::ir::Value>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
@@ -82,7 +82,9 @@ pub(super) fn lower_terminator(
             drop_ops::execute_cleanup_plan(
                 program, function, cleanup, slots, runtime, drops, builder,
             )?;
-            builder.ins().trap(TrapCode::unwrap_user(identity.saturating_add(10)))
+            let code = builder.ins().iconst(types::I32, i64::from(*identity) + 1);
+            super::failure::return_trap(program, function, code, runtime, builder)?;
+            return Ok(());
         }
     };
     Ok(())
@@ -129,7 +131,7 @@ fn lower_weak_upgrade(
     blocks: &[Block],
     slots: &[Option<StackSlot>],
     values: &[Option<cranelift_codegen::ir::Value>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
@@ -150,7 +152,19 @@ fn lower_weak_upgrade(
     }
     let weak_address = place_storage_address(program, function, weak, slots, builder)?;
     let control = builder.ins().load(types::I64, MemFlagsData::new(), weak_address, 0);
-    let result = allocate_record(program, target.ty(), runtime, builder)?;
+    let early_failure = builder.create_block();
+    builder.append_block_param(early_failure, types::I32);
+    let fallible =
+        &super::failure::Runtime { symbols: runtime.symbols, failed: Some(early_failure) };
+    let strong = builder.ins().load(types::I32, MemFlagsData::new(), control, 0);
+    let live = builder.create_block();
+    let attempt = builder.create_block();
+    builder.ins().brif(strong, live, &[], attempt, &[]);
+    builder.switch_to_block(live);
+    super::failure::probe(4, fallible, builder)?;
+    builder.ins().jump(attempt, &[]);
+    builder.switch_to_block(attempt);
+    let result = allocate_record(program, target.ty(), fallible, builder)?;
     let call = builder.ins().call(runtime_function(runtime, runtime_symbol)?, &[control]);
     let status = *builder.inst_results(call).first().ok_or_else(invariant_error)?;
     let upgraded = builder.create_block();
@@ -179,6 +193,10 @@ fn lower_weak_upgrade(
     builder.switch_to_block(failed);
     release_record(program, target.ty(), result, runtime, builder)?;
     drop_ops::execute_cleanup_plan(program, function, cleanup, slots, runtime, drops, builder)?;
-    builder.ins().trap(TrapCode::unwrap_user(2));
-    Ok(())
+    let code = builder.ins().iadd_imm_u(status, 1);
+    super::failure::return_trap(program, function, code, runtime, builder)?;
+    builder.switch_to_block(early_failure);
+    let code = builder.block_params(early_failure)[0];
+    drop_ops::execute_cleanup_plan(program, function, cleanup, slots, runtime, drops, builder)?;
+    super::failure::return_trap(program, function, code, runtime, builder)
 }

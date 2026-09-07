@@ -3,6 +3,9 @@ use zryna_layout::{TypeCategory, VerifiedType};
 
 use super::{Context, index_error};
 
+mod clone;
+pub(super) use clone::clone_helper;
+
 const WORD: MemArg = MemArg { offset: 0, align: 2, memory_index: 0 };
 const BYTE: MemArg = MemArg { offset: 0, align: 0, memory_index: 0 };
 
@@ -33,198 +36,14 @@ pub(super) fn store_value(ty: VerifiedType<'_>, body: &mut Function) {
     }
 }
 
-pub(super) fn clone_helper(
-    ty: VerifiedType<'_>,
-    context: &Context<'_>,
-) -> Result<Function, zryna_diagnostics::Diagnostic> {
-    let mut body = Function::new([(5, ValType::I32)]);
-    match ty.category() {
-        TypeCategory::Bool | TypeCategory::I32 => {
-            body.instruction(&Instruction::LocalGet(0));
-        }
-        TypeCategory::String => clone_bytes(4, &mut body),
-        TypeCategory::Struct => {
-            clone_fixed(ty, &mut body)?;
-            for field in ty.fields() {
-                clone_child(field.ty(), field.offset(), context, &mut body)?;
-            }
-            body.instruction(&Instruction::LocalGet(2));
-        }
-        TypeCategory::FixedArray => {
-            clone_fixed(ty, &mut body)?;
-            let child_id = ty.referenced_type().ok_or_else(index_error)?;
-            let child = context.layouts.type_by_id(child_id).ok_or_else(index_error)?;
-            if child.drop_kind() != 0 {
-                let stride = i32::try_from(ty.array_stride().ok_or_else(index_error)?)
-                    .map_err(|_| index_error())?;
-                let length = i32::try_from(ty.array_length().ok_or_else(index_error)?)
-                    .map_err(|_| index_error())?;
-                clone_elements(child_id, child, stride, length, &mut body);
-            }
-            body.instruction(&Instruction::LocalGet(2));
-        }
-        TypeCategory::Enum => {
-            clone_fixed(ty, &mut body)?;
-            let payload_offset = ty.enum_payload_layout().ok_or_else(index_error)?.0;
-            for variant in ty.variants() {
-                let Some(payload) = variant.payload() else { continue };
-                body.instruction(&Instruction::LocalGet(0));
-                body.instruction(&Instruction::I32Load(WORD));
-                body.instruction(&Instruction::I32Const(
-                    i32::try_from(variant.ordinal()).map_err(|_| index_error())?,
-                ));
-                body.instruction(&Instruction::I32Eq);
-                body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-                clone_child(payload, payload_offset, context, &mut body)?;
-                body.instruction(&Instruction::End);
-            }
-            body.instruction(&Instruction::LocalGet(2));
-        }
-        TypeCategory::Vec => clone_vec(ty, context, &mut body)?,
-        TypeCategory::Shared => clone_count(0, &mut body),
-        TypeCategory::Weak => clone_count(4, &mut body),
-    }
-    body.instruction(&Instruction::End);
-    Ok(body)
-}
-
-fn clone_bytes(length_offset: u64, body: &mut Function) {
-    body.instruction(&Instruction::LocalGet(0));
-    body.instruction(&Instruction::I32Const(i32::try_from(length_offset).unwrap_or(4)));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::I32Load(WORD));
-    body.instruction(&Instruction::LocalSet(1));
-    body.instruction(&Instruction::LocalGet(1));
-    body.instruction(&Instruction::I32Const(12));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::Call(0));
-    body.instruction(&Instruction::LocalTee(2));
-    body.instruction(&Instruction::LocalGet(0));
-    body.instruction(&Instruction::LocalGet(1));
-    body.instruction(&Instruction::I32Const(12));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::Call(1));
-    body.instruction(&Instruction::LocalGet(2));
-    body.instruction(&Instruction::LocalGet(2));
-    body.instruction(&Instruction::I32Const(12));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::I32Store(WORD));
-    body.instruction(&Instruction::LocalGet(2));
-}
-
-fn clone_fixed(
-    ty: VerifiedType<'_>,
-    body: &mut Function,
-) -> Result<(), zryna_diagnostics::Diagnostic> {
-    body.instruction(&Instruction::I32Const(
-        i32::try_from(ty.size().max(1)).map_err(|_| index_error())?,
-    ));
-    body.instruction(&Instruction::Call(0));
-    body.instruction(&Instruction::LocalTee(2));
-    body.instruction(&Instruction::LocalGet(0));
-    body.instruction(&Instruction::I32Const(i32::try_from(ty.size()).map_err(|_| index_error())?));
-    body.instruction(&Instruction::Call(1));
-    Ok(())
-}
-
-fn clone_child(
-    child: zryna_layout::TypeId,
-    offset: u64,
-    context: &Context<'_>,
-    body: &mut Function,
-) -> Result<(), zryna_diagnostics::Diagnostic> {
-    let ty = context.layouts.type_by_id(child).ok_or_else(index_error)?;
-    if ty.drop_kind() == 0 {
-        return Ok(());
-    }
-    address(2, offset, body)?;
-    address(0, offset, body)?;
-    load_value(ty, body);
-    body.instruction(&Instruction::Call(Context::clone_index(child)));
-    store_value(ty, body);
-    Ok(())
-}
-
-fn clone_count(offset: u64, body: &mut Function) {
-    address(0, offset, body).expect("constant offset");
-    body.instruction(&Instruction::I32Load(WORD));
-    body.instruction(&Instruction::LocalTee(1));
-    body.instruction(&Instruction::I32Const(-1));
-    body.instruction(&Instruction::I32Eq);
-    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::Unreachable);
-    body.instruction(&Instruction::End);
-    address(0, offset, body).expect("constant offset");
-    body.instruction(&Instruction::LocalGet(1));
-    body.instruction(&Instruction::I32Const(1));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::I32Store(WORD));
-    body.instruction(&Instruction::LocalGet(0));
-}
-
-fn clone_vec(
-    ty: VerifiedType<'_>,
-    context: &Context<'_>,
-    body: &mut Function,
-) -> Result<(), zryna_diagnostics::Diagnostic> {
-    let child_id = ty.referenced_type().ok_or_else(index_error)?;
-    let child = context.layouts.type_by_id(child_id).ok_or_else(index_error)?;
-    let stride = i32::try_from(child.size().max(1)).map_err(|_| index_error())?;
-    body.instruction(&Instruction::LocalGet(0));
-    body.instruction(&Instruction::I32Const(4));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::I32Load(WORD));
-    body.instruction(&Instruction::LocalSet(1));
-    body.instruction(&Instruction::LocalGet(1));
-    body.instruction(&Instruction::I32Const(stride));
-    body.instruction(&Instruction::I32Mul);
-    body.instruction(&Instruction::I32Const(12));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::Call(0));
-    body.instruction(&Instruction::LocalTee(2));
-    body.instruction(&Instruction::LocalGet(0));
-    body.instruction(&Instruction::LocalGet(1));
-    body.instruction(&Instruction::I32Const(stride));
-    body.instruction(&Instruction::I32Mul);
-    body.instruction(&Instruction::I32Const(12));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::Call(1));
-    body.instruction(&Instruction::LocalGet(2));
-    body.instruction(&Instruction::LocalGet(2));
-    body.instruction(&Instruction::I32Const(12));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::I32Store(WORD));
-    if child.drop_kind() != 0 {
-        body.instruction(&Instruction::I32Const(0));
-        body.instruction(&Instruction::LocalSet(3));
-        body.instruction(&Instruction::Block(wasm_encoder::BlockType::Empty));
-        body.instruction(&Instruction::Loop(wasm_encoder::BlockType::Empty));
-        body.instruction(&Instruction::LocalGet(3));
-        body.instruction(&Instruction::LocalGet(1));
-        body.instruction(&Instruction::I32GeU);
-        body.instruction(&Instruction::BrIf(1));
-        indexed(2, 3, stride, body);
-        indexed(0, 3, stride, body);
-        load_value(child, body);
-        body.instruction(&Instruction::Call(Context::clone_index(child_id)));
-        store_value(child, body);
-        body.instruction(&Instruction::LocalGet(3));
-        body.instruction(&Instruction::I32Const(1));
-        body.instruction(&Instruction::I32Add);
-        body.instruction(&Instruction::LocalSet(3));
-        body.instruction(&Instruction::Br(0));
-        body.instruction(&Instruction::End);
-        body.instruction(&Instruction::End);
-    }
-    body.instruction(&Instruction::LocalGet(2));
-    Ok(())
-}
-
 pub(super) fn drop_helper(
     ty: VerifiedType<'_>,
     context: &Context<'_>,
 ) -> Result<Function, zryna_diagnostics::Diagnostic> {
     let mut body = Function::new([(3, ValType::I32)]);
+    if let Some(kind) = super::observation::value_kind(ty.category()) {
+        super::observation::record(0x10000000 + kind, context, &mut body);
+    }
     match ty.category() {
         TypeCategory::Struct => {
             for field in ty.fields().iter().rev() {
@@ -259,7 +78,7 @@ pub(super) fn drop_helper(
         }
         TypeCategory::Vec => drop_vec(ty, context, &mut body)?,
         TypeCategory::Shared => drop_shared(ty, context, &mut body)?,
-        TypeCategory::Weak => decrement(4, &mut body),
+        TypeCategory::Weak => decrement(4, context, &mut body),
         TypeCategory::Bool | TypeCategory::I32 | TypeCategory::String => {}
     }
     body.instruction(&Instruction::End);
@@ -321,35 +140,6 @@ fn drop_vec(
     Ok(())
 }
 
-fn clone_elements(
-    child_id: zryna_layout::TypeId,
-    child: VerifiedType<'_>,
-    stride: i32,
-    length: i32,
-    body: &mut Function,
-) {
-    body.instruction(&Instruction::I32Const(0));
-    body.instruction(&Instruction::LocalSet(3));
-    body.instruction(&Instruction::Block(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::Loop(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::LocalGet(3));
-    body.instruction(&Instruction::I32Const(length));
-    body.instruction(&Instruction::I32GeU);
-    body.instruction(&Instruction::BrIf(1));
-    raw_indexed(2, 3, stride, body);
-    raw_indexed(0, 3, stride, body);
-    load_value(child, body);
-    body.instruction(&Instruction::Call(Context::clone_index(child_id)));
-    store_value(child, body);
-    body.instruction(&Instruction::LocalGet(3));
-    body.instruction(&Instruction::I32Const(1));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::LocalSet(3));
-    body.instruction(&Instruction::Br(0));
-    body.instruction(&Instruction::End);
-    body.instruction(&Instruction::End);
-}
-
 fn drop_elements(
     child_id: zryna_layout::TypeId,
     child: VerifiedType<'_>,
@@ -405,12 +195,13 @@ fn drop_shared(
     let payload_ty = context.layouts.type_by_id(payload).ok_or_else(index_error)?;
     let offset = align_up(8, payload_ty.alignment()).ok_or_else(index_error)?;
     drop_child(payload, offset, context, body)?;
-    decrement(4, body);
+    super::observation::record(0x10000006, context, body);
+    decrement(4, context, body);
     body.instruction(&Instruction::End);
     Ok(())
 }
 
-fn decrement(offset: u64, body: &mut Function) {
+fn decrement(offset: u64, context: &Context<'_>, body: &mut Function) {
     address(0, offset, body).expect("constant offset");
     body.instruction(&Instruction::I32Load(WORD));
     body.instruction(&Instruction::LocalTee(1));
@@ -423,6 +214,12 @@ fn decrement(offset: u64, body: &mut Function) {
     body.instruction(&Instruction::I32Const(1));
     body.instruction(&Instruction::I32Sub);
     body.instruction(&Instruction::I32Store(WORD));
+    body.instruction(&Instruction::LocalGet(1));
+    body.instruction(&Instruction::I32Const(1));
+    body.instruction(&Instruction::I32Eq);
+    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+    super::observation::record(0x10000007, context, body);
+    body.instruction(&Instruction::End);
 }
 
 pub(super) fn address(

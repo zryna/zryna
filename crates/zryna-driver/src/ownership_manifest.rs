@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use zryna_abi::{ScalarOutcome, ScalarValue};
+use zryna_abi::ScalarValue;
 use zryna_diagnostics::{Diagnostic, PrimaryLocation};
 
 use crate::{
@@ -36,31 +36,8 @@ pub enum OwnershipTarget {
     Native,
 }
 
-/// One normalized typed target observation.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct OwnershipManifestResult {
-    target: OwnershipTarget,
-    outcome: ScalarOutcome,
-}
-
-impl OwnershipManifestResult {
-    /// Creates one target result for canonical manifest rendering.
-    #[must_use]
-    pub(crate) const fn new(target: OwnershipTarget, outcome: ScalarOutcome) -> Self {
-        Self { target, outcome }
-    }
-    /// Returns the observed target.
-    #[must_use]
-    pub const fn target(&self) -> OwnershipTarget {
-        self.target
-    }
-    /// Returns the normalized typed outcome.
-    #[must_use]
-    pub const fn outcome(&self) -> ScalarOutcome {
-        self.outcome
-    }
-}
+mod observation;
+pub use observation::{OwnershipManifestResult, OwnershipTraceEvent, OwnershipValueKind};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]

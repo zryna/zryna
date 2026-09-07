@@ -1,3 +1,5 @@
+mod cleanup;
+use cleanup::verify_cleanup;
 use std::collections::{BTreeMap, BTreeSet};
 
 use zryna_ownership_runtime_abi::{LogicalOperation, VerifiedOwnershipRuntimeAbi};
@@ -5,6 +7,7 @@ use zryna_ownership_runtime_abi::{LogicalOperation, VerifiedOwnershipRuntimeAbi}
 use super::{VerifiedMirModule, error, raw};
 
 mod operation;
+pub(super) mod source_binding;
 
 const MAX_DIAGNOSTICS: usize = 256;
 
@@ -14,15 +17,20 @@ const MAX_DIAGNOSTICS: usize = 256;
 /// Returns deterministic bounded diagnostics and no partial verified module.
 pub fn verify(
     program: raw::Program,
-    layouts: &zryna_layout::VerifiedLayouts,
+    source: &zryna_ir::data_ownership_v1::VerifiedProgram,
     runtime: &VerifiedOwnershipRuntimeAbi,
 ) -> Result<VerifiedMirModule, Vec<zryna_diagnostics::Diagnostic>> {
+    let layouts = source.linux_x86_64_layouts();
     let mut errors = Errors::default();
     verify_authority(&program, layouts, runtime, &mut errors);
     verify_types(&program, layouts, &mut errors);
     verify_symbols(&program, runtime, &mut errors);
     verify_functions(&program, layouts, runtime, &mut errors);
-    if errors.items.is_empty() { Ok(VerifiedMirModule { program }) } else { Err(errors.items) }
+    if !errors.items.is_empty() {
+        return Err(errors.items);
+    }
+    source_binding::validate(&program, source, runtime)?;
+    Ok(VerifiedMirModule { program })
 }
 
 fn verify_authority(
@@ -438,43 +446,6 @@ fn value_type(function: &raw::Function, id: u32) -> Option<u32> {
         }))
         .find(|value| value.id == id)
         .map(|value| value.ty)
-}
-
-fn verify_cleanup(program: &raw::Program, function: &raw::Function, errors: &mut Errors) {
-    if function.cleanup_plans.len() > zryna_ir::data_ownership_v1::MAX_CLEANUP_PLANS_PER_FUNCTION {
-        errors.push("ZRYNA-N3201", "native MIR cleanup plan budget exceeded");
-    }
-    for (index, plan) in function.cleanup_plans.iter().enumerate() {
-        if plan.id as usize != index {
-            errors.push("ZRYNA-N3112", "native MIR cleanup identity is not dense");
-        }
-        for action in &plan.actions {
-            let Some(place) = function.places.get(action.place as usize) else {
-                errors.push("ZRYNA-N3112", "native MIR cleanup uses an unknown place");
-                continue;
-            };
-            let category = type_at(program, place.ty).map(|ty| ty.category);
-            let valid = match action.kind {
-                raw::DropKind::Place => {
-                    type_at(program, place.ty).is_some_and(|ty| ty.drop_kind != 0)
-                }
-                raw::DropKind::VecPrefix => category == Some(raw::TypeCategory::Vec),
-                raw::DropKind::AggregatePrefix | raw::DropKind::GenericPrefix => matches!(
-                    category,
-                    Some(
-                        raw::TypeCategory::Struct
-                            | raw::TypeCategory::Enum
-                            | raw::TypeCategory::FixedArray
-                            | raw::TypeCategory::Vec
-                    )
-                ),
-            };
-            if !valid {
-                errors
-                    .push("ZRYNA-N3112", "native MIR cleanup kind disagrees with its place layout");
-            }
-        }
-    }
 }
 
 pub(super) fn type_at(program: &raw::Program, id: u32) -> Option<&raw::Type> {

@@ -120,11 +120,12 @@ fn complete_run_bundle_binds_typed_results() {
         OwnershipTarget::JavaScript,
         ScalarOutcome::Returned { value: ScalarValue::I32(42) },
     );
-    let published = publish_after_staging(&success, |_, _| Ok(vec![result])).expect("run bundle");
+    let published =
+        publish_after_staging(&success, |_, _| Ok(vec![result.clone()])).expect("run bundle");
     let _cleanup = BundleCleanup(published.path().to_owned());
 
     assert_eq!(published.command(), CommandKind::Run);
-    assert_eq!(published.results(), [result]);
+    assert_eq!(published.results(), [result.clone()]);
     assert!(published.path().ends_with(format!("{}.run", request.artifact_stem)));
     let manifest = fs::read(published.manifest_path()).expect("manifest bytes");
     let decoded = decode_ownership_manifest_v3(&manifest).expect("strict manifest");

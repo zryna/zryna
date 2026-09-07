@@ -19,7 +19,7 @@ pub fn lower(
     runtime: &VerifiedOwnershipRuntimeAbi,
 ) -> Result<VerifiedMirModule, Vec<zryna_diagnostics::Diagnostic>> {
     let raw = lower_unverified(program, runtime)?;
-    verify(raw, program.linux_x86_64_layouts(), runtime)
+    verify(raw, program, runtime)
 }
 
 /// Produces untrusted native MIR claims for verifier and hostile-input testing.
@@ -123,7 +123,7 @@ fn lower_function(
             }
         }
     }
-    Ok(raw::Function {
+    let mut lowered = raw::Function {
         module: function.id().module(),
         declaration: function.id().declaration(),
         symbol: format!("zryna_m3_m{}_f{}", function.id().module(), function.id().declaration()),
@@ -184,7 +184,37 @@ fn lower_function(
                     .collect(),
             })
             .collect(),
-    })
+    };
+    for (source_block, block) in function.blocks().zip(&mut lowered.blocks) {
+        for (source, operation) in source_block.instructions().zip(&mut block.operations) {
+            if !verify::source_binding::needs_storage_plan(source, layouts) {
+                continue;
+            }
+            let actions = source
+                .allocation_failure_drop_actions()
+                .map(|action| raw::DropAction {
+                    place: action.root().index(),
+                    kind: drop_kind(action.kind()),
+                })
+                .collect::<Vec<_>>();
+            let plan = if let Some(plan) =
+                lowered.cleanup_plans.iter().find(|plan| plan.actions == actions)
+            {
+                plan.id
+            } else {
+                let id = u32::try_from(lowered.cleanup_plans.len()).map_err(|_| {
+                    vec![super::error(
+                        "ZRYNA-N3107",
+                        "constructor cleanup inventory exceeds native MIR limits",
+                    )]
+                })?;
+                lowered.cleanup_plans.push(raw::CleanupPlan { id, actions });
+                id
+            };
+            operation.cleanup = Some(plan);
+        }
+    }
+    Ok(lowered)
 }
 
 fn lower_place(

@@ -99,8 +99,8 @@ fn audit(bytes: &[u8]) -> Result<(), Diagnostic> {
                     let global =
                         global.map_err(|failure| error("ZRYNA-W3002", failure.to_string()))?;
                     let mut init = global.init_expr.get_operators_reader();
-                    let expected = if index == 0 { 1024 } else { 0 };
-                    if index > 1
+                    let expected = if index == 0 { 65_536 } else { 0 };
+                    if index > 5
                         || global.ty.content_type != ValType::I32
                         || !global.ty.mutable
                         || global.ty.shared
@@ -114,7 +114,7 @@ fn audit(bytes: &[u8]) -> Result<(), Diagnostic> {
                         ));
                     }
                 }
-                if globals != 2 {
+                if globals != 6 {
                     return Err(error("ZRYNA-W3004", "missing private observation global"));
                 }
             }
@@ -140,7 +140,7 @@ fn audit(bytes: &[u8]) -> Result<(), Diagnostic> {
     if memories != 1 {
         return Err(error("ZRYNA-W3004", "module is missing bounded linear memory"));
     }
-    if globals != 2 {
+    if globals != 6 {
         return Err(error("ZRYNA-W3004", "module is missing its private arena global"));
     }
     for payload in Parser::new(0).parse_all(bytes) {
@@ -216,6 +216,8 @@ fn approved_operator(operator: &Operator<'_>) -> bool {
             | Operator::I32Sub
             | Operator::I32Mul
             | Operator::I32And
+            | Operator::I32ShrU
+            | Operator::Drop
             | Operator::I32Shl
     )
 }

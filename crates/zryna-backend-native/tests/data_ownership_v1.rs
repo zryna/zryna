@@ -57,7 +57,12 @@ fn owned_pair_object_is_deterministic_and_runtime_symbol_sealed() {
         .filter(ObjectSymbol::is_undefined)
         .map(|symbol| symbol.name().expect("symbol"))
         .collect::<Vec<_>>();
-    assert_eq!(undefined, mir.runtime_symbols().collect::<Vec<_>>());
+    let mut expected = mir
+        .runtime_symbols()
+        .chain(["zryna_m3_allocate_record", "zryna_m3_observe"])
+        .collect::<Vec<_>>();
+    expected.sort_unstable();
+    assert_eq!(undefined, expected);
     assert!(file.symbol_by_name("zryna_m3_m0_f0").is_some());
 }
 
@@ -96,31 +101,57 @@ fn owned_string_and_vec_borrow_reads_emit() {
 
 #[test]
 fn string_literal_codegen_cost_is_bounded_before_emission() {
-    use zryna_native_mir::data_ownership_v1::raw::{Immediate, Opcode};
-
-    let program = verified(
-        include_str!("../../../tests/m3-fixtures/owned-root-borrow-reads.zry"),
-        include_str!("../../../tests/m3-fixtures/owned-root-borrow-reads.json"),
-    );
-    let mut raw = zryna_native_mir::data_ownership_v1::lower_unverified(
-        program.verified_ir(),
-        program.runtime_abi(),
-    )
-    .expect("raw MIR");
-    let literal = raw
-        .functions
-        .iter_mut()
-        .flat_map(|function| &mut function.blocks)
-        .flat_map(|block| &mut block.operations)
-        .find(|operation| operation.opcode == Opcode::String)
-        .expect("String literal");
-    literal.immediate = Immediate::Utf8(vec![b'x'; 1_000_001]);
-    let mir = zryna_native_mir::data_ownership_v1::verify(
-        raw,
-        program.verified_ir().linux_x86_64_layouts(),
-        program.runtime_abi(),
-    )
-    .expect("bounded verified MIR");
+    let source = include_str!("../../../tests/m3-fixtures/owned-root-borrow-reads.zry");
+    let mut snapshot: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../tests/m3-fixtures/owned-root-borrow-reads.json"
+    ))
+    .unwrap();
+    let old = "\"value\"";
+    let new = format!("\"{}\"", "x".repeat(1_000_001));
+    let end = source.find(old).unwrap() + old.len();
+    let delta = new.len() - old.len();
+    fn shift(
+        value: &mut serde_json::Value,
+        end: usize,
+        delta: usize,
+        old: &str,
+        new: &str,
+        replaced: &mut bool,
+    ) {
+        match value {
+            serde_json::Value::Object(object) => {
+                if object.contains_key("file")
+                    && object.contains_key("start")
+                    && object.contains_key("end")
+                {
+                    for key in ["start", "end"] {
+                        let offset = object[key].as_u64().unwrap();
+                        if offset >= u64::try_from(end).unwrap() {
+                            object[key] = (offset + u64::try_from(delta).unwrap()).into();
+                        }
+                    }
+                }
+                for value in object.values_mut() {
+                    shift(value, end, delta, old, new, replaced);
+                }
+            }
+            serde_json::Value::Array(items) => {
+                for value in items {
+                    shift(value, end, delta, old, new, replaced);
+                }
+            }
+            serde_json::Value::String(text) if text == old && !*replaced => {
+                *text = new.to_owned();
+                *replaced = true;
+            }
+            _ => {}
+        }
+    }
+    shift(&mut snapshot, end, delta, old, &new, &mut false);
+    let program = verified(&source.replacen(old, &new, 1), &snapshot.to_string());
+    let mir =
+        zryna_native_mir::data_ownership_v1::lower(program.verified_ir(), program.runtime_abi())
+            .expect("source-authenticated large literal");
     let target =
         zryna_backend_native::select_object_target(zryna_backend_native::NATIVE_OBJECT_TARGET)
             .expect("target");

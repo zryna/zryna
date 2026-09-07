@@ -198,6 +198,32 @@ pub(super) fn validate_results(
     targets: &[OwnershipTarget],
     results: &[OwnershipManifestResult],
 ) -> Result<(), Diagnostic> {
+    for result in results {
+        if matches!(
+            result.outcome(),
+            zryna_abi::ScalarOutcome::Trapped {
+                code: zryna_abi::ScalarTrapCode::Unreachable
+                    | zryna_abi::ScalarTrapCode::TargetTrap
+            }
+        ) {
+            return Err(error("candidate manifest requires a typed language trap"));
+        }
+        let mut words = 0usize;
+        for event in result.trace() {
+            words += match event {
+                crate::OwnershipTraceEvent::Cleanup { module, function, place } => {
+                    if *module > 65535 || *function > 65535 || *place > 1048576 {
+                        return Err(error("candidate cleanup identity exceeds its fixed bound"));
+                    }
+                    3
+                }
+                _ => 1,
+            };
+            if words > 4096 {
+                return Err(error("candidate cleanup trace exceeds its fixed bound"));
+            }
+        }
+    }
     let actual = results.iter().map(OwnershipManifestResult::target).collect::<Vec<_>>();
     if (command == ManifestCommand::Build && !results.is_empty())
         || (command == ManifestCommand::Run && actual != targets)

@@ -19,6 +19,7 @@ zryna-ir = { path = "../zryna-ir" }
 zryna-native-mir = { path = "../zryna-native-mir" }
 
 [dev-dependencies]
+serde_json.workspace = true
 sha2.workspace = true
 zryna-semantics = { path = "../zryna-semantics" }
 zryna-source = { path = "../zryna-source" }

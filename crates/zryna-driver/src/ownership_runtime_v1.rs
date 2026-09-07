@@ -22,7 +22,9 @@ pub(crate) fn render_source(
             align_up(ty.size(), ty.alignment()).map(|stride| (id, stride, ty.alignment()))
         })
     });
-    render_layouts(layouts)
+    let mut source = b"#define ZRYNA_M3_OBSERVATION 1\n".to_vec();
+    source.extend(render_layouts(layouts));
+    source
 }
 
 fn render_layouts(layouts: impl IntoIterator<Item = (u32, u64, u64)>) -> Vec<u8> {
@@ -219,6 +221,43 @@ int main(void) {
         let status = Command::new(&executable).status().expect("execute runtime test");
         assert!(status.success(), "runtime harness status {status}");
         fs::remove_dir_all(root).expect("runtime test cleanup");
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn candidate_scratch_finalization_cannot_hide_owned_or_pending_control_leaks() {
+        const HARNESS: &str = r#"
+#include <stdint.h>
+#include "zryna_ownership_runtime_v1.h"
+extern uint32_t zryna_m3_allocate_record(uint64_t, uint32_t, uintptr_t *);
+extern uint32_t zryna_m3_finish_invocation(void);
+static uint32_t attempt, fail_at;
+uint32_t zryna_m3_observe(uint32_t command) {
+  return command == UINT32_C(0x10000006) && ++attempt == fail_at ? 2 : 0;
+}
+int main(void) {
+  uintptr_t scratch = 0, owned = 0;
+  uint32_t last = 0;
+  if (zryna_m3_allocate_record(24, 8, &scratch) != 0) return 1;
+  if (zryna_m3_finish_invocation() != 0) return 2;
+  if (zryna_m3_allocate_record(24, 8, &scratch) != 0) return 3;
+  if (zryna_rt_o1_release(scratch, 24, 8) != 0 || zryna_m3_finish_invocation() != 0) return 4;
+  if (zryna_m3_allocate_record(24, 8, &scratch) != 0 || zryna_rt_o1_allocate(8, 8, &owned) != 0) return 5;
+  if (zryna_m3_finish_invocation() != 255) return 6;
+  if (zryna_rt_o1_release(owned, 8, 8) != 0 || zryna_m3_finish_invocation() != 0) return 7;
+  if (zryna_rt_o1_allocate(16, 4, &owned) != 0) return 8;
+  ((uint32_t *)owned)[0] = 1; ((uint32_t *)owned)[1] = 1;
+  if (zryna_rt_o1_strong_release_begin(owned, &last) != 0 || last != 1) return 9;
+  if (zryna_m3_finish_invocation() != 255) return 10;
+  if (zryna_rt_o1_strong_release_finish(owned) != 0 || zryna_m3_finish_invocation() != 0) return 11;
+  if (zryna_m3_allocate_record(24, 8, &scratch) != 0) return 12;
+  fail_at = attempt + 1;
+  if (zryna_rt_o1_allocate(8, 8, &owned) != 1 || owned != 0) return 13;
+  if (zryna_m3_finish_invocation() != 0) return 14;
+  return 0;
+}
+"#;
+        compile_and_run(HARNESS, &["-DZRYNA_M3_OBSERVATION=1"], "scratch-ledger");
     }
 
     #[test]

@@ -33,6 +33,7 @@ pub(super) fn build_helper(
     context.func.signature.params.push(AbiParam::new(types::I64));
     context.func.signature.returns.push(AbiParam::new(types::I32));
     let mut builder = FunctionBuilder::new(&mut context.func, builder_context);
+    let runtime = &super::failure::Runtime { symbols: runtime, failed: None };
     let entry = builder.create_block();
     builder.append_block_params_for_function_params(entry);
     builder.switch_to_block(entry);
@@ -51,10 +52,14 @@ pub(super) fn drop_place(
     function: VerifiedFunction<'_>,
     place: u32,
     slots: &[Option<cranelift_codegen::ir::StackSlot>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
+    let (module, declaration) = function.identity();
+    for word in [0x20000000 + module, declaration, place] {
+        super::failure::record(word, runtime, builder)?;
+    }
     let ty = place_type(function, place)?;
     let address = place_storage_address(program, function, place, slots, builder)?;
     call_helper(drops, ty, address, builder)?;
@@ -85,10 +90,11 @@ pub(super) fn execute_cleanup_plan(
     function: VerifiedFunction<'_>,
     cleanup: Option<u32>,
     slots: &[Option<cranelift_codegen::ir::StackSlot>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
+    let runtime = &super::failure::Runtime { symbols: runtime.symbols, failed: None };
     let Some(cleanup) = cleanup else { return Ok(()) };
     let plan = function.cleanup_plan(cleanup).ok_or_else(invariant_error)?;
     for action in plan.actions() {
@@ -104,11 +110,14 @@ fn drop_contents_impl(
     program: &VerifiedMirModule,
     ty: u32,
     address: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let layout = type_record(program, ty)?;
+    if let Some(kind) = super::failure::value_kind(layout.category()) {
+        super::failure::record(0x10000000 + kind, runtime, builder)?;
+    }
     match layout.category() {
         TypeCategory::Bool | TypeCategory::I32 => Ok(()),
         TypeCategory::String => call_ok(runtime, "zryna_rt_o1_string_release", &[address], builder),
@@ -138,7 +147,9 @@ fn drop_contents_impl(
                 2,
             ));
             let output = builder.ins().stack_addr(types::I64, output, 0);
-            call_ok(runtime, "zryna_rt_o1_weak_release", &[control, output], builder)
+            call_ok(runtime, "zryna_rt_o1_weak_release", &[control, output], builder)?;
+            let freed = builder.ins().load(types::I32, MemFlagsData::new(), output, 0);
+            super::failure::record_if(freed, 0x10000007, runtime, builder)
         }
     }
 }
@@ -177,7 +188,7 @@ fn drop_vec(
     program: &VerifiedMirModule,
     ty: u32,
     address: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
@@ -212,7 +223,7 @@ fn drop_shared(
     program: &VerifiedMirModule,
     ty: u32,
     address: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     drops: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
@@ -231,7 +242,11 @@ fn drop_shared(
     let payload_layout = type_record(program, payload)?;
     let payload_offset = align_up(8, payload_layout.alignment())?;
     call_child(drops, payload, offset(control, payload_offset, builder)?, builder)?;
+    super::failure::record(0x10000006, runtime, builder)?;
+    let weak = builder.ins().load(types::I32, MemFlagsData::new(), control, 4);
+    let last_weak = builder.ins().icmp_imm_u(IntCC::Equal, weak, 1);
     call_ok(runtime, "zryna_rt_o1_strong_release_finish", &[control], builder)?;
+    super::failure::record_if(last_weak, 0x10000007, runtime, builder)?;
     builder.ins().jump(done, &[]);
     builder.switch_to_block(done);
     Ok(())
