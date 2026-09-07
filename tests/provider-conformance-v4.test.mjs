@@ -119,21 +119,23 @@ test('the TypeScript 6 bootstrap provider passes every canonical session twice',
   assert.equal(runProviderConformance(), 6);
 });
 
-test('package command and Linux/Windows workflow keep conformance independently required', () => {
+test('package command and routed Linux/Windows workflow keep conformance fail closed', () => {
   const pkg = JSON.parse(readFileSync(resolve(workspaceRoot, 'package.json')));
   assert.equal(
     pkg.scripts['provider:conformance:v4'],
     'node scripts/check-provider-conformance-v4.mjs && node --test tests/provider-conformance-v4.test.mjs && cargo test --locked -p zryna-frontend --test provider_conformance_v4',
   );
   const workflow = parseDocument(readFileSync(
-    resolve(workspaceRoot, '.github/workflows/provider-conformance-v4.yml'),
+    resolve(workspaceRoot, '.github/workflows/ci.yml'),
     'utf8',
   ));
   assert.deepEqual(workflow.errors, []);
   const document = workflow.toJS();
-  assert.deepEqual(document.on, { push: { branches: ['main'] }, pull_request: null });
+  assert.deepEqual(Object.keys(document.on), ['pull_request', 'workflow_dispatch']);
   assert.deepEqual(document.permissions, { contents: 'read' });
-  const job = document.jobs.conformance;
+  const job = document.jobs['provider-conformance-v4'];
+  assert.equal(job.needs, 'route-contracts');
+  assert.equal(job.if, "needs.route-contracts.outputs.provider_v4 == 'true'");
   assert.deepEqual(job.strategy, {
     'fail-fast': false, matrix: { os: ['ubuntu-latest', 'windows-latest'] },
   });

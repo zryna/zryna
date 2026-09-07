@@ -1,9 +1,13 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      structure_base:
+        description: Full trusted ancestor commit for repository structure validation
+        required: true
+        type: string
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -13,9 +17,38 @@ permissions:
   contents: read
 
 env:
-  ZRYNA_STRUCTURE_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+  ZRYNA_STRUCTURE_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.structure_base }}
 
 jobs:
+  route-contracts:
+    name: route contract checks
+    runs-on: ubuntu-latest
+    outputs:
+      diagnostics: ${{ steps.routes.outputs.diagnostics }}
+      package_release: ${{ steps.routes.outputs.package_release }}
+      provider_v4: ${{ steps.routes.outputs.provider_v4 }}
+      wit: ${{ steps.routes.outputs.wit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - name: Classify changed paths
+        id: routes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          FULL_VALIDATION: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ "$FULL_VALIDATION" = true ]; then
+            node scripts/classify-workflow-paths.mjs --all >> "$GITHUB_OUTPUT"
+          else
+            node scripts/classify-workflow-paths.mjs \
+              --git-diff "$BASE_SHA" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          fi
+
   owned-data-quick:
     name: owned data quick (${{ matrix.os }})
     timeout-minutes: 10
@@ -248,12 +281,114 @@ jobs:
           PLATFORM_RESULT: ${{ needs.m3-platform.result }}
         run: test "$M0_RESULT" = success && test "$M2_RESULT" = success && test "$PLATFORM_RESULT" = success
 
-  docs-publish:
-    name: documentation
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: m3
-    timeout-minutes: 10
+  m0:
+    name: m0
+    if: always()
+    needs: [owned-data-quick, preflight, rust, adapter, route-contracts]
     runs-on: ubuntu-latest
+    steps:
+      - name: Verify complete M0 gate
+        env:
+          PREFLIGHT_RESULT: ${{ needs.preflight.result }}
+          OWNED_DATA_QUICK_RESULT: ${{ needs.owned-data-quick.result }}
+          RUST_RESULT: ${{ needs.rust.result }}
+          ADAPTER_RESULT: ${{ needs.adapter.result }}
+          ROUTING_RESULT: ${{ needs.route-contracts.result }}
+        run: test "$OWNED_DATA_QUICK_RESULT" = success && test "$PREFLIGHT_RESULT" = success && test "$RUST_RESULT" = success && test "$ADAPTER_RESULT" = success && test "$ROUTING_RESULT" = success
+
+  diagnostics-contract:
+    name: Diagnostic protocol (${{ matrix.os }})
+    if: needs.route-contracts.outputs.diagnostics == 'true'
+    needs: route-contracts
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+          components: clippy, rustfmt
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm diagnostics:contract
+      - run: cargo test --locked -p zryna-diagnostics
+      - run: cargo clippy --locked -p zryna-diagnostics --all-targets -- -D warnings
+      - run: cargo fmt --all -- --check
+
+  package-release-contract:
+    name: package release contract (${{ matrix.os }})
+    if: needs.route-contracts.outputs.package_release == 'true'
+    needs: route-contracts
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm package:contract
+
+  provider-conformance-v4:
+    name: Provider conformance v4 (${{ matrix.os }})
+    if: needs.route-contracts.outputs.provider_v4 == 'true'
+    needs: route-contracts
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm provider:conformance:v4
+
+  wit-capability-contract:
+    name: WIT capability contract (${{ matrix.os }})
+    if: needs.route-contracts.outputs.wit == 'true'
+    needs: route-contracts
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -269,39 +404,4 @@ jobs:
           node-version: 22.22.1
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Verify documentation bundle contract
-        run: pnpm docs:check
-      - name: Export authenticated next documentation bundle
-        id: docs-bundle
-        run: |
-          digest="$(node scripts/docs/export.mjs \
-            --channel next \
-            --source-commit "${{ github.sha }}" \
-            --source-ref "${{ github.ref }}" \
-            --output .zryna/out/docs/next)"
-          printf '%s' "$digest" | grep -Eq '^[0-9a-f]{64}$'
-          echo "manifest-sha256=$digest" >> "$GITHUB_OUTPUT"
-          printf 'Compiler commit: `%s`\nDocumentation manifest SHA-256: `%s`\n' \
-            "${{ github.sha }}" "$digest" >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload authenticated next documentation bundle
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: zryna-docs-next-${{ github.sha }}-${{ steps.docs-bundle.outputs.manifest-sha256 }}
-          path: .zryna/out/docs/next
-          if-no-files-found: error
-          compression-level: 0
-          include-hidden-files: true
-
-  m0:
-    name: m0
-    if: always()
-    needs: [owned-data-quick, preflight, rust, adapter]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify complete M0 gate
-        env:
-          PREFLIGHT_RESULT: ${{ needs.preflight.result }}
-          OWNED_DATA_QUICK_RESULT: ${{ needs.owned-data-quick.result }}
-          RUST_RESULT: ${{ needs.rust.result }}
-          ADAPTER_RESULT: ${{ needs.adapter.result }}
-        run: test "$OWNED_DATA_QUICK_RESULT" = success && test "$PREFLIGHT_RESULT" = success && test "$RUST_RESULT" = success && test "$ADAPTER_RESULT" = success
+      - run: pnpm wit:contract

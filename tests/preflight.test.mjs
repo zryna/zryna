@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import './ci-gate-cases.mjs';
 import './npm-timing.test.mjs';
+import './workflow-routing.test.mjs';
 
 import {
   PREFLIGHT_COMMANDS,
@@ -110,7 +111,8 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.doesNotMatch(rust, /module_closure_tests::/);
   assert.doesNotMatch(rust, /needs:/);
   assert.doesNotMatch(adapterPlatform, /needs:/);
-  assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter\]/);
+  assert.match(aggregate,
+    /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts\]/);
   assert.match(
     aggregate,
     /OWNED_DATA_QUICK_RESULT: \$\{\{ needs\.owned-data-quick\.result \}\}/,
@@ -118,6 +120,7 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.match(aggregate, /test "\$OWNED_DATA_QUICK_RESULT" = success/);
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /test "\$PREFLIGHT_RESULT" = success/);
+  assert.match(aggregate, /test "\$ROUTING_RESULT" = success/);
 
   assert.equal(parsed.jobs.preflight['timeout-minutes'], 35);
   assert.equal(parsed.jobs.preflight.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@')).length, 1);
@@ -128,7 +131,8 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.equal(parsed.jobs.rust.needs, undefined);
   assert.equal(parsed.jobs['adapter-platform'].needs, undefined);
   assert.deepEqual(parsed.jobs.adapter.needs, ['preflight', 'adapter-platform']);
-  assert.deepEqual(parsed.jobs.m0.needs, ['owned-data-quick', 'preflight', 'rust', 'adapter']);
+  assert.deepEqual(parsed.jobs.m0.needs,
+    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts']);
 });
 
 test('package exposes the exact documented preflight entrypoint', async () => {

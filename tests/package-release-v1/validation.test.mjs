@@ -289,7 +289,7 @@ test('ordered release arrays reject duplicates and changed projections', () => {
   }
 });
 
-test('contract links and additive CI retain the dedicated fixture gate', () => {
+test('contract links and routed CI retain the dedicated fixture gate', () => {
   const root = new URL('../../', import.meta.url);
   const spec = readFileSync(new URL('spec/package/PACKAGE_RELEASE_V1.md', root), 'utf8');
   for (const match of spec.matchAll(/\]\((\.\.\/[^)#]+)(?:#[^)]*)?\)/g)) {
@@ -301,7 +301,9 @@ test('contract links and additive CI retain the dedicated fixture gate', () => {
   const pkg = JSON.parse(readFileSync(new URL('package.json', root)));
   assert.equal(pkg.scripts['package:contract'],
     'node --test tests/package-release-v1/validation.test.mjs tests/package-release-v1/boundaries.test.mjs');
-  const workflow = readFileSync(new URL('.github/workflows/package-release-contract.yml', root), 'utf8');
+  const workflow = readFileSync(new URL('.github/workflows/ci.yml', root), 'utf8');
+  assert.match(workflow,
+    /if: needs\.route-contracts\.outputs\.package_release == 'true'/);
   assert.match(workflow, /os: \[ubuntu-latest, windows-latest\]/);
   assert.match(workflow, /pnpm install --frozen-lockfile/);
   assert.match(workflow, /pnpm package:contract/);

@@ -29,7 +29,8 @@ function validateWorkflow(candidate) {
     }, run: 'test "$M0_RESULT" = success && test "$M2_RESULT" = success && test "$PLATFORM_RESULT" = success' }],
   });
   assert.deepEqual(jobs.m2.needs, ['m0', 'm2-platform']);
-  assert.deepEqual(jobs.m0.needs, ['owned-data-quick', 'preflight', 'rust', 'adapter']);
+  assert.deepEqual(jobs.m0.needs,
+    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts']);
   const pkg = JSON.parse(readFileSync(resolve(workspaceRoot, 'package.json')));
   for (const [name, file] of [['quick', 'quick'], ['check', 'conformance']]) {
     assert.equal(pkg.scripts[`m3:${name}`], `node scripts/run-m3-${file}.mjs`);

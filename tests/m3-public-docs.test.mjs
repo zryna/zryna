@@ -35,23 +35,26 @@ test('complete beginner sources and commands bind to the independent executable 
 
 function publication(workflow) {
   const job = workflow.jobs['docs-publish'];
-  assert.equal(job.needs, 'm3');
-  assert.equal(job.if, "github.event_name == 'push' && github.ref == 'refs/heads/main'");
+  assert.equal(job.needs, undefined);
   const exportStep = job.steps.find(step => step.id === 'docs-bundle');
   assert(exportStep.run.includes('--source-commit "${{ github.sha }}"'));
   assert(exportStep.run.includes('--source-ref "${{ github.ref }}"'));
   const upload = job.steps.at(-1);
   assert.equal(upload.with.name, 'zryna-docs-next-${{ github.sha }}-${{ steps.docs-bundle.outputs.manifest-sha256 }}');
   assert.equal(upload.with['if-no-files-found'], 'error');
+  assert.equal(upload.with['retention-days'], 7);
 }
 
-test('published M3 bytes require successful merged main M0-M3 authority', () => {
-  const workflow = parseDocument(readFileSync(`${workspaceRoot}/.github/workflows/ci.yml`, 'utf8')).toJS();
+test('published M3 bytes use the protected main publication workflow', () => {
+  const workflow = parseDocument(
+    readFileSync(`${workspaceRoot}/.github/workflows/documentation.yml`, 'utf8'),
+  ).toJS();
+  assert.deepEqual(workflow.on, { push: { branches: ['main'] } });
   publication(workflow);
   for (const mutate of [
-    w => { w.jobs['docs-publish'].needs = 'm2'; },
-    w => { w.jobs['docs-publish'].if = 'always()'; },
+    w => { w.jobs['docs-publish'].needs = 'm3'; },
     w => { w.jobs['docs-publish'].steps.at(-1).with.name = 'latest'; },
+    w => { w.jobs['docs-publish'].steps.at(-1).with['retention-days'] = 90; },
   ]) {
     const changed = structuredClone(workflow); mutate(changed);
     assert.throws(() => publication(changed));
