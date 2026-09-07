@@ -328,11 +328,12 @@ remain outside M3.
 Public source-level Boolean execution requires explicit `control-flow-v1` or `data-ownership-v1`; it remains rejected by
 the default M1 path. The compiler-owned M2 gate checks three-target equivalence for one fixed
 source control-flow and module oracle; it is not a claim of general language completeness. The
-current public executable profiles do not claim heap values, an allocator, a tracing-GC profile,
-browser execution, WASI, Windows or macOS native execution, static native executables, package
-resolution, watch mode, incremental builds, or production readiness. The absence of heap or GC
-capabilities in these scalar profiles is not a general zero-runtime or GC-free guarantee for future
-data profiles.
+M1/M2 scalar profiles do not claim heap values, an allocator or a tracing-GC profile. Their
+scalar-only surface is not a general zero-runtime or GC-free guarantee for data profiles.
+Explicit M3 uses bounded owned allocation and deterministic cleanup under its
+[public profile](M3_PUBLIC_PROFILE.md). No current profile claims tracing GC, browser execution,
+WASI/Components, Windows or macOS native execution, static native executables, package resolution,
+watch mode, incremental builds, or production readiness.
 
 ## Evidence and reference
 
