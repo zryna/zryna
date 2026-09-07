@@ -81,6 +81,7 @@ test('capacity oracles distinguish universal limits from the fixed target arena'
   }
   assert.deepEqual(capacity.source.map(row => row.arguments[0]), [1048576, 1048577, 1048575, 1048576]);
   assert.deepEqual(capacity.source.map(row => row.result), [13, 'capacity', 13, 'bounds']);
+  assert.ok(capacity.source.every(row => !Object.hasOwn(row, 'cleanupOwners')));
   assert.deepEqual(capacity.webassemblyAllocator.map(row => [row.bytes, row.status]), [
     [16711680, 0], [16711681, 2], [67108863, 2], [67108864, 2],
     [67108865, 2], [2147483647, 2], [2147483648, 3],

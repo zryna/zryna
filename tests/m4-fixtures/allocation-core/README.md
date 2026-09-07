@@ -61,9 +61,11 @@ source cleanup suite; it does not replace compiler execution evidence.
 `capacity-cases.json` keeps resource cases separate from the small fixture loop.
 Two source fixtures push up to the 1,048,576-element maximum, test the first
 extra push, and read the last/first-extra element of a maximum-length clone.
-They check the fixed scalar/trap result, exact owner count and reverse cleanup
-order. They use the private UTF-8 fault channel only to enable tracing: the
-fixtures contain no String operations, so no allocation attempt is injected.
+They check the fixed scalar/trap result with tracing disabled: each loop
+iteration has derived temporary cleanup, so a maximum-boundary trace inherently
+exceeds the fixed 4,096-word observation frame. The small fixed corpus
+separately proves exact owner count and reverse cleanup order without weakening
+that bound.
 
 The private allocator probes distinguish the fixed WebAssembly arena from the
 universal byte maximum. `native-capacity.c` is a standalone bounded probe of

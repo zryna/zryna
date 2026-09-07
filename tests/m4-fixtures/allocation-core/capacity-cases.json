@@ -7,10 +7,10 @@
     "webassemblyHeapStart": 65536
   },
   "source": [
-    {"id":"vec-maximum-push","fixture":"vec-capacity","arguments":[1048576],"result":13,"cleanupOwners":1},
-    {"id":"vec-first-extra-push","fixture":"vec-capacity","arguments":[1048577],"result":"capacity","cleanupOwners":1},
-    {"id":"vec-maximum-clone-read","fixture":"vec-clone-capacity","arguments":[1048575],"result":13,"cleanupOwners":2},
-    {"id":"vec-maximum-clone-first-extra-read","fixture":"vec-clone-capacity","arguments":[1048576],"result":"bounds","cleanupOwners":2}
+    {"id":"vec-maximum-push","fixture":"vec-capacity","arguments":[1048576],"result":13},
+    {"id":"vec-first-extra-push","fixture":"vec-capacity","arguments":[1048577],"result":"capacity"},
+    {"id":"vec-maximum-clone-read","fixture":"vec-clone-capacity","arguments":[1048575],"result":13},
+    {"id":"vec-maximum-clone-first-extra-read","fixture":"vec-clone-capacity","arguments":[1048576],"result":"bounds"}
   ],
   "webassemblyAllocator": [
     {"id":"arena-exact","bytes":16711680,"pointer":65536,"status":0,"arena":16777216},
