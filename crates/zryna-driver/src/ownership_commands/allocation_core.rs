@@ -86,6 +86,32 @@ fn run_node_inspection(script: &Path, root: &Path) -> Result<Vec<u8>, String> {
         .map_err(|error| format!("private bounded inspection: {error}"))
 }
 
+fn check_alias_mutation(
+    root: &Path,
+    export: &str,
+    clone_index: u32,
+    drop_index: u32,
+) -> Result<(), String> {
+    fs::write(
+        root.join("allocation-inspection.json"),
+        serde_json::to_vec(&json!({
+            "target": "webassembly",
+            "entry": export,
+            "id": "q4",
+            "cloneIndex": clone_index,
+            "dropIndex": drop_index,
+            "aliasMutation": true,
+        }))
+        .expect("private alias mutation command"),
+    )
+    .expect("private alias mutation command");
+    let output = run_node_inspection(&corpus().join("inspect.mjs"), root)?;
+    if output != b"allocation alias mutant rejected\n" {
+        return Err("missing private alias mutation rejection".to_owned());
+    }
+    Ok(())
+}
+
 fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
     let workspace = fixture_workspace();
     install(workspace.root(), case["fixture"].as_str().expect("source"));
@@ -170,23 +196,7 @@ fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
             return Err("missing complete private observation".to_owned());
         }
         if target == TargetSelection::WebAssembly && case["id"] == "q4" {
-            fs::write(
-                workspace.root().join("allocation-inspection.json"),
-                serde_json::to_vec(&json!({
-                    "target": kind,
-                    "entry": export,
-                    "id": "q4",
-                    "cloneIndex": clone_index,
-                    "dropIndex": drop_index,
-                    "aliasMutation": true,
-                }))
-                .expect("private alias mutation command"),
-            )
-            .expect("private alias mutation command");
-            let output = run_node_inspection(&corpus().join("inspect.mjs"), workspace.root())?;
-            if output != b"allocation alias mutant rejected\n" {
-                return Err("missing private alias mutation rejection".to_owned());
-            }
+            check_alias_mutation(workspace.root(), export, clone_index, drop_index)?;
         }
     }
     Ok(())
