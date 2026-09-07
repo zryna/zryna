@@ -52,6 +52,7 @@ target-lexicon = "=0.13.5"
 windows-spawn = "=0.1.0"
 wasm-encoder = { version = "=0.258.0", default-features = false, features = ["std"] }
 wasmparser = { version = "=0.258.0", default-features = false, features = ["features", "std", "validate"] }
+wit-parser = { version = "=0.258.0", default-features = false, features = ["std"] }
 zryna-abi = { path = "crates/zryna-abi" }
 zryna-ownership-runtime-abi = { path = "crates/zryna-ownership-runtime-abi" }
 

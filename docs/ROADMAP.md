@@ -460,6 +460,13 @@ fixtures. Its `specified-only` state adds no component emission, bindings, runti
 activation, example publication, or public support. Cross-target dependency composition remains
 #357 and JS/WASM conversion/resource adapters remain #359.
 
+Issue #383 implements the prerequisite authenticated dependency-resolution boundary in the
+existing WebAssembly backend. It pins the aligned `wit-parser 0.258.0` toolchain, authenticates the
+complete WASI source closure, and independently audits resolved packages and interfaces under
+explicit input and graph bounds. It preserves all three accepted worlds—including the empty
+browser world—and still adds no component emission, instantiation, bindings, selector, public
+activation, or host grant.
+
 The M4 [cross-target composition decision](../spec/language/CROSS_TARGET_PROFILES_V1.md),
 tracked by [#357](https://github.com/zryna/zryna/issues/357), specifies separate language,
 target and host-permission axes, transitive requirements, native isolation limits and later

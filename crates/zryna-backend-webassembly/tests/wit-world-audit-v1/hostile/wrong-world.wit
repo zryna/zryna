@@ -1,0 +1,5 @@
+package zryna:capability-profiles@0.1.0;
+
+world browser {}
+world renamed-command {}
+world server {}

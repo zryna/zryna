@@ -1,0 +1,8 @@
+package zryna:capability-profiles@0.1.0;
+
+world browser {
+  export wasi:cli/run@0.2.12;
+}
+
+world command {}
+world server {}
