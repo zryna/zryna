@@ -452,6 +452,14 @@ An optional tracing-GC profile requires a separate language and ABI proposal. It
 - test denied and granted capabilities;
 - publish browser, command, and server examples.
 
+Issue #167 specifies the contract-only foundation in
+[`spec/wit/CAPABILITY_PROFILES_V1.md`](../spec/wit/CAPABILITY_PROFILES_V1.md): exact
+`zryna:capability-profiles@0.1.0` browser, command, and server world identities; WASI `0.2.12`;
+an exhaustive denied-by-default capability registry; and bounded deterministic validation
+fixtures. Its `specified-only` state adds no component emission, bindings, runtime or CLI
+activation, example publication, or public support. Cross-target dependency composition remains
+#357 and JS/WASM conversion/resource adapters remain #359.
+
 Completion gate: components expose self-described interfaces and receive no filesystem, network, clock, randomness, or environment capability unless the selected profile declares it.
 
 ## M5 — Packages and Reproducible Releases

@@ -1,0 +1,17 @@
+{
+  "request": {
+    "schema": "zryna.capability-request.v1",
+    "profile": "server",
+    "requests": ["clock", "network", "randomness"],
+    "usage": {
+      "clock": { "maxSubscriptions": 1024, "maxTimers": 1024 },
+      "network": { "maxAllowedEndpoints": 128, "maxConcurrentOperations": 1024 },
+      "randomness": { "maxBytesPerCall": 65536, "maxBytesPerInstance": 8388608 }
+    }
+  },
+  "expected": {
+    "profile": "server",
+    "world": "zryna:capability-profiles/server@0.1.0",
+    "granted": ["clock", "network", "randomness"]
+  }
+}

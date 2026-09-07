@@ -1,0 +1,146 @@
+{
+  "$schema": "../schemas/zryna-wit-capability-profiles-v1.schema.json",
+  "schema": "zryna.wit-capability-profiles.v1",
+  "version": 1,
+  "status": "specified-only",
+  "wit": {
+    "package": "zryna:capability-profiles@0.1.0",
+    "source": "spec/wit/capability-profiles-v1/worlds.wit",
+    "sha256": "cee8923feb7e50b545a56ecf01c14ca2fd9264e2dfdbe9f54eca6b07f0886cfe",
+    "grammarSource": "https://github.com/WebAssembly/component-model/blob/2bed77e4228841c1d2721996d3ecc169ff96b158/design/mvp/WIT.md",
+    "grammarCommit": "2bed77e4228841c1d2721996d3ecc169ff96b158"
+  },
+  "wasi": {
+    "version": "0.2.12",
+    "tag": "v0.2.12",
+    "source": "https://github.com/WebAssembly/WASI",
+    "commit": "281ba75fafcd50961ef55f9e52747afcc9b71ede",
+    "packages": [
+      "wasi:cli@0.2.12",
+      "wasi:clocks@0.2.12",
+      "wasi:filesystem@0.2.12",
+      "wasi:http@0.2.12",
+      "wasi:random@0.2.12",
+      "wasi:sockets@0.2.12"
+    ]
+  },
+  "bounds": {
+    "maxWitBytes": 16384,
+    "maxProfiles": 3,
+    "maxCapabilitiesPerProfile": 5,
+    "maxInterfacesPerCapability": 7,
+    "maxWorldImports": 13
+  },
+  "capabilityOrder": ["clock", "environment", "filesystem", "network", "randomness"],
+  "profiles": [
+    {
+      "id": "browser",
+      "world": "zryna:capability-profiles/browser@0.1.0",
+      "target": "browser",
+      "imports": [],
+      "exports": [],
+      "capabilities": [
+        { "id": "clock", "decision": "denied", "interfaces": [], "limits": { "maxSubscriptions": 0, "maxTimers": 0 } },
+        { "id": "environment", "decision": "denied", "interfaces": [], "limits": { "maxEntries": 0, "maxTotalBytes": 0 } },
+        { "id": "filesystem", "decision": "denied", "interfaces": [], "limits": { "maxPreopens": 0, "maxOpenDescriptors": 0 } },
+        { "id": "network", "decision": "denied", "interfaces": [], "limits": { "maxAllowedEndpoints": 0, "maxConcurrentOperations": 0 } },
+        { "id": "randomness", "decision": "denied", "interfaces": [], "limits": { "maxBytesPerCall": 0, "maxBytesPerInstance": 0 } }
+      ]
+    },
+    {
+      "id": "command",
+      "world": "zryna:capability-profiles/command@0.1.0",
+      "target": "wasi-command",
+      "imports": [
+        "wasi:clocks/monotonic-clock@0.2.12",
+        "wasi:clocks/wall-clock@0.2.12",
+        "wasi:cli/environment@0.2.12",
+        "wasi:filesystem/preopens@0.2.12",
+        "wasi:filesystem/types@0.2.12",
+        "wasi:sockets/instance-network@0.2.12",
+        "wasi:sockets/ip-name-lookup@0.2.12",
+        "wasi:sockets/network@0.2.12",
+        "wasi:sockets/tcp-create-socket@0.2.12",
+        "wasi:sockets/tcp@0.2.12",
+        "wasi:sockets/udp-create-socket@0.2.12",
+        "wasi:sockets/udp@0.2.12",
+        "wasi:random/random@0.2.12"
+      ],
+      "exports": ["wasi:cli/run@0.2.12"],
+      "capabilities": [
+        {
+          "id": "clock",
+          "decision": "granted",
+          "interfaces": ["wasi:clocks/monotonic-clock@0.2.12", "wasi:clocks/wall-clock@0.2.12"],
+          "limits": { "maxSubscriptions": 64, "maxTimers": 64 }
+        },
+        {
+          "id": "environment",
+          "decision": "granted",
+          "interfaces": ["wasi:cli/environment@0.2.12"],
+          "limits": { "maxEntries": 128, "maxTotalBytes": 65536 }
+        },
+        {
+          "id": "filesystem",
+          "decision": "granted",
+          "interfaces": ["wasi:filesystem/preopens@0.2.12", "wasi:filesystem/types@0.2.12"],
+          "limits": { "maxPreopens": 16, "maxOpenDescriptors": 256 }
+        },
+        {
+          "id": "network",
+          "decision": "granted",
+          "interfaces": [
+            "wasi:sockets/instance-network@0.2.12",
+            "wasi:sockets/ip-name-lookup@0.2.12",
+            "wasi:sockets/network@0.2.12",
+            "wasi:sockets/tcp-create-socket@0.2.12",
+            "wasi:sockets/tcp@0.2.12",
+            "wasi:sockets/udp-create-socket@0.2.12",
+            "wasi:sockets/udp@0.2.12"
+          ],
+          "limits": { "maxAllowedEndpoints": 64, "maxConcurrentOperations": 128 }
+        },
+        {
+          "id": "randomness",
+          "decision": "granted",
+          "interfaces": ["wasi:random/random@0.2.12"],
+          "limits": { "maxBytesPerCall": 65536, "maxBytesPerInstance": 8388608 }
+        }
+      ]
+    },
+    {
+      "id": "server",
+      "world": "zryna:capability-profiles/server@0.1.0",
+      "target": "wasi-http-server",
+      "imports": [
+        "wasi:clocks/monotonic-clock@0.2.12",
+        "wasi:clocks/wall-clock@0.2.12",
+        "wasi:http/outgoing-handler@0.2.12",
+        "wasi:random/random@0.2.12"
+      ],
+      "exports": ["wasi:http/incoming-handler@0.2.12"],
+      "capabilities": [
+        {
+          "id": "clock",
+          "decision": "granted",
+          "interfaces": ["wasi:clocks/monotonic-clock@0.2.12", "wasi:clocks/wall-clock@0.2.12"],
+          "limits": { "maxSubscriptions": 1024, "maxTimers": 1024 }
+        },
+        { "id": "environment", "decision": "denied", "interfaces": [], "limits": { "maxEntries": 0, "maxTotalBytes": 0 } },
+        { "id": "filesystem", "decision": "denied", "interfaces": [], "limits": { "maxPreopens": 0, "maxOpenDescriptors": 0 } },
+        {
+          "id": "network",
+          "decision": "granted",
+          "interfaces": ["wasi:http/outgoing-handler@0.2.12"],
+          "limits": { "maxAllowedEndpoints": 128, "maxConcurrentOperations": 1024 }
+        },
+        {
+          "id": "randomness",
+          "decision": "granted",
+          "interfaces": ["wasi:random/random@0.2.12"],
+          "limits": { "maxBytesPerCall": 65536, "maxBytesPerInstance": 8388608 }
+        }
+      ]
+    }
+  ]
+}

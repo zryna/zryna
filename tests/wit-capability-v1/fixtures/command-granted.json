@@ -1,0 +1,19 @@
+{
+  "request": {
+    "schema": "zryna.capability-request.v1",
+    "profile": "command",
+    "requests": ["clock", "environment", "filesystem", "network", "randomness"],
+    "usage": {
+      "clock": { "maxSubscriptions": 64, "maxTimers": 64 },
+      "environment": { "maxEntries": 128, "maxTotalBytes": 65536 },
+      "filesystem": { "maxPreopens": 16, "maxOpenDescriptors": 256 },
+      "network": { "maxAllowedEndpoints": 64, "maxConcurrentOperations": 128 },
+      "randomness": { "maxBytesPerCall": 65536, "maxBytesPerInstance": 8388608 }
+    }
+  },
+  "expected": {
+    "profile": "command",
+    "world": "zryna:capability-profiles/command@0.1.0",
+    "granted": ["clock", "environment", "filesystem", "network", "randomness"]
+  }
+}

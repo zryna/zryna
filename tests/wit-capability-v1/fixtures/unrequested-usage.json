@@ -1,0 +1,9 @@
+{
+  "request": {
+    "schema": "zryna.capability-request.v1",
+    "profile": "command",
+    "requests": [],
+    "usage": { "clock": { "maxTimers": 1 } }
+  },
+  "expectedError": "ZRYNA-C4002: usage for unrequested capability clock"
+}

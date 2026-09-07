@@ -1,0 +1,4 @@
+{
+  "request": { "schema": "zryna.capability-request.v1", "profile": "browser", "requests": ["filesystem"] },
+  "expectedError": "ZRYNA-C4001: browser denies filesystem"
+}

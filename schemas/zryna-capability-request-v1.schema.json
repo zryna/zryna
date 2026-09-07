@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zryna.com/schemas/zryna-capability-request-v1.schema.json",
+  "title": "Zryna capability request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "profile", "requests"],
+  "properties": {
+    "schema": { "const": "zryna.capability-request.v1" },
+    "profile": { "enum": ["browser", "command", "server"] },
+    "requests": {
+      "type": "array",
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": { "enum": ["clock", "environment", "filesystem", "network", "randomness"] }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clock": { "$ref": "#/$defs/usage" },
+        "environment": { "$ref": "#/$defs/usage" },
+        "filesystem": { "$ref": "#/$defs/usage" },
+        "network": { "$ref": "#/$defs/usage" },
+        "randomness": { "$ref": "#/$defs/usage" }
+      }
+    }
+  },
+  "$defs": {
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 2,
+      "properties": {
+        "maxSubscriptions": { "type": "integer", "minimum": 0, "maximum": 1025 },
+        "maxTimers": { "type": "integer", "minimum": 0, "maximum": 1025 },
+        "maxEntries": { "type": "integer", "minimum": 0, "maximum": 129 },
+        "maxTotalBytes": { "type": "integer", "minimum": 0, "maximum": 65537 },
+        "maxPreopens": { "type": "integer", "minimum": 0, "maximum": 17 },
+        "maxOpenDescriptors": { "type": "integer", "minimum": 0, "maximum": 257 },
+        "maxAllowedEndpoints": { "type": "integer", "minimum": 0, "maximum": 129 },
+        "maxConcurrentOperations": { "type": "integer", "minimum": 0, "maximum": 1025 },
+        "maxBytesPerCall": { "type": "integer", "minimum": 0, "maximum": 65537 },
+        "maxBytesPerInstance": { "type": "integer", "minimum": 0, "maximum": 8388609 }
+      }
+    }
+  }
+}
