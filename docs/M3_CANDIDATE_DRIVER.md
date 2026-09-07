@@ -73,7 +73,7 @@ Focused repository tests cover:
   metadata, hostile bytes, and the exact manifest-size boundary;
 - `ownership_publication::tests` for actual all-target bundles, create-only collisions, rollback,
   injected phase failures, modes, and exact inventory;
-- `ownership_commands::tests::all_targets_execute_from_one_candidate_authority` for actual Linux
+- `ownership_commands::tests::all_targets_execute_and_publish_one_typed_candidate_run` for actual Linux
   x86-64 JavaScript, WebAssembly, and native execution from one two-module candidate request; and
 - `data_ownership_candidate_profile_is_rejected_before_workspace_effects` for both public CLI
   profile spellings, deterministic `ZRYNA-C3401`, and no output creation.
