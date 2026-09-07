@@ -19,12 +19,15 @@ trap must win before the later String initializer is evaluated.
 
 The first-allocation and operation-failure cases use the existing bounded
 private fault command. A distant allocation ordinal enables normal cleanup
-tracing without changing these small successful executions. Replacement cases
-observe both preparation failure and successful commit. Prefix cases fail the
-second or third argument preparation before entering `consume`: only completed
-String results are released, in reverse order, followed by the retained source.
-This exercises A1/A2 result preparation without introducing `Vec<String>` or
-aggregate APIs. Copy `i32` elements have no fallible owned-member clone or drop.
+tracing without changing these small successful executions. Failed String and
+Vec clone/concat rows inspect the retained input payload and absence of a
+completed result, then run the matching fixed success twice in the same imported
+JavaScript module or WebAssembly instance. Replacement cases observe both
+preparation failure and successful commit. Prefix cases fail the second or third
+argument preparation before entering `consume`: only completed String results
+are released, in reverse order, followed by the retained source. This exercises
+A1/A2 result preparation without introducing `Vec<String>` or aggregate APIs.
+Copy `i32` elements have no fallible owned-member clone or drop.
 
 The driver tests run each selected target independently through authenticated
 source, semantics, IR, target emission, typed execution, and the existing
@@ -33,19 +36,24 @@ source span before any target dispatch or artifact publication. Unsupported
 native execution on Windows requires `ZRYNA-N4002` with an empty output root.
 
 `inspect.mjs` supplies additional private JavaScript and core WebAssembly
-observations. JavaScript appends inspection to a test-only copy of emitted
-source and checks exact released values and distinct owners. WebAssembly first
-audits the original module's imports/exports, then adds a memory export only to
-an in-memory test copy, leaving code/data sections unchanged. Its bounded
-post-invocation snapshots check exact bytes and separate storage; the independent
-driver trace proves logical cleanup. Retained arena bytes are not proof of
-live ownership or physical deallocation. The inspected copies are never
-published as compiler artifacts.
+observations through the driver's existing bounded Node capability. JavaScript
+appends inspection to a test-only copy of emitted source and checks exact
+released values and distinct owners. WebAssembly first audits the original
+module's imports/exports, then prepends one argument-recording call to the
+selected drop helper and adds a memory export only in an in-memory test copy.
+The recorded cleanup handles must be distinct and must own the exact expected
+bytes; this rejects an orphan copy combined with reuse of the source handle.
+Bounded post-invocation snapshots separately retain allocation-history evidence,
+while the independent unmodified driver execution proves logical cleanup.
+Retained arena bytes are not proof of live ownership or physical deallocation.
+The inspected copies are never published as compiler artifacts.
 
 On Linux x86-64, the same source/fault suite runs native code. A separate
 `native-storage.c` harness exercises the actual private C runtime, inspecting
 UTF-8 bytes, disjoint allocations, zero failed outputs, retained old Vec storage,
-successful growth, and an empty allocation registry after cleanup. Exact and
+successful retry after String clone/concat failure, successful Vec growth, and
+an empty allocation registry after cleanup. Its compiler and executable run
+through the established bounded native process-group helper. Exact and
 first-extra Vec/allocation limits use injected allocation failure at the exact
 limit so the test never exhausts the host. This helper test complements the
 source cleanup suite; it does not replace compiler execution evidence.

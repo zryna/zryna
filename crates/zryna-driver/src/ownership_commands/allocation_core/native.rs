@@ -21,16 +21,6 @@ fn allocation_core_native_private_utf8_storage_and_failure_atomicity() {
 }
 
 fn compile_and_run(source: &std::path::Path, root: &std::path::Path, expected: &[u8]) {
-    let executable = root.join("allocation-observation");
-    let compiled = Command::new("/usr/bin/gcc")
-        .args(["-std=c11", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O2", "-fno-common"])
-        .arg(source)
-        .arg("-o")
-        .arg(&executable)
-        .output()
-        .expect("supported Linux C compiler");
-    assert!(compiled.status.success(), "{}", String::from_utf8_lossy(&compiled.stderr));
-    let output = Command::new(executable).output().expect("private runtime observation");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    assert_eq!(output.stdout, expected);
+    crate::native::ownership::allocation_fixture_process::compile_and_run(source, root, expected)
+        .expect("bounded private native allocation observation");
 }

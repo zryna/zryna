@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
-import { exposeTestExports } from './m4-fixtures/allocation-core/wasm-inspection.mjs';
+import {
+  cleanupHandles,
+  exposeTestExports,
+  instrumentFunctionArgument,
+} from './m4-fixtures/allocation-core/wasm-inspection.mjs';
 
 const root = new URL('./m4-fixtures/allocation-core/', import.meta.url);
 const cases = JSON.parse(await readFile(new URL('cases.json', root), 'utf8'));
@@ -35,6 +39,18 @@ test('fault cases are bounded and retain completed owners without partial append
   assert.deepEqual(cases.find(row => row.id === 'push-growth').drops, [[7, 9]]);
   assert.deepEqual(cases.find(row => row.id === 'prefix-two').drops,
     [[104, 195, 169, 104, 195, 169], [104, 195, 169], [104, 195, 169]]);
+  for (const [id, recovery, retained] of [
+    ['clone-result', 'q4', [[104, 195, 169]]],
+    ['concat-result', 'q5', [[33], [104, 195, 169]]],
+    ['vec-copy', 'q6-copy', [[7, 9]]],
+    ['push-growth', 'q8', [[7, 9]]],
+  ]) {
+    const row = cases.find(candidate => candidate.id === id);
+    assert.equal(row.inspect, true, `${id} must inspect retained storage`);
+    assert.deepEqual(row.drops, retained, `${id} retained input payload`);
+    assert.equal(row.recovery, recovery, `${id} same-instance recovery`);
+    assert.equal(cases.find(candidate => candidate.id === recovery)?.fixture, row.fixture);
+  }
 });
 
 test('N7 and N10 keep source diagnostics and all source files are used', async () => {
@@ -99,4 +115,28 @@ test('private inspection adds exports while retaining original storage and funct
   e.inspectionArena.value = 8;
   assert.equal(e.inspectionArena.value, 8);
   assert.equal(e.inspectionStatus.value, 0);
+});
+
+test('private Wasm instrumentation binds cleanup handles and rejects clone aliasing', () => {
+  const original = Uint8Array.from([
+    0, 97, 115, 109, 1, 0, 0, 0,
+    1, 10, 2, 96, 1, 127, 1, 127, 96, 1, 127, 0,
+    3, 3, 2, 0, 1,
+    6, 6, 1, 127, 1, 65, 0, 11,
+    7, 15, 2, 4, 101, 99, 104, 111, 0, 0, 4, 115, 101, 101, 110, 3, 0,
+    10, 13, 2, 4, 0, 32, 0, 11, 6, 0, 32, 0, 36, 0, 11,
+  ]);
+  const bytes = instrumentFunctionArgument(original, 0, 1);
+  const { exports: e } = new WebAssembly.Instance(new WebAssembly.Module(bytes));
+  assert.equal(e.echo(17), 17);
+  assert.equal(e.seen.value, 17);
+
+  const aliased = [
+    0x20000001, 0, 3, 65536, 0x10000001,
+    0x20000001, 0, 1, 65536, 0x10000001,
+  ];
+  assert.throws(
+    () => cleanupHandles(aliased, [[3, 'string'], [1, 'string']], 1),
+    /distinct handle/,
+  );
 });

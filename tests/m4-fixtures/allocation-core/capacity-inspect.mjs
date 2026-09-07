@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { exposeTestExports } from './wasm-inspection.mjs';
 
-const [artifactPath] = process.argv.slice(2);
+const artifactPath = 'allocation-boundaries.wasm';
 const cases = JSON.parse(await readFile(new URL('./capacity-cases.json', import.meta.url), 'utf8'));
 const original = new Uint8Array(await readFile(artifactPath));
 const module = new WebAssembly.Module(original);

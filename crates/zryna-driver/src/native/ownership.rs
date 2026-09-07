@@ -1,5 +1,7 @@
 //! Audited `DataOwnershipV1` program, runtime, harness, and executable capabilities.
 
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(crate) mod allocation_fixture_process;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod audit;
 #[cfg(test)]

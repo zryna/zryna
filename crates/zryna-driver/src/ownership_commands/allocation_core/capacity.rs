@@ -81,12 +81,7 @@ fn allocation_core_capacity_webassembly_private_allocator_boundaries() {
     let path = workspace.root().join("allocation-boundaries.wasm");
     fs::write(&path, prepared.artifacts().webassembly().expect("WebAssembly").bytes())
         .expect("private allocator input");
-    let output = Command::new(node_executable())
-        .arg(corpus().join("capacity-inspect.mjs"))
-        .arg(path)
-        .output()
+    let output = run_node_inspection(&corpus().join("capacity-inspect.mjs"), workspace.root())
         .expect("private allocator inspection");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    assert!(output.stderr.is_empty());
-    assert_eq!(output.stdout, b"allocation capacity observation passed\n");
+    assert_eq!(output, b"allocation capacity observation passed\n");
 }

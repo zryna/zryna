@@ -1,6 +1,9 @@
 //! Issue #377: private A1–A5 source, trap, cleanup, and storage observations.
 
-use std::{fs, path::PathBuf, process::Command};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use serde_json::{Value, json};
 use zryna_abi::{Invocation, ScalarValue};
@@ -12,6 +15,7 @@ use crate::{
         prepare_data_ownership_for_test,
         test_support::{fixture_workspace, node_executable, route_guard},
     },
+    runtime::NodeRuntimeCapability,
 };
 
 mod capacity;
@@ -74,6 +78,14 @@ fn expected_outcome(case: &Value) -> Value {
     }
 }
 
+fn run_node_inspection(script: &Path, root: &Path) -> Result<Vec<u8>, String> {
+    let runtime = NodeRuntimeCapability::discover(&node_executable(), root)
+        .map_err(|error| format!("private runtime discovery: {error}"))?;
+    runtime
+        .run_ownership_javascript(script, root)
+        .map_err(|error| format!("private bounded inspection: {error}"))
+}
+
 fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
     let workspace = fixture_workspace();
     install(workspace.root(), case["fixture"].as_str().expect("source"));
@@ -124,21 +136,35 @@ fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
             ),
             _ => return Ok(()),
         };
+        let layouts = prepared.program().verified_ir().linear32_layouts();
+        let category = match case["storage"].as_str().expect("inspection storage") {
+            "string" => zryna_layout::TypeCategory::String,
+            "vec" => zryna_layout::TypeCategory::Vec,
+            other => return Err(format!("unsupported inspection storage: {other}")),
+        };
+        let ty = layouts
+            .types()
+            .find(|ty| ty.category() == category)
+            .ok_or_else(|| format!("missing {category:?} inspection layout"))?;
+        let drop_index = 2_u32
+            .checked_add(u32::try_from(layouts.types().len()).expect("bounded type count"))
+            .and_then(|index| index.checked_add(ty.id().index()))
+            .expect("bounded drop helper index");
         let path = workspace.root().join("inspection-input");
         fs::write(&path, artifact).expect("private inspection input");
-        let output = Command::new(node_executable())
-            .arg(corpus().join("inspect.mjs"))
-            .args([kind, export, case["id"].as_str().expect("case id")])
-            .arg(path)
-            .output()
-            .map_err(|error| format!("private observation: {error}"))?;
-        if !output.status.success() || !output.stderr.is_empty() {
-            return Err(format!(
-                "private observation: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ));
-        }
-        if output.stdout != b"allocation observation passed\n" {
+        fs::write(
+            workspace.root().join("allocation-inspection.json"),
+            serde_json::to_vec(&json!({
+                "target": kind,
+                "entry": export,
+                "id": case["id"].as_str().expect("case id"),
+                "dropIndex": drop_index,
+            }))
+            .expect("private inspection command"),
+        )
+        .expect("private inspection command");
+        let output = run_node_inspection(&corpus().join("inspect.mjs"), workspace.root())?;
+        if output != b"allocation observation passed\n" {
             return Err("missing complete private observation".to_owned());
         }
     }
