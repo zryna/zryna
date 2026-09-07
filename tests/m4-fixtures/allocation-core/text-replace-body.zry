@@ -1,0 +1,7 @@
+export function text(): i32 {
+  let destination: String = "old";
+  const source: String = "hé";
+  destination = clone(source);
+  const later: String = "later";
+  return 17;
+}

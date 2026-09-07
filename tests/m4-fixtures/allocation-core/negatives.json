@@ -1,0 +1,27 @@
+[
+  {
+    "fixture": "public-string",
+    "code": "ZRYNA-M3010",
+    "oracle": "N7"
+  },
+  {
+    "fixture": "public-vec",
+    "code": "ZRYNA-M3010",
+    "oracle": "N7"
+  },
+  {
+    "fixture": "moved-string",
+    "code": "ZRYNA-M3011",
+    "oracle": "N10"
+  },
+  {
+    "fixture": "moved-vec",
+    "code": "ZRYNA-M3014",
+    "oracle": "N10"
+  },
+  {
+    "fixture": "borrowed-push",
+    "code": "ZRYNA-M3017",
+    "oracle": "N10"
+  }
+]
