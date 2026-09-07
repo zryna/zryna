@@ -521,6 +521,15 @@ composition contract. It adds no resolver, import syntax, or runtime support.
 - npm, crates.io, Docker, and GitHub release publication;
 - signed release notes and rollback procedure.
 
+Issue #361 has a source-only contract candidate in
+[`spec/package/RESOLVED_BUILD_PLAN_V0.md`](../spec/package/RESOLVED_BUILD_PLAN_V0.md). It specifies
+canonical resolved inputs and cache invalidation while reusing #168 package/release digests and
+#357 profile composition, and preserving #360 package-instance identity, #362 execution policy,
+and driver-owned compilation, linking and
+create-only publication. Its optional native-input appendix remains provisional pending only the
+relevant accepted #364 ABI decisions. The checked fixtures implement no resolver, build engine,
+registry, native tool invocation, cache store, selector, or public support.
+
 Completion gate: a clean environment reproduces and verifies every published artifact from a tagged source revision.
 
 ## M6 — Developer Tooling
