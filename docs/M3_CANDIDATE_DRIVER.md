@@ -57,8 +57,9 @@ The driver verifies bytes, checksums, modes, paths, results, and the canonical m
 publishes the whole `<stem>.build` or `<stem>.run` directory with one same-filesystem create-only
 rename. Existing destinations are never replaced.
 
-Source, backend, execution, staging, manifest, audit, cleanup, or commit failure exposes no final
-bundle. Ordinary rollback removes the private transaction. Process or machine termination may
+Source, backend, malformed execution, staging, manifest, audit, cleanup, or commit failure
+exposes no final bundle. A typed language trap is a complete run observation and may publish
+a complete bundle with its exact trap identity and optional bounded logical cleanup trace. Ordinary rollback removes the private transaction. Process or machine termination may
 leave an unadvertised private transaction directory; it cannot be mistaken for a committed
 bundle.
 
@@ -80,8 +81,8 @@ Focused repository tests cover:
 ## Retained exclusions
 
 This candidate is not public CLI availability or general aggregate ABI. The
-[fixed-oracle gates](M3_CONFORMANCE.md) exercise this candidate under Issue #89; closure remains
-blocked on the documented trap and fault evidence. Public profile activation, authenticated
+[fixed-oracle gates](M3_CONFORMANCE.md) exercise this candidate under Issue #89; typed trap and fixed cleanup evidence are
+documented with the corpus and resource boundaries. Public profile activation, authenticated
 website material, and release provenance remain Issue #90. Windows or macOS native execution,
 WASI, Components, FFI, threads, raw pointers, custom allocators, and freestanding targets remain
 unsupported.

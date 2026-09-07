@@ -1,7 +1,7 @@
 # M3 fixed-oracle candidate conformance
 
 Issue #89 verifies the internal #88 candidate route. Public `--profile data-ownership-v1`
-remains rejected with `ZRYNA-C3401`; activation belongs to #90. No capability is activated. This is incomplete conformance work; #89 remains blocked.
+remains rejected with `ZRYNA-C3401`; activation belongs to #90. No public capability is activated.
 
 ## Authorities and commands
 
@@ -25,8 +25,8 @@ commands and CI dependency bypasses.
 The corpus observes Pair arithmetic and signed wrap, enum matching, fixed arrays, exclusive borrow writes,
 Vec clone/push/index, String clone/move/replace/concat cleanup, aggregate clone/move cleanup,
 and Shared/Weak clone/downgrade/release plus live/expired upgrades. String and handle cases observe a scalar continuation;
-they do not expose owned host values or directly measure allocations. Separate runtime fault
-and cleanup oracles check destination retention and released allocation state.
+they do not expose owned host values. Injected trace and runtime-ledger oracles separately check
+cleanup order, destination retention and released allocation state.
 
 The harness uses the existing test frontend configuration for isolated fixture roots while
 retaining source authentication, semantic/IR verification, dispatch, execution and publication.
@@ -39,6 +39,8 @@ JavaScript/core WebAssembly, emits all three deterministic build artifacts, and 
 runs without artifacts. Linux-only runtime/publication fault evidence is explicitly unsupported
 on Windows. The `m3` aggregate depends on both M3 hosts and complete `m0` and `m2` aggregates;
 skipped or failed dependencies reject. Existing M0-M2 registries remain unchanged authorities.
+The main branch protection requires `m3` alongside the existing Rust, adapter, M0 and M2
+contexts, with strict up-to-date checking and the existing status-provider binding.
 
 ## Boundaries
 
@@ -51,18 +53,34 @@ No Windows/macOS native execution, WASI, Components, ambient filesystem/network 
 threads, raw pointers, custom allocators, owned public host ABI, performance guarantees,
 fuzzing substitution or production certification is claimed. Issue #90 remains separate.
 
-## Closure blocker
+## Typed trap and cleanup observations
 
-The new fixed bounds-trap test deliberately enforces the normative language identity rather
-than accepting host/process failure as conformance. Current candidate execution reports
-`ZRYNA-R3006` for JavaScript/WebAssembly and `ZRYNA-N4021` for native; it does not retain
-`zryna.trap.bounds-v1`. The scalar observation enum has no M3 trap identities. Existing
-native status paths use terminal machine traps and the JavaScript/Wasm harnesses have no
-M3 typed trap observation channel. Section 11 of the language contract forbids treating these
-host failures as language traps.
+The internal candidate channel carries returned scalars or the five section 11 language traps:
+`zryna.trap.bounds-v1`, `zryna.trap.allocation-v1`, `zryna.trap.capacity-v1`,
+`zryna.trap.refcount-v1`, and `zryna.trap.utf8-v1`. Host exceptions, machine traps, malformed
+frames and process failures cannot substitute for a typed language outcome.
 
-The same prerequisite gap prevents complete three-target fault-injected logical drop/release
-trace evidence (section 13). Existing compiler oracles and native C fault tests cannot substitute
-for those target observations. #89 cannot close, the M3 gates must remain red, and #90 must not
-activate the profile until the missing prerequisite behavior and complete corpus are implemented.
-The registry's host-error records document rollback diagnostics only, not accepted language traps.
+The frozen corpus contains 15 scalar cases, four source/ABI rejections, two bounds failures and
+26 injected fault cases. Fault observations compare the entire ordered trace: exact source
+module/function/place cleanup identities, recursive value drops, implicit weak releases and
+control releases. Nested String aggregates, Vec<String> clone prefixes and Shared<String>
+payloads are included. No target supplies the expected value or trace for another target.
+
+Private fault selection accepts defined trap classes and ordinals 1 through 1,048,576. Logical
+injection points are shared by all three targets. Additional Linux tests fail actual descriptor,
+payload, growth, control and nested clone allocations. Native finalization releases non-owning
+SSA descriptors separately and rejects remaining owned allocations or control blocks before
+emitting an observation. The standalone ownership runtime retains its sealed 17-symbol ABI;
+private candidate observation and descriptor capabilities are audited separately.
+
+Trace collection is enabled only for injected evidence and is bounded to 4,096 encoded words.
+Overflow preserves the original language trap internally and rejects the incomplete observation
+at execution with `ZRYNA-C3302`. It does not impose a cleanup-event limit on ordinary execution.
+Manifest decoding independently enforces typed traps, event vocabulary, identities and size.
+A complete trapped observation may publish a complete run bundle; malformed execution or any
+publication failure rolls back without a partial bundle.
+
+Native MIR verification authenticates non-cleanup operations against the sealed source and
+independently checks each used cleanup plan's exact source-derived roots and action kinds.
+Hostile substitutions and omissions fail before code generation; aggregate action counts retain
+the exact/first-extra resource boundary. Public profile activation remains Issue #90.
