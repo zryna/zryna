@@ -1,0 +1,2 @@
+interface TextPair extends ZrynaStruct { left: String; right: String; }
+export function aggregate(): i32 { const pair: TextPair = TextPair({ left: "left", right: "right" }); const copied: TextPair = clone(pair); const moved: TextPair = copied; return 29; }

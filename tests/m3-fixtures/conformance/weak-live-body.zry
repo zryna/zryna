@@ -1,0 +1,1 @@
+export function check(): i32 { const owner: Shared<i32> = shared(7); const weak: Weak<i32> = downgrade(owner); upgradeWeak(weak, (value) => { return 31; }, () => { return 37; }); }

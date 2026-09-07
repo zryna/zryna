@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "profile": "zryna-data-ownership-fixed-oracle-v1",
+  "candidateProfile": "zryna-data-ownership-v1-candidate",
+  "targetOrder": [
+    "javascript",
+    "webassembly",
+    "native"
+  ],
+  "fixtures": [
+    {
+      "id": "pair",
+      "path": "tests/m3-fixtures/conformance/pair.zry",
+      "sha256": "c746b889df39e9679a3117ec88dd6511f73338987f416e31db6746d5a9cd103f"
+    },
+    {
+      "id": "array",
+      "path": "tests/m3-fixtures/conformance/array.zry",
+      "sha256": "7fcdf511e1f6b40a9e8c0b8053f5218b08b146c6eb06e734ac1ce83821deacd0"
+    },
+    {
+      "id": "borrow",
+      "path": "tests/m3-fixtures/conformance/borrow.zry",
+      "sha256": "1c02973b59be2f575fad73738d08deb717cc0e1d65053bb0081811634c05ec2f"
+    },
+    {
+      "id": "vec",
+      "path": "tests/m3-fixtures/conformance/vec.zry",
+      "sha256": "69f54f0870b70e0818538141e4b89ef44e24424fbade6adef02b389ff86f7917"
+    },
+    {
+      "id": "string",
+      "path": "tests/m3-fixtures/conformance/string.zry",
+      "sha256": "16d10babf51903110aaee0c8ef327e29b5a70a3be9071eb255f75b3106f51b50",
+      "dependency": "string-body"
+    },
+    {
+      "id": "handles",
+      "path": "tests/m3-fixtures/conformance/handles.zry",
+      "sha256": "3367e2543514e4f73d862556b27c4691082acee78aba9e576b7e4168f8397495",
+      "dependency": "handles-body"
+    },
+    {
+      "id": "owned-aggregate",
+      "path": "tests/m3-fixtures/conformance/owned-aggregate.zry",
+      "sha256": "ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675",
+      "dependency": "owned-aggregate-body"
+    },
+    {
+      "id": "conflict",
+      "path": "tests/m3-fixtures/conformance/conflict.zry",
+      "sha256": "a913ddc0e46121adbc73f90f0c4b28fdbb178dc9f04e6e36c21dc4bb7871958f"
+    },
+    {
+      "id": "moved",
+      "path": "tests/m3-fixtures/conformance/moved.zry",
+      "sha256": "2646863a723a3ae82d59557ebf24431422d6b98baea3b35daf9585233560ea97"
+    },
+    {
+      "id": "unknown",
+      "path": "tests/m3-fixtures/conformance/unknown.zry",
+      "sha256": "88e9de3e3ad56827d38becb5c94d64b437f4a9ec3b6f71a53de29367408cfb4b"
+    },
+    {
+      "id": "abi",
+      "path": "tests/m3-fixtures/conformance/abi.zry",
+      "sha256": "cafc15d865a5e5e015a598f29e5aeb966c6143ea64050b37d306571ad68f804f"
+    },
+    {
+      "id": "string-body",
+      "path": "tests/m3-fixtures/conformance/string-body.zry",
+      "sha256": "2600d157a71237d3ab8641761b57392a7edb954ef79397e33c784b584dc2ec94"
+    },
+    {
+      "id": "handles-body",
+      "path": "tests/m3-fixtures/conformance/handles-body.zry",
+      "sha256": "aace98260d527614117b7ad7b40b0da402ee2e9aed72f1889c202113682fa968"
+    },
+    {
+      "id": "owned-aggregate-body",
+      "path": "tests/m3-fixtures/conformance/owned-aggregate-body.zry",
+      "sha256": "5e72890982471583db622bcfd43c2e126dcccefc3b368a7b517336f9740682d6"
+    },
+    {
+      "id": "bounds",
+      "path": "tests/m3-fixtures/conformance/bounds.zry",
+      "sha256": "34a2b3210f2fa03eb990fbae3cd881b7cf182abdc6ec651dc8bf85c16bd414d9"
+    },
+    {
+      "id": "enum",
+      "path": "tests/m3-fixtures/conformance/enum.zry",
+      "sha256": "5052c0754d74a8b2ad1d3d20496ef4b09fe428f7af1591be1712052b1d6426f2",
+      "dependency": "enum-body"
+    },
+    {
+      "id": "weak-live-body",
+      "path": "tests/m3-fixtures/conformance/weak-live-body.zry",
+      "sha256": "77e3f2ee548371a30ab057eb43dc8e486a8fd032ddda8e53ae58aecac5bdd53c"
+    },
+    {
+      "id": "weak-live",
+      "path": "tests/m3-fixtures/conformance/weak-live.zry",
+      "sha256": "a4ed2aa2b621b69a16c0365a8eb5fdd7db9ca9dddc4cae495f045157c8e92cb1",
+      "dependency": "weak-live-body"
+    },
+    {
+      "id": "weak-expired-body",
+      "path": "tests/m3-fixtures/conformance/weak-expired-body.zry",
+      "sha256": "7f149fe308e1e75761721371ead063c072a7643dae7f7454643ba8c199247225"
+    },
+    {
+      "id": "weak-expired",
+      "path": "tests/m3-fixtures/conformance/weak-expired.zry",
+      "sha256": "a4ed2aa2b621b69a16c0365a8eb5fdd7db9ca9dddc4cae495f045157c8e92cb1",
+      "dependency": "weak-expired-body"
+    },
+    {
+      "id": "enum-body",
+      "path": "tests/m3-fixtures/conformance/enum-body.zry",
+      "sha256": "7d65eeacbcad853fe9470679d714cf08c1796d1d0375bbf2df05a713cf54bdc0"
+    }
+  ],
+  "valid": [
+    {
+      "id": "pair-positive",
+      "fixture": "pair",
+      "export": "score",
+      "arguments": [
+        2,
+        3
+      ],
+      "expected": 65
+    },
+    {
+      "id": "pair-negative",
+      "fixture": "pair",
+      "export": "score",
+      "arguments": [
+        -2,
+        3
+      ],
+      "expected": -59
+    },
+    {
+      "id": "pair-wrap",
+      "fixture": "pair",
+      "export": "score",
+      "arguments": [
+        2147483647,
+        1
+      ],
+      "expected": 2147483618
+    },
+    {
+      "id": "array",
+      "fixture": "array",
+      "export": "score",
+      "arguments": [],
+      "expected": 829
+    },
+    {
+      "id": "borrow",
+      "fixture": "borrow",
+      "export": "score",
+      "arguments": [],
+      "expected": 9
+    },
+    {
+      "id": "vec",
+      "fixture": "vec",
+      "export": "score",
+      "arguments": [],
+      "expected": 13
+    },
+    {
+      "id": "string",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "expected": 17
+    },
+    {
+      "id": "handles",
+      "fixture": "handles",
+      "export": "score",
+      "arguments": [],
+      "expected": 23
+    },
+    {
+      "id": "owned-aggregate",
+      "fixture": "owned-aggregate",
+      "export": "score",
+      "arguments": [],
+      "expected": 29
+    },
+    {
+      "id": "bounds-last",
+      "fixture": "bounds",
+      "export": "score",
+      "arguments": [
+        1
+      ],
+      "expected": 9
+    },
+    {
+      "id": "enum-match",
+      "fixture": "enum",
+      "export": "score",
+      "arguments": [
+        11
+      ],
+      "expected": 33
+    },
+    {
+      "id": "weak-live",
+      "fixture": "weak-live",
+      "export": "score",
+      "arguments": [],
+      "expected": 31
+    },
+    {
+      "id": "weak-expired",
+      "fixture": "weak-expired",
+      "export": "score",
+      "arguments": [],
+      "expected": 37
+    }
+  ],
+  "invalid": [
+    {
+      "id": "borrow-conflict",
+      "fixture": "conflict",
+      "phase": "source",
+      "code": "ZRYNA-M3017"
+    },
+    {
+      "id": "use-after-move",
+      "fixture": "moved",
+      "phase": "source",
+      "code": "ZRYNA-M3011"
+    },
+    {
+      "id": "unknown-name",
+      "fixture": "unknown",
+      "phase": "source",
+      "code": "ZRYNA-M3002"
+    },
+    {
+      "id": "abi-mismatch",
+      "fixture": "abi",
+      "phase": "source",
+      "code": "ZRYNA-B2102",
+      "export": "score",
+      "arguments": []
+    }
+  ],
+  "evidence": [
+    {
+      "id": "layout-oracles",
+      "phase": "layout",
+      "package": "zryna-layout",
+      "path": "crates/zryna-layout/src/tests.rs",
+      "test": "tests::seals_the_exact_five_type_oracles_for_both_targets",
+      "expected": "both frozen layout records",
+      "host": "portable"
+    },
+    {
+      "id": "layout-boundary",
+      "phase": "layout",
+      "package": "zryna-layout",
+      "path": "crates/zryna-layout/src/tests.rs",
+      "test": "tests::enforces_member_array_and_checked_object_boundaries",
+      "expected": "exact accepted; first extra rejected before layout sealing",
+      "host": "portable"
+    },
+    {
+      "id": "borrow-resources",
+      "phase": "semantics",
+      "package": "zryna-semantics",
+      "path": "crates/zryna-semantics/src/data_ownership_v1/tests/nonindexed_borrow_resources.rs",
+      "test": "data_ownership_v1::tests::nonindexed_borrow_resources::nonindexed_owned_borrow_resource_dimensions_accept_exact_and_reject_first_extra",
+      "expected": "exact accepted; first extra rejected without state mutation",
+      "host": "portable"
+    },
+    {
+      "id": "manifest-boundary",
+      "phase": "manifest",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_manifest/tests.rs",
+      "test": "ownership_manifest::tests::manifest_byte_budget_accepts_exact_and_rejects_first_extra",
+      "expected": "exact 32 MiB accepted; first extra rejected",
+      "host": "portable"
+    },
+    {
+      "id": "publication-rollback",
+      "phase": "publication",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_publication/tests.rs",
+      "test": "ownership_publication::tests::failures_rollback_then_complete_bundle_publishes_create_only",
+      "expected": "every injected publication phase leaves no transaction or final bundle",
+      "host": "linux-x86_64"
+    },
+    {
+      "id": "runtime-allocation",
+      "phase": "runtime",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_runtime_v1.rs",
+      "test": "ownership_runtime_v1::tests::allocation_failure_is_atomic_and_recoverable",
+      "expected": "injected allocation failure leaves destination unchanged; recovery succeeds",
+      "host": "linux-x86_64"
+    },
+    {
+      "id": "runtime-transitions",
+      "phase": "runtime",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_runtime_v1.rs",
+      "test": "ownership_runtime_v1::tests::runtime_compiles_with_strict_c_and_executes_transitions",
+      "expected": "fixed allocation/String/Vec/count statuses and unchanged failure state",
+      "host": "linux-x86_64"
+    },
+    {
+      "id": "runtime-capabilities",
+      "phase": "runtime",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_runtime_v1.rs",
+      "test": "ownership_runtime_v1::tests::compiled_runtime_has_exact_exports_and_ambient_imports",
+      "expected": "exact sealed symbol inventory",
+      "host": "linux-x86_64"
+    },
+    {
+      "id": "cleanup-execution",
+      "phase": "runtime",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/native/ownership/tests.rs",
+      "test": "native::ownership::tests::generated_owned_cleanup_executes_before_scalar_return",
+      "expected": "returned zero and no live allocations",
+      "host": "linux-x86_64"
+    },
+    {
+      "id": "runtime-abi-resources",
+      "phase": "runtime-abi",
+      "package": "zryna-ownership-runtime-abi",
+      "path": "crates/zryna-ownership-runtime-abi/src/tests.rs",
+      "test": "tests::aggregate_target_declaration_budget_is_exact_and_plus_one",
+      "expected": "exact declaration budget accepted; first extra rejected",
+      "host": "portable"
+    },
+    {
+      "id": "runtime-count-bounds",
+      "phase": "runtime-abi",
+      "package": "zryna-ownership-runtime-abi",
+      "path": "crates/zryna-ownership-runtime-abi/src/tests.rs",
+      "test": "tests::pure_vec_and_count_transitions_are_exact",
+      "expected": "fixed Vec and count success/overflow transitions",
+      "host": "portable"
+    },
+    {
+      "id": "native-codegen-resources",
+      "phase": "native-codegen",
+      "package": "zryna-backend-native",
+      "path": "crates/zryna-backend-native/src/data_ownership_v1/mod.rs",
+      "test": "data_ownership_v1::resource_tests::codegen_budget_accepts_exact_and_rejects_first_extra",
+      "expected": "1000000 units accepted; first extra N3304",
+      "host": "portable"
+    }
+  ],
+  "runtimeInvalid": [
+    {
+      "id": "bounds-first-extra",
+      "fixture": "bounds",
+      "export": "score",
+      "arguments": [
+        2
+      ],
+      "phase": "execution",
+      "codes": {
+        "javascript": "ZRYNA-R3006",
+        "webassembly": "ZRYNA-R3006",
+        "native": "ZRYNA-N4021"
+      },
+      "expectedTrap": "zryna.trap.bounds-v1"
+    }
+  ],
+  "closureRequirements": {
+    "trapIdentities": [
+      "zryna.trap.bounds-v1",
+      "zryna.trap.allocation-v1",
+      "zryna.trap.capacity-v1",
+      "zryna.trap.refcount-v1",
+      "zryna.trap.utf8-v1"
+    ],
+    "faultEvidence": "same exact logical drop/release trace under injected faults on all three targets",
+    "authority": "spec/language/DATA_OWNERSHIP_V1.md#11-controlled-traps-and-cleanup"
+  }
+}

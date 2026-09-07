@@ -1,0 +1,1 @@
+export function handles(): i32 { const owner: Shared<i32> = shared(7); const copy: Shared<i32> = clone(owner); const weak: Weak<i32> = downgrade(copy); const weakCopy: Weak<i32> = clone(weak); return 23; }

@@ -1,0 +1,2 @@
+interface Choice extends ZrynaEnum { none: ZrynaNone; value: i32; }
+export function score(value: i32): i32 { const selected: Choice = Choice.value(value); return match(selected, { "Choice.none": () => 0, "Choice.value": (item) => item * 3 }); }

@@ -1,0 +1,2 @@
+import { score as enumScore } from "./math.zry";
+export function score(value: i32): i32 { return enumScore(value); }

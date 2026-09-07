@@ -1,0 +1,1 @@
+function invalid(): String { const text: String = "owned"; const moved: String = text; return text; }
