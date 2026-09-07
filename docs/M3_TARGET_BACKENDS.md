@@ -28,6 +28,8 @@ fallible instructions run their sealed cleanup actions before propagating the tr
 eval, dynamic Function, global object, package, process,
 browser, DOM or dynamic import capability. Engine GC may reclaim unreachable implementation
 records, but Zryna release order and refcount transitions are explicit and do not depend on GC.
+The helper's 64 MiB String allocation budget remains target-specific: exhaustion below the
+universal byte limit is `ALLOCATION`, while checked arithmetic or universal excess is `CAPACITY`.
 
 Stable failures are `ZRYNA-J3001` for authority/profile inconsistency, `ZRYNA-J3002` for formatting
 failure and `ZRYNA-J3003` for the artifact bound. Runtime traps use private `ZRYNA-R3*` identities.
@@ -45,6 +47,8 @@ The audit rejects imports, tables, start, elements, data, tags, custom/unknown s
 exports, indirect calls and ambient memory growth. The fixed 256-page maximum and checked allocator
 make address addition and exhaustion deterministic without granting WASI, Component Model, GC,
 threads, SIMD, filesystem or network capability.
+The fixed arena is a target budget, so an otherwise valid request that does not fit is
+`ALLOCATION`; only checked arithmetic or a universal/profile maximum violation is `CAPACITY`.
 
 Stable failures are `ZRYNA-W3001` for authority/index inconsistency, `ZRYNA-W3002` for invalid
 bytes, `ZRYNA-W3003` for the byte bound and `ZRYNA-W3004` for capability-audit rejection.

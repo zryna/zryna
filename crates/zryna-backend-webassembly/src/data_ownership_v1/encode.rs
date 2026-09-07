@@ -140,7 +140,10 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
 fn allocator() -> Function {
     let mut function = Function::new([(2, ValType::I32)]);
     function.instruction(&Instruction::LocalGet(0));
-    function.instruction(&Instruction::I32Const(67_108_864));
+    function.instruction(&Instruction::I32Const(
+        i32::try_from(zryna_ownership_runtime_abi::MAX_DYNAMIC_ALLOCATION_BYTES)
+            .expect("universal allocation byte limit fits i32"),
+    ));
     function.instruction(&Instruction::I32GtU);
     function.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
     failure::helper_trap(3, &mut function);

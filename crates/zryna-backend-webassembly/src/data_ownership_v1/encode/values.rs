@@ -139,25 +139,7 @@ pub(super) fn string_concat(
     body.instruction(&Instruction::LocalSet(locals.heap + 1));
     load_length(locals.heap, locals.heap + 2, body);
     load_length(locals.heap + 1, locals.heap + 3, body);
-    body.instruction(&Instruction::LocalGet(locals.heap + 2));
-    body.instruction(&Instruction::LocalGet(locals.heap + 3));
-    body.instruction(&Instruction::I32Add);
-    body.instruction(&Instruction::LocalTee(locals.heap + 2));
-    body.instruction(&Instruction::LocalGet(locals.heap + 3));
-    body.instruction(&Instruction::I32LtU);
-    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::I32Const(3));
-    body.instruction(&Instruction::GlobalSet(1));
-    body.instruction(&Instruction::Br(1));
-    body.instruction(&Instruction::End);
-    body.instruction(&Instruction::LocalGet(locals.heap + 2));
-    body.instruction(&Instruction::I32Const(67_108_864));
-    body.instruction(&Instruction::I32GtU);
-    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::I32Const(3));
-    body.instruction(&Instruction::GlobalSet(1));
-    body.instruction(&Instruction::Br(1));
-    body.instruction(&Instruction::End);
+    string_allocation_size(locals.heap + 2, locals.heap + 3, locals.heap + 2, body)?;
     body.instruction(&Instruction::LocalGet(locals.heap + 2));
     body.instruction(&Instruction::I32Const(12));
     body.instruction(&Instruction::I32Add);
@@ -173,6 +155,51 @@ pub(super) fn string_concat(
         body,
     );
     body.instruction(&Instruction::LocalGet(locals.scratch));
+    Ok(())
+}
+
+pub(super) fn string_allocation_size(
+    left: u32,
+    right: u32,
+    total: u32,
+    body: &mut Function,
+) -> Result<(), zryna_diagnostics::Diagnostic> {
+    body.instruction(&Instruction::LocalGet(left));
+    body.instruction(&Instruction::LocalGet(right));
+    body.instruction(&Instruction::I32Add);
+    body.instruction(&Instruction::LocalTee(total));
+    body.instruction(&Instruction::LocalGet(right));
+    body.instruction(&Instruction::I32LtU);
+    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+    body.instruction(&Instruction::I32Const(3));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
+    body.instruction(&Instruction::End);
+    body.instruction(&Instruction::LocalGet(total));
+    body.instruction(&Instruction::I32Const(
+        i32::try_from(zryna_ownership_runtime_abi::MAX_STRING_BYTES).map_err(|_| index_error())?,
+    ));
+    body.instruction(&Instruction::I32GtU);
+    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+    body.instruction(&Instruction::I32Const(3));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
+    body.instruction(&Instruction::End);
+    body.instruction(&Instruction::LocalGet(total));
+    body.instruction(&Instruction::I32Const(
+        i32::try_from(
+            super::MEMORY_PAGES * 65_536
+                - u64::try_from(super::observation::ARENA_START).map_err(|_| index_error())?
+                - 12,
+        )
+        .map_err(|_| index_error())?,
+    ));
+    body.instruction(&Instruction::I32GtU);
+    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+    body.instruction(&Instruction::I32Const(2));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
+    body.instruction(&Instruction::End);
     Ok(())
 }
 

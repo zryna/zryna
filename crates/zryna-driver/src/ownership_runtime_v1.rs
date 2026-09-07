@@ -105,7 +105,7 @@ int main(void) {
   memset((void *)pointer, 0x5a, 8);
   if (zryna_rt_o1_grow(pointer, 8, 16, 8, &grown) != 0 || grown == 0) return 2;
   if (((uint8_t *)grown)[0] != 0x5a || zryna_rt_o1_release(grown, 16, 8) != 0) return 3;
-  if (zryna_rt_o1_allocate(UINT64_C(67108865), 8, &pointer) != 2 || pointer != 0) return 17;
+  if (zryna_rt_o1_allocate(UINT64_C(67108865), 8, &pointer) != 1 || pointer != 0) return 17;
   if (zryna_rt_o1_allocate(8, 3, &pointer) != 255 || pointer != 0) return 18;
   if (zryna_rt_o1_string_from_utf8_copy(invalid, 2, &text) != 4 || text.pointer != 0) return 4;
   if (zryna_rt_o1_string_from_utf8_copy(valid, 2, &text) != 0) return 19;
@@ -181,6 +181,29 @@ int main(void) {
             &["-DZRYNA_RT_O1_FAIL_ALLOCATION_AT=2"],
             "allocation-failure",
         );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn universal_capacity_and_native_exhaustion_keep_distinct_statuses() {
+        let sequence = NEXT_TEST.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir()
+            .join(format!("zryna-runtime-v1-capacity-{}-{sequence}", std::process::id()));
+        fs::create_dir(&root).expect("capacity probe directory");
+        let executable = root.join("capacity-probe");
+        let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/m4-fixtures/allocation-core/native-capacity.c");
+        let output = Command::new("/usr/bin/gcc")
+            .args(["-std=c11", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O2", "-fno-common"])
+            .arg(fixture)
+            .arg("-o")
+            .arg(&executable)
+            .output()
+            .expect("compile capacity probe");
+        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        let status = Command::new(&executable).status().expect("execute capacity probe");
+        assert!(status.success(), "capacity probe status {status}");
+        fs::remove_dir_all(root).expect("capacity probe cleanup");
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

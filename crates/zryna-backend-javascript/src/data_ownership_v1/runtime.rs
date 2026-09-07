@@ -61,8 +61,15 @@ function $zryna$utf8Length(text) {
   }
   return bytes;
 }
+function $zryna$stringAllocationSize(left, right) {
+  if (!Number.isSafeInteger(left) || !Number.isSafeInteger(right) || left < 0 || right < 0) $zryna$trap("ABI");
+  if (right > 2147483647 || left > 2147483647 - right) $zryna$trap("CAPACITY");
+  const bytes = left + right;
+  if (bytes > 67108864) $zryna$trap("ALLOCATION");
+  return bytes;
+}
 function $zryna$concat(left, right) {
-  if ($zryna$utf8Length(left.$v) + $zryna$utf8Length(right.$v) > 67108864) $zryna$trap("CAPACITY");
+  $zryna$stringAllocationSize($zryna$utf8Length(left.$v), $zryna$utf8Length(right.$v));
   return {$k: 1, $v: left.$v + right.$v};
 }
 function $zryna$push(vector, value) {

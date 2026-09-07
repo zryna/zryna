@@ -116,3 +116,39 @@ fn recursive_clone_failure_releases_completed_prefix() {
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
     assert_eq!(String::from_utf8(output.stdout).expect("UTF-8"), "1 4294967295\n");
 }
+
+#[test]
+fn string_allocation_classification_is_bounded_and_recoverable() {
+    let program = fixture();
+    let artifact =
+        zryna_backend_javascript::emit_data_ownership(program.verified_ir(), program.runtime_abi())
+            .expect("JavaScript artifact");
+    let script = format!(
+        r#"{}
+const cases = [
+  [67108863, 0], [67108864, 0], [67108865, 0],
+  [2147483647, 0], [2147483647, 1], [-1, 0], [1.5, 0]
+];
+const rows = cases.map(([left, right]) => {{
+  $zryna$status = 0;
+  try {{ return [$zryna$stringAllocationSize(left, right), $zryna$status]; }}
+  catch (failure) {{
+    return [failure === $zryna$sentinel ? $zryna$status : failure.message, $zryna$status];
+  }}
+}});
+$zryna$status = 0;
+rows.push([$zryna$concat({{$k:1,$v:"hé"}},{{$k:1,$v:"!"}}).$v, $zryna$status]);
+console.log(JSON.stringify(rows));
+"#,
+        artifact.source,
+    );
+    let output = Command::new("node")
+        .args(["--input-type=module", "--eval", &script])
+        .output()
+        .expect("Node.js");
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(
+        String::from_utf8(output.stdout).expect("classification rows"),
+        "[[67108863,0],[67108864,0],[2,2],[2,2],[3,3],[\"ZRYNA-R3ABI\",0],[\"ZRYNA-R3ABI\",0],[\"hé!\",0]]\n"
+    );
+}
