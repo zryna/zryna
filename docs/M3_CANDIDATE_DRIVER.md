@@ -1,9 +1,9 @@
 # M3 DataOwnershipV1 candidate driver
 
-Status: implemented as an internal candidate boundary. It does not activate a public profile.
-The public CLI continues to accept only the default M1 profile and exact
-`--profile control-flow-v1`; exact `data-ownership-v1` is rejected before workspace effects with
-`ZRYNA-C3401`.
+Status: the #89-conformant driver is activated by exact public `--profile data-ownership-v1`.
+The public CLI and retained candidate library entrypoints call the same implementation. M1 and
+M2 remain separate. The former candidate manifest identity is historical; new bundles use only
+`zryna-data-ownership-v1`, and the strict decoder rejects the old candidate identity.
 
 ## One authenticated route
 
@@ -31,7 +31,7 @@ Every candidate bundle contains exactly `zryna-manifest-v3.json`. Its canonical 
 order is `version`, `profile`, `protocol_version`, `command`, `entrypoint`, `graph_sha256`,
 `sources`, `edges`, `layouts`, `runtime_abi`, `stem`, `targets`, `artifacts`, `invocation`,
 `results`, and `diagnostics`. The fixed identities are manifest version `3`, protocol version `4`,
-and profile `zryna-data-ownership-v1-candidate`.
+and profile `zryna-data-ownership-v1`.
 
 The manifest binds:
 
@@ -75,12 +75,12 @@ Focused repository tests cover:
   injected phase failures, modes, and exact inventory;
 - `ownership_commands::tests::all_targets_execute_and_publish_one_typed_candidate_run` for actual Linux
   x86-64 JavaScript, WebAssembly, and native execution from one two-module candidate request; and
-- `data_ownership_candidate_profile_is_rejected_before_workspace_effects` for both public CLI
-  profile spellings, deterministic `ZRYNA-C3401`, and no output creation.
+- `cargo test --locked -p zryna --test m3_public` for exact public spellings, fixed outcomes,
+  byte-identical public/candidate results, typed traps, rejections and create-only resource bounds.
 
 ## Retained exclusions
 
-This candidate is not public CLI availability or general aggregate ABI. The
+Public selection does not expose a general aggregate ABI. The
 [fixed-oracle gates](M3_CONFORMANCE.md) exercise this candidate under Issue #89; typed trap and fixed cleanup evidence are
 documented with the corpus and resource boundaries. Public profile activation, authenticated
 website material, and release provenance remain Issue #90. Windows or macOS native execution,

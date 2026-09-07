@@ -52,9 +52,15 @@ pub struct PublishedOwnershipBundle {
     manifest_path: PathBuf,
     artifacts: Vec<PublishedOwnershipArtifact>,
     results: Vec<OwnershipManifestResult>,
+    diagnostics: Vec<Diagnostic>,
 }
 
 impl PublishedOwnershipBundle {
+    /// Returns the authenticated provider warnings retained in manifest v3.
+    #[must_use]
+    pub fn diagnostics(&self) -> &[Diagnostic] {
+        &self.diagnostics
+    }
     /// Returns build or run.
     #[must_use]
     pub const fn command(&self) -> CommandKind {
@@ -168,6 +174,7 @@ where
             path: bundle,
             artifacts,
             results,
+            diagnostics: success.diagnostics().to_vec(),
         })
     })();
     match operation {

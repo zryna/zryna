@@ -1,7 +1,10 @@
-# M3 fixed-oracle candidate conformance
+# M3 fixed-oracle conformance
 
-Issue #89 verifies the internal #88 candidate route. Public `--profile data-ownership-v1`
-remains rejected with `ZRYNA-C3401`; activation belongs to #90. No public capability is activated.
+Issue #89 verified the internal #88 candidate route at merge
+`5de1464167b39c379dfb868f90316500d8529701`. Issue #90 activates exact public
+`--profile data-ownership-v1` through that same implementation, with manifest identity
+`zryna-data-ownership-v1`. The frozen #89 registry retains its historical candidate label;
+its source bytes, fixed observations and resource/fault authorities remain unchanged.
 
 ## Authorities and commands
 
@@ -13,7 +16,7 @@ commands and CI dependency bypasses.
 
 - `pnpm m3:registry`: registry authentication and hostile mutation self-tests.
 - `pnpm m3:quick`: registry, v4 syntax/worker, candidate execution/repeat builds/rejections and
-  public-selector rejection; excludes proportional resource suites.
+  the exact public-profile corpus; excludes proportional resource suites.
 - `pnpm m3:check`: quick evidence plus complete layout, runtime ABI, ownership IR/semantics,
   backend/native MIR and candidate-security suites, including ignored resource tests and named
   fault/resource oracles. A filtered command that executes zero passing tests fails.
@@ -83,4 +86,19 @@ publication failure rolls back without a partial bundle.
 Native MIR verification authenticates non-cleanup operations against the sealed source and
 independently checks each used cleanup plan's exact source-derived roots and action kinds.
 Hostile substitutions and omissions fail before code generation; aggregate action counts retain
-the exact/first-extra resource boundary. Public profile activation remains Issue #90.
+the exact/first-extra resource boundary. Public activation tests compare complete public and candidate artifact bytes and fixed outcomes.
+
+## Public activation evidence
+
+`pnpm m3:public` runs the executable CLI with both exact profile spellings, canonical Boolean
+arguments, all 15 fixed successful cases, four invalid cases, both typed bounds traps, artifact
+stem exact/first-extra limits, file and directory collisions, deterministic safe reruns, rejected
+profile/target aliases and owned public ABI rejection. Each fixed public run and build is compared
+byte-for-byte with the shared candidate library route, including manifest v3. Injected allocation,
+capacity, refcount and UTF-8 traps and exact cleanup traces remain exercised through the same
+implementation's private test channel by the full #89 gate; no public fault-injection switch exists.
+Documentation tests bind every beginner source block to the independently pinned executable corpus.
+
+Documentation publication runs only after the required M3 aggregate (including M0–M2) succeeds
+on the exact main-push commit. Website deployment and live verification remain separate #90
+closure obligations and are never inferred from a compiler test pass.

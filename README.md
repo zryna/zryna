@@ -1,5 +1,10 @@
 # Zryna
 
+Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
+See [the public M3 surface](docs/M3_PUBLIC_PROFILE.md) and [the beginner guide](docs/M3_GETTING_STARTED.md).
+The component checkpoints below retain their historical implementation boundaries; they do not
+limit or independently expand the integrated public surface. M0–M2 remain unchanged.
+
 **Zryna** (pronounced *ZREE-na*) is developed at [zryna.com](https://zryna.com).
 
 Zryna is an experimental, strict, three-target programming language project. Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its semantics, typed intermediate representation, JavaScript output, WebAssembly output, and native output belong to Zryna.
@@ -187,8 +192,8 @@ The repository currently establishes and tests:
   public driver profile;
 - an internal authenticated `DataOwnershipV1` driver route that shares one final protocol-v4
   closure and verified program across selected targets, executes runs inside one private
-  transaction, and publishes a strict manifest-v3 bundle with one create-only commit. The public
-  CLI still rejects exact `--profile data-ownership-v1` before workspace effects;
+  transaction, and publishes a strict manifest-v3 bundle with one create-only commit. Exact public
+  `--profile data-ownership-v1` uses this same conformant route;
 - Zryna-owned name resolution, strict source checking, and deterministic lowering from a verified
   protocol-v2 snapshot to unverified Universal IR;
 - a driver-owned authenticated source-to-verified-IR path that preserves provider warnings and
@@ -370,7 +375,7 @@ suite without a skip-architecture mode. See [M0 conformance](docs/M0_CONFORMANCE
 coverage and unsupported status.
 
 See [M3 fixed-oracle conformance](docs/M3_CONFORMANCE.md) for candidate evidence,
-resource gates and the retained public-profile rejection.
+resource gates and the exact public-profile corpus.
 
 ## Repository map
 

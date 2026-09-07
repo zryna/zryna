@@ -13,5 +13,9 @@ selected backends. Complete create-only bundles are committed below `.zryna/out`
 ordered results. The repository-owned [M1 conformance suite](../../docs/M1_CONFORMANCE.md) compares
 those public observations with fixed expected values and each other.
 
+Exact `--profile data-ownership-v1` selects the shared conformant M3 driver and manifest v3.
+Public observations remain typed `i32`/`bool`; owned values stay internal. See the
+[public M3 contract](../../docs/M3_PUBLIC_PROFILE.md).
+
 See the [complete CLI reference](../../docs/CLI.md) for syntax, target and platform limits, bundle
 and manifest layout, atomic publication, examples, JSON behavior, and stable exit statuses.

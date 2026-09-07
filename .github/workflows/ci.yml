@@ -249,7 +249,7 @@ jobs:
   docs-publish:
     name: documentation
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: m2
+    needs: m3
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:

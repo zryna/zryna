@@ -179,13 +179,20 @@ Completion gates:
 
 ## M3 — Data, Memory, and Ownership
 
+Current compiler state: exact `--profile data-ownership-v1` activates the #89-conformant route
+with manifest v3. [Public support and exclusions](M3_PUBLIC_PROFILE.md) and the
+[beginner guide](M3_GETTING_STARTED.md) are exported in the authenticated documentation bundle.
+Final milestone closure is recorded externally in #90 only after the merged-commit website
+import, hosted checks, deployment, live provenance and independent review succeed. The following
+issue-by-issue checkpoints preserve the development history rather than making deployment claims.
+
 Goal: add a separate explicit `DataOwnershipV1` profile without reinterpreting default M1 or
 explicit M2. Issue #75 freezes the specification, exact non-goals, real issue graph, first internal
 Pair slice, checked layout rules, ownership transitions, and non-Rust runtime ABI before any M3
 implementation is activated. The canonical planning inventory is digest-pinned in
 `tests/m3-contract-v1.json`.
 
-Current status: the contract, internal verified aggregate-layout authority, separately versioned
+Original internal checkpoint: the contract, internal verified aggregate-layout authority, separately versioned
 protocol-v4 syntax boundary, isolated `DataOwnershipV1` raw-to-verified IR boundary, and internal
 Copy-only struct/enum/fixed-array semantic lowerer, and sealed ownership-runtime ABI v1 declaration
 authority are implemented. The semantic boundary resolves
@@ -304,6 +311,8 @@ accepted cases, and 13 exclusions at merged-main provenance
 `32e3f0607389dd1274c21770088456c765ee4fb7`. Protocol v4 and every runtime, backend, driver, CLI,
 artifact, and public-profile boundary remain unchanged. The remaining dependency-ordered slices
 retain nested/repeated control flow, runtime, backend, and public-profile work.
+
+Historical gate ledger after #88, before #89/#90; the current public status is stated above:
 
 | Issue | Gate                                                                 | Depends on              | State       |
 | ----: | -------------------------------------------------------------------- | ----------------------- | ----------- |

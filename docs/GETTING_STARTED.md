@@ -1,7 +1,8 @@
 # Run your first Zryna programs
 
 Zryna is experimental. This walkthrough uses the existing public M1 scalar and M2 control-flow
-profiles, not the internal M3 ownership profile. Run commands from the compiler repository root.
+profiles. For the separately selected public M3 ownership profile, continue with
+[Your first M3 programs](M3_GETTING_STARTED.md). Run commands from the compiler repository root.
 You do not need to run the contributor regression suite after every program edit.
 
 ## Prepare the checkout

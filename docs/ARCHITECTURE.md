@@ -1,5 +1,10 @@
 # Compiler architecture
 
+Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
+See [the public M3 surface](M3_PUBLIC_PROFILE.md) and [the beginner guide](M3_GETTING_STARTED.md).
+The component checkpoints below retain their historical implementation boundaries; they do not
+limit or independently expand the integrated public surface. M0–M2 remain unchanged.
+
 ## Permanent boundary
 
 Verified Universal IR is the permanent contract. Frontend providers and output backends are replaceable around it.
@@ -295,8 +300,8 @@ authenticates one final module closure, lowers one verifier-sealed program retai
 and ownership-runtime ABI identities, and dispatches selected JavaScript, WebAssembly, and Linux
 x86-64 native targets in fixed order. Run requests validate one typed invocation before any target
 execution. Execution, strict manifest-v3 construction, artifact audit, and create-only whole-bundle
-publication share one private transaction, so failure cannot advertise a partial result. This
-library-only composition does not activate `--profile data-ownership-v1`; see the
+publication share one private transaction, so failure cannot advertise a partial result. Exact
+`--profile data-ownership-v1` activates this same composition; see the
 [candidate driver contract](M3_CANDIDATE_DRIVER.md).
 
 ## Initial numeric contract
@@ -360,8 +365,8 @@ artifact contract is reinterpreted.
 ## Isolated `DataOwnershipV1` boundary
 
 M3 is specified as another separately selected and separately verified profile. Its syntax,
-layout, and Universal IR authorities are implemented internally, but the profile is not publicly
-selectable. It may not widen `I32V1`, mutate `ControlFlowV1`, or expose a partial public command.
+layout, and Universal IR authorities are implemented internally, and the complete conformant route is publicly
+selectable through exact `--profile data-ownership-v1`. It may not widen `I32V1`, mutate `ControlFlowV1`, or expose a partial public command.
 Its remaining authority chain is:
 
 ```text

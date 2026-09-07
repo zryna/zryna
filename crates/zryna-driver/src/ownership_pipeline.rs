@@ -20,7 +20,7 @@ use crate::{
 };
 
 /// Exact profile identity retained by every internal candidate request.
-pub const DATA_OWNERSHIP_CANDIDATE_PROFILE: &str = "zryna-data-ownership-v1-candidate";
+pub const DATA_OWNERSHIP_CANDIDATE_PROFILE: &str = "zryna-data-ownership-v1";
 const NATIVE_TARGET: &str = "x86_64-unknown-linux-gnu";
 
 /// One explicit internal `DataOwnershipV1` build request.

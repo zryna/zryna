@@ -14,7 +14,7 @@
     "m2:quick": "node scripts/run-m2-quick.mjs",
     "m2:registry": "node scripts/check-m2-conformance.mjs && node --test tests/m2-conformance.test.mjs",
     "m2:check": "node scripts/run-m2-conformance.mjs",
-    "docs:check": "node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs tests/m2-manifest-contract.test.mjs tests/m3-contract.test.mjs",
+    "docs:check": "node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs tests/m2-manifest-contract.test.mjs tests/m3-contract.test.mjs tests/m3-public-docs.test.mjs",
     "docs:export": "node scripts/docs/export.mjs",
     "m2:contract": "node scripts/check-m2-contract.mjs",
     "m3:contract": "node scripts/check-m3-contract.mjs",
@@ -29,7 +29,8 @@
     "protocol:test": "node --test tests/syntax-protocol-v2.test.mjs tests/syntax-protocol-v3.test.mjs",
     "m3:quick": "node scripts/run-m3-quick.mjs",
     "m3:registry": "node scripts/check-m3-conformance.mjs && node --test tests/m3-conformance.test.mjs",
-    "m3:check": "node scripts/run-m3-conformance.mjs"
+    "m3:check": "node scripts/run-m3-conformance.mjs",
+    "m3:public": "cargo test --locked -p zryna --test m3_public"
   },
   "devDependencies": {
     "ajv": "8.17.1",

@@ -6,10 +6,10 @@ function command(id, executable, args, timeout = 10 * 60_000) {
 }
 const cargo = (id, args) => command(id, 'cargo', ['test', '--locked', ...args]);
 export const QUICK = Object.freeze([
-  command('registry-self-tests', 'node', ['--test', 'tests/m3-conformance.test.mjs']),
+  command('registry-self-tests', 'node', ['--test', 'tests/m3-conformance.test.mjs', 'tests/m3-public-docs.test.mjs']),
   command('v4-source-contract', 'node', ['--test', 'tests/syntax-protocol-v4.test.mjs', 'adapters/typescript-6/test/worker-v4.test.mjs']),
   cargo('candidate-fixed-oracles', ['-p', 'zryna-driver', '--lib', 'ownership_commands::conformance::']),
-  cargo('public-selector-closed', ['-p', 'zryna', '--test', 'cli', 'data_ownership_candidate_profile_is_rejected_before_workspace_effects', '--', '--exact']),
+  cargo('public-profile-corpus', ['-p', 'zryna', '--test', 'm3_public']),
 ]);
 export const FULL = Object.freeze([
   ...QUICK,
@@ -20,8 +20,8 @@ export const FULL = Object.freeze([
   cargo('targets-and-native-mir', ['-p', 'zryna-backend-javascript', '-p', 'zryna-backend-webassembly', '-p', 'zryna-backend-native', '-p', 'zryna-native-mir', '--', '--include-ignored']),
   cargo('candidate-security-runtime-and-transactions', ['-p', 'zryna-driver', 'ownership_', '--', '--include-ignored']),
 ]);
-const quickDigest = '189e8cce8d54c1205e493a7b3a61075360c5a4624cd2b3c4c6d6731132123424';
-const fullDigest = '05284b25a1d707e479acb4d176a9b8c4a1369aff60e4d693b4162f327ccf0ad1';
+const quickDigest = 'da1fd773a800a162fba3b3d275d8290d37c76643d4e6cb468b49936210348634';
+const fullDigest = '8586548e11c9c588e9dd1fe314c9913b475943cf82d1938ff1a5a353279f2aaa';
 export function validateCommands(commands, full = false) {
   if (digest(JSON.stringify(commands)) !== (full ? fullDigest : quickDigest)) {
     throw new Error('M3 command authority differs from the frozen inventory');

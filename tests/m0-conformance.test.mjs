@@ -201,7 +201,7 @@ test('documentation publication waits for the complete M2 gate and binds exact p
   assert.ok(rust.indexOf(docsCheck) < rust.indexOf(completeGate), 'documentation validation must precede M0');
   assert.doesNotMatch(rust, /Export authenticated next documentation bundle/);
   assert.match(publisher, /if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
-  assert.match(publisher, /needs: m2/);
+  assert.match(publisher, /needs: m3/);
   assert.ok(publisher.indexOf(docsCheck) > -1, 'publisher must revalidate documentation');
   assert.ok(
     publisher.indexOf(docsCheck) < publisher.indexOf('node scripts/docs/export.mjs'),

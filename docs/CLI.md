@@ -1,13 +1,25 @@
 # Zryna CLI reference
 
+## Public M3 profile
+
+Exact `--profile data-ownership-v1` on `build` and `run` selects the authenticated protocol-v4
+DataOwnershipV1 driver and canonical `zryna-manifest-v3.json`. Both `--profile value` and
+`--profile=value` spellings work. Omission still selects M1; `control-flow-v1` still selects M2.
+Run arguments accept canonical `i32:<decimal>` and `bool:true`/`bool:false` values. Only scalar
+entry exports are public. JSON keeps response version 1 and reports the manifest-v3 portable
+path, authenticated warnings and ordered typed results. A complete typed trap is an `ok: true`
+run observation with exit 0; inspect `results[].outcome.kind`, not just process exit status.
+Invalid source and unsupported features fail without a bundle. Create-only publication never
+replaces an existing destination. See [public boundaries](M3_PUBLIC_PROFILE.md),
+[manifest v3](M3_CANDIDATE_DRIVER.md), and [executable beginner examples](M3_GETTING_STARTED.md).
+
+
 Status: implemented for the default M1 `I32V1` slice and the explicit M2 `ControlFlowV1` slice.
 The CLI is a thin request parser and renderer over `zryna-driver`; it does not own compiler
 semantics, module resolution, backend behavior, or bundle publication.
 
-The internal `DataOwnershipV1` candidate is not a public CLI profile. Exact
-`--profile data-ownership-v1` and `--profile=data-ownership-v1` fail before workspace effects with
-exit status `2` and `ZRYNA-C3401`; they do not create an output root or bundle. The internal route
-and manifest v3 are documented in [M3 candidate driver](M3_CANDIDATE_DRIVER.md).
+The exact public M3 selector uses the shared conformant driver; its authenticated transaction
+and manifest v3 are documented in [M3 driver](M3_CANDIDATE_DRIVER.md).
 
 ## Commands
 

@@ -79,17 +79,18 @@ fn hostile_schema_and_identity_changes_are_rejected() {
         render_ownership_manifest_v3(&success, "ownership-score", &[]).expect("manifest v3");
     let canonical = String::from_utf8(bytes.clone()).expect("UTF-8 manifest");
 
+    let stale = canonical.replace("zryna-data-ownership-v1", "zryna-data-ownership-v1-candidate");
+    assert!(decode_ownership_manifest_v3(stale.as_bytes()).is_err());
     let duplicate =
         canonical.replacen("  \"version\": 3,", "  \"version\": 3,\n  \"version\": 3,", 1);
     assert!(decode_ownership_manifest_v3(duplicate.as_bytes()).is_err());
     let unknown = canonical.replacen("\n}\n", ",\n  \"unknown\": true\n}\n", 1);
     assert!(decode_ownership_manifest_v3(unknown.as_bytes()).is_err());
-    let missing =
-        canonical.replacen("  \"profile\": \"zryna-data-ownership-v1-candidate\",\n", "", 1);
+    let missing = canonical.replacen("  \"profile\": \"zryna-data-ownership-v1\",\n", "", 1);
     assert!(decode_ownership_manifest_v3(missing.as_bytes()).is_err());
     let reordered = canonical.replacen(
-        "  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1-candidate\",",
-        "  \"profile\": \"zryna-data-ownership-v1-candidate\",\n  \"version\": 3,",
+        "  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1\",",
+        "  \"profile\": \"zryna-data-ownership-v1\",\n  \"version\": 3,",
         1,
     );
     assert!(decode_ownership_manifest_v3(reordered.as_bytes()).is_err());
