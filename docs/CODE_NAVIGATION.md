@@ -17,10 +17,10 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 1. Syntax recognition, source spans, or frontend transport
 
 - Diagnostic transport: [v2 contract](../spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md), [schema](../schemas/zryna-diagnostics-v2.schema.json), and [diagnostics component](../crates/zryna-diagnostics/README.md). Run `pnpm diagnostics:contract` and `cargo test --locked -p zryna-diagnostics`; preserve the existing text/JSON-v1 APIs.
-- Start: [adapter README](../adapters/typescript-6/README.md), [FRONTENDS](FRONTENDS.md), and [v2](SYNTAX_PROTOCOL_V2.md), [v3 control-flow](../spec/language/CONTROL_FLOW_MODULES_V1.md), or [v4](SYNTAX_PROTOCOL_V4.md).
+- Start: [adapter README](../adapters/typescript-6/README.md), [FRONTENDS](FRONTENDS.md), and [v2](SYNTAX_PROTOCOL_V2.md), [v3 control-flow](../spec/language/CONTROL_FLOW_MODULES_V1.md), [v4](SYNTAX_PROTOCOL_V4.md), or [v4 provider conformance](PROVIDER_CONFORMANCE_V4.md).
 - Parser-side entry: `adapters/typescript-6/src/worker.mjs`, `worker-v3.mjs`, or `worker-v4.mjs`; choose the protocol explicitly.
 - Trust boundary: `crates/zryna-syntax/src/v4.rs::{decode_snapshot,verify_snapshot}` (or matching older protocol); process isolation/handshake in `crates/zryna-frontend/src/worker.rs`.
-- Focus: `pnpm adapter:check`, `pnpm adapter:test`, `pnpm protocol:test`; v4 changes: `pnpm m3:syntax:quick` including `worker_process` integration tests.
+- Focus: `pnpm adapter:check`, `pnpm adapter:test`, `pnpm protocol:test`; v4 changes: `pnpm m3:syntax:quick` including `worker_process` integration tests, plus `pnpm provider:conformance:v4` for provider equivalence.
 - Keep provider output syntax-only; name/type/module resolution belongs downstream. Finish with the full gates below.
 
 ## 2. M1/M2 names, locals, calls, branches, or module discovery
