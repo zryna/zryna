@@ -1,0 +1,5 @@
+import { alpha } from "./a.zry";
+
+export function omega(value: i32): i32 {
+  return alpha(value);
+}

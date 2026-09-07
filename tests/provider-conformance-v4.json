@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": 4,
+  "profile": "zryna-provider-conformance-v4",
+  "requiredCapabilities": {
+    "module_resolution": false,
+    "semantic_diagnostics": false,
+    "control_flow_v1": true,
+    "data_ownership_syntax_v1": true
+  },
+  "bootstrapAuthority": {
+    "provider": "typescript-6",
+    "providerVersion": "6.0.3",
+    "executable": "node",
+    "arguments": [
+      "adapters/typescript-6/src/worker-v4.mjs"
+    ]
+  },
+  "artifacts": [
+    {
+      "id": "budget-request",
+      "kind": "request",
+      "path": "tests/provider-conformance-v4/fixtures/budget.ndjson",
+      "sha256": "97f679f27390e4b7030d26190fb3dff1ebbc75cb878ec1e3dab9d70dc0df2381"
+    },
+    {
+      "id": "malformed-request",
+      "kind": "request",
+      "path": "tests/provider-conformance-v4/fixtures/malformed.ndjson",
+      "sha256": "ad723410fa5c242297c50a90c2ef0128e44a97d64cd9f3dcdcc741ea3fcd8911"
+    },
+    {
+      "id": "ordering-a-source",
+      "kind": "source",
+      "path": "tests/provider-conformance-v4/fixtures/ordering-a.zry",
+      "sha256": "8335f9eac0b60e7ef27853faad8512d40e3195cb6d942d9b04d823a05a590e47"
+    },
+    {
+      "id": "ordering-snapshot",
+      "kind": "snapshot",
+      "path": "tests/provider-conformance-v4/fixtures/ordering.snapshot.json",
+      "sha256": "2752a20c772e21364e4e611c8a55c6c5352a19096d8002ae7c4ce0870b4b87a3"
+    },
+    {
+      "id": "ordering-z-source",
+      "kind": "source",
+      "path": "tests/provider-conformance-v4/fixtures/ordering-z.zry",
+      "sha256": "dd44ceb99d46c863d1547cfcf9edc22bb2bd661ac87755423efd019e12fbae00"
+    },
+    {
+      "id": "positive-snapshot",
+      "kind": "snapshot",
+      "path": "tests/provider-conformance-v4/fixtures/positive.snapshot.json",
+      "sha256": "8aff00791e597927474ee7be0bd91927bd7c631c5d0ed82da70cb8ea29212c73"
+    },
+    {
+      "id": "positive-source",
+      "kind": "source",
+      "path": "tests/provider-conformance-v4/fixtures/positive.zry",
+      "sha256": "46c9e927354c6d18f21fd06c1cddc1ea51d05af25e2a97ccb904c773ce60c747"
+    },
+    {
+      "id": "unsupported-source",
+      "kind": "source",
+      "path": "tests/provider-conformance-v4/fixtures/unsupported.zry",
+      "sha256": "62515d0682a3f5e330c9ed80dde311e6e99e85dce36e8648af4e7f00e3892052"
+    }
+  ],
+  "cases": [
+    {
+      "id": "positive",
+      "category": "positive",
+      "steps": [
+        {
+          "request": { "kind": "handshake", "id": 1 },
+          "expected": { "kind": "handshake", "id": 1 }
+        },
+        {
+          "request": {
+            "kind": "analyze",
+            "id": 10,
+            "sources": [
+              { "path": "src/main.zry", "artifact": "positive-source" }
+            ]
+          },
+          "expected": { "kind": "snapshot", "id": 10, "artifact": "positive-snapshot" }
+        }
+      ]
+    },
+    {
+      "id": "malformed",
+      "category": "malformed",
+      "steps": [
+        {
+          "request": { "kind": "handshake", "id": 29 },
+          "expected": { "kind": "handshake", "id": 29 }
+        },
+        {
+          "request": { "kind": "raw", "artifact": "malformed-request" },
+          "expected": { "kind": "diagnostic", "id": null, "code": "ZRYNA-F1001" }
+        },
+        {
+          "request": { "kind": "handshake", "id": 31 },
+          "expected": { "kind": "handshake", "id": 31 }
+        }
+      ]
+    },
+    {
+      "id": "unsupported",
+      "category": "unsupported",
+      "steps": [
+        {
+          "request": { "kind": "handshake", "id": 39 },
+          "expected": { "kind": "handshake", "id": 39 }
+        },
+        {
+          "request": {
+            "kind": "analyze",
+            "id": 40,
+            "sources": [
+              { "path": "src/unsupported.zry", "artifact": "unsupported-source" }
+            ]
+          },
+          "expected": { "kind": "diagnostic", "id": 40, "code": "ZRYNA-F2002" }
+        },
+        {
+          "request": { "kind": "handshake", "id": 41 },
+          "expected": { "kind": "handshake", "id": 41 }
+        }
+      ]
+    },
+    {
+      "id": "budget",
+      "category": "budget",
+      "steps": [
+        {
+          "request": { "kind": "handshake", "id": 49 },
+          "expected": { "kind": "handshake", "id": 49 }
+        },
+        {
+          "request": { "kind": "raw", "artifact": "budget-request" },
+          "expected": { "kind": "diagnostic", "id": null, "code": "ZRYNA-F1002" }
+        },
+        {
+          "request": { "kind": "handshake", "id": 51 },
+          "expected": { "kind": "handshake", "id": 51 }
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "category": "recovery",
+      "steps": [
+        {
+          "request": { "kind": "handshake", "id": 59 },
+          "expected": { "kind": "handshake", "id": 59 }
+        },
+        {
+          "request": {
+            "kind": "analyze",
+            "id": 60,
+            "sources": [
+              { "path": "src/unsupported.zry", "artifact": "unsupported-source" }
+            ]
+          },
+          "expected": { "kind": "diagnostic", "id": 60, "code": "ZRYNA-F2002" }
+        },
+        {
+          "request": {
+            "kind": "analyze",
+            "id": 61,
+            "sources": [
+              { "path": "src/main.zry", "artifact": "positive-source" }
+            ]
+          },
+          "expected": { "kind": "snapshot", "id": 61, "artifact": "positive-snapshot" }
+        }
+      ]
+    },
+    {
+      "id": "ordering",
+      "category": "ordering",
+      "steps": [
+        {
+          "request": { "kind": "handshake", "id": 70 },
+          "expected": { "kind": "handshake", "id": 70 }
+        },
+        {
+          "request": {
+            "kind": "analyze",
+            "id": 71,
+            "sources": [
+              { "path": "src/z.zry", "artifact": "ordering-z-source" },
+              { "path": "src/a.zry", "artifact": "ordering-a-source" }
+            ]
+          },
+          "expected": { "kind": "snapshot", "id": 71, "artifact": "ordering-snapshot" }
+        }
+      ]
+    }
+  ]
+}
