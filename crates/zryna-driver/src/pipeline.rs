@@ -428,7 +428,7 @@ struct ControlFlowManifestEdge<'a> {
 }
 
 struct PreparedControlFlowArtifacts {
-    javascript: Option<zryna_backend_javascript::JavaScriptArtifact>,
+    javascript: Option<crate::scalar_adapter_interface::VerifiedScalarEsm>,
     webassembly: Option<zryna_backend_webassembly::ValidatedWebAssemblyArtifact>,
     native_object:
         Option<zryna_backend_native::control_flow_v1::ValidatedControlFlowNativeObjectArtifact>,
@@ -615,12 +615,11 @@ where
     let closure = discover_module_closure(&source_root, entrypoint, &frontend)
         .map_err(|error| module_closure_failure(&error))?;
     checkpoint(ControlFlowPhase::Semantics)?;
-    let program = closure
-        .lower_control_flow_v1()
+    let scalar_source = crate::scalar_adapter_interface::lower_verified_scalar_source(&closure)
         .map_err(|diagnostics| CommandFailure { kind: CommandFailureKind::Source, diagnostics })?;
     let verified_invocation = run
         .map(|invocation| {
-            program.prepare_invocation(zryna_abi::Invocation::new(
+            scalar_source.program().prepare_invocation(zryna_abi::Invocation::new(
                 invocation.logical_export.clone(),
                 invocation.arguments.clone(),
             ))
@@ -637,7 +636,7 @@ where
                 ),
             )
         })?;
-    let mut prepared = compile_control_flow_selected(&program, request.targets, checkpoint)?;
+    let mut prepared = compile_control_flow_selected(&scalar_source, request.targets, checkpoint)?;
     node.revalidate().map_err(preparation_failure)?;
 
     if run.is_some() && request.targets.native() {
@@ -660,7 +659,7 @@ where
             .map_err(preparation_failure)?;
         prepared.native_executable = Some(
             prepare_control_flow_native_invocation_from_verified(
-                &program,
+                scalar_source.program(),
                 object,
                 invocation,
                 &output_root,
@@ -694,13 +693,14 @@ where
 }
 
 fn compile_control_flow_selected(
-    program: &zryna_ir::control_flow_v1::VerifiedProgram,
+    source: &crate::scalar_adapter_interface::VerifiedScalarSource,
     targets: TargetSelection,
     checkpoint: ControlFlowCheckpoint<'_>,
 ) -> Result<PreparedControlFlowArtifacts, CommandFailure> {
+    let program = source.program();
     let javascript = if targets.javascript() {
         checkpoint(ControlFlowPhase::JavaScriptBackend)?;
-        Some(zryna_backend_javascript::emit_control_flow(program).map_err(preparation_failure)?)
+        Some(source.prepare_node_interface().map_err(preparation_failure)?)
     } else {
         None
     };
@@ -1221,7 +1221,7 @@ fn write_control_flow_artifacts(
             "ecmascript-module",
             &request.artifact_stem,
             "mjs",
-            artifact.source.as_bytes(),
+            artifact.javascript_source().map_err(preparation_failure)?.as_bytes(),
         )?);
     }
     if let Some(artifact) = &prepared.webassembly {

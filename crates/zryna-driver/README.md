@@ -57,6 +57,13 @@ then uses the existing bounded GNU link/run boundary. Staging retains and revali
 directory identity before writes, process launch, audit, and publication. The explicit profile
 publishes only [manifest v2](../../docs/M2_MANIFEST_V2.md); it never reinterprets manifest v1.
 
+The private scalar adapter interface checkpoint binds that same authenticated module-graph
+identity and verified `ControlFlowV1` scalar ABI to one byte-compared JavaScript ESM artifact and
+an exact pure browser or Node policy. The current M2 JavaScript preparation path consumes its
+sealed Node view before publication. Raw declarations and caller-provided digests remain
+untrusted; stale source, interface, export, type, host-policy, or artifact claims reject. This
+produces no loader, declarations, Component Model artifact, host operation, or public selector.
+
 `compile_javascript` connects real source to the deterministic JavaScript backend and publishes one
 new `.mjs` artifact through the target-neutral `ArtifactOutputRoot` capability (with a compatible
 `JavaScriptOutputRoot` alias). The capability is derived only from an absolute

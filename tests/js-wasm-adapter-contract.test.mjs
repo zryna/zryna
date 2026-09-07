@@ -154,6 +154,18 @@ test('future negative cases name fixed outcomes and retain independent consumer 
   assert.match(proof, /not generated bindings or runtime execution evidence/);
 });
 
+test('private scalar implementation ledger preserves later consumer and target gates', () => {
+  const ledger = table(proof, '| Boundary | State | Exact implemented evidence | Still separate |', 4);
+  assert.deepEqual(ledger.map(row => row[0]),
+    ['Private scalar ESM interface', 'Non-scalar ESM conversions', 'WIT/Component adapters']);
+  assert.equal(ledger[0][1], 'implemented-private by #381');
+  assert.match(ledger[0][2], /byte-compared deterministic ESM/);
+  assert.match(ledger[0][3], /real browser\/Node consumer conformance/);
+  assert(ledger.slice(1).every(row => row[1] === 'specified-only'));
+  assert.match(proof, /unsupported core-WebAssembly, native, WIT and\s+Component target claims are rejected/);
+  assert.match(proof, /do not imply Windows or macOS native ABI decisions/);
+});
+
 test('proposed bounds and accepted library alignment preserve remaining host admission gates', async () => {
   const bounds = table(proof, '| Metric | Maximum | Exact-limit / first-extra oracle |', 3);
   assert.deepEqual(bounds.map(row => Number(row[1].replaceAll(',', ''))),

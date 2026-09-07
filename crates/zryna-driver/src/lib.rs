@@ -10,6 +10,16 @@
 //!     let _ = zryna_semantics::SemanticInput::try_new(legacy, sources);
 //! }
 //! ```
+//!
+//! Private scalar adapter authorities are intentionally absent from the external crate surface:
+//!
+//! ```compile_fail
+//! let _ = zryna_driver::VerifiedScalarEsm;
+//! ```
+//!
+//! ```compile_fail
+//! fn accept_raw(_: zryna_driver::scalar_adapter_interface::raw::Interface) {}
+//! ```
 
 #![forbid(unsafe_code)]
 
@@ -32,6 +42,7 @@ mod pipeline;
 mod pipeline_runtime;
 mod profile_composition;
 mod runtime;
+mod scalar_adapter_interface;
 mod source_api;
 mod webassembly;
 mod workspace_source;
