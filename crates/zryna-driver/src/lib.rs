@@ -27,6 +27,7 @@ mod ownership_publication;
 mod ownership_runtime_v1;
 mod pipeline;
 mod pipeline_runtime;
+mod profile_composition;
 mod runtime;
 mod source_api;
 mod webassembly;

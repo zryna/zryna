@@ -265,3 +265,76 @@ supplies only specification and documentation-consistency tests. Future conforma
 stable diagnostic codes and execute the fixed cases above on every claimed host/target; public
 activation requires reviewed selectors, migration and support documentation. Current contribution
 checks, Linux/Windows M0 proof, and applicable cross-target gates remain mandatory.
+
+## Private fixed-graph implementation #380
+
+The decision table and public availability above remain specified-only. The private driver
+`profile_composition` module implements the **prototype** verification boundary for a closed,
+fixed input graph. `verify` receives independently supplied claims and recomputes each node's
+reachable requirements and reservations using iterative traversal. It validates every node's
+restrictions, selected language and exact target/interface pair; permission eligibility never
+becomes a grant. Only the verifier constructs the opaque result.
+
+Each graph instance is accompanied by an opaque verified program and its exact `SourceMap`.
+Composition checks that pairing at the sealed program boundary and derives language compatibility
+from the verified program type; the graph cannot supply a source-identity string or language
+declaration. A WIT selection additionally requires the existing authenticated `WitWorldAudit`,
+and every approved interface must occur in that exact resolved world. The digest-pinned #167
+registry remains the authority for capability classification and numeric quotas. There is no
+resolver, dispatch call, host grant, execution, public API or selector in this boundary.
+Package-backed integration still requires #360; invocation-time grants remain a separate gate.
+
+The policy adapter reads the existing #167 JSON projection at compile time and authenticates its
+exact SHA-256 bytes before use. Numeric limits and capability classification come from that
+projection; WIT world/interface admission additionally requires the opaque authenticated audit.
+JS/native effectful interfaces remain unsupported. Host policy inputs can narrow WIT ceilings;
+they cannot enlarge them. Language admission comes only from the corresponding sealed program.
+
+Input limits are 256 instances, 4,096 edges, longest root-to-leaf depth 32 and 65,536 UTF-8
+identity bytes. Identity accounting includes every occurrence of instance IDs, edge/root
+references, contract/policy/world strings and required/approved interface strings, excluding JSON
+framing. Reservation environment bytes and authority/endpoint entries use their separate #167
+bounds. Graph shape and bounds are checked before closure-summary derivation. All instances must
+be reachable. Missing authorities, duplicate instances/edges and cycles reject. Typed private
+DTOs deny unknown fields and versions; there is no unbounded public decoding entrypoint.
+
+Canonical input order is target, bytewise instance ID and edge ID. The binding covers the complete
+canonical metadata input, sealed program observations, exact source bytes and the WIT audit,
+including restrictions, selected outputs, approval and narrowed policy. The opaque result retains
+the same canonical input and authority binding and requires equality on revalidation.
+Witnesses use shortest paths with bytewise sequence tie-breaking. Restriction diagnostics retain
+a root-to-leaf witness through the rejecting node. Diagnostics are global because no authenticated
+source span is supplied, and never render reservation values, preopen authorities or endpoints.
+
+Reservation sums count each reachable instance once. Distinct instances add; shared diamonds do
+not. Environment keys deduplicate only when values agree; conflicts reject. Preopen authority IDs
+and normalized lowercase DNS host/decimal-port endpoint entries deduplicate. This fixed input
+requires canonical endpoint spellings and opaque preopen IDs; it performs no host lookup or path
+normalization. Retained counters and cumulative randomness add with checked arithmetic; per-call
+randomness uses the maximum individual reservation. This is static reservation evidence, not
+runtime quota consumption, revocation or process-wide isolation.
+
+Stable producing-phase diagnostics use the existing `zryna_diagnostics::Diagnostic` authority:
+
+| Code | Private composition category |
+| --- | --- |
+| `ZRYNA-C4010` | invalid-composition: shape, structural budget, stale binding or forged claim |
+| `ZRYNA-C4011` | unsupported-target: exact target, world, interface or policy mismatch |
+| `ZRYNA-C4012` | incompatible-profile: selected language lacks matching sealed program authority |
+| `ZRYNA-C4013` | forbidden-capability: transitive restriction, ceiling or approval denial |
+| `ZRYNA-C4014` | resource-limit: reservation bound, conflict, undeclared usage or checked overflow |
+| `ZRYNA-C4015` | incomplete composition report: the 256th candidate replaces that slot with a terminal diagnostic |
+
+#167's C4000–C4004 meanings and #169 transport rules remain unchanged. This slice allocates no
+undeclared-source-operation or missing-host-grant diagnostic because neither phase executes here.
+
+Focused verification is mapped to driver unit tests rather than a new component or integration
+test directory: `cargo test --locked -p zryna-driver profile_composition`, plus driver doc-tests
+for external opacity. The `tests` module covers pure multi-output closure, diamond witnesses,
+independently malformed graphs, profile/world mismatches, forged summaries/quotas/witnesses,
+source/policy/edge replay, all graph and diagnostic exact/first-extra limits, every applicable
+command/server quota, deduplication, conflicts, overflow, permutation and rejection recovery.
+Registry parity and byte-substitution tests retain the owning authority. These located tests
+are not a claim that full conformance or hosted checks have passed. Required frozen installation,
+structure/docs/WIT checks, preflight, M0 and applicable complete M2/M3/resource and hosted
+Linux/Windows gates remain required before integration. Runtime and public conformance stay open.
