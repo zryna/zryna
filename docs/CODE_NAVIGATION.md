@@ -115,6 +115,12 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Typed JS/WASM design: [adapter contracts](../spec/interop/JS_WASM_ADAPTERS_V1.md) and [conversion/lifecycle proof plan](../spec/interop/JS_WASM_ADAPTER_CONFORMANCE_V1.md); `tests/js-wasm-adapter-contract.test.mjs` checks design consistency through `pnpm docs:check`, without executing adapters.
 - Focus: the resolved-audit test above, `pnpm wit:contract`, then `pnpm docs:check`. Preserve the `specified-only` boundary: component emission, bindings, runtime/CLI activation, cross-target dependency composition and JS/WASM resource adapters are separate work.
 
+## 12. M5 package manifests or package-instance identity
+
+- Start: [package and release contract v1](../spec/package/PACKAGE_RELEASE_V1.md), [package-instance identity v1](../spec/package/PACKAGE_INSTANCE_IDENTITY_V1.md), and the [M5 roadmap](ROADMAP.md).
+- Canonical schema, serialization, fixtures, and validator are `schemas/zryna-package-release-v1.schema.json`, `scripts/package-release/`, and `tests/package-release-v1/`; #360 semantic decisions are checked by `tests/package-instance-identity-contract.test.mjs`.
+- Focus: `pnpm package:contract`, then `pnpm docs:check`. Preserve the contract-only boundary: package resolution, import syntax, source acquisition, build execution, publication, and public support remain separate work.
+
 ## Required completion checks for every route
 
 The focused commands above are editing aids, not submission evidence by themselves. Follow current CONTRIBUTING and the checked gate registries:

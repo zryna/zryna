@@ -509,6 +509,12 @@ unimplemented. Supplemental #360, #361 and #362 retain package/type identity, re
 and source/build trust policy respectively; their full implementations do not block #168.
 Existing releases, public support and M0–M3 remain unchanged.
 
+Issue #360 specifies the draft [package-instance identity contract](../spec/package/PACKAGE_INSTANCE_IDENTITY_V1.md):
+exact `(id, sourceSha256)` instances derived from #168, nominal type compatibility, fail-closed
+module visibility, duplicate version/source behavior, role-separated host and target graphs, and a
+bounded source-only resolver outline. Its profile acceptance follows the merged specified-only #357
+composition contract. It adds no resolver, import syntax, or runtime support.
+
 - package manifest, deterministic dependency resolution, and lockfile;
 - semantic versioning and compatibility policy;
 - reproducible artifacts, checksums, SBOM, and provenance;
