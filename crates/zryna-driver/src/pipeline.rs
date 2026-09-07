@@ -31,7 +31,8 @@ use crate::{
         prepare_native_invocation_from_verified, run_prepared_native_invocation,
     },
     pipeline_runtime::{
-        normalize_carrier, normalize_frame, render_javascript_harness, render_webassembly_harness,
+        invoke_scalar_esm, normalize_carrier, normalize_frame, render_javascript_harness,
+        render_webassembly_harness,
     },
     runtime::{NodeRuntimeCapability, node_compatible_path},
 };
@@ -1276,16 +1277,9 @@ fn execute_control_flow_targets(
     let mut results = Vec::with_capacity(request.targets.ordered().len());
     if request.targets.javascript() {
         checkpoint(ControlFlowPhase::JavaScriptExecution)?;
-        let harness = render_javascript_harness(&request.artifact_stem, invocation)?;
-        let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
-        let result_type = invocation.export().result();
-        let carrier = node
-            .run_javascript_module(&harness_path, transaction.path(), result_type)
-            .map_err(runtime_failure)?;
-        results.push(TargetResult {
-            target: ManifestTarget::JavaScript,
-            outcome: normalize_carrier(ScalarTarget::JavaScript, result_type, carrier),
-        });
+        let outcome =
+            invoke_scalar_esm(prepared.javascript.as_ref(), node, transaction.path(), invocation)?;
+        results.push(TargetResult { target: ManifestTarget::JavaScript, outcome });
     }
     if request.targets.webassembly() {
         checkpoint(ControlFlowPhase::WebAssemblyExecution)?;
@@ -1382,7 +1376,7 @@ impl Write for BoundedManifestWriter {
     }
 }
 
-fn hex_sha256(bytes: &[u8; 32]) -> String {
+pub(super) fn hex_sha256(bytes: &[u8; 32]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut output = String::with_capacity(64);
     for byte in bytes {
@@ -2170,7 +2164,7 @@ fn execution_failure(diagnostic: Diagnostic) -> CommandFailure {
     failure(CommandFailureKind::Execution, diagnostic)
 }
 
-fn runtime_failure(diagnostic: Diagnostic) -> CommandFailure {
+pub(super) fn runtime_failure(diagnostic: Diagnostic) -> CommandFailure {
     if diagnostic.code() == "ZRYNA-R3007" {
         failure(CommandFailureKind::Cleanup, diagnostic)
     } else {
@@ -2229,7 +2223,7 @@ fn entrypoint_error(message: &'static str) -> CommandFailure {
     )
 }
 
-fn request_error(
+pub(super) fn request_error(
     code: &'static str,
     message: &'static str,
     guidance: &'static str,

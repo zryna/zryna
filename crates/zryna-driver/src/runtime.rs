@@ -1,4 +1,5 @@
 //! Bounded, direct Node.js execution for sealed JavaScript and WebAssembly artifacts.
+mod inline;
 mod ownership;
 use std::{
     ffi::OsString,
@@ -132,47 +133,6 @@ impl NodeRuntimeCapability {
                 Ok(RawHostScalar::JavaScriptNumber(f64::from(i32::from_le_bytes(bytes))))
             }
         }
-    }
-
-    pub(crate) fn run_webassembly_module(
-        &self,
-        script: &[u8],
-        module: &[u8],
-        working_directory: &Path,
-    ) -> Result<[u8; 4], Diagnostic> {
-        if script.len() > MAX_INLINE_MODULE_BYTES || module.len() > MAX_WEBASSEMBLY_INPUT_BYTES {
-            return Err(runtime_error(
-                "ZRYNA-R3004",
-                "target runtime input exceeded its hard byte budget",
-                "reduce the sealed artifact and report a reproducible boundary failure",
-            ));
-        }
-        let script = std::str::from_utf8(script).map_err(|_| {
-            runtime_error(
-                "ZRYNA-R3006",
-                "target runtime received an invalid inline module",
-                "report the smallest reproducible source and verified invocation",
-            )
-        })?;
-        self.revalidate()?;
-        let node_working_directory = node_compatible_path(working_directory);
-        let output = run_bounded(
-            &self.invocation_path,
-            &[
-                OsString::from("--input-type=module"),
-                OsString::from("--eval"),
-                OsString::from(script),
-            ],
-            &node_working_directory,
-            Some(module),
-            4,
-            MAX_STDERR,
-        )?;
-        self.revalidate()?;
-        if !output.status.success() || !output.stderr.is_empty() || output.stdout.len() != 4 {
-            return Err(invalid_result_frame());
-        }
-        output.stdout.try_into().map_err(|_| invalid_result_frame())
     }
 
     fn run_module_frame(
@@ -423,7 +383,6 @@ fn capture_stream(
     Ok(Captured { bytes, exceeded })
 }
 
-#[cfg(unix)]
 fn run_bounded(
     program: &Path,
     arguments: &[OsString],
@@ -431,6 +390,27 @@ fn run_bounded(
     input: Option<&[u8]>,
     stdout_limit: usize,
     stderr_limit: usize,
+) -> Result<BoundedOutput, Diagnostic> {
+    run_bounded_with_timeout(
+        program,
+        arguments,
+        working_directory,
+        input,
+        stdout_limit,
+        stderr_limit,
+        PROCESS_TIMEOUT,
+    )
+}
+
+#[cfg(unix)]
+fn run_bounded_with_timeout(
+    program: &Path,
+    arguments: &[OsString],
+    working_directory: &Path,
+    input: Option<&[u8]>,
+    stdout_limit: usize,
+    stderr_limit: usize,
+    timeout: Duration,
 ) -> Result<BoundedOutput, Diagnostic> {
     let mut native = std::process::Command::new(program);
     native
@@ -457,7 +437,7 @@ fn run_bounded(
         };
         let stdout = child.stdout().take().ok_or_else(|| process_error("lost stdout"))?;
         let stderr = child.stderr().take().ok_or_else(|| process_error("lost stderr"))?;
-        monitor_process(child.as_mut(), input, stdout, stderr, stdout_limit, stderr_limit)
+        monitor_process(child.as_mut(), input, stdout, stderr, stdout_limit, stderr_limit, timeout)
     })();
     let cleanup_deadline = Instant::now() + CLEANUP_RESERVE;
     let cleanup = cleanup_unix(child.as_mut(), group_id, cleanup_deadline);
@@ -467,13 +447,14 @@ fn run_bounded(
 }
 
 #[cfg(windows)]
-fn run_bounded(
+fn run_bounded_with_timeout(
     program: &Path,
     arguments: &[OsString],
     working_directory: &Path,
     input: Option<&[u8]>,
     stdout_limit: usize,
     stderr_limit: usize,
+    timeout: Duration,
 ) -> Result<BoundedOutput, Diagnostic> {
     use windows_spawn::{Command, Job, SpawnOptions, Stdio as WindowsStdio};
 
@@ -505,7 +486,7 @@ fn run_bounded(
         };
         let stdout = child.stdout.take().ok_or_else(|| process_error("lost stdout"))?;
         let stderr = child.stderr.take().ok_or_else(|| process_error("lost stderr"))?;
-        monitor_process(&mut child, input, stdout, stderr, stdout_limit, stderr_limit)
+        monitor_process(&mut child, input, stdout, stderr, stdout_limit, stderr_limit, timeout)
     })();
     let cleanup_deadline = Instant::now() + CLEANUP_RESERVE;
     let cleanup = cleanup_windows(&mut child, &job, cleanup_deadline);
@@ -539,9 +520,10 @@ fn monitor_process<Child: RuntimeChild + ?Sized>(
     stderr: impl Read + Send + 'static,
     stdout_limit: usize,
     stderr_limit: usize,
+    timeout: Duration,
 ) -> Result<Pending, Diagnostic> {
     let deadline = Instant::now()
-        .checked_add(PROCESS_TIMEOUT)
+        .checked_add(timeout)
         .ok_or_else(|| process_error("could not establish execution deadline"))?;
     let (stdout_sender, stdout_receiver) = mpsc::sync_channel(1);
     let (stderr_sender, stderr_receiver) = mpsc::sync_channel(1);

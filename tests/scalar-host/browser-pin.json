@@ -1,0 +1,22 @@
+{
+  "runner": "playwright-core",
+  "runnerVersion": "1.63.0",
+  "runnerIntegrity": "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==",
+  "upstreamCommit": "1b025d7e20a026371cd5f98ba0cdce48892737c8",
+  "browserVersion": "153.0.8010.12",
+  "browserRevision": "1243",
+  "platforms": {
+    "linux-x64": {
+      "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip",
+      "executable": "chrome-linux64/chrome",
+      "archiveSha256": null,
+      "inventorySha256": null
+    },
+    "win32-x64": {
+      "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/win64/chrome-win64.zip",
+      "executable": "chrome-win64/chrome.exe",
+      "archiveSha256": null,
+      "inventorySha256": null
+    }
+  }
+}

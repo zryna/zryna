@@ -1,5 +1,7 @@
 //! Private sealed scalar interface binding for future JavaScript adapter consumers.
 
+mod consumer;
+
 use sha2::{Digest, Sha256};
 use zryna_abi::{ScalarType, VerifiedScalarAbiModule, raw as raw_abi, verify_v1};
 use zryna_backend_javascript::JavaScriptArtifact;
@@ -115,7 +117,7 @@ pub(crate) fn lower_verified_scalar_source(
 pub(crate) struct VerifiedScalarEsm {
     graph_sha256: [u8; 32],
     abi: VerifiedScalarAbiModule,
-    artifact: JavaScriptArtifact,
+    artifact: std::sync::Arc<JavaScriptArtifact>,
     host: ScalarAdapterHost,
     artifact_sha256: [u8; 32],
     interface_sha256: [u8; 32],
@@ -236,24 +238,7 @@ pub(crate) fn verify_scalar_adapter_interface(
             "use the exact JavaScript ESM target; WebAssembly and native adapters are not admitted",
         ));
     }
-    let host = match claim.host.boundary.as_str() {
-        "js-browser" => ScalarAdapterHost::Browser,
-        "js-node" => ScalarAdapterHost::Node,
-        _ => {
-            return Err(single_failure(
-                "ZRYNA-D3814",
-                "scalar adapter host policy claim is unsupported",
-                "use the exact js-browser or js-node pure ESM policy",
-            ));
-        }
-    };
-    if !claim.host.required_interfaces.is_empty() {
-        return Err(single_failure(
-            "ZRYNA-D3815",
-            "scalar adapter host policy requests unsupported interfaces",
-            "the private scalar interface is pure and requires no host interfaces",
-        ));
-    }
+    let host = verify_host_policy(&claim.host)?;
     if claim.source_graph_sha256 != source.graph_sha256 {
         return Err(single_failure(
             "ZRYNA-D3816",
@@ -297,12 +282,34 @@ pub(crate) fn verify_scalar_adapter_interface(
     Ok(VerifiedScalarEsm {
         graph_sha256: source.graph_sha256,
         abi: claimed_abi,
-        artifact,
+        artifact: std::sync::Arc::new(artifact),
         host,
         artifact_sha256,
         interface_sha256,
         binding_sha256,
     })
+}
+
+fn verify_host_policy(policy: &raw::HostPolicy) -> Result<ScalarAdapterHost, Vec<Diagnostic>> {
+    let host = match policy.boundary.as_str() {
+        "js-browser" => ScalarAdapterHost::Browser,
+        "js-node" => ScalarAdapterHost::Node,
+        _ => {
+            return Err(single_failure(
+                "ZRYNA-D3814",
+                "scalar adapter host policy claim is unsupported",
+                "use the exact js-browser or js-node pure ESM policy",
+            ));
+        }
+    };
+    if !policy.required_interfaces.is_empty() {
+        return Err(single_failure(
+            "ZRYNA-D3815",
+            "scalar adapter host policy requests unsupported interfaces",
+            "the private scalar interface is pure and requires no host interfaces",
+        ));
+    }
+    Ok(host)
 }
 
 const fn raw_type(value: ScalarType) -> raw_abi::Type {

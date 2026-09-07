@@ -11,6 +11,8 @@ use zryna_source::NormalizedSourcePath;
 use super::*;
 use crate::{WorkspaceSourceRoot, discover_module_closure};
 
+mod host_consumers;
+
 static NEXT_WORKSPACE: AtomicUsize = AtomicUsize::new(0);
 
 struct TemporaryWorkspace {

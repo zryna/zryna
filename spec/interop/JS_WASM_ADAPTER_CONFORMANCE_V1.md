@@ -198,6 +198,7 @@ checkpoint does not make the overall specified-only adapter contract or a host r
 | Boundary | State | Exact implemented evidence | Still separate |
 | --- | --- | --- | --- |
 | Private scalar ESM interface | implemented-private by #381 | authenticated `ControlFlowV1` graph -> sealed scalar ABI -> byte-compared deterministic ESM; exact revision/profile/browser-or-Node pure policy, ordered exports, source graph, interface and artifact identities; independent forged/stale/limit/recovery rejection | generated declarations/loaders, real browser/Node consumer conformance and public activation |
+| Private scalar host consumer | local candidate by #387; conformance unrun | retained-ABI invocation and retained-byte Node ESM import; shared strict carrier corpus and separately scheduled pinned real-browser resource test | reviewed browser archive/inventory pins, executed Node/browser proof, M2 regression and required gates; package-backed composition and public activation |
 | Non-scalar ESM conversions | specified-only | design vectors only | every public String/list/resource language, ABI, cleanup and consumer gate |
 | WIT/Component adapters | specified-only | #167 worlds and design matrices only | reviewed application world, component emission/parser/host enforcement and WASI consumer proof |
 
@@ -205,6 +206,15 @@ The #381 view is private and JavaScript-bound: unsupported core-WebAssembly, nat
 Component target claims are rejected rather than assigned names or policies. Its retained exact
 ESM source and sealed scalar export view are the internal seam for the next real Node/browser
 scalar consumer; they do not imply Windows or macOS native ABI decisions.
+
+The #387 candidate uses the pure non-package specialization of #357: one authenticated complete
+`ControlFlowV1` source closure and an explicitly verified empty host-interface request. It does
+not copy #380 metadata claims into source authority. Host-specific seals may share immutable ESM
+bytes while retaining distinct interface/binding identities. The
+[scalar host conformance lane](../../tests/scalar-host/README.md) records exact dependency pins,
+pending acquisition review, transport costs and required nonzero Linux/Windows resource-test
+commands. An ignored browser test or null acquisition pin is not conformance evidence or #387
+completion; I1, C1 and public activation remain open.
 
 ## Separate consumer proofs and delivery slices
 
