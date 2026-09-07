@@ -93,6 +93,6 @@ contract.
 The internal M3 candidate route separately authenticates one protocol-v4 module closure and lowers
 it once to one verifier-sealed `DataOwnershipV1` program. Selected JavaScript, WebAssembly, and
 Linux x86-64 native artifacts execute and publish through one private transaction with strict
-manifest v3 identity. The library entrypoints do not activate a public CLI profile; exact
-`--profile data-ownership-v1` remains rejected before workspace effects. See the
+manifest v3 identity. Exact public `--profile data-ownership-v1` calls these same library entrypoints and publishes
+the public `zryna-data-ownership-v1` manifest identity. See the
 [candidate driver and manifest contract](../../docs/M3_CANDIDATE_DRIVER.md).
