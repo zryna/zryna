@@ -213,6 +213,13 @@ fn allocation_core_webassembly_fixed_results_faults_and_cleanup() {
     check_target(TargetSelection::WebAssembly);
 }
 
+#[test]
+fn allocation_core_webassembly_real_clone_alias_mutant_is_rejected() {
+    let _guard = route_guard();
+    let case = cases().into_iter().find(|case| case["id"] == "q4").expect("fixed Q4 alias control");
+    check_case(&case, TargetSelection::WebAssembly).expect("genuine pass and alias mutant reject");
+}
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[test]
 fn allocation_core_native_fixed_results_faults_and_cleanup() {
