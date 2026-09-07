@@ -1,0 +1,2 @@
+function expired(): Weak<i32> { const owner: Shared<i32> = shared(7); return downgrade(owner); }
+export function check(): i32 { const weak: Weak<i32> = expired(); upgradeWeak(weak, (value) => { return 31; }, () => { return 37; }); }

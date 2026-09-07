@@ -1,0 +1,10 @@
+function bad(): i32 {
+  let root: i32 = 7;
+  {
+    const exclusiveAlias: BorrowMut<i32> = borrowMut(root);
+    const sharedAlias: Borrow<i32> = borrow(root);
+    exclusiveAlias = 9;
+    const copy: i32 = sharedAlias;
+  }
+  return root;
+}

@@ -1,0 +1,2 @@
+import { text } from "./math.zry";
+export function score(): i32 { return text(); }

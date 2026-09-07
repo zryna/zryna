@@ -1,0 +1,1 @@
+export function text(): i32 { let first: String = "héllo"; const copy: String = clone(first); const moved: String = copy; first = "new"; const joined: String = concat(first, moved); return 17; }
