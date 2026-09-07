@@ -16,6 +16,7 @@ mod values;
 
 const MEMORY_PAGES: u64 = 256;
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnostics::Diagnostic> {
     let functions = program
         .modules()

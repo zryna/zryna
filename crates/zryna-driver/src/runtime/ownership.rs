@@ -1,4 +1,8 @@
-use super::*;
+use super::{
+    Diagnostic, MAX_INLINE_MODULE_BYTES, MAX_STDERR, MAX_WEBASSEMBLY_INPUT_BYTES,
+    NodeRuntimeCapability, OsString, Path, invalid_result_frame, node_compatible_path, run_bounded,
+    runtime_error,
+};
 
 impl NodeRuntimeCapability {
     pub(crate) fn run_ownership_javascript(

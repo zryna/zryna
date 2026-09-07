@@ -98,21 +98,25 @@ mod tests {
             ScalarTrapCode::Utf8,
         ] {
             let result = OwnershipManifestResult::new(target, ScalarOutcome::Trapped { code });
-            let bytes = serde_json::to_vec(&result).unwrap();
-            assert_eq!(serde_json::from_slice::<OwnershipManifestResult>(&bytes).unwrap(), result);
-            check(result).unwrap();
+            let bytes = serde_json::to_vec(&result).expect("fixed test authority");
+            assert_eq!(
+                serde_json::from_slice::<OwnershipManifestResult>(&bytes)
+                    .expect("fixed test authority"),
+                result
+            );
+            check(result).expect("fixed test authority");
         }
         let event = OwnershipTraceEvent::Drop { value: OwnershipValueKind::String };
         let result = OwnershipManifestResult::new(
             target,
             ScalarOutcome::Trapped { code: ScalarTrapCode::Allocation },
         );
-        check(result.clone().with_trace(vec![event.clone(); 4096])).unwrap();
+        check(result.clone().with_trace(vec![event.clone(); 4096])).expect("fixed test authority");
         assert!(check(result.clone().with_trace(vec![event; 4097])).is_err());
         for event in [
             OwnershipTraceEvent::Cleanup { module: 65536, function: 0, place: 0 },
             OwnershipTraceEvent::Cleanup { module: 0, function: 65536, place: 0 },
-            OwnershipTraceEvent::Cleanup { module: 0, function: 0, place: 1048577 },
+            OwnershipTraceEvent::Cleanup { module: 0, function: 0, place: 1_048_577 },
         ] {
             assert!(check(result.clone().with_trace(vec![event])).is_err());
         }

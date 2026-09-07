@@ -275,6 +275,7 @@ pub(super) fn copy_memory(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn indexed_address(
     program: &VerifiedMirModule,
     function: VerifiedFunction<'_>,
@@ -369,6 +370,7 @@ fn scaled_address(
     Ok(builder.ins().iadd(data, offset))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn index_value(
     program: &VerifiedMirModule,
     function: VerifiedFunction<'_>,

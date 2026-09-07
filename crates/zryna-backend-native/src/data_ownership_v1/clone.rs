@@ -17,6 +17,7 @@ use super::{
     storage::type_record,
 };
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn build_helper(
     program: &VerifiedMirModule,
     ty: u32,
@@ -122,6 +123,7 @@ pub(super) fn clone_value(
     Ok(result)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn clone_into(
     program: &VerifiedMirModule,
     ty: u32,
@@ -179,11 +181,7 @@ fn clone_into(
                     runtime,
                     builder,
                 )?;
-                super::clone_cleanup::mark(
-                    initialized,
-                    u64::try_from(index + 1).map_err(|_| invariant_error())?,
-                    builder,
-                );
+                super::clone_cleanup::mark(initialized, index + 1, builder);
             }
             Ok(())
         }

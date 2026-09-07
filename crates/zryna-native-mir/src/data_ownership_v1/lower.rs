@@ -98,6 +98,7 @@ fn lower_type(ty: zryna_layout::VerifiedType<'_>) -> raw::Type {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn lower_function(
     function: VerifiedFunction<'_>,
     layouts: &VerifiedLayouts,

@@ -125,7 +125,7 @@ fn complete_run_bundle_binds_typed_results() {
     let _cleanup = BundleCleanup(published.path().to_owned());
 
     assert_eq!(published.command(), CommandKind::Run);
-    assert_eq!(published.results(), [result.clone()]);
+    assert_eq!(published.results(), std::slice::from_ref(&result));
     assert!(published.path().ends_with(format!("{}.run", request.artifact_stem)));
     let manifest = fs::read(published.manifest_path()).expect("manifest bytes");
     let decoded = decode_ownership_manifest_v3(&manifest).expect("strict manifest");

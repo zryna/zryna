@@ -1,4 +1,10 @@
-use super::*;
+use super::{
+    BorrowIndex, Errors, OwnershipFlow, PlaceState, PlaceStateKind, VecDeque, VerifiedDropAction,
+    VerifiedInstruction, VerifiedLayouts, apply_ownership_instruction, apply_value_transfers,
+    consuming_instruction_operands, indexed_borrows, layout_type, normalize_dead_places,
+    projection_base, push_pending_owner, raw, sealed_drop_action, terminator_edges,
+    transfer_consumed_values, transfer_edge_owners, transfer_return_value,
+};
 
 pub(super) fn derive_state_before(
     function: &raw::Function,
@@ -38,6 +44,7 @@ pub(super) fn construction_failure_actions(
         .collect()
 }
 
+#[allow(clippy::too_many_lines)]
 fn derive_flow_before(
     function: &raw::Function,
     layouts: &VerifiedLayouts,

@@ -1,4 +1,13 @@
-use super::super::*;
+use super::super::{
+    ArtifactOutputRoot, NativeProcessLimits, NativeRunError, PreparedNativeExecutable,
+    native_error, native_run_error,
+};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use super::super::{
+    NativeStage, OsString, ProcessPhase, PublishedNativeExecutableArtifact,
+    ensure_linux_x86_64_host, prepare_executable_mode, run_bounded_process,
+    run_prepared_native_invocation,
+};
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub(crate) fn run(

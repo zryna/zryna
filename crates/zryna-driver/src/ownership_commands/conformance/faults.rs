@@ -9,11 +9,14 @@ fn fixed_injected_faults_preserve_typed_outcomes_and_logical_cleanup() {
     assert_eq!(cases.len(), 26);
     let mut failures = Vec::new();
     for case in cases {
-        let fixture = case["fixture"].as_str().unwrap();
-        let code = u32::try_from(case["fault"]["code"].as_u64().unwrap()).unwrap();
-        let ordinal = u32::try_from(case["fault"]["ordinal"].as_u64().unwrap()).unwrap();
+        let fixture = case["fixture"].as_str().expect("fixed test authority");
+        let code = u32::try_from(case["fault"]["code"].as_u64().expect("fixed test authority"))
+            .expect("fixed test authority");
+        let ordinal =
+            u32::try_from(case["fault"]["ordinal"].as_u64().expect("fixed test authority"))
+                .expect("fixed test authority");
         let expected: Vec<crate::OwnershipTraceEvent> =
-            serde_json::from_value(case["trace"].clone()).unwrap();
+            serde_json::from_value(case["trace"].clone()).expect("fixed test authority");
         for target in
             [TargetSelection::JavaScript, TargetSelection::WebAssembly, TargetSelection::Native]
         {
@@ -33,16 +36,16 @@ fn fixed_injected_faults_preserve_typed_outcomes_and_logical_cleanup() {
             match execute_with_fault(&prepared, Some(fault)) {
                 Ok(bundle) => {
                     let result = &bundle.results()[0];
-                    if serde_json::to_value(result.outcome()).unwrap() != case["expected"]
+                    if serde_json::to_value(result.outcome()).expect("fixed test authority")
+                        != case["expected"]
                         || result.trace() != expected
                     {
-                        failures
-                            .push(format!("{fixture} {code}@{ordinal} {target:?}: {:?}", result));
+                        failures.push(format!("{fixture} {code}@{ordinal} {target:?}: {result:?}"));
                     }
                     fs::remove_dir_all(bundle.path()).expect("remove complete observation bundle");
                 }
                 Err(error) => {
-                    failures.push(format!("{fixture} {code}@{ordinal} {target:?}: {error:?}"))
+                    failures.push(format!("{fixture} {code}@{ordinal} {target:?}: {error:?}"));
                 }
             }
             assert_no_artifacts(workspace.root());
@@ -55,9 +58,8 @@ fn fixed_injected_faults_preserve_typed_outcomes_and_logical_cleanup() {
 fn fault_selection_exact_limit_and_first_extra_are_request_owned() {
     assert!(Fault::new(2, 1_048_576).is_ok());
     for (code, ordinal) in [(1, 1), (6, 1), (2, 0), (2, 1_048_577)] {
-        let error = match Fault::new(code, ordinal) {
-            Err(error) => error,
-            Ok(_) => panic!("invalid fault accepted"),
+        let Err(error) = Fault::new(code, ordinal) else {
+            panic!("invalid fault accepted");
         };
         assert_eq!(error.kind(), CommandFailureKind::Request);
         assert_eq!(error.diagnostics()[0].code(), "ZRYNA-C3303");
@@ -94,10 +96,10 @@ fn native_physical_allocation_failures_release_intermediates_before_observation(
         .expect("physical fault source");
         let expected = registry["faults"]
             .as_array()
-            .unwrap()
+            .expect("fixed test authority")
             .iter()
             .find(|case| case["id"] == oracle)
-            .unwrap();
+            .expect("fixed test authority");
         let bundle = execute_with_fault(&prepared, Some(Fault::physical_allocation(ordinal)))
             .unwrap_or_else(|error| panic!("{fixture} allocation {ordinal}: {error:?}"));
         let result = &bundle.results()[0];
@@ -106,12 +108,12 @@ fn native_physical_allocation_failures_release_intermediates_before_observation(
             ScalarOutcome::Trapped { code: zryna_abi::ScalarTrapCode::Allocation }
         );
         assert_eq!(
-            serde_json::to_value(result.trace()).unwrap(),
+            serde_json::to_value(result.trace()).expect("fixed test authority"),
             expected["trace"],
             "{fixture} allocation {ordinal}"
         );
         // Native harness finalization refuses any live owned allocation before emitting this frame.
-        fs::remove_dir_all(bundle.path()).unwrap();
+        fs::remove_dir_all(bundle.path()).expect("fixed test authority");
         assert_no_artifacts(workspace.root());
     }
 }

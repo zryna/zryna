@@ -14,7 +14,7 @@ fn mode(body: &mut Function, value: i32) {
         body,
         [
             I::LocalGet(0),
-            I::I32Const(-268435456),
+            I::I32Const(-268_435_456),
             I::I32And,
             I::I32Const(value),
             I::I32Eq,
@@ -25,7 +25,7 @@ fn mode(body: &mut Function, value: i32) {
 
 pub(super) fn getter() -> Function {
     let mut body = Function::new([(1, ValType::I32)]);
-    mode(&mut body, 0x20000000);
+    mode(&mut body, 0x2000_0000);
     emit(
         &mut body,
         [
@@ -36,7 +36,7 @@ pub(super) fn getter() -> Function {
             I::I32And,
             I::GlobalSet(3),
             I::LocalGet(0),
-            I::I32Const(0xffffff),
+            I::I32Const(0xff_ffff),
             I::I32And,
             I::GlobalSet(4),
             I::I32Const(0),
@@ -46,12 +46,12 @@ pub(super) fn getter() -> Function {
             I::End,
         ],
     );
-    mode(&mut body, 0x10000000);
+    mode(&mut body, 0x1000_0000);
     emit(
         &mut body,
         [
             I::LocalGet(0),
-            I::I32Const(0xfffffff),
+            I::I32Const(0xfff_ffff),
             I::I32And,
             I::GlobalGet(3),
             I::I32Eq,
@@ -73,12 +73,12 @@ pub(super) fn getter() -> Function {
             I::End,
         ],
     );
-    mode(&mut body, 0x40000000);
+    mode(&mut body, 0x4000_0000);
     emit(
         &mut body,
         [
             I::LocalGet(0),
-            I::I32Const(0xfffffff),
+            I::I32Const(0xfff_ffff),
             I::I32And,
             I::LocalTee(1),
             I::I32Eqz,
@@ -152,13 +152,13 @@ pub(super) fn root(
     context: &Context<'_>,
     body: &mut Function,
 ) {
-    for word in [0x20000000 + function.id().module(), function.id().declaration(), place] {
+    for word in [0x2000_0000 + function.id().module(), function.id().declaration(), place] {
         record(word, context, body);
     }
 }
 
 pub(super) fn probe(code: i32, context: &Context<'_>, body: &mut Function) {
-    emit(body, [I::I32Const(0x10000000 + code), I::Call(context.observation), I::Drop]);
+    emit(body, [I::I32Const(0x1000_0000 + code), I::Call(context.observation), I::Drop]);
 }
 
 pub(super) fn value_kind(category: zryna_layout::TypeCategory) -> Option<u32> {

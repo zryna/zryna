@@ -57,11 +57,10 @@ fn owned_pair_object_is_deterministic_and_runtime_symbol_sealed() {
         .filter(ObjectSymbol::is_undefined)
         .map(|symbol| symbol.name().expect("symbol"))
         .collect::<Vec<_>>();
-    let mut expected = mir
+    let expected = mir
         .runtime_symbols()
-        .chain(["zryna_m3_allocate_record", "zryna_m3_observe"])
+        .chain(["zryna_m3_observe", "zryna_m3_allocate_record"])
         .collect::<Vec<_>>();
-    expected.sort_unstable();
     assert_eq!(undefined, expected);
     assert!(file.symbol_by_name("zryna_m3_m0_f0").is_some());
 }
@@ -101,15 +100,6 @@ fn owned_string_and_vec_borrow_reads_emit() {
 
 #[test]
 fn string_literal_codegen_cost_is_bounded_before_emission() {
-    let source = include_str!("../../../tests/m3-fixtures/owned-root-borrow-reads.zry");
-    let mut snapshot: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../tests/m3-fixtures/owned-root-borrow-reads.json"
-    ))
-    .unwrap();
-    let old = "\"value\"";
-    let new = format!("\"{}\"", "x".repeat(1_000_001));
-    let end = source.find(old).unwrap() + old.len();
-    let delta = new.len() - old.len();
     fn shift(
         value: &mut serde_json::Value,
         end: usize,
@@ -125,9 +115,11 @@ fn string_literal_codegen_cost_is_bounded_before_emission() {
                     && object.contains_key("end")
                 {
                     for key in ["start", "end"] {
-                        let offset = object[key].as_u64().unwrap();
-                        if offset >= u64::try_from(end).unwrap() {
-                            object[key] = (offset + u64::try_from(delta).unwrap()).into();
+                        let offset = object[key].as_u64().expect("fixed test authority");
+                        if offset >= u64::try_from(end).expect("fixed test authority") {
+                            object[key] = (offset
+                                + u64::try_from(delta).expect("fixed test authority"))
+                            .into();
                         }
                     }
                 }
@@ -147,6 +139,15 @@ fn string_literal_codegen_cost_is_bounded_before_emission() {
             _ => {}
         }
     }
+    let source = include_str!("../../../tests/m3-fixtures/owned-root-borrow-reads.zry");
+    let mut snapshot: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../tests/m3-fixtures/owned-root-borrow-reads.json"
+    ))
+    .expect("fixed test authority");
+    let old = "\"value\"";
+    let new = format!("\"{}\"", "x".repeat(1_000_001));
+    let end = source.find(old).expect("fixed test authority") + old.len();
+    let delta = new.len() - old.len();
     shift(&mut snapshot, end, delta, old, &new, &mut false);
     let program = verified(&source.replacen(old, &new, 1), &snapshot.to_string());
     let mir =
