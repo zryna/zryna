@@ -222,7 +222,7 @@ fn fixed_corpus_repeat_builds_have_identical_complete_artifacts() {
             assert_no_artifacts(workspace.root());
         }
     }
-    assert_eq!(visited.len(), 11);
+    assert_eq!(visited.len(), 13);
 }
 
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
