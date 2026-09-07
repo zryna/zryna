@@ -1,0 +1,9 @@
+{
+  "request": {
+    "schema": "zryna.capability-request.v1",
+    "profile": "command",
+    "requests": ["environment"],
+    "usage": { "environment": { "maxEntries": 129 } }
+  },
+  "expectedError": "ZRYNA-C4003: command/environment/maxEntries exceeds its limit"
+}

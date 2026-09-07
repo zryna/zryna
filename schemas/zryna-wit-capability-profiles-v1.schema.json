@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zryna.com/schemas/zryna-wit-capability-profiles-v1.schema.json",
+  "title": "Zryna WIT capability profile registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema", "version", "status", "wit", "wasi", "bounds", "capabilityOrder", "profiles"],
+  "properties": {
+    "$schema": { "const": "../schemas/zryna-wit-capability-profiles-v1.schema.json" },
+    "schema": { "const": "zryna.wit-capability-profiles.v1" },
+    "version": { "const": 1 },
+    "status": { "const": "specified-only" },
+    "wit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "source", "sha256", "grammarSource", "grammarCommit"],
+      "properties": {
+        "package": { "const": "zryna:capability-profiles@0.1.0" },
+        "source": { "const": "spec/wit/capability-profiles-v1/worlds.wit" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "grammarSource": { "const": "https://github.com/WebAssembly/component-model/blob/2bed77e4228841c1d2721996d3ecc169ff96b158/design/mvp/WIT.md" },
+        "grammarCommit": { "const": "2bed77e4228841c1d2721996d3ecc169ff96b158" }
+      }
+    },
+    "wasi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "tag", "source", "commit", "packages"],
+      "properties": {
+        "version": { "const": "0.2.12" },
+        "tag": { "const": "v0.2.12" },
+        "source": { "const": "https://github.com/WebAssembly/WASI" },
+        "commit": { "const": "281ba75fafcd50961ef55f9e52747afcc9b71ede" },
+        "packages": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "wasi:cli@0.2.12" },
+            { "const": "wasi:clocks@0.2.12" },
+            { "const": "wasi:filesystem@0.2.12" },
+            { "const": "wasi:http@0.2.12" },
+            { "const": "wasi:random@0.2.12" },
+            { "const": "wasi:sockets@0.2.12" }
+          ],
+          "minItems": 6,
+          "maxItems": 6
+        }
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxWitBytes", "maxProfiles", "maxCapabilitiesPerProfile", "maxInterfacesPerCapability", "maxWorldImports"],
+      "properties": {
+        "maxWitBytes": { "const": 16384 },
+        "maxProfiles": { "const": 3 },
+        "maxCapabilitiesPerProfile": { "const": 5 },
+        "maxInterfacesPerCapability": { "const": 7 },
+        "maxWorldImports": { "const": 13 }
+      }
+    },
+    "capabilityOrder": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "clock" },
+        { "const": "environment" },
+        { "const": "filesystem" },
+        { "const": "network" },
+        { "const": "randomness" }
+      ],
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/profile" }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "worldId": { "type": "string", "pattern": "^zryna:capability-profiles/(?:browser|command|server)@0\\.1\\.0$" },
+    "interfaceId": { "type": "string", "pattern": "^wasi:[a-z][a-z0-9-]*/[a-z][a-z0-9-]*@0\\.2\\.12$", "maxLength": 96 },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "properties": {
+        "maxSubscriptions": { "type": "integer", "minimum": 0, "maximum": 1024 },
+        "maxTimers": { "type": "integer", "minimum": 0, "maximum": 1024 },
+        "maxEntries": { "type": "integer", "minimum": 0, "maximum": 128 },
+        "maxTotalBytes": { "type": "integer", "minimum": 0, "maximum": 65536 },
+        "maxPreopens": { "type": "integer", "minimum": 0, "maximum": 16 },
+        "maxOpenDescriptors": { "type": "integer", "minimum": 0, "maximum": 256 },
+        "maxAllowedEndpoints": { "type": "integer", "minimum": 0, "maximum": 128 },
+        "maxConcurrentOperations": { "type": "integer", "minimum": 0, "maximum": 1024 },
+        "maxBytesPerCall": { "type": "integer", "minimum": 0, "maximum": 65536 },
+        "maxBytesPerInstance": { "type": "integer", "minimum": 0, "maximum": 8388608 }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "decision", "interfaces", "limits"],
+      "properties": {
+        "id": { "enum": ["clock", "environment", "filesystem", "network", "randomness"] },
+        "decision": { "enum": ["denied", "granted"] },
+        "interfaces": {
+          "type": "array",
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/interfaceId" }
+        },
+        "limits": { "$ref": "#/$defs/limits" }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "world", "target", "imports", "exports", "capabilities"],
+      "properties": {
+        "id": { "enum": ["browser", "command", "server"] },
+        "world": { "$ref": "#/$defs/worldId" },
+        "target": { "enum": ["browser", "wasi-command", "wasi-http-server"] },
+        "imports": { "type": "array", "maxItems": 13, "uniqueItems": true, "items": { "$ref": "#/$defs/interfaceId" } },
+        "exports": { "type": "array", "maxItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/interfaceId" } },
+        "capabilities": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/capability" }
+        }
+      }
+    }
+  }
+}

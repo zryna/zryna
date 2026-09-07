@@ -37,7 +37,7 @@ test('code navigation links resolve and contribution guidance exposes the index'
   await validateLinks(document);
   assert(document.trimEnd().split('\n').length <= 150, 'navigation stays compact');
   assert.deepEqual([...document.matchAll(/^## ([0-9]+)\. /gm)].map(match => Number(match[1])),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   const contributing = await readFile(path.join(root, 'CONTRIBUTING.md'), 'utf8');
   assert.equal([...contributing.matchAll(/\]\(docs\/CODE_NAVIGATION\.md\)/g)].length, 1);
 });

@@ -104,6 +104,13 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Export is an explicit whitelist/provenance operation, not implicit inclusion of every Markdown file. CI artifact success is not evidence of website deployment.
 - Keep supported behavior separate from future milestones. Finish with the required contribution gates, not a docs-only substitute.
 
+## 11. M4 WIT worlds or host-capability policy
+
+- Start: [WIT capability profiles v1](../spec/wit/CAPABILITY_PROFILES_V1.md) and the [M4 roadmap](ROADMAP.md).
+- WIT source: `spec/wit/capability-profiles-v1/worlds.wit`; machine-readable authority: `tests/wit-capability-profiles-v1.json` and `schemas/zryna-{wit-capability-profiles,capability-request}-v1.schema.json`.
+- Validator: `scripts/wit-capabilities/validate.mjs`; positive, negative, malformed, replay and boundary evidence: `tests/wit-capability-contract.test.mjs` and `tests/wit-capability-v1/fixtures/`.
+- Focus: `pnpm wit:contract`, then `pnpm docs:check`. Preserve the `specified-only` boundary: component emission, bindings, runtime/CLI activation, cross-target dependency composition and JS/WASM resource adapters are separate work.
+
 ## Required completion checks for every route
 
 The focused commands above are editing aids, not submission evidence by themselves. Follow current CONTRIBUTING and the checked gate registries:

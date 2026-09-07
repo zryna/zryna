@@ -1,0 +1,145 @@
+# WIT capability profiles v1
+
+This document specifies the contract-only M4 foundation tracked by Issue #167. It assigns stable
+WIT identities and bounded host-capability policies. It does not emit a component, generate a
+binding, instantiate a runtime, add a CLI selector, or publish a supported profile.
+
+## Normative artifacts and sources
+
+The local package is `zryna:capability-profiles@0.1.0`; its source is
+[`capability-profiles-v1/worlds.wit`](capability-profiles-v1/worlds.wit). The authoritative
+machine-readable projection is
+[`tests/wit-capability-profiles-v1.json`](../../tests/wit-capability-profiles-v1.json), validated
+against [`schemas/zryna-wit-capability-profiles-v1.schema.json`](../../schemas/zryna-wit-capability-profiles-v1.schema.json).
+Capability requests use
+[`schemas/zryna-capability-request-v1.schema.json`](../../schemas/zryna-capability-request-v1.schema.json).
+
+The WIT grammar is pinned to WebAssembly/component-model commit
+[`2bed77e4228841c1d2721996d3ecc169ff96b158`](https://github.com/WebAssembly/component-model/blob/2bed77e4228841c1d2721996d3ecc169ff96b158/design/mvp/WIT.md).
+That specification makes a world the complete set of component imports and exports and gives
+packages full semantic-version identities. WASI is pinned independently to release `v0.2.12`,
+commit [`281ba75fafcd50961ef55f9e52747afcc9b71ede`](https://github.com/WebAssembly/WASI/tree/281ba75fafcd50961ef55f9e52747afcc9b71ede).
+No unversioned or version-ranged WASI interface is admitted.
+
+The repository validator recognizes and fail-closed parses the exact WIT subset used here:
+one package declaration followed by flat worlds containing fully qualified interface imports and
+exports. It is not a replacement for a general Component Model toolchain. A later emission gate
+must additionally resolve the pinned upstream WIT dependency graph with its own parser.
+
+## World identities
+
+| Profile | Exact world | Host imports | Guest exports | Contract state |
+| --- | --- | ---: | ---: | --- |
+| browser | `zryna:capability-profiles/browser@0.1.0` | 0 | 0 | specified only |
+| command | `zryna:capability-profiles/command@0.1.0` | 13 | `wasi:cli/run@0.2.12` | specified only |
+| server | `zryna:capability-profiles/server@0.1.0` | 4 | `wasi:http/incoming-handler@0.2.12` | specified only |
+
+The empty browser world is deliberate. It records the capability-free identity without claiming
+that today's core `wasm-web` artifact is a component. Omitting M4 profile selection preserves the
+current import-free core-WebAssembly behavior exactly.
+
+The command world lists each imported interface instead of including `wasi:cli/command`; this
+makes every authority visible in the checked registry. The server world similarly selects the
+HTTP handler interfaces and omits filesystem and environment interfaces. Standard I/O, terminal,
+exit, and insecure-random interfaces are not in this contract.
+
+## Denied-by-default selection
+
+A profile is an upper bound, not an ambient grant. Before any future instantiation, a request must
+name the exact profile and each requested capability. An omitted request list is empty. An omitted
+capability is denied even if the selected profile permits it. An unknown profile, capability,
+field, interface, or version fails before instantiation. There is no fallback to a broader world.
+
+| Capability | Browser | Command | Server |
+| --- | --- | --- | --- |
+| clock | denied | granted | granted |
+| environment | denied | granted | denied |
+| filesystem | denied | granted | denied |
+| network | denied | granted | granted |
+| randomness | denied | granted | granted |
+
+`granted` means only that the profile may satisfy the exact registry interfaces after the request
+also names the capability. It does not select paths, endpoints, environment entries, entropy
+sources, or clock policy. Those host-owned values must be supplied explicitly within the limits
+below. Supplying an imported function that always rejects is not evidence that a forbidden
+capability was granted.
+
+The registry projection is exhaustive: each profile contains all five capability rows in the
+canonical order `clock`, `environment`, `filesystem`, `network`, `randomness`. A denied row has no
+interface and both limits are zero. A granted row has at least one exact interface and two
+positive limits. The ordered union of granted interfaces must equal the world's WIT imports.
+
+## Resource limits
+
+Limits apply per component instance. A future host must reject a request before instantiation if
+any declared maximum is exceeded; it must not truncate, wrap, partially grant, or silently replace
+the request. Counts include resources retained by imported interfaces and their children.
+
+| Capability | Metric | Browser | Command | Server |
+| --- | --- | ---: | ---: | ---: |
+| clock | simultaneous subscriptions / timers | 0 / 0 | 64 / 64 | 1,024 / 1,024 |
+| environment | entries / total UTF-8 bytes | 0 / 0 | 128 / 65,536 | 0 / 0 |
+| filesystem | preopens / open descriptors | 0 / 0 | 16 / 256 | 0 / 0 |
+| network | allowed endpoints / concurrent operations | 0 / 0 | 64 / 128 | 128 / 1,024 |
+| randomness | bytes per call / bytes per instance | 0 / 0 | 65,536 / 8,388,608 | 65,536 / 8,388,608 |
+
+An endpoint is one normalized host-and-port policy entry. A network operation includes an open
+socket, DNS lookup, or HTTP request retained by the host. Environment byte accounting is the sum
+of UTF-8 key and value bytes; duplicate keys are invalid rather than counted twice. A preopen is
+one host-selected directory authority, not a guest path pattern. A descriptor or child resource
+must be released before its slot can be reused. Clock and randomness values remain
+nondeterministic host inputs; deterministic compilation and registry validation do not promise
+deterministic runtime values.
+
+The WIT source itself is limited to 16,384 UTF-8 bytes, three worlds, five capability rows per
+profile, seven interfaces per capability, and thirteen imports per world. The validator accepts
+the exact boundary and rejects the first extra unit.
+
+## Versioning and compatibility
+
+There are three independent identities:
+
+1. registry schema `zryna.wit-capability-profiles.v1` controls JSON shape and validation;
+2. WIT package `zryna:capability-profiles@0.1.0` controls world/interface identity; and
+3. WASI `0.2.12` controls every external interface identity.
+
+Consumers must match all three exactly. A comment or documentation-only clarification may leave
+them unchanged. Any world import/export change, new capability, weakened denial, larger resource
+limit, different WASI release, or changed request outcome requires a reviewed registry/schema
+revision and a new WIT package version. Removing or changing an existing world requires a new
+incompatible identity; no subtyping claim is inferred from WIT `include`. Because the local
+package is pre-1.0 and specified-only, no public compatibility or support promise exists yet.
+
+A later implementation may add a new registry version while retaining this file as historical
+evidence. It must not rewrite a released registry or reinterpret a v1 denial as a grant.
+
+## Validation and diagnostics
+
+[`scripts/wit-capabilities/validate.mjs`](../../scripts/wit-capabilities/validate.mjs) verifies the
+schemas, source digest, exact package/world identities, WIT import/export projection, exhaustive
+capability rows, default denials, limits, and deterministic request outcomes.
+
+| Code | Meaning |
+| --- | --- |
+| `ZRYNA-C4000` | malformed schema, WIT, identity, version, ordering, or registry projection |
+| `ZRYNA-C4001` | requested or encoded capability is denied |
+| `ZRYNA-C4002` | usage does not belong to the named requested capability |
+| `ZRYNA-C4003` | request exceeds a profile resource limit |
+| `ZRYNA-C4004` | WIT or registry structural bound is exceeded |
+
+Committed fixtures cover a capability-free browser request, exact-limit command and server grants,
+browser filesystem denial, server environment denial, an unknown capability, unrequested usage,
+and the first environment entry beyond the command limit. Tests also synthesize every one of the
+fifteen profile/capability decisions, malformed WIT and registry mutations, deterministic replay,
+and exact/first-extra WIT byte boundaries.
+
+## Dependency and rollout boundaries
+
+Issue #357 owns cross-target and transitive dependency capability composition. Issue #359 owns
+JS/WASM value conversion and resource adapters. Issue #168 owns package and release formats.
+This contract supplies identities and host-policy inputs to those tasks but implements none of
+their behavior.
+
+Component emission, host bindings, runtime enforcement, CLI activation, examples, publication,
+and a public profile require separate implementation, conformance, and activation gates. Existing
+M0–M3 source, IR, backend, manifest, CI, and authenticated inventory contracts are unchanged.

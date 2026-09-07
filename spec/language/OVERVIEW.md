@@ -32,7 +32,10 @@ and public `run` command use the standard browser-compatible WebAssembly API, bu
 and a generated loader remain untested future work, as does a general strict typed host wrapper.
 The CLI validates its `I32V1` invocation before making the raw host call.
 
-WASI and Component Model support is a separately versioned host profile. WIT and Canonical ABI types describe component boundaries; they do not redefine Zryna's internal ownership or memory model.
+The specified-only M4 [WIT capability contract](../wit/CAPABILITY_PROFILES_V1.md) pins separate
+browser, command, and server world identities plus a WASI version and denied-by-default host
+policy. It does not activate WASI or Component Model support. WIT and Canonical ABI types describe
+component boundaries; they do not redefine Zryna's internal ownership or memory model.
 
 ## Native profile
 
