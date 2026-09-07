@@ -469,6 +469,16 @@ which retains pinned-world and WASI fixture authority. The decision feeds
 [#359](https://github.com/zryna/zryna/issues/359)'s interface acceptance; it adds no implementation,
 selector, public support, M3 acceptance item, or change to existing completion gates.
 
+Proposed bounded M4 scope extension, [#358](https://github.com/zryna/zryna/issues/358):
+the [minimal core and host library decision](../spec/libraries/MINIMAL_CORE_HOST_V0.md)
+separates concrete pure scalar operations, allocation-backed String/Vec operations and explicitly
+gated host candidates. It specifies prerequisites, ownership/errors and fixed positive/negative
+oracles without implementing or activating a library. Profile mapping follows accepted #357;
+affected resource interfaces retain explicit #359/#364 prerequisites without blocking pure-core
+review. General generics and `Option`/`Result` retain separate M7 gates;
+JSON and async/task work retain explicit future prerequisites. This proposal changes no M3 gate
+or historical inventory and does not require all M7 work before a limited core library.
+
 Completion gate: components expose self-described interfaces and receive no filesystem, network, clock, randomness, or environment capability unless the selected profile declares it.
 
 ## M5 — Packages and Reproducible Releases
