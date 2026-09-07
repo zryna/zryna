@@ -179,6 +179,13 @@ Completion gates:
 
 ## M3 — Data, Memory, and Ownership
 
+Current compiler state: exact `--profile data-ownership-v1` activates the #89-conformant route
+with manifest v3. [Public support and exclusions](M3_PUBLIC_PROFILE.md) and the
+[beginner guide](M3_GETTING_STARTED.md) are exported in the authenticated documentation bundle.
+Final milestone closure is recorded externally in #90 only after the merged-commit website
+import, hosted checks, deployment, live provenance and independent review succeed. The following
+issue-by-issue checkpoints preserve the development history rather than making deployment claims.
+
 Goal: add a separate explicit `DataOwnershipV1` profile without reinterpreting default M1 or
 explicit M2. Issue #75 freezes the specification, exact non-goals, real issue graph, first internal
 Pair slice, checked layout rules, ownership transitions, and non-Rust runtime ABI before any M3

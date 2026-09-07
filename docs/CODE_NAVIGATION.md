@@ -80,7 +80,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 - Start: [CLI reference](CLI.md), [driver README](../crates/zryna-driver/README.md), [manifest v2](M2_MANIFEST_V2.md), or the internal [M3 candidate driver and manifest](M3_CANDIDATE_DRIVER.md).
 - CLI parsing/rendering: `apps/zryna/src/main.rs::main`; explicit profile preselection:
-  `apps/zryna/src/profile.rs::select_control_flow`; orchestration:
+  `apps/zryna/src/profile.rs::selects_typed_scalars`; orchestration:
   `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and
   `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`.
 - M3 candidate closure and dispatch: `crates/zryna-driver/src/{ownership_closure,ownership_pipeline}.rs`; strict manifest and transaction: `src/{ownership_manifest,ownership_publication}.rs`; complete internal build/run entrypoints: `src/ownership_commands.rs`.

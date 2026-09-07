@@ -21,7 +21,7 @@ agree. A semantic-version channel must equal the compiler package version and us
 immutable `refs/tags/v<version>` ref.
 
 The official `next` artifact is published only by the dedicated `main`-push documentation job after
-the aggregate required `m2` job succeeds. Its artifact name and job summary bind the exact compiler
+the aggregate required `m3` job (which retains M0–M2) succeeds. Its artifact name and job summary bind the exact compiler
 commit and manifest SHA-256 as `zryna-docs-next-<commit>-<manifest-sha256>`; consumers authenticate
 both values from that immutable workflow run before importing any bytes.
 

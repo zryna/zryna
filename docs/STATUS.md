@@ -1,5 +1,10 @@
 # Compiler status
 
+Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
+See [the public M3 surface](M3_PUBLIC_PROFILE.md) and [the beginner guide](M3_GETTING_STARTED.md).
+The component checkpoints below retain their historical implementation boundaries; they do not
+limit or independently expand the integrated public surface. M0–M2 remain unchanged.
+
 Status channel: `next`
 
 Zryna is an experimental compiler project. It is not production-ready, and the current executable
@@ -287,11 +292,9 @@ Protocol v4 is unchanged; projected forwarding, call recursion, public borrow si
 retained borrow authority remain later or unavailable child work. The source-completion closure
 itself added no driver, CLI, published artifact, website-support or public-profile capability.
 
-The public compiler still does not select syntax protocol v4 or accept
-`--profile data-ownership-v1`. That exact selector is deterministically rejected before workspace
-effects with `ZRYNA-C3401`. The internal candidate can route `DataOwnershipV1`, execute selected
-targets, and publish strict manifest-v3 bundles through library entrypoints, but it is not public
-driver capability. Default M1 and explicit `control-flow-v1` M2 remain the only public profiles.
+The public compiler selects protocol v4 through exact `--profile data-ownership-v1`.
+It executes the #89-conformant driver and publishes strict manifest-v3 bundles. Default M1
+and explicit M2 remain separate public profiles. Website deployment is recorded by #90.
 
 The internal #83 compiler boundary now provides explicit Shared/Weak construction, clone,
 downgrade, deterministic release cleanup and one indivisible success/expired/overflow upgrade
@@ -322,7 +325,7 @@ remain outside M3.
 
 ## Deliberately unsupported
 
-Public source-level Boolean execution requires explicit `control-flow-v1`; it remains rejected by
+Public source-level Boolean execution requires explicit `control-flow-v1` or `data-ownership-v1`; it remains rejected by
 the default M1 path. The compiler-owned M2 gate checks three-target equivalence for one fixed
 source control-flow and module oracle; it is not a claim of general language completeness. The
 current public executable profiles do not claim heap values, an allocator, a tracing-GC profile,

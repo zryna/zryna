@@ -117,6 +117,18 @@
       "title": "M3 bounded borrowing semantics"
     },
     {
+      "id": "reference/m3-candidate-driver",
+      "source": "docs/M3_CANDIDATE_DRIVER.md",
+      "path": "documents/reference/m3-candidate-driver.md",
+      "title": "M3 driver and manifest v3"
+    },
+    {
+      "id": "reference/m3-conformance",
+      "source": "docs/M3_CONFORMANCE.md",
+      "path": "documents/reference/m3-conformance.md",
+      "title": "M3 fixed-oracle conformance"
+    },
+    {
       "id": "reference/m3-copy-aggregate-semantics",
       "source": "docs/M3_COPY_AGGREGATE_SEMANTICS.md",
       "path": "documents/reference/m3-copy-aggregate-semantics.md",
@@ -153,6 +165,12 @@
       "title": "M3 ordinary generic Vec operations"
     },
     {
+      "id": "reference/m3-getting-started",
+      "source": "docs/M3_GETTING_STARTED.md",
+      "path": "documents/reference/m3-getting-started.md",
+      "title": "Your first M3 programs"
+    },
+    {
       "id": "reference/m3-indexed-borrow-authority",
       "source": "docs/M3_INDEXED_BORROW_AUTHORITY.md",
       "path": "documents/reference/m3-indexed-borrow-authority.md",
@@ -187,6 +205,12 @@
       "source": "docs/M3_OWNERSHIP_RUNTIME_ABI.md",
       "path": "documents/reference/m3-ownership-runtime-abi.md",
       "title": "M3 ownership runtime ABI authority"
+    },
+    {
+      "id": "reference/m3-public-profile",
+      "source": "docs/M3_PUBLIC_PROFILE.md",
+      "path": "documents/reference/m3-public-profile.md",
+      "title": "Public DataOwnershipV1 profile"
     },
     {
       "id": "reference/m3-shared-weak-authority",
