@@ -76,6 +76,36 @@ export function instrumentFunctionArgument(bytes, functionIndex, recorderIndex) 
   }, 10);
 }
 
+// Retain one real helper's allocation/copy work but replace its returned owner
+// with parameter zero in a private mutation control.
+export function substituteFunctionResultWithArgument(bytes, functionIndex) {
+  return rewriteSections(bytes, (kind, payload) => {
+    if (kind !== 10) return payload;
+    const count = readLeb(payload, 0);
+    assert.ok(functionIndex < count.value, 'clone helper index must be defined');
+    let cursor = count.next;
+    const bodies = [];
+    for (let index = 0; index < count.value; index++) {
+      const size = readLeb(payload, cursor);
+      const end = size.next + size.value;
+      let body = payload.slice(size.next, end);
+      if (index === functionIndex) {
+        assert.equal(body.at(-1), 0x0b, 'clone helper must have one final end');
+        body = Uint8Array.from([
+          ...body.slice(0, -1),
+          0x1a,
+          0x20, 0x00,
+          0x0b,
+        ]);
+      }
+      bodies.push(...leb(body.length), ...body);
+      cursor = end;
+    }
+    assert.equal(cursor, payload.length, 'complete code section');
+    return Uint8Array.from([...leb(count.value), ...bodies]);
+  }, 10);
+}
+
 export function cleanupHandles(trace, cleanup, module = 0) {
   const handles = [];
   let cursor = 0;

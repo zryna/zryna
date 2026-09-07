@@ -6,9 +6,10 @@ import {
   exposeTestExports,
   findFunctionExport,
   instrumentFunctionArgument,
+  substituteFunctionResultWithArgument,
 } from './wasm-inspection.mjs';
 
-const { target, entry, id, dropIndex } = JSON.parse(
+const { target, entry, id, cloneIndex, dropIndex, aliasMutation = false } = JSON.parse(
   await readFile('allocation-inspection.json', 'utf8'),
 );
 const artifactPath = 'inspection-input';
@@ -88,8 +89,15 @@ export const inspected = ${JSON.stringify(selections)}.map(([selected, fault]) =
   const originalModule = new WebAssembly.Module(original);
   assert.deepEqual(WebAssembly.Module.imports(originalModule), []);
   assert.ok(WebAssembly.Module.exports(originalModule).every(value => value.kind === 'function'));
+  if (aliasMutation) {
+    assert.equal(id, 'q4', 'the alias control mutates the fixed String clone case');
+    assert.equal(recovery, undefined);
+  }
   const observation = findFunctionExport(original, '$zryna$observation');
-  const instrumented = instrumentFunctionArgument(original, dropIndex, observation + 1);
+  const candidate = aliasMutation
+    ? substituteFunctionResultWithArgument(original, cloneIndex)
+    : original;
+  const instrumented = instrumentFunctionArgument(candidate, dropIndex, observation + 1);
   const bytes = exposeTestExports(instrumented, [
     { name: 'inspectionMemory', kind: 2, index: 0 },
   ]);
@@ -135,14 +143,18 @@ export const inspected = ${JSON.stringify(selections)}.map(([selected, fault]) =
     return { scalar, status, drops: handles.map(handle => payload(handle, selected)), snapshots };
   }
 
-  const selections = [[row, command]];
-  if (recovery) selections.push([recovery, normalCommand], [recovery, normalCommand]);
-  const inspected = selections.map(([selected, fault]) => execute(selected, fault));
-  assert.deepEqual(inspected, expectedRuns(selected => ({
-    scalar: expectedStatus(selected) === 0 ? selected.result : 0,
-    status: expectedStatus(selected),
-    drops: selected.drops,
-    snapshots: selected.snapshots,
-  })));
+  if (aliasMutation) {
+    assert.throws(() => execute(row, command), /distinct handle/);
+  } else {
+    const selections = [[row, command]];
+    if (recovery) selections.push([recovery, normalCommand], [recovery, normalCommand]);
+    const inspected = selections.map(([selected, fault]) => execute(selected, fault));
+    assert.deepEqual(inspected, expectedRuns(selected => ({
+      scalar: expectedStatus(selected) === 0 ? selected.result : 0,
+      status: expectedStatus(selected),
+      drops: selected.drops,
+      snapshots: selected.snapshots,
+    })));
+  }
 }
-console.log('allocation observation passed');
+console.log(aliasMutation ? 'allocation alias mutant rejected' : 'allocation observation passed');

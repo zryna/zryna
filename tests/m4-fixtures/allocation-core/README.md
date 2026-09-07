@@ -43,6 +43,10 @@ module's imports/exports, then prepends one argument-recording call to the
 selected drop helper and adds a memory export only in an in-memory test copy.
 The recorded cleanup handles must be distinct and must own the exact expected
 bytes; this rejects an orphan copy combined with reuse of the source handle.
+The Q4 negative control performs that mutation on the real emitted private
+module: the clone helper still allocates and copies, but its final result is
+replaced with the source argument. The genuine artifact passes and the mutated
+copy must fail the same handle-binding inspector.
 Bounded post-invocation snapshots separately retain allocation-history evidence,
 while the independent unmodified driver execution proves logical cleanup.
 Retained arena bytes are not proof of live ownership or physical deallocation.

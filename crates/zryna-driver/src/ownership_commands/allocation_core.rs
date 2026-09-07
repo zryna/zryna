@@ -147,9 +147,9 @@ fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
             .types()
             .find(|ty| ty.runtime_kind() == runtime_kind)
             .ok_or_else(|| format!("missing {storage} inspection layout"))?;
-        let drop_index = 2_u32
+        let clone_index = 2_u32.checked_add(ty.id().index()).expect("bounded clone helper index");
+        let drop_index = clone_index
             .checked_add(u32::try_from(layouts.types().len()).expect("bounded type count"))
-            .and_then(|index| index.checked_add(ty.id().index()))
             .expect("bounded drop helper index");
         let path = workspace.root().join("inspection-input");
         fs::write(&path, artifact).expect("private inspection input");
@@ -159,6 +159,7 @@ fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
                 "target": kind,
                 "entry": export,
                 "id": case["id"].as_str().expect("case id"),
+                "cloneIndex": clone_index,
                 "dropIndex": drop_index,
             }))
             .expect("private inspection command"),
@@ -167,6 +168,25 @@ fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
         let output = run_node_inspection(&corpus().join("inspect.mjs"), workspace.root())?;
         if output != b"allocation observation passed\n" {
             return Err("missing complete private observation".to_owned());
+        }
+        if target == TargetSelection::WebAssembly && case["id"] == "q4" {
+            fs::write(
+                workspace.root().join("allocation-inspection.json"),
+                serde_json::to_vec(&json!({
+                    "target": kind,
+                    "entry": export,
+                    "id": "q4",
+                    "cloneIndex": clone_index,
+                    "dropIndex": drop_index,
+                    "aliasMutation": true,
+                }))
+                .expect("private alias mutation command"),
+            )
+            .expect("private alias mutation command");
+            let output = run_node_inspection(&corpus().join("inspect.mjs"), workspace.root())?;
+            if output != b"allocation alias mutant rejected\n" {
+                return Err("missing private alias mutation rejection".to_owned());
+            }
         }
     }
     Ok(())
