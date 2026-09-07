@@ -27,7 +27,7 @@ test('frozen preflight and M0 declarations cannot silently omit structure enforc
   delete pkg.scripts['structure:check'];
   assert.throws(() => validatePackageDocument(pkg), /structure:check/);
   const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  assert.match(workflow, /ZRYNA_STRUCTURE_BASE:.*pull_request.base.sha.*github.event.before/);
+  assert.match(workflow, /ZRYNA_STRUCTURE_BASE:.*pull_request.base.sha.*inputs.structure_base/);
   assert.match(workflow, /os: \[ubuntu-latest, windows-latest\]/);
   assert.equal((workflow.match(/uses: actions\/checkout@/g) ?? []).length,
     (workflow.match(/fetch-depth: 0/g) ?? []).length);

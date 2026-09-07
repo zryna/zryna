@@ -9,7 +9,7 @@ const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml
 assert.deepEqual(document.errors, []);
 const budgetWorkflow = withoutBootstrapTiming(document.toJS());
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform', 'docs-publish'];
+const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
 const nodeStep = {
   uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
   with: { 'node-version': '22.22.1' },
@@ -92,7 +92,7 @@ function bootstrapOrder(candidate, metadata) {
   assert.equal(metadata.devEngines?.packageManager, undefined,
     'new package-manager metadata requires explicit automatic-cache review');
   const actualJobs = Object.entries(candidate.jobs).filter(([, job]) => job.steps.some(step =>
-    /^(actions\/setup-node|pnpm\/action-setup)@/.test(step.uses ?? ''))).map(([id]) => id);
+    /^pnpm\/action-setup@/.test(step.uses ?? '')) && !job.needs).map(([id]) => id);
   assert.deepEqual(actualJobs, bootstrapJobs);
   for (const id of bootstrapJobs) {
     const steps = candidate.jobs[id].steps;
@@ -163,7 +163,7 @@ test('bootstrap toolchain and cache-order mutations fail closed in every setup j
 });
 const aggregateNeeds = {
   adapter: ['preflight', 'adapter-platform'],
-  m0: ['owned-data-quick', 'preflight', 'rust', 'adapter'],
+  m0: ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts'],
   m2: ['m0', 'm2-platform'],
 };
 const matrixJobs = ['owned-data-quick', 'rust', 'adapter-platform', 'm2-platform'];
@@ -255,11 +255,12 @@ test('actual aggregate predicates reject every Cartesian non-success result', ()
       checked++;
     }
   }
-  assert.equal(checked, 2499);
+  assert.equal(checked, 16905);
 });
 
 test('each OS authority and preflight must succeed through the actual aggregate graph', () => {
-  const allSuccess = Object.fromEntries(['preflight', ...matrixJobs].map(id => [id, 'success']));
+  const allSuccess = Object.fromEntries(['preflight', 'route-contracts', ...matrixJobs]
+    .map(id => [id, 'success']));
   assert.equal(evaluateGraph(workflow.jobs, allSuccess).m2, 'success');
   for (const preflight of outcomes) {
     const results = evaluateGraph(workflow.jobs, { ...allSuccess, preflight });
@@ -308,11 +309,11 @@ test('aggregate grammar and dependency mutations fail closed', () => {
   }
 });
 
-test('parallel scheduling preserves all other pinned workflow authority', () => {
+test('routing preserves all other pinned workflow authority', () => {
   bootstrapOrder(workflow, packageDocument);
   const original = structuredClone(workflow);
   assert.deepEqual(original.env, {
-    ZRYNA_STRUCTURE_BASE: "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}",
+    ZRYNA_STRUCTURE_BASE: "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.structure_base }}",
   });
   delete original.env;
   for (const job of Object.values(original.jobs)) {
@@ -335,9 +336,6 @@ test('parallel scheduling preserves all other pinned workflow authority', () => 
   // M3 additions are independently frozen by m3-conformance.test.mjs.
   delete original.jobs['m3-platform'];
   delete original.jobs.m3;
-  // Public M3 publication is independently frozen by m3-public-docs.test.mjs.
-  assert.equal(original.jobs['docs-publish'].needs, 'm3');
-  original.jobs['docs-publish'].needs = 'm2';
   original.jobs.preflight['timeout-minutes'] = 10;
   for (const id of ['rust', 'adapter-platform', 'm2-platform']) {
     original.jobs[id].needs = 'preflight';
@@ -353,5 +351,5 @@ test('parallel scheduling preserves all other pinned workflow authority', () => 
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');
-  assert.equal(digest, 'e17c35d5e29afbf6bfee1710ce91da6826f6562938a3213cc63d5a81a54392a0');
+  assert.equal(digest, '33d34832305fcdc33c149e58e319435e8b46fe794a4a22f795b3d86360ba4b32');
 });

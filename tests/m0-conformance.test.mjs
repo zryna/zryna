@@ -173,7 +173,8 @@ test('required CI consumes the same canonical gate on Linux and Windows', async 
 
 test('CI avoids duplicate feature runs and cancels superseded revisions', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  assert.match(workflow, /push:\n    branches: \[main\]\n  pull_request:/);
+  assert.match(workflow, /on:\n  pull_request:\n  workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /push:\n    branches: \[main\]/);
   assert.match(
     workflow,
     /group: ci-\$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/,
@@ -191,17 +192,18 @@ test('Windows CLI smoke precedes the complete M0 gate', async () => {
   assert.ok(rust.indexOf(smoke) < rust.indexOf(completeGate), 'Windows CLI smoke must run before M0');
 });
 
-test('documentation publication waits for the complete M2 gate and binds exact provenance', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  const rust = workflowJob(workflow, 'rust');
+test('main documentation publication revalidates and binds exact provenance', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/documentation.yml', import.meta.url), 'utf8');
+  const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const rust = workflowJob(ciWorkflow, 'rust');
   const publisher = workflowJob(workflow, 'docs-publish');
   const docsCheck = 'run: pnpm docs:check';
   const completeGate = 'run: node scripts/run-m0-conformance.mjs';
   assert.ok(rust.indexOf(docsCheck) > -1, 'missing documentation bundle validation');
   assert.ok(rust.indexOf(docsCheck) < rust.indexOf(completeGate), 'documentation validation must precede M0');
   assert.doesNotMatch(rust, /Export authenticated next documentation bundle/);
-  assert.match(publisher, /if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
-  assert.match(publisher, /needs: m3/);
+  assert.match(workflow, /push:\n    branches: \[main\]/);
+  assert.doesNotMatch(publisher, /needs:/);
   assert.ok(publisher.indexOf(docsCheck) > -1, 'publisher must revalidate documentation');
   assert.ok(
     publisher.indexOf(docsCheck) < publisher.indexOf('node scripts/docs/export.mjs'),
@@ -217,6 +219,7 @@ test('documentation publication waits for the complete M2 gate and binds exact p
   assert.match(publisher, /Compiler commit:[\s\S]*Documentation manifest SHA-256:/);
   assert.match(publisher, /compression-level: 0/);
   assert.match(publisher, /include-hidden-files: true/);
+  assert.match(publisher, /retention-days: 7/);
 });
 
 test('required CI exposes a stable aggregate over Rust and adapter gates', async () => {
@@ -226,7 +229,7 @@ test('required CI exposes a stable aggregate over Rust and adapter gates', async
   assert.match(adapter, /name: adapter/);
   assert.match(aggregate, /name: m0/);
   assert.match(aggregate, /if: always\(\)/);
-  assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter\]/);
+  assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts\]/);
   assert.match(
     aggregate,
     /OWNED_DATA_QUICK_RESULT: \$\{\{ needs\.owned-data-quick\.result \}\}/,
@@ -235,6 +238,7 @@ test('required CI exposes a stable aggregate over Rust and adapter gates', async
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /RUST_RESULT: \$\{\{ needs\.rust\.result \}\}/);
   assert.match(aggregate, /ADAPTER_RESULT: \$\{\{ needs\.adapter\.result \}\}/);
+  assert.match(aggregate, /ROUTING_RESULT: \$\{\{ needs\.route-contracts\.result \}\}/);
 });
 
 test('public contributor docs name the canonical closure command', async () => {

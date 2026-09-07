@@ -107,6 +107,14 @@ pnpm preflight
 pnpm m0:check
 ```
 
+Finish the approved local checks and batch related fixes before publishing one review candidate.
+Avoid publishing intermediate revisions only to use hosted checks as an edit loop. The manual CI
+dispatch remains available when maintainers deliberately need the complete required and contract
+matrix; supply its `structure_base` input with the full trusted ancestor commit. Generated
+next-channel documentation bundles are retained for seven days because each
+main-branch publication supersedes the preceding candidate; release artifacts follow their
+separate release retention policy.
+
 Run `pnpm preflight` during the edit loop. It stops at the first portable contract, formatting,
 workspace-check, frontend, or syntax failure and normally reuses warm local build state. It is a
 fast diagnostic gate, not a substitute for the complete Linux and Windows `pnpm m0:check` proof
