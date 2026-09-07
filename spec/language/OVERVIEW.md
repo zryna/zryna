@@ -45,6 +45,12 @@ browser, command, and server world identities plus a WASI version and denied-by-
 policy. It does not activate WASI or Component Model support. WIT and Canonical ABI types describe
 component boundaries; they do not redefine Zryna's internal ownership or memory model.
 
+The specified-only [typed JS/WASM adapter design](../interop/JS_WASM_ADAPTERS_V1.md) separately
+defines ESM carriers, component conversion and resource lifetime rules. Public String/list/resource
+bridges, library API alignment, generation, conformance and activation remain separately gated;
+internal M3 layouts and borrows are not a public interface. No browser, Node package or WASI
+support is added by those declarations.
+
 ## Native profile
 
 The universal `I32V1` slice emits audited Linux x86-64 ELF relocatable objects using the System V

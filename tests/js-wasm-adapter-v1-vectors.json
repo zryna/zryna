@@ -1,0 +1,23 @@
+{
+  "contract": "zryna.js-wasm-adapters.v1",
+  "status": "specified-only",
+  "unicode": [
+    { "id": "empty", "text": "", "utf8": [] },
+    { "id": "nul", "text": "A\u0000B", "utf8": [65, 0, 66] },
+    { "id": "bom", "text": "\ufeffA", "utf8": [239, 187, 191, 65] },
+    { "id": "accent", "text": "\u00e9", "utf8": [195, 169] },
+    { "id": "supplementary", "text": "\ud83d\ude00", "utf8": [240, 159, 152, 128] },
+    { "id": "decomposed", "text": "e\u0301", "utf8": [101, 204, 129] }
+  ],
+  "invalidUtf8": [
+    { "id": "overlong", "bytes": [192, 175] },
+    { "id": "truncated", "bytes": [226, 130] },
+    { "id": "surrogate", "bytes": [237, 160, 128] },
+    { "id": "above-unicode-limit", "bytes": [244, 144, 128, 128] },
+    { "id": "isolated-continuation", "bytes": [128] }
+  ],
+  "invalidUtf16": [
+    { "id": "lone-high", "text": "\ud800" },
+    { "id": "lone-low", "text": "\udc00" }
+  ]
+}
