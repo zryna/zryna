@@ -1,0 +1,3 @@
+export function clock(): i32 {
+  return Date.now();
+}

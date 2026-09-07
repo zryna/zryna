@@ -1,0 +1,5 @@
+import { readFile } from "node:fs";
+
+export function filesystem(): i32 {
+  return readFile(0);
+}

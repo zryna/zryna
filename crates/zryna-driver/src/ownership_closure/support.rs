@@ -9,9 +9,9 @@ use zryna_frontend::syntax_v4;
 use zryna_source::{NormalizedSourcePath, SourceMap, Span, UntrustedSpan};
 
 use super::{
-    GRAPH_DOMAIN, GRAPH_VERSION, Import, ImportBinding, MAX_MODULE_DISCOVERY_WALL_TIME,
-    MAX_MODULE_PROVIDER_CALLS, MAX_MODULE_PROVIDER_SOURCE_BYTES, ModuleClosureError, ModuleEdge,
-    ModuleRecord, add,
+    DiscoveredSource, GRAPH_DOMAIN, GRAPH_VERSION, Import, ImportBinding,
+    MAX_MODULE_DISCOVERY_WALL_TIME, MAX_MODULE_PROVIDER_CALLS, MAX_MODULE_PROVIDER_SOURCE_BYTES,
+    ModuleClosureError, ModuleEdge, ModuleRecord, add,
 };
 
 pub(super) fn imports(
@@ -43,6 +43,40 @@ pub(super) fn imports(
             (file.path().clone(), imports)
         })
         .collect()
+}
+
+pub(super) fn imports_match(
+    final_imports: &BTreeMap<NormalizedSourcePath, Vec<Import>>,
+    discovered: &BTreeMap<NormalizedSourcePath, DiscoveredSource>,
+) -> bool {
+    final_imports.len() == discovered.len()
+        && discovered.iter().all(|(path, source)| {
+            final_imports
+                .get(path)
+                .is_some_and(|imports| import_lists_match(imports, &source.imports))
+        })
+}
+
+fn import_lists_match(left: &[Import], right: &[Import]) -> bool {
+    // Discovery batches and the final closure have distinct source maps. The normalized path key
+    // identifies the file here, so compare source offsets without comparing map-local file IDs.
+    left.len() == right.len()
+        && left.iter().zip(right).all(|(left, right)| {
+            span_offsets_match(left.span, right.span)
+                && left.specifier == right.specifier
+                && span_offsets_match(left.specifier_span, right.specifier_span)
+                && left.bindings.len() == right.bindings.len()
+                && left.bindings.iter().zip(&right.bindings).all(|(left, right)| {
+                    left.imported == right.imported
+                        && left.local == right.local
+                        && span_offsets_match(left.imported_span, right.imported_span)
+                        && span_offsets_match(left.local_span, right.local_span)
+                })
+        })
+}
+
+const fn span_offsets_match(left: UntrustedSpan, right: UntrustedSpan) -> bool {
+    left.start == right.start && left.end == right.end
 }
 
 pub(super) fn final_edges(
