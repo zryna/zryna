@@ -34,7 +34,8 @@ typedef struct allocation_header_tag {
 } allocation_header;
 
 static const uint64_t ALLOCATION_MAGIC = UINT64_C(0x7a72796e616f3175);
-static const uint64_t MAX_ALLOCATION_BYTES = UINT64_C(67108864);
+static const uint64_t MAX_DYNAMIC_ALLOCATION_BYTES = UINT64_C(2147483647);
+static const uint64_t TARGET_ALLOCATION_BUDGET = UINT64_C(67108864);
 static const uint64_t MAX_VEC_ELEMENTS = UINT64_C(1048576);
 static allocation_header *allocation_head = NULL;
 #ifdef ZRYNA_M3_OBSERVATION
@@ -98,10 +99,8 @@ static uint32_t allocate_bytes(uint64_t byte_size, uint32_t alignment,
   if (byte_size == 0) {
     return RT_OK;
   }
-  if (byte_size > MAX_ALLOCATION_BYTES || byte_size > SIZE_MAX ||
-      (size_t)byte_size > SIZE_MAX - sizeof(allocation_header) - alignment) {
-    return RT_CAPACITY;
-  }
+  if (byte_size > MAX_DYNAMIC_ALLOCATION_BYTES) return RT_CAPACITY;
+  if (byte_size > TARGET_ALLOCATION_BUDGET) return RT_ALLOCATION;
 #ifdef ZRYNA_M3_OBSERVATION
   if (zryna_m3_observe(UINT32_C(0x10000006)) != 0) return RT_ALLOCATION;
 #endif
@@ -275,6 +274,7 @@ uint32_t zryna_rt_o1_string_from_utf8_copy(const uint8_t *bytes,
     return RT_ABI;
   }
   memset(out_string, 0, sizeof(*out_string));
+  if (byte_length > MAX_DYNAMIC_ALLOCATION_BYTES) return RT_CAPACITY;
   if (!valid_utf8(bytes, byte_length)) {
     return RT_UTF8;
   }
@@ -323,7 +323,7 @@ uint32_t zryna_rt_o1_string_concat(const zryna_rt_o1_handle *left,
     return RT_ABI;
   }
   memset(out_string, 0, sizeof(*out_string));
-  if (left->length > MAX_ALLOCATION_BYTES - right->length) {
+  if (left->length > MAX_DYNAMIC_ALLOCATION_BYTES - right->length) {
     return RT_CAPACITY;
   }
   length = left->length + right->length;
@@ -366,7 +366,7 @@ static int valid_vec_storage(const zryna_rt_o1_handle *storage,
   allocation_header *header;
   if (storage == NULL || stride == 0 || storage->length > storage->capacity ||
       storage->capacity > MAX_VEC_ELEMENTS ||
-      storage->capacity > MAX_ALLOCATION_BYTES / stride) {
+      storage->capacity > MAX_DYNAMIC_ALLOCATION_BYTES / stride) {
     return 0;
   }
   if (storage->capacity == 0) {
@@ -392,7 +392,7 @@ uint32_t zryna_rt_o1_vec_allocate(uint32_t element_layout_id,
     return RT_ABI;
   }
   if (required_capacity > MAX_VEC_ELEMENTS ||
-      required_capacity > MAX_ALLOCATION_BYTES / stride) {
+      required_capacity > MAX_DYNAMIC_ALLOCATION_BYTES / stride) {
     return RT_CAPACITY;
   }
   status = allocate_bytes(required_capacity * stride, alignment, &pointer);
@@ -436,7 +436,7 @@ uint32_t zryna_rt_o1_vec_reserve(uint32_t element_layout_id,
   if (capacity < required_length) {
     capacity = required_length;
   }
-  if (capacity > MAX_VEC_ELEMENTS || capacity > MAX_ALLOCATION_BYTES / stride) {
+  if (capacity > MAX_VEC_ELEMENTS || capacity > MAX_DYNAMIC_ALLOCATION_BYTES / stride) {
     return RT_CAPACITY;
   }
   status = zryna_rt_o1_grow(storage->pointer, storage->capacity * stride,

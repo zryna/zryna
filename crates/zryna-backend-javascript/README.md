@@ -6,6 +6,9 @@ The internal M3 `emit_data_ownership` entrypoint additionally accepts only a sea
 `DataOwnershipV1` program and its matching ownership-runtime ABI. It emits bounded deterministic
 self-contained ESM with private aggregate/String/Vec/borrow/Shared/Weak helpers, explicit release
 transitions, failure cleanup and no ambient capability. See `docs/M3_TARGET_BACKENDS.md`.
+Its String helper retains a 64 MiB target allocation budget: an otherwise valid larger request is
+`ALLOCATION`, while checked arithmetic or exceeding the universal 2,147,483,647-byte maximum is
+`CAPACITY`.
 
 The backend consumes only sealed function views and uses each export's sealed scalar ABI
 JavaScript name. It emits a deterministic ECMAScript module with LF line endings and a final

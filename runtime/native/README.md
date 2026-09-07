@@ -13,6 +13,10 @@ Shared/Weak transitions are status-returning and preserve their inputs unless th
 success transition commits. Threads, custom allocators, raw host pointers, and a public C API are
 outside this runtime.
 
+The implementation retains a 64 MiB per-allocation target budget. Exhausting that budget with a
+request at or below the universal 2,147,483,647-byte allocation/String limit reports `ALLOCATION`;
+only checked arithmetic or a genuine universal/profile maximum violation reports `CAPACITY`.
+
 The existing pure `i32` object has no runtime dependency or undefined symbol. The driver can link
 it with a private generated one-invocation C harness under the
 [executable contract](../../spec/native-semantics/EXECUTABLE.md), but that harness is not a Zryna

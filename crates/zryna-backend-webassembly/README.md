@@ -8,6 +8,10 @@ private bounded Linear32 memory and sealed layout-derived address operations. It
 memory or activate the M3 driver profile. Its private type-indexed helpers perform recursive
 clone/drop, String/Vec operations, checked indexing and Shared/Weak transitions; scalar wrappers
 bound allocation lifetime to one invocation. See `docs/M3_TARGET_BACKENDS.md`.
+Requests within the universal 2,147,483,647-byte allocation/String limit that exceed the private
+fixed arena report `ALLOCATION`; checked arithmetic and genuine universal/profile excess report
+`CAPACITY`. The caller-owned 12-byte String result record consumes target arena space but does not
+reduce the universal logical String-length maximum.
 
 The backend consumes only sealed verified function views and exact scalar ABI WebAssembly export
 names. It emits deterministic, import-free WebAssembly 1.0 modules for the current `I32V1`
