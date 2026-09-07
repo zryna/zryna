@@ -1,0 +1,10 @@
+export function add_i32(left: i32, right: i32): i32 {
+  return left + right;
+}
+
+export function min_i32(left: i32, right: i32): i32 {
+  if (left < right) {
+    return left;
+  }
+  return right;
+}

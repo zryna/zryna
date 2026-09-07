@@ -21,10 +21,12 @@ const GRAPH_DOMAIN: &[u8] = b"ZRYNA-M3-GRAPH\0";
 const GRAPH_VERSION: u32 = 1;
 
 mod support;
+#[cfg(test)]
+mod tests;
 use support::{
     account_provider, budget, diagnostic, enforce_time, final_edges, graph_identity, imports,
-    invalid_import, invariant, register_portable, reject_cycles, reject_provider_errors, rejected,
-    remaining,
+    imports_match, invalid_import, invariant, register_portable, reject_cycles,
+    reject_provider_errors, rejected, remaining,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -307,12 +309,7 @@ where
         return Err(invariant());
     }
     let final_imports = imports(&syntax);
-    if final_imports.len() != inputs.discovered.len()
-        || inputs
-            .discovered
-            .iter()
-            .any(|(path, source)| final_imports.get(path) != Some(&source.imports))
-    {
+    if !imports_match(&final_imports, &inputs.discovered) {
         return Err(rejected(diagnostic(
             "ZRYNA-D3302",
             None,

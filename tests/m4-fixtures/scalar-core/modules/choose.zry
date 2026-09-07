@@ -1,0 +1,16 @@
+import { add_i32 as arithmetic_add_i32, min_i32 as arithmetic_min_i32 } from "./support/arithmetic.zry";
+
+export function add_i32(left: i32, right: i32): i32 {
+  return arithmetic_add_i32(left, right);
+}
+
+export function min_i32(left: i32, right: i32): i32 {
+  return arithmetic_min_i32(left, right);
+}
+
+export function select_i32(flag: bool, yes: i32, no: i32): i32 {
+  if (flag) {
+    return yes;
+  }
+  return no;
+}

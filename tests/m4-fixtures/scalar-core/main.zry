@@ -1,0 +1,17 @@
+import { add_i32 as core_add_i32, min_i32 as core_min_i32, select_i32 as core_select_i32 } from "./modules/choose.zry";
+
+export function add_i32(left: i32, right: i32): i32 {
+  return core_add_i32(left, right);
+}
+
+export function min_i32(left: i32, right: i32): i32 {
+  return core_min_i32(left, right);
+}
+
+export function select_i32(flag: bool, yes: i32, no: i32): i32 {
+  return core_select_i32(flag, yes, no);
+}
+
+export function score(): i32 {
+  return core_select_i32(true, core_add_i32(20, 22), core_min_i32(7, -3));
+}
