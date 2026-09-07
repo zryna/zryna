@@ -99,6 +99,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 10. Guides, roadmap/contracts, or website documentation bundles
 
 - Start: [DOCUMENTATION_BUNDLES](DOCUMENTATION_BUNDLES.md), [ROADMAP](ROADMAP.md), and the specific contract being documented.
+- Cross-target composition: [versioned decision table](../spec/language/CROSS_TARGET_PROFILES_V1.md) and [documentation checks](../tests/cross-target-profile-contract.test.mjs); run `pnpm docs:check`. WIT identities and single-instance capability fixtures remain Issue #167's authority.
 - Source docs are under `docs/` and `spec/`; export registration is `docs/website-bundle-v1.json`; implementation is `scripts/docs/{bundle,export,check}.mjs`.
 - Focus: `pnpm docs:check`; for M3 authority changes also `pnpm m3:contract`. Inspect `tests/docs-bundle.test.mjs` and the relevant contract test.
 - Export is an explicit whitelist/provenance operation, not implicit inclusion of every Markdown file. CI artifact success is not evidence of website deployment.

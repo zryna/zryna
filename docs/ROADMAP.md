@@ -460,6 +460,15 @@ fixtures. Its `specified-only` state adds no component emission, bindings, runti
 activation, example publication, or public support. Cross-target dependency composition remains
 #357 and JS/WASM conversion/resource adapters remain #359.
 
+The M4 [cross-target composition decision](../spec/language/CROSS_TARGET_PROFILES_V1.md),
+tracked by [#357](https://github.com/zryna/zryna/issues/357), specifies separate language,
+target and host-permission axes, transitive requirements, native isolation limits and later
+conformance gates. Its WIT mapping depends on [#167](https://github.com/zryna/zryna/issues/167),
+which retains pinned-world and WASI fixture authority. The decision feeds
+[#358](https://github.com/zryna/zryna/issues/358)'s final library profile mapping and
+[#359](https://github.com/zryna/zryna/issues/359)'s interface acceptance; it adds no implementation,
+selector, public support, M3 acceptance item, or change to existing completion gates.
+
 Completion gate: components expose self-described interfaces and receive no filesystem, network, clock, randomness, or environment capability unless the selected profile declares it.
 
 ## M5 — Packages and Reproducible Releases

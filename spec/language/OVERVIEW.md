@@ -22,6 +22,14 @@ verified IR, and resource budgets. It is selected only by exact `--profile contr
 covered by the fixed-oracle three-target M2 gate. Omitting `--profile` continues to select the M1
 `I32V1` slice.
 
+## Cross-target composition
+
+The specified-only [cross-target profile composition v1](CROSS_TARGET_PROFILES_V1.md) separates
+language admission, output target and deployment-host permissions. It defines transitive
+dependency requirements and explicit denial policies without adding a public selector or
+package/host implementation. Backend choice and native metadata do not grant host authority
+or establish execution isolation. Its WIT mapping depends on Issue #167's pinned-world contract.
+
 ## WebAssembly profiles
 
 The implemented `I32V1` scalar subset maps directly to core WebAssembly without passing through
