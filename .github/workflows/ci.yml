@@ -44,7 +44,9 @@ jobs:
 
   preflight:
     name: preflight
-    timeout-minutes: 30
+    # #369: cold execution reached the 15-minute deadline after bootstrap completed.
+    # Allow a nominal 5 minutes for other setup/cleanup beyond the 10/20-minute steps.
+    timeout-minutes: 35
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -77,7 +79,7 @@ jobs:
       - name: Fetch locked Rust dependencies
         run: cargo fetch --locked
       - run: pnpm preflight
-        timeout-minutes: 15
+        timeout-minutes: 20
 
   rust:
     name: rust (${{ matrix.os }})

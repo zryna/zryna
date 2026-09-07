@@ -119,11 +119,11 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /test "\$PREFLIGHT_RESULT" = success/);
 
-  assert.equal(parsed.jobs.preflight['timeout-minutes'], 30);
+  assert.equal(parsed.jobs.preflight['timeout-minutes'], 35);
   assert.equal(parsed.jobs.preflight.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@')).length, 1);
   assert.equal(parsed.jobs.preflight.steps.find(step => step.uses?.startsWith('pnpm/action-setup@'))['timeout-minutes'], 10);
   assert.deepEqual(parsed.jobs.preflight.steps.filter(step => step.run === 'pnpm preflight'), [
-    { run: 'pnpm preflight', 'timeout-minutes': 15 },
+    { run: 'pnpm preflight', 'timeout-minutes': 20 },
   ]);
   assert.equal(parsed.jobs.rust.needs, undefined);
   assert.equal(parsed.jobs['adapter-platform'].needs, undefined);
