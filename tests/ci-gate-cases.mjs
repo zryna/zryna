@@ -335,6 +335,9 @@ test('parallel scheduling preserves all other pinned workflow authority', () => 
   // M3 additions are independently frozen by m3-conformance.test.mjs.
   delete original.jobs['m3-platform'];
   delete original.jobs.m3;
+  // Public M3 publication is independently frozen by m3-public-docs.test.mjs.
+  assert.equal(original.jobs['docs-publish'].needs, 'm3');
+  original.jobs['docs-publish'].needs = 'm2';
   original.jobs.preflight['timeout-minutes'] = 10;
   for (const id of ['rust', 'adapter-platform', 'm2-platform']) {
     original.jobs[id].needs = 'preflight';
