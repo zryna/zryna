@@ -118,6 +118,28 @@
       "id": "enum-body",
       "path": "tests/m3-fixtures/conformance/enum-body.zry",
       "sha256": "7d65eeacbcad853fe9470679d714cf08c1796d1d0375bbf2df05a713cf54bdc0"
+    },
+    {
+      "id": "owned-vec",
+      "path": "tests/m3-fixtures/conformance/owned-vec.zry",
+      "sha256": "ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675",
+      "dependency": "owned-vec-body"
+    },
+    {
+      "id": "owned-vec-body",
+      "path": "tests/m3-fixtures/conformance/owned-vec-body.zry",
+      "sha256": "8cbc1323b239a280945199d62aa33385bbe653e67f36473b7038de7e47e37b65"
+    },
+    {
+      "id": "owned-shared",
+      "path": "tests/m3-fixtures/conformance/owned-shared.zry",
+      "sha256": "ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675",
+      "dependency": "owned-shared-body"
+    },
+    {
+      "id": "owned-shared-body",
+      "path": "tests/m3-fixtures/conformance/owned-shared-body.zry",
+      "sha256": "d2c9057d40a558eefb680c23387662ad76a639d33cfc8cb75c737958ba96606c"
     }
   ],
   "valid": [
@@ -224,6 +246,20 @@
       "export": "score",
       "arguments": [],
       "expected": 37
+    },
+    {
+      "id": "owned-vec",
+      "fixture": "owned-vec",
+      "export": "score",
+      "arguments": [],
+      "expected": 41
+    },
+    {
+      "id": "owned-shared",
+      "fixture": "owned-shared",
+      "export": "score",
+      "arguments": [],
+      "expected": 43
     }
   ],
   "invalid": [
@@ -362,6 +398,60 @@
       "test": "data_ownership_v1::resource_tests::codegen_budget_accepts_exact_and_rejects_first_extra",
       "expected": "1000000 units accepted; first extra N3304",
       "host": "portable"
+    },
+    {
+      "id": "typed-trace-boundary",
+      "phase": "execution",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_commands/observation.rs",
+      "test": "ownership_commands::observation::tests::trace_frame_exact_boundary_and_hostile_words_are_execution_owned",
+      "expected": "4096 encoded words accepted; extra or malformed frame rejects C3302",
+      "host": "portable"
+    },
+    {
+      "id": "typed-manifest-boundary",
+      "phase": "manifest",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_manifest/observation.rs",
+      "test": "ownership_manifest::observation::tests::manifest_typed_trap_trace_boundaries_and_hostile_events_are_strict",
+      "expected": "five typed traps and exact trace accepted; host traps and malformed or extra events rejected",
+      "host": "portable"
+    },
+    {
+      "id": "native-cleanup-authority",
+      "phase": "native-mir",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_commands/conformance/authority.rs",
+      "test": "ownership_commands::conformance::authority::native_cleanup_claims_are_bound_to_exact_source_ownership_and_budget",
+      "expected": "exact source cleanup roots; mutations N3116; extra aggregate action N3201",
+      "host": "portable"
+    },
+    {
+      "id": "native-physical-faults",
+      "phase": "execution",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_commands/conformance/faults.rs",
+      "test": "ownership_commands::conformance::faults::native_physical_allocation_failures_release_intermediates_before_observation",
+      "expected": "typed allocation trap with exact logical cleanup and empty owned allocation ledger",
+      "host": "linux-x86_64"
+    },
+    {
+      "id": "native-scratch-ledger",
+      "phase": "runtime",
+      "package": "zryna-driver",
+      "path": "crates/zryna-driver/src/ownership_runtime_v1.rs",
+      "test": "ownership_runtime_v1::tests::candidate_scratch_finalization_cannot_hide_owned_or_pending_control_leaks",
+      "expected": "scratch reclaimed; owned payload and pending control leaks rejected; no double free",
+      "host": "linux-x86_64"
+    },
+    {
+      "id": "wasm-allocator-boundary",
+      "phase": "execution",
+      "package": "zryna-backend-webassembly",
+      "path": "crates/zryna-backend-webassembly/src/data_ownership_v1/encode/allocator_tests.rs",
+      "test": "data_ownership_v1::encode::allocator_tests::allocator_capacity_and_arena_exhaustion_keep_distinct_typed_statuses",
+      "expected": "oversized request capacity; valid request exhaustion allocation; exact arena accepted",
+      "host": "portable"
     }
   ],
   "runtimeInvalid": [
@@ -373,11 +463,16 @@
         2
       ],
       "phase": "execution",
-      "codes": {
-        "javascript": "ZRYNA-R3006",
-        "webassembly": "ZRYNA-R3006",
-        "native": "ZRYNA-N4021"
-      },
+      "expectedTrap": "zryna.trap.bounds-v1"
+    },
+    {
+      "id": "bounds-negative",
+      "fixture": "bounds",
+      "export": "score",
+      "arguments": [
+        -1
+      ],
+      "phase": "execution",
       "expectedTrap": "zryna.trap.bounds-v1"
     }
   ],
@@ -391,5 +486,865 @@
     ],
     "faultEvidence": "same exact logical drop/release trace under injected faults on all three targets",
     "authority": "spec/language/DATA_OWNERSHIP_V1.md#11-controlled-traps-and-cleanup"
-  }
+  },
+  "faults": [
+    {
+      "id": "string-fault-2-1",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": []
+    },
+    {
+      "id": "string-fault-2-2",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 2
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "string-fault-2-3",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 3
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 5
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "string-fault-2-4",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 4
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 5
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "string-fault-3-1",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 3,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.capacity-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 5
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "string-fault-5-1",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 5,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.utf8-v1"
+      },
+      "trace": []
+    },
+    {
+      "id": "string-fault-5-2",
+      "fixture": "string",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 5,
+        "ordinal": 2
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.utf8-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 5
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "vec-fault-2-1",
+      "fixture": "vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": []
+    },
+    {
+      "id": "vec-fault-2-2",
+      "fixture": "vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 2
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 0,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        }
+      ]
+    },
+    {
+      "id": "vec-fault-2-3",
+      "fixture": "vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 3
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 0,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        }
+      ]
+    },
+    {
+      "id": "vec-fault-3-1",
+      "fixture": "vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 3,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.capacity-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 0,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        }
+      ]
+    },
+    {
+      "id": "handles-fault-2-1",
+      "fixture": "handles",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": []
+    },
+    {
+      "id": "handles-fault-4-1",
+      "fixture": "handles",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 4,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.refcount-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "shared"
+        },
+        {
+          "kind": "release-implicit-weak"
+        },
+        {
+          "kind": "release-control"
+        }
+      ]
+    },
+    {
+      "id": "handles-fault-4-2",
+      "fixture": "handles",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 4,
+        "ordinal": 2
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.refcount-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "shared"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "shared"
+        },
+        {
+          "kind": "release-implicit-weak"
+        },
+        {
+          "kind": "release-control"
+        }
+      ]
+    },
+    {
+      "id": "handles-fault-4-3",
+      "fixture": "handles",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 4,
+        "ordinal": 3
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.refcount-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 5
+        },
+        {
+          "kind": "drop",
+          "value": "weak"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "shared"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "shared"
+        },
+        {
+          "kind": "release-implicit-weak"
+        },
+        {
+          "kind": "release-control"
+        }
+      ]
+    },
+    {
+      "id": "weak-live-fault-4-2",
+      "fixture": "weak-live",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 4,
+        "ordinal": 2
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.refcount-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "weak"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "shared"
+        },
+        {
+          "kind": "release-implicit-weak"
+        },
+        {
+          "kind": "release-control"
+        }
+      ]
+    },
+    {
+      "id": "owned-aggregate-fault-2-3",
+      "fixture": "owned-aggregate",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 3
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 0
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-aggregate-fault-2-4",
+      "fixture": "owned-aggregate",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 4
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-aggregate-fault-2-5",
+      "fixture": "owned-aggregate",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 5
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-aggregate-fault-2-6",
+      "fixture": "owned-aggregate",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 6
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-vec-fault-2-3",
+      "fixture": "owned-vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 3
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 1
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 0
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-vec-fault-2-4",
+      "fixture": "owned-vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 4
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-vec-fault-2-5",
+      "fixture": "owned-vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 5
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-vec-fault-2-6",
+      "fixture": "owned-vec",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 6
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 3
+        },
+        {
+          "kind": "drop",
+          "value": "sequence"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-shared-fault-2-2",
+      "fixture": "owned-shared",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 2,
+        "ordinal": 2
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.allocation-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 0
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        }
+      ]
+    },
+    {
+      "id": "owned-shared-fault-4-1",
+      "fixture": "owned-shared",
+      "export": "score",
+      "arguments": [],
+      "fault": {
+        "code": 4,
+        "ordinal": 1
+      },
+      "expected": {
+        "kind": "trapped",
+        "code": "zryna.trap.refcount-v1"
+      },
+      "trace": [
+        {
+          "kind": "cleanup",
+          "module": 1,
+          "function": 0,
+          "place": 2
+        },
+        {
+          "kind": "drop",
+          "value": "shared"
+        },
+        {
+          "kind": "drop",
+          "value": "string"
+        },
+        {
+          "kind": "release-implicit-weak"
+        },
+        {
+          "kind": "release-control"
+        }
+      ]
+    }
+  ]
 }

@@ -1,0 +1,1 @@
+export function aggregate(): i32 { const owner: Shared<String> = shared("payload"); const copied: Shared<String> = clone(owner); return 43; }

@@ -15,6 +15,9 @@ use crate::{
     ownership_publication::publish_data_ownership_build,
 };
 
+mod authority;
+mod faults;
+
 const REGISTRY: &str = include_str!("../../../../tests/m3-conformance-v1.json");
 
 fn registry() -> Value {
@@ -112,7 +115,7 @@ fn fixed_candidate_observations_match_every_registered_case() {
     let _guard = route_guard();
     let registry = registry();
     let cases = registry["valid"].as_array().expect("valid cases");
-    assert_eq!(cases.len(), 13, "frozen executable inventory");
+    assert_eq!(cases.len(), 15, "frozen executable inventory");
     for case in cases {
         let workspace = fixture_workspace();
         install(workspace.root(), &registry, case["fixture"].as_str().expect("fixture"));
@@ -257,12 +260,17 @@ fn fixed_runtime_bounds_fail_without_partial_publication() {
                 Some((case["export"].as_str().expect("export").to_owned(), arguments(case))),
             )
             .expect("bounds case is source-valid");
-            let failure =
-                execute_and_publish_run(&prepared).expect_err("bounds first extra must fail");
+            let bundle =
+                execute_and_publish_run(&prepared).expect("complete typed trap observation");
             assert_eq!(case["phase"], "execution");
-            assert_eq!(failure.kind(), CommandFailureKind::Execution);
-            assert_eq!(failure.diagnostics().len(), 1);
-            assert_eq!(failure.diagnostics()[0].code(), case["codes"][name], "{name}");
+            for result in bundle.results() {
+                assert_eq!(
+                    serde_json::to_value(result.outcome()).unwrap(),
+                    serde_json::json!({"kind":"trapped", "code":case["expectedTrap"]}),
+                    "{name}"
+                );
+            }
+            fs::remove_dir_all(bundle.path()).expect("remove complete observation");
             assert_no_artifacts(workspace.root());
         }
     }
