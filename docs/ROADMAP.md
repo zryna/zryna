@@ -464,6 +464,14 @@ Completion gate: components expose self-described interfaces and receive no file
 
 ## M5 — Packages and Reproducible Releases
 
+Issue #168 specifies the repository-only [package and release contract v1](../spec/package/PACKAGE_RELEASE_V1.md):
+closed bounded manifest/lock, deterministic exact resolution, integrity/SBOM/provenance,
+signed-note and rollback declarations, and clean-environment fixture evidence. This is a
+contract-only foundation; package runtime, signing, publication and release activation remain
+unimplemented. Supplemental #360, #361 and #362 retain package/type identity, resolved build plans
+and source/build trust policy respectively; their full implementations do not block #168.
+Existing releases, public support and M0–M3 remain unchanged.
+
 - package manifest, deterministic dependency resolution, and lockfile;
 - semantic versioning and compatibility policy;
 - reproducible artifacts, checksums, SBOM, and provenance;

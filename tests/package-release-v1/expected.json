@@ -1,0 +1,8 @@
+{
+  "status": "contract-fixture-valid",
+  "lockSha256": "9bc558948ab928407ad5bdbff3e9de9b1b55a815f8a5ec39ffef19708679fbcf",
+  "subjectSha256": "e3f204ce5d1626e51459a1e18207c3799146b998967a33e86f6fd13ce35adadd",
+  "signatures": "not-verified",
+  "reproduction": "not-executed",
+  "release": "not-activated"
+}

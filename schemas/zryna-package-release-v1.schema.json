@@ -1,0 +1,732 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-package-release-v1.schema.json",
+  "title": "Contract-only package and release fixture v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "manifests",
+    "lock",
+    "materials",
+    "release"
+  ],
+  "properties": {
+    "format": {
+      "const": "zryna.package-release.fixture.v1"
+    },
+    "manifests": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/manifest"
+      }
+    },
+    "lock": {
+      "$ref": "#/$defs/lock"
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/material"
+      }
+    },
+    "release": {
+      "$ref": "#/$defs/release"
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$(?![\\s\\S])"
+    },
+    "commit": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "pattern": "^[a-f0-9]{40}$(?![\\s\\S])"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9-]*$(?![\\s\\S])"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 14,
+      "pattern": "^(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})$(?![\\s\\S])"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[a-z0-9][a-z0-9./_-]*$(?![\\s\\S])"
+    },
+    "target": {
+      "enum": [
+        "javascript",
+        "native-linux-x86_64",
+        "webassembly"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "locator",
+        "revision"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "git",
+            "local"
+          ]
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[ -~]+$(?![\\s\\S])"
+        },
+        "revision": {
+          "type": "string",
+          "maxLength": 40,
+          "pattern": "^([a-f0-9]{40})?$(?![\\s\\S])"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compiler",
+        "profile",
+        "targets"
+      ],
+      "properties": {
+        "compiler": {
+          "$ref": "#/$defs/version"
+        },
+        "profile": {
+          "enum": [
+            "i32-v1",
+            "control-flow-v1",
+            "data-ownership-v1"
+          ]
+        },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/target"
+          }
+        }
+      }
+    },
+    "checksum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "size",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1024
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alias",
+        "name",
+        "version",
+        "source"
+      ],
+      "properties": {
+        "alias": {
+          "$ref": "#/$defs/name"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "name",
+        "version",
+        "source",
+        "compatibility",
+        "files",
+        "dependencies"
+      ],
+      "properties": {
+        "format": {
+          "const": "zryna.package.v1"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "compatibility": {
+          "$ref": "#/$defs/compatibility"
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/checksum"
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/dependency"
+          }
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alias",
+        "package"
+      ],
+      "properties": {
+        "alias": {
+          "$ref": "#/$defs/name"
+        },
+        "package": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sourceSha256",
+        "dependencies"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/digest"
+        },
+        "sourceSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "dependencies": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/edge"
+          }
+        }
+      }
+    },
+    "lock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "root",
+        "compatibility",
+        "packages"
+      ],
+      "properties": {
+        "format": {
+          "const": "zryna.lock.v1"
+        },
+        "root": {
+          "$ref": "#/$defs/digest"
+        },
+        "compatibility": {
+          "$ref": "#/$defs/compatibility"
+        },
+        "packages": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/package"
+          }
+        }
+      }
+    },
+    "material": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "content"
+      ],
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 1024,
+          "pattern": "^[\\x20-\\x7e\\n]*$(?![\\s\\S])"
+        }
+      }
+    },
+    "sbomPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package",
+        "sourceSha256",
+        "license"
+      ],
+      "properties": {
+        "package": {
+          "$ref": "#/$defs/digest"
+        },
+        "sourceSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[ -~]+$(?![\\s\\S])"
+        }
+      }
+    },
+    "sbomEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "alias",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/digest"
+        },
+        "alias": {
+          "$ref": "#/$defs/name"
+        },
+        "to": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "sbom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "packages",
+        "edges"
+      ],
+      "properties": {
+        "format": {
+          "const": "zryna.sbom.v1"
+        },
+        "packages": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/sbomPackage"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 128,
+          "items": {
+            "$ref": "#/$defs/sbomEdge"
+          }
+        }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Z][A-Z0-9_]*$(?![\\s\\S])"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[ -~]+$(?![\\s\\S])"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "compilerSha256",
+        "toolchains",
+        "variables",
+        "network",
+        "workspace",
+        "cache",
+        "compilerVersion"
+      ],
+      "properties": {
+        "os": {
+          "enum": [
+            "linux-x86_64",
+            "windows-x86_64"
+          ]
+        },
+        "compilerSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "toolchains": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/tool"
+          }
+        },
+        "variables": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/variable"
+          }
+        },
+        "network": {
+          "const": "disabled"
+        },
+        "workspace": {
+          "const": "empty"
+        },
+        "cache": {
+          "const": "empty"
+        },
+        "compilerVersion": {
+          "$ref": "#/$defs/version"
+        }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "executable",
+        "arguments"
+      ],
+      "properties": {
+        "executable": {
+          "$ref": "#/$defs/name"
+        },
+        "arguments": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 16,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[ -~]+$(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "environment",
+        "recipe",
+        "expected",
+        "observed",
+        "verification"
+      ],
+      "properties": {
+        "environment": {
+          "$ref": "#/$defs/environment"
+        },
+        "recipe": {
+          "$ref": "#/$defs/recipe"
+        },
+        "expected": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/checksum"
+          }
+        },
+        "observed": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/checksum"
+          }
+        },
+        "verification": {
+          "const": "comparison-only"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "builder",
+        "recipeSha256",
+        "environmentSha256",
+        "materials",
+        "sourceDateEpoch"
+      ],
+      "properties": {
+        "format": {
+          "const": "zryna.provenance.v1"
+        },
+        "builder": {
+          "$ref": "#/$defs/name"
+        },
+        "recipeSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "environmentSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "materials": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/digest"
+          }
+        },
+        "sourceDateEpoch": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "keyId",
+        "algorithm",
+        "signature",
+        "status",
+        "payloadSha256"
+      ],
+      "properties": {
+        "keyId": {
+          "$ref": "#/$defs/digest"
+        },
+        "algorithm": {
+          "const": "ed25519"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-f0-9]{128}$(?![\\s\\S])"
+        },
+        "status": {
+          "const": "unverified-fixture"
+        },
+        "payloadSha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "subjectSha256",
+        "signatures"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[ -~]+$(?![\\s\\S])"
+        },
+        "subjectSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "signatures": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/signature"
+          }
+        }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "reason",
+        "authorizationSha256",
+        "mode"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/digest"
+        },
+        "to": {
+          "$ref": "#/$defs/digest"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[ -~]+$(?![\\s\\S])"
+        },
+        "authorizationSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "mode": {
+          "const": "proposal-only"
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "tag",
+        "commit",
+        "lockSha256",
+        "checksums",
+        "sbom",
+        "provenance",
+        "reproduction",
+        "notes",
+        "rollback"
+      ],
+      "properties": {
+        "format": {
+          "const": "zryna.release.v1"
+        },
+        "tag": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 15,
+          "pattern": "^v(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})$(?![\\s\\S])"
+        },
+        "commit": {
+          "$ref": "#/$defs/commit"
+        },
+        "lockSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "checksums": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/checksum"
+          }
+        },
+        "sbom": {
+          "$ref": "#/$defs/sbom"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "reproduction": {
+          "$ref": "#/$defs/reproduction"
+        },
+        "notes": {
+          "$ref": "#/$defs/notes"
+        },
+        "rollback": {
+          "$ref": "#/$defs/rollback"
+        }
+      }
+    }
+  }
+}
