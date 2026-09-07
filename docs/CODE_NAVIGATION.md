@@ -84,6 +84,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
   `apps/zryna/src/profile.rs::selects_typed_scalars`; orchestration:
   `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and
   `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`.
+- Source-to-IR driver tests: `crates/zryna-driver/src/tests.rs`.
 - M3 candidate closure and dispatch: `crates/zryna-driver/src/{ownership_closure,ownership_pipeline}.rs`; strict manifest and transaction: `src/{ownership_manifest,ownership_publication}.rs`; complete internal build/run entrypoints: `src/ownership_commands.rs`.
 - Focus: `cargo test --locked -p zryna --test cli`, `cargo test --locked -p zryna-driver`; use pipeline fault/publication tests for transaction changes.
 - Keep architecture validation first, one verified program per request, and create-only whole-bundle commit. Finish with full gates.
