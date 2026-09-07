@@ -342,7 +342,9 @@ fn check_bound(
 fn bounds_trap(body: &mut Function) {
     body.instruction(&Instruction::I32GeU);
     body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    body.instruction(&Instruction::Unreachable);
+    body.instruction(&Instruction::I32Const(1));
+    body.instruction(&Instruction::GlobalSet(1));
+    body.instruction(&Instruction::Br(1));
     body.instruction(&Instruction::End);
 }
 

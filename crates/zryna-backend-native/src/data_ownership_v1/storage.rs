@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use cranelift_codegen::ir::{
-    FuncRef, InstBuilder, MemFlagsData, StackSlot, StackSlotData, StackSlotKind, TrapCode,
-    condcodes::IntCC, types,
+    FuncRef, InstBuilder, MemFlagsData, StackSlot, StackSlotData, StackSlotKind, condcodes::IntCC,
+    types,
 };
 use cranelift_frontend::FunctionBuilder;
 use zryna_diagnostics::Diagnostic;
@@ -284,6 +284,7 @@ pub(super) fn indexed_address(
     place: u32,
     index: cranelift_codegen::ir::Value,
     slots: &[Option<StackSlot>],
+    failed: cranelift_codegen::ir::Block,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
     let layout = type_record(program, place_type(function, place)?)?;
@@ -299,7 +300,7 @@ pub(super) fn indexed_address(
             let length = builder.ins().load(types::I64, MemFlagsData::new(), base, 8);
             let extended = builder.ins().uextend(types::I64, index);
             let ok = builder.ins().icmp(IntCC::UnsignedLessThan, extended, length);
-            builder.ins().trapz(ok, TrapCode::unwrap_user(10));
+            super::failure::bounds(ok, failed, builder);
             let stride =
                 type_record(program, layout.referenced_type().ok_or_else(invariant_error)?)?.size();
             return scaled_address(data, index, stride, builder);
@@ -309,7 +310,7 @@ pub(super) fn indexed_address(
     let limit =
         builder.ins().iconst(types::I32, i64::try_from(length).map_err(|_| invariant_error())?);
     let ok = builder.ins().icmp(IntCC::UnsignedLessThan, index, limit);
-    builder.ins().trapz(ok, TrapCode::unwrap_user(10));
+    super::failure::bounds(ok, failed, builder);
     scaled_address(data, index, stride, builder)
 }
 
@@ -318,6 +319,7 @@ pub(super) fn indexed_borrow_address(
     container_type: u32,
     container: cranelift_codegen::ir::Value,
     index: cranelift_codegen::ir::Value,
+    failed: cranelift_codegen::ir::Block,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
     let layout = type_record(program, container_type)?;
@@ -329,7 +331,7 @@ pub(super) fn indexed_borrow_address(
                     .map_err(|_| invariant_error())?,
             );
             let ok = builder.ins().icmp(IntCC::UnsignedLessThan, index, length);
-            builder.ins().trapz(ok, TrapCode::unwrap_user(10));
+            super::failure::bounds(ok, failed, builder);
             scaled_address(
                 container,
                 index,
@@ -342,7 +344,7 @@ pub(super) fn indexed_borrow_address(
             let length = builder.ins().load(types::I64, MemFlagsData::new(), container, 8);
             let extended = builder.ins().uextend(types::I64, index);
             let ok = builder.ins().icmp(IntCC::UnsignedLessThan, extended, length);
-            builder.ins().trapz(ok, TrapCode::unwrap_user(10));
+            super::failure::bounds(ok, failed, builder);
             let element = layout.referenced_type().ok_or_else(invariant_error)?;
             let element = type_record(program, element)?;
             scaled_address(data, index, align_up(element.size(), element.alignment())?, builder)
@@ -377,11 +379,12 @@ pub(super) fn index_value(
     index: cranelift_codegen::ir::Value,
     slots: &[Option<StackSlot>],
     runtime: &BTreeMap<&str, FuncRef>,
+    failed: cranelift_codegen::ir::Block,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
     let container = type_record(program, place_type(function, place)?)?;
     let element = container.referenced_type().ok_or_else(invariant_error)?;
-    let address = indexed_address(program, function, place, index, slots, builder)?;
+    let address = indexed_address(program, function, place, index, slots, failed, builder)?;
     copy_from_address(program, element, address, runtime, builder)
 }
 

@@ -7,6 +7,7 @@ use zryna_ir::data_ownership_v1::{FunctionIdentity, VerifiedFunction, VerifiedPr
 use super::error;
 
 mod control;
+mod failure;
 mod memory;
 mod operations;
 mod values;
@@ -61,6 +62,7 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
                 .map_err(|_| index_error())?,
         );
     }
+    declarations.function(0);
     module.section(&declarations);
 
     let mut memories = MemorySection::new();
@@ -77,6 +79,10 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
         GlobalType { val_type: ValType::I32, mutable: true, shared: false },
         &ConstExpr::i32_const(1024),
     );
+    globals.global(
+        GlobalType { val_type: ValType::I32, mutable: true, shared: false },
+        &ConstExpr::i32_const(0),
+    );
     module.section(&globals);
 
     let mut exports = ExportSection::new();
@@ -89,6 +95,7 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
             wrapper_index += 1;
         }
     }
+    exports.export("$zryna$observation", ExportKind::Func, wrapper_index);
     module.section(&exports);
 
     let context = Context { functions: &functions, layouts, type_count, program_base };
@@ -112,6 +119,10 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
             )?);
         }
     }
+    let mut observation = Function::new([]);
+    observation.instruction(&Instruction::GlobalGet(1));
+    observation.instruction(&Instruction::End);
+    code.function(&observation);
     module.section(&code);
     Ok(module.finish())
 }
@@ -183,6 +194,8 @@ fn export_wrapper(
     let parameters = function.parameters().len() + function.borrow_parameters().len();
     let result = u32::try_from(parameters).map_err(|_| index_error())?;
     let mut body = Function::new([(1, ValType::I32)]);
+    body.instruction(&Instruction::I32Const(0));
+    body.instruction(&Instruction::GlobalSet(1));
     body.instruction(&Instruction::I32Const(1024));
     body.instruction(&Instruction::GlobalSet(0));
     for index in 0..parameters {
@@ -335,7 +348,10 @@ fn encode_function(
         body.instruction(&Instruction::I32Ne);
         body.instruction(&Instruction::BrIf(0));
         for instruction in block.instructions() {
+            body.instruction(&Instruction::Block(wasm_encoder::BlockType::Empty));
             operations::instruction(function, instruction, locals, context, &mut body)?;
+            body.instruction(&Instruction::End);
+            failure::propagate(function, instruction, locals, context, &mut body)?;
         }
         control::terminator(
             function,

@@ -1,17 +1,18 @@
 //! Complete internal candidate commands; no public CLI profile is enabled here.
 
-use zryna_abi::{Invocation, ScalarHostErrorCode, ScalarOutcome, ScalarTarget};
+use zryna_abi::Invocation;
+
+mod observation;
 use zryna_diagnostics::Diagnostic;
 
 use crate::{
     CommandFailure, CommandFailureKind, DataOwnershipBuildRequest, DataOwnershipRunRequest,
     NativeProcessLimits, OwnershipManifestResult, OwnershipTarget, PublishedOwnershipBundle,
-    native::run_prepared_native_invocation,
+    native::ownership::observation::run,
     ownership_pipeline::{
         DataOwnershipCandidateSuccess, prepare_data_ownership_build, prepare_data_ownership_run,
     },
     ownership_publication::publish_after_staging,
-    pipeline_runtime::{normalize_frame, render_javascript_harness, render_webassembly_harness},
     runtime::NodeRuntimeCapability,
 };
 
@@ -65,38 +66,29 @@ fn execute_and_publish_run(
         let mut results = Vec::with_capacity(3);
         let artifacts = success.artifacts();
         if artifacts.javascript().is_some() {
-            let harness = render_javascript_harness(success.artifact_stem(), &invocation)?;
+            let harness = observation::javascript(success.artifact_stem(), &invocation)?;
             let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
-            let result_type = invocation.export().result();
-            let carrier = node
-                .run_javascript_module(&harness_path, transaction.path(), result_type)
+            let frame = node
+                .run_ownership_javascript(&harness_path, transaction.path())
                 .map_err(execution_diagnostic)?;
-            let outcome =
-                match zryna_abi::normalize_result(ScalarTarget::JavaScript, result_type, carrier) {
-                    Ok(value) => ScalarOutcome::Returned { value },
-                    Err(_) => {
-                        ScalarOutcome::HostError { code: ScalarHostErrorCode::InvalidTargetResult }
-                    }
-                };
+            let outcome = observation::decode(frame, invocation.export().result())?;
             results.push(OwnershipManifestResult::new(OwnershipTarget::JavaScript, outcome));
         }
         if let Some(artifact) = artifacts.webassembly() {
-            let harness = render_webassembly_harness(success.artifact_stem(), &invocation)?;
+            let harness = observation::webassembly(&invocation)?;
             let frame = node
-                .run_webassembly_module(&harness, artifact.bytes(), transaction.path())
+                .run_ownership_webassembly(&harness, artifact.bytes(), transaction.path())
                 .map_err(execution_diagnostic)?;
             results.push(OwnershipManifestResult::new(
                 OwnershipTarget::WebAssembly,
-                normalize_frame(ScalarTarget::CoreWebAssembly, invocation.export().result(), frame),
+                observation::decode(frame, invocation.export().result())?,
             ));
         }
         if let Some(executable) = artifacts.native_executable() {
-            let outcome = run_prepared_native_invocation(
-                executable.prepared_executable(),
-                output,
-                NativeProcessLimits::default(),
-            )
-            .map_err(|error| execution_diagnostic(error.diagnostic().clone()))?;
+            let frame =
+                run(executable.prepared_executable(), output, NativeProcessLimits::default())
+                    .map_err(|error| execution_diagnostic(error.diagnostic().clone()))?;
+            let outcome = observation::decode(frame, invocation.export().result())?;
             results.push(OwnershipManifestResult::new(OwnershipTarget::Native, outcome));
         }
         node.revalidate().map_err(execution_diagnostic)?;
