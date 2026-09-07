@@ -66,7 +66,7 @@ frames and process failures cannot substitute for a typed language outcome.
 The frozen corpus contains 15 scalar cases, four source/ABI rejections, two bounds failures and
 26 injected fault cases. Fault observations compare the entire ordered trace: exact source
 module/function/place cleanup identities, recursive value drops, implicit weak releases and
-control releases. Nested String aggregates, Vec<String> clone prefixes and Shared<String>
+control releases. Nested String aggregates, `Vec<String>` clone prefixes and `Shared<String>`
 payloads are included. No target supplies the expected value or trace for another target.
 
 Private fault selection accepts defined trap classes and ordinals 1 through 1,048,576. Logical
