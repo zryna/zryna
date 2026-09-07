@@ -221,7 +221,7 @@ fn drop_shared(
         builder.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 4, 2));
     let output_address = builder.ins().stack_addr(types::I64, output, 0);
     call_ok(runtime, "zryna_rt_o1_strong_release_begin", &[control, output_address], builder)?;
-    let is_last = builder.ins().stack_load(types::I32, types::I32, output, 0);
+    let is_last = builder.ins().stack_load(types::I64, types::I32, output, 0);
     let last = builder.create_block();
     let done = builder.create_block();
     let condition = builder.ins().icmp_imm_u(IntCC::NotEqual, is_last, 0);
