@@ -33,7 +33,8 @@ mod source_api;
 mod webassembly;
 mod workspace_source;
 
-use std::{error::Error, fmt, path::Path};
+use std::path::Path;
+
 use zryna_architecture::ValidationReport;
 use zryna_diagnostics::{Diagnostic, Severity};
 use zryna_ir::VerifiedProgram;
@@ -69,55 +70,13 @@ pub use pipeline::{
     TargetResult, TargetSelection, build_control_flow_workspace, build_workspace,
     run_control_flow_workspace, run_workspace,
 };
-pub use source_api::{DualTargetArtifacts, SourceToIrSuccess};
+pub use source_api::{DualTargetArtifacts, SourceToIrError, SourceToIrSuccess};
 pub use webassembly::{
     MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,
     WEBASSEMBLY_ARTIFACT_EXTENSION, WebAssemblyBuildError, WebAssemblyBuildSuccess,
     WebAssemblyOutputRoot, compile_webassembly, publish_webassembly,
 };
 pub use workspace_source::WorkspaceSourceRoot;
-
-/// Failure before source can become backend-safe verified IR.
-#[derive(Debug)]
-pub enum SourceToIrError {
-    /// The authenticated frontend worker failed before returning verified syntax.
-    Frontend(zryna_frontend::WorkerError),
-    /// Provider, semantic, or IR diagnostics rejected the source.
-    Rejected(Vec<Diagnostic>),
-}
-
-impl SourceToIrError {
-    /// Returns source diagnostics when a compiler phase rejected the program.
-    #[must_use]
-    pub fn diagnostics(&self) -> &[Diagnostic] {
-        match self {
-            Self::Frontend(error) => error.diagnostics(),
-            Self::Rejected(diagnostics) => diagnostics,
-        }
-    }
-}
-
-impl fmt::Display for SourceToIrError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Frontend(error) => error.fmt(formatter),
-            Self::Rejected(diagnostics) => write!(
-                formatter,
-                "source was rejected by {} deterministic diagnostic(s)",
-                diagnostics.len()
-            ),
-        }
-    }
-}
-
-impl Error for SourceToIrError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::Frontend(error) => Some(error),
-            Self::Rejected(_) => None,
-        }
-    }
-}
 
 /// Runs the mandatory workspace gate.
 #[must_use]

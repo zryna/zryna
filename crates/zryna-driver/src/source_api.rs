@@ -1,4 +1,6 @@
-//! Public source-to-IR success and dual-target response models.
+//! Public source-to-IR response models.
+
+use std::{error::Error, fmt};
 
 use zryna_backend_javascript::JavaScriptArtifact;
 use zryna_backend_native::LlvmIrArtifact;
@@ -38,5 +40,47 @@ impl SourceToIrSuccess {
     #[must_use]
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
+    }
+}
+
+/// Failure before source can become backend-safe verified IR.
+#[derive(Debug)]
+pub enum SourceToIrError {
+    /// The authenticated frontend worker failed before returning verified syntax.
+    Frontend(zryna_frontend::WorkerError),
+    /// Provider, semantic, or IR diagnostics rejected the source.
+    Rejected(Vec<Diagnostic>),
+}
+
+impl SourceToIrError {
+    /// Returns source diagnostics when a compiler phase rejected the program.
+    #[must_use]
+    pub fn diagnostics(&self) -> &[Diagnostic] {
+        match self {
+            Self::Frontend(error) => error.diagnostics(),
+            Self::Rejected(diagnostics) => diagnostics,
+        }
+    }
+}
+
+impl fmt::Display for SourceToIrError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Frontend(error) => error.fmt(formatter),
+            Self::Rejected(diagnostics) => write!(
+                formatter,
+                "source was rejected by {} deterministic diagnostic(s)",
+                diagnostics.len()
+            ),
+        }
+    }
+}
+
+impl Error for SourceToIrError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Frontend(error) => Some(error),
+            Self::Rejected(_) => None,
+        }
     }
 }
