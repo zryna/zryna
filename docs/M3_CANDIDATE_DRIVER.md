@@ -79,8 +79,9 @@ Focused repository tests cover:
 
 ## Retained exclusions
 
-This candidate is not public CLI availability or general aggregate ABI. The fixed-oracle
-three-target conformance closure remains Issue #89. Public profile activation, authenticated
+This candidate is not public CLI availability or general aggregate ABI. The
+[fixed-oracle gates](M3_CONFORMANCE.md) exercise this candidate under Issue #89; closure remains
+blocked on the documented trap and fault evidence. Public profile activation, authenticated
 website material, and release provenance remain Issue #90. Windows or macOS native execution,
 WASI, Components, FFI, threads, raw pointers, custom allocators, and freestanding targets remain
 unsupported.
