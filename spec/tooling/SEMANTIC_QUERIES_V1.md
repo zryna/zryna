@@ -9,6 +9,16 @@ The [examples and future fixtures](QUERY_EXAMPLES_V1.md) are normative observati
 implementation, not recorded executions. Existing M0–M3 acceptance gates, including the order
 of #89 then #90 closure, and historical digest-pinned inventories remain unchanged.
 
+Issue #382 implements only the internal `diagnostics` session slice in the driver's
+`diagnostic_sessions` module. The driver retains immutable `SourceMap` authority and the
+unchanged structured-diagnostics-v2 report, rejects stale or foreign handle/revision pairs, and
+rechecks the active revision before publishing a complete report. Its deterministic cache charge
+is the exact UTF-8 bytes of retained paths, source text and v2 reports; its diagnostic-query work
+charge is one unit per retained report byte plus one authority comparison. The `results` request
+limit is still shape-validated, while diagnostic-record bounds remain exactly #169's authority.
+No other method, transport, consumer integration, edit, formatting or execution capability is
+implemented by this slice.
+
 ## Ownership and dependencies
 
 | Authority | Responsibility |
