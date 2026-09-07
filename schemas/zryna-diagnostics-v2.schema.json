@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zryna.com/schemas/zryna-diagnostics-v2.schema.json",
+  "title": "Zryna structured diagnostics v2",
+  "description": "Closed wire shape. UTF-8 byte budgets, source binding, ordering and terminal exhaustion require the normative Rust validator as well.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "diagnostics"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "diagnostics": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "offset": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "path": { "type": "string", "maxLength": 1024 },
+    "text": { "type": "string", "maxLength": 4096 },
+    "location": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "global" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "workspace-path" },
+            "path": { "$ref": "#/$defs/path" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path", "byte_start", "byte_end"],
+          "properties": {
+            "kind": { "const": "source" },
+            "path": { "$ref": "#/$defs/path" },
+            "byte_start": { "$ref": "#/$defs/offset" },
+            "byte_end": { "$ref": "#/$defs/offset" }
+          }
+        }
+      ]
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "location", "message", "guidance"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^ZRYNA-[A-Z][0-9]{4}$", "maxLength": 11 },
+        "severity": { "enum": ["error", "warning"] },
+        "location": { "$ref": "#/$defs/location" },
+        "message": { "$ref": "#/$defs/text" },
+        "guidance": { "$ref": "#/$defs/text" }
+      }
+    }
+  }
+}

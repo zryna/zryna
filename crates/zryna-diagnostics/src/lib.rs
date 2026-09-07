@@ -2,9 +2,9 @@
 
 #![forbid(unsafe_code)]
 
-use std::fmt;
-
+pub mod protocol_v2;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use zryna_source::{SourceError, SourceMap, Span};
 
 /// Diagnostic severity.
