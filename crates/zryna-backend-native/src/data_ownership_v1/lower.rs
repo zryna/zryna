@@ -90,6 +90,22 @@ pub(super) fn build_function(
         if block.id() == 0 {
             initialize_parameter_places(function, &slots, &values, &mut builder)?;
         }
+        // Block parameters can own temporaries, including an upgraded Shared value.
+        for parameter in block.parameters() {
+            if let Some(place) = function.places().find(
+                |place| matches!(place.kind(), PlaceKind::Temporary(id) if *id == parameter.id()),
+            ) {
+                store_place(
+                    program,
+                    function,
+                    place.id(),
+                    get_value(&values, parameter.id())?,
+                    &slots,
+                    runtime,
+                    &mut builder,
+                )?;
+            }
+        }
         for operation in block.operations() {
             lower_operation(
                 program,
