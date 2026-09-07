@@ -9,7 +9,7 @@ const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml
 assert.deepEqual(document.errors, []);
 const budgetWorkflow = withoutBootstrapTiming(document.toJS());
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'docs-publish'];
+const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform', 'docs-publish'];
 const nodeStep = {
   uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
   with: { 'node-version': '22.22.1' },
@@ -332,6 +332,9 @@ test('parallel scheduling preserves all other pinned workflow authority', () => 
       steps.splice(index - 1, 1);
     }
   }
+  // M3 additions are independently frozen by m3-conformance.test.mjs.
+  delete original.jobs['m3-platform'];
+  delete original.jobs.m3;
   original.jobs.preflight['timeout-minutes'] = 10;
   for (const id of ['rust', 'adapter-platform', 'm2-platform']) {
     original.jobs[id].needs = 'preflight';

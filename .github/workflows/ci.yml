@@ -203,6 +203,49 @@ jobs:
           PLATFORM_RESULT: ${{ needs.m2-platform.result }}
         run: test "$M0_RESULT" = success && test "$PLATFORM_RESULT" = success
 
+  m3-platform:
+    name: m3 (${{ matrix.os }})
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked
+      - run: pnpm m3:check
+
+  m3:
+    name: m3
+    if: always()
+    needs: [m0, m2, m3-platform]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify complete M3 gate
+        env:
+          M0_RESULT: ${{ needs.m0.result }}
+          M2_RESULT: ${{ needs.m2.result }}
+          PLATFORM_RESULT: ${{ needs.m3-platform.result }}
+        run: test "$M0_RESULT" = success && test "$M2_RESULT" = success && test "$PLATFORM_RESULT" = success
+
   docs-publish:
     name: documentation
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -304,6 +304,9 @@ Requirements:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm m3:quick
+pnpm m3:registry
+pnpm m3:check
 pnpm m3:runtime-abi:quick
 pnpm m3:owned:quick
 pnpm m3:data:quick
@@ -365,6 +368,9 @@ broader workspace check so closure and retained-filesystem regressions fail earl
 The canonical command validates and executes every registered Rust, protocol, and adapter proof
 suite without a skip-architecture mode. See [M0 conformance](docs/M0_CONFORMANCE.md) for the exact
 coverage and unsupported status.
+
+See [M3 fixed-oracle conformance](docs/M3_CONFORMANCE.md) for candidate evidence,
+resource gates and the retained public-profile rejection.
 
 ## Repository map
 

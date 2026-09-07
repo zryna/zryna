@@ -124,3 +124,7 @@ When moving a file or changing an entrypoint, update its route and relative link
 Recheck the component's manifest registration/dependencies, existing README, neighboring tests, and gate script references.
 Prefer stable entry symbols over line numbers and dynamic test counts. Search within the selected component before expanding to callers.
 This file guides navigation; it grants no new source admission, dependency edge, public profile, or reduced verification requirement.
+
+M3 conformance: [contract](M3_CONFORMANCE.md), [registry](../tests/m3-conformance-v1.json),
+[candidate corpus](../crates/zryna-driver/src/ownership_commands/conformance.rs),
+and [commands](../scripts/lib/m3-gates.mjs).
