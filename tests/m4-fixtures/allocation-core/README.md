@@ -1,6 +1,6 @@
 # Private allocation core conformance
 
-Issue #377 implements the S2 fixture slice of
+Issue #377 develops the S2 fixture slice of
 `spec/libraries/MINIMAL_CORE_HOST_V0.md`. These are private source fixtures for
 A1–A5 under DataOwnershipV1. They add no library package, owned entry ABI, host
 operation, public selector, or public support claim. Only `score` is an entry;
@@ -49,6 +49,25 @@ successful growth, and an empty allocation registry after cleanup. Exact and
 first-extra Vec/allocation limits use injected allocation failure at the exact
 limit so the test never exhausts the host. This helper test complements the
 source cleanup suite; it does not replace compiler execution evidence.
+
+`capacity-cases.json` keeps resource cases separate from the small fixture loop.
+Two source fixtures push up to the 1,048,576-element maximum, test the first
+extra push, and read the last/first-extra element of a maximum-length clone.
+They check the fixed scalar/trap result, exact owner count and reverse cleanup
+order. They use the private UTF-8 fault channel only to enable tracing: the
+fixtures contain no String operations, so no allocation attempt is injected.
+
+The private allocator probes distinguish the fixed WebAssembly arena from the
+universal byte maximum. `native-capacity.c` is a standalone bounded probe of
+the actual C runtime; `capacity-inspect.mjs` exposes existing allocator/global
+definitions only in an in-memory copy of an emitted module. Neither builds a
+large payload. The previous 64 MiB first-extra `CAPACITY` oracle was incorrect;
+the integrated [#384](https://github.com/zryna/zryna/issues/384) prerequisite
+classifies target exhaustion within the universal limit as `ALLOCATION`.
+`native-capacity.c` remains owned by the #384 runtime regression rather than a
+duplicate #377 driver test. These prepared fixtures are not passing evidence
+for this revision and do not establish String maximum-length source execution.
+See [capacity evidence and reproduction](CAPACITY.md) before claiming completion.
 
 Focused commands:
 

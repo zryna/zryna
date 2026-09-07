@@ -18,7 +18,6 @@ int main(void) {
   static const uint8_t joined[] = {104, 195, 169, 33};
   zryna_rt_o1_handle source = {0}, copied = {0}, right = {0}, result = {0};
   zryna_rt_o1_handle vector = {0}, replacement = {0};
-  uintptr_t raw = 0;
   uint64_t attempts;
 
   fail_at = allocation_attempt + 1;
@@ -82,11 +81,7 @@ int main(void) {
   assert(zryna_rt_o1_vec_allocate(7, 1048577, &result) == RT_CAPACITY);
   assert(allocation_attempt == attempts);
   zero_result(&result);
-  fail_at = allocation_attempt + 1;
-  assert(zryna_rt_o1_allocate(67108864, 1, &raw) == RT_ALLOCATION && raw == 0);
-  attempts = allocation_attempt;
-  assert(zryna_rt_o1_allocate(67108865, 1, &raw) == RT_CAPACITY && raw == 0);
-  assert(allocation_attempt == attempts && allocation_head == NULL);
+  assert(allocation_head == NULL);
   puts("native allocation observation passed");
   return 0;
 }

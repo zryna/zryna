@@ -16,11 +16,15 @@ fn allocation_core_native_private_utf8_storage_and_failure_atomicity() {
         "#include <stdint.h>\nstatic uint64_t fail_at;\n#define ZRYNA_RT_O1_FAIL_ALLOCATION_AT fail_at\n{runtime}\n{harness}"
     );
     let path = workspace.root().join("allocation-observation.c");
-    let executable = workspace.root().join("allocation-observation");
     fs::write(&path, source).expect("private runtime translation unit");
+    compile_and_run(&path, workspace.root(), b"native allocation observation passed\n");
+}
+
+fn compile_and_run(source: &std::path::Path, root: &std::path::Path, expected: &[u8]) {
+    let executable = root.join("allocation-observation");
     let compiled = Command::new("/usr/bin/gcc")
         .args(["-std=c11", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O2", "-fno-common"])
-        .arg(path)
+        .arg(source)
         .arg("-o")
         .arg(&executable)
         .output()
@@ -28,5 +32,5 @@ fn allocation_core_native_private_utf8_storage_and_failure_atomicity() {
     assert!(compiled.status.success(), "{}", String::from_utf8_lossy(&compiled.stderr));
     let output = Command::new(executable).output().expect("private runtime observation");
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    assert_eq!(output.stdout, b"native allocation observation passed\n");
+    assert_eq!(output.stdout, expected);
 }

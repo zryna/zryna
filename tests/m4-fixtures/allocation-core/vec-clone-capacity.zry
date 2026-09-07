@@ -1,0 +1,12 @@
+function values(index: i32): i32 {
+  let items: Vec<i32> = Vec<i32>([7, 9]);
+  let count: i32 = 2;
+  while (count < 1048576) {
+    push(items, 13);
+    count = count + 1;
+  }
+  const copied: Vec<i32> = clone(items);
+  return copied[index];
+}
+
+export function score(index: i32): i32 { return values(index); }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { exposeTestExports } from './wasm-inspection.mjs';
 
 const [target, entry, id, artifactPath] = process.argv.slice(2);
 const cases = JSON.parse(await readFile(new URL('./cases.json', import.meta.url), 'utf8'));
@@ -58,7 +59,7 @@ export const inspected = { scalar, status: $zryna$observation(0), observations }
   assert.deepEqual(WebAssembly.Module.imports(originalModule), []);
   assert.ok(WebAssembly.Module.exports(originalModule).every(value => value.kind === 'function'));
   // Expose memory only in an in-memory test copy, preserving all code/data sections.
-  const bytes = exposeTestMemory(original);
+  const bytes = exposeTestExports(original, [{ name: 'inspectionMemory', kind: 2, index: 0 }]);
   const { instance } = await WebAssembly.instantiate(bytes, {});
   const observe = instance.exports.$zryna$observation;
   observe(command);
@@ -83,47 +84,3 @@ export const inspected = { scalar, status: $zryna$observation(0), observations }
   assert.deepEqual(snapshots, row.snapshots);
 }
 console.log('allocation observation passed');
-
-function exposeTestMemory(bytes) {
-  let offset = 8;
-  const sections = [bytes.slice(0, 8)];
-  let changed = false;
-  while (offset < bytes.length) {
-    const kind = bytes[offset++];
-    const size = readLeb();
-    const end = offset + size;
-    let payload = bytes.slice(offset, end);
-    if (kind === 7) {
-      const count = readLeb();
-      const name = new TextEncoder().encode('inspectionMemory');
-      payload = Uint8Array.from([...leb(count + 1), ...bytes.slice(offset, end), ...leb(name.length), ...name, 2, 0]);
-      changed = true;
-    }
-    sections.push(Uint8Array.from([kind, ...leb(payload.length)]), payload);
-    offset = end;
-  }
-  assert.ok(changed, 'the validated module must have an export section');
-  return Buffer.concat(sections);
-
-  function readLeb() {
-    let value = 0;
-    let shift = 0;
-    for (let count = 0; count < 5; count++) {
-      const byte = bytes[offset++];
-      value |= (byte & 127) << shift;
-      if ((byte & 128) === 0) return value >>> 0;
-      shift += 7;
-    }
-    throw new Error('invalid section length in validated input');
-  }
-}
-
-function leb(value) {
-  const bytes = [];
-  do {
-    const next = value & 127;
-    value >>>= 7;
-    bytes.push(next | (value ? 128 : 0));
-  } while (value);
-  return bytes;
-}
