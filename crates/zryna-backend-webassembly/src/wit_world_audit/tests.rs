@@ -1,6 +1,8 @@
 use super::*;
+use std::fs;
+use std::path::PathBuf;
 
-const ROOT: &str = r#"
+const ROOT: &str = r"
     package zryna:capability-profiles@0.1.0;
     world browser {}
     world command {
@@ -26,54 +28,50 @@ const ROOT: &str = r#"
       import wasi:random/random@0.2.12;
       export wasi:http/incoming-handler@0.2.12;
     }
-"#;
+";
 
-const DEPENDENCIES: &[(&str, &str)] = &[
-    ("wasi:cli@0.2.12", "package wasi:cli@0.2.12; interface environment {} interface run {}"),
-    (
-        "wasi:clocks@0.2.12",
-        "package wasi:clocks@0.2.12; interface monotonic-clock {} interface wall-clock {}",
-    ),
-    (
-        "wasi:filesystem@0.2.12",
-        "package wasi:filesystem@0.2.12; interface preopens {} interface types {}",
-    ),
-    (
-        "wasi:http@0.2.12",
-        "package wasi:http@0.2.12; interface outgoing-handler {} interface incoming-handler {}",
-    ),
-    ("wasi:io@0.2.12", "package wasi:io@0.2.12; interface streams {}"),
-    ("wasi:random@0.2.12", "package wasi:random@0.2.12; interface random {}"),
-    (
-        "wasi:sockets@0.2.12",
-        "package wasi:sockets@0.2.12; interface instance-network {} interface ip-name-lookup {} interface network {} interface tcp-create-socket {} interface tcp {} interface udp-create-socket {} interface udp {}",
-    ),
-];
+const DEPENDENCY_PACKAGES: &[&str] =
+    &["cli", "clocks", "filesystem", "http", "io", "random", "sockets"];
 
 fn independently_resolve(root: &str) -> Result<(Resolve, wit_parser::PackageId), Diagnostic> {
-    let mut owned = vec![(pins::ROOT_PACKAGE, "root.wit", root)];
-    for (index, (package, text)) in DEPENDENCIES.iter().enumerate() {
-        let path = match index {
-            0 => "dep-0.wit",
-            1 => "dep-1.wit",
-            2 => "dep-2.wit",
-            3 => "dep-3.wit",
-            4 => "dep-4.wit",
-            5 => "dep-5.wit",
-            _ => "dep-6.wit",
-        };
-        owned.push((package, path, text));
+    let mut owned = vec![(pins::ROOT_PACKAGE.to_owned(), "root.wit".to_owned(), root.to_owned())];
+    let dependencies =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/wit-world-audit-v1/dependencies");
+    for package_name in DEPENDENCY_PACKAGES {
+        let package = dependencies.join(package_name);
+        let package_identity = format!("wasi:{package_name}@0.2.12");
+        let mut files = fs::read_dir(&package)
+            .expect("WASI package sources")
+            .map(|entry| entry.expect("WASI source entry").path())
+            .filter(|path| path.extension().is_some_and(|extension| extension == "wit"))
+            .collect::<Vec<_>>();
+        files.sort();
+        for file in files {
+            let file_name = file.file_name().expect("WIT file name").to_string_lossy();
+            owned.push((
+                package_identity.clone(),
+                format!("wasi/{package_name}/{file_name}"),
+                fs::read_to_string(file).expect("UTF-8 WASI WIT source"),
+            ));
+        }
     }
-    let source_pins = owned
-        .iter()
-        .map(|(package, path, _)| pins::SourcePin { package, path, sha256: "" })
-        .collect::<Vec<_>>();
-    let sources = source_pins
-        .iter()
-        .zip(owned.iter())
-        .map(|(pin, (_, _, text))| (pin, *text))
-        .collect::<Vec<_>>();
-    resolve_sources(&sources)
+    assert_eq!(owned.len(), pins::SOURCES.len(), "complete pinned WIT source inventory");
+    resolve_source_texts(
+        owned.iter().map(|(package, path, text)| (package.as_str(), path.as_str(), text.as_str())),
+    )
+}
+
+fn authentication_failure(sources: &[WitSource], context: &str) -> Diagnostic {
+    match authenticate(sources) {
+        Ok(_) => panic!("{context}"),
+        Err(error) => error,
+    }
+}
+
+#[test]
+fn independent_baseline_resolves_and_matches_the_exact_world_closure() {
+    let (resolve, root) = independently_resolve(ROOT).expect("accepted graph resolves");
+    audit_resolved(&resolve, root).expect("accepted resolved graph matches");
 }
 
 #[test]
@@ -106,39 +104,36 @@ fn independent_resolution_rejects_wrong_version_world_and_malformed_source() {
 
 #[test]
 fn parser_input_byte_limits_accept_the_boundary_and_reject_the_first_extra() {
-    let exact_root = [b'x'; MAX_ROOT_SOURCE_BYTES];
+    let exact_root = vec![b'x'; MAX_ROOT_SOURCE_BYTES];
     let exact = [WitSource::new(pins::SOURCES[0].path, exact_root)];
-    assert_ne!(authenticate(&exact).expect_err("unauthenticated exact root").code(), "ZRYNA-W4003");
+    assert_ne!(authentication_failure(&exact, "unauthenticated exact root").code(), "ZRYNA-W4003");
 
-    let first_extra_root = [b'x'; MAX_ROOT_SOURCE_BYTES + 1];
+    let first_extra_root = vec![b'x'; MAX_ROOT_SOURCE_BYTES + 1];
     let first_extra = [WitSource::new(pins::SOURCES[0].path, first_extra_root)];
-    assert_eq!(
-        authenticate(&first_extra).expect_err("first extra root byte").code(),
-        "ZRYNA-W4003"
-    );
+    assert_eq!(authentication_failure(&first_extra, "first extra root byte").code(), "ZRYNA-W4003");
 
     let exact_total = (0..8)
         .map(|index| WitSource::new(format!("unknown-{index}.wit"), vec![b'x'; MAX_SOURCE_BYTES]))
         .collect::<Vec<_>>();
     assert_ne!(
-        authenticate(&exact_total).expect_err("unauthenticated exact total").code(),
+        authentication_failure(&exact_total, "unauthenticated exact total").code(),
         "ZRYNA-W4003"
     );
     let mut first_extra_total = exact_total;
     first_extra_total[0] = WitSource::new("unknown-0.wit", vec![b'x'; MAX_SOURCE_BYTES + 1]);
     assert_eq!(
-        authenticate(&first_extra_total).expect_err("first extra total byte").code(),
+        authentication_failure(&first_extra_total, "first extra total byte").code(),
         "ZRYNA-W4003"
     );
 
     let exact_path = [WitSource::new("x".repeat(MAX_SOURCE_PATH_BYTES), Vec::new())];
     assert_ne!(
-        authenticate(&exact_path).expect_err("unauthenticated exact path").code(),
+        authentication_failure(&exact_path, "unauthenticated exact path").code(),
         "ZRYNA-W4003"
     );
     let first_extra_path = [WitSource::new("x".repeat(MAX_SOURCE_PATH_BYTES + 1), Vec::new())];
     assert_eq!(
-        authenticate(&first_extra_path).expect_err("first extra path byte").code(),
+        authentication_failure(&first_extra_path, "first extra path byte").code(),
         "ZRYNA-W4003"
     );
 }

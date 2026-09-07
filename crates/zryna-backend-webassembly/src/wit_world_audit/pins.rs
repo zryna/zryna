@@ -6,7 +6,8 @@ pub(super) struct SourcePin {
 
 pub(super) struct WorldPin {
     pub(super) identity: &'static str,
-    pub(super) imports: &'static [&'static str],
+    pub(super) explicit_imports: &'static [&'static str],
+    pub(super) resolved_imports: &'static [&'static str],
     pub(super) exports: &'static [&'static str],
 }
 
@@ -201,10 +202,15 @@ const fn pin(package: &'static str, path: &'static str, sha256: &'static str) ->
 }
 
 pub(super) const WORLDS: &[WorldPin] = &[
-    WorldPin { identity: "zryna:capability-profiles/browser@0.1.0", imports: &[], exports: &[] },
+    WorldPin {
+        identity: "zryna:capability-profiles/browser@0.1.0",
+        explicit_imports: &[],
+        resolved_imports: &[],
+        exports: &[],
+    },
     WorldPin {
         identity: "zryna:capability-profiles/command@0.1.0",
-        imports: &[
+        explicit_imports: &[
             "wasi:cli/environment@0.2.12",
             "wasi:clocks/monotonic-clock@0.2.12",
             "wasi:clocks/wall-clock@0.2.12",
@@ -219,14 +225,42 @@ pub(super) const WORLDS: &[WorldPin] = &[
             "wasi:sockets/udp-create-socket@0.2.12",
             "wasi:sockets/udp@0.2.12",
         ],
+        resolved_imports: &[
+            "wasi:cli/environment@0.2.12",
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:filesystem/preopens@0.2.12",
+            "wasi:filesystem/types@0.2.12",
+            "wasi:io/error@0.2.12",
+            "wasi:io/poll@0.2.12",
+            "wasi:io/streams@0.2.12",
+            "wasi:random/random@0.2.12",
+            "wasi:sockets/instance-network@0.2.12",
+            "wasi:sockets/ip-name-lookup@0.2.12",
+            "wasi:sockets/network@0.2.12",
+            "wasi:sockets/tcp-create-socket@0.2.12",
+            "wasi:sockets/tcp@0.2.12",
+            "wasi:sockets/udp-create-socket@0.2.12",
+            "wasi:sockets/udp@0.2.12",
+        ],
         exports: &["wasi:cli/run@0.2.12"],
     },
     WorldPin {
         identity: "zryna:capability-profiles/server@0.1.0",
-        imports: &[
+        explicit_imports: &[
             "wasi:clocks/monotonic-clock@0.2.12",
             "wasi:clocks/wall-clock@0.2.12",
             "wasi:http/outgoing-handler@0.2.12",
+            "wasi:random/random@0.2.12",
+        ],
+        resolved_imports: &[
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:http/outgoing-handler@0.2.12",
+            "wasi:http/types@0.2.12",
+            "wasi:io/error@0.2.12",
+            "wasi:io/poll@0.2.12",
+            "wasi:io/streams@0.2.12",
             "wasi:random/random@0.2.12",
         ],
         exports: &["wasi:http/incoming-handler@0.2.12"],

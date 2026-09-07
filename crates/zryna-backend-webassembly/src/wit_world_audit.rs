@@ -49,7 +49,8 @@ impl WitSource {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedWitWorld {
     identity: String,
-    imports: Vec<String>,
+    explicit_imports: Vec<String>,
+    resolved_imports: Vec<String>,
     exports: Vec<String>,
 }
 
@@ -60,10 +61,16 @@ impl ResolvedWitWorld {
         &self.identity
     }
 
-    /// Returns canonical, sorted interface imports.
+    /// Returns the canonical, sorted imports declared explicitly by the accepted world contract.
     #[must_use]
-    pub fn imports(&self) -> &[String] {
-        &self.imports
+    pub fn explicit_imports(&self) -> &[String] {
+        &self.explicit_imports
+    }
+
+    /// Returns canonical, sorted imports after parser-mandated type-dependency elaboration.
+    #[must_use]
+    pub fn resolved_imports(&self) -> &[String] {
+        &self.resolved_imports
     }
 
     /// Returns canonical, sorted interface exports.
@@ -110,9 +117,9 @@ pub fn audit_pinned_wit_worlds(sources: &[WitSource]) -> Result<WitWorldAudit, D
     audit_resolved(&resolve, root)
 }
 
-fn authenticate<'a>(
-    sources: &'a [WitSource],
-) -> Result<Vec<(&'static pins::SourcePin, &'a str)>, Diagnostic> {
+fn authenticate(
+    sources: &[WitSource],
+) -> Result<Vec<(&'static pins::SourcePin, &str)>, Diagnostic> {
     if sources.len() > MAX_SOURCE_FILES {
         return Err(budget_error("source count", MAX_SOURCE_FILES));
     }
@@ -171,9 +178,15 @@ fn authenticate<'a>(
 fn resolve_sources(
     sources: &[(&pins::SourcePin, &str)],
 ) -> Result<(Resolve, wit_parser::PackageId), Diagnostic> {
+    resolve_source_texts(sources.iter().map(|(pin, text)| (pin.package, pin.path, *text)))
+}
+
+fn resolve_source_texts<'a>(
+    sources: impl IntoIterator<Item = (&'a str, &'a str, &'a str)>,
+) -> Result<(Resolve, wit_parser::PackageId), Diagnostic> {
     let mut maps = BTreeMap::<&str, SourceMap>::new();
-    for (pin, text) in sources {
-        maps.entry(pin.package).or_default().push_str(pin.path, *text);
+    for (package, path, text) in sources {
+        maps.entry(package).or_default().push_str(path, text);
     }
 
     let mut root = None;
@@ -239,9 +252,9 @@ fn audit_resolved(
                 expected.identity
             )));
         }
-        let imports = interface_ids(resolve, world.imports.values(), "import")?;
+        let resolved_imports = interface_ids(resolve, world.imports.values(), "import")?;
         let exports = interface_ids(resolve, world.exports.values(), "export")?;
-        if imports.iter().map(String::as_str).ne(expected.imports.iter().copied())
+        if resolved_imports.iter().map(String::as_str).ne(expected.resolved_imports.iter().copied())
             || exports.iter().map(String::as_str).ne(expected.exports.iter().copied())
         {
             return Err(audit_error(format!(
@@ -249,7 +262,12 @@ fn audit_resolved(
                 expected.identity
             )));
         }
-        worlds.push(ResolvedWitWorld { identity, imports, exports });
+        worlds.push(ResolvedWitWorld {
+            identity,
+            explicit_imports: expected.explicit_imports.iter().map(ToString::to_string).collect(),
+            resolved_imports,
+            exports,
+        });
     }
     Ok(WitWorldAudit { packages, worlds })
 }

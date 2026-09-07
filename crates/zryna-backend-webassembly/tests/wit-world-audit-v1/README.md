@@ -49,5 +49,12 @@ Authentication occurs before parsing. One call accepts at most 34 files, 32 KiB 
 141,709 bytes including the 1,129-byte local root; the vendored WASI inputs are 140,580 bytes.
 Input order is normalized before authentication and every call constructs a fresh resolver.
 
+The accepted root explicitly declares 0/13/4 imports for browser/command/server. The pinned parser
+elaborates interface type dependencies into exact resolved closures of 0/16/8: command additionally
+observes `wasi:io/error`, `wasi:io/poll`, and `wasi:io/streams`; server additionally observes those
+three interfaces and `wasi:http/types`. All are `0.2.12`. Tests assert both complete lists and first
+prove that the unmodified vendored dependency sources pass the independent resolved audit.
+Elaboration records dependency topology only; it does not change the registry or grant authority.
+
 The `hostile/` files are intentionally unauthenticated replacements used to prove that version,
 world, broadening and syntax substitutions fail closed. They are not alternate accepted sources.

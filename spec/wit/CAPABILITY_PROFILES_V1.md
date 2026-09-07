@@ -26,7 +26,9 @@ here: one package declaration followed by flat worlds containing fully qualified
 imports and exports. It is not a replacement for a general Component Model toolchain. The
 separate backend dependency audit described below parses the complete authenticated source set
 with the pinned upstream parser, resolves its dependency graph, and independently compares the
-resolved packages and world interfaces with this contract.
+resolved packages and world interfaces with exact pins. The audit reports the accepted explicit
+imports separately from the parser-elaborated dependency closure; it does not treat synthesized
+type dependencies as additional host-capability grants.
 
 ## World identities
 
@@ -35,6 +37,13 @@ resolved packages and world interfaces with this contract.
 | browser | `zryna:capability-profiles/browser@0.1.0` | 0 | 0 | specified only |
 | command | `zryna:capability-profiles/command@0.1.0` | 13 | `wasi:cli/run@0.2.12` | specified only |
 | server | `zryna:capability-profiles/server@0.1.0` | 4 | `wasi:http/incoming-handler@0.2.12` | specified only |
+
+The host-import counts above are the explicit declarations authenticated by the accepted source
+and registry. WIT resolution elaborates interfaces needed by imported or exported interface types,
+so the exact resolved observations contain 0 imports for browser, 16 for command, and 8 for server.
+Command adds `wasi:io/error`, `wasi:io/poll`, and `wasi:io/streams`; server adds those interfaces
+plus `wasi:http/types`, all at `0.2.12`. These are transitive type dependencies already within the
+declared interface contract, not permission widening, new registry rows, or ambient host grants.
 
 The empty browser world is deliberate. It records the capability-free identity without claiming
 that today's core `wasm-web` artifact is a component. Omitting M4 profile selection preserves the

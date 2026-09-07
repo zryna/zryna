@@ -1,9 +1,13 @@
+//! Authenticated WIT dependency-closure and world-audit integration tests.
+
 use std::fs;
 use std::path::PathBuf;
 
 use zryna_backend_webassembly::{WitSource, audit_pinned_wit_worlds};
 
 const ROOT_LOGICAL_PATH: &str = "spec/wit/capability-profiles-v1/worlds.wit";
+const DEPENDENCY_PACKAGES: &[&str] =
+    &["cli", "clocks", "filesystem", "http", "io", "random", "sockets"];
 
 fn crate_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -16,16 +20,12 @@ fn accepted_sources() -> Vec<WitSource> {
         fs::read(root_path).expect("accepted local WIT source"),
     )];
     let dependencies = crate_root().join("tests/wit-world-audit-v1/dependencies");
-    let mut packages = fs::read_dir(dependencies)
-        .expect("WASI package fixture directory")
-        .map(|entry| entry.expect("WASI package entry").path())
-        .collect::<Vec<_>>();
-    packages.sort();
-    for package in packages {
-        let package_name = package.file_name().expect("package name").to_string_lossy();
+    for package_name in DEPENDENCY_PACKAGES {
+        let package = dependencies.join(package_name);
         let mut files = fs::read_dir(&package)
             .expect("WASI package sources")
             .map(|entry| entry.expect("WASI source entry").path())
+            .filter(|path| path.extension().is_some_and(|extension| extension == "wit"))
             .collect::<Vec<_>>();
         files.sort();
         for file in files {
@@ -36,6 +36,7 @@ fn accepted_sources() -> Vec<WitSource> {
             ));
         }
     }
+    assert_eq!(sources.len(), 34, "complete pinned WIT source inventory");
     sources
 }
 
@@ -64,13 +65,73 @@ fn resolves_the_authenticated_dependency_closure_and_exact_worlds() {
     let worlds = audit.worlds();
     assert_eq!(worlds.len(), 3);
     assert_eq!(worlds[0].identity(), "zryna:capability-profiles/browser@0.1.0");
-    assert!(worlds[0].imports().is_empty());
+    assert!(worlds[0].explicit_imports().is_empty());
+    assert!(worlds[0].resolved_imports().is_empty());
     assert!(worlds[0].exports().is_empty());
     assert_eq!(worlds[1].identity(), "zryna:capability-profiles/command@0.1.0");
-    assert_eq!(worlds[1].imports().len(), 13);
+    assert_eq!(
+        worlds[1].explicit_imports(),
+        [
+            "wasi:cli/environment@0.2.12",
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:filesystem/preopens@0.2.12",
+            "wasi:filesystem/types@0.2.12",
+            "wasi:random/random@0.2.12",
+            "wasi:sockets/instance-network@0.2.12",
+            "wasi:sockets/ip-name-lookup@0.2.12",
+            "wasi:sockets/network@0.2.12",
+            "wasi:sockets/tcp-create-socket@0.2.12",
+            "wasi:sockets/tcp@0.2.12",
+            "wasi:sockets/udp-create-socket@0.2.12",
+            "wasi:sockets/udp@0.2.12",
+        ]
+    );
+    assert_eq!(
+        worlds[1].resolved_imports(),
+        [
+            "wasi:cli/environment@0.2.12",
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:filesystem/preopens@0.2.12",
+            "wasi:filesystem/types@0.2.12",
+            "wasi:io/error@0.2.12",
+            "wasi:io/poll@0.2.12",
+            "wasi:io/streams@0.2.12",
+            "wasi:random/random@0.2.12",
+            "wasi:sockets/instance-network@0.2.12",
+            "wasi:sockets/ip-name-lookup@0.2.12",
+            "wasi:sockets/network@0.2.12",
+            "wasi:sockets/tcp-create-socket@0.2.12",
+            "wasi:sockets/tcp@0.2.12",
+            "wasi:sockets/udp-create-socket@0.2.12",
+            "wasi:sockets/udp@0.2.12",
+        ]
+    );
     assert_eq!(worlds[1].exports(), ["wasi:cli/run@0.2.12"]);
     assert_eq!(worlds[2].identity(), "zryna:capability-profiles/server@0.1.0");
-    assert_eq!(worlds[2].imports().len(), 4);
+    assert_eq!(
+        worlds[2].explicit_imports(),
+        [
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:http/outgoing-handler@0.2.12",
+            "wasi:random/random@0.2.12",
+        ]
+    );
+    assert_eq!(
+        worlds[2].resolved_imports(),
+        [
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:http/outgoing-handler@0.2.12",
+            "wasi:http/types@0.2.12",
+            "wasi:io/error@0.2.12",
+            "wasi:io/poll@0.2.12",
+            "wasi:io/streams@0.2.12",
+            "wasi:random/random@0.2.12",
+        ]
+    );
     assert_eq!(worlds[2].exports(), ["wasi:http/incoming-handler@0.2.12"]);
 }
 

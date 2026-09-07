@@ -463,7 +463,9 @@ activation, example publication, or public support. Cross-target dependency comp
 Issue #383 implements the prerequisite authenticated dependency-resolution boundary in the
 existing WebAssembly backend. It pins the aligned `wit-parser 0.258.0` toolchain, authenticates the
 complete WASI source closure, and independently audits resolved packages and interfaces under
-explicit input and graph bounds. It preserves all three accepted worlds—including the empty
+explicit input and graph bounds. The audit distinguishes the accepted explicit world imports from
+the parser-elaborated type-dependency closure without widening host grants. It preserves all three
+accepted worlds—including the empty
 browser world—and still adds no component emission, instantiation, bindings, selector, public
 activation, or host grant.
 
