@@ -1,0 +1,1 @@
+export function aggregate(): i32 { const values: Vec<String> = Vec<String>(["left", "right"]); const copied: Vec<String> = clone(values); return 41; }

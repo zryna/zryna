@@ -39,12 +39,18 @@ function validateWorkflow(candidate) {
 
 test('fixed registry binds observations and phase-owned oracles', () => {
   const registry = loadAndValidateM3Conformance();
-  assert.equal(registry.valid.length, 13); assert.equal(registry.invalid.length, 4);
-  assert.equal(registry.evidence.length, 12);
+  assert.equal(registry.valid.length, 15); assert.equal(registry.invalid.length, 4);
+  assert.equal(registry.evidence.length, 18);
+  assert.equal(registry.faults.length, 26);
+  assert.equal(registry.runtimeInvalid.length, 2);
   assert.deepEqual(registry.targetOrder, ['javascript', 'webassembly', 'native']);
 });
 test('removed, duplicated, substituted and self-derived oracle claims reject', () => {
   for (const mutate of [
+    r => r.faults.pop(), r => r.faults.push(r.faults[0]),
+    r => { r.faults[0].expected.code = 'ZRYNA-R3006'; },
+    r => { r.faults[1].trace.pop(); }, r => { r.faults[1].trace[0].place += 1; },
+    r => { r.faults[1].trace.reverse(); }, r => { r.faults[1].fault.ordinal += 1; },
     r => r.valid.pop(), r => r.valid.push(r.valid[0]), r => r.invalid.pop(),
     r => { r.valid[0].expected = 66; }, r => { r.invalid[0].phase = 'execution'; },
     r => { r.invalid[0].code = 'ZRYNA-M9999'; }, r => r.evidence.pop(),

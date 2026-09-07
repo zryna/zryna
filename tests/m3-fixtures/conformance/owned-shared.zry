@@ -1,0 +1,2 @@
+import { aggregate } from "./math.zry";
+export function score(): i32 { return aggregate(); }
