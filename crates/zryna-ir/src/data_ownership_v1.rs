@@ -1269,14 +1269,6 @@ impl<'a> VerifiedInstruction<'a> {
     /// Returns exact semantic cleanup actions for this instruction.
     #[must_use]
     pub fn derived_drop_actions(self) -> impl ExactSizeIterator<Item = VerifiedDropAction> {
-        if matches!(
-            self.instruction.kind,
-            raw::InstructionKind::StructConstruct { .. }
-                | raw::InstructionKind::EnumConstruct { .. }
-                | raw::InstructionKind::FixedArrayConstruct { .. }
-        ) {
-            return state_replay::construction_failure_actions(self).into_iter();
-        }
         let state = derive_state_before(
             self.function.function,
             &self.function.owner.linear32,

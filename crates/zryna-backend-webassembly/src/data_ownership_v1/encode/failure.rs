@@ -11,7 +11,16 @@ pub(super) fn propagate(
 ) -> Result<(), zryna_diagnostics::Diagnostic> {
     body.instruction(&Instruction::GlobalGet(1));
     body.instruction(&Instruction::If(BlockType::Empty));
-    for action in instruction.derived_drop_actions() {
+    for action in if matches!(
+        instruction.kind(),
+        zryna_ir::data_ownership_v1::VerifiedInstructionKind::StructConstruct
+            | zryna_ir::data_ownership_v1::VerifiedInstructionKind::EnumConstruct
+            | zryna_ir::data_ownership_v1::VerifiedInstructionKind::FixedArrayConstruct
+    ) {
+        instruction.allocation_failure_drop_actions().collect::<Vec<_>>()
+    } else {
+        instruction.derived_drop_actions().collect::<Vec<_>>()
+    } {
         let root = action.root().index();
         super::observation::root(function, root, context, body);
         let ty = operations::place_type(function, root, context.layouts)?;

@@ -48,7 +48,7 @@ pub(super) fn emit_function(
     }
     out.write_str("];\n").map_err(format_error)?;
     writeln!(out, "  const cleanup = id => {{ $zryna$record({}); $zryna$record({}); $zryna$record(id); $zryna$drop($zryna$take(p,r,v,id)); }};",
-        0x20000000_u32 + function.id().module(), function.id().declaration()).map_err(format_error)?;
+        0x2000_0000_u32 + function.id().module(), function.id().declaration()).map_err(format_error)?;
     for (index, parameter) in value_parameters.iter().enumerate() {
         writeln!(out, "  v[{}] = a{index};", parameter.id().index()).map_err(format_error)?;
     }
@@ -85,7 +85,16 @@ fn emit_instruction(
 ) -> Result<(), zryna_diagnostics::Diagnostic> {
     let kind = instruction.kind();
     let data = instruction.backend_instruction();
-    let failure_actions = instruction.derived_drop_actions().collect::<Vec<_>>();
+    let failure_actions = if matches!(
+        instruction.kind(),
+        zryna_ir::data_ownership_v1::VerifiedInstructionKind::StructConstruct
+            | zryna_ir::data_ownership_v1::VerifiedInstructionKind::EnumConstruct
+            | zryna_ir::data_ownership_v1::VerifiedInstructionKind::FixedArrayConstruct
+    ) {
+        instruction.allocation_failure_drop_actions().collect::<Vec<_>>()
+    } else {
+        instruction.derived_drop_actions().collect::<Vec<_>>()
+    };
     let catches = !failure_actions.is_empty()
         && !matches!(
             kind,
