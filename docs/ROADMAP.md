@@ -474,6 +474,14 @@ Completion gate: a clean environment reproduces and verifies every published art
 
 ## M6 — Developer Tooling
 
+The proposed [semantic query and snapshot contract](../spec/tooling/SEMANTIC_QUERIES_V1.md)
+tracks [#363](https://github.com/zryna/zryna/issues/363) in
+[M6](https://github.com/zryna/zryna/milestone/7), reuses merged
+[#169](https://github.com/zryna/zryna/issues/169), and coordinates provider observations with
+[#170 / M7](https://github.com/zryna/zryna/issues/170). Its playground execution appendix alone
+depends on [#362 / M5](https://github.com/zryna/zryna/issues/362); query review remains independent.
+The contract separates specified, prototype, conformance-passed and publicly-supported states.
+
 - formatter and structured diagnostics;
 - language server and thin editor integrations;
 - source maps and debugging contracts;
