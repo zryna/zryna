@@ -405,14 +405,15 @@ pub(super) fn emit_wrapper(
         writeln!(out, "  a{i}={validator}(a{i});").map_err(format_error)?;
     }
     let result = validator(layouts, function.result_type())?;
-    write!(out, "  return {result}({}(", private_name(function)).map_err(format_error)?;
+    write!(out, "  $zryna$status = 0;\n  try {{ return {result}({}(", private_name(function))
+        .map_err(format_error)?;
     for i in 0..parameters.len() {
         if i > 0 {
             out.write_str(", ").map_err(format_error)?;
         }
         write!(out, "a{i}").map_err(format_error)?;
     }
-    writeln!(out, "));\n}}\nexport {{ $zryna$de{index} as {name} }};\n").map_err(format_error)?;
+    writeln!(out, ")); }} catch (failure) {{ if (failure !== $zryna$sentinel) throw failure; return 0; }}\n}}\nexport {{ $zryna$de{index} as {name} }};\n").map_err(format_error)?;
     Ok(())
 }
 

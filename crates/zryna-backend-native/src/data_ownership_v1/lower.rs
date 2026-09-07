@@ -107,6 +107,8 @@ pub(super) fn build_function(
             }
         }
         for operation in block.operations() {
+            let failed = builder.create_block();
+            builder.append_block_param(failed, types::I32);
             lower_operation(
                 program,
                 function,
@@ -119,6 +121,17 @@ pub(super) fn build_function(
                 runtime,
                 clones,
                 drops,
+                failed,
+                &mut builder,
+            )?;
+            super::failure::finish_operation(
+                program,
+                function,
+                operation.cleanup(),
+                &slots,
+                runtime,
+                drops,
+                failed,
                 &mut builder,
             )?;
         }
@@ -153,6 +166,7 @@ fn lower_operation(
     runtime: &BTreeMap<&str, FuncRef>,
     clones: &BTreeMap<u32, FuncRef>,
     drops: &BTreeMap<u32, FuncRef>,
+    failed: cranelift_codegen::ir::Block,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let operand = |index: usize| {
@@ -241,6 +255,7 @@ fn lower_operation(
             operand(0)?,
             slots,
             runtime,
+            failed,
             builder,
         )?),
         Opcode::BeginBorrow | Opcode::BeginIndexedBorrow => {
@@ -249,7 +264,7 @@ fn lower_operation(
             let address = if operation.opcode() == Opcode::BeginBorrow {
                 place_storage_address(program, function, place, slots, builder)?
             } else {
-                indexed_address(program, function, place, operand(0)?, slots, builder)?
+                indexed_address(program, function, place, operand(0)?, slots, failed, builder)?
             };
             set_borrow(borrows, id, address)?;
             set_borrow_type(
@@ -331,7 +346,7 @@ fn lower_operation(
             let parent = get_borrow(borrows, parent_id)?;
             let parent_type = get_borrow_type(borrow_types, parent_id)?;
             let address =
-                indexed_borrow_address(program, parent_type, parent, operand(0)?, builder)?;
+                indexed_borrow_address(program, parent_type, parent, operand(0)?, failed, builder)?;
             set_borrow(borrows, child_id, address)?;
             set_borrow_type(
                 borrow_types,

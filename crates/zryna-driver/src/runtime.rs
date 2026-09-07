@@ -1,5 +1,5 @@
 //! Bounded, direct Node.js execution for sealed JavaScript and WebAssembly artifacts.
-
+mod ownership;
 use std::{
     ffi::OsString,
     io::{self, Read, Write},

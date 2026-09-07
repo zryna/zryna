@@ -1,5 +1,14 @@
 pub(super) const PRELUDE: &str = r#"const $zryna$U = void 0;
-function $zryna$trap(id) { throw new Error("ZRYNA-R3" + id); }
+const $zryna$sentinel = {};
+let $zryna$status = 0;
+function $zryna$trap(id) {
+  const code = {BOUNDS: 1, ALLOCATION: 2, CAPACITY: 3, REFCOUNT: 4, UTF8: 5}[id];
+  if (code === void 0) throw new Error("ZRYNA-R3" + id);
+  $zryna$status = code;
+  throw $zryna$sentinel;
+}
+function $zryna$observation() { return $zryna$status; }
+export { $zryna$observation };
 function $zryna$index(value, length) {
   if ((value | 0) !== value || value < 0 || value >= length) $zryna$trap("BOUNDS");
   return value;

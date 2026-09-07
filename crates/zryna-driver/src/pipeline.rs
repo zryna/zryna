@@ -2133,12 +2133,7 @@ fn manifest_result(result: &TargetResult) -> ManifestResult {
         ScalarOutcome::Returned { value: ScalarValue::I32(value) } => {
             ManifestOutcome::Returned { ty: "i32", value: ManifestScalar::I32(value) }
         }
-        ScalarOutcome::Trapped { code } => ManifestOutcome::Trapped {
-            code: match code {
-                zryna_abi::ScalarTrapCode::Unreachable => "unreachable",
-                zryna_abi::ScalarTrapCode::TargetTrap => "target-trap",
-            },
-        },
+        ScalarOutcome::Trapped { code } => ManifestOutcome::Trapped { code: code.as_str() },
         ScalarOutcome::HostError { code } => ManifestOutcome::HostError {
             code: match code {
                 ScalarHostErrorCode::UnknownExport => "unknown-export",

@@ -5,6 +5,8 @@ mod audit;
 #[cfg(test)]
 mod tests;
 
+pub(crate) mod observation;
+
 use std::{fmt::Write as _, sync::Arc};
 
 use sha2::{Digest, Sha256};
@@ -274,7 +276,9 @@ fn render_harness(
         ScalarType::Bool => "uint8_t",
         ScalarType::I32 => "int32_t",
     };
-    let mut source = String::from("#include <stdint.h>\n#include <stdio.h>\n");
+    let mut source = String::from(
+        "#include <stdint.h>\n#include <stdio.h>\nstatic uint32_t trap_status;\nuint32_t zryna_m3_observe(uint32_t status) { if (status && !trap_status) trap_status = status; return trap_status; }\n",
+    );
     write!(source, "extern {} {symbol}(", c_type(export.result()))
         .map_err(|_| vec![ownership_harness_error()])?;
     if export.parameters().is_empty() {
@@ -305,7 +309,7 @@ fn render_harness(
         }
     }
     source.push_str(
-        ");\n  uint32_t bits = (uint32_t)result;\n  unsigned char output[4] = {\n    (unsigned char)(bits & UINT32_C(255)),\n    (unsigned char)((bits >> 8) & UINT32_C(255)),\n    (unsigned char)((bits >> 16) & UINT32_C(255)),\n    (unsigned char)((bits >> 24) & UINT32_C(255))\n  };\n  if (fwrite(output, 1, sizeof(output), stdout) != sizeof(output)) return 70;\n  if (fflush(stdout) != 0) return 71;\n  return 0;\n}\n",
+        ");\n  uint32_t bits = (uint32_t)result;\n  unsigned char output[8] = { (unsigned char)trap_status, 0, 0, 0,\n    (unsigned char)(bits & UINT32_C(255)),\n    (unsigned char)((bits >> 8) & UINT32_C(255)),\n    (unsigned char)((bits >> 16) & UINT32_C(255)),\n    (unsigned char)((bits >> 24) & UINT32_C(255))\n  };\n  if (fwrite(output, 1, sizeof(output), stdout) != sizeof(output)) return 70;\n  if (fflush(stdout) != 0) return 71;\n  return 0;\n}\n",
     );
     if source.len() > MAX_NATIVE_HARNESS_BYTES {
         return Err(vec![ownership_harness_error()]);

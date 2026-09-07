@@ -95,25 +95,27 @@ fn audit(bytes: &[u8]) -> Result<(), Diagnostic> {
             }
             Payload::GlobalSection(section) => {
                 globals += section.count();
-                let mut entries = section.into_iter();
-                let exact = entries
-                    .next()
-                    .transpose()
-                    .map_err(|failure| error("ZRYNA-W3002", failure.to_string()))?;
-                let valid = exact.is_some_and(|global| {
+                for (index, global) in section.into_iter().enumerate() {
+                    let global =
+                        global.map_err(|failure| error("ZRYNA-W3002", failure.to_string()))?;
                     let mut init = global.init_expr.get_operators_reader();
-                    global.ty.content_type == ValType::I32
-                        && global.ty.mutable
-                        && !global.ty.shared
-                        && matches!(init.read(), Ok(Operator::I32Const { value: 1024 }))
-                        && matches!(init.read(), Ok(Operator::End))
-                        && init.eof()
-                });
-                if globals != 1 || !valid || entries.next().is_some() {
-                    return Err(error(
-                        "ZRYNA-W3004",
-                        "module must contain exactly one private canonical arena global",
-                    ));
+                    let expected = if index == 0 { 1024 } else { 0 };
+                    if index > 1
+                        || global.ty.content_type != ValType::I32
+                        || !global.ty.mutable
+                        || global.ty.shared
+                        || !matches!(init.read(), Ok(Operator::I32Const { value }) if value == expected)
+                        || !matches!(init.read(), Ok(Operator::End))
+                        || !init.eof()
+                    {
+                        return Err(error(
+                            "ZRYNA-W3004",
+                            "invalid private arena or observation global",
+                        ));
+                    }
+                }
+                if globals != 2 {
+                    return Err(error("ZRYNA-W3004", "missing private observation global"));
                 }
             }
             Payload::ImportSection(_)
@@ -138,7 +140,7 @@ fn audit(bytes: &[u8]) -> Result<(), Diagnostic> {
     if memories != 1 {
         return Err(error("ZRYNA-W3004", "module is missing bounded linear memory"));
     }
-    if globals != 1 {
+    if globals != 2 {
         return Err(error("ZRYNA-W3004", "module is missing its private arena global"));
     }
     for payload in Parser::new(0).parse_all(bytes) {

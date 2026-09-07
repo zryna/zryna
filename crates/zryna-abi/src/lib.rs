@@ -197,15 +197,8 @@ fn decode_boundary_value(
     }
 }
 
-/// Stable trap categories compared by differential conformance.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ScalarTrapCode {
-    /// Explicit language-level unreachable execution.
-    Unreachable,
-    /// Target engine reported an execution trap.
-    TargetTrap,
-}
+mod trap;
+pub use trap::ScalarTrapCode;
 
 /// Stable host-side failure categories that are not program traps.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

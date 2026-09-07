@@ -3,6 +3,7 @@
 mod clone;
 mod control;
 mod drop;
+mod failure;
 mod lower;
 mod runtime;
 mod state;
@@ -278,6 +279,7 @@ fn declare_runtime(
 ) -> Result<BTreeMap<String, FuncId>, Diagnostic> {
     program
         .runtime_symbols()
+        .chain([failure::OBSERVER])
         .map(|symbol| {
             let id = object
                 .declare_function(symbol, Linkage::Import, &runtime_signature(symbol)?)
@@ -294,6 +296,10 @@ fn runtime_signature(symbol: &str) -> Result<Signature, Diagnostic> {
         signature.returns.push(AbiParam::new(types::I32));
     };
     let p = types::I64;
+    if symbol == failure::OBSERVER {
+        i32s(&mut signature, &[types::I32]);
+        return Ok(signature);
+    }
     match symbol.strip_prefix("zryna_rt_o1_").ok_or_else(invariant_error)? {
         "allocate" => i32s(&mut signature, &[types::I64, types::I32, p]),
         "grow" => i32s(&mut signature, &[p, types::I64, types::I64, types::I32, p]),
@@ -331,7 +337,8 @@ fn audit_object(bytes: &[u8], program: &VerifiedMirModule) -> Result<(), Diagnos
     {
         return Err(audit_error());
     }
-    let approved_runtime = program.runtime_symbols().collect::<BTreeSet<_>>();
+    let approved_runtime =
+        program.runtime_symbols().chain([failure::OBSERVER]).collect::<BTreeSet<_>>();
     let expected_functions = program.functions().map(VerifiedFunction::symbol).collect();
     let mut defined = BTreeSet::new();
     let mut all_defined = BTreeSet::new();

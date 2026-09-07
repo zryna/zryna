@@ -1,6 +1,6 @@
 //! Linux x86-64 native object emission, sealed invocation linking, and bounded execution.
 
-mod ownership;
+pub(crate) mod ownership;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod stage_support;
 
