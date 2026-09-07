@@ -479,6 +479,15 @@ review. General generics and `Option`/`Result` retain separate M7 gates;
 JSON and async/task work retain explicit future prerequisites. This proposal changes no M3 gate
 or historical inventory and does not require all M7 work before a limited core library.
 
+Issue #359 specifies a bounded M4 typed-JS scope extension in the
+[JS/WASM adapter contract](../spec/interop/JS_WASM_ADAPTERS_V1.md): separate browser/Node ESM
+and WIT/Component conversions, resource lifetimes, failure cleanup and interface versioning.
+Its [consumer proof plan](../spec/interop/JS_WASM_ADAPTER_CONFORMANCE_V1.md) separates later
+implementation, conformance and activation. This is `specified-only`; #167 and the accepted
+#357 composition contract supply its interface authority; its per-API alignment with merged #358
+preserves explicit host-outcome, u64 and async implementation gates. No runtime, generator, selector, publication or M3
+gate change is included, and existing pinned WIT worlds remain unchanged.
+
 Completion gate: components expose self-described interfaces and receive no filesystem, network, clock, randomness, or environment capability unless the selected profile declares it.
 
 ## M5 — Packages and Reproducible Releases
