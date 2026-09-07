@@ -14,11 +14,15 @@ use zryna_ir::control_flow_v1::{
 };
 use zryna_ir::{ExprKind, Type, VerifiedFunction, VerifiedProgram};
 mod artifact;
+mod scalar_audit;
 pub use artifact::ValidatedWebAssemblyArtifact;
+use scalar_audit::{audit_profile, seal};
 mod data_ownership_v1;
 pub use data_ownership_v1::emit_data_ownership;
 mod wit_world_audit;
 pub use wit_world_audit::{ResolvedWitWorld, WitSource, WitWorldAudit, audit_pinned_wit_worlds};
+mod component_command;
+pub use component_command::{ValidatedCommandComponent, emit_command_self_check};
 
 const MAX_CONTROL_FLOW_WEBASSEMBLY_BYTES: usize = 32 * 1024 * 1024;
 
@@ -650,64 +654,6 @@ fn encode_function(function: VerifiedFunction<'_>) -> Result<Function, Diagnosti
     Ok(body)
 }
 
-fn seal(bytes: Vec<u8>) -> Result<ValidatedWebAssemblyArtifact, Diagnostic> {
-    Validator::new_with_features(WasmFeatures::WASM1)
-        .validate_all(&bytes)
-        .map_err(validation_error)?;
-    audit_profile(&bytes)?;
-    Ok(ValidatedWebAssemblyArtifact { bytes })
-}
-
-fn audit_profile(bytes: &[u8]) -> Result<(), Diagnostic> {
-    let mut saw_module_version = false;
-    for payload in Parser::new(0).parse_all(bytes) {
-        let payload = payload.map_err(validation_error)?;
-        match payload {
-            Payload::Version { encoding: Encoding::Module, .. } if !saw_module_version => {
-                saw_module_version = true;
-            }
-            Payload::TypeSection(types) => {
-                for function_type in types.into_iter_err_on_gc_types() {
-                    let function_type = function_type.map_err(validation_error)?;
-                    if !function_type.params().iter().all(|ty| *ty == wasmparser::ValType::I32)
-                        || function_type.results() != [wasmparser::ValType::I32]
-                    {
-                        return Err(profile_error("a function type outside I32V1"));
-                    }
-                }
-            }
-            Payload::FunctionSection(_) | Payload::CodeSectionStart { .. } | Payload::End(_) => {}
-            Payload::ExportSection(exports) => {
-                for export in exports {
-                    if export.map_err(validation_error)?.kind != ExternalKind::Func {
-                        return Err(profile_error("a non-function export"));
-                    }
-                }
-            }
-            Payload::CodeSectionEntry(body) => {
-                if body.get_locals_reader().map_err(validation_error)?.get_count() != 0 {
-                    return Err(profile_error("function-local declarations"));
-                }
-                let mut operators = body.get_operators_reader().map_err(validation_error)?;
-                while !operators.eof() {
-                    match operators.read().map_err(validation_error)? {
-                        Operator::LocalGet { .. }
-                        | Operator::I32Const { .. }
-                        | Operator::I32Add
-                        | Operator::End => {}
-                        _ => return Err(profile_error("an instruction outside I32V1")),
-                    }
-                }
-            }
-            _ => return Err(profile_error("a section outside the import-free I32V1 profile")),
-        }
-    }
-    if !saw_module_version {
-        return Err(profile_error("a missing core-module header"));
-    }
-    Ok(())
-}
-
 #[allow(clippy::too_many_lines)]
 fn audit_control_flow_profile(
     bytes: &[u8],
@@ -874,24 +820,6 @@ fn index_error() -> Diagnostic {
         None,
         "verified WebAssembly indexes exceeded the core binary index space",
         "report this compiler invariant failure with the smallest reproducible Zryna source",
-    )
-}
-
-fn validation_error(error: impl std::fmt::Display) -> Diagnostic {
-    Diagnostic::error(
-        "ZRYNA-W1003",
-        None,
-        format!("emitted core WebAssembly failed pinned WebAssembly 1.0 validation: {error}"),
-        "report this compiler failure with the smallest reproducible Zryna source",
-    )
-}
-
-fn profile_error(capability: &str) -> Diagnostic {
-    Diagnostic::error(
-        "ZRYNA-W1004",
-        None,
-        format!("core WebAssembly contains {capability}"),
-        "emit only deterministic import-free I32V1 functions and exports",
     )
 }
 

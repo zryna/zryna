@@ -19,6 +19,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 windows-spawn.workspace = true
+wasmtime.workspace = true
 zryna-abi.workspace = true
 zryna-architecture = { path = "../zryna-architecture" }
 zryna-backend-javascript = { path = "../zryna-backend-javascript" }
@@ -32,6 +33,8 @@ zryna-semantics = { path = "../zryna-semantics" }
 zryna-source = { path = "../zryna-source" }
 
 [dev-dependencies]
+wasm-encoder.workspace = true
+wasmparser.workspace = true
 zryna-syntax = { path = "../zryna-syntax" }
 
 [lints]

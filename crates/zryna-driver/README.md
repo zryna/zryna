@@ -2,6 +2,11 @@
 
 The only compiler component allowed to orchestrate frontend, verification, and backend phases.
 
+The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
+verified i32 source, empty composition requests, a separately audited component and an
+explicit denied host policy. Its source and execution fixtures await the required
+verification lanes; public WASI target selection remains unactivated.
+
 The private `profile_composition` boundary verifies a fixed graph under
 Issue #380. It independently derives transitive requirements, canonical witnesses and shared
 reservation totals, checks every instance's restrictions and exact selected profile/interface,

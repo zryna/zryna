@@ -10,6 +10,7 @@ repository.workspace = true
 sha2.workspace = true
 wasm-encoder.workspace = true
 wasmparser.workspace = true
+wit-component.workspace = true
 wit-parser.workspace = true
 zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-ir = { path = "../zryna-ir" }

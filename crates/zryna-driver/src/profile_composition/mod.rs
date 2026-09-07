@@ -7,11 +7,14 @@
 //! ```
 
 mod authority;
+mod command_source;
 mod graph;
 mod model;
 mod policy;
 mod quota;
 mod verification;
+
+pub(crate) use command_source::{PureCommandSource, compile_pure_command};
 
 #[cfg(test)]
 mod tests;

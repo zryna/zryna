@@ -66,6 +66,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 - Start: [JavaScript README](../crates/zryna-backend-javascript/README.md) or [WebAssembly README](../crates/zryna-backend-webassembly/README.md).
 - Entries: each backend's `src/lib.rs::{emit,emit_control_flow,emit_data_ownership}` consumes the corresponding sealed IR, never source syntax. M3 code is isolated under `src/data_ownership_v1/`.
+- Scalar core sealing: `crates/zryna-backend-webassembly/src/scalar_audit.rs` owns the unchanged WASM1/I32V1 validation and instruction audit.
 - Focus: `cargo test --locked -p zryna-backend-javascript` or `cargo test --locked -p zryna-backend-webassembly`; use [the M3 target contract](M3_TARGET_BACKENDS.md) for the new focused execution and audit cases.
 - Publication and runtime invocation belong to the driver. Preserve byte/capability audits, scalar carriers, and deterministic output; finish with full gates.
 
@@ -113,6 +114,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - WIT source: `spec/wit/capability-profiles-v1/worlds.wit`; machine-readable authority: `tests/wit-capability-profiles-v1.json` and `schemas/zryna-{wit-capability-profiles,capability-request}-v1.schema.json`.
 - Validator: `scripts/wit-capabilities/validate.mjs`; positive, negative, malformed, replay and boundary evidence: `tests/wit-capability-contract.test.mjs` and `tests/wit-capability-v1/fixtures/`.
 - Resolved dependency audit: `crates/zryna-backend-webassembly/src/wit_world_audit.rs`; exact source pins: its private `wit_world_audit/pins.rs`; provenance and hostile evidence: `crates/zryna-backend-webassembly/tests/wit-world-audit-v1/` and `tests/wit_world_audit.rs`. Run `cargo test --locked -p zryna-backend-webassembly --test wit_world_audit`.
+- Private command self-check source: [architecture and envelopes](WASI_COMMAND_SELF_CHECK_V1.md), backend `src/component_command/` and driver `src/command_runtime/`. Focused filters are `component_command` and `command_runtime` respectively; execution evidence remains pending the required lanes.
 - Typed JS/WASM design: [adapter contracts](../spec/interop/JS_WASM_ADAPTERS_V1.md) and [conversion/lifecycle proof plan](../spec/interop/JS_WASM_ADAPTER_CONFORMANCE_V1.md); `tests/js-wasm-adapter-contract.test.mjs` checks design consistency through `pnpm docs:check`, without executing adapters.
 - Focus: the resolved-audit test above, `pnpm wit:contract`, then `pnpm docs:check`. Preserve the `specified-only` boundary: component emission, bindings, runtime/CLI activation, cross-target dependency composition and JS/WASM resource adapters are separate work.
 

@@ -13,6 +13,7 @@
 
 #![forbid(unsafe_code)]
 
+mod command_runtime;
 mod javascript;
 mod module_closure;
 #[cfg(test)]
@@ -40,6 +41,7 @@ use zryna_diagnostics::{Diagnostic, Severity};
 use zryna_ir::VerifiedProgram;
 use zryna_source::SourceMap;
 
+pub use command_runtime::{CommandHostPolicy, PreparedCommand, prepare_command_self_check};
 pub use javascript::{
     ArtifactOutputRoot, JAVASCRIPT_ARTIFACT_EXTENSION, JavaScriptBuildError,
     JavaScriptBuildSuccess, JavaScriptOutputRoot, MAX_ARTIFACT_STEM_BYTES,

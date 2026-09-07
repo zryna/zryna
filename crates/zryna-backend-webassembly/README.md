@@ -3,6 +3,12 @@
 Direct core WebAssembly lowering from the M1 `VerifiedProgram` and the isolated M2
 `control_flow_v1::VerifiedProgram`.
 
+The separate private [command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) retains
+the exact scalar core inside an independently audited component. Its source and test fixtures
+await the required execution lanes. Public WASI target selection remains unactivated.
+`src/scalar_audit.rs` owns the existing core-only sealing and I32V1 instruction audit;
+`src/component_command/` owns the distinct component artifact and final-byte audit.
+
 The internal M3 `emit_data_ownership` entrypoint emits one validated, import-free core module with
 private bounded Linear32 memory and sealed layout-derived address operations. It does not expose
 memory or activate the M3 driver profile. Its private type-indexed helpers perform recursive
