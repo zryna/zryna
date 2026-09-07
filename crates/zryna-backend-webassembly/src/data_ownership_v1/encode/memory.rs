@@ -42,7 +42,7 @@ pub(super) fn drop_helper(
 ) -> Result<Function, zryna_diagnostics::Diagnostic> {
     let mut body = Function::new([(3, ValType::I32)]);
     if let Some(kind) = super::observation::value_kind(ty.category()) {
-        super::observation::record(0x10000000 + kind, context, &mut body);
+        super::observation::record(0x1000_0000 + kind, context, &mut body);
     }
     match ty.category() {
         TypeCategory::Struct => {
@@ -195,7 +195,7 @@ fn drop_shared(
     let payload_ty = context.layouts.type_by_id(payload).ok_or_else(index_error)?;
     let offset = align_up(8, payload_ty.alignment()).ok_or_else(index_error)?;
     drop_child(payload, offset, context, body)?;
-    super::observation::record(0x10000006, context, body);
+    super::observation::record(0x1000_0006, context, body);
     decrement(4, context, body);
     body.instruction(&Instruction::End);
     Ok(())
@@ -218,7 +218,7 @@ fn decrement(offset: u64, context: &Context<'_>, body: &mut Function) {
     body.instruction(&Instruction::I32Const(1));
     body.instruction(&Instruction::I32Eq);
     body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    super::observation::record(0x10000007, context, body);
+    super::observation::record(0x1000_0007, context, body);
     body.instruction(&Instruction::End);
 }
 

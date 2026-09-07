@@ -57,7 +57,7 @@ pub(super) fn drop_place(
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let (module, declaration) = function.identity();
-    for word in [0x20000000 + module, declaration, place] {
+    for word in [0x2000_0000 + module, declaration, place] {
         super::failure::record(word, runtime, builder)?;
     }
     let ty = place_type(function, place)?;
@@ -116,7 +116,7 @@ fn drop_contents_impl(
 ) -> Result<(), Diagnostic> {
     let layout = type_record(program, ty)?;
     if let Some(kind) = super::failure::value_kind(layout.category()) {
-        super::failure::record(0x10000000 + kind, runtime, builder)?;
+        super::failure::record(0x1000_0000 + kind, runtime, builder)?;
     }
     match layout.category() {
         TypeCategory::Bool | TypeCategory::I32 => Ok(()),
@@ -149,7 +149,7 @@ fn drop_contents_impl(
             let output = builder.ins().stack_addr(types::I64, output, 0);
             call_ok(runtime, "zryna_rt_o1_weak_release", &[control, output], builder)?;
             let freed = builder.ins().load(types::I32, MemFlagsData::new(), output, 0);
-            super::failure::record_if(freed, 0x10000007, runtime, builder)
+            super::failure::record_if(freed, 0x1000_0007, runtime, builder)
         }
     }
 }
@@ -242,11 +242,11 @@ fn drop_shared(
     let payload_layout = type_record(program, payload)?;
     let payload_offset = align_up(8, payload_layout.alignment())?;
     call_child(drops, payload, offset(control, payload_offset, builder)?, builder)?;
-    super::failure::record(0x10000006, runtime, builder)?;
+    super::failure::record(0x1000_0006, runtime, builder)?;
     let weak = builder.ins().load(types::I32, MemFlagsData::new(), control, 4);
     let last_weak = builder.ins().icmp_imm_u(IntCC::Equal, weak, 1);
     call_ok(runtime, "zryna_rt_o1_strong_release_finish", &[control], builder)?;
-    super::failure::record_if(last_weak, 0x10000007, runtime, builder)?;
+    super::failure::record_if(last_weak, 0x1000_0007, runtime, builder)?;
     builder.ins().jump(done, &[]);
     builder.switch_to_block(done);
     Ok(())

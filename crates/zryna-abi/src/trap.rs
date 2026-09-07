@@ -8,19 +8,19 @@ pub enum ScalarTrapCode {
     Unreachable,
     /// Target engine reported an execution trap.
     TargetTrap,
-    /// DataOwnershipV1 bounds language trap.
+    /// `DataOwnershipV1` bounds language trap.
     #[serde(rename = "zryna.trap.bounds-v1")]
     Bounds,
-    /// DataOwnershipV1 allocation language trap.
+    /// `DataOwnershipV1` allocation language trap.
     #[serde(rename = "zryna.trap.allocation-v1")]
     Allocation,
-    /// DataOwnershipV1 capacity language trap.
+    /// `DataOwnershipV1` capacity language trap.
     #[serde(rename = "zryna.trap.capacity-v1")]
     Capacity,
-    /// DataOwnershipV1 refcount language trap.
+    /// `DataOwnershipV1` refcount language trap.
     #[serde(rename = "zryna.trap.refcount-v1")]
     Refcount,
-    /// DataOwnershipV1 utf8 language trap.
+    /// `DataOwnershipV1` utf8 language trap.
     #[serde(rename = "zryna.trap.utf8-v1")]
     Utf8,
 }

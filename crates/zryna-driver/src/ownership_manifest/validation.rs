@@ -212,7 +212,7 @@ pub(super) fn validate_results(
         for event in result.trace() {
             words += match event {
                 crate::OwnershipTraceEvent::Cleanup { module, function, place } => {
-                    if *module > 65535 || *function > 65535 || *place > 1048576 {
+                    if *module > 65535 || *function > 65535 || *place > 1_048_576 {
                         return Err(error("candidate cleanup identity exceeds its fixed bound"));
                     }
                     3

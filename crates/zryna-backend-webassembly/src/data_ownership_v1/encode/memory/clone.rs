@@ -1,4 +1,7 @@
-use super::*;
+use super::{
+    Context, Function, Instruction, TypeCategory, ValType, VerifiedType, WORD, address, drop_child,
+    index_error, indexed, load_value, raw_indexed, store_value,
+};
 
 pub(in super::super) fn clone_helper(
     ty: VerifiedType<'_>,
@@ -131,7 +134,7 @@ fn clone_child(
     body.instruction(&Instruction::LocalGet(2));
     body.instruction(&Instruction::LocalSet(0));
     if sequence {
-        super::super::observation::record(0x10000002, context, body);
+        super::super::observation::record(0x1000_0002, context, body);
     }
     for (ty, offset) in prefix.iter().rev() {
         drop_child(*ty, *offset, context, body)?;
@@ -261,7 +264,7 @@ fn cleanup_sequence(
 ) {
     body.instruction(&Instruction::GlobalGet(1));
     body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    super::super::observation::record(0x10000002, context, body);
+    super::super::observation::record(0x1000_0002, context, body);
     body.instruction(&Instruction::Block(wasm_encoder::BlockType::Empty));
     body.instruction(&Instruction::Loop(wasm_encoder::BlockType::Empty));
     body.instruction(&Instruction::LocalGet(3));

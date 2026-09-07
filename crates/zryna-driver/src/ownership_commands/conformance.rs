@@ -265,7 +265,7 @@ fn fixed_runtime_bounds_fail_without_partial_publication() {
             assert_eq!(case["phase"], "execution");
             for result in bundle.results() {
                 assert_eq!(
-                    serde_json::to_value(result.outcome()).unwrap(),
+                    serde_json::to_value(result.outcome()).expect("fixed test authority"),
                     serde_json::json!({"kind":"trapped", "code":case["expectedTrap"]}),
                     "{name}"
                 );

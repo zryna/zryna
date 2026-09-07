@@ -28,10 +28,10 @@ fn allocator_capacity_and_arena_exhaustion_keep_distinct_typed_statuses() {
     let mut code = CodeSection::new();
     code.function(&super::allocator());
     module.section(&code);
-    let bytes = serde_json::to_string(&module.finish()).unwrap();
+    let bytes = serde_json::to_string(&module.finish()).expect("fixed test authority");
     let limit = super::MEMORY_PAGES * 65536;
     let script = format!(
-        r#"
+        r"
 const bytes = new Uint8Array({bytes});
 const rows = [];
 for (const size of [67108865, -1, 67108864, {limit} - 65536, {limit} - 65535]) {{
@@ -40,14 +40,15 @@ for (const size of [67108865, -1, 67108864, {limit} - 65536, {limit} - 65535]) {
   rows.push([e.allocate(size), e.status.value, e.arena.value]);
 }}
 console.log(JSON.stringify(rows));
-"#
+"
     );
     let output = std::process::Command::new("node")
         .args(["--input-type=module", "--eval", &script])
         .output()
-        .unwrap();
+        .expect("fixed test authority");
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    let rows: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("fixed test authority");
     assert_eq!(
         rows,
         serde_json::json!([

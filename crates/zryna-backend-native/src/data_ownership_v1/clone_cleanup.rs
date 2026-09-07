@@ -40,7 +40,7 @@ pub(super) fn prefix(
         }
         _ => return Ok(()),
     };
-    super::failure::record(0x10000002, runtime, builder)?;
+    super::failure::record(0x1000_0002, runtime, builder)?;
     for (index, (child, offset)) in fields.iter().enumerate().rev() {
         let live = builder.ins().icmp_imm_u(
             IntCC::UnsignedGreaterThan,

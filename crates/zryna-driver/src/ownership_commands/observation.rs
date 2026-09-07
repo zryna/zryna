@@ -21,12 +21,12 @@ impl Fault {
                 )],
             });
         }
-        Ok(Self(0x20000000 | (code << 24) | ordinal))
+        Ok(Self(0x2000_0000 | (code << 24) | ordinal))
     }
     #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
     pub(super) fn physical_allocation(ordinal: u32) -> Self {
         assert!((1..=1_048_576).contains(&ordinal));
-        Self(0x26000000 | ordinal)
+        Self(0x2600_0000 | ordinal)
     }
     pub(super) const fn command(self) -> u32 {
         self.0
@@ -43,7 +43,7 @@ pub(crate) fn decode(
     target: crate::OwnershipTarget,
 ) -> Result<crate::OwnershipManifestResult, CommandFailure> {
     use crate::{OwnershipTraceEvent as E, OwnershipValueKind as V};
-    if frame.len() < 12 || frame.len() > MAX_FRAME || frame.len() % 4 != 0 {
+    if frame.len() < 12 || frame.len() > MAX_FRAME || !frame.len().is_multiple_of(4) {
         return Err(invalid());
     }
     let words = frame
@@ -79,7 +79,7 @@ pub(crate) fn decode(
         let word = words[index];
         index += 1;
         trace.push(match word {
-            0x10000001..=0x10000005 => E::Drop {
+            0x1000_0001..=0x1000_0005 => E::Drop {
                 value: match word & 15 {
                     1 => V::String,
                     2 => V::Sequence,
@@ -88,9 +88,9 @@ pub(crate) fn decode(
                     _ => V::Weak,
                 },
             },
-            0x10000006 => E::ReleaseImplicitWeak,
-            0x10000007 => E::ReleaseControl,
-            0x20000000..=0x2000ffff => {
+            0x1000_0006 => E::ReleaseImplicitWeak,
+            0x1000_0007 => E::ReleaseControl,
+            0x2000_0000..=0x2000_ffff => {
                 if words.len() - index < 2 || words[index] > 0xffff || words[index + 1] > 1_048_576
                 {
                     return Err(invalid());
@@ -165,14 +165,14 @@ mod tests {
         let names = ["bounds", "allocation", "capacity", "refcount", "utf8"];
         for (index, name) in names.iter().enumerate() {
             let mut frame = [0; 12];
-            frame[0] = u8::try_from(index + 1).unwrap();
+            frame[0] = u8::try_from(index + 1).expect("fixed test authority");
             assert_eq!(
                 serde_json::to_value(
                     decode(&frame, ScalarType::I32, crate::OwnershipTarget::JavaScript)
-                        .unwrap()
+                        .expect("fixed test authority")
                         .outcome()
                 )
-                .unwrap(),
+                .expect("fixed test authority"),
                 serde_json::json!({"kind": "trapped", "code": format!("zryna.trap.{name}-v1")})
             );
             frame[4] = 1;
@@ -187,15 +187,21 @@ mod tests {
     #[test]
     fn trace_frame_exact_boundary_and_hostile_words_are_execution_owned() {
         let mut words = vec![2u32, 0, 4096];
-        words.extend(std::iter::repeat_n(0x10000001, 4096));
+        words.extend(std::iter::repeat_n(0x1000_0001, 4096));
         let bytes =
             |words: &[u32]| words.iter().flat_map(|word| word.to_le_bytes()).collect::<Vec<_>>();
         let target = crate::OwnershipTarget::Native;
-        assert_eq!(decode(&bytes(&words), ScalarType::I32, target).unwrap().trace().len(), 4096);
+        assert_eq!(
+            decode(&bytes(&words), ScalarType::I32, target)
+                .expect("fixed test authority")
+                .trace()
+                .len(),
+            4096
+        );
         let mut bad = Vec::new();
         let mut extra = words.clone();
         extra[2] += 1;
-        extra.push(0x10000001);
+        extra.push(0x1000_0001);
         bad.push(bytes(&extra));
         let mut truncated = words.clone();
         truncated[2] += 1;
@@ -205,13 +211,14 @@ mod tests {
             vec![0; 11],
             vec![0; 13],
             bytes(&[2, 0, 1, 0]),
-            bytes(&[2, 0, 1, 0x20000001]),
-            bytes(&[2, 0, 3, 0x20000001, 65536, 0]),
-            bytes(&[2, 0, 3, 0x20000001, 0, 1048577]),
+            bytes(&[2, 0, 1, 0x2000_0001]),
+            bytes(&[2, 0, 3, 0x2000_0001, 65536, 0]),
+            bytes(&[2, 0, 3, 0x2000_0001, 0, 1_048_577]),
             bytes(&[2, 1, 0]),
         ]);
         for frame in bad {
-            let failure = decode(&frame, ScalarType::I32, target).unwrap_err();
+            let failure =
+                decode(&frame, ScalarType::I32, target).expect_err("hostile claim must fail");
             assert_eq!(failure.kind(), crate::CommandFailureKind::Execution);
             assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-C3302");
         }
@@ -220,8 +227,8 @@ mod tests {
     fn invalid_scalar_carrier_is_rejected_before_publication() {
         let mut frame = [0; 12];
         frame[4] = 2;
-        let failure =
-            decode(&frame, ScalarType::Bool, crate::OwnershipTarget::WebAssembly).unwrap_err();
+        let failure = decode(&frame, ScalarType::Bool, crate::OwnershipTarget::WebAssembly)
+            .expect_err("hostile claim must fail");
         assert_eq!(failure.kind(), crate::CommandFailureKind::Execution);
         assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-C3302");
     }

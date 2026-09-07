@@ -112,7 +112,7 @@ pub(super) fn record(
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let observer = *runtime.get(OBSERVER).ok_or_else(super::invariant_error)?;
-    let command = builder.ins().iconst(types::I32, i64::from(0x80000000_u32 | word));
+    let command = builder.ins().iconst(types::I32, i64::from(0x8000_0000_u32 | word));
     builder.ins().call(observer, &[command]);
     Ok(())
 }
@@ -123,7 +123,7 @@ pub(super) fn probe(
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let observer = *runtime.get(OBSERVER).ok_or_else(super::invariant_error)?;
-    let command = builder.ins().iconst(types::I32, i64::from(0x10000000_u32 + code));
+    let command = builder.ins().iconst(types::I32, i64::from(0x1000_0000_u32 + code));
     let call = builder.ins().call(observer, &[command]);
     language_status(runtime, builder.inst_results(call)[0], builder);
     Ok(())
