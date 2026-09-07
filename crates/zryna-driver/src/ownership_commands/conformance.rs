@@ -141,7 +141,11 @@ fn fixed_candidate_observations_match_every_registered_case() {
                 TargetSelection::Native => unreachable!(),
             };
             assert_eq!(
-                published.results().iter().map(|r| r.target()).collect::<Vec<_>>(),
+                published
+                    .results()
+                    .iter()
+                    .map(crate::OwnershipManifestResult::target)
+                    .collect::<Vec<_>>(),
                 expected_targets
             );
             let expected = ScalarOutcome::Returned {
