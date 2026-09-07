@@ -1,6 +1,7 @@
 //! Audited Linux x86-64 object emission for verified DataOwnershipV1 MIR.
 
 mod clone;
+mod clone_cleanup;
 mod control;
 mod drop;
 mod failure;
@@ -219,6 +220,10 @@ fn define_helpers(
                 (*id, object.declare_func_in_func(*function, &mut clone_context.func))
             })
             .collect();
+        let clone_drops = drop_ids
+            .iter()
+            .map(|(ty, id)| (*ty, object.declare_func_in_func(*id, &mut clone_context.func)))
+            .collect();
         clone::build_helper(
             program,
             ty.id(),
@@ -226,6 +231,7 @@ fn define_helpers(
             &mut builder_context,
             &runtime,
             &clones,
+            &clone_drops,
             object.target_config(),
         )?;
         object.define_function(clone_id, &mut clone_context).map_err(codegen_error)?;
@@ -279,7 +285,7 @@ fn declare_runtime(
 ) -> Result<BTreeMap<String, FuncId>, Diagnostic> {
     program
         .runtime_symbols()
-        .chain([failure::OBSERVER])
+        .chain([failure::OBSERVER, "zryna_m3_allocate_record"])
         .map(|symbol| {
             let id = object
                 .declare_function(symbol, Linkage::Import, &runtime_signature(symbol)?)
@@ -298,6 +304,10 @@ fn runtime_signature(symbol: &str) -> Result<Signature, Diagnostic> {
     let p = types::I64;
     if symbol == failure::OBSERVER {
         i32s(&mut signature, &[types::I32]);
+        return Ok(signature);
+    }
+    if symbol == "zryna_m3_allocate_record" {
+        i32s(&mut signature, &[types::I64, types::I32, p]);
         return Ok(signature);
     }
     match symbol.strip_prefix("zryna_rt_o1_").ok_or_else(invariant_error)? {
@@ -337,8 +347,10 @@ fn audit_object(bytes: &[u8], program: &VerifiedMirModule) -> Result<(), Diagnos
     {
         return Err(audit_error());
     }
-    let approved_runtime =
-        program.runtime_symbols().chain([failure::OBSERVER]).collect::<BTreeSet<_>>();
+    let approved_runtime = program
+        .runtime_symbols()
+        .chain([failure::OBSERVER, "zryna_m3_allocate_record"])
+        .collect::<BTreeSet<_>>();
     let expected_functions = program.functions().map(VerifiedFunction::symbol).collect();
     let mut defined = BTreeSet::new();
     let mut all_defined = BTreeSet::new();

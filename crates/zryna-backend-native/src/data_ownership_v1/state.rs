@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use cranelift_codegen::ir::{Block, BlockArg, FuncRef};
 use zryna_diagnostics::Diagnostic;
 use zryna_native_mir::data_ownership_v1::{
@@ -113,7 +111,7 @@ pub(super) fn get_borrow(
 }
 
 pub(super) fn runtime_function(
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     symbol: &str,
 ) -> Result<FuncRef, Diagnostic> {
     runtime.get(symbol).copied().ok_or_else(invariant_error)

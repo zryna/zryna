@@ -11,7 +11,8 @@ pub use crate::ownership_closure::{
 pub use crate::ownership_commands::{build_data_ownership_candidate, run_data_ownership_candidate};
 pub use crate::ownership_manifest::{
     MAX_OWNERSHIP_MANIFEST_BYTES, OWNERSHIP_MANIFEST_NAME, OwnershipManifestResult,
-    OwnershipManifestV3, OwnershipTarget, decode_ownership_manifest_v3,
+    OwnershipManifestV3, OwnershipTarget, OwnershipTraceEvent, OwnershipValueKind,
+    decode_ownership_manifest_v3,
 };
 pub use crate::ownership_pipeline::{
     DATA_OWNERSHIP_CANDIDATE_PROFILE, DataOwnershipBuildRequest, DataOwnershipRunRequest,

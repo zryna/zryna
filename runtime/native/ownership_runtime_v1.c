@@ -28,12 +28,18 @@ typedef struct allocation_header_tag {
   struct allocation_header_tag *next;
   uint32_t alignment;
   uint32_t pending_last_strong;
+#ifdef ZRYNA_M3_OBSERVATION
+  uint32_t scratch;
+#endif
 } allocation_header;
 
 static const uint64_t ALLOCATION_MAGIC = UINT64_C(0x7a72796e616f3175);
 static const uint64_t MAX_ALLOCATION_BYTES = UINT64_C(67108864);
 static const uint64_t MAX_VEC_ELEMENTS = UINT64_C(1048576);
 static allocation_header *allocation_head = NULL;
+#ifdef ZRYNA_M3_OBSERVATION
+extern uint32_t zryna_m3_observe(uint32_t command);
+#endif
 #ifdef ZRYNA_RT_O1_FAIL_ALLOCATION_AT
 static uint64_t allocation_attempt = 0;
 #endif
@@ -96,6 +102,9 @@ static uint32_t allocate_bytes(uint64_t byte_size, uint32_t alignment,
       (size_t)byte_size > SIZE_MAX - sizeof(allocation_header) - alignment) {
     return RT_CAPACITY;
   }
+#ifdef ZRYNA_M3_OBSERVATION
+  if (zryna_m3_observe(UINT32_C(0x10000006)) != 0) return RT_ALLOCATION;
+#endif
 #ifdef ZRYNA_RT_O1_FAIL_ALLOCATIONS
   return RT_ALLOCATION;
 #else
@@ -126,6 +135,9 @@ static uint32_t allocate_bytes(uint64_t byte_size, uint32_t alignment,
   allocation_head = header;
   header->alignment = alignment;
   header->pending_last_strong = 0;
+#ifdef ZRYNA_M3_OBSERVATION
+  header->scratch = 0;
+#endif
   *out_pointer = aligned;
   return RT_OK;
 #endif
@@ -553,3 +565,26 @@ uint32_t zryna_rt_o1_weak_release(uintptr_t control,
   }
   return RT_OK;
 }
+
+#ifdef ZRYNA_M3_OBSERVATION
+/* Non-owning SSA descriptors live until the scalar invocation has completed. */
+uint32_t zryna_m3_allocate_record(uint64_t size, uint32_t alignment, uintptr_t *out) {
+  uint32_t status = allocate_bytes(size, alignment, out);
+  if (status == RT_OK && *out != 0) {
+    allocation_header *header = header_for(*out);
+    if (header == NULL) return RT_ABI;
+    header->scratch = 1;
+  }
+  return status;
+}
+uint32_t zryna_m3_finish_invocation(void) {
+  allocation_header *current = allocation_head;
+  while (current != NULL) {
+    allocation_header *next = current->next;
+    if (current->scratch && release_known(current) != RT_OK) return RT_ABI;
+    current = next;
+  }
+  /* Owned payloads/control blocks must have been released by generated cleanup. */
+  return allocation_head == NULL ? RT_OK : RT_ABI;
+}
+#endif

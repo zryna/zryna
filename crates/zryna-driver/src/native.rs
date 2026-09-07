@@ -665,7 +665,7 @@ pub fn run_native_invocation(
     executable: &PublishedNativeExecutableArtifact,
     limits: NativeProcessLimits,
 ) -> Result<zryna_abi::ScalarOutcome, NativeRunError> {
-    run_prepared_native_invocation(&executable.prepared, &executable.output_root, limits)
+    ownership::observation::run_published(executable, limits)
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

@@ -24,6 +24,7 @@ pub(super) fn build_helper(
     builder_context: &mut FunctionBuilderContext,
     runtime: &BTreeMap<&str, FuncRef>,
     clones: &BTreeMap<u32, FuncRef>,
+    drops: &BTreeMap<u32, FuncRef>,
     frontend: TargetFrontendConfig,
 ) -> Result<(), Diagnostic> {
     context.func.signature.params.extend([AbiParam::new(types::I64), AbiParam::new(types::I64)]);
@@ -32,11 +33,48 @@ pub(super) fn build_helper(
     let entry = builder.create_block();
     builder.append_block_params_for_function_params(entry);
     builder.switch_to_block(entry);
+    let failed = builder.create_block();
+    builder.append_block_param(failed, types::I32);
+    let runtime = &super::failure::Runtime { symbols: runtime, failed: Some(failed) };
+    let initialized = builder.create_sized_stack_slot(cranelift_codegen::ir::StackSlotData::new(
+        cranelift_codegen::ir::StackSlotKind::ExplicitSlot,
+        8,
+        3,
+    ));
+    let zero = builder.ins().iconst(types::I64, 0);
+    builder.ins().stack_store(types::I64, zero, initialized, 0);
+    if let Some(kind) = super::failure::value_kind(type_record(program, ty)?.category()) {
+        let early = builder.create_block();
+        builder.append_block_param(early, types::I32);
+        super::failure::probe(
+            if kind < 4 { 2 } else { 4 },
+            &super::failure::Runtime { symbols: runtime.symbols, failed: Some(early) },
+            &mut builder,
+        )?;
+        let next = builder.create_block();
+        builder.ins().jump(next, &[]);
+        builder.switch_to_block(early);
+        let status = builder.block_params(early)[0];
+        builder.ins().return_(&[status]);
+        builder.switch_to_block(next);
+    }
     let source = builder.block_params(entry)[0];
     let destination = builder.block_params(entry)[1];
-    clone_into(program, ty, source, destination, runtime, clones, &mut builder)?;
+    clone_into(program, ty, source, destination, initialized, runtime, clones, &mut builder)?;
     let ok = builder.ins().iconst(types::I32, 0);
     builder.ins().return_(&[ok]);
+    builder.switch_to_block(failed);
+    let status = builder.block_params(failed)[0];
+    super::clone_cleanup::prefix(
+        program,
+        ty,
+        destination,
+        initialized,
+        runtime,
+        drops,
+        &mut builder,
+    )?;
+    builder.ins().return_(&[status]);
     builder.seal_all_blocks();
     builder.finalize(frontend);
     Ok(())
@@ -46,7 +84,7 @@ pub(super) fn clone_value(
     program: &VerifiedMirModule,
     operation: VerifiedOperation<'_>,
     source: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     clones: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
@@ -57,7 +95,30 @@ pub(super) fn clone_value(
         return Ok(builder.ins().load(native, MemFlagsData::new(), source, 0));
     }
     let result = allocate_record(program, ty, runtime, builder)?;
-    call_helper(clones, ty, source, result, builder)?;
+    let failed = builder.create_block();
+    builder.append_block_param(failed, types::I32);
+    call_helper(
+        clones,
+        ty,
+        source,
+        result,
+        &super::failure::Runtime { symbols: runtime.symbols, failed: Some(failed) },
+        builder,
+    )?;
+    let next = builder.create_block();
+    builder.ins().jump(next, &[]);
+    builder.switch_to_block(failed);
+    let status = builder.block_params(failed)[0];
+    super::runtime::release_record(
+        program,
+        ty,
+        result,
+        &super::failure::Runtime { symbols: runtime.symbols, failed: None },
+        builder,
+    )?;
+    super::failure::language_status(runtime, status, builder);
+    builder.ins().jump(next, &[]);
+    builder.switch_to_block(next);
     Ok(result)
 }
 
@@ -66,7 +127,8 @@ fn clone_into(
     ty: u32,
     source: cranelift_codegen::ir::Value,
     destination: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    initialized: cranelift_codegen::ir::StackSlot,
+    runtime: &super::failure::Runtime<'_>,
     clones: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
@@ -84,18 +146,26 @@ fn clone_into(
             call_ok(runtime, "zryna_rt_o1_string_clone", &[source, destination], builder)
         }
         TypeCategory::Struct => {
-            for field in layout.fields() {
+            for (index, field) in layout.fields().iter().enumerate() {
                 call_child(
                     clones,
                     field.ty,
                     offset(source, field.offset, builder)?,
                     offset(destination, field.offset, builder)?,
+                    runtime,
                     builder,
                 )?;
+                super::clone_cleanup::mark(
+                    initialized,
+                    u64::try_from(index + 1).map_err(|_| invariant_error())?,
+                    builder,
+                );
             }
             Ok(())
         }
-        TypeCategory::Enum => clone_enum(program, ty, source, destination, clones, builder),
+        TypeCategory::Enum => {
+            clone_enum(program, ty, source, destination, clones, runtime, builder)
+        }
         TypeCategory::FixedArray => {
             let element = layout.referenced_type().ok_or_else(invariant_error)?;
             let stride = layout.array_stride().ok_or_else(invariant_error)?;
@@ -106,8 +176,14 @@ fn clone_into(
                     element,
                     offset(source, displacement, builder)?,
                     offset(destination, displacement, builder)?,
+                    runtime,
                     builder,
                 )?;
+                super::clone_cleanup::mark(
+                    initialized,
+                    u64::try_from(index + 1).map_err(|_| invariant_error())?,
+                    builder,
+                );
             }
             Ok(())
         }
@@ -132,6 +208,7 @@ fn clone_enum(
     source: cranelift_codegen::ir::Value,
     destination: cranelift_codegen::ir::Value,
     clones: &BTreeMap<u32, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let layout = type_record(program, ty)?;
@@ -155,6 +232,7 @@ fn clone_enum(
                 payload,
                 offset(source, payload_offset, builder)?,
                 offset(destination, payload_offset, builder)?,
+                runtime,
                 builder,
             )?;
         }
@@ -172,7 +250,7 @@ fn clone_vec(
     ty: u32,
     source: cranelift_codegen::ir::Value,
     destination: cranelift_codegen::ir::Value,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     clones: &BTreeMap<u32, FuncRef>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
@@ -203,8 +281,9 @@ fn clone_vec(
         builder.ins().imul_imm_u(index, i64::try_from(stride).map_err(|_| invariant_error())?);
     let source_item = builder.ins().iadd(source_data, byte_offset);
     let destination_item = builder.ins().iadd(destination_data, byte_offset);
-    call_child(clones, element, source_item, destination_item, builder)?;
+    call_child(clones, element, source_item, destination_item, runtime, builder)?;
     let next = builder.ins().iadd_imm_u(index, 1);
+    builder.ins().store(MemFlagsData::new(), next, destination, 8);
     builder.ins().jump(header, &[BlockArg::Value(next)]);
     builder.switch_to_block(done);
     builder.ins().store(MemFlagsData::new(), length, destination, 8);
@@ -216,9 +295,10 @@ fn call_child(
     ty: u32,
     source: cranelift_codegen::ir::Value,
     destination: cranelift_codegen::ir::Value,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
-    call_helper(clones, ty, source, destination, builder)
+    call_helper(clones, ty, source, destination, runtime, builder)
 }
 
 fn call_helper(
@@ -226,12 +306,13 @@ fn call_helper(
     ty: u32,
     source: cranelift_codegen::ir::Value,
     destination: cranelift_codegen::ir::Value,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<(), Diagnostic> {
     let function = *clones.get(&ty).ok_or_else(invariant_error)?;
     let call = builder.ins().call(function, &[source, destination]);
     let status = *builder.inst_results(call).first().ok_or_else(invariant_error)?;
-    builder.ins().trapnz(status, TrapCode::unwrap_user(2));
+    super::failure::language_status(runtime, status, builder);
     Ok(())
 }
 

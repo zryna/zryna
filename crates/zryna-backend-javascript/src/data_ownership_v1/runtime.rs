@@ -1,26 +1,20 @@
+pub(super) const OBSERVATION: &str = include_str!("observation.js");
+
 pub(super) const PRELUDE: &str = r#"const $zryna$U = void 0;
-const $zryna$sentinel = {};
-let $zryna$status = 0;
-function $zryna$trap(id) {
-  const code = {BOUNDS: 1, ALLOCATION: 2, CAPACITY: 3, REFCOUNT: 4, UTF8: 5}[id];
-  if (code === void 0) throw new Error("ZRYNA-R3" + id);
-  $zryna$status = code;
-  throw $zryna$sentinel;
-}
-function $zryna$observation() { return $zryna$status; }
-export { $zryna$observation };
 function $zryna$index(value, length) {
   if ((value | 0) !== value || value < 0 || value >= length) $zryna$trap("BOUNDS");
   return value;
 }
 function $zryna$clone(value) {
   if (value === $zryna$U || value === null || typeof value !== "object") return value;
+  $zryna$probe(value.$k < 4 ? 2 : 4);
   switch (value.$k) {
     case 1: return {$k: 1, $v: value.$v};
     case 2: {
       const out = {$k: 2, $v: []};
       try { for (const item of value.$v) out.$v.push($zryna$clone(item)); }
       catch (failure) {
+        $zryna$record(0x10000002);
         for (let i = out.$v.length - 1; i >= 0; i--) $zryna$drop(out.$v[i]);
         throw failure;
       }
@@ -39,6 +33,7 @@ function $zryna$clone(value) {
 function $zryna$drop(value) {
   if (value === $zryna$U || value === null || typeof value !== "object" || value.$d) return;
   value.$d = true;
+  $zryna$record(0x10000000 + value.$k);
   if (value.$k === 1) return;
   if (value.$k === 2) { for (let i = value.$v.length - 1; i >= 0; i--) $zryna$drop(value.$v[i]); return; }
   if (value.$k === 3) { $zryna$drop(value.$v); return; }
@@ -47,15 +42,32 @@ function $zryna$drop(value) {
     if (--value.$c.$s === 0) {
       $zryna$drop(value.$c.$p); value.$c.$p = $zryna$U;
       if (value.$c.$w === 0) $zryna$trap("ABI");
-      value.$c.$w--;
+      $zryna$record(0x10000006);
+      if (--value.$c.$w === 0) $zryna$record(0x10000007);
     }
     return;
   }
   if (value.$k === 5) {
     if (value.$c.$w === 0) $zryna$trap("ABI");
-    value.$c.$w--; return;
+    if (--value.$c.$w === 0) $zryna$record(0x10000007); return;
   }
   $zryna$trap("ABI");
+}
+function $zryna$utf8Length(text) {
+  let bytes = 0;
+  for (const character of text) {
+    const value = character.codePointAt(0);
+    bytes += value < 128 ? 1 : value < 2048 ? 2 : value < 65536 ? 3 : 4;
+  }
+  return bytes;
+}
+function $zryna$concat(left, right) {
+  if ($zryna$utf8Length(left.$v) + $zryna$utf8Length(right.$v) > 67108864) $zryna$trap("CAPACITY");
+  return {$k: 1, $v: left.$v + right.$v};
+}
+function $zryna$push(vector, value) {
+  if (vector.$v.length === 1048576) $zryna$trap("CAPACITY");
+  vector.$v.push(value);
 }
 function $zryna$read(places, roots, values, id) {
   const d = places[id];

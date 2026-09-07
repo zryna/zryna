@@ -9,7 +9,9 @@ use super::error;
 mod control;
 mod failure;
 mod memory;
+mod observation;
 mod operations;
+mod places;
 mod values;
 
 const MEMORY_PAGES: u64 = 256;
@@ -63,6 +65,7 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
         );
     }
     declarations.function(0);
+    declarations.function(drop_type);
     module.section(&declarations);
 
     let mut memories = MemorySection::new();
@@ -77,12 +80,14 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
     let mut globals = GlobalSection::new();
     globals.global(
         GlobalType { val_type: ValType::I32, mutable: true, shared: false },
-        &ConstExpr::i32_const(1024),
+        &ConstExpr::i32_const(observation::ARENA_START),
     );
-    globals.global(
-        GlobalType { val_type: ValType::I32, mutable: true, shared: false },
-        &ConstExpr::i32_const(0),
-    );
+    for _ in 0..5 {
+        globals.global(
+            GlobalType { val_type: ValType::I32, mutable: true, shared: false },
+            &ConstExpr::i32_const(0),
+        );
+    }
     module.section(&globals);
 
     let mut exports = ExportSection::new();
@@ -98,7 +103,13 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
     exports.export("$zryna$observation", ExportKind::Func, wrapper_index);
     module.section(&exports);
 
-    let context = Context { functions: &functions, layouts, type_count, program_base };
+    let context = Context {
+        functions: &functions,
+        layouts,
+        type_count,
+        program_base,
+        observation: wrapper_index,
+    };
     let mut code = CodeSection::new();
     code.function(&allocator());
     code.function(&copy_memory());
@@ -119,16 +130,20 @@ pub(super) fn module(program: &VerifiedProgram) -> Result<Vec<u8>, zryna_diagnos
             )?);
         }
     }
-    let mut observation = Function::new([]);
-    observation.instruction(&Instruction::GlobalGet(1));
-    observation.instruction(&Instruction::End);
-    code.function(&observation);
+    code.function(&observation::getter());
+    code.function(&observation::recorder());
     module.section(&code);
     Ok(module.finish())
 }
 
 fn allocator() -> Function {
     let mut function = Function::new([(2, ValType::I32)]);
+    function.instruction(&Instruction::LocalGet(0));
+    function.instruction(&Instruction::I32Const(67_108_864));
+    function.instruction(&Instruction::I32GtU);
+    function.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+    failure::helper_trap(3, &mut function);
+    function.instruction(&Instruction::End);
     function.instruction(&Instruction::GlobalGet(0));
     function.instruction(&Instruction::LocalTee(1));
     function.instruction(&Instruction::LocalGet(0));
@@ -141,7 +156,7 @@ fn allocator() -> Function {
     function.instruction(&Instruction::LocalGet(1));
     function.instruction(&Instruction::I32LtU);
     function.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    function.instruction(&Instruction::Unreachable);
+    failure::helper_trap(3, &mut function);
     function.instruction(&Instruction::End);
     function.instruction(&Instruction::LocalGet(2));
     function.instruction(&Instruction::I32Const(
@@ -149,7 +164,7 @@ fn allocator() -> Function {
     ));
     function.instruction(&Instruction::I32GtU);
     function.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
-    function.instruction(&Instruction::Unreachable);
+    failure::helper_trap(2, &mut function);
     function.instruction(&Instruction::End);
     function.instruction(&Instruction::LocalGet(2));
     function.instruction(&Instruction::GlobalSet(0));
@@ -163,6 +178,7 @@ pub(super) struct Context<'a> {
     pub(super) layouts: &'a zryna_layout::VerifiedLayouts,
     type_count: u32,
     program_base: u32,
+    observation: u32,
 }
 
 impl Context<'_> {
@@ -196,14 +212,18 @@ fn export_wrapper(
     let mut body = Function::new([(1, ValType::I32)]);
     body.instruction(&Instruction::I32Const(0));
     body.instruction(&Instruction::GlobalSet(1));
-    body.instruction(&Instruction::I32Const(1024));
+    body.instruction(&Instruction::I32Const(0));
+    body.instruction(&Instruction::GlobalSet(2));
+    body.instruction(&Instruction::I32Const(0));
+    body.instruction(&Instruction::GlobalSet(5));
+    body.instruction(&Instruction::I32Const(observation::ARENA_START));
     body.instruction(&Instruction::GlobalSet(0));
     for index in 0..parameters {
         body.instruction(&Instruction::LocalGet(u32::try_from(index).map_err(|_| index_error())?));
     }
     body.instruction(&Instruction::Call(target));
     body.instruction(&Instruction::LocalSet(result));
-    body.instruction(&Instruction::I32Const(1024));
+    body.instruction(&Instruction::I32Const(observation::ARENA_START));
     body.instruction(&Instruction::GlobalSet(0));
     body.instruction(&Instruction::LocalGet(result));
     body.instruction(&Instruction::End);
@@ -317,6 +337,17 @@ fn encode_function(
     body.instruction(&Instruction::I32Const(frame_bytes));
     body.instruction(&Instruction::Call(0));
     body.instruction(&Instruction::LocalSet(locals.frame));
+    body.instruction(&Instruction::GlobalGet(1));
+    body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+    for parameter in function.parameters().collect::<Vec<_>>().into_iter().rev() {
+        if context.layouts.type_by_id(parameter.ty()).ok_or_else(index_error)?.drop_kind() != 0 {
+            body.instruction(&Instruction::LocalGet(parameter.id().index()));
+            body.instruction(&Instruction::Call(context.drop_index(parameter.ty())));
+        }
+    }
+    body.instruction(&Instruction::I32Const(0));
+    body.instruction(&Instruction::Return);
+    body.instruction(&Instruction::End);
     for place in function.places() {
         if let zryna_ir::data_ownership_v1::VerifiedPlaceKind::Parameter(ordinal) = place.kind() {
             operations::place_address(
@@ -373,3 +404,6 @@ fn encode_function(
 pub(super) fn index_error() -> zryna_diagnostics::Diagnostic {
     error("ZRYNA-W3001", "verified DataOwnershipV1 index exceeds core WebAssembly limits")
 }
+
+#[cfg(test)]
+mod allocator_tests;

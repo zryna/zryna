@@ -35,7 +35,7 @@ fn verify_rejects(
 ) {
     let diagnostics = zryna_native_mir::data_ownership_v1::verify(
         raw,
-        program.verified_ir().linux_x86_64_layouts(),
+        program.verified_ir(),
         program.runtime_abi(),
     )
     .expect_err("forged native MIR must fail closed");
@@ -86,13 +86,13 @@ fn forged_layout_address_and_runtime_inventory_fail_closed() {
     bad_type.types[0].size += 1;
     let first = zryna_native_mir::data_ownership_v1::verify(
         bad_type.clone(),
-        program.verified_ir().linux_x86_64_layouts(),
+        program.verified_ir(),
         program.runtime_abi(),
     )
     .expect_err("forged type");
     let second = zryna_native_mir::data_ownership_v1::verify(
         bad_type,
-        program.verified_ir().linux_x86_64_layouts(),
+        program.verified_ir(),
         program.runtime_abi(),
     )
     .expect_err("replayed forged type");
@@ -114,7 +114,7 @@ fn forged_layout_address_and_runtime_inventory_fail_closed() {
     }
     let diagnostics = zryna_native_mir::data_ownership_v1::verify(
         bad_address,
-        program.verified_ir().linux_x86_64_layouts(),
+        program.verified_ir(),
         program.runtime_abi(),
     )
     .expect_err("forged address");
@@ -124,7 +124,7 @@ fn forged_layout_address_and_runtime_inventory_fail_closed() {
     bad_cleanup.functions[0].blocks[0].operations[0].cleanup = Some(u32::MAX);
     let diagnostics = zryna_native_mir::data_ownership_v1::verify(
         bad_cleanup,
-        program.verified_ir().linux_x86_64_layouts(),
+        program.verified_ir(),
         program.runtime_abi(),
     )
     .expect_err("forged cleanup reference");
@@ -134,7 +134,7 @@ fn forged_layout_address_and_runtime_inventory_fail_closed() {
     bad_symbols.runtime_symbols[0].push_str("_forged");
     let diagnostics = zryna_native_mir::data_ownership_v1::verify(
         bad_symbols,
-        program.verified_ir().linux_x86_64_layouts(),
+        program.verified_ir(),
         program.runtime_abi(),
     )
     .expect_err("forged runtime inventory");

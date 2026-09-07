@@ -338,7 +338,7 @@ fn generated_owned_cleanup_executes_before_scalar_return() {
         let layout = mir.types().find(|ty| ty.id() == parameter.ty()).expect("parameter layout");
         writeln!(
             declarations,
-            "  uintptr_t p{index} = 0; if (zryna_rt_o1_allocate({}, {}, &p{index}) != 0) return {}; memset((void *)p{index}, 0, {});",
+            "  uintptr_t p{index} = 0; if (zryna_m3_allocate_record({}, {}, &p{index}) != 0) return {}; memset((void *)p{index}, 0, {});",
             layout.size(),
             layout.alignment(),
             index + 10,
@@ -356,9 +356,10 @@ fn generated_owned_cleanup_executes_before_scalar_return() {
             r"
 #include <stdio.h>
 extern int32_t zryna_m3_m0_f0(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+uint32_t zryna_m3_observe(uint32_t command) {{ (void)command; return 0; }}
 int main(void) {{
 {declarations}  if (zryna_m3_m0_f0({arguments}) != 0) return 1;
-  if (allocation_head != NULL) return 2;
+  if (zryna_m3_finish_invocation() != 0 || allocation_head != NULL) return 2;
   return 0;
 }}
 "

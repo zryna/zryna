@@ -63,7 +63,10 @@ pub(super) fn audit_runtime_object(
     {
         return Err(ownership_object_audit_error());
     }
-    let expected = mir.runtime_symbols().collect::<BTreeSet<_>>();
+    let expected = mir
+        .runtime_symbols()
+        .chain(["zryna_m3_allocate_record", "zryna_m3_finish_invocation"])
+        .collect::<BTreeSet<_>>();
     let mut defined = BTreeSet::new();
     let mut undefined = BTreeSet::new();
     for symbol in file.symbols() {
@@ -80,7 +83,9 @@ pub(super) fn audit_runtime_object(
         }
     }
     if defined != expected
-        || !undefined.iter().all(|name| ["free", "malloc", "memcpy", "memset"].contains(name))
+        || !undefined
+            .iter()
+            .all(|name| ["free", "malloc", "memcpy", "memset", "zryna_m3_observe"].contains(name))
     {
         return Err(ownership_object_audit_error());
     }

@@ -5,10 +5,21 @@ impl NodeRuntimeCapability {
         &self,
         harness: &Path,
         working_directory: &Path,
-    ) -> Result<[u8; 8], Diagnostic> {
-        self.run_module_frame(harness, working_directory, 8)?
-            .try_into()
-            .map_err(|_| invalid_result_frame())
+    ) -> Result<Vec<u8>, Diagnostic> {
+        self.revalidate()?;
+        let output = run_bounded(
+            &self.invocation_path,
+            &[node_compatible_path(harness).into_os_string()],
+            &node_compatible_path(working_directory),
+            None,
+            12 + 4096 * 4,
+            MAX_STDERR,
+        )?;
+        self.revalidate()?;
+        if !output.status.success() || !output.stderr.is_empty() || output.stdout.len() < 12 {
+            return Err(invalid_result_frame());
+        }
+        Ok(output.stdout)
     }
 
     pub(crate) fn run_ownership_webassembly(
@@ -16,7 +27,7 @@ impl NodeRuntimeCapability {
         script: &[u8],
         module: &[u8],
         working_directory: &Path,
-    ) -> Result<[u8; 8], Diagnostic> {
+    ) -> Result<Vec<u8>, Diagnostic> {
         if script.len() > MAX_INLINE_MODULE_BYTES || module.len() > MAX_WEBASSEMBLY_INPUT_BYTES {
             return Err(runtime_error(
                 "ZRYNA-R3004",
@@ -42,13 +53,13 @@ impl NodeRuntimeCapability {
             ],
             &node_working_directory,
             Some(module),
-            8,
+            12 + 4096 * 4,
             MAX_STDERR,
         )?;
         self.revalidate()?;
-        if !output.status.success() || !output.stderr.is_empty() || output.stdout.len() != 8 {
+        if !output.status.success() || !output.stderr.is_empty() || output.stdout.len() < 12 {
             return Err(invalid_result_frame());
         }
-        output.stdout.try_into().map_err(|_| invalid_result_frame())
+        Ok(output.stdout)
     }
 }

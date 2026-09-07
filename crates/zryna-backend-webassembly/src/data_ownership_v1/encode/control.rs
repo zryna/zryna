@@ -83,12 +83,19 @@ pub(super) fn terminator(
             operations::load(body);
             body.instruction(&Instruction::LocalTee(locals.heap));
             body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+            super::observation::probe(4, context, body);
+            body.instruction(&Instruction::GlobalGet(1));
+            body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
+            operations::emit_terminator_drops(function, terminator, locals, context, body)?;
+            body.instruction(&Instruction::I32Const(0));
+            body.instruction(&Instruction::Return);
+            body.instruction(&Instruction::End);
             body.instruction(&Instruction::LocalGet(locals.heap));
             body.instruction(&Instruction::I32Const(-1));
             body.instruction(&Instruction::I32Eq);
             body.instruction(&Instruction::If(wasm_encoder::BlockType::Empty));
             operations::emit_terminator_drops(function, terminator, locals, context, body)?;
-            body.instruction(&Instruction::Unreachable);
+            super::failure::helper_trap(4, body);
             body.instruction(&Instruction::End);
             body.instruction(&Instruction::LocalGet(locals.scratch));
             body.instruction(&Instruction::LocalGet(locals.heap));
@@ -116,9 +123,19 @@ pub(super) fn terminator(
             )?;
             body.instruction(&Instruction::End);
         }
-        T::Trap(_) => {
+        T::Trap(identity) => {
             operations::emit_terminator_drops(function, terminator, locals, context, body)?;
-            body.instruction(&Instruction::Unreachable);
+            let code = match identity {
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::BoundsV1 => 1,
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::AllocationV1 => 2,
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::CapacityV1 => 3,
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::RefcountV1 => 4,
+                zryna_ir::data_ownership_v1::VerifiedTrapIdentity::Utf8V1 => 5,
+            };
+            body.instruction(&Instruction::I32Const(code));
+            body.instruction(&Instruction::GlobalSet(1));
+            body.instruction(&Instruction::I32Const(0));
+            body.instruction(&Instruction::Return);
         }
     }
     Ok(())

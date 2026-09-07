@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 
 use cranelift_codegen::ir::{
-    FuncRef, InstBuilder, MemFlagsData, StackSlot, StackSlotData, StackSlotKind, TrapCode,
-    condcodes::IntCC, types,
+    FuncRef, InstBuilder, MemFlagsData, StackSlot, condcodes::IntCC, types,
 };
 use cranelift_codegen::{Context, isa::TargetFrontendConfig};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
@@ -19,8 +18,8 @@ use super::drop as drop_ops;
 use super::invariant_error;
 use super::runtime as runtime_ops;
 use super::state::{
-    borrow_capacity, get_borrow, get_borrow_type, get_value, runtime_function, set_borrow,
-    set_borrow_type, set_value, value_capacity,
+    borrow_capacity, get_borrow, get_borrow_type, get_value, set_borrow, set_borrow_type,
+    set_value, value_capacity,
 };
 use super::storage::{
     allocate_place_slots, copy_from_address, copy_place_value, index_value, indexed_address,
@@ -58,6 +57,7 @@ pub(super) fn build_function(
     frontend: TargetFrontendConfig,
 ) -> Result<(), Diagnostic> {
     let mut builder = FunctionBuilder::new(&mut context.func, builder_context);
+    let runtime = &super::failure::Runtime { symbols: runtime, failed: None };
     let blocks = function.blocks().collect::<Vec<_>>();
     let encoded = blocks.iter().map(|_| builder.create_block()).collect::<Vec<_>>();
     let entry = *encoded.first().ok_or_else(invariant_error)?;
@@ -118,7 +118,7 @@ pub(super) fn build_function(
                 &mut borrows,
                 &mut borrow_types,
                 callees,
-                runtime,
+                &super::failure::Runtime { symbols: runtime.symbols, failed: Some(failed) },
                 clones,
                 drops,
                 failed,
@@ -163,7 +163,7 @@ fn lower_operation(
     borrows: &mut [Option<cranelift_codegen::ir::Value>],
     borrow_types: &mut [Option<u32>],
     callees: &BTreeMap<(u32, u32), FuncRef>,
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     clones: &BTreeMap<u32, FuncRef>,
     drops: &BTreeMap<u32, FuncRef>,
     failed: cranelift_codegen::ir::Block,
@@ -177,6 +177,16 @@ fn lower_operation(
             .ok_or_else(invariant_error)
             .and_then(|id| get_value(values, id))
     };
+    let probes: &[u32] = match operation.opcode() {
+        Opcode::String => &[5, 2],
+        Opcode::StringConcat | Opcode::VecPush => &[3, 2],
+        Opcode::Construct | Opcode::VecConstruct | Opcode::SharedConstruct => &[2],
+        Opcode::SharedClone | Opcode::WeakClone | Opcode::WeakDowngrade => &[4],
+        _ => &[],
+    };
+    for code in probes {
+        super::failure::probe(*code, runtime, builder)?;
+    }
     let result = match operation.opcode() {
         Opcode::BoolLiteral => match operation.immediate() {
             VerifiedImmediate::Bool(value) => {
@@ -218,7 +228,9 @@ fn lower_operation(
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             let call = builder.ins().call(callee, &arguments);
-            Some(*builder.inst_results(call).first().ok_or_else(invariant_error)?)
+            let result = *builder.inst_results(call).first().ok_or_else(invariant_error)?;
+            super::failure::check_propagated(runtime, builder)?;
+            Some(result)
         }
         Opcode::Construct => Some(construct(program, operation, values, runtime, builder)?),
         Opcode::Copy => {
@@ -373,25 +385,12 @@ fn construct(
     program: &VerifiedMirModule,
     operation: VerifiedOperation<'_>,
     values: &[Option<cranelift_codegen::ir::Value>],
-    runtime: &BTreeMap<&str, FuncRef>,
+    runtime: &super::failure::Runtime<'_>,
     builder: &mut FunctionBuilder<'_>,
 ) -> Result<cranelift_codegen::ir::Value, Diagnostic> {
     let result = operation.result().ok_or_else(invariant_error)?;
     let layout = type_record(program, result.ty())?;
-    let output =
-        builder.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
-    let out_address = builder.ins().stack_addr(types::I64, output, 0);
-    let size = builder
-        .ins()
-        .iconst(types::I64, i64::try_from(layout.size()).map_err(|_| invariant_error())?);
-    let alignment = builder
-        .ins()
-        .iconst(types::I32, i64::try_from(layout.alignment()).map_err(|_| invariant_error())?);
-    let allocate = runtime_function(runtime, "zryna_rt_o1_allocate")?;
-    let call = builder.ins().call(allocate, &[size, alignment, out_address]);
-    let status = *builder.inst_results(call).first().ok_or_else(invariant_error)?;
-    builder.ins().trapnz(status, TrapCode::unwrap_user(2));
-    let pointer = builder.ins().stack_load(types::I64, types::I64, output, 0);
+    let pointer = super::runtime::allocate_record(program, result.ty(), runtime, builder)?;
     if layout.category() == TypeCategory::Enum {
         let VerifiedImmediate::Variant(variant) = operation.immediate() else {
             return Err(invariant_error());

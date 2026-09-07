@@ -1,4 +1,4 @@
-use wasm_encoder::{Function, Instruction, MemArg};
+use wasm_encoder::{Function, Instruction};
 use zryna_ir::data_ownership_v1::{
     VerifiedBackendInstruction as B, VerifiedCallArgument, VerifiedFunction, VerifiedInstruction,
     VerifiedInstructionKind as K, VerifiedPlaceKind,
@@ -7,107 +7,9 @@ use zryna_layout::{TypeCategory, VerifiedLayouts};
 
 use super::{Context, Locals, index_error, memory};
 
-const WORD: MemArg = MemArg { offset: 0, align: 2, memory_index: 0 };
-
-pub(super) fn store(body: &mut Function) {
-    body.instruction(&Instruction::I32Store(WORD));
-}
-pub(super) fn load(body: &mut Function) {
-    body.instruction(&Instruction::I32Load(WORD));
-}
-
-pub(super) fn place_address(
-    function: VerifiedFunction<'_>,
-    id: u32,
-    locals: Locals,
-    layouts: &VerifiedLayouts,
-    body: &mut Function,
-) -> Result<(), zryna_diagnostics::Diagnostic> {
-    let place = function.places().find(|place| place.id().index() == id).ok_or_else(index_error)?;
-    match place.kind() {
-        VerifiedPlaceKind::Parameter(_)
-        | VerifiedPlaceKind::Local(_)
-        | VerifiedPlaceKind::Temporary(_) => {
-            body.instruction(&Instruction::LocalGet(locals.frame));
-            body.instruction(&Instruction::I32Const(
-                i32::try_from(id.checked_mul(4).ok_or_else(index_error)?)
-                    .map_err(|_| index_error())?,
-            ));
-            body.instruction(&Instruction::I32Add);
-        }
-        VerifiedPlaceKind::StructField { base, ordinal } => {
-            place_value(function, base.index(), locals, layouts, body)?;
-            let base_type = function
-                .places()
-                .find(|candidate| candidate.id() == base)
-                .ok_or_else(index_error)?
-                .ty();
-            let offset = layouts
-                .type_by_id(base_type)
-                .and_then(|ty| ty.fields().iter().find(|field| field.ordinal() == ordinal))
-                .map(|field| field.offset())
-                .ok_or_else(index_error)?;
-            body.instruction(&Instruction::I32Const(
-                i32::try_from(offset).map_err(|_| index_error())?,
-            ));
-            body.instruction(&Instruction::I32Add);
-        }
-        VerifiedPlaceKind::EnumPayload { base, .. } => {
-            place_value(function, base.index(), locals, layouts, body)?;
-            let base_type = function
-                .places()
-                .find(|candidate| candidate.id() == base)
-                .ok_or_else(index_error)?
-                .ty();
-            let offset = layouts
-                .type_by_id(base_type)
-                .and_then(zryna_layout::VerifiedType::enum_payload_layout)
-                .map(|layout| layout.0)
-                .ok_or_else(index_error)?;
-            body.instruction(&Instruction::I32Const(
-                i32::try_from(offset).map_err(|_| index_error())?,
-            ));
-            body.instruction(&Instruction::I32Add);
-        }
-        VerifiedPlaceKind::FixedArrayConstant { base, index } => {
-            place_value(function, base.index(), locals, layouts, body)?;
-            let base_type = function
-                .places()
-                .find(|candidate| candidate.id() == base)
-                .ok_or_else(index_error)?
-                .ty();
-            let stride = layouts
-                .type_by_id(base_type)
-                .and_then(zryna_layout::VerifiedType::array_stride)
-                .ok_or_else(index_error)?;
-            let offset = stride.checked_mul(u64::from(index)).ok_or_else(index_error)?;
-            body.instruction(&Instruction::I32Const(
-                i32::try_from(offset).map_err(|_| index_error())?,
-            ));
-            body.instruction(&Instruction::I32Add);
-        }
-    }
-    Ok(())
-}
-
-pub(super) fn place_value(
-    function: VerifiedFunction<'_>,
-    id: u32,
-    locals: Locals,
-    layouts: &VerifiedLayouts,
-    body: &mut Function,
-) -> Result<(), zryna_diagnostics::Diagnostic> {
-    let place = function.places().find(|place| place.id().index() == id).ok_or_else(index_error)?;
-    let ty = layouts.type_by_id(place.ty()).ok_or_else(index_error)?;
-    place_address(function, id, locals, layouts, body)?;
-    match place.kind() {
-        VerifiedPlaceKind::Parameter(_)
-        | VerifiedPlaceKind::Local(_)
-        | VerifiedPlaceKind::Temporary(_) => load(body),
-        _ => memory::load_value(ty, body),
-    }
-    Ok(())
-}
+pub(super) use super::places::{
+    load, place_address, place_storage_address, place_type, place_value, store, store_place_value,
+};
 
 #[allow(clippy::match_same_arms, clippy::too_many_lines)]
 pub(super) fn instruction(
@@ -118,6 +20,20 @@ pub(super) fn instruction(
     body: &mut Function,
 ) -> Result<(), zryna_diagnostics::Diagnostic> {
     let kind = instruction.kind();
+    let probes: &[i32] = match kind {
+        K::StringFromUtf8 => &[5, 2],
+        K::StringConcat | K::VecPush => &[3, 2],
+        K::StructConstruct
+        | K::FixedArrayConstruct
+        | K::EnumConstruct
+        | K::VecConstruct
+        | K::SharedConstruct => &[2],
+        _ => &[],
+    };
+    for code in probes {
+        super::observation::probe(*code, context, body);
+        super::failure::operation_check(body);
+    }
     match (kind, instruction.backend_instruction()) {
         (K::BoolLiteral, B::BoolLiteral(value)) => {
             body.instruction(&Instruction::I32Const(i32::from(value)));
@@ -167,7 +83,7 @@ pub(super) fn instruction(
                     }
                 };
             }
-            body.instruction(&Instruction::Call(context.function_index(callee)?));
+            super::failure::operation_call(context.function_index(callee)?, body);
         }
         (
             K::StructConstruct | K::FixedArrayConstruct | K::EnumConstruct,
@@ -178,7 +94,7 @@ pub(super) fn instruction(
             body.instruction(&Instruction::I32Const(
                 i32::try_from(layout.size().max(1)).map_err(|_| index_error())?,
             ));
-            body.instruction(&Instruction::Call(0));
+            super::failure::operation_call(0, body);
             let result = instruction.result().ok_or_else(index_error)?;
             body.instruction(&Instruction::LocalSet(result.index()));
             if layout.category() == TypeCategory::Enum {
@@ -244,9 +160,10 @@ pub(super) fn instruction(
             B::Place(place),
         ) => {
             place_value(function, place.index(), locals, context.layouts, body)?;
-            body.instruction(&Instruction::Call(Context::clone_index(
-                instruction.result_type().ok_or_else(index_error)?,
-            )));
+            super::failure::operation_call(
+                Context::clone_index(instruction.result_type().ok_or_else(index_error)?),
+                body,
+            );
         }
         (K::EnumDiscriminant, B::Place(place)) => {
             place_value(function, place.index(), locals, context.layouts, body)?;
@@ -318,9 +235,10 @@ pub(super) fn instruction(
         )?,
         (K::SharedClone | K::WeakClone | K::WeakDowngrade, B::Place(place)) => {
             place_value(function, place.index(), locals, context.layouts, body)?;
-            body.instruction(&Instruction::Call(Context::clone_index(
-                instruction.result_type().ok_or_else(index_error)?,
-            )));
+            super::failure::operation_call(
+                Context::clone_index(instruction.result_type().ok_or_else(index_error)?),
+                body,
+            );
         }
         (K::BeginBorrow, B::BeginBorrow(definition)) => {
             place_storage_address(
@@ -370,7 +288,7 @@ pub(super) fn instruction(
             let ty = instruction.result_type().ok_or_else(index_error)?;
             memory::load_value(context.layouts.type_by_id(ty).ok_or_else(index_error)?, body);
             if kind != K::BorrowRead {
-                body.instruction(&Instruction::Call(Context::clone_index(ty)));
+                super::failure::operation_call(Context::clone_index(ty), body);
             }
         }
         (K::BorrowWrite | K::BorrowReplace, B::BorrowValue { borrow, value }) => {
@@ -413,58 +331,6 @@ fn sync_result(
     Ok(())
 }
 
-pub(super) fn place_type<'a>(
-    function: VerifiedFunction<'_>,
-    id: u32,
-    layouts: &'a VerifiedLayouts,
-) -> Result<zryna_layout::VerifiedType<'a>, zryna_diagnostics::Diagnostic> {
-    function
-        .places()
-        .find(|place| place.id().index() == id)
-        .and_then(|place| layouts.type_by_id(place.ty()))
-        .ok_or_else(index_error)
-}
-
-fn place_storage_address(
-    function: VerifiedFunction<'_>,
-    id: u32,
-    locals: Locals,
-    layouts: &VerifiedLayouts,
-    body: &mut Function,
-) -> Result<(), zryna_diagnostics::Diagnostic> {
-    let place = function.places().find(|place| place.id().index() == id).ok_or_else(index_error)?;
-    let ty = layouts.type_by_id(place.ty()).ok_or_else(index_error)?;
-    if matches!(
-        place.kind(),
-        VerifiedPlaceKind::Parameter(_)
-            | VerifiedPlaceKind::Local(_)
-            | VerifiedPlaceKind::Temporary(_)
-    ) && matches!(
-        ty.category(),
-        TypeCategory::Struct | TypeCategory::Enum | TypeCategory::FixedArray
-    ) {
-        place_value(function, id, locals, layouts, body)
-    } else {
-        place_address(function, id, locals, layouts, body)
-    }
-}
-
-pub(super) fn store_place_value(
-    function: VerifiedFunction<'_>,
-    id: u32,
-    ty: zryna_layout::VerifiedType<'_>,
-    body: &mut Function,
-) -> Result<(), zryna_diagnostics::Diagnostic> {
-    let place = function.places().find(|place| place.id().index() == id).ok_or_else(index_error)?;
-    match place.kind() {
-        VerifiedPlaceKind::Parameter(_)
-        | VerifiedPlaceKind::Local(_)
-        | VerifiedPlaceKind::Temporary(_) => store(body),
-        _ => memory::store_value(ty, body),
-    }
-    Ok(())
-}
-
 fn emit_instruction_drops(
     function: VerifiedFunction<'_>,
     instruction: VerifiedInstruction<'_>,
@@ -474,6 +340,7 @@ fn emit_instruction_drops(
 ) -> Result<(), zryna_diagnostics::Diagnostic> {
     for action in instruction.derived_drop_actions() {
         let root = action.root().index();
+        super::observation::root(function, root, context, body);
         let ty = place_type(function, root, context.layouts)?;
         place_value(function, root, locals, context.layouts, body)?;
         body.instruction(&Instruction::Call(context.drop_index(ty.id())));
@@ -490,6 +357,7 @@ pub(super) fn emit_terminator_drops(
 ) -> Result<(), zryna_diagnostics::Diagnostic> {
     for action in terminator.derived_drop_actions() {
         let root = action.root().index();
+        super::observation::root(function, root, context, body);
         let ty = place_type(function, root, context.layouts)?;
         place_value(function, root, locals, context.layouts, body)?;
         body.instruction(&Instruction::Call(context.drop_index(ty.id())));
