@@ -21,10 +21,14 @@ packages full semantic-version identities. WASI is pinned independently to relea
 commit [`281ba75fafcd50961ef55f9e52747afcc9b71ede`](https://github.com/WebAssembly/WASI/tree/281ba75fafcd50961ef55f9e52747afcc9b71ede).
 No unversioned or version-ranged WASI interface is admitted.
 
-The repository validator recognizes and fail-closed parses the exact WIT subset used here:
-one package declaration followed by flat worlds containing fully qualified interface imports and
-exports. It is not a replacement for a general Component Model toolchain. A later emission gate
-must additionally resolve the pinned upstream WIT dependency graph with its own parser.
+The repository registry validator recognizes and fail-closed parses the exact WIT subset used
+here: one package declaration followed by flat worlds containing fully qualified interface
+imports and exports. It is not a replacement for a general Component Model toolchain. The
+separate backend dependency audit described below parses the complete authenticated source set
+with the pinned upstream parser, resolves its dependency graph, and independently compares the
+resolved packages and world interfaces with exact pins. The audit reports the accepted explicit
+imports separately from the parser-elaborated dependency closure; it does not treat synthesized
+type dependencies as additional host-capability grants.
 
 ## World identities
 
@@ -33,6 +37,13 @@ must additionally resolve the pinned upstream WIT dependency graph with its own 
 | browser | `zryna:capability-profiles/browser@0.1.0` | 0 | 0 | specified only |
 | command | `zryna:capability-profiles/command@0.1.0` | 13 | `wasi:cli/run@0.2.12` | specified only |
 | server | `zryna:capability-profiles/server@0.1.0` | 4 | `wasi:http/incoming-handler@0.2.12` | specified only |
+
+The host-import counts above are the explicit declarations authenticated by the accepted source
+and registry. WIT resolution elaborates interfaces needed by imported or exported interface types,
+so the exact resolved observations contain 0 imports for browser, 16 for command, and 8 for server.
+Command adds `wasi:io/error`, `wasi:io/poll`, and `wasi:io/streams`; server adds those interfaces
+plus `wasi:http/types`, all at `0.2.12`. These are transitive type dependencies already within the
+declared interface contract, not permission widening, new registry rows, or ambient host grants.
 
 The empty browser world is deliberate. It records the capability-free identity without claiming
 that today's core `wasm-web` artifact is a component. Omitting M4 profile selection preserves the
@@ -132,6 +143,40 @@ browser filesystem denial, server environment denial, an unknown capability, unr
 and the first environment entry beyond the command limit. Tests also synthesize every one of the
 fifteen profile/capability decisions, malformed WIT and registry mutations, deterministic replay,
 and exact/first-extra WIT byte boundaries.
+
+## Executable dependency audit
+
+Issue #383 adds an executable prerequisite in the existing WebAssembly backend without changing
+the worlds above. `wit-parser` is exactly pinned to `0.258.0` with default features disabled and
+only `std` enabled. Its crates.io archive SHA-256 is
+`ff4daaa3cd97ae49ecd0a99dc009d453f93e0f083dd3be38c0f24a83a93e37ac`, published from
+`bytecodealliance/wasm-tools` commit `5c6d31c78f8bd503f558441ef9c732950a141d1a`. This matches the
+repository's existing `wasmparser` and `wasm-encoder` release line rather than creating a second
+Component Model toolchain.
+
+[`wit_world_audit`](../../crates/zryna-backend-webassembly/src/wit_world_audit.rs) owns a typed,
+effect-free audit entrypoint. It first authenticates the local source and 33 vendored WASI source
+files by exact SHA-256, then creates a fresh resolver, resolves all eight exact package identities,
+and independently compares each resolved browser, command, and server import/export set. It does
+not expose parser state as authority. The browser observation must remain empty.
+
+The parser boundary accepts at most 34 files, 32 KiB per file, 16 KiB for the local root, 256 KiB
+in total, and 96 bytes per logical path. Resolved output is capped at eight packages, 32
+interfaces, 16 worlds, and 4,096 types. Input paths are sorted before authentication, source
+maps sort their files, returned identities are canonical, and no resolver survives a call. The
+accepted closure is 141,709 bytes. Exact source provenance, package-tree identities, upstream
+package hashes, license notice and hostile fixtures are recorded with the
+[backend evidence](../../crates/zryna-backend-webassembly/tests/wit-world-audit-v1/README.md).
+
+| Code | Meaning |
+| --- | --- |
+| `ZRYNA-W4000` | UTF-8, WIT parsing or dependency resolution failed |
+| `ZRYNA-W4001` | a source is missing, unknown, duplicated or does not match its reviewed hash |
+| `ZRYNA-W4002` | a resolved package, version, world or interface differs from the accepted contract |
+| `ZRYNA-W4003` | a pre-parse or resolved-graph resource bound is exceeded |
+
+Successful audit is evidence about interface identity only. It does not emit or instantiate a
+component, generate bindings, select a public profile, or grant host permissions.
 
 ## Dependency and rollout boundaries
 

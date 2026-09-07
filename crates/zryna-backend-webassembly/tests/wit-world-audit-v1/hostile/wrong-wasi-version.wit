@@ -1,0 +1,13 @@
+package zryna:capability-profiles@0.1.0;
+
+world browser {}
+
+world command {
+  import wasi:cli/environment@0.2.13;
+  export wasi:cli/run@0.2.13;
+}
+
+world server {
+  import wasi:http/outgoing-handler@0.2.13;
+  export wasi:http/incoming-handler@0.2.13;
+}

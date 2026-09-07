@@ -209,6 +209,10 @@ The repository currently establishes and tests:
 - deterministic direct core WebAssembly 1.0 emission from verified `I32V1` IR, with sealed export
   names, an import-free capability audit, pinned binary validation, and create-only `.wasm`
   publication through the same validated output capability;
+- an isolated M4 prerequisite that authenticates the accepted WIT source closure, resolves all
+  exact WASI `0.2.12` dependencies with pinned `wit-parser 0.258.0`, and independently audits the
+  existing browser, command, and server interfaces without emitting or instantiating components,
+  generating bindings, activating a profile, or granting host capabilities;
 - native MIR lowering through an independent `VerifiedMirModule` gate that retains scalar ABI v1
   authority, plus deterministic Linux x86-64 ELF relocatable-object emission and create-only
   `.o` publication;

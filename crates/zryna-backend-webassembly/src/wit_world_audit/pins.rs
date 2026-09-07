@@ -1,0 +1,268 @@
+pub(super) struct SourcePin {
+    pub(super) package: &'static str,
+    pub(super) path: &'static str,
+    pub(super) sha256: &'static str,
+}
+
+pub(super) struct WorldPin {
+    pub(super) identity: &'static str,
+    pub(super) explicit_imports: &'static [&'static str],
+    pub(super) resolved_imports: &'static [&'static str],
+    pub(super) exports: &'static [&'static str],
+}
+
+pub(super) const ROOT_PACKAGE: &str = "zryna:capability-profiles@0.1.0";
+
+pub(super) const PACKAGES: &[&str] = &[
+    "wasi:cli@0.2.12",
+    "wasi:clocks@0.2.12",
+    "wasi:filesystem@0.2.12",
+    "wasi:http@0.2.12",
+    "wasi:io@0.2.12",
+    "wasi:random@0.2.12",
+    "wasi:sockets@0.2.12",
+    ROOT_PACKAGE,
+];
+
+pub(super) const SOURCES: &[SourcePin] = &[
+    pin(
+        ROOT_PACKAGE,
+        "spec/wit/capability-profiles-v1/worlds.wit",
+        "cee8923feb7e50b545a56ecf01c14ca2fd9264e2dfdbe9f54eca6b07f0886cfe",
+    ),
+    pin(
+        "wasi:cli@0.2.12",
+        "wasi/cli/command.wit",
+        "31501d47bbb3b114c4fcb5218d42e69a4583d298384518c6adda1f2f97442153",
+    ),
+    pin(
+        "wasi:cli@0.2.12",
+        "wasi/cli/environment.wit",
+        "5e58cd47b162e9f004bc9224a29c2ec3cf9e1a3d4c910154ce53742f828af91f",
+    ),
+    pin(
+        "wasi:cli@0.2.12",
+        "wasi/cli/exit.wit",
+        "05453b1a965cdbd08fd1f9fa5df25f98746a68245bf6ff484ff661ed1e192c15",
+    ),
+    pin(
+        "wasi:cli@0.2.12",
+        "wasi/cli/imports.wit",
+        "2be596bf68d2a4babe8ab388b390af96b4fcd7e4436eea599bd9c4d5705c22f7",
+    ),
+    pin(
+        "wasi:cli@0.2.12",
+        "wasi/cli/run.wit",
+        "a7df5376da8230e0509fffbb8355641af0765cc5cff8064bbe58fef1cbbe63c1",
+    ),
+    pin(
+        "wasi:cli@0.2.12",
+        "wasi/cli/stdio.wit",
+        "87e289b61c200a8cfc615767ef74920da51fdd75d7fac413dba67fff76e0f95f",
+    ),
+    pin(
+        "wasi:cli@0.2.12",
+        "wasi/cli/terminal.wit",
+        "fc87cd0bc3f76ff7181d3666617a38ee10239f8e0344db2a52cb79f46c6b2d31",
+    ),
+    pin(
+        "wasi:clocks@0.2.12",
+        "wasi/clocks/monotonic-clock.wit",
+        "3453cd071d43c1045d417adea2bec82d66580639b71c09cad641f8a5753da947",
+    ),
+    pin(
+        "wasi:clocks@0.2.12",
+        "wasi/clocks/timezone.wit",
+        "657bb268af30308f7b34f28e0b2bb83f69655789158813dd9926e10b57ebba43",
+    ),
+    pin(
+        "wasi:clocks@0.2.12",
+        "wasi/clocks/wall-clock.wit",
+        "59a16c2aa86e89bb0a15eeb81b4205ea607cc7e97bebffdf62622b369da9b3d5",
+    ),
+    pin(
+        "wasi:clocks@0.2.12",
+        "wasi/clocks/world.wit",
+        "b998c5cba8ef680051e83fe12bdc9d579775efe05bc93c27202c125ecc82e76d",
+    ),
+    pin(
+        "wasi:filesystem@0.2.12",
+        "wasi/filesystem/preopens.wit",
+        "d67e1e166fdcbd0336784b774997d9af777b3843bca21cc651ba88f524f716e1",
+    ),
+    pin(
+        "wasi:filesystem@0.2.12",
+        "wasi/filesystem/types.wit",
+        "ff4b5f880ef38afb462fa37f00f75a75b476feb5dc0fc2da8a3633e2ae592ee6",
+    ),
+    pin(
+        "wasi:filesystem@0.2.12",
+        "wasi/filesystem/world.wit",
+        "3b126a50383dc58c7b85bfbde38836179a3df2acc9cddd3130d8dd112b77b2ae",
+    ),
+    pin(
+        "wasi:http@0.2.12",
+        "wasi/http/handler.wit",
+        "1f66174b4058b102367e69ce8aa657b3e9dbc767f6ade960108faaa1731f0945",
+    ),
+    pin(
+        "wasi:http@0.2.12",
+        "wasi/http/proxy.wit",
+        "8342e207c6ddcd642babce6e744a940c6521892e1370562c7918eb2116de379c",
+    ),
+    pin(
+        "wasi:http@0.2.12",
+        "wasi/http/types.wit",
+        "d67973c394247f8ed912368ef81a47408254163e26f11de2d1440ba3f4b66eec",
+    ),
+    pin(
+        "wasi:io@0.2.12",
+        "wasi/io/error.wit",
+        "a4eb0f5805db705c3c9754d5fc1396c5d75ada2628a4c0ac599310e194e38a9b",
+    ),
+    pin(
+        "wasi:io@0.2.12",
+        "wasi/io/poll.wit",
+        "385347a39e16284d6c78e9776014be4a5e90aeee74c8de4eabbc6ea5e3b1b2c5",
+    ),
+    pin(
+        "wasi:io@0.2.12",
+        "wasi/io/streams.wit",
+        "8b667deda5c89045ff30cea91693cc5cf1510cc2fdd96a20053459c6bf27e7e9",
+    ),
+    pin(
+        "wasi:io@0.2.12",
+        "wasi/io/world.wit",
+        "366f9d1a2b5b11cbdbb7a15155b25aa6999c1d1da30e4ba58047d11526014be3",
+    ),
+    pin(
+        "wasi:random@0.2.12",
+        "wasi/random/insecure-seed.wit",
+        "ef468057768649dd74b23baf659626fd80fc7b653cdb2347437503ffa03fd00a",
+    ),
+    pin(
+        "wasi:random@0.2.12",
+        "wasi/random/insecure.wit",
+        "5c3f5c1e2250edc4db2685a983880822304d0a0847c88e068f2a4a04209f7be1",
+    ),
+    pin(
+        "wasi:random@0.2.12",
+        "wasi/random/random.wit",
+        "c9553bdc37f0306e7d6908de669330675d528e79762954ed1539f32dbe9f61c4",
+    ),
+    pin(
+        "wasi:random@0.2.12",
+        "wasi/random/world.wit",
+        "fc32132c0aee89c0a846dfa5358dfe2143350acca1a470052270bf427815110d",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/instance-network.wit",
+        "1e4a5d97df44421503a169e1d514eca2cf160f545c44d320ce8a82f726a40cf8",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/ip-name-lookup.wit",
+        "9bbdac3007844acc4a292736be3fe01e39df2ea968f8d1e4568fec20869752f0",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/network.wit",
+        "7813868ee56552a434319f5fbf141d55cc1d37272b2976debcc75a50b9cb52e6",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/tcp-create-socket.wit",
+        "96a6a1a93b859127ee60273f0a77cda8d60930f7952174fb22469293b5da6a3a",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/tcp.wit",
+        "1e9d17a8e0770abbc2ddead9dcc66793393bafe549f4b7effe73d8ad27272295",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/udp-create-socket.wit",
+        "c52b9bf91ef4e30e7ec08ad1fc9e77ef005a0a87648c5d2e416dd6e35369f08c",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/udp.wit",
+        "83d0808198c95f261897676a54c93f1914061190d7a08c99847a6e3ddbeabada",
+    ),
+    pin(
+        "wasi:sockets@0.2.12",
+        "wasi/sockets/world.wit",
+        "abf77820f4208da60dab68dc9be63c510eb0e5083014963dc478326798cd771b",
+    ),
+];
+
+const fn pin(package: &'static str, path: &'static str, sha256: &'static str) -> SourcePin {
+    SourcePin { package, path, sha256 }
+}
+
+pub(super) const WORLDS: &[WorldPin] = &[
+    WorldPin {
+        identity: "zryna:capability-profiles/browser@0.1.0",
+        explicit_imports: &[],
+        resolved_imports: &[],
+        exports: &[],
+    },
+    WorldPin {
+        identity: "zryna:capability-profiles/command@0.1.0",
+        explicit_imports: &[
+            "wasi:cli/environment@0.2.12",
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:filesystem/preopens@0.2.12",
+            "wasi:filesystem/types@0.2.12",
+            "wasi:random/random@0.2.12",
+            "wasi:sockets/instance-network@0.2.12",
+            "wasi:sockets/ip-name-lookup@0.2.12",
+            "wasi:sockets/network@0.2.12",
+            "wasi:sockets/tcp-create-socket@0.2.12",
+            "wasi:sockets/tcp@0.2.12",
+            "wasi:sockets/udp-create-socket@0.2.12",
+            "wasi:sockets/udp@0.2.12",
+        ],
+        resolved_imports: &[
+            "wasi:cli/environment@0.2.12",
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:filesystem/preopens@0.2.12",
+            "wasi:filesystem/types@0.2.12",
+            "wasi:io/error@0.2.12",
+            "wasi:io/poll@0.2.12",
+            "wasi:io/streams@0.2.12",
+            "wasi:random/random@0.2.12",
+            "wasi:sockets/instance-network@0.2.12",
+            "wasi:sockets/ip-name-lookup@0.2.12",
+            "wasi:sockets/network@0.2.12",
+            "wasi:sockets/tcp-create-socket@0.2.12",
+            "wasi:sockets/tcp@0.2.12",
+            "wasi:sockets/udp-create-socket@0.2.12",
+            "wasi:sockets/udp@0.2.12",
+        ],
+        exports: &["wasi:cli/run@0.2.12"],
+    },
+    WorldPin {
+        identity: "zryna:capability-profiles/server@0.1.0",
+        explicit_imports: &[
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:http/outgoing-handler@0.2.12",
+            "wasi:random/random@0.2.12",
+        ],
+        resolved_imports: &[
+            "wasi:clocks/monotonic-clock@0.2.12",
+            "wasi:clocks/wall-clock@0.2.12",
+            "wasi:http/outgoing-handler@0.2.12",
+            "wasi:http/types@0.2.12",
+            "wasi:io/error@0.2.12",
+            "wasi:io/poll@0.2.12",
+            "wasi:io/streams@0.2.12",
+            "wasi:random/random@0.2.12",
+        ],
+        exports: &["wasi:http/incoming-handler@0.2.12"],
+    },
+];

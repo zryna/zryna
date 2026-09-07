@@ -13,24 +13,14 @@ use zryna_ir::control_flow_v1::{
     VerifiedInstructionKind, VerifiedProgram as VerifiedControlFlowProgram, VerifiedTerminatorKind,
 };
 use zryna_ir::{ExprKind, Type, VerifiedFunction, VerifiedProgram};
+mod artifact;
+pub use artifact::ValidatedWebAssemblyArtifact;
 mod data_ownership_v1;
 pub use data_ownership_v1::emit_data_ownership;
+mod wit_world_audit;
+pub use wit_world_audit::{ResolvedWitWorld, WitSource, WitWorldAudit, audit_pinned_wit_worlds};
 
 const MAX_CONTROL_FLOW_WEBASSEMBLY_BYTES: usize = 32 * 1024 * 1024;
-
-/// A complete core WebAssembly module that passed the pinned validator and the Zryna profile audit.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ValidatedWebAssemblyArtifact {
-    bytes: Vec<u8>,
-}
-
-impl ValidatedWebAssemblyArtifact {
-    /// Returns the exact validated module bytes.
-    #[must_use]
-    pub fn bytes(&self) -> &[u8] {
-        &self.bytes
-    }
-}
 
 /// Emits deterministic, import-free core WebAssembly from the current `I32V1` profile.
 ///

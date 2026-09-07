@@ -28,6 +28,15 @@ Boolean core carriers remain specified and tested through the shared scalar ABI 
 does not enable Boolean source or IR. Source orchestration, artifact publication, runtime
 execution, browser loaders, and public host wrappers do not belong to this backend.
 
+The separate `audit_pinned_wit_worlds` prerequisite authenticates and resolves the accepted
+`zryna:capability-profiles@0.1.0` source with the complete pinned WASI `0.2.12` dependency closure,
+then independently compares all three resolved world interface sets. It uses exactly pinned
+`wit-parser 0.258.0`, normalizes input order, applies pre-parse and resolved-graph budgets, and
+creates fresh state per call. The returned observation is not component emission, bindings,
+instantiation, profile activation, or a host-capability grant. The browser world remains empty.
+See [WIT capability profiles v1](../../spec/wit/CAPABILITY_PROFILES_V1.md) and the
+[source provenance](tests/wit-world-audit-v1/README.md).
+
 The separate internal M2 entrypoint consumes only sealed `ControlFlowV1` views. It lowers every
 current scalar operation, direct call, return, branch, jump, loop, and parallel block edge into a
 deterministic core module with only type, function, export, and code sections. It validates the

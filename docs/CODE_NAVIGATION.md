@@ -111,8 +111,9 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Start: [WIT capability profiles v1](../spec/wit/CAPABILITY_PROFILES_V1.md) and the [M4 roadmap](ROADMAP.md).
 - WIT source: `spec/wit/capability-profiles-v1/worlds.wit`; machine-readable authority: `tests/wit-capability-profiles-v1.json` and `schemas/zryna-{wit-capability-profiles,capability-request}-v1.schema.json`.
 - Validator: `scripts/wit-capabilities/validate.mjs`; positive, negative, malformed, replay and boundary evidence: `tests/wit-capability-contract.test.mjs` and `tests/wit-capability-v1/fixtures/`.
+- Resolved dependency audit: `crates/zryna-backend-webassembly/src/wit_world_audit.rs`; exact source pins: its private `wit_world_audit/pins.rs`; provenance and hostile evidence: `crates/zryna-backend-webassembly/tests/wit-world-audit-v1/` and `tests/wit_world_audit.rs`. Run `cargo test --locked -p zryna-backend-webassembly --test wit_world_audit`.
 - Typed JS/WASM design: [adapter contracts](../spec/interop/JS_WASM_ADAPTERS_V1.md) and [conversion/lifecycle proof plan](../spec/interop/JS_WASM_ADAPTER_CONFORMANCE_V1.md); `tests/js-wasm-adapter-contract.test.mjs` checks design consistency through `pnpm docs:check`, without executing adapters.
-- Focus: `pnpm wit:contract`, then `pnpm docs:check`. Preserve the `specified-only` boundary: component emission, bindings, runtime/CLI activation, cross-target dependency composition and JS/WASM resource adapters are separate work.
+- Focus: the resolved-audit test above, `pnpm wit:contract`, then `pnpm docs:check`. Preserve the `specified-only` boundary: component emission, bindings, runtime/CLI activation, cross-target dependency composition and JS/WASM resource adapters are separate work.
 
 ## Required completion checks for every route
 
