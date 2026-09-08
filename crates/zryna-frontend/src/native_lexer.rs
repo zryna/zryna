@@ -289,9 +289,9 @@ pub fn lex(sources: &SourceMap) -> Result<LexedProject, LexError> {
     let mut project_lexemes = 0_usize;
     for raw_id in 0..sources.len() {
         let raw_id = u32::try_from(raw_id).map_err(|_| resource("source file id overflow"))?;
-        let id = sources.verify_file_id(raw_id).map_err(|error| LexError {
-            diagnostic: Diagnostic::from_source_error(&error),
-        })?;
+        let id = sources
+            .verify_file_id(raw_id)
+            .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })?;
         let source = sources.source(id).ok_or_else(|| resource("source file is unavailable"))?;
         let lexemes = scan_file(sources, id, source.text(), &mut diagnostics)?;
         project_lexemes = project_lexemes

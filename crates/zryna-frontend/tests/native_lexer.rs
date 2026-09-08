@@ -171,9 +171,7 @@ fn token_and_diagnostic_limits_accept_exact_reject_first_extra_and_recover() {
 
     let exact_trivia = sources(&" /**/".repeat(MAX_TRIVIA_PER_FILE / 2));
     assert_eq!(
-        lex(&exact_trivia)
-            .expect("exact trivia boundary")
-            .files()[0]
+        lex(&exact_trivia).expect("exact trivia boundary").files()[0]
             .lexemes()
             .iter()
             .filter(|lexeme| matches!(lexeme, Lexeme::Trivia(_)))
@@ -224,10 +222,7 @@ fn project_lexeme_limit_accepts_exact_and_rejects_first_extra() {
     );
 
     let mut extra_inputs = (0..4)
-        .map(|index| SourceFileInput {
-            path: format!("src/{index}.zry"),
-            text: quarter.clone(),
-        })
+        .map(|index| SourceFileInput { path: format!("src/{index}.zry"), text: quarter.clone() })
         .collect::<Vec<_>>();
     extra_inputs.push(SourceFileInput { path: "src/extra.zry".to_owned(), text: ";".to_owned() });
     let extra = SourceMap::build(extra_inputs).expect("first-extra project fixture");

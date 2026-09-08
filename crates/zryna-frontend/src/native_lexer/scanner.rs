@@ -2,8 +2,8 @@ use zryna_diagnostics::Diagnostic;
 use zryna_source::{FileId, SourceMap, Span};
 
 use super::{
-    Keyword, LexError, Lexeme, MAX_LEXICAL_DIAGNOSTICS, MAX_TOKENS_PER_FILE,
-    MAX_TRIVIA_PER_FILE, Token, TokenKind, Trivia, TriviaKind, resource,
+    Keyword, LexError, Lexeme, MAX_LEXICAL_DIAGNOSTICS, MAX_TOKENS_PER_FILE, MAX_TRIVIA_PER_FILE,
+    Token, TokenKind, Trivia, TriviaKind, resource,
 };
 
 pub(super) fn scan_file(
@@ -94,7 +94,10 @@ pub(super) fn scan_file(
             ItemKind::Trivia(kind) => {
                 trivia += 1;
                 if trivia > MAX_TRIVIA_PER_FILE {
-                    return Err(resource_at(span, "source file trivia inventory exceeds its limit"));
+                    return Err(resource_at(
+                        span,
+                        "source file trivia inventory exceeds its limit",
+                    ));
                 }
                 lexemes.push(Lexeme::Trivia(Trivia { kind, span }));
             }
@@ -219,11 +222,7 @@ fn utf8_width(first: u8) -> usize {
 }
 
 fn whitespace_width(bytes: &[u8]) -> Option<usize> {
-    if bytes[0].is_ascii_whitespace() {
-        Some(1)
-    } else {
-        line_terminator_width(bytes)
-    }
+    if bytes[0].is_ascii_whitespace() { Some(1) } else { line_terminator_width(bytes) }
 }
 
 fn line_terminator_width(bytes: &[u8]) -> Option<usize> {
@@ -244,9 +243,9 @@ fn make_span(
 ) -> Result<Span, LexError> {
     let start = u32::try_from(start).map_err(|_| resource("source offset overflow"))?;
     let end = u32::try_from(end).map_err(|_| resource("source offset overflow"))?;
-    sources.span(file, start, end).map_err(|error| LexError {
-        diagnostic: Diagnostic::from_source_error(&error),
-    })
+    sources
+        .span(file, start, end)
+        .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })
 }
 
 fn malformed(
