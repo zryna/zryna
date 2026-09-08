@@ -36,7 +36,7 @@
   {
     "fixture": "borrowed-push",
     "code": "ZRYNA-M3017",
-    "span": { "file": 0, "start": 126, "end": 142, "text": "push(items, 13);" },
+    "span": { "file": 0, "start": 131, "end": 147, "text": "push(items, 13);" },
     "oracle": "N10"
   }
 ]

@@ -60,7 +60,7 @@ test('N7 and N10 keep source diagnostics and all source files are used', async (
     { file: 0, start: 0, end: 62 },
     { file: 0, start: 121, end: 127 },
     { file: 0, start: 135, end: 140 },
-    { file: 0, start: 126, end: 142 },
+    { file: 0, start: 131, end: 147 },
   ]);
   for (const row of negatives) {
     const source = await readFile(new URL(`${row.fixture}.zry`, root));
