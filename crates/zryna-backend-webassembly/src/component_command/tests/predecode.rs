@@ -118,14 +118,25 @@ fn real_component_identity_budget_accepts_exact_and_rejects_first_extra() {
 }
 
 #[test]
-fn real_component_public_type_exports_are_charged_before_decode_allocation() {
+fn real_component_public_type_identity_budget_accepts_exact_and_rejects_first_extra() {
     let component = baseline();
-    check(&component, component.bytes()).expect("positive complete audit");
-    // One small underlying type with many public aliases stays below each syntax vector limit.
-    // Each exported identity and its imported instance use must count before decoding begins.
+    let used =
+        audit::identity_budget_used(component.bytes()).expect("accepted topology accounting");
+    let remaining = 4096 - used;
+    // The mutation adds one small underlying type plus one identity per public export. Both the
+    // declarations and their imported instance use are conservatively charged before decoding.
+    assert_eq!(remaining % 2, 0, "fixture must reach the exact prospective identity ceiling");
+    let exact_exports = remaining / 2 - 1;
+    let exact = mutate(&component, 0, exact_exports as u32);
+    assert_eq!(audit::identity_budget_used(&exact).expect("exact public identity budget"), 4096);
     assert_eq!(
-        check(&component, &mutate(&component, 0, 2000))
-            .expect_err("public identities before decode")
+        check(&component, &exact).expect_err("extra public types after bounded decode").code(),
+        "ZRYNA-W4012"
+    );
+    let first_extra = mutate(&component, 0, exact_exports as u32 + 1);
+    assert_eq!(
+        check(&component, &first_extra)
+            .expect_err("first extra public identity before decode")
             .code(),
         "ZRYNA-W4013"
     );
