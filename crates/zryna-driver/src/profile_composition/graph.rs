@@ -4,8 +4,9 @@ use sha2::{Digest, Sha256};
 use zryna_diagnostics::Diagnostic;
 
 use super::{
+    INVALID,
     authority::Binding,
-    INVALID, error,
+    error,
     model::{Input, VERSION},
 };
 

@@ -34,7 +34,6 @@ mod webassembly;
 mod workspace_source;
 
 use std::{error::Error, fmt, path::Path};
-
 use zryna_architecture::ValidationReport;
 use zryna_diagnostics::{Diagnostic, Severity};
 use zryna_ir::VerifiedProgram;

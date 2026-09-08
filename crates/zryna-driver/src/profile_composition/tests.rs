@@ -92,7 +92,8 @@ fn wit_audit() -> zryna_backend_webassembly::WitWorldAudit {
         "spec/wit/capability-profiles-v1/worlds.wit",
         fs::read(root).expect("root WIT source"),
     )];
-    let dependencies = crate_root.join("../zryna-backend-webassembly/tests/wit-world-audit-v1/dependencies");
+    let dependencies =
+        crate_root.join("../zryna-backend-webassembly/tests/wit-world-audit-v1/dependencies");
     for package_name in ["cli", "clocks", "filesystem", "http", "io", "random", "sockets"] {
         let mut files = fs::read_dir(dependencies.join(package_name))
             .expect("WASI sources")
@@ -132,7 +133,11 @@ fn pure_claim(input: &Input) -> Claim {
     Claim {
         binding: graph::validate(input)
             .expect("valid test shape")
-            .binding(&authorities.binding(&input.instances.iter().map(|node| node.id.clone()).collect()).expect("authorities"))
+            .binding(
+                &authorities
+                    .binding(&input.instances.iter().map(|node| node.id.clone()).collect())
+                    .expect("authorities"),
+            )
             .expect("binding"),
         summaries: input
             .instances

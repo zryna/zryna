@@ -174,8 +174,7 @@ fn sealed_program_source_and_world_authorities_cannot_be_forged_or_omitted() {
     mismatched.instances.get_mut("A").expect("instance").programs =
         vec![VerifiedLanguage::I32V1 { program, sources }];
     assert_eq!(
-        super::super::verify(&input, &mismatched, &claim)
-            .expect_err("program/source mismatch")[0]
+        super::super::verify(&input, &mismatched, &claim).expect_err("program/source mismatch")[0]
             .code(),
         INVALID
     );
@@ -184,9 +183,9 @@ fn sealed_program_source_and_world_authorities_cannot_be_forged_or_omitted() {
     let mut missing_wit = authorities(&wit_input);
     missing_wit.wit = None;
     assert_eq!(
-        super::super::verify(&wit_input, &missing_wit, &wit_claim)
-            .expect_err("missing WIT audit")[0]
-            .code(),
+        super::super::verify(&wit_input, &missing_wit, &wit_claim).expect_err("missing WIT audit")
+            [0]
+        .code(),
         UNSUPPORTED
     );
 }

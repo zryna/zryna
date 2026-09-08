@@ -3,8 +3,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use zryna_diagnostics::Diagnostic;
 
 use super::{
+    FORBIDDEN, INVALID, PROFILE, RESOURCE, Report, UNSUPPORTED, ValidatedComposition,
     authority::Authorities,
-    FORBIDDEN, INVALID, PROFILE, RESOURCE, Report, UNSUPPORTED, ValidatedComposition, error,
+    error,
     graph::{self, Graph},
     model::{Claim, Input, Requirement, Summary},
     policy::Policy,
@@ -56,11 +57,16 @@ fn select(
                 return Err(vec![error(UNSUPPORTED, "WIT selection lacks sealed world audit")]);
             };
             let Some(resolved) = audit.worlds().iter().find(|item| item.identity() == world) else {
-                return Err(vec![error(UNSUPPORTED, "selected WIT world lacks exact audit authority")]);
+                return Err(vec![error(
+                    UNSUPPORTED,
+                    "selected WIT world lacks exact audit authority",
+                )]);
             };
-            if selection.approved.iter().any(|requirement| {
-                !resolved.resolved_imports().contains(&requirement.interface)
-            }) {
+            if selection
+                .approved
+                .iter()
+                .any(|requirement| !resolved.resolved_imports().contains(&requirement.interface))
+            {
                 return Err(vec![error(
                     UNSUPPORTED,
                     "approved interface is absent from the audited WIT world",
@@ -90,10 +96,7 @@ fn select(
     report.finish()
 }
 
-fn profiles(
-    graph: &Graph,
-    authorities: &super::authority::Binding,
-) -> Result<(), Vec<Diagnostic>> {
+fn profiles(graph: &Graph, authorities: &super::authority::Binding) -> Result<(), Vec<Diagnostic>> {
     let mut report = Report::default();
     for node in &graph.input.instances {
         if !authorities.has_language(&node.id, graph.input.language)

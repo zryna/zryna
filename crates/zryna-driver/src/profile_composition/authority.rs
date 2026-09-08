@@ -9,7 +9,10 @@ use super::{INVALID, error, model::Language};
 
 #[derive(Clone, Debug)]
 pub(super) enum VerifiedLanguage {
-    I32V1 { program: zryna_ir::VerifiedProgram, sources: SourceMap },
+    I32V1 {
+        program: zryna_ir::VerifiedProgram,
+        sources: SourceMap,
+    },
     ControlFlowV1 {
         program: zryna_ir::control_flow_v1::VerifiedProgram,
         sources: SourceMap,
@@ -35,17 +38,19 @@ impl VerifiedLanguage {
                 let mut spans = program.functions().flat_map(|function| function.expressions());
                 let first = spans.next();
                 first.is_some()
-                    && first.into_iter().chain(spans).all(|expression| {
-                        sources.resolve(expression.span).is_ok()
-                    })
+                    && first
+                        .into_iter()
+                        .chain(spans)
+                        .all(|expression| sources.resolve(expression.span).is_ok())
             }
             Self::ControlFlowV1 { program, sources } => {
                 let mut modules = program.modules();
                 let first = modules.next();
                 first.is_some()
-                    && first.into_iter().chain(modules).all(|module| {
-                        sources.source(module.source_file()).is_some()
-                    })
+                    && first
+                        .into_iter()
+                        .chain(modules)
+                        .all(|module| sources.source(module.source_file()).is_some())
             }
             Self::DataOwnershipV1 { program, sources } => {
                 program.verified_ir().source_map_identity() == sources.identity()
@@ -64,7 +69,8 @@ impl VerifiedLanguage {
         };
         let mut bytes = Vec::new();
         for index in 0..sources.len() {
-            let id = sources.verify_file_id(u32::try_from(index).expect("bounded source map"))
+            let id = sources
+                .verify_file_id(u32::try_from(index).expect("bounded source map"))
                 .map_err(|_| vec![error(INVALID, "cannot bind verified source authority")])?;
             let source = sources.source(id).expect("verified dense source id");
             bytes.extend_from_slice(source.path().as_bytes());
@@ -118,10 +124,7 @@ pub(super) struct Binding {
 }
 
 impl Authorities {
-    pub(super) fn binding(
-        &self,
-        expected: &BTreeSet<String>,
-    ) -> Result<Binding, Vec<Diagnostic>> {
+    pub(super) fn binding(&self, expected: &BTreeSet<String>) -> Result<Binding, Vec<Diagnostic>> {
         if self.instances.keys().ne(expected.iter()) {
             return Err(vec![error(
                 INVALID,
@@ -145,9 +148,7 @@ impl Authorities {
                 ));
             }
             languages.sort_by_key(|(language, _, _)| *language);
-            if languages.is_empty()
-                || languages.windows(2).any(|pair| pair[0].0 == pair[1].0)
-            {
+            if languages.is_empty() || languages.windows(2).any(|pair| pair[0].0 == pair[1].0) {
                 return Err(vec![error(
                     INVALID,
                     "instance requires one distinct sealed authority per language",
