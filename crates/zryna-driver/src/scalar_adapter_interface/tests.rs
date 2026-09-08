@@ -69,7 +69,7 @@ impl Fixture {
 
 fn frontend() -> WorkerFrontendV3 {
     let repository = repository_root();
-    let adapter = repository.join("adapters/typescript-6");
+    let adapter = crate::runtime::node_compatible_path(&repository.join("adapters/typescript-6"));
     let expected =
         ProviderExpectationV3::new("typescript-6", "6.0.3").expect("pinned provider identity");
     let spec = WorkerSpecV3::new(
