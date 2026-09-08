@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zryna.com/schemas/zryna-resolved-build-plan-v0.schema.json",
+  "title": "Zryna resolved build plan v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "format", "version", "status", "sourcePlan", "cacheKey"],
+  "properties": {
+    "$schema": { "const": "../../schemas/zryna-resolved-build-plan-v0.schema.json" },
+    "format": { "const": "zryna.resolved-build-plan.v0" },
+    "version": { "const": 0 },
+    "status": { "const": "specified-only" },
+    "sourcePlan": { "$ref": "#/$defs/sourcePlan" },
+    "nativeAppendix": { "$ref": "#/$defs/nativeAppendix" },
+    "cacheKey": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9._-]{0,63}$" },
+    "versionString": { "type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z.+_-]{0,63}$" },
+    "targetId": { "enum": ["javascript", "native-linux-x86_64", "webassembly"] },
+    "triple": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,95}$" },
+    "portablePath": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._/-]{0,159}$",
+      "not": { "pattern": "(?:^|/)(?:\\.{1,2}|con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\\.|/|$)|//|/$" }
+    },
+    "sourcePath": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._/-]{0,95}$",
+      "not": { "pattern": "(?:^|/)(?:\\.{1,2}|con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\\.|/|$)|//|/$" }
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alias", "graphRole", "package"],
+      "properties": {
+        "alias": { "$ref": "#/$defs/name" },
+        "graphRole": { "$ref": "#/$defs/graphRole" },
+        "package": { "$ref": "#/$defs/packageIdentity" }
+      }
+    },
+    "graphRole": { "const": "target/runtime" },
+    "packageIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sourceSha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/sha256" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["graphRole", "package", "dependencies"],
+      "properties": {
+        "graphRole": { "$ref": "#/$defs/graphRole" },
+        "package": { "$ref": "#/$defs/packageIdentity" },
+        "dependencies": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/dependency" }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["graphRole", "package", "path", "sha256", "size"],
+      "properties": {
+        "graphRole": { "$ref": "#/$defs/graphRole" },
+        "package": { "$ref": "#/$defs/packageIdentity" },
+        "path": { "$ref": "#/$defs/sourcePath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0, "maximum": 1024 }
+      }
+    },
+    "compiler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "version", "sha256", "protocol"],
+      "properties": {
+        "tool": { "$ref": "#/$defs/name" },
+        "version": { "$ref": "#/$defs/versionString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "protocol": { "$ref": "#/$defs/name" }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "configurationSha256"],
+      "properties": {
+        "id": { "enum": ["control-flow-v1", "data-ownership-v1", "i32-v1"] },
+        "configurationSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "executionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "configurationSha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/name" },
+        "version": { "$ref": "#/$defs/versionString" },
+        "configurationSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "environmentEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+        "value": { "type": "string", "maxLength": 160 }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "sha256"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "version": { "$ref": "#/$defs/versionString" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "triple", "abi", "features", "runtime", "composition"],
+      "properties": {
+        "id": { "$ref": "#/$defs/targetId" },
+        "triple": { "$ref": "#/$defs/triple" },
+        "abi": { "$ref": "#/$defs/name" },
+        "features": {
+          "type": "array",
+          "maxItems": 0,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/name" }
+        },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "composition": { "$ref": "#/$defs/composition" }
+      }
+    },
+    "composition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "row", "hostPolicySha256", "approvedRequestSha256"],
+      "properties": {
+        "contract": { "const": "zryna.cross-target-profiles.v1" },
+        "row": { "enum": ["JS-BROWSER", "JS-NODE", "NATIVE-HOST", "U-JS", "U-NATIVE", "U-WASM", "WIT-BROWSER", "WIT-COMMAND", "WIT-SERVER"] },
+        "hostPolicySha256": { "$ref": "#/$defs/sha256" },
+        "approvedRequestSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "hostTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "sha256", "runsOn", "targets"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "version": { "$ref": "#/$defs/versionString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "runsOn": { "$ref": "#/$defs/triple" },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/targetId" }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "target"],
+      "properties": {
+        "path": { "$ref": "#/$defs/portablePath" },
+        "target": { "$ref": "#/$defs/targetId" }
+      }
+    },
+    "sourcePlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageLockSha256", "rootPackage", "packages", "sources", "compiler", "profile", "executionPolicy", "host", "targets", "hostTools", "outputs"],
+      "properties": {
+        "packageLockSha256": { "$ref": "#/$defs/sha256" },
+        "rootPackage": { "$ref": "#/$defs/packageIdentity" },
+        "packages": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/package" } },
+        "sources": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "$ref": "#/$defs/source" } },
+        "compiler": { "$ref": "#/$defs/compiler" },
+        "profile": { "$ref": "#/$defs/profile" },
+        "executionPolicy": { "$ref": "#/$defs/executionPolicy" },
+        "host": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["triple", "environment"],
+          "properties": {
+            "triple": { "$ref": "#/$defs/triple" },
+            "environment": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/environmentEntry" } }
+          }
+        },
+        "targets": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/target" } },
+        "hostTools": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/hostTool" } },
+        "outputs": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/output" } }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "sha256", "size"],
+      "properties": {
+        "id": { "$ref": "#/$defs/name" },
+        "target": { "$ref": "#/$defs/targetId" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0, "maximum": 1073741824 }
+      }
+    },
+    "targetLibrary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "target", "linkage", "artifact"],
+      "properties": {
+        "id": { "$ref": "#/$defs/name" },
+        "version": { "$ref": "#/$defs/versionString" },
+        "target": { "$ref": "#/$defs/targetId" },
+        "linkage": { "enum": ["static", "shared"] },
+        "artifact": { "$ref": "#/$defs/name" }
+      }
+    },
+    "sysroot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/name" },
+        "target": { "$ref": "#/$defs/targetId" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "runtimeDependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "sharedArtifact"],
+      "properties": {
+        "id": { "$ref": "#/$defs/name" },
+        "target": { "$ref": "#/$defs/targetId" },
+        "sharedArtifact": { "$ref": "#/$defs/name" }
+      }
+    },
+    "compileStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "tool", "target", "inputs", "invocation", "output"],
+      "properties": {
+        "id": { "$ref": "#/$defs/name" },
+        "tool": { "$ref": "#/$defs/name" },
+        "target": { "$ref": "#/$defs/targetId" },
+        "inputs": { "type": "array", "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/compileInput" } },
+        "invocation": { "$ref": "#/$defs/compileInvocation" },
+        "output": { "$ref": "#/$defs/name" }
+      }
+    },
+    "compileInvocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "mode"],
+      "properties": {
+        "adapter": { "const": "zryna.native-compile-adapter.v0" },
+        "mode": { "const": "compile-only" }
+      }
+    },
+    "compileInput": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "graphRole", "package", "path"],
+          "properties": {
+            "kind": { "const": "source" },
+            "graphRole": { "$ref": "#/$defs/graphRole" },
+            "package": { "$ref": "#/$defs/packageIdentity" },
+            "path": { "$ref": "#/$defs/sourcePath" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id"],
+          "properties": {
+            "kind": { "enum": ["static", "shared", "sysroot"] },
+            "id": { "$ref": "#/$defs/name" }
+          }
+        }
+      ]
+    },
+    "linkerInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "enum": ["object", "static", "shared", "sysroot"] },
+        "id": { "$ref": "#/$defs/name" }
+      }
+    },
+    "nativeAppendix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "target", "abi", "acquisition", "compilation", "linking"],
+      "properties": {
+        "status": { "const": "provisional-pending-364" },
+        "target": { "$ref": "#/$defs/targetId" },
+        "abi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["identity", "version", "targetTriple", "callingConvention", "carrierModel", "ownershipModel", "runtime", "decisionIssue"],
+          "properties": {
+            "identity": { "$ref": "#/$defs/name" },
+            "version": { "$ref": "#/$defs/versionString" },
+            "targetTriple": { "$ref": "#/$defs/triple" },
+            "callingConvention": { "$ref": "#/$defs/name" },
+            "carrierModel": { "$ref": "#/$defs/name" },
+            "ownershipModel": { "$ref": "#/$defs/name" },
+            "runtime": { "$ref": "#/$defs/runtime" },
+            "decisionIssue": { "const": 364 }
+          }
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["targetLibraries", "sysroots", "staticArtifacts", "sharedArtifacts", "runtimeDependencies"],
+          "properties": {
+            "targetLibraries": { "type": "array", "maxItems": 32, "items": { "$ref": "#/$defs/targetLibrary" } },
+            "sysroots": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/sysroot" } },
+            "staticArtifacts": { "type": "array", "maxItems": 32, "items": { "$ref": "#/$defs/artifact" } },
+            "sharedArtifacts": { "type": "array", "maxItems": 32, "items": { "$ref": "#/$defs/artifact" } },
+            "runtimeDependencies": { "type": "array", "maxItems": 32, "items": { "$ref": "#/$defs/runtimeDependency" } }
+          }
+        },
+        "compilation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["steps"],
+          "properties": { "steps": { "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/compileStep" } } }
+        },
+        "linking": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tool", "target", "inputs", "invocation", "output"],
+          "properties": {
+            "tool": { "$ref": "#/$defs/name" },
+            "target": { "$ref": "#/$defs/targetId" },
+            "inputs": { "type": "array", "maxItems": 96, "items": { "$ref": "#/$defs/linkerInput" } },
+            "invocation": { "$ref": "#/$defs/linkInvocation" },
+            "output": { "$ref": "#/$defs/portablePath" }
+          }
+        }
+      }
+    },
+    "linkInvocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "buildId"],
+      "properties": {
+        "adapter": { "const": "zryna.native-link-adapter.v0" },
+        "buildId": { "const": "none" }
+      }
+    }
+  }
+}

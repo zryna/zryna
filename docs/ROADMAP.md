@@ -521,6 +521,23 @@ composition contract. It adds no resolver, import syntax, or runtime support.
 - npm, crates.io, Docker, and GitHub release publication;
 - signed release notes and rollback procedure.
 
+Issue #361 has a source-only contract candidate in
+[`spec/package/RESOLVED_BUILD_PLAN_V0.md`](../spec/package/RESOLVED_BUILD_PLAN_V0.md). It specifies
+canonical resolved inputs and cache invalidation while reusing #168 package/release digests and
+#357 profile composition, and preserving #360 package-instance identity, #362 execution policy,
+and driver-owned compilation, linking and
+create-only publication. Its optional native-input appendix remains provisional pending only the
+relevant accepted #364 ABI decisions. The checked fixtures implement no resolver, build engine,
+registry, native tool invocation, cache store, selector, or public support.
+
+Issue #362 proposes [package source trust and build execution policy
+v0](../spec/package/SOURCE_TRUST_V0.md): explicit source/namespace and cache integrity,
+offline/frozen rejection, pure-source/trusted-native/untrusted-playground operation tables,
+isolation ownership and later adversarial gates. Acceptance retains #168/#360 source authority
+and #361's validated target/runtime-only source-plan boundary; native recipes additionally need its optional appendix
+and relevant #364 ABI decisions. Registry hosting and M6 playground implementation stay deferred.
+This policy draft creates no resolver, sandbox, execution mode or public support.
+
 Completion gate: a clean environment reproduces and verifies every published artifact from a tagged source revision.
 
 ## M6 — Developer Tooling

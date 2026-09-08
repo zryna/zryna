@@ -34,6 +34,9 @@ test('representative paths select only their owning optional contract lanes', ()
   assert.deepEqual(classifyWorkflowPaths(['tests/package-release-v1/validation.test.mjs']), {
     ...none, package_release: true,
   });
+  assert.deepEqual(classifyWorkflowPaths(['tests/package-source-trust.test.mjs']), {
+    ...none, package_release: true,
+  });
   assert.deepEqual(classifyWorkflowPaths(['adapters/typescript-6/src/worker-v4.mjs']), {
     ...none, provider_v4: true,
   });
@@ -63,6 +66,7 @@ test('representative paths select only their owning optional contract lanes', ()
     ['schemas/zryna-package-release-v1.schema.json', ['package_release']],
     ['scripts/package-release/validate.mjs', ['package_release']],
     ['spec/package/PACKAGE_RELEASE_V1.md', ['package_release']],
+    ['tests/package-source-trust.test.mjs', ['package_release']],
     ['schemas/zryna-capability-request-v1.schema.json', ['wit']],
     ['scripts/wit-capabilities/validate.mjs', ['wit']],
     ['tests/wit-capability-v1/fixtures/command-granted.json', ['wit']],
