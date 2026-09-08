@@ -76,6 +76,12 @@ fn foreign_session_handle_is_never_substituted() {
 #[test]
 fn oldest_revision_is_evicted_without_handle_reuse() {
     let (mut session, first, now) = ready_session("let x = 1;\n");
+    let pending = session
+        .begin_diagnostics(
+            &request("evicted-pending", first, 100_000, "diagnostics", json!({})),
+            now,
+        )
+        .unwrap_or_else(|response| panic!("first request must begin: {response:?}"));
     let second = session
         .admit_diagnostics(sources("src/main.zry", "let y = 1;\n"), &[])
         .unwrap_or_else(|error| panic!("second revision must fit: {error}"));
@@ -85,6 +91,13 @@ fn oldest_revision_is_evicted_without_handle_reuse() {
     assert_eq!(session.retained_revisions(), 2);
     assert_ne!(first.handle(), second.handle());
     assert_ne!(second.handle(), third.handle());
+    assert!(pending.record.upgrade().is_none());
+    assert_eq!(session.finish_diagnostics(pending, now).status(), QueryStatus::Stale);
+
+    let active = session
+        .begin_diagnostics(&request("active", third, 100_000, "diagnostics", json!({})), now)
+        .unwrap_or_else(|response| panic!("active request must recover: {response:?}"));
+    assert_eq!(session.finish_diagnostics(active, now).status(), QueryStatus::Ok);
 
     let response = session
         .begin_diagnostics(&request("evicted", first, 100_000, "diagnostics", json!({})), now)

@@ -93,7 +93,7 @@ impl DiagnosticSession {
             session: self.session,
             correlation: request.correlation,
             revision: record.description,
-            record: Arc::clone(record),
+            record: Arc::downgrade(record),
             source_identity: record.sources.identity(),
             work_limit: request.work_limit,
             deadline,
@@ -143,7 +143,9 @@ impl DiagnosticSession {
                 QueryReason::Deadline,
             );
         }
-        let record = &pending.record;
+        let Some(record) = pending.record.upgrade() else {
+            return stale(&pending.correlation);
+        };
         let response = if let Some(report) = record.report.as_deref() {
             let logical_work = u64::try_from(report.len())
                 .ok()

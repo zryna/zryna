@@ -7,7 +7,7 @@ use std::{
     collections::{BTreeMap, VecDeque},
     fmt,
     sync::{
-        Arc,
+        Arc, Weak,
         atomic::{AtomicU8, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
@@ -151,7 +151,7 @@ pub(crate) struct PendingDiagnosticQuery {
     session: u64,
     correlation: Correlation,
     revision: DiagnosticRevision,
-    record: Arc<RevisionRecord>,
+    record: Weak<RevisionRecord>,
     source_identity: SourceMapIdentity,
     work_limit: u64,
     deadline: Instant,
