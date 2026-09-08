@@ -7,17 +7,16 @@ use zryna_frontend::{
 use zryna_source::{SourceFileInput, SourceMap};
 
 pub(super) fn frontend() -> WorkerFrontend {
-    let node = ["ZRYNA_TEST_NODE", "NODE"]
-        .into_iter()
-        .find_map(env::var_os)
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
+    let node = ["ZRYNA_TEST_NODE", "NODE"].into_iter().find_map(env::var_os).map_or_else(
+        || {
             let executable = if cfg!(windows) { "node.exe" } else { "node" };
             env::split_paths(&env::var_os("PATH").expect("test PATH"))
                 .map(|path| path.join(executable))
                 .find(|path| path.is_file())
                 .expect("pinned test Node")
-        });
+        },
+        PathBuf::from,
+    );
     assert!(node.is_absolute() && node.is_file());
     let expected = ProviderExpectation::new(
         "typescript-6",

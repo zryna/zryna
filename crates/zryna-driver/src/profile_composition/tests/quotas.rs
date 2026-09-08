@@ -21,7 +21,7 @@ fn reserve(value: &mut Reservation, metric: usize, amount: u64, prefix: &str) {
         1 => value.timers = amount,
         2 => {
             value.environment =
-                (0..amount).map(|n| (format!("{prefix}{n:03}"), String::new())).collect()
+                (0..amount).map(|n| (format!("{prefix}{n:03}"), String::new())).collect();
         }
         3 => {
             value.environment.insert(
@@ -75,8 +75,8 @@ fn split(metric: usize, row: Row, total: u64) -> (Input, Claim) {
 fn every_applicable_wit_quota_accepts_exact_and_rejects_first_extra() {
     // Independently fixed #167 expectations; parity checks ensure the loaded authority agrees.
     for (row, limits) in [
-        (Row::WitCommand, [64, 64, 128, 65536, 16, 256, 64, 128, 65536, 8388608]),
-        (Row::WitServer, [1024, 1024, 0, 0, 0, 0, 128, 1024, 65536, 8388608]),
+        (Row::WitCommand, [64, 64, 128, 65_536, 16, 256, 64, 128, 65_536, 8_388_608]),
+        (Row::WitServer, [1024, 1024, 0, 0, 0, 0, 128, 1024, 65_536, 8_388_608]),
     ] {
         assert_eq!(policy::Policy::load().expect("registry").limits(row), limits);
         for (metric, maximum) in
@@ -100,7 +100,7 @@ fn every_applicable_wit_quota_accepts_exact_and_rejects_first_extra() {
             reserve(&mut node.reservation, 8, 65536, "r");
         }
         let mut claim = pure_claim(&input);
-        for (id, total) in [("A", 131072), ("B", 65536)] {
+        for (id, total) in [("A", 131_072), ("B", 65_536)] {
             let summary = claim.summaries.get_mut(id).expect("summary");
             summary.requirements.insert(requirement.clone());
             summary.quota[8] = 65536;
@@ -216,8 +216,10 @@ fn endpoint_bytes_accept_exact_reject_first_extra_and_bound_the_largest_reservat
             suffix = "d".repeat(host_bytes - 192)
         )
     };
-    let mut reservation = Reservation::default();
-    reservation.endpoints = (0..128).map(|index| endpoint(index, 253)).collect();
+    let mut reservation = Reservation {
+        endpoints: (0..128).map(|index| endpoint(index, 253)).collect(),
+        ..Reservation::default()
+    };
     assert_eq!(reservation.endpoints.len(), 128);
     assert_eq!(reservation.endpoints.iter().map(String::len).sum::<usize>(), 128 * 259);
     assert!(quota::validate_reservation(&reservation).is_ok());

@@ -93,7 +93,7 @@ impl Session {
                 error("command trapped, was denied, or exceeded its execution envelope")
             })
         })();
-        self.denial = store.data().first_denial.clone();
+        self.denial.clone_from(&store.data().first_denial);
         self.denial_entries = store.data().entries;
         let fatal = store.data().fatal;
         drop(store);

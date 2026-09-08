@@ -70,9 +70,9 @@ impl TypeIndices {
     pub(super) fn alias(
         &self,
         scope: Option<&[Shape]>,
-        alias: ComponentAlias<'_>,
+        alias: &ComponentAlias<'_>,
     ) -> Result<Shape, Diagnostic> {
-        let shape = match alias {
+        let shape = match *alias {
             ComponentAlias::Outer { kind: ComponentOuterAliasKind::Type, count, index } => {
                 let types = match (scope, count) {
                     (None, 0) | (Some(_), 1) => &self.outer[..],

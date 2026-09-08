@@ -34,7 +34,7 @@ impl TypeBudget {
         Ok(())
     }
 
-    pub(super) fn alias(&mut self, alias: ComponentAlias<'_>) -> Result<(), Diagnostic> {
+    pub(super) fn alias(&mut self, alias: &ComponentAlias<'_>) -> Result<(), Diagnostic> {
         self.indices.charge(1)?;
         let shape = self.indices.alias(None, alias)?;
         self.indices.outer.push(shape);
@@ -129,7 +129,7 @@ impl TypeBudget {
                 0x02 => {
                     self.indices.charge(1)?;
                     let alias = reader.read().map_err(malformed)?;
-                    let shape = self.indices.alias(Some(&local), alias)?;
+                    let shape = self.indices.alias(Some(&local), &alias)?;
                     local.push(shape);
                 }
                 0x04 => {

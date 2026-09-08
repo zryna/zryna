@@ -17,7 +17,7 @@ pub(super) fn engine() -> wasmtime::Result<Engine> {
         .consume_fuel(true)
         .epoch_interruption(true)
         .max_wasm_stack(64 * 1024)
-        .wasm_backtrace(false);
+        .wasm_backtrace_max_frames(None);
     Engine::new(&config)
 }
 

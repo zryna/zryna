@@ -1,7 +1,8 @@
 //! Independently recognize the private bridge's signature and complete instruction stream.
 
 use wasmparser::{
-    Encoding, ExternalKind, Operator, Parser, Payload, TypeRef, ValType, Validator, WasmFeatures,
+    Encoding, ExternalKind, FunctionBody, Operator, Parser, Payload, TypeRef, ValType, Validator,
+    WasmFeatures,
 };
 use zryna_diagnostics::Diagnostic;
 
@@ -73,32 +74,7 @@ pub(super) fn audit(bytes: &[u8], invocation: &CommandInvocation) -> Result<(), 
             Payload::CodeSectionStart { count: 1, .. } if !sections[4] => sections[4] = true,
             Payload::CodeSectionEntry(body) if !body_seen => {
                 body_seen = true;
-                if body.get_locals_reader().map_err(malformed)?.get_count() != 0 {
-                    return Err(invalid("command bridge declares unexpected locals"));
-                }
-                let mut operators = body.get_operators_reader().map_err(malformed)?;
-                for expected in invocation.arguments() {
-                    match operators.read().map_err(malformed)? {
-                        Operator::I32Const { value } if value == *expected => {}
-                        _ => return Err(invalid("command bridge argument instructions differ")),
-                    }
-                }
-                if !matches!(
-                    operators.read().map_err(malformed)?,
-                    Operator::Call { function_index: 0 }
-                ) {
-                    return Err(invalid("command bridge does not call its retained scalar export"));
-                }
-                match operators.read().map_err(malformed)? {
-                    Operator::I32Const { value } if value == invocation.expected() => {}
-                    _ => return Err(invalid("command bridge expected value differs")),
-                }
-                if !matches!(operators.read().map_err(malformed)?, Operator::I32Ne)
-                    || !matches!(operators.read().map_err(malformed)?, Operator::End)
-                    || !operators.eof()
-                {
-                    return Err(invalid("command bridge comparison or termination differs"));
-                }
+                audit_body(&body, invocation)?;
             }
             _ => {
                 return Err(invalid(
@@ -109,6 +85,33 @@ pub(super) fn audit(bytes: &[u8], invocation: &CommandInvocation) -> Result<(), 
     }
     if !body_seen || sections.iter().any(|seen| !seen) {
         return Err(invalid("command bridge is incomplete"));
+    }
+    Ok(())
+}
+
+fn audit_body(body: &FunctionBody<'_>, invocation: &CommandInvocation) -> Result<(), Diagnostic> {
+    if body.get_locals_reader().map_err(malformed)?.get_count() != 0 {
+        return Err(invalid("command bridge declares unexpected locals"));
+    }
+    let mut operators = body.get_operators_reader().map_err(malformed)?;
+    for expected in invocation.arguments() {
+        match operators.read().map_err(malformed)? {
+            Operator::I32Const { value } if value == *expected => {}
+            _ => return Err(invalid("command bridge argument instructions differ")),
+        }
+    }
+    if !matches!(operators.read().map_err(malformed)?, Operator::Call { function_index: 0 }) {
+        return Err(invalid("command bridge does not call its retained scalar export"));
+    }
+    match operators.read().map_err(malformed)? {
+        Operator::I32Const { value } if value == invocation.expected() => {}
+        _ => return Err(invalid("command bridge expected value differs")),
+    }
+    if !matches!(operators.read().map_err(malformed)?, Operator::I32Ne)
+        || !matches!(operators.read().map_err(malformed)?, Operator::End)
+        || !operators.eof()
+    {
+        return Err(invalid("command bridge comparison or termination differs"));
     }
     Ok(())
 }

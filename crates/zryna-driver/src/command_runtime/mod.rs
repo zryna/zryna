@@ -133,7 +133,9 @@ fn binding(
         for ty in export.parameters().iter().copied().chain([export.result()]) {
             let byte = match ty {
                 zryna_abi::ScalarType::I32 => 1,
-                _ => return Err(vec![invalid("command ABI is not entirely i32")]),
+                zryna_abi::ScalarType::Bool => {
+                    return Err(vec![invalid("command ABI is not entirely i32")]);
+                }
             };
             digest.update([byte]);
         }

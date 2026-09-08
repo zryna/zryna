@@ -164,12 +164,8 @@ fn sealed_program_source_and_world_authorities_cannot_be_forged_or_omitted() {
     );
     assert!(result.revalidate(&input, &replaced).is_err());
 
-    let VerifiedLanguage::I32V1 { program, .. } = verified_language("first") else {
-        unreachable!()
-    };
-    let VerifiedLanguage::I32V1 { sources, .. } = verified_language("second") else {
-        unreachable!()
-    };
+    let VerifiedLanguage::I32V1 { program, .. } = verified_language("first");
+    let VerifiedLanguage::I32V1 { sources, .. } = verified_language("second");
     let mut mismatched = authorities(&input);
     mismatched.instances.get_mut("A").expect("instance").programs =
         vec![VerifiedLanguage::I32V1 { program, sources }];
@@ -206,12 +202,8 @@ fn sealed_program_cardinality_rejects_before_program_fingerprinting() {
         "instance requires one distinct sealed authority per language"
     );
 
-    let VerifiedLanguage::I32V1 { program, .. } = verified_language("mismatched program") else {
-        unreachable!()
-    };
-    let VerifiedLanguage::I32V1 { sources, .. } = verified_language("mismatched source") else {
-        unreachable!()
-    };
+    let VerifiedLanguage::I32V1 { program, .. } = verified_language("mismatched program");
+    let VerifiedLanguage::I32V1 { sources, .. } = verified_language("mismatched source");
     authorities
         .instances
         .get_mut("A")

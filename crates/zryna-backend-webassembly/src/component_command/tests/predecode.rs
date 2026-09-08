@@ -127,13 +127,14 @@ fn real_component_public_type_identity_budget_accepts_exact_and_rejects_first_ex
     // declarations and their imported instance use are conservatively charged before decoding.
     assert_eq!(remaining % 2, 0, "fixture must reach the exact prospective identity ceiling");
     let exact_exports = remaining / 2 - 1;
-    let exact = mutate(&component, 0, exact_exports as u32);
+    let exact = mutate(&component, 0, u32::try_from(exact_exports).expect("bounded export count"));
     assert_eq!(audit::identity_budget_used(&exact).expect("exact public identity budget"), 4096);
     assert_eq!(
         check(&component, &exact).expect_err("extra public types after bounded decode").code(),
         "ZRYNA-W4012"
     );
-    let first_extra = mutate(&component, 0, exact_exports as u32 + 1);
+    let first_extra =
+        mutate(&component, 0, u32::try_from(exact_exports).expect("bounded export count") + 1);
     assert_eq!(
         check(&component, &first_extra)
             .expect_err("first extra public identity before decode")
