@@ -17,8 +17,8 @@
       "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/win64/chrome-win64.zip",
       "publisherUrl": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/win64/chrome-win64.zip",
       "executable": "chrome-win64/chrome.exe",
-      "archiveSha256": null,
-      "inventorySha256": null
+      "archiveSha256": "415968b02065d4a9e2c10b85f0ae9f489b8fba500e94d9d0a7b7c4852a7234c1",
+      "inventorySha256": "92892432f2a0ba1ef1f7c35cfc5ce3967f869b40941afae7ffeac402aabeba19"
     }
   }
 }

@@ -70,14 +70,15 @@ The initial trust is the official HTTPS source, **not an upstream browser digest
 publishes a version/revision, but no browser cryptographic hash in the runner manifest. Review the
 receipt's configured and final response URLs, resulting archive SHA-256, full file inventory
 SHA-256, executable and notices before copying the
-two approved hashes into the platform pin. Until then, null hashes deliberately prevent launch.
+two approved hashes into the platform pin. A platform remains launch-disabled while either hash
+is null.
 No channel selection, system-browser fallback, headless-shell replacement or shared cache is used.
 Redirects are restricted before following them to the exact initial URL and the corresponding
 Google `chrome-for-testing-public` URL recorded as `publisherUrl` in the pin; the final response
 must match that publisher URL exactly. Both destinations match the
 [Google version manifest](https://googlechromelabs.github.io/chrome-for-testing/153.0.8010.12.json).
 Any new redirect destination requires review, even if it uses HTTPS. URL provenance does not
-replace the pending archive/inventory integrity review.
+replace the reviewed archive/inventory integrity pins.
 
 The runner checks every inventoried file before and after execution, exact runner/browser versions,
 and the artifact hash in both the parent Node process and the real browser page. It uses one
@@ -112,8 +113,9 @@ separate from the small cross-host scalar fixture.
 
 ## Candidate evidence
 
-The implementation is an unverified local candidate. Browser archive/inventory pins are pending
-authorized acquisition. Rust source tests, Node target execution, real browser execution, resource
-limits, frozen installation, preflight, M0, M2 and hosted conformance are **UNRUN** until an exact
-candidate receipt records observed commands, nonzero counts and platforms. This file specifies
-required evidence; it records no passing execution.
+The implementation is an unverified local candidate. Linux x64 and Windows x64 browser
+archive/inventory hashes are pinned from reviewed publisher-HTTPS acquisition receipts. Frozen
+installation and metadata-only fixture preparation do not establish host execution. Rust source
+tests, Node target execution, real browser execution, resource limits, preflight, M0, M2 and hosted
+conformance are **UNRUN** until an exact candidate receipt records observed commands, nonzero counts
+and platforms. This file specifies required evidence; it records no passing execution.
