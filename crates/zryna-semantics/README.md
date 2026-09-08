@@ -8,10 +8,11 @@ legacy M1 entry returns raw IR to its verifier call site; the isolated M2 entry 
 recovery or unsupported syntax cannot enter name resolution, type checking, or lowering as a
 smaller program. Provider warnings remain non-fatal and are preserved by `zryna-driver`.
 
-The internal `definition_queries` module freezes exact function and parameter declaration/use
-spans only after this scalar checker succeeds. The driver may retain that opaque,
-source-map-bound index for the documented definition-query prototype. It does not add general
-symbol coverage, a transport, or a public tooling profile.
+The internal `definition_queries` module freezes exact function and parameter declaration spans
+and parameter reference spans only after this protocol-v2 scalar checker succeeds. The driver's
+private `diagnostic_sessions` boundary retains that opaque, source-map-bound index for bounded
+definition lookup. It does not add general symbol coverage, a transport, a CLI/LSP route, or a
+public tooling profile.
 
 ## First strict source subset (protocol v2/M1)
 
