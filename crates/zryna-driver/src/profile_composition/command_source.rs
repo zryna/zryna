@@ -3,6 +3,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use sha2::{Digest, Sha256};
+use zryna_backend_webassembly::{WitSource, WitWorldAudit, audit_pinned_wit_worlds};
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::VerifiedFrontendProvider;
 use zryna_ir::VerifiedProgram;
@@ -11,7 +12,9 @@ use zryna_source::SourceMap;
 use crate::{SourceToIrError, SourceToIrSuccess, compile_to_verified_ir};
 
 use super::{
-    INVALID, ValidatedComposition, error, graph,
+    INVALID, ValidatedComposition,
+    authority::{Authorities, InstanceAuthority, VerifiedLanguage},
+    error, graph,
     model::{
         Claim, Input, Instance, Language, POLICY, Reservation, Row, Selection, Summary, VERSION,
     },
@@ -29,6 +32,7 @@ pub(crate) struct PureCommandSource<'source> {
     source_identity: [u8; 32],
     composition: ValidatedComposition,
     composition_identity: [u8; 32],
+    wit: WitWorldAudit,
 }
 
 impl PureCommandSource<'_> {
@@ -48,13 +52,19 @@ impl PureCommandSource<'_> {
         &self.composition_identity
     }
 
-    pub(crate) fn revalidate(&self) -> Result<(), Vec<Diagnostic>> {
+    pub(crate) fn revalidate(&self, wit: &WitWorldAudit) -> Result<(), Vec<Diagnostic>> {
+        if wit != &self.wit {
+            return Err(vec![error(INVALID, "command composition WIT authority changed")]);
+        }
         let identity = source_identity(self.sources)?;
         if identity != self.source_identity {
             return Err(vec![error(INVALID, "authenticated command source identity changed")]);
         }
-        self.composition.revalidate(&pure_input(identity))?;
-        if graph::validate(&pure_input(identity))?.binding()? != self.composition_identity {
+        let input = pure_input();
+        let authorities = command_authorities(self.program(), self.sources, wit);
+        self.composition.revalidate(&input, &authorities)?;
+        let graph = graph::validate(&input)?;
+        if graph.binding(&authorities.binding(&graph.ids())?)? != self.composition_identity {
             return Err(vec![error(INVALID, "command composition identity changed")]);
         }
         if !self.composition.requirements().is_empty() {
@@ -68,12 +78,16 @@ impl PureCommandSource<'_> {
 pub(crate) fn compile_pure_command<'source, Provider: VerifiedFrontendProvider + ?Sized>(
     frontend: &Provider,
     sources: &'source SourceMap,
+    wit_sources: &[WitSource],
 ) -> Result<PureCommandSource<'source>, SourceToIrError> {
     let compiled = compile_to_verified_ir(frontend, sources)?;
+    let wit = audit_pinned_wit_worlds(wit_sources)
+        .map_err(|error| SourceToIrError::Rejected(vec![error]))?;
     let source_identity = source_identity(sources).map_err(SourceToIrError::Rejected)?;
-    let input = pure_input(source_identity);
+    let input = pure_input();
+    let authorities = command_authorities(compiled.program(), sources, &wit);
     let binding = graph::validate(&input)
-        .and_then(|graph| graph.binding())
+        .and_then(|graph| graph.binding(&authorities.binding(&graph.ids())?))
         .map_err(SourceToIrError::Rejected)?;
     // The producer claims only the one-node empty result; verification derives it independently.
     let claim = Claim {
@@ -81,13 +95,14 @@ pub(crate) fn compile_pure_command<'source, Provider: VerifiedFrontendProvider +
         summaries: BTreeMap::from([(ROOT_INSTANCE.to_owned(), Summary::default())]),
         witnesses: BTreeMap::new(),
     };
-    let composition = verify(&input, &claim).map_err(SourceToIrError::Rejected)?;
+    let composition = verify(&input, &authorities, &claim).map_err(SourceToIrError::Rejected)?;
     Ok(PureCommandSource {
         sources,
         compiled,
         source_identity,
         composition,
         composition_identity: binding,
+        wit,
     })
 }
 
@@ -109,8 +124,26 @@ fn source_identity(sources: &SourceMap) -> Result<[u8; 32], Vec<Diagnostic>> {
     Ok(digest.finalize().into())
 }
 
-fn pure_input(identity: [u8; 32]) -> Input {
-    let source_identity = identity.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+fn command_authorities(
+    program: &VerifiedProgram,
+    sources: &SourceMap,
+    wit: &WitWorldAudit,
+) -> Authorities {
+    Authorities {
+        instances: BTreeMap::from([(
+            ROOT_INSTANCE.to_owned(),
+            InstanceAuthority {
+                programs: vec![VerifiedLanguage::I32V1 {
+                    program: program.clone(),
+                    sources: sources.clone(),
+                }],
+            },
+        )]),
+        wit: Some(wit.clone()),
+    }
+}
+
+fn pure_input() -> Input {
     Input {
         version: VERSION.to_owned(),
         root: ROOT_INSTANCE.to_owned(),
@@ -124,8 +157,6 @@ fn pure_input(identity: [u8; 32]) -> Input {
         }],
         instances: vec![Instance {
             id: ROOT_INSTANCE.to_owned(),
-            source_identity,
-            languages: BTreeSet::from([Language::I32V1]),
             rows: BTreeSet::from([Row::WitCommand]),
             requirements: BTreeSet::new(),
             restrictions: BTreeSet::new(),

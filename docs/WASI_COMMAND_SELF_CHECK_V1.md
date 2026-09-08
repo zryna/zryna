@@ -14,6 +14,13 @@ map, matching verified program and scalar ABI, independently verified one-node
 composition, and explicit empty host requests and grants. The selected host policy
 is `CommandHostPolicy::deny_all()`.
 
+The composition verifier consumes the actual opaque verified `I32V1` program paired
+with its exact `SourceMap`, plus the existing authenticated `WitWorldAudit`. Producer
+JSON language/source labels cannot substitute for those authorities. The command
+retains the audit and compares it with the independently sealed component's audit
+both during preparation and before execution; source and composition digests remain
+binding observations rather than replacement authorities.
+
 The WebAssembly backend emits the original scalar core without rewriting it. A
 separate private core bridge calls the selected i32 export with constant arguments,
 compares the result with its constant expectation, and produces the discriminant of
@@ -36,7 +43,8 @@ The auditor checks final bytes, exact retained core identity, every private brid
 instruction, instantiation/alias/lift/export topology, complete interface versions
 and function/value types, and resource identity across aliases. Value data compares
 structurally; resources require a bijection between canonical nominal identities.
-The selected validator features are explicitly WASM1 and the component model.
+The runtime validator features are explicitly WASM1 with GC types removed, plus the
+component model; this does not widen the existing core-only validators.
 
 A predecoder checks syntax counts and earlier-index references before recursive
 validation or WIT decoding. It computes dependency depth in one pass, rejects
@@ -91,6 +99,8 @@ Node/TypeScript frontend setup. The fixtures cover real add source, wrapping, a 
 expected result, source/policy binding rejection, binary/type/resource mutations,
 predecode exact/first-extra controls, actual denied environment/filesystem calls,
 invalid discriminants, loop interruption, store invalidation and fresh recovery.
+The integration fixture also replaces a prepared command's source with a separately
+verified changed program and requires rejection before runtime construction.
 
 Run the WIT audit, structure/documentation/preflight checks and applicable full M0,
 M2 and M3 lanes after focused tests. Required hosted Linux and Windows checks must

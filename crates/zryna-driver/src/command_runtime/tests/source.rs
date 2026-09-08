@@ -41,3 +41,27 @@ fn command_rejects_stale_binding_and_host_policy_before_runtime_creation() {
     prepared.binding[0] ^= 1;
     assert_eq!(prepared.execute(policy).expect_err("stale binding")[0].code(), "ZRYNA-C4020");
 }
+
+#[test]
+fn command_rejects_replaced_verified_source_before_runtime_creation() {
+    let frontend = fixtures::frontend();
+    let sources = fixtures::sources();
+    let replaced_sources = zryna_source::SourceMap::build(vec![zryna_source::SourceFileInput {
+        path: "examples/universal/add.zry".into(),
+        text: "export function add(a: i32, b: i32): i32 { return a + b + 1; }".into(),
+    }])
+    .expect("independent changed source authority");
+    let wit = fixtures::wit();
+    let policy = CommandHostPolicy::deny_all();
+    let mut prepared =
+        prepare_command_self_check(&frontend, &sources, &wit, "add", &[20, 22], 42, policy)
+            .expect("original authenticated command");
+    prepared.source =
+        crate::profile_composition::compile_pure_command(&frontend, &replaced_sources, &wit)
+            .expect("independently verified replacement source and composition");
+    assert_eq!(
+        prepared.execute(policy).expect_err("component cannot consume another verified program")[0]
+            .code(),
+        "ZRYNA-W4016"
+    );
+}

@@ -65,7 +65,7 @@ impl PreparedCommand<'_> {
         if policy.revision != POLICY || policy != self.policy {
             return Err(vec![invalid("command host policy identity changed")]);
         }
-        self.source.revalidate()?;
+        self.source.revalidate(self.component.world_audit())?;
         self.component.revalidate(self.source.program()).map_err(|error| vec![error])?;
         if binding(&self.source, &self.component, policy)? != self.binding {
             return Err(vec![invalid(
@@ -99,10 +99,10 @@ pub fn prepare_command_self_check<'source, Provider: VerifiedFrontendProvider + 
     if policy.revision != POLICY {
         return Err(SourceToIrError::Rejected(vec![invalid("unsupported command host policy")]));
     }
-    let source = compile_pure_command(frontend, sources)?;
-    source.revalidate().map_err(SourceToIrError::Rejected)?;
+    let source = compile_pure_command(frontend, sources, wit)?;
     let component = emit_command_self_check(source.program(), wit, export, arguments, expected)
         .map_err(|error| SourceToIrError::Rejected(vec![error]))?;
+    source.revalidate(component.world_audit()).map_err(SourceToIrError::Rejected)?;
     let binding = binding(&source, &component, policy).map_err(SourceToIrError::Rejected)?;
     Ok(PreparedCommand { source, component, policy, binding })
 }
