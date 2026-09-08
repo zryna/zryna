@@ -81,6 +81,67 @@ fn canonical_keywords_identifiers_literals_and_operators_are_distinct() {
 }
 
 #[test]
+fn identifier_length_accepts_exact_boundary_and_rejects_complete_first_extra() {
+    let exact = "a".repeat(128);
+    let map = sources(&exact);
+    let project = lex(&map).expect("exact identifier byte limit");
+    assert!(project.diagnostics().is_empty());
+    assert_eq!(
+        project.files()[0].tokens().map(|token| token.kind()).collect::<Vec<_>>(),
+        [TokenKind::Identifier]
+    );
+
+    assert_invalid_identifier_recovers(&"a".repeat(129));
+}
+
+#[test]
+fn forbidden_identifiers_reject_only_exact_spellings_and_recover() {
+    for spelling in ["constructor", "prototype", "__proto__"] {
+        assert_invalid_identifier_recovers(spelling);
+        let text = format!("{spelling}_ _{spelling} {spelling}1");
+        let map = sources(&text);
+        let project = lex(&map).expect("valid identifiers containing forbidden names");
+        assert!(project.diagnostics().is_empty());
+        assert_eq!(
+            project.files()[0].tokens().map(|token| token.kind()).collect::<Vec<_>>(),
+            [TokenKind::Identifier; 3]
+        );
+    }
+}
+
+fn assert_invalid_identifier_recovers(spelling: &str) {
+    let text = format!("before/*é*/{spelling};after");
+    let map = sources(&text);
+    let project = lex(&map).expect("bounded invalid identifier recovery");
+    assert_eq!(project, lex(&map).expect("deterministic invalid identifier replay"));
+    let file = &project.files()[0];
+    let tokens = file.tokens().collect::<Vec<_>>();
+    assert_eq!(
+        tokens.iter().map(|token| token.kind()).collect::<Vec<_>>(),
+        [TokenKind::Identifier, TokenKind::Invalid, TokenKind::Semicolon, TokenKind::Identifier]
+    );
+    assert_eq!(project.diagnostics().len(), 1);
+    let diagnostic = &project.diagnostics()[0];
+    assert_eq!(diagnostic.code(), "ZRYNA-F1501");
+    assert_eq!(diagnostic.primary_span(), Some(tokens[1].span()));
+    assert_eq!(tokens[1].span().start(), u32::try_from("before/*é*/".len()).unwrap());
+    assert_eq!(
+        tokens[1].span().end() - tokens[1].span().start(),
+        u32::try_from(spelling.len()).unwrap()
+    );
+    let reconstructed = file
+        .lexemes()
+        .iter()
+        .map(|lexeme| {
+            let span = lexeme.span();
+            map.resolve(span).expect("source-authenticated recovery span");
+            &text[usize::try_from(span.start()).unwrap()..usize::try_from(span.end()).unwrap()]
+        })
+        .collect::<String>();
+    assert_eq!(reconstructed, text);
+}
+
+#[test]
 fn malformed_unicode_strings_and_comments_are_deterministic_and_recover() {
     let map = sources("é; 'bad\\escape'; \"open\u{2028}return 1; /* open");
     let first = lex(&map).expect("bounded malformed stream");

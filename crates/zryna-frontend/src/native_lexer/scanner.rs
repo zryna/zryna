@@ -58,7 +58,17 @@ pub(super) fn scan_file(
             {
                 offset += 1;
             }
-            (ItemKind::Token(keyword(&text[start..offset])), offset, None)
+            let spelling = &text[start..offset];
+            if spelling.len() > 128 || matches!(spelling, "constructor" | "prototype" | "__proto__")
+            {
+                (
+                    ItemKind::Token(TokenKind::Invalid),
+                    offset,
+                    Some("identifier spelling is forbidden or exceeds 128 bytes"),
+                )
+            } else {
+                (ItemKind::Token(keyword(spelling)), offset, None)
+            }
         } else if bytes[start].is_ascii_digit() {
             offset += 1;
             while offset < bytes.len() && bytes[offset].is_ascii_digit() {
