@@ -41,6 +41,70 @@ fn malformed_shape_precedes_stale_lookup() {
 }
 
 #[test]
+fn invalid_limits_reject_with_safe_correlation() {
+    let (mut session, revision, now) = ready_session("let x = 1;\n");
+    for (field, value) in [("work", 0), ("results", 0)] {
+        let id = format!("zero-{field}");
+        let mut malformed: serde_json::Value = serde_json::from_slice(&request(
+            &id,
+            revision,
+            100_000,
+            "diagnostics",
+            json!({}),
+        ))
+        .unwrap_or_else(|error| panic!("request must decode: {error}"));
+        malformed["limits"][field] = json!(value);
+        let bytes = serde_json::to_vec(&malformed)
+            .unwrap_or_else(|error| panic!("request must encode: {error}"));
+        let response = session
+            .begin_diagnostics(&bytes, now)
+            .expect_err("zero limit must reject");
+
+        assert_eq!(
+            (response.status(), response.reason()),
+            (QueryStatus::Malformed, Some(QueryReason::Shape))
+        );
+        let expected = format!(
+            "{{\"query_version\":1,\"request_id\":\"{id}\",\"snapshot\":\"{}\",\"revision\":{},\"status\":\"malformed\",\"reason\":\"shape\"}}",
+            revision.handle(),
+            revision.revision()
+        );
+        assert_eq!(response.encoded(), Some(expected.as_str()));
+    }
+}
+
+#[test]
+fn invalid_correlation_fields_remain_uncorrelated() {
+    let (mut session, revision, now) = ready_session("let x = 1;\n");
+    for (field, value) in [
+        ("request_id", json!("")),
+        ("snapshot", json!("non-ascii-é")),
+        ("revision", json!(0)),
+    ] {
+        let mut malformed: serde_json::Value = serde_json::from_slice(&request(
+            "unsafe",
+            revision,
+            100_000,
+            "diagnostics",
+            json!({}),
+        ))
+        .unwrap_or_else(|error| panic!("request must decode: {error}"));
+        malformed[field] = value;
+        let bytes = serde_json::to_vec(&malformed)
+            .unwrap_or_else(|error| panic!("request must encode: {error}"));
+        let response = session
+            .begin_diagnostics(&bytes, now)
+            .expect_err("unsafe correlation must reject");
+
+        assert_eq!(
+            (response.status(), response.reason()),
+            (QueryStatus::Malformed, Some(QueryReason::Shape))
+        );
+        assert_eq!(response.encoded(), None);
+    }
+}
+
+#[test]
 fn version_and_method_follow_snapshot_precedence() {
     let (mut session, revision, now) = ready_session("let x = 1;\n");
     let mut version: serde_json::Value =

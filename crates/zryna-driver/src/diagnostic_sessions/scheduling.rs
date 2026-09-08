@@ -36,8 +36,16 @@ impl DiagnosticSession {
                 QueryStatus::OverBudget,
                 QueryReason::RequestDepth,
             ),
-            super::request::DecodeError::Shape => {
+            super::request::DecodeError::ParseShape
+            | super::request::DecodeError::UnsafeCorrelation => {
                 DiagnosticQueryResponse::uncorrelated(QueryStatus::Malformed, QueryReason::Shape)
+            }
+            super::request::DecodeError::CorrelatedShape(correlation) => {
+                DiagnosticQueryResponse::failure(
+                    &correlation,
+                    QueryStatus::Malformed,
+                    QueryReason::Shape,
+                )
             }
         })?;
         let correlation = &request.correlation;

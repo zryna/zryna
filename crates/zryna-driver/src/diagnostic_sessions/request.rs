@@ -10,7 +10,9 @@ use super::{
 pub(super) enum DecodeError {
     RequestBytes,
     RequestDepth,
-    Shape,
+    ParseShape,
+    UnsafeCorrelation,
+    CorrelatedShape(Correlation),
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,29 +52,33 @@ pub(super) fn decode(bytes: &[u8]) -> Result<ParsedRequest, DecodeError> {
     if bytes.len() > MAX_REQUEST_BYTES {
         return Err(DecodeError::RequestBytes);
     }
-    std::str::from_utf8(bytes).map_err(|_| DecodeError::Shape)?;
+    std::str::from_utf8(bytes).map_err(|_| DecodeError::ParseShape)?;
     if exceeds_depth(bytes) {
         return Err(DecodeError::RequestDepth);
     }
-    let request: WireRequest = serde_json::from_slice(bytes).map_err(|_| DecodeError::Shape)?;
+    let request: WireRequest = serde_json::from_slice(bytes).map_err(|_| DecodeError::ParseShape)?;
     if !valid_id(&request.request_id)
         || !valid_id(&request.snapshot)
         || request.revision == 0
         || request.revision > MAX_REVISION
-        || request.limits.work == 0
+    {
+        return Err(DecodeError::UnsafeCorrelation);
+    }
+    let correlation = Correlation {
+        query_version: request.query_version,
+        request_id: request.request_id,
+        snapshot: request.snapshot,
+        revision: request.revision,
+    };
+    if request.limits.work == 0
         || request.limits.work > MAX_QUERY_WORK
         || request.limits.results == 0
         || request.limits.results > MAX_QUERY_RESULTS
     {
-        return Err(DecodeError::Shape);
+        return Err(DecodeError::CorrelatedShape(correlation));
     }
     Ok(ParsedRequest {
-        correlation: Correlation {
-            query_version: request.query_version,
-            request_id: request.request_id,
-            snapshot: request.snapshot,
-            revision: request.revision,
-        },
+        correlation,
         method: request.method,
         params: request.params,
         work_limit: request.limits.work,
