@@ -38,7 +38,7 @@ fn request(interface: &VerifiedScalarEsm, host: ScalarAdapterHost) -> serde_json
         "interfaceSha256": hex(&interface.interface_sha256),
         "bindingSha256": hex(&interface.binding_sha256),
         "graphSha256": hex(&interface.graph_sha256),
-        "call": super::super::consumer::CALL, "corpus": CORPUS,
+        "call": consumer::CALL, "corpus": CORPUS,
     })
 }
 
