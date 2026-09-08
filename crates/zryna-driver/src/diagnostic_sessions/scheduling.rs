@@ -107,32 +107,33 @@ impl DiagnosticSession {
         now: Instant,
     ) -> DiagnosticQueryResponse {
         self.release(&pending);
+        let correlation = pending.correlation;
         if pending.session != self.session {
-            return stale(&pending.correlation);
+            return stale(&correlation);
         }
         if pending.state.load(Ordering::Acquire) == CANCELLED {
             return DiagnosticQueryResponse::failure(
-                &pending.correlation,
+                &correlation,
                 QueryStatus::Cancelled,
                 QueryReason::Request,
             );
         }
         if pending.state.load(Ordering::Acquire) == TIMED_OUT {
             return DiagnosticQueryResponse::failure(
-                &pending.correlation,
+                &correlation,
                 QueryStatus::Cancelled,
                 QueryReason::Deadline,
             );
         }
         if now >= pending.deadline {
             return DiagnosticQueryResponse::failure(
-                &pending.correlation,
+                &correlation,
                 QueryStatus::Cancelled,
                 QueryReason::Deadline,
             );
         }
         let Some(record) = pending.record.upgrade() else {
-            return stale(&pending.correlation);
+            return stale(&correlation);
         };
         let response = if let Some(report) = record.report.as_deref() {
             let logical_work = u64::try_from(report.len())
@@ -141,28 +142,28 @@ impl DiagnosticSession {
                 .unwrap_or(u64::MAX);
             if logical_work > pending.work_limit {
                 DiagnosticQueryResponse::failure(
-                    &pending.correlation,
+                    &correlation,
                     QueryStatus::OverBudget,
                     QueryReason::Work,
                 )
             } else if protocol_v2::validate_json(report.as_bytes(), &record.sources).is_err() {
                 DiagnosticQueryResponse::failure(
-                    &pending.correlation,
+                    &correlation,
                     QueryStatus::Unavailable,
                     QueryReason::Analysis,
                 )
             } else {
-                DiagnosticQueryResponse::success(&pending.correlation, report)
+                DiagnosticQueryResponse::success(&correlation, report)
             }
         } else {
             DiagnosticQueryResponse::failure(
-                &pending.correlation,
+                &correlation,
                 QueryStatus::Unavailable,
                 QueryReason::Analysis,
             )
         };
         if !self.is_active(pending.revision, pending.source_identity) {
-            return stale(&pending.correlation);
+            return stale(&correlation);
         }
         response
     }

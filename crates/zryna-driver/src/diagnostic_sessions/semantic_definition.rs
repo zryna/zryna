@@ -131,29 +131,30 @@ impl DiagnosticSession {
         now: Instant,
     ) -> DiagnosticQueryResponse {
         self.release_definition(&pending);
+        let correlation = pending.correlation;
         if pending.session != self.session {
-            return stale(&pending.correlation);
+            return stale(&correlation);
         }
         if pending.state.load(Ordering::Acquire) == CANCELLED {
             return DiagnosticQueryResponse::failure(
-                &pending.correlation,
+                &correlation,
                 QueryStatus::Cancelled,
                 QueryReason::Request,
             );
         }
         if pending.state.load(Ordering::Acquire) == TIMED_OUT || now >= pending.deadline {
             return DiagnosticQueryResponse::failure(
-                &pending.correlation,
+                &correlation,
                 QueryStatus::Cancelled,
                 QueryReason::Deadline,
             );
         }
         let Some(record) = pending.record.upgrade() else {
-            return stale(&pending.correlation);
+            return stale(&correlation);
         };
         let response = match record.definitions.as_deref() {
             None => DiagnosticQueryResponse::failure(
-                &pending.correlation,
+                &correlation,
                 QueryStatus::Unavailable,
                 QueryReason::Analysis,
             ),
@@ -165,29 +166,29 @@ impl DiagnosticSession {
                 }) {
                     Some(DefinitionLookup::Found(span)) => match record.sources.resolve(span) {
                         Ok(location) => DiagnosticQueryResponse::definition_success(
-                            &pending.correlation,
+                            &correlation,
                             location.source().path().as_str(),
                             span.start(),
                             span.end(),
                         ),
                         Err(_) => DiagnosticQueryResponse::failure(
-                            &pending.correlation,
+                            &correlation,
                             QueryStatus::Unavailable,
                             QueryReason::Analysis,
                         ),
                     },
                     Some(DefinitionLookup::Absent) => DiagnosticQueryResponse::failure(
-                        &pending.correlation,
+                        &correlation,
                         QueryStatus::Absent,
                         QueryReason::Symbol,
                     ),
                     Some(DefinitionLookup::OverBudget) => DiagnosticQueryResponse::failure(
-                        &pending.correlation,
+                        &correlation,
                         QueryStatus::OverBudget,
                         QueryReason::Work,
                     ),
                     None => DiagnosticQueryResponse::failure(
-                        &pending.correlation,
+                        &correlation,
                         QueryStatus::Unavailable,
                         QueryReason::Analysis,
                     ),
@@ -195,7 +196,7 @@ impl DiagnosticSession {
             }
         };
         if !self.is_active(pending.revision, pending.source_identity) {
-            return stale(&pending.correlation);
+            return stale(&correlation);
         }
         response
     }

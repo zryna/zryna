@@ -34,7 +34,14 @@ fn definition_deadline_is_exact_and_expired_completion_preserves_reuse() {
     let bytes = definition_request("deadline", revision, 100, "src/main.zry", 47);
     let before = session.begin_definition(&bytes, now).expect("definition must begin");
     assert_eq!(
-        session.finish_definition(before, now + QUERY_DEADLINE - Duration::from_nanos(1)).status(),
+        session
+            .finish_definition(
+                before,
+                (now + QUERY_DEADLINE)
+                    .checked_sub(Duration::from_nanos(1))
+                    .expect("before deadline")
+            )
+            .status(),
         QueryStatus::Ok
     );
     let old = session.begin_definition(&bytes, now).expect("deadline fixture must begin");

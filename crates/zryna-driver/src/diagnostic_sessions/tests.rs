@@ -22,16 +22,16 @@ fn request(
     method: &str,
     params: serde_json::Value,
 ) -> Vec<u8> {
-    serde_json::to_vec(&json!({
+    let mut request = json!({
         "query_version": 1,
         "request_id": id,
         "snapshot": revision.handle().to_string(),
         "revision": revision.revision(),
         "method": method,
-        "params": params,
         "limits": { "work": work, "results": 10_000 }
-    }))
-    .unwrap_or_else(|error| panic!("test request must encode: {error}"))
+    });
+    request["params"] = params;
+    serde_json::to_vec(&request).unwrap_or_else(|error| panic!("test request must encode: {error}"))
 }
 
 fn ready_session(text: &str) -> (DiagnosticSession, DiagnosticRevision, Instant) {
