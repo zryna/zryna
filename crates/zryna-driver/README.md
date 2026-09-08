@@ -2,6 +2,23 @@
 
 The only compiler component allowed to orchestrate frontend, verification, and backend phases.
 
+The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
+verified i32 source, empty composition requests, a separately audited component and an
+explicit denied host policy. Its source and execution fixtures await the required
+verification lanes; public WASI target selection remains unactivated.
+
+The private `profile_composition` boundary verifies a fixed graph under
+Issue #380. It independently derives transitive requirements, canonical witnesses and shared
+reservation totals, checks every instance's restrictions and exact selected profile/interface,
+and rejects stale or forged claims before retaining an opaque input-bound result. Every instance
+is admitted through an opaque verified program paired with its exact source authority; WIT rows
+also require the existing authenticated `WitWorldAudit`. The exact digest-pinned #167 registry
+continues to own capability and quota policy. Package authentication, host grants, execution and
+public activation remain separate obligations. See the
+[implementation ledger](../../spec/language/CROSS_TARGET_PROFILES_V1.md#private-fixed-graph-implementation-380).
+Focused tests are `cargo test --locked -p zryna-driver profile_composition`; privacy is also
+covered by `cargo test --locked -p zryna-driver --doc`.
+
 `analyze_sources` accepts one authoritative `SourceMap` and a configured process frontend. It
 returns only the opaque protocol-v2 snapshot that the frontend crate has authenticated, decoded,
 bounded, and verified against that exact map. Raw worker bytes and untrusted syntax DTOs are not a

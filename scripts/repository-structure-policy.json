@@ -270,6 +270,13 @@
       "review": "https://github.com/zryna/zryna/issues/314"
     },
     {
+      "path": "crates/zryna-driver/src/tests.rs",
+      "kind": "test",
+      "owner": "driver maintainers",
+      "reason": "Relocated driver source-to-IR tests from the production facade; contains test-only code",
+      "review": "https://github.com/zryna/zryna/issues/385"
+    },
+    {
       "path": "crates/zryna-frontend/tests/worker_process.rs",
       "kind": "test",
       "owner": "compiler maintainers",

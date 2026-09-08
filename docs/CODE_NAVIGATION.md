@@ -66,6 +66,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 - Start: [JavaScript README](../crates/zryna-backend-javascript/README.md) or [WebAssembly README](../crates/zryna-backend-webassembly/README.md).
 - Entries: each backend's `src/lib.rs::{emit,emit_control_flow,emit_data_ownership}` consumes the corresponding sealed IR, never source syntax. M3 code is isolated under `src/data_ownership_v1/`.
+- Scalar core sealing: `crates/zryna-backend-webassembly/src/scalar_audit.rs` owns the unchanged WASM1/I32V1 validation and instruction audit.
 - Focus: `cargo test --locked -p zryna-backend-javascript` or `cargo test --locked -p zryna-backend-webassembly`; use [the M3 target contract](M3_TARGET_BACKENDS.md) for the new focused execution and audit cases.
 - Publication and runtime invocation belong to the driver. Preserve byte/capability audits, scalar carriers, and deterministic output; finish with full gates.
 
@@ -80,10 +81,8 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 8. CLI options, manifests, or create-only publication
 
 - Start: [CLI reference](CLI.md), [driver README](../crates/zryna-driver/README.md), [manifest v2](M2_MANIFEST_V2.md), or the internal [M3 candidate driver and manifest](M3_CANDIDATE_DRIVER.md).
-- CLI parsing/rendering: `apps/zryna/src/main.rs::main`; explicit profile preselection:
-  `apps/zryna/src/profile.rs::selects_typed_scalars`; orchestration:
-  `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and
-  `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`.
+- CLI parsing/rendering: `apps/zryna/src/main.rs::main`; explicit profile preselection: `apps/zryna/src/profile.rs::selects_typed_scalars`; orchestration: `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`.
+- Source-to-IR driver tests: `crates/zryna-driver/src/tests.rs`.
 - M3 candidate closure and dispatch: `crates/zryna-driver/src/{ownership_closure,ownership_pipeline}.rs`; strict manifest and transaction: `src/{ownership_manifest,ownership_publication}.rs`; complete internal build/run entrypoints: `src/ownership_commands.rs`.
 - Focus: `cargo test --locked -p zryna --test cli`, `cargo test --locked -p zryna-driver`; use pipeline fault/publication tests for transaction changes.
 - Keep architecture validation first, one verified program per request, and create-only whole-bundle commit. Finish with full gates.
@@ -100,7 +99,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 10. Guides, roadmap/contracts, or website documentation bundles
 
 - Start: [DOCUMENTATION_BUNDLES](DOCUMENTATION_BUNDLES.md), [ROADMAP](ROADMAP.md), and the specific contract being documented.
-- Cross-target composition: [versioned decision table](../spec/language/CROSS_TARGET_PROFILES_V1.md) and [documentation checks](../tests/cross-target-profile-contract.test.mjs); run `pnpm docs:check`. WIT identities and single-instance capability fixtures remain Issue #167's authority.
+- Cross-target composition: [decision table](../spec/language/CROSS_TARGET_PROFILES_V1.md), [documentation checks](../tests/cross-target-profile-contract.test.mjs), private [entrypoint](../crates/zryna-driver/src/profile_composition/mod.rs), [independent verifier](../crates/zryna-driver/src/profile_composition/verification.rs), and [focused tests](../crates/zryna-driver/src/profile_composition/tests.rs). Run `pnpm docs:check`, `cargo test --locked -p zryna-driver profile_composition`, and driver doc-tests. WIT identities/quotas remain #167's authority; composition grants no source, artifact or host authority.
 - Source docs are under `docs/` and `spec/`; export registration is `docs/website-bundle-v1.json`; implementation is `scripts/docs/{bundle,export,check}.mjs`.
 - Focus: `pnpm docs:check`; for M3 authority changes also `pnpm m3:contract`. Inspect `tests/docs-bundle.test.mjs` and the relevant contract test.
 - Export is an explicit whitelist/provenance operation, not implicit inclusion of every Markdown file. CI artifact success is not evidence of website deployment.
@@ -112,6 +111,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - WIT source: `spec/wit/capability-profiles-v1/worlds.wit`; machine-readable authority: `tests/wit-capability-profiles-v1.json` and `schemas/zryna-{wit-capability-profiles,capability-request}-v1.schema.json`.
 - Validator: `scripts/wit-capabilities/validate.mjs`; positive, negative, malformed, replay and boundary evidence: `tests/wit-capability-contract.test.mjs` and `tests/wit-capability-v1/fixtures/`.
 - Resolved dependency audit: `crates/zryna-backend-webassembly/src/wit_world_audit.rs`; exact source pins: its private `wit_world_audit/pins.rs`; provenance and hostile evidence: `crates/zryna-backend-webassembly/tests/wit-world-audit-v1/` and `tests/wit_world_audit.rs`. Run `cargo test --locked -p zryna-backend-webassembly --test wit_world_audit`.
+- Private command self-check source: [architecture and envelopes](WASI_COMMAND_SELF_CHECK_V1.md), backend `src/component_command/` and driver `src/command_runtime/`. Focused filters are `component_command` and `command_runtime` respectively; execution evidence remains pending the required lanes.
 - Typed JS/WASM design: [adapter contracts](../spec/interop/JS_WASM_ADAPTERS_V1.md) and [conversion/lifecycle proof plan](../spec/interop/JS_WASM_ADAPTER_CONFORMANCE_V1.md); `tests/js-wasm-adapter-contract.test.mjs` checks design consistency through `pnpm docs:check`, without executing adapters.
 - Focus: the resolved-audit test above, `pnpm wit:contract`, then `pnpm docs:check`. Preserve the `specified-only` boundary: component emission, bindings, runtime/CLI activation, cross-target dependency composition and JS/WASM resource adapters are separate work.
 

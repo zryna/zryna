@@ -6,7 +6,10 @@ use sha2::{Digest, Sha256};
 use wit_parser::{Resolve, SourceMap, WorldItem};
 use zryna_diagnostics::Diagnostic;
 
+mod command;
 mod pins;
+
+pub(crate) use command::AuthenticatedCommandWorld;
 
 const MAX_SOURCE_FILES: usize = 34;
 const MAX_SOURCE_BYTES: usize = 32 * 1024;

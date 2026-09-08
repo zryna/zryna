@@ -240,7 +240,8 @@ jobs:
 
   m3-platform:
     name: m3 (${{ matrix.os }})
-    timeout-minutes: 30
+    # The complete cold Windows ownership and allocation matrix can exceed 30 minutes.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
