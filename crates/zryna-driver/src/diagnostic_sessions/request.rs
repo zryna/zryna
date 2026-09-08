@@ -69,7 +69,8 @@ pub(super) fn decode(bytes: &[u8]) -> Result<ParsedRequest, DecodeError> {
     if exceeds_depth(bytes) {
         return Err(DecodeError::RequestDepth);
     }
-    let request: WireRequest = serde_json::from_slice(bytes).map_err(|_| DecodeError::ParseShape)?;
+    let request: WireRequest =
+        serde_json::from_slice(bytes).map_err(|_| DecodeError::ParseShape)?;
     if !valid_id(&request.request_id)
         || !valid_id(&request.snapshot)
         || request.revision == 0

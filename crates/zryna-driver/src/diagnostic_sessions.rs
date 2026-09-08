@@ -282,9 +282,9 @@ impl DiagnosticSession {
         }
         let (source_fingerprint, source_bytes) = source_fingerprint_and_charge(&sources)?;
         let semantic_bytes = match definitions.as_deref() {
-            Some(definitions) => definitions
-                .cache_bytes()
-                .ok_or(DiagnosticSessionError::SessionCacheExhausted)?,
+            Some(definitions) => {
+                definitions.cache_bytes().ok_or(DiagnosticSessionError::SessionCacheExhausted)?
+            }
             None => 0,
         };
         let cache_bytes = checked_cache_charge(
