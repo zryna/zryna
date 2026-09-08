@@ -9,9 +9,11 @@ pub(super) const EXECUTION_DEADLINE: Duration = Duration::from_secs(5);
 
 pub(super) fn engine() -> wasmtime::Result<Engine> {
     let mut config = Config::new();
+    let features =
+        WasmFeatures::WASM1.difference(WasmFeatures::GC_TYPES).union(WasmFeatures::COMPONENT_MODEL);
     config
         .wasm_features(WasmFeatures::all(), false)
-        .wasm_features(WasmFeatures::WASM1.union(WasmFeatures::COMPONENT_MODEL), true)
+        .wasm_features(features, true)
         .consume_fuel(true)
         .epoch_interruption(true)
         .max_wasm_stack(64 * 1024)
