@@ -184,6 +184,27 @@ fn canonical_policy_entries_deduplicate_and_aliases_reject() {
 }
 
 #[test]
+fn endpoint_host_bytes_accept_exact_and_reject_first_extra_with_short_port() {
+    let endpoint = |host_bytes: usize| {
+        format!(
+            "{}.{}.{}.{suffix}:1",
+            "a".repeat(63),
+            "b".repeat(63),
+            "c".repeat(63),
+            suffix = "d".repeat(host_bytes - 192)
+        )
+    };
+    let mut reservation = Reservation::default();
+    reservation.endpoints.insert(endpoint(253));
+    assert!(quota::validate_reservation(&reservation).is_ok());
+
+    reservation.endpoints = BTreeSet::from([endpoint(254)]);
+    let diagnostics = quota::validate_reservation(&reservation).expect_err("254-byte host");
+    assert_eq!(diagnostics[0].code(), INVALID);
+    assert_eq!(diagnostics[0].message(), "noncanonical preopen authority or endpoint identity");
+}
+
+#[test]
 fn endpoint_bytes_accept_exact_reject_first_extra_and_bound_the_largest_reservation() {
     let endpoint = |index: usize, host_bytes: usize| {
         let prefix = format!("e{index:03}");

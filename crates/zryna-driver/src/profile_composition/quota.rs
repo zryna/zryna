@@ -25,6 +25,7 @@ fn endpoint(value: &str) -> bool {
         return false;
     };
     !host.is_empty()
+        && host.len() <= 253
         && !host.starts_with('.')
         && !host.ends_with('.')
         && !host.contains("..")
