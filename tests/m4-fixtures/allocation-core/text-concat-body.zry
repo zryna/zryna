@@ -1,0 +1,6 @@
+export function text(): i32 {
+  const left: String = "hé";
+  const right: String = "!";
+  const joined: String = concat(left, right);
+  return 17;
+}

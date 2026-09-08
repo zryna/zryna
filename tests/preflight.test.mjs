@@ -41,7 +41,7 @@ test('preflight has one frozen portable command order', () => {
   );
   assert.ok(PREFLIGHT_COMMANDS.every(({ args }) => Object.isFrozen(args)));
   assert.ok(Object.isFrozen(PREFLIGHT_COMMANDS));
-  assert.equal(preflightCommandDigest(), 'c40df677bd292852b957879e37e2aa756e82b61d267e09df45ffe20f6ea3c295');
+  assert.equal(preflightCommandDigest(), 'b27402c8d6052eaf665be0d01855ee9febabd2167b459881c320833bce662c3b');
   assert.doesNotThrow(() => validatePreflightCommands());
 
   for (const mutate of [

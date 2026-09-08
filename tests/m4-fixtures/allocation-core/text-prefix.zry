@@ -1,0 +1,11 @@
+function text(): i32 {
+  const source: String = "hé";
+  return consume(clone(source), concat(source, source), clone(source));
+}
+
+function consume(first: String, second: String, third: String): i32 {
+  const later: String = "later";
+  return 17;
+}
+
+export function score(): i32 { return text(); }

@@ -1,0 +1,24 @@
+{
+  "limits": {
+    "dynamicAllocationBytes": 2147483647,
+    "stringBytes": 2147483647,
+    "vecElements": 1048576,
+    "webassemblyArenaBytes": 16777216,
+    "webassemblyHeapStart": 65536
+  },
+  "source": [
+    {"id":"vec-maximum-push","fixture":"vec-capacity","arguments":[1048576],"result":13},
+    {"id":"vec-first-extra-push","fixture":"vec-capacity","arguments":[1048577],"result":"capacity"},
+    {"id":"vec-maximum-clone-read","fixture":"vec-clone-capacity","arguments":[1048575],"result":13},
+    {"id":"vec-maximum-clone-first-extra-read","fixture":"vec-clone-capacity","arguments":[1048576],"result":"bounds"}
+  ],
+  "webassemblyAllocator": [
+    {"id":"arena-exact","bytes":16711680,"pointer":65536,"status":0,"arena":16777216},
+    {"id":"arena-first-extra","bytes":16711681,"pointer":0,"status":2,"arena":65536},
+    {"id":"former-cutoff-minus-one","bytes":67108863,"pointer":0,"status":2,"arena":65536},
+    {"id":"former-cutoff-exact","bytes":67108864,"pointer":0,"status":2,"arena":65536},
+    {"id":"allocation-within-language-limit","bytes":67108865,"pointer":0,"status":2,"arena":65536},
+    {"id":"allocation-exact","bytes":2147483647,"pointer":0,"status":2,"arena":65536},
+    {"id":"allocation-first-extra","bytes":2147483648,"pointer":0,"status":3,"arena":65536}
+  ]
+}

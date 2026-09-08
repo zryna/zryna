@@ -1,0 +1,8 @@
+function values(): i32 {
+  const items: Vec<i32> = Vec<i32>([]);
+  const result: i32 = items[0];
+  const later: String = "later";
+  return result;
+}
+
+export function score(): i32 { return values(); }

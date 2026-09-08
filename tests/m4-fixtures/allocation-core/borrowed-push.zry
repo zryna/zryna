@@ -1,0 +1,11 @@
+function values(): Vec<i32> {
+  let items: Vec<i32> = Vec<i32>([7, 9]);
+  {
+    const alias: Borrow<Vec<i32>> = borrow(items);
+    push(items, 13);
+    const result: i32 = alias[1];
+  }
+  return items;
+}
+
+export function score(): i32 { return 17; }

@@ -1,0 +1,8 @@
+function values(): i32 {
+  let items: Vec<i32> = Vec<i32>([7, 9]);
+  const copied: Vec<i32> = clone(items);
+  push(items, 13);
+  return items[2];
+}
+
+export function score(): i32 { return values(); }

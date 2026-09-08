@@ -1,0 +1,2 @@
+import { text } from "./text-concat-body.zry";
+export function score(): i32 { return text(); }

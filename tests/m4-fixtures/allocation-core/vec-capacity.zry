@@ -1,0 +1,11 @@
+function values(limit: i32): i32 {
+  let items: Vec<i32> = Vec<i32>([7, 9]);
+  let count: i32 = 2;
+  while (count < limit) {
+    push(items, 13);
+    count = count + 1;
+  }
+  return items[1048575];
+}
+
+export function score(limit: i32): i32 { return values(limit); }

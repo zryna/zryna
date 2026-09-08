@@ -1,0 +1,5 @@
+export function text(): i32 {
+  const source: String = "hé";
+  const copied: String = clone(source);
+  return 17;
+}

@@ -1,0 +1,8 @@
+function text(): String {
+  const source: String = "hé";
+  const moved: String = source;
+  const copied: String = clone(source);
+  return copied;
+}
+
+export function score(): i32 { return 17; }

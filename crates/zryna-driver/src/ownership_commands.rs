@@ -132,3 +132,6 @@ mod tests;
 
 #[cfg(test)]
 mod conformance;
+
+#[cfg(test)]
+mod allocation_core;

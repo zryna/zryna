@@ -1,0 +1,302 @@
+//! Issue #377: private A1–A5 source, trap, cleanup, and storage observations.
+
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
+use serde_json::{Value, json};
+use zryna_abi::{Invocation, ScalarValue};
+
+use super::{execute_with_fault, observation::Fault};
+use crate::{
+    CommandFailureKind, DataOwnershipBuildRequest, TargetSelection,
+    ownership_pipeline::{
+        prepare_data_ownership_for_test,
+        test_support::{fixture_workspace, node_executable, route_guard},
+    },
+    runtime::NodeRuntimeCapability,
+};
+
+mod capacity;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod native;
+
+fn corpus() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/m4-fixtures/allocation-core")
+}
+
+fn cases() -> Vec<Value> {
+    serde_json::from_slice(&fs::read(corpus().join("cases.json")).expect("allocation cases"))
+        .expect("fixed allocation oracles")
+}
+
+fn request(root: &Path, targets: TargetSelection) -> DataOwnershipBuildRequest {
+    DataOwnershipBuildRequest {
+        workspace_root: root.to_owned(),
+        entrypoint: "main.zry".to_owned(),
+        artifact_stem: "allocation-core".to_owned(),
+        targets,
+        node_runtime: node_executable(),
+    }
+}
+
+fn install(root: &Path, name: &str) {
+    fs::copy(corpus().join(format!("{name}.zry")), root.join("main.zry"))
+        .expect("isolated allocation source");
+    let dependency = format!("{name}-body.zry");
+    if corpus().join(&dependency).is_file() {
+        fs::copy(corpus().join(&dependency), root.join(dependency))
+            .expect("isolated allocation dependency");
+    }
+}
+
+fn arguments(case: &Value) -> Vec<ScalarValue> {
+    case["arguments"]
+        .as_array()
+        .expect("fixed scalar arguments")
+        .iter()
+        .map(|value| {
+            ScalarValue::I32(i32::try_from(value.as_i64().expect("integer")).expect("i32"))
+        })
+        .collect()
+}
+
+fn fault(case: &Value) -> Fault {
+    let (code, ordinal) = case["fault"].as_array().map_or((2, 1_048_576), |value| {
+        (value[0].as_u64().expect("code"), value[1].as_u64().expect("ordinal"))
+    });
+    Fault::new(u32::try_from(code).expect("code"), u32::try_from(ordinal).expect("ordinal"))
+        .expect("bounded private fault")
+}
+
+fn expected_outcome(case: &Value) -> Value {
+    if case["result"].is_i64() {
+        json!({"kind": "returned", "value": {"type": "i32", "value": case["result"]}})
+    } else {
+        json!({"kind": "trapped", "code": format!("zryna.trap.{}-v1", case["result"].as_str().expect("trap"))})
+    }
+}
+
+fn run_node_inspection(script: &Path, root: &Path) -> Result<Vec<u8>, String> {
+    let runtime = NodeRuntimeCapability::discover(&node_executable(), root)
+        .map_err(|error| format!("private runtime discovery: {error}"))?;
+    runtime
+        .run_ownership_javascript(script, root)
+        .map_err(|error| format!("private bounded inspection: {error}"))
+}
+
+fn check_alias_mutation(
+    root: &Path,
+    export: &str,
+    clone_index: u32,
+    drop_index: u32,
+) -> Result<(), String> {
+    fs::write(
+        root.join("allocation-inspection.json"),
+        serde_json::to_vec(&json!({
+            "target": "webassembly",
+            "entry": export,
+            "id": "q4",
+            "cloneIndex": clone_index,
+            "dropIndex": drop_index,
+            "aliasMutation": true,
+        }))
+        .expect("private alias mutation command"),
+    )
+    .expect("private alias mutation command");
+    let output = run_node_inspection(&corpus().join("inspect.mjs"), root)?;
+    if output != b"allocation alias mutant rejected\n" {
+        return Err("missing private alias mutation rejection".to_owned());
+    }
+    Ok(())
+}
+
+fn check_case(case: &Value, target: TargetSelection) -> Result<(), String> {
+    let workspace = fixture_workspace();
+    install(workspace.root(), case["fixture"].as_str().expect("source"));
+    let prepared = prepare_data_ownership_for_test(
+        &request(workspace.root(), target),
+        Some(("score".to_owned(), arguments(case))),
+    )
+    .map_err(|error| format!("prepare: {error:?}"))?;
+    let bundle = execute_with_fault(&prepared, Some(fault(case)))
+        .map_err(|error| format!("execute: {error:?}"))?;
+    let result = &bundle.results()[0];
+    let actual = serde_json::to_value(result.outcome()).expect("typed outcome");
+    if actual != expected_outcome(case) {
+        return Err(format!("outcome: {actual}; expected {}", expected_outcome(case)));
+    }
+    if let Some(cleanup) = case["cleanup"].as_array() {
+        let expected: Vec<Value> = cleanup
+            .iter()
+            .flat_map(|row| {
+                [
+                    json!({"kind": "cleanup", "module": case["module"].as_u64().unwrap_or(0), "function": 0, "place": row[0]}),
+                    json!({"kind": "drop", "value": row[1]}),
+                ]
+            })
+            .collect();
+        let actual = serde_json::to_value(result.trace()).expect("logical trace");
+        if actual != json!(expected) {
+            return Err(format!("cleanup: {actual}; expected {}", json!(expected)));
+        }
+    }
+    if case["inspect"].as_bool() == Some(true) {
+        let invocation = prepared
+            .program()
+            .verified_ir()
+            .scalar_abi()
+            .prepare_invocation(Invocation::new("score".to_owned(), arguments(case)))
+            .expect("verified scalar entry");
+        let (kind, artifact, export) = match target {
+            TargetSelection::JavaScript => (
+                "javascript",
+                prepared.artifacts().javascript().expect("JavaScript").source.as_bytes(),
+                invocation.export().javascript_name().as_str(),
+            ),
+            TargetSelection::WebAssembly => (
+                "webassembly",
+                prepared.artifacts().webassembly().expect("WebAssembly").bytes(),
+                invocation.export().webassembly_name().as_str(),
+            ),
+            _ => return Ok(()),
+        };
+        let layouts = prepared.program().verified_ir().linear32_layouts();
+        let storage = case["storage"].as_str().expect("inspection storage");
+        let runtime_kind = match storage {
+            "string" => 2,
+            "vec" => 3,
+            other => return Err(format!("unsupported inspection storage: {other}")),
+        };
+        let ty = layouts
+            .types()
+            .find(|ty| ty.runtime_kind() == runtime_kind)
+            .ok_or_else(|| format!("missing {storage} inspection layout"))?;
+        let clone_index = 2_u32.checked_add(ty.id().index()).expect("bounded clone helper index");
+        let drop_index = clone_index
+            .checked_add(u32::try_from(layouts.types().len()).expect("bounded type count"))
+            .expect("bounded drop helper index");
+        let path = workspace.root().join("inspection-input");
+        fs::write(&path, artifact).expect("private inspection input");
+        fs::write(
+            workspace.root().join("allocation-inspection.json"),
+            serde_json::to_vec(&json!({
+                "target": kind,
+                "entry": export,
+                "id": case["id"].as_str().expect("case id"),
+                "cloneIndex": clone_index,
+                "dropIndex": drop_index,
+            }))
+            .expect("private inspection command"),
+        )
+        .expect("private inspection command");
+        let output = run_node_inspection(&corpus().join("inspect.mjs"), workspace.root())?;
+        if output != b"allocation observation passed\n" {
+            return Err("missing complete private observation".to_owned());
+        }
+        if target == TargetSelection::WebAssembly && case["id"] == "q4" {
+            check_alias_mutation(workspace.root(), export, clone_index, drop_index)?;
+        }
+    }
+    Ok(())
+}
+
+fn check_target(target: TargetSelection) {
+    let _guard = route_guard();
+    let mut failures = Vec::new();
+    for case in cases() {
+        if let Err(error) = check_case(&case, target) {
+            failures.push(format!("{} {target:?}: {error}", case["id"]));
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
+#[test]
+fn allocation_core_javascript_fixed_results_faults_and_cleanup() {
+    check_target(TargetSelection::JavaScript);
+}
+
+#[test]
+fn allocation_core_webassembly_fixed_results_faults_and_cleanup() {
+    check_target(TargetSelection::WebAssembly);
+}
+
+#[test]
+fn allocation_core_webassembly_real_clone_alias_mutant_is_rejected() {
+    let _guard = route_guard();
+    let case = cases().into_iter().find(|case| case["id"] == "q4").expect("fixed Q4 alias control");
+    check_case(&case, TargetSelection::WebAssembly).expect("genuine pass and alias mutant reject");
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn allocation_core_native_fixed_results_faults_and_cleanup() {
+    check_target(TargetSelection::Native);
+}
+
+#[test]
+fn allocation_core_n7_n10_reject_before_target_dispatch() {
+    let _guard = route_guard();
+    let negatives: Vec<Value> =
+        serde_json::from_slice(&fs::read(corpus().join("negatives.json")).expect("negative cases"))
+            .expect("fixed negative oracles");
+    let mut failures = Vec::new();
+    for case in negatives {
+        for target in
+            [TargetSelection::JavaScript, TargetSelection::WebAssembly, TargetSelection::Native]
+        {
+            let workspace = fixture_workspace();
+            install(workspace.root(), case["fixture"].as_str().expect("source"));
+            match prepare_data_ownership_for_test(&request(workspace.root(), target), None) {
+                Err(error) if error.kind() == CommandFailureKind::Source => {
+                    let diagnostic = &error.diagnostics()[0];
+                    let expected = &case["span"];
+                    let actual = diagnostic
+                        .primary_span()
+                        .map(|span| (span.file().index(), span.start(), span.end()));
+                    let expected_span = (
+                        u32::try_from(expected["file"].as_u64().expect("stable file"))
+                            .expect("bounded file"),
+                        u32::try_from(expected["start"].as_u64().expect("stable start"))
+                            .expect("bounded start"),
+                        u32::try_from(expected["end"].as_u64().expect("stable end"))
+                            .expect("bounded end"),
+                    );
+                    if error.diagnostics().len() != 1
+                        || diagnostic.code() != case["code"].as_str().expect("stable code")
+                        || actual != Some(expected_span)
+                    {
+                        failures.push(format!("{} {target:?}: {error:?}", case["fixture"]));
+                    }
+                }
+                other => failures.push(format!("{} {target:?}: {other:?}", case["fixture"])),
+            }
+            assert!(
+                !workspace.root().join(".zryna/out").exists(),
+                "rejected source reached publication"
+            );
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+#[test]
+fn allocation_core_native_run_requires_supported_linux_host() {
+    let _guard = route_guard();
+    let workspace = fixture_workspace();
+    install(workspace.root(), "vec-push");
+    let error = prepare_data_ownership_for_test(
+        &request(workspace.root(), TargetSelection::Native),
+        Some(("score".to_owned(), vec![])),
+    )
+    .expect_err("native execution requires Linux x86-64");
+    assert_eq!(error.kind(), CommandFailureKind::Preparation);
+    assert_eq!(error.diagnostics()[0].code(), "ZRYNA-N4002");
+    let output = workspace.root().join(".zryna/out");
+    if output.exists() {
+        assert_eq!(fs::read_dir(output).expect("output inventory").count(), 0);
+    }
+}
