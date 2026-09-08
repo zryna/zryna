@@ -93,10 +93,10 @@ impl VerifiedScalarEsm {
     #[cfg(test)]
     pub(super) fn verify_host_view(
         &self,
-        policy: super::raw::HostPolicy,
+        policy: &super::raw::HostPolicy,
     ) -> Result<Self, Vec<Diagnostic>> {
         self.revalidate().map_err(|error| vec![error])?;
-        let host = super::verify_host_policy(&policy)?;
+        let host = super::verify_host_policy(policy)?;
         let interface_sha256 = super::interface_identity(host, self.scalar_abi());
         let binding_sha256 = super::binding_identity(
             &interface_sha256,

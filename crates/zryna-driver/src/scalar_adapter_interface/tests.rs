@@ -37,7 +37,7 @@ impl Drop for TemporaryWorkspace {
 }
 
 struct Fixture {
-    _workspace: TemporaryWorkspace,
+    workspace: TemporaryWorkspace,
     source: VerifiedScalarSource,
     artifact: JavaScriptArtifact,
 }
@@ -55,7 +55,7 @@ impl Fixture {
             .expect("fixture ControlFlowV1 source must verify");
         let artifact = zryna_backend_javascript::emit_control_flow(source.program())
             .expect("fixture ESM must emit");
-        Self { _workspace: workspace, source, artifact }
+        Self { workspace, source, artifact }
     }
 
     fn claim(&self, host: ScalarAdapterHost) -> raw::Interface {

@@ -11,7 +11,7 @@ fn hex(bytes: &[u8; 32]) -> String {
 
 fn host_view(interface: &VerifiedScalarEsm, host: ScalarAdapterHost) -> VerifiedScalarEsm {
     interface
-        .verify_host_view(raw::HostPolicy {
+        .verify_host_view(&raw::HostPolicy {
             boundary: host.identity().to_owned(),
             required_interfaces: Vec::new(),
         })
@@ -79,7 +79,7 @@ fn assert_corpus(report: &serde_json::Value) {
     assert_eq!(returned.len(), 14);
     assert_eq!(&returned[..7], &returned[7..]);
     assert_eq!(returned[0], serde_json::json!({"type": "i32", "value": 42}));
-    assert_eq!(returned[1], serde_json::json!({"type": "i32", "value": -2147483648_i32}));
+    assert_eq!(returned[1], serde_json::json!({"type": "i32", "value": -2_147_483_648_i32}));
 }
 
 #[test]
@@ -119,7 +119,7 @@ fn rejects_stale_host_artifact_and_typed_requests_before_runtime_then_recovers()
     let runtime =
         NodeRuntimeCapability::discover(&node_executable(), &repository_root()).expect("Node");
     // A nonexistent working directory makes accidental process entry observable as a runtime error.
-    let absent = fixture._workspace.path.join("absent");
+    let absent = fixture.workspace.path.join("absent");
     for (request, code) in [
         (Invocation::new("missing".to_owned(), vec![]), "ZRYNA-B2101"),
         (Invocation::new("add".to_owned(), vec![ScalarValue::I32(20)]), "ZRYNA-B2102"),
@@ -143,7 +143,7 @@ fn rejects_stale_host_artifact_and_typed_requests_before_runtime_then_recovers()
     assert_ne!(interface.binding_sha256, browser.binding_sha256);
     assert_eq!(
         interface
-            .verify_host_view(raw::HostPolicy {
+            .verify_host_view(&raw::HostPolicy {
                 boundary: "js-browser".to_owned(),
                 required_interfaces: vec!["network".to_owned()],
             })
@@ -158,7 +158,7 @@ fn rejects_stale_host_artifact_and_typed_requests_before_runtime_then_recovers()
             1 => stale.interface_sha256[0] ^= 1,
             2 => stale.graph_sha256[0] ^= 1,
             _ => {
-                std::sync::Arc::make_mut(&mut stale.artifact).source.push_str("\n// substituted\n")
+                std::sync::Arc::make_mut(&mut stale.artifact).source.push_str("\n// substituted\n");
             }
         }
         assert_eq!(
@@ -238,7 +238,7 @@ fn pinned_real_browser_and_node_execute_the_same_sealed_scalar_corpus() {
             .expect("explicit reviewed private browser fixture directory"),
     );
     packet["runtimeDirectory"] = serde_json::to_value(crate::runtime::node_compatible_path(
-        &fixture._workspace.path.join("browser-runtime"),
+        &fixture.workspace.path.join("browser-runtime"),
     ))
     .expect("private browser runtime path");
     let runner = repository_root().join("tests/scalar-host/browser-fixture.mjs");
