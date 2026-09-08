@@ -38,6 +38,8 @@ function independentCacheKey(document) {
     .digest('hex');
 }
 
+const SOURCE_ONLY_CACHE_KEY = '71e0a59c6c30dbb07e17c3f72ae1aa5a73bf273b27dfd7bc8a962d1887768d62';
+
 function bindPlanToFixture(template, fixture, packageAuthority) {
   const document = structuredClone(template);
   const manifests = new Map(fixture.manifests.map((manifest) =>
@@ -56,7 +58,7 @@ function bindPlanToFixture(template, fixture, packageAuthority) {
 
 function nativePlan(sourceOnly) {
   const document = structuredClone(sourceOnly);
-  document.sourcePlan.targets.push({
+  document.sourcePlan.targets.splice(1, 0, {
     id: 'native-linux-x86_64',
     triple: 'x86_64-unknown-linux-gnu',
     abi: 'zryna-native-scalar-v1',
@@ -72,9 +74,9 @@ function nativePlan(sourceOnly) {
   document.sourcePlan.hostTools = [
     { name: 'clang', version: '18.1.8', sha256: '4'.repeat(64), runsOn: 'x86_64-unknown-linux-gnu', targets: ['native-linux-x86_64'] },
     { name: 'lld', version: '18.1.8', sha256: '5'.repeat(64), runsOn: 'x86_64-unknown-linux-gnu', targets: ['native-linux-x86_64'] },
-    { ...document.sourcePlan.hostTools[0], targets: ['javascript', 'native-linux-x86_64'] },
+    { ...document.sourcePlan.hostTools[0], targets: ['javascript', 'native-linux-x86_64', 'webassembly'] },
   ];
-  document.sourcePlan.outputs.push({ path: 'native/app.elf', target: 'native-linux-x86_64' });
+  document.sourcePlan.outputs.splice(1, 0, { path: 'native/app.elf', target: 'native-linux-x86_64' });
   document.nativeAppendix = {
     status: 'provisional-pending-364',
     target: 'native-linux-x86_64',
@@ -138,8 +140,9 @@ test('source-only v0 plan validates and canonical replay is stable', async () =>
     packageFixture.lock.packages.map(({ id, sourceSha256 }) => ({ id, sourceSha256 })));
   assert.deepEqual(document.sourcePlan.packages.flatMap((pkg) => pkg.dependencies.map((dependency) => dependency.alias)),
     packageFixture.lock.packages.flatMap((pkg) => pkg.dependencies.map((dependency) => dependency.alias)));
-  assert.equal(document.cacheKey, '1c864e28837cb1dcdcaf10622f994277befc69de3ef64828dfc4dc3cada0c471');
-  assert.equal(document.cacheKey, independentCacheKey(document));
+  assert.deepEqual(document.sourcePlan.targets.map(({ id }) => id), packageFixture.lock.compatibility.targets);
+  assert.equal(document.cacheKey, SOURCE_ONLY_CACHE_KEY);
+  assert.equal(independentCacheKey(document), SOURCE_ONLY_CACHE_KEY);
   assert.deepEqual(receipt, { cacheKey: document.cacheKey, native: false });
   assert.deepEqual(fixtureBytes, wire(document));
   assert.deepEqual(validateBuildPlan(document, packageAuthority), receipt);
@@ -186,26 +189,20 @@ test('validated #168 compatibility binds compiler, profile and requested target 
     /P361-TARGET: profile differs from validated #168 compatibility/);
   const target = nativePlan(document);
   assert.throws(() => validateBuildPlan(target, packageAuthority),
-    /P361-TARGET: native-linux-x86_64 is absent from validated #168 compatibility/);
+    /P361-TARGET: target set differs from validated #168 compatibility/);
+
+  const removedTarget = structuredClone(document);
+  removedTarget.sourcePlan.targets.pop();
+  removedTarget.sourcePlan.hostTools[0].targets.pop();
+  removedTarget.sourcePlan.outputs.pop();
+  assert.throws(() => validateBuildPlan(withCache(removedTarget), packageAuthority),
+    /P361-TARGET: target set differs from validated #168 compatibility/);
 });
 
 test('every selected target is admitted by the exact compiler tool', async () => {
   const { document, packageAuthority } = await loadBuildPlan();
   const uncovered = structuredClone(document);
-  uncovered.sourcePlan.targets.push({
-    id: 'webassembly',
-    triple: 'wasm32-unknown-unknown',
-    abi: 'zryna-wasm-scalar-v1',
-    features: [],
-    composition: {
-      contract: 'zryna.cross-target-profiles.v1',
-      row: 'U-WASM',
-      hostPolicySha256: '0'.repeat(64),
-      approvedRequestSha256: '1'.repeat(64),
-    },
-    runtime: { name: 'zryna-wasm-runtime', version: '1', sha256: 'e'.repeat(64) },
-  });
-  uncovered.sourcePlan.outputs.push({ path: 'webassembly/app.wasm', target: 'webassembly' });
+  uncovered.sourcePlan.hostTools[0].targets.pop();
   assert.throws(() => validateBuildPlan(withCache(uncovered), packageAuthority),
     /P361-TOOLCHAIN: compiler does not admit target webassembly/);
 });

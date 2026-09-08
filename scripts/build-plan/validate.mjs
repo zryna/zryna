@@ -110,10 +110,10 @@ function validateSourcePlan(plan, packageAuthority) {
   if (plan.profile.id !== packageAuthority.compatibility.profile) {
     fail('P361-TARGET', 'profile differs from validated #168 compatibility');
   }
-  for (const target of plan.targets) {
-    if (!packageAuthority.compatibility.targets.includes(target.id)) {
-      fail('P361-TARGET', `${target.id} is absent from validated #168 compatibility`);
-    }
+  const compatibilityTargets = packageAuthority.compatibility.targets;
+  if (plan.targets.length !== compatibilityTargets.length ||
+      plan.targets.some(({ id }, index) => id !== compatibilityTargets[index])) {
+    fail('P361-TARGET', 'target set differs from validated #168 compatibility');
   }
   for (const source of plan.sources) {
     if (!packageIds.has(rolePackageKey(source.graphRole, source.package))) fail('P361-SOURCE', `source package ${source.package.id} is absent`);
