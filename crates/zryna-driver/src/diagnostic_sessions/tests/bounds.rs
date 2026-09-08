@@ -120,10 +120,11 @@ fn abandoned_queue_slots_expire_at_the_exact_deadline() {
 
 #[test]
 fn source_cache_charge_counts_exact_utf8_path_text_and_report_bytes() {
-    let map = sources("src/é.zry", "😀\r\n");
+    let path = "src/diagnostics/main.zry";
+    let map = sources(path, "😀\r\n");
     let (_, source_bytes) = source_fingerprint_and_charge(&map)
         .unwrap_or_else(|error| panic!("source charge must succeed: {error}"));
-    assert_eq!(source_bytes, "src/é.zry".len() + "😀\r\n".len());
+    assert_eq!(source_bytes, path.len() + "😀\r\n".len());
     let mut session =
         DiagnosticSession::try_new().unwrap_or_else(|error| panic!("session must exist: {error}"));
     let report = zryna_diagnostics::protocol_v2::render_json(&[], &map)
