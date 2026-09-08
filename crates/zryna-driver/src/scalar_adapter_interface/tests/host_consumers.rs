@@ -238,7 +238,7 @@ fn pinned_real_browser_and_node_execute_the_same_sealed_scalar_corpus() {
             .expect("explicit reviewed private browser fixture directory"),
     );
     packet["runtimeDirectory"] = serde_json::to_value(crate::runtime::node_compatible_path(
-        &fixture.workspace.path.join("browser-runtime"),
+        &fixture.workspace.path.join("browser"),
     ))
     .expect("private browser runtime path");
     let runner = repository_root().join("tests/scalar-host/browser-fixture.mjs");

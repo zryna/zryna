@@ -22,8 +22,9 @@ struct TemporaryWorkspace {
 impl TemporaryWorkspace {
     fn with_source(label: &str, source: &str) -> Self {
         let sequence = NEXT_WORKSPACE.fetch_add(1, Ordering::Relaxed);
-        let path = env::temp_dir()
-            .join(format!("zryna-scalar-interface-{}-{label}-{sequence}", std::process::id()));
+        // Leave room for Chromium's private Unix socket suffix below this directory.
+        let path =
+            env::temp_dir().join(format!("zryna-scalar-{}-{label}-{sequence}", std::process::id()));
         fs::create_dir(&path).expect("unique scalar-interface workspace must be created");
         fs::write(path.join("main.zry"), source).expect("fixture source must be written");
         Self { path }
