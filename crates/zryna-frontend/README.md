@@ -19,6 +19,15 @@ The core verifies fixed item budgets and the exact canonical file-id/path set ag
 and converts every raw UTF-8 range into an opaque, map-bound `Span`. The driver-facing API returns
 only the resulting verified project. Raw provider bytes and DTOs do not cross that boundary.
 
+`native_lexer` is the first internal native-frontend stage. It walks canonical `SourceMap` files,
+retains a lossless ordered stream of tokens and whitespace/comment trivia, and issues only
+source-map-authenticated UTF-8 spans. Its ASCII identifier boundary and protocol-v4 punctuation,
+keyword, decimal, and unescaped string inventory are deterministic; malformed scalars, strings,
+and comments recover at character boundaries with stable diagnostics. Fixed token, trivia,
+project, and diagnostic budgets fail atomically as `ZRYNA-F1502`; recoverable malformed input is
+reported as `ZRYNA-F1501`. This stage does not parse, create protocol-v4 snapshots, implement a
+provider, or change bootstrap/public selection.
+
 Protocol v1 intentionally carries declarations and diagnostics only. Protocol v2 is a separate
 executable-syntax contract owned by `zryna-syntax`; it does not change v1 semantics in place. The
 TypeScript 6 adapter implements the protocol-v2 executable-syntax contract. Protocol v3 has its own

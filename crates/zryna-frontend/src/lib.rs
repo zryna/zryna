@@ -12,7 +12,7 @@ use zryna_source::{
 };
 
 mod worker;
-
+pub mod native_lexer;
 pub use worker::{
     FrontendCapabilitiesV3, FrontendCapabilitiesV4, MAX_HANDSHAKE_RESPONSE_BYTES,
     MAX_WORKER_REQUEST_BYTES, MAX_WORKER_STDERR_BYTES, MAX_WORKER_STDOUT_BYTES,

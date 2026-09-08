@@ -116,6 +116,14 @@ protocol-v2 M1 compiler and CLI path.
 Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the bootstrap
 provider must not modify semantic behavior or any backend.
 
+The first native implementation checkpoint is `zryna_frontend::native_lexer`. It consumes the
+existing authoritative `SourceMap` and retains source-ordered tokens and formatter-relevant trivia
+with opaque UTF-8 spans. It covers only the frozen protocol-v4 lexical spellings, deterministic
+malformed-input recovery, and fixed resource ceilings. It does not yet parse the conformance
+corpus, emit a raw snapshot, implement the provider handshake, or alter TypeScript 6 authority.
+The next native checkpoint is a bounded parser that consumes this stream and constructs candidate
+protocol-v4 DTOs for verification and conformance comparison.
+
 ## Protocol v3 and internal module discovery
 
 M2 protocol v3 adds source-faithful DTOs for named imports, locals, assignment, direct calls,
