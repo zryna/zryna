@@ -1,18 +1,16 @@
 # Allocation capacity evidence
 
-#377 is stacked on the unpublished [#384](https://github.com/zryna/zryna/issues/384)
-prerequisite. The probes below are prepared but have not been executed on this
-integrated #377 revision. They therefore record expected independent oracles,
-not passing conformance evidence.
+#377 was developed on the reviewed [#384](https://github.com/zryna/zryna/issues/384)
+publication candidate. The integrated fixtures and probes have been executed
+in the pinned Linux proof environment described below. Hosted Linux and Windows
+checks remain separate merge evidence.
 
 ## Governing contract and inspected revision
 
-The integration base is #384 candidate
-`79900617164aad690e2a4eb4e0c789ca0dae8f24`, whose parent is current main
-`2a4ccc06b82f29a00983c2dd2356ed9d767f247f`. The #377 corpus was replayed from
-the preserved `823a76d4792460b478ae239140aab6cfe92f1f9a..707ea3ec7cb897d911a6e2a35bec38ef58124062`
-slice. Publication still requires #384 to merge first and this branch to align
-with the resulting main before final execution proof.
+The local proof base is the reviewed #384 candidate
+`ef3863f78ffe144c3145ece7f03c9ee09d5164da`. The #377 patches were verified
+unchanged after replaying them onto that base. Publication still requires a
+byte-identical alignment with the resulting main revision.
 
 | Evidence | Meaning |
 | --- | --- |
@@ -69,21 +67,22 @@ status representation: native ABI `ALLOCATION=1` and `CAPACITY=2`;
 WebAssembly private trap `allocation=2` and `capacity=3`. Neither probe requires
 the source resource cases or the remaining Q4–Q8 corpus.
 
-## Remaining #377 acceptance
+## Observed #377 evidence
 
 | Requirement | Evidence and remaining work |
 | --- | --- |
-| Q4–Q8 results, bytes and independent owners | Fixtures and independent oracles are integrated; JavaScript, WebAssembly and Linux native execution are `UNRUN` on this revision. |
-| Failure atomicity, source retention, reverse cleanup | Bounded first-allocation, operation, growth, replacement and initialized-prefix cases are integrated; all target executions are `UNRUN` on this revision. |
-| Bounds before later computation | Negative, first-extra and empty cases arm a later allocation failure; execution is `UNRUN` on this revision. |
-| N7/N10 before publication | Fixed source diagnostics/spans and no-publication assertions are integrated; execution is `UNRUN` on this revision. |
-| Exact/first-extra capacity | Four source resource cases and bounded target probes use the corrected #384 classification. Complete source/runtime/resource execution is `UNRUN`; raw allocator probes alone do not prove String operations at their maximum. |
+| Q4–Q8 results, bytes and independent owners | The focused driver suite passed for JavaScript, WebAssembly and Linux native. The WebAssembly Q4 genuine artifact passed its actual drop-handle/payload inspection, while a real clone-helper alias mutant was rejected. |
+| Failure atomicity, source retention, reverse cleanup | Bounded first-allocation, operation, growth, replacement and initialized-prefix cases passed across the selected targets. String clone/concat recovery and Vec recovery were each observed after failure; small traced rows bind cleanup order and retained sources. |
+| Bounds before later computation | Negative, first-extra and empty cases passed with the bounds trap winning before the armed later allocation failure. |
+| N7/N10 before publication | Fixed source diagnostics/spans and no-publication assertions passed before target dispatch. |
+| Exact/first-extra capacity | The source resource rows and bounded target probes passed with the corrected #384 classification. Maximum-size source rows run with tracing disabled because their derived temporary cleanup exceeds the fixed observation-frame capacity; they prove exact outcomes, not a full-limit cleanup trace. Raw allocator probes do not prove String operations at their maximum. |
 | No new public ABI/package/support | Static inspection: changes remain private fixture/harness documentation and test integration. No selector, library package, public ABI or support claim is added. |
 
-After #384 lands and this branch is aligned with the resulting main, run the full
-focused `allocation_core` driver suite on each supported host, relevant M3
-ownership/runtime checks and required exact-limit/resource tests. Complete
-preflight, M0 and hosted Linux/Windows gates remain mandatory. Lightweight
-fixture checks do not execute the compiler or establish target conformance.
-Report the final revision and actual counts; earlier binaries do not verify
-these new Rust tests.
+The pinned local Linux proof used Rust 1.97.1, Node 22.22.1 and pnpm 11.18.0
+with a frozen install, at most three build/test jobs, and serial execution for
+the focused resource fixtures. The static fixture corpus passed 6/6, the
+focused driver suite passed 10/10, the complete driver package passed 139/139
+plus 2/2 doctests, and preflight passed all 12 ordered checks. Publication must
+still bind the final main-aligned revision to the required M0/M2/M3 and hosted
+Linux/Windows results. Lightweight fixture checks alone do not execute the
+compiler or establish target conformance.

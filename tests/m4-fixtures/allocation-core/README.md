@@ -79,9 +79,9 @@ large payload. The previous 64 MiB first-extra `CAPACITY` oracle was incorrect;
 the integrated [#384](https://github.com/zryna/zryna/issues/384) prerequisite
 classifies target exhaustion within the universal limit as `ALLOCATION`.
 `native-capacity.c` remains owned by the #384 runtime regression rather than a
-duplicate #377 driver test. These prepared fixtures are not passing evidence
-for this revision and do not establish String maximum-length source execution.
-See [capacity evidence and reproduction](CAPACITY.md) before claiming completion.
+duplicate #377 driver test. The pinned local Linux evidence is recorded in
+[capacity evidence and reproduction](CAPACITY.md). It does not establish String
+maximum-length source execution or replace the required hosted merge checks.
 
 Focused commands:
 
