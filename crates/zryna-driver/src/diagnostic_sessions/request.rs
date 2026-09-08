@@ -42,9 +42,22 @@ pub(super) struct ParsedRequest {
     pub(super) work_limit: u64,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DefinitionParams {
+    path: String,
+    byte_offset: u32,
+}
+
 impl ParsedRequest {
     pub(super) fn validate_diagnostic_params(&self) -> bool {
         self.params.as_object().is_some_and(serde_json::Map::is_empty)
+    }
+
+    pub(super) fn definition_params(&self) -> Option<(String, u32)> {
+        serde_json::from_value::<DefinitionParams>(self.params.clone())
+            .ok()
+            .map(|params| (params.path, params.byte_offset))
     }
 }
 

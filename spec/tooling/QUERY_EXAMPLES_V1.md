@@ -1,10 +1,11 @@
 # Tooling query examples and future conformance fixtures
 
 These are specified observations for [semantic queries v1](SEMANTIC_QUERIES_V1.md), Issue
-[#363](https://github.com/zryna/zryna/issues/363). They are not output from an implemented query
-service. JSON blocks are representative logical records; no new public wire protocol is active.
-The later independent fixture runner must check both producer output and hostile consumer input,
-not derive its oracle from the implementation under test.
+[#363](https://github.com/zryna/zryna/issues/363). The protocol-v2 `definition` golden and its
+focused hostile cases are exercised by the internal driver prototype; all other JSON blocks remain
+representative logical records for later slices. No public wire protocol is active. The later
+independent fixture runner must check both producer output and hostile consumer input, not derive
+its oracle from the implementation under test.
 
 ## Golden source and scope
 

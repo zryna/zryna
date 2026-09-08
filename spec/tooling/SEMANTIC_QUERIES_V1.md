@@ -1,23 +1,33 @@
 # Semantic queries and tooling snapshots v1
 
-Status: proposed contract for [#363](https://github.com/zryna/zryna/issues/363), native
-[M6 — Developer Tooling](https://github.com/zryna/zryna/milestone/7). Review accepts a
-specification, not an implemented service. No transport endpoint, public selector, compiler or
-runtime implementation, extension release, or executable capability is introduced here.
+Status: accepted contract from [#363](https://github.com/zryna/zryna/issues/363), native
+[M6 — Developer Tooling](https://github.com/zryna/zryna/milestone/7), with bounded internal
+`diagnostics` and protocol-v2 `definition` prototypes described below. No transport endpoint,
+public selector, runtime implementation, extension release, or executable capability is active.
 
-The [examples and future fixtures](QUERY_EXAMPLES_V1.md) are normative observations for later
-implementation, not recorded executions. Existing M0–M3 acceptance gates, including the order
-of #89 then #90 closure, and historical digest-pinned inventories remain unchanged.
+The [examples and future fixtures](QUERY_EXAMPLES_V1.md) remain normative for the complete future
+service; only the explicitly described internal slices have executable tests. Existing M0–M3
+acceptance gates, including the order of #89 then #90 closure, and historical digest-pinned
+inventories remain unchanged.
 
-Issue #382 implements only the internal `diagnostics` session slice in the driver's
-`diagnostic_sessions` module. The driver retains immutable `SourceMap` authority and the
-unchanged structured-diagnostics-v2 report, rejects stale or foreign handle/revision pairs, and
-rechecks the active revision before publishing a complete report. Its deterministic cache charge
-is the exact UTF-8 bytes of retained paths, source text and v2 reports; its diagnostic-query work
-charge is one unit per retained report byte plus one authority comparison. The `results` request
-limit is still shape-validated, while diagnostic-record bounds remain exactly #169's authority.
-No other method, transport, consumer integration, edit, formatting or execution capability is
-implemented by this slice.
+Issue #382 implements the internal `diagnostics` session slice in the driver's
+`diagnostic_sessions` module. The same internal host now prototypes one additional method:
+`definition` for successfully checked protocol-v2 scalar programs. `zryna-semantics` freezes
+function-name and parameter declaration/use spans after its existing name and type checker
+succeeds; the driver retains that opaque index with the exact issuing `SourceMap`. This is not
+general M2/M3, import, local, field, type, reference, hover or rename coverage. Unsupported
+constructs do not acquire this semantic view.
+
+Both methods reject stale or foreign handle/revision pairs and recheck the active revision before
+publishing a complete result. The deterministic cache charge is the exact UTF-8 bytes of retained
+paths, source text and v2 reports, plus 24 bytes per retained definition record. Diagnostic-query
+work remains one unit per retained report byte plus one authority comparison. Definition work is
+one authority comparison plus one unit per examined source-ordered semantic record; exhaustion
+returns `over_budget` / `work` without a location. Its one-location result requires `results >= 1`.
+Exact path spelling and a valid scalar-boundary byte position are checked by the retained source
+authority; token ends, whitespace, comments and EOF return `absent` / `symbol`. No transport,
+consumer integration, editor/LSP route, edit, formatting or execution capability is implemented
+by these internal slices.
 
 ## Ownership and dependencies
 

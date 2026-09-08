@@ -138,12 +138,12 @@ fn source_cache_charge_counts_exact_utf8_path_text_and_report_bytes() {
 #[test]
 fn cache_charge_limit_is_inclusive_and_first_extra_rejects() {
     assert_eq!(
-        checked_cache_charge(MAX_SESSION_CACHE_BYTES - 1, 1)
+        checked_cache_charge(MAX_SESSION_CACHE_BYTES - 1, 1, 0)
             .unwrap_or_else(|error| panic!("exact cache limit must fit: {error}")),
         MAX_SESSION_CACHE_BYTES
     );
     assert!(matches!(
-        checked_cache_charge(MAX_SESSION_CACHE_BYTES, 1),
+        checked_cache_charge(MAX_SESSION_CACHE_BYTES, 1, 0),
         Err(crate::diagnostic_sessions::DiagnosticSessionError::SessionCacheExhausted)
     ));
 }
@@ -160,6 +160,7 @@ fn cache_retention_accepts_exact_limit_and_evicts_for_first_extra() {
         description: active.description,
         sources: active.sources.clone(),
         report: active.report.clone(),
+        definitions: active.definitions.clone(),
         cache_bytes: MAX_SESSION_CACHE_BYTES,
     });
     session.retained.push_back(exact);

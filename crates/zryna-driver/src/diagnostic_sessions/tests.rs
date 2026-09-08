@@ -6,6 +6,7 @@ use zryna_source::{SourceFileInput, SourceMap};
 use super::{DiagnosticRevision, DiagnosticSession};
 
 mod bounds;
+mod definition;
 mod hostile;
 mod lifecycle;
 

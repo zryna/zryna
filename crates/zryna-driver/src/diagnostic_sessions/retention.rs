@@ -6,9 +6,11 @@ use super::{DiagnosticSessionError, MAX_SESSION_CACHE_BYTES};
 pub(super) fn checked_cache_charge(
     source_bytes: usize,
     report_bytes: usize,
+    semantic_bytes: usize,
 ) -> Result<usize, DiagnosticSessionError> {
     let charge = source_bytes
         .checked_add(report_bytes)
+        .and_then(|value| value.checked_add(semantic_bytes))
         .ok_or(DiagnosticSessionError::SessionCacheExhausted)?;
     if charge > MAX_SESSION_CACHE_BYTES {
         return Err(DiagnosticSessionError::SessionCacheExhausted);

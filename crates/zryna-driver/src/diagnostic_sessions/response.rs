@@ -1,10 +1,12 @@
 use super::{Correlation, MAX_RESPONSE_BYTES};
 
-/// Closed status vocabulary for the internal diagnostics-only query slice.
+/// Closed status vocabulary for implemented internal query slices.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum QueryStatus {
     /// The complete retained diagnostic report was published.
     Ok,
+    /// No supported symbol occupies the requested position.
+    Absent,
     /// The snapshot/revision pair is not the active authority.
     Stale,
     /// The request does not have the closed v1 shape.
@@ -23,6 +25,7 @@ impl QueryStatus {
     const fn as_str(self) -> &'static str {
         match self {
             Self::Ok => "ok",
+            Self::Absent => "absent",
             Self::Stale => "stale",
             Self::Malformed => "malformed",
             Self::Unsupported => "unsupported",
@@ -33,7 +36,7 @@ impl QueryStatus {
     }
 }
 
-/// Closed reason vocabulary for diagnostics-session outcomes.
+/// Closed reason vocabulary for internal query-session outcomes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum QueryReason {
     /// The encoded request exceeds 65,536 bytes.
@@ -46,10 +49,14 @@ pub(crate) enum QueryReason {
     Version,
     /// The snapshot/revision pair is stale or foreign.
     Snapshot,
-    /// The method is outside this diagnostics-only slice.
+    /// The method is outside the selected internal slice.
     Method,
-    /// Diagnostic parameters are not the exact empty object.
+    /// Method parameters do not have the selected closed shape.
     Params,
+    /// A path, byte offset, or retained span is outside the source authority.
+    Source,
+    /// No supported semantic symbol occupies the requested byte.
+    Symbol,
     /// The request was explicitly cancelled.
     Request,
     /// The request exceeded its monotonic deadline.
@@ -74,6 +81,8 @@ impl QueryReason {
             Self::Snapshot => "snapshot",
             Self::Method => "method",
             Self::Params => "params",
+            Self::Source => "source",
+            Self::Symbol => "symbol",
             Self::Request => "request",
             Self::Deadline => "deadline",
             Self::Analysis => "analysis",
@@ -129,6 +138,24 @@ impl DiagnosticQueryResponse {
             None => Self::failure(correlation, QueryStatus::OverBudget, QueryReason::ResponseBytes),
         }
     }
+
+    pub(super) fn definition_success(
+        correlation: &Correlation,
+        path: &str,
+        byte_start: u32,
+        byte_end: u32,
+    ) -> Self {
+        let Ok(path) = serde_json::to_string(path) else {
+            return Self::failure(correlation, QueryStatus::Unavailable, QueryReason::Analysis);
+        };
+        let result = format!(
+            "{{\"locations\":[{{\"path\":{path},\"byte_start\":{byte_start},\"byte_end\":{byte_end}}}]}}"
+        );
+        match encode_result(correlation, &result) {
+            Some(encoded) => Self { status: QueryStatus::Ok, reason: None, encoded: Some(encoded) },
+            None => Self::failure(correlation, QueryStatus::OverBudget, QueryReason::ResponseBytes),
+        }
+    }
 }
 
 fn prefix(correlation: &Correlation) -> Option<String> {
@@ -154,7 +181,10 @@ fn encode_failure(
 }
 
 pub(super) fn encode_success(correlation: &Correlation, report: &str) -> Option<String> {
-    let encoded =
-        format!("{},\"status\":\"ok\",\"result\":{{\"report\":{report}}}}}", prefix(correlation)?);
+    encode_result(correlation, &format!("{{\"report\":{report}}}"))
+}
+
+fn encode_result(correlation: &Correlation, result: &str) -> Option<String> {
+    let encoded = format!("{},\"status\":\"ok\",\"result\":{result}}}", prefix(correlation)?);
     (encoded.len() <= MAX_RESPONSE_BYTES).then_some(encoded)
 }

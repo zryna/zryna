@@ -4,6 +4,7 @@
 
 pub mod control_flow_v1;
 pub mod data_ownership_v1;
+pub mod definition_queries;
 
 use std::{cmp::Ordering, collections::BTreeMap};
 

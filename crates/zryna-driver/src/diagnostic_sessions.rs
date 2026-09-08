@@ -1,7 +1,8 @@
-//! Revision-bound internal diagnostic sessions.
+//! Revision-bound internal compiler query sessions.
 //!
-//! This compiler-host boundary retains exact source-map and structured-diagnostics-v2 authority.
-//! It is not a transport, semantic query service, CLI/LSP route, formatter, or executor.
+//! This compiler-host boundary retains exact source-map, structured-diagnostics-v2, and the first
+//! semantics-owned definition authority. It is not a transport, CLI/LSP route, formatter, or
+//! executor.
 
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -14,12 +15,14 @@ use std::{
 };
 
 use zryna_diagnostics::{Diagnostic, protocol_v2};
+use zryna_semantics::definition_queries::DefinitionIndex;
 use zryna_source::{SourceMap, SourceMapIdentity};
 
 mod request;
 mod response;
 mod retention;
 mod scheduling;
+mod semantic_definition;
 
 pub(crate) use response::{DiagnosticQueryResponse, QueryReason, QueryStatus};
 use retention::{checked_cache_charge, source_fingerprint_and_charge};
@@ -104,6 +107,10 @@ pub(crate) enum DiagnosticSessionError {
     SessionCacheExhausted,
     /// Structured diagnostic v2 rejected producer input or source authority.
     Diagnostics(protocol_v2::ProtocolError),
+    /// Semantic analysis rejected the source before query facts could be retained.
+    Semantics(Vec<Diagnostic>),
+    /// Semantic inputs were not issued from the retained source authority.
+    SemanticAuthority,
     /// A previously verified source map could not be enumerated consistently.
     SourceInvariant,
 }
@@ -115,6 +122,8 @@ impl fmt::Display for DiagnosticSessionError {
             Self::RevisionExhausted => "diagnostic session revision space is exhausted",
             Self::SessionCacheExhausted => "diagnostic session cache limit exceeded",
             Self::Diagnostics(_) => "structured diagnostics rejected the retained source",
+            Self::Semantics(_) => "semantic analysis rejected the retained source",
+            Self::SemanticAuthority => "semantic inputs are not bound to the retained source",
             Self::SourceInvariant => "retained source map could not be enumerated",
         })
     }
@@ -134,6 +143,7 @@ struct RevisionRecord {
     description: DiagnosticRevision,
     sources: SourceMap,
     report: Option<Arc<str>>,
+    definitions: Option<Arc<DefinitionIndex>>,
     cache_bytes: usize,
 }
 
@@ -206,7 +216,29 @@ impl DiagnosticSession {
     ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
         let report = protocol_v2::render_json(diagnostics, &sources)
             .map_err(DiagnosticSessionError::Diagnostics)?;
-        self.admit(sources, Some(report.into()))
+        self.admit(sources, Some(report.into()), None)
+    }
+
+    /// Admits successful protocol-v2 semantic state for definition queries.
+    ///
+    /// # Errors
+    ///
+    /// Rejects foreign authority, semantic diagnostics, invalid reports, or retention exhaustion.
+    pub(crate) fn admit_semantics(
+        &mut self,
+        sources: SourceMap,
+        syntax: &zryna_frontend::syntax_v2::ProjectSyntaxSnapshot,
+    ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
+        let input = zryna_semantics::SemanticInput::try_new(syntax, &sources)
+            .ok_or(DiagnosticSessionError::SemanticAuthority)?;
+        let definitions =
+            DefinitionIndex::analyze(input).map_err(DiagnosticSessionError::Semantics)?;
+        if !definitions.is_bound_to(&sources) {
+            return Err(DiagnosticSessionError::SemanticAuthority);
+        }
+        let report = protocol_v2::render_json(syntax.diagnostics(), &sources)
+            .map_err(DiagnosticSessionError::Diagnostics)?;
+        self.admit(sources, Some(report.into()), Some(Arc::new(definitions)))
     }
 
     /// Admits source authority whose diagnostic pass is not ready yet.
@@ -218,7 +250,7 @@ impl DiagnosticSession {
         &mut self,
         sources: SourceMap,
     ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
-        self.admit(sources, None)
+        self.admit(sources, None, None)
     }
 
     /// Returns the currently active revision, when one has been admitted.
@@ -243,19 +275,30 @@ impl DiagnosticSession {
         &mut self,
         sources: SourceMap,
         report: Option<Arc<str>>,
+        definitions: Option<Arc<DefinitionIndex>>,
     ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
         if self.next_revision > MAX_REVISION {
             return Err(DiagnosticSessionError::RevisionExhausted);
         }
         let (source_fingerprint, source_bytes) = source_fingerprint_and_charge(&sources)?;
-        let cache_bytes =
-            checked_cache_charge(source_bytes, report.as_ref().map_or(0, |value| value.len()))?;
+        let semantic_bytes = match definitions.as_deref() {
+            Some(definitions) => definitions
+                .cache_bytes()
+                .ok_or(DiagnosticSessionError::SessionCacheExhausted)?,
+            None => 0,
+        };
+        let cache_bytes = checked_cache_charge(
+            source_bytes,
+            report.as_ref().map_or(0, |value| value.len()),
+            semantic_bytes,
+        )?;
         let description = DiagnosticRevision {
             handle: DiagnosticSnapshotHandle { session: self.session, serial: self.next_revision },
             revision: self.next_revision,
             source_fingerprint,
         };
-        let record = Arc::new(RevisionRecord { description, sources, report, cache_bytes });
+        let record =
+            Arc::new(RevisionRecord { description, sources, report, definitions, cache_bytes });
         let mut projected_cache = self
             .cache_bytes
             .checked_add(cache_bytes)

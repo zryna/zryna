@@ -27,27 +27,7 @@ impl DiagnosticSession {
         bytes: &[u8],
         now: Instant,
     ) -> Result<PendingDiagnosticQuery, DiagnosticQueryResponse> {
-        let request = super::request::decode(bytes).map_err(|error| match error {
-            super::request::DecodeError::RequestBytes => DiagnosticQueryResponse::uncorrelated(
-                QueryStatus::OverBudget,
-                QueryReason::RequestBytes,
-            ),
-            super::request::DecodeError::RequestDepth => DiagnosticQueryResponse::uncorrelated(
-                QueryStatus::OverBudget,
-                QueryReason::RequestDepth,
-            ),
-            super::request::DecodeError::ParseShape
-            | super::request::DecodeError::UnsafeCorrelation => {
-                DiagnosticQueryResponse::uncorrelated(QueryStatus::Malformed, QueryReason::Shape)
-            }
-            super::request::DecodeError::CorrelatedShape(correlation) => {
-                DiagnosticQueryResponse::failure(
-                    &correlation,
-                    QueryStatus::Malformed,
-                    QueryReason::Shape,
-                )
-            }
-        })?;
+        let request = super::request::decode(bytes).map_err(decode_failure)?;
         let correlation = &request.correlation;
         self.expire_deadlines(now);
         if self.in_flight.contains_key(&correlation.request_id) {
@@ -197,7 +177,7 @@ impl DiagnosticSession {
         }
     }
 
-    fn expire_deadlines(&mut self, now: Instant) {
+    pub(super) fn expire_deadlines(&mut self, now: Instant) {
         self.in_flight.retain(|_, slot| {
             if now < slot.deadline {
                 return true;
@@ -208,13 +188,41 @@ impl DiagnosticSession {
         });
     }
 
-    fn is_active(&self, revision: DiagnosticRevision, source_identity: SourceMapIdentity) -> bool {
+    pub(super) fn is_active(
+        &self,
+        revision: DiagnosticRevision,
+        source_identity: SourceMapIdentity,
+    ) -> bool {
         self.retained.back().is_some_and(|active| {
             active.sources.identity() == source_identity && active.description == revision
         })
     }
 }
 
-fn stale(correlation: &Correlation) -> DiagnosticQueryResponse {
+pub(super) fn decode_failure(error: super::request::DecodeError) -> DiagnosticQueryResponse {
+    match error {
+        super::request::DecodeError::RequestBytes => DiagnosticQueryResponse::uncorrelated(
+            QueryStatus::OverBudget,
+            QueryReason::RequestBytes,
+        ),
+        super::request::DecodeError::RequestDepth => DiagnosticQueryResponse::uncorrelated(
+            QueryStatus::OverBudget,
+            QueryReason::RequestDepth,
+        ),
+        super::request::DecodeError::ParseShape
+        | super::request::DecodeError::UnsafeCorrelation => {
+            DiagnosticQueryResponse::uncorrelated(QueryStatus::Malformed, QueryReason::Shape)
+        }
+        super::request::DecodeError::CorrelatedShape(correlation) => {
+            DiagnosticQueryResponse::failure(
+                &correlation,
+                QueryStatus::Malformed,
+                QueryReason::Shape,
+            )
+        }
+    }
+}
+
+pub(super) fn stale(correlation: &Correlation) -> DiagnosticQueryResponse {
     DiagnosticQueryResponse::failure(correlation, QueryStatus::Stale, QueryReason::Snapshot)
 }
