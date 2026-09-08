@@ -12,17 +12,22 @@ Package and provenance authority remains with #168. Its accepted
 [`zryna.package.v1` and `zryna.lock.v1` contract](PACKAGE_RELEASE_V1.md) supplies canonical
 manifest, `source-files`, and lock digests. In this plan, `package.id` is #168's manifest digest,
 `package.sourceSha256` is #168's `source-files` digest, and `packageLockSha256` is #168's lock
-digest. This document imports its checker helper and does not redefine its serialization or digest
-domains. Release subjects, SBOM, signed notes, rollback and provenance remain entirely #168-owned.
+digest. The fixture checker first runs #168's complete validator over canonical bytes and then
+projects its authenticated lock digest, root, exact package pairs, aliases, and edges. A caller
+cannot supply an unvalidated lookalike projection. This document imports #168's checker and
+serializer helpers and does not redefine their serialization or digest domains. Release subjects,
+SBOM, signed notes, rollback and provenance remain entirely #168-owned.
 
 [#360](https://github.com/zryna/zryna/issues/360) owns exact package-instance identity and
 host/target dependency-graph decisions. The package identity is the exact ordered pair
 `(id, sourceSha256)` from one validated #168 lock package record; there is no additional shorthand
-identity field. Each package occurrence, dependency edge, and qualified source carries a graph role:
-`target/runtime` or `host/build`. The same pair may occur in both roles, but those occurrences remain
-in separate role-scoped semantic domains and are never interned together. A #168 lock edge selects
-the package record by `id`; its `sourceSha256` is then recovered from that record. Because #168 has
-no build-edge kind, its edges remain `target/runtime` and must not be reinterpreted as a mixed graph.
+identity field. #360 defines the distinct `target/runtime` and `host/build` graph roles, but the
+source-only v0 record admits only `target/runtime` occurrences. It has one authenticated root and
+exactly the complete #168 lock graph. A `host/build` package, source, or edge therefore rejects;
+admitting that role requires a later version with its own authenticated root and edge authority.
+A #168 lock edge selects the package record by `id`; its `sourceSha256` is then recovered from that
+record. Because #168 has no build-edge kind, its edges remain `target/runtime` and must not be
+reinterpreted as a mixed graph.
 
 The accepted [cross-target composition contract](../language/CROSS_TARGET_PROFILES_V1.md) supplies
 identity `zryna.cross-target-profiles.v1`, exact language profiles, output axes and composition row
@@ -67,7 +72,7 @@ The source plan binds the following inputs:
 | Field | Bound identity | Owner or purpose |
 | --- | --- | --- |
 | `packageLockSha256` | #168 `lock` digest | exact verified package-lock authority |
-| `rootPackage`, `packages` | exact #360 `(id, sourceSha256)` pairs, graph roles, alias edges | exact role-scoped resolved graph |
+| `rootPackage`, `packages` | exact #360 `(id, sourceSha256)` pairs and #168 aliases/edges | exact authenticated target/runtime graph |
 | `sources` | graph role, exact package pair, portable path, exact byte size and SHA-256 | complete qualified source snapshot used by the driver |
 | `compiler` | declared host-tool name, exact version, executable SHA-256 and protocol | compiler implementation identity |
 | `profile` | exact #357 language-profile id and configuration SHA-256 | semantic/build profile, not a selector |
@@ -78,8 +83,15 @@ The source plan binds the following inputs:
 | `outputs` | target-qualified portable paths | requested outputs, not evidence of publication |
 
 Every dependency must reference a listed package in the same graph role. Every source must reference
-a listed package in its graph role. The root pair must be present in `target/runtime`. The exact
-compiler tuple must match a declared host tool. Each host tool
+a listed package in its graph role. The root pair must be present in `target/runtime`. Starting at
+that root, the complete graph must be acyclic and must reach every listed package. Cycle selection
+is deterministic: choose the fewest edges, normalize each cycle to its least
+`(graph role, package instance, alias)` edge, then compare the complete normalized edge sequence as
+unsigned ASCII bytes. The first unreachable package is likewise selected in canonical package
+order. After structural graph validation, the lock digest, root, ordered package pairs, aliases,
+and selected edges must exactly equal the branded projection from the validated #168 envelope.
+Source-only v0 rejects every `host/build` occurrence rather than inventing an unauthenticated root.
+The exact compiler tuple must match a declared host tool. Each host tool
 must run on the declared host and may produce only for listed targets. Every output must name a
 listed target. These are closed references: discovery from `PATH`, a current working directory,
 an ambient registry, an inherited environment, or a neighboring cache entry is forbidden.
@@ -112,7 +124,8 @@ digest. A row from another target rejects before compilation. Its presence grant
 Canonical plan bytes are strict UTF-8 JSON without BOM, recursively sorted object keys, no
 insignificant whitespace, JSON's shortest ordinary spelling for admitted scalar values, and one
 terminal LF. Consumers reject noncanonical bytes rather than normalize them. The maximum plan is
-262,144 bytes. The source-only projection reuses #168's fixture bounds: 16 packages, eight
+262,144 bytes. A source path is at most 96 lowercase portable ASCII bytes, matching #168 exactly;
+byte 97 rejects before source hashing. The source-only projection reuses #168's fixture bounds: 16 packages, eight
 dependencies per package, 16 files per package (256 sources total), three targets, eight host tools
 and environment entries, 16 outputs, and 1,024 bytes per source. The optional native collections
 retain their separately provisional bounds.
@@ -121,7 +134,7 @@ Arrays have these deterministic rules:
 
 | Collection | Required ordering |
 | --- | --- |
-| packages | graph role (`target/runtime`, then `host/build`), `package.id`, then `package.sourceSha256` ascending |
+| packages | `target/runtime`, then `package.id` and `package.sourceSha256` ascending |
 | package dependencies | alias ascending |
 | sources | graph role, `package.id`, `package.sourceSha256`, then path ascending |
 | targets, target features | id/value ascending |
@@ -230,11 +243,11 @@ The checked fixture API returns one stable category and no partial accepted plan
 
 | Category | Rejected condition |
 | --- | --- |
-| `P361-BUDGET` | wire or collection bound exceeded |
+| `P361-BUDGET` | wire/canonical-plan byte bound or structural collection bound exceeded |
 | `P361-WIRE` | invalid UTF-8/JSON or noncanonical bytes |
 | `P361-SCHEMA` | missing, unknown, mistyped, or malformed field |
 | `P361-ORDER` | noncanonical or duplicate set-like collection |
-| `P361-IDENTITY` | missing root/dependency package reference |
+| `P361-IDENTITY` | absent/unvalidated #168 authority; changed lock/root/pair/alias/edge; missing reference; cycle; orphan; unsupported graph role |
 | `P361-SOURCE` | missing package for a source, missing bytes, or size/hash drift |
 | `P361-TOOLCHAIN` | compiler mismatch, wrong-host tool, or undeclared compile/link tool |
 | `P361-TARGET` | absent, incompatible, non-native, or cross-target input |
@@ -242,8 +255,11 @@ The checked fixture API returns one stable category and no partial accepted plan
 | `P361-CACHE` | forged plan key, incompatible entry, incomplete inventory, or stale bytes |
 | `P361-PUBLICATION` | partial visibility or replacement at the existing commit boundary |
 
-The phase order is budget/wire, schema, ordering/reference identity, source/tool/target/native
-semantics, then cache verification. These fixture categories are not public compiler diagnostics.
+The phase order is wire-byte budget, UTF-8/JSON/canonical-wire checks, canonical-plan and collection
+budgets, schema, ordering/reference/graph/#168 identity, source/tool/target/native semantics, then
+cache verification. Collection first-extra cases therefore report `P361-BUDGET`, not a schema
+error; malformed values within an admitted collection report `P361-SCHEMA`. These fixture
+categories are not public compiler diagnostics.
 A later driver integration must map failures through its separately reviewed diagnostic surface.
 
 ## Representative outcomes
@@ -322,9 +338,9 @@ part of that slice.
 
 ## Alignment checklist
 
-- Preserve #360's exact `(id, sourceSha256)` pair in every package reference and keep
-  `target/runtime` and `host/build` occurrences role-scoped; never reinterpret #168 lock edges as
-  build edges.
+- Preserve #360's exact `(id, sourceSha256)` pair in every package reference. Source-only v0 admits
+  only the authenticated `target/runtime` root and closure; reject `host/build` until a later
+  version defines its root and edge authority. Never reinterpret #168 lock edges as build edges.
 - Verify `package.id`, `package.sourceSha256`, and `packageLockSha256` against #168's accepted
   records, while keeping the #361 plan-closure `cacheKey` in its separate digest domain; do not copy
   release/provenance fields.

@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-import { digest as packageDigest } from '../scripts/package-release/canonical.mjs';
+import { bindGraph, checksum, makeFixture, recordHash, wire } from './package-release-v1/builders.mjs';
 
 import {
   canonicalBytes,
@@ -14,6 +14,7 @@ import {
   validateBuildPlan,
   validateBuildPlanBytes,
   validateCacheEntry,
+  validatePackageAuthority,
   validatePublicationObservation,
   verifySourceMaterials,
   workspaceRoot,
@@ -22,6 +23,22 @@ import {
 function withCache(document) {
   document.cacheKey = deriveCacheKey(document);
   return document;
+}
+
+function bindPlanToFixture(template, fixture, packageAuthority) {
+  const document = structuredClone(template);
+  const manifests = new Map(fixture.manifests.map((manifest) =>
+    [recordHash('manifest', manifest), manifest]));
+  document.sourcePlan.packageLockSha256 = packageAuthority.lockSha256;
+  document.sourcePlan.rootPackage = structuredClone(packageAuthority.rootPackage);
+  document.sourcePlan.packages = structuredClone(packageAuthority.packages);
+  document.sourcePlan.sources = packageAuthority.packages.flatMap((pkg) =>
+    manifests.get(pkg.package.id).files.map((file) => ({
+      graphRole: 'target/runtime',
+      package: structuredClone(pkg.package),
+      ...file,
+    })));
+  return withCache(document);
 }
 
 function nativePlan(sourceOnly) {
@@ -100,16 +117,39 @@ function nativePlan(sourceOnly) {
 }
 
 test('source-only v0 plan validates and canonical replay is stable', async () => {
-  const { document, schema } = await loadBuildPlan();
+  const { document, schema, packageAuthority } = await loadBuildPlan();
   const packageFixture = JSON.parse(await readFile(path.join(workspaceRoot, 'tests/package-release-v1/valid.json'), 'utf8'));
   assert.equal(document.sourcePlan.packageLockSha256, packageFixture.release.lockSha256);
   assert.deepEqual(document.sourcePlan.packages.map(({ package: identity }) => identity),
     packageFixture.lock.packages.map(({ id, sourceSha256 }) => ({ id, sourceSha256 })));
-  assert.deepEqual(validateBuildPlan(document, schema), { cacheKey: document.cacheKey, native: false });
+  assert.deepEqual(document.sourcePlan.packages.flatMap((pkg) => pkg.dependencies.map((dependency) => dependency.alias)),
+    packageFixture.lock.packages.flatMap((pkg) => pkg.dependencies.map((dependency) => dependency.alias)));
+  assert.deepEqual(validateBuildPlan(document, schema, packageAuthority), { cacheKey: document.cacheKey, native: false });
   const wire = canonicalBytes(document);
-  assert.deepEqual(validateBuildPlanBytes(wire, schema), { cacheKey: document.cacheKey, native: false });
-  assert.deepEqual(validateBuildPlanBytes(wire, schema), { cacheKey: document.cacheKey, native: false });
-  assert.throws(() => validateBuildPlanBytes(Buffer.from(` ${wire}`), schema), /P361-WIRE/);
+  assert.deepEqual(validateBuildPlanBytes(wire, schema, packageAuthority), { cacheKey: document.cacheKey, native: false });
+  assert.deepEqual(validateBuildPlanBytes(wire, schema, packageAuthority), { cacheKey: document.cacheKey, native: false });
+  assert.throws(() => validateBuildPlanBytes(Buffer.from(` ${wire}`), schema, packageAuthority), /P361-WIRE/);
+});
+
+test('validated #168 projection authenticates lock, root, exact pairs, aliases and edges', async () => {
+  const { document, schema, packageAuthority } = await loadBuildPlan();
+  assert.throws(() => validateBuildPlan(document, schema, structuredClone(packageAuthority)),
+    /P361-IDENTITY: a validated #168 package authority is required/);
+  const forgedLock = structuredClone(document);
+  forgedLock.sourcePlan.packageLockSha256 = '0'.repeat(64);
+  assert.throws(() => validateBuildPlan(withCache(forgedLock), schema, packageAuthority),
+    /P361-IDENTITY: package lock digest differs/);
+  const forgedRoot = structuredClone(document);
+  forgedRoot.sourcePlan.rootPackage = structuredClone(forgedRoot.sourcePlan.packages[1].package);
+  assert.throws(() => validateBuildPlan(withCache(forgedRoot), schema, packageAuthority), /P361-IDENTITY/);
+  const forgedAlias = structuredClone(document);
+  forgedAlias.sourcePlan.packages[0].dependencies[0].alias = 'other';
+  assert.throws(() => validateBuildPlan(withCache(forgedAlias), schema, packageAuthority),
+    /P361-IDENTITY: package pairs or alias edges differ/);
+  const forgedEdge = structuredClone(document);
+  forgedEdge.sourcePlan.packages[0].dependencies[0].package.id = '0'.repeat(64);
+  assert.throws(() => validateBuildPlan(withCache(forgedEdge), schema, packageAuthority),
+    /P361-IDENTITY: dependency .* is absent/);
 });
 
 test('cache identity binds source, dependency, compiler, runtime, profile, target and host-tool inputs', async () => {
@@ -137,8 +177,8 @@ test('cache identity binds source, dependency, compiler, runtime, profile, targe
   }
 });
 
-test('source material repeat succeeds while missing and stale bytes fail closed', async () => {
-  const { document, schema } = await loadBuildPlan();
+test('source material repeat succeeds while missing, extra and stale bytes fail closed', async () => {
+  const { document, schema, packageAuthority } = await loadBuildPlan();
   const materialKey = (source) =>
     `${source.graphRole}:${source.package.id}:${source.package.sourceSha256}:${source.path}`;
   const materials = new Map(document.sourcePlan.sources.map((source) =>
@@ -147,81 +187,98 @@ test('source material repeat succeeds while missing and stale bytes fail closed'
   assert.equal(verifySourceMaterials(document, materials), true);
   const missing = new Map(materials);
   missing.delete(materialKey(document.sourcePlan.sources[1]));
-  assert.throws(() => verifySourceMaterials(document, missing), /P361-SOURCE: missing source material/);
+  assert.throws(() => verifySourceMaterials(document, missing), /P361-SOURCE: source material inventory has missing or extra entries/);
+  const extra = new Map(materials);
+  extra.set('target/runtime:extra:extra:src/extra.zry', Buffer.alloc(0));
+  assert.throws(() => verifySourceMaterials(document, extra), /P361-SOURCE: source material inventory has missing or extra entries/);
   const stale = new Map(materials);
   stale.set(materialKey(document.sourcePlan.sources[0]), Buffer.from('changed'));
   assert.throws(() => verifySourceMaterials(document, stale), /P361-SOURCE: stale source material/);
   const mismatchedDigest = structuredClone(document);
   mismatchedDigest.sourcePlan.sources[0].sha256 = '0'.repeat(64);
-  assert.throws(() => validateBuildPlan(withCache(mismatchedDigest), schema), /P361-SOURCE: .* source digest differs from #168/);
+  assert.throws(() => validateBuildPlan(withCache(mismatchedDigest), schema, packageAuthority), /P361-SOURCE: .* source digest differs from #168/);
 });
 
-test('source inventory exact bound passes and the first extra entry rejects', async () => {
+test('source collection budget rejects the first extra before schema validation', async () => {
+  const { document, schema, packageAuthority } = await loadBuildPlan();
+  const extra = structuredClone(document);
+  while (extra.sourcePlan.sources.length < 257) {
+    extra.sourcePlan.sources.push(structuredClone(extra.sourcePlan.sources.at(-1)));
+  }
+  assert.throws(() => validateBuildPlan(withCache(extra), schema, packageAuthority),
+    /P361-BUDGET: sources exceeds 256/);
+});
+
+test('source path accepts 96 ASCII bytes and rejects byte 97', async () => {
   const { document, schema } = await loadBuildPlan();
-  const exact = structuredClone(document);
-  const packageRows = Array.from({ length: 16 }, (_, packageIndex) => {
-    const files = Array.from({ length: 16 }, (_, sourceIndex) => ({
-      path: `src/${String(sourceIndex).padStart(2, '0')}.zry`,
-      sha256: 'a'.repeat(64),
-      size: 0,
-    }));
-    const packageIdentity = {
-      id: String(packageIndex + 1).padStart(64, '0'),
-      sourceSha256: packageDigest('source-files', files),
-    };
-    return { packageIdentity, files };
-  });
-  exact.sourcePlan.packages = packageRows.map(({ packageIdentity }) => ({
-    graphRole: 'target/runtime',
-    package: packageIdentity,
-    dependencies: [],
-  }));
-  exact.sourcePlan.rootPackage = structuredClone(packageRows[0].packageIdentity);
-  exact.sourcePlan.sources = packageRows.flatMap(({ packageIdentity, files }) =>
-    files.map((file) => ({
-      graphRole: 'target/runtime',
-      package: packageIdentity,
-      ...file,
-    })));
-  assert.doesNotThrow(() => validateBuildPlan(withCache(exact), schema));
+  const fixture = makeFixture();
+  const path96 = `src/${'a'.repeat(88)}.zry`;
+  assert.equal(Buffer.byteLength(path96), 96);
+  for (const manifest of fixture.manifests) {
+    manifest.files = [checksum(path96, 'synthetic source fixture\n')];
+  }
+  bindGraph(fixture, 'package-01');
+  const authority = validatePackageAuthority(wire(fixture));
+  const exact = bindPlanToFixture(document, fixture, authority);
+  assert.doesNotThrow(() => validateBuildPlan(exact, schema, authority));
   const extra = structuredClone(exact);
-  extra.sourcePlan.sources.push({ ...extra.sourcePlan.sources[255], path: 'src/16.zry' });
-  assert.throws(() => validateBuildPlan(withCache(extra), schema), /P361-SCHEMA/);
+  extra.sourcePlan.sources[0].path = `src/${'a'.repeat(89)}.zry`;
+  assert.equal(Buffer.byteLength(extra.sourcePlan.sources[0].path), 97);
+  assert.throws(() => validateBuildPlan(withCache(extra), schema, authority), /P361-SCHEMA/);
+});
+
+test('target graph rejects deterministic cycles, orphans and host/build occurrences', async () => {
+  const { document, schema, packageAuthority } = await loadBuildPlan();
+  const cyclic = structuredClone(document);
+  cyclic.sourcePlan.packages[1].dependencies = [{
+    alias: 'root',
+    graphRole: 'target/runtime',
+    package: structuredClone(cyclic.sourcePlan.packages[0].package),
+  }];
+  assert.throws(() => validateBuildPlan(withCache(cyclic), schema, packageAuthority),
+    /P361-IDENTITY: dependency cycle/);
+  const orphaned = structuredClone(document);
+  orphaned.sourcePlan.packages[0].dependencies = [];
+  assert.throws(() => validateBuildPlan(withCache(orphaned), schema, packageAuthority),
+    /P361-IDENTITY: unreachable package/);
+  const hostBuild = structuredClone(document);
+  hostBuild.sourcePlan.packages[0].graphRole = 'host/build';
+  assert.throws(() => validateBuildPlan(withCache(hostBuild), schema, packageAuthority), /P361-SCHEMA/);
 });
 
 test('native draft separates acquisition, compilation and linking and rejects boundary confusion', async () => {
-  const { document, schema } = await loadBuildPlan();
+  const { document, schema, packageAuthority } = await loadBuildPlan();
   const valid = nativePlan(document);
-  assert.deepEqual(validateBuildPlan(valid, schema), { cacheKey: valid.cacheKey, native: true });
+  assert.deepEqual(validateBuildPlan(valid, schema, packageAuthority), { cacheKey: valid.cacheKey, native: true });
   const changedArtifact = structuredClone(valid);
   changedArtifact.nativeAppendix.acquisition.staticArtifacts[0].sha256 = '9'.repeat(64);
   assert.notEqual(deriveCacheKey(changedArtifact), valid.cacheKey);
 
   const wrongTarget = structuredClone(valid);
   wrongTarget.nativeAppendix.acquisition.staticArtifacts[0].target = 'javascript';
-  assert.throws(() => validateBuildPlan(withCache(wrongTarget), schema), /P361-TARGET: libsample-a has the wrong target/);
+  assert.throws(() => validateBuildPlan(withCache(wrongTarget), schema, packageAuthority), /P361-TARGET: libsample-a has the wrong target/);
 
   const wrongRuntime = structuredClone(valid);
   wrongRuntime.nativeAppendix.abi.runtime.sha256 = '0'.repeat(64);
-  assert.throws(() => validateBuildPlan(withCache(wrongRuntime), schema), /P361-NATIVE: native ABI runtime identity differs/);
+  assert.throws(() => validateBuildPlan(withCache(wrongRuntime), schema, packageAuthority), /P361-NATIVE: native ABI runtime identity differs/);
 
   const missingLibrary = structuredClone(valid);
   missingLibrary.nativeAppendix.acquisition.targetLibraries[1].artifact = 'missing-a';
-  assert.throws(() => validateBuildPlan(withCache(missingLibrary), schema), /P361-NATIVE: sample is missing its static artifact/);
+  assert.throws(() => validateBuildPlan(withCache(missingLibrary), schema, packageAuthority), /P361-NATIVE: sample is missing its static artifact/);
 
   const undeclaredTool = structuredClone(valid);
   undeclaredTool.nativeAppendix.compilation.steps[0].tool = 'ambient-cc';
-  assert.throws(() => validateBuildPlan(withCache(undeclaredTool), schema), /P361-TOOLCHAIN: undeclared compilation tool/);
+  assert.throws(() => validateBuildPlan(withCache(undeclaredTool), schema, packageAuthority), /P361-TOOLCHAIN: undeclared compilation tool/);
 });
 
 test('accepted #357 profile and target rows do not widen or cross target axes', async () => {
-  const { document, schema } = await loadBuildPlan();
+  const { document, schema, packageAuthority } = await loadBuildPlan();
   const wrongRow = structuredClone(document);
   wrongRow.sourcePlan.targets[0].composition.row = 'U-WASM';
-  assert.throws(() => validateBuildPlan(withCache(wrongRow), schema), /P361-TARGET: U-WASM is incompatible with javascript/);
+  assert.throws(() => validateBuildPlan(withCache(wrongRow), schema, packageAuthority), /P361-TARGET: U-WASM is incompatible with javascript/);
   const unresolvedAll = structuredClone(document);
   unresolvedAll.sourcePlan.targets[0].id = 'all';
-  assert.throws(() => validateBuildPlan(withCache(unresolvedAll), schema), /P361-SCHEMA/);
+  assert.throws(() => validateBuildPlan(withCache(unresolvedAll), schema, packageAuthority), /P361-SCHEMA/);
 });
 
 test('cache miss, hit, wrong target and stale output have distinct deterministic outcomes', async () => {
@@ -280,7 +337,7 @@ test('documentation keeps authority, exact identities and implementation stages 
   for (const phrase of [
     'Package and provenance authority remains with #168.',
     'The package identity is the exact ordered pair `(id, sourceSha256)`',
-    'Each package occurrence, dependency edge, and qualified source carries a graph role',
+    'Source-only v0 rejects every `host/build` occurrence rather than inventing an unauthenticated root.',
     '`zryna.cross-target-profiles.v1`',
     'The driver alone owns compilation orchestration, tool validation, linking, cache materialization, and output publication.',
     'The native appendix is provisional pending the relevant accepted #364 ABI decisions.',

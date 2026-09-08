@@ -18,7 +18,7 @@
         },
         "dependencies": [
           {
-            "alias": "math",
+            "alias": "package-00",
             "graphRole": "target/runtime",
             "package": {
               "id": "4afeb8c9b3b25a156fe99d439db9be346fb384e37b2b11b09c0d6a4416b959d0",
@@ -116,5 +116,5 @@
       }
     ]
   },
-  "cacheKey": "a1710b87ac006088ae7ef8b9aca2da03ccb6bde22310fd300b90a767b8df257f"
+  "cacheKey": "1c864e28837cb1dcdcaf10622f994277befc69de3ef64828dfc4dc3cada0c471"
 }

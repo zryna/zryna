@@ -6,6 +6,15 @@ import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 
 import { digest as packageDigest } from '../package-release/canonical.mjs';
+import { validateCollectionBudgets } from './budgets.mjs';
+import {
+  packageKey,
+  rolePackageKey,
+  validateAuthenticatedPackageGraph,
+  validatePackageAuthority,
+} from './package-authority.mjs';
+
+export { validatePackageAuthority } from './package-authority.mjs';
 
 export const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export const MAX_PLAN_BYTES = 262144;
@@ -66,19 +75,11 @@ function orderedUnique(items, key, label) {
   }
 }
 
-function packageKey(pkg) {
-  return `${pkg.id}\0${pkg.sourceSha256}`;
-}
-
-function rolePackageKey(role, pkg) {
-  return `${role === 'target/runtime' ? '0' : '1'}\0${packageKey(pkg)}`;
-}
-
 function materialKey(role, pkg, sourcePath) {
   return `${role}:${pkg.id}:${pkg.sourceSha256}:${sourcePath}`;
 }
 
-function validateSourcePlan(plan) {
+function validateSourcePlan(plan, packageAuthority) {
   orderedUnique(plan.packages, (item) => rolePackageKey(item.graphRole, item.package), 'packages');
   orderedUnique(plan.sources, (item) => `${rolePackageKey(item.graphRole, item.package)}\0${item.path}`, 'sources');
   orderedUnique(plan.targets, (item) => item.id, 'targets');
@@ -86,7 +87,8 @@ function validateSourcePlan(plan) {
   orderedUnique(plan.outputs, (item) => `${item.target}\0${item.path}`, 'outputs');
   orderedUnique(plan.host.environment, (item) => item.name, 'host environment');
 
-  const packageIds = new Set(plan.packages.map((pkg) => rolePackageKey(pkg.graphRole, pkg.package)));
+  const packagesByKey = new Map(plan.packages.map((pkg) => [rolePackageKey(pkg.graphRole, pkg.package), pkg]));
+  const packageIds = new Set(packagesByKey.keys());
   if (!packageIds.has(rolePackageKey('target/runtime', plan.rootPackage))) fail('P361-IDENTITY', 'root target/runtime package is absent');
   for (const pkg of plan.packages) {
     orderedUnique(pkg.dependencies, (item) => item.alias, `${pkg.package.id} dependencies`);
@@ -96,6 +98,7 @@ function validateSourcePlan(plan) {
       }
     }
   }
+  validateAuthenticatedPackageGraph(plan, packagesByKey, packageAuthority);
   for (const source of plan.sources) {
     if (!packageIds.has(rolePackageKey(source.graphRole, source.package))) fail('P361-SOURCE', `source package ${source.package.id} is absent`);
   }
@@ -223,17 +226,24 @@ function validateNativeAppendix(appendix, sourceAuthority) {
   }
 }
 
-export function validateBuildPlan(document, schema) {
+export function validateBuildPlan(document, schema, packageAuthority) {
+  validateCollectionBudgets(document);
+  let planBytes;
+  try {
+    planBytes = canonicalBytes(document);
+  } catch {
+    planBytes = Buffer.alloc(0);
+  }
+  if (planBytes.length > MAX_PLAN_BYTES) fail('P361-BUDGET', 'plan exceeds 262144 bytes');
   const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
   if (!validate(document)) fail('P361-SCHEMA', `schema failed at ${validate.errors[0].instancePath || '/'}`);
-  if (canonicalBytes(document).length > MAX_PLAN_BYTES) fail('P361-BUDGET', 'plan exceeds 262144 bytes');
-  const sourceAuthority = validateSourcePlan(document.sourcePlan);
+  const sourceAuthority = validateSourcePlan(document.sourcePlan, packageAuthority);
   if (document.nativeAppendix) validateNativeAppendix(document.nativeAppendix, sourceAuthority);
   if (document.cacheKey !== deriveCacheKey(document)) fail('P361-CACHE', 'cache key does not bind the canonical plan');
   return Object.freeze({ cacheKey: document.cacheKey, native: Boolean(document.nativeAppendix) });
 }
 
-export function validateBuildPlanBytes(input, schema) {
+export function validateBuildPlanBytes(input, schema, packageAuthority) {
   if (!Buffer.isBuffer(input) || input.length > MAX_PLAN_BYTES) fail('P361-BUDGET', 'wire input exceeds its bound');
   let document;
   try {
@@ -242,10 +252,13 @@ export function validateBuildPlanBytes(input, schema) {
     fail('P361-WIRE', 'input is not strict UTF-8 JSON');
   }
   if (!canonicalBytes(document).equals(input)) fail('P361-WIRE', 'input is not canonical JSON');
-  return validateBuildPlan(document, schema);
+  return validateBuildPlan(document, schema, packageAuthority);
 }
 
 export function verifySourceMaterials(document, materials) {
+  if (!(materials instanceof Map) || materials.size !== document.sourcePlan.sources.length) {
+    fail('P361-SOURCE', 'source material inventory has missing or extra entries');
+  }
   for (const source of document.sourcePlan.sources) {
     const key = materialKey(source.graphRole, source.package, source.path);
     const bytes = materials.get(key);
@@ -294,14 +307,16 @@ export function validatePublicationObservation(observation) {
 }
 
 export async function loadBuildPlan(root = workspaceRoot) {
-  const [documentText, schemaText] = await Promise.all([
+  const [documentText, schemaText, packageFixtureBytes] = await Promise.all([
     readFile(path.join(root, 'tests/resolved-build-plan-v0/source-only.json'), 'utf8'),
     readFile(path.join(root, 'schemas/zryna-resolved-build-plan-v0.schema.json'), 'utf8'),
+    readFile(path.join(root, 'tests/package-release-v1/valid.json')),
   ]);
   const document = JSON.parse(documentText);
   const schema = JSON.parse(schemaText);
-  validateBuildPlan(document, schema);
-  return { document, schema };
+  const packageAuthority = validatePackageAuthority(packageFixtureBytes);
+  validateBuildPlan(document, schema, packageAuthority);
+  return { document, schema, packageAuthority };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

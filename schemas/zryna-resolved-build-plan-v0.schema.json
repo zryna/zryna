@@ -25,6 +25,11 @@
       "pattern": "^[a-z0-9][a-z0-9._/-]{0,159}$",
       "not": { "pattern": "(?:^|/)(?:\\.{1,2}|con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\\.|/|$)|//|/$" }
     },
+    "sourcePath": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._/-]{0,95}$",
+      "not": { "pattern": "(?:^|/)(?:\\.{1,2}|con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\\.|/|$)|//|/$" }
+    },
     "dependency": {
       "type": "object",
       "additionalProperties": false,
@@ -35,7 +40,7 @@
         "package": { "$ref": "#/$defs/packageIdentity" }
       }
     },
-    "graphRole": { "enum": ["target/runtime", "host/build"] },
+    "graphRole": { "const": "target/runtime" },
     "packageIdentity": {
       "type": "object",
       "additionalProperties": false,
@@ -66,7 +71,7 @@
       "properties": {
         "graphRole": { "$ref": "#/$defs/graphRole" },
         "package": { "$ref": "#/$defs/packageIdentity" },
-        "path": { "$ref": "#/$defs/portablePath" },
+        "path": { "$ref": "#/$defs/sourcePath" },
         "sha256": { "$ref": "#/$defs/sha256" },
         "size": { "type": "integer", "minimum": 0, "maximum": 1024 }
       }
@@ -268,7 +273,7 @@
             "kind": { "const": "source" },
             "graphRole": { "$ref": "#/$defs/graphRole" },
             "package": { "$ref": "#/$defs/packageIdentity" },
-            "path": { "$ref": "#/$defs/portablePath" }
+            "path": { "$ref": "#/$defs/sourcePath" }
           }
         },
         {
