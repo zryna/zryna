@@ -182,3 +182,28 @@ fn canonical_policy_entries_deduplicate_and_aliases_reject() {
     assert!(result.revalidate(&narrowed, &authorities(&narrowed)).is_err());
     assert!(result.revalidate(&input, &authorities(&input)).is_ok());
 }
+
+#[test]
+fn endpoint_bytes_accept_exact_reject_first_extra_and_bound_the_largest_reservation() {
+    let endpoint = |index: usize, host_bytes: usize| {
+        let prefix = format!("e{index:03}");
+        let first = format!("{prefix}{}", "a".repeat(63 - prefix.len()));
+        format!(
+            "{first}.{}.{}.{suffix}:65535",
+            "b".repeat(63),
+            "c".repeat(63),
+            suffix = "d".repeat(host_bytes - 192)
+        )
+    };
+    let mut reservation = Reservation::default();
+    reservation.endpoints = (0..128).map(|index| endpoint(index, 253)).collect();
+    assert_eq!(reservation.endpoints.len(), 128);
+    assert_eq!(reservation.endpoints.iter().map(String::len).sum::<usize>(), 128 * 259);
+    assert!(quota::validate_reservation(&reservation).is_ok());
+
+    reservation.endpoints.remove(&endpoint(127, 253));
+    reservation.endpoints.insert(endpoint(127, 254));
+    let diagnostics = quota::validate_reservation(&reservation).expect_err("260-byte endpoint");
+    assert_eq!(diagnostics[0].code(), RESOURCE);
+    assert_eq!(diagnostics[0].message(), "endpoint bytes limit 259 exceeded at 260");
+}

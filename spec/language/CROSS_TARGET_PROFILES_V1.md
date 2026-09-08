@@ -294,7 +294,12 @@ Input limits are 256 instances, 4,096 edges, longest root-to-leaf depth 32 and 6
 identity bytes. Identity accounting includes every occurrence of instance IDs, edge/root
 references, contract/policy/world strings and required/approved interface strings, excluding JSON
 framing. Reservation environment bytes and authority/endpoint entries use their separate #167
-bounds. Graph shape and bounds are checked before closure-summary derivation. All instances must
+bounds. Each normalized endpoint is additionally limited to 259 UTF-8 bytes, the maximum
+253-byte DNS host plus `:` and a five-digit port; the 128-entry structural ceiling therefore
+bounds one reservation's endpoint identities to 33,152 bytes. Each instance carries at most one
+sealed authority for each of the three `Language` variants. Endpoint and graph bounds are checked
+before input cloning or closure-summary derivation; the authority cardinality bound is checked
+before source/program fingerprinting. All instances must
 be reachable. Missing authorities, duplicate instances/edges and cycles reject. Typed private
 DTOs deny unknown fields and versions; there is no unbounded public decoding entrypoint.
 

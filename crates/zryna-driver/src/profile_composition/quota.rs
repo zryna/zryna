@@ -7,6 +7,8 @@ use super::{
     model::{Capability, Instance, Reservation},
 };
 
+const MAX_ENDPOINT_BYTES: usize = 259;
+
 fn fail(message: &str) -> Vec<Diagnostic> {
     vec![error(RESOURCE, message)]
 }
@@ -46,6 +48,9 @@ pub(super) fn validate_reservation(value: &Reservation) -> Result<(), Vec<Diagno
             .and_then(|n| n.checked_add(text.len()))
             .filter(|n| *n <= 65_536)
             .ok_or_else(|| fail("environment bytes limit 65536 exceeded at 65537"))?;
+    }
+    if value.endpoints.iter().any(|id| id.len() > MAX_ENDPOINT_BYTES) {
+        return Err(fail("endpoint bytes limit 259 exceeded at 260"));
     }
     if value.preopens.iter().any(|id| !token(id)) || value.endpoints.iter().any(|id| !endpoint(id))
     {

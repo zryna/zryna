@@ -190,3 +190,39 @@ fn sealed_program_source_and_world_authorities_cannot_be_forged_or_omitted() {
         UNSUPPORTED
     );
 }
+
+#[test]
+fn sealed_program_cardinality_rejects_before_program_fingerprinting() {
+    let input = input(&["A"], &[]);
+    let expected = BTreeSet::from(["A".to_owned()]);
+    let mut authorities = authorities(&input);
+    authorities
+        .instances
+        .get_mut("A")
+        .expect("instance")
+        .programs
+        .extend([verified_language("second"), verified_language("third")]);
+    assert_eq!(
+        authorities.binding(&expected).expect_err("duplicate exact-bound authorities")[0].message(),
+        "instance requires one distinct sealed authority per language"
+    );
+
+    let VerifiedLanguage::I32V1 { program, .. } = verified_language("mismatched program") else {
+        unreachable!()
+    };
+    let VerifiedLanguage::I32V1 { sources, .. } = verified_language("mismatched source") else {
+        unreachable!()
+    };
+    authorities
+        .instances
+        .get_mut("A")
+        .expect("instance")
+        .programs
+        .push(VerifiedLanguage::I32V1 { program, sources });
+    let diagnostics = authorities.binding(&expected).expect_err("four sealed authorities");
+    assert_eq!(diagnostics[0].code(), INVALID);
+    assert_eq!(
+        diagnostics[0].message(),
+        "instance sealed program authority bound (1..=3) exceeded"
+    );
+}

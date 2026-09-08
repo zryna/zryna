@@ -130,6 +130,12 @@ impl Authorities {
         }
         let mut instances = Vec::with_capacity(self.instances.len());
         for (id, authority) in &self.instances {
+            if authority.programs.len() > 3 {
+                return Err(vec![error(
+                    INVALID,
+                    "instance sealed program authority bound (1..=3) exceeded",
+                )]);
+            }
             let mut languages = Vec::with_capacity(authority.programs.len());
             for program in &authority.programs {
                 languages.push((
