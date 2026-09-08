@@ -253,9 +253,9 @@ fn allocation_core_n7_n10_reject_before_target_dispatch() {
                 Err(error) if error.kind() == CommandFailureKind::Source => {
                     let diagnostic = &error.diagnostics()[0];
                     let expected = &case["span"];
-                    let actual = diagnostic.primary_span().map(|span| {
-                        (span.file().index(), span.start(), span.end())
-                    });
+                    let actual = diagnostic
+                        .primary_span()
+                        .map(|span| (span.file().index(), span.start(), span.end()));
                     let expected_span = (
                         u32::try_from(expected["file"].as_u64().expect("stable file"))
                             .expect("bounded file"),
