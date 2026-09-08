@@ -530,6 +530,14 @@ create-only publication. Its optional native-input appendix remains provisional 
 relevant accepted #364 ABI decisions. The checked fixtures implement no resolver, build engine,
 registry, native tool invocation, cache store, selector, or public support.
 
+Issue #362 proposes [package source trust and build execution policy
+v0](../spec/package/SOURCE_TRUST_V0.md): explicit source/namespace and cache integrity,
+offline/frozen rejection, pure-source/trusted-native/untrusted-playground operation tables,
+isolation ownership and later adversarial gates. Acceptance retains #168/#360 source authority
+and #361's validated target/runtime-only source-plan boundary; native recipes additionally need its optional appendix
+and relevant #364 ABI decisions. Registry hosting and M6 playground implementation stay deferred.
+This policy draft creates no resolver, sandbox, execution mode or public support.
+
 Completion gate: a clean environment reproduces and verifies every published artifact from a tagged source revision.
 
 ## M6 — Developer Tooling

@@ -121,12 +121,12 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Canonical schema, serialization, fixtures, and validator are `schemas/zryna-package-release-v1.schema.json`, `scripts/package-release/`, and `tests/package-release-v1/`; #360 semantic decisions are checked by `tests/package-instance-identity-contract.test.mjs`.
 - Focus: `pnpm package:contract`, then `pnpm docs:check`. Preserve the contract-only boundary: package resolution, import syntax, source acquisition, build execution, publication, and public support remain separate work.
 
-## 13. M5 resolved source/build plans or cache identity
+## 13. M5 resolved build/source trust plans or cache identity
 
-- Start: [resolved build plan v0](../spec/package/RESOLVED_BUILD_PLAN_V0.md) and the [M5 roadmap](ROADMAP.md).
+- Start: [resolved build plan v0](../spec/package/RESOLVED_BUILD_PLAN_V0.md), [source trust policy v0](../spec/package/SOURCE_TRUST_V0.md), and the [M5 roadmap](ROADMAP.md).
 - Closed source-only shape: `schemas/zryna-resolved-build-plan-v0.schema.json`; validation entrypoint, #168 authority projection, and structural budget checks: `scripts/build-plan/validate.mjs`, `scripts/build-plan/package-authority.mjs`, and `scripts/build-plan/budgets.mjs`.
-- Positive, cache-miss, stale-input, wrong-target, missing-library, undeclared-tool, boundary and interrupted-publication evidence: `tests/resolved-build-plan-v0.test.mjs` and `tests/resolved-build-plan-v0/source-only.json`.
-- Focus: `pnpm build-plan:contract`, then `pnpm docs:check`. Reuse #168 package/provenance digests and #357 profile composition; preserve #360 package-instance identity, #362 execution/trust policy, driver-owned compilation/link/publication, and the native appendix's pending-#364 status.
+- Positive, cache-miss, stale-input, wrong-target, missing-library, undeclared-tool, boundary, trust-policy and interrupted-publication evidence: `tests/resolved-build-plan-v0.test.mjs`, `tests/resolved-build-plan-v0/source-only.json`, and `tests/package-source-trust.test.mjs`.
+- Focus: `pnpm build-plan:contract`, `pnpm package:contract`, then `pnpm docs:check`. Reuse #168 package/provenance digests and #357 profile composition; preserve #360 package-instance identity, #362 execution/trust policy, driver-owned compilation/link/publication, and the native appendix's pending-#364 status.
 
 ## Required completion checks for every route
 

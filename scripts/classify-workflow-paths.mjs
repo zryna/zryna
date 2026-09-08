@@ -38,6 +38,7 @@ const LANE_PATHS = Object.freeze({
     /^scripts\/package-release\//,
     /^spec\/package\//,
     /^tests\/package-release-v1\//,
+    /^tests\/package-source-trust\.test\.mjs$/,
   ]),
   provider_v4: Object.freeze([
     /^adapters\/typescript-6\//,

@@ -300,7 +300,7 @@ test('contract links and routed CI retain the dedicated fixture gate', () => {
   }
   const pkg = JSON.parse(readFileSync(new URL('package.json', root)));
   assert.equal(pkg.scripts['package:contract'],
-    'node --test tests/package-release-v1/validation.test.mjs tests/package-release-v1/boundaries.test.mjs');
+    'node --test tests/package-release-v1/validation.test.mjs tests/package-release-v1/boundaries.test.mjs tests/package-source-trust.test.mjs');
   const workflow = readFileSync(new URL('.github/workflows/ci.yml', root), 'utf8');
   assert.match(workflow,
     /if: needs\.route-contracts\.outputs\.package_release == 'true'/);
