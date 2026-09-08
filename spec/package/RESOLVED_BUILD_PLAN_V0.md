@@ -13,7 +13,8 @@ Package and provenance authority remains with #168. Its accepted
 manifest, `source-files`, and lock digests. In this plan, `package.id` is #168's manifest digest,
 `package.sourceSha256` is #168's `source-files` digest, and `packageLockSha256` is #168's lock
 digest. The fixture checker first runs #168's complete validator over canonical bytes and then
-projects its authenticated lock digest, root, exact package pairs, aliases, and edges. A caller
+projects its authenticated lock digest, compatibility compiler/profile/target coverage, root,
+exact package pairs, aliases, and edges. A caller
 cannot supply an unvalidated lookalike projection. This document imports #168's checker and
 serializer helpers and does not redefine their serialization or digest domains. Release subjects,
 SBOM, signed notes, rollback and provenance remain entirely #168-owned.
@@ -65,7 +66,9 @@ The closed JSON Schema is
 [`schemas/zryna-resolved-build-plan-v0.schema.json`](../../schemas/zryna-resolved-build-plan-v0.schema.json).
 The root record has format `zryna.resolved-build-plan.v0`, numeric version `0`, status
 `specified-only`, one `sourcePlan`, an optional `nativeAppendix`, and a derived `cacheKey`. Unknown,
-missing, null, or mistyped fields reject. The source-only plan omits `nativeAppendix` completely.
+missing, null, or mistyped fields reject. The checker compiles this repository-owned schema at
+module initialization; callers cannot substitute a relaxed schema. The source-only plan omits
+`nativeAppendix` completely.
 
 The source plan binds the following inputs:
 
@@ -91,7 +94,9 @@ unsigned ASCII bytes. The first unreachable package is likewise selected in cano
 order. After structural graph validation, the lock digest, root, ordered package pairs, aliases,
 and selected edges must exactly equal the branded projection from the validated #168 envelope.
 Source-only v0 rejects every `host/build` occurrence rather than inventing an unauthenticated root.
-The exact compiler tuple must match a declared host tool. Each host tool
+The compiler version and profile must match #168 compatibility, and each selected target must be
+in its target set. The exact compiler tuple must match a declared host tool, and that compiler tool
+must admit every selected target. Each host tool
 must run on the declared host and may produce only for listed targets. Every output must name a
 listed target. These are closed references: discovery from `PATH`, a current working directory,
 an ambient registry, an inherited environment, or a neighboring cache entry is forbidden.
@@ -142,7 +147,7 @@ Arrays have these deterministic rules:
 | tool target sets | target id ascending |
 | outputs | target id, then path ascending |
 | native acquired collections and compile steps | id ascending |
-| compilation/link arguments and linker inputs | declared execution order; repetitions allowed |
+| linker inputs | declared execution order; repetitions allowed |
 
 All comparisons use unsigned ASCII bytes. Set-like arrays are unique. Source paths use lowercase
 portable relative syntax and reject empty, dot, parent, device-name, repeated-separator, absolute,
@@ -187,8 +192,9 @@ SHA256(
 ```
 
 A cache lookup by a missing target key is an ordinary cache miss and may lead the driver to build.
-A present entry is never trusted by key alone: its target, complete output paths, byte sizes and
-SHA-256 values must be revalidated before use. A wrong target, stale output, incomplete inventory,
+A present entry is never trusted by key alone: its closed metadata record has at most 16 unique
+outputs, and its target, complete output paths, byte sizes and SHA-256 values must be revalidated
+before use. Malformed metadata, a wrong target, stale output, incomplete inventory,
 or incompatible plan key is corrupt/incompatible input and rejects; it is not silently treated as a
 hit, repaired, relabeled, or published. Cache storage is private intermediate state, not a release
 or provenance record. #168 remains the authority for recording any resulting release material.
@@ -205,9 +211,9 @@ The appendix makes host and target roles unambiguous while leaving ABI details p
 | `acquisition.staticArtifacts` | exact link-time archives | target id, byte size and digest |
 | `acquisition.sharedArtifacts` | exact link/load artifacts | target id, byte size and digest |
 | `acquisition.runtimeDependencies` | artifacts required after link | target id and an exact shared-artifact reference |
-| `compilation.steps` | driver-requested compilation | declared host tool, target, ordered literal arguments, inputs and object output identity |
+| `compilation.steps` | driver-requested compilation | declared host tool, target, typed versioned invocation adapter, inputs and object output identity |
 | `abi` | accepted native boundary inputs | target triple plus versioned ABI, calling-convention, carrier, ownership and runtime identities from relevant #364 decisions |
-| `linking` | driver-owned final link | declared host linker, target, ordered typed linker inputs, literal arguments and output path |
+| `linking` | driver-owned final link | declared host linker, target, ordered typed linker inputs, typed versioned invocation adapter and exact declared output path |
 
 The appendix records acquisition identities; their presence never authorizes retrieval or execution.
 Acquisition may return verified bytes and metadata only under #362 policy and evidence, and it cannot
@@ -216,6 +222,11 @@ Linking consumes explicitly typed object, static, shared, and sysroot references
 Runtime dependencies are not linker inputs by implication and linker inputs are not deployed by
 implication. The driver checks every reference, target, digest and tool before starting a process and
 alone owns compilation, linking, cache materialization, and publication.
+
+Compilation and linking use closed, versioned invocation-adapter records rather than raw argument
+arrays. Source paths, response-file references, and ambient `-L`/`-l` selections therefore cannot
+be smuggled into process arguments. The linker output must exactly match a target-qualified output
+already declared by the source plan.
 
 All acquired records and compilation/link sections must name the appendix target. A target library
 must reference an artifact of its declared static/shared kind. Every runtime dependency must name a
@@ -249,7 +260,7 @@ The checked fixture API returns one stable category and no partial accepted plan
 | `P361-ORDER` | noncanonical or duplicate set-like collection |
 | `P361-IDENTITY` | absent/unvalidated #168 authority; changed lock/root/pair/alias/edge; missing reference; cycle; orphan; unsupported graph role |
 | `P361-SOURCE` | missing package for a source, missing bytes, or size/hash drift |
-| `P361-TOOLCHAIN` | compiler mismatch, wrong-host tool, or undeclared compile/link tool |
+| `P361-TOOLCHAIN` | #168 compatibility mismatch, compiler target gap, wrong-host tool, or undeclared compile/link tool |
 | `P361-TARGET` | absent, incompatible, non-native, or cross-target input |
 | `P361-NATIVE` | unresolved or kind-confused library/sysroot/artifact/object reference |
 | `P361-CACHE` | forged plan key, incompatible entry, incomplete inventory, or stale bytes |
@@ -266,8 +277,10 @@ A later driver integration must map failures through its separately reviewed dia
 
 ### Repeat build and cache miss
 
-`tests/resolved-build-plan-v0/source-only.json` is a fixed two-package source-only example. Parsing
-the same canonical bytes twice yields the same plan cache key. Rehashing the same two source files
+`tests/resolved-build-plan-v0/source-only.json` is a fixed two-package source-only example committed
+as canonical single-line JSON with a terminal LF and validated through the byte API. Its cache key
+is checked against a fixed expected value and an independent canonicalization/domain-hash oracle.
+Parsing the same canonical bytes twice yields the same plan cache key. Rehashing the same two source files
 twice succeeds. A target-cache entry with the derived target key and complete rehashed output is a
 hit. With no entry, the result is `miss`; no error, cache mutation, or publication has occurred.
 

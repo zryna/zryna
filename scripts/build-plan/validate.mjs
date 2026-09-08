@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,10 @@ export { validatePackageAuthority } from './package-authority.mjs';
 
 export const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export const MAX_PLAN_BYTES = 262144;
+const schema = JSON.parse(readFileSync(
+  new URL('../../schemas/zryna-resolved-build-plan-v0.schema.json', import.meta.url), 'utf8',
+));
+const validateSchema = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
 
 function fail(code, detail) {
   throw new Error(`${code}: ${detail}`);
@@ -99,6 +104,17 @@ function validateSourcePlan(plan, packageAuthority) {
     }
   }
   validateAuthenticatedPackageGraph(plan, packagesByKey, packageAuthority);
+  if (plan.compiler.version !== packageAuthority.compatibility.compiler) {
+    fail('P361-TOOLCHAIN', 'compiler version differs from validated #168 compatibility');
+  }
+  if (plan.profile.id !== packageAuthority.compatibility.profile) {
+    fail('P361-TARGET', 'profile differs from validated #168 compatibility');
+  }
+  for (const target of plan.targets) {
+    if (!packageAuthority.compatibility.targets.includes(target.id)) {
+      fail('P361-TARGET', `${target.id} is absent from validated #168 compatibility`);
+    }
+  }
   for (const source of plan.sources) {
     if (!packageIds.has(rolePackageKey(source.graphRole, source.package))) fail('P361-SOURCE', `source package ${source.package.id} is absent`);
   }
@@ -135,6 +151,11 @@ function validateSourcePlan(plan, packageAuthority) {
   if (!compiler || compiler.version !== plan.compiler.version || compiler.sha256 !== plan.compiler.sha256) {
     fail('P361-TOOLCHAIN', 'compiler must match one exact declared host tool');
   }
+  for (const target of plan.targets) {
+    if (!compiler.targets.includes(target.id)) {
+      fail('P361-TOOLCHAIN', `compiler does not admit target ${target.id}`);
+    }
+  }
   for (const tool of plan.hostTools) {
     if (tool.runsOn !== plan.host.triple) fail('P361-TOOLCHAIN', `${tool.name} does not run on the declared host`);
     orderedUnique(tool.targets, (item) => item, `${tool.name} targets`);
@@ -147,7 +168,8 @@ function validateSourcePlan(plan, packageAuthority) {
       !/^(?:0|[1-9][0-9]{0,9})$/.test(environment.get('SOURCE_DATE_EPOCH') ?? '')) {
     fail('P361-TOOLCHAIN', 'reproduction environment differs from #168');
   }
-  return { packageIds, sourceKeys, targets, tools };
+  const outputKeys = new Set(plan.outputs.map((output) => `${output.target}\0${output.path}`));
+  return { packageIds, sourceKeys, targets, tools, outputKeys };
 }
 
 function indexById(items, label) {
@@ -224,9 +246,12 @@ function validateNativeAppendix(appendix, sourceAuthority) {
         : input.kind === 'shared' ? sharedArtifacts : sysroots;
     if (!index.has(input.id)) fail('P361-NATIVE', `missing ${input.kind} linker input ${input.id}`);
   }
+  if (!sourceAuthority.outputKeys.has(`${appendix.target}\0${appendix.linking.output}`)) {
+    fail('P361-NATIVE', 'linker output is not an exact declared target output');
+  }
 }
 
-export function validateBuildPlan(document, schema, packageAuthority) {
+export function validateBuildPlan(document, packageAuthority) {
   validateCollectionBudgets(document);
   let planBytes;
   try {
@@ -235,15 +260,14 @@ export function validateBuildPlan(document, schema, packageAuthority) {
     planBytes = Buffer.alloc(0);
   }
   if (planBytes.length > MAX_PLAN_BYTES) fail('P361-BUDGET', 'plan exceeds 262144 bytes');
-  const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
-  if (!validate(document)) fail('P361-SCHEMA', `schema failed at ${validate.errors[0].instancePath || '/'}`);
+  if (!validateSchema(document)) fail('P361-SCHEMA', `schema failed at ${validateSchema.errors[0].instancePath || '/'}`);
   const sourceAuthority = validateSourcePlan(document.sourcePlan, packageAuthority);
   if (document.nativeAppendix) validateNativeAppendix(document.nativeAppendix, sourceAuthority);
   if (document.cacheKey !== deriveCacheKey(document)) fail('P361-CACHE', 'cache key does not bind the canonical plan');
   return Object.freeze({ cacheKey: document.cacheKey, native: Boolean(document.nativeAppendix) });
 }
 
-export function validateBuildPlanBytes(input, schema, packageAuthority) {
+export function validateBuildPlanBytes(input, packageAuthority) {
   if (!Buffer.isBuffer(input) || input.length > MAX_PLAN_BYTES) fail('P361-BUDGET', 'wire input exceeds its bound');
   let document;
   try {
@@ -252,7 +276,7 @@ export function validateBuildPlanBytes(input, schema, packageAuthority) {
     fail('P361-WIRE', 'input is not strict UTF-8 JSON');
   }
   if (!canonicalBytes(document).equals(input)) fail('P361-WIRE', 'input is not canonical JSON');
-  return validateBuildPlan(document, schema, packageAuthority);
+  return validateBuildPlan(document, packageAuthority);
 }
 
 export function verifySourceMaterials(document, materials) {
@@ -269,11 +293,41 @@ export function verifySourceMaterials(document, materials) {
   return true;
 }
 
+function exactObjectKeys(value, expected) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) &&
+    Object.keys(value).sort().join('\0') === [...expected].sort().join('\0');
+}
+
+function validateCacheMetadata(entry, outputMaterials) {
+  if (!exactObjectKeys(entry, ['key', 'outputs', 'target']) ||
+      typeof entry.key !== 'string' || !/^[0-9a-f]{64}$/.test(entry.key) ||
+      !['javascript', 'native-linux-x86_64', 'webassembly'].includes(entry.target) ||
+      !Array.isArray(entry.outputs) || entry.outputs.length > 16 ||
+      !(outputMaterials instanceof Map) || outputMaterials.size !== entry.outputs.length) {
+    fail('P361-CACHE', 'cache entry metadata is malformed or incomplete');
+  }
+  const paths = new Set();
+  for (const output of entry.outputs) {
+    if (!exactObjectKeys(output, ['path', 'sha256', 'size']) ||
+        typeof output.path !== 'string' || output.path.length === 0 || output.path.length > 160 ||
+        !/^[a-z0-9][a-z0-9._/-]*$/.test(output.path) || paths.has(output.path) ||
+        !Number.isSafeInteger(output.size) || output.size < 0 || output.size > 1073741824 ||
+        typeof output.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(output.sha256)) {
+      fail('P361-CACHE', 'cache output metadata is malformed, duplicate, or oversized');
+    }
+    paths.add(output.path);
+  }
+  for (const key of outputMaterials.keys()) {
+    if (!paths.has(key)) fail('P361-CACHE', 'cache output material inventory has extra entries');
+  }
+}
+
 export function validateCacheEntry(document, target, entry, outputMaterials) {
   if (!document.sourcePlan.targets.some((candidate) => candidate.id === target)) {
     fail('P361-TARGET', `cache lookup target ${target} is absent`);
   }
   if (entry === undefined) return Object.freeze({ outcome: 'miss' });
+  validateCacheMetadata(entry, outputMaterials);
   const expectedKey = deriveTargetCacheKey(document, target);
   if (entry.key !== expectedKey || entry.target !== target) fail('P361-CACHE', 'cache entry identity is incompatible');
   const expectedPaths = document.sourcePlan.outputs.filter((output) => output.target === target).map((output) => output.path);
@@ -307,16 +361,13 @@ export function validatePublicationObservation(observation) {
 }
 
 export async function loadBuildPlan(root = workspaceRoot) {
-  const [documentText, schemaText, packageFixtureBytes] = await Promise.all([
-    readFile(path.join(root, 'tests/resolved-build-plan-v0/source-only.json'), 'utf8'),
-    readFile(path.join(root, 'schemas/zryna-resolved-build-plan-v0.schema.json'), 'utf8'),
+  const [documentBytes, packageFixtureBytes] = await Promise.all([
+    readFile(path.join(root, 'tests/resolved-build-plan-v0/source-only.json')),
     readFile(path.join(root, 'tests/package-release-v1/valid.json')),
   ]);
-  const document = JSON.parse(documentText);
-  const schema = JSON.parse(schemaText);
   const packageAuthority = validatePackageAuthority(packageFixtureBytes);
-  validateBuildPlan(document, schema, packageAuthority);
-  return { document, schema, packageAuthority };
+  const receipt = validateBuildPlanBytes(documentBytes, packageAuthority);
+  return { document: JSON.parse(documentBytes), packageAuthority, receipt };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

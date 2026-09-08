@@ -30,6 +30,11 @@ export function validatePackageAuthority(input) {
   const authority = Object.freeze({
     lockSha256: receipt.lockSha256,
     rootPackage: identity(fixture.lock.root),
+    compatibility: Object.freeze({
+      compiler: fixture.lock.compatibility.compiler,
+      profile: fixture.lock.compatibility.profile,
+      targets: Object.freeze([...fixture.lock.compatibility.targets]),
+    }),
     packages: Object.freeze(fixture.lock.packages.map((pkg) => Object.freeze({
       graphRole: 'target/runtime',
       package: identity(pkg.id),

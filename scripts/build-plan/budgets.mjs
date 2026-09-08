@@ -31,8 +31,6 @@ export function validateCollectionBudgets(document) {
   collectionBound(appendix?.compilation?.steps, 64, 'compilation steps');
   for (const step of Array.isArray(appendix?.compilation?.steps) ? appendix.compilation.steps : []) {
     collectionBound(step?.inputs, 64, 'compilation inputs');
-    collectionBound(step?.arguments, 64, 'compilation arguments');
   }
   collectionBound(appendix?.linking?.inputs, 96, 'linker inputs');
-  collectionBound(appendix?.linking?.arguments, 64, 'linker arguments');
 }

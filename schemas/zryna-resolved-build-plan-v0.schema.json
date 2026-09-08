@@ -253,14 +253,23 @@
     "compileStep": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "tool", "target", "inputs", "arguments", "output"],
+      "required": ["id", "tool", "target", "inputs", "invocation", "output"],
       "properties": {
         "id": { "$ref": "#/$defs/name" },
         "tool": { "$ref": "#/$defs/name" },
         "target": { "$ref": "#/$defs/targetId" },
         "inputs": { "type": "array", "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/compileInput" } },
-        "arguments": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 160 } },
+        "invocation": { "$ref": "#/$defs/compileInvocation" },
         "output": { "$ref": "#/$defs/name" }
+      }
+    },
+    "compileInvocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "mode"],
+      "properties": {
+        "adapter": { "const": "zryna.native-compile-adapter.v0" },
+        "mode": { "const": "compile-only" }
       }
     },
     "compileInput": {
@@ -339,15 +348,24 @@
         "linking": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["tool", "target", "inputs", "arguments", "output"],
+          "required": ["tool", "target", "inputs", "invocation", "output"],
           "properties": {
             "tool": { "$ref": "#/$defs/name" },
             "target": { "$ref": "#/$defs/targetId" },
             "inputs": { "type": "array", "maxItems": 96, "items": { "$ref": "#/$defs/linkerInput" } },
-            "arguments": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 160 } },
+            "invocation": { "$ref": "#/$defs/linkInvocation" },
             "output": { "$ref": "#/$defs/portablePath" }
           }
         }
+      }
+    },
+    "linkInvocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "buildId"],
+      "properties": {
+        "adapter": { "const": "zryna.native-link-adapter.v0" },
+        "buildId": { "const": "none" }
       }
     }
   }

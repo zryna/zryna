@@ -7,7 +7,6 @@ import test from 'node:test';
 import { bindGraph, checksum, makeFixture, recordHash, wire } from './package-release-v1/builders.mjs';
 
 import {
-  canonicalBytes,
   deriveCacheKey,
   deriveTargetCacheKey,
   loadBuildPlan,
@@ -23,6 +22,20 @@ import {
 function withCache(document) {
   document.cacheKey = deriveCacheKey(document);
   return document;
+}
+
+function independentCacheKey(document) {
+  const material = {
+    format: document.format,
+    sourcePlan: document.sourcePlan,
+    status: document.status,
+    version: document.version,
+  };
+  if (document.nativeAppendix) material.nativeAppendix = document.nativeAppendix;
+  return createHash('sha256')
+    .update(Buffer.from('ZRYNA-RESOLVED-BUILD-PLAN-V0\0plan\0'))
+    .update(wire(material))
+    .digest('hex');
 }
 
 function bindPlanToFixture(template, fixture, packageAuthority) {
@@ -96,7 +109,7 @@ function nativePlan(sourceOnly) {
           package: structuredClone(document.sourcePlan.rootPackage),
           path: 'src/main.zry',
         }],
-        arguments: ['-c', 'sample.c'],
+        invocation: { adapter: 'zryna.native-compile-adapter.v0', mode: 'compile-only' },
         output: 'sample-object',
       }],
     },
@@ -109,7 +122,7 @@ function nativePlan(sourceOnly) {
         { kind: 'shared', id: 'libc-so' },
         { kind: 'sysroot', id: 'linux-sysroot' },
       ],
-      arguments: ['--build-id=none'],
+      invocation: { adapter: 'zryna.native-link-adapter.v0', buildId: 'none' },
       output: 'native/app.elf',
     },
   };
@@ -117,39 +130,84 @@ function nativePlan(sourceOnly) {
 }
 
 test('source-only v0 plan validates and canonical replay is stable', async () => {
-  const { document, schema, packageAuthority } = await loadBuildPlan();
+  const { document, packageAuthority, receipt } = await loadBuildPlan();
+  const fixtureBytes = await readFile(path.join(workspaceRoot, 'tests/resolved-build-plan-v0/source-only.json'));
   const packageFixture = JSON.parse(await readFile(path.join(workspaceRoot, 'tests/package-release-v1/valid.json'), 'utf8'));
   assert.equal(document.sourcePlan.packageLockSha256, packageFixture.release.lockSha256);
   assert.deepEqual(document.sourcePlan.packages.map(({ package: identity }) => identity),
     packageFixture.lock.packages.map(({ id, sourceSha256 }) => ({ id, sourceSha256 })));
   assert.deepEqual(document.sourcePlan.packages.flatMap((pkg) => pkg.dependencies.map((dependency) => dependency.alias)),
     packageFixture.lock.packages.flatMap((pkg) => pkg.dependencies.map((dependency) => dependency.alias)));
-  assert.deepEqual(validateBuildPlan(document, schema, packageAuthority), { cacheKey: document.cacheKey, native: false });
-  const wire = canonicalBytes(document);
-  assert.deepEqual(validateBuildPlanBytes(wire, schema, packageAuthority), { cacheKey: document.cacheKey, native: false });
-  assert.deepEqual(validateBuildPlanBytes(wire, schema, packageAuthority), { cacheKey: document.cacheKey, native: false });
-  assert.throws(() => validateBuildPlanBytes(Buffer.from(` ${wire}`), schema, packageAuthority), /P361-WIRE/);
+  assert.equal(document.cacheKey, '1c864e28837cb1dcdcaf10622f994277befc69de3ef64828dfc4dc3cada0c471');
+  assert.equal(document.cacheKey, independentCacheKey(document));
+  assert.deepEqual(receipt, { cacheKey: document.cacheKey, native: false });
+  assert.deepEqual(fixtureBytes, wire(document));
+  assert.deepEqual(validateBuildPlan(document, packageAuthority), receipt);
+  assert.deepEqual(validateBuildPlanBytes(fixtureBytes, packageAuthority), receipt);
+  assert.deepEqual(validateBuildPlanBytes(fixtureBytes, packageAuthority), receipt);
+  assert.throws(() => validateBuildPlanBytes(Buffer.from(` ${fixtureBytes}`), packageAuthority), /P361-WIRE/);
+  const unknown = structuredClone(document);
+  unknown.unbound = 'not-in-cache-material';
+  assert.equal(deriveCacheKey(unknown), document.cacheKey);
+  assert.throws(() => validateBuildPlanBytes(wire(unknown), packageAuthority), /P361-SCHEMA/);
 });
 
 test('validated #168 projection authenticates lock, root, exact pairs, aliases and edges', async () => {
-  const { document, schema, packageAuthority } = await loadBuildPlan();
-  assert.throws(() => validateBuildPlan(document, schema, structuredClone(packageAuthority)),
+  const { document, packageAuthority } = await loadBuildPlan();
+  assert.throws(() => validateBuildPlan(document, structuredClone(packageAuthority)),
     /P361-IDENTITY: a validated #168 package authority is required/);
   const forgedLock = structuredClone(document);
   forgedLock.sourcePlan.packageLockSha256 = '0'.repeat(64);
-  assert.throws(() => validateBuildPlan(withCache(forgedLock), schema, packageAuthority),
+  assert.throws(() => validateBuildPlan(withCache(forgedLock), packageAuthority),
     /P361-IDENTITY: package lock digest differs/);
   const forgedRoot = structuredClone(document);
   forgedRoot.sourcePlan.rootPackage = structuredClone(forgedRoot.sourcePlan.packages[1].package);
-  assert.throws(() => validateBuildPlan(withCache(forgedRoot), schema, packageAuthority), /P361-IDENTITY/);
+  assert.throws(() => validateBuildPlan(withCache(forgedRoot), packageAuthority), /P361-IDENTITY/);
   const forgedAlias = structuredClone(document);
   forgedAlias.sourcePlan.packages[0].dependencies[0].alias = 'other';
-  assert.throws(() => validateBuildPlan(withCache(forgedAlias), schema, packageAuthority),
+  assert.throws(() => validateBuildPlan(withCache(forgedAlias), packageAuthority),
     /P361-IDENTITY: package pairs or alias edges differ/);
   const forgedEdge = structuredClone(document);
   forgedEdge.sourcePlan.packages[0].dependencies[0].package.id = '0'.repeat(64);
-  assert.throws(() => validateBuildPlan(withCache(forgedEdge), schema, packageAuthority),
+  assert.throws(() => validateBuildPlan(withCache(forgedEdge), packageAuthority),
     /P361-IDENTITY: dependency .* is absent/);
+});
+
+test('validated #168 compatibility binds compiler, profile and requested target coverage', async () => {
+  const { document, packageAuthority } = await loadBuildPlan();
+  const compiler = structuredClone(document);
+  compiler.sourcePlan.compiler.version = '0.1.1';
+  compiler.sourcePlan.hostTools[0].version = '0.1.1';
+  assert.throws(() => validateBuildPlan(withCache(compiler), packageAuthority),
+    /P361-TOOLCHAIN: compiler version differs from validated #168 compatibility/);
+  const profile = structuredClone(document);
+  profile.sourcePlan.profile.id = 'control-flow-v1';
+  assert.throws(() => validateBuildPlan(withCache(profile), packageAuthority),
+    /P361-TARGET: profile differs from validated #168 compatibility/);
+  const target = nativePlan(document);
+  assert.throws(() => validateBuildPlan(target, packageAuthority),
+    /P361-TARGET: native-linux-x86_64 is absent from validated #168 compatibility/);
+});
+
+test('every selected target is admitted by the exact compiler tool', async () => {
+  const { document, packageAuthority } = await loadBuildPlan();
+  const uncovered = structuredClone(document);
+  uncovered.sourcePlan.targets.push({
+    id: 'webassembly',
+    triple: 'wasm32-unknown-unknown',
+    abi: 'zryna-wasm-scalar-v1',
+    features: [],
+    composition: {
+      contract: 'zryna.cross-target-profiles.v1',
+      row: 'U-WASM',
+      hostPolicySha256: '0'.repeat(64),
+      approvedRequestSha256: '1'.repeat(64),
+    },
+    runtime: { name: 'zryna-wasm-runtime', version: '1', sha256: 'e'.repeat(64) },
+  });
+  uncovered.sourcePlan.outputs.push({ path: 'webassembly/app.wasm', target: 'webassembly' });
+  assert.throws(() => validateBuildPlan(withCache(uncovered), packageAuthority),
+    /P361-TOOLCHAIN: compiler does not admit target webassembly/);
 });
 
 test('cache identity binds source, dependency, compiler, runtime, profile, target and host-tool inputs', async () => {
@@ -178,7 +236,7 @@ test('cache identity binds source, dependency, compiler, runtime, profile, targe
 });
 
 test('source material repeat succeeds while missing, extra and stale bytes fail closed', async () => {
-  const { document, schema, packageAuthority } = await loadBuildPlan();
+  const { document, packageAuthority } = await loadBuildPlan();
   const materialKey = (source) =>
     `${source.graphRole}:${source.package.id}:${source.package.sourceSha256}:${source.path}`;
   const materials = new Map(document.sourcePlan.sources.map((source) =>
@@ -196,21 +254,21 @@ test('source material repeat succeeds while missing, extra and stale bytes fail 
   assert.throws(() => verifySourceMaterials(document, stale), /P361-SOURCE: stale source material/);
   const mismatchedDigest = structuredClone(document);
   mismatchedDigest.sourcePlan.sources[0].sha256 = '0'.repeat(64);
-  assert.throws(() => validateBuildPlan(withCache(mismatchedDigest), schema, packageAuthority), /P361-SOURCE: .* source digest differs from #168/);
+  assert.throws(() => validateBuildPlan(withCache(mismatchedDigest), packageAuthority), /P361-SOURCE: .* source digest differs from #168/);
 });
 
 test('source collection budget rejects the first extra before schema validation', async () => {
-  const { document, schema, packageAuthority } = await loadBuildPlan();
+  const { document, packageAuthority } = await loadBuildPlan();
   const extra = structuredClone(document);
   while (extra.sourcePlan.sources.length < 257) {
     extra.sourcePlan.sources.push(structuredClone(extra.sourcePlan.sources.at(-1)));
   }
-  assert.throws(() => validateBuildPlan(withCache(extra), schema, packageAuthority),
+  assert.throws(() => validateBuildPlan(withCache(extra), packageAuthority),
     /P361-BUDGET: sources exceeds 256/);
 });
 
 test('source path accepts 96 ASCII bytes and rejects byte 97', async () => {
-  const { document, schema } = await loadBuildPlan();
+  const { document } = await loadBuildPlan();
   const fixture = makeFixture();
   const path96 = `src/${'a'.repeat(88)}.zry`;
   assert.equal(Buffer.byteLength(path96), 96);
@@ -220,65 +278,84 @@ test('source path accepts 96 ASCII bytes and rejects byte 97', async () => {
   bindGraph(fixture, 'package-01');
   const authority = validatePackageAuthority(wire(fixture));
   const exact = bindPlanToFixture(document, fixture, authority);
-  assert.doesNotThrow(() => validateBuildPlan(exact, schema, authority));
+  assert.doesNotThrow(() => validateBuildPlan(exact, authority));
   const extra = structuredClone(exact);
   extra.sourcePlan.sources[0].path = `src/${'a'.repeat(89)}.zry`;
   assert.equal(Buffer.byteLength(extra.sourcePlan.sources[0].path), 97);
-  assert.throws(() => validateBuildPlan(withCache(extra), schema, authority), /P361-SCHEMA/);
+  assert.throws(() => validateBuildPlan(withCache(extra), authority), /P361-SCHEMA/);
 });
 
 test('target graph rejects deterministic cycles, orphans and host/build occurrences', async () => {
-  const { document, schema, packageAuthority } = await loadBuildPlan();
+  const { document, packageAuthority } = await loadBuildPlan();
   const cyclic = structuredClone(document);
   cyclic.sourcePlan.packages[1].dependencies = [{
     alias: 'root',
     graphRole: 'target/runtime',
     package: structuredClone(cyclic.sourcePlan.packages[0].package),
   }];
-  assert.throws(() => validateBuildPlan(withCache(cyclic), schema, packageAuthority),
+  assert.throws(() => validateBuildPlan(withCache(cyclic), packageAuthority),
     /P361-IDENTITY: dependency cycle/);
   const orphaned = structuredClone(document);
   orphaned.sourcePlan.packages[0].dependencies = [];
-  assert.throws(() => validateBuildPlan(withCache(orphaned), schema, packageAuthority),
+  assert.throws(() => validateBuildPlan(withCache(orphaned), packageAuthority),
     /P361-IDENTITY: unreachable package/);
   const hostBuild = structuredClone(document);
   hostBuild.sourcePlan.packages[0].graphRole = 'host/build';
-  assert.throws(() => validateBuildPlan(withCache(hostBuild), schema, packageAuthority), /P361-SCHEMA/);
+  assert.throws(() => validateBuildPlan(withCache(hostBuild), packageAuthority), /P361-SCHEMA/);
 });
 
 test('native draft separates acquisition, compilation and linking and rejects boundary confusion', async () => {
-  const { document, schema, packageAuthority } = await loadBuildPlan();
-  const valid = nativePlan(document);
-  assert.deepEqual(validateBuildPlan(valid, schema, packageAuthority), { cacheKey: valid.cacheKey, native: true });
+  const { document } = await loadBuildPlan();
+  const fixture = makeFixture();
+  const targets = ['javascript', 'native-linux-x86_64', 'webassembly'];
+  fixture.lock.compatibility.targets = targets;
+  for (const manifest of fixture.manifests) manifest.compatibility.targets = targets;
+  bindGraph(fixture, 'package-01');
+  const packageAuthority = validatePackageAuthority(wire(fixture));
+  const valid = nativePlan(bindPlanToFixture(document, fixture, packageAuthority));
+  assert.deepEqual(validateBuildPlan(valid, packageAuthority), { cacheKey: valid.cacheKey, native: true });
   const changedArtifact = structuredClone(valid);
   changedArtifact.nativeAppendix.acquisition.staticArtifacts[0].sha256 = '9'.repeat(64);
   assert.notEqual(deriveCacheKey(changedArtifact), valid.cacheKey);
 
   const wrongTarget = structuredClone(valid);
   wrongTarget.nativeAppendix.acquisition.staticArtifacts[0].target = 'javascript';
-  assert.throws(() => validateBuildPlan(withCache(wrongTarget), schema, packageAuthority), /P361-TARGET: libsample-a has the wrong target/);
+  assert.throws(() => validateBuildPlan(withCache(wrongTarget), packageAuthority), /P361-TARGET: libsample-a has the wrong target/);
 
   const wrongRuntime = structuredClone(valid);
   wrongRuntime.nativeAppendix.abi.runtime.sha256 = '0'.repeat(64);
-  assert.throws(() => validateBuildPlan(withCache(wrongRuntime), schema, packageAuthority), /P361-NATIVE: native ABI runtime identity differs/);
+  assert.throws(() => validateBuildPlan(withCache(wrongRuntime), packageAuthority), /P361-NATIVE: native ABI runtime identity differs/);
 
   const missingLibrary = structuredClone(valid);
   missingLibrary.nativeAppendix.acquisition.targetLibraries[1].artifact = 'missing-a';
-  assert.throws(() => validateBuildPlan(withCache(missingLibrary), schema, packageAuthority), /P361-NATIVE: sample is missing its static artifact/);
+  assert.throws(() => validateBuildPlan(withCache(missingLibrary), packageAuthority), /P361-NATIVE: sample is missing its static artifact/);
 
   const undeclaredTool = structuredClone(valid);
   undeclaredTool.nativeAppendix.compilation.steps[0].tool = 'ambient-cc';
-  assert.throws(() => validateBuildPlan(withCache(undeclaredTool), schema, packageAuthority), /P361-TOOLCHAIN: undeclared compilation tool/);
+  assert.throws(() => validateBuildPlan(withCache(undeclaredTool), packageAuthority), /P361-TOOLCHAIN: undeclared compilation tool/);
+
+  for (const argument of ['sample.c', '@args.rsp', '-L/tmp/lib', '-lsample']) {
+    const ambientArgument = structuredClone(valid);
+    ambientArgument.nativeAppendix.compilation.steps[0].arguments = [argument];
+    assert.throws(() => validateBuildPlan(withCache(ambientArgument), packageAuthority), /P361-SCHEMA/);
+  }
+  const wrongAdapter = structuredClone(valid);
+  wrongAdapter.nativeAppendix.linking.invocation.adapter = 'ambient-linker';
+  assert.throws(() => validateBuildPlan(withCache(wrongAdapter), packageAuthority), /P361-SCHEMA/);
+  const mismatchedOutput = structuredClone(valid);
+  mismatchedOutput.nativeAppendix.linking.output = 'native/other.elf';
+  assert.throws(() => validateBuildPlan(withCache(mismatchedOutput), packageAuthority),
+    /P361-NATIVE: linker output is not an exact declared target output/);
 });
 
 test('accepted #357 profile and target rows do not widen or cross target axes', async () => {
-  const { document, schema, packageAuthority } = await loadBuildPlan();
+  const { document, packageAuthority } = await loadBuildPlan();
   const wrongRow = structuredClone(document);
   wrongRow.sourcePlan.targets[0].composition.row = 'U-WASM';
-  assert.throws(() => validateBuildPlan(withCache(wrongRow), schema, packageAuthority), /P361-TARGET: U-WASM is incompatible with javascript/);
+  assert.throws(() => validateBuildPlan(withCache(wrongRow), packageAuthority), /P361-TARGET: U-WASM is incompatible with javascript/);
   const unresolvedAll = structuredClone(document);
   unresolvedAll.sourcePlan.targets[0].id = 'all';
-  assert.throws(() => validateBuildPlan(withCache(unresolvedAll), schema, packageAuthority), /P361-SCHEMA/);
+  assert.throws(() => validateBuildPlan(withCache(unresolvedAll), packageAuthority), /P361-SCHEMA/);
 });
 
 test('cache miss, hit, wrong target and stale output have distinct deterministic outcomes', async () => {
@@ -290,12 +367,31 @@ test('cache miss, hit, wrong target and stale output have distinct deterministic
     target: 'javascript',
     outputs: [{ path: 'javascript/app.mjs', size: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') }],
   };
+  for (const malformed of [null, {}, { key: entry.key, target: entry.target },
+    { ...entry, key: 'too-short' }, { ...entry, target: 'Invalid Target' },
+    { ...entry, outputs: 'not-an-array' }, { ...entry, extra: true }]) {
+    assert.throws(() => validateCacheEntry(document, 'javascript', malformed, new Map()),
+      /P361-CACHE: cache entry metadata is malformed or incomplete/);
+  }
+  const oversized = { ...entry, outputs: Array.from({ length: 17 }, () => structuredClone(entry.outputs[0])) };
+  assert.throws(() => validateCacheEntry(document, 'javascript', oversized, new Map()), /P361-CACHE/);
+  const duplicate = { ...entry, outputs: [structuredClone(entry.outputs[0]), structuredClone(entry.outputs[0])] };
+  assert.throws(() => validateCacheEntry(document, 'javascript', duplicate, new Map()), /P361-CACHE/);
+  for (const output of [null, {}, { ...entry.outputs[0], extra: true },
+    { ...entry.outputs[0], sha256: 'too-short' }, { ...entry.outputs[0], size: -1 }]) {
+    assert.throws(() => validateCacheEntry(document, 'javascript', { ...entry, outputs: [output] },
+      new Map([['javascript/app.mjs', bytes]])), /P361-CACHE: cache output metadata is malformed/);
+  }
+  assert.throws(() => validateCacheEntry(document, 'javascript', entry, {}), /P361-CACHE/);
+  assert.throws(() => validateCacheEntry(document, 'javascript', entry,
+    new Map([['javascript/extra.mjs', bytes]])), /P361-CACHE: cache output material inventory has extra entries/);
   assert.deepEqual(validateCacheEntry(document, 'javascript', entry, new Map([['javascript/app.mjs', bytes]])), {
     outcome: 'hit',
     key: entry.key,
   });
   assert.throws(
-    () => validateCacheEntry(document, 'javascript', { ...entry, target: 'native-linux-x86_64' }, new Map()),
+    () => validateCacheEntry(document, 'javascript', { ...entry, target: 'native-linux-x86_64' },
+      new Map([['javascript/app.mjs', bytes]])),
     /P361-CACHE: cache entry identity is incompatible/,
   );
   assert.throws(
