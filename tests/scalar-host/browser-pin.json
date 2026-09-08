@@ -10,8 +10,8 @@
       "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip",
       "publisherUrl": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/linux64/chrome-linux64.zip",
       "executable": "chrome-linux64/chrome",
-      "archiveSha256": null,
-      "inventorySha256": null
+      "archiveSha256": "8aac35011c18f6e2d10696154af89a5728ac2ddd6dc6fad24ffdf243c3fcfd5a",
+      "inventorySha256": "110d5111c1a885596b2dba4fe5d04e570d26e1c57454d0a902f1115ce818635a"
     },
     "win32-x64": {
       "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/win64/chrome-win64.zip",
