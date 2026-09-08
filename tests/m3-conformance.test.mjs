@@ -17,7 +17,7 @@ function validateWorkflow(candidate) {
   assert.deepEqual(Object.keys(platform).sort(), ['name', 'runs-on', 'steps', 'strategy', 'timeout-minutes']);
   assert.equal(platform.name, 'm3 (${{ matrix.os }})');
   assert.equal(platform['runs-on'], '${{ matrix.os }}');
-  assert.equal(platform['timeout-minutes'], 30);
+  assert.equal(platform['timeout-minutes'], 40);
   assert.deepEqual(platform.strategy, { 'fail-fast': false, matrix: { os: ['ubuntu-latest', 'windows-latest'] } });
   assert.deepEqual(platform.steps, jobs['m2-platform'].steps.map(step =>
     step.run === 'pnpm m2:check' ? { run: 'pnpm m3:check' } : step));
