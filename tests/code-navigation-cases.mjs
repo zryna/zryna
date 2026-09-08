@@ -3,6 +3,7 @@ import { lstat, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import './package-instance-identity-contract.test.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const documentPath = 'docs/CODE_NAVIGATION.md';
@@ -37,7 +38,7 @@ test('code navigation links resolve and contribution guidance exposes the index'
   await validateLinks(document);
   assert(document.trimEnd().split('\n').length <= 150, 'navigation stays compact');
   assert.deepEqual([...document.matchAll(/^## ([0-9]+)\. /gm)].map(match => Number(match[1])),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   const contributing = await readFile(path.join(root, 'CONTRIBUTING.md'), 'utf8');
   assert.equal([...contributing.matchAll(/\]\(docs\/CODE_NAVIGATION\.md\)/g)].length, 1);
 });
