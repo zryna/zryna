@@ -93,6 +93,7 @@ impl DiagnosticSession {
             session: self.session,
             correlation: request.correlation,
             revision: record.description,
+            record: Arc::clone(record),
             source_identity: record.sources.identity(),
             work_limit: request.work_limit,
             deadline,
@@ -142,41 +143,34 @@ impl DiagnosticSession {
                 QueryReason::Deadline,
             );
         }
-        if pending.state.load(Ordering::Acquire) == super::REPLACED {
-            return stale(&pending.correlation);
-        }
-        let Some(record) = self.retained.iter().find(|record| {
-            record.description == pending.revision
-                && record.sources.identity() == pending.source_identity
-        }) else {
-            return stale(&pending.correlation);
-        };
-        let Some(report) = record.report.as_deref() else {
-            return DiagnosticQueryResponse::failure(
+        let record = &pending.record;
+        let response = if let Some(report) = record.report.as_deref() {
+            let logical_work = u64::try_from(report.len())
+                .ok()
+                .and_then(|value| value.checked_add(1))
+                .unwrap_or(u64::MAX);
+            if logical_work > pending.work_limit {
+                DiagnosticQueryResponse::failure(
+                    &pending.correlation,
+                    QueryStatus::OverBudget,
+                    QueryReason::Work,
+                )
+            } else if protocol_v2::validate_json(report.as_bytes(), &record.sources).is_err() {
+                DiagnosticQueryResponse::failure(
+                    &pending.correlation,
+                    QueryStatus::Unavailable,
+                    QueryReason::Analysis,
+                )
+            } else {
+                DiagnosticQueryResponse::success(&pending.correlation, report)
+            }
+        } else {
+            DiagnosticQueryResponse::failure(
                 &pending.correlation,
                 QueryStatus::Unavailable,
                 QueryReason::Analysis,
-            );
+            )
         };
-        let logical_work = u64::try_from(report.len())
-            .ok()
-            .and_then(|value| value.checked_add(1))
-            .unwrap_or(u64::MAX);
-        if logical_work > pending.work_limit {
-            return DiagnosticQueryResponse::failure(
-                &pending.correlation,
-                QueryStatus::OverBudget,
-                QueryReason::Work,
-            );
-        }
-        if protocol_v2::validate_json(report.as_bytes(), &record.sources).is_err() {
-            return DiagnosticQueryResponse::failure(
-                &pending.correlation,
-                QueryStatus::Unavailable,
-                QueryReason::Analysis,
-            );
-        }
-        let response = DiagnosticQueryResponse::success(&pending.correlation, report);
         if !self.is_active(pending.revision, pending.source_identity) {
             return stale(&pending.correlation);
         }

@@ -49,8 +49,7 @@ pub(crate) const MAX_REVISION: u64 = (1_u64 << 53) - 1;
 
 const LIVE: u8 = 0;
 const CANCELLED: u8 = 1;
-const REPLACED: u8 = 2;
-const TIMED_OUT: u8 = 3;
+const TIMED_OUT: u8 = 2;
 static NEXT_SESSION_ID: AtomicU64 = AtomicU64::new(1);
 
 /// Opaque compiler-host-issued identity for one retained source revision.
@@ -152,6 +151,7 @@ pub(crate) struct PendingDiagnosticQuery {
     session: u64,
     correlation: Correlation,
     revision: DiagnosticRevision,
+    record: Arc<RevisionRecord>,
     source_identity: SourceMapIdentity,
     work_limit: u64,
     deadline: Instant,
@@ -282,10 +282,6 @@ impl DiagnosticSession {
     }
 
     fn mark_replaced(&mut self) {
-        for slot in self.in_flight.values() {
-            let _ =
-                slot.state.compare_exchange(LIVE, REPLACED, Ordering::AcqRel, Ordering::Acquire);
-        }
         self.in_flight.clear();
     }
 }

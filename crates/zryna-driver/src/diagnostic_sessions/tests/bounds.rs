@@ -195,7 +195,11 @@ fn response_bytes_are_inclusive_and_first_extra_rejects_whole_result() {
 
 #[test]
 fn work_charge_is_exact_and_warm_replay_is_identical() {
-    let (mut session, revision, now) = ready_session("let x = 1;\n");
+    let (mut session, _, now) = ready_session("let old = 0;\n");
+    let revision = session
+        .admit_diagnostics(sources("src/main.zry", "let x = 1;\n"), &[])
+        .unwrap_or_else(|error| panic!("active revision must be admitted: {error}"));
+    assert_eq!(session.retained_revisions(), 2);
     let report_len = session
         .retained
         .back()
@@ -224,6 +228,11 @@ fn work_charge_is_exact_and_warm_replay_is_identical() {
         (response.status(), response.reason()),
         (QueryStatus::OverBudget, Some(QueryReason::Work))
     );
+
+    let recovered = session
+        .begin_diagnostics(&request("recovered", revision, work, "diagnostics", json!({})), now)
+        .unwrap_or_else(|response| panic!("work rejection must not poison state: {response:?}"));
+    assert_eq!(session.finish_diagnostics(recovered, now).status(), QueryStatus::Ok);
 }
 
 #[test]

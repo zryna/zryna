@@ -28,7 +28,7 @@ fn same_length_replacement_rejects_old_work_and_replay() {
 }
 
 #[test]
-fn replacement_staleness_precedes_old_readiness_and_work() {
+fn replacement_is_stale_after_internal_readiness_and_work() {
     let mut session = DiagnosticSession::try_new()
         .unwrap_or_else(|error| panic!("session identity must be available: {error}"));
     let unready = session
