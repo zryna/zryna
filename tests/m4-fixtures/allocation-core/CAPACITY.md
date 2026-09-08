@@ -1,16 +1,23 @@
 # Allocation capacity evidence
 
 #377 was developed on the reviewed [#384](https://github.com/zryna/zryna/issues/384)
-publication candidate. The integrated fixtures and probes have been executed
-in the pinned Linux proof environment described below. Hosted Linux and Windows
-checks remain separate merge evidence.
+publication candidate. An earlier Linux run is retained below as historical
+context only. Fresh candidate-bound local and hosted proof remains required.
 
 ## Governing contract and inspected revision
 
-The local proof base is the reviewed #384 candidate
-`ef3863f78ffe144c3145ece7f03c9ee09d5164da`. The #377 patches were verified
-unchanged after replaying them onto that base. Publication still requires a
-byte-identical alignment with the resulting main revision.
+The historical run used the reviewed #384 candidate
+`ef3863f78ffe144c3145ece7f03c9ee09d5164da` as its base. Its result was recorded
+by `eff49e0d4227a527c242af0d68eb999967da2eac` (tree
+`fb4dd04fd8faf5bdddc464b7698481c107c8c3d5`). Repository history does not retain
+the exact tested revision, full command lines, or process exit statuses behind
+that record, so its counts are not current-candidate verification.
+
+The reviewed correction base is `870e1a95c8bfc8bdd69a451a2f781d182d29bb93`.
+Before this correction, the candidate was
+`c6d8ff44ae8e898ec3bebcc5a37e0e3f0ade87c3`, whose tree is byte-identical to the
+historical evidence-record tree above. Tree identity makes the old report useful
+context, but does not recover the missing tested revision, commands, or statuses.
 
 | Evidence | Meaning |
 | --- | --- |
@@ -67,22 +74,24 @@ status representation: native ABI `ALLOCATION=1` and `CAPACITY=2`;
 WebAssembly private trap `allocation=2` and `capacity=3`. Neither probe requires
 the source resource cases or the remaining Q4–Q8 corpus.
 
-## Observed #377 evidence
+## Historical #377 report and current proof status
 
-| Requirement | Evidence and remaining work |
+| Requirement | Historical report and remaining current proof |
 | --- | --- |
-| Q4–Q8 results, bytes and independent owners | The focused driver suite passed for JavaScript, WebAssembly and Linux native. The WebAssembly Q4 genuine artifact passed its actual drop-handle/payload inspection, while a real clone-helper alias mutant was rejected. |
-| Failure atomicity, source retention, reverse cleanup | Bounded first-allocation, operation, growth, replacement and initialized-prefix cases passed across the selected targets. String clone/concat recovery and Vec recovery were each observed after failure; small traced rows bind cleanup order and retained sources. |
-| Bounds before later computation | Negative, first-extra and empty cases passed with the bounds trap winning before the armed later allocation failure. |
-| N7/N10 before publication | Fixed source diagnostics/spans and no-publication assertions passed before target dispatch. |
-| Exact/first-extra capacity | The source resource rows and bounded target probes passed with the corrected #384 classification. Maximum-size source rows run with tracing disabled because their derived temporary cleanup exceeds the fixed observation-frame capacity; they prove exact outcomes, not a full-limit cleanup trace. Raw allocator probes do not prove String operations at their maximum. |
+| Q4–Q8 results, bytes and independent owners | Historically reported passed for JavaScript, WebAssembly and Linux native, including the Q4 genuine artifact and alias mutant. Current revision: `UNRUN`. |
+| Failure atomicity, source retention, reverse cleanup | Historically reported passed for the selected targets, including String and Vec recovery. Current revision: `UNRUN`. |
+| Bounds before later computation | Historically reported passed for negative, first-extra and empty cases. Current revision: `UNRUN`. |
+| N7/N10 before publication | Historically reported passed. Exact file/start/end span oracles are now frozen; current revision: `UNRUN`. |
+| Exact/first-extra capacity | Historically reported passed with the corrected #384 classification. Current revision: `UNRUN`; raw allocator probes still do not prove String operations at their maximum. |
 | No new public ABI/package/support | Static inspection: changes remain private fixture/harness documentation and test integration. No selector, library package, public ABI or support claim is added. |
 
-The pinned local Linux proof used Rust 1.97.1, Node 22.22.1 and pnpm 11.18.0
-with a frozen install, at most three build/test jobs, and serial execution for
-the focused resource fixtures. The static fixture corpus passed 6/6, the
-focused driver suite passed 10/10, the complete driver package passed 139/139
-plus 2/2 doctests, and preflight passed all 12 ordered checks. Publication must
-still bind the final main-aligned revision to the required M0/M2/M3 and hosted
-Linux/Windows results. Lightweight fixture checks alone do not execute the
-compiler or establish target conformance.
+The historical record says its pinned Linux environment used Rust 1.97.1, Node
+22.22.1 and pnpm 11.18.0 with a frozen install, at most three build/test jobs,
+and serial focused resource execution. It reports static fixtures 6/6, focused
+driver 10/10, driver package 139/139 plus 2/2 doctests, and preflight 12/12.
+Because the record omitted exact tested revision, commands, and exit statuses,
+none of those counts is merge proof for this correction. Publication must bind
+the final main-aligned revision to exact commands/statuses for the focused
+allocation suite, complete driver package, preflight, required M0/M2/M3, and
+hosted Linux/Windows results. Lightweight fixture checks alone do not execute
+the compiler or establish target conformance.

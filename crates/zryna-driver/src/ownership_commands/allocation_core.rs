@@ -252,8 +252,21 @@ fn allocation_core_n7_n10_reject_before_target_dispatch() {
             match prepare_data_ownership_for_test(&request(workspace.root(), target), None) {
                 Err(error) if error.kind() == CommandFailureKind::Source => {
                     let diagnostic = &error.diagnostics()[0];
-                    if diagnostic.code() != case["code"].as_str().expect("stable code")
-                        || diagnostic.primary_span().is_none()
+                    let expected = &case["span"];
+                    let actual = diagnostic.primary_span().map(|span| {
+                        (span.file().index(), span.start(), span.end())
+                    });
+                    let expected_span = (
+                        u32::try_from(expected["file"].as_u64().expect("stable file"))
+                            .expect("bounded file"),
+                        u32::try_from(expected["start"].as_u64().expect("stable start"))
+                            .expect("bounded start"),
+                        u32::try_from(expected["end"].as_u64().expect("stable end"))
+                            .expect("bounded end"),
+                    );
+                    if error.diagnostics().len() != 1
+                        || diagnostic.code() != case["code"].as_str().expect("stable code")
+                        || actual != Some(expected_span)
                     {
                         failures.push(format!("{} {target:?}: {error:?}", case["fixture"]));
                     }

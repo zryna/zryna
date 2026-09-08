@@ -31,9 +31,10 @@ Copy `i32` elements have no fallible owned-member clone or drop.
 
 The driver tests run each selected target independently through authenticated
 source, semantics, IR, target emission, typed execution, and the existing
-cleanup channel. N7/N10 negatives require the fixed source diagnostic and a
-source span before any target dispatch or artifact publication. Unsupported
-native execution on Windows requires `ZRYNA-N4002` with an empty output root.
+cleanup channel. N7/N10 negatives require the fixed source diagnostic and exact
+file/start/end source span before any target dispatch or artifact publication.
+Unsupported native execution on Windows requires `ZRYNA-N4002` with an empty
+output root.
 
 `inspect.mjs` supplies additional private JavaScript and core WebAssembly
 observations through the driver's existing bounded Node capability. JavaScript
@@ -79,9 +80,10 @@ large payload. The previous 64 MiB first-extra `CAPACITY` oracle was incorrect;
 the integrated [#384](https://github.com/zryna/zryna/issues/384) prerequisite
 classifies target exhaustion within the universal limit as `ALLOCATION`.
 `native-capacity.c` remains owned by the #384 runtime regression rather than a
-duplicate #377 driver test. The pinned local Linux evidence is recorded in
-[capacity evidence and reproduction](CAPACITY.md). It does not establish String
-maximum-length source execution or replace the required hosted merge checks.
+duplicate #377 driver test. The historical local Linux report and its proof
+limitations are recorded in [capacity evidence and reproduction](CAPACITY.md).
+It does not establish String maximum-length source execution or replace fresh
+candidate-bound merge checks.
 
 Focused commands:
 

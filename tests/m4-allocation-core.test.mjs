@@ -55,6 +55,21 @@ test('fault cases are bounded and retain completed owners without partial append
 
 test('N7 and N10 keep source diagnostics and all source files are used', async () => {
   assert.deepEqual(negatives.map(row => row.oracle), ['N7', 'N7', 'N10', 'N10', 'N10']);
+  assert.deepEqual(negatives.map(({ span: { text: _text, ...span } }) => span), [
+    { file: 0, start: 0, end: 49 },
+    { file: 0, start: 0, end: 62 },
+    { file: 0, start: 121, end: 127 },
+    { file: 0, start: 135, end: 140 },
+    { file: 0, start: 126, end: 142 },
+  ]);
+  for (const row of negatives) {
+    const source = await readFile(new URL(`${row.fixture}.zry`, root));
+    assert.equal(
+      source.subarray(row.span.start, row.span.end).toString(),
+      row.span.text,
+      row.fixture,
+    );
+  }
   const used = new Set([...cases, ...negatives, ...capacity.source].map(row => `${row.fixture}.zry`));
   const present = (await readdir(root)).filter(path => path.endsWith('.zry'));
   for (const file of present.filter(path => path.endsWith('-body.zry'))) {
