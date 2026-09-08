@@ -55,7 +55,7 @@ pub(super) fn linker(
     component: &Component,
     state: &DeniedState,
 ) -> wasmtime::Result<Linker<DeniedState>> {
-    let mut linker = Linker::new(engine);
+    let mut linker: Linker<DeniedState> = Linker::new(engine);
     let component_type = component.component_type();
     let mut resources = Vec::<(ResourceType, ResourceType)>::new();
     let imports = component_type.imports(engine);
