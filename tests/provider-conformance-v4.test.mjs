@@ -44,7 +44,7 @@ test('registry freezes the provider-neutral corpus and TypeScript 6 bootstrap au
   assert.deepEqual(registry.cases.map((entry) => entry.category), [
     'positive', 'malformed', 'unsupported', 'budget', 'recovery', 'ordering',
   ]);
-  assert.equal(registry.artifacts.length, 8);
+  assert.equal(registry.artifacts.length, 9);
   assert.deepEqual(registry.bootstrapAuthority, {
     provider: 'typescript-6', providerVersion: '6.0.3', executable: 'node',
     arguments: ['adapters/typescript-6/src/worker-v4.mjs'],
@@ -123,7 +123,7 @@ test('package command and routed Linux/Windows workflow keep conformance fail cl
   const pkg = JSON.parse(readFileSync(resolve(workspaceRoot, 'package.json')));
   assert.equal(
     pkg.scripts['provider:conformance:v4'],
-    'node scripts/check-provider-conformance-v4.mjs && node --test tests/provider-conformance-v4.test.mjs && cargo test --locked -p zryna-frontend --test provider_conformance_v4',
+    'node scripts/check-provider-conformance-v4.mjs && node --test tests/provider-conformance-v4.test.mjs tests/native-lexer-provider-runner.test.mjs && cargo test --locked -p zryna-frontend --test provider_conformance_v4 && node scripts/run-native-lexer-provider-differential.mjs',
   );
   const workflow = parseDocument(readFileSync(
     resolve(workspaceRoot, '.github/workflows/ci.yml'),

@@ -258,9 +258,7 @@ fn make_span(
 ) -> Result<Span, LexError> {
     let start = u32::try_from(start).map_err(|_| resource("source offset overflow"))?;
     let end = u32::try_from(end).map_err(|_| resource("source offset overflow"))?;
-    sources
-        .span(file, start, end)
-        .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })
+    sources.span(file, start, end).map_err(|error| super::source_error(&error))
 }
 
 fn malformed(

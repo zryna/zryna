@@ -19,23 +19,29 @@ The core verifies fixed item budgets and the exact canonical file-id/path set ag
 and converts every raw UTF-8 range into an opaque, map-bound `Span`. The driver-facing API returns
 only the resulting verified project. Raw provider bytes and DTOs do not cross that boundary.
 
-`native_lexer` is the first internal native-frontend stage. It walks canonical `SourceMap` files,
+`native_lexer` is the first internal native-frontend stage. Its `admit_and_lex` boundary validates
+portable paths and fixed raw-byte budgets before strict UTF-8 conversion, then owns the resulting
+`SourceMap` together with the bound lexical project. Malformed encoding uses an exact
+pre-authority `RawByteSpan`; it is never represented as a forged source-map `Span`. The existing
+`lex(&SourceMap)` entry remains available unchanged for already-authenticated sources. Both paths
+walk canonical `SourceMap` files,
 retains a lossless ordered stream of tokens and whitespace/comment trivia, and issues only
 source-map-authenticated UTF-8 spans. Its ASCII identifier boundary and protocol-v4 punctuation,
 keyword, decimal, and unescaped string inventory are deterministic; malformed scalars, strings,
 and comments recover at character boundaries with stable diagnostics. Fixed token, trivia,
 project, diagnostic, and protocol-v4 aggregate-source budgets fail atomically as `ZRYNA-F1502`;
-recoverable malformed input is reported as `ZRYNA-F1501`. The source layer admits only valid UTF-8
-before it can construct the required `SourceMap`; the lexer never decodes, normalizes, or repairs
-raw bytes. Identifiers are ASCII and at most 128 bytes, strings are single- or double-quoted with
+recoverable malformed input and invalid UTF-8 admission are reported as `ZRYNA-F1501`. Raw bytes
+are never normalized or repaired. Identifiers are ASCII and at most 128 bytes, strings are single- or double-quoted with
 no escapes or line terminators, and `//` and `/* ... */` comments remain lossless trivia. The
 lexical inventory covers the v4 keywords plus braces, brackets, parentheses, `: ; , .`, `< <= >
 >=`, `= => === !==`, and `+ - *`. Per-file token and trivia limits are 65,536 each; the project
 retains at most 262,144 combined lexemes, 256 diagnostics, and 8 MiB of source. This stage does not
 parse, create protocol-v4 snapshots, implement a provider, or change bootstrap/public selection.
-Run `cargo test --locked -p zryna-frontend --test native_lexer --test native_lexer_fuzz` for the
-ordinary corpus. Add `-- --include-ignored` to execute the two proportional production-limit token,
-trivia, and project-lexeme proofs without lowering their limits.
+Run the `native_lexer`, `native_lexer_admission`, and `native_lexer_fuzz` integration tests for the
+ordinary corpus. The routed provider-v4 lane runs a direct exact-span differential against the
+pinned TypeScript 6 provider on Linux and Windows. Add `-- --include-ignored` to execute the three
+proportional production-limit token, trivia, project-lexeme, and raw-byte proofs without lowering
+their limits.
 
 Protocol v1 intentionally carries declarations and diagnostics only. Protocol v2 is a separate
 executable-syntax contract owned by `zryna-syntax`; it does not change v1 semantics in place. The

@@ -24,6 +24,12 @@
       "sha256": "97f679f27390e4b7030d26190fb3dff1ebbc75cb878ec1e3dab9d70dc0df2381"
     },
     {
+      "id": "lexical-negative-source",
+      "kind": "source",
+      "path": "tests/provider-conformance-v4/fixtures/lexical-negative.zry",
+      "sha256": "ce773b87709a04bbcb0ead74fea94b1f20fa4a4d185fc06a24a9bc703dd99613"
+    },
+    {
       "id": "malformed-request",
       "kind": "request",
       "path": "tests/provider-conformance-v4/fixtures/malformed.ndjson",
@@ -124,8 +130,18 @@
           "expected": { "kind": "diagnostic", "id": 40, "code": "ZRYNA-F2002" }
         },
         {
-          "request": { "kind": "handshake", "id": 41 },
-          "expected": { "kind": "handshake", "id": 41 }
+          "request": {
+            "kind": "analyze",
+            "id": 41,
+            "sources": [
+              { "path": "src/negative.zry", "artifact": "lexical-negative-source" }
+            ]
+          },
+          "expected": { "kind": "diagnostic", "id": 41, "code": "ZRYNA-F2002" }
+        },
+        {
+          "request": { "kind": "handshake", "id": 42 },
+          "expected": { "kind": "handshake", "id": 42 }
         }
       ]
     },

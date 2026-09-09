@@ -148,7 +148,7 @@ fn every_protocol_v4_keyword_punctuation_and_reserved_name_is_lexed() {
 }
 
 #[test]
-fn frozen_provider_corpus_has_canonical_native_token_identity() {
+fn frozen_provider_sources_match_the_static_native_lexical_contract() {
     let cases = [
         (
             PROVIDER_POSITIVE,

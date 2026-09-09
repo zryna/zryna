@@ -12,6 +12,10 @@ mod scanner;
 
 use scanner::scan_file;
 
+mod admission;
+
+pub use admission::{AdmittedLexedProject, NativeSourceBytes, RawByteSpan, admit_and_lex};
+
 /// Maximum tokens retained for one source file.
 pub const MAX_TOKENS_PER_FILE: usize = 65_536;
 /// Maximum trivia runs retained for one source file.
@@ -256,6 +260,7 @@ impl LexedProject {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LexError {
     diagnostic: Diagnostic,
+    raw_byte_span: Option<Box<RawByteSpan>>,
 }
 
 impl LexError {
@@ -263,6 +268,14 @@ impl LexError {
     #[must_use]
     pub const fn diagnostic(&self) -> &Diagnostic {
         &self.diagnostic
+    }
+
+    /// Returns the exact pre-authority byte range for a raw-input failure.
+    ///
+    /// This is deliberately not a [`Span`]: malformed bytes cannot belong to a [`SourceMap`].
+    #[must_use]
+    pub fn raw_byte_span(&self) -> Option<&RawByteSpan> {
+        self.raw_byte_span.as_deref()
     }
 }
 
@@ -291,9 +304,7 @@ pub fn lex(sources: &SourceMap) -> Result<LexedProject, LexError> {
     let mut project_lexemes = 0_usize;
     for raw_id in 0..sources.len() {
         let raw_id = u32::try_from(raw_id).map_err(|_| resource("source file id overflow"))?;
-        let id = sources
-            .verify_file_id(raw_id)
-            .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })?;
+        let id = sources.verify_file_id(raw_id).map_err(|error| source_error(&error))?;
         let source = sources.source(id).ok_or_else(|| resource("source file is unavailable"))?;
         let remaining_project_lexemes = MAX_LEXEMES_PER_PROJECT - project_lexemes;
         let lexemes =
@@ -313,9 +324,7 @@ fn preflight_source_bytes(sources: &SourceMap) -> Result<(), LexError> {
     let mut total = 0_usize;
     for raw_id in 0..sources.len() {
         let raw_id = u32::try_from(raw_id).map_err(|_| resource("source file id overflow"))?;
-        let id = sources
-            .verify_file_id(raw_id)
-            .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })?;
+        let id = sources.verify_file_id(raw_id).map_err(|error| source_error(&error))?;
         let source = sources.source(id).ok_or_else(|| resource("source file is unavailable"))?;
         let next = total
             .checked_add(source.text().len())
@@ -332,7 +341,7 @@ fn preflight_source_bytes(sources: &SourceMap) -> Result<(), LexError> {
                     u32::try_from(start).map_err(|_| resource("source offset overflow"))?,
                     u32::try_from(end).map_err(|_| resource("source offset overflow"))?,
                 )
-                .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })?;
+                .map_err(|error| source_error(&error))?;
             return Err(resource_at(span, "project source bytes exceed the protocol-v4 limit"));
         }
         total = next;
@@ -348,6 +357,7 @@ pub(super) fn resource(message: &'static str) -> LexError {
             message,
             "reduce the bounded source before native lexing",
         ),
+        raw_byte_span: None,
     }
 }
 
@@ -359,5 +369,27 @@ pub(super) fn resource_at(span: Span, message: &'static str) -> LexError {
             message,
             "reduce the bounded source before native lexing",
         ),
+        raw_byte_span: None,
+    }
+}
+
+pub(super) fn source_error(error: &zryna_source::SourceError) -> LexError {
+    LexError { diagnostic: Diagnostic::from_source_error(error), raw_byte_span: None }
+}
+
+pub(super) fn raw_error(
+    code: &'static str,
+    location: RawByteSpan,
+    message: &'static str,
+    guidance: &'static str,
+) -> LexError {
+    LexError {
+        diagnostic: Diagnostic::error(
+            code,
+            Some(location.path().as_str().to_owned()),
+            message,
+            guidance,
+        ),
+        raw_byte_span: Some(Box::new(location)),
     }
 }

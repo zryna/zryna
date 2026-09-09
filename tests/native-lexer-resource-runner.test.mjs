@@ -3,12 +3,13 @@ import test from 'node:test';
 
 import {
   REQUIRED_RESOURCE_TESTS,
+  RESOURCE_COMMANDS,
   runNativeLexerResourceTests,
   verifyResourceTestOutput,
 } from '../scripts/run-native-lexer-resource-tests.mjs';
 
 const success = `${REQUIRED_RESOURCE_TESTS.map((name) => `test ${name} ... ok`).join('\n')}
-test result: ok. 13 passed; 0 failed; 0 ignored;`;
+test result: ok. 14 passed; 0 failed; 0 ignored;`;
 
 test('resource output requires both production-limit tests and a nonzero summary', () => {
   assert.doesNotThrow(() => verifyResourceTestOutput(success));
@@ -20,16 +21,13 @@ test('resource output requires both production-limit tests and a nonzero summary
 });
 
 test('resource runner invokes locked Cargo without a shell', () => {
-  let observed;
+  const observed = [];
   runNativeLexerResourceTests((executable, args, options) => {
-    observed = { executable, args, options };
+    observed.push({ executable, args, options });
     return { status: 0, stdout: success, stderr: '' };
   });
-  assert.equal(observed.executable, 'cargo');
-  assert.deepEqual(observed.args, [
-    'test', '--locked', '-p', 'zryna-frontend', '--test', 'native_lexer',
-    '--', '--include-ignored',
-  ]);
-  assert.equal(observed.options.shell, false);
-  assert.equal(observed.options.maxBuffer, 4 * 1024 * 1024);
+  assert.deepEqual(observed.map((entry) => entry.executable), ['cargo', 'cargo']);
+  assert.deepEqual(observed.map((entry) => entry.args), RESOURCE_COMMANDS);
+  assert(observed.every((entry) => entry.options.shell === false));
+  assert(observed.every((entry) => entry.options.maxBuffer === 4 * 1024 * 1024));
 });
