@@ -174,7 +174,13 @@ fn changed_stage_and_foreign_cleanup_entry_fail_closed() {
     if fs::write(path.join("worker.mjs"), "throw new Error('substitute');\n").is_ok() {
         assert!(stage.revalidate().is_err(), "changed staged bytes must reject");
         drop(stage);
-        fs::remove_dir_all(path).expect("test-owned changed stage cleanup");
+        if let Err(error) = fs::remove_dir_all(path) {
+            assert_eq!(
+                error.kind(),
+                std::io::ErrorKind::NotFound,
+                "test-owned changed stage cleanup"
+            );
+        }
     } else {
         stage.revalidate().expect("denied replacement preserves the stage");
         drop(stage);
