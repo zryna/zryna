@@ -2,8 +2,9 @@
 
 Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
 production-ready. It provides the documented repository-local M1–M3 workflows; it does not
-include standalone binaries, package installation, or stable compatibility guarantees. This
-walkthrough uses the existing public M1 scalar and M2 control-flow profiles. For the separately
+include standalone binaries, package installation, or stable compatibility guarantees. The
+`v0.1.0` tag and pre-release are not yet published. This walkthrough uses the existing public M1
+scalar and M2 control-flow profiles. For the separately
 selected public M3 ownership profile, continue with
 [Your first M3 programs](M3_GETTING_STARTED.md). Run commands from the compiler repository root.
 You do not need to run the contributor regression suite after every program edit.

@@ -3,6 +3,7 @@
 Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
 production-ready. It provides the documented repository-local M1–M3 workflows; it does not
 include standalone binaries, package installation, or stable compatibility guarantees.
+The `v0.1.0` tag and pre-release are not yet published.
 
 This document defines the support and release contract for the proposed `v0.1.0` pre-release.
 It does not publish a release, authorize a tag, or make work planned for M4 and later public.

@@ -10,8 +10,9 @@ Status channel: `next`
 Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
 production-ready. It provides the documented repository-local M1–M3 workflows; it does not
 include standalone binaries, package installation, or stable compatibility guarantees. The
-[preview policy](DEVELOPER_PREVIEW.md) freezes the proposed support matrix without publishing a
-release; the current executable profiles remain intentionally narrow.
+`v0.1.0` tag and pre-release are not yet published. The [preview policy](DEVELOPER_PREVIEW.md)
+freezes the proposed support matrix without publishing a release; the current executable profiles
+remain intentionally narrow.
 
 ## Implemented M1 slice
 

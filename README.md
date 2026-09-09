@@ -10,6 +10,7 @@ limit or independently expand the integrated public surface. M0–M2 remain unch
 Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
 production-ready. It provides the documented repository-local M1–M3 workflows; it does not
 include standalone binaries, package installation, or stable compatibility guarantees.
+The `v0.1.0` tag and pre-release are not yet published.
 
 Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its
 semantics, typed intermediate representation, JavaScript output, WebAssembly output, and native

@@ -171,7 +171,9 @@ test('preview release policy is exported and keeps release-facing wording and bo
     'docs/M3_GETTING_STARTED.md',
     'docs/STATUS.md',
   ]) {
-    assert((await readFile(path.join(compilerWorkspaceRoot, relative), 'utf8')).includes(statement), relative);
+    const text = await readFile(path.join(compilerWorkspaceRoot, relative), 'utf8');
+    assert(text.includes(statement), relative);
+    assert(text.includes('`v0.1.0` tag and pre-release are not yet published'), relative);
   }
   const policy = await readFile(path.join(compilerWorkspaceRoot, 'docs/DEVELOPER_PREVIEW.md'), 'utf8');
   for (const required of [
