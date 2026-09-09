@@ -7,8 +7,11 @@ limit or independently expand the integrated public surface. M0–M2 remain unch
 
 Status channel: `next`
 
-Zryna is an experimental compiler project. It is not production-ready, and the current executable
-profile is intentionally narrow.
+Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
+production-ready. It provides the documented repository-local M1–M3 workflows; it does not
+include standalone binaries, package installation, or stable compatibility guarantees. The
+[preview policy](DEVELOPER_PREVIEW.md) freezes the proposed support matrix without publishing a
+release; the current executable profiles remain intentionally narrow.
 
 ## Implemented M1 slice
 

@@ -1,8 +1,12 @@
 # Your first M3 programs
 
-Zryna is experimental. This guide uses exact public `--profile data-ownership-v1` and scalar
-observations. Owned values remain inside Zryna; a String example does not print a string.
-Run commands from the compiler repository root. See [public boundaries](M3_PUBLIC_PROFILE.md).
+Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
+production-ready. It provides the documented repository-local M1–M3 workflows; it does not
+include standalone binaries, package installation, or stable compatibility guarantees. This
+guide uses exact public `--profile data-ownership-v1` and scalar observations. Owned values remain
+inside Zryna; a String example does not print a string. Run commands from the compiler repository
+root. See [public boundaries](M3_PUBLIC_PROFILE.md) and the
+[preview policy](DEVELOPER_PREVIEW.md).
 
 ## Setup
 
