@@ -256,6 +256,7 @@ function evaluateGraph(jobs, leaves) {
 
 test('CI starts independent authorities together with bounded preflight headroom', () => {
   assert.equal(workflow.jobs.preflight['timeout-minutes'], 35);
+  assert.equal(workflow.jobs.rust['timeout-minutes'], 40);
   assert.equal(workflow.jobs.preflight.if, undefined);
   assert.equal(workflow.jobs.preflight.needs, undefined);
   for (const id of matrixJobs) {
@@ -388,5 +389,5 @@ test('routing preserves all other pinned workflow authority', () => {
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');
-  assert.equal(digest, '94fd5ae020ecc9a557014738cc041e0a10e3688c83c2638e5b616c86da7a2cd2');
+  assert.equal(digest, '74b2fd74c49c244182f99d4fdf7702c7f82886872cfe44386151179343800a86');
 });

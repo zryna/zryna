@@ -116,7 +116,8 @@ jobs:
 
   rust:
     name: rust (${{ matrix.os }})
-    timeout-minutes: 30
+    # The complete cold Windows closure can exceed 30 minutes.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
