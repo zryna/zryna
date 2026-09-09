@@ -1,9 +1,10 @@
 # Semantic queries and tooling snapshots v1
 
 Status: accepted contract from [#363](https://github.com/zryna/zryna/issues/363), native
-[M6 — Developer Tooling](https://github.com/zryna/zryna/milestone/7), with bounded internal
-`diagnostics` and protocol-v2 `definition` prototypes described below. No transport endpoint,
-public selector, runtime implementation, extension release, or executable capability is active.
+[M6 — Developer Tooling](https://github.com/zryna/zryna/milestone/7). Bounded internal
+`diagnostics` and protocol-v2 scalar `definition` are exposed through the public
+[language-server transport](../../docs/LANGUAGE_SERVER.md). No broader semantic-query profile,
+extension release, formatter, playground, debugging, or executable capability is active.
 
 The [examples and future fixtures](QUERY_EXAMPLES_V1.md) remain normative for the complete future
 service; only the explicitly described internal slices have executable tests. Existing M0–M3
@@ -25,9 +26,10 @@ work remains one unit per retained report byte plus one authority comparison. De
 one authority comparison plus one unit per examined source-ordered semantic record; exhaustion
 returns `over_budget` / `work` without a location. Its one-location result requires `results >= 1`.
 Exact path spelling and a valid scalar-boundary byte position are checked by the retained source
-authority; token ends, whitespace, comments and EOF return `absent` / `symbol`. No transport,
-consumer integration, editor/LSP route, edit, formatting or execution capability is implemented
-by these internal slices.
+authority; token ends, whitespace, comments and EOF return `absent` / `symbol`. The language server
+adds only framing, full-text document lifecycle, negotiated editor-coordinate conversion,
+revision-safe diagnostic publication and cancellation. Edit planning, formatting and execution
+remain unavailable.
 
 ## Ownership and dependencies
 
@@ -37,7 +39,7 @@ by these internal slices.
 | `zryna-syntax` | Independently verified provider-neutral syntax and any future authenticated trivia view |
 | `zryna-semantics` | Name resolution, scopes, exact types and references; owns query facts and rename proofs |
 | `zryna-diagnostics` | Existing compiler diagnostic codes and explicitly selected structured transport |
-| Driver and future tooling host | Compose these authorities, retain sessions, bound scheduling and invalidate results |
+| Driver and tooling host | Compose these authorities, retain sessions, bound scheduling and invalidate results |
 | Consumers | Convert coordinates, render inert text, present plans and apply only revision-checked edits |
 
 These are responsibilities, not new component registrations or dependency edges. A later service
@@ -149,9 +151,9 @@ Presentation text may change with compiler revision and is not used as a lookup 
 
 ## Request and response observations
 
-The JSON examples define logical closed records for a future internal contract, not an installed
-wire protocol. A later transport must freeze duplicate-key rejection, canonical serialization and
-independent schema/runtime validation before a prototype claims conformance. Version `1` below
+The JSON examples define logical closed records for the complete internal contract, not the LSP
+wire shape. The implemented language-server subset freezes duplicate-key rejection, canonical
+serialization and independent response validation for diagnostics and definition. Version `1` below
 is independent of syntax v4, diagnostic v2, manifest version and language profile; unknown versions
 never downgrade. Changing these records, ordering, units, failure semantics or limits requires a
 new query contract version.

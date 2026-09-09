@@ -18,7 +18,7 @@ use super::{
 
 /// One admitted definition request awaiting bounded completion.
 #[derive(Debug)]
-pub(crate) struct PendingDefinitionQuery {
+pub struct PendingDefinitionQuery {
     session: u64,
     correlation: Correlation,
     revision: DiagnosticRevision,
@@ -33,7 +33,12 @@ pub(crate) struct PendingDefinitionQuery {
 
 impl DiagnosticSession {
     /// Validates and admits one closed definition request without performing semantic lookup.
-    pub(crate) fn begin_definition(
+    ///
+    /// # Errors
+    ///
+    /// Returns a closed failure response when request decoding, correlation, source authority,
+    /// method support, or the session's in-flight limit rejects the request.
+    pub fn begin_definition(
         &mut self,
         bytes: &[u8],
         now: Instant,
@@ -125,7 +130,7 @@ impl DiagnosticSession {
 
     /// Completes one definition lookup and rechecks the active revision before publication.
     #[must_use]
-    pub(crate) fn finish_definition(
+    pub fn finish_definition(
         &mut self,
         pending: PendingDefinitionQuery,
         now: Instant,

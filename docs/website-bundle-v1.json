@@ -63,6 +63,12 @@
       "title": "Language overview"
     },
     {
+      "id": "reference/language-server",
+      "source": "docs/LANGUAGE_SERVER.md",
+      "path": "documents/reference/language-server.md",
+      "title": "Language server protocol v1"
+    },
+    {
       "id": "reference/m2-conformance",
       "source": "docs/M2_CONFORMANCE.md",
       "path": "documents/reference/m2-conformance.md",

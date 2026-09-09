@@ -1,8 +1,8 @@
-//! Revision-bound internal compiler query sessions.
+//! Revision-bound compiler query sessions for bounded tooling transports.
 //!
 //! This compiler-host boundary retains exact source-map, structured-diagnostics-v2, and the first
-//! semantics-owned definition authority. It is not a transport, CLI/LSP route, formatter, or
-//! executor.
+//! semantics-owned definition authority. Transports may compose this boundary but cannot inspect
+//! or reconstruct its semantic records. This module is not a formatter or executor.
 
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -23,32 +23,39 @@ mod response;
 mod retention;
 mod scheduling;
 mod semantic_definition;
+#[cfg(feature = "diagnostic-test-support")]
+mod test_support;
+mod tooling_compiler;
 
-pub(crate) use response::{DiagnosticQueryResponse, QueryReason, QueryStatus};
+pub use response::{DiagnosticQueryResponse, QueryReason, QueryStatus};
 use retention::{checked_cache_charge, source_fingerprint_and_charge};
+pub use semantic_definition::PendingDefinitionQuery;
+#[cfg(feature = "diagnostic-test-support")]
+pub use test_support::admit_single_function_fixture;
+pub use tooling_compiler::{ToolingCompiler, ToolingCompilerError};
 
 /// Maximum complete encoded request bytes, including whitespace.
-pub(crate) const MAX_REQUEST_BYTES: usize = 65_536;
+pub const MAX_REQUEST_BYTES: usize = 65_536;
 /// Maximum complete encoded response bytes.
-pub(crate) const MAX_RESPONSE_BYTES: usize = 1_048_576;
+pub const MAX_RESPONSE_BYTES: usize = 1_048_576;
 /// Maximum JSON object/array nesting in one request.
-pub(crate) const MAX_REQUEST_DEPTH: u32 = 64;
+pub const MAX_REQUEST_DEPTH: u32 = 64;
 /// Maximum logical work units admitted by one request.
-pub(crate) const MAX_QUERY_WORK: u64 = 100_000;
+pub const MAX_QUERY_WORK: u64 = 100_000;
 /// Maximum result locations or edits admitted by one request.
-pub(crate) const MAX_QUERY_RESULTS: u64 = 10_000;
+pub const MAX_QUERY_RESULTS: u64 = 10_000;
 /// Maximum retained immutable revisions in one session.
-pub(crate) const MAX_RETAINED_REVISIONS: usize = 2;
+pub const MAX_RETAINED_REVISIONS: usize = 2;
 /// Maximum deterministically charged cache bytes in one session.
-pub(crate) const MAX_SESSION_CACHE_BYTES: usize = 64 * 1_024 * 1_024;
+pub const MAX_SESSION_CACHE_BYTES: usize = 64 * 1_024 * 1_024;
 /// Maximum queued plus running requests in one session.
-pub(crate) const MAX_IN_FLIGHT_REQUESTS: usize = 32;
+pub const MAX_IN_FLIGHT_REQUESTS: usize = 32;
 /// Maximum request lifetime, including cancellation cleanup.
-pub(crate) const QUERY_DEADLINE: Duration = Duration::from_secs(30);
+pub const QUERY_DEADLINE: Duration = Duration::from_secs(30);
 /// Maximum request or snapshot identifier bytes.
-pub(crate) const MAX_ID_BYTES: usize = 128;
+pub const MAX_ID_BYTES: usize = 128;
 /// Largest exact JSON integer admitted for a session revision.
-pub(crate) const MAX_REVISION: u64 = (1_u64 << 53) - 1;
+pub const MAX_REVISION: u64 = (1_u64 << 53) - 1;
 
 const LIVE: u8 = 0;
 const CANCELLED: u8 = 1;
@@ -57,7 +64,7 @@ static NEXT_SESSION_ID: AtomicU64 = AtomicU64::new(1);
 
 /// Opaque compiler-host-issued identity for one retained source revision.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct DiagnosticSnapshotHandle {
+pub struct DiagnosticSnapshotHandle {
     session: u64,
     serial: u64,
 }
@@ -70,7 +77,7 @@ impl fmt::Display for DiagnosticSnapshotHandle {
 
 /// Immutable description of one admitted source revision.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct DiagnosticRevision {
+pub struct DiagnosticRevision {
     handle: DiagnosticSnapshotHandle,
     revision: u64,
     source_fingerprint: [u8; 32],
@@ -79,26 +86,26 @@ pub(crate) struct DiagnosticRevision {
 impl DiagnosticRevision {
     /// Returns the opaque session-bound handle.
     #[must_use]
-    pub(crate) const fn handle(&self) -> DiagnosticSnapshotHandle {
+    pub const fn handle(&self) -> DiagnosticSnapshotHandle {
         self.handle
     }
 
     /// Returns the monotonic nonzero revision.
     #[must_use]
-    pub(crate) const fn revision(&self) -> u64 {
+    pub const fn revision(&self) -> u64 {
         self.revision
     }
 
     /// Returns the exact source-closure fingerprint specified by tooling snapshot v1.
     #[must_use]
-    pub(crate) const fn source_fingerprint(&self) -> [u8; 32] {
+    pub const fn source_fingerprint(&self) -> [u8; 32] {
         self.source_fingerprint
     }
 }
 
 /// Admission failures that cannot be represented as a correlated query response.
 #[derive(Debug)]
-pub(crate) enum DiagnosticSessionError {
+pub enum DiagnosticSessionError {
     /// The process-local session identity space was exhausted.
     SessionIdentityExhausted,
     /// The exact JavaScript-safe revision space was exhausted.
@@ -157,7 +164,7 @@ struct Correlation {
 
 /// One admitted diagnostics request awaiting bounded completion.
 #[derive(Debug)]
-pub(crate) struct PendingDiagnosticQuery {
+pub struct PendingDiagnosticQuery {
     session: u64,
     correlation: Correlation,
     revision: DiagnosticRevision,
@@ -176,7 +183,7 @@ struct RequestSlot {
 
 /// One compiler-host-owned collection of immutable diagnostic revisions.
 #[derive(Debug)]
-pub(crate) struct DiagnosticSession {
+pub struct DiagnosticSession {
     session: u64,
     next_revision: u64,
     retained: VecDeque<Arc<RevisionRecord>>,
@@ -190,7 +197,7 @@ impl DiagnosticSession {
     /// # Errors
     ///
     /// Returns an error if the process-local identity counter is exhausted.
-    pub(crate) fn try_new() -> Result<Self, DiagnosticSessionError> {
+    pub fn try_new() -> Result<Self, DiagnosticSessionError> {
         let session = NEXT_SESSION_ID
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| current.checked_add(1))
             .map_err(|_| DiagnosticSessionError::SessionIdentityExhausted)?;
@@ -209,7 +216,7 @@ impl DiagnosticSession {
     ///
     /// Rejects foreign spans, invalid diagnostic records, revision exhaustion, source invariant
     /// failure, or a first revision whose deterministic cache charge exceeds 64 MiB.
-    pub(crate) fn admit_diagnostics(
+    pub fn admit_diagnostics(
         &mut self,
         sources: SourceMap,
         diagnostics: &[Diagnostic],
@@ -224,7 +231,7 @@ impl DiagnosticSession {
     /// # Errors
     ///
     /// Rejects foreign authority, semantic diagnostics, invalid reports, or retention exhaustion.
-    pub(crate) fn admit_semantics(
+    pub fn admit_semantics(
         &mut self,
         sources: SourceMap,
         syntax: &zryna_frontend::syntax_v2::ProjectSyntaxSnapshot,
@@ -241,12 +248,43 @@ impl DiagnosticSession {
         self.admit(sources, Some(report.into()), Some(Arc::new(definitions)))
     }
 
+    /// Admits one verified protocol-v2 analysis for tooling diagnostics and definition queries.
+    ///
+    /// Provider errors retain their exact diagnostic report without semantic facts. Successfully
+    /// parsed sources retain definition facts only when the existing scalar semantic checker
+    /// succeeds; semantic rejection is retained as diagnostics instead of fabricated query data.
+    ///
+    /// # Errors
+    ///
+    /// Rejects foreign source authority, invalid diagnostics, or retention exhaustion.
+    pub fn admit_analysis(
+        &mut self,
+        sources: SourceMap,
+        syntax: &zryna_frontend::syntax_v2::ProjectSyntaxSnapshot,
+    ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
+        if !syntax.is_bound_to(&sources) {
+            return Err(DiagnosticSessionError::SemanticAuthority);
+        }
+        let Some(input) = zryna_semantics::SemanticInput::try_new(syntax, &sources) else {
+            return self.admit_diagnostics(sources, syntax.diagnostics());
+        };
+        match DefinitionIndex::analyze(input) {
+            Ok(definitions) if definitions.is_bound_to(&sources) => {
+                let report = protocol_v2::render_json(syntax.diagnostics(), &sources)
+                    .map_err(DiagnosticSessionError::Diagnostics)?;
+                self.admit(sources, Some(report.into()), Some(Arc::new(definitions)))
+            }
+            Ok(_) => Err(DiagnosticSessionError::SemanticAuthority),
+            Err(diagnostics) => self.admit_diagnostics(sources, &diagnostics),
+        }
+    }
+
     /// Admits source authority whose diagnostic pass is not ready yet.
     ///
     /// # Errors
     ///
     /// Rejects revision exhaustion, source invariant failure, or a cache charge over 64 MiB.
-    pub(crate) fn admit_unready(
+    pub fn admit_unready(
         &mut self,
         sources: SourceMap,
     ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
@@ -255,19 +293,19 @@ impl DiagnosticSession {
 
     /// Returns the currently active revision, when one has been admitted.
     #[must_use]
-    pub(crate) fn active_revision(&self) -> Option<DiagnosticRevision> {
+    pub fn active_revision(&self) -> Option<DiagnosticRevision> {
         self.retained.back().map(|record| record.description)
     }
 
     /// Returns the number of immutable revisions retained for bounded incremental reuse.
     #[must_use]
-    pub(crate) fn retained_revisions(&self) -> usize {
+    pub fn retained_revisions(&self) -> usize {
         self.retained.len()
     }
 
     /// Returns the exact variable-byte cache charge for retained paths, source, and v2 reports.
     #[must_use]
-    pub(crate) const fn cache_bytes(&self) -> usize {
+    pub const fn cache_bytes(&self) -> usize {
         self.cache_bytes
     }
 

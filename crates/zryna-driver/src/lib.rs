@@ -24,8 +24,7 @@
 #![forbid(unsafe_code)]
 
 mod command_runtime;
-#[allow(dead_code, reason = "internal diagnostic sessions precede consumer activation")]
-mod diagnostic_sessions;
+pub mod diagnostic_sessions;
 mod javascript;
 mod module_closure;
 #[cfg(test)]

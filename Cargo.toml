@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "apps/zryna",
+  "apps/zryna-language-server",
   "crates/zryna-abi",
   "crates/zryna-architecture",
   "crates/zryna-backend-javascript",

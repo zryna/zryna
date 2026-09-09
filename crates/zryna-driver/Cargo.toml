@@ -6,6 +6,9 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+diagnostic-test-support = []
+
 [dependencies]
 cap-fs-ext.workspace = true
 cap-primitives.workspace = true

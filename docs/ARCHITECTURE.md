@@ -673,3 +673,14 @@ wrong topology or identity, and resource excess before publication. It does not 
 component, generate bindings, or provide browser, DOM, WASI, filesystem, network, clock, random,
 or environment capabilities. Browser and WASI host execution remain later integration boundaries.
 Component artifact emission also remains outside the advertised v0.1.0 preview support matrix.
+
+## Language-server transport
+
+The registered `zryna-language-server` application is a thin stdio transport over the driver's
+revision-bound diagnostic session and scalar definition authority. It owns framing, in-memory
+document lifecycle, URI/version correlation, negotiated coordinate conversion and cancellation;
+it depends only on the driver orchestrator and source foundation. Protocol input cannot select a
+frontend process or gain filesystem, build, runtime, network or mutation authority. The exact
+supported methods and omissions are documented in [Language server protocol v1](LANGUAGE_SERVER.md).
+A future editor extension may consume these diagnostics but will not duplicate or redefine
+architecture or compiler rules.

@@ -14,7 +14,8 @@ The opt-in `protocol_v2::{render_json, validate_json}` library boundary adds a c
 bounded tooling transport with deterministic terminal exhaustion. See the normative
 [v2 contract](../../spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md) and
 [schema](../../schemas/zryna-diagnostics-v2.schema.json). Existing text and JSON v1 stay
-unchanged. No CLI, editor or language-server integration is activated.
+unchanged. The separate `zryna-language-server` application carries exact v2 reports inside
+revision-bound notifications; this component still owns their codes, shape, ordering and limits.
 
 Run `cargo test --locked -p zryna-diagnostics` and `pnpm diagnostics:contract` for focused
 source-binding, malformed-input, golden, ordering and exact/first-extra limit evidence.

@@ -1,9 +1,10 @@
 # Structured diagnostics v2
 
-Status: opt-in library transport contract for Issue #169. This does not activate a CLI
-flag, language server, formatter, editor extension or playground integration. Existing
-`render_text`, `render_structured`, `render_json` and `STRUCTURED_DIAGNOSTICS_VERSION = 1`
-remain unchanged. V2 is explicitly selected through `zryna_diagnostics::protocol_v2`.
+Status: opt-in library transport contract for Issue #169. The public language server now embeds
+the exact v2 report in a revision-bound notification; this does not activate a compiler CLI flag,
+formatter, editor extension or playground integration. Existing `render_text`,
+`render_structured`, `render_json` and `STRUCTURED_DIAGNOSTICS_VERSION = 1` remain unchanged. V2 is
+explicitly selected through `zryna_diagnostics::protocol_v2`.
 
 ## Authority and closed shape
 
@@ -132,10 +133,10 @@ is not a stable identifier and may change. A code must not be silently repurpose
 mean another failure. Tooling never duplicates name resolution, type/ownership checking,
 ABI, architecture, or support-profile decisions to reinterpret compiler diagnostics.
 
-| Consumer | Required adaptation; implementation remains out of scope |
+| Consumer | Required adaptation and current status |
 | --- | --- |
 | Formatter | Preserve compiler diagnostics; do not infer semantic validity or apply guidance as edits |
-| Language server | Bind request/document revision; convert byte ranges against that exact text to negotiated positions |
+| Language server | Implemented for the protocol-v2 scalar profile: bind request/document revision and convert byte ranges against that exact text to negotiated positions |
 | Editor | Display inert text, preserve code/severity, distinguish source ranges from labels, expose incomplete-report state |
 | Playground | Bind results to the submitted source revision; render inert text and never grant workspace/host authority |
 
