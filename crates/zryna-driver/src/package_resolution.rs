@@ -2,7 +2,10 @@
 
 mod filesystem;
 
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeSet,
+    path::{Path, PathBuf},
+};
 
 use cap_fs_ext::DirExt as _;
 use cap_std::fs::Dir;
@@ -19,6 +22,7 @@ const LOCK_NAME: &str = "zryna.lock.json";
 const MAX_MANIFEST_BYTES: usize = 65_536;
 const MAX_SOURCE_BYTES: usize = 1_024;
 const MAX_SOURCE_FILES: usize = 16;
+const MAX_SOURCE_ENTRIES: usize = 256;
 const MAX_DIRECTORY_DEPTH: usize = 32;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -87,7 +91,12 @@ pub fn resolve_package(
         revision: String::new(),
     };
     zryna_package::validate_source(&root_source)?;
-    let mut provider = FilesystemProvider { source_root, git_cache, retained: Vec::new() };
+    let mut provider = FilesystemProvider {
+        source_root,
+        git_cache,
+        retained_files: Vec::new(),
+        retained_packages: Vec::new(),
+    };
     let package_dir = provider.open_source_dir(&root_source)?;
     let existing_lock = match request.mode {
         PackageLockMode::Frozen => {
@@ -120,17 +129,28 @@ pub fn resolve_package(
 struct FilesystemProvider {
     source_root: CapturedRoot,
     git_cache: Option<CapturedRoot>,
-    retained: Vec<RetainedFile>,
+    retained_files: Vec<RetainedFile>,
+    retained_packages: Vec<RetainedPackage>,
 }
 
 impl PackageSourceProvider for FilesystemProvider {
     fn load(&mut self, source: &PackageSource) -> Result<PackageMaterial, ResolveError> {
         let directory = self.open_source_dir(source)?;
+        let mut retained_package = RetainedPackage::new(source.clone(), &directory)?;
         let (manifest, retained) = read_retained(&directory, MANIFEST_NAME, MAX_MANIFEST_BYTES)?;
         self.push_retained(retained)?;
         let mut files = Vec::new();
-        self.collect_files(&directory, "", 0, &mut files)?;
+        let mut entries_seen = 0;
+        self.collect_files(
+            &directory,
+            "",
+            0,
+            &mut entries_seen,
+            &mut files,
+            &mut retained_package,
+        )?;
         files.sort_by(|left, right| left.path.cmp(&right.path));
+        self.retained_packages.push(retained_package);
         Ok(PackageMaterial { manifest, files })
     }
 }
@@ -153,78 +173,191 @@ impl FilesystemProvider {
         directory: &Dir,
         prefix: &str,
         depth: usize,
+        entries_seen: &mut usize,
         files: &mut Vec<PackageFile>,
+        retained_package: &mut RetainedPackage,
     ) -> Result<(), ResolveError> {
         if depth > MAX_DIRECTORY_DEPTH {
             return Err(ResolveError::source("package directory depth exceeds 32"));
         }
-        let mut names = directory
-            .entries()
-            .map_err(|_| ResolveError::source("package directory cannot be enumerated"))?
-            .map(|entry| {
-                entry
-                    .map_err(|_| ResolveError::source("package directory entry cannot be read"))
-                    .and_then(|entry| {
-                        entry.file_name().into_string().map_err(|_| {
-                            ResolveError::source("package entry name is not portable UTF-8")
-                        })
-                    })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        names.sort();
-        if names.windows(2).any(|pair| pair[0].eq_ignore_ascii_case(&pair[1])) {
-            return Err(ResolveError::source("package entries collide under ASCII case folding"));
-        }
-        for name in names {
+        let entries = enumerate_directory(directory, entries_seen)?;
+        retained_package.retain_inventory(directory, prefix, &entries)?;
+        for entry in entries {
+            let name = entry.name;
             if prefix.is_empty() && matches!(name.as_str(), MANIFEST_NAME | LOCK_NAME) {
                 continue;
             }
-            let metadata = directory
-                .symlink_metadata(&name)
-                .map_err(|_| ResolveError::source("package entry cannot be inspected"))?;
-            if metadata.is_symlink() {
-                return Err(ResolveError::source(
-                    "package source contains a link or reparse point",
-                ));
-            }
             let path = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
-            if metadata.is_dir() {
+            if entry.kind == PackageEntryKind::Directory {
                 let child = directory
                     .open_dir_nofollow(&name)
                     .map_err(|_| ResolveError::source("package directory cannot be retained"))?;
-                self.collect_files(&child, &path, depth + 1, files)?;
-            } else if metadata.is_file() {
+                self.collect_files(
+                    &child,
+                    &path,
+                    depth + 1,
+                    entries_seen,
+                    files,
+                    retained_package,
+                )?;
+            } else {
                 if files.len() == MAX_SOURCE_FILES {
                     return Err(ResolveError::source("package source file count exceeds 16"));
                 }
                 let (bytes, retained) = read_retained(directory, &name, MAX_SOURCE_BYTES)?;
                 self.push_retained(retained)?;
                 files.push(PackageFile { path, bytes });
-            } else {
-                return Err(ResolveError::source("package source contains a special file"));
             }
         }
         Ok(())
     }
 
     fn revalidate(&mut self) -> Result<(), ResolveError> {
-        for retained in &mut self.retained {
-            retained.revalidate()?;
-        }
         self.source_root.revalidate()?;
         if let Some(cache) = &self.git_cache {
             cache.revalidate()?;
+        }
+        for package in &self.retained_packages {
+            let reopened = self.open_source_dir(&package.source)?;
+            package.revalidate(&reopened)?;
+        }
+        for retained in &mut self.retained_files {
+            retained.revalidate()?;
         }
         Ok(())
     }
 
     fn push_retained(&mut self, retained: RetainedFile) -> Result<(), ResolveError> {
-        if self.retained.iter().any(|existing| existing.handle == retained.handle) {
+        if self.retained_files.iter().any(|existing| existing.handle == retained.handle) {
             return Err(ResolveError::source("package inputs contain a hard-link alias"));
         }
-        self.retained.push(retained);
+        self.retained_files.push(retained);
         Ok(())
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct PackageEntry {
+    identity: String,
+    name: String,
+    kind: PackageEntryKind,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PackageEntryKind {
+    Directory,
+    File,
+}
+
+fn enumerate_directory(
+    directory: &Dir,
+    entries_seen: &mut usize,
+) -> Result<Vec<PackageEntry>, ResolveError> {
+    let entries = directory
+        .entries()
+        .map_err(|_| ResolveError::source("package directory cannot be enumerated"))?;
+    let mut identities = BTreeSet::new();
+    let mut result = Vec::new();
+    for entry in entries {
+        if *entries_seen >= MAX_SOURCE_ENTRIES {
+            return Err(ResolveError::source("package directory entry count exceeds 256"));
+        }
+        *entries_seen += 1;
+        let entry =
+            entry.map_err(|_| ResolveError::source("package directory entry cannot be read"))?;
+        let name = entry
+            .file_name()
+            .into_string()
+            .map_err(|_| ResolveError::source("package entry name is not portable UTF-8"))?;
+        let identity = name.to_ascii_lowercase();
+        if !identities.insert(identity.clone()) {
+            return Err(ResolveError::source("package entries collide under ASCII case folding"));
+        }
+        let metadata = directory
+            .symlink_metadata(&name)
+            .map_err(|_| ResolveError::source("package entry cannot be inspected"))?;
+        if metadata.is_symlink() {
+            return Err(ResolveError::source("package source contains a link or reparse point"));
+        }
+        let kind = if metadata.is_dir() {
+            PackageEntryKind::Directory
+        } else if metadata.is_file() {
+            PackageEntryKind::File
+        } else {
+            return Err(ResolveError::source("package source contains a special file"));
+        };
+        result.push(PackageEntry { identity, name, kind });
+    }
+    result.sort_by(|left, right| {
+        left.identity.cmp(&right.identity).then_with(|| left.name.cmp(&right.name))
+    });
+    Ok(result)
+}
+
+struct RetainedPackage {
+    source: PackageSource,
+    root: Dir,
+    inventories: Vec<RetainedInventory>,
+}
+
+impl RetainedPackage {
+    fn new(source: PackageSource, root: &Dir) -> Result<Self, ResolveError> {
+        let root = root
+            .try_clone()
+            .map_err(|_| ResolveError::source("package directory capability cannot be retained"))?;
+        Ok(Self { source, root, inventories: Vec::new() })
+    }
+
+    fn retain_inventory(
+        &mut self,
+        directory: &Dir,
+        path: &str,
+        entries: &[PackageEntry],
+    ) -> Result<(), ResolveError> {
+        self.inventories.push(RetainedInventory {
+            directory: directory.try_clone().map_err(|_| {
+                ResolveError::source("package directory capability cannot be retained")
+            })?,
+            path: path.to_owned(),
+            entries: entries.to_vec(),
+        });
+        Ok(())
+    }
+
+    fn revalidate(&self, reopened: &Dir) -> Result<(), ResolveError> {
+        ensure_same_directory(&self.root, reopened)?;
+        let mut entries_seen = 0;
+        for inventory in &self.inventories {
+            let current = open_descendant(reopened, &inventory.path)?;
+            ensure_same_directory(&inventory.directory, &current)?;
+            let entries = enumerate_directory(&current, &mut entries_seen)?;
+            if entries != inventory.entries {
+                return Err(ResolveError::source("package directory changed during resolution"));
+            }
+        }
+        Ok(())
+    }
+}
+
+fn open_descendant(root: &Dir, path: &str) -> Result<Dir, ResolveError> {
+    let mut directory = root
+        .try_clone()
+        .map_err(|_| ResolveError::source("package directory cannot be revalidated"))?;
+    if path.is_empty() {
+        return Ok(directory);
+    }
+    for component in path.split('/') {
+        directory = directory
+            .open_dir_nofollow(component)
+            .map_err(|_| ResolveError::source("package directory changed during resolution"))?;
+    }
+    Ok(directory)
+}
+
+struct RetainedInventory {
+    directory: Dir,
+    path: String,
+    entries: Vec<PackageEntry>,
 }
 
 fn git_cache_key(source: &PackageSource) -> String {

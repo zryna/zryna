@@ -6,9 +6,12 @@ use std::{
 
 use serde_json::{Value, json};
 use sha2::{Digest as _, Sha256};
-use zryna_package::{PackageSource, PackageSourceKind};
+use zryna_package::{PackageSource, PackageSourceKind, PackageSourceProvider as _};
 
-use super::{PackageLockMode, PackageResolutionRequest, git_cache_key, resolve_package};
+use super::{
+    CapturedRoot, FilesystemProvider, MAX_SOURCE_ENTRIES, PackageLockMode,
+    PackageResolutionRequest, git_cache_key, resolve_package,
+};
 
 static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
 
@@ -83,6 +86,29 @@ fn request(root: &TemporaryRoot, mode: PackageLockMode) -> PackageResolutionRequ
         package: "packages/app".to_owned(),
         git_cache: None,
         mode,
+    }
+}
+
+fn local_source() -> PackageSource {
+    PackageSource {
+        kind: PackageSourceKind::Local,
+        locator: "packages/app".to_owned(),
+        revision: String::new(),
+    }
+}
+
+fn provider(root: &TemporaryRoot) -> FilesystemProvider {
+    FilesystemProvider {
+        source_root: CapturedRoot::capture(root.path()).expect("captured source root"),
+        git_cache: None,
+        retained_files: Vec::new(),
+        retained_packages: Vec::new(),
+    }
+}
+
+fn add_empty_directories(package: &Path, count: usize) {
+    for index in 0..count {
+        fs::create_dir(package.join(format!("empty-{index:03}"))).expect("empty directory");
     }
 }
 
@@ -172,4 +198,97 @@ fn linked_source_is_rejected_without_publication() {
         resolve_package(&request(&root, PackageLockMode::Update)).expect_err("link rejection");
     assert_eq!(error.code(), "ZRYNA-P4004");
     assert!(!package.join("zryna.lock.json").exists());
+}
+
+#[test]
+fn exact_directory_entry_budget_is_accepted() {
+    let root = TemporaryRoot::new("entries-exact");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    // The manifest, `src`, and `src/main.zry` consume three entries.
+    add_empty_directories(&package, MAX_SOURCE_ENTRIES - 3);
+    resolve_package(&request(&root, PackageLockMode::Update)).expect("exact entry budget");
+}
+
+#[test]
+fn first_extra_directory_entry_is_rejected_without_truncation() {
+    let root = TemporaryRoot::new("entries-extra");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    add_empty_directories(&package, MAX_SOURCE_ENTRIES - 2);
+    let error =
+        resolve_package(&request(&root, PackageLockMode::Update)).expect_err("first extra entry");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+    assert!(!package.join("zryna.lock.json").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn interleaved_ascii_case_collision_is_rejected() {
+    let root = TemporaryRoot::new("case-collision");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    for name in ["A", "B", "a"] {
+        fs::create_dir(package.join(name)).expect("collision fixture directory");
+    }
+    let error = resolve_package(&request(&root, PackageLockMode::Update))
+        .expect_err("interleaved case collision");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+    assert!(!package.join("zryna.lock.json").exists());
+}
+
+#[test]
+fn new_nested_entry_after_load_is_rejected() {
+    let root = TemporaryRoot::new("entry-mutation");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    let mut provider = provider(&root);
+    provider.load(&local_source()).expect("initial package load");
+    fs::create_dir(package.join("src/added")).expect("new nested entry");
+    let error = provider.revalidate().expect_err("entry-set mutation");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+}
+
+#[cfg(unix)]
+#[test]
+fn removed_empty_directory_after_load_is_rejected() {
+    let root = TemporaryRoot::new("entry-removal");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    fs::create_dir(package.join("empty")).expect("empty directory");
+    let mut provider = provider(&root);
+    provider.load(&local_source()).expect("initial package load");
+    fs::remove_dir(package.join("empty")).expect("remove empty directory");
+    let error = provider.revalidate().expect_err("removed entry");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+}
+
+#[cfg(unix)]
+#[test]
+fn replaced_nested_directory_after_load_is_rejected() {
+    let root = TemporaryRoot::new("directory-replacement");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    let mut provider = provider(&root);
+    provider.load(&local_source()).expect("initial package load");
+    fs::rename(package.join("src"), package.join("old-src")).expect("move retained directory");
+    fs::create_dir(package.join("src")).expect("replacement directory");
+    fs::write(package.join("src/main.zry"), b"app\n").expect("replacement source");
+    let error = provider.revalidate().expect_err("nested directory replacement");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+}
+
+#[cfg(unix)]
+#[test]
+fn directory_to_file_kind_change_after_load_is_rejected() {
+    let root = TemporaryRoot::new("kind-mutation");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    fs::create_dir(package.join("empty")).expect("empty directory");
+    let mut provider = provider(&root);
+    provider.load(&local_source()).expect("initial package load");
+    fs::remove_dir(package.join("empty")).expect("remove empty directory");
+    fs::write(package.join("empty"), b"replacement\n").expect("replacement file");
+    let error = provider.revalidate().expect_err("entry kind mutation");
+    assert_eq!(error.code(), "ZRYNA-P4004");
 }

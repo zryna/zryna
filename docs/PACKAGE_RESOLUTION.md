@@ -23,6 +23,12 @@ created without exposing staged bytes. A failure preserves the prior lock and re
 private staging name. `frozen` requires the existing lock to be byte-canonical and exactly equal
 to the newly authenticated graph; it never writes or repairs the lock.
 
+Revalidation immediately before publication reopens each package and descendant directory from
+the retained source or cache root, compares directory identities and complete bounded entry sets,
+then rechecks retained file identity, state, bytes, and digest. This detects persistent replacement
+or entry mutation observed at that boundary; it is not an atomic filesystem snapshot against an
+arbitrary hostile writer that continues mutating paths after validation.
+
 For a local-only quickstart, create this layout:
 
 ```text
@@ -72,8 +78,11 @@ same-name packages from different versions or sources remain distinct, and nomin
 also retain the exact profile, module path, and declaration ordinal.
 
 One graph admits at most 16 packages, eight dependencies per package, 16 files per package,
-1,024 bytes per source file, 96 bytes per portable path, six wire-container levels, and 65,536
-bytes per manifest or lock record. Collections are canonical and unique. The first extra item,
+256 total directory entries inspected per package, 1,024 bytes per source file, 96 bytes per
+portable path, six wire-container levels, and 65,536 bytes per manifest or lock record. The entry
+budget includes the manifest, an existing lock, source files, and directories including empty
+directories. Enumeration rejects the first extra entry before name conversion or retention and
+never silently truncates it. Collections are canonical and unique. The first extra item,
 cycle, orphan, absent exact selection, incompatible compiler/profile/target coverage, path escape,
 case collision, file/directory collision, duplicate incompatible instance, stale lock, or unsafe
 filesystem object rejects atomically.
