@@ -3,13 +3,14 @@ use zryna_source::{FileId, SourceMap, Span};
 
 use super::{
     Keyword, LexError, Lexeme, MAX_LEXICAL_DIAGNOSTICS, MAX_TOKENS_PER_FILE, MAX_TRIVIA_PER_FILE,
-    Token, TokenKind, Trivia, TriviaKind, resource,
+    Token, TokenKind, Trivia, TriviaKind, resource, resource_at,
 };
 
 pub(super) fn scan_file(
     sources: &SourceMap,
     file: FileId,
     text: &str,
+    remaining_project_lexemes: usize,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Result<Vec<Lexeme>, LexError> {
     let bytes = text.as_bytes();
@@ -36,13 +37,11 @@ pub(super) fn scan_file(
             (ItemKind::Trivia(TriviaKind::LineComment), offset, None)
         } else if bytes[start..].starts_with(b"/*") {
             offset += 2;
-            while offset < bytes.len() && !bytes[offset..].starts_with(b"*/") {
-                offset += utf8_width(bytes[offset]);
-            }
-            if offset < bytes.len() {
-                offset += 2;
+            if let Some(relative_end) = text[offset..].find("*/") {
+                offset += relative_end + 2;
                 (ItemKind::Trivia(TriviaKind::BlockComment), offset, None)
             } else {
+                offset = bytes.len();
                 (
                     ItemKind::Trivia(TriviaKind::BlockComment),
                     offset,
@@ -83,31 +82,44 @@ pub(super) fn scan_file(
             (ItemKind::Token(TokenKind::Invalid), offset, Some("unrecognized source character"))
         };
         let span = make_span(sources, file, start, end)?;
-        match kind {
-            ItemKind::Token(kind) => {
-                tokens += 1;
-                if tokens > MAX_TOKENS_PER_FILE {
-                    return Err(resource_at(span, "source file token inventory exceeds its limit"));
-                }
-                lexemes.push(Lexeme::Token(Token { kind, span }));
-            }
-            ItemKind::Trivia(kind) => {
-                trivia += 1;
-                if trivia > MAX_TRIVIA_PER_FILE {
-                    return Err(resource_at(
-                        span,
-                        "source file trivia inventory exceeds its limit",
-                    ));
-                }
-                lexemes.push(Lexeme::Trivia(Trivia { kind, span }));
-            }
-        }
+        push_item(kind, span, remaining_project_lexemes, &mut lexemes, &mut tokens, &mut trivia)?;
         if let Some(message) = problem {
             malformed(diagnostics, span, message)?;
         }
         offset = end;
     }
     Ok(lexemes)
+}
+
+fn push_item(
+    kind: ItemKind,
+    span: Span,
+    remaining_project_lexemes: usize,
+    lexemes: &mut Vec<Lexeme>,
+    tokens: &mut usize,
+    trivia: &mut usize,
+) -> Result<(), LexError> {
+    let lexeme = match kind {
+        ItemKind::Token(kind) => {
+            *tokens += 1;
+            if *tokens > MAX_TOKENS_PER_FILE {
+                return Err(resource_at(span, "source file token inventory exceeds its limit"));
+            }
+            Lexeme::Token(Token { kind, span })
+        }
+        ItemKind::Trivia(kind) => {
+            *trivia += 1;
+            if *trivia > MAX_TRIVIA_PER_FILE {
+                return Err(resource_at(span, "source file trivia inventory exceeds its limit"));
+            }
+            Lexeme::Trivia(Trivia { kind, span })
+        }
+    };
+    if lexemes.len() == remaining_project_lexemes {
+        return Err(resource_at(span, "project lexical inventory exceeds its limit"));
+    }
+    lexemes.push(lexeme);
+    Ok(())
 }
 
 #[derive(Clone, Copy)]
@@ -144,6 +156,9 @@ fn scan_string(bytes: &[u8], start: usize) -> (ItemKind, usize, Option<&'static 
             b'\\' => {
                 escaped = true;
                 offset += 1;
+                if offset < bytes.len() && line_terminator_width(&bytes[offset..]).is_none() {
+                    offset += utf8_width(bytes[offset]);
+                }
             }
             byte => offset += utf8_width(byte),
         }
@@ -263,15 +278,4 @@ fn malformed(
         "use the frozen protocol-v4 lexical spelling",
     ));
     Ok(())
-}
-
-fn resource_at(span: Span, message: &'static str) -> LexError {
-    LexError {
-        diagnostic: Diagnostic::error_at(
-            "ZRYNA-F1502",
-            span,
-            message,
-            "reduce the bounded source before native lexing",
-        ),
-    }
 }

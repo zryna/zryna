@@ -119,8 +119,11 @@ provider must not modify semantic behavior or any backend.
 The first native implementation checkpoint is `zryna_frontend::native_lexer`. It consumes the
 existing authoritative `SourceMap` and retains source-ordered tokens and formatter-relevant trivia
 with opaque UTF-8 spans. It covers only the frozen protocol-v4 lexical spellings, deterministic
-malformed-input recovery, and fixed resource ceilings. It does not yet parse the conformance
-corpus, emit a raw snapshot, implement the provider handshake, or alter TypeScript 6 authority.
+malformed-input recovery, the frozen 8 MiB aggregate source ceiling, and fixed token, trivia,
+project, and diagnostic ceilings. Invalid byte encoding is rejected by the source-ingestion
+boundary before a `SourceMap` can exist; lexing preserves every admitted UTF-8 byte exactly. The
+native lexer runs the frozen provider sources as lexical fixtures, but does not yet parse the
+conformance corpus, emit a raw snapshot, implement the provider handshake, or alter TypeScript 6 authority.
 The next native checkpoint is a bounded parser that consumes this stream and constructs candidate
 protocol-v4 DTOs for verification and conformance comparison.
 

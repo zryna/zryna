@@ -18,6 +18,8 @@ pub const MAX_TOKENS_PER_FILE: usize = 65_536;
 pub const MAX_TRIVIA_PER_FILE: usize = 65_536;
 /// Maximum tokens plus trivia runs retained for a project.
 pub const MAX_LEXEMES_PER_PROJECT: usize = 262_144;
+/// Maximum aggregate source bytes accepted by the native protocol-v4 stage.
+pub const MAX_SOURCE_BYTES_PER_PROJECT: usize = zryna_syntax::v4::MAX_AGGREGATE_SOURCE_BYTES;
 /// Maximum malformed-input diagnostics retained before lexing fails atomically.
 pub const MAX_LEXICAL_DIAGNOSTICS: usize = 256;
 
@@ -214,7 +216,6 @@ impl LexedFile {
     }
 
     /// Iterates parser-visible tokens in source order.
-    #[must_use]
     pub fn tokens(&self) -> impl Iterator<Item = Token> + '_ {
         self.lexemes.iter().filter_map(|lexeme| match lexeme {
             Lexeme::Token(token) => Some(*token),
@@ -284,6 +285,7 @@ impl std::error::Error for LexError {}
 /// Returns [`LexError`] when a token, trivia, project, diagnostic, or source-boundary inventory
 /// cannot be represented within its fixed limit.
 pub fn lex(sources: &SourceMap) -> Result<LexedProject, LexError> {
+    preflight_source_bytes(sources)?;
     let mut files = Vec::with_capacity(sources.len());
     let mut diagnostics = Vec::new();
     let mut project_lexemes = 0_usize;
@@ -293,7 +295,9 @@ pub fn lex(sources: &SourceMap) -> Result<LexedProject, LexError> {
             .verify_file_id(raw_id)
             .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })?;
         let source = sources.source(id).ok_or_else(|| resource("source file is unavailable"))?;
-        let lexemes = scan_file(sources, id, source.text(), &mut diagnostics)?;
+        let remaining_project_lexemes = MAX_LEXEMES_PER_PROJECT - project_lexemes;
+        let lexemes =
+            scan_file(sources, id, source.text(), remaining_project_lexemes, &mut diagnostics)?;
         project_lexemes = project_lexemes
             .checked_add(lexemes.len())
             .ok_or_else(|| resource("project lexical inventory overflowed"))?;
@@ -305,11 +309,53 @@ pub fn lex(sources: &SourceMap) -> Result<LexedProject, LexError> {
     Ok(LexedProject { source_map_identity: sources.identity(), files, diagnostics })
 }
 
+fn preflight_source_bytes(sources: &SourceMap) -> Result<(), LexError> {
+    let mut total = 0_usize;
+    for raw_id in 0..sources.len() {
+        let raw_id = u32::try_from(raw_id).map_err(|_| resource("source file id overflow"))?;
+        let id = sources
+            .verify_file_id(raw_id)
+            .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })?;
+        let source = sources.source(id).ok_or_else(|| resource("source file is unavailable"))?;
+        let next = total
+            .checked_add(source.text().len())
+            .ok_or_else(|| resource("project source byte inventory overflowed"))?;
+        if next > MAX_SOURCE_BYTES_PER_PROJECT {
+            let mut start = MAX_SOURCE_BYTES_PER_PROJECT - total;
+            while !source.text().is_char_boundary(start) {
+                start -= 1;
+            }
+            let end = start + source.text()[start..].chars().next().map_or(0, char::len_utf8);
+            let span = sources
+                .span(
+                    id,
+                    u32::try_from(start).map_err(|_| resource("source offset overflow"))?,
+                    u32::try_from(end).map_err(|_| resource("source offset overflow"))?,
+                )
+                .map_err(|error| LexError { diagnostic: Diagnostic::from_source_error(&error) })?;
+            return Err(resource_at(span, "project source bytes exceed the protocol-v4 limit"));
+        }
+        total = next;
+    }
+    Ok(())
+}
+
 pub(super) fn resource(message: &'static str) -> LexError {
     LexError {
         diagnostic: Diagnostic::error(
             "ZRYNA-F1502",
             None,
+            message,
+            "reduce the bounded source before native lexing",
+        ),
+    }
+}
+
+pub(super) fn resource_at(span: Span, message: &'static str) -> LexError {
+    LexError {
+        diagnostic: Diagnostic::error_at(
+            "ZRYNA-F1502",
+            span,
             message,
             "reduce the bounded source before native lexing",
         ),

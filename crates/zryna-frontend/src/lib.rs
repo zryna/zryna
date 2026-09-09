@@ -11,8 +11,8 @@ use zryna_source::{
     FileId, MAX_SOURCE_FILES, NormalizedSourcePath, SourceMap, Span, UntrustedSpan,
 };
 
-mod worker;
 pub mod native_lexer;
+mod worker;
 pub use worker::{
     FrontendCapabilitiesV3, FrontendCapabilitiesV4, MAX_HANDSHAKE_RESPONSE_BYTES,
     MAX_WORKER_REQUEST_BYTES, MAX_WORKER_STDERR_BYTES, MAX_WORKER_STDOUT_BYTES,
