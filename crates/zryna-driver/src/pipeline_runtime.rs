@@ -5,7 +5,36 @@ use zryna_abi::{
     VerifiedInvocation,
 };
 
-use crate::pipeline::{CommandFailure, invariant_failure};
+use crate::{
+    pipeline::{CommandFailure, invariant_failure, request_error, runtime_failure},
+    runtime::NodeRuntimeCapability,
+    scalar_adapter_interface::VerifiedScalarEsm,
+};
+
+pub(crate) fn invoke_scalar_esm(
+    interface: Option<&VerifiedScalarEsm>,
+    runtime: &NodeRuntimeCapability,
+    working_directory: &std::path::Path,
+    invocation: &VerifiedInvocation<'_>,
+) -> Result<ScalarOutcome, CommandFailure> {
+    let interface = interface.ok_or_else(|| {
+        request_error(
+            "ZRYNA-C1010",
+            "M2 scalar ESM preparation was not completed",
+            "report this compiler invariant failure",
+        )
+    })?;
+    interface
+        .invoke_node(
+            runtime,
+            working_directory,
+            zryna_abi::Invocation::new(
+                invocation.export().logical_name().as_str().to_owned(),
+                invocation.arguments().to_vec(),
+            ),
+        )
+        .map_err(runtime_failure)
+}
 
 pub(crate) fn render_javascript_harness(
     stem: &str,
@@ -33,7 +62,7 @@ pub(crate) fn render_javascript_harness(
     .into_bytes())
 }
 
-fn render_javascript_arguments(invocation: &VerifiedInvocation<'_>) -> String {
+pub(crate) fn render_javascript_arguments(invocation: &VerifiedInvocation<'_>) -> String {
     invocation
         .arguments()
         .iter()

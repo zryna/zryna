@@ -1,0 +1,24 @@
+{
+  "runner": "playwright-core",
+  "runnerVersion": "1.63.0",
+  "runnerIntegrity": "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==",
+  "upstreamCommit": "1b025d7e20a026371cd5f98ba0cdce48892737c8",
+  "browserVersion": "153.0.8010.12",
+  "browserRevision": "1243",
+  "platforms": {
+    "linux-x64": {
+      "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip",
+      "publisherUrl": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/linux64/chrome-linux64.zip",
+      "executable": "chrome-linux64/chrome",
+      "archiveSha256": "8aac35011c18f6e2d10696154af89a5728ac2ddd6dc6fad24ffdf243c3fcfd5a",
+      "inventorySha256": "110d5111c1a885596b2dba4fe5d04e570d26e1c57454d0a902f1115ce818635a"
+    },
+    "win32-x64": {
+      "url": "https://cdn.playwright.dev/builds/cft/153.0.8010.12/win64/chrome-win64.zip",
+      "publisherUrl": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/win64/chrome-win64.zip",
+      "executable": "chrome-win64/chrome.exe",
+      "archiveSha256": "415968b02065d4a9e2c10b85f0ae9f489b8fba500e94d9d0a7b7c4852a7234c1",
+      "inventorySha256": "92892432f2a0ba1ef1f7c35cfc5ce3967f869b40941afae7ffeac402aabeba19"
+    }
+  }
+}

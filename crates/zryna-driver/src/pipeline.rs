@@ -31,7 +31,8 @@ use crate::{
         prepare_native_invocation_from_verified, run_prepared_native_invocation,
     },
     pipeline_runtime::{
-        normalize_carrier, normalize_frame, render_javascript_harness, render_webassembly_harness,
+        invoke_scalar_esm, normalize_carrier, normalize_frame, render_javascript_harness,
+        render_webassembly_harness,
     },
     runtime::{NodeRuntimeCapability, node_compatible_path},
 };
@@ -428,7 +429,7 @@ struct ControlFlowManifestEdge<'a> {
 }
 
 struct PreparedControlFlowArtifacts {
-    javascript: Option<zryna_backend_javascript::JavaScriptArtifact>,
+    javascript: Option<crate::scalar_adapter_interface::VerifiedScalarEsm>,
     webassembly: Option<zryna_backend_webassembly::ValidatedWebAssemblyArtifact>,
     native_object:
         Option<zryna_backend_native::control_flow_v1::ValidatedControlFlowNativeObjectArtifact>,
@@ -615,12 +616,11 @@ where
     let closure = discover_module_closure(&source_root, entrypoint, &frontend)
         .map_err(|error| module_closure_failure(&error))?;
     checkpoint(ControlFlowPhase::Semantics)?;
-    let program = closure
-        .lower_control_flow_v1()
+    let scalar_source = crate::scalar_adapter_interface::lower_verified_scalar_source(&closure)
         .map_err(|diagnostics| CommandFailure { kind: CommandFailureKind::Source, diagnostics })?;
     let verified_invocation = run
         .map(|invocation| {
-            program.prepare_invocation(zryna_abi::Invocation::new(
+            scalar_source.program().prepare_invocation(zryna_abi::Invocation::new(
                 invocation.logical_export.clone(),
                 invocation.arguments.clone(),
             ))
@@ -637,7 +637,7 @@ where
                 ),
             )
         })?;
-    let mut prepared = compile_control_flow_selected(&program, request.targets, checkpoint)?;
+    let mut prepared = compile_control_flow_selected(&scalar_source, request.targets, checkpoint)?;
     node.revalidate().map_err(preparation_failure)?;
 
     if run.is_some() && request.targets.native() {
@@ -660,7 +660,7 @@ where
             .map_err(preparation_failure)?;
         prepared.native_executable = Some(
             prepare_control_flow_native_invocation_from_verified(
-                &program,
+                scalar_source.program(),
                 object,
                 invocation,
                 &output_root,
@@ -694,13 +694,14 @@ where
 }
 
 fn compile_control_flow_selected(
-    program: &zryna_ir::control_flow_v1::VerifiedProgram,
+    source: &crate::scalar_adapter_interface::VerifiedScalarSource,
     targets: TargetSelection,
     checkpoint: ControlFlowCheckpoint<'_>,
 ) -> Result<PreparedControlFlowArtifacts, CommandFailure> {
+    let program = source.program();
     let javascript = if targets.javascript() {
         checkpoint(ControlFlowPhase::JavaScriptBackend)?;
-        Some(zryna_backend_javascript::emit_control_flow(program).map_err(preparation_failure)?)
+        Some(source.prepare_node_interface().map_err(preparation_failure)?)
     } else {
         None
     };
@@ -1221,7 +1222,7 @@ fn write_control_flow_artifacts(
             "ecmascript-module",
             &request.artifact_stem,
             "mjs",
-            artifact.source.as_bytes(),
+            artifact.javascript_source().map_err(preparation_failure)?.as_bytes(),
         )?);
     }
     if let Some(artifact) = &prepared.webassembly {
@@ -1276,16 +1277,9 @@ fn execute_control_flow_targets(
     let mut results = Vec::with_capacity(request.targets.ordered().len());
     if request.targets.javascript() {
         checkpoint(ControlFlowPhase::JavaScriptExecution)?;
-        let harness = render_javascript_harness(&request.artifact_stem, invocation)?;
-        let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
-        let result_type = invocation.export().result();
-        let carrier = node
-            .run_javascript_module(&harness_path, transaction.path(), result_type)
-            .map_err(runtime_failure)?;
-        results.push(TargetResult {
-            target: ManifestTarget::JavaScript,
-            outcome: normalize_carrier(ScalarTarget::JavaScript, result_type, carrier),
-        });
+        let outcome =
+            invoke_scalar_esm(prepared.javascript.as_ref(), node, transaction.path(), invocation)?;
+        results.push(TargetResult { target: ManifestTarget::JavaScript, outcome });
     }
     if request.targets.webassembly() {
         checkpoint(ControlFlowPhase::WebAssemblyExecution)?;
@@ -1382,7 +1376,7 @@ impl Write for BoundedManifestWriter {
     }
 }
 
-fn hex_sha256(bytes: &[u8; 32]) -> String {
+pub(super) fn hex_sha256(bytes: &[u8; 32]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut output = String::with_capacity(64);
     for byte in bytes {
@@ -2170,7 +2164,7 @@ fn execution_failure(diagnostic: Diagnostic) -> CommandFailure {
     failure(CommandFailureKind::Execution, diagnostic)
 }
 
-fn runtime_failure(diagnostic: Diagnostic) -> CommandFailure {
+pub(super) fn runtime_failure(diagnostic: Diagnostic) -> CommandFailure {
     if diagnostic.code() == "ZRYNA-R3007" {
         failure(CommandFailureKind::Cleanup, diagnostic)
     } else {
@@ -2229,7 +2223,7 @@ fn entrypoint_error(message: &'static str) -> CommandFailure {
     )
 }
 
-fn request_error(
+pub(super) fn request_error(
     code: &'static str,
     message: &'static str,
     guidance: &'static str,
