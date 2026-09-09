@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use serde_json::{Value, json};
 use sha2::{Digest as _, Sha256};
 use zryna_package::{
-    LockMode, PackageFile, PackageMaterial, PackageSource, PackageSourceKind,
+    GraphRole, LockMode, PackageFile, PackageMaterial, PackageSource, PackageSourceKind,
     PackageSourceProvider, ResolveError, resolve,
 };
 
@@ -172,23 +172,22 @@ fn update_and_frozen_replay_produce_one_exact_graph() {
 }
 
 #[test]
-fn graph_identity_and_nominal_compatibility_are_instance_bound() {
+fn package_semantic_domains_are_graph_and_instance_bound() {
     let (root, mut provider) = two_packages();
     let graph = resolve(&mut provider, root, LockMode::Update).expect("graph");
     let app = graph.packages().iter().find(|package| package.name() == "app").expect("app");
     let library =
         graph.packages().iter().find(|package| package.name() == "library").expect("library");
-    let first = graph
-        .nominal_identity(app.instance().manifest_id(), "src/main.zry", 0)
-        .expect("app nominal");
-    let replay = graph
-        .nominal_identity(app.instance().manifest_id(), "src/main.zry", 0)
-        .expect("same nominal");
-    let distinct = graph
-        .nominal_identity(library.instance().manifest_id(), "src/main.zry", 0)
-        .expect("library nominal");
+    let first = graph.package_semantic_domain(app.instance().manifest_id()).expect("app domain");
+    let replay = graph.package_semantic_domain(app.instance().manifest_id()).expect("same domain");
+    let distinct =
+        graph.package_semantic_domain(library.instance().manifest_id()).expect("library domain");
     assert_eq!(first, replay);
     assert_ne!(first, distinct);
+    assert_eq!(first.role(), GraphRole::TargetRuntime);
+    assert_eq!(first.profile(), graph.compatibility().profile);
+    assert_eq!(first.package(), app.instance());
+    assert!(graph.package_semantic_domain(&"0".repeat(64)).is_err());
 }
 
 #[test]

@@ -70,12 +70,14 @@ identity or trust; all bytes are independently checked against the manifest.
 
 ## Bounds, identity, and unsupported forms
 
-The resolver preserves the accepted #168/#360 identities. A package instance is exactly the pair
+The resolver preserves the accepted #168/#360 package identities. A package instance is exactly the pair
 of the domain-separated canonical manifest digest and the domain-separated complete source-file
 inventory digest. Dependencies are selected by exact name, version, and source tuple. Aliases order
-edges but do not change instance or nominal declaration identity. The graph is target/runtime only;
-same-name packages from different versions or sources remain distinct, and nominal identities
-also retain the exact profile, module path, and declaration ordinal.
+edges but do not change instance identity. The graph is target/runtime only, so its opaque package
+semantic-domain input retains the exact profile, role, and instance. Same-name packages from
+different versions or sources remain distinct. The resolver does not accept module paths or
+declaration ordinals as nominal authority: only semantics may seal final nominal identity after
+receiving an authenticated module and real source-ordered declaration ordinal.
 
 One graph admits at most 16 packages, eight dependencies per package, 16 files per package,
 256 total directory entries inspected per package, 1,024 bytes per source file, 96 bytes per
@@ -102,7 +104,7 @@ package type imports, source acquisition, compilation, cache execution, and pack
 | `ZRYNA-P4004` | Source material is absent, substituted, unsafe, unstable, or mismatched. |
 | `ZRYNA-P4005` | Portable path or locator is unsafe. |
 | `ZRYNA-P4006` | Exact dependency selection is absent or ambiguous. |
-| `ZRYNA-P4007` | Package-instance or nominal identity is invalid. |
+| `ZRYNA-P4007` | Package-instance or package semantic-domain identity is invalid. |
 | `ZRYNA-P4008` | Dependency edge, cycle, or reachability validation failed. |
 | `ZRYNA-P4009` | Compiler, profile, or target coverage is incompatible. |
 | `ZRYNA-P4010` | Frozen lock is stale or differs from the authenticated graph. |

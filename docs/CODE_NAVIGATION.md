@@ -119,8 +119,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 - Start: [package and release contract v1](../spec/package/PACKAGE_RELEASE_V1.md), [package-instance identity v1](../spec/package/PACKAGE_INSTANCE_IDENTITY_V1.md), and the [M5 roadmap](ROADMAP.md).
 - Canonical schema, serialization, fixtures, and validator are `schemas/zryna-package-release-v1.schema.json`, `scripts/package-release/`, and `tests/package-release-v1/`; #360 semantic decisions are checked by `tests/package-instance-identity-contract.test.mjs`.
-- Source-only resolver: `crates/zryna-package`; retained local/Git-cache filesystem capabilities and lock publication: `crates/zryna-driver/src/package_resolution.rs`; CLI dispatch: `apps/zryna/src/package.rs`; user contract: [package resolution](PACKAGE_RESOLUTION.md).
-- Focus: `cargo test --locked -p zryna-package`, `cargo test --locked -p zryna-driver package_resolution`, `pnpm package:contract`, then `pnpm docs:check`. Preserve the source-only boundary: package imports, registry acquisition, build execution, native recipes, and package publication remain separate work.
+- Source-only resolver: `crates/zryna-package`; retained local/Git-cache filesystem capabilities and lock publication: `crates/zryna-driver/src/package_resolution.rs`; CLI dispatch: `apps/zryna/src/package.rs`; user contract: [package resolution](PACKAGE_RESOLUTION.md). Focus with `cargo test --locked -p zryna-package`, `cargo test --locked -p zryna-driver package_resolution`, `pnpm package:contract`, then `pnpm docs:check`. Preserve the source-only boundary: package imports, registry acquisition, build execution, native recipes, and package publication remain separate work.
 
 ## 13. M5 resolved build/source trust plans or cache identity
 

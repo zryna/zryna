@@ -29,39 +29,57 @@ impl PackageInstance {
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-/// Compiler-facing nominal coordinate retained from one authenticated graph.
-pub struct NominalIdentity {
+/// Opaque package-scoped input to later semantics-owned nominal identity.
+pub struct PackageSemanticDomain {
     role: GraphRole,
     profile: String,
     package: PackageInstance,
-    module: String,
-    declaration_ordinal: u32,
+}
+
+impl PackageSemanticDomain {
+    #[must_use]
+    /// Returns the exact role of the authenticated package graph.
+    pub const fn role(&self) -> GraphRole {
+        self.role
+    }
+
+    #[must_use]
+    /// Returns the exact selected language profile.
+    pub fn profile(&self) -> &str {
+        &self.profile
+    }
+
+    #[must_use]
+    /// Returns the exact authenticated package instance.
+    pub const fn package(&self) -> &PackageInstance {
+        &self.package
+    }
 }
 
 impl ResolvedGraph {
-    /// Constructs a nominal coordinate for a package and portable module in this graph.
+    /// Returns the package-scoped semantic domain authenticated by this graph.
+    ///
+    /// This is not a nominal declaration identity. Only later semantics may combine it with an
+    /// authenticated module and a real source-ordered declaration ordinal.
     ///
     /// # Errors
     ///
-    /// Returns an identity error if the package is absent or the module path is invalid.
-    pub fn nominal_identity(
+    /// Returns an identity error if the package is absent from this graph.
+    pub fn package_semantic_domain(
         &self,
         package_id: &str,
-        module: &str,
-        declaration_ordinal: u32,
-    ) -> Result<NominalIdentity, ResolveError> {
+    ) -> Result<PackageSemanticDomain, ResolveError> {
         let package = self
             .packages()
             .iter()
             .find(|package| package.instance().manifest_id() == package_id)
-            .ok_or_else(|| ResolveError::identity("nominal package is absent from the graph"))?;
-        crate::validation::portable_path(module)?;
-        Ok(NominalIdentity {
+            .ok_or_else(|| {
+                ResolveError::identity("semantic-domain package is absent from the graph")
+            })?;
+        Ok(PackageSemanticDomain {
             role: GraphRole::TargetRuntime,
             profile: self.compatibility().profile.clone(),
             package: package.instance().clone(),
-            module: module.to_owned(),
-            declaration_ordinal,
         })
     }
 }

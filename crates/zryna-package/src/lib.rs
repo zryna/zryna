@@ -8,7 +8,7 @@ mod model;
 mod resolver;
 mod validation;
 
-pub use identity::{GraphRole, NominalIdentity, PackageInstance};
+pub use identity::{GraphRole, PackageInstance, PackageSemanticDomain};
 pub use model::{Compatibility, PackageSource, PackageSourceKind};
 pub use resolver::{
     LockMode, PackageFile, PackageMaterial, PackageSourceProvider, ResolveError, ResolvedGraph,

@@ -23,7 +23,6 @@ const MAX_MANIFEST_BYTES: usize = 65_536;
 const MAX_SOURCE_BYTES: usize = 1_024;
 const MAX_SOURCE_FILES: usize = 16;
 const MAX_SOURCE_ENTRIES: usize = 256;
-const MAX_DIRECTORY_DEPTH: usize = 32;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 /// Lock behavior for a driver-owned package resolution request.
@@ -141,14 +140,7 @@ impl PackageSourceProvider for FilesystemProvider {
         self.push_retained(retained)?;
         let mut files = Vec::new();
         let mut entries_seen = 0;
-        self.collect_files(
-            &directory,
-            "",
-            0,
-            &mut entries_seen,
-            &mut files,
-            &mut retained_package,
-        )?;
+        self.collect_files(&directory, &mut entries_seen, &mut files, &mut retained_package)?;
         files.sort_by(|left, right| left.path.cmp(&right.path));
         self.retained_packages.push(retained_package);
         Ok(PackageMaterial { manifest, files })
@@ -170,44 +162,41 @@ impl FilesystemProvider {
 
     fn collect_files(
         &mut self,
-        directory: &Dir,
-        prefix: &str,
-        depth: usize,
+        root: &Dir,
         entries_seen: &mut usize,
         files: &mut Vec<PackageFile>,
         retained_package: &mut RetainedPackage,
     ) -> Result<(), ResolveError> {
-        if depth > MAX_DIRECTORY_DEPTH {
-            return Err(ResolveError::source("package directory depth exceeds 32"));
-        }
-        let entries = enumerate_directory(directory, entries_seen)?;
-        retained_package.retain_inventory(directory, prefix, &entries)?;
-        for entry in entries {
-            let name = entry.name;
-            if prefix.is_empty() && matches!(name.as_str(), MANIFEST_NAME | LOCK_NAME) {
-                continue;
-            }
-            let path = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
-            if entry.kind == PackageEntryKind::Directory {
-                let child = directory
-                    .open_dir_nofollow(&name)
-                    .map_err(|_| ResolveError::source("package directory cannot be retained"))?;
-                self.collect_files(
-                    &child,
-                    &path,
-                    depth + 1,
-                    entries_seen,
-                    files,
-                    retained_package,
-                )?;
-            } else {
-                if files.len() == MAX_SOURCE_FILES {
-                    return Err(ResolveError::source("package source file count exceeds 16"));
+        let root = root
+            .try_clone()
+            .map_err(|_| ResolveError::source("package directory capability cannot be retained"))?;
+        let mut pending = vec![(root, String::new())];
+        while let Some((directory, prefix)) = pending.pop() {
+            let entries = enumerate_directory(&directory, entries_seen)?;
+            retained_package.retain_inventory(&directory, &prefix, &entries)?;
+            let mut children = Vec::new();
+            for entry in entries {
+                let name = entry.name;
+                if prefix.is_empty() && matches!(name.as_str(), MANIFEST_NAME | LOCK_NAME) {
+                    continue;
                 }
-                let (bytes, retained) = read_retained(directory, &name, MAX_SOURCE_BYTES)?;
-                self.push_retained(retained)?;
-                files.push(PackageFile { path, bytes });
+                let path =
+                    if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+                if entry.kind == PackageEntryKind::Directory {
+                    let child = directory.open_dir_nofollow(&name).map_err(|_| {
+                        ResolveError::source("package directory cannot be retained")
+                    })?;
+                    children.push((child, path));
+                } else {
+                    if files.len() == MAX_SOURCE_FILES {
+                        return Err(ResolveError::source("package source file count exceeds 16"));
+                    }
+                    let (bytes, retained) = read_retained(&directory, &name, MAX_SOURCE_BYTES)?;
+                    self.push_retained(retained)?;
+                    files.push(PackageFile { path, bytes });
+                }
             }
+            pending.extend(children.into_iter().rev());
         }
         Ok(())
     }

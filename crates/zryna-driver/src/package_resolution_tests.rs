@@ -56,8 +56,20 @@ fn write_package(
     body: &[u8],
     dependencies: Vec<Value>,
 ) {
-    fs::create_dir_all(directory.join("src")).expect("source directory");
-    fs::write(directory.join("src/main.zry"), body).expect("source file");
+    write_package_file(directory, name, source, "src/main.zry", body, dependencies);
+}
+
+fn write_package_file(
+    directory: &Path,
+    name: &str,
+    source: Value,
+    file_path: &str,
+    body: &[u8],
+    dependencies: Vec<Value>,
+) {
+    let source_path = directory.join(file_path);
+    fs::create_dir_all(source_path.parent().expect("source parent")).expect("source directory");
+    fs::write(source_path, body).expect("source file");
     let source = serde_json::to_value(source).expect("source value");
     let dependencies = serde_json::to_value(dependencies).expect("dependency values");
     let manifest = json!({
@@ -68,7 +80,7 @@ fn write_package(
         },
         "dependencies": dependencies,
         "files": [{
-            "path": "src/main.zry",
+            "path": file_path,
             "sha256": format!("{:x}", Sha256::digest(body)),
             "size": body.len()
         }],
@@ -219,6 +231,62 @@ fn first_extra_directory_entry_is_rejected_without_truncation() {
     let error =
         resolve_package(&request(&root, PackageLockMode::Update)).expect_err("first extra entry");
     assert_eq!(error.code(), "ZRYNA-P4004");
+    assert!(!package.join("zryna.lock.json").exists());
+}
+
+#[test]
+fn source_path_deeper_than_thirty_two_directories_is_accepted() {
+    let root = TemporaryRoot::new("deep-source");
+    let package = root.path().join("packages/app");
+    let file_path = format!("{}x.zry", "a/".repeat(33));
+    assert_eq!(file_path.matches('/').count(), 33);
+    assert!(file_path.len() < 96);
+    write_package_file(
+        &package,
+        "app",
+        source("local", "packages/app", ""),
+        &file_path,
+        b"app\n",
+        vec![],
+    );
+    resolve_package(&request(&root, PackageLockMode::Update)).expect("deep valid source path");
+}
+
+#[test]
+fn exact_source_path_byte_budget_is_accepted() {
+    let root = TemporaryRoot::new("path-exact");
+    let package = root.path().join("packages/app");
+    let file_path = format!("{}xx.zry", "a/".repeat(45));
+    assert_eq!(file_path.len(), 96);
+    write_package_file(
+        &package,
+        "app",
+        source("local", "packages/app", ""),
+        &file_path,
+        b"app\n",
+        vec![],
+    );
+    resolve_package(&request(&root, PackageLockMode::Update)).expect("exact path budget");
+    resolve_package(&request(&root, PackageLockMode::Frozen)).expect("exact frozen replay");
+}
+
+#[test]
+fn first_extra_source_path_byte_is_rejected_without_publication() {
+    let root = TemporaryRoot::new("path-extra");
+    let package = root.path().join("packages/app");
+    let file_path = format!("{}xxx.zry", "a/".repeat(45));
+    assert_eq!(file_path.len(), 97);
+    write_package_file(
+        &package,
+        "app",
+        source("local", "packages/app", ""),
+        &file_path,
+        b"app\n",
+        vec![],
+    );
+    let error = resolve_package(&request(&root, PackageLockMode::Update))
+        .expect_err("first extra path byte");
+    assert_eq!(error.code(), "ZRYNA-P4005");
     assert!(!package.join("zryna.lock.json").exists());
 }
 
