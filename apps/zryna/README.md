@@ -26,3 +26,9 @@ Public observations remain typed `i32`/`bool`; owned values stay internal. See t
 
 See the [complete CLI reference](../../docs/CLI.md) for syntax, target and platform limits, bundle
 and manifest layout, atomic publication, examples, JSON behavior, and stable exit statuses.
+
+The additive `package resolve` command validates one standalone source-only package graph and
+verifies or atomically updates `zryna.lock.json`. It uses only workspace-relative local packages
+and an explicitly supplied prepopulated exact-commit Git cache; it performs no network, registry,
+script, native-recipe, package-import, compilation, or target execution work. See the
+[package resolution contract](../../docs/PACKAGE_RESOLUTION.md).

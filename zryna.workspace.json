@@ -25,6 +25,13 @@
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
+      "id": "zryna-package",
+      "root": "crates/zryna-package",
+      "kind": "foundation",
+      "dependencies": [],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
+    },
+    {
       "id": "zryna-architecture",
       "root": "crates/zryna-architecture",
       "kind": "foundation",
@@ -115,6 +122,7 @@
         "zryna-frontend",
         "zryna-ir",
         "zryna-native-mir",
+        "zryna-package",
         "zryna-semantics",
         "zryna-source",
         "zryna-syntax"

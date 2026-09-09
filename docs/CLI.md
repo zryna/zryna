@@ -26,6 +26,7 @@ and manifest v3 are documented in [M3 driver](M3_CANDIDATE_DRIVER.md).
 ```text
 zryna architecture check [--root <PATH>] [--json]
 zryna doctor             [--root <PATH>] [--json]
+zryna package resolve <PACKAGE> --source-root <PATH> --mode <frozen|update> [--git-cache <PATH>] [--json]
 zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> --node <PATH> [--profile control-flow-v1] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
 ```
@@ -35,6 +36,9 @@ zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <
 runtime, or doing target work. There is no bypass flag.
 Architecture and doctor `--json` output retains the existing deterministic `ValidationReport`
 shape containing its `diagnostics` array.
+
+`package resolve` is the source-only package command documented in
+[Package resolution](PACKAGE_RESOLUTION.md). It does not compile source or select a backend.
 
 `ENTRYPOINT` is exactly one workspace-relative `.zry` path. Absolute paths, traversal,
 normalized-away components, backslashes, links or Windows reparse points, and paths outside

@@ -13,6 +13,7 @@ members = [
   "crates/zryna-ir",
   "crates/zryna-layout",
   "crates/zryna-ownership-runtime-abi",
+  "crates/zryna-package",
   "crates/zryna-native-mir",
   "crates/zryna-semantics",
   "crates/zryna-source",
