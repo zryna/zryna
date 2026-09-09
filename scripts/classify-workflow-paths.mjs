@@ -45,7 +45,11 @@ const LANE_PATHS = Object.freeze({
     /^crates\/zryna-(?:diagnostics|frontend|source|syntax)\//,
     /^schemas\/zryna-syntax-v4\.schema\.json$/,
     /^scripts\/check-provider-conformance-v4\.mjs$/,
+    /^scripts\/run-native-lexer-resource-tests\.mjs$/,
+    /^scripts\/verify-provider-v4-ci-result\.mjs$/,
     /^tests\/provider-conformance-v4(?:\.json|\.test\.mjs|\/.*)$/,
+    /^tests\/native-lexer-resource-runner\.test\.mjs$/,
+    /^tests\/provider-v4-ci-result\.test\.mjs$/,
     /^tests\/syntax-protocol-v4\.test\.mjs$/,
   ]),
   wit: Object.freeze([

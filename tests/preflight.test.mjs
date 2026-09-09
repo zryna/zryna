@@ -112,7 +112,7 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.doesNotMatch(rust, /needs:/);
   assert.doesNotMatch(adapterPlatform, /needs:/);
   assert.match(aggregate,
-    /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts\]/);
+    /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4\]/);
   assert.match(
     aggregate,
     /OWNED_DATA_QUICK_RESULT: \$\{\{ needs\.owned-data-quick\.result \}\}/,
@@ -121,6 +121,7 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /test "\$PREFLIGHT_RESULT" = success/);
   assert.match(aggregate, /test "\$ROUTING_RESULT" = success/);
+  assert.match(aggregate, /node scripts\/verify-provider-v4-ci-result\.mjs/);
 
   assert.equal(parsed.jobs.preflight['timeout-minutes'], 35);
   assert.equal(parsed.jobs.preflight.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@')).length, 1);
@@ -132,7 +133,7 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.equal(parsed.jobs['adapter-platform'].needs, undefined);
   assert.deepEqual(parsed.jobs.adapter.needs, ['preflight', 'adapter-platform']);
   assert.deepEqual(parsed.jobs.m0.needs,
-    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts']);
+    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts', 'provider-conformance-v4']);
 });
 
 test('package exposes the exact documented preflight entrypoint', async () => {

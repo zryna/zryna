@@ -33,6 +33,9 @@ lexical inventory covers the v4 keywords plus braces, brackets, parentheses, `: 
 >=`, `= => === !==`, and `+ - *`. Per-file token and trivia limits are 65,536 each; the project
 retains at most 262,144 combined lexemes, 256 diagnostics, and 8 MiB of source. This stage does not
 parse, create protocol-v4 snapshots, implement a provider, or change bootstrap/public selection.
+Run `cargo test --locked -p zryna-frontend --test native_lexer --test native_lexer_fuzz` for the
+ordinary corpus. Add `-- --include-ignored` to execute the two proportional production-limit token,
+trivia, and project-lexeme proofs without lowering their limits.
 
 Protocol v1 intentionally carries declarations and diagnostics only. Protocol v2 is a separate
 executable-syntax contract owned by `zryna-syntax`; it does not change v1 semantics in place. The

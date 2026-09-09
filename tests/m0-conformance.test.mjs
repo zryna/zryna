@@ -229,7 +229,7 @@ test('required CI exposes a stable aggregate over Rust and adapter gates', async
   assert.match(adapter, /name: adapter/);
   assert.match(aggregate, /name: m0/);
   assert.match(aggregate, /if: always\(\)/);
-  assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts\]/);
+  assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4\]/);
   assert.match(
     aggregate,
     /OWNED_DATA_QUICK_RESULT: \$\{\{ needs\.owned-data-quick\.result \}\}/,
@@ -239,6 +239,9 @@ test('required CI exposes a stable aggregate over Rust and adapter gates', async
   assert.match(aggregate, /RUST_RESULT: \$\{\{ needs\.rust\.result \}\}/);
   assert.match(aggregate, /ADAPTER_RESULT: \$\{\{ needs\.adapter\.result \}\}/);
   assert.match(aggregate, /ROUTING_RESULT: \$\{\{ needs\.route-contracts\.result \}\}/);
+  assert.match(aggregate, /PROVIDER_V4_REQUIRED: \$\{\{ needs\.route-contracts\.outputs\.provider_v4 \}\}/);
+  assert.match(aggregate, /PROVIDER_V4_RESULT: \$\{\{ needs\.provider-conformance-v4\.result \}\}/);
+  assert.match(aggregate, /node scripts\/verify-provider-v4-ci-result\.mjs/);
 });
 
 test('public contributor docs name the canonical closure command', async () => {

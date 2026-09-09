@@ -163,7 +163,7 @@ test('bootstrap toolchain and cache-order mutations fail closed in every setup j
 });
 const aggregateNeeds = {
   adapter: ['preflight', 'adapter-platform'],
-  m0: ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts'],
+  m0: ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts', 'provider-conformance-v4'],
   m2: ['m0', 'm2-platform'],
 };
 const matrixJobs = ['owned-data-quick', 'rust', 'adapter-platform', 'm2-platform'];
@@ -184,21 +184,37 @@ function aggregatePredicate(job, expectedNeeds) {
   keys(step, ['name', 'env', 'run']);
   assert.equal(typeof step.run, 'string');
   const clauses = step.run.split(' && ');
+  const providerIndex = job.needs.indexOf('provider-conformance-v4');
+  if (providerIndex !== -1) {
+    assert.equal(clauses.shift(), 'node scripts/verify-provider-v4-ci-result.mjs');
+    assert.equal(
+      step.env.PROVIDER_V4_REQUIRED,
+      '${{ needs.route-contracts.outputs.provider_v4 }}',
+    );
+    assert.equal(
+      step.env.PROVIDER_V4_RESULT,
+      '${{ needs.provider-conformance-v4.result }}',
+    );
+  }
   const variables = clauses.map(clause => {
     const match = /^test "\$([A-Z][A-Z0-9_]*)" = success$/.exec(clause);
     assert(match, `unsupported aggregate predicate: ${clause}`);
     return match[1];
   });
   assert.equal(new Set(variables).size, variables.length, 'duplicate predicate variable');
-  keys(step.env, variables);
+  keys(step.env, providerIndex === -1
+    ? variables
+    : [...variables, 'PROVIDER_V4_REQUIRED', 'PROVIDER_V4_RESULT']);
   const bindings = new Map(variables.map(variable => {
     const match = /^\$\{\{ needs\.([a-z][a-z0-9-]*)\.result \}\}$/.exec(step.env[variable]);
     assert(match, `unsupported result binding: ${variable}`);
     assert(job.needs.includes(match[1]), `undeclared dependency: ${match[1]}`);
     return [variable, match[1]];
   }));
-  assert.deepEqual([...bindings.values()].sort(), [...job.needs].sort(), 'every dependency checked once');
-  return results => variables.every(variable => results[bindings.get(variable)] === 'success');
+  const shellNeeds = job.needs.filter(need => need !== 'provider-conformance-v4');
+  assert.deepEqual([...bindings.values()].sort(), [...shellNeeds].sort(), 'every shell dependency checked once');
+  return results => variables.every(variable => results[bindings.get(variable)] === 'success')
+    && (providerIndex === -1 || results['provider-conformance-v4'] === 'success');
 }
 
 function* combinations(names, prefix = {}) {
@@ -255,11 +271,11 @@ test('actual aggregate predicates reject every Cartesian non-success result', ()
       checked++;
     }
   }
-  assert.equal(checked, 16905);
+  assert.equal(checked, 117747);
 });
 
 test('each OS authority and preflight must succeed through the actual aggregate graph', () => {
-  const allSuccess = Object.fromEntries(['preflight', 'route-contracts', ...matrixJobs]
+  const allSuccess = Object.fromEntries(['preflight', 'route-contracts', 'provider-conformance-v4', ...matrixJobs]
     .map(id => [id, 'success']));
   assert.equal(evaluateGraph(workflow.jobs, allSuccess).m2, 'success');
   for (const preflight of outcomes) {
@@ -351,5 +367,5 @@ test('routing preserves all other pinned workflow authority', () => {
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');
-  assert.equal(digest, '33d34832305fcdc33c149e58e319435e8b46fe794a4a22f795b3d86360ba4b32');
+  assert.equal(digest, '683616f771f6b5511b29d7023b975efc41a4f30607678549bf3cbafa21629bb1');
 });

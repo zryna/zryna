@@ -285,7 +285,7 @@ jobs:
   m0:
     name: m0
     if: always()
-    needs: [owned-data-quick, preflight, rust, adapter, route-contracts]
+    needs: [owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4]
     runs-on: ubuntu-latest
     steps:
       - name: Verify complete M0 gate
@@ -295,7 +295,9 @@ jobs:
           RUST_RESULT: ${{ needs.rust.result }}
           ADAPTER_RESULT: ${{ needs.adapter.result }}
           ROUTING_RESULT: ${{ needs.route-contracts.result }}
-        run: test "$OWNED_DATA_QUICK_RESULT" = success && test "$PREFLIGHT_RESULT" = success && test "$RUST_RESULT" = success && test "$ADAPTER_RESULT" = success && test "$ROUTING_RESULT" = success
+          PROVIDER_V4_REQUIRED: ${{ needs.route-contracts.outputs.provider_v4 }}
+          PROVIDER_V4_RESULT: ${{ needs.provider-conformance-v4.result }}
+        run: node scripts/verify-provider-v4-ci-result.mjs && test "$OWNED_DATA_QUICK_RESULT" = success && test "$PREFLIGHT_RESULT" = success && test "$RUST_RESULT" = success && test "$ADAPTER_RESULT" = success && test "$ROUTING_RESULT" = success
 
   diagnostics-contract:
     name: Diagnostic protocol (${{ matrix.os }})
@@ -354,7 +356,7 @@ jobs:
     name: Provider conformance v4 (${{ matrix.os }})
     if: needs.route-contracts.outputs.provider_v4 == 'true'
     needs: route-contracts
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -379,6 +381,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm provider:conformance:v4
+      - name: Verify native lexer production limits
+        run: node scripts/run-native-lexer-resource-tests.mjs
 
   wit-capability-contract:
     name: WIT capability contract (${{ matrix.os }})

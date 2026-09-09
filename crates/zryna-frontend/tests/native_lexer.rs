@@ -346,7 +346,8 @@ fn escaped_quote_is_one_invalid_literal_with_an_exact_recovery_span() {
 }
 
 #[test]
-fn token_and_diagnostic_limits_accept_exact_reject_first_extra_and_recover() {
+#[ignore = "proportional production-limit token and trivia proof"]
+fn token_and_trivia_limits_accept_exact_and_reject_first_extra() {
     let exact_tokens = sources(&";".repeat(MAX_TOKENS_PER_FILE));
     assert_eq!(
         lex(&exact_tokens).expect("exact token boundary").files()[0].tokens().count(),
@@ -372,7 +373,10 @@ fn token_and_diagnostic_limits_accept_exact_reject_first_extra_and_recover() {
         lex(&extra_trivia).expect_err("first extra trivia").diagnostic().code(),
         "ZRYNA-F1502"
     );
+}
 
+#[test]
+fn diagnostic_limit_accepts_exact_rejects_first_extra_and_recovers() {
     let exact_diagnostics = sources(&"?".repeat(MAX_LEXICAL_DIAGNOSTICS));
     assert_eq!(
         lex(&exact_diagnostics).expect("exact diagnostic boundary").diagnostics().len(),
@@ -389,6 +393,7 @@ fn token_and_diagnostic_limits_accept_exact_reject_first_extra_and_recover() {
 }
 
 #[test]
+#[ignore = "proportional production-limit project lexeme proof"]
 fn project_lexeme_limit_accepts_exact_and_rejects_first_extra() {
     let quarter = "; ".repeat(MAX_LEXEMES_PER_PROJECT / 8);
     let exact = SourceMap::build(

@@ -62,6 +62,10 @@ test('representative paths select only their owning optional contract lanes', ()
     ['crates/zryna-syntax/src/v4.rs', ['provider_v4']],
     ['schemas/zryna-syntax-v4.schema.json', ['provider_v4']],
     ['scripts/check-provider-conformance-v4.mjs', ['provider_v4']],
+    ['scripts/run-native-lexer-resource-tests.mjs', ['provider_v4']],
+    ['scripts/verify-provider-v4-ci-result.mjs', ['provider_v4']],
+    ['tests/native-lexer-resource-runner.test.mjs', ['provider_v4']],
+    ['tests/provider-v4-ci-result.test.mjs', ['provider_v4']],
     ['tests/provider-conformance-v4/fixtures/positive.zry', ['provider_v4']],
     ['schemas/zryna-package-release-v1.schema.json', ['package_release']],
     ['scripts/package-release/validate.mjs', ['package_release']],
@@ -185,8 +189,15 @@ test('CI retains every protected pull-request context and one manual full entry 
   assert.match(ci.concurrency.group, /pull_request\.number/);
   assert.match(ci.jobs['route-contracts'].steps.at(-1).run, /workflow-paths\.mjs --all/);
   assert.deepEqual(ci.jobs.m0.needs,
-    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts']);
+    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts',
+      'provider-conformance-v4']);
   assert.match(ci.jobs.m0.steps[0].run, /ROUTING_RESULT/);
+  assert.match(ci.jobs.m0.steps[0].run, /verify-provider-v4-ci-result\.mjs/);
+  assert.equal(ci.jobs.m0.steps[0].env.PROVIDER_V4_REQUIRED,
+    '${{ needs.route-contracts.outputs.provider_v4 }}');
+  assert.equal(ci.jobs.m0.steps[0].env.PROVIDER_V4_RESULT,
+    '${{ needs.provider-conformance-v4.result }}');
+  assert.equal(ci.jobs.m0.if, 'always()');
 });
 
 test('classification failure runs all optional lanes and each matrix uses its exact output', () => {
@@ -224,6 +235,7 @@ test('consolidation preserves every prior contract command and pinned action', (
   assert.deepEqual(commands('provider-conformance-v4'), [
     'pnpm install --frozen-lockfile',
     'pnpm provider:conformance:v4',
+    'node scripts/run-native-lexer-resource-tests.mjs',
   ]);
   assert.deepEqual(commands('wit-capability-contract'), [
     'pnpm install --frozen-lockfile',
