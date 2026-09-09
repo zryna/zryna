@@ -191,11 +191,16 @@ test('CI retains every protected pull-request context and one manual full entry 
   assert.deepEqual(ci.jobs.m0.needs,
     ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts',
       'provider-conformance-v4']);
-  assert.match(ci.jobs.m0.steps[0].run, /ROUTING_RESULT/);
-  assert.match(ci.jobs.m0.steps[0].run, /verify-provider-v4-ci-result\.mjs/);
-  assert.equal(ci.jobs.m0.steps[0].env.PROVIDER_V4_REQUIRED,
+  assert.deepEqual(ci.jobs.m0.steps[0], {
+    uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+    with: { 'fetch-depth': 0 },
+  });
+  const m0Gate = ci.jobs.m0.steps.at(-1);
+  assert.match(m0Gate.run, /ROUTING_RESULT/);
+  assert.match(m0Gate.run, /verify-provider-v4-ci-result\.mjs/);
+  assert.equal(m0Gate.env.PROVIDER_V4_REQUIRED,
     '${{ needs.route-contracts.outputs.provider_v4 }}');
-  assert.equal(ci.jobs.m0.steps[0].env.PROVIDER_V4_RESULT,
+  assert.equal(m0Gate.env.PROVIDER_V4_RESULT,
     '${{ needs.provider-conformance-v4.result }}');
   assert.equal(ci.jobs.m0.if, 'always()');
 });

@@ -288,6 +288,9 @@ jobs:
     needs: [owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - name: Verify complete M0 gate
         env:
           PREFLIGHT_RESULT: ${{ needs.preflight.result }}

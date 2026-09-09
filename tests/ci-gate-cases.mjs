@@ -179,12 +179,20 @@ function aggregatePredicate(job, expectedNeeds) {
   assert.equal(job.if, 'always()');
   assert.equal(job['runs-on'], 'ubuntu-latest');
   assert.deepEqual(job.needs, expectedNeeds);
-  assert.equal(job.steps.length, 1);
-  const step = job.steps[0];
+  const providerIndex = job.needs.indexOf('provider-conformance-v4');
+  if (providerIndex !== -1) {
+    assert.equal(job.steps.length, 2);
+    assert.deepEqual(job.steps[0], {
+      uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+      with: { 'fetch-depth': 0 },
+    });
+  } else {
+    assert.equal(job.steps.length, 1);
+  }
+  const step = job.steps.at(-1);
   keys(step, ['name', 'env', 'run']);
   assert.equal(typeof step.run, 'string');
   const clauses = step.run.split(' && ');
-  const providerIndex = job.needs.indexOf('provider-conformance-v4');
   if (providerIndex !== -1) {
     assert.equal(clauses.shift(), 'node scripts/verify-provider-v4-ci-result.mjs');
     assert.equal(
@@ -304,24 +312,37 @@ test('aggregate grammar and dependency mutations fail closed', () => {
       job => { delete job.if; },
       job => { job['continue-on-error'] = true; },
       job => { job.needs = job.needs.slice(1); },
-      job => { job.steps[0].if = 'success()'; },
-      job => { job.steps[0]['continue-on-error'] = true; },
-      job => { job.steps[0].run += ' || true'; },
-      job => { job.steps[0].run += '; exit 0'; },
-      job => { job.steps[0].run = job.steps[0].run.replace('= success', '!= failure'); },
-      job => { job.steps[0].run = job.steps[0].run.split(' && ').slice(1).join(' && '); },
-      job => { job.steps[0].run += ` && ${job.steps[0].run.split(' && ')[0]}`; },
-      job => { job.steps[0].run = 'true'; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] = 'success'; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] = '${{ needs.missing.result }}'; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] = Object.values(job.steps[0].env)[1]; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] += ' || success'; },
+      job => { job.steps.at(-1).if = 'success()'; },
+      job => { job.steps.at(-1)['continue-on-error'] = true; },
+      job => { job.steps.at(-1).run += ' || true'; },
+      job => { job.steps.at(-1).run += '; exit 0'; },
+      job => { job.steps.at(-1).run = job.steps.at(-1).run.replace('= success', '!= failure'); },
+      job => { job.steps.at(-1).run = job.steps.at(-1).run.split(' && ').slice(1).join(' && '); },
+      job => { job.steps.at(-1).run += ` && ${job.steps.at(-1).run.split(' && ')[0]}`; },
+      job => { job.steps.at(-1).run = 'true'; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] = 'success'; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] = '${{ needs.missing.result }}'; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] = Object.values(job.steps.at(-1).env)[1]; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] += ' || success'; },
       job => { job.steps.push({ run: 'true' }); },
     ]) {
       const changed = structuredClone(workflow.jobs[id]);
       mutate(changed);
       assert.throws(() => aggregatePredicate(changed, needs), `${id}: mutation must fail`);
     }
+  }
+});
+
+test('M0 aggregate checks out the pinned verifier before execution', () => {
+  for (const mutate of [
+    job => { job.steps.shift(); },
+    job => { job.steps.reverse(); },
+    job => { job.steps[0].uses = 'actions/checkout@main'; },
+    job => { job.steps[0].with['fetch-depth'] = 1; },
+  ]) {
+    const changed = structuredClone(workflow.jobs.m0);
+    mutate(changed);
+    assert.throws(() => aggregatePredicate(changed, aggregateNeeds.m0));
   }
 });
 
@@ -367,5 +388,5 @@ test('routing preserves all other pinned workflow authority', () => {
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');
-  assert.equal(digest, 'c022e7b6e7abb9e9becdafeba5c499535628ec19f7d50f90c128ad9df133605a');
+  assert.equal(digest, '94fd5ae020ecc9a557014738cc041e0a10e3688c83c2638e5b616c86da7a2cd2');
 });
