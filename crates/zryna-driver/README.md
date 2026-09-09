@@ -31,6 +31,14 @@ It returns `SourceToIrSuccess` only when backends may safely consume the program
 warnings remain observable on that success value; frontend failures and compiler rejections remain
 distinct error categories.
 
+The private `diagnostic_sessions` boundary retains immutable source-map-bound structured
+diagnostics v2 records and scalar definition indexes for one compiler-host session. Definition
+lookup covers function and parameter declarations and parameter references after successful
+protocol-v2 semantic checking. The boundary issues non-reused revision handles, enforces the
+accepted request, response, queue, cache, cancellation and deadline bounds, and rechecks the active
+revision before publication. It adds no transport, CLI/LSP route, public tooling profile, general
+symbol coverage, formatting, edit application or execution capability.
+
 The default public success profile is the one-file, explicitly typed `i32` subset documented by
 `zryna-semantics`. Source-level `bool` remains rejected by `I32V1`. The separate
 `discover_module_closure` boundary resolves bounded protocol-v3 module graphs through a retained

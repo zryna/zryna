@@ -1,10 +1,8 @@
 # Code navigation by task
 
-Reviewed against main `9e31e6249aee44c93579c82c2e87fdafdb4b8b7d`.
-Paths and commands below are navigation pointers, not a second specification or proof of execution.
+Reviewed against main `9e31e6249aee44c93579c82c2e87fdafdb4b8b7d`. Paths and commands below are navigation pointers, not a second specification or proof of execution.
 Start with [CONTRIBUTING](../CONTRIBUTING.md), then the selected component's README and scoped guidance.
-[zryna.workspace.json](../zryna.workspace.json) owns registration/dependencies;
-[ARCHITECTURE](ARCHITECTURE.md) owns phase boundaries and [STRICT_WORKSPACE](STRICT_WORKSPACE.md) owns enforcement.
+[zryna.workspace.json](../zryna.workspace.json) owns registration/dependencies; [ARCHITECTURE](ARCHITECTURE.md) owns phase boundaries and [STRICT_WORKSPACE](STRICT_WORKSPACE.md) owns enforcement.
 Resolve disagreements there, rather than changing this index into another authority.
 Source-size policy: [reviewed inventory](../scripts/repository-structure-policy.json),
 [read-only checker](../scripts/check-repository-structure.mjs); run `pnpm structure:check` and `node --test tests/repository-structure.test.mjs`.
@@ -17,6 +15,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 1. Syntax recognition, source spans, or frontend transport
 
 - Diagnostic transport: [v2 contract](../spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md), [schema](../schemas/zryna-diagnostics-v2.schema.json), and [diagnostics component](../crates/zryna-diagnostics/README.md). Run `pnpm diagnostics:contract` and `cargo test --locked -p zryna-diagnostics`; preserve the existing text/JSON-v1 APIs.
+- Revision-bound internal query sessions: `crates/zryna-driver/src/diagnostic_sessions.rs` composes one retained `SourceMap` with unchanged diagnostic v2 bytes and the protocol-v2 definition slice from `crates/zryna-semantics/src/definition_queries.rs`, bounded scheduling and final active-revision publication checks. Focus with `cargo test --locked -p zryna-driver diagnostic_sessions`; this is an internal host boundary, not a transport or editor service.
 - Start: [adapter README](../adapters/typescript-6/README.md), [FRONTENDS](FRONTENDS.md), and [v2](SYNTAX_PROTOCOL_V2.md), [v3 control-flow](../spec/language/CONTROL_FLOW_MODULES_V1.md), [v4](SYNTAX_PROTOCOL_V4.md), or [v4 provider conformance](PROVIDER_CONFORMANCE_V4.md).
 - Parser-side entry: `adapters/typescript-6/src/worker.mjs`, `worker-v3.mjs`, or `worker-v4.mjs`; choose the protocol explicitly.
 - Trust boundary: `crates/zryna-syntax/src/v4.rs::{decode_snapshot,verify_snapshot}` (or matching older protocol); process isolation/handshake in `crates/zryna-frontend/src/worker.rs`.
