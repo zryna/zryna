@@ -1,7 +1,6 @@
 //! Deterministic core WebAssembly emission from verified Zryna IR.
 #![forbid(unsafe_code)]
 use std::collections::BTreeMap;
-
 use wasm_encoder::{
     CodeSection, ExportKind, ExportSection, Function, FunctionSection, Instruction, Module,
     TypeSection, ValType,
@@ -20,14 +19,15 @@ use scalar_audit::{audit_profile, seal};
 mod data_ownership_v1;
 pub use data_ownership_v1::emit_data_ownership;
 mod wit_world_audit;
-pub use wit_world_audit::{ResolvedWitWorld, WitSource, WitWorldAudit, audit_pinned_wit_worlds};
+pub use wit_world_audit::{
+    ResolvedWitWorld, WitSource, WitWorldAudit, audit_pinned_wit_worlds, pinned_wit_sources,
+};
 mod component_command;
 pub use component_command::{ValidatedCommandComponent, emit_command_self_check};
-
+mod scalar_component;
+pub use scalar_component::{ValidatedScalarComponent, emit_scalar_component};
 const MAX_CONTROL_FLOW_WEBASSEMBLY_BYTES: usize = 32 * 1024 * 1024;
-
 /// Emits deterministic, import-free core WebAssembly from the current `I32V1` profile.
-///
 /// Raw Universal IR cannot enter this boundary:
 ///
 /// ```compile_fail

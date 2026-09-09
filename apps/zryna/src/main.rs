@@ -107,6 +107,7 @@ enum CliTarget {
     JavaScript,
     WebAssembly,
     Native,
+    Component,
     All,
 }
 
@@ -116,6 +117,7 @@ impl From<CliTarget> for TargetSelection {
             CliTarget::JavaScript => Self::JavaScript,
             CliTarget::WebAssembly => Self::WebAssembly,
             CliTarget::Native => Self::Native,
+            CliTarget::Component => Self::Component,
             CliTarget::All => Self::All,
         }
     }
@@ -435,5 +437,23 @@ mod tests {
         ])
         .expect_err("profile aliases must fail");
         assert!(error.to_string().contains("control-flow-v1"));
+    }
+
+    #[test]
+    fn component_build_target_is_explicit() {
+        let cli = parse_cli_from([
+            "zryna",
+            "build",
+            "src/main.zry",
+            "--target",
+            "component",
+            "--node",
+            "/node",
+        ])
+        .expect("component build target");
+        let Command::Build(options) = cli.command else {
+            panic!("build command must parse");
+        };
+        assert_eq!(options.target, super::CliTarget::Component);
     }
 }

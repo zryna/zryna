@@ -15,16 +15,16 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use zryna_abi::{ScalarHostErrorCode, ScalarOutcome, ScalarTarget, ScalarValue};
 use zryna_diagnostics::Diagnostic;
+use zryna_frontend::VerifiedFrontendProviderV3;
 use zryna_frontend::{
     FrontendCapabilities, ProviderExpectation, WorkerFrontend, WorkerLimits, WorkerSpec, syntax_v2,
 };
 use zryna_frontend::{ProviderExpectationV3, WorkerFrontendV3, WorkerLimitsV3, WorkerSpecV3};
-use zryna_frontend::{VerifiedFrontendProvider, VerifiedFrontendProviderV3};
 use zryna_source::{MAX_SOURCE_FILE_BYTES, NormalizedSourcePath, SourceFileInput, SourceMap};
 
 use crate::{
     ArtifactOutputRoot, NativeProcessLimits, SourceToIrError, WorkspaceSourceRoot,
-    compile_to_verified_ir, discover_linux_native_toolchain, discover_module_closure,
+    discover_linux_native_toolchain, discover_module_closure,
     javascript::validate_artifact_stem,
     native::{
         prepare_control_flow_native_invocation_from_verified,
@@ -36,6 +36,9 @@ use crate::{
     },
     runtime::{NodeRuntimeCapability, node_compatible_path},
 };
+
+mod preparation;
+use preparation::{PreparedArtifacts, compile_selected};
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
 const MANIFEST_PROFILE: &str = "zryna-m1-cli-v1";
@@ -55,6 +58,8 @@ pub enum TargetSelection {
     WebAssembly,
     /// Linux x86-64 native object or invocation executable.
     Native,
+    /// Audited WebAssembly Component Model artifact for the default scalar profile.
+    Component,
     /// Every target in canonical order.
     All,
 }
@@ -72,6 +77,10 @@ impl TargetSelection {
         matches!(self, Self::Native | Self::All)
     }
 
+    pub(crate) fn component(self) -> bool {
+        matches!(self, Self::Component)
+    }
+
     fn ordered(self) -> Vec<ManifestTarget> {
         let mut targets = Vec::with_capacity(if self == Self::All { 3 } else { 1 });
         if self.javascript() {
@@ -83,6 +92,9 @@ impl TargetSelection {
         if self.native() {
             targets.push(ManifestTarget::Native);
         }
+        if self.component() {
+            targets.push(ManifestTarget::Component);
+        }
         targets
     }
 }
@@ -93,6 +105,7 @@ impl fmt::Display for TargetSelection {
             Self::JavaScript => "javascript",
             Self::WebAssembly => "webassembly",
             Self::Native => "native",
+            Self::Component => "component",
             Self::All => "all",
         })
     }
@@ -333,6 +346,7 @@ enum ManifestTarget {
     JavaScript,
     WebAssembly,
     Native,
+    Component,
 }
 
 impl ManifestTarget {
@@ -341,6 +355,7 @@ impl ManifestTarget {
             Self::JavaScript => "javascript",
             Self::WebAssembly => "webassembly",
             Self::Native => "native",
+            Self::Component => "component",
         }
     }
 }
@@ -459,48 +474,6 @@ fn allow_control_flow_phase(_phase: ControlFlowPhase) -> Result<(), CommandFailu
     Ok(())
 }
 
-struct PreparedArtifacts {
-    javascript: Option<zryna_backend_javascript::JavaScriptArtifact>,
-    webassembly: Option<zryna_backend_webassembly::ValidatedWebAssemblyArtifact>,
-    native_object: Option<zryna_backend_native::ValidatedNativeObjectArtifact>,
-    native_executable: Option<crate::native::PreparedNativeExecutable>,
-}
-
-fn compile_selected<Provider: VerifiedFrontendProvider + ?Sized>(
-    frontend: &Provider,
-    sources: &SourceMap,
-    targets: TargetSelection,
-) -> Result<(crate::SourceToIrSuccess, PreparedArtifacts), CommandFailure> {
-    let compiled =
-        compile_to_verified_ir(frontend, sources).map_err(|error| source_failure(&error))?;
-    let program = compiled.program();
-    let javascript = if targets.javascript() {
-        Some(zryna_backend_javascript::emit(program).map_err(preparation_failure)?)
-    } else {
-        None
-    };
-    let webassembly = if targets.webassembly() {
-        Some(zryna_backend_webassembly::emit(program).map_err(preparation_failure)?)
-    } else {
-        None
-    };
-    let native_object = if targets.native() {
-        let target =
-            crate::select_native_object_target(NATIVE_TARGET).map_err(preparation_failure)?;
-        let mir = zryna_native_mir::lower(program).map_err(|diagnostics| CommandFailure {
-            kind: CommandFailureKind::Preparation,
-            diagnostics,
-        })?;
-        Some(zryna_backend_native::emit_object(&mir, target).map_err(preparation_failure)?)
-    } else {
-        None
-    };
-    Ok((
-        compiled,
-        PreparedArtifacts { javascript, webassembly, native_object, native_executable: None },
-    ))
-}
-
 /// Builds one entrypoint and atomically commits one complete target bundle.
 ///
 /// # Errors
@@ -590,6 +563,11 @@ where
 {
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
     validate_architecture(&request.workspace_root)?;
+    if request.targets.component() {
+        return Err(unsupported_component_request(
+            "component emission currently accepts only the default scalar profile",
+        ));
+    }
     let compatibility_request = BuildRequest {
         workspace_root: request.workspace_root.clone(),
         entrypoint: request.entrypoint.clone(),
@@ -868,13 +846,18 @@ fn validate_architecture(root: &Path) -> Result<(), CommandFailure> {
 
 fn validate_request(
     request: &BuildRequest,
-    _command: CommandKind,
+    command: CommandKind,
 ) -> Result<ValidatedRequest, CommandFailure> {
     if !request.workspace_root.is_absolute() {
         return Err(request_error(
             "ZRYNA-C1001",
             "workspace root must be absolute",
             "resolve --root to an absolute real directory before dispatch",
+        ));
+    }
+    if command == CommandKind::Run && request.targets.component() {
+        return Err(unsupported_component_request(
+            "component artifacts are build-only until a reviewed host profile is activated",
         ));
     }
     validate_artifact_stem(&request.artifact_stem)
@@ -1530,6 +1513,15 @@ fn write_prepared_artifacts(
             artifact.bytes(),
         )?);
     }
+    if let Some(artifact) = &prepared.component {
+        artifacts.push(transaction.write_artifact(
+            ManifestTarget::Component,
+            "webassembly-component",
+            &request.artifact_stem,
+            "wasm",
+            artifact.bytes(),
+        )?);
+    }
     if request.targets.native() {
         let (kind, extension, bytes): (&str, &str, &[u8]) = if command == CommandKind::Run {
             let executable = prepared.native_executable.as_ref().ok_or_else(|| {
@@ -1617,6 +1609,14 @@ fn execute_targets(
         results.push(TargetResult { target: ManifestTarget::Native, outcome });
     }
     Ok(results)
+}
+
+fn unsupported_component_request(message: &'static str) -> CommandFailure {
+    request_error(
+        "ZRYNA-C1012",
+        message,
+        "use build --target component without an explicit profile",
+    )
 }
 
 pub(crate) struct Transaction {

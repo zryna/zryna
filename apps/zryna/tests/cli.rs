@@ -319,6 +319,72 @@ fn read_json(path: &Path) -> Value {
         .expect("JSON file must decode")
 }
 
+#[test]
+fn component_build_publishes_one_audited_build_only_artifact() {
+    let mut case = WorkspaceCase::new();
+    let stem = case.stem("component_build", "build");
+    let output = command_output(
+        &case,
+        &["build", &case.source_relative, "--target", "component", "--name", &stem],
+    );
+    assert_success(&output);
+    let bundle = case.bundle(&stem, "build");
+    let artifact_path = bundle.join(format!("component/{stem}.wasm"));
+    let bytes = fs::read(&artifact_path).expect("component artifact");
+    assert_eq!(&bytes[..8], b"\0asm\r\0\x01\0");
+    assert!(!bundle.join("webassembly").exists());
+    let manifest = read_json(&bundle.join("zryna-manifest-v1.json"));
+    assert_eq!(manifest["targets"], json!(["component"]));
+    assert_eq!(manifest["artifacts"][0]["target"], "component");
+    assert_eq!(manifest["artifacts"][0]["kind"], "webassembly-component");
+    assert_eq!(manifest["artifacts"][0]["path"], format!("component/{stem}.wasm"));
+    assert_eq!(manifest["artifacts"][0]["bytes"], bytes.len());
+
+    let run_stem = case.stem("component_run", "run");
+    let rejected = command_output(
+        &case,
+        &[
+            "run",
+            &case.source_relative,
+            "--target",
+            "component",
+            "--name",
+            &run_stem,
+            "--export",
+            "add",
+            "--arg=i32:20",
+            "--arg=i32:22",
+            "--json",
+        ],
+    );
+    assert_eq!(rejected.status.code(), Some(2));
+    let response: Value =
+        serde_json::from_slice(&rejected.stdout).expect("component rejection JSON");
+    assert_eq!(response["diagnostics"][0]["code"], "ZRYNA-C1012");
+    assert!(!case.bundle(&run_stem, "run").exists());
+
+    let profile_stem = case.stem("component_profile", "build");
+    let rejected = command_output(
+        &case,
+        &[
+            "build",
+            &case.source_relative,
+            "--profile",
+            "control-flow-v1",
+            "--target",
+            "component",
+            "--name",
+            &profile_stem,
+            "--json",
+        ],
+    );
+    assert_eq!(rejected.status.code(), Some(2));
+    let response: Value =
+        serde_json::from_slice(&rejected.stdout).expect("component profile rejection JSON");
+    assert_eq!(response["diagnostics"][0]["code"], "ZRYNA-C1012");
+    assert!(!case.bundle(&profile_stem, "build").exists());
+}
+
 fn m1_registry() -> Value {
     serde_json::from_str(include_str!("../../../tests/m1-conformance-v1.json"))
         .expect("M1 conformance registry must be strict JSON")

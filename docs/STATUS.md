@@ -23,6 +23,11 @@ remain intentionally narrow.
 - `zryna build` emits direct ECMAScript modules, import-free core WebAssembly modules, and audited
   Linux x86-64 ELF objects through explicit `javascript`, `webassembly`, `native`, or `all` target
   selection.
+- Default-M1 `zryna build --target component` emits one deterministic audited Component Model
+  artifact from the same verified program and unchanged scalar core. It binds the exact empty
+  browser capability-world identity, rejects undeclared imports and malformed or excessive final
+  bytes before publication, and records manifest target `component` with artifact kind
+  `webassembly-component`. It is not part of `all`, rejects explicit profiles, and cannot run.
 - `zryna run` executes JavaScript, core WebAssembly, and Linux x86-64 native artifacts for one typed
   scalar invocation and commits one complete create-only bundle.
 - The M1 conformance suite observes `1 + 2`, `i32::MAX + 1`, and `i32::MIN - 1` through all three
@@ -314,7 +319,8 @@ and publishes one atomic manifest-v3 bundle. The completed bounded owned String/
 Issue #83 internal compile-time semantics are complete. Later issues add fixed-oracle conformance
 and authenticated public/website activation. Tracing GC,
 public aggregate ABI,
-raw pointers, unsafe, FFI, threads, WASI, Components, custom allocators, and freestanding targets
+raw pointers, unsafe, FFI, threads, WASI component hosts, component execution, custom allocators,
+and freestanding targets
 remain outside M3.
 
 ## Runtime and toolchain boundary
@@ -336,8 +342,8 @@ M1/M2 scalar profiles do not claim heap values, an allocator or a tracing-GC pro
 scalar-only surface is not a general zero-runtime or GC-free guarantee for data profiles.
 Explicit M3 uses bounded owned allocation and deterministic cleanup under its
 [public profile](M3_PUBLIC_PROFILE.md). No current profile claims tracing GC, browser execution,
-WASI/Components, Windows or macOS native execution, static native executables, package resolution,
-watch mode, incremental builds, or production readiness.
+WASI/component execution, Windows or macOS native execution, static native executables, package
+resolution, watch mode, incremental builds, or production readiness.
 
 ## Evidence and reference
 

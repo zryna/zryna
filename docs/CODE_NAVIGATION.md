@@ -61,13 +61,14 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Focus: `cargo test --locked -p zryna-abi`; `pnpm m3:runtime-abi:quick`; use existing shared carrier/transition fixtures rather than target-local competing rules.
 - Declaration/transition verification is not an implemented allocator or runtime. Finish with the full gates below.
 
-## 6. JavaScript or core WebAssembly output
+## 6. JavaScript, core WebAssembly, or scalar component output
 
 - Start: [JavaScript README](../crates/zryna-backend-javascript/README.md) or [WebAssembly README](../crates/zryna-backend-webassembly/README.md).
 - Entries: each backend's `src/lib.rs::{emit,emit_control_flow,emit_data_ownership}` consumes the corresponding sealed IR, never source syntax. M3 code is isolated under `src/data_ownership_v1/`.
 - Scalar core sealing: `crates/zryna-backend-webassembly/src/scalar_audit.rs` owns the unchanged WASM1/I32V1 validation and instruction audit.
+- Scalar component: `crates/zryna-backend-webassembly/src/scalar_component/` owns deterministic wrapping plus the independent final-byte topology/import/type/export audit; `src/wit_world_audit/browser.rs` authenticates the exact empty browser capability world and `src/wit_world_audit/pins.rs` owns its compile-time source closure. Driver selection and publication live in `crates/zryna-driver/src/{pipeline.rs,pipeline/preparation.rs}`.
 - Focus: `cargo test --locked -p zryna-backend-javascript` or `cargo test --locked -p zryna-backend-webassembly`; use [the M3 target contract](M3_TARGET_BACKENDS.md) for the new focused execution and audit cases.
-- Publication and runtime invocation belong to the driver. Preserve byte/capability audits, scalar carriers, and deterministic output; finish with full gates.
+- Publication and runtime invocation belong to the driver. The scalar component is build-only, default-M1-only, and deliberately absent from `all`; it does not activate a host. Preserve byte/capability audits, scalar carriers, and deterministic output; finish with full gates.
 
 ## 7. Native lowering, object audit, linking, or process execution
 
@@ -80,7 +81,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 8. CLI options, manifests, or create-only publication
 
 - Start: [CLI reference](CLI.md), [driver README](../crates/zryna-driver/README.md), [manifest v2](M2_MANIFEST_V2.md), or the internal [M3 candidate driver and manifest](M3_CANDIDATE_DRIVER.md).
-- CLI parsing/rendering: `apps/zryna/src/main.rs::main`; explicit profile preselection: `apps/zryna/src/profile.rs::selects_typed_scalars`; orchestration: `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`.
+- CLI parsing/rendering: `apps/zryna/src/main.rs::main`; explicit profile preselection: `apps/zryna/src/profile.rs::selects_typed_scalars`; orchestration: `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`; target preparation is isolated in `src/pipeline/preparation.rs`.
 - Source-to-IR driver tests: `crates/zryna-driver/src/tests.rs`.
 - M3 candidate closure and dispatch: `crates/zryna-driver/src/{ownership_closure,ownership_pipeline}.rs`; strict manifest and transaction: `src/{ownership_manifest,ownership_publication}.rs`; complete internal build/run entrypoints: `src/ownership_commands.rs`.
 - Focus: `cargo test --locked -p zryna --test cli`, `cargo test --locked -p zryna-driver`; use pipeline fault/publication tests for transaction changes.

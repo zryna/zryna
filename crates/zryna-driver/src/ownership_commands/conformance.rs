@@ -141,7 +141,7 @@ fn fixed_candidate_observations_match_every_registered_case() {
                 ],
                 TargetSelection::JavaScript => vec![OwnershipTarget::JavaScript],
                 TargetSelection::WebAssembly => vec![OwnershipTarget::WebAssembly],
-                TargetSelection::Native => unreachable!(),
+                TargetSelection::Native | TargetSelection::Component => unreachable!(),
             };
             assert_eq!(
                 published
