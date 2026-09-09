@@ -127,7 +127,8 @@ The explicit M1-only `component` build target dispatches that same verified prog
 `component` and artifact kind `webassembly-component`. It uses the existing synchronized,
 create-only whole-bundle transaction. It is intentionally excluded from `all`, rejects every
 explicit profile, and has no `run` route: component host activation and browser/WASI execution are
-separate boundaries.
+separate boundaries. The target remains outside the advertised
+[v0.1.0 preview support matrix](../../docs/DEVELOPER_PREVIEW.md).
 
 The internal M3 candidate route separately authenticates one protocol-v4 module closure and lowers
 it once to one verifier-sealed `DataOwnershipV1` program. Selected JavaScript, WebAssembly, and

@@ -68,7 +68,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Scalar core sealing: `crates/zryna-backend-webassembly/src/scalar_audit.rs` owns the unchanged WASM1/I32V1 validation and instruction audit.
 - Scalar component: `crates/zryna-backend-webassembly/src/scalar_component/` owns deterministic wrapping plus the independent final-byte topology/import/type/export audit; `src/wit_world_audit/browser.rs` authenticates the exact empty browser capability world and `src/wit_world_audit/pins.rs` owns its compile-time source closure. Driver selection and publication live in `crates/zryna-driver/src/{pipeline.rs,pipeline/preparation.rs}`.
 - Focus: `cargo test --locked -p zryna-backend-javascript` or `cargo test --locked -p zryna-backend-webassembly`; use [the M3 target contract](M3_TARGET_BACKENDS.md) for the new focused execution and audit cases.
-- Publication and runtime invocation belong to the driver. The scalar component is build-only, default-M1-only, and deliberately absent from `all`; it does not activate a host. Preserve byte/capability audits, scalar carriers, and deterministic output; finish with full gates.
+- Publication and runtime invocation belong to the driver. The scalar component is build-only, default-M1-only, deliberately absent from `all`, and outside the advertised [v0.1.0 preview support matrix](DEVELOPER_PREVIEW.md); it does not activate a host. Preserve byte/capability audits, scalar carriers, and deterministic output; finish with full gates.
 
 ## 7. Native lowering, object audit, linking, or process execution
 

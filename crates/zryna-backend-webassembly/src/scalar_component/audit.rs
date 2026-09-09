@@ -230,7 +230,7 @@ impl<'a> Topology<'a> {
             if self.lifts[index] != (index_u32, index_u32) {
                 return Err(invalid("scalar component canonical lift index differs"));
             }
-            if self.exports[index] != (expected.logical.as_str(), index_u32, index_u32) {
+            if self.exports[index] != (expected.component.as_str(), index_u32, index_u32) {
                 return Err(invalid("scalar component public export differs"));
             }
         }

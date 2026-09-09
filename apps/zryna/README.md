@@ -11,7 +11,9 @@ execution remains profile-gated.
 
 `component` publishes one audited, import-free Component Model artifact and its manifest. It is
 not included in `all`, cannot be combined with an explicit profile, and cannot be selected by
-`run`; no component host or browser/WASI execution is activated.
+`run`; no component host or browser/WASI execution is activated. It is an implemented
+repository-development target, not an expansion of the advertised
+[v0.1.0 preview support matrix](../../docs/DEVELOPER_PREVIEW.md).
 
 Every compiler command runs architecture validation first and uses one verified program for all
 selected backends. Complete create-only bundles are committed below `.zryna/out`; `all` reports

@@ -284,7 +284,9 @@ requires that root to be private to the invoking principal. After containment is
 create-only same-filesystem directory rename commits either
 `.zryna/out/<stem>.build` or `.zryna/out/<stem>.run`. Only selected target subdirectories exist.
 The component selection publishes only `component/<stem>.wasm` plus manifest v1, is deliberately
-absent from `all`, rejects explicit profiles, and has no run route.
+absent from `all`, rejects explicit profiles, and has no run route. It is an implemented
+repository-development boundary and remains outside the advertised
+[v0.1.0 preview support matrix](DEVELOPER_PREVIEW.md).
 Any preparation, execution, audit, publication, or cleanup failure before commit leaves no final
 bundle, and an existing bundle is never replaced.
 
@@ -662,7 +664,12 @@ by every active backend.
 The explicit default-M1 `component` build wraps the unchanged audited core in a deterministic
 Component Model artifact with exact canonical scalar lifts and metadata binding the authenticated
 `zryna:capability-profiles/browser@0.1.0` WIT source closure. That capability world is empty; the
-application scalar exports come from verified IR. The wrapper rejects imports, starts, nesting,
+application scalar exports come from verified IR. Component external labels use the total,
+reversible `zryna-export-<lowercase-hex-of-logical-name-bytes>` mapping because scalar ABI logical
+names admit case and underscores that Component Model kebab labels do not. This mapping cannot
+collide; the exact logical name and mapped label are both covered by the interface digest, while
+existing JavaScript, core WebAssembly, and native ABI names remain unchanged. The wrapper rejects imports, starts, nesting,
 wrong topology or identity, and resource excess before publication. It does not instantiate a
 component, generate bindings, or provide browser, DOM, WASI, filesystem, network, clock, random,
 or environment capabilities. Browser and WASI host execution remain later integration boundaries.
+Component artifact emission also remains outside the advertised v0.1.0 preview support matrix.

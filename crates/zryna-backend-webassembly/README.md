@@ -14,11 +14,16 @@ profile. It retains the exact audited M1 core module, canonically lifts the veri
 functions, and binds the artifact to the authenticated
 `zryna:capability-profiles/browser@0.1.0` identity and complete pinned WIT-source digest. That
 capability world has no imports or exports; the component's application exports are derived from
-the verified program, not claimed as WIT world exports. The independent final-byte audit rejects
+the verified program, not claimed as WIT world exports. Each public Component Model label is the
+collision-free `zryna-export-<lowercase-hex>` encoding of the exact logical export's ASCII bytes;
+logical and core WebAssembly names remain unchanged, and both identities are authenticated by the
+component interface digest. The independent final-byte audit rejects
 imports, nested components, starts, unsupported sections, changed aliases/types/exports, malformed
 topology, substituted WIT identity, and the first byte above the 1 MiB ceiling before returning
 artifact authority. Emission does not instantiate a host, generate a loader, or grant browser,
 WASI, DOM, network, filesystem, clock, or random capabilities.
+This repository-development boundary remains outside the advertised
+[v0.1.0 preview support matrix](../../docs/DEVELOPER_PREVIEW.md).
 
 The internal M3 `emit_data_ownership` entrypoint emits one validated, import-free core module with
 private bounded Linear32 memory and sealed layout-derived address operations. It does not expose

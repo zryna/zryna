@@ -47,7 +47,8 @@ dispatch. The frontend never resolves imports or reads the workspace.
 `--profile` has no hidden default: omission means M1, and the only accepted explicit value is exact
 lowercase `control-flow-v1`. `--target` is mandatory, exact, lowercase, and has no alias or default.
 The `component` target is accepted only by `build` when `--profile` is omitted. It rejects explicit
-profiles and `run` before source or target work.
+profiles and `run` before source or target work. This implemented repository-development target is
+outside the advertised [v0.1.0 preview support matrix](DEVELOPER_PREVIEW.md).
 `--root` defaults to the current directory; the driver requires its resolved
 workspace root to be an absolute real directory. `--name` defaults to the entrypoint stem and must
 be 1 to 128 ASCII letters, digits, underscores, or hyphens, begin with a letter or underscore, and
@@ -92,6 +93,7 @@ scalar exports. It binds the exact authenticated `zryna:capability-profiles/brow
 identity, whose capability-world import and export sets are empty. This is deterministic artifact
 emission only: no loader, host instantiation, browser, DOM, or WASI execution is provided. The
 selection is intentionally not folded into `all`.
+Artifact emission does not claim Component Model support for the v0.1.0 preview release.
 
 ## Output bundles
 
@@ -144,7 +146,9 @@ results, and diagnostics are in stable order. Each artifact records its `target`
 relative `/`-separated `path`, `bytes`, and lowercase `sha256`. Artifact kinds are
 `ecmascript-module`, `core-webassembly-module`, `linux-x86-64-relocatable-object`, and
 `linux-x86-64-invocation-executable` as applicable. A component build uses target `component` and
-artifact kind `webassembly-component`. `invocation` is `null` for `build`; for `run`
+artifact kind `webassembly-component`. Its public function labels are
+`zryna-export-<lowercase-hex-of-logical-name-bytes>`; this collision-free mapping accommodates
+every scalar ABI logical name without changing existing target names. `invocation` is `null` for `build`; for `run`
 it records `export` plus ordered arguments as `{ "type": "i32", "value": n }`. `results` is empty
 for build and records each run target and its typed `outcome` in target order. The manifest contains
 no absolute or temporary path, timestamp, process id, inherited environment value, credential, or

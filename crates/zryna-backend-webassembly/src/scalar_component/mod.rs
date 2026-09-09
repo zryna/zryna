@@ -26,6 +26,7 @@ const METADATA_REVISION: &str = "zryna.scalar-component.v1";
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct ScalarExport {
     logical: String,
+    component: String,
     webassembly: String,
     arity: usize,
 }
@@ -146,8 +147,10 @@ fn exports(program: &VerifiedProgram) -> Result<Vec<ScalarExport>, Diagnostic> {
             {
                 return Err(invalid("component export is outside the verified i32 profile"));
             }
+            let logical = function.export_name().as_str().to_owned();
             Ok(ScalarExport {
-                logical: function.export_name().as_str().to_owned(),
+                component: component_export_name(&logical),
+                logical,
                 webassembly: function.abi_export().webassembly_name().as_str().to_owned(),
                 arity: function.parameters().len(),
             })
@@ -204,7 +207,7 @@ fn encode(
         functions.into_iter().zip(function_types).zip(exports)
     {
         component.export(
-            export.logical.as_str(),
+            export.component.as_str(),
             ComponentExportKind::Func,
             function,
             Some(ComponentTypeRef::Func(function_type)),
@@ -223,11 +226,17 @@ fn interface_digest(exports: &[ScalarExport]) -> [u8; 32] {
     for export in exports {
         digest.update(u64::try_from(export.logical.len()).unwrap_or(u64::MAX).to_le_bytes());
         digest.update(export.logical.as_bytes());
+        digest.update(u64::try_from(export.component.len()).unwrap_or(u64::MAX).to_le_bytes());
+        digest.update(export.component.as_bytes());
         digest.update(u64::try_from(export.webassembly.len()).unwrap_or(u64::MAX).to_le_bytes());
         digest.update(export.webassembly.as_bytes());
         digest.update(u64::try_from(export.arity).unwrap_or(u64::MAX).to_le_bytes());
     }
     digest.finalize().into()
+}
+
+fn component_export_name(logical: &str) -> String {
+    format!("zryna-export-{}", hex(logical.as_bytes()))
 }
 
 fn digest(bytes: &[u8]) -> [u8; 32] {

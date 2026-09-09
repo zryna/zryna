@@ -219,8 +219,10 @@ The repository currently establishes and tests:
   existing browser, command, and server interfaces;
 - an explicit default-M1 `component` build that preserves the audited scalar core, canonically
   lifts verified exports, binds the exact empty browser capability-world identity, independently
+  maps every logical export to a collision-free `zryna-export-<lowercase-hex>` component label,
   audits the final Component Model bytes, and publishes one create-only manifest-v1 bundle without
-  generating bindings, instantiating a host, or granting capabilities;
+  generating bindings, instantiating a host, or granting capabilities; this repository-development
+  surface remains outside the advertised [v0.1.0 preview support matrix](docs/DEVELOPER_PREVIEW.md);
 - native MIR lowering through an independent `VerifiedMirModule` gate that retains scalar ABI v1
   authority, plus deterministic Linux x86-64 ELF relocatable-object emission and create-only
   `.o` publication;
