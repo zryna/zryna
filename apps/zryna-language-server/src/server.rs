@@ -4,6 +4,11 @@ use std::{
     time::Instant,
 };
 
+mod outgoing;
+
+use outgoing::OutstandingRequests;
+pub use outgoing::{MAX_OUTSTANDING_REQUESTS, Outgoing};
+
 use serde_json::{Value, json};
 use zryna_driver::diagnostic_sessions::{
     DiagnosticQueryResponse, DiagnosticRevision, DiagnosticSession, PendingDefinitionQuery,
@@ -75,6 +80,7 @@ pub struct Server<Compiler> {
     documents: BTreeMap<String, Document>,
     active: Option<ActiveSnapshot>,
     pending: VecDeque<PendingDefinition>,
+    outstanding: OutstandingRequests,
     initialized: bool,
     shutting_down: bool,
     exit: bool,
@@ -97,6 +103,7 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
             documents: BTreeMap::new(),
             active: None,
             pending: VecDeque::new(),
+            outstanding: OutstandingRequests::new(),
             initialized: false,
             shutting_down: false,
             exit: false,
@@ -105,27 +112,11 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
 
     /// Decodes and handles one complete JSON-RPC payload.
     #[must_use]
-    pub fn handle_bytes(&mut self, bytes: &[u8]) -> Vec<Value> {
+    pub fn handle_bytes(&mut self, bytes: &[u8]) -> Vec<Outgoing> {
         match protocol::decode(bytes) {
-            Ok(message) => self.handle(message),
-            Err(error) => vec![error],
+            Ok(message) => self.handle_reserved(message),
+            Err(error) => vec![Outgoing::untracked(error)],
         }
-    }
-
-    /// Finishes all admitted definition requests after queued cancellation or edits were observed.
-    #[must_use]
-    pub fn finish_pending(&mut self) -> Vec<Value> {
-        let mut output = Vec::new();
-        while let Some(pending) = self.pending.pop_front() {
-            let response = self.session.finish_definition(pending.query, Instant::now());
-            output.push(self.definition_response(
-                &pending.id,
-                pending.revision,
-                &pending.sources,
-                &response,
-            ));
-        }
-        output
     }
 
     /// Returns whether a valid `exit` notification ended this connection.

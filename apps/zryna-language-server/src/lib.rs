@@ -11,7 +11,7 @@ mod protocol;
 mod server;
 
 use std::{
-    io::{self, BufReader, BufWriter, Write},
+    io::{self, BufReader, BufWriter},
     path::Path,
     sync::mpsc,
     thread,
@@ -19,7 +19,7 @@ use std::{
 };
 
 pub use framing::{FrameError, MAX_LSP_MESSAGE_BYTES, read_frame, write_frame};
-pub use server::{RevisionCompiler, Server};
+pub use server::{MAX_OUTSTANDING_REQUESTS, Outgoing, RevisionCompiler, Server};
 use zryna_driver::diagnostic_sessions::ToolingCompiler;
 
 /// Runs the bounded language server over standard input and output.
@@ -59,7 +59,7 @@ pub fn run_stdio(compiler_root: &Path, node: &Path) -> Result<(), String> {
         match receiver.recv_timeout(Duration::from_millis(2)) {
             Ok(Ok(frame)) => {
                 for message in server.handle_bytes(&frame) {
-                    write_value(&mut output, &message)?;
+                    server.write_outgoing(&mut output, message)?;
                 }
                 if server.should_exit() {
                     break;
@@ -68,7 +68,7 @@ pub fn run_stdio(compiler_root: &Path, node: &Path) -> Result<(), String> {
                     messages_with_pending = messages_with_pending.saturating_add(1);
                     if messages_with_pending >= 32 {
                         for message in server.finish_pending() {
-                            write_value(&mut output, &message)?;
+                            server.write_outgoing(&mut output, message)?;
                         }
                         messages_with_pending = 0;
                     }
@@ -79,7 +79,7 @@ pub fn run_stdio(compiler_root: &Path, node: &Path) -> Result<(), String> {
             Ok(Err(error)) => return Err(error),
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 for message in server.finish_pending() {
-                    write_value(&mut output, &message)?;
+                    server.write_outgoing(&mut output, message)?;
                 }
                 messages_with_pending = 0;
             }
@@ -91,10 +91,4 @@ pub fn run_stdio(compiler_root: &Path, node: &Path) -> Result<(), String> {
     drop(receiver);
     drop(reader);
     Ok(())
-}
-
-fn write_value(output: &mut impl Write, value: &serde_json::Value) -> Result<(), String> {
-    let bytes = serde_json::to_vec(value).map_err(|error| error.to_string())?;
-    write_frame(output, &bytes).map_err(|error| error.to_string())?;
-    output.flush().map_err(|error| error.to_string())
 }

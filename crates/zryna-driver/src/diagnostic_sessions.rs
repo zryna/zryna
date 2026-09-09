@@ -26,6 +26,7 @@ mod semantic_definition;
 #[cfg(feature = "diagnostic-test-support")]
 mod test_support;
 mod tooling_compiler;
+mod tooling_execution;
 
 pub use response::{DiagnosticQueryResponse, QueryReason, QueryStatus};
 use retention::{checked_cache_charge, source_fingerprint_and_charge};
