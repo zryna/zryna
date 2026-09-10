@@ -374,6 +374,9 @@ test('routing preserves all other pinned workflow authority', () => {
   // M3 additions are independently frozen by m3-conformance.test.mjs.
   delete original.jobs['m3-platform'];
   delete original.jobs.m3;
+  // The optional distribution lane is independently frozen by workflow-routing.test.mjs.
+  delete original.jobs['distribution-release-contract'];
+  delete original.jobs['route-contracts'].outputs.distribution_release;
   original.jobs.preflight['timeout-minutes'] = 10;
   for (const id of ['rust', 'adapter-platform', 'm2-platform']) {
     original.jobs[id].needs = 'preflight';

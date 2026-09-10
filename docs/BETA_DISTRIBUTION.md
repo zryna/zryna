@@ -165,7 +165,7 @@ owns signing/attestation and publication. The agreed logical input is
 | `version`, `tag` | One release version and its exact tag; no tag creation or mutable resolution by the assembler. |
 | `source` | Repository, full commit/tree, ref and `sourceDateEpoch`. |
 | `target` | Triple, archive format and qualified `platformBaseline`. |
-| `toolchains`, `materials` | Ordered records with name, version, origin, SHA-256 and signature-evidence SHA-256. Evidence identifies the applicable authenticated build/upstream chain; a digest alone is not verification. |
+| `toolchains`, `materials` | Ordered records with name, version, origin, SHA-256 and signature-evidence SHA-256. The exact toolchain set is Cargo 1.97.1, Node 22.22.1 and rustc 1.97.1. Evidence identifies the applicable authenticated build/upstream chain; a digest alone is not verification. |
 | `compiledCli` | Logical input path, SHA-256 and byte size. |
 | `architectureReceipt` | Logical path, digest, format and exact source commit/tree. |
 | `gateReceipt` | Logical path/digest, workflow, run ID/attempt/URL, source commit and exact required pre-assembly job results. |
@@ -176,6 +176,16 @@ host paths enter release identities. Production serialization, primitive types a
 remain #406's envelope/schema work and must be frozen before assembly implementation. Required
 post-assembly install/reproduction evidence belongs to the outer release admission, not an input
 receipt pretending those future checks already ran.
+
+The protected architecture producer runs against an isolated source checkout while its tooling
+dependencies remain outside that checkout. It rejects tracked, untracked and ignored workspace
+differences. Rustup must select the supplied absolute Cargo and rustc paths from the exact 1.97.1
+toolchain; link, reparse and proxy aliases are rejected. The producer binds those executables by
+digest before and after execution, requires exact full version output, removes ambient Cargo/Rust
+overrides and uses a controlled Cargo home without configuration files. The protected gate
+producer requires identity encoding and reads GitHub response bodies through a one-MiB streaming
+limit with a declared-length check and fixed request deadline. These controls belong to the
+producer; parsing a correctly shaped receipt does not reproduce their observations.
 
 The embedded metadata inventory is exactly `metadata/distribution.json`,
 `metadata/inventory.json`, `metadata/materials.json`, `metadata/architecture-receipt.json` and

@@ -1,0 +1,260 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-distribution-build-input-v1.schema.json",
+  "title": "Zryna distribution build input v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "tag",
+    "channel",
+    "source",
+    "target",
+    "toolchains",
+    "materials",
+    "preparedDistribution",
+    "compiledCli",
+    "architectureReceipt",
+    "gateReceipt",
+    "recipe"
+  ],
+  "properties": {
+    "format": { "const": "zryna.distribution-build-input.v1" },
+    "version": { "$ref": "#/$defs/version" },
+    "tag": { "$ref": "#/$defs/tag" },
+    "channel": { "const": "beta" },
+    "source": { "$ref": "#/$defs/source" },
+    "target": { "$ref": "#/$defs/target" },
+    "toolchains": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/toolchain" }
+    },
+    "materials": { "$ref": "#/$defs/materials" },
+    "preparedDistribution": { "$ref": "#/$defs/preparedDistribution" },
+    "compiledCli": { "$ref": "#/$defs/artifact" },
+    "architectureReceipt": { "$ref": "#/$defs/architectureReceipt" },
+    "gateReceipt": { "$ref": "#/$defs/gateReceipt" },
+    "recipe": { "$ref": "#/$defs/recipe" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "version": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 14,
+      "pattern": "^(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})$"
+    },
+    "tag": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 15,
+      "pattern": "^v(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "logicalPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 192,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*){0,7}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logicalPath", "size", "sha256"],
+      "properties": {
+        "logicalPath": { "$ref": "#/$defs/logicalPath" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 268435456 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "ref", "commit", "tree", "sourceDateEpoch"],
+      "properties": {
+        "repository": { "const": "https://github.com/zryna/zryna" },
+        "ref": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 32,
+          "pattern": "^refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "commit": { "$ref": "#/$defs/commit" },
+        "tree": { "$ref": "#/$defs/commit" },
+        "sourceDateEpoch": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    },
+    "platformBaseline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["os", "distribution", "version", "architecture"],
+          "properties": {
+            "os": { "const": "linux" },
+            "distribution": { "const": "ubuntu" },
+            "version": { "const": "24.04" },
+            "architecture": { "const": "x86_64" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["os", "product", "version", "architecture", "runtime"],
+          "properties": {
+            "os": { "const": "windows" },
+            "product": { "const": "windows-server" },
+            "version": { "const": "2022" },
+            "architecture": { "const": "x86_64" },
+            "runtime": { "const": "operating-system-ucrt" }
+          }
+        }
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["triple", "archiveFormat", "platformBaseline"],
+      "properties": {
+        "triple": { "enum": ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"] },
+        "archiveFormat": { "enum": ["tar-gzip", "zip"] },
+        "platformBaseline": { "$ref": "#/$defs/platformBaseline" }
+      }
+    },
+    "origin": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256,
+      "pattern": "^(?:https://[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]+|repository:[A-Za-z0-9][A-Za-z0-9._/-]*)$"
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "origin", "sha256", "signatureEvidenceSha256"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[ -~]+$" },
+        "origin": { "$ref": "#/$defs/origin" },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "signatureEvidenceSha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "materials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "logicalPath", "fileCount", "size", "sha256"],
+      "properties": {
+        "format": { "const": "zryna.distribution-materials.v1" },
+        "logicalPath": { "$ref": "#/$defs/logicalPath" },
+        "fileCount": { "type": "integer", "minimum": 1, "maximum": 512 },
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "preparedDistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "logicalPath", "archiveFileCount", "size", "sha256"],
+      "properties": {
+        "format": { "const": "zryna.distribution.v1" },
+        "logicalPath": { "$ref": "#/$defs/logicalPath" },
+        "archiveFileCount": { "type": "integer", "minimum": 1, "maximum": 512 },
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "architectureReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "logicalPath", "size", "sha256", "sourceCommit", "sourceTree"],
+      "properties": {
+        "format": { "const": "zryna.source-build-receipt.v1" },
+        "logicalPath": { "$ref": "#/$defs/logicalPath" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "sourceCommit": { "$ref": "#/$defs/commit" },
+        "sourceTree": { "$ref": "#/$defs/commit" }
+      }
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name", "conclusion", "sourceCommit", "runId", "runAttempt", "jobId", "checkRunId"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[ -~]+$" },
+        "conclusion": { "const": "success" },
+        "sourceCommit": { "$ref": "#/$defs/commit" },
+        "runId": { "$ref": "#/$defs/numericId" },
+        "runAttempt": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "jobId": { "$ref": "#/$defs/numericId" },
+        "checkRunId": { "$ref": "#/$defs/numericId" }
+      }
+    },
+    "gateReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "logicalPath",
+        "size",
+        "sha256",
+        "workflow",
+        "runId",
+        "runAttempt",
+        "runUrl",
+        "sourceCommit",
+        "requiredContexts",
+        "requiredJobs"
+      ],
+      "properties": {
+        "format": { "const": "zryna.preassembly-gates.v1" },
+        "logicalPath": { "$ref": "#/$defs/logicalPath" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "workflow": { "const": ".github/workflows/ci.yml" },
+        "runId": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+        "runAttempt": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "runUrl": {
+          "type": "string",
+          "minLength": 50,
+          "maxLength": 128,
+          "pattern": "^https://github.com/zryna/zryna/actions/runs/[1-9][0-9]{0,19}$"
+        },
+        "sourceCommit": { "$ref": "#/$defs/commit" },
+        "requiredContexts": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[ -~]+$" }
+        },
+        "requiredJobs": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": { "$ref": "#/$defs/job" }
+        }
+      }
+    },
+    "numericId": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "sha256"],
+      "properties": {
+        "format": { "const": "zryna.distribution-recipe.v1" },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}

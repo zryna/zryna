@@ -37,6 +37,9 @@ test('representative paths select only their owning optional contract lanes', ()
   assert.deepEqual(classifyWorkflowPaths(['tests/package-source-trust.test.mjs']), {
     ...none, package_release: true,
   });
+  assert.deepEqual(classifyWorkflowPaths(['tests/distribution-release-v1.test.mjs']), {
+    ...none, distribution_release: true,
+  });
   assert.deepEqual(classifyWorkflowPaths(['adapters/typescript-6/src/worker-v4.mjs']), {
     ...none, provider_v4: true,
   });
@@ -56,6 +59,17 @@ test('representative paths select only their owning optional contract lanes', ()
 
   const ownershipCases = [
     ['schemas/zryna-diagnostics-v2.schema.json', ['diagnostics']],
+    ['schemas/zryna-distribution-release-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-build-input-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-source-build-receipt-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-preassembly-gates-v1.schema.json', ['distribution_release']],
+    ['scripts/distribution-release/validate.mjs', ['distribution_release']],
+    ['spec/release/DISTRIBUTION_RELEASE_V1.md', ['distribution_release']],
+    ['tests/distribution-release-v1.test.mjs', ['distribution_release']],
+    ['tests/distribution-build-input-v1.test.mjs', ['distribution_release']],
+    ['tests/source-build-receipt-v1.test.mjs', ['distribution_release']],
+    ['tests/preassembly-gates-v1.test.mjs', ['distribution_release']],
+    ['tests/distribution-release-producers.test.mjs', ['distribution_release']],
     ['spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md', ['diagnostics']],
     ['crates/zryna-source/src/lib.rs', ['diagnostics', 'provider_v4']],
     ['crates/zryna-frontend/src/lib.rs', ['provider_v4']],
@@ -146,7 +160,7 @@ test('manual, shared, unknown and malformed changes fail safe to every lane', ()
     'docs\\ROADMAP.md',
   ]) assert.deepEqual(classifyWorkflowPaths([changedPath]), all, changedPath);
   assert.equal(formatWorkflowOutputs(all),
-    'diagnostics=true\npackage_release=true\nprovider_v4=true\nwit=true\n');
+    'diagnostics=true\ndistribution_release=true\npackage_release=true\nprovider_v4=true\nwit=true\n');
 });
 
 test('git diff execution fails safe without shell pipeline semantics', () => {
@@ -219,6 +233,7 @@ test('classification failure runs all optional lanes and each matrix uses its ex
   assert.doesNotMatch(command, /git diff|\|\s*node/);
   for (const [id, output] of [
     ['diagnostics-contract', 'diagnostics'],
+    ['distribution-release-contract', 'distribution_release'],
     ['package-release-contract', 'package_release'],
     ['provider-conformance-v4', 'provider_v4'],
     ['wit-capability-contract', 'wit'],
@@ -240,6 +255,10 @@ test('consolidation preserves every prior contract command and pinned action', (
     'cargo clippy --locked -p zryna-diagnostics --all-targets -- -D warnings',
     'cargo fmt --all -- --check',
   ]);
+  assert.deepEqual(commands('distribution-release-contract'), [
+    'pnpm install --frozen-lockfile',
+    'pnpm release:contract',
+  ]);
   assert.deepEqual(commands('package-release-contract'), [
     'pnpm install --frozen-lockfile',
     'pnpm package:contract',
@@ -256,6 +275,7 @@ test('consolidation preserves every prior contract command and pinned action', (
   ]);
   for (const id of [
     'diagnostics-contract',
+    'distribution-release-contract',
     'package-release-contract',
     'provider-conformance-v4',
     'wit-capability-contract',

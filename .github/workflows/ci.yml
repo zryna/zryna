@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       diagnostics: ${{ steps.routes.outputs.diagnostics }}
+      distribution_release: ${{ steps.routes.outputs.distribution_release }}
       package_release: ${{ steps.routes.outputs.package_release }}
       provider_v4: ${{ steps.routes.outputs.provider_v4 }}
       wit: ${{ steps.routes.outputs.wit }}
@@ -359,6 +360,33 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm package:contract
       - run: cargo test --locked -p zryna-package
+
+  distribution-release-contract:
+    name: distribution release contract (${{ matrix.os }})
+    if: needs.route-contracts.outputs.distribution_release == 'true'
+    needs: route-contracts
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm release:contract
 
   provider-conformance-v4:
     name: Provider conformance v4 (${{ matrix.os }})
