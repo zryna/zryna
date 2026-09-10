@@ -37,11 +37,13 @@
     "toolchain": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["channel", "cargoVersion", "rustcVersion"],
+      "required": ["channel", "cargoVersion", "cargoSha256", "rustcVersion", "rustcSha256"],
       "properties": {
         "channel": { "const": "1.97.1" },
-        "cargoVersion": { "$ref": "#/$defs/versionOutput" },
-        "rustcVersion": { "$ref": "#/$defs/versionOutput" }
+        "cargoVersion": { "const": "cargo 1.97.1 (c980f4866 2026-06-30)" },
+        "cargoSha256": { "$ref": "#/$defs/digest" },
+        "rustcVersion": { "const": "rustc 1.97.1 (8bab26f4f 2026-07-14)" },
+        "rustcSha256": { "$ref": "#/$defs/digest" }
       }
     },
     "inputs": {
@@ -62,12 +64,6 @@
   "$defs": {
     "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-    "versionOutput": {
-      "type": "string",
-      "minLength": 12,
-      "maxLength": 96,
-      "pattern": "^[ -~]+$"
-    },
     "input": {
       "type": "object",
       "additionalProperties": false,

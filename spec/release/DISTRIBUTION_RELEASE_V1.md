@@ -78,7 +78,8 @@ verify the prepared distribution record and installed bytes.
 
 The canonical `zryna.source-build-receipt.v1` is identical across the two assemblies. It records
 the exact source commit and tree, the exact JSON architecture command, the pinned Rust and Cargo
-versions, SHA-256 identities of the canonical Git bytes for `Cargo.lock`, `Cargo.toml`,
+versions and executable SHA-256 identities, SHA-256 identities of the canonical Git bytes for
+`Cargo.lock`, `Cargo.toml`,
 `rust-toolchain.toml`, and `zryna.workspace.json`, and the successful empty-diagnostic report. Run
 IDs, attempts, URLs, timestamps, runner paths, and randomized evidence are forbidden. Those hosted
 identities belong to the separately authenticated preassembly-gate receipt and outer provenance;
@@ -87,6 +88,24 @@ The full canonical gate receipt contains repository/workflow/run identity, sourc
 ordered successful required jobs, but not its own path, size, or digest. Its build-input descriptor
 holds those values; validation bounds and hashes the retained gate bytes before requiring exact
 field-for-field projection, avoiding a self-hash cycle.
+
+These records become evidence only through their protected producers. Against an isolated exact
+tagged checkout, `create-source-build-receipt.mjs` derives HEAD/tree and the four input byte
+identities from Git and rejects every tracked, untracked, or ignored workspace difference. Tooling
+dependencies remain outside that source checkout. Rustup must select the supplied absolute Cargo
+and rustc paths from its exact `1.97.1` toolchain; link, reparse, or proxy aliases are rejected.
+The producer matches both executable SHA-256 identities before and after execution, rejects Cargo
+configuration in its controlled Cargo home and checkout ancestors, removes ambient Cargo/Rust
+overrides, and requires the exact full version outputs. It runs the fixed architecture command
+offline without a shell and emits a receipt only for its exact empty-diagnostic result. Separately,
+`create-preassembly-gates.mjs` uses the protected workflow token to select exactly one successful
+manual CI run for the tagged commit, reads the current `main` required-status policy, and retrieves
+the exact selected attempt's job and check-run IDs. Every required job must be completed and
+successful at that commit and attempt, and the live required context set must exactly equal the
+contract set. GitHub requests require identity encoding; responses have a fixed deadline,
+prechecked declared length, and a bounded streaming body. A caller-authored JSON document,
+matching pair of documents, or serialized empty
+diagnostic array is not evidence that either command or hosted run occurred.
 
 #422's embedded graph avoids cycles as follows:
 
@@ -127,8 +146,11 @@ restricted to `zryna/zryna/.github/workflows/release.yml`, each Sigstore bundle 
 issuer and identity above, the canonical envelope, every checksum entry, both SBOM/provenance
 subject sets, and the installed archive inventory. A wildcard signer identity is not acceptable.
 
-The checked JavaScript validator authenticates canonical record shape, cross-field identities,
-digest declarations, coverage, ordering, and resource bounds. It does not perform a cryptographic
+The checked JavaScript validators enforce canonical record shape, cross-field identities,
+declared-digest bindings, coverage, ordering, and resource bounds. Shape/projection validation does
+not authenticate its caller or a remote run. Only the protected producers above establish the
+command and hosted observations, and their outputs remain subject to outer signing and provenance.
+The validators do not perform a cryptographic
 signature, transparency-log, attestation, SPDX, provenance, archive-byte, or hosted-release
 verification. The protected workflow must invoke separately pinned verifiers for those subjects
 and record their observed results.

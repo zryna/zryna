@@ -14,6 +14,13 @@ const validateSchema = ajv.compile(JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'))
 const REQUIRED_JOBS = Object.freeze([
   'adapter', 'm0', 'm2', 'm3', 'rust (ubuntu-latest)', 'rust (windows-latest)',
 ]);
+const REQUIRED_TOOLCHAINS = Object.freeze([
+  Object.freeze({ name: 'cargo', version: '1.97.1', origin: 'repository:rust-toolchain.toml' }),
+  Object.freeze({
+    name: 'node', version: '22.22.1', origin: 'https://nodejs.org/dist/v22.22.1/',
+  }),
+  Object.freeze({ name: 'rustc', version: '1.97.1', origin: 'repository:rust-toolchain.toml' }),
+]);
 
 function reject(code, message) {
   throw new Error(`${code}: ${message}`);
@@ -73,13 +80,25 @@ export function validateBuildInput(document) {
       reject('R406-BUILD-ORDER', `${name} must be unique and sorted by name`);
     }
   }
-  if (document.gateReceipt.requiredJobs.some(({ sourceCommit }) =>
-    sourceCommit !== document.source.commit)) {
-    reject('R406-BUILD-GATES', 'required job belongs to another source commit');
+  for (const [index, expected] of REQUIRED_TOOLCHAINS.entries()) {
+    const observed = document.toolchains[index];
+    if (observed.name !== expected.name || observed.version !== expected.version
+      || observed.origin !== expected.origin) {
+      reject('R406-BUILD-TOOLCHAINS', 'toolchain names, versions, and origins must be exact');
+    }
   }
-  const jobs = new Set(document.gateReceipt.requiredJobs.map(({ name }) => name));
-  if (REQUIRED_JOBS.some((name) => !jobs.has(name))) {
-    reject('R406-BUILD-GATES', 'current protected branch checks are incomplete');
+  if (document.gateReceipt.requiredContexts.some((name, index) => name !== REQUIRED_JOBS[index])) {
+    reject('R406-BUILD-GATES', 'current protected branch context set differs');
+  }
+  if (document.gateReceipt.requiredJobs.length !== REQUIRED_JOBS.length) {
+    reject('R406-BUILD-GATES', 'required job set must be exact');
+  }
+  for (const [index, job] of document.gateReceipt.requiredJobs.entries()) {
+    if (job.name !== REQUIRED_JOBS[index] || job.sourceCommit !== document.source.commit
+      || job.runId !== document.gateReceipt.runId
+      || job.runAttempt !== document.gateReceipt.runAttempt) {
+      reject('R406-BUILD-GATES', 'required jobs must exactly bind the selected run attempt');
+    }
   }
   return document;
 }

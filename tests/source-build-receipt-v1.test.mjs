@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canonical } from '../scripts/distribution-release/canonical.mjs';
+import { canonical, sha256 } from '../scripts/distribution-release/canonical.mjs';
 import {
   validateSourceBuildReceipt,
   validateSourceBuildReceiptText,
@@ -21,8 +21,10 @@ function fixture() {
     ],
     toolchain: {
       channel: '1.97.1',
-      cargoVersion: 'cargo 1.97.1 (111111111 2026-08-01)',
-      rustcVersion: 'rustc 1.97.1 (222222222 2026-08-01)',
+      cargoVersion: 'cargo 1.97.1 (c980f4866 2026-06-30)',
+      cargoSha256: digest(20),
+      rustcVersion: 'rustc 1.97.1 (8bab26f4f 2026-07-14)',
+      rustcSha256: digest(21),
     },
     inputs: ['Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', 'zryna.workspace.json']
       .map((logicalPath, index) => ({ logicalPath, size: 100 + index, sha256: digest(index) })),
@@ -32,8 +34,38 @@ function fixture() {
 
 test('accepts one canonical deterministic architecture receipt', () => {
   const value = fixture();
+  const text = `${canonical(value)}\n`;
+  const input = {
+    source: value.source,
+    toolchains: [
+      { name: 'cargo', version: '1.97.1', sha256: value.toolchain.cargoSha256 },
+      { name: 'rustc', version: '1.97.1', sha256: value.toolchain.rustcSha256 },
+    ],
+    architectureReceipt: { size: Buffer.byteLength(text), sha256: sha256(text) },
+  };
   assert.equal(validateSourceBuildReceipt(value), value);
-  assert.deepEqual(validateSourceBuildReceiptText(`${canonical(value)}\n`), value);
+  assert.deepEqual(validateSourceBuildReceiptText(text, input), value);
+});
+
+test('rejects descriptor, source, and build-toolchain drift', () => {
+  const value = fixture();
+  const text = `${canonical(value)}\n`;
+  const input = {
+    source: value.source,
+    toolchains: [
+      { name: 'cargo', version: '1.97.1', sha256: value.toolchain.cargoSha256 },
+      { name: 'rustc', version: '1.97.1', sha256: value.toolchain.rustcSha256 },
+    ],
+    architectureReceipt: { size: Buffer.byteLength(text), sha256: sha256(text) },
+  };
+  input.architectureReceipt.sha256 = 'c'.repeat(64);
+  assert.throws(() => validateSourceBuildReceiptText(text, input), /R406-ARCH-DIGEST:/);
+  input.architectureReceipt.sha256 = sha256(text);
+  input.source = { ...input.source, tree: 'c'.repeat(40) };
+  assert.throws(() => validateSourceBuildReceipt(value, input), /R406-ARCH-SOURCE:/);
+  input.source = value.source;
+  input.toolchains[0].sha256 = digest(22);
+  assert.throws(() => validateSourceBuildReceipt(value, input), /R406-ARCH-TOOLCHAIN:/);
 });
 
 test('rejects input omission, duplication, and ordering drift', () => {
@@ -54,7 +86,7 @@ test('rejects input omission, duplication, and ordering drift', () => {
 test('rejects unpinned tools, unsuccessful reports, and nondeterministic fields', () => {
   const toolchain = fixture();
   toolchain.toolchain.rustcVersion = 'rustc 1.98.0 (222222222 2026-08-01)';
-  assert.throws(() => validateSourceBuildReceipt(toolchain), /R406-ARCH-TOOLCHAIN:/);
+  assert.throws(() => validateSourceBuildReceipt(toolchain), /R406-ARCH-SCHEMA:/);
 
   for (const mutate of [
     (value) => { value.report.diagnostics.push({ code: 'failure' }); },

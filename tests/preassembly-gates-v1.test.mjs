@@ -9,7 +9,10 @@ import {
 const COMMIT = 'a'.repeat(40);
 const jobs = [
   'adapter', 'm0', 'm2', 'm3', 'rust (ubuntu-latest)', 'rust (windows-latest)',
-].map((name) => ({ name, conclusion: 'success', sourceCommit: COMMIT }));
+].map((name, index) => ({
+  name, conclusion: 'success', sourceCommit: COMMIT, runId: '123456789', runAttempt: 1,
+  jobId: `${200 + index}`, checkRunId: `${300 + index}`,
+}));
 
 function fixture() {
   const document = {
@@ -20,6 +23,7 @@ function fixture() {
     runAttempt: 1,
     runUrl: 'https://github.com/zryna/zryna/actions/runs/123456789',
     sourceCommit: COMMIT,
+    requiredContexts: jobs.map(({ name }) => name),
     requiredJobs: structuredClone(jobs),
   };
   const text = `${canonical(document)}\n`;
@@ -32,6 +36,7 @@ function fixture() {
       runAttempt: document.runAttempt,
       runUrl: document.runUrl,
       sourceCommit: COMMIT,
+      requiredContexts: structuredClone(document.requiredContexts),
       requiredJobs: structuredClone(jobs),
       size: Buffer.byteLength(text),
       sha256: sha256(text),
@@ -55,6 +60,7 @@ test('rejects source, run, and required-job projection drift', () => {
       input.gateReceipt.runUrl = document.runUrl;
     }],
     ['R406-GATES-JOBS', ({ document }) => { document.requiredJobs.reverse(); }],
+    ['R406-GATES-CONTEXTS', ({ document }) => { document.requiredContexts.reverse(); }],
   ]) {
     const value = fixture();
     mutate(value);
@@ -78,6 +84,7 @@ test('rejects wrong descriptors before parsing gate bytes', () => {
 test('schema rejects false success and hosted metadata extensions', () => {
   for (const mutate of [
     ({ document }) => { document.requiredJobs[0].conclusion = 'skipped'; },
+    ({ document }) => { document.requiredJobs.splice(2, 1); },
     ({ document }) => { document.runnerPath = 'C:\\runner'; },
   ]) {
     const value = fixture();

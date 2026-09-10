@@ -2,8 +2,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
-import { canonicalBounded, parseCanonical } from './canonical.mjs';
+import { assertTextBounds, canonicalBounded, parseCanonical, sha256 } from './canonical.mjs';
 import { readEnvelopeFile } from './input.mjs';
+import { validateBuildInputText } from './validate-build-input.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const SCHEMA_PATH = fileURLToPath(new URL(
@@ -19,7 +20,7 @@ function reject(code, message) {
   throw new Error(`${code}: ${message}`);
 }
 
-export function validateSourceBuildReceipt(document) {
+export function validateSourceBuildReceipt(document, input) {
   canonicalBounded(document);
   if (!validateSchema(document)) {
     reject('R406-ARCH-SCHEMA', ajv.errorsText(validateSchema.errors, { separator: '; ' }));
@@ -28,21 +29,40 @@ export function validateSourceBuildReceipt(document) {
   if (paths.some((path, index) => path !== INPUT_PATHS[index])) {
     reject('R406-ARCH-INPUTS', 'source authority inputs must be exact and sorted');
   }
-  if (!document.toolchain.cargoVersion.startsWith('cargo 1.97.1 ')
-    || !document.toolchain.rustcVersion.startsWith('rustc 1.97.1 ')) {
-    reject('R406-ARCH-TOOLCHAIN', 'observed cargo and rustc versions must match the pin');
+  if (input) {
+    if (document.source.repository !== input.source?.repository
+      || document.source.commit !== input.source?.commit
+      || document.source.tree !== input.source?.tree) {
+      reject('R406-ARCH-SOURCE', 'receipt and build source identities differ');
+    }
+    const cargo = input.toolchains?.find(({ name }) => name === 'cargo');
+    const rustc = input.toolchains?.find(({ name }) => name === 'rustc');
+    if (cargo?.version !== document.toolchain.channel
+      || cargo?.sha256 !== document.toolchain.cargoSha256
+      || rustc?.version !== document.toolchain.channel
+      || rustc?.sha256 !== document.toolchain.rustcSha256) {
+      reject('R406-ARCH-TOOLCHAIN', 'receipt and build toolchain identities differ');
+    }
   }
   return document;
 }
 
-export function validateSourceBuildReceiptText(text) {
-  return validateSourceBuildReceipt(parseCanonical(text));
+export function validateSourceBuildReceiptText(text, input) {
+  assertTextBounds(text);
+  if (input && (Buffer.byteLength(text, 'utf8') !== input.architectureReceipt?.size
+    || sha256(text) !== input.architectureReceipt?.sha256)) {
+    reject('R406-ARCH-DIGEST', 'receipt bytes differ from the build descriptor');
+  }
+  return validateSourceBuildReceipt(parseCanonical(text), input);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
   try {
-    if (process.argv.length !== 3) reject('R406-ARCH-USAGE', 'expected one receipt path');
-    validateSourceBuildReceiptText(readEnvelopeFile(resolve(process.argv[2])));
+    if (process.argv.length !== 4) {
+      reject('R406-ARCH-USAGE', 'expected build input and receipt paths');
+    }
+    const input = validateBuildInputText(readEnvelopeFile(resolve(process.argv[2])));
+    validateSourceBuildReceiptText(readEnvelopeFile(resolve(process.argv[3])), input);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

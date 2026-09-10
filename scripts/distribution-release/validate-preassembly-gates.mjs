@@ -19,11 +19,16 @@ function reject(code, message) {
   throw new Error(`${code}: ${message}`);
 }
 
-export function validatePreassemblyGates(document, input) {
+export function validatePreassemblyGatesShape(document) {
   canonicalBounded(document);
   if (!validateSchema(document)) {
     reject('R406-GATES-SCHEMA', ajv.errorsText(validateSchema.errors, { separator: '; ' }));
   }
+  return document;
+}
+
+export function validatePreassemblyGates(document, input) {
+  validatePreassemblyGatesShape(document);
   const expected = input?.gateReceipt;
   if (!expected || document.repository !== input?.source?.repository
     || document.sourceCommit !== input?.source?.commit) {
@@ -34,11 +39,14 @@ export function validatePreassemblyGates(document, input) {
   }
   for (const field of ['format', 'workflow', 'runId', 'runAttempt', 'runUrl', 'sourceCommit']) {
     if (document[field] !== expected[field]) {
-      reject('R406-GATES-RUN', `${field} differs from the authenticated build input`);
+      reject('R406-GATES-RUN', `${field} differs from the bound build input`);
     }
   }
+  if (canonical(document.requiredContexts) !== canonical(expected.requiredContexts)) {
+    reject('R406-GATES-CONTEXTS', 'required contexts differ from the bound build input');
+  }
   if (canonical(document.requiredJobs) !== canonical(expected.requiredJobs)) {
-    reject('R406-GATES-JOBS', 'required jobs differ from the authenticated build input');
+    reject('R406-GATES-JOBS', 'required jobs differ from the bound build input');
   }
   return document;
 }
@@ -47,7 +55,7 @@ export function validatePreassemblyGatesText(text, input) {
   assertTextBounds(text);
   if (Buffer.byteLength(text, 'utf8') !== input?.gateReceipt?.size
     || sha256(text) !== input?.gateReceipt?.sha256) {
-    reject('R406-GATES-DIGEST', 'gate bytes differ from the authenticated descriptor');
+    reject('R406-GATES-DIGEST', 'gate bytes differ from the bound descriptor');
   }
   return validatePreassemblyGates(parseCanonical(text), input);
 }

@@ -69,6 +69,7 @@ test('representative paths select only their owning optional contract lanes', ()
     ['tests/distribution-build-input-v1.test.mjs', ['distribution_release']],
     ['tests/source-build-receipt-v1.test.mjs', ['distribution_release']],
     ['tests/preassembly-gates-v1.test.mjs', ['distribution_release']],
+    ['tests/distribution-release-producers.test.mjs', ['distribution_release']],
     ['spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md', ['diagnostics']],
     ['crates/zryna-source/src/lib.rs', ['diagnostics', 'provider_v4']],
     ['crates/zryna-frontend/src/lib.rs', ['provider_v4']],

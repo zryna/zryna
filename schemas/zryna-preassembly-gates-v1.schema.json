@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "format", "repository", "workflow", "runId", "runAttempt", "runUrl", "sourceCommit",
-    "requiredJobs"
+    "requiredContexts", "requiredJobs"
   ],
   "properties": {
     "format": { "const": "zryna.preassembly-gates.v1" },
@@ -21,10 +21,16 @@
       "pattern": "^https://github.com/zryna/zryna/actions/runs/[1-9][0-9]{0,19}$"
     },
     "sourceCommit": { "$ref": "#/$defs/commit" },
+    "requiredContexts": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[ -~]+$" }
+    },
     "requiredJobs": {
       "type": "array",
-      "minItems": 1,
-      "maxItems": 32,
+      "minItems": 6,
+      "maxItems": 6,
       "items": { "$ref": "#/$defs/job" }
     }
   },
@@ -33,12 +39,19 @@
     "job": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "conclusion", "sourceCommit"],
+      "required": [
+        "name", "conclusion", "sourceCommit", "runId", "runAttempt", "jobId", "checkRunId"
+      ],
       "properties": {
         "name": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[ -~]+$" },
         "conclusion": { "const": "success" },
-        "sourceCommit": { "$ref": "#/$defs/commit" }
+        "sourceCommit": { "$ref": "#/$defs/commit" },
+        "runId": { "$ref": "#/$defs/numericId" },
+        "runAttempt": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "jobId": { "$ref": "#/$defs/numericId" },
+        "checkRunId": { "$ref": "#/$defs/numericId" }
       }
-    }
+    },
+    "numericId": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" }
   }
 }

@@ -38,7 +38,7 @@ const LANE_PATHS = Object.freeze({
     /^schemas\/zryna-(?:distribution-(?:release|build-input)|source-build-receipt|preassembly-gates)-v1\.schema\.json$/,
     /^scripts\/distribution-release\//,
     /^spec\/release\//,
-    /^tests\/(?:distribution-(?:release|build-input)|source-build-receipt|preassembly-gates)-v1\.test\.mjs$/,
+    /^tests\/(?:(?:distribution-(?:release|build-input)|source-build-receipt|preassembly-gates)-v1|distribution-release-producers)\.test\.mjs$/,
   ]),
   package_release: Object.freeze([
     /^crates\/zryna-package\//,

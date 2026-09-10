@@ -39,12 +39,16 @@ function fixture(target = 'x86_64-unknown-linux-gnu') {
     },
     toolchains: [
       {
-        name: 'node', version: '22.22.1', origin: 'https://nodejs.org/dist/v22.22.1/',
+        name: 'cargo', version: '1.97.1', origin: 'repository:rust-toolchain.toml',
         sha256: digest(1), signatureEvidenceSha256: digest(2),
       },
       {
-        name: 'rust', version: '1.89.0', origin: 'repository:rust-toolchain.toml',
+        name: 'node', version: '22.22.1', origin: 'https://nodejs.org/dist/v22.22.1/',
         sha256: digest(3), signatureEvidenceSha256: digest(4),
+      },
+      {
+        name: 'rustc', version: '1.97.1', origin: 'repository:rust-toolchain.toml',
+        sha256: digest(5), signatureEvidenceSha256: digest(6),
       },
     ],
     materials: {
@@ -84,9 +88,15 @@ function fixture(target = 'x86_64-unknown-linux-gnu') {
       runAttempt: 1,
       runUrl: 'https://github.com/zryna/zryna/actions/runs/123456789',
       sourceCommit: COMMIT,
+      requiredContexts: [
+        'adapter', 'm0', 'm2', 'm3', 'rust (ubuntu-latest)', 'rust (windows-latest)',
+      ],
       requiredJobs: [
         'adapter', 'm0', 'm2', 'm3', 'rust (ubuntu-latest)', 'rust (windows-latest)',
-      ].map((name) => ({ name, conclusion: 'success', sourceCommit: COMMIT })),
+      ].map((name, index) => ({
+        name, conclusion: 'success', sourceCommit: COMMIT, runId: '123456789', runAttempt: 1,
+        jobId: `${200 + index}`, checkRunId: `${300 + index}`,
+      })),
     },
     recipe: { format: 'zryna.distribution-recipe.v1', sha256: digest(54) },
   };
@@ -116,9 +126,11 @@ test('rejects source, receipt, target, and fixed-path drift', () => {
 });
 
 test('rejects missing, stale, duplicate, and unsorted authenticated inputs', () => {
-  const missing = fixture();
-  missing.gateReceipt.requiredJobs.pop();
-  assert.throws(() => validateBuildInput(missing), /R406-BUILD-GATES:/);
+  for (const index of [0, 2, 5]) {
+    const missing = fixture();
+    missing.gateReceipt.requiredJobs.splice(index, 1);
+    assert.throws(() => validateBuildInput(missing), /R406-BUILD-SCHEMA:/);
+  }
 
   const stale = fixture();
   stale.gateReceipt.requiredJobs[0].sourceCommit = TREE;
@@ -135,6 +147,18 @@ test('rejects missing, stale, duplicate, and unsorted authenticated inputs', () 
   const unsorted = fixture();
   unsorted.toolchains.reverse();
   assert.throws(() => validateBuildInput(unsorted), /R406-BUILD-ORDER:/);
+
+  const arbitraryTool = fixture();
+  arbitraryTool.toolchains[2].version = '1.89.0';
+  assert.throws(() => validateBuildInput(arbitraryTool), /R406-BUILD-TOOLCHAINS:/);
+
+  const extraContext = fixture();
+  extraContext.gateReceipt.requiredContexts[5] = 'new-required-check';
+  assert.throws(() => validateBuildInput(extraContext), /R406-BUILD-GATES:/);
+
+  const mixedAttempt = fixture();
+  mixedAttempt.gateReceipt.requiredJobs[0].runAttempt = 2;
+  assert.throws(() => validateBuildInput(mixedAttempt), /R406-BUILD-GATES:/);
 
   const conflictingCount = fixture();
   conflictingCount.materials.fileCount = conflictingCount.preparedDistribution.archiveFileCount;
