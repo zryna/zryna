@@ -116,6 +116,23 @@ protocol-v2 M1 compiler and CLI path.
 Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the bootstrap
 provider must not modify semantic behavior or any backend.
 
+The first native implementation checkpoint is `zryna_frontend::native_lexer`. It either consumes
+an existing authoritative `SourceMap`, or validates bounded raw bytes through `admit_and_lex` and
+returns the newly owned `SourceMap` with its bound lexical project. Raw admission checks canonical
+paths and byte limits before strict UTF-8 conversion. An invalid or truncated encoding receives an
+exact pre-authority `RawByteSpan`; it is not a forged source-map `Span`. Lexing retains source-ordered tokens and formatter-relevant trivia
+with opaque UTF-8 spans. It covers only the frozen protocol-v4 lexical spellings, deterministic
+malformed-input recovery, the frozen 8 MiB aggregate source ceiling, and fixed token, trivia,
+project, and diagnostic ceilings. It preserves every admitted UTF-8 byte exactly. The routed
+provider-v4 proof compares every native token kind and UTF-8 byte range directly with a live witness
+from the exact pinned TypeScript 6 scanner. Its negative case also proves the same offending lexical
+range while retaining the provider's `ZRYNA-F2002` and native lexer's `ZRYNA-F1501` ownership-specific
+diagnostic identities. This test-only comparison adds no TypeScript production dependency. The
+native lexer does not yet parse the
+conformance corpus, emit a raw snapshot, implement the provider handshake, or alter TypeScript 6 authority.
+The next native checkpoint is a bounded parser that consumes this stream and constructs candidate
+protocol-v4 DTOs for verification and conformance comparison.
+
 ## Protocol v3 and internal module discovery
 
 M2 protocol v3 adds source-faithful DTOs for named imports, locals, assignment, direct calls,

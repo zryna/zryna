@@ -14,7 +14,7 @@ const scriptPath = fileURLToPath(import.meta.url);
 export const workspaceRoot = resolve(dirname(scriptPath), '..');
 export const registryPath = resolve(workspaceRoot, 'tests/provider-conformance-v4.json');
 const fixtureRoot = 'tests/provider-conformance-v4/fixtures';
-const expectedRegistryDigest = 'ba2140e5ec068da57bae8c54ede454fda56125cf11b0fb985e6585268e2448a3';
+const expectedRegistryDigest = 'a2870b7501aa5c83b9da9f6cc6934ddd22deb1c61be9b4ecd6cb8e9fe6c11c97';
 const expectedCaseOrder = [
   'positive', 'malformed', 'unsupported', 'budget', 'recovery', 'ordering',
 ];

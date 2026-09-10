@@ -28,7 +28,8 @@ The six sessions cover:
 
 - a successful one-file snapshot;
 - malformed duplicate request fields followed by a successful handshake;
-- unsupported syntax and its stable `ZRYNA-F2002` category;
+- unsupported syntax plus a one-byte lexical-negative source, each with the stable provider
+  `ZRYNA-F2002` category;
 - the first request beyond the fixed JSON-depth budget and `ZRYNA-F1002`;
 - a provider error followed by a successful analysis in the same process; and
 - reverse-ordered multi-file input with canonical path/FileId output ordering.
@@ -45,6 +46,15 @@ remains an additional closed structural boundary. A focused Rust integration tes
 goldens and requires the authoritative protocol-v4 verifier to bind them to those exact source
 maps; changed source bytes reject. The resulting opaque verified view remains the compiler
 authority for admission.
+
+The same routed command also performs a direct test-only lexical differential. A witness from the
+exact pinned TypeScript 6 scanner retains its raw provider kind and maps it into the closed native
+token vocabulary; the Rust test compares every canonical kind, source spelling, file order, and
+UTF-8 byte range with `native_lexer` output for the positive and ordering sources. For the
+lexical-negative source, both implementations must locate the same byte, while their owning
+diagnostic identities remain explicit and distinct: provider `ZRYNA-F2002`, native lexer
+`ZRYNA-F1501`. Both complete witnesses replay deterministically. Node and TypeScript are used only
+by this conformance test and are not dependencies of native production code.
 
 ## Registry closure
 

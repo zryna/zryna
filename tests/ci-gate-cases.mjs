@@ -163,7 +163,7 @@ test('bootstrap toolchain and cache-order mutations fail closed in every setup j
 });
 const aggregateNeeds = {
   adapter: ['preflight', 'adapter-platform'],
-  m0: ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts'],
+  m0: ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts', 'provider-conformance-v4'],
   m2: ['m0', 'm2-platform'],
 };
 const matrixJobs = ['owned-data-quick', 'rust', 'adapter-platform', 'm2-platform'];
@@ -179,26 +179,50 @@ function aggregatePredicate(job, expectedNeeds) {
   assert.equal(job.if, 'always()');
   assert.equal(job['runs-on'], 'ubuntu-latest');
   assert.deepEqual(job.needs, expectedNeeds);
-  assert.equal(job.steps.length, 1);
-  const step = job.steps[0];
+  const providerIndex = job.needs.indexOf('provider-conformance-v4');
+  if (providerIndex !== -1) {
+    assert.equal(job.steps.length, 2);
+    assert.deepEqual(job.steps[0], {
+      uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+      with: { 'fetch-depth': 0 },
+    });
+  } else {
+    assert.equal(job.steps.length, 1);
+  }
+  const step = job.steps.at(-1);
   keys(step, ['name', 'env', 'run']);
   assert.equal(typeof step.run, 'string');
   const clauses = step.run.split(' && ');
+  if (providerIndex !== -1) {
+    assert.equal(clauses.shift(), 'node scripts/verify-provider-v4-ci-result.mjs');
+    assert.equal(
+      step.env.PROVIDER_V4_REQUIRED,
+      '${{ needs.route-contracts.outputs.provider_v4 }}',
+    );
+    assert.equal(
+      step.env.PROVIDER_V4_RESULT,
+      '${{ needs.provider-conformance-v4.result }}',
+    );
+  }
   const variables = clauses.map(clause => {
     const match = /^test "\$([A-Z][A-Z0-9_]*)" = success$/.exec(clause);
     assert(match, `unsupported aggregate predicate: ${clause}`);
     return match[1];
   });
   assert.equal(new Set(variables).size, variables.length, 'duplicate predicate variable');
-  keys(step.env, variables);
+  keys(step.env, providerIndex === -1
+    ? variables
+    : [...variables, 'PROVIDER_V4_REQUIRED', 'PROVIDER_V4_RESULT']);
   const bindings = new Map(variables.map(variable => {
     const match = /^\$\{\{ needs\.([a-z][a-z0-9-]*)\.result \}\}$/.exec(step.env[variable]);
     assert(match, `unsupported result binding: ${variable}`);
     assert(job.needs.includes(match[1]), `undeclared dependency: ${match[1]}`);
     return [variable, match[1]];
   }));
-  assert.deepEqual([...bindings.values()].sort(), [...job.needs].sort(), 'every dependency checked once');
-  return results => variables.every(variable => results[bindings.get(variable)] === 'success');
+  const shellNeeds = job.needs.filter(need => need !== 'provider-conformance-v4');
+  assert.deepEqual([...bindings.values()].sort(), [...shellNeeds].sort(), 'every shell dependency checked once');
+  return results => variables.every(variable => results[bindings.get(variable)] === 'success')
+    && (providerIndex === -1 || results['provider-conformance-v4'] === 'success');
 }
 
 function* combinations(names, prefix = {}) {
@@ -232,6 +256,7 @@ function evaluateGraph(jobs, leaves) {
 
 test('CI starts independent authorities together with bounded preflight headroom', () => {
   assert.equal(workflow.jobs.preflight['timeout-minutes'], 35);
+  assert.equal(workflow.jobs.rust['timeout-minutes'], 40);
   assert.equal(workflow.jobs.preflight.if, undefined);
   assert.equal(workflow.jobs.preflight.needs, undefined);
   for (const id of matrixJobs) {
@@ -255,11 +280,11 @@ test('actual aggregate predicates reject every Cartesian non-success result', ()
       checked++;
     }
   }
-  assert.equal(checked, 16905);
+  assert.equal(checked, 117747);
 });
 
 test('each OS authority and preflight must succeed through the actual aggregate graph', () => {
-  const allSuccess = Object.fromEntries(['preflight', 'route-contracts', ...matrixJobs]
+  const allSuccess = Object.fromEntries(['preflight', 'route-contracts', 'provider-conformance-v4', ...matrixJobs]
     .map(id => [id, 'success']));
   assert.equal(evaluateGraph(workflow.jobs, allSuccess).m2, 'success');
   for (const preflight of outcomes) {
@@ -288,24 +313,37 @@ test('aggregate grammar and dependency mutations fail closed', () => {
       job => { delete job.if; },
       job => { job['continue-on-error'] = true; },
       job => { job.needs = job.needs.slice(1); },
-      job => { job.steps[0].if = 'success()'; },
-      job => { job.steps[0]['continue-on-error'] = true; },
-      job => { job.steps[0].run += ' || true'; },
-      job => { job.steps[0].run += '; exit 0'; },
-      job => { job.steps[0].run = job.steps[0].run.replace('= success', '!= failure'); },
-      job => { job.steps[0].run = job.steps[0].run.split(' && ').slice(1).join(' && '); },
-      job => { job.steps[0].run += ` && ${job.steps[0].run.split(' && ')[0]}`; },
-      job => { job.steps[0].run = 'true'; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] = 'success'; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] = '${{ needs.missing.result }}'; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] = Object.values(job.steps[0].env)[1]; },
-      job => { job.steps[0].env[Object.keys(job.steps[0].env)[0]] += ' || success'; },
+      job => { job.steps.at(-1).if = 'success()'; },
+      job => { job.steps.at(-1)['continue-on-error'] = true; },
+      job => { job.steps.at(-1).run += ' || true'; },
+      job => { job.steps.at(-1).run += '; exit 0'; },
+      job => { job.steps.at(-1).run = job.steps.at(-1).run.replace('= success', '!= failure'); },
+      job => { job.steps.at(-1).run = job.steps.at(-1).run.split(' && ').slice(1).join(' && '); },
+      job => { job.steps.at(-1).run += ` && ${job.steps.at(-1).run.split(' && ')[0]}`; },
+      job => { job.steps.at(-1).run = 'true'; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] = 'success'; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] = '${{ needs.missing.result }}'; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] = Object.values(job.steps.at(-1).env)[1]; },
+      job => { job.steps.at(-1).env[Object.keys(job.steps.at(-1).env)[0]] += ' || success'; },
       job => { job.steps.push({ run: 'true' }); },
     ]) {
       const changed = structuredClone(workflow.jobs[id]);
       mutate(changed);
       assert.throws(() => aggregatePredicate(changed, needs), `${id}: mutation must fail`);
     }
+  }
+});
+
+test('M0 aggregate checks out the pinned verifier before execution', () => {
+  for (const mutate of [
+    job => { job.steps.shift(); },
+    job => { job.steps.reverse(); },
+    job => { job.steps[0].uses = 'actions/checkout@main'; },
+    job => { job.steps[0].with['fetch-depth'] = 1; },
+  ]) {
+    const changed = structuredClone(workflow.jobs.m0);
+    mutate(changed);
+    assert.throws(() => aggregatePredicate(changed, aggregateNeeds.m0));
   }
 });
 
@@ -351,5 +389,5 @@ test('routing preserves all other pinned workflow authority', () => {
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');
-  assert.equal(digest, '33d34832305fcdc33c149e58e319435e8b46fe794a4a22f795b3d86360ba4b32');
+  assert.equal(digest, '74b2fd74c49c244182f99d4fdf7702c7f82886872cfe44386151179343800a86');
 });

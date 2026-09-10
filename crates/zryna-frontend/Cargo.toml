@@ -28,3 +28,7 @@ workspace = true
 name = "worker_process"
 path = "tests/worker_process.rs"
 harness = false
+
+[[test]]
+name = "native_lexer_provider"
+path = "tests/native_lexer_provider.rs"
