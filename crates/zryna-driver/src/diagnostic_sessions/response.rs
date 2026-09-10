@@ -2,8 +2,8 @@ use super::{Correlation, MAX_RESPONSE_BYTES};
 
 /// Closed status vocabulary for implemented internal query slices.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum QueryStatus {
-    /// The complete retained diagnostic report was published.
+pub enum QueryStatus {
+    /// The complete retained diagnostic report or definition result was published.
     Ok,
     /// No supported symbol occupies the requested position.
     Absent,
@@ -38,7 +38,7 @@ impl QueryStatus {
 
 /// Closed reason vocabulary for internal query-session outcomes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum QueryReason {
+pub enum QueryReason {
     /// The encoded request exceeds 65,536 bytes.
     RequestBytes,
     /// The request nesting exceeds 64 levels.
@@ -61,7 +61,7 @@ pub(crate) enum QueryReason {
     Request,
     /// The request exceeded its monotonic deadline.
     Deadline,
-    /// The diagnostic pass is not ready or its retained authority is invalid.
+    /// The required diagnostic or semantic view is not ready or has invalid authority.
     Analysis,
     /// The canonical logical work charge exceeds the requested limit.
     Work,
@@ -95,7 +95,7 @@ impl QueryReason {
 
 /// One complete query response, or an uncorrelated admission rejection.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct DiagnosticQueryResponse {
+pub struct DiagnosticQueryResponse {
     status: QueryStatus,
     reason: Option<QueryReason>,
     encoded: Option<String>,
@@ -104,19 +104,19 @@ pub(crate) struct DiagnosticQueryResponse {
 impl DiagnosticQueryResponse {
     /// Returns the closed response status.
     #[must_use]
-    pub(crate) const fn status(&self) -> QueryStatus {
+    pub const fn status(&self) -> QueryStatus {
         self.status
     }
 
     /// Returns the closed failure reason, absent only for success.
     #[must_use]
-    pub(crate) const fn reason(&self) -> Option<QueryReason> {
+    pub const fn reason(&self) -> Option<QueryReason> {
         self.reason
     }
 
     /// Returns canonical JSON when correlation fields were safely decoded.
     #[must_use]
-    pub(crate) fn encoded(&self) -> Option<&str> {
+    pub fn encoded(&self) -> Option<&str> {
         self.encoded.as_deref()
     }
 

@@ -10,9 +10,9 @@ smaller program. Provider warnings remain non-fatal and are preserved by `zryna-
 
 The internal `definition_queries` module freezes exact function and parameter declaration spans
 and parameter reference spans only after this protocol-v2 scalar checker succeeds. The driver's
-private `diagnostic_sessions` boundary retains that opaque, source-map-bound index for bounded
-definition lookup. It does not add general symbol coverage, a transport, a CLI/LSP route, or a
-public tooling profile.
+`diagnostic_sessions` boundary retains that opaque, source-map-bound index for bounded definition
+lookup. The separate language-server transport may invoke it through the driver; semantics adds no
+general symbol coverage, transport logic, CLI route, or new language profile.
 
 ## First strict source subset (protocol v2/M1)
 

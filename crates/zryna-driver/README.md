@@ -37,13 +37,26 @@ It returns `SourceToIrSuccess` only when backends may safely consume the program
 warnings remain observable on that success value; frontend failures and compiler rejections remain
 distinct error categories.
 
-The private `diagnostic_sessions` boundary retains immutable source-map-bound structured
+The public `diagnostic_sessions` facade retains immutable source-map-bound structured
 diagnostics v2 records and scalar definition indexes for one compiler-host session. Definition
 lookup covers function and parameter declarations and parameter references after successful
 protocol-v2 semantic checking. The boundary issues non-reused revision handles, enforces the
 accepted request, response, queue, cache, cancellation and deadline bounds, and rechecks the active
-revision before publication. It adds no transport, CLI/LSP route, public tooling profile, general
-symbol coverage, formatting, edit application or execution capability.
+revision before publication. The registered thin language-server transport composes these opaque
+authorities without inspecting semantic records. The driver adds no general symbol coverage,
+formatting, edit application or execution capability.
+
+The tooling compiler supports the lockfile's exact pnpm layout: the adapter package link must
+resolve to `@typescript/typescript6` 6.0.2, whose compatibility wrapper resolves the staged
+`@typescript/old` name to the actual TypeScript 6.0.3 implementation. It captures the fixed worker,
+wrapper, package manifests, and implementation through retained no-follow filesystem authorities,
+then copies that five-file executable closure into one bounded private stage. Node receives only
+the staged worker and staged package graph; later replacement or deletion below the original
+compiler root cannot select different executable bytes. The stage is revalidated before and after
+each admission and cleanup removes only its fixed identity-checked inventory. This boundary assumes
+the pinned installation is trusted when discovery begins and that owner-private Unix permissions
+or the corresponding inherited Windows ACL remain private. It is not immunity against an
+arbitrary same-user process or a hostile operating system racing execution.
 
 The default public success profile is the one-file, explicitly typed `i32` subset documented by
 `zryna-semantics`. Source-level `bool` remains rejected by `I32V1`. The separate

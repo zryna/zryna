@@ -22,7 +22,7 @@ impl DiagnosticSession {
     ///
     /// Returns a complete correlated failure when safe correlation fields were decoded, otherwise
     /// an uncorrelated rejection. No partial diagnostic result is returned.
-    pub(crate) fn begin_diagnostics(
+    pub fn begin_diagnostics(
         &mut self,
         bytes: &[u8],
         now: Instant,
@@ -91,7 +91,7 @@ impl DiagnosticSession {
 
     /// Cancels one admitted request and immediately releases its queue slot.
     #[must_use]
-    pub(crate) fn cancel(&mut self, request_id: &str) -> bool {
+    pub fn cancel(&mut self, request_id: &str) -> bool {
         let Some(slot) = self.in_flight.remove(request_id) else {
             return false;
         };
@@ -101,7 +101,7 @@ impl DiagnosticSession {
 
     /// Completes one query against its retained source and atomically rechecks the active revision.
     #[must_use]
-    pub(crate) fn finish_diagnostics(
+    pub fn finish_diagnostics(
         &mut self,
         pending: PendingDiagnosticQuery,
         now: Instant,

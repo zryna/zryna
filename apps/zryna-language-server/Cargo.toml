@@ -1,0 +1,23 @@
+[package]
+name = "zryna-language-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "zryna-language-server"
+path = "src/main.rs"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+zryna-driver = { path = "../../crates/zryna-driver" }
+zryna-source = { path = "../../crates/zryna-source" }
+
+[dev-dependencies]
+zryna-driver = { path = "../../crates/zryna-driver", features = ["diagnostic-test-support"] }
+
+[lints]
+workspace = true

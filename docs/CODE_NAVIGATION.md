@@ -8,13 +8,13 @@ Source-size policy: [reviewed inventory](../scripts/repository-structure-policy.
 [read-only checker](../scripts/check-repository-structure.mjs); run `pnpm structure:check` and `node --test tests/repository-structure.test.mjs`.
 
 Public execution is default M1 `I32V1` or explicit M2 `--profile control-flow-v1`.
-M3 `DataOwnershipV1` remains an internal candidate: it has audited target/runtime and atomic bundle
-boundaries but does not activate a public CLI profile or general-purpose allocator.
+M3 `DataOwnershipV1` remains an internal candidate: it has audited target/runtime and atomic bundle boundaries but does not activate a public CLI profile or general-purpose allocator.
 Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI](CLI.md) for exact command/platform contracts.
 
 ## 1. Syntax recognition, source spans, or frontend transport
 
 - Diagnostic transport: [v2 contract](../spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md), [schema](../schemas/zryna-diagnostics-v2.schema.json), and [diagnostics component](../crates/zryna-diagnostics/README.md). Run `pnpm diagnostics:contract` and `cargo test --locked -p zryna-diagnostics`; preserve the existing text/JSON-v1 APIs.
+- Language-server transport: [public protocol](LANGUAGE_SERVER.md), `apps/zryna-language-server/src/`, and driver `diagnostic_sessions`; focus with `cargo test --locked -p zryna-language-server`, preserving framing/process, stale revision, cancellation, limits, Unicode/CRLF and recovery evidence without adding semantic authority.
 - Revision-bound internal query sessions: `crates/zryna-driver/src/diagnostic_sessions.rs` composes one retained `SourceMap` with unchanged diagnostic v2 bytes and the protocol-v2 definition slice from `crates/zryna-semantics/src/definition_queries.rs`, bounded scheduling and final active-revision publication checks. Focus with `cargo test --locked -p zryna-driver diagnostic_sessions`; this is an internal host boundary, not a transport or editor service.
 - Start: [adapter README](../adapters/typescript-6/README.md), [FRONTENDS](FRONTENDS.md), and [v2](SYNTAX_PROTOCOL_V2.md), [v3 control-flow](../spec/language/CONTROL_FLOW_MODULES_V1.md), [v4](SYNTAX_PROTOCOL_V4.md), or [v4 provider conformance](PROVIDER_CONFORMANCE_V4.md).
 - Parser-side entry: `adapters/typescript-6/src/worker.mjs`, `worker-v3.mjs`, or `worker-v4.mjs`; choose the protocol explicitly. Native lexical entry: `crates/zryna-frontend/src/native_lexer.rs`; raw-byte admission: `src/native_lexer/admission.rs`. The live pinned-provider differential is `tests/native_lexer_provider.rs` with `scripts/native-lexer-provider-witness.mjs`; this remains a partial stage only, before parsing, snapshot construction, provider handshake, or selection.

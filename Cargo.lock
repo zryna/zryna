@@ -1941,6 +1941,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "zryna-language-server"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "zryna-driver",
+ "zryna-source",
+]
+
+[[package]]
 name = "zryna-layout"
 version = "0.1.0"
 dependencies = [

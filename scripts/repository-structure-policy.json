@@ -256,6 +256,20 @@
       "review": "https://github.com/zryna/zryna/issues/314"
     },
     {
+      "path": "apps/zryna-language-server/tests/process.rs",
+      "kind": "test",
+      "owner": "tooling maintainers",
+      "reason": "Cross-platform stdio process and exact revision/cancellation conformance fixture",
+      "review": "https://github.com/zryna/zryna/issues/408"
+    },
+    {
+      "path": "apps/zryna-language-server/tests/protocol.rs",
+      "kind": "test",
+      "owner": "tooling maintainers",
+      "reason": "Language-server framing, lifecycle, revision, coordinate, cancellation, and recovery tests",
+      "review": "https://github.com/zryna/zryna/issues/408"
+    },
+    {
       "path": "apps/zryna/tests/cli.rs",
       "kind": "test",
       "owner": "compiler maintainers",
