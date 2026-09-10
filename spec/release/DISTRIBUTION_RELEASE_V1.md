@@ -29,6 +29,16 @@ Every production record binds one annotated tag-object SHA, its full peeled sour
 tree, `refs/tags/<tag>`, the tagged workflow bytes, source epoch, workflow run ID and attempt, and
 every required successful job at the same commit.
 
+The canonical `zryna.release-tag-receipt.v1` is the first protected-workflow handoff. Its producer
+accepts only the exact protected tag push context, requires the tag object to point directly to the
+release commit, and requires the isolated checkout HEAD to equal that peeled commit. It reads the
+tagged `.github/workflows/release.yml` as an ordinary non-executable Git blob and records its size
+and SHA-256 identity together with the tag object, commit, tree, and commit epoch. Lightweight or
+nested tags, mutable checkout content, wrong workflow refs, and symlink, executable, missing, or
+oversized workflow entries are rejected before build or signing work begins. This local Git-object
+receipt binds the inputs used by later jobs; repository ruleset enforcement and remote ref
+immutability remain separately authenticated hosted checks.
+
 Version 1 accepts only the existing three-decimal compiler version and binds beta/prerelease status
 as separate closed fields. Stable publication remains outside this issue. The schema requires one
 Windows x64 subject and one Linux x86-64 subject in canonical target order.
