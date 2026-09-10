@@ -60,6 +60,12 @@ test('representative paths select only their owning optional contract lanes', ()
   const ownershipCases = [
     ['schemas/zryna-diagnostics-v2.schema.json', ['diagnostics']],
     ['schemas/zryna-distribution-release-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-files-v1.schema.json', ['distribution_release']],
+    ['scripts/distribution/assemble.mjs', ['distribution_release']],
+    ['crates/zryna-driver/src/distribution/mod.rs', ['distribution_release']],
+    ['apps/zryna/src/installed.rs', ['distribution_release']],
+    ['tests/distribution-receipt-compatibility.test.mjs', ['distribution_release']],
     ['schemas/zryna-distribution-build-input-v1.schema.json', ['distribution_release']],
     ['schemas/zryna-source-build-receipt-v1.schema.json', ['distribution_release']],
     ['schemas/zryna-preassembly-gates-v1.schema.json', ['distribution_release']],
@@ -258,6 +264,7 @@ test('consolidation preserves every prior contract command and pinned action', (
   assert.deepEqual(commands('distribution-release-contract'), [
     'pnpm install --frozen-lockfile',
     'pnpm release:contract',
+    'pnpm distribution:check',
   ]);
   assert.deepEqual(commands('package-release-contract'), [
     'pnpm install --frozen-lockfile',
