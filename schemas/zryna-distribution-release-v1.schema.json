@@ -1,0 +1,270 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-distribution-release-v1.schema.json",
+  "title": "Zryna downloadable distribution release v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "tag",
+    "channel",
+    "publication",
+    "source",
+    "workflow",
+    "subjects",
+    "releaseNotes",
+    "checksums",
+    "signing",
+    "revocation",
+    "assetAllowlist"
+  ],
+  "properties": {
+    "format": { "const": "zryna.distribution-release.v1" },
+    "version": { "$ref": "#/$defs/version" },
+    "tag": { "$ref": "#/$defs/tag" },
+    "channel": { "const": "beta" },
+    "publication": { "const": "prerelease" },
+    "source": { "$ref": "#/$defs/source" },
+    "workflow": { "$ref": "#/$defs/workflow" },
+    "subjects": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/subject" }
+    },
+    "releaseNotes": { "$ref": "#/$defs/artifact" },
+    "checksums": { "$ref": "#/$defs/checksums" },
+    "signing": { "$ref": "#/$defs/signing" },
+    "revocation": { "$ref": "#/$defs/revocation" },
+    "assetAllowlist": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/path" }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 32,
+      "pattern": "^(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})$"
+    },
+    "tag": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 33,
+      "pattern": "^v(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})\\.(0|[1-9][0-9]{0,3})$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "size", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/path" },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483648
+        },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "ref",
+        "tagType",
+        "tagObject",
+        "commit",
+        "tree",
+        "sourceDateEpoch"
+      ],
+      "properties": {
+        "repository": { "const": "https://github.com/zryna/zryna" },
+        "ref": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 48,
+          "pattern": "^refs/tags/v[0-9A-Za-z.-]+$"
+        },
+        "tagType": { "const": "annotated" },
+        "tagObject": { "$ref": "#/$defs/commit" },
+        "commit": { "$ref": "#/$defs/commit" },
+        "tree": { "$ref": "#/$defs/commit" },
+        "sourceDateEpoch": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "path",
+        "commit",
+        "runId",
+        "runAttempt",
+        "environment",
+        "requiredJobs"
+      ],
+      "properties": {
+        "repository": { "const": "zryna/zryna" },
+        "path": { "const": ".github/workflows/release.yml" },
+        "commit": { "$ref": "#/$defs/commit" },
+        "runId": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+        "runAttempt": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "environment": { "const": "binary-release" },
+        "requiredJobs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "conclusion", "sourceCommit"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 96,
+                "pattern": "^[ -~]+$"
+              },
+              "conclusion": { "const": "success" },
+              "sourceCommit": { "$ref": "#/$defs/commit" }
+            }
+          }
+        }
+      }
+    },
+    "platformBaseline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["os", "distribution", "version", "architecture"],
+          "properties": {
+            "os": { "const": "linux" },
+            "distribution": { "const": "ubuntu" },
+            "version": { "const": "24.04" },
+            "architecture": { "const": "x86_64" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["os", "product", "version", "architecture", "runtime"],
+          "properties": {
+            "os": { "const": "windows" },
+            "product": { "const": "windows-server" },
+            "version": { "const": "2022" },
+            "architecture": { "const": "x86_64" },
+            "runtime": { "const": "operating-system-ucrt" }
+          }
+        }
+      ]
+    },
+    "reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["firstBuildSha256", "secondBuildSha256", "comparison"],
+      "properties": {
+        "firstBuildSha256": { "$ref": "#/$defs/digest" },
+        "secondBuildSha256": { "$ref": "#/$defs/digest" },
+        "comparison": { "const": "byte-identical" }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "archive",
+        "buildReceipt",
+        "sbom",
+        "provenance",
+        "attestation",
+        "platformBaseline",
+        "reproduction"
+      ],
+      "properties": {
+        "target": {
+          "enum": ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"]
+        },
+        "archive": { "$ref": "#/$defs/artifact" },
+        "buildReceipt": { "$ref": "#/$defs/artifact" },
+        "sbom": { "$ref": "#/$defs/artifact" },
+        "provenance": { "$ref": "#/$defs/artifact" },
+        "attestation": { "$ref": "#/$defs/artifact" },
+        "platformBaseline": { "$ref": "#/$defs/platformBaseline" },
+        "reproduction": { "$ref": "#/$defs/reproduction" }
+      }
+    },
+    "checksums": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document", "signature", "entries"],
+      "properties": {
+        "document": { "$ref": "#/$defs/artifact" },
+        "signature": { "$ref": "#/$defs/artifact" },
+        "entries": {
+          "type": "array",
+          "minItems": 11,
+          "maxItems": 28,
+          "items": { "$ref": "#/$defs/artifact" }
+        }
+      }
+    },
+    "signing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "certificateIdentity",
+        "releaseNotesSignature",
+        "envelopeSignaturePath"
+      ],
+      "properties": {
+        "issuer": { "const": "https://token.actions.githubusercontent.com" },
+        "certificateIdentity": {
+          "type": "string",
+          "minLength": 80,
+          "maxLength": 180,
+          "pattern": "^https://github\\.com/zryna/zryna/\\.github/workflows/release\\.yml@refs/tags/v[0-9A-Za-z.-]+$"
+        },
+        "releaseNotesSignature": { "$ref": "#/$defs/artifact" },
+        "envelopeSignaturePath": { "const": "zryna-release-envelope-v1.sigstore.json" }
+      }
+    },
+    "revocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "mode", "replacement"],
+      "properties": {
+        "policy": { "$ref": "#/$defs/artifact" },
+        "mode": { "const": "preserve-and-mark-affected" },
+        "replacement": { "const": "new-version-and-tag" }
+      }
+    }
+  }
+}

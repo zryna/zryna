@@ -43,3 +43,12 @@ for hostile source or a concurrently hostile workspace ancestor.
 
 The current workspace forbids unsafe Rust globally; any future exception requires an isolated
 approved component, a documented safety invariant, and dedicated tests.
+
+The downloadable-distribution release candidate adds a separate outer trust boundary without
+activating a release. A release must bind one protected annotated tag, exact commit and tree,
+clean-build receipts, deterministic archive inventories, SBOM and provenance subjects, successful
+same-revision gates, byte-identical independent builds, signed checksums and notes, and a closed
+asset allowlist. Signing is restricted to the exact tagged release workflow identity. Publication
+uses a protected environment and immutable draft-to-release transition; wrong or mutable tags,
+missing attestations, digest drift, extra assets, and signer-identity drift fail closed. Published
+artifacts are preserved if revoked and any correction uses a new version and tag.

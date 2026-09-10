@@ -7,6 +7,7 @@ const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
 export const CONTRACT_LANES = Object.freeze([
   'diagnostics',
+  'distribution_release',
   'package_release',
   'provider_v4',
   'wit',
@@ -32,6 +33,12 @@ const LANE_PATHS = Object.freeze({
     /^schemas\/zryna-diagnostics-v2\.schema\.json$/,
     /^spec\/diagnostics\//,
     /^tests\/diagnostics-protocol-v2\.test\.mjs$/,
+  ]),
+  distribution_release: Object.freeze([
+    /^schemas\/zryna-distribution-release-v1\.schema\.json$/,
+    /^scripts\/distribution-release\//,
+    /^spec\/release\//,
+    /^tests\/distribution-release-v1\.test\.mjs$/,
   ]),
   package_release: Object.freeze([
     /^crates\/zryna-package\//,

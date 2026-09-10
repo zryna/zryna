@@ -128,6 +128,16 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Positive, cache-miss, stale-input, wrong-target, missing-library, undeclared-tool, boundary, trust-policy and interrupted-publication evidence: `tests/resolved-build-plan-v0.test.mjs`, `tests/resolved-build-plan-v0/source-only.json`, and `tests/package-source-trust.test.mjs`.
 - Focus: `pnpm build-plan:contract`, `pnpm package:contract`, then `pnpm docs:check`. Reuse #168 package/provenance digests and #357 profile composition; preserve #360 package-instance identity, #362 execution/trust policy, driver-owned compilation/link/publication, and the native appendix's pending-#364 status.
 
+### Downloadable distribution release
+
+- Start: [downloadable distribution release v1](../spec/release/DISTRIBUTION_RELEASE_V1.md).
+- The production outer-envelope schema and validator are
+  `schemas/zryna-distribution-release-v1.schema.json` and `scripts/distribution-release/`;
+  independent identity, inventory, checksum, signer, reproduction, and revocation cases are in
+  `tests/distribution-release-v1.test.mjs`.
+- Run `pnpm release:contract`. #406 owns this outer publication boundary; #422 separately owns
+  deterministic archive inventory/assembly/verification and installed provider/runtime admission.
+
 ## Required completion checks for every route
 
 The focused commands above are editing aids, not submission evidence by themselves. Follow current CONTRIBUTING and the checked gate registries:
