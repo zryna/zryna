@@ -12,7 +12,10 @@ use zryna_source::{
     NormalizedSourcePath, SourceFileInput, SourceMap, Span, resolve_explicit_zry_import,
 };
 
-use crate::workspace_source::{MAX_DIRECTORY_ENTRIES, StableSource, WorkspaceSourceRoot};
+use crate::source_session::{ModuleSourceRoot, ModuleSourceSession};
+use crate::workspace_source::{MAX_DIRECTORY_ENTRIES, StableSource};
+mod entry;
+pub use entry::discover_module_closure;
 
 /// Maximum modules in one M2 closure.
 pub const MAX_MODULE_FILES: usize = 4_096;
@@ -315,31 +318,12 @@ struct ResolvedEdge {
     target: NormalizedSourcePath,
 }
 
-/// Discovers, authenticates, and seals one bounded deterministic M2 module closure.
-///
-/// The provider receives only immutable source bytes and normalized portable paths. It never
-/// receives the workspace capability or chooses a resolved host path. Intermediate snapshots are
-/// discarded; only one final full-map snapshot is returned.
-///
-/// # Errors
-///
-/// Returns a fail-closed frontend or deterministic driver rejection before semantic analysis or
-/// artifact creation.
-#[allow(clippy::too_many_lines)]
-pub fn discover_module_closure<Provider: VerifiedFrontendProviderV3 + ?Sized>(
-    root: &WorkspaceSourceRoot,
-    entrypoint: NormalizedSourcePath,
-    frontend: &Provider,
-) -> Result<VerifiedModuleClosure, ModuleClosureError> {
-    discover_module_closure_with_clock(root, entrypoint, frontend, Instant::now)
-}
-
 #[allow(clippy::too_many_lines)]
 pub(crate) fn discover_module_closure_with_clock<
     Provider: VerifiedFrontendProviderV3 + ?Sized,
     Clock: FnMut() -> Instant,
 >(
-    root: &WorkspaceSourceRoot,
+    root: &impl ModuleSourceRoot,
     entrypoint: NormalizedSourcePath,
     frontend: &Provider,
     mut now: Clock,
@@ -353,7 +337,7 @@ pub(crate) fn discover_module_closure_with_clock<
             "select one normalized portable .zry entry module",
         )));
     }
-    let mut source_session = root.begin_discovery().map_err(rejected)?;
+    let mut source_session = root.begin().map_err(rejected)?;
 
     let mut discovered = BTreeMap::<NormalizedSourcePath, DiscoveredSource>::new();
     let mut portable_paths = BTreeMap::<String, NormalizedSourcePath>::new();
@@ -400,6 +384,7 @@ pub(crate) fn discover_module_closure_with_clock<
         account_provider_bytes(&mut provider_bytes, batch_bytes)?;
         account_provider_call(&mut provider_calls, ProviderCallPhase::Discovery)?;
         let batch_map = SourceMap::build(batch_sources).map_err(|_| invariant_rejection())?;
+        source_session.revalidate_all().map_err(rejected)?;
         let remaining = remaining_discovery_wall_time(
             discovery_started,
             now(),

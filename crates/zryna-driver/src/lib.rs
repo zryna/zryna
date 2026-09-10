@@ -25,6 +25,7 @@
 
 mod command_runtime;
 pub mod diagnostic_sessions;
+pub mod distribution;
 mod javascript;
 mod module_closure;
 #[cfg(test)]
@@ -44,6 +45,7 @@ mod profile_composition;
 mod runtime;
 mod scalar_adapter_interface;
 mod source_api;
+mod source_session;
 mod webassembly;
 mod workspace_source;
 

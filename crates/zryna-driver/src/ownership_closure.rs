@@ -14,7 +14,8 @@ use crate::{
     MAX_MODULE_DISCOVERY_ROUNDS, MAX_MODULE_DISCOVERY_WALL_TIME, MAX_MODULE_FILES,
     MAX_MODULE_IMPORT_DECLARATIONS, MAX_MODULE_IMPORT_EDGES, MAX_MODULE_PROVIDER_CALLS,
     MAX_MODULE_PROVIDER_SOURCE_BYTES, MAX_MODULE_SOURCE_BYTES, ModuleClosureError, ModuleEdge,
-    ModuleRecord, WorkspaceSourceRoot, workspace_source::WorkspaceSourceSession,
+    ModuleRecord, WorkspaceSourceRoot,
+    source_session::{ModuleSourceRoot, ModuleSourceSession},
 };
 
 const GRAPH_DOMAIN: &[u8] = b"ZRYNA-M3-GRAPH\0";
@@ -154,8 +155,8 @@ pub fn discover_ownership_module_closure<Provider: VerifiedFrontendProviderV4 + 
     discover_with_clock(root, entrypoint, frontend, Instant::now)
 }
 
-fn discover_with_clock<Provider, Clock>(
-    root: &WorkspaceSourceRoot,
+pub(crate) fn discover_with_clock<Provider, Clock>(
+    root: &impl ModuleSourceRoot,
     entrypoint: NormalizedSourcePath,
     frontend: &Provider,
     mut now: Clock,
@@ -172,7 +173,7 @@ where
             "entry module must use the exact lowercase .zry extension",
         )));
     }
-    let mut session = root.begin_discovery().map_err(rejected)?;
+    let mut session = root.begin().map_err(rejected)?;
     let mut discovered = BTreeMap::<NormalizedSourcePath, DiscoveredSource>::new();
     let mut portable = BTreeMap::from([(entrypoint.portable_identity(), entrypoint.clone())]);
     let mut pending = BTreeSet::from([entrypoint.clone()]);
@@ -209,6 +210,7 @@ where
         }
         account_provider(&mut provider_calls, &mut provider_bytes, batch_bytes, false)?;
         let source_map = SourceMap::build(inputs).map_err(|_| invariant())?;
+        session.revalidate_all().map_err(rejected)?;
         let snapshot = frontend
             .analyze_verified_v4_with_timeout(
                 &source_map,
@@ -269,7 +271,7 @@ where
 }
 
 fn finalize_closure<Provider, Clock>(
-    session: &mut WorkspaceSourceSession<'_>,
+    session: &mut impl ModuleSourceSession,
     entrypoint: NormalizedSourcePath,
     frontend: &Provider,
     started: Instant,
