@@ -60,9 +60,11 @@ test('representative paths select only their owning optional contract lanes', ()
   const ownershipCases = [
     ['schemas/zryna-diagnostics-v2.schema.json', ['diagnostics']],
     ['schemas/zryna-distribution-release-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-build-input-v1.schema.json', ['distribution_release']],
     ['scripts/distribution-release/validate.mjs', ['distribution_release']],
     ['spec/release/DISTRIBUTION_RELEASE_V1.md', ['distribution_release']],
     ['tests/distribution-release-v1.test.mjs', ['distribution_release']],
+    ['tests/distribution-build-input-v1.test.mjs', ['distribution_release']],
     ['spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md', ['diagnostics']],
     ['crates/zryna-source/src/lib.rs', ['diagnostics', 'provider_v4']],
     ['crates/zryna-frontend/src/lib.rs', ['provider_v4']],

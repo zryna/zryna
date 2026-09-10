@@ -54,6 +54,23 @@ reproduction result. Version 1 requires byte-identical archives: both clean-buil
 published archive digest. A future platform-qualified equivalence rule needs a separately reviewed
 schema version and may not silently normalize timestamps or signatures.
 
+Each clean assembly starts from a canonical
+[`zryna.distribution-build-input.v1`](../../schemas/zryna-distribution-build-input-v1.schema.json)
+record. It binds the exact source commit/tree/epoch and target baseline to authenticated toolchain
+identities, #422's canonical `metadata/materials.json` and prepared `metadata/distribution.json`,
+the compiled CLI bytes, the architecture receipt, the successful preassembly-gate receipt, and the
+distribution recipe. Material entries are not duplicated in this outer handoff: their finite list
+is owned by the separately hashed materials record and bound again by the prepared distribution.
+Fixed logical paths keep the handoff independent of runner-private filesystem names. The protected
+gate set is recorded at the same source commit; skipped, stale, missing, duplicate, or unsorted
+inputs are rejected before assembly.
+
+The prepared distribution digest is embedded into the CLI at compilation. Assembly verifies that
+embedded identity against the authenticated prepared input before creating postbuild inventory,
+checksums, or a build receipt. The embedded digest is a binding value, not self-authenticating
+evidence: the installation route must first authenticate the release/archive and then use it to
+verify the prepared distribution record and installed bytes.
+
 #422's embedded graph avoids cycles as follows:
 
 - `metadata/distribution.json` binds source, target, recipe, and material identities;
@@ -142,9 +159,11 @@ names every affected digest. A correction uses a new version and tag. Moving, de
 recreating the old tag, replacing an asset, or presenting a documentation edit as compiler
 rollback is forbidden.
 
-The checked schema is
-[`schemas/zryna-distribution-release-v1.schema.json`](../../schemas/zryna-distribution-release-v1.schema.json).
-Run its independent boundary cases with:
+The checked schemas are the outer
+[`zryna.distribution-release.v1`](../../schemas/zryna-distribution-release-v1.schema.json) envelope
+and per-target
+[`zryna.distribution-build-input.v1`](../../schemas/zryna-distribution-build-input-v1.schema.json)
+handoff. Run their independent boundary cases with:
 
 ```bash
 pnpm release:contract
