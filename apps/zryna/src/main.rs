@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod ownership;
+mod package;
 mod profile;
 mod render;
 
@@ -35,6 +36,11 @@ enum Command {
     },
     /// Report local compiler-workspace health.
     Doctor(ArchitectureOptions),
+    /// Resolve one standalone source package and verify or update its lockfile.
+    Package {
+        #[command(subcommand)]
+        command: package::Command,
+    },
     /// Compile one Zryna entrypoint into one atomic target bundle.
     Build(CompileOptions),
     /// Compile and invoke one scalar export, then commit one atomic target bundle.
@@ -136,6 +142,7 @@ fn main() -> ExitCode {
     match cli.command {
         Command::Architecture { command: ArchitectureCommand::Check(options) }
         | Command::Doctor(options) => run_architecture_check(&options),
+        Command::Package { command } => package::run(command),
         Command::Build(options) => run_build(options),
         Command::Run(options) => run_command(options),
     }
@@ -366,6 +373,19 @@ mod tests {
         let rendered = error.to_string();
         assert!(rendered.contains("--target"));
         assert!(rendered.contains("--node"));
+    }
+
+    #[test]
+    fn package_resolution_requires_an_explicit_mode() {
+        let error = parse_cli_from(["zryna", "package", "resolve", "packages/app"])
+            .expect_err("package lock mode must be explicit");
+        assert!(error.to_string().contains("--mode"));
+        assert!(matches!(
+            parse_cli_from(["zryna", "package", "resolve", "packages/app", "--mode", "frozen"])
+                .expect("package command")
+                .command,
+            Command::Package { .. }
+        ));
     }
 
     #[test]

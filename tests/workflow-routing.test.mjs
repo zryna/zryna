@@ -71,6 +71,10 @@ test('representative paths select only their owning optional contract lanes', ()
     ['tests/provider-v4-ci-result.test.mjs', ['provider_v4']],
     ['tests/provider-conformance-v4/fixtures/positive.zry', ['provider_v4']],
     ['schemas/zryna-package-release-v1.schema.json', ['package_release']],
+    ['crates/zryna-package/src/lib.rs', ['package_release']],
+    ['crates/zryna-driver/src/package_resolution/filesystem.rs', ['package_release']],
+    ['apps/zryna/src/package.rs', ['package_release']],
+    ['docs/PACKAGE_RESOLUTION.md', ['package_release']],
     ['scripts/package-release/validate.mjs', ['package_release']],
     ['spec/package/PACKAGE_RELEASE_V1.md', ['package_release']],
     ['tests/package-source-trust.test.mjs', ['package_release']],
@@ -239,6 +243,7 @@ test('consolidation preserves every prior contract command and pinned action', (
   assert.deepEqual(commands('package-release-contract'), [
     'pnpm install --frozen-lockfile',
     'pnpm package:contract',
+    'cargo test --locked -p zryna-package',
   ]);
   assert.deepEqual(commands('provider-conformance-v4'), [
     'pnpm install --frozen-lockfile',
@@ -259,6 +264,9 @@ test('consolidation preserves every prior contract command and pinned action', (
     assert(uses.includes('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'));
     assert(uses.includes('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020'));
     assert(uses.includes('pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86'));
+    if (id === 'package-release-contract') {
+      assert(uses.includes('dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c'));
+    }
     assert(!uses.some((use) => use.endsWith('@main')));
   }
 });

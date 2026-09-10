@@ -115,11 +115,11 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Private scalar ESM interface: `crates/zryna-driver/src/scalar_adapter_interface.rs` binds one authenticated `ControlFlowV1` closure and sealed scalar ABI to exact deterministic ESM bytes plus a pure browser/Node policy; the existing M2 JavaScript preparation path is its first internal consumer. Focus with `cargo test --locked -p zryna-driver scalar_adapter_interface`; this is not loader generation, Component Model output, host-operation admission, or public activation. Private scalar host calls: [consumer](../crates/zryna-driver/src/scalar_adapter_interface/consumer.rs), [shared runtime seam](../crates/zryna-driver/src/pipeline_runtime.rs), and [host conformance lane](../tests/scalar-host/README.md). The browser resource test requires separately reviewed acquisition pins and explicit nonzero execution; static or default tests do not establish cross-host acceptance.
 - Focus: the resolved-audit test above, `pnpm wit:contract`, then `pnpm docs:check`. Preserve the `specified-only` boundary: component emission, bindings, runtime/CLI activation, cross-target dependency composition and JS/WASM resource adapters are separate work.
 
-## 12. M5 package manifests or package-instance identity
+## 12. M5 package manifests, lockfiles, resolution, or package-instance identity
 
 - Start: [package and release contract v1](../spec/package/PACKAGE_RELEASE_V1.md), [package-instance identity v1](../spec/package/PACKAGE_INSTANCE_IDENTITY_V1.md), and the [M5 roadmap](ROADMAP.md).
 - Canonical schema, serialization, fixtures, and validator are `schemas/zryna-package-release-v1.schema.json`, `scripts/package-release/`, and `tests/package-release-v1/`; #360 semantic decisions are checked by `tests/package-instance-identity-contract.test.mjs`.
-- Focus: `pnpm package:contract`, then `pnpm docs:check`. Preserve the contract-only boundary: package resolution, import syntax, source acquisition, build execution, publication, and public support remain separate work.
+- Source-only resolver: `crates/zryna-package`; retained local/Git-cache filesystem capabilities and lock publication: `crates/zryna-driver/src/package_resolution.rs`; CLI dispatch: `apps/zryna/src/package.rs`; user contract: [package resolution](PACKAGE_RESOLUTION.md). Focus with `cargo test --locked -p zryna-package`, `cargo test --locked -p zryna-driver package_resolution`, `pnpm package:contract`, then `pnpm docs:check`. Preserve the source-only boundary: package imports, registry acquisition, build execution, native recipes, and package publication remain separate work.
 
 ## 13. M5 resolved build/source trust plans or cache identity
 

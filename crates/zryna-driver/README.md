@@ -2,6 +2,12 @@
 
 The only compiler component allowed to orchestrate frontend, verification, and backend phases.
 
+The source-only package route owns retained no-follow filesystem capabilities for declared local
+roots and prepopulated exact-commit Git-cache entries. It passes bounded bytes to
+`zryna-package`, revalidates every retained input before publishing, and atomically writes only the
+root package's `zryna.lock.json`. It does not acquire source, invoke Git, compile packages, change
+module semantics, or authorize build execution.
+
 The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
 verified i32 source, empty composition requests, a separately audited component and an
 explicit denied host policy. Its source and execution fixtures await the required

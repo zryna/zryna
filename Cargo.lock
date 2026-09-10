@@ -1908,6 +1908,7 @@ dependencies = [
  "zryna-frontend",
  "zryna-ir",
  "zryna-native-mir",
+ "zryna-package",
  "zryna-semantics",
  "zryna-source",
  "zryna-syntax",
@@ -1973,6 +1974,15 @@ dependencies = [
  "sha2",
  "zryna-layout",
  "zryna-source",
+]
+
+[[package]]
+name = "zryna-package"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

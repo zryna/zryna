@@ -34,6 +34,10 @@ const LANE_PATHS = Object.freeze({
     /^tests\/diagnostics-protocol-v2\.test\.mjs$/,
   ]),
   package_release: Object.freeze([
+    /^crates\/zryna-package\//,
+    /^crates\/zryna-driver\/src\/package_resolution(?:\.rs|_tests?\.rs|\/)/,
+    /^apps\/zryna\/src\/package\.rs$/,
+    /^docs\/PACKAGE_RESOLUTION\.md$/,
     /^schemas\/zryna-package-release-v1\.schema\.json$/,
     /^scripts\/package-release\//,
     /^spec\/package\//,
