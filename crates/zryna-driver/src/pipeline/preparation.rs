@@ -9,8 +9,9 @@ use zryna_frontend::{
 use zryna_source::SourceMap;
 
 use super::{
-    CommandFailure, CommandFailureKind, NATIVE_TARGET, TargetSelection, entrypoint_error, failure,
-    metadata_is_link_or_reparse, preparation_failure, source_failure, validate_real_directory,
+    CommandFailure, CommandFailureKind, FailureKindExt, NATIVE_TARGET, TargetSelection,
+    entrypoint_error, failure, metadata_is_link_or_reparse, preparation_failure, source_failure,
+    validate_real_directory,
 };
 use crate::runtime::{NodeRuntimeCapability, node_compatible_path};
 
