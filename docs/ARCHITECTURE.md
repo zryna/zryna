@@ -650,8 +650,8 @@ runtime, and conformance work.
 Issues #75 through #80 add no executable capability. Later components must keep syntax providers
 free of semantics, make every backend consume these opaque verified views, depend on ABI
 declarations rather than runtime implementations, and never recompute host layouts. The driver
-alone may compose audited target runtimes and publish the future explicit `data-ownership-v1`
-manifest-v3 transaction after all target gates exist.
+alone composes audited target runtimes and publishes the explicit `data-ownership-v1`
+manifest-v3 transaction after all target gates pass.
 
 ## WebAssembly profiles
 

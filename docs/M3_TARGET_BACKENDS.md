@@ -1,8 +1,10 @@
 # Internal M3 target backends
 
-Issues #84–#86 add three internal consumers of the same sealed `DataOwnershipV1` authority. They
-do not add a driver route, artifact publication, public aggregate ABI or
-`--profile data-ownership-v1` selection.
+Issues #84–#86 originally added three internal consumers of the same sealed
+`DataOwnershipV1` authority. They did not themselves add a driver route, artifact publication,
+public aggregate ABI, or `--profile data-ownership-v1` selection. The later integrated route is
+now selected by that exact public profile; this page preserves the backend boundary those issues
+established.
 
 ## Shared trust boundary
 
@@ -78,4 +80,5 @@ the responsibility of #87.
   address, cleanup-reference and runtime-symbol claims to exact rejection codes.
 
 Full repository preflight, M0/M2 regressions and Linux/Windows hosted CI remain mandatory merge
-evidence. #87–#90 remain downstream and public M3 selection stays unavailable.
+evidence. Issues #87–#90 completed the downstream runtime, conformance, and public-profile
+activation work; see [the public profile](M3_PUBLIC_PROFILE.md) for the current boundary.
