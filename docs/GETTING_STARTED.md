@@ -2,11 +2,15 @@
 
 Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
 production-ready. It provides the documented repository-local M1–M3 workflows; it does not
-include standalone binaries, package installation, or stable compatibility guarantees. The
+include standalone binaries, package installation, or stable compatibility guarantees.
+Current `main` separately implements the source-checkout standalone default-M1 project path
+documented below, outside that v0.1.0 preview policy. The
 `v0.1.0` tag and pre-release are not yet published. This walkthrough uses the existing public M1
 scalar and M2 control-flow profiles. For the separately
 selected public M3 ownership profile, continue with
-[Your first M3 programs](M3_GETTING_STARTED.md). Run commands from the compiler repository root.
+[Your first M3 programs](M3_GETTING_STARTED.md). This walkthrough runs commands from the compiler
+repository root; use [Standalone source projects](STANDALONE_PROJECTS.md) to keep source and output
+in a separate project tree.
 You do not need to run the contributor regression suite after every program edit.
 
 ## Prepare the checkout
@@ -162,9 +166,9 @@ This is editing guidance, not an additional executed example.
 
 Do not put personal source in `.zryna/out`, add a new top-level project directory, or create
 symlinks/reparse points in the checkout. The [strict workspace contract](STRICT_WORKSPACE.md)
-still checks file names, UTF-8 contents, layout and budgets. There is no `zryna init` command in
-this walkthrough and no architecture bypass; this repository-local workflow is not package or
-standalone-project support.
+still checks file names, UTF-8 contents, layout and budgets. This repository-local walkthrough does
+not use `zryna new`; the [standalone guide](STANDALONE_PROJECTS.md) documents that separate
+package-authenticated path. Both paths retain validation; there is no architecture bypass.
 
 ## Targets and limits
 
