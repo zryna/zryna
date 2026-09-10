@@ -134,8 +134,11 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - The production outer-envelope schema and validator are
   `schemas/zryna-distribution-release-v1.schema.json` and `scripts/distribution-release/`;
   the same route also owns the per-target `zryna.distribution-build-input.v1` schema and validator.
+  Its deterministic `zryna.source-build-receipt.v1` records the exact architecture command,
+  source authority inputs, pinned toolchain and successful report without hosted-run identity.
   Independent source/gate/build handoff, inventory, checksum, signer, reproduction, and revocation
-  cases are in `tests/distribution-build-input-v1.test.mjs` and
+  cases are in `tests/source-build-receipt-v1.test.mjs`,
+  `tests/distribution-build-input-v1.test.mjs`, and
   `tests/distribution-release-v1.test.mjs`.
 - Run `pnpm release:contract`. #406 owns this outer publication boundary; #422 separately owns
   deterministic archive inventory/assembly/verification and installed provider/runtime admission.

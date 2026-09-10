@@ -53,6 +53,9 @@ export function validateBuildInput(document) {
       reject('R406-BUILD-PATH', `${name} must use ${expected}`);
     }
   }
+  if (document.materials.fileCount >= document.preparedDistribution.archiveFileCount) {
+    reject('R406-BUILD-MATERIALS', 'archive must add CLI and metadata to the material files');
+  }
   if (document.architectureReceipt.sourceCommit !== document.source.commit
     || document.architectureReceipt.sourceTree !== document.source.tree
     || document.gateReceipt.sourceCommit !== document.source.commit) {

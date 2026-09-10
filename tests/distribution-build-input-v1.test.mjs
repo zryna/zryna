@@ -50,13 +50,14 @@ function fixture(target = 'x86_64-unknown-linux-gnu') {
     materials: {
       format: 'zryna.distribution-materials.v1',
       logicalPath: 'prepared/metadata/materials.json',
-      count: 285,
+      fileCount: 300,
       size: 32768,
       sha256: digest(49),
     },
     preparedDistribution: {
       format: 'zryna.distribution.v1',
       logicalPath: 'prepared/metadata/distribution.json',
+      archiveFileCount: 306,
       size: 4096,
       sha256: digest(50),
     },
@@ -130,6 +131,10 @@ test('rejects missing, stale, duplicate, and unsorted authenticated inputs', () 
   const unsorted = fixture();
   unsorted.toolchains.reverse();
   assert.throws(() => validateBuildInput(unsorted), /^R406-BUILD-ORDER:/);
+
+  const conflictingCount = fixture();
+  conflictingCount.materials.fileCount = conflictingCount.preparedDistribution.archiveFileCount;
+  assert.throws(() => validateBuildInput(conflictingCount), /^R406-BUILD-MATERIALS:/);
 });
 
 test('schema and canonical parser reject open or ambiguous inputs', () => {
@@ -139,7 +144,7 @@ test('schema and canonical parser reject open or ambiguous inputs', () => {
     (value) => { value.compiledCli.logicalPath = '../zryna'; },
     (value) => { value.privatePath = 'C:\\private'; },
     (value) => { value.target.platformBaseline.version = '22.04'; },
-    (value) => { value.materials.count = 513; },
+    (value) => { value.materials.fileCount = 513; },
   ]) {
     const value = fixture();
     mutate(value);

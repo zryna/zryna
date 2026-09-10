@@ -151,11 +151,11 @@
     "materials": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["format", "logicalPath", "count", "size", "sha256"],
+      "required": ["format", "logicalPath", "fileCount", "size", "sha256"],
       "properties": {
         "format": { "const": "zryna.distribution-materials.v1" },
         "logicalPath": { "$ref": "#/$defs/logicalPath" },
-        "count": { "type": "integer", "minimum": 1, "maximum": 512 },
+        "fileCount": { "type": "integer", "minimum": 1, "maximum": 512 },
         "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
         "sha256": { "$ref": "#/$defs/digest" }
       }
@@ -163,10 +163,11 @@
     "preparedDistribution": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["format", "logicalPath", "size", "sha256"],
+      "required": ["format", "logicalPath", "archiveFileCount", "size", "sha256"],
       "properties": {
         "format": { "const": "zryna.distribution.v1" },
         "logicalPath": { "$ref": "#/$defs/logicalPath" },
+        "archiveFileCount": { "type": "integer", "minimum": 1, "maximum": 512 },
         "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
         "sha256": { "$ref": "#/$defs/digest" }
       }

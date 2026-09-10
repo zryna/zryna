@@ -61,6 +61,11 @@ identities, #422's canonical `metadata/materials.json` and prepared `metadata/di
 the compiled CLI bytes, the architecture receipt, the successful preassembly-gate receipt, and the
 distribution recipe. Material entries are not duplicated in this outer handoff: their finite list
 is owned by the separately hashed materials record and bound again by the prepared distribution.
+The descriptor's `fileCount` counts `materials.json` entries; `archiveFileCount` counts every
+regular archive file, including the CLI and metadata, and is at most 512. The former must be lower
+than the latter. Neither declared count is evidence by itself: the workflow opens the retained
+materials bytes, verifies their digest, schema, exact entries, origins, and count through #422's
+authority, and verifies the full distribution inventory before compilation and assembly.
 Fixed logical paths keep the handoff independent of runner-private filesystem names. The protected
 gate set is recorded at the same source commit; skipped, stale, missing, duplicate, or unsorted
 inputs are rejected before assembly.
@@ -70,6 +75,14 @@ embedded identity against the authenticated prepared input before creating postb
 checksums, or a build receipt. The embedded digest is a binding value, not self-authenticating
 evidence: the installation route must first authenticate the release/archive and then use it to
 verify the prepared distribution record and installed bytes.
+
+The canonical `zryna.source-build-receipt.v1` is identical across the two assemblies. It records
+the exact source commit and tree, the exact JSON architecture command, the pinned Rust and Cargo
+versions, SHA-256 identities of the canonical Git bytes for `Cargo.lock`, `Cargo.toml`,
+`rust-toolchain.toml`, and `zryna.workspace.json`, and the successful empty-diagnostic report. Run
+IDs, attempts, URLs, timestamps, runner paths, and randomized evidence are forbidden. Those hosted
+identities belong to the separately authenticated preassembly-gate receipt and outer provenance;
+they do not enter `metadata/distribution.json` or the compiled distribution digest.
 
 #422's embedded graph avoids cycles as follows:
 
