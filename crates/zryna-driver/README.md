@@ -8,6 +8,15 @@ roots and prepopulated exact-commit Git-cache entries. It passes bounded bytes t
 root package's `zryna.lock.json`. It does not acquire source, invoke Git, compile packages, change
 module semantics, or authorize build execution.
 
+The separate internal package build engine consumes that exact resolved graph and its immutable
+authenticated source bytes. It constructs the canonical source-only resolved plan, executes only
+an explicit in-process pure-source compiler in deterministic dependencies-first order, validates
+or atomically fills target-keyed cache entries, and publishes one create-only bundle containing
+the exact plan, declared outputs, and package build manifest. Cache hits are rehashed against the
+plan and output inventory; corrupt or partial entries reject instead of becoming misses. Offline
+and frozen modes expose no acquisition or network operation, and frozen additionally requires an
+exact existing-lock resolution. See [the package build engine](../../docs/PACKAGE_BUILD_ENGINE.md).
+
 The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
 verified i32 source, empty composition requests, a separately audited component and an
 explicit denied host policy. Its source and execution fixtures await the required

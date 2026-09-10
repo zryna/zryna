@@ -115,6 +115,7 @@ fn provider(root: &TemporaryRoot) -> FilesystemProvider {
         git_cache: None,
         retained_files: Vec::new(),
         retained_packages: Vec::new(),
+        loaded_files: std::collections::BTreeMap::new(),
     }
 }
 
@@ -150,6 +151,15 @@ fn local_update_is_atomic_and_frozen_replay_is_exact() {
     );
     let update = resolve_package(&request(&root, PackageLockMode::Update)).expect("update");
     assert!(update.published());
+    assert_eq!(update.sources().len(), 2);
+    assert!(update.sources().iter().all(|package| !package.files().is_empty()));
+    assert!(
+        update
+            .sources()
+            .iter()
+            .flat_map(super::AuthenticatedPackageSources::files)
+            .all(|file| { file.sha256() == format!("{:x}", Sha256::digest(file.bytes())) })
+    );
     let lock = fs::read(update.lock_path()).expect("published lock");
     assert_eq!(lock, update.graph().lock_bytes());
     let repeated =

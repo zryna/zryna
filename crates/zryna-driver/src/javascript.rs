@@ -18,6 +18,11 @@ use zryna_source::SourceMap;
 
 use crate::{SourceToIrError, compile_to_verified_ir};
 
+mod output_root_retention;
+
+use output_root_retention::metadata_is_link_or_reparse;
+pub(crate) use output_root_retention::validate_real_directory_chain;
+
 /// File extension used for directly importable ECMAScript modules.
 pub const JAVASCRIPT_ARTIFACT_EXTENSION: &str = "mjs";
 /// Maximum portable artifact stem bytes accepted by every artifact publisher.
@@ -422,24 +427,6 @@ fn is_windows_device_stem(stem: &str) -> bool {
         })
 }
 
-fn validate_real_directory_chain(path: &Path) -> Result<(), Diagnostic> {
-    for component in path.ancestors() {
-        let metadata = fs::symlink_metadata(component).map_err(|error| {
-            invalid_output_root_error(format!(
-                "could not inspect artifact output path component '{}': {error}",
-                component.display()
-            ))
-        })?;
-        if !metadata.is_dir() || metadata_is_link_or_reparse(&metadata) {
-            return Err(invalid_output_root_error(format!(
-                "artifact output path component '{}' is not a real directory",
-                component.display()
-            )));
-        }
-    }
-    Ok(())
-}
-
 fn invalid_output_root_error(message: impl Into<String>) -> Diagnostic {
     Diagnostic::error(
         "ZRYNA-D2002",
@@ -447,20 +434,6 @@ fn invalid_output_root_error(message: impl Into<String>) -> Diagnostic {
         message,
         "use an absolute workspace whose .zryna/out path and ancestors are real directories without links or reparse points",
     )
-}
-
-#[cfg(windows)]
-fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt;
-
-    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
-    metadata.file_type().is_symlink()
-        || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
-}
-
-#[cfg(not(windows))]
-fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
-    metadata.file_type().is_symlink()
 }
 
 fn create_temporary(

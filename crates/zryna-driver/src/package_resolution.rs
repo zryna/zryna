@@ -3,7 +3,7 @@
 mod filesystem;
 
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     path::{Path, PathBuf},
 };
 
@@ -50,8 +50,65 @@ pub struct PackageResolutionRequest {
 /// Complete authenticated graph and lock publication observation.
 pub struct PackageResolutionSuccess {
     graph: ResolvedGraph,
+    sources: Vec<AuthenticatedPackageSources>,
     lock_path: PathBuf,
     published: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+/// One authenticated source file retained as immutable bytes for later compilation.
+pub struct AuthenticatedPackageFile {
+    path: String,
+    bytes: Vec<u8>,
+    sha256: String,
+}
+
+impl AuthenticatedPackageFile {
+    #[must_use]
+    /// Returns the portable package-relative path.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    #[must_use]
+    /// Returns the exact bytes authenticated during package resolution.
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    #[must_use]
+    /// Returns the raw SHA-256 digest of the retained bytes.
+    pub fn sha256(&self) -> &str {
+        &self.sha256
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+/// Complete authenticated source inventory for one resolved package instance.
+pub struct AuthenticatedPackageSources {
+    package_id: String,
+    source_sha256: String,
+    files: Vec<AuthenticatedPackageFile>,
+}
+
+impl AuthenticatedPackageSources {
+    #[must_use]
+    /// Returns the package manifest identity.
+    pub fn package_id(&self) -> &str {
+        &self.package_id
+    }
+
+    #[must_use]
+    /// Returns the package's domain-separated complete source-inventory digest.
+    pub fn source_sha256(&self) -> &str {
+        &self.source_sha256
+    }
+
+    #[must_use]
+    /// Returns files in canonical package-relative path order.
+    pub fn files(&self) -> &[AuthenticatedPackageFile] {
+        &self.files
+    }
 }
 
 impl PackageResolutionSuccess {
@@ -59,6 +116,12 @@ impl PackageResolutionSuccess {
     /// Returns the authenticated graph.
     pub fn graph(&self) -> &ResolvedGraph {
         &self.graph
+    }
+
+    #[must_use]
+    /// Returns immutable source inventories in canonical package identity order.
+    pub fn sources(&self) -> &[AuthenticatedPackageSources] {
+        &self.sources
     }
 
     #[must_use]
@@ -95,6 +158,7 @@ pub fn resolve_package(
         git_cache,
         retained_files: Vec::new(),
         retained_packages: Vec::new(),
+        loaded_files: BTreeMap::new(),
     };
     let package_dir = provider.open_source_dir(&root_source)?;
     let existing_lock = match request.mode {
@@ -108,6 +172,7 @@ pub fn resolve_package(
     let mode = existing_lock.as_deref().map_or(LockMode::Update, LockMode::Frozen);
     let graph = zryna_package::resolve(&mut provider, root_source, mode)?;
     provider.revalidate()?;
+    let sources = authenticated_sources(&graph, &provider.loaded_files)?;
     let current_package_dir = provider.open_source_dir(&PackageSource {
         kind: PackageSourceKind::Local,
         locator: request.package.clone(),
@@ -120,6 +185,7 @@ pub fn resolve_package(
     }
     Ok(PackageResolutionSuccess {
         graph,
+        sources,
         lock_path: request.source_root.join(&request.package).join(LOCK_NAME),
         published,
     })
@@ -130,6 +196,7 @@ struct FilesystemProvider {
     git_cache: Option<CapturedRoot>,
     retained_files: Vec<RetainedFile>,
     retained_packages: Vec<RetainedPackage>,
+    loaded_files: BTreeMap<PackageSource, Vec<PackageFile>>,
 }
 
 impl PackageSourceProvider for FilesystemProvider {
@@ -142,9 +209,37 @@ impl PackageSourceProvider for FilesystemProvider {
         let mut entries_seen = 0;
         self.collect_files(&directory, &mut entries_seen, &mut files, &mut retained_package)?;
         files.sort_by(|left, right| left.path.cmp(&right.path));
+        self.loaded_files.insert(source.clone(), files.clone());
         self.retained_packages.push(retained_package);
         Ok(PackageMaterial { manifest, files })
     }
+}
+
+fn authenticated_sources(
+    graph: &ResolvedGraph,
+    loaded: &BTreeMap<PackageSource, Vec<PackageFile>>,
+) -> Result<Vec<AuthenticatedPackageSources>, ResolveError> {
+    graph
+        .packages()
+        .iter()
+        .map(|package| {
+            let files = loaded.get(package.source()).ok_or_else(|| {
+                ResolveError::source("authenticated package source inventory is unavailable")
+            })?;
+            Ok(AuthenticatedPackageSources {
+                package_id: package.instance().manifest_id().to_owned(),
+                source_sha256: package.instance().source_sha256().to_owned(),
+                files: files
+                    .iter()
+                    .map(|file| AuthenticatedPackageFile {
+                        path: file.path.clone(),
+                        sha256: format!("{:x}", Sha256::digest(&file.bytes)),
+                        bytes: file.bytes.clone(),
+                    })
+                    .collect(),
+            })
+        })
+        .collect()
 }
 
 impl FilesystemProvider {

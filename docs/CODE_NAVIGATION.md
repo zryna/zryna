@@ -10,7 +10,6 @@ Source-size policy: [reviewed inventory](../scripts/repository-structure-policy.
 Public execution is default M1 `I32V1`, explicit M2 `--profile control-flow-v1`, or explicit M3 `--profile data-ownership-v1`.
 M3 uses audited target/runtime and atomic manifest-v3 bundles, not a general-purpose allocator or public aggregate ABI.
 Use [GETTING_STARTED](GETTING_STARTED.md) for M1/M2, [M3_GETTING_STARTED](M3_GETTING_STARTED.md) for M3, and [CLI](CLI.md) for exact contracts.
-
 ## 1. Syntax recognition, source spans, or frontend transport
 
 - Diagnostic transport: [v2 contract](../spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md), [schema](../schemas/zryna-diagnostics-v2.schema.json), and [diagnostics component](../crates/zryna-diagnostics/README.md). Run `pnpm diagnostics:contract` and `cargo test --locked -p zryna-diagnostics`; preserve the existing text/JSON-v1 APIs.
@@ -126,6 +125,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for M1/M2, [M3_GETTING_STARTED](M3_GET
 - Start: [resolved build plan v0](../spec/package/RESOLVED_BUILD_PLAN_V0.md), [source trust policy v0](../spec/package/SOURCE_TRUST_V0.md), and the [M5 roadmap](ROADMAP.md).
 - Closed source-only shape: `schemas/zryna-resolved-build-plan-v0.schema.json`; validation entrypoint, #168 authority projection, and structural budget checks: `scripts/build-plan/validate.mjs`, `scripts/build-plan/package-authority.mjs`, and `scripts/build-plan/budgets.mjs`.
 - Positive, cache-miss, stale-input, wrong-target, missing-library, undeclared-tool, boundary, trust-policy and interrupted-publication evidence: `tests/resolved-build-plan-v0.test.mjs`, `tests/resolved-build-plan-v0/source-only.json`, and `tests/package-source-trust.test.mjs`.
+- Implemented pure-source execution: [package build engine](PACKAGE_BUILD_ENGINE.md), `crates/zryna-driver/src/package_build.rs`, canonical planning in `src/package_build/plan.rs`, cache admission/publication in `src/package_build/{cache,publication}.rs`, and hostile tests below `src/package_build/tests/`. The explicit compiler interface consumes only immutable resolver-authenticated source bytes and cannot be selected by package content.
 - Focus: `pnpm build-plan:contract`, `pnpm package:contract`, then `pnpm docs:check`. Reuse #168 package/provenance digests and #357 profile composition; preserve #360 package-instance identity, #362 execution/trust policy, driver-owned compilation/link/publication, and the native appendix's pending-#364 status.
 
 ## Required completion checks for every route
