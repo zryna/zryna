@@ -99,6 +99,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 ## 10. Guides, roadmap/contracts, or website documentation bundles
 
 - Start: [DOCUMENTATION_BUNDLES](DOCUMENTATION_BUNDLES.md), [ROADMAP](ROADMAP.md), and the specific contract being documented.
+- Beta archive prerequisite: [distribution definition](BETA_DISTRIBUTION.md) and [bootstrap material evidence](BETA_BOOTSTRAP_MATERIALS.md). These specify packaging/admission obligations and recorded inputs; they do not provide downloadable binaries or release acceptance evidence.
 - Cross-target composition: [decision table](../spec/language/CROSS_TARGET_PROFILES_V1.md), [documentation checks](../tests/cross-target-profile-contract.test.mjs), private [entrypoint](../crates/zryna-driver/src/profile_composition/mod.rs), [independent verifier](../crates/zryna-driver/src/profile_composition/verification.rs), and [focused tests](../crates/zryna-driver/src/profile_composition/tests.rs). Run `pnpm docs:check`, `cargo test --locked -p zryna-driver profile_composition`, and driver doc-tests. WIT identities/quotas remain #167's authority; composition grants no source, artifact or host authority.
 - Source docs are under `docs/` and `spec/`; export registration is `docs/website-bundle-v1.json`; implementation is `scripts/docs/{bundle,export,check}.mjs`.
 - Focus: `pnpm docs:check`; for M3 authority changes also `pnpm m3:contract`. Inspect `tests/docs-bundle.test.mjs` and the relevant contract test.
