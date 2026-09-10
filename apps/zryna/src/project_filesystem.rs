@@ -446,7 +446,7 @@ fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
 
 #[cfg(windows)]
 fn cap_metadata_is_link_or_reparse(metadata: &cap_std::fs::Metadata) -> bool {
-    use cap_fs_ext::MetadataExt as _;
+    use cap_fs_ext::OsMetadataExt as _;
 
     metadata.file_type().is_symlink() || metadata.file_attributes() & 0x400 != 0
 }

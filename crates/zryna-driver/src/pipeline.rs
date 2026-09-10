@@ -16,9 +16,6 @@ use sha2::{Digest, Sha256};
 use zryna_abi::{ScalarHostErrorCode, ScalarOutcome, ScalarTarget, ScalarValue};
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::VerifiedFrontendProviderV3;
-use zryna_frontend::{
-    FrontendCapabilities, ProviderExpectation, WorkerFrontend, WorkerLimits, WorkerSpec, syntax_v2,
-};
 use zryna_frontend::{ProviderExpectationV3, WorkerFrontendV3, WorkerLimitsV3, WorkerSpecV3};
 use zryna_source::{MAX_SOURCE_FILE_BYTES, NormalizedSourcePath, SourceFileInput, SourceMap};
 
@@ -38,7 +35,9 @@ use crate::{
 };
 
 mod preparation;
-use preparation::{PreparedArtifacts, analyze, prepare_selected};
+mod project;
+use preparation::{PreparedArtifacts, analyze, configured_frontend, prepare_selected};
+pub(crate) use project::{build_project_request, run_project_request};
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
 const MANIFEST_PROFILE: &str = "zryna-m1-cli-v1";
@@ -739,34 +738,6 @@ fn execute(
     execute_with_roots(request, run, &request.workspace_root, None)
 }
 
-pub(crate) fn build_project_request(
-    project: &crate::ProjectBuildRequest,
-) -> Result<CommandSuccess, CommandFailure> {
-    validate_architecture(&project.compiler_root)?;
-    let admission = crate::project::ProjectAdmission::discover(project)?;
-    execute_after_architecture(
-        &project.as_workspace_request(),
-        None,
-        &project.compiler_root,
-        Some(&admission),
-    )
-}
-
-pub(crate) fn run_project_request(
-    request: crate::ProjectRunRequest,
-) -> Result<CommandSuccess, CommandFailure> {
-    validate_architecture(&request.build.compiler_root)?;
-    let admission = crate::project::ProjectAdmission::discover(&request.build)?;
-    let invocation =
-        RunInvocation { logical_export: request.logical_export, arguments: request.arguments };
-    execute_after_architecture(
-        &request.build.as_workspace_request(),
-        Some(&invocation),
-        &request.build.compiler_root,
-        Some(&admission),
-    )
-}
-
 fn execute_with_roots(
     request: &BuildRequest,
     run: Option<&RunInvocation>,
@@ -1421,50 +1392,6 @@ pub(super) fn hex_sha256(bytes: &[u8; 32]) -> String {
         output.push(char::from(HEX[usize::from(byte & 0x0f)]));
     }
     output
-}
-
-fn configured_frontend(
-    compiler_root: &Path,
-    node: &NodeRuntimeCapability,
-) -> Result<WorkerFrontend, CommandFailure> {
-    let adapter_root = compiler_root.join("adapters/typescript-6");
-    validate_real_directory(&adapter_root)
-        .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
-    let worker_entrypoint = adapter_root.join("src/worker.mjs");
-    let worker_metadata = fs::symlink_metadata(&worker_entrypoint).map_err(|_| {
-        entrypoint_error("TypeScript frontend worker entrypoint is unavailable")
-            .with_kind(CommandFailureKind::Preparation)
-    })?;
-    if !worker_metadata.is_file() || metadata_is_link_or_reparse(&worker_metadata) {
-        return Err(entrypoint_error(
-            "TypeScript frontend worker entrypoint is not a real regular file",
-        )
-        .with_kind(CommandFailureKind::Preparation));
-    }
-    let node_adapter_root = node_compatible_path(&adapter_root);
-    let node_worker_entrypoint = node_compatible_path(&worker_entrypoint);
-    let expected = ProviderExpectation::new(
-        "typescript-6",
-        "6.0.3",
-        syntax_v2::PROTOCOL_VERSION,
-        FrontendCapabilities { module_resolution: false, semantic_diagnostics: false },
-    )
-    .map_err(|error| CommandFailure {
-        kind: CommandFailureKind::Preparation,
-        diagnostics: error.diagnostics().to_vec(),
-    })?;
-    let spec = WorkerSpec::new(
-        node.executable().map_err(preparation_failure)?,
-        vec![node_worker_entrypoint.into_os_string()],
-        node_adapter_root,
-        expected,
-        WorkerLimits::default(),
-    )
-    .map_err(|error| CommandFailure {
-        kind: CommandFailureKind::Preparation,
-        diagnostics: error.diagnostics().to_vec(),
-    })?;
-    Ok(WorkerFrontend::new(spec))
 }
 
 #[allow(clippy::too_many_arguments)]
