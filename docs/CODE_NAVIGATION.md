@@ -91,7 +91,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 - Start: [STRICT_WORKSPACE](STRICT_WORKSPACE.md), `zryna.workspace.json`, and the relevant registered component README.
 - Enforcement: `crates/zryna-architecture/src/lib.rs::validate_workspace`; pull-request and manual CI: `.github/workflows/ci.yml`; main documentation publication: `.github/workflows/documentation.yml`; local gate entrypoints: `scripts/run-preflight.mjs`, `scripts/run-m0-conformance.mjs`.
-- Contract-lane routing: `scripts/classify-workflow-paths.mjs`; focus: `node --test tests/workflow-routing.test.mjs`. For gate changes also run `node --test tests/preflight.test.mjs tests/m0-conformance.test.mjs`.
+- Contract-lane routing: `scripts/classify-workflow-paths.mjs`; focus: `node --test tests/workflow-routing.test.mjs`. Downloadable release work starts at [release v1](../spec/release/DISTRIBUTION_RELEASE_V1.md), with schemas/producers/validators under `schemas/` and `scripts/distribution-release/`, cases in `tests/{distribution-release,distribution-build-input,source-build-receipt,preassembly-gates}-v1.test.mjs` and `tests/distribution-release-producers.test.mjs`, and `pnpm release:contract`. For gate changes also run `node --test tests/preflight.test.mjs tests/m0-conformance.test.mjs`.
 - Architecture focus: `cargo test --locked -p zryna-architecture`; `cargo run --locked -p zryna -- architecture check`.
 - Gate predicate/timing helpers are imported by those tests. Preserve required checks, exact commands, pins, failure propagation, and security settings; timing headroom is not a performance claim.
 - Inspect actual current CI policy before editing: timeout values are intentionally not duplicated here. Finish with full gates and required hosted checks.

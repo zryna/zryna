@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-source-build-receipt-v1.schema.json",
+  "title": "Zryna deterministic source build receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "source", "command", "toolchain", "inputs", "report"],
+  "properties": {
+    "format": { "const": "zryna.source-build-receipt.v1" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "tree"],
+      "properties": {
+        "repository": { "const": "https://github.com/zryna/zryna" },
+        "commit": { "$ref": "#/$defs/objectId" },
+        "tree": { "$ref": "#/$defs/objectId" }
+      }
+    },
+    "command": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": [
+        { "const": "cargo" },
+        { "const": "run" },
+        { "const": "--locked" },
+        { "const": "-p" },
+        { "const": "zryna" },
+        { "const": "--" },
+        { "const": "architecture" },
+        { "const": "check" },
+        { "const": "--json" }
+      ],
+      "additionalItems": false
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["channel", "cargoVersion", "cargoSha256", "rustcVersion", "rustcSha256"],
+      "properties": {
+        "channel": { "const": "1.97.1" },
+        "cargoVersion": { "const": "cargo 1.97.1 (c980f4866 2026-06-30)" },
+        "cargoSha256": { "$ref": "#/$defs/digest" },
+        "rustcVersion": { "const": "rustc 1.97.1 (8bab26f4f 2026-07-14)" },
+        "rustcSha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/input" }
+    },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["diagnostics"],
+      "properties": {
+        "diagnostics": { "type": "array", "maxItems": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logicalPath", "size", "sha256"],
+      "properties": {
+        "logicalPath": {
+          "enum": ["Cargo.lock", "Cargo.toml", "rust-toolchain.toml", "zryna.workspace.json"]
+        },
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}
