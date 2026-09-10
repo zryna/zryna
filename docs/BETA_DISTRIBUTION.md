@@ -228,6 +228,41 @@ raw and normalized identities. A broad exclusion of binary differences is not re
 Detached signatures/attestations do not enter deterministic payload production. Embedded binary
 signing, if selected later, requires a separately reviewed identity/reproduction rule.
 
+### Archive admission limits
+
+The implementation candidate uses these inclusive limits for both targets. The file ceiling
+counts every regular file, including all Rust notices and the five metadata files. Directories
+are derived only from admitted file ancestors; they cannot introduce independent contents.
+
+| Resource | Inclusive ceiling |
+| --- | --- |
+| Regular files | 512 |
+| Each CLI or Node executable | 256 MiB |
+| Each provider file | 16 MiB |
+| Each notice, document or metadata file | 2 MiB |
+| Each canonical JSON record | 256 KiB, additionally subject to its file limit |
+| Sum of regular-file bytes | 512 MiB |
+| Complete archive bytes | 513 MiB |
+| Portable relative path | 200 ASCII bytes and 12 segments |
+| Canonical JSON nesting | 12 levels |
+
+Canonical JSON uses recursively sorted object keys, compact UTF-8 encoding and one final LF.
+Numbers must be safe integers. Duplicate keys, noncanonical bytes, unknown fields, unsorted or
+colliding paths, dangling license references and undeclared payload files fail admission.
+Case collisions, traversal, Windows reserved names, links, reparse points, hard links and special
+files are rejected. Only the CLI and Node files have mode `0755`; other files have mode `0644`.
+
+Linux archives use ustar headers with uid/gid zero, empty owner names, the source epoch, zero
+padding and two final zero blocks. Gzip uses level 9 and OS byte 255. Windows ZIP archives use
+stored members, Unix creator attributes, midnight on 1980-01-01, and no extra fields or comments.
+Both formats have one matching archive root and deterministic entry order. Admission decodes
+within the budgets and compares a canonical re-encoding, including trailers, before extraction.
+
+Production gzip bytes require the authenticated upstream Node 22.22.1 runtime with its exact
+zlib build. The Linux material reports `1.3.1-e00f703`; a system Node with zlib `1.3.1` is not
+interchangeable. The Windows runtime check, full compiler/linker recipe and two-build archive
+comparison remain required acceptance evidence; these limits do not establish release readiness.
+
 ## Materials, host qualification and remaining acceptance
 
 [Bootstrap material evidence](BETA_BOOTSTRAP_MATERIALS.md) records the current pins, extracted
