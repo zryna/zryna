@@ -202,3 +202,37 @@ fn retained_root_allows_project_output_creation_without_admitting_output_as_sour
     admission.revalidate().expect("output state is separate from frozen source inventory");
     assert!(admission.sources.root_file(".zryna/out/main.zry").is_none());
 }
+
+#[test]
+fn retained_project_batches_use_only_original_declared_bytes_until_full_revalidation() {
+    use crate::source_session::{ModuleSourceRoot as _, ModuleSourceSession as _};
+    use zryna_source::{SourceFileInput, SourceMap};
+    let case = Case::new();
+    let admission = ProjectAdmission::discover_profile(
+        &case.request(),
+        "i32-v1",
+        super::RootPackageSources::retained,
+    )
+    .expect("retained project");
+    let mut session = admission.begin().expect("session");
+    let batch = |path: &str, bytes: &[u8]| {
+        SourceMap::build(vec![SourceFileInput {
+            path: path.to_owned(),
+            text: String::from_utf8(bytes.to_vec()).expect("fixture UTF-8"),
+        }])
+        .expect("batch")
+    };
+    let original = batch("src/main.zry", &case.source);
+    session.validate_provider_batch(&original).expect("exact captured request");
+    assert!(session.validate_provider_batch(&batch("src/main.zry", b"forged")).is_err());
+    assert!(session.validate_provider_batch(&batch(".zryna/hidden.zry", b"hidden")).is_err());
+    if fs::write(case.project.join("src/main.zry"), b"changed source").is_ok() {
+        session.validate_provider_batch(&original).expect("captured bytes remain authoritative");
+        assert!(
+            session.validate_provider_batch(&batch("src/main.zry", b"changed source")).is_err()
+        );
+        assert!(session.revalidate_all().is_err());
+    } else {
+        session.revalidate_all().expect("retained source denied mutation");
+    }
+}

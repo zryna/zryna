@@ -2,7 +2,7 @@
 
 use sha2::{Digest as _, Sha256};
 use zryna_diagnostics::Diagnostic;
-use zryna_source::NormalizedSourcePath;
+use zryna_source::{NormalizedSourcePath, SourceMap};
 
 use crate::{
     CommandFailure,
@@ -86,6 +86,28 @@ impl ModuleSourceSession for ProjectSourceSession<'_> {
 
     fn revalidate_all(&mut self) -> Result<(), Diagnostic> {
         self.project.revalidate().map_err(diagnostic)
+    }
+
+    fn validate_provider_batch(&mut self, sources: &SourceMap) -> Result<(), Diagnostic> {
+        let reject = || {
+            Diagnostic::error(
+                "ZRYNA-P4004",
+                None,
+                "provider batch differs from the captured root package",
+                "use only exact resolver-admitted source paths and bytes",
+            )
+        };
+        for index in 0..sources.len() {
+            let raw = u32::try_from(index).map_err(|_| reject())?;
+            let id = sources.verify_file_id(raw).map_err(|_| reject())?;
+            let source = sources.source(id).ok_or_else(reject)?;
+            if self.project.sources.root_file(source.path().as_str())
+                != Some(source.text().as_bytes())
+            {
+                return Err(reject());
+            }
+        }
+        Ok(())
     }
 }
 

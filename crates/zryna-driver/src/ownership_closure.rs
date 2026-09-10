@@ -210,7 +210,7 @@ where
         }
         account_provider(&mut provider_calls, &mut provider_bytes, batch_bytes, false)?;
         let source_map = SourceMap::build(inputs).map_err(|_| invariant())?;
-        session.revalidate_all().map_err(rejected)?;
+        session.validate_provider_batch(&source_map).map_err(rejected)?;
         let snapshot = frontend
             .analyze_verified_v4_with_timeout(
                 &source_map,

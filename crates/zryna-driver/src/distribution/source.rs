@@ -1,7 +1,7 @@
 //! Source session whose provider checkpoints retain both installation and project proofs.
 
 use zryna_diagnostics::Diagnostic;
-use zryna_source::NormalizedSourcePath;
+use zryna_source::{NormalizedSourcePath, SourceMap};
 
 use crate::{
     project::ProjectAdmission,
@@ -51,6 +51,17 @@ impl ModuleSourceSession for InstalledSourceSession<'_, '_> {
 
     fn revalidate_all(&mut self) -> Result<(), Diagnostic> {
         self.project.revalidate_all()?;
+        self.revalidate_execution()
+    }
+
+    fn validate_provider_batch(&mut self, sources: &SourceMap) -> Result<(), Diagnostic> {
+        self.project.validate_provider_batch(sources)?;
+        self.revalidate_execution()
+    }
+}
+
+impl InstalledSourceSession<'_, '_> {
+    fn revalidate_execution(&self) -> Result<(), Diagnostic> {
         self.execution.revalidate().map_err(|failure| {
             failure
                 .diagnostics

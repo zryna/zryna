@@ -1,3 +1,5 @@
+mod batch;
+
 use std::{
     collections::BTreeMap,
     ffi::{OsStr, OsString},
@@ -214,43 +216,6 @@ impl<'root> WorkspaceSourceSession<'root> {
         );
         self.revalidate_source_with_index(path, &parent_index)?;
         Ok(stable)
-    }
-
-    pub(super) fn revalidate_all(&mut self) -> Result<(), Diagnostic> {
-        let keys = self.directories.keys().cloned().collect::<Vec<_>>();
-        let mut current_indexes = BTreeMap::new();
-        for key in &keys {
-            let directory = self.directories.get(key).ok_or_else(unsafe_root)?;
-            current_indexes
-                .insert(key.clone(), scan_entries(&directory.dir).map_err(root_child_error)?);
-        }
-        self.revalidate_root()?;
-        for key in keys.into_iter().filter(|key| !key.is_empty()) {
-            let expected = self.directories.get(&key).ok_or_else(unsafe_root)?;
-            let parent_key = expected.parent.as_ref().ok_or_else(unsafe_root)?;
-            let name = expected.name.as_deref().ok_or_else(unsafe_root)?;
-            current_indexes
-                .get(parent_key)
-                .ok_or_else(unsafe_root)?
-                .require_exact(name)
-                .map_err(|_| changed_path(&key))?;
-            let parent = self.directories.get(parent_key).ok_or_else(unsafe_root)?;
-            let current = parent.dir.open_dir_nofollow(name).map_err(|_| changed_path(&key))?;
-            let (identity, metadata) =
-                directory_identity_and_metadata(&current).map_err(|_| changed_path(&key))?;
-            if identity != expected.identity
-                || !same_file_state(&metadata, &expected.metadata)
-                || !metadata.is_dir()
-                || metadata_is_link_or_reparse(&metadata)
-            {
-                return Err(changed_path(&key));
-            }
-        }
-        let paths = self.sources.keys().cloned().collect::<Vec<_>>();
-        for path in paths {
-            self.revalidate_source_with_indexes(&path, &current_indexes)?;
-        }
-        Ok(())
     }
 
     fn revalidate_root(&self) -> Result<(), Diagnostic> {

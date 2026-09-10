@@ -384,7 +384,7 @@ pub(crate) fn discover_module_closure_with_clock<
         account_provider_bytes(&mut provider_bytes, batch_bytes)?;
         account_provider_call(&mut provider_calls, ProviderCallPhase::Discovery)?;
         let batch_map = SourceMap::build(batch_sources).map_err(|_| invariant_rejection())?;
-        source_session.revalidate_all().map_err(rejected)?;
+        source_session.validate_provider_batch(&batch_map).map_err(rejected)?;
         let remaining = remaining_discovery_wall_time(
             discovery_started,
             now(),

@@ -73,6 +73,14 @@ edges, source hashes, and a canonical graph digest. It is documented in
 `--profile control-flow-v1` now composes that closure with the straight-line/control-flow semantic
 boundary and all selected sealed backends. Omitting `--profile` does not enter this path.
 
+M2 and M3 discovery validate each provider request against the source session's exact captured
+paths and bytes. Workspace sessions revalidate the current batch's files and ancestor bindings;
+project sessions use the resolver-owned root inventory. Complete source validation remains before
+and after final analysis. Installed sessions also revalidate provider identity before each call
+and retain complete project/installation checks through execution and publication. The checkout
+closure API returns a sealed snapshot; it does not retain a live source session downstream.
+Batch validation avoids rereading all earlier source contents, but directory enumeration can repeat.
+
 The M2 driver path passes the same verifier-sealed `ControlFlowV1` program to the independent
 JavaScript, direct core WebAssembly, and verified native-MIR/object emitters. WebAssembly execution sends the exact validated
 artifact bytes over bounded standard input to an inline pinned Node module, so no staged script or

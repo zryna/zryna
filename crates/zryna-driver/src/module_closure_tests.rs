@@ -1,5 +1,7 @@
 //! Cross-platform proof tests for the retained deterministic M2 module closure.
 
+mod batch;
+
 use std::{
     collections::BTreeMap,
     fmt::Write as _,
