@@ -8,8 +8,7 @@ Source-size policy: [reviewed inventory](../scripts/repository-structure-policy.
 [read-only checker](../scripts/check-repository-structure.mjs); run `pnpm structure:check` and `node --test tests/repository-structure.test.mjs`.
 
 Public execution is default M1 `I32V1` or explicit M2 `--profile control-flow-v1`.
-M3 `DataOwnershipV1` remains an internal candidate: it has audited target/runtime and atomic bundle
-boundaries but does not activate a public CLI profile or general-purpose allocator.
+M3 `DataOwnershipV1` remains an internal candidate: it has audited target/runtime and atomic bundle boundaries but does not activate a public CLI profile or general-purpose allocator.
 Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI](CLI.md) for exact command/platform contracts.
 
 ## 1. Syntax recognition, source spans, or frontend transport
