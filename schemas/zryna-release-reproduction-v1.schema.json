@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-release-reproduction-v1.schema.json",
+  "title": "Zryna protected release reproduction result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "target", "source", "recipe", "artifacts", "builds", "comparison"],
+  "properties": {
+    "format": { "const": "zryna.release-reproduction.v1" },
+    "version": { "const": "0.2.0" },
+    "target": { "enum": ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"] },
+    "source": { "$ref": "#/$defs/source" },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "sha256"],
+      "properties": {
+        "format": { "const": "zryna.distribution-recipe.v1" },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["archive", "buildReceipt", "sbom"],
+      "properties": {
+        "archive": { "$ref": "#/$defs/artifact" },
+        "buildReceipt": { "$ref": "#/$defs/artifact" },
+        "sbom": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "builds": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["replica", "manifestSha256"],
+        "properties": {
+          "replica": { "type": "integer", "minimum": 1, "maximum": 2 },
+          "manifestSha256": { "$ref": "#/$defs/digest" }
+        }
+      }
+    },
+    "comparison": { "const": "byte-identical" }
+  },
+  "$defs": {
+    "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "size", "sha256"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 2147483648 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "ref", "tagObject", "commit", "tree", "sourceDateEpoch"],
+      "properties": {
+        "repository": { "const": "https://github.com/zryna/zryna" },
+        "ref": { "const": "refs/tags/v0.2.0" },
+        "tagObject": { "$ref": "#/$defs/objectId" },
+        "commit": { "$ref": "#/$defs/objectId" },
+        "tree": { "$ref": "#/$defs/objectId" },
+        "sourceDateEpoch": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    }
+  }
+}

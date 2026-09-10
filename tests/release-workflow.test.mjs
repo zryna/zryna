@@ -152,6 +152,12 @@ test('evidence signing precedes the sole environment-gated draft publisher', () 
   const evidence = workflow.jobs.evidence;
   assert.equal(steps(evidence, 'Attest Linux archive').length, 1);
   assert.equal(steps(evidence, 'Attest Windows archive').length, 1);
+  for (const name of ['Attest Linux archive', 'Attest Windows archive']) {
+    assert.equal(steps(evidence, name)[0].with['create-storage-record'], false);
+  }
+  assert.equal(steps(evidence, 'Install the pinned independent signature verifier').length, 1);
+  assert.equal(steps(workflow.jobs.publish,
+    'Install the pinned independent signature verifier').length, 1);
   const signing = steps(evidence, 'Sign and verify checksums and release notes')[0];
   assert.equal(signing.with.verify, true);
   assert.equal(signing.with['release-signing-artifacts'], false);

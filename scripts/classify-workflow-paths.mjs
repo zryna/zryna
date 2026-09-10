@@ -35,10 +35,10 @@ const LANE_PATHS = Object.freeze({
     /^tests\/diagnostics-protocol-v2\.test\.mjs$/,
   ]),
   distribution_release: Object.freeze([
-    /^schemas\/zryna-(?:distribution-(?:release|build-input)|source-build-receipt|preassembly-gates|release-tag-receipt)-v1\.schema\.json$/,
+    /^schemas\/zryna-(?:distribution-(?:release|build-input)|release-(?:build-result|reproduction|tag-receipt)|source-build-receipt|preassembly-gates)-v1\.schema\.json$/,
     /^scripts\/distribution-release\//,
     /^spec\/release\//,
-    /^tests\/(?:(?:distribution-(?:release|build-input)|source-build-receipt|preassembly-gates|release-tag-receipt)-v1|distribution-release-producers|release-workflow)\.test\.mjs$/,
+    /^tests\/(?:(?:distribution-(?:release|build-input)|source-build-receipt|preassembly-gates|release-tag-receipt)-v1|distribution-release-producers|protected-release-build|release-(?:evidence|reproduction|workflow))\.test\.mjs$/,
   ]),
   package_release: Object.freeze([
     /^crates\/zryna-package\//,

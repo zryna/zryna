@@ -190,9 +190,12 @@ wrong commit/tree,
 pending/skipped gates, missing attestations, digest drift, or extra assets stop publication.
 
 The checked-in `release.yml` already fixes this authority and job ordering, but remains deliberately
-fail closed while the accepted recipe digest and its protected build, comparison, evidence, and
-publication implementations are absent. Its admission job verifies the tag and required CI evidence
-before running `check-release-readiness.mjs`; that check rejects the current tree before any build.
+fail closed while the accepted recipe digest, authenticated material acquisition, exact compile
+recipe, and deterministic SPDX producer remain unapproved. The bounded build orchestrator,
+two-replica byte comparison, evidence preparation, independent signature verification, and
+four-phase draft publisher are present as reviewable inactive integrations; none is production
+evidence. The admission job verifies the tag and required CI evidence before running
+`check-release-readiness.mjs`; that check rejects the current tree before any build.
 Removing or bypassing the readiness failure is not activation evidence. Activation requires one
 reviewed change that fills every named prerequisite, freezes the exact recipe digest, and completes
 the protected settings and dry-run evidence described here.
