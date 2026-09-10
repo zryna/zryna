@@ -34,6 +34,9 @@ export async function assemble(inputBytes, captured) {
   validatePreassemblyGates(gates, input);
   const architecture = captured.payload.find(file => file.path === 'metadata/architecture-receipt.json');
   descriptorMatches(input.architectureReceipt, architecture.data);
+  const { validateSourceBuildReceiptText } = await import(
+    '../distribution-release/validate-source-build-receipt.mjs');
+  validateSourceBuildReceiptText(architecture.data.toString('utf8'), input);
   verifyCompiledIdentity(captured.cli, input.preparedDistribution.sha256, input.target.triple);
   const paths = targetPaths(input.target.triple);
   const cliTuple = { path: paths.cli, size: captured.cli.length, sha256: sha256(captured.cli),

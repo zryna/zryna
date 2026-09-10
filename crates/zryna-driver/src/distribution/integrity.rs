@@ -124,17 +124,24 @@ fn source_receipt(bytes: &[u8], distribution: &Distribution) -> Result<(), Diagn
     {
         return Err(admission_error("installed source architecture receipt mismatch"));
     }
-    exact_keys(&receipt["toolchain"], &["channel", "cargoVersion", "rustcVersion"])?;
+    exact_keys(
+        &receipt["toolchain"],
+        &["channel", "cargoVersion", "cargoSha256", "rustcVersion", "rustcSha256"],
+    )?;
     if receipt["toolchain"]["channel"] != "1.97.1" {
         return Err(admission_error("installed source toolchain mismatch"));
     }
-    for tool in ["cargo", "rustc"] {
+    for (tool, expected) in [
+        ("cargo", "cargo 1.97.1 (c980f4866 2026-06-30)"),
+        ("rustc", "rustc 1.97.1 (8bab26f4f 2026-07-14)"),
+    ] {
         let version = receipt["toolchain"][format!("{tool}Version")]
             .as_str()
             .ok_or_else(|| admission_error("installed source toolchain version is absent"))?;
-        if !version.starts_with(&format!("{tool} 1.97.1 "))
-            || version.len() > 96
-            || !version.bytes().all(|byte| (32..=126).contains(&byte))
+        if version != expected
+            || !receipt["toolchain"][format!("{tool}Sha256")]
+                .as_str()
+                .is_some_and(|digest| super::manifest::hex(digest, 64))
         {
             return Err(admission_error("installed source toolchain version mismatch"));
         }

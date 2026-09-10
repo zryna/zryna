@@ -14,12 +14,14 @@ export function validateSourceReceipt(input, distribution) {
   requireValue(Array.isArray(receipt.command) && receipt.command.join('\0')
     === ['cargo', 'run', '--locked', '-p', 'zryna', '--', 'architecture', 'check', '--json'].join('\0'),
   'source architecture command');
-  exactKeys(receipt.toolchain, ['channel', 'cargoVersion', 'rustcVersion']);
+  exactKeys(receipt.toolchain, ['channel', 'cargoVersion', 'cargoSha256', 'rustcVersion', 'rustcSha256']);
   requireValue(receipt.toolchain.channel === '1.97.1', 'source receipt toolchain');
-  for (const tool of ['cargo', 'rustc']) {
-    const version = receipt.toolchain[`${tool}Version`];
-    requireValue(typeof version === 'string' && version.startsWith(`${tool} 1.97.1 `)
-      && version.length <= 96 && /^[ -~]+$/.test(version), 'source tool version');
+  for (const [tool, version] of [
+    ['cargo', 'cargo 1.97.1 (c980f4866 2026-06-30)'],
+    ['rustc', 'rustc 1.97.1 (8bab26f4f 2026-07-14)'],
+  ]) {
+    requireValue(receipt.toolchain[`${tool}Version`] === version, 'source tool version');
+    digestValue(receipt.toolchain[`${tool}Sha256`]);
   }
   const paths = ['Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', 'zryna.workspace.json'];
   requireValue(Array.isArray(receipt.inputs) && receipt.inputs.length === paths.length,
