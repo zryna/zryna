@@ -8,10 +8,12 @@ mod identity;
 mod integrity;
 mod manifest;
 mod provider;
+mod source;
 mod stage;
 mod wire;
 
 pub(crate) use provider::InstalledExecution;
+pub(crate) use source::InstalledProjectSources;
 
 use std::path::{Path, PathBuf};
 

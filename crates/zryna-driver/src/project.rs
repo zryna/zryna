@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+mod frozen;
+
 use zryna_abi::ScalarValue;
 use zryna_diagnostics::Diagnostic;
 use zryna_package::{PackageSourceKind, ResolvedGraph};
@@ -63,6 +65,7 @@ pub(crate) struct ProjectAdmission {
     graph: ResolvedGraph,
     entrypoint_path: String,
     entrypoint: Vec<u8>,
+    sources: crate::package_resolution::CapturedProject,
 }
 
 impl ProjectAdmission {
@@ -110,13 +113,12 @@ impl ProjectAdmission {
             git_cache: None,
             mode: PackageLockMode::Frozen,
         };
-        let (success, files) = crate::package_resolution::resolve_project_package(&resolution)
+        let (success, sources) = crate::package_resolution::capture_project_package(&resolution)
             .map_err(|error| package_failure(&error))?;
         validate_graph(success.graph(), &package, request.targets)?;
-        let entrypoint = files
-            .iter()
-            .find(|file| file.path == request.entrypoint)
-            .map(|file| file.bytes.clone())
+        let entrypoint = sources
+            .root_file(&request.entrypoint)
+            .map(<[u8]>::to_vec)
             .ok_or_else(|| {
                 project_error(
                     "ZRYNA-P4004",
@@ -130,6 +132,7 @@ impl ProjectAdmission {
             graph: success.graph().clone(),
             entrypoint_path: request.entrypoint.clone(),
             entrypoint,
+            sources,
         })
     }
 
@@ -145,6 +148,7 @@ impl ProjectAdmission {
     }
 
     pub(crate) fn revalidate(&self) -> Result<(), CommandFailure> {
+        self.sources.revalidate().map_err(|error| package_failure(&error))?;
         let (current, files) = crate::package_resolution::resolve_project_package(&self.resolution)
             .map_err(|error| package_failure(&error))?;
         if current.graph() != &self.graph {
