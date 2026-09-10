@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-distribution-v1.schema.json",
+  "title": "Zryna prepared distribution identity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "source",
+    "target",
+    "recipe",
+    "files"
+  ],
+  "properties": {
+    "format": {
+      "const": "zryna.distribution.v1"
+    },
+    "version": {
+      "const": "0.2.0"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "target": {
+      "$ref": "#/$defs/target"
+    },
+    "recipe": {
+      "$ref": "#/$defs/recipe"
+    },
+    "files": {
+      "allOf": [
+        {
+          "$ref": "https://zryna.com/schemas/zryna-distribution-files-v1.schema.json"
+        },
+        {
+          "type": "array",
+          "maxItems": 508
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "ref",
+        "commit",
+        "tree",
+        "sourceDateEpoch"
+      ],
+      "properties": {
+        "repository": {
+          "const": "https://github.com/zryna/zryna"
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 32,
+          "pattern": "^refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "commit": {
+          "$ref": "#/$defs/commit"
+        },
+        "tree": {
+          "$ref": "#/$defs/commit"
+        },
+        "sourceDateEpoch": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "triple",
+        "archiveFormat",
+        "platformBaseline"
+      ],
+      "properties": {
+        "triple": {
+          "enum": [
+            "x86_64-pc-windows-msvc",
+            "x86_64-unknown-linux-gnu"
+          ]
+        },
+        "archiveFormat": {
+          "enum": [
+            "tar-gzip",
+            "zip"
+          ]
+        },
+        "platformBaseline": {
+          "$ref": "#/$defs/platformBaseline"
+        }
+      }
+    },
+    "platformBaseline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "os",
+            "distribution",
+            "version",
+            "architecture"
+          ],
+          "properties": {
+            "os": {
+              "const": "linux"
+            },
+            "distribution": {
+              "const": "ubuntu"
+            },
+            "version": {
+              "const": "24.04"
+            },
+            "architecture": {
+              "const": "x86_64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "os",
+            "product",
+            "version",
+            "architecture",
+            "runtime"
+          ],
+          "properties": {
+            "os": {
+              "const": "windows"
+            },
+            "product": {
+              "const": "windows-server"
+            },
+            "version": {
+              "const": "2022"
+            },
+            "architecture": {
+              "const": "x86_64"
+            },
+            "runtime": {
+              "const": "operating-system-ucrt"
+            }
+          }
+        }
+      ]
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "sha256"
+      ],
+      "properties": {
+        "format": {
+          "const": "zryna.distribution-recipe.v1"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

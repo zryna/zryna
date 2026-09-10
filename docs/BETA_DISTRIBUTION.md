@@ -247,6 +247,10 @@ are derived only from admitted file ancestors; they cannot introduce independent
 | Canonical JSON nesting | 12 levels |
 
 Canonical JSON uses recursively sorted object keys, compact UTF-8 encoding and one final LF.
+Wire shapes are defined by the [prepared distribution](../schemas/zryna-distribution-v1.schema.json),
+[materials](../schemas/zryna-distribution-materials-v1.schema.json) and
+[inventory](../schemas/zryna-distribution-inventory-v1.schema.json) schemas. Shape validation alone
+does not establish source, material, gate or release authority.
 Numbers must be safe integers. Duplicate keys, noncanonical bytes, unknown fields, unsorted or
 colliding paths, dangling license references and undeclared payload files fail admission.
 Case collisions, traversal, Windows reserved names, links, reparse points, hard links and special
