@@ -1,8 +1,11 @@
 use super::*;
 use crate::source_session::{ModuleSourceRoot, ModuleSourceSession};
 use crate::workspace_source::{StableSource, WorkspaceSourceSession};
+use std::sync::Mutex;
 use zryna_diagnostics::Diagnostic;
-use zryna_frontend::{VerifiedFrontendProviderV4, syntax_v4};
+use zryna_frontend::{
+    VerifiedFrontendProviderV3, VerifiedFrontendProviderV4, WorkerError, syntax_v4,
+};
 use zryna_source::SourceFileInput;
 
 fn map(path: &str, text: &str) -> SourceMap {
