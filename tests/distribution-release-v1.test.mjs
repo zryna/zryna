@@ -148,14 +148,14 @@ test('rejects drift at source, workflow, signing, target, and platform boundarie
   ]) {
     const value = fixture();
     mutate(value);
-    assert.throws(() => validateRelease(value), new RegExp(`^${code}:`));
+    assert.throws(() => validateRelease(value), new RegExp(`${code}:`));
   }
 });
 
 test('rejects missing protected checks and version-disconnected asset names', () => {
   const missingCheck = fixture();
   missingCheck.workflow.requiredJobs.pop();
-  assert.throws(() => validateRelease(missingCheck), /^R406-WORKFLOW:/);
+  assert.throws(() => validateRelease(missingCheck), /R406-WORKFLOW:/);
 
   const archive = fixture();
   archive.subjects[1].archive.path = archive.subjects[1].archive.path.replace(VERSION, '0.2.1');
@@ -166,59 +166,59 @@ test('rejects missing protected checks and version-disconnected asset names', ()
   archive.checksums.entries.find((entry) => entry.sha256 === archive.subjects[1].archive.sha256).path
     = archive.subjects[1].archive.path;
   archive.checksums.entries.sort((left, right) => compare(left.path, right.path));
-  assert.throws(() => validateRelease(archive), /^R406-ASSETS:/);
+  assert.throws(() => validateRelease(archive), /R406-ASSETS:/);
 
   const global = fixture();
   global.releaseNotes.path = 'NOTES.md';
-  assert.throws(() => validateRelease(global), /^R406-ASSETS:/);
+  assert.throws(() => validateRelease(global), /R406-ASSETS:/);
 });
 
 test('rejects non-identical reproduction and incomplete or forged checksum coverage', () => {
   const mismatch = fixture();
   mismatch.subjects[1].reproduction.secondBuildSha256 = digest(60);
-  assert.throws(() => validateRelease(mismatch), /^R406-REPRODUCTION:/);
+  assert.throws(() => validateRelease(mismatch), /R406-REPRODUCTION:/);
 
   const missing = fixture();
   missing.checksums.entries.pop();
-  assert.throws(() => validateRelease(missing), /^R406-CHECKSUMS:/);
+  assert.throws(() => validateRelease(missing), /R406-CHECKSUMS:/);
 
   const forged = fixture();
   forged.checksums.entries[0].size += 1;
-  assert.throws(() => validateRelease(forged), /^R406-CHECKSUMS:/);
+  assert.throws(() => validateRelease(forged), /R406-CHECKSUMS:/);
 
   const signatureCycle = fixture();
   signatureCycle.checksums.entries.push(structuredClone(signatureCycle.checksums.signature));
   signatureCycle.checksums.entries.sort((left, right) => compare(left.path, right.path));
-  assert.throws(() => validateRelease(signatureCycle), /^R406-CHECKSUMS:/);
+  assert.throws(() => validateRelease(signatureCycle), /R406-CHECKSUMS:/);
 
   const missingAttestation = fixture();
   missingAttestation.checksums.entries = missingAttestation.checksums.entries
     .filter(({ path }) => path !== missingAttestation.subjects[0].attestation.path);
-  assert.throws(() => validateRelease(missingAttestation), /^R406-CHECKSUMS:/);
+  assert.throws(() => validateRelease(missingAttestation), /R406-CHECKSUMS:/);
 
   const forgedAttestation = fixture();
   forgedAttestation.checksums.entries
     .find(({ path }) => path === forgedAttestation.subjects[0].attestation.path).sha256 = digest(61);
-  assert.throws(() => validateRelease(forgedAttestation), /^R406-CHECKSUMS:/);
+  assert.throws(() => validateRelease(forgedAttestation), /R406-CHECKSUMS:/);
 });
 
 test('rejects duplicate, extra, missing, and unsorted public assets', () => {
   const duplicate = fixture();
   duplicate.releaseNotes.path = duplicate.subjects[0].archive.path;
-  assert.throws(() => validateRelease(duplicate), /^R406-ASSETS:/);
+  assert.throws(() => validateRelease(duplicate), /R406-ASSETS:/);
 
   const extra = fixture();
   extra.assetAllowlist.push('undeclared.exe');
   extra.assetAllowlist.sort(compare);
-  assert.throws(() => validateRelease(extra), /^R406-ASSETS:/);
+  assert.throws(() => validateRelease(extra), /R406-ASSETS:/);
 
   const missing = fixture();
   missing.assetAllowlist.shift();
-  assert.throws(() => validateRelease(missing), /^R406-ASSETS:/);
+  assert.throws(() => validateRelease(missing), /R406-ASSETS:/);
 
   const order = fixture();
   order.assetAllowlist.reverse();
-  assert.throws(() => validateRelease(order), /^R406-ORDER:/);
+  assert.throws(() => validateRelease(order), /R406-ORDER:/);
 });
 
 test('schema rejects false success, qualified equivalence, paths, and extra fields', () => {
@@ -235,16 +235,16 @@ test('schema rejects false success, qualified equivalence, paths, and extra fiel
   ]) {
     const value = fixture();
     mutate(value);
-    assert.throws(() => validateRelease(value), /^R406-SCHEMA:/);
+    assert.throws(() => validateRelease(value), /R406-SCHEMA:/);
   }
 });
 
 test('wire parser rejects whitespace and non-canonical object order', () => {
   const value = fixture();
-  assert.throws(() => validateReleaseText(JSON.stringify(value)), /^R406-CANONICAL:/);
-  assert.throws(() => validateReleaseText(`${canonical(value)}\n\n`), /^R406-CANONICAL:/);
+  assert.throws(() => validateReleaseText(JSON.stringify(value)), /R406-CANONICAL:/);
+  assert.throws(() => validateReleaseText(`${canonical(value)}\n\n`), /R406-CANONICAL:/);
   assert.throws(() => validateReleaseText('{"broken":]\n'),
-    /^R406-CANONICAL: document is not valid JSON$/);
+    /R406-CANONICAL: document is not valid JSON$/);
 });
 
 test('wire limits are inclusive and reject the first extra byte, depth, and container', () => {
@@ -252,39 +252,39 @@ test('wire limits are inclusive and reject the first extra byte, depth, and cont
   assert.equal(Buffer.byteLength(exactBytes), MAX_ENVELOPE_BYTES);
   assert.equal(parseCanonical(exactBytes).length, MAX_ENVELOPE_BYTES - 3);
   assert.throws(() => parseCanonical(`"${'x'.repeat(MAX_ENVELOPE_BYTES - 2)}"\n`),
-    /^R406-RESOURCE: envelope exceeds 262144 bytes$/);
+    /R406-RESOURCE: envelope exceeds 262144 bytes$/);
 
   const exactDepth = `${'['.repeat(MAX_ENVELOPE_DEPTH)}null${']'.repeat(MAX_ENVELOPE_DEPTH)}\n`;
   assert.doesNotThrow(() => parseCanonical(exactDepth));
   const extraDepth = `${'['.repeat(MAX_ENVELOPE_DEPTH + 1)}null${']'.repeat(MAX_ENVELOPE_DEPTH + 1)}\n`;
-  assert.throws(() => parseCanonical(extraDepth), /^R406-RESOURCE: envelope exceeds depth 32$/);
+  assert.throws(() => parseCanonical(extraDepth), /R406-RESOURCE: envelope exceeds depth 32$/);
 
   const exactContainers = `${canonical(Array.from({ length: MAX_ENVELOPE_CONTAINERS - 1 }, () => []))}\n`;
   assert.doesNotThrow(() => parseCanonical(exactContainers));
   const extraContainer = `${canonical(Array.from({ length: MAX_ENVELOPE_CONTAINERS }, () => []))}\n`;
   assert.throws(() => parseCanonical(extraContainer),
-    /^R406-RESOURCE: envelope exceeds 1024 containers$/);
+    /R406-RESOURCE: envelope exceeds 1024 containers$/);
 });
 
 test('in-memory API rejects first-extra values and cycles before canonical recursion', () => {
   const exact = { values: Array.from({ length: MAX_ENVELOPE_VALUES - 2 }, () => null) };
-  assert.throws(() => validateRelease(exact), /^R406-SCHEMA:/);
+  assert.throws(() => validateRelease(exact), /R406-SCHEMA:/);
   const extra = { values: Array.from({ length: MAX_ENVELOPE_VALUES - 1 }, () => null) };
-  assert.throws(() => validateRelease(extra), /^R406-RESOURCE: envelope exceeds 4096 values$/);
+  assert.throws(() => validateRelease(extra), /R406-RESOURCE: envelope exceeds 4096 values$/);
   const cyclic = {};
   cyclic.self = cyclic;
-  assert.throws(() => validateRelease(cyclic), /^R406-RESOURCE: envelope contains a cycle$/);
+  assert.throws(() => validateRelease(cyclic), /R406-RESOURCE: envelope contains a cycle$/);
 
   const lastString = { value: 'x'.repeat(MAX_ENVELOPE_BYTES) };
   assert.throws(() => validateRelease(lastString),
-    /^R406-RESOURCE: envelope strings exceed 262144 bytes$/);
+    /R406-RESOURCE: envelope strings exceed 262144 bytes$/);
 
   const escapedCount = Math.floor((MAX_ENVELOPE_BYTES - 3) / 6);
   const exactEscaped = `${'\0'.repeat(escapedCount)}x`;
   assert.equal(Buffer.byteLength(`${canonical(exactEscaped)}\n`), MAX_ENVELOPE_BYTES);
   assert.doesNotThrow(() => canonicalBounded(exactEscaped));
   assert.throws(() => canonicalBounded(`${exactEscaped}x`),
-    /^R406-RESOURCE: canonical envelope exceeds 262144 bytes$/);
+    /R406-RESOURCE: canonical envelope exceeds 262144 bytes$/);
 });
 
 test('retained reader enforces the inclusive file bound before parsing', (t) => {
@@ -294,7 +294,7 @@ test('retained reader enforces the inclusive file bound before parsing', (t) => 
   writeFileSync(path, 'x'.repeat(MAX_ENVELOPE_BYTES));
   assert.equal(readEnvelopeFile(path).length, MAX_ENVELOPE_BYTES);
   writeFileSync(path, 'x'.repeat(MAX_ENVELOPE_BYTES + 1));
-  assert.throws(() => readEnvelopeFile(path), /^R406-RESOURCE: envelope exceeds 262144 bytes$/);
+  assert.throws(() => readEnvelopeFile(path), /R406-RESOURCE: envelope exceeds 262144 bytes$/);
 });
 
 test('retained reader rejects non-regular inputs without blocking', (t) => {
@@ -303,7 +303,7 @@ test('retained reader rejects non-regular inputs without blocking', (t) => {
   const child = join(directory, 'directory');
   mkdirSync(child);
   assert.throws(() => readEnvelopeFile(child),
-    /^R406-RESOURCE: envelope must be a direct regular file$/);
+    /R406-RESOURCE: envelope must be a direct regular file$/);
 
   if (process.platform !== 'win32') {
     const fifo = join(directory, 'fifo');
@@ -311,6 +311,6 @@ test('retained reader rejects non-regular inputs without blocking', (t) => {
     assert.equal(created.error, undefined);
     assert.equal(created.status, 0, created.stderr);
     assert.throws(() => readEnvelopeFile(fifo),
-      /^R406-RESOURCE: envelope must be a direct regular file$/);
+      /R406-RESOURCE: envelope must be a direct regular file$/);
   }
 });

@@ -61,6 +61,10 @@ export function validateBuildInput(document) {
     || document.gateReceipt.sourceCommit !== document.source.commit) {
     reject('R406-BUILD-SOURCE', 'receipt source identity differs from build source');
   }
+  if (document.gateReceipt.runUrl
+    !== `https://github.com/zryna/zryna/actions/runs/${document.gateReceipt.runId}`) {
+    reject('R406-BUILD-GATES', 'gate run URL and ID differ');
+  }
   for (const [name, records] of [
     ['toolchains', document.toolchains],
     ['required jobs', document.gateReceipt.requiredJobs],

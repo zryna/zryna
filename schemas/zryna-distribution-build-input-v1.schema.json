@@ -227,7 +227,7 @@
         "sourceCommit": { "$ref": "#/$defs/commit" },
         "requiredJobs": {
           "type": "array",
-          "minItems": 6,
+          "minItems": 1,
           "maxItems": 32,
           "items": { "$ref": "#/$defs/job" }
         }

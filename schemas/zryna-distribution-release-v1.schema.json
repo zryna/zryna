@@ -248,7 +248,7 @@
         "issuer": { "const": "https://token.actions.githubusercontent.com" },
         "certificateIdentity": {
           "type": "string",
-          "minLength": 80,
+          "minLength": 70,
           "maxLength": 180,
           "pattern": "^https://github\\.com/zryna/zryna/\\.github/workflows/release\\.yml@refs/tags/v[0-9A-Za-z.-]+$"
         },

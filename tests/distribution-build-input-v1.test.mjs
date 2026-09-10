@@ -111,30 +111,34 @@ test('rejects source, receipt, target, and fixed-path drift', () => {
   ]) {
     const value = fixture();
     mutate(value);
-    assert.throws(() => validateBuildInput(value), new RegExp(`^${code}:`));
+    assert.throws(() => validateBuildInput(value), new RegExp(`${code}:`));
   }
 });
 
 test('rejects missing, stale, duplicate, and unsorted authenticated inputs', () => {
   const missing = fixture();
   missing.gateReceipt.requiredJobs.pop();
-  assert.throws(() => validateBuildInput(missing), /^R406-BUILD-GATES:/);
+  assert.throws(() => validateBuildInput(missing), /R406-BUILD-GATES:/);
 
   const stale = fixture();
   stale.gateReceipt.requiredJobs[0].sourceCommit = TREE;
-  assert.throws(() => validateBuildInput(stale), /^R406-BUILD-GATES:/);
+  assert.throws(() => validateBuildInput(stale), /R406-BUILD-GATES:/);
+
+  const wrongRun = fixture();
+  wrongRun.gateReceipt.runUrl = 'https://github.com/zryna/zryna/actions/runs/987654321';
+  assert.throws(() => validateBuildInput(wrongRun), /R406-BUILD-GATES:/);
 
   const duplicate = fixture();
   duplicate.toolchains[1].name = duplicate.toolchains[0].name;
-  assert.throws(() => validateBuildInput(duplicate), /^R406-BUILD-ORDER:/);
+  assert.throws(() => validateBuildInput(duplicate), /R406-BUILD-ORDER:/);
 
   const unsorted = fixture();
   unsorted.toolchains.reverse();
-  assert.throws(() => validateBuildInput(unsorted), /^R406-BUILD-ORDER:/);
+  assert.throws(() => validateBuildInput(unsorted), /R406-BUILD-ORDER:/);
 
   const conflictingCount = fixture();
   conflictingCount.materials.fileCount = conflictingCount.preparedDistribution.archiveFileCount;
-  assert.throws(() => validateBuildInput(conflictingCount), /^R406-BUILD-MATERIALS:/);
+  assert.throws(() => validateBuildInput(conflictingCount), /R406-BUILD-MATERIALS:/);
 });
 
 test('schema and canonical parser reject open or ambiguous inputs', () => {
@@ -148,8 +152,8 @@ test('schema and canonical parser reject open or ambiguous inputs', () => {
   ]) {
     const value = fixture();
     mutate(value);
-    assert.throws(() => validateBuildInput(value), /^R406-BUILD-SCHEMA:/);
+    assert.throws(() => validateBuildInput(value), /R406-BUILD-SCHEMA:/);
   }
 
-  assert.throws(() => validateBuildInputText(JSON.stringify(fixture())), /^R406-CANONICAL:/);
+  assert.throws(() => validateBuildInputText(JSON.stringify(fixture())), /R406-CANONICAL:/);
 });

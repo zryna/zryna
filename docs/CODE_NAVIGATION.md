@@ -91,7 +91,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 - Start: [STRICT_WORKSPACE](STRICT_WORKSPACE.md), `zryna.workspace.json`, and the relevant registered component README.
 - Enforcement: `crates/zryna-architecture/src/lib.rs::validate_workspace`; pull-request and manual CI: `.github/workflows/ci.yml`; main documentation publication: `.github/workflows/documentation.yml`; local gate entrypoints: `scripts/run-preflight.mjs`, `scripts/run-m0-conformance.mjs`.
-- Contract-lane routing: `scripts/classify-workflow-paths.mjs`; focus: `node --test tests/workflow-routing.test.mjs`. For gate changes also run `node --test tests/preflight.test.mjs tests/m0-conformance.test.mjs`.
+- Contract-lane routing: `scripts/classify-workflow-paths.mjs`; focus: `node --test tests/workflow-routing.test.mjs`. Downloadable release work starts at [release v1](../spec/release/DISTRIBUTION_RELEASE_V1.md), with schemas/validators under `schemas/` and `scripts/distribution-release/`, cases in `tests/{distribution-release,distribution-build-input,source-build-receipt,preassembly-gates}-v1.test.mjs`, and `pnpm release:contract`. For gate changes also run `node --test tests/preflight.test.mjs tests/m0-conformance.test.mjs`.
 - Architecture focus: `cargo test --locked -p zryna-architecture`; `cargo run --locked -p zryna -- architecture check`.
 - Gate predicate/timing helpers are imported by those tests. Preserve required checks, exact commands, pins, failure propagation, and security settings; timing headroom is not a performance claim.
 - Inspect actual current CI policy before editing: timeout values are intentionally not duplicated here. Finish with full gates and required hosted checks.
@@ -127,21 +127,6 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Closed source-only shape: `schemas/zryna-resolved-build-plan-v0.schema.json`; validation entrypoint, #168 authority projection, and structural budget checks: `scripts/build-plan/validate.mjs`, `scripts/build-plan/package-authority.mjs`, and `scripts/build-plan/budgets.mjs`.
 - Positive, cache-miss, stale-input, wrong-target, missing-library, undeclared-tool, boundary, trust-policy and interrupted-publication evidence: `tests/resolved-build-plan-v0.test.mjs`, `tests/resolved-build-plan-v0/source-only.json`, and `tests/package-source-trust.test.mjs`.
 - Focus: `pnpm build-plan:contract`, `pnpm package:contract`, then `pnpm docs:check`. Reuse #168 package/provenance digests and #357 profile composition; preserve #360 package-instance identity, #362 execution/trust policy, driver-owned compilation/link/publication, and the native appendix's pending-#364 status.
-
-### Downloadable distribution release
-
-- Start: [downloadable distribution release v1](../spec/release/DISTRIBUTION_RELEASE_V1.md).
-- The production outer-envelope schema and validator are
-  `schemas/zryna-distribution-release-v1.schema.json` and `scripts/distribution-release/`;
-  the same route also owns the per-target `zryna.distribution-build-input.v1` schema and validator.
-  Its deterministic `zryna.source-build-receipt.v1` records the exact architecture command,
-  source authority inputs, pinned toolchain and successful report without hosted-run identity.
-  Independent source/gate/build handoff, inventory, checksum, signer, reproduction, and revocation
-  cases are in `tests/source-build-receipt-v1.test.mjs`,
-  `tests/distribution-build-input-v1.test.mjs`, and
-  `tests/distribution-release-v1.test.mjs`.
-- Run `pnpm release:contract`. #406 owns this outer publication boundary; #422 separately owns
-  deterministic archive inventory/assembly/verification and installed provider/runtime admission.
 
 ## Required completion checks for every route
 

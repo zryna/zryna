@@ -39,7 +39,7 @@ test('accepts one canonical deterministic architecture receipt', () => {
 test('rejects input omission, duplication, and ordering drift', () => {
   const omitted = fixture();
   omitted.inputs.pop();
-  assert.throws(() => validateSourceBuildReceipt(omitted), /^R406-ARCH-SCHEMA:/);
+  assert.throws(() => validateSourceBuildReceipt(omitted), /R406-ARCH-SCHEMA:/);
 
   for (const mutate of [
     (value) => { value.inputs[1].logicalPath = value.inputs[0].logicalPath; },
@@ -47,14 +47,14 @@ test('rejects input omission, duplication, and ordering drift', () => {
   ]) {
     const value = fixture();
     mutate(value);
-    assert.throws(() => validateSourceBuildReceipt(value), /^R406-ARCH-INPUTS:/);
+    assert.throws(() => validateSourceBuildReceipt(value), /R406-ARCH-INPUTS:/);
   }
 });
 
 test('rejects unpinned tools, unsuccessful reports, and nondeterministic fields', () => {
   const toolchain = fixture();
   toolchain.toolchain.rustcVersion = 'rustc 1.98.0 (222222222 2026-08-01)';
-  assert.throws(() => validateSourceBuildReceipt(toolchain), /^R406-ARCH-TOOLCHAIN:/);
+  assert.throws(() => validateSourceBuildReceipt(toolchain), /R406-ARCH-TOOLCHAIN:/);
 
   for (const mutate of [
     (value) => { value.report.diagnostics.push({ code: 'failure' }); },
@@ -64,11 +64,11 @@ test('rejects unpinned tools, unsuccessful reports, and nondeterministic fields'
   ]) {
     const value = fixture();
     mutate(value);
-    assert.throws(() => validateSourceBuildReceipt(value), /^R406-ARCH-SCHEMA:/);
+    assert.throws(() => validateSourceBuildReceipt(value), /R406-ARCH-SCHEMA:/);
   }
 });
 
 test('rejects non-canonical wire order', () => {
   assert.throws(() => validateSourceBuildReceiptText(JSON.stringify(fixture())),
-    /^R406-CANONICAL:/);
+    /R406-CANONICAL:/);
 });

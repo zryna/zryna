@@ -83,6 +83,10 @@ versions, SHA-256 identities of the canonical Git bytes for `Cargo.lock`, `Cargo
 IDs, attempts, URLs, timestamps, runner paths, and randomized evidence are forbidden. Those hosted
 identities belong to the separately authenticated preassembly-gate receipt and outer provenance;
 they do not enter `metadata/distribution.json` or the compiled distribution digest.
+The full canonical gate receipt contains repository/workflow/run identity, source commit, and the
+ordered successful required jobs, but not its own path, size, or digest. Its build-input descriptor
+holds those values; validation bounds and hashes the retained gate bytes before requiring exact
+field-for-field projection, avoiding a self-hash cycle.
 
 #422's embedded graph avoids cycles as follows:
 
