@@ -139,6 +139,9 @@ export function createReleaseTagReceipt({
   }
   const workflowBytes = run(spawn, ['cat-file', 'blob', workflowObject], cwd, null);
   if (workflowBytes.length !== Number(workflowSize)) reject('tagged workflow size changed while reading');
+  if (oneLine(spawn, ['show-ref', '--verify', '--hash', REF], cwd) !== tagObject) {
+    reject('release tag reference changed while producing the receipt');
+  }
   return validateReleaseTagReceipt({
     format: 'zryna.release-tag-receipt.v1',
     version: TAG.slice(1),

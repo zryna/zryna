@@ -187,6 +187,28 @@ test('producer rejects workflow context, object-size, and read-size drift', () =
     environment: environment(),
     spawn: mock(changed),
   }), /tagged workflow size changed while reading/);
+
+  const swapped = responses();
+  let refReads = 0;
+  const swapRef = (executable, args, options) => {
+    assert.equal(executable, 'git');
+    const key = args.join('\0');
+    let value = swapped.get(key);
+    assert.notEqual(value, undefined, `unexpected command: ${args.join(' ')}`);
+    if (key === 'show-ref\0--verify\0--hash\0refs/tags/v0.2.0' && refReads++ === 1) {
+      value = `${'e'.repeat(40)}\n`;
+    }
+    return {
+      status: 0,
+      stdout: options.encoding === null
+        ? Buffer.from(value)
+        : Buffer.isBuffer(value) ? value.toString('utf8') : value,
+    };
+  };
+  assert.throws(() => createReleaseTagReceipt({
+    environment: environment(),
+    spawn: swapRef,
+  }), /release tag reference changed while producing the receipt/);
 });
 
 function mock(output) {
