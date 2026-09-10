@@ -189,6 +189,14 @@ jobs perform no release mutation. Existing tags or releases, lightweight or wron
 wrong commit/tree,
 pending/skipped gates, missing attestations, digest drift, or extra assets stop publication.
 
+The checked-in `release.yml` already fixes this authority and job ordering, but remains deliberately
+fail closed while the accepted recipe digest and its protected build, comparison, evidence, and
+publication implementations are absent. Its admission job verifies the tag and required CI evidence
+before running `check-release-readiness.mjs`; that check rejects the current tree before any build.
+Removing or bypassing the readiness failure is not activation evidence. Activation requires one
+reviewed change that fills every named prerequisite, freezes the exact recipe digest, and completes
+the protected settings and dry-run evidence described here.
+
 The canonical envelope is limited to 262,144 UTF-8 bytes, 32 nested containers, 1,024 total
 containers, and 4,096 total JSON values, all inclusive. The CLI opens a direct regular file,
 uses a nonblocking descriptor acquisition on POSIX before confirming regular-file identity,

@@ -71,6 +71,7 @@ test('representative paths select only their owning optional contract lanes', ()
     ['tests/source-build-receipt-v1.test.mjs', ['distribution_release']],
     ['tests/preassembly-gates-v1.test.mjs', ['distribution_release']],
     ['tests/release-tag-receipt-v1.test.mjs', ['distribution_release']],
+    ['tests/release-workflow.test.mjs', ['distribution_release']],
     ['tests/distribution-release-producers.test.mjs', ['distribution_release']],
     ['spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md', ['diagnostics']],
     ['crates/zryna-source/src/lib.rs', ['diagnostics', 'provider_v4']],
@@ -295,7 +296,7 @@ test('consolidation preserves every prior contract command and pinned action', (
 
 test('only CI handles pull requests and every superseded pull-request run cancels', () => {
   const names = readdirSync(resolve(root, '.github/workflows')).sort();
-  assert.deepEqual(names, ['ci.yml', 'documentation.yml']);
+  assert.deepEqual(names, ['ci.yml', 'documentation.yml', 'release.yml']);
   for (const name of names) {
     const candidate = workflow(name);
     if (!Object.hasOwn(candidate.on, 'pull_request')) continue;

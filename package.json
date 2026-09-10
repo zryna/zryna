@@ -17,7 +17,7 @@
     "docs:check": "node --test tests/docs-bundle.test.mjs tests/m2-contract.test.mjs tests/m2-manifest-contract.test.mjs tests/m3-contract.test.mjs tests/m3-public-docs.test.mjs",
     "wit:contract": "node scripts/wit-capabilities/validate.mjs && node --test tests/wit-capability-contract.test.mjs",
     "package:contract": "node --test tests/package-release-v1/validation.test.mjs tests/package-release-v1/boundaries.test.mjs tests/package-source-trust.test.mjs",
-    "release:contract": "node --test tests/distribution-release-v1.test.mjs tests/distribution-build-input-v1.test.mjs tests/source-build-receipt-v1.test.mjs tests/preassembly-gates-v1.test.mjs tests/release-tag-receipt-v1.test.mjs tests/distribution-release-producers.test.mjs",
+    "release:contract": "node --test tests/distribution-release-v1.test.mjs tests/distribution-build-input-v1.test.mjs tests/source-build-receipt-v1.test.mjs tests/preassembly-gates-v1.test.mjs tests/release-tag-receipt-v1.test.mjs tests/release-workflow.test.mjs tests/distribution-release-producers.test.mjs",
     "build-plan:contract": "node scripts/build-plan/validate.mjs && node --test tests/resolved-build-plan-v0.test.mjs",
     "docs:export": "node scripts/docs/export.mjs",
     "m2:contract": "node scripts/check-m2-contract.mjs",
