@@ -34,10 +34,14 @@ use crate::{
     runtime::{NodeRuntimeCapability, node_compatible_path},
 };
 
+mod control_flow;
 mod preparation;
 mod project;
-use preparation::{PreparedArtifacts, analyze, configured_frontend, prepare_selected};
+mod scalar;
+pub(crate) use control_flow::execute_installed as execute_installed_control_flow;
+use preparation::{PreparedArtifacts, analyze, configured_frontend};
 pub(crate) use project::{build_project_request, run_project_request};
+pub(crate) use scalar::execute_installed as execute_installed_scalar;
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
 const MANIFEST_PROFILE: &str = "zryna-m1-cli-v1";
@@ -462,6 +466,7 @@ enum ControlFlowPhase {
     JavaScriptExecution,
     WebAssemblyExecution,
     NativeExecution,
+    ArtifactStaging,
     ManifestRendering,
     Publication,
 }
@@ -592,82 +597,7 @@ where
     checkpoint(ControlFlowPhase::Discovery)?;
     let closure = discover_module_closure(&source_root, entrypoint, &frontend)
         .map_err(|error| module_closure_failure(&error))?;
-    checkpoint(ControlFlowPhase::Semantics)?;
-    let scalar_source = crate::scalar_adapter_interface::lower_verified_scalar_source(&closure)
-        .map_err(|diagnostics| CommandFailure { kind: CommandFailureKind::Source, diagnostics })?;
-    let verified_invocation = run
-        .map(|invocation| {
-            scalar_source.program().prepare_invocation(zryna_abi::Invocation::new(
-                invocation.logical_export.clone(),
-                invocation.arguments.clone(),
-            ))
-        })
-        .transpose()
-        .map_err(|error| {
-            failure(
-                CommandFailureKind::Source,
-                Diagnostic::error(
-                    error.code(),
-                    None,
-                    "run invocation does not match the verified ControlFlowV1 scalar ABI export",
-                    "use the exact entry-module export, arity, and scalar argument types",
-                ),
-            )
-        })?;
-    let mut prepared = compile_control_flow_selected(&scalar_source, request.targets, checkpoint)?;
-    node.revalidate().map_err(preparation_failure)?;
-
-    if run.is_some() && request.targets.native() {
-        checkpoint(ControlFlowPhase::NativeLink)?;
-        let invocation = verified_invocation.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "verified M2 invocation preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let object = prepared.native_object.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "M2 native object preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let toolchain = discover_linux_native_toolchain(NativeProcessLimits::default())
-            .map_err(preparation_failure)?;
-        prepared.native_executable = Some(
-            prepare_control_flow_native_invocation_from_verified(
-                scalar_source.program(),
-                object,
-                invocation,
-                &output_root,
-                &toolchain,
-                NativeProcessLimits::default(),
-            )
-            .map_err(native_preparation_failure)?,
-        );
-    }
-
-    let diagnostics = closure
-        .syntax()
-        .diagnostics()
-        .iter()
-        .filter(|diagnostic| diagnostic.severity() == zryna_diagnostics::Severity::Warning)
-        .cloned()
-        .collect::<Vec<_>>();
-    commit_control_flow_prepared(
-        request,
-        command,
-        run,
-        verified_invocation.as_ref(),
-        &node,
-        &output_root,
-        &final_bundle,
-        &closure,
-        &prepared,
-        diagnostics,
-        checkpoint,
-    )
+    control_flow::finish(request, run, &node, &output_root, &final_bundle, closure, checkpoint)
 }
 
 fn compile_control_flow_selected(
@@ -778,78 +708,18 @@ fn execute_after_architecture(
     if let Some(admission) = admission {
         admission.revalidate()?;
     }
-    let mut prepared = prepare_selected(&compiled, request.targets)?;
-    node.revalidate().map_err(preparation_failure)?;
-    let program = compiled.program();
-    let verified_invocation = run
-        .map(|invocation| {
-            program.prepare_invocation(zryna_abi::Invocation::new(
-                invocation.logical_export.clone(),
-                invocation.arguments.clone(),
-            ))
-        })
-        .transpose()
-        .map_err(|error| {
-            failure(
-                CommandFailureKind::Source,
-                Diagnostic::error(
-                    error.code(),
-                    None,
-                    "run invocation does not match the verified scalar ABI export",
-                    "use the exact export, arity, and scalar argument types",
-                ),
-            )
-        })?;
-
-    let native_executable = if run.is_some() && request.targets.native() {
-        let invocation = verified_invocation.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "verified invocation preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let object = prepared.native_object.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "native object preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let toolchain = discover_linux_native_toolchain(NativeProcessLimits::default())
-            .map_err(preparation_failure)?;
-        Some(
-            prepare_native_invocation_from_verified(
-                program,
-                object,
-                invocation,
-                &output_root,
-                &toolchain,
-                NativeProcessLimits::default(),
-            )
-            .map_err(native_preparation_failure)?,
-        )
-    } else {
-        None
-    };
-
-    let mut diagnostics = compiled.diagnostics().to_vec();
-    if let Some(executable) = &native_executable {
-        diagnostics.extend_from_slice(executable.diagnostics());
-    }
-    prepared.native_executable = native_executable;
-    commit_prepared(
+    scalar::finish(
         request,
-        command,
         run,
-        verified_invocation.as_ref(),
         &node,
         &output_root,
         &final_bundle,
         &source_text,
-        &prepared,
-        diagnostics,
-        admission,
+        &compiled,
+        &|| match admission {
+            Some(admission) => admission.revalidate(),
+            None => Ok(()),
+        },
     )
 }
 
@@ -1133,6 +1003,7 @@ fn commit_control_flow_prepared(
     diagnostics: Vec<Diagnostic>,
     checkpoint: ControlFlowCheckpoint<'_>,
 ) -> Result<CommandSuccess, CommandFailure> {
+    checkpoint(ControlFlowPhase::ArtifactStaging)?;
     let mut transaction = Transaction::create(output_root)?;
     let operation: Result<CommandSuccess, CommandFailure> = (|| {
         let artifacts = write_control_flow_artifacts(&transaction, request, command, prepared)?;
@@ -1406,22 +1277,30 @@ fn commit_prepared(
     source_text: &str,
     prepared: &PreparedArtifacts,
     diagnostics: Vec<Diagnostic>,
-    admission: Option<&crate::project::ProjectAdmission>,
+    checkpoint: &dyn Fn() -> Result<(), CommandFailure>,
 ) -> Result<CommandSuccess, CommandFailure> {
+    checkpoint()?;
     let mut transaction = Transaction::create(output_root)?;
     let operation: Result<CommandSuccess, CommandFailure> = (|| {
-        if let Some(admission) = admission {
-            admission.revalidate()?;
-        }
+        checkpoint()?;
         let artifacts = write_prepared_artifacts(&transaction, request, command, prepared)?;
 
         let results = if let Some(invocation) = invocation {
-            execute_targets(request, node, output_root, &transaction, prepared, invocation)?
+            execute_targets(
+                request,
+                node,
+                output_root,
+                &transaction,
+                prepared,
+                invocation,
+                checkpoint,
+            )?
         } else {
             Vec::new()
         };
         let manifest_results = results.iter().map(manifest_result).collect::<Vec<_>>();
         let source_sha256 = sha256(source_text.as_bytes());
+        checkpoint()?;
         let manifest = Manifest {
             version: 1,
             profile: MANIFEST_PROFILE,
@@ -1447,9 +1326,7 @@ fn commit_prepared(
         })?;
         manifest_bytes.push(b'\n');
         transaction.write_manifest(MANIFEST_NAME, &manifest_bytes)?;
-        if let Some(admission) = admission {
-            admission.revalidate()?;
-        }
+        checkpoint()?;
         transaction.commit(output_root, final_bundle)?;
         Ok(CommandSuccess {
             command,
@@ -1548,9 +1425,11 @@ fn execute_targets(
     transaction: &Transaction,
     prepared: &PreparedArtifacts,
     invocation: &zryna_abi::VerifiedInvocation<'_>,
+    checkpoint: &dyn Fn() -> Result<(), CommandFailure>,
 ) -> Result<Vec<TargetResult>, CommandFailure> {
     let mut results = Vec::with_capacity(request.targets.ordered().len());
     if request.targets.javascript() {
+        checkpoint()?;
         let harness = render_javascript_harness(&request.artifact_stem, invocation)?;
         let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
         let result_type = invocation.export().result();
@@ -1563,6 +1442,7 @@ fn execute_targets(
         });
     }
     if request.targets.webassembly() {
+        checkpoint()?;
         let harness = render_webassembly_harness(&request.artifact_stem, invocation)?;
         let artifact = prepared.webassembly.as_ref().ok_or_else(|| {
             request_error(
@@ -1584,6 +1464,7 @@ fn execute_targets(
         });
     }
     if request.targets.native() {
+        checkpoint()?;
         let executable = prepared.native_executable.as_ref().ok_or_else(|| {
             request_error(
                 "ZRYNA-C1010",
@@ -1596,6 +1477,7 @@ fn execute_targets(
                 .map_err(|error| native_runtime_failure(error.diagnostic().clone()))?;
         results.push(TargetResult { target: ManifestTarget::Native, outcome });
     }
+    checkpoint()?;
     Ok(results)
 }
 
@@ -2372,6 +2254,7 @@ mod tests {
             ControlFlowPhase::JavaScriptExecution,
             ControlFlowPhase::WebAssemblyExecution,
             ControlFlowPhase::NativeExecution,
+            ControlFlowPhase::ArtifactStaging,
             ControlFlowPhase::ManifestRendering,
             ControlFlowPhase::Publication,
         ];

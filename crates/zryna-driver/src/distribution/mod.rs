@@ -3,6 +3,7 @@
 //! Initial archive authentication belongs to the external release verifier. A compiler cannot
 //! authenticate its own initial execution by consulting a mutable adjacent manifest.
 
+mod commands;
 mod filesystem;
 mod identity;
 mod integrity;
@@ -13,6 +14,7 @@ mod source;
 mod stage;
 mod wire;
 
+pub use commands::InstalledCommandSuccess;
 pub(crate) use provider::InstalledExecution;
 pub(crate) use request::InstalledAdmission;
 pub use request::{InstalledBuildRequest, InstalledProfile};

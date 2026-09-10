@@ -84,22 +84,34 @@ pub(super) fn configured_frontend(
     Ok(WorkerFrontend::new(spec))
 }
 
+#[cfg(test)]
 pub(super) fn prepare_selected(
     compiled: &crate::SourceToIrSuccess,
     targets: TargetSelection,
 ) -> Result<PreparedArtifacts, CommandFailure> {
+    prepare_selected_guarded(compiled, targets, &|| Ok(()))
+}
+
+pub(super) fn prepare_selected_guarded(
+    compiled: &crate::SourceToIrSuccess,
+    targets: TargetSelection,
+    checkpoint: &dyn Fn() -> Result<(), CommandFailure>,
+) -> Result<PreparedArtifacts, CommandFailure> {
     let program = compiled.program();
     let javascript = if targets.javascript() {
+        checkpoint()?;
         Some(zryna_backend_javascript::emit(program).map_err(preparation_failure)?)
     } else {
         None
     };
     let webassembly = if targets.webassembly() {
+        checkpoint()?;
         Some(zryna_backend_webassembly::emit(program).map_err(preparation_failure)?)
     } else {
         None
     };
     let native_object = if targets.native() {
+        checkpoint()?;
         let target =
             crate::select_native_object_target(NATIVE_TARGET).map_err(preparation_failure)?;
         let mir = zryna_native_mir::lower(program).map_err(|diagnostics| CommandFailure {
@@ -111,6 +123,7 @@ pub(super) fn prepare_selected(
         None
     };
     let component = if targets.component() {
+        checkpoint()?;
         Some(
             zryna_backend_webassembly::emit_scalar_component(
                 program,

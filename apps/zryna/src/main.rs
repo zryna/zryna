@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod installed;
 mod ownership;
 mod package;
 mod profile;
@@ -77,9 +78,9 @@ struct CompileOptions {
     /// Select an exact versioned profile; omission preserves M1.
     #[arg(long, value_enum)]
     profile: Option<CliProfile>,
-    /// Workspace root.
-    #[arg(long, default_value = ".")]
-    root: PathBuf,
+    /// Source-checkout workspace root; defaults to the current directory.
+    #[arg(long)]
+    root: Option<PathBuf>,
     /// Explicit standalone project root; omission preserves repository-local behavior.
     #[arg(long)]
     project_root: Option<PathBuf>,
@@ -87,8 +88,8 @@ struct CompileOptions {
     #[arg(long)]
     name: Option<String>,
     /// Absolute direct Node.js 22.22.1 executable.
-    #[arg(long)]
-    node: PathBuf,
+    #[arg(long, required = !zryna_driver::distribution::InstalledCompiler::is_distribution_build())]
+    node: Option<PathBuf>,
     /// Emit one versioned JSON response.
     #[arg(long)]
     json: bool,
@@ -200,6 +201,9 @@ fn run_architecture_check(options: &ArchitectureOptions) -> ExitCode {
 }
 
 fn run_build(options: CompileOptions) -> ExitCode {
+    if zryna_driver::distribution::InstalledCompiler::is_distribution_build() {
+        return installed::execute(options, None);
+    }
     let json_mode = options.json;
     let request = match build_request(options) {
         Ok(request) => request,
@@ -228,6 +232,9 @@ fn run_build(options: CompileOptions) -> ExitCode {
 }
 
 fn run_command(options: RunOptions) -> ExitCode {
+    if zryna_driver::distribution::InstalledCompiler::is_distribution_build() {
+        return installed::execute(options.compile, Some((options.export, options.arguments)));
+    }
     let json_mode = options.compile.json;
     let export = options.export;
     let arguments = options.arguments;
@@ -281,12 +288,12 @@ enum ProfileBuildRequest {
 }
 
 fn build_request(options: CompileOptions) -> Result<ProfileBuildRequest, Diagnostic> {
-    let root = absolute_workspace_path(&options.root)?;
+    let root = absolute_workspace_path(&options.root.unwrap_or_else(|| PathBuf::from(".")))?;
     let project_root = options.project_root.as_ref().map(absolute_workspace_path).transpose()?;
-    if !options.node.is_absolute() {
+    let node = options.node.ok_or_else(cli_path_error)?;
+    if !node.is_absolute() {
         return Err(cli_path_error());
     }
-    let node = options.node;
     let stem = options.name.unwrap_or_else(|| profile::default_stem(&options.entrypoint));
     let targets = options.target.into();
     if let Some(project_root) = project_root {
