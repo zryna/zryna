@@ -26,7 +26,7 @@ and manifest v3 are documented in [M3 driver](M3_CANDIDATE_DRIVER.md).
 ```text
 zryna architecture check [--root <PATH>] [--json]
 zryna doctor             [--root <PATH>] [--json]
-zryna build <ENTRYPOINT> --target <javascript|webassembly|native|all> --node <PATH> [--profile control-flow-v1] [--root <PATH>] [--name <STEM>] [--json]
+zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> --node <PATH> [--profile control-flow-v1] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
 ```
 
@@ -46,6 +46,9 @@ dispatch. The frontend never resolves imports or reads the workspace.
 
 `--profile` has no hidden default: omission means M1, and the only accepted explicit value is exact
 lowercase `control-flow-v1`. `--target` is mandatory, exact, lowercase, and has no alias or default.
+The `component` target is accepted only by `build` when `--profile` is omitted. It rejects explicit
+profiles and `run` before source or target work. This implemented repository-development target is
+outside the advertised [v0.1.0 preview support matrix](DEVELOPER_PREVIEW.md).
 `--root` defaults to the current directory; the driver requires its resolved
 workspace root to be an absolute real directory. `--name` defaults to the entrypoint stem and must
 be 1 to 128 ASCII letters, digits, underscores, or hyphens, begin with a letter or underscore, and
@@ -70,6 +73,7 @@ Boolean source and invocation remain rejected when `--profile` is omitted.
 | `javascript` | deterministic `.mjs` | sealed module through Node.js | Linux, Windows |
 | `webassembly` | validated import-free `.wasm` | direct standard WebAssembly API through Node.js | Linux, Windows |
 | `native` | audited Linux x86-64 `.o` | invocation-specific audited `.elf` | Linux x86-64 for run |
+| `component` | audited import-free Component Model `.wasm` | unsupported | Linux, Windows |
 | `all` | `.mjs`, `.wasm`, `.o` | `.mjs`, `.wasm`, `.elf` | Linux x86-64 for run |
 
 `build native` emits a relocatable object and does not invent `main`. `run native` generates the
@@ -84,6 +88,13 @@ runtime semantics authority. This composition rule applies independently to M1 a
 fixed oracle on every supported platform. Issue #57 records authenticated website import,
 deployment, and live commit/digest evidence separately from the CLI contract.
 
+`component` preserves the unchanged audited M1 core module and canonically lifts its verified
+scalar exports. It binds the exact authenticated `zryna:capability-profiles/browser@0.1.0` source
+identity, whose capability-world import and export sets are empty. This is deterministic artifact
+emission only: no loader, host instantiation, browser, DOM, or WASI execution is provided. The
+selection is intentionally not folded into `all`.
+Artifact emission does not claim Component Model support for the v0.1.0 preview release.
+
 ## Output bundles
 
 The public output root is `<root>/.zryna/out`:
@@ -94,6 +105,7 @@ The public output root is `<root>/.zryna/out`:
   javascript/<stem>.mjs
   webassembly/<stem>.wasm
   native/<stem>.o
+  component/<stem>.wasm
 
 .zryna/out/<stem>.run/
   zryna-manifest-v1.json
@@ -106,6 +118,10 @@ An explicit `--profile control-flow-v1` request uses the same bundle names and s
 subdirectories, but contains `zryna-manifest-v2.json` instead. A bundle contains exactly one
 manifest version. Consequently an existing `<stem>.build` or `<stem>.run` bundle collides
 create-only regardless of profile; selecting M2 never replaces an M1 bundle.
+
+The tree above shows every possible M1 build subdirectory; only selected target paths exist. A
+`component` build therefore contains only `component/<stem>.wasm` and
+`zryna-manifest-v1.json`.
 
 Only selected target paths exist. Build and run bundles with the same stem may coexist. A second
 command of the same kind is create-only and fails without changing the existing bundle. The Linux
@@ -129,7 +145,10 @@ equal to `zryna-m1-cli-v1`. Its top-level fields are `version`, `profile`, `comm
 results, and diagnostics are in stable order. Each artifact records its `target`, `kind`, bundle-
 relative `/`-separated `path`, `bytes`, and lowercase `sha256`. Artifact kinds are
 `ecmascript-module`, `core-webassembly-module`, `linux-x86-64-relocatable-object`, and
-`linux-x86-64-invocation-executable` as applicable. `invocation` is `null` for `build`; for `run`
+`linux-x86-64-invocation-executable` as applicable. A component build uses target `component` and
+artifact kind `webassembly-component`. Its public function labels are
+`zryna-export-<lowercase-hex-of-logical-name-bytes>`; this collision-free mapping accommodates
+every scalar ABI logical name without changing existing target names. `invocation` is `null` for `build`; for `run`
 it records `export` plus ordered arguments as `{ "type": "i32", "value": n }`. `results` is empty
 for build and records each run target and its typed `outcome` in target order. The manifest contains
 no absolute or temporary path, timestamp, process id, inherited environment value, credential, or
@@ -211,6 +230,7 @@ From the workspace root, using an exact Node.js 22.22.1 executable:
 cargo run --locked -p zryna -- build examples/universal/add.zry --target javascript --name add-js --node /absolute/path/to/node
 cargo run --locked -p zryna -- build examples/universal/add.zry --target webassembly --name add-wasm --node /absolute/path/to/node
 cargo run --locked -p zryna -- build examples/universal/add.zry --target native --name add-native --node /absolute/path/to/node
+cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component --node /absolute/path/to/node
 cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all --node /absolute/path/to/node
 
 cargo run --locked -p zryna -- run examples/universal/add.zry --target javascript --name add-js --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node

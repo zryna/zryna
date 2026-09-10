@@ -6,9 +6,11 @@ use sha2::{Digest, Sha256};
 use wit_parser::{Resolve, SourceMap, WorldItem};
 use zryna_diagnostics::Diagnostic;
 
+mod browser;
 mod command;
 mod pins;
 
+pub(crate) use browser::{AuthenticatedBrowserWorld, BROWSER_WORLD};
 pub(crate) use command::AuthenticatedCommandWorld;
 
 const MAX_SOURCE_FILES: usize = 34;
@@ -118,6 +120,20 @@ pub fn audit_pinned_wit_worlds(sources: &[WitSource]) -> Result<WitWorldAudit, D
     let authenticated = authenticate(sources)?;
     let (resolve, root) = resolve_sources(&authenticated)?;
     audit_resolved(&resolve, root)
+}
+
+/// Returns the exact reviewed WIT source closure embedded in this backend build.
+///
+/// Callers may pass this immutable source set to component emission without reading ambient
+/// filesystem state. The ordinary audit entrypoint remains available for independently supplied
+/// and hostile inputs.
+#[must_use]
+pub fn pinned_wit_sources() -> Vec<WitSource> {
+    pins::SOURCES
+        .iter()
+        .zip(pins::SOURCE_BYTES)
+        .map(|(pin, bytes)| WitSource::new(pin.path, *bytes))
+        .collect()
 }
 
 fn authenticate(

@@ -3,10 +3,17 @@
 Fail-closed command-line entrypoint for architecture checks and the M1 `I32V1` compiler slice.
 
 The CLI provides `architecture check`, `doctor`, and explicit `build` and `run` commands for
-`javascript`, `webassembly`, `native`, and `all`. Build and run require one workspace-relative
+`javascript`, `webassembly`, `native`, and `all`. `build` additionally accepts the default-M1-only
+`component` selection. Build and run require one workspace-relative
 `.zry` entrypoint, one explicit target, and an exact Node.js 22.22.1 executable. Run additionally
 requires one scalar-ABI export and canonical repeated `--arg=i32:<VALUE>` arguments. Boolean
 execution remains profile-gated.
+
+`component` publishes one audited, import-free Component Model artifact and its manifest. It is
+not included in `all`, cannot be combined with an explicit profile, and cannot be selected by
+`run`; no component host or browser/WASI execution is activated. It is an implemented
+repository-development target, not an expansion of the advertised
+[v0.1.0 preview support matrix](../../docs/DEVELOPER_PREVIEW.md).
 
 Every compiler command runs architecture validation first and uses one verified program for all
 selected backends. Complete create-only bundles are committed below `.zryna/out`; `all` reports

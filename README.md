@@ -216,8 +216,13 @@ The repository currently establishes and tests:
   publication through the same validated output capability;
 - an isolated M4 prerequisite that authenticates the accepted WIT source closure, resolves all
   exact WASI `0.2.12` dependencies with pinned `wit-parser 0.258.0`, and independently audits the
-  existing browser, command, and server interfaces without emitting or instantiating components,
-  generating bindings, activating a profile, or granting host capabilities;
+  existing browser, command, and server interfaces;
+- an explicit default-M1 `component` build that preserves the audited scalar core, canonically
+  lifts verified exports, binds the exact empty browser capability-world identity, independently
+  maps every logical export to a collision-free `zryna-export-<lowercase-hex>` component label,
+  audits the final Component Model bytes, and publishes one create-only manifest-v1 bundle without
+  generating bindings, instantiating a host, or granting capabilities; this repository-development
+  surface remains outside the advertised [v0.1.0 preview support matrix](docs/DEVELOPER_PREVIEW.md);
 - native MIR lowering through an independent `VerifiedMirModule` gate that retains scalar ABI v1
   authority, plus deterministic Linux x86-64 ELF relocatable-object emission and create-only
   `.o` publication;
@@ -290,11 +295,13 @@ relative-import module graph under `--profile control-flow-v1`. These examples u
 
 ```bash
 cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all --node /absolute/path/to/node
+cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component --node /absolute/path/to/node
 cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-all --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
 cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2 --node /absolute/path/to/node
 ```
 
-Build publishes `.mjs`, `.wasm`, and `.o`; run publishes `.mjs`, `.wasm`, and an invocation-
+Selected M1 builds publish `.mjs`, core `.wasm`, `.o`, or component `.wasm`; `all` remains the
+original three core targets. Run publishes `.mjs`, `.wasm`, and an invocation-
 specific `.elf`. The selected artifacts and deterministic manifest appear together only after one
 create-only atomic bundle commit below `.zryna/out`. M1 writes manifest v1; the explicit M2 profile
 writes [manifest v2](docs/M2_MANIFEST_V2.md). See the [CLI reference](docs/CLI.md) for exact

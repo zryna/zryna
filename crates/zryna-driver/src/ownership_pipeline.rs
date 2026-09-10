@@ -389,6 +389,11 @@ fn validate_request(request: &DataOwnershipBuildRequest) -> Result<(), CommandFa
 }
 
 fn validate_request_shape(request: &DataOwnershipBuildRequest) -> Result<(), CommandFailure> {
+    if request.targets.component() {
+        return Err(request_error(
+            "component emission currently accepts only the default scalar profile",
+        ));
+    }
     if !request.workspace_root.is_absolute() {
         return Err(request_error("candidate workspace root must be absolute"));
     }

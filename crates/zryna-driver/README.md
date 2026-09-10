@@ -122,6 +122,14 @@ expected values, and committed manifest. The equivalent
 [`EXECUTABLE.md`](../../spec/native-semantics/EXECUTABLE.md) for the normative security and behavior
 contract.
 
+The explicit M1-only `component` build target dispatches that same verified program to
+`emit_scalar_component` and publishes exactly `component/<stem>.wasm` with manifest target
+`component` and artifact kind `webassembly-component`. It uses the existing synchronized,
+create-only whole-bundle transaction. It is intentionally excluded from `all`, rejects every
+explicit profile, and has no `run` route: component host activation and browser/WASI execution are
+separate boundaries. The target remains outside the advertised
+[v0.1.0 preview support matrix](../../docs/DEVELOPER_PREVIEW.md).
+
 The internal M3 candidate route separately authenticates one protocol-v4 module closure and lowers
 it once to one verifier-sealed `DataOwnershipV1` program. Selected JavaScript, WebAssembly, and
 Linux x86-64 native artifacts execute and publish through one private transaction with strict

@@ -9,6 +9,22 @@ await the required execution lanes. Public WASI target selection remains unactiv
 `src/scalar_audit.rs` owns the existing core-only sealing and I32V1 instruction audit;
 `src/component_command/` owns the distinct component artifact and final-byte audit.
 
+`emit_scalar_component` is the public build-only Component Model boundary for the default scalar
+profile. It retains the exact audited M1 core module, canonically lifts the verified `i32`
+functions, and binds the artifact to the authenticated
+`zryna:capability-profiles/browser@0.1.0` identity and complete pinned WIT-source digest. That
+capability world has no imports or exports; the component's application exports are derived from
+the verified program, not claimed as WIT world exports. Each public Component Model label is the
+collision-free `zryna-export-<lowercase-hex>` encoding of the exact logical export's ASCII bytes;
+logical and core WebAssembly names remain unchanged, and both identities are authenticated by the
+component interface digest. The independent final-byte audit rejects
+imports, nested components, starts, unsupported sections, changed aliases/types/exports, malformed
+topology, substituted WIT identity, and the first byte above the 1 MiB ceiling before returning
+artifact authority. Emission does not instantiate a host, generate a loader, or grant browser,
+WASI, DOM, network, filesystem, clock, or random capabilities.
+This repository-development boundary remains outside the advertised
+[v0.1.0 preview support matrix](../../docs/DEVELOPER_PREVIEW.md).
+
 The internal M3 `emit_data_ownership` entrypoint emits one validated, import-free core module with
 private bounded Linear32 memory and sealed layout-derived address operations. It does not expose
 memory or activate the M3 driver profile. Its private type-indexed helpers perform recursive
@@ -29,6 +45,7 @@ The current instruction surface is `local.get`, `i32.const`, `i32.add`, and func
 pure `i32` parameters and results. Modules contain only type, function, export, and code sections;
 they contain no imports, tables, memory, globals, start function, element/data segments, custom
 sections, WASI, WIT, Component Model, GC, threads, SIMD, reference types, or ambient capabilities.
+The optional scalar component wrapper leaves those core bytes unchanged.
 
 Boolean core carriers remain specified and tested through the shared scalar ABI fixture, but this
 does not enable Boolean source or IR. Source orchestration, artifact publication, runtime
