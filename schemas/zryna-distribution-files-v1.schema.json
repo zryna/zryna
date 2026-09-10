@@ -13,7 +13,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 200,
-      "pattern": "^[A-Za-z0-9@][A-Za-z0-9@._-]*(/[A-Za-z0-9@][A-Za-z0-9@._-]*){0,11}$"
+      "pattern": "^[A-Za-z0-9@][A-Za-z0-9@+._-]*(/[A-Za-z0-9@][A-Za-z0-9@+._-]*){0,11}$"
     },
     "file": {
       "type": "object",

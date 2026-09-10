@@ -117,6 +117,15 @@ fn first_byte_over_capture_budget_is_rejected_with_and_without_retention() {
 }
 
 #[test]
+fn approved_rust_notice_version_build_metadata_remains_a_portable_path() {
+    assert!(super::super::manifest::portable(
+        "licenses/rust/toml-0.9.12+spec-1.1.0/LICENSE-APACHE"
+    ));
+    assert!(!super::super::manifest::portable("licenses/rust/../LICENSE-APACHE"));
+    assert!(!super::super::manifest::portable("licenses/rust/CON.txt/LICENSE-APACHE"));
+}
+
+#[test]
 fn replacing_an_ancestor_cannot_redirect_the_retained_installation() {
     let case = Case::new();
     let tree = case.capture();

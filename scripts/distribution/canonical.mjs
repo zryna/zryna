@@ -65,7 +65,7 @@ export function portablePath(value) {
   requireValue(typeof value === 'string' && value.length <= LIMITS.path, 'path byte budget');
   const segments = value.split('/');
   requireValue(segments.length <= LIMITS.depth && segments.every(segment =>
-    /^[A-Za-z0-9@][A-Za-z0-9@._-]*$/.test(segment)
+    /^[A-Za-z0-9@][A-Za-z0-9@+._-]*$/.test(segment)
     && !/[. ]$/.test(segment)
     && !/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(segment)), 'unsafe portable path');
   return value;

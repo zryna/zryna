@@ -53,6 +53,11 @@ test('reviewed Rust closure preserves exact target package and license counts', 
     const selected = rustMaterials(triple);
     assert.equal(selected.length, packages);
     assert.equal(selected.flatMap(record => record.files).length, files);
+    const notices = selected.flatMap(record => record.files).map(file => ({
+      path: file.path, size: file.size, sha256: file.sha256, role: 'license', mode: 0o644,
+      material: 'source', licenses: [file.path],
+    })).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+    validateTuples(notices, triple);
     assert(selected.every(record => !record.name.startsWith('zryna')));
   }
 });

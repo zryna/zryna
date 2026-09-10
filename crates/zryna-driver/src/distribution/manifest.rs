@@ -192,7 +192,7 @@ pub(super) fn portable(path: &str) -> bool {
             let Some(first) = part.bytes().next() else { return false };
             let reserved = part.split('.').next().unwrap_or_default().to_ascii_lowercase();
             (first.is_ascii_alphanumeric() || first == b'@')
-                && part.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"@._-".contains(&byte))
+                && part.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"@+._-".contains(&byte))
                 && !part.ends_with('.')
                 && !["con", "prn", "aux", "nul"].contains(&reserved.as_str())
                 && !(reserved.len() == 4
