@@ -569,3 +569,54 @@ Completion gate: editor and playground behavior is driven by compiler contracts 
 - documented 1.0 stability criteria.
 
 Completion gate: the native frontend can replace the bootstrap provider without changing verified IR or backend behavior, and every 1.0 compatibility gate is reproducible.
+
+## M8 — Developer Preview Release
+
+Status: planned. This milestone publishes an experimental, source-based `v0.1.0` Developer
+Preview from one authenticated `main` revision. It does not distribute standalone binaries or
+promote unfinished M4–M7 capabilities into the preview.
+
+1. [#419](https://github.com/zryna/zryna/issues/419) freezes the
+   [preview support and release policy](DEVELOPER_PREVIEW.md), including exact advertised and
+   excluded capabilities, evidence fields, immutable release identities, and rollback rules.
+2. [#420](https://github.com/zryna/zryna/issues/420) reconciles release-facing repository and
+   website documentation, milestone state, and stale contribution metadata against that policy.
+3. [#421](https://github.com/zryna/zryna/issues/421) selects one reviewed exact revision, completes
+   both-host gates and clean-clone quickstarts, then publishes the tag, source archives, GitHub
+   pre-release, documentation bundle, and matching announcement.
+
+Completion gate: the immutable `v0.1.0` tag, GitHub pre-release, source archive hashes, website,
+and documentation manifest identify the same reviewed commit and experimental support matrix.
+
+## M9 — Downloadable Beta Distribution
+
+Status: planned after M8. The beta adds installable artifacts without changing the preview into a
+stable compatibility promise.
+
+1. [#422](https://github.com/zryna/zryna/issues/422) builds separately audited standalone Linux
+   and Windows distributions.
+2. [#423](https://github.com/zryna/zryna/issues/423) verifies clean-machine install, upgrade,
+   uninstall, and external-project workflows.
+3. [#424](https://github.com/zryna/zryna/issues/424) runs the bounded beta pilot and publishes the
+   downloadable beta with its observed support and recovery limits.
+
+Completion gate: every distributed binary is bound to its source, checksums, provenance, SBOM,
+platform contract, clean-machine evidence, and tested removal or rollback path.
+
+## M10 — Stable 1.0 Launch
+
+Status: planned after M9. Stability is earned by frozen public contracts and release-candidate
+evidence; it is not inferred from preview or beta usage.
+
+1. [#425](https://github.com/zryna/zryna/issues/425) freezes the Zryna 1.0 language, CLI, manifest,
+   and platform contracts.
+2. [#426](https://github.com/zryna/zryna/issues/426) publishes and evaluates the 1.0 release
+   candidate without moving the final version identity.
+3. [#427](https://github.com/zryna/zryna/issues/427) completes the final security, performance,
+   reproducibility, and recovery audit.
+4. [#428](https://github.com/zryna/zryna/issues/428) publishes `v1.0.0` and activates the stable
+   support and rollback policy only after every preceding gate passes.
+
+Completion gate: one immutable `v1.0.0` release satisfies the frozen compatibility contract,
+supported-platform matrix, reproducibility and security evidence, distribution audit, and tested
+support and rollback procedures.

@@ -7,9 +7,14 @@ limit or independently expand the integrated public surface. M0–M2 remain unch
 
 **Zryna** (pronounced *ZREE-na*) is developed at [zryna.com](https://zryna.com).
 
-Zryna is an experimental, strict, three-target programming language project. Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its semantics, typed intermediate representation, JavaScript output, WebAssembly output, and native output belong to Zryna.
+Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not
+production-ready. It provides the documented repository-local M1–M3 workflows; it does not
+include standalone binaries, package installation, or stable compatibility guarantees.
+The `v0.1.0` tag and pre-release are not yet published.
 
-The project is at the foundation stage. It is not yet a production compiler.
+Its source syntax begins as a deliberately restricted TypeScript-compatible subset, while its
+semantics, typed intermediate representation, JavaScript output, WebAssembly output, and native
+output belong to Zryna. See the [preview scope and release policy](docs/DEVELOPER_PREVIEW.md).
 
 ## Goal
 

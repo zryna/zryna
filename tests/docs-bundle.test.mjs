@@ -158,6 +158,42 @@ test('beginner setup preserves direct runtime and repository-local editing bound
   assert.match(guide, /Node\.js \*\*22\.22\.1\*\*/);
 });
 
+test('preview release policy is exported and keeps release-facing wording and boundaries aligned', async () => {
+  const statement = [
+    'Zryna v0.1.0 is an experimental, source-based Developer Preview. It is not',
+    'production-ready. It provides the documented repository-local M1–M3 workflows; it does not',
+    'include standalone binaries, package installation, or stable compatibility guarantees.',
+  ].join('\n');
+  for (const relative of [
+    'README.md',
+    'docs/DEVELOPER_PREVIEW.md',
+    'docs/GETTING_STARTED.md',
+    'docs/M3_GETTING_STARTED.md',
+    'docs/STATUS.md',
+  ]) {
+    const text = await readFile(path.join(compilerWorkspaceRoot, relative), 'utf8');
+    assert(text.includes(statement), relative);
+    assert(text.includes('`v0.1.0` tag and pre-release are not yet published'), relative);
+  }
+  const policy = await readFile(path.join(compilerWorkspaceRoot, 'docs/DEVELOPER_PREVIEW.md'), 'utf8');
+  for (const required of [
+    '`--profile control-flow-v1`',
+    '`--profile data-ownership-v1`',
+    'Linux x86-64 and Windows x64',
+    'Node.js | direct regular executable, exact `22.22.1`',
+    '`pnpm docs:check`',
+    '`pnpm preflight`',
+    '`pnpm m0:check`',
+    '`pnpm m1:check`',
+    '`pnpm m2:check`',
+    '`pnpm m3:check`',
+    '`refs/tags/v0.1.0`',
+    'Never move or recreate `v0.1.0`',
+    'private security advisory channel',
+  ]) assert(policy.includes(required), required);
+  assert.match(policy, /does not publish a release, authorize a tag, or make work planned for M4 and later public/);
+});
+
 async function temporaryOutput() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'zryna-docs-test-'));
   return { root, output: path.join(root, 'bundle') };
@@ -202,6 +238,7 @@ test('registry exports the exact implemented and planned publication inventory',
       { id: 'reference/cli', source: 'docs/CLI.md', path: 'documents/reference/cli.md', title: 'CLI reference' },
       { id: 'reference/control-flow-modules-v1', source: 'spec/language/CONTROL_FLOW_MODULES_V1.md', path: 'documents/reference/control-flow-modules-v1.md', title: 'Scalar control flow and modules v1' },
       { id: 'reference/data-ownership-v1', source: 'spec/language/DATA_OWNERSHIP_V1.md', path: 'documents/reference/data-ownership-v1.md', title: 'Data and ownership v1' },
+      { id: 'reference/developer-preview', source: 'docs/DEVELOPER_PREVIEW.md', path: 'documents/reference/developer-preview.md', title: 'v0.1.0 Developer Preview policy' },
       { id: 'reference/documentation-bundles', source: 'docs/DOCUMENTATION_BUNDLES.md', path: 'documents/reference/documentation-bundles.md', title: 'Compiler documentation bundles' },
       { id: 'reference/frontends', source: 'docs/FRONTENDS.md', path: 'documents/reference/frontends.md', title: 'Frontend providers' },
       { id: 'reference/getting-started', source: 'docs/GETTING_STARTED.md', path: 'documents/reference/getting-started.md', title: 'Run your first Zryna programs' },

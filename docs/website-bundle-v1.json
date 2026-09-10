@@ -33,6 +33,12 @@
       "title": "Data and ownership v1"
     },
     {
+      "id": "reference/developer-preview",
+      "source": "docs/DEVELOPER_PREVIEW.md",
+      "path": "documents/reference/developer-preview.md",
+      "title": "v0.1.0 Developer Preview policy"
+    },
+    {
       "id": "reference/documentation-bundles",
       "source": "docs/DOCUMENTATION_BUNDLES.md",
       "path": "documents/reference/documentation-bundles.md",
