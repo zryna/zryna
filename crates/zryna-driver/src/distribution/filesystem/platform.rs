@@ -21,7 +21,7 @@ pub(super) fn child(parent: &Dir, name: &std::ffi::OsStr) -> io::Result<Dir> {
 }
 
 #[cfg(windows)]
-pub(super) fn absolute(path: &Path) -> io::Result<(Vec<Dir>, Dir)> {
+pub(in crate::distribution) fn absolute(path: &Path) -> io::Result<(Vec<Dir>, Dir)> {
     use std::path::{PathBuf, Prefix};
     let mut components = path.components();
     let drive = match components.next() {
@@ -42,7 +42,7 @@ pub(super) fn absolute(path: &Path) -> io::Result<(Vec<Dir>, Dir)> {
 }
 
 #[cfg(unix)]
-pub(super) fn absolute(path: &Path) -> io::Result<(Vec<Dir>, Dir)> {
+pub(in crate::distribution) fn absolute(path: &Path) -> io::Result<(Vec<Dir>, Dir)> {
     if !path.is_absolute() {
         return Err(io::Error::other("installation root is not absolute"));
     }
