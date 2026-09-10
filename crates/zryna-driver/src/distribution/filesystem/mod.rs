@@ -2,6 +2,8 @@
 
 mod file;
 mod platform;
+#[cfg(test)]
+mod tests;
 
 pub(super) use platform::absolute as capture_absolute_directory;
 

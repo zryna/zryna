@@ -17,6 +17,9 @@ use super::{
     manifest::PROVIDERS,
 };
 
+#[cfg(test)]
+mod tests;
+
 static NEXT_STAGE: AtomicU64 = AtomicU64::new(0);
 
 pub(super) struct ProviderStage {
