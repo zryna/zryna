@@ -4,10 +4,12 @@ import { decodeZip } from './archive-zip.mjs';
 import { verifyCompiledIdentity } from './binary-identity.mjs';
 import { authenticateFiles, checksumBytes, targetPaths } from './inventory.mjs';
 import { prepare } from './prepare.mjs';
+import { requireArchiveRuntime } from './runtime.mjs';
 
 // The caller obtains expected identities from an independently authenticated release subject.
 // This content verifier does not authenticate a signature or trust policy supplied beside bytes.
 export async function verifyArchive(archive, expected) {
+  requireArchiveRuntime();
   requireValue(Buffer.isBuffer(archive) && archive.length === expected.size
     && sha256(archive) === expected.sha256, 'archive differs from expected release subject');
   const paths = targetPaths(expected.target.triple);

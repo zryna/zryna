@@ -4,6 +4,7 @@ import { encodeZip } from './archive-zip.mjs';
 import { verifyCompiledIdentity } from './binary-identity.mjs';
 import { authenticateFiles, checksumBytes, inventoryBytes, targetPaths } from './inventory.mjs';
 import { prepare } from './prepare.mjs';
+import { requireArchiveRuntime } from './runtime.mjs';
 
 function descriptorMatches(descriptor, data) {
   requireValue(Buffer.isBuffer(data) && descriptor.size === data.length
@@ -16,6 +17,7 @@ function metadataTuple(path, data) {
 }
 
 export async function assemble(inputBytes, captured) {
+  requireArchiveRuntime();
   // The separate release boundary owns this schema and protected input admission.
   const { validateBuildInput } = await import('../distribution-release/validate-build-input.mjs');
   const input = validateBuildInput(parseCanonical(inputBytes));

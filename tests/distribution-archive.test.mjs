@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { validateArchiveRuntime } from '../scripts/distribution/runtime.mjs';
 import assert from 'node:assert/strict';
 import { bytes, orderedPaths, parseCanonical, portablePath } from '../scripts/distribution/canonical.mjs';
 import { encodeTar, decodeTar } from '../scripts/distribution/archive-tar.mjs';
@@ -11,6 +12,16 @@ const files = [
   { path: 'lib/zryna/bootstrap/node_modules/@typescript/old/lib/typescript.js',
     mode: 0o644, data: Buffer.from('provider') },
 ];
+
+test('archive runtime requires the exact upstream compressor build on a qualified builder', () => {
+  const runtime = { node: '22.22.1', zlib: '1.3.1-e00f703', platform: 'linux', architecture: 'x64' };
+  validateArchiveRuntime(runtime);
+  validateArchiveRuntime({ ...runtime, platform: 'win32' });
+  for (const change of [{ node: '24.19.0' }, { zlib: '1.3.1' },
+    { architecture: 'arm64' }, { platform: 'darwin' }]) {
+    assert.throws(() => validateArchiveRuntime({ ...runtime, ...change }), /archive/);
+  }
+});
 
 test('canonical record rejects duplicate keys, non-UTF8 and excessive nesting', () => {
   assert.deepEqual(parseCanonical(bytes({ b: 2, a: 1 })), { a: 1, b: 2 });
