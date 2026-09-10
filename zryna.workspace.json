@@ -140,7 +140,7 @@
       "id": "zryna",
       "root": "apps/zryna",
       "kind": "application",
-      "dependencies": ["zryna-abi", "zryna-architecture", "zryna-diagnostics", "zryna-driver"],
+      "dependencies": ["zryna-abi", "zryna-architecture", "zryna-diagnostics", "zryna-driver", "zryna-package"],
       "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     }
   ],

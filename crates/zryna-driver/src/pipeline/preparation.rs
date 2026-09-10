@@ -16,13 +16,28 @@ pub(super) struct PreparedArtifacts {
     pub(super) component: Option<zryna_backend_webassembly::ValidatedScalarComponent>,
 }
 
+#[cfg(test)]
 pub(super) fn compile_selected<Provider: VerifiedFrontendProvider + ?Sized>(
     frontend: &Provider,
     sources: &SourceMap,
     targets: TargetSelection,
 ) -> Result<(crate::SourceToIrSuccess, PreparedArtifacts), CommandFailure> {
-    let compiled =
-        crate::compile_to_verified_ir(frontend, sources).map_err(|error| source_failure(&error))?;
+    let compiled = analyze(frontend, sources)?;
+    let prepared = prepare_selected(&compiled, targets)?;
+    Ok((compiled, prepared))
+}
+
+pub(super) fn analyze<Provider: VerifiedFrontendProvider + ?Sized>(
+    frontend: &Provider,
+    sources: &SourceMap,
+) -> Result<crate::SourceToIrSuccess, CommandFailure> {
+    crate::compile_to_verified_ir(frontend, sources).map_err(|error| source_failure(&error))
+}
+
+pub(super) fn prepare_selected(
+    compiled: &crate::SourceToIrSuccess,
+    targets: TargetSelection,
+) -> Result<PreparedArtifacts, CommandFailure> {
     let program = compiled.program();
     let javascript = if targets.javascript() {
         Some(zryna_backend_javascript::emit(program).map_err(preparation_failure)?)
@@ -56,14 +71,11 @@ pub(super) fn compile_selected<Provider: VerifiedFrontendProvider + ?Sized>(
     } else {
         None
     };
-    Ok((
-        compiled,
-        PreparedArtifacts {
-            javascript,
-            webassembly,
-            native_object,
-            native_executable: None,
-            component,
-        },
-    ))
+    Ok(PreparedArtifacts {
+        javascript,
+        webassembly,
+        native_object,
+        native_executable: None,
+        component,
+    })
 }
