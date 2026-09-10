@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 mod frozen;
+use frozen::RootPackageSources;
 
 use zryna_abi::ScalarValue;
 use zryna_diagnostics::Diagnostic;
@@ -65,11 +66,36 @@ pub(crate) struct ProjectAdmission {
     graph: ResolvedGraph,
     entrypoint_path: String,
     entrypoint: Vec<u8>,
-    sources: crate::package_resolution::CapturedProject,
+    sources: RootPackageSources,
 }
 
 impl ProjectAdmission {
     pub(crate) fn discover(request: &ProjectBuildRequest) -> Result<Self, CommandFailure> {
+        Self::discover_profile(request, "i32-v1", RootPackageSources::snapshot)
+    }
+
+    pub(crate) fn discover_installed(
+        request: &ProjectBuildRequest,
+        installation: &crate::distribution::InstalledCompiler,
+        profile: crate::distribution::InstalledProfile,
+    ) -> Result<Self, CommandFailure> {
+        installation.revalidate().map_err(|diagnostic| CommandFailure {
+            kind: CommandFailureKind::Preparation,
+            diagnostics: vec![diagnostic],
+        })?;
+        Self::discover_profile(request, profile.package_profile(), RootPackageSources::retained)
+    }
+
+    fn discover_profile(
+        request: &ProjectBuildRequest,
+        profile: &str,
+        resolve: fn(
+            &PackageResolutionRequest,
+        ) -> Result<
+            (crate::PackageResolutionSuccess, RootPackageSources),
+            zryna_package::ResolveError,
+        >,
+    ) -> Result<Self, CommandFailure> {
         if !request.compiler_root.is_absolute() || !request.project_root.is_absolute() {
             return Err(project_error(
                 "ZRYNA-C2001",
@@ -113,13 +139,10 @@ impl ProjectAdmission {
             git_cache: None,
             mode: PackageLockMode::Frozen,
         };
-        let (success, sources) = crate::package_resolution::capture_project_package(&resolution)
-            .map_err(|error| package_failure(&error))?;
-        validate_graph(success.graph(), &package, request.targets)?;
-        let entrypoint = sources
-            .root_file(&request.entrypoint)
-            .map(<[u8]>::to_vec)
-            .ok_or_else(|| {
+        let (success, sources) = resolve(&resolution).map_err(|error| package_failure(&error))?;
+        validate_graph(success.graph(), &package, request.targets, profile)?;
+        let entrypoint =
+            sources.root_file(&request.entrypoint).map(<[u8]>::to_vec).ok_or_else(|| {
                 project_error(
                     "ZRYNA-P4004",
                     CommandFailureKind::Source,
@@ -148,7 +171,7 @@ impl ProjectAdmission {
     }
 
     pub(crate) fn revalidate(&self) -> Result<(), CommandFailure> {
-        self.sources.revalidate().map_err(|error| package_failure(&error))?;
+        self.sources.revalidate_retained().map_err(|error| package_failure(&error))?;
         let (current, files) = crate::package_resolution::resolve_project_package(&self.resolution)
             .map_err(|error| package_failure(&error))?;
         if current.graph() != &self.graph {
@@ -190,14 +213,15 @@ fn validate_graph(
     graph: &ResolvedGraph,
     root_locator: &str,
     targets: TargetSelection,
+    profile: &str,
 ) -> Result<(), CommandFailure> {
     let compatibility = graph.compatibility();
-    if compatibility.compiler != env!("CARGO_PKG_VERSION") || compatibility.profile != "i32-v1" {
+    if compatibility.compiler != env!("CARGO_PKG_VERSION") || compatibility.profile != profile {
         return Err(project_error(
             "ZRYNA-P4009",
             CommandFailureKind::Source,
             "standalone project compiler version or profile is incompatible",
-            "use a package compatible with this compiler and the i32-v1 profile",
+            "use a package compatible with this compiler and the selected profile",
         ));
     }
     for target in selected_targets(targets) {

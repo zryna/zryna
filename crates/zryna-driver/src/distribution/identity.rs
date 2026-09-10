@@ -30,8 +30,10 @@ const fn build_identity() -> [u8; IDENTITY_BYTES] {
 }
 
 pub(super) fn expected_digest() -> Option<&'static str> {
-    if IDENTITY[PREFIX.len()] == 0 {
+    // Keep the complete marker addressable for the external pre-execution binary inspector.
+    let identity = std::hint::black_box(&IDENTITY);
+    if identity[PREFIX.len()] == 0 {
         return None;
     }
-    std::str::from_utf8(&IDENTITY[PREFIX.len()..PREFIX.len() + 64]).ok()
+    std::str::from_utf8(&identity[PREFIX.len()..PREFIX.len() + 64]).ok()
 }

@@ -21,7 +21,8 @@ impl CapturedProject {
     }
 
     pub(crate) fn revalidate(&self) -> Result<(), ResolveError> {
-        self.provider.try_borrow_mut()
+        self.provider
+            .try_borrow_mut()
             .map_err(|_| ResolveError::source("project source revalidation is already active"))?
             .revalidate()
     }

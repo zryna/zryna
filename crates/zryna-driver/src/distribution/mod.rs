@@ -8,11 +8,14 @@ mod identity;
 mod integrity;
 mod manifest;
 mod provider;
+mod request;
 mod source;
 mod stage;
 mod wire;
 
 pub(crate) use provider::InstalledExecution;
+pub(crate) use request::InstalledAdmission;
+pub use request::{InstalledBuildRequest, InstalledProfile};
 pub(crate) use source::InstalledProjectSources;
 
 use std::path::{Path, PathBuf};

@@ -122,7 +122,8 @@ mod tests {
         sync::atomic::{AtomicU64, Ordering},
     };
 
-    use super::{Digest, ExpectedRuntime, Sha256, authenticate, discover, open_runtime_identity};
+    use super::{ExpectedRuntime, authenticate, discover, open_runtime_identity};
+    use sha2::{Digest as _, Sha256};
 
     static NEXT: AtomicU64 = AtomicU64::new(0);
 

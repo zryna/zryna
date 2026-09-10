@@ -141,3 +141,64 @@ fn current_entrypoint_mutation_fails_before_project_execution_can_continue() {
     let failure = admission.revalidate().expect_err("mutated project must reject");
     assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-P4004");
 }
+
+#[test]
+fn retained_root_sources_reject_changed_then_restored_bytes_or_deny_the_write() {
+    let case = Case::new();
+    let admission = ProjectAdmission::discover_profile(
+        &case.request(),
+        "i32-v1",
+        super::RootPackageSources::retained,
+    )
+    .expect("retained root package admission");
+    let source = case.project.join("src/main.zry");
+    if fs::write(&source, b"export function main(): i32 { return 7; }\n").is_ok() {
+        fs::write(&source, &case.source).expect("restore original source bytes");
+        admission.revalidate().expect_err("restored bytes do not restore retained file state");
+    } else {
+        admission.revalidate().expect("retained handle denied mutation");
+    }
+}
+
+#[test]
+fn frozen_source_session_rejects_undeclared_state_file_before_reading_it() {
+    use crate::source_session::{ModuleSourceRoot as _, ModuleSourceSession as _};
+    let case = Case::new();
+    fs::create_dir(case.project.join(".zryna")).expect("reserved project state");
+    fs::write(case.project.join(".zryna/hidden.zry"), b"not a declared source")
+        .expect("state sentinel");
+    let admission = ProjectAdmission::discover_profile(
+        &case.request(),
+        "i32-v1",
+        super::RootPackageSources::retained,
+    )
+    .expect("retained root package admission");
+    let mut session = admission.begin().expect("captured source session");
+    let path = zryna_source::NormalizedSourcePath::new(".zryna/hidden.zry".to_owned())
+        .expect("portable state path");
+    let error = match session.read_source(&path) {
+        Ok(_) => panic!("undeclared file admitted"),
+        Err(error) => error,
+    };
+    assert_eq!(error.code(), "ZRYNA-P4004");
+    let entry =
+        zryna_source::NormalizedSourcePath::new("src/main.zry".to_owned()).expect("entry path");
+    assert_eq!(
+        session.read_source(&entry).expect("captured declared source").text.as_bytes(),
+        case.source
+    );
+}
+
+#[test]
+fn retained_root_allows_project_output_creation_without_admitting_output_as_source() {
+    let case = Case::new();
+    let admission = ProjectAdmission::discover_profile(
+        &case.request(),
+        "i32-v1",
+        super::RootPackageSources::retained,
+    )
+    .expect("retained root package admission");
+    fs::create_dir_all(case.project.join(".zryna/out")).expect("project-owned output");
+    admission.revalidate().expect("output state is separate from frozen source inventory");
+    assert!(admission.sources.root_file(".zryna/out/main.zry").is_none());
+}

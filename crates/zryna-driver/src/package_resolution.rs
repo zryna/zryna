@@ -90,7 +90,8 @@ pub fn resolve_package(
 pub(crate) fn resolve_project_package(
     request: &PackageResolutionRequest,
 ) -> Result<(PackageResolutionSuccess, Vec<PackageFile>), ResolveError> {
-    capture_project_package(request).map(|(success, captured)| (success, captured.into_root_files()))
+    capture_project_package(request)
+        .map(|(success, captured)| (success, captured.into_root_files()))
 }
 
 pub(crate) fn capture_project_package(
@@ -226,8 +227,12 @@ impl FilesystemProvider {
         let mut pending = vec![(root, String::new())];
         while let Some((directory, prefix)) = pending.pop() {
             let entries = enumerate_directory(&directory, entries_seen)?;
-            retained_package.retain_inventory(&directory, &prefix, &entries,
-                is_root_package && prefix.is_empty())?;
+            retained_package.retain_inventory(
+                &directory,
+                &prefix,
+                &entries,
+                is_root_package && prefix.is_empty(),
+            )?;
             let mut children = Vec::new();
             for entry in entries {
                 let name = entry.name;
@@ -414,9 +419,15 @@ struct RetainedInventory {
     project_state: bool,
 }
 
-fn source_inventory(mut entries: Vec<PackageEntry>, project_state: bool) -> Result<Vec<PackageEntry>, ResolveError> {
+fn source_inventory(
+    mut entries: Vec<PackageEntry>,
+    project_state: bool,
+) -> Result<Vec<PackageEntry>, ResolveError> {
     if project_state {
-        if entries.iter().any(|entry| entry.name == ".zryna" && entry.kind != PackageEntryKind::Directory) {
+        if entries
+            .iter()
+            .any(|entry| entry.name == ".zryna" && entry.kind != PackageEntryKind::Directory)
+        {
             return Err(ResolveError::source("reserved project state is not a real directory"));
         }
         entries.retain(|entry| entry.name != ".zryna");
