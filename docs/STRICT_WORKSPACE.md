@@ -229,6 +229,29 @@ is a separate fail-closed exit category. The create-only rename is the commit po
 entry crash durability afterward is not claimed. The exact layout is specified in the
 [CLI reference](CLI.md).
 
+### Windows exact directory mutation
+
+Windows transaction code that requires identity-stable directory commit or cleanup uses the
+registered `zryna-windows-filesystem` foundation. A new owned directory is created relative to a
+retained parent and returns an opaque `OwnedDirectory` in that same operation. Its authoritative
+handle requests delete access, permits read and write sharing, and denies delete sharing; the
+capability retains that handle, its current parent, and its current name through child operations,
+audit, commit, rollback, and cleanup. A second capability reopen of that directory is expected to
+fail while the delete-capable handle remains live and is never part of the lifecycle.
+
+Commit renames that exact source handle relative to the retained destination parent with replacement
+disabled. Cleanup consumes the opaque capability, marks that exact empty directory for deletion,
+releases its authoritative handle, and uses the retained parent for a handle-relative no-reparse
+open of the bound name. Cleanup succeeds only when Windows reports that name unambiguously absent;
+a foreign replacement or a share-delete handle that keeps deletion pending returns an error. Neither
+operation accepts an arbitrary source handle or path, reopens the source for mutation, or falls back
+to an ambient path. Existing destinations, nonempty directories, unsafe component names, and sharing
+conflicts fail closed; callers own stable diagnostic mapping and must preserve foreign content.
+
+The repository structure gate enforces the exact exception component, copied lint defaults, sole
+private-module `unsafe_code` allowance, and workspace forbid everywhere else. Compilation remains an
+independent lint boundary, and explicit Windows CI exercises the native lifecycle.
+
 ## Controlled mutation
 
 Future create and move commands will use a transactional planner:

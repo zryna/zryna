@@ -2032,3 +2032,12 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-source",
 ]
+
+[[package]]
+name = "zryna-windows-filesystem"
+version = "0.1.0"
+dependencies = [
+ "cap-std",
+ "same-file",
+ "windows-sys 0.61.2",
+]

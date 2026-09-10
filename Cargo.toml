@@ -19,6 +19,7 @@ members = [
   "crates/zryna-semantics",
   "crates/zryna-source",
   "crates/zryna-syntax",
+  "crates/zryna-windows-filesystem",
 ]
 
 [workspace.package]
@@ -52,6 +53,7 @@ thiserror = "2.0.16"
 toml = "0.9.5"
 target-lexicon = "=0.13.5"
 windows-spawn = "=0.1.0"
+windows-sys = "=0.61.2"
 wasm-encoder = { version = "=0.258.0", default-features = false, features = ["std"] }
 wasmparser = { version = "=0.258.0", default-features = false, features = ["features", "std", "validate"] }
 wasmtime = { version = "=48.0.1", default-features = false, features = ["std", "runtime", "cranelift", "component-model"] }

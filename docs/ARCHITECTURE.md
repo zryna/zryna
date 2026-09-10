@@ -119,6 +119,15 @@ scalar ABI ───────────────────────
 
 `zryna-driver` is the only library allowed to orchestrate all phases. The CLI calls the driver and architecture engine; individual backends do not call one another.
 
+`zryna-windows-filesystem` is a leaf foundation beneath Windows transaction owners. It exposes only
+atomic child-directory creation, same-source-handle no-replace rename, and exact-handle empty
+deletion with retained-parent absence confirmation. The driver and applications retain
+orchestration, names, inventories, diagnostics, and rollback policy; the foundation accepts no
+ambient path or arbitrary source handle and grants no general filesystem authority. Its private
+syscall module is the workspace's sole approved unsafe-Rust exception. The repository structure
+gate enforces the exact exception manifest and module; all other components retain the workspace
+forbid.
+
 The permanent direction is `frontend -> syntax -> semantics -> IR`. `zryna-semantics` is a compiler
 component and cannot depend on `zryna-frontend`; backends cannot depend on either provider layer.
 The architecture engine has a negative graph fixture for both forbidden edges.
