@@ -43,6 +43,8 @@ fn exact_handle_supports_the_complete_directory_lifecycle() -> Result<(), Box<dy
     let reopen = parent.open_dir("stage").expect_err("a second cap directory open must conflict");
     assert_eq!(reopen.raw_os_error(), Some(SHARING_VIOLATION));
 
+    drop(source);
+
     stage
         .rename_noreplace(&parent, OsStr::new("final"))
         .map_err(|error| operation_error("rename stage to final", error))?;
@@ -59,14 +61,18 @@ fn exact_handle_supports_the_complete_directory_lifecycle() -> Result<(), Box<dy
     drop(retained_identity);
     drop(final_identity);
 
+    let source = stage.directory().open_dir("src")?;
+    assert_eq!(source.read("main.zry")?, b"export fn main(): i32 { return 7; }\n");
+    drop(source);
+
     stage
         .rename_noreplace(&parent, OsStr::new("stage"))
         .map_err(|error| operation_error("rename final to stage", error))?;
     assert!(!root.path().join("final").exists());
-    assert_eq!(source.directory().read("main.zry")?, b"export fn main(): i32 { return 7; }\n");
-
-    source.directory().remove_file("main.zry")?;
-    source.remove_empty().map_err(|error| operation_error("remove nested source", error))?;
+    let source = stage.directory().open_dir("src")?;
+    source.remove_file("main.zry")?;
+    drop(source);
+    stage.directory().remove_dir("src")?;
     stage.directory().remove_file("artifact.txt")?;
     stage.remove_empty().map_err(|error| operation_error("remove stage", error))?;
     assert!(!root.path().join("stage").exists());

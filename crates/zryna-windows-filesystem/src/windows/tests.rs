@@ -3,72 +3,90 @@ use cap_std::ambient_authority;
 use same_file::Handle;
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use windows_sys::Win32::Foundation::{ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS};
 
 static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
 
 #[test]
-fn diagnostic_only_reports_open_descendant_rename_outcomes()
+fn ancestor_rename_rejects_a_live_child_regardless_of_delete_sharing()
 -> Result<(), Box<dyn std::error::Error>> {
-    let outcomes = [
-        no_descendants()?,
-        child_without_delete_sharing()?,
-        child_with_delete_sharing()?,
-        retained_project_topology()?,
-    ];
-    let report = outcomes.iter().map(Outcome::report).collect::<Vec<_>>().join("; ");
+    for (label, share_access) in [
+        ("exclusive", FILE_SHARE_READ | FILE_SHARE_WRITE),
+        ("share-delete", FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
+    ] {
+        let root = TemporaryRoot::new(label)?;
+        let parent = root.open()?;
+        let mut stage = create_directory(&parent, OsStr::new("stage"))?;
+        let child = create_test_directory(stage.directory(), OsStr::new("src"), share_access)?;
 
-    println!("diagnostic-only open-descendant matrix (not a contract assertion): {report}");
+        let error = stage
+            .rename_noreplace(&parent, OsStr::new("final"))
+            .expect_err("a live descendant must reject the ancestor rename");
+        assert_eq!(error.raw_os_error(), Some(ERROR_ACCESS_DENIED as i32));
+        assert!(root.path().join("stage").is_dir());
+        assert!(!root.path().join("final").exists());
+
+        drop(child);
+        stage.rename_noreplace(&parent, OsStr::new("final"))?;
+        stage.directory().remove_dir("src")?;
+        stage.remove_empty()?;
+    }
     Ok(())
 }
 
-fn no_descendants() -> io::Result<Outcome> {
-    let root = TemporaryRoot::new("diagnostic-none")?;
-    let parent = root.open()?;
-    let mut stage = create_directory(&parent, OsStr::new("stage"))?;
-    Ok(Outcome::new("no descendants", stage.rename_noreplace(&parent, OsStr::new("final"))))
-}
-
-fn child_without_delete_sharing() -> io::Result<Outcome> {
-    let root = TemporaryRoot::new("diagnostic-child-exclusive")?;
-    let parent = root.open()?;
-    let mut stage = create_directory(&parent, OsStr::new("stage"))?;
-    let _child = create_directory(stage.directory(), OsStr::new("src"))?;
-    Ok(Outcome::new(
-        "child without delete sharing",
-        stage.rename_noreplace(&parent, OsStr::new("final")),
-    ))
-}
-
-fn child_with_delete_sharing() -> io::Result<Outcome> {
-    let root = TemporaryRoot::new("diagnostic-child-shared")?;
-    let parent = root.open()?;
-    let mut stage = create_directory(&parent, OsStr::new("stage"))?;
-    let _child = create_test_directory(
-        stage.directory(),
-        OsStr::new("src"),
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-    )?;
-    Ok(Outcome::new(
-        "child with delete sharing",
-        stage.rename_noreplace(&parent, OsStr::new("final")),
-    ))
-}
-
-fn retained_project_topology() -> io::Result<Outcome> {
-    let root = TemporaryRoot::new("diagnostic-project")?;
+#[test]
+fn project_topology_renames_only_after_every_descendant_handle_closes()
+-> Result<(), Box<dyn std::error::Error>> {
+    let root = TemporaryRoot::new("project-topology")?;
     let parent = root.open()?;
     let mut stage = create_directory(&parent, OsStr::new("stage"))?;
     let source = create_directory(stage.directory(), OsStr::new("src"))?;
-    let _manifest = retain_file(stage.directory(), "zryna.package.json", b"manifest")?;
-    let _lock = retain_file(stage.directory(), "zryna.lock.json", b"lock")?;
-    let _source = retain_file(source.directory(), "main.zry", b"source")?;
+    let manifest = retain_file(stage.directory(), "zryna.package.json", b"manifest")?;
+    let lock = retain_file(stage.directory(), "zryna.lock.json", b"lock")?;
+    let source_file = retain_file(source.directory(), "main.zry", b"source")?;
 
-    Ok(Outcome::new(
-        "project topology with three file identities and directory clones",
-        stage.rename_noreplace(&parent, OsStr::new("final")),
-    ))
+    let error = stage
+        .rename_noreplace(&parent, OsStr::new("final"))
+        .expect_err("the complete live project topology must reject the ancestor rename");
+    assert_eq!(error.raw_os_error(), Some(ERROR_ACCESS_DENIED as i32));
+    assert!(root.path().join("stage").is_dir());
+    assert!(!root.path().join("final").exists());
+
+    drop(source_file);
+    drop(source);
+    drop(lock);
+    drop(manifest);
+
+    fs::create_dir(root.path().join("collision"))?;
+    fs::write(root.path().join("collision/sentinel"), b"foreign")?;
+    let collision = stage
+        .rename_noreplace(&parent, OsStr::new("collision"))
+        .expect_err("the exact root must not replace a foreign destination");
+    assert_eq!(collision.raw_os_error(), Some(ERROR_ALREADY_EXISTS as i32));
+    assert_eq!(fs::read(root.path().join("collision/sentinel"))?, b"foreign");
+
+    stage.rename_noreplace(&parent, OsStr::new("final"))?;
+    assert!(!root.path().join("stage").exists());
+    let retained = Handle::from_file(stage.directory().try_clone()?.into_std_file())?;
+    let published = Handle::from_path(root.path().join("final"))?;
+    assert_eq!(retained, published);
+    drop(retained);
+    drop(published);
+
+    assert_eq!(stage.directory().read("zryna.package.json")?, b"manifest");
+    assert_eq!(stage.directory().read("zryna.lock.json")?, b"lock");
+    let source = stage.directory().open_dir("src")?;
+    assert_eq!(source.read("main.zry")?, b"source");
+    source.remove_file("main.zry")?;
+    drop(source);
+    stage.directory().remove_dir("src")?;
+    stage.directory().remove_file("zryna.lock.json")?;
+    stage.directory().remove_file("zryna.package.json")?;
+    stage.remove_empty()?;
+    assert_eq!(fs::read(root.path().join("collision/sentinel"))?, b"foreign");
+    Ok(())
 }
 
 fn create_test_directory(
@@ -102,29 +120,6 @@ struct RetainedFile {
     _identity: Handle,
 }
 
-struct Outcome {
-    label: &'static str,
-    result: io::Result<()>,
-}
-
-impl Outcome {
-    fn new(label: &'static str, result: io::Result<()>) -> Self {
-        Self { label, result }
-    }
-
-    fn report(&self) -> String {
-        match &self.result {
-            Ok(()) => format!("{}=success", self.label),
-            Err(error) => format!(
-                "{}=error(kind={:?}, raw={:?}, message={error})",
-                self.label,
-                error.kind(),
-                error.raw_os_error()
-            ),
-        }
-    }
-}
-
 struct TemporaryRoot {
     path: PathBuf,
 }
@@ -136,6 +131,10 @@ impl TemporaryRoot {
             .join(format!("zryna-windows-filesystem-{label}-{}-{sequence}", std::process::id()));
         fs::create_dir(&path)?;
         Ok(Self { path })
+    }
+
+    fn path(&self) -> &Path {
+        &self.path
     }
 
     fn open(&self) -> io::Result<Dir> {

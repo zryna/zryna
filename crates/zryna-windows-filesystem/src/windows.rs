@@ -57,6 +57,9 @@ impl OwnedDirectory {
     ///
     /// The destination parent is cloned before mutation and becomes the retained parent only after
     /// the native rename succeeds. The source is never selected by path.
+    /// Every handle to a file or directory below this directory must be closed before calling this
+    /// method. Windows rejects an ancestor rename while any descendant handle remains open, even
+    /// when that descendant permits delete sharing. This method does not close descendant handles.
     ///
     /// # Errors
     ///
@@ -119,7 +122,8 @@ impl OwnedDirectory {
 ///
 /// The authoritative handle has delete access and permits read/write sharing, but deliberately
 /// excludes delete sharing. `name` must be one portable ASCII path component. At most 256 UTF-16
-/// units are inspected and allocated while validating the 255-unit limit.
+/// units are inspected and allocated while validating the 255-unit limit. A capability created
+/// below another [`OwnedDirectory`] must be dropped before renaming that ancestor.
 ///
 /// # Errors
 ///
