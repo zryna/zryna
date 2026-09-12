@@ -35,6 +35,12 @@ function header(path, mode, size, type = 48, link = '') {
   return value;
 }
 
+function rewriteChecksum(value) {
+  value.fill(32, 148, 156);
+  const checksum = value.reduce((sum, byte) => sum + byte, 0);
+  value.write(`${checksum.toString(8).padStart(6, '0')}\0 `, 148, 8, 'ascii');
+}
+
 function entry(path, data, type = 48, link = '') {
   const padding = (BLOCK - data.length % BLOCK) % BLOCK;
   return [header(path, 0o644, data.length, type, link), data, Buffer.alloc(padding)];
@@ -47,14 +53,20 @@ function namedGzip(input) {
   return Buffer.concat([prefix, Buffer.from('fixture.crate\0'), gzip.subarray(10)]);
 }
 
-function fixture({ corruptPadding = false, type = 48, trailing = false } = {}) {
+function fixture({ corruptLinkField = false, corruptPadding = false, type = 48,
+  trailing = false } = {}) {
   const root = 'example-1.0.0';
   const sourcePath = `licenses/${'long-'.repeat(18)}LICENSE`;
   const archivePath = `${root}/${sourcePath}`;
   const data = Buffer.from('license\n');
   const longName = Buffer.from(`${archivePath}\0`);
+  const longHeader = header('././@LongLink', 0o644, longName.length, 76);
+  if (corruptLinkField) {
+    longHeader[158] = 65;
+    rewriteChecksum(longHeader);
+  }
   const raw = Buffer.concat([
-    ...entry('././@LongLink', longName, 76),
+    longHeader, longName, Buffer.alloc((BLOCK - longName.length % BLOCK) % BLOCK),
     ...entry('placeholder', data, type, type === 49 || type === 50 ? `${root}/target` : ''),
     ...entry(`${root}/EMPTY`, Buffer.alloc(0)),
     Buffer.alloc(2 * BLOCK),
@@ -93,6 +105,12 @@ test('rejects nonzero crate tar padding', () => {
   const value = fixture({ corruptPadding: true });
   assert.throws(() => captureTarGzipMembers(value.archive, value.descriptor),
     /npm tar padding/);
+});
+
+test('rejects hidden bytes after the GNU long-name linkfield terminator', () => {
+  const value = fixture({ corruptLinkField: true });
+  assert.throws(() => captureTarGzipMembers(value.archive, value.descriptor),
+    /npm tar long name/);
 });
 
 test('publishes exact Node member and expanded Linux tar requirements', () => {

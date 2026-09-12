@@ -196,7 +196,7 @@ function parseTar(input, descriptor, root = 'package', allowedModes = new Set([0
       'npm tar padding');
     if (header[156] === 76) {
       requireValue(longName === null && size >= 2 && size <= 257 && data.at(-1) === 0
-        && ascii(header, 157, 100, 'link name') === ''
+        && header.subarray(157, 257).every(byte => byte === 0)
         && data.subarray(0, -1).every(byte => byte >= 32 && byte <= 126),
       'npm tar long name');
       longName = data.subarray(0, -1).toString('ascii');
@@ -204,7 +204,7 @@ function parseTar(input, descriptor, root = 'package', allowedModes = new Set([0
       continue;
     }
     requireValue((header[156] === 0 || header[156] === 48)
-      && ascii(header, 157, 100, 'link name') === '', 'npm tar ordinary file');
+      && header.subarray(157, 257).every(byte => byte === 0), 'npm tar ordinary file');
     const name = ascii(header, 0, 100, 'name');
     const prefix = ascii(header, 345, 155, 'prefix');
     const path = longName ?? (prefix ? `${prefix}/${name}` : name);
