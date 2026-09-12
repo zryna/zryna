@@ -8,6 +8,12 @@ roots and prepopulated exact-commit Git-cache entries. It passes bounded bytes t
 root package's `zryna.lock.json`. It does not acquire source, invoke Git, compile packages, change
 module semantics, or authorize build execution.
 
+`ProjectBuildRequest` and `ProjectRunRequest` keep an architecture-validated source compiler root
+separate from one explicit package-authenticated project root. The default M1 route resolves the
+project's frozen graph before compilation, uses only project-relative source and `.zryna` output,
+and revalidates the same graph before create-only bundle publication. It does not turn a project
+into a compiler workspace or add an architecture bypass.
+
 The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
 verified i32 source, empty composition requests, a separately audited component and an
 explicit denied host policy. Its source and execution fixtures await the required

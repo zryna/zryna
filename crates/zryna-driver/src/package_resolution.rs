@@ -3,7 +3,7 @@
 mod filesystem;
 
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     path::{Path, PathBuf},
 };
 
@@ -82,6 +82,19 @@ impl PackageResolutionSuccess {
 pub fn resolve_package(
     request: &PackageResolutionRequest,
 ) -> Result<PackageResolutionSuccess, ResolveError> {
+    resolve_package_internal(request, None).map(|(success, _)| success)
+}
+
+pub(crate) fn resolve_project_package(
+    request: &PackageResolutionRequest,
+) -> Result<(PackageResolutionSuccess, Vec<PackageFile>), ResolveError> {
+    resolve_package_internal(request, Some(&request.package))
+}
+
+fn resolve_package_internal(
+    request: &PackageResolutionRequest,
+    local_scope: Option<&str>,
+) -> Result<(PackageResolutionSuccess, Vec<PackageFile>), ResolveError> {
     let source_root = CapturedRoot::capture(&request.source_root)?;
     let git_cache = request.git_cache.as_deref().map(CapturedRoot::capture).transpose()?;
     let root_source = PackageSource {
@@ -93,6 +106,9 @@ pub fn resolve_package(
     let mut provider = FilesystemProvider {
         source_root,
         git_cache,
+        root_source: root_source.clone(),
+        local_scope: local_scope.map(ToOwned::to_owned),
+        loaded_files: BTreeMap::new(),
         retained_files: Vec::new(),
         retained_packages: Vec::new(),
     };
@@ -107,6 +123,11 @@ pub fn resolve_package(
     };
     let mode = existing_lock.as_deref().map_or(LockMode::Update, LockMode::Frozen);
     let graph = zryna_package::resolve(&mut provider, root_source, mode)?;
+    let root_files = provider
+        .loaded_files
+        .get(&provider.root_source)
+        .cloned()
+        .ok_or_else(|| ResolveError::source("root package source inventory is unavailable"))?;
     provider.revalidate()?;
     let current_package_dir = provider.open_source_dir(&PackageSource {
         kind: PackageSourceKind::Local,
@@ -118,16 +139,22 @@ pub fn resolve_package(
     if published {
         publish_lock(&package_dir, LOCK_NAME, graph.lock_bytes())?;
     }
-    Ok(PackageResolutionSuccess {
-        graph,
-        lock_path: request.source_root.join(&request.package).join(LOCK_NAME),
-        published,
-    })
+    Ok((
+        PackageResolutionSuccess {
+            graph,
+            lock_path: request.source_root.join(&request.package).join(LOCK_NAME),
+            published,
+        },
+        root_files,
+    ))
 }
 
 struct FilesystemProvider {
     source_root: CapturedRoot,
     git_cache: Option<CapturedRoot>,
+    root_source: PackageSource,
+    local_scope: Option<String>,
+    loaded_files: BTreeMap<PackageSource, Vec<PackageFile>>,
     retained_files: Vec<RetainedFile>,
     retained_packages: Vec<RetainedPackage>,
 }
@@ -140,8 +167,15 @@ impl PackageSourceProvider for FilesystemProvider {
         self.push_retained(retained)?;
         let mut files = Vec::new();
         let mut entries_seen = 0;
-        self.collect_files(&directory, &mut entries_seen, &mut files, &mut retained_package)?;
+        self.collect_files(
+            &directory,
+            source == &self.root_source,
+            &mut entries_seen,
+            &mut files,
+            &mut retained_package,
+        )?;
         files.sort_by(|left, right| left.path.cmp(&right.path));
+        self.loaded_files.insert(source.clone(), files.clone());
         self.retained_packages.push(retained_package);
         Ok(PackageMaterial { manifest, files })
     }
@@ -150,7 +184,17 @@ impl PackageSourceProvider for FilesystemProvider {
 impl FilesystemProvider {
     fn open_source_dir(&self, source: &PackageSource) -> Result<Dir, ResolveError> {
         match source.kind {
-            PackageSourceKind::Local => self.source_root.open_relative(&source.locator),
+            PackageSourceKind::Local => {
+                if let Some(scope) = &self.local_scope {
+                    let prefix = format!("{scope}/");
+                    if source.locator != *scope && !source.locator.starts_with(&prefix) {
+                        return Err(ResolveError::source(
+                            "local package dependency escapes the explicit project tree",
+                        ));
+                    }
+                }
+                self.source_root.open_relative(&source.locator)
+            }
             PackageSourceKind::Git => {
                 let cache = self.git_cache.as_ref().ok_or_else(|| {
                     ResolveError::source("exact Git source is absent from the configured cache")
@@ -163,6 +207,7 @@ impl FilesystemProvider {
     fn collect_files(
         &mut self,
         root: &Dir,
+        is_root_package: bool,
         entries_seen: &mut usize,
         files: &mut Vec<PackageFile>,
         retained_package: &mut RetainedPackage,
@@ -178,6 +223,14 @@ impl FilesystemProvider {
             for entry in entries {
                 let name = entry.name;
                 if prefix.is_empty() && matches!(name.as_str(), MANIFEST_NAME | LOCK_NAME) {
+                    continue;
+                }
+                if is_root_package && prefix.is_empty() && name == ".zryna" {
+                    if entry.kind != PackageEntryKind::Directory {
+                        return Err(ResolveError::source(
+                            "reserved project state path is not a real directory",
+                        ));
+                    }
                     continue;
                 }
                 let path =

@@ -32,3 +32,9 @@ verifies or atomically updates `zryna.lock.json`. It uses only workspace-relativ
 and an explicitly supplied prepopulated exact-commit Git cache; it performs no network, registry,
 script, native-recipe, package-import, compilation, or target execution work. See the
 [package resolution contract](../../docs/PACKAGE_RESOLUTION.md).
+
+`zryna new <PATH>` publishes one deterministic minimal project without replacing an existing path.
+Default-M1 `build` and `run` accept `--project-root <PATH>` while `--root` continues to identify the
+separately architecture-validated source checkout. Project source and generated `.zryna` state stay
+outside the compiler tree; see the [standalone project guide](../../docs/STANDALONE_PROJECTS.md).
+This source-checkout workflow does not expand the advertised v0.1.0 preview support matrix.

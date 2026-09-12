@@ -11,12 +11,23 @@ name = "zryna"
 path = "src/main.rs"
 
 [dependencies]
+cap-fs-ext.workspace = true
+cap-std.workspace = true
 clap.workspace = true
+same-file.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 zryna-abi.workspace = true
 zryna-architecture = { path = "../../crates/zryna-architecture" }
 zryna-diagnostics = { path = "../../crates/zryna-diagnostics" }
 zryna-driver = { path = "../../crates/zryna-driver" }
+zryna-package = { path = "../../crates/zryna-package" }
+
+[target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
+nix.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+zryna-windows-filesystem = { path = "../../crates/zryna-windows-filesystem" }
 
 [lints]
 workspace = true
