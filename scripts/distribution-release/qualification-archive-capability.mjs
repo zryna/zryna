@@ -71,13 +71,15 @@ function readTarMember(container, expected) {
     const prefix = tarAscii(header, 345, 155);
     const path = prefix ? `${prefix}/${name}` : name;
     const size = tarOctal(header, 124, 12);
-    const mode = tarOctal(header, 100, 8) & 0o777;
+    const mode = tarOctal(header, 100, 8);
     const type = header[156];
     const end = offset + BLOCK + size;
     if (size > MAX_CONTAINER || end > container.length) reject('tar member framing differs');
     if (path === expected.sourcePath) {
       if (selected || pathOverride || ![0, 48].includes(type)
-        || mode !== expected.mode || size !== expected.size) {
+        || ![expected.mode, 0o100000 + expected.mode].includes(mode)
+        || !header.subarray(157, 257).every((byte) => byte === 0)
+        || size !== expected.size) {
         reject('selected tar member is missing, ambiguous, or non-ordinary');
       }
       selected = Buffer.from(container.subarray(offset + BLOCK, end));

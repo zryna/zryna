@@ -40,4 +40,11 @@ test('qualification workflow pins actions and closes the replica topology', () =
   assert.match(text, /compare-release-qualifications\.mjs/);
   assert.match(text, /compression-level: 0/);
   assert.match(text, /retention-days: 1/);
+  const windows = workflow.jobs.build.steps.find(
+    ({ name }) => name === 'Bind exact Windows tools and developer environment');
+  assert.match(windows.run, /ZRYNA_QUALIFICATION_FETCH_PATH=/);
+  assert.match(windows.run, /ZRYNA_QUALIFICATION_PATH=/);
+  const fetchPath = /"ZRYNA_QUALIFICATION_FETCH_PATH=([^"\r\n]+)"/.exec(windows.run);
+  const compilePath = /"ZRYNA_QUALIFICATION_PATH=([^"\r\n]+)"/.exec(windows.run);
+  assert.equal(fetchPath[1], compilePath[1]);
 });

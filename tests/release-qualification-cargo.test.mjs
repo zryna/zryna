@@ -47,6 +47,12 @@ test('fetches into one fresh Cargo home and binds every cached crate to captured
   assert.equal(called, true);
   const captures = [{ identity: 'example-1.2.3', archive }];
   auditQualificationCargoCache(provisioned.cargoHome, captures);
+  const cacheRoot = join(provisioned.cargoHome, 'registry', 'cache',
+    'index.crates.io-1949cf8c6b5b557f');
+  writeFileSync(join(cacheRoot, 'unbound-9.9.9.crate'), 'unbound');
+  assert.throws(() => auditQualificationCargoCache(provisioned.cargoHome, captures),
+    /cache inventory differs/);
+  rmSync(join(cacheRoot, 'unbound-9.9.9.crate'));
   writeFileSync(join(provisioned.cargoHome, 'registry', 'cache',
     'index.crates.io-1949cf8c6b5b557f', 'example-1.2.3.crate'), 'changed');
   assert.throws(() => auditQualificationCargoCache(provisioned.cargoHome, captures),

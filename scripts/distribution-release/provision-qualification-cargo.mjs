@@ -3,7 +3,7 @@ import {
   lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync,
 } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
-import { sha256 } from './canonical.mjs';
+import { canonical, sha256 } from './canonical.mjs';
 
 const MAX_TOOL = 536870912;
 const MAX_CRATE = 64 * 1024 * 1024;
@@ -106,6 +106,13 @@ export function auditQualificationCargoCache(cargoHome, rustCaptures, {
       reject('Cargo crate capture differs');
     }
     names.add(capture.identity);
+  }
+  const expectedNames = [...names].map((identity) => `${identity}.crate`).sort();
+  const actualNames = system.list(root).sort();
+  if (canonical(actualNames) !== canonical(expectedNames)) {
+    reject('Cargo registry cache inventory differs from its captures');
+  }
+  for (const capture of rustCaptures) {
     const filename = `${capture.identity}.crate`;
     if (basename(filename) !== filename) reject('Cargo crate filename differs');
     const cached = regular(join(root, filename), {

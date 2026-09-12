@@ -34,6 +34,12 @@ function tar(path, mode, data, type = 48) {
   return Buffer.concat([tarHeader(path, mode, data, type), data, Buffer.alloc(padding + 2 * BLOCK)]);
 }
 
+function checksum(header) {
+  header.fill(32, 148, 156);
+  const value = header.reduce((sum, byte) => sum + byte, 0);
+  header.write(`${value.toString(8).padStart(6, '0')}\0 `, 148, 8, 'ascii');
+}
+
 function root(t) {
   const value = mkdtempSync(join(tmpdir(), 'zryna-qualification-capability-'));
   t.after(() => rmSync(value, { recursive: true, force: true }));
@@ -119,4 +125,15 @@ test('expands XZ through one fixed observed executable and validates a tar ordin
     format: 'tar', container: link, containerSha256: sha256(link),
     expected: member(sourcePath, 'runtime/node/bin/node', 0o755, data),
   }), /non-ordinary/);
+
+  for (const hostile of [
+    (() => { const value = tar(sourcePath, 0o200755, data); return value; })(),
+    (() => { const value = tar(sourcePath, 0o755, data); value.write('target', 157, 'ascii');
+      checksum(value.subarray(0, BLOCK)); return value; })(),
+  ]) {
+    await assert.rejects(() => capability.readOrdinaryMember({
+      format: 'tar', container: hostile, containerSha256: sha256(hostile),
+      expected: member(sourcePath, 'runtime/node/bin/node', 0o755, data),
+    }), /non-ordinary/);
+  }
 });

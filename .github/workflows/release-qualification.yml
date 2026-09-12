@@ -158,6 +158,7 @@ jobs:
           "ZRYNA_LINKER_PATH=$nativeBin\link.exe" >> $env:GITHUB_ENV
           "ZRYNA_INSPECTOR_PATH=$nativeBin\dumpbin.exe" >> $env:GITHUB_ENV
           "ZRYNA_QUALIFICATION_PATH=$nativeBin;$env:SystemRoot\System32;$env:SystemRoot" >> $env:GITHUB_ENV
+          "ZRYNA_QUALIFICATION_FETCH_PATH=$nativeBin;$env:SystemRoot\System32;$env:SystemRoot" >> $env:GITHUB_ENV
           "INCLUDE=$env:INCLUDE" >> $env:GITHUB_ENV
           "LIB=$env:LIB" >> $env:GITHUB_ENV
           "LIBPATH=$env:LIBPATH" >> $env:GITHUB_ENV
