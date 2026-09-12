@@ -328,6 +328,7 @@ fn write_entry(
     plan_key: &str,
     outputs: &[CompiledOutput],
 ) -> Result<(), PackageBuildError> {
+    #[cfg(not(windows))]
     let namespace = request.cache_root.path().join("build-plan-v0");
     let directory = request.cache_root.retained_build_namespace()?;
     let entry = CacheEntry {
