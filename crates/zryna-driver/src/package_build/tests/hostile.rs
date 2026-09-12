@@ -560,12 +560,15 @@ fn replaced_cache_and_output_roots_reject_before_parent_capture() {
         }
     });
     if cache_substitution_denied.get() {
-        drop(cache_result.expect("OS-protected cache root remains authenticated"));
-        cache.revalidate().expect("original cache root remains valid");
+        let retained = cache_result.expect("OS-protected cache root remains authenticated");
         assert_eq!(
-            same_file::Handle::from_path(&cache_path).expect("current cache identity"),
+            same_file::Handle::from_file(
+                retained.try_clone().expect("retained cache clone").into_std_file(),
+            )
+            .expect("retained cache identity"),
             cache_identity
         );
+        drop(retained);
         assert!(!displaced_cache.exists());
     } else {
         let cache_error = cache_result.expect_err("replaced cache root must reject");
@@ -593,12 +596,15 @@ fn replaced_cache_and_output_roots_reject_before_parent_capture() {
         }
     });
     if output_substitution_denied.get() {
-        drop(output_result.expect("OS-protected output root remains authenticated"));
-        output.revalidate().expect("original output root remains valid");
+        let retained = output_result.expect("OS-protected output root remains authenticated");
         assert_eq!(
-            same_file::Handle::from_path(&output_path).expect("current output identity"),
+            same_file::Handle::from_file(
+                retained.try_clone().expect("retained output clone").into_std_file(),
+            )
+            .expect("retained output identity"),
             output_identity
         );
+        drop(retained);
         assert!(!displaced_output.exists());
     } else {
         let output_error = output_result.expect_err("replaced output root must reject");
