@@ -94,6 +94,56 @@ impl Drop for InvalidWorkspace {
     }
 }
 
+struct ProjectCase {
+    parent: PathBuf,
+    root: PathBuf,
+}
+
+impl ProjectCase {
+    fn empty(name: &str) -> Self {
+        let sequence = NEXT_CASE.fetch_add(1, Ordering::Relaxed);
+        let parent =
+            env::temp_dir().join(format!("zryna-project-cli-{}-{sequence}", std::process::id()));
+        fs::create_dir(&parent).expect("project test parent must be created");
+        let root = parent.join(name);
+        Self { parent, root }
+    }
+
+    fn create(name: &str) -> Self {
+        let case = Self::empty(name);
+        let output =
+            zryna().arg("new").arg(&case.root).output().expect("project creation must start");
+        assert_success(&output);
+        case
+    }
+
+    fn compiler_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .canonicalize()
+            .expect("compiler root must resolve")
+    }
+
+    fn command(&self, arguments: &[&str]) -> Output {
+        zryna()
+            .args(arguments)
+            .arg("--root")
+            .arg(Self::compiler_root())
+            .arg("--project-root")
+            .arg(&self.root)
+            .arg("--node")
+            .arg(node_executable())
+            .output()
+            .expect("standalone project command must start")
+    }
+}
+
+impl Drop for ProjectCase {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.parent);
+    }
+}
+
 fn zryna() -> Command {
     Command::new(env!("CARGO_BIN_EXE_zryna"))
 }
@@ -177,6 +227,49 @@ fn compile_test_node(case: &WorkspaceCase, label: &str, target_body: &str) -> Pa
         .arg(&wrapper_source)
         .output()
         .expect("runtime wrapper compiler must start");
+    assert_success(&compile);
+    wrapper
+}
+
+#[cfg(unix)]
+fn compile_mutating_project_node(case: &ProjectCase, marker: &Path) -> PathBuf {
+    let wrapper = case.parent.join("mutating-node");
+    let wrapper_source = wrapper.with_extension("rs");
+    let real_node = serde_json::to_string(node_executable().to_string_lossy().as_ref())
+        .expect("real Node path literal");
+    let source = serde_json::to_string(case.root.join("src/main.zry").to_string_lossy().as_ref())
+        .expect("source path literal");
+    let marker =
+        serde_json::to_string(marker.to_string_lossy().as_ref()).expect("marker path literal");
+    fs::write(
+        &wrapper_source,
+        format!(
+            r#"fn main() {{
+    let arguments = std::env::args_os().skip(1).collect::<Vec<_>>();
+    if arguments.first().is_some_and(|value| value == "--version") {{
+        print!("v22.22.1\n");
+        return;
+    }}
+    if arguments.first().and_then(|value| std::path::Path::new(value).file_name()).is_some_and(|value| value == "worker.mjs") {{
+        let status = std::process::Command::new({real_node}).args(&arguments).status().expect("real Node must start");
+        if status.success() {{
+            std::fs::write({source}, b"export function main(): i32 {{ return 7; }}\n").expect("mutate source");
+        }}
+        std::process::exit(status.code().unwrap_or(1));
+    }}
+    std::fs::write({marker}, b"executed").expect("execution marker");
+    std::process::exit(1);
+}}
+"#
+        ),
+    )
+    .expect("mutating runtime wrapper source");
+    let compile = Command::new("rustc")
+        .args(["--edition=2024", "-o"])
+        .arg(&wrapper)
+        .arg(&wrapper_source)
+        .output()
+        .expect("mutating runtime wrapper compiler must start");
     assert_success(&compile);
     wrapper
 }
@@ -1467,4 +1560,191 @@ fn native_and_all_runs_publish_and_report_ordered_results() {
     let manifest = read_json(&bundle.join("zryna-manifest-v1.json"));
     assert_eq!(manifest["targets"], json!(["javascript", "webassembly", "native"]));
     assert_eq!(manifest["results"].as_array().map(Vec::len), Some(3));
+}
+
+#[test]
+fn new_project_is_deterministic_create_only_and_removable() {
+    let first = ProjectCase::create("hello-project");
+    let second = ProjectCase::create("hello-project");
+    for relative in ["zryna.package.json", "zryna.lock.json", "src/main.zry"] {
+        assert_eq!(
+            fs::read(first.root.join(relative)).expect("first scaffold file"),
+            fs::read(second.root.join(relative)).expect("second scaffold file"),
+            "{relative} must be byte-deterministic"
+        );
+    }
+    let original = fs::read(first.root.join("src/main.zry")).expect("original source");
+    let collision =
+        zryna().arg("new").arg(&first.root).output().expect("collision command must start");
+    assert_eq!(collision.status.code(), Some(4));
+    assert!(collision.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&collision.stderr).contains("ZRYNA-C2002"));
+    assert_eq!(fs::read(first.root.join("src/main.zry")).expect("preserved source"), original);
+    fs::remove_dir_all(&first.root).expect("standalone project must be removable as one tree");
+    assert!(!first.root.exists());
+}
+
+#[test]
+fn new_project_rejects_unsafe_names_paths_and_stages_without_cleanup_damage() {
+    for name in ["con", "lpt1", "Uppercase", "bad name"] {
+        let case = ProjectCase::empty(name);
+        let output =
+            zryna().arg("new").arg(&case.root).output().expect("invalid-name command must start");
+        assert_eq!(output.status.code(), Some(2), "{name}");
+        assert!(String::from_utf8_lossy(&output.stderr).contains("ZRYNA-C2001"));
+        assert!(!case.root.exists());
+    }
+
+    let case = ProjectCase::empty("safe-project");
+    let traversal = case.parent.join("child").join("..").join("escaped-project");
+    let output = zryna().arg("new").arg(traversal).output().expect("traversal command must start");
+    assert_eq!(output.status.code(), Some(2));
+    assert!(!case.parent.join("escaped-project").exists());
+
+    fs::create_dir(&case.root).expect("empty destination collision");
+    let empty_collision =
+        zryna().arg("new").arg(&case.root).output().expect("empty collision command must start");
+    assert_eq!(empty_collision.status.code(), Some(4));
+    assert!(case.root.is_dir());
+    fs::remove_dir(&case.root).expect("owned empty collision fixture");
+
+    let stage = case.parent.join(".zryna-new-safe-project.pending");
+    fs::create_dir(&stage).expect("pre-existing stage must be created");
+    fs::write(stage.join("sentinel"), b"preserve").expect("stage sentinel must be written");
+    let collision =
+        zryna().arg("new").arg(&case.root).output().expect("stage collision command must start");
+    assert_eq!(collision.status.code(), Some(4));
+    assert_eq!(fs::read(stage.join("sentinel")).expect("stage sentinel"), b"preserve");
+    assert!(!case.root.exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn new_project_rejects_a_linked_parent_without_touching_its_target() {
+    let target = ProjectCase::empty("target-parent");
+    let linked = ProjectCase::empty("linked-parent");
+    let parent_link = linked.parent.join("parent-link");
+    std::os::unix::fs::symlink(&target.parent, &parent_link).expect("linked parent fixture");
+    let destination = parent_link.join("linked-child");
+    let rejected =
+        zryna().arg("new").arg(&destination).output().expect("linked-parent command must start");
+    assert_eq!(rejected.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("ZRYNA-C2001"));
+    assert!(!target.parent.join("linked-child").exists());
+}
+
+#[test]
+fn standalone_project_builds_and_runs_from_explicit_separate_roots() {
+    let case = ProjectCase::create("external-project");
+    let build = case.command(&[
+        "build",
+        "src/main.zry",
+        "--target",
+        "javascript",
+        "--name",
+        "external-build",
+    ]);
+    assert_success(&build);
+    assert!(
+        case.root.join(".zryna/out/external-build.build/javascript/external-build.mjs").is_file()
+    );
+    let run = case.command(&[
+        "run",
+        "src/main.zry",
+        "--target",
+        "webassembly",
+        "--name",
+        "external-run",
+        "--export",
+        "main",
+    ]);
+    assert_success(&run);
+    assert_eq!(run.stdout, b"webassembly: i32 42\n");
+    assert!(case.root.join(".zryna/out/external-run.run/webassembly/external-run.wasm").is_file());
+
+    fs::write(case.root.join("undeclared.txt"), b"undeclared")
+        .expect("undeclared fixture must be written");
+    let rejected = case.command(&[
+        "build",
+        "src/main.zry",
+        "--target",
+        "javascript",
+        "--name",
+        "undeclared-build",
+    ]);
+    assert_eq!(rejected.status.code(), Some(3));
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("ZRYNA-P4004"));
+    assert!(!case.root.join(".zryna/out/undeclared-build.build").exists());
+}
+
+#[test]
+fn standalone_project_cannot_compile_undeclared_state_source() {
+    let case = ProjectCase::create("state-source-project");
+    fs::create_dir_all(case.root.join(".zryna/cache")).expect("state cache directory");
+    fs::write(
+        case.root.join(".zryna/cache/undeclared.zry"),
+        b"export function hidden(): i32 { return 7; }\n",
+    )
+    .expect("undeclared state source");
+    let rejected = case.command(&[
+        "build",
+        ".zryna/cache/undeclared.zry",
+        "--target",
+        "javascript",
+        "--name",
+        "state-source-build",
+    ]);
+    assert_eq!(rejected.status.code(), Some(3));
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("ZRYNA-P4004"));
+    assert!(!case.root.join(".zryna/out/state-source-build.build").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn project_mutation_after_frontend_admission_stops_before_target_execution() {
+    let case = ProjectCase::create("mutating-project");
+    let marker = case.parent.join("target-executed");
+    let node = compile_mutating_project_node(&case, &marker);
+    let rejected = zryna()
+        .args([
+            "run",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--name",
+            "mutating-run",
+            "--export",
+            "main",
+        ])
+        .arg("--root")
+        .arg(ProjectCase::compiler_root())
+        .arg("--project-root")
+        .arg(&case.root)
+        .arg("--node")
+        .arg(node)
+        .output()
+        .expect("mutating project command must start");
+    assert_eq!(rejected.status.code(), Some(3));
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("ZRYNA-P4004"));
+    assert!(!marker.exists(), "target runtime must not execute after project mutation");
+    assert!(!case.root.join(".zryna/out/mutating-run.run").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn standalone_project_root_link_is_rejected_without_output() {
+    let real = ProjectCase::create("real-project");
+    let linked = ProjectCase::empty("linked-project");
+    std::os::unix::fs::symlink(&real.root, &linked.root).expect("project root link");
+    let rejected = linked.command(&[
+        "build",
+        "src/main.zry",
+        "--target",
+        "javascript",
+        "--name",
+        "linked-build",
+    ]);
+    assert_eq!(rejected.status.code(), Some(3));
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("ZRYNA-P4004"));
+    assert!(!real.root.join(".zryna").exists());
 }

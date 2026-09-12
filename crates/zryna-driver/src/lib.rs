@@ -42,6 +42,7 @@ mod package_resolution;
 mod pipeline;
 mod pipeline_runtime;
 mod profile_composition;
+mod project;
 mod runtime;
 mod scalar_adapter_interface;
 mod source_api;
@@ -91,6 +92,7 @@ pub use pipeline::{
     TargetResult, TargetSelection, build_control_flow_workspace, build_workspace,
     run_control_flow_workspace, run_workspace,
 };
+pub use project::{ProjectBuildRequest, ProjectRunRequest, build_project, run_project};
 pub use source_api::{DualTargetArtifacts, SourceToIrError, SourceToIrSuccess};
 pub use webassembly::{
     MAX_WEBASSEMBLY_ARTIFACT_STEM_BYTES, PublishedWebAssemblyArtifact,

@@ -16,9 +16,6 @@ use sha2::{Digest, Sha256};
 use zryna_abi::{ScalarHostErrorCode, ScalarOutcome, ScalarTarget, ScalarValue};
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::VerifiedFrontendProviderV3;
-use zryna_frontend::{
-    FrontendCapabilities, ProviderExpectation, WorkerFrontend, WorkerLimits, WorkerSpec, syntax_v2,
-};
 use zryna_frontend::{ProviderExpectationV3, WorkerFrontendV3, WorkerLimitsV3, WorkerSpecV3};
 use zryna_source::{MAX_SOURCE_FILE_BYTES, NormalizedSourcePath, SourceFileInput, SourceMap};
 
@@ -38,7 +35,9 @@ use crate::{
 };
 
 mod preparation;
-use preparation::{PreparedArtifacts, compile_selected};
+mod project;
+use preparation::{PreparedArtifacts, analyze, configured_frontend, prepare_selected};
+pub(crate) use project::{build_project_request, run_project_request};
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
 const MANIFEST_PROFILE: &str = "zryna-m1-cli-v1";
@@ -736,8 +735,26 @@ fn execute(
     request: &BuildRequest,
     run: Option<&RunInvocation>,
 ) -> Result<CommandSuccess, CommandFailure> {
+    execute_with_roots(request, run, &request.workspace_root, None)
+}
+
+fn execute_with_roots(
+    request: &BuildRequest,
+    run: Option<&RunInvocation>,
+    compiler_root: &Path,
+    admission: Option<&crate::project::ProjectAdmission>,
+) -> Result<CommandSuccess, CommandFailure> {
+    validate_architecture(compiler_root)?;
+    execute_after_architecture(request, run, compiler_root, admission)
+}
+
+fn execute_after_architecture(
+    request: &BuildRequest,
+    run: Option<&RunInvocation>,
+    compiler_root: &Path,
+    admission: Option<&crate::project::ProjectAdmission>,
+) -> Result<CommandSuccess, CommandFailure> {
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
-    validate_architecture(&request.workspace_root)?;
     let validated = validate_request(request, command)?;
     let output_root = ArtifactOutputRoot::prepare_for_workspace(&request.workspace_root)
         .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
@@ -745,16 +762,23 @@ fn execute(
         output_root.path().join(format!("{}.{}", request.artifact_stem, command.suffix()));
     ensure_absent(&final_bundle)?;
 
-    let source_text = read_entrypoint(&validated.source_path)?;
+    let source_text = match admission {
+        Some(admission) => admission.entrypoint_text()?,
+        None => read_entrypoint(&validated.source_path)?,
+    };
     let sources = SourceMap::build(vec![SourceFileInput {
         path: request.entrypoint.clone(),
         text: source_text.clone(),
     }])
     .map_err(|error| failure(CommandFailureKind::Source, Diagnostic::from_source_error(&error)))?;
-    let node = NodeRuntimeCapability::discover(&request.node_runtime, &request.workspace_root)
+    let node = NodeRuntimeCapability::discover(&request.node_runtime, compiler_root)
         .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
-    let frontend = configured_frontend(request, &node)?;
-    let (compiled, mut prepared) = compile_selected(&frontend, &sources, request.targets)?;
+    let frontend = configured_frontend(compiler_root, &node)?;
+    let compiled = analyze(&frontend, &sources)?;
+    if let Some(admission) = admission {
+        admission.revalidate()?;
+    }
+    let mut prepared = prepare_selected(&compiled, request.targets)?;
     node.revalidate().map_err(preparation_failure)?;
     let program = compiled.program();
     let verified_invocation = run
@@ -825,6 +849,7 @@ fn execute(
         &source_text,
         &prepared,
         diagnostics,
+        admission,
     )
 }
 
@@ -1369,50 +1394,6 @@ pub(super) fn hex_sha256(bytes: &[u8; 32]) -> String {
     output
 }
 
-fn configured_frontend(
-    request: &BuildRequest,
-    node: &NodeRuntimeCapability,
-) -> Result<WorkerFrontend, CommandFailure> {
-    let adapter_root = request.workspace_root.join("adapters/typescript-6");
-    validate_real_directory(&adapter_root)
-        .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
-    let worker_entrypoint = adapter_root.join("src/worker.mjs");
-    let worker_metadata = fs::symlink_metadata(&worker_entrypoint).map_err(|_| {
-        entrypoint_error("TypeScript frontend worker entrypoint is unavailable")
-            .with_kind(CommandFailureKind::Preparation)
-    })?;
-    if !worker_metadata.is_file() || metadata_is_link_or_reparse(&worker_metadata) {
-        return Err(entrypoint_error(
-            "TypeScript frontend worker entrypoint is not a real regular file",
-        )
-        .with_kind(CommandFailureKind::Preparation));
-    }
-    let node_adapter_root = node_compatible_path(&adapter_root);
-    let node_worker_entrypoint = node_compatible_path(&worker_entrypoint);
-    let expected = ProviderExpectation::new(
-        "typescript-6",
-        "6.0.3",
-        syntax_v2::PROTOCOL_VERSION,
-        FrontendCapabilities { module_resolution: false, semantic_diagnostics: false },
-    )
-    .map_err(|error| CommandFailure {
-        kind: CommandFailureKind::Preparation,
-        diagnostics: error.diagnostics().to_vec(),
-    })?;
-    let spec = WorkerSpec::new(
-        node.executable().map_err(preparation_failure)?,
-        vec![node_worker_entrypoint.into_os_string()],
-        node_adapter_root,
-        expected,
-        WorkerLimits::default(),
-    )
-    .map_err(|error| CommandFailure {
-        kind: CommandFailureKind::Preparation,
-        diagnostics: error.diagnostics().to_vec(),
-    })?;
-    Ok(WorkerFrontend::new(spec))
-}
-
 #[allow(clippy::too_many_arguments)]
 fn commit_prepared(
     request: &BuildRequest,
@@ -1425,9 +1406,13 @@ fn commit_prepared(
     source_text: &str,
     prepared: &PreparedArtifacts,
     diagnostics: Vec<Diagnostic>,
+    admission: Option<&crate::project::ProjectAdmission>,
 ) -> Result<CommandSuccess, CommandFailure> {
     let mut transaction = Transaction::create(output_root)?;
     let operation: Result<CommandSuccess, CommandFailure> = (|| {
+        if let Some(admission) = admission {
+            admission.revalidate()?;
+        }
         let artifacts = write_prepared_artifacts(&transaction, request, command, prepared)?;
 
         let results = if let Some(invocation) = invocation {
@@ -1462,6 +1447,9 @@ fn commit_prepared(
         })?;
         manifest_bytes.push(b'\n');
         transaction.write_manifest(MANIFEST_NAME, &manifest_bytes)?;
+        if let Some(admission) = admission {
+            admission.revalidate()?;
+        }
         transaction.commit(output_root, final_bundle)?;
         Ok(CommandSuccess {
             command,
@@ -2284,12 +2272,13 @@ mod tests {
     use zryna_ir::{Type, control_flow_v1};
     use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 
+    use super::preparation::compile_selected;
     #[cfg(unix)]
     use super::read_entrypoint_with_after_read;
     use super::{
         BoundedManifestWriter, BuildRequest, CommandFailure, CommandFailureKind, CommandKind,
         ControlFlowBuildRequest, MANIFEST_NAME, ManifestTarget, TargetSelection, Transaction,
-        compile_selected, configured_frontend_v3, execute_control_flow_with_frontend_factory,
+        configured_frontend_v3, execute_control_flow_with_frontend_factory,
         native_preparation_failure, native_runtime_failure, normalize_carrier,
         render_javascript_harness, render_webassembly_harness, runtime_failure, validate_request,
     };

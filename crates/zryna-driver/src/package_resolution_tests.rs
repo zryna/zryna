@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
     sync::atomic::{AtomicU64, Ordering},
@@ -10,7 +11,7 @@ use zryna_package::{PackageSource, PackageSourceKind, PackageSourceProvider as _
 
 use super::{
     CapturedRoot, FilesystemProvider, MAX_SOURCE_ENTRIES, PackageLockMode,
-    PackageResolutionRequest, git_cache_key, resolve_package,
+    PackageResolutionRequest, git_cache_key, resolve_package, resolve_project_package,
 };
 
 static NEXT_ROOT: AtomicU64 = AtomicU64::new(0);
@@ -113,6 +114,9 @@ fn provider(root: &TemporaryRoot) -> FilesystemProvider {
     FilesystemProvider {
         source_root: CapturedRoot::capture(root.path()).expect("captured source root"),
         git_cache: None,
+        root_source: local_source(),
+        local_scope: None,
+        loaded_files: BTreeMap::new(),
         retained_files: Vec::new(),
         retained_packages: Vec::new(),
         loaded_files: std::collections::BTreeMap::new(),
@@ -220,6 +224,58 @@ fn linked_source_is_rejected_without_publication() {
         resolve_package(&request(&root, PackageLockMode::Update)).expect_err("link rejection");
     assert_eq!(error.code(), "ZRYNA-P4004");
     assert!(!package.join("zryna.lock.json").exists());
+}
+
+#[test]
+fn root_project_state_is_reserved_but_other_extra_files_still_reject() {
+    let root = TemporaryRoot::new("project-state");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    fs::create_dir_all(package.join(".zryna/out/example.build")).expect("project state directory");
+    fs::write(package.join(".zryna/out/example.build/artifact"), b"generated")
+        .expect("project state artifact");
+    resolve_package(&request(&root, PackageLockMode::Update)).expect("reserved project state");
+    resolve_package(&request(&root, PackageLockMode::Frozen)).expect("frozen project replay");
+
+    fs::write(package.join("undeclared.txt"), b"undeclared").expect("undeclared source");
+    let error = resolve_package(&request(&root, PackageLockMode::Frozen))
+        .expect_err("extra file rejection");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+}
+
+#[test]
+fn root_project_state_name_must_be_a_real_directory() {
+    let root = TemporaryRoot::new("project-state-file");
+    let package = root.path().join("packages/app");
+    write_package(&package, "app", source("local", "packages/app", ""), b"app\n", vec![]);
+    fs::write(package.join(".zryna"), b"not a directory").expect("reserved state file");
+    let error = resolve_package(&request(&root, PackageLockMode::Update))
+        .expect_err("state file rejection");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+    assert!(!package.join("zryna.lock.json").exists());
+}
+
+#[test]
+fn project_scope_rejects_a_sibling_dependency_before_filesystem_acquisition() {
+    let root = TemporaryRoot::new("project-sibling");
+    let package = root.path().join("packages/app");
+    write_package(
+        &package,
+        "app",
+        source("local", "packages/app", ""),
+        b"app\n",
+        vec![json!({
+            "alias": "sibling",
+            "name": "sibling",
+            "source": source("local", "packages/sibling", ""),
+            "version": "1.0.0"
+        })],
+    );
+    let error = resolve_project_package(&request(&root, PackageLockMode::Update))
+        .expect_err("out-of-tree dependency must reject before acquisition");
+    assert_eq!(error.code(), "ZRYNA-P4004");
+    assert_eq!(error.detail(), "local package dependency escapes the explicit project tree");
+    assert!(!root.path().join("packages/sibling").exists());
 }
 
 #[test]

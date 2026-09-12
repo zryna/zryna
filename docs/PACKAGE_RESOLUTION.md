@@ -112,3 +112,8 @@ package type imports, source acquisition, compilation, cache execution, and pack
 
 Diagnostics contain stable logical categories and never print credentials or absolute source/cache
 paths. JSON success reports the lock digest, package count, and whether update publication occurred.
+
+The exact root-package `.zryna` directory is reserved for project-owned generated state and is not
+source material. Resolution retains and revalidates that directory entry but does not traverse its
+contents. A non-directory at that name rejects, and every other undeclared file remains part of the
+authenticated inventory check. See [standalone projects](STANDALONE_PROJECTS.md).

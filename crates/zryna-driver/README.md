@@ -22,6 +22,12 @@ authentication rejects only mutations it observes; same-user descendant mutation
 follow final validation and is neither prevented nor guaranteed to be detected. See [the package
 build engine](../../docs/PACKAGE_BUILD_ENGINE.md).
 
+`ProjectBuildRequest` and `ProjectRunRequest` keep an architecture-validated source compiler root
+separate from one explicit package-authenticated project root. The default M1 route resolves the
+project's frozen graph before compilation, uses only project-relative source and `.zryna` output,
+and revalidates the same graph before create-only bundle publication. It does not turn a project
+into a compiler workspace or add an architecture bypass.
+
 The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
 verified i32 source, empty composition requests, a separately audited component and an
 explicit denied host policy. Its source and execution fixtures await the required
