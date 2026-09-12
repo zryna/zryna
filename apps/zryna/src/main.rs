@@ -2,9 +2,12 @@
 
 #![forbid(unsafe_code)]
 
+mod installed;
 mod ownership;
 mod package;
 mod profile;
+mod project;
+mod project_filesystem;
 mod render;
 
 use render::{render_cli_failure, render_failure, render_success};
@@ -41,6 +44,8 @@ enum Command {
         #[command(subcommand)]
         command: package::Command,
     },
+    /// Create one deterministic standalone source project without replacing files.
+    New(project::NewOptions),
     /// Compile one Zryna entrypoint into one atomic target bundle.
     Build(CompileOptions),
     /// Compile and invoke one scalar export, then commit one atomic target bundle.
@@ -73,15 +78,18 @@ struct CompileOptions {
     /// Select an exact versioned profile; omission preserves M1.
     #[arg(long, value_enum)]
     profile: Option<CliProfile>,
-    /// Workspace root.
-    #[arg(long, default_value = ".")]
-    root: PathBuf,
+    /// Source-checkout workspace root; defaults to the current directory.
+    #[arg(long)]
+    root: Option<PathBuf>,
+    /// Explicit standalone project root; omission preserves repository-local behavior.
+    #[arg(long)]
+    project_root: Option<PathBuf>,
     /// Portable output stem; defaults to the entrypoint stem.
     #[arg(long)]
     name: Option<String>,
     /// Absolute direct Node.js 22.22.1 executable.
-    #[arg(long)]
-    node: PathBuf,
+    #[arg(long, required = !zryna_driver::distribution::InstalledCompiler::is_distribution_build())]
+    node: Option<PathBuf>,
     /// Emit one versioned JSON response.
     #[arg(long)]
     json: bool,
@@ -95,7 +103,7 @@ struct RunOptions {
     #[arg(long)]
     export: String,
     /// Ordered canonical typed argument, for example --arg=i32:42.
-    #[arg(long = "arg", value_parser = parse_scalar_argument)]
+    #[arg(long = "arg", value_parser = profile::parse_scalar_argument)]
     arguments: Vec<ScalarValue>,
 }
 
@@ -143,6 +151,7 @@ fn main() -> ExitCode {
         Command::Architecture { command: ArchitectureCommand::Check(options) }
         | Command::Doctor(options) => run_architecture_check(&options),
         Command::Package { command } => package::run(command),
+        Command::New(options) => project::create(&options),
         Command::Build(options) => run_build(options),
         Command::Run(options) => run_command(options),
     }
@@ -160,7 +169,9 @@ where
     }
     let mut command = Cli::command();
     command = command.mut_subcommand("run", |run| {
-        run.mut_arg("arguments", |argument| argument.value_parser(parse_control_flow_argument))
+        run.mut_arg("arguments", |argument| {
+            argument.value_parser(profile::parse_control_flow_argument)
+        })
     });
     let matches = command.try_get_matches_from(arguments)?;
     Cli::from_arg_matches(&matches)
@@ -190,6 +201,9 @@ fn run_architecture_check(options: &ArchitectureOptions) -> ExitCode {
 }
 
 fn run_build(options: CompileOptions) -> ExitCode {
+    if zryna_driver::distribution::InstalledCompiler::is_distribution_build() {
+        return installed::execute(options, None);
+    }
     let json_mode = options.json;
     let request = match build_request(options) {
         Ok(request) => request,
@@ -206,6 +220,7 @@ fn run_build(options: CompileOptions) -> ExitCode {
             );
         }
         ProfileBuildRequest::M1(request) => zryna_driver::build_workspace(&request),
+        ProfileBuildRequest::Project(request) => zryna_driver::build_project(&request),
         ProfileBuildRequest::ControlFlowV1(request) => {
             zryna_driver::build_control_flow_workspace(&request)
         }
@@ -217,6 +232,9 @@ fn run_build(options: CompileOptions) -> ExitCode {
 }
 
 fn run_command(options: RunOptions) -> ExitCode {
+    if zryna_driver::distribution::InstalledCompiler::is_distribution_build() {
+        return installed::execute(options.compile, Some((options.export, options.arguments)));
+    }
     let json_mode = options.compile.json;
     let export = options.export;
     let arguments = options.arguments;
@@ -241,6 +259,13 @@ fn run_command(options: RunOptions) -> ExitCode {
         ProfileBuildRequest::M1(build) => {
             zryna_driver::run_workspace(RunRequest { build, logical_export: export, arguments })
         }
+        ProfileBuildRequest::Project(build) => {
+            zryna_driver::run_project(zryna_driver::ProjectRunRequest {
+                build,
+                logical_export: export,
+                arguments,
+            })
+        }
         ProfileBuildRequest::ControlFlowV1(build) => {
             zryna_driver::run_control_flow_workspace(ControlFlowRunRequest {
                 build,
@@ -257,18 +282,38 @@ fn run_command(options: RunOptions) -> ExitCode {
 
 enum ProfileBuildRequest {
     M1(BuildRequest),
+    Project(zryna_driver::ProjectBuildRequest),
     ControlFlowV1(ControlFlowBuildRequest),
     DataOwnershipV1(DataOwnershipBuildRequest),
 }
 
 fn build_request(options: CompileOptions) -> Result<ProfileBuildRequest, Diagnostic> {
-    let root = absolute_workspace_path(&options.root)?;
-    if !options.node.is_absolute() {
+    let root = absolute_workspace_path(&options.root.unwrap_or_else(|| PathBuf::from(".")))?;
+    let project_root = options.project_root.as_ref().map(absolute_workspace_path).transpose()?;
+    let node = options.node.ok_or_else(cli_path_error)?;
+    if !node.is_absolute() {
         return Err(cli_path_error());
     }
-    let node = options.node;
-    let stem = options.name.unwrap_or_else(|| default_stem(&options.entrypoint));
+    let stem = options.name.unwrap_or_else(|| profile::default_stem(&options.entrypoint));
     let targets = options.target.into();
+    if let Some(project_root) = project_root {
+        if options.profile.is_some() {
+            return Err(Diagnostic::error(
+                "ZRYNA-C2001",
+                None,
+                "standalone projects currently require the manifest-declared i32-v1 profile",
+                "omit --profile when using --project-root",
+            ));
+        }
+        return Ok(ProfileBuildRequest::Project(zryna_driver::ProjectBuildRequest {
+            compiler_root: root,
+            project_root,
+            entrypoint: options.entrypoint,
+            artifact_stem: stem,
+            targets,
+            node_runtime: node,
+        }));
+    }
     Ok(match options.profile {
         None => ProfileBuildRequest::M1(BuildRequest {
             workspace_root: root,
@@ -306,64 +351,13 @@ fn absolute_workspace_path(path: &PathBuf) -> Result<PathBuf, Diagnostic> {
     }
 }
 
-fn default_stem(entrypoint: &str) -> String {
-    std::path::Path::new(entrypoint)
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .unwrap_or("")
-        .to_owned()
-}
-
-fn parse_scalar_argument(value: &str) -> Result<ScalarValue, String> {
-    let Some(decimal) = value.strip_prefix("i32:") else {
-        return Err("expected canonical i32:<decimal> argument".to_owned());
-    };
-    let canonical = if decimal == "0" {
-        true
-    } else if let Some(digits) = decimal.strip_prefix('-') {
-        !digits.is_empty()
-            && !digits.starts_with('0')
-            && digits.bytes().all(|byte| byte.is_ascii_digit())
-    } else {
-        !decimal.is_empty()
-            && !decimal.starts_with('0')
-            && decimal.bytes().all(|byte| byte.is_ascii_digit())
-    };
-    if !canonical {
-        return Err("expected canonical signed base-ten i32 without whitespace or leading zeroes"
-            .to_owned());
-    }
-    decimal
-        .parse::<i32>()
-        .map(ScalarValue::I32)
-        .map_err(|_| "i32 argument is outside the signed 32-bit range".to_owned())
-}
-
-fn parse_control_flow_argument(value: &str) -> Result<ScalarValue, String> {
-    if let Some(boolean) = value.strip_prefix("bool:") {
-        return match boolean {
-            "true" => Ok(ScalarValue::Bool(true)),
-            "false" => Ok(ScalarValue::Bool(false)),
-            _ => Err("expected canonical bool:true or bool:false argument".to_owned()),
-        };
-    }
-    parse_scalar_argument(value)
-}
-
 fn cli_path_error() -> Diagnostic {
-    Diagnostic::error(
-        "ZRYNA-C1001",
-        None,
-        "CLI path could not be resolved to an existing absolute path",
-        "pass an existing workspace root and direct Node.js executable path",
-    )
+    profile::cli_path_error()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        CliProfile, Command, parse_cli_from, parse_control_flow_argument, parse_scalar_argument,
-    };
+    use super::{CliProfile, Command, parse_cli_from, profile};
     use zryna_abi::ScalarValue;
 
     #[test]
@@ -390,10 +384,16 @@ mod tests {
 
     #[test]
     fn scalar_arguments_are_canonical() {
-        assert_eq!(parse_scalar_argument("i32:-2147483648"), Ok(ScalarValue::I32(i32::MIN)));
-        assert_eq!(parse_scalar_argument("i32:2147483647"), Ok(ScalarValue::I32(i32::MAX)));
+        assert_eq!(
+            profile::parse_scalar_argument("i32:-2147483648"),
+            Ok(ScalarValue::I32(i32::MIN))
+        );
+        assert_eq!(
+            profile::parse_scalar_argument("i32:2147483647"),
+            Ok(ScalarValue::I32(i32::MAX))
+        );
         for rejected in ["i32:+1", "i32:01", "i32:-0", "i32: 1", "bool:true"] {
-            assert!(parse_scalar_argument(rejected).is_err(), "{rejected}");
+            assert!(profile::parse_scalar_argument(rejected).is_err(), "{rejected}");
         }
     }
 
@@ -419,11 +419,14 @@ mod tests {
         };
         assert_eq!(options.compile.profile, Some(CliProfile::ControlFlowV1));
         assert_eq!(options.arguments, [ScalarValue::Bool(true)]);
-        assert_eq!(parse_control_flow_argument("bool:true"), Ok(ScalarValue::Bool(true)));
-        assert_eq!(parse_control_flow_argument("bool:false"), Ok(ScalarValue::Bool(false)));
-        assert_eq!(parse_control_flow_argument("i32:-1"), Ok(ScalarValue::I32(-1)));
+        assert_eq!(profile::parse_control_flow_argument("bool:true"), Ok(ScalarValue::Bool(true)));
+        assert_eq!(
+            profile::parse_control_flow_argument("bool:false"),
+            Ok(ScalarValue::Bool(false))
+        );
+        assert_eq!(profile::parse_control_flow_argument("i32:-1"), Ok(ScalarValue::I32(-1)));
         for rejected in ["bool:True", "bool:1", "bool:false ", "bool:"] {
-            assert!(parse_control_flow_argument(rejected).is_err(), "{rejected}");
+            assert!(profile::parse_control_flow_argument(rejected).is_err(), "{rejected}");
         }
     }
 

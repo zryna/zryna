@@ -75,8 +75,11 @@ semantic lowering never depends on a replaceable provider.
 13. The CLI runs architecture validation first, then asks the driver to select either the
     unchanged default M1 path or explicit `control-flow-v1`. M1 analyzes one entrypoint once; M2
     discovers one authenticated module graph and lowers it once. Each path dispatches its same
-    verified authority to an explicit target selection. The driver stages and commits one complete
-    versioned build or run bundle; the CLI only parses and renders.
+   verified authority to an explicit target selection. The driver stages and commits one complete
+   versioned build or run bundle; the CLI only parses and renders.
+   A standalone default-M1 request retains that same compiler-checkout gate separately from one
+   explicit project root, authenticates the project through the frozen package graph, and publishes
+   only below the project's reserved `.zryna` state directory.
 14. The repository-owned documentation producer exports an explicit whitelist of reviewed
     Markdown with exact compiler provenance. The website validates and presents that bundle but
     never becomes a language, ABI, diagnostic, or support-status authority.

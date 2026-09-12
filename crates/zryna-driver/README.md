@@ -8,6 +8,12 @@ roots and prepopulated exact-commit Git-cache entries. It passes bounded bytes t
 root package's `zryna.lock.json`. It does not acquire source, invoke Git, compile packages, change
 module semantics, or authorize build execution.
 
+`ProjectBuildRequest` and `ProjectRunRequest` keep an architecture-validated source compiler root
+separate from one explicit package-authenticated project root. The default M1 route resolves the
+project's frozen graph before compilation, uses only project-relative source and `.zryna` output,
+and revalidates the same graph before create-only bundle publication. It does not turn a project
+into a compiler workspace or add an architecture bypass.
+
 The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
 verified i32 source, empty composition requests, a separately audited component and an
 explicit denied host policy. Its source and execution fixtures await the required
@@ -66,6 +72,14 @@ edges, source hashes, and a canonical graph digest. It is documented in
 [M2 deterministic module closure](../../docs/M2_MODULE_CLOSURE.md). Exact
 `--profile control-flow-v1` now composes that closure with the straight-line/control-flow semantic
 boundary and all selected sealed backends. Omitting `--profile` does not enter this path.
+
+M2 and M3 discovery validate each provider request against the source session's exact captured
+paths and bytes. Workspace sessions revalidate the current batch's files and ancestor bindings;
+project sessions use the resolver-owned root inventory. Complete source validation remains before
+and after final analysis. Installed sessions also revalidate provider identity before each call
+and retain complete project/installation checks through execution and publication. The checkout
+closure API returns a sealed snapshot; it does not retain a live source session downstream.
+Batch validation avoids rereading all earlier source contents, but directory enumeration can repeat.
 
 The M2 driver path passes the same verifier-sealed `ControlFlowV1` program to the independent
 JavaScript, direct core WebAssembly, and verified native-MIR/object emitters. WebAssembly execution sends the exact validated

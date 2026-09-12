@@ -72,6 +72,13 @@ test('representative paths select only their owning optional contract lanes', ()
     ['schemas/zryna-release-qualification-input-v1.schema.json', ['distribution_release']],
     ['schemas/zryna-release-qualification-inspection-v1.schema.json', ['distribution_release']],
     ['schemas/zryna-release-qualification-result-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-files-v1.schema.json', ['distribution_release']],
+    ['scripts/distribution/assemble.mjs', ['distribution_release']],
+    ['crates/zryna-driver/src/distribution/mod.rs', ['distribution_release']],
+    ['apps/zryna/src/installed.rs', ['distribution_release']],
+    ['tests/distribution-receipt-compatibility.test.mjs', ['distribution_release']],
+    ['tests/distribution-npm-materials.test.mjs', ['distribution_release']],
     ['scripts/distribution-release/validate.mjs', ['distribution_release']],
     ['spec/release/DISTRIBUTION_RELEASE_V1.md', ['distribution_release']],
     ['tests/distribution-release-v1.test.mjs', ['distribution_release']],
@@ -276,6 +283,7 @@ test('consolidation preserves every prior contract command and pinned action', (
   assert.deepEqual(commands('distribution-release-contract'), [
     'pnpm install --frozen-lockfile',
     'pnpm release:contract',
+    'pnpm distribution:check',
   ]);
   assert.deepEqual(commands('package-release-contract'), [
     'pnpm install --frozen-lockfile',

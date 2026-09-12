@@ -16,9 +16,6 @@ use sha2::{Digest, Sha256};
 use zryna_abi::{ScalarHostErrorCode, ScalarOutcome, ScalarTarget, ScalarValue};
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::VerifiedFrontendProviderV3;
-use zryna_frontend::{
-    FrontendCapabilities, ProviderExpectation, WorkerFrontend, WorkerLimits, WorkerSpec, syntax_v2,
-};
 use zryna_frontend::{ProviderExpectationV3, WorkerFrontendV3, WorkerLimitsV3, WorkerSpecV3};
 use zryna_source::{MAX_SOURCE_FILE_BYTES, NormalizedSourcePath, SourceFileInput, SourceMap};
 
@@ -37,8 +34,14 @@ use crate::{
     runtime::{NodeRuntimeCapability, node_compatible_path},
 };
 
+mod control_flow;
 mod preparation;
-use preparation::{PreparedArtifacts, compile_selected};
+mod project;
+mod scalar;
+pub(crate) use control_flow::execute_installed as execute_installed_control_flow;
+use preparation::{PreparedArtifacts, analyze, configured_frontend};
+pub(crate) use project::{build_project_request, run_project_request};
+pub(crate) use scalar::execute_installed as execute_installed_scalar;
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
 const MANIFEST_PROFILE: &str = "zryna-m1-cli-v1";
@@ -463,6 +466,7 @@ enum ControlFlowPhase {
     JavaScriptExecution,
     WebAssemblyExecution,
     NativeExecution,
+    ArtifactStaging,
     ManifestRendering,
     Publication,
 }
@@ -593,82 +597,7 @@ where
     checkpoint(ControlFlowPhase::Discovery)?;
     let closure = discover_module_closure(&source_root, entrypoint, &frontend)
         .map_err(|error| module_closure_failure(&error))?;
-    checkpoint(ControlFlowPhase::Semantics)?;
-    let scalar_source = crate::scalar_adapter_interface::lower_verified_scalar_source(&closure)
-        .map_err(|diagnostics| CommandFailure { kind: CommandFailureKind::Source, diagnostics })?;
-    let verified_invocation = run
-        .map(|invocation| {
-            scalar_source.program().prepare_invocation(zryna_abi::Invocation::new(
-                invocation.logical_export.clone(),
-                invocation.arguments.clone(),
-            ))
-        })
-        .transpose()
-        .map_err(|error| {
-            failure(
-                CommandFailureKind::Source,
-                Diagnostic::error(
-                    error.code(),
-                    None,
-                    "run invocation does not match the verified ControlFlowV1 scalar ABI export",
-                    "use the exact entry-module export, arity, and scalar argument types",
-                ),
-            )
-        })?;
-    let mut prepared = compile_control_flow_selected(&scalar_source, request.targets, checkpoint)?;
-    node.revalidate().map_err(preparation_failure)?;
-
-    if run.is_some() && request.targets.native() {
-        checkpoint(ControlFlowPhase::NativeLink)?;
-        let invocation = verified_invocation.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "verified M2 invocation preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let object = prepared.native_object.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "M2 native object preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let toolchain = discover_linux_native_toolchain(NativeProcessLimits::default())
-            .map_err(preparation_failure)?;
-        prepared.native_executable = Some(
-            prepare_control_flow_native_invocation_from_verified(
-                scalar_source.program(),
-                object,
-                invocation,
-                &output_root,
-                &toolchain,
-                NativeProcessLimits::default(),
-            )
-            .map_err(native_preparation_failure)?,
-        );
-    }
-
-    let diagnostics = closure
-        .syntax()
-        .diagnostics()
-        .iter()
-        .filter(|diagnostic| diagnostic.severity() == zryna_diagnostics::Severity::Warning)
-        .cloned()
-        .collect::<Vec<_>>();
-    commit_control_flow_prepared(
-        request,
-        command,
-        run,
-        verified_invocation.as_ref(),
-        &node,
-        &output_root,
-        &final_bundle,
-        &closure,
-        &prepared,
-        diagnostics,
-        checkpoint,
-    )
+    control_flow::finish(request, run, &node, &output_root, &final_bundle, &closure, checkpoint)
 }
 
 fn compile_control_flow_selected(
@@ -736,8 +665,26 @@ fn execute(
     request: &BuildRequest,
     run: Option<&RunInvocation>,
 ) -> Result<CommandSuccess, CommandFailure> {
+    execute_with_roots(request, run, &request.workspace_root, None)
+}
+
+fn execute_with_roots(
+    request: &BuildRequest,
+    run: Option<&RunInvocation>,
+    compiler_root: &Path,
+    admission: Option<&crate::project::ProjectAdmission>,
+) -> Result<CommandSuccess, CommandFailure> {
+    validate_architecture(compiler_root)?;
+    execute_after_architecture(request, run, compiler_root, admission)
+}
+
+fn execute_after_architecture(
+    request: &BuildRequest,
+    run: Option<&RunInvocation>,
+    compiler_root: &Path,
+    admission: Option<&crate::project::ProjectAdmission>,
+) -> Result<CommandSuccess, CommandFailure> {
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
-    validate_architecture(&request.workspace_root)?;
     let validated = validate_request(request, command)?;
     let output_root = ArtifactOutputRoot::prepare_for_workspace(&request.workspace_root)
         .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
@@ -745,86 +692,34 @@ fn execute(
         output_root.path().join(format!("{}.{}", request.artifact_stem, command.suffix()));
     ensure_absent(&final_bundle)?;
 
-    let source_text = read_entrypoint(&validated.source_path)?;
+    let source_text = match admission {
+        Some(admission) => admission.entrypoint_text()?,
+        None => read_entrypoint(&validated.source_path)?,
+    };
     let sources = SourceMap::build(vec![SourceFileInput {
         path: request.entrypoint.clone(),
         text: source_text.clone(),
     }])
     .map_err(|error| failure(CommandFailureKind::Source, Diagnostic::from_source_error(&error)))?;
-    let node = NodeRuntimeCapability::discover(&request.node_runtime, &request.workspace_root)
+    let node = NodeRuntimeCapability::discover(&request.node_runtime, compiler_root)
         .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
-    let frontend = configured_frontend(request, &node)?;
-    let (compiled, mut prepared) = compile_selected(&frontend, &sources, request.targets)?;
-    node.revalidate().map_err(preparation_failure)?;
-    let program = compiled.program();
-    let verified_invocation = run
-        .map(|invocation| {
-            program.prepare_invocation(zryna_abi::Invocation::new(
-                invocation.logical_export.clone(),
-                invocation.arguments.clone(),
-            ))
-        })
-        .transpose()
-        .map_err(|error| {
-            failure(
-                CommandFailureKind::Source,
-                Diagnostic::error(
-                    error.code(),
-                    None,
-                    "run invocation does not match the verified scalar ABI export",
-                    "use the exact export, arity, and scalar argument types",
-                ),
-            )
-        })?;
-
-    let native_executable = if run.is_some() && request.targets.native() {
-        let invocation = verified_invocation.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "verified invocation preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let object = prepared.native_object.as_ref().ok_or_else(|| {
-            request_error(
-                "ZRYNA-C1010",
-                "native object preparation was not completed",
-                "report this compiler invariant failure",
-            )
-        })?;
-        let toolchain = discover_linux_native_toolchain(NativeProcessLimits::default())
-            .map_err(preparation_failure)?;
-        Some(
-            prepare_native_invocation_from_verified(
-                program,
-                object,
-                invocation,
-                &output_root,
-                &toolchain,
-                NativeProcessLimits::default(),
-            )
-            .map_err(native_preparation_failure)?,
-        )
-    } else {
-        None
-    };
-
-    let mut diagnostics = compiled.diagnostics().to_vec();
-    if let Some(executable) = &native_executable {
-        diagnostics.extend_from_slice(executable.diagnostics());
+    let frontend = configured_frontend(compiler_root, &node)?;
+    let compiled = analyze(&frontend, &sources)?;
+    if let Some(admission) = admission {
+        admission.revalidate()?;
     }
-    prepared.native_executable = native_executable;
-    commit_prepared(
+    scalar::finish(
         request,
-        command,
         run,
-        verified_invocation.as_ref(),
         &node,
         &output_root,
         &final_bundle,
         &source_text,
-        &prepared,
-        diagnostics,
+        &compiled,
+        &|| match admission {
+            Some(admission) => admission.revalidate(),
+            None => Ok(()),
+        },
     )
 }
 
@@ -1108,6 +1003,7 @@ fn commit_control_flow_prepared(
     diagnostics: Vec<Diagnostic>,
     checkpoint: ControlFlowCheckpoint<'_>,
 ) -> Result<CommandSuccess, CommandFailure> {
+    checkpoint(ControlFlowPhase::ArtifactStaging)?;
     let mut transaction = Transaction::create(output_root)?;
     let operation: Result<CommandSuccess, CommandFailure> = (|| {
         let artifacts = write_control_flow_artifacts(&transaction, request, command, prepared)?;
@@ -1369,50 +1265,6 @@ pub(super) fn hex_sha256(bytes: &[u8; 32]) -> String {
     output
 }
 
-fn configured_frontend(
-    request: &BuildRequest,
-    node: &NodeRuntimeCapability,
-) -> Result<WorkerFrontend, CommandFailure> {
-    let adapter_root = request.workspace_root.join("adapters/typescript-6");
-    validate_real_directory(&adapter_root)
-        .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
-    let worker_entrypoint = adapter_root.join("src/worker.mjs");
-    let worker_metadata = fs::symlink_metadata(&worker_entrypoint).map_err(|_| {
-        entrypoint_error("TypeScript frontend worker entrypoint is unavailable")
-            .with_kind(CommandFailureKind::Preparation)
-    })?;
-    if !worker_metadata.is_file() || metadata_is_link_or_reparse(&worker_metadata) {
-        return Err(entrypoint_error(
-            "TypeScript frontend worker entrypoint is not a real regular file",
-        )
-        .with_kind(CommandFailureKind::Preparation));
-    }
-    let node_adapter_root = node_compatible_path(&adapter_root);
-    let node_worker_entrypoint = node_compatible_path(&worker_entrypoint);
-    let expected = ProviderExpectation::new(
-        "typescript-6",
-        "6.0.3",
-        syntax_v2::PROTOCOL_VERSION,
-        FrontendCapabilities { module_resolution: false, semantic_diagnostics: false },
-    )
-    .map_err(|error| CommandFailure {
-        kind: CommandFailureKind::Preparation,
-        diagnostics: error.diagnostics().to_vec(),
-    })?;
-    let spec = WorkerSpec::new(
-        node.executable().map_err(preparation_failure)?,
-        vec![node_worker_entrypoint.into_os_string()],
-        node_adapter_root,
-        expected,
-        WorkerLimits::default(),
-    )
-    .map_err(|error| CommandFailure {
-        kind: CommandFailureKind::Preparation,
-        diagnostics: error.diagnostics().to_vec(),
-    })?;
-    Ok(WorkerFrontend::new(spec))
-}
-
 #[allow(clippy::too_many_arguments)]
 fn commit_prepared(
     request: &BuildRequest,
@@ -1425,18 +1277,30 @@ fn commit_prepared(
     source_text: &str,
     prepared: &PreparedArtifacts,
     diagnostics: Vec<Diagnostic>,
+    checkpoint: &dyn Fn() -> Result<(), CommandFailure>,
 ) -> Result<CommandSuccess, CommandFailure> {
+    checkpoint()?;
     let mut transaction = Transaction::create(output_root)?;
     let operation: Result<CommandSuccess, CommandFailure> = (|| {
+        checkpoint()?;
         let artifacts = write_prepared_artifacts(&transaction, request, command, prepared)?;
 
         let results = if let Some(invocation) = invocation {
-            execute_targets(request, node, output_root, &transaction, prepared, invocation)?
+            execute_targets(
+                request,
+                node,
+                output_root,
+                &transaction,
+                prepared,
+                invocation,
+                checkpoint,
+            )?
         } else {
             Vec::new()
         };
         let manifest_results = results.iter().map(manifest_result).collect::<Vec<_>>();
         let source_sha256 = sha256(source_text.as_bytes());
+        checkpoint()?;
         let manifest = Manifest {
             version: 1,
             profile: MANIFEST_PROFILE,
@@ -1462,6 +1326,7 @@ fn commit_prepared(
         })?;
         manifest_bytes.push(b'\n');
         transaction.write_manifest(MANIFEST_NAME, &manifest_bytes)?;
+        checkpoint()?;
         transaction.commit(output_root, final_bundle)?;
         Ok(CommandSuccess {
             command,
@@ -1560,9 +1425,11 @@ fn execute_targets(
     transaction: &Transaction,
     prepared: &PreparedArtifacts,
     invocation: &zryna_abi::VerifiedInvocation<'_>,
+    checkpoint: &dyn Fn() -> Result<(), CommandFailure>,
 ) -> Result<Vec<TargetResult>, CommandFailure> {
     let mut results = Vec::with_capacity(request.targets.ordered().len());
     if request.targets.javascript() {
+        checkpoint()?;
         let harness = render_javascript_harness(&request.artifact_stem, invocation)?;
         let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
         let result_type = invocation.export().result();
@@ -1575,6 +1442,7 @@ fn execute_targets(
         });
     }
     if request.targets.webassembly() {
+        checkpoint()?;
         let harness = render_webassembly_harness(&request.artifact_stem, invocation)?;
         let artifact = prepared.webassembly.as_ref().ok_or_else(|| {
             request_error(
@@ -1596,6 +1464,7 @@ fn execute_targets(
         });
     }
     if request.targets.native() {
+        checkpoint()?;
         let executable = prepared.native_executable.as_ref().ok_or_else(|| {
             request_error(
                 "ZRYNA-C1010",
@@ -1608,6 +1477,7 @@ fn execute_targets(
                 .map_err(|error| native_runtime_failure(error.diagnostic().clone()))?;
         results.push(TargetResult { target: ManifestTarget::Native, outcome });
     }
+    checkpoint()?;
     Ok(results)
 }
 
@@ -2284,12 +2154,13 @@ mod tests {
     use zryna_ir::{Type, control_flow_v1};
     use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 
+    use super::preparation::compile_selected;
     #[cfg(unix)]
     use super::read_entrypoint_with_after_read;
     use super::{
         BoundedManifestWriter, BuildRequest, CommandFailure, CommandFailureKind, CommandKind,
         ControlFlowBuildRequest, MANIFEST_NAME, ManifestTarget, TargetSelection, Transaction,
-        compile_selected, configured_frontend_v3, execute_control_flow_with_frontend_factory,
+        configured_frontend_v3, execute_control_flow_with_frontend_factory,
         native_preparation_failure, native_runtime_failure, normalize_carrier,
         render_javascript_harness, render_webassembly_harness, runtime_failure, validate_request,
     };
@@ -2383,6 +2254,7 @@ mod tests {
             ControlFlowPhase::JavaScriptExecution,
             ControlFlowPhase::WebAssemblyExecution,
             ControlFlowPhase::NativeExecution,
+            ControlFlowPhase::ArtifactStaging,
             ControlFlowPhase::ManifestRendering,
             ControlFlowPhase::Publication,
         ];

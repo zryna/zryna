@@ -10,7 +10,7 @@ use zryna_abi::{ScalarOutcome, ScalarValue};
 
 use super::*;
 use crate::{
-    TargetSelection,
+    OwnershipTarget, TargetSelection,
     ownership_pipeline::{
         prepare_data_ownership_for_test,
         test_support::{fixture_workspace, node_executable, route_guard},
