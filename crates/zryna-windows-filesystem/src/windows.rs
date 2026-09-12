@@ -329,6 +329,6 @@ fn utf16_byte_length_u16(units: usize) -> io::Result<u16> {
         .ok_or_else(|| invalid_input("directory component byte length overflow"))
 }
 
-fn invalid_input(error: impl std::fmt::Display) -> io::Error {
+fn invalid_input(error: impl fmt::Display) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, error.to_string())
 }
