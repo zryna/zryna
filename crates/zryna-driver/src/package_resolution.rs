@@ -1,5 +1,6 @@
 //! Retained filesystem capabilities for source-only package resolution.
 
+mod authenticated;
 mod filesystem;
 
 use std::{
@@ -15,7 +16,10 @@ use zryna_package::{
     PackageSourceProvider, ResolveError, ResolvedGraph,
 };
 
+use authenticated::authenticated_sources;
 use filesystem::{CapturedRoot, RetainedFile, ensure_same_directory, publish_lock, read_retained};
+
+pub use authenticated::{AuthenticatedPackageFile, AuthenticatedPackageSources};
 
 const MANIFEST_NAME: &str = "zryna.package.json";
 const LOCK_NAME: &str = "zryna.lock.json";
@@ -53,62 +57,6 @@ pub struct PackageResolutionSuccess {
     sources: Vec<AuthenticatedPackageSources>,
     lock_path: PathBuf,
     published: bool,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-/// One authenticated source file retained as immutable bytes for later compilation.
-pub struct AuthenticatedPackageFile {
-    path: String,
-    bytes: Vec<u8>,
-    sha256: String,
-}
-
-impl AuthenticatedPackageFile {
-    #[must_use]
-    /// Returns the portable package-relative path.
-    pub fn path(&self) -> &str {
-        &self.path
-    }
-
-    #[must_use]
-    /// Returns the exact bytes authenticated during package resolution.
-    pub fn bytes(&self) -> &[u8] {
-        &self.bytes
-    }
-
-    #[must_use]
-    /// Returns the raw SHA-256 digest of the retained bytes.
-    pub fn sha256(&self) -> &str {
-        &self.sha256
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-/// Complete authenticated source inventory for one resolved package instance.
-pub struct AuthenticatedPackageSources {
-    package_id: String,
-    source_sha256: String,
-    files: Vec<AuthenticatedPackageFile>,
-}
-
-impl AuthenticatedPackageSources {
-    #[must_use]
-    /// Returns the package manifest identity.
-    pub fn package_id(&self) -> &str {
-        &self.package_id
-    }
-
-    #[must_use]
-    /// Returns the package's domain-separated complete source-inventory digest.
-    pub fn source_sha256(&self) -> &str {
-        &self.source_sha256
-    }
-
-    #[must_use]
-    /// Returns files in canonical package-relative path order.
-    pub fn files(&self) -> &[AuthenticatedPackageFile] {
-        &self.files
-    }
 }
 
 impl PackageResolutionSuccess {
@@ -244,33 +192,6 @@ impl PackageSourceProvider for FilesystemProvider {
         self.retained_packages.push(retained_package);
         Ok(PackageMaterial { manifest, files })
     }
-}
-
-fn authenticated_sources(
-    graph: &ResolvedGraph,
-    loaded: &BTreeMap<PackageSource, Vec<PackageFile>>,
-) -> Result<Vec<AuthenticatedPackageSources>, ResolveError> {
-    graph
-        .packages()
-        .iter()
-        .map(|package| {
-            let files = loaded.get(package.source()).ok_or_else(|| {
-                ResolveError::source("authenticated package source inventory is unavailable")
-            })?;
-            Ok(AuthenticatedPackageSources {
-                package_id: package.instance().manifest_id().to_owned(),
-                source_sha256: package.instance().source_sha256().to_owned(),
-                files: files
-                    .iter()
-                    .map(|file| AuthenticatedPackageFile {
-                        path: file.path.clone(),
-                        sha256: format!("{:x}", Sha256::digest(&file.bytes)),
-                        bytes: file.bytes.clone(),
-                    })
-                    .collect(),
-            })
-        })
-        .collect()
 }
 
 impl FilesystemProvider {
