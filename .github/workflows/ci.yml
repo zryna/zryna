@@ -390,6 +390,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm release:contract
+      - run: pnpm distribution:check
 
   provider-conformance-v4:
     name: Provider conformance v4 (${{ matrix.os }})

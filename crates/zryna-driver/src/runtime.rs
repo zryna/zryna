@@ -1,5 +1,7 @@
 //! Bounded, direct Node.js execution for sealed JavaScript and WebAssembly artifacts.
+mod admission;
 mod inline;
+pub(crate) use admission::ExpectedRuntime;
 mod ownership;
 use std::{
     ffi::OsString,
@@ -42,6 +44,7 @@ pub(crate) struct NodeRuntimeCapability {
     invocation_path: PathBuf,
     identity: Handle,
     state: std::fs::Metadata,
+    expected: Option<ExpectedRuntime>,
 }
 
 impl NodeRuntimeCapability {
@@ -49,38 +52,15 @@ impl NodeRuntimeCapability {
         executable: &Path,
         working_directory: &Path,
     ) -> Result<Self, Diagnostic> {
-        if !executable.is_absolute() || !working_directory.is_absolute() {
-            return Err(runtime_error(
-                "ZRYNA-R3001",
-                "Node.js runtime and working directory must be absolute paths",
-                "pass the absolute path of the documented Node.js 22.22.1 executable",
-            ));
-        }
-        let (identity, state) = open_runtime_identity(executable)?;
-        let invocation_path = stable_invocation_path(executable, &identity)?;
-        let node_working_directory = node_compatible_path(working_directory);
-        let output = run_bounded(
-            &invocation_path,
-            &[OsString::from("--version")],
-            &node_working_directory,
-            None,
-            MAX_VERSION_STDOUT,
-            MAX_STDERR,
-        )?;
-        if !output.status.success()
-            || !output.stderr.is_empty()
-            || !is_pinned_node_version(&output.stdout)
-        {
-            return Err(runtime_error(
-                "ZRYNA-R3002",
-                "Node.js runtime identity does not match the pinned Zryna runtime",
-                "install Node.js 22.22.1 and pass its absolute executable path",
-            ));
-        }
-        let capability =
-            Self { executable: executable.to_path_buf(), invocation_path, identity, state };
-        capability.revalidate()?;
-        Ok(capability)
+        admission::discover(executable, working_directory, None)
+    }
+
+    pub(crate) fn discover_authenticated(
+        executable: &Path,
+        working_directory: &Path,
+        expected: ExpectedRuntime,
+    ) -> Result<Self, Diagnostic> {
+        admission::discover(executable, working_directory, Some(expected))
     }
 
     pub(crate) fn executable(&self) -> Result<&Path, Diagnostic> {
@@ -90,6 +70,9 @@ impl NodeRuntimeCapability {
 
     pub(crate) fn revalidate(&self) -> Result<(), Diagnostic> {
         let (current, state) = open_runtime_identity(&self.executable)?;
+        if let Some(expected) = &self.expected {
+            admission::authenticate(&current, expected)?;
+        }
         if current != self.identity || !same_file_state(&self.state, &state) {
             return Err(runtime_error(
                 "ZRYNA-R3001",

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-release-qualification-gates-v1.schema.json",
+  "title": "Zryna provisional release qualification gates v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "status", "productionAdmission", "repository", "sourceRef", "workflow",
+    "runId", "runAttempt", "runUrl", "sourceCommit", "requiredContexts", "requiredJobs"
+  ],
+  "properties": {
+    "format": { "const": "zryna.release-qualification-gates.v1" },
+    "status": { "const": "provisional-candidate" },
+    "productionAdmission": { "const": "forbidden" },
+    "repository": { "const": "https://github.com/zryna/zryna" },
+    "sourceRef": { "const": "refs/heads/main" },
+    "workflow": { "const": ".github/workflows/ci.yml" },
+    "runId": { "$ref": "#/$defs/numericId" },
+    "runAttempt": { "type": "integer", "minimum": 1, "maximum": 100 },
+    "runUrl": { "type": "string", "pattern": "^https://github.com/zryna/zryna/actions/runs/[1-9][0-9]{0,19}$" },
+    "sourceCommit": { "$ref": "#/$defs/objectId" },
+    "requiredContexts": {
+      "type": "array", "minItems": 6, "maxItems": 6,
+      "items": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[ -~]+$" }
+    },
+    "requiredJobs": {
+      "type": "array", "minItems": 6, "maxItems": 6, "items": { "$ref": "#/$defs/job" }
+    }
+  },
+  "$defs": {
+    "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "numericId": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+    "job": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "conclusion", "sourceCommit", "runId", "runAttempt", "jobId", "checkRunId"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[ -~]+$" },
+        "conclusion": { "const": "success" }, "sourceCommit": { "$ref": "#/$defs/objectId" },
+        "runId": { "$ref": "#/$defs/numericId" },
+        "runAttempt": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "jobId": { "$ref": "#/$defs/numericId" }, "checkRunId": { "$ref": "#/$defs/numericId" }
+      }
+    }
+  }
+}

@@ -1788,7 +1788,7 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zryna"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -1807,7 +1807,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-abi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1815,7 +1815,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-architecture"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "libc",
  "same-file",
@@ -1827,7 +1827,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-backend-javascript"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "zryna-diagnostics",
  "zryna-ir",
@@ -1840,7 +1840,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-backend-native"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cranelift-codegen",
  "cranelift-frontend",
@@ -1861,7 +1861,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-backend-webassembly"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde_json",
  "sha2",
@@ -1880,7 +1880,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-diagnostics"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1889,7 +1889,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-driver"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cap-fs-ext",
  "cap-primitives",
@@ -1924,7 +1924,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-frontend"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nix",
  "process-wrap",
@@ -1939,7 +1939,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-ir"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "zryna-abi",
@@ -1950,7 +1950,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-language-server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1960,7 +1960,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-layout"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1971,7 +1971,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-native-mir"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "zryna-abi",
  "zryna-diagnostics",
@@ -1985,7 +1985,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-ownership-runtime-abi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1996,7 +1996,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-package"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2005,7 +2005,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-semantics"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde_json",
  "zryna-abi",
@@ -2019,7 +2019,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-source"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2027,7 +2027,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-syntax"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2037,7 +2037,7 @@ dependencies = [
 
 [[package]]
 name = "zryna-windows-filesystem"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cap-std",
  "same-file",
