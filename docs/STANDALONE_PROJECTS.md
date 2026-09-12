@@ -35,6 +35,13 @@ failed stage instead of deleting it. This detects persistent replacement observe
 it is not an operating-system sandbox against an arbitrary same-user process that continues racing
 after validation.
 
+On Windows, stage and source creation return opaque capabilities whose authoritative handles stay
+live through commit or confirmed cleanup. The same stage handle performs the no-replace rename;
+cleanup consumes the exact source and stage handles after known child handles close. A pathname
+replacement is never reopened as the mutation source, and a foreign entry makes cleanup fail closed
+without recursively deleting the retained directory. Linux retains its handle-relative
+`renameat2(RENAME_NOREPLACE)` transaction and directory synchronization.
+
 Generated compiler state is confined to the project-owned `.zryna` directory. That exact reserved
 directory is excluded from the package source inventory; no other undeclared project file is
 ignored. Deleting the project tree therefore removes its source, lock, build output, and run output

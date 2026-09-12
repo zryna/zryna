@@ -1802,6 +1802,7 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-driver",
  "zryna-package",
+ "zryna-windows-filesystem",
 ]
 
 [[package]]

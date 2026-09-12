@@ -1,3 +1,5 @@
+//! Windows-only exact directory lifecycle tests.
+
 #![cfg(windows)]
 
 use cap_std::ambient_authority;
