@@ -340,3 +340,6 @@ fn utf16_byte_length_u16(units: usize) -> io::Result<u16> {
 fn invalid_input(error: impl fmt::Display) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, error.to_string())
 }
+
+#[cfg(test)]
+mod tests;

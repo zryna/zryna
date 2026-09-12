@@ -29,7 +29,8 @@ fn exact_handle_supports_the_complete_directory_lifecycle() -> Result<(), Box<dy
     let mut stage = create_directory(&parent, OsStr::new("stage"))?;
 
     stage.directory().write("artifact.txt", b"artifact")?;
-    let source = create_directory(stage.directory(), OsStr::new("src"))?;
+    let source = create_directory(stage.directory(), OsStr::new("src"))
+        .map_err(|error| operation_error("create nested source", error))?;
     source.directory().write("main.zry", b"export fn main(): i32 { return 7; }\n")?;
     assert_eq!(stage.directory().read("artifact.txt")?, b"artifact");
     assert_eq!(source.directory().read("main.zry")?, b"export fn main(): i32 { return 7; }\n");
@@ -42,7 +43,9 @@ fn exact_handle_supports_the_complete_directory_lifecycle() -> Result<(), Box<dy
     let reopen = parent.open_dir("stage").expect_err("a second cap directory open must conflict");
     assert_eq!(reopen.raw_os_error(), Some(SHARING_VIOLATION));
 
-    stage.rename_noreplace(&parent, OsStr::new("final"))?;
+    stage
+        .rename_noreplace(&parent, OsStr::new("final"))
+        .map_err(|error| operation_error("rename stage to final", error))?;
     assert!(!root.path().join("stage").exists());
     assert_eq!(stage.directory().read("artifact.txt")?, b"artifact");
     assert_eq!(
@@ -56,14 +59,16 @@ fn exact_handle_supports_the_complete_directory_lifecycle() -> Result<(), Box<dy
     drop(retained_identity);
     drop(final_identity);
 
-    stage.rename_noreplace(&parent, OsStr::new("stage"))?;
+    stage
+        .rename_noreplace(&parent, OsStr::new("stage"))
+        .map_err(|error| operation_error("rename final to stage", error))?;
     assert!(!root.path().join("final").exists());
     assert_eq!(source.directory().read("main.zry")?, b"export fn main(): i32 { return 7; }\n");
 
     source.directory().remove_file("main.zry")?;
-    source.remove_empty()?;
+    source.remove_empty().map_err(|error| operation_error("remove nested source", error))?;
     stage.directory().remove_file("artifact.txt")?;
-    stage.remove_empty()?;
+    stage.remove_empty().map_err(|error| operation_error("remove stage", error))?;
     assert!(!root.path().join("stage").exists());
     Ok(())
 }
@@ -256,6 +261,10 @@ fn entry_names(directory: &Dir) -> io::Result<Vec<OsString>> {
         .collect::<io::Result<Vec<_>>>()?;
     names.sort();
     Ok(names)
+}
+
+fn operation_error(operation: &str, error: io::Error) -> io::Error {
+    io::Error::new(error.kind(), format!("{operation}: {error}"))
 }
 
 struct TemporaryRoot {
