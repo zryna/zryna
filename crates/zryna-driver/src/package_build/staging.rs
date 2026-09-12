@@ -107,18 +107,21 @@ impl StageRoot {
 
     fn remove_empty(
         self,
-        _parent: &Dir,
+        parent: &Dir,
         error: fn(&str) -> PackageBuildError,
     ) -> Result<(), PackageBuildError> {
         #[cfg(windows)]
-        return self
-            .directory
-            .remove_empty()
-            .map_err(|_| error("private stage directory could not be removed"));
+        {
+            let _ = parent;
+            return self
+                .directory
+                .remove_empty()
+                .map_err(|_| error("private stage directory could not be removed"));
+        }
         #[cfg(not(windows))]
         {
-            revalidate_name(_parent, &self.name, &self.directory, error)?;
-            _parent
+            revalidate_name(parent, &self.name, &self.directory, error)?;
+            parent
                 .remove_dir(&self.name)
                 .map_err(|_| error("private stage directory could not be removed"))
         }
