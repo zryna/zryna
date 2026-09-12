@@ -5,6 +5,7 @@ import { createReleaseFile, exactReleaseNames } from './release-files.mjs';
 import { validateReleaseQualificationInputText } from './validate-release-qualification-input.mjs';
 import { validateReleaseQualificationInspectionText } from './validate-release-qualification-inspection.mjs';
 import { validateQualificationResult } from './compare-release-qualifications.mjs';
+import { verifyQualification } from './release-qualification-core.mjs';
 
 function reject(message) {
   throw new Error(`R406-QUALIFICATION-RESULT: ${message}`);
@@ -15,8 +16,8 @@ function artifact(path, bytes) {
   return { path, size: bytes.length, sha256: sha256(bytes) };
 }
 
-export function writeReleaseQualificationResult({
-  outputRoot, replica, binding, cli, assembled, inspection,
+export async function writeReleaseQualificationResult({
+  outputRoot, replica, binding, cli, assembled, inspection, primitives,
 }) {
   if (!isAbsolute(outputRoot) || resolve(outputRoot) !== outputRoot || ![1, 2].includes(replica)) {
     reject('exact absolute output root and replica are required');
@@ -37,6 +38,21 @@ export function writeReleaseQualificationResult({
   };
   if (names.archive !== `${input.archive.root}.${input.archive.format === 'zip' ? 'zip' : 'tar.gz'}`) {
     reject('qualification archive filename differs');
+  }
+  const verified = await verifyQualification(assembled.archive, {
+    filename: assembled.filename,
+    size: assembled.archive.length,
+    sha256: sha256(assembled.archive),
+    binding,
+  }, primitives);
+  const cliPath = input.target.triple === 'x86_64-pc-windows-msvc' ? 'zryna.exe' : 'bin/zryna';
+  const decodedCli = verified.files.filter(({ path }) => path === cliPath);
+  const decodedInventory = verified.files.filter(
+    ({ path }) => path === 'qualification/inventory.json',
+  );
+  if (decodedCli.length !== 1 || !decodedCli[0].data.equals(cli)
+    || decodedInventory.length !== 1 || !decodedInventory[0].data.equals(assembled.inventory)) {
+    reject('verified archive CLI or inventory differs from the qualification result');
   }
   const bytes = {
     binding, cli, inventory: assembled.inventory, archive: assembled.archive, inspection,

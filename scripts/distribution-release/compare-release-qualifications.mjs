@@ -5,8 +5,11 @@ import Ajv from 'ajv';
 import { canonical, canonicalBounded, parseCanonical, sha256 } from './canonical.mjs';
 import {
   compareReleaseFiles, copyReleaseFile, createReleaseFile, exactReleaseNames,
-  MAX_RELEASE_DOCUMENT, readReleaseFile,
+  MAX_RELEASE_DOCUMENT, MAX_RELEASE_FILE, readReleaseFile,
 } from './release-files.mjs';
+import { verifyQualification } from './release-qualification-core.mjs';
+import { validateReleaseQualificationInputText } from './validate-release-qualification-input.mjs';
+import { validateReleaseQualificationInspectionText } from './validate-release-qualification-inspection.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const SCHEMA_PATH = fileURLToPath(new URL(
@@ -41,19 +44,73 @@ export function validateQualificationResult(value, target, replica) {
   return value;
 }
 
-function load(root, target, replica) {
+function readArtifact(root, descriptor) {
+  const bytes = readReleaseFile(root, descriptor.path, MAX_RELEASE_FILE);
+  if (bytes.length !== descriptor.size || sha256(bytes) !== descriptor.sha256) {
+    reject(`${descriptor.path} bytes differ from their qualification descriptor`);
+  }
+  return bytes;
+}
+
+async function load(root, target, replica, primitives) {
   const bytes = readReleaseFile(root, MANIFEST, MAX_RELEASE_DOCUMENT);
   const value = validateQualificationResult(parseCanonical(bytes.toString('utf8')), target, replica);
   exactReleaseNames(root, [MANIFEST, ...Object.values(value.artifacts).map(({ path }) => path)]);
+  const artifacts = Object.fromEntries(Object.entries(value.artifacts)
+    .map(([key, descriptor]) => [key, readArtifact(root, descriptor)]));
+  const input = validateReleaseQualificationInputText(artifacts.binding.toString('utf8'));
+  const boundIdentity = {
+    versionCandidate: input.versionCandidate,
+    target: input.target.triple,
+    source: {
+      ref: input.source.ref,
+      commit: input.source.commit,
+      tree: input.source.tree,
+      sourceDateEpoch: input.source.sourceDateEpoch,
+    },
+    recipeProposal: {
+      size: input.recipeProposal.size,
+      sha256: input.recipeProposal.sha256,
+    },
+  };
+  const claimedIdentity = {
+    versionCandidate: value.versionCandidate,
+    target: value.target,
+    source: value.source,
+    recipeProposal: value.recipeProposal,
+  };
+  if (canonical(claimedIdentity) !== canonical(boundIdentity)) {
+    reject('qualification result identity differs from its verified binding');
+  }
+  validateReleaseQualificationInspectionText(artifacts.inspection.toString('utf8'), input,
+    artifacts.cli);
+  const verified = await verifyQualification(artifacts.archive, {
+    filename: value.artifacts.archive.path,
+    size: value.artifacts.archive.size,
+    sha256: value.artifacts.archive.sha256,
+    binding: artifacts.binding,
+  }, primitives);
+  const cliPath = target === 'x86_64-pc-windows-msvc' ? 'zryna.exe' : 'bin/zryna';
+  const decodedCli = verified.files.filter(({ path }) => path === cliPath);
+  const decodedInventory = verified.files.filter(
+    ({ path }) => path === 'qualification/inventory.json',
+  );
+  if (decodedCli.length !== 1 || !decodedCli[0].data.equals(artifacts.cli)
+    || decodedInventory.length !== 1 || !decodedInventory[0].data.equals(artifacts.inventory)) {
+    reject('verified archive CLI or inventory differs from the qualification artifacts');
+  }
   return { bytes, value };
 }
 
-export function compareReleaseQualifications({ firstRoot, secondRoot, outputRoot, target }) {
+export async function compareReleaseQualifications({
+  firstRoot, secondRoot, outputRoot, target, primitives,
+}) {
   if (![firstRoot, secondRoot, outputRoot].every((path) => isAbsolute(path)
     && resolve(path) === path) || new Set([firstRoot, secondRoot, outputRoot]).size !== 3
     || !TARGETS.has(target)) reject('exact distinct roots and supported target are required');
-  const first = load(firstRoot, target, 1);
-  const second = load(secondRoot, target, 2);
+  const [first, second] = await Promise.all([
+    load(firstRoot, target, 1, primitives), load(secondRoot, target, 2, primitives),
+  ]);
   const project = ({ replica, ...value }) => value;
   if (canonical(project(first.value)) !== canonical(project(second.value))) {
     reject('qualification result identities differ');
@@ -68,7 +125,10 @@ export function compareReleaseQualifications({ firstRoot, secondRoot, outputRoot
     artifacts[key] = observed;
   }
   mkdirSync(outputRoot, { recursive: false, mode: 0o700 });
-  for (const { path } of Object.values(artifacts)) copyReleaseFile(firstRoot, outputRoot, path);
+  for (const descriptor of Object.values(artifacts)) {
+    copyReleaseFile(firstRoot, outputRoot, descriptor.path);
+    readArtifact(outputRoot, descriptor);
+  }
   const comparison = {
     format: 'zryna.release-qualification-comparison.v1',
     status: 'qualification-only',
@@ -98,7 +158,7 @@ if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
       || process.argv[4] !== '--second' || process.argv[6] !== '--output') {
       reject('expected --first, --second, and --output once');
     }
-    compareReleaseQualifications({
+    await compareReleaseQualifications({
       firstRoot: resolve(process.argv[3]), secondRoot: resolve(process.argv[5]),
       outputRoot: resolve(process.argv[7]), target: process.env.ZRYNA_TARGET,
     });
