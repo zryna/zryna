@@ -47,9 +47,10 @@ pub(super) fn publish_windows_stage(
     };
     let open = OpenStage { stage, source_directory, manifest_file, lock_file, source_file };
     checkpoint();
-    match open.validate_and_seal(parent, stage_name, contents) {
-        Ok(sealed) => sealed.commit(parent, destination_name),
-        Err((error, open)) => match open.cleanup(parent, stage_name) {
+    let (open, validation) = open.validate(parent, stage_name, contents);
+    match validation {
+        Ok(()) => open.seal().commit(parent, destination_name),
+        Err(error) => match open.cleanup(parent, stage_name) {
             Ok(()) => Err(error),
             Err(_) => Err(cleanup_error()),
         },
@@ -73,6 +74,21 @@ fn cleanup_error() -> ProjectError {
     ProjectError::cleanup("project creation failed and its retained stage could not be removed")
 }
 
+impl RetainedStage {
+    fn commit(&mut self, parent: &CapturedParent, destination: &OsStr) -> Result<(), ProjectError> {
+        self.owned.rename_noreplace(&parent.directory, destination).map_err(|error| {
+            if matches!(
+                error.kind(),
+                io::ErrorKind::AlreadyExists | io::ErrorKind::DirectoryNotEmpty
+            ) {
+                ProjectError::collision("project destination appeared before commit")
+            } else {
+                ProjectError::publication("create-only project commit failed")
+            }
+        })
+    }
+}
+
 struct OpenStage {
     stage: RetainedStage,
     source_directory: RetainedSourceDirectory,
@@ -82,12 +98,12 @@ struct OpenStage {
 }
 
 impl OpenStage {
-    fn validate_and_seal(
+    fn validate(
         self,
         parent: &CapturedParent,
         stage_name: &OsStr,
         contents: ProjectContents<'_>,
-    ) -> Result<SealedStage, (ProjectError, Self)> {
+    ) -> (Self, Result<(), ProjectError>) {
         let validation: Result<(), ProjectError> = (|| {
             parent.revalidate()?;
             self.stage.revalidate(parent, stage_name)?;
@@ -102,16 +118,16 @@ impl OpenStage {
             self.source_file.revalidate(contents.source)?;
             Ok(())
         })();
-        if let Err(error) = validation {
-            return Err((error, self));
-        }
+        (self, validation)
+    }
 
+    fn seal(self) -> SealedStage {
         let Self { stage, source_directory, manifest_file, lock_file, source_file } = self;
         drop(source_file);
         drop(lock_file);
         drop(manifest_file);
         drop(source_directory);
-        Ok(SealedStage { stage })
+        SealedStage { stage }
     }
 
     fn cleanup(self, parent: &CapturedParent, stage_name: &OsStr) -> io::Result<()> {

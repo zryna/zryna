@@ -52,7 +52,7 @@ fn publish_with_checkpoint(
     parent.require_absent(destination_name, "project destination already exists")?;
     let stage_name = OsString::from(format!(".zryna-new-{name}.pending"));
     parent.require_absent(&stage_name, "project staging destination already exists")?;
-    let mut stage = parent.create_stage(&stage_name)?;
+    let stage = parent.create_stage(&stage_name)?;
     let source_directory = match stage.create_source_directory() {
         Ok(source) => source,
         Err(error) => {
@@ -65,17 +65,20 @@ fn publish_with_checkpoint(
         }
     };
     #[cfg(windows)]
-    return publish_windows_stage(
-        stage,
-        source_directory,
-        &parent,
-        &stage_name,
-        destination_name,
-        ProjectContents { manifest, lock, source },
-        checkpoint,
-    );
+    {
+        publish_windows_stage(
+            stage,
+            source_directory,
+            &parent,
+            &stage_name,
+            destination_name,
+            ProjectContents { manifest, lock, source },
+            checkpoint,
+        )
+    }
     #[cfg(not(windows))]
     {
+        let mut stage = stage;
         let result = (|| {
             let manifest_file = write_new(stage.directory(), "zryna.package.json", manifest)?;
             let lock_file = write_new(stage.directory(), "zryna.lock.json", lock)?;
@@ -287,20 +290,6 @@ impl RetainedStage {
             },
         }
         parent.directory.remove_dir(name)
-    }
-
-    #[cfg(windows)]
-    fn commit(&mut self, parent: &CapturedParent, destination: &OsStr) -> Result<(), ProjectError> {
-        self.owned.rename_noreplace(&parent.directory, destination).map_err(|error| {
-            if matches!(
-                error.kind(),
-                io::ErrorKind::AlreadyExists | io::ErrorKind::DirectoryNotEmpty
-            ) {
-                ProjectError::collision("project destination appeared before commit")
-            } else {
-                ProjectError::publication("create-only project commit failed")
-            }
-        })
     }
 
     #[cfg(all(target_os = "linux", target_env = "gnu"))]
