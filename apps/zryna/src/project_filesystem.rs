@@ -14,9 +14,15 @@ use crate::project::ProjectError;
 use project_filesystem_capture::{
     cap_metadata_is_link_or_reparse, capture_absolute_root, directory_identity,
 };
+#[cfg(windows)]
+use project_filesystem_windows::{ProjectContents, publish_windows_stage};
 
 #[path = "project_filesystem_capture.rs"]
 mod project_filesystem_capture;
+
+#[cfg(windows)]
+#[path = "project_filesystem_windows.rs"]
+mod project_filesystem_windows;
 
 pub(super) fn publish(
     destination: &Path,
@@ -58,33 +64,49 @@ fn publish_with_checkpoint(
             return Err(error);
         }
     };
-    let result = (|| {
-        let manifest_file = write_new(stage.directory(), "zryna.package.json", manifest)?;
-        let lock_file = write_new(stage.directory(), "zryna.lock.json", lock)?;
-        let source_file = write_new(source_directory.directory(), "main.zry", source)?;
-        #[cfg(unix)]
-        {
-            sync_directory(source_directory.directory())?;
-            sync_directory(stage.directory())?;
+    #[cfg(windows)]
+    return publish_windows_stage(
+        stage,
+        source_directory,
+        &parent,
+        &stage_name,
+        destination_name,
+        ProjectContents { manifest, lock, source },
+        checkpoint,
+    );
+    #[cfg(not(windows))]
+    {
+        let result = (|| {
+            let manifest_file = write_new(stage.directory(), "zryna.package.json", manifest)?;
+            let lock_file = write_new(stage.directory(), "zryna.lock.json", lock)?;
+            let source_file = write_new(source_directory.directory(), "main.zry", source)?;
+            #[cfg(unix)]
+            {
+                sync_directory(source_directory.directory())?;
+                sync_directory(stage.directory())?;
+            }
+            checkpoint();
+            parent.revalidate()?;
+            stage.revalidate(&parent, &stage_name)?;
+            source_directory.revalidate(&stage)?;
+            validate_inventory(
+                stage.directory(),
+                &["src", "zryna.lock.json", "zryna.package.json"],
+            )?;
+            validate_inventory(source_directory.directory(), &["main.zry"])?;
+            manifest_file.revalidate(manifest)?;
+            lock_file.revalidate(lock)?;
+            source_file.revalidate(source)?;
+            stage.commit(&parent, &stage_name, destination_name)?;
+            Ok(())
+        })();
+        if result.is_err() && stage.cleanup(&parent, &stage_name, Some(source_directory)).is_err() {
+            return Err(ProjectError::cleanup(
+                "project creation failed and its retained stage could not be removed",
+            ));
         }
-        checkpoint();
-        parent.revalidate()?;
-        stage.revalidate(&parent, &stage_name)?;
-        source_directory.revalidate(&stage)?;
-        validate_inventory(stage.directory(), &["src", "zryna.lock.json", "zryna.package.json"])?;
-        validate_inventory(source_directory.directory(), &["main.zry"])?;
-        manifest_file.revalidate(manifest)?;
-        lock_file.revalidate(lock)?;
-        source_file.revalidate(source)?;
-        stage.commit(&parent, &stage_name, destination_name)?;
-        Ok(())
-    })();
-    if result.is_err() && stage.cleanup(&parent, &stage_name, Some(source_directory)).is_err() {
-        return Err(ProjectError::cleanup(
-            "project creation failed and its retained stage could not be removed",
-        ));
+        result
     }
-    result
 }
 
 struct CapturedParent {
@@ -268,12 +290,7 @@ impl RetainedStage {
     }
 
     #[cfg(windows)]
-    fn commit(
-        &mut self,
-        parent: &CapturedParent,
-        _source: &OsStr,
-        destination: &OsStr,
-    ) -> Result<(), ProjectError> {
+    fn commit(&mut self, parent: &CapturedParent, destination: &OsStr) -> Result<(), ProjectError> {
         self.owned.rename_noreplace(&parent.directory, destination).map_err(|error| {
             if matches!(
                 error.kind(),
