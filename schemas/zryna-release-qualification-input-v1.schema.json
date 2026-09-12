@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-release-qualification-input-v1.schema.json",
+  "title": "Zryna provisional release qualification input v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "status", "productionAdmission", "versionCandidate", "source", "workflow",
+    "target", "recipeProposal", "sourceReceipt", "architectureReceipt", "gateReceipt",
+    "toolchains", "nativeTools", "materials", "compile", "archive"
+  ],
+  "properties": {
+    "format": { "const": "zryna.release-qualification-input.v1" },
+    "status": { "const": "provisional-candidate" },
+    "productionAdmission": { "const": "forbidden" },
+    "versionCandidate": { "const": "0.2.0" },
+    "source": { "$ref": "#/$defs/source" },
+    "workflow": { "$ref": "#/$defs/workflow" },
+    "target": { "$ref": "#/$defs/target" },
+    "recipeProposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gitPath", "size", "sha256"],
+      "properties": {
+        "gitPath": { "const": "scripts/distribution/release-recipe-v1.json" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "sourceReceipt": { "$ref": "#/$defs/artifact" },
+    "architectureReceipt": { "$ref": "#/$defs/sourceArtifact" },
+    "gateReceipt": {
+      "$ref": "#/$defs/gateArtifact"
+    },
+    "toolchains": {
+      "type": "array", "minItems": 3, "maxItems": 3,
+      "items": { "$ref": "#/$defs/tool" }
+    },
+    "nativeTools": {
+      "type": "array", "minItems": 1, "maxItems": 16,
+      "items": { "$ref": "#/$defs/tool" }
+    },
+    "materials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files"],
+      "properties": {
+        "files": {
+          "type": "array", "minItems": 1, "maxItems": 508,
+          "items": { "$ref": "#/$defs/file" }
+        }
+      }
+    },
+    "compile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["argv", "environment", "encodedRustFlags", "encodedLinkerFlags"],
+      "properties": {
+        "argv": {
+          "type": "array", "minItems": 8, "maxItems": 32,
+          "items": { "$ref": "#/$defs/ascii" }
+        },
+        "environment": {
+          "type": "array", "minItems": 1, "maxItems": 64,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["name", "value"],
+            "properties": { "name": { "$ref": "#/$defs/name" }, "value": { "$ref": "#/$defs/ascii" } }
+          }
+        },
+        "encodedRustFlags": {
+          "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/ascii" }
+        },
+        "encodedLinkerFlags": {
+          "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/ascii" }
+        }
+      }
+    },
+    "archive": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["format", "root", "tarFormat", "uid", "gid", "owner", "group",
+            "entryMtime", "gzipLevel", "gzipMtime", "gzipOs"],
+          "properties": {
+            "format": { "const": "tar-gzip" }, "root": { "$ref": "#/$defs/root" },
+            "tarFormat": { "const": "ustar" }, "uid": { "const": 0 }, "gid": { "const": 0 },
+            "owner": { "const": "" }, "group": { "const": "" },
+            "entryMtime": { "const": "source-epoch" }, "gzipLevel": { "const": 9 },
+            "gzipMtime": { "const": 0 }, "gzipOs": { "const": 255 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["format", "root", "method", "creator", "timestamp", "extraFields", "comments"],
+          "properties": {
+            "format": { "const": "zip" }, "root": { "$ref": "#/$defs/root" },
+            "method": { "const": "store" }, "creator": { "const": "unix-2.0" },
+            "timestamp": { "const": "1980-01-01T00:00:00" },
+            "extraFields": { "const": false }, "comments": { "const": false }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "numericId": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+    "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$" },
+    "ascii": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[ -~]+$" },
+    "path": { "type": "string", "pattern": "^[A-Za-z0-9@][A-Za-z0-9@+._-]*(?:/[A-Za-z0-9@][A-Za-z0-9@+._-]*){0,11}$" },
+    "root": { "type": "string", "pattern": "^zryna-qualification-0\\.2\\.0-(?:x86_64-pc-windows-msvc|x86_64-unknown-linux-gnu)-[0-9a-f]{12}$" },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["logicalPath", "size", "sha256"],
+      "properties": {
+        "logicalPath": { "$ref": "#/$defs/path" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "sourceArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["logicalPath", "size", "sha256", "sourceCommit", "sourceTree"],
+      "properties": {
+        "logicalPath": { "$ref": "#/$defs/path" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "sourceCommit": { "$ref": "#/$defs/objectId" },
+        "sourceTree": { "$ref": "#/$defs/objectId" }
+      }
+    },
+    "gateArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["logicalPath", "size", "sha256", "runId", "runAttempt", "sourceCommit", "requiredJobs"],
+      "properties": {
+        "logicalPath": { "$ref": "#/$defs/path" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "runId": { "$ref": "#/$defs/numericId" },
+        "runAttempt": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "sourceCommit": { "$ref": "#/$defs/objectId" },
+        "requiredJobs": {
+          "type": "array", "minItems": 6, "maxItems": 6,
+          "items": { "$ref": "#/$defs/job" }
+        }
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "ref", "commit", "tree", "sourceDateEpoch"],
+      "properties": {
+        "repository": { "const": "https://github.com/zryna/zryna" },
+        "ref": { "const": "refs/heads/main" },
+        "commit": { "$ref": "#/$defs/objectId" }, "tree": { "$ref": "#/$defs/objectId" },
+        "sourceDateEpoch": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    },
+    "workflow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "const": ".github/workflows/release-qualification.yml" },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["triple", "platformBaseline"],
+          "properties": {
+            "triple": { "const": "x86_64-unknown-linux-gnu" },
+            "platformBaseline": {
+              "type": "object", "additionalProperties": false,
+              "required": ["os", "distribution", "version", "architecture"],
+              "properties": { "os": { "const": "linux" }, "distribution": { "const": "ubuntu" },
+                "version": { "const": "24.04" }, "architecture": { "const": "x86_64" } }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["triple", "platformBaseline"],
+          "properties": {
+            "triple": { "const": "x86_64-pc-windows-msvc" },
+            "platformBaseline": {
+              "type": "object", "additionalProperties": false,
+              "required": ["os", "product", "version", "architecture", "runtime"],
+              "properties": { "os": { "const": "windows" }, "product": { "const": "windows-server" },
+                "version": { "const": "2022" }, "architecture": { "const": "x86_64" },
+                "runtime": { "const": "operating-system-ucrt" } }
+            }
+          }
+        }
+      ]
+    },
+    "tool": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version", "origin", "size", "sha256", "signatureEvidenceSha256"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" }, "version": { "$ref": "#/$defs/ascii" },
+        "origin": { "$ref": "#/$defs/ascii" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "signatureEvidenceSha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "mode", "size", "sha256", "role", "material", "licenses"],
+      "properties": {
+        "path": { "$ref": "#/$defs/path" }, "mode": { "enum": [420, 493] },
+        "size": { "type": "integer", "minimum": 1, "maximum": 268435456 },
+        "sha256": { "$ref": "#/$defs/digest" }, "role": { "$ref": "#/$defs/name" },
+        "material": { "$ref": "#/$defs/ascii" },
+        "licenses": { "type": "array", "minItems": 1, "maxItems": 256,
+          "items": { "$ref": "#/$defs/path" } }
+      }
+    },
+    "job": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "conclusion", "sourceCommit"],
+      "properties": {
+        "name": { "$ref": "#/$defs/ascii" }, "conclusion": { "const": "success" },
+        "sourceCommit": { "$ref": "#/$defs/objectId" }
+      }
+    }
+  }
+}
