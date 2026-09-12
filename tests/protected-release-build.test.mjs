@@ -5,7 +5,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { canonicalBounded, sha256 } from '../scripts/distribution-release/canonical.mjs';
+import { canonicalBounded, parseCanonical, sha256 } from '../scripts/distribution-release/canonical.mjs';
+import { releaseSpdxBytes } from '../scripts/distribution-release/release-sbom.mjs';
 import { runProtectedBuild } from '../scripts/distribution-release/run-protected-build.mjs';
 
 const COMMIT = 'b'.repeat(40);
@@ -65,7 +66,21 @@ function fixture(t) {
 
 function adapters() {
   let preparedRecord;
-  const files = [{ path: 'VERSION', mode: 0o644, data: Buffer.from('0.2.0\n') }];
+  const indexed = [
+    { path: 'LICENSE', mode: 0o644, data: Buffer.from('license\n'), material: 'source',
+      licenses: ['LICENSE'], role: 'license' },
+    { path: 'VERSION', mode: 0o644, data: Buffer.from('0.2.0\n'), material: 'source',
+      licenses: ['LICENSE'], role: 'notice' },
+  ].map((file) => ({ ...file, size: file.data.length, sha256: sha256(file.data) }));
+  const inventory = wire({
+    format: 'zryna.distribution-inventory.v1',
+    files: indexed.map(({ data, ...entry }) => entry),
+  });
+  const files = [
+    ...indexed.map(({ material, licenses, role, size, sha256: digest, ...file }) => file),
+    { path: 'metadata/inventory.json', mode: 0o644, data: inventory },
+    { path: 'metadata/checksums.sha256', mode: 0o644, data: Buffer.from('checksums\n') },
+  ];
   return {
     createArchitectureReceipt: async () => wire({ receipt: 'architecture' }),
     captureReleaseMaterials: async () => [],
@@ -103,11 +118,7 @@ function adapters() {
     verifyArchive: async (archive) => ({
       archiveSha256: sha256(archive), distribution: preparedRecord, files,
     }),
-    createReleaseSbom: async ({ archive }) => wire({
-      spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0', SPDXID: 'SPDXRef-DOCUMENT',
-      name: `zryna-0.2.0-${TARGET}`,
-      documentNamespace: `https://zryna.com/spdx/0.2.0/${TARGET}/${archive.sha256}`,
-    }),
+    createReleaseSbom: async (context) => releaseSpdxBytes(context),
   };
 }
 
@@ -129,4 +140,32 @@ test('rejects execution while no exact recipe digest is accepted', async (t) => 
   await assert.rejects(() => runProtectedBuild({
     ...paths, target: TARGET, replica: 1, acceptedRecipeSha256: null, adapters: adapters(),
   }), /R406-PROTECTED-BUILD: recipe bytes differ from the independently accepted digest/);
+});
+
+test('rejects a valid-looking SPDX header without complete archive and material coverage', async (t) => {
+  const paths = fixture(t);
+  const implementation = adapters();
+  implementation.createReleaseSbom = async ({ archive }) => wire({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0', SPDXID: 'SPDXRef-DOCUMENT',
+    name: `zryna-0.2.0-${TARGET}`,
+    documentNamespace: `https://zryna.com/spdx/0.2.0/${TARGET}/${archive.sha256}`,
+  });
+  await assert.rejects(() => runProtectedBuild({
+    ...paths, target: TARGET, replica: 1,
+    acceptedRecipeSha256: sha256(paths.recipeBytes), adapters: implementation,
+  }), /R406-SPDX: document fields differ from the closed SPDX 2.3 profile/);
+});
+
+test('rejects an SPDX document that omits one authenticated archive relationship', async (t) => {
+  const paths = fixture(t);
+  const implementation = adapters();
+  implementation.createReleaseSbom = async (context) => {
+    const value = parseCanonical(releaseSpdxBytes(context).toString('utf8'));
+    value.relationships.pop();
+    return wire(value);
+  };
+  await assert.rejects(() => runProtectedBuild({
+    ...paths, target: TARGET, replica: 1,
+    acceptedRecipeSha256: sha256(paths.recipeBytes), adapters: implementation,
+  }), /R406-SPDX: SPDX subject, archive files, materials, licenses, or relationships differ/);
 });

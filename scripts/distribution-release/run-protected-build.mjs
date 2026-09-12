@@ -2,7 +2,6 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TextDecoder } from 'node:util';
 import { ACCEPTED_RECIPE_SHA256 } from './check-release-readiness.mjs';
 import { canonical, canonicalBounded, parseCanonical, sha256 } from './canonical.mjs';
 import { createSourceBuildReceipt } from './create-source-build-receipt.mjs';
@@ -12,6 +11,7 @@ import {
 import { validateBuildInput } from './validate-build-input.mjs';
 import { validatePreassemblyGatesShape } from './validate-preassembly-gates.mjs';
 import { validateReleaseTagReceiptText } from './validate-release-tag-receipt.mjs';
+import { releaseSpdxBytes, validateReleaseSpdx } from './release-sbom.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const RECIPE_PATH = 'scripts/distribution/release-recipe-v1.json';
@@ -80,14 +80,14 @@ async function defaultAdapters() {
     import('../distribution/verify.mjs'),
     import('../distribution/provision-release.mjs'),
   ]);
-  for (const name of ['captureReleaseMaterials', 'compileReleaseCli', 'createReleaseSbom']) {
+  for (const name of ['captureReleaseMaterials', 'compileReleaseCli']) {
     if (typeof provisioner[name] !== 'function') reject(`#422 provisioner must export ${name}`);
   }
   return {
     preparePayload, assemble, verifyArchive,
     captureReleaseMaterials: provisioner.captureReleaseMaterials,
     compileReleaseCli: provisioner.compileReleaseCli,
-    createReleaseSbom: provisioner.createReleaseSbom,
+    createReleaseSbom: releaseSpdxBytes,
     createArchitectureReceipt: (options) => Buffer.from(
       `${canonicalBounded(createSourceBuildReceipt(options))}\n`,
     ),
@@ -108,23 +108,6 @@ function gateDescriptor(gatesBytes, gates) {
     requiredContexts: gates.requiredContexts,
     requiredJobs: gates.requiredJobs,
   };
-}
-
-function validateSbom(sbomBytes, target, archive) {
-  let sbom;
-  try {
-    sbom = parseCanonical(new TextDecoder('utf-8', { fatal: true }).decode(sbomBytes));
-  } catch (error) {
-    if (error instanceof TypeError) reject('SBOM is not UTF-8');
-    throw error;
-  }
-  const expectedNamespace = `https://zryna.com/spdx/${VERSION}/${target}/${archive.sha256}`;
-  if (sbom.spdxVersion !== 'SPDX-2.3' || sbom.dataLicense !== 'CC0-1.0'
-    || sbom.SPDXID !== 'SPDXRef-DOCUMENT'
-    || sbom.name !== `zryna-${VERSION}-${target}`
-    || sbom.documentNamespace !== expectedNamespace) {
-    reject('deterministic SPDX document identity differs');
-  }
 }
 
 const VERSION = '0.2.0';
@@ -240,10 +223,10 @@ export async function runProtectedBuild({
     reject('independent archive verification differs from assembly');
   }
   const sbom = bytes(await implementation.createReleaseSbom({
-    recipe: recipe.value, source, target: targetRecord, input, assembled, verified,
+    files: verified.files, recipe: recipe.value, source, target, targetRecord, input, assembled, verified,
     archive: archiveDescriptor,
   }), 'SPDX SBOM');
-  validateSbom(sbom, target, archiveDescriptor);
+  validateReleaseSpdx(sbom, { files: verified.files, source, target, archive: archiveDescriptor });
 
   mkdirSync(outputRoot, { recursive: false, mode: 0o700 });
   const prefix = `zryna-${VERSION}-${target}`;

@@ -258,7 +258,7 @@ export async function publishDraftRelease({ directory, phase, environment = proc
     || !Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1 || requestTimeoutMs > MAX_TIMEOUT) {
     reject('exact directory, phase, and bounded timeout are required');
   }
-  verifyImpl({ directory, spawn: signatureSpawn });
+  await verifyImpl({ directory, spawn: signatureSpawn });
   const publication = loadPublication(directory);
   validateEnvironment(environment, publication);
   const token = environment.GITHUB_TOKEN;

@@ -8,6 +8,7 @@ import test from 'node:test';
 import { canonicalBounded, sha256 } from '../scripts/distribution-release/canonical.mjs';
 import { prepareReleaseEvidence } from '../scripts/distribution-release/prepare-release-evidence.mjs';
 import { publishDraftRelease } from '../scripts/distribution-release/publish-draft-release.mjs';
+import { releaseSpdxBytes } from '../scripts/distribution-release/release-sbom.mjs';
 import { verifySignedRelease } from '../scripts/distribution-release/verify-signed-release.mjs';
 
 const VERSION = '0.2.0';
@@ -36,7 +37,27 @@ function writeCanonical(path, value) {
   writeFileSync(path, `${canonicalBounded(value)}\n`);
 }
 
-function fixture(t) {
+function archiveFiles(target) {
+  const cliPath = target === 'x86_64-pc-windows-msvc' ? 'bin/zryna.exe' : 'bin/zryna';
+  const indexed = [
+    { path: 'LICENSE', mode: 0o644, data: Buffer.from('license\n'), role: 'license',
+      material: 'source', licenses: ['LICENSE'] },
+    { path: cliPath, mode: 0o755, data: Buffer.from(`${target} cli`), role: 'cli',
+      material: 'source', licenses: ['LICENSE'] },
+  ].sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0)
+    .map((file) => ({ ...file, size: file.data.length, sha256: sha256(file.data) }));
+  const inventory = Buffer.from(`${canonicalBounded({
+    format: 'zryna.distribution-inventory.v1',
+    files: indexed.map(({ data, ...entry }) => entry),
+  })}\n`);
+  return [
+    ...indexed.map(({ role, material, licenses, size, sha256: digest, ...file }) => file),
+    { path: 'metadata/inventory.json', mode: 0o644, data: inventory },
+    { path: 'metadata/checksums.sha256', mode: 0o644, data: Buffer.from('checksums\n') },
+  ].sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+}
+
+function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
   const parent = mkdtempSync(join(tmpdir(), 'zryna-release-evidence-'));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
   const inputRoot = join(parent, 'reproduced');
@@ -47,19 +68,28 @@ function fixture(t) {
   mkdirSync(admissionRoot);
   mkdirSync(attestations);
   const attestationPaths = {};
+  const verifiedFiles = {};
   for (const target of TARGETS) {
     const root = join(inputRoot, target.key);
     mkdirSync(root);
     const base = `zryna-${VERSION}-${target.triple}`;
-    const bytes = {
-      archive: Buffer.from(`${target.triple} archive`),
-      buildReceipt: Buffer.from(`{"target":"${target.triple}"}\n`),
-      sbom: Buffer.from(`{"spdxVersion":"SPDX-2.3","name":"${target.triple}"}\n`),
-    };
     const paths = {
       archive: `${base}.${target.extension}`,
       buildReceipt: `${base}.build-receipt.json`,
       sbom: `${base}.spdx.json`,
+    };
+    const archive = Buffer.from(`${target.triple} archive`);
+    const files = archiveFiles(target.triple);
+    verifiedFiles[target.triple] = files;
+    const bytes = {
+      archive,
+      buildReceipt: Buffer.from(`{"target":"${target.triple}"}\n`),
+      sbom: mutateSbom(releaseSpdxBytes({
+        files,
+        archive: { filename: paths.archive, size: archive.length, sha256: sha256(archive) },
+        source: source(),
+        target: target.triple,
+      }), { target, archive }),
     };
     const artifacts = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, {
       path, size: bytes[key].length, sha256: sha256(bytes[key]),
@@ -78,12 +108,36 @@ function fixture(t) {
       ],
       comparison: 'byte-identical',
     });
+    const run = 'https://github.com/zryna/zryna/actions/runs/987654321/attempts/2';
     const statement = {
       _type: 'https://in-toto.io/Statement/v1',
       subject: [{ name: artifacts.archive.path, digest: { sha256: artifacts.archive.sha256 } }],
       predicateType: 'https://slsa.dev/provenance/v1',
-      predicate: { buildDefinition: { buildType: 'https://actions.github.io/buildtypes/workflow/v1' } },
+      predicate: {
+        buildDefinition: {
+          buildType: 'https://actions.github.io/buildtypes/workflow/v1',
+          externalParameters: { workflow: {
+            path: '.github/workflows/release.yml', ref: 'refs/tags/v0.2.0',
+            repository: 'https://github.com/zryna/zryna',
+          } },
+          internalParameters: { github: {
+            event_name: 'push', repository_id: '123', repository_owner_id: '456',
+            runner_environment: 'github-hosted',
+          } },
+          resolvedDependencies: [{
+            uri: 'git+https://github.com/zryna/zryna@refs/tags/v0.2.0',
+            digest: { gitCommit: COMMIT },
+          }],
+        },
+        runDetails: {
+          builder: {
+            id: 'https://github.com/zryna/zryna/.github/workflows/release.yml@refs/tags/v0.2.0',
+          },
+          metadata: { invocationId: run },
+        },
+      },
     };
+    mutateStatement(statement, target);
     const bundle = {
       mediaType: 'application/vnd.dev.sigstore.bundle.v0.3+json',
       dsseEnvelope: { payload: Buffer.from(JSON.stringify(statement)).toString('base64'),
@@ -110,6 +164,10 @@ function fixture(t) {
   });
   return {
     inputRoot: resolve(inputRoot), admissionRoot: resolve(admissionRoot), outputRoot: resolve(outputRoot),
+    verifyArchiveImpl: async (archive, expected) => {
+      assert.equal(sha256(archive), expected.sha256);
+      return { archiveSha256: expected.sha256, files: verifiedFiles[expected.target.triple] };
+    },
     environment: {
       GITHUB_TOKEN: 'test-token', GITHUB_SERVER_URL: 'https://github.com',
       GITHUB_REPOSITORY: 'zryna/zryna', GITHUB_REF: 'refs/tags/v0.2.0',
@@ -181,12 +239,13 @@ function prepareAll(paths) {
   writeFileSync(join(paths.outputRoot, 'zryna-release-envelope-v1.sigstore.json'), '{}\n');
 }
 
-test('binds two reproduced archives, admission, provenance, checksums, and signed envelope', (t) => {
+test('binds two reproduced archives, admission, provenance, checksums, and signed envelope', async (t) => {
   const paths = fixture(t);
   prepareAll(paths);
   const calls = [];
-  const envelope = verifySignedRelease({
+  const envelope = await verifySignedRelease({
     directory: paths.outputRoot,
+    verifyArchiveImpl: paths.verifyArchiveImpl,
     spawn(executable, args) {
       calls.push([executable, ...args]);
       return { status: 0, stdout: 'Verified OK', stderr: '' };
@@ -194,28 +253,69 @@ test('binds two reproduced archives, admission, provenance, checksums, and signe
   });
   assert.equal(envelope.workflow.runId, '987654321');
   assert.equal(envelope.subjects.length, 2);
-  assert.equal(calls.filter((call) => call[1] === 'verify-blob-attestation').length, 2);
+  const attestationCalls = calls.filter((call) => call[1] === 'verify-blob-attestation');
+  assert.equal(attestationCalls.length, 2);
+  assert(attestationCalls.every((call) => call.includes('https://slsa.dev/provenance/v1')
+    && call.includes('--check-claims=true')));
   assert.equal(calls.filter((call) => call[1] === 'verify-blob').length, 3);
   assert.equal(readFileSync(join(paths.outputRoot, 'SHA256SUMS'), 'utf8').split('\n').length, 13);
 });
 
-test('rejects provenance drift and cryptographic verifier failure', (t) => {
+test('rejects provenance drift and cryptographic verifier failure', async (t) => {
   const drift = fixture(t);
   prepareAll(drift);
   const provenance = join(drift.outputRoot,
     'zryna-0.2.0-x86_64-unknown-linux-gnu.intoto.jsonl');
   writeFileSync(provenance, '{}\n');
-  assert.throws(() => verifySignedRelease({
+  await assert.rejects(() => verifySignedRelease({
     directory: drift.outputRoot,
+    verifyArchiveImpl: drift.verifyArchiveImpl,
     spawn: () => ({ status: 0, stdout: '', stderr: '' }),
   }), /R406-SIGNED-RELEASE:.*signed descriptor/);
 
   const crypto = fixture(t);
   prepareAll(crypto);
-  assert.throws(() => verifySignedRelease({
+  await assert.rejects(() => verifySignedRelease({
     directory: crypto.outputRoot,
+    verifyArchiveImpl: crypto.verifyArchiveImpl,
     spawn: () => ({ status: 1, stdout: '', stderr: 'invalid signature' }),
   }), /R406-SIGNED-RELEASE: cosign verify-blob-attestation failed/);
+});
+
+test('rejects a valid archive subject with wrong predicate, workflow, source, or run identity', (t) => {
+  for (const [label, mutate] of [
+    ['predicate', (statement) => { statement.predicateType = 'https://example.invalid/predicate'; }],
+    ['workflow', (statement) => {
+      statement.predicate.buildDefinition.externalParameters.workflow.path = '.github/workflows/ci.yml';
+    }],
+    ['source', (statement) => {
+      statement.predicate.buildDefinition.resolvedDependencies[0].digest.gitCommit = 'f'.repeat(40);
+    }],
+    ['run', (statement) => {
+      statement.predicate.runDetails.metadata.invocationId =
+        'https://github.com/zryna/zryna/actions/runs/987654320/attempts/2';
+    }],
+  ]) {
+    const paths = fixture(t, mutate);
+    prepareReleaseEvidence({ ...paths, phase: 'subjects' });
+    assert.throws(() => prepareReleaseEvidence({ ...paths, phase: 'documents' }),
+      /R406-EVIDENCE: attestation provenance policy differs/, label);
+  }
+});
+
+test('signed-release admission rejects an envelope-bound header-only SBOM', async (t) => {
+  const paths = fixture(t, () => {}, (_bytes, { target, archive }) => Buffer.from(`${
+    canonicalBounded({
+      spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0', SPDXID: 'SPDXRef-DOCUMENT',
+      name: `zryna-0.2.0-${target.triple}`,
+      documentNamespace: `https://zryna.com/spdx/0.2.0/${target.triple}/${sha256(archive)}`,
+    })}\n`));
+  prepareAll(paths);
+  await assert.rejects(() => verifySignedRelease({
+    directory: paths.outputRoot,
+    verifyArchiveImpl: paths.verifyArchiveImpl,
+    spawn: () => ({ status: 0, stdout: '', stderr: '' }),
+  }), /R406-SPDX: document fields differ from the closed SPDX 2.3 profile/);
 });
 
 test('creates, fills, verifies, and publishes only the exact server-digested asset set', async (t) => {

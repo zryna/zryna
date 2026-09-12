@@ -103,6 +103,46 @@ function decodeBase64(value) {
   return result;
 }
 
+function provenanceProjection(statement) {
+  const definition = statement?.predicate?.buildDefinition;
+  const internal = definition?.internalParameters;
+  const details = statement?.predicate?.runDetails;
+  return {
+    predicateType: statement?.predicateType,
+    buildType: definition?.buildType,
+    workflow: definition?.externalParameters?.workflow,
+    eventName: internal?.github?.event_name,
+    runnerEnvironment: internal?.github?.runner_environment,
+    resolvedDependencies: definition?.resolvedDependencies,
+    builder: details?.builder?.id,
+    invocationId: details?.metadata?.invocationId,
+  };
+}
+
+function expectedProvenance(expected) {
+  const { archive, source, workflow } = expected;
+  const run = `https://github.com/zryna/zryna/actions/runs/${workflow.runId}/attempts/${
+    workflow.runAttempt}`;
+  const config = `${source.repository}/.github/workflows/release.yml@${source.ref}`;
+  return {
+    subject: archive,
+    projection: {
+      predicateType: 'https://slsa.dev/provenance/v1',
+      buildType: 'https://actions.github.io/buildtypes/workflow/v1',
+      workflow: {
+        path: '.github/workflows/release.yml', ref: source.ref, repository: source.repository,
+      },
+      eventName: 'push',
+      runnerEnvironment: 'github-hosted',
+      resolvedDependencies: [{
+        uri: `git+${source.repository}@${source.ref}`, digest: { gitCommit: source.commit },
+      }],
+      builder: config,
+      invocationId: run,
+    },
+  };
+}
+
 export function statementFromAttestation(bundleBytes, expected) {
   const text = utf8(bundleBytes, 'attestation bundle');
   const lines = text.endsWith('\n') ? text.slice(0, -1).split('\n') : text.split('\n');
@@ -120,11 +160,15 @@ export function statementFromAttestation(bundleBytes, expected) {
   } catch {
     reject('attestation statement is not JSON');
   }
+  const policy = expectedProvenance(expected);
   if (statement?._type !== 'https://in-toto.io/Statement/v1'
     || !Array.isArray(statement.subject) || statement.subject.length !== 1
-    || statement.subject[0]?.name !== expected.path
-    || canonical(statement.subject[0]?.digest) !== canonical({ sha256: expected.sha256 })) {
+    || statement.subject[0]?.name !== policy.subject.path
+    || canonical(statement.subject[0]?.digest) !== canonical({ sha256: policy.subject.sha256 })) {
     reject('attestation subject differs from the reproduced archive');
+  }
+  if (canonical(provenanceProjection(statement)) !== canonical(policy.projection)) {
+    reject('attestation provenance policy differs from the release workflow');
   }
   return payload;
 }
@@ -211,6 +255,8 @@ function revocationPolicy() {
 
 function writeDocuments(reproductions, outputRoot, environment) {
   exactReleaseNames(outputRoot, subjectNames(reproductions));
+  const source = reproductions[0].reproduction.source;
+  const workflow = requireWorkflowEnvironment(environment, source);
   for (const entry of reproductions) {
     const archive = entry.reproduction.artifacts.archive;
     const sourcePath = environment[entry.key === 'linux'
@@ -223,11 +269,10 @@ function writeDocuments(reproductions, outputRoot, environment) {
     // closed public name without accepting any sibling files from its temporary directory.
     const bundle = readReleaseFile(dirname(sourcePath), basename(sourcePath), MAX_RELEASE_DOCUMENT);
     createReleaseFile(outputRoot, bundleName, bundle);
-    const statement = statementFromAttestation(bundle, archive);
+    const statement = statementFromAttestation(bundle, { archive, source, workflow });
     createReleaseFile(outputRoot, `zryna-${VERSION}-${entry.triple}.intoto.jsonl`,
       Buffer.concat([statement, Buffer.from('\n')]));
   }
-  const source = reproductions[0].reproduction.source;
   createReleaseFile(outputRoot, 'RELEASE_NOTES.md', releaseNotes(source, reproductions));
   createReleaseFile(outputRoot, 'REVOCATION.md', revocationPolicy());
   const names = documentNames(reproductions).filter((name) => name !== 'SHA256SUMS');
@@ -281,6 +326,7 @@ function writeEnvelope(reproductions, admission, outputRoot, environment) {
     channel: 'beta',
     publication: 'prerelease',
     source,
+    recipe: reproductions[0].reproduction.recipe,
     workflow,
     subjects,
     releaseNotes: descriptor(outputRoot, 'RELEASE_NOTES.md'),
