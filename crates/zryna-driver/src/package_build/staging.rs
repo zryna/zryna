@@ -143,6 +143,7 @@ pub(super) fn read_file(
     limit: usize,
     error: fn(&str) -> PackageBuildError,
 ) -> Result<Vec<u8>, PackageBuildError> {
+    validate_directory(root, error)?;
     let mut directory =
         root.try_clone().map_err(|_| error("retained directory cannot be cloned for reading"))?;
     let mut components = relative.split('/').peekable();
@@ -154,6 +155,7 @@ pub(super) fn read_file(
             directory = directory
                 .open_dir_nofollow(component)
                 .map_err(|_| error("retained file parent is unsafe"))?;
+            validate_directory(&directory, error)?;
             continue;
         }
         let mut options = cap_std::fs::OpenOptions::new();
@@ -162,7 +164,10 @@ pub(super) fn read_file(
             .open_with(component, &options)
             .map_err(|_| error("retained file cannot be opened"))?;
         let metadata = file.metadata().map_err(|_| error("retained file cannot be inspected"))?;
-        if !metadata.is_file() || metadata.len() > u64::try_from(limit).unwrap_or(u64::MAX) {
+        if metadata_is_link_or_reparse(&metadata)
+            || !metadata.is_file()
+            || metadata.len() > u64::try_from(limit).unwrap_or(u64::MAX)
+        {
             return Err(error("retained file is unsafe or exceeds its limit"));
         }
         let bound = u64::try_from(limit).unwrap_or(u64::MAX).saturating_add(1);
@@ -186,6 +191,26 @@ pub(super) fn inventory(
     let mut entries = BTreeSet::new();
     collect(root, "", &mut entries, error)?;
     Ok(entries)
+}
+
+#[cfg(windows)]
+fn validate_directory(
+    directory: &Dir,
+    error: fn(&str) -> PackageBuildError,
+) -> Result<(), PackageBuildError> {
+    let metadata =
+        directory.dir_metadata().map_err(|_| error("retained directory cannot be inspected"))?;
+    if !metadata.is_dir() || metadata_is_link_or_reparse(&metadata) {
+        return Err(error("retained directory is unsafe"));
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn metadata_is_link_or_reparse(metadata: &cap_std::fs::Metadata) -> bool {
+    use cap_std::fs::MetadataExt as _;
+
+    metadata.file_type().is_symlink() || metadata.file_attributes() & 0x0400 != 0
 }
 
 pub(super) fn write_file(
@@ -227,6 +252,8 @@ pub(super) fn sync_tree(
     directory: &Dir,
     error: fn(&str) -> PackageBuildError,
 ) -> Result<(), PackageBuildError> {
+    #[cfg(windows)]
+    validate_directory(directory, error)?;
     for entry in directory.entries().map_err(|_| error("private stage cannot be synchronized"))? {
         let entry = entry.map_err(|_| error("private stage cannot be synchronized"))?;
         let file_type =
@@ -235,8 +262,24 @@ pub(super) fn sync_tree(
             let child = directory
                 .open_dir_nofollow(entry.file_name())
                 .map_err(|_| error("private stage directory changed"))?;
+            #[cfg(windows)]
+            validate_directory(&child, error)?;
             sync_tree(&child, error)?;
-        } else if !file_type.is_file() {
+        } else if file_type.is_file() {
+            #[cfg(windows)]
+            {
+                let mut options = cap_std::fs::OpenOptions::new();
+                options.read(true).follow(FollowSymlinks::No);
+                let file = directory
+                    .open_with(entry.file_name(), &options)
+                    .map_err(|_| error("private stage file changed"))?;
+                let metadata =
+                    file.metadata().map_err(|_| error("private stage file cannot be inspected"))?;
+                if !metadata.is_file() || metadata_is_link_or_reparse(&metadata) {
+                    return Err(error("private stage contains an unsafe path"));
+                }
+            }
+        } else {
             return Err(error("private stage contains an unsafe path"));
         }
     }
@@ -322,6 +365,8 @@ fn collect(
     entries: &mut BTreeSet<String>,
     error: fn(&str) -> PackageBuildError,
 ) -> Result<(), PackageBuildError> {
+    #[cfg(windows)]
+    validate_directory(directory, error)?;
     for entry in
         directory.entries().map_err(|_| error("private stage cannot be enumerated for cleanup"))?
     {
@@ -339,6 +384,8 @@ fn collect(
             let child = directory
                 .open_dir_nofollow(entry.file_name())
                 .map_err(|_| error("private stage directory changed during cleanup"))?;
+            #[cfg(windows)]
+            validate_directory(&child, error)?;
             entries.insert(relative.clone());
             collect(&child, &relative, entries, error)?;
         } else if file_type.is_file() {
@@ -349,11 +396,9 @@ fn collect(
                 let file = directory
                     .open_with(entry.file_name(), &options)
                     .map_err(|_| error("private stage file changed during inspection"))?;
-                if !file
-                    .metadata()
-                    .map_err(|_| error("private stage file cannot be inspected"))?
-                    .is_file()
-                {
+                let metadata =
+                    file.metadata().map_err(|_| error("private stage file cannot be inspected"))?;
+                if !metadata.is_file() || metadata_is_link_or_reparse(&metadata) {
                     return Err(error("private stage contains an unsafe cleanup path"));
                 }
             }

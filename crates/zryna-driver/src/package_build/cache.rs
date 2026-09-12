@@ -5,10 +5,7 @@ use std::{
 };
 
 #[cfg(not(windows))]
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 #[cfg(windows)]
 use cap_fs_ext::DirExt as _;
@@ -209,11 +206,6 @@ fn materialized_target(
 }
 
 #[cfg(not(windows))]
-fn entry_path(request: &PackageBuildRequest<'_>, key: &str) -> PathBuf {
-    request.cache_root.path().join("build-plan-v0").join(key)
-}
-
-#[cfg(not(windows))]
 fn read_entry(
     request: &PackageBuildRequest<'_>,
     target: &BuildTargetId,
@@ -221,7 +213,7 @@ fn read_entry(
     plan_key: &str,
 ) -> Result<Option<Vec<CompiledOutput>>, PackageBuildError> {
     request.cache_root.revalidate()?;
-    let path = entry_path(request, key);
+    let path = request.cache_root.path().join("build-plan-v0").join(key);
     match fs::symlink_metadata(&path) {
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(_) => return Err(PackageBuildError::cache("cache entry cannot be inspected")),
@@ -231,30 +223,7 @@ fn read_entry(
         Ok(_) => {}
     }
     let bytes = read_stable_file(&path.join(ENTRY_MANIFEST), 65_536)?;
-    let entry: CacheEntry = serde_json::from_slice(&bytes)
-        .map_err(|_| PackageBuildError::cache("cache metadata is malformed"))?;
-    let canonical = encode_entry(&entry)?;
-    if bytes != canonical
-        || entry.format != "zryna.build-cache-entry.v0"
-        || entry.version != 0
-        || entry.plan_cache_key != plan_key
-        || &entry.target != target
-        || entry.target_cache_key != key
-    {
-        return Err(PackageBuildError::cache("cache metadata identity is incompatible"));
-    }
-    let expected = request
-        .configuration
-        .outputs
-        .iter()
-        .filter(|output| &output.target == target)
-        .map(|output| output.path.as_str())
-        .collect::<Vec<_>>();
-    if entry.outputs.len() != expected.len()
-        || entry.outputs.iter().zip(expected).any(|(output, expected)| output.path != expected)
-    {
-        return Err(PackageBuildError::cache("cache output inventory is incomplete"));
-    }
+    let entry = authenticate_metadata(request, target, key, plan_key, &bytes)?;
     audit_inventory(&path, &entry.outputs)?;
     let mut outputs = Vec::with_capacity(entry.outputs.len());
     for output in entry.outputs {
@@ -296,10 +265,37 @@ fn read_entry_from_directory(
 ) -> Result<Vec<CompiledOutput>, PackageBuildError> {
     let bytes =
         super::staging::read_file(directory, ENTRY_MANIFEST, 65_536, PackageBuildError::cache)?;
-    let entry: CacheEntry = serde_json::from_slice(&bytes)
+    let entry = authenticate_metadata(request, target, key, plan_key, &bytes)?;
+    audit_inventory_directory(directory, &entry.outputs)?;
+    let mut outputs = Vec::with_capacity(entry.outputs.len());
+    for output in entry.outputs {
+        let material = super::staging::read_file(
+            directory,
+            &output.path,
+            1_073_741_824,
+            PackageBuildError::cache,
+        )?;
+        if u64::try_from(material.len()).ok() != Some(output.bytes)
+            || sha256(&material) != output.sha256
+        {
+            return Err(PackageBuildError::cache("cached output bytes are stale or corrupt"));
+        }
+        outputs.push(CompiledOutput { path: output.path, bytes: material });
+    }
+    Ok(outputs)
+}
+
+fn authenticate_metadata(
+    request: &PackageBuildRequest<'_>,
+    target: &BuildTargetId,
+    key: &str,
+    plan_key: &str,
+    bytes: &[u8],
+) -> Result<CacheEntry, PackageBuildError> {
+    let entry: CacheEntry = serde_json::from_slice(bytes)
         .map_err(|_| PackageBuildError::cache("cache metadata is malformed"))?;
     let canonical = encode_entry(&entry)?;
-    if bytes != canonical
+    if bytes != canonical.as_slice()
         || entry.format != "zryna.build-cache-entry.v0"
         || entry.version != 0
         || entry.plan_cache_key != plan_key
@@ -320,23 +316,7 @@ fn read_entry_from_directory(
     {
         return Err(PackageBuildError::cache("cache output inventory is incomplete"));
     }
-    audit_inventory_directory(directory, &entry.outputs)?;
-    let mut outputs = Vec::with_capacity(entry.outputs.len());
-    for output in entry.outputs {
-        let material = super::staging::read_file(
-            directory,
-            &output.path,
-            1_073_741_824,
-            PackageBuildError::cache,
-        )?;
-        if u64::try_from(material.len()).ok() != Some(output.bytes)
-            || sha256(&material) != output.sha256
-        {
-            return Err(PackageBuildError::cache("cached output bytes are stale or corrupt"));
-        }
-        outputs.push(CompiledOutput { path: output.path, bytes: material });
-    }
-    Ok(outputs)
+    Ok(entry)
 }
 
 fn write_entry(

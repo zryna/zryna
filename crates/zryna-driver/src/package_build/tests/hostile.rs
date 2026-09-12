@@ -1,5 +1,8 @@
 use std::{cell::Cell, fs};
 
+#[cfg(windows)]
+use std::{path::Path, process::Command};
+
 use super::*;
 
 #[cfg(windows)]
@@ -10,6 +13,17 @@ fn is_retained_handle_denial(error: &std::io::Error) -> bool {
 #[cfg(not(windows))]
 fn is_retained_handle_denial(_error: &std::io::Error) -> bool {
     false
+}
+
+#[cfg(windows)]
+fn create_junction(link: &Path, target: &Path) {
+    let status = Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(link)
+        .arg(target)
+        .status()
+        .expect("junction command must start");
+    assert!(status.success(), "junction fixture must be created");
 }
 
 fn one_output() -> Vec<BuildOutput> {
@@ -340,6 +354,140 @@ fn unexpected_stage_entry_is_never_cleaned() {
     .expect_err("unexpected entry must block cleanup");
     assert_eq!(error.code(), "ZRYNA-B4102");
     assert_eq!(fs::read(stage.join("foreign")).expect("test fixture"), b"retain");
+}
+
+#[cfg(windows)]
+#[test]
+fn expected_junction_is_rejected_without_touching_its_target() {
+    let root = TemporaryRoot::new("expected-stage-junction");
+    let stage = root.path().join("stage");
+    let outside = root.path().join("outside");
+    let junction = stage.join("expected");
+    fs::create_dir(&outside).expect("outside directory");
+    fs::write(outside.join("sentinel"), b"retain").expect("outside sentinel");
+    let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
+        .expect("parent capability");
+    let stage_directory =
+        staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+            .expect("stage capability");
+    create_junction(&junction, &outside);
+    let expected = std::collections::BTreeSet::from(["expected".to_owned()]);
+    let error = staging::cleanup_known_stage(
+        &parent,
+        stage_directory.seal(),
+        &expected,
+        PackageBuildError::cache,
+    )
+    .expect_err("an expected-name junction must block cleanup");
+    assert_eq!(error.code(), "ZRYNA-B4102");
+    assert_eq!(fs::read(outside.join("sentinel")).expect("outside sentinel"), b"retain");
+    assert!(stage.exists());
+    assert!(junction.exists());
+    fs::remove_dir(&junction).expect("junction cleanup");
+}
+
+#[cfg(windows)]
+#[test]
+fn held_descendant_blocks_commit_without_losing_the_stage() {
+    let root = TemporaryRoot::new("held-stage-descendant");
+    let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
+        .expect("parent capability");
+    let writable = staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+        .expect("stage capability");
+    writable.directory().create_dir("nested").expect("nested directory");
+    let descendant = writable.directory().open_dir("nested").expect("descendant capability");
+    let mut sealed = writable.seal();
+    let error = sealed
+        .rename_noreplace(&parent, "final", "cache entry commit failed", PackageBuildError::cache)
+        .expect_err("a live descendant must block the ancestor rename");
+    assert_eq!(error.code(), "ZRYNA-B4102");
+    assert!(root.path().join("stage").is_dir());
+    assert!(!root.path().join("final").exists());
+    drop(descendant);
+    let expected = std::collections::BTreeSet::from(["nested".to_owned()]);
+    staging::cleanup_known_stage(&parent, sealed, &expected, PackageBuildError::cache)
+        .expect("stage cleanup after descendant close");
+}
+
+#[cfg(windows)]
+#[test]
+fn commit_collision_preserves_the_owned_stage_and_foreign_destination() {
+    let root = TemporaryRoot::new("stage-commit-collision");
+    let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
+        .expect("parent capability");
+    let writable = staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+        .expect("stage capability");
+    staging::write_file(writable.directory(), "owned", b"owned", PackageBuildError::cache)
+        .expect("owned stage file");
+    fs::create_dir(root.path().join("final")).expect("foreign destination");
+    fs::write(root.path().join("final/foreign"), b"foreign").expect("foreign sentinel");
+    let mut sealed = writable.seal();
+    sealed
+        .rename_noreplace(&parent, "final", "cache entry commit failed", PackageBuildError::cache)
+        .expect_err("an existing destination must block commit");
+    assert_eq!(fs::read(root.path().join("stage/owned")).expect("owned file"), b"owned");
+    assert_eq!(fs::read(root.path().join("final/foreign")).expect("foreign sentinel"), b"foreign");
+    let expected = std::collections::BTreeSet::from(["owned".to_owned()]);
+    staging::cleanup_known_stage(&parent, sealed, &expected, PackageBuildError::cache)
+        .expect("owned stage cleanup");
+}
+
+#[cfg(windows)]
+#[test]
+fn postcommit_mutation_rolls_back_the_exact_stage_before_cleanup_rejects() {
+    let root = TemporaryRoot::new("stage-postcommit-mutation");
+    let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
+        .expect("parent capability");
+    let writable = staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+        .expect("stage capability");
+    staging::write_file(writable.directory(), "owned", b"owned", PackageBuildError::cache)
+        .expect("owned stage file");
+    let mut sealed = writable.seal();
+    sealed
+        .rename_noreplace(&parent, "final", "cache entry commit failed", PackageBuildError::cache)
+        .expect("stage commit");
+    sealed.directory().write("foreign", b"foreign").expect("postcommit mutation");
+    sealed
+        .rename_noreplace(&parent, "stage", "cache entry rollback failed", PackageBuildError::cache)
+        .expect("exact rollback");
+    assert!(!root.path().join("final").exists());
+    let expected = std::collections::BTreeSet::from(["owned".to_owned()]);
+    staging::cleanup_known_stage(&parent, sealed, &expected, PackageBuildError::cache)
+        .expect_err("unexpected postcommit content must preserve the rolled-back stage");
+    assert_eq!(fs::read(root.path().join("stage/owned")).expect("owned file"), b"owned");
+    assert_eq!(fs::read(root.path().join("stage/foreign")).expect("foreign file"), b"foreign");
+}
+
+#[cfg(windows)]
+#[test]
+fn rollback_collision_preserves_committed_and_foreign_roots() {
+    let root = TemporaryRoot::new("stage-rollback-collision");
+    let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
+        .expect("parent capability");
+    let writable = staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+        .expect("stage capability");
+    staging::write_file(writable.directory(), "owned", b"owned", PackageBuildError::cache)
+        .expect("owned stage file");
+    let mut sealed = writable.seal();
+    sealed
+        .rename_noreplace(&parent, "final", "cache entry commit failed", PackageBuildError::cache)
+        .expect("stage commit");
+    fs::create_dir(root.path().join("stage")).expect("foreign rollback destination");
+    fs::write(root.path().join("stage/foreign"), b"foreign").expect("foreign sentinel");
+    sealed
+        .rename_noreplace(&parent, "stage", "cache entry rollback failed", PackageBuildError::cache)
+        .expect_err("rollback collision must fail closed");
+    assert_eq!(fs::read(root.path().join("final/owned")).expect("owned file"), b"owned");
+    assert_eq!(fs::read(root.path().join("stage/foreign")).expect("foreign sentinel"), b"foreign");
+
+    fs::remove_file(root.path().join("stage/foreign")).expect("foreign file cleanup");
+    fs::remove_dir(root.path().join("stage")).expect("foreign directory cleanup");
+    sealed
+        .rename_noreplace(&parent, "stage", "cache entry rollback failed", PackageBuildError::cache)
+        .expect("rollback after collision removal");
+    let expected = std::collections::BTreeSet::from(["owned".to_owned()]);
+    staging::cleanup_known_stage(&parent, sealed, &expected, PackageBuildError::cache)
+        .expect("owned stage cleanup");
 }
 
 #[test]

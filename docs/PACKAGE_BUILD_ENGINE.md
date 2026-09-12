@@ -74,11 +74,20 @@ sibling entry, writes and synchronizes every output, writes metadata last, audit
 inventory, synchronizes the directory tree, and performs one create-only rename. A failed or
 interrupted writer does not make its staging directory addressable by a target cache key. A race
 that finds an already committed entry succeeds only when its bytes exactly match the current
-trusted compilation result. Cleanup retains the exact stage identity and removes only a bounded
-subset of paths successfully written through the retained stage capability. Files and directories
-are removed through that same capability and the stage root is removed non-recursively through its
-retained parent. A substituted stage or unexpected path is left untouched and reported as a
-failure.
+trusted compilation result. On Windows, atomic stage creation returns one exact owned directory
+capability that remains authoritative through commit, post-commit authentication, rollback, and
+cleanup. Every temporary descendant handle closes before an ancestor rename or rollback, and
+Windows inventory and byte checks remain relative to that retained root. Cleanup removes only a
+bounded subset of paths successfully written through the retained stage capability, then consumes
+the exact empty root on Windows or uses the revalidated retained parent on Linux. An uncertain or
+unexpected inventory is left untouched. A later removal failure can leave a partially cleaned
+exact stage and is reported as such instead of selecting another directory by path.
+
+Closing descendant handles creates an unavoidable validation-to-rename mutation window on
+Windows. The driver retains the exact root and authenticates it again after commit, but this is not
+protection from another process running as the same user and changing descendants during that
+window. A detected change is rolled back through the exact root; failed rollback preserves the
+committed directory and returns a failure.
 
 Both `offline` and `frozen` build modes expose no acquisition or network operation. `frozen`
 additionally requires a resolver result produced by exact existing-lock verification; an update
@@ -90,9 +99,10 @@ authenticated source/tool inputs when the artifact cache is empty.
 After every selected target is materialized, publication writes the exact plan, outputs, and build
 manifest to one private sibling of `.zryna/out`. The reopened output directory must match the
 previously retained output-root identity before the stage is created. Files are create-only and
-synchronized through the retained stage capability. The driver
-audits all paths and hashes before and after one create-only directory rename. Any preparation,
-compiler, cache, or publication failure returns no successful bundle.
+synced through the retained stage capability. On Windows, both audits use the continuously owned
+stage root rather than reopening the stage or committed bundle by pathname. The driver audits all
+paths and hashes before and after one create-only directory rename. Any preparation, compiler,
+cache, or publication failure returns no successful bundle.
 Publication cleanup uses the same retained-stage and bounded-inventory rule and refuses to
 recursively remove a substituted or expanded directory.
 
