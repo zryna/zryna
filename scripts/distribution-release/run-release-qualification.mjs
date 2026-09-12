@@ -8,7 +8,10 @@ import { createReleaseQualificationInput } from './create-release-qualification-
 import { createQualificationArchitectureReceipt } from './create-source-build-receipt.mjs';
 import { inspectReleaseQualification } from './inspect-release-qualification.mjs';
 import { observeQualificationTools } from './observe-qualification-tools.mjs';
-import { auditQualificationCargoCache, provisionQualificationCargoHome } from './provision-qualification-cargo.mjs';
+import {
+  auditQualificationCompileSources, provisionQualificationCargoHome,
+  seedQualificationCompileCargoHome,
+} from './provision-qualification-cargo.mjs';
 import { createQualificationArchiveCapability } from './qualification-archive-capability.mjs';
 import { assembleQualification, prepareQualification } from './release-qualification-core.mjs';
 import { exactReleaseNames, MAX_RELEASE_DOCUMENT, readReleaseFile } from './release-files.mjs';
@@ -65,7 +68,9 @@ export async function runReleaseQualification({
 
   const boundEnvironment = { ...environment,
     SOURCE_DATE_EPOCH: String(source.source.sourceDateEpoch) };
-  const provisioned = provisionQualificationCargoHome({ sourceRoot, workRoot, target,
+  const bootstrapWorkRoot = `${workRoot}-bootstrap`;
+  if (roots.includes(bootstrapWorkRoot)) reject('bootstrap qualification root overlaps an input root');
+  const provisioned = provisionQualificationCargoHome({ sourceRoot, workRoot: bootstrapWorkRoot, target,
     environment: boundEnvironment, spawn });
   const receiptEnvironment = { ...boundEnvironment, CARGO_HOME: provisioned.cargoHome };
   const architectureBytes = Buffer.from(`${canonicalBounded(createQualificationArchitectureReceipt({
@@ -77,7 +82,9 @@ export async function runReleaseQualification({
     nativeTools: tools.nativeTools, workingRoot: sourceRoot, spawn });
   const acquired = await acquireQualificationMaterials({ sourceRoot,
     sourceCommit: source.source.commit, target, archiveCapability, spawn });
-  auditQualificationCargoCache(provisioned.cargoHome, acquired.rustCaptures);
+  const compileHome = seedQualificationCompileCargoHome({
+    bootstrapCargoHome: provisioned.cargoHome, workRoot, rustCaptures: acquired.rustCaptures,
+  });
   const recipeBytes = gitBlob(spawn, sourceRoot, source.source.commit, RECIPE_PATH);
   const options = { sourceBytes, architectureBytes, gateBytes, recipeBytes, target,
     capturedMaterials: acquired.capturedMaterials, tools };
@@ -86,7 +93,8 @@ export async function runReleaseQualification({
   const prepared = prepareQualification(input, acquired.capturedMaterials,
     { source: sourceBytes, architecture: architectureBytes, gates: gateBytes });
   const compiled = compileReleaseQualification({ binding, sourceRoot, workRoot,
-    cargoHome: provisioned.cargoHome, observedTools: tools, spawn });
+    cargoHome: compileHome.cargoHome, observedTools: tools, spawn });
+  auditQualificationCompileSources(compileHome.cargoHome, acquired.rustCaptures);
   const assembled = await assembleQualification(binding,
     { payload: prepared.payload, cli: compiled.cli });
   const inspection = inspectReleaseQualification({ binding, cli: compiled.cli, sourceRoot, workRoot,

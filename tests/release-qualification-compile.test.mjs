@@ -36,6 +36,7 @@ function observed(input, parent) {
 
 test('materializes only bound compile tokens and runs one absolute Cargo command', async (t) => {
   const fixture = await createQualificationFixture();
+  fixture.input.compile.environment.unshift({ name: 'CARGO_HOME', value: '@cargo-home@' });
   const paths = roots(t);
   const tools = observed(fixture.input, paths.parent);
   const binding = Buffer.from(`${canonicalBounded(fixture.input)}\n`);
@@ -48,6 +49,9 @@ test('materializes only bound compile tokens and runs one absolute Cargo command
       assert.deepEqual(args, fixture.input.compile.argv.slice(1));
       assert.equal(options.shell, false);
       assert.equal(options.env.SOURCE_DATE_EPOCH, '1789081200');
+      assert.equal(options.env.CARGO_HOME, paths.cargoHome);
+      assert.equal(options.env.HOME, undefined);
+      assert.equal(options.env.USERPROFILE, undefined);
       assert(!Object.values(options.env).some((value) => /@[A-Za-z0-9_-]+@/.test(value)));
       const output = join(paths.workRoot, 'target', fixture.input.target.triple, 'release');
       mkdirSync(output, { recursive: true });
