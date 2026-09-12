@@ -55,8 +55,11 @@ fn publish_with_checkpoint(
         let manifest_file = write_new(&stage.directory, "zryna.package.json", manifest)?;
         let lock_file = write_new(&stage.directory, "zryna.lock.json", lock)?;
         let source_file = write_new(&source_directory.directory, "main.zry", source)?;
-        sync_directory(&source_directory.directory)?;
-        sync_directory(&stage.directory)?;
+        #[cfg(unix)]
+        {
+            sync_directory(&source_directory.directory)?;
+            sync_directory(&stage.directory)?;
+        }
         checkpoint();
         parent.revalidate()?;
         stage.revalidate(&parent, &stage_name)?;
@@ -425,11 +428,6 @@ fn sync_directory(directory: &Dir) -> Result<(), ProjectError> {
         .open(".")
         .and_then(|directory| directory.sync_all())
         .map_err(|_| ProjectError::publication("project directory cannot be synchronized"))
-}
-
-#[cfg(not(unix))]
-fn sync_directory(_directory: &Dir) -> Result<(), ProjectError> {
-    Ok(())
 }
 
 #[cfg(windows)]
