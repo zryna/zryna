@@ -24,7 +24,7 @@ fn ancestor_rename_rejects_a_live_child_regardless_of_delete_sharing()
         let error = stage
             .rename_noreplace(&parent, OsStr::new("final"))
             .expect_err("a live descendant must reject the ancestor rename");
-        assert_eq!(error.raw_os_error(), Some(ERROR_ACCESS_DENIED as i32));
+        assert_eq!(error.raw_os_error(), Some(ERROR_ACCESS_DENIED.cast_signed()));
         assert!(root.path().join("stage").is_dir());
         assert!(!root.path().join("final").exists());
 
@@ -50,7 +50,7 @@ fn project_topology_renames_only_after_every_descendant_handle_closes()
     let error = stage
         .rename_noreplace(&parent, OsStr::new("final"))
         .expect_err("the complete live project topology must reject the ancestor rename");
-    assert_eq!(error.raw_os_error(), Some(ERROR_ACCESS_DENIED as i32));
+    assert_eq!(error.raw_os_error(), Some(ERROR_ACCESS_DENIED.cast_signed()));
     assert!(root.path().join("stage").is_dir());
     assert!(!root.path().join("final").exists());
 
@@ -64,7 +64,7 @@ fn project_topology_renames_only_after_every_descendant_handle_closes()
     let collision = stage
         .rename_noreplace(&parent, OsStr::new("collision"))
         .expect_err("the exact root must not replace a foreign destination");
-    assert_eq!(collision.raw_os_error(), Some(ERROR_ALREADY_EXISTS as i32));
+    assert_eq!(collision.raw_os_error(), Some(ERROR_ALREADY_EXISTS.cast_signed()));
     assert_eq!(fs::read(root.path().join("collision/sentinel"))?, b"foreign");
 
     stage.rename_noreplace(&parent, OsStr::new("final"))?;
