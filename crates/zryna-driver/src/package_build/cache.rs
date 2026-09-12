@@ -1,16 +1,24 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs, io,
-    path::{Path, PathBuf},
+    io,
     sync::atomic::{AtomicU64, Ordering},
 };
 
+#[cfg(not(windows))]
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
+#[cfg(windows)]
 use cap_fs_ext::DirExt as _;
 use serde::{Deserialize, Serialize};
 
 mod filesystem;
 mod root;
-use filesystem::{collect_inventory, link_like, read_stable_file, sha256};
+use filesystem::sha256;
+#[cfg(not(windows))]
+use filesystem::{collect_inventory, link_like, read_stable_file};
 pub use root::ArtifactCacheRoot;
 
 use super::{
@@ -200,10 +208,12 @@ fn materialized_target(
     })
 }
 
+#[cfg(not(windows))]
 fn entry_path(request: &PackageBuildRequest<'_>, key: &str) -> PathBuf {
     request.cache_root.path().join("build-plan-v0").join(key)
 }
 
+#[cfg(not(windows))]
 fn read_entry(
     request: &PackageBuildRequest<'_>,
     target: &BuildTargetId,
@@ -259,6 +269,76 @@ fn read_entry(
     Ok(Some(outputs))
 }
 
+#[cfg(windows)]
+fn read_entry(
+    request: &PackageBuildRequest<'_>,
+    target: &BuildTargetId,
+    key: &str,
+    plan_key: &str,
+) -> Result<Option<Vec<CompiledOutput>>, PackageBuildError> {
+    request.cache_root.revalidate()?;
+    let namespace = request.cache_root.retained_build_namespace()?;
+    let directory = match namespace.open_dir_nofollow(key) {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err(PackageBuildError::cache("cache entry is not a real directory")),
+        Ok(directory) => directory,
+    };
+    read_entry_from_directory(request, target, key, plan_key, &directory).map(Some)
+}
+
+#[cfg(windows)]
+fn read_entry_from_directory(
+    request: &PackageBuildRequest<'_>,
+    target: &BuildTargetId,
+    key: &str,
+    plan_key: &str,
+    directory: &cap_std::fs::Dir,
+) -> Result<Vec<CompiledOutput>, PackageBuildError> {
+    let bytes =
+        super::staging::read_file(directory, ENTRY_MANIFEST, 65_536, PackageBuildError::cache)?;
+    let entry: CacheEntry = serde_json::from_slice(&bytes)
+        .map_err(|_| PackageBuildError::cache("cache metadata is malformed"))?;
+    let canonical = encode_entry(&entry)?;
+    if bytes != canonical
+        || entry.format != "zryna.build-cache-entry.v0"
+        || entry.version != 0
+        || entry.plan_cache_key != plan_key
+        || &entry.target != target
+        || entry.target_cache_key != key
+    {
+        return Err(PackageBuildError::cache("cache metadata identity is incompatible"));
+    }
+    let expected = request
+        .configuration
+        .outputs
+        .iter()
+        .filter(|output| &output.target == target)
+        .map(|output| output.path.as_str())
+        .collect::<Vec<_>>();
+    if entry.outputs.len() != expected.len()
+        || entry.outputs.iter().zip(expected).any(|(output, expected)| output.path != expected)
+    {
+        return Err(PackageBuildError::cache("cache output inventory is incomplete"));
+    }
+    audit_inventory_directory(directory, &entry.outputs)?;
+    let mut outputs = Vec::with_capacity(entry.outputs.len());
+    for output in entry.outputs {
+        let material = super::staging::read_file(
+            directory,
+            &output.path,
+            1_073_741_824,
+            PackageBuildError::cache,
+        )?;
+        if u64::try_from(material.len()).ok() != Some(output.bytes)
+            || sha256(&material) != output.sha256
+        {
+            return Err(PackageBuildError::cache("cached output bytes are stale or corrupt"));
+        }
+        outputs.push(CompiledOutput { path: output.path, bytes: material });
+    }
+    Ok(outputs)
+}
+
 fn write_entry(
     request: &PackageBuildRequest<'_>,
     target: &BuildTargetId,
@@ -288,17 +368,12 @@ fn write_entry(
     let stage_name =
         format!(".pending-{}-{}", std::process::id(), NEXT_STAGE.fetch_add(1, Ordering::Relaxed));
     let stage = namespace.join(&stage_name);
-    directory
-        .create_dir(&stage_name)
-        .map_err(|_| PackageBuildError::cache("cache stage cannot be created"))?;
-    let stage_directory = directory
-        .open_dir_nofollow(&stage_name)
-        .map_err(|_| PackageBuildError::cache("cache stage capability cannot be retained"))?;
-    let mut stage_is_private = true;
-    let outcome = (|| {
+    let writable =
+        super::staging::WritableStage::create(&directory, &stage_name, PackageBuildError::cache)?;
+    let preparation = (|| {
         for output in outputs {
             super::staging::write_file(
-                &stage_directory,
+                writable.directory(),
                 &output.path,
                 &output.bytes,
                 PackageBuildError::cache,
@@ -306,43 +381,24 @@ fn write_entry(
             super::staging::record_path(&mut cleanup_inventory, &output.path);
         }
         super::staging::write_file(
-            &stage_directory,
+            writable.directory(),
             ENTRY_MANIFEST,
             &entry_bytes,
             PackageBuildError::cache,
         )?;
         super::staging::record_path(&mut cleanup_inventory, ENTRY_MANIFEST);
+        #[cfg(windows)]
+        audit_inventory_directory(writable.directory(), &entry.outputs)?;
+        #[cfg(not(windows))]
         audit_inventory(&stage, &entry.outputs)?;
-        super::staging::sync_tree(&stage_directory, PackageBuildError::cache)?;
-        super::staging::revalidate_name(
-            &directory,
-            &stage_name,
-            &stage_directory,
-            PackageBuildError::cache,
-        )?;
-        crate::pipeline::rename_create_only(&directory, &stage_name, key)
-            .map_err(|_| PackageBuildError::cache("cache entry commit failed"))?;
-        stage_is_private = false;
-        let verified = read_entry(request, target, key, plan_key);
-        if !matches!(&verified, Ok(Some(bytes)) if bytes.as_slice() == outputs) {
-            crate::pipeline::rename_create_only(&directory, key, &stage_name).map_err(|_| {
-                PackageBuildError::cache(
-                    "committed cache entry changed and rollback could not be completed",
-                )
-            })?;
-            stage_is_private = true;
-            return match verified {
-                Err(error) => Err(error),
-                Ok(_) => Err(PackageBuildError::cache("committed cache entry differs")),
-            };
-        }
+        super::staging::sync_tree(writable.directory(), PackageBuildError::cache)?;
         Ok(())
     })();
-    if outcome.is_err() && stage_is_private {
+    let mut sealed = writable.seal();
+    if let Err(error) = preparation {
         super::staging::cleanup_known_stage(
             &directory,
-            &stage_name,
-            &stage_directory,
+            sealed,
             &cleanup_inventory,
             PackageBuildError::cache,
         )?;
@@ -354,8 +410,62 @@ fn write_entry(
                 "winning cache entry differs from the compiled outputs",
             ));
         }
+        return Err(error);
     }
-    outcome
+    if let Err(error) = sealed.rename_noreplace(
+        &directory,
+        key,
+        "cache entry commit failed",
+        PackageBuildError::cache,
+    ) {
+        super::staging::cleanup_known_stage(
+            &directory,
+            sealed,
+            &cleanup_inventory,
+            PackageBuildError::cache,
+        )?;
+        if let Some(winner) = read_entry(request, target, key, plan_key)? {
+            if winner == outputs {
+                return Ok(());
+            }
+            return Err(PackageBuildError::cache(
+                "winning cache entry differs from the compiled outputs",
+            ));
+        }
+        return Err(error);
+    }
+    #[cfg(windows)]
+    let verified =
+        read_entry_from_directory(request, target, key, plan_key, sealed.directory()).map(Some);
+    #[cfg(not(windows))]
+    let verified = read_entry(request, target, key, plan_key);
+    if matches!(&verified, Ok(Some(bytes)) if bytes.as_slice() == outputs) {
+        return Ok(());
+    }
+    sealed.rename_noreplace(
+        &directory,
+        &stage_name,
+        "committed cache entry changed and rollback could not be completed",
+        PackageBuildError::cache,
+    )?;
+    super::staging::cleanup_known_stage(
+        &directory,
+        sealed,
+        &cleanup_inventory,
+        PackageBuildError::cache,
+    )?;
+    if let Some(winner) = read_entry(request, target, key, plan_key)? {
+        if winner == outputs {
+            return Ok(());
+        }
+        return Err(PackageBuildError::cache(
+            "winning cache entry differs from the compiled outputs",
+        ));
+    }
+    match verified {
+        Err(error) => Err(error),
+        Ok(_) => Err(PackageBuildError::cache("committed cache entry differs")),
+    }
 }
 
 fn encode_entry(entry: &CacheEntry) -> Result<Vec<u8>, PackageBuildError> {
@@ -365,11 +475,25 @@ fn encode_entry(entry: &CacheEntry) -> Result<Vec<u8>, PackageBuildError> {
     Ok(bytes)
 }
 
+#[cfg(not(windows))]
 fn audit_inventory(root: &Path, outputs: &[CacheOutput]) -> Result<(), PackageBuildError> {
     let expected = expected_inventory(outputs);
     let mut actual = BTreeSet::new();
     collect_inventory(root, root, &mut actual)?;
     if actual != expected {
+        return Err(PackageBuildError::cache(
+            "cache entry inventory contains missing or extra paths",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn audit_inventory_directory(
+    root: &cap_std::fs::Dir,
+    outputs: &[CacheOutput],
+) -> Result<(), PackageBuildError> {
+    if super::staging::inventory(root, PackageBuildError::cache)? != expected_inventory(outputs) {
         return Err(PackageBuildError::cache(
             "cache entry inventory contains missing or extra paths",
         ));

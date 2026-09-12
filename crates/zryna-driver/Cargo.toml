@@ -36,6 +36,9 @@ zryna-package = { path = "../zryna-package" }
 zryna-semantics = { path = "../zryna-semantics" }
 zryna-source = { path = "../zryna-source" }
 
+[target.'cfg(windows)'.dependencies]
+zryna-windows-filesystem = { path = "../zryna-windows-filesystem" }
+
 [dev-dependencies]
 wasm-encoder.workspace = true
 wasmparser.workspace = true

@@ -1,13 +1,13 @@
 use std::{
     collections::BTreeSet,
-    fs,
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::atomic::{AtomicU64, Ordering},
 };
 
-use cap_fs_ext::DirExt as _;
 use serde::Serialize;
 use sha2::{Digest as _, Sha256};
+#[cfg(not(windows))]
+use std::{fs, path::Path};
 
 use super::{
     PACKAGE_BUILD_MANIFEST_NAME, PackageBuildError, PackageBuildMode, PackageBuildRequest,
@@ -74,19 +74,17 @@ pub(super) fn publish(
         .output_root
         .retained_directory()
         .map_err(|_| PackageBuildError::publication("project output root cannot be retained"))?;
-    directory
-        .create_dir(&stage_name)
-        .map_err(|_| PackageBuildError::publication("private output stage cannot be created"))?;
-    let stage_directory = directory.open_dir_nofollow(&stage_name).map_err(|_| {
-        PackageBuildError::publication("private output stage capability cannot be retained")
-    })?;
+    let writable = super::staging::WritableStage::create(
+        &directory,
+        &stage_name,
+        PackageBuildError::publication,
+    )?;
     let mut cleanup_inventory = BTreeSet::new();
     let final_name = format!("{}.package-build", prepared.identity.cache_key());
     let final_path = request.output_root.path().join(&final_name);
-    let mut stage_is_private = true;
-    let outcome = (|| {
+    let preparation = (|| {
         super::staging::write_file(
-            &stage_directory,
+            writable.directory(),
             PLAN_NAME,
             prepared.identity.bytes(),
             PackageBuildError::publication,
@@ -95,7 +93,7 @@ pub(super) fn publish(
         for target in targets {
             for output in &target.outputs {
                 super::staging::write_file(
-                    &stage_directory,
+                    writable.directory(),
                     &output.path,
                     &output.bytes,
                     PackageBuildError::publication,
@@ -104,51 +102,66 @@ pub(super) fn publish(
             }
         }
         super::staging::write_file(
-            &stage_directory,
+            writable.directory(),
             PACKAGE_BUILD_MANIFEST_NAME,
             &manifest_bytes,
             PackageBuildError::publication,
         )?;
         super::staging::record_path(&mut cleanup_inventory, PACKAGE_BUILD_MANIFEST_NAME);
+        #[cfg(windows)]
+        audit_directory(writable.directory(), targets, prepared.identity.bytes(), &manifest_bytes)?;
+        #[cfg(not(windows))]
         audit(&stage, targets, prepared.identity.bytes(), &manifest_bytes)?;
-        super::staging::sync_tree(&stage_directory, PackageBuildError::publication)?;
+        super::staging::sync_tree(writable.directory(), PackageBuildError::publication)?;
         request.output_root.revalidate().map_err(|_| {
             PackageBuildError::publication("project output root changed before publication")
         })?;
-        super::staging::revalidate_name(
-            &directory,
-            &stage_name,
-            &stage_directory,
-            PackageBuildError::publication,
-        )?;
-        crate::pipeline::rename_create_only(&directory, &stage_name, &final_name).map_err(
-            |_| PackageBuildError::publication("create-only package bundle commit failed"),
-        )?;
-        stage_is_private = false;
-        if let Err(error) = audit(&final_path, targets, prepared.identity.bytes(), &manifest_bytes)
-        {
-            crate::pipeline::rename_create_only(&directory, &final_name, &stage_name).map_err(
-                |_| {
-                    PackageBuildError::publication(
-                        "published package bundle changed and rollback could not be completed",
-                    )
-                },
-            )?;
-            stage_is_private = true;
-            return Err(error);
-        }
         Ok(())
     })();
-    if outcome.is_err() && stage_is_private {
+    let mut sealed = writable.seal();
+    if let Err(error) = preparation {
         super::staging::cleanup_known_stage(
             &directory,
-            &stage_name,
-            &stage_directory,
+            sealed,
             &cleanup_inventory,
             PackageBuildError::publication,
         )?;
+        return Err(error);
     }
-    outcome?;
+    if let Err(error) = sealed.rename_noreplace(
+        &directory,
+        &final_name,
+        "create-only package bundle commit failed",
+        PackageBuildError::publication,
+    ) {
+        super::staging::cleanup_known_stage(
+            &directory,
+            sealed,
+            &cleanup_inventory,
+            PackageBuildError::publication,
+        )?;
+        return Err(error);
+    }
+    #[cfg(windows)]
+    let post_commit =
+        audit_directory(sealed.directory(), targets, prepared.identity.bytes(), &manifest_bytes);
+    #[cfg(not(windows))]
+    let post_commit = audit(&final_path, targets, prepared.identity.bytes(), &manifest_bytes);
+    if let Err(error) = post_commit {
+        sealed.rename_noreplace(
+            &directory,
+            &stage_name,
+            "published package bundle changed and rollback could not be completed",
+            PackageBuildError::publication,
+        )?;
+        super::staging::cleanup_known_stage(
+            &directory,
+            sealed,
+            &cleanup_inventory,
+            PackageBuildError::publication,
+        )?;
+        return Err(error);
+    }
     Ok(final_path.join(PACKAGE_BUILD_MANIFEST_NAME))
 }
 
@@ -205,6 +218,7 @@ fn manifest_bytes(
     Ok(bytes)
 }
 
+#[cfg(not(windows))]
 fn audit(
     root: &Path,
     targets: &[MaterializedTarget],
@@ -250,6 +264,57 @@ fn audit(
     Ok(())
 }
 
+#[cfg(windows)]
+fn audit_directory(
+    root: &cap_std::fs::Dir,
+    targets: &[MaterializedTarget],
+    plan: &[u8],
+    manifest: &[u8],
+) -> Result<(), PackageBuildError> {
+    for target in targets {
+        for output in &target.outputs {
+            let bytes = super::staging::read_file(
+                root,
+                &output.path,
+                1_073_741_824,
+                PackageBuildError::publication,
+            )?;
+            let observation = target
+                .observation
+                .outputs
+                .iter()
+                .find(|item| item.path == output.path)
+                .ok_or_else(|| PackageBuildError::publication("published output is unrecorded"))?;
+            if u64::try_from(bytes.len()).ok() != Some(observation.bytes)
+                || sha256(&bytes) != observation.sha256
+            {
+                return Err(PackageBuildError::publication("published output bytes changed"));
+            }
+        }
+    }
+    if super::staging::read_file(root, PLAN_NAME, 1_073_741_824, PackageBuildError::publication)?
+        != plan
+        || super::staging::read_file(
+            root,
+            PACKAGE_BUILD_MANIFEST_NAME,
+            262_144,
+            PackageBuildError::publication,
+        )? != manifest
+    {
+        return Err(PackageBuildError::publication(
+            "resolved plan or package manifest bytes changed",
+        ));
+    }
+    if super::staging::inventory(root, PackageBuildError::publication)?
+        != expected_inventory(targets)
+    {
+        return Err(PackageBuildError::publication(
+            "package bundle inventory contains missing or extra paths",
+        ));
+    }
+    Ok(())
+}
+
 fn expected_inventory(targets: &[MaterializedTarget]) -> BTreeSet<String> {
     let mut expected =
         BTreeSet::from([PLAN_NAME.to_owned(), PACKAGE_BUILD_MANIFEST_NAME.to_owned()]);
@@ -268,6 +333,7 @@ fn expected_inventory(targets: &[MaterializedTarget]) -> BTreeSet<String> {
     expected
 }
 
+#[cfg(not(windows))]
 fn collect(
     root: &Path,
     directory: &Path,
@@ -307,12 +373,6 @@ fn collect(
 
 fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
-}
-
-#[cfg(windows)]
-fn link_like(metadata: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt as _;
-    metadata.file_type().is_symlink() || metadata.file_attributes() & 0x400 != 0
 }
 
 #[cfg(not(windows))]

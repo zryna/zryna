@@ -1,6 +1,16 @@
-use std::fs;
+use std::{cell::Cell, fs};
 
 use super::*;
+
+#[cfg(windows)]
+fn is_retained_handle_denial(error: &std::io::Error) -> bool {
+    error.raw_os_error() == Some(32)
+}
+
+#[cfg(not(windows))]
+fn is_retained_handle_denial(_error: &std::io::Error) -> bool {
+    false
+}
 
 fn one_output() -> Vec<BuildOutput> {
     vec![BuildOutput { path: "javascript/app.mjs".to_owned(), target: BuildTargetId::JavaScript }]
@@ -267,41 +277,63 @@ fn substituted_stage_is_never_recursively_cleaned() {
     let root = TemporaryRoot::new("substituted-stage");
     let stage = root.path().join("stage");
     let displaced = root.path().join("displaced");
-    fs::create_dir(&stage).expect("stage");
+    let outside = root.path().join("outside");
+    fs::write(&outside, b"retain").expect("outside sentinel");
     let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
         .expect("parent capability");
-    let stage_directory = parent.open_dir("stage").expect("stage capability");
-    let error = staging::cleanup_known_stage_with_substitution_hook(
+    let stage_directory =
+        staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+            .expect("stage capability")
+            .seal();
+    let substitution_denied = Cell::new(false);
+    let result = staging::cleanup_known_stage_with_substitution_hook(
         &parent,
-        "stage",
-        &stage_directory,
+        stage_directory,
         &std::collections::BTreeSet::new(),
         PackageBuildError::cache,
-        || {
-            fs::rename(&stage, &displaced).expect("displace genuine stage");
-            fs::create_dir(&stage).expect("replacement stage");
-            fs::write(stage.join("foreign"), b"retain").expect("foreign entry");
+        || match fs::rename(&stage, &displaced) {
+            Ok(()) => {
+                fs::create_dir(&stage).expect("replacement stage");
+                fs::write(stage.join("foreign"), b"retain").expect("foreign entry");
+            }
+            Err(error) if is_retained_handle_denial(&error) => {
+                substitution_denied.set(true);
+            }
+            Err(error) => panic!("displace genuine stage: {error}"),
         },
-    )
-    .expect_err("substituted stage must not be cleaned");
-    assert_eq!(error.code(), "ZRYNA-B4102");
-    assert_eq!(fs::read(stage.join("foreign")).expect("test fixture"), b"retain");
-    assert!(displaced.exists());
+    );
+    if substitution_denied.get() {
+        result.expect("an OS-protected stage remains the authenticated stage");
+        assert!(!stage.exists());
+        assert!(!displaced.exists());
+    } else {
+        let error = result.expect_err("substituted stage must not be cleaned");
+        assert_eq!(error.code(), "ZRYNA-B4102");
+        assert_eq!(fs::read(stage.join("foreign")).expect("test fixture"), b"retain");
+        assert!(displaced.exists());
+    }
+    assert_eq!(fs::read(outside).expect("outside sentinel"), b"retain");
 }
 
 #[test]
 fn unexpected_stage_entry_is_never_cleaned() {
     let root = TemporaryRoot::new("unexpected-stage-entry");
     let stage = root.path().join("stage");
-    fs::create_dir(&stage).expect("stage");
-    fs::write(stage.join("foreign"), b"retain").expect("foreign entry");
     let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
         .expect("parent capability");
-    let stage_directory = parent.open_dir("stage").expect("stage capability");
+    let stage_directory =
+        staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+            .expect("stage capability");
+    staging::write_file(
+        stage_directory.directory(),
+        "foreign",
+        b"retain",
+        PackageBuildError::cache,
+    )
+    .expect("foreign entry");
     let error = staging::cleanup_known_stage(
         &parent,
-        "stage",
-        &stage_directory,
+        stage_directory.seal(),
         &std::collections::BTreeSet::new(),
         PackageBuildError::cache,
     )
@@ -315,19 +347,49 @@ fn staged_writes_remain_bound_to_the_retained_directory() {
     let root = TemporaryRoot::new("substituted-stage-write");
     let stage = root.path().join("stage");
     let displaced = root.path().join("displaced");
-    fs::create_dir(&stage).expect("stage");
+    let outside = root.path().join("outside");
+    fs::write(&outside, b"retain").expect("outside sentinel");
     let parent = cap_std::fs::Dir::open_ambient_dir(root.path(), cap_std::ambient_authority())
         .expect("parent capability");
-    let stage_directory = parent.open_dir("stage").expect("stage capability");
-    fs::rename(&stage, &displaced).expect("displace genuine stage");
-    fs::create_dir(&stage).expect("replacement stage");
-    fs::write(stage.join("foreign"), b"retain").expect("foreign entry");
+    let stage_directory =
+        staging::WritableStage::create(&parent, "stage", PackageBuildError::cache)
+            .expect("stage capability");
+    let substitution_denied = match fs::rename(&stage, &displaced) {
+        Ok(()) => {
+            fs::create_dir(&stage).expect("replacement stage");
+            fs::write(stage.join("foreign"), b"retain").expect("foreign entry");
+            false
+        }
+        Err(error) if is_retained_handle_denial(&error) => true,
+        Err(error) => panic!("displace genuine stage: {error}"),
+    };
 
-    staging::write_file(&stage_directory, "nested/output", b"trusted", PackageBuildError::cache)
-        .expect("capability-relative write");
-    assert_eq!(fs::read(displaced.join("nested/output")).expect("test fixture"), b"trusted");
-    assert_eq!(fs::read(stage.join("foreign")).expect("test fixture"), b"retain");
-    assert!(!stage.join("nested").exists());
+    staging::write_file(
+        stage_directory.directory(),
+        "nested/output",
+        b"trusted",
+        PackageBuildError::cache,
+    )
+    .expect("capability-relative write");
+    if substitution_denied {
+        assert_eq!(fs::read(stage.join("nested/output")).expect("test fixture"), b"trusted");
+        assert!(!displaced.exists());
+        let mut expected = std::collections::BTreeSet::new();
+        staging::record_path(&mut expected, "nested/output");
+        staging::cleanup_known_stage(
+            &parent,
+            stage_directory.seal(),
+            &expected,
+            PackageBuildError::cache,
+        )
+        .expect("OS-protected stage cleanup");
+        assert!(!stage.exists());
+    } else {
+        assert_eq!(fs::read(displaced.join("nested/output")).expect("test fixture"), b"trusted");
+        assert_eq!(fs::read(stage.join("foreign")).expect("test fixture"), b"retain");
+        assert!(!stage.join("nested").exists());
+    }
+    assert_eq!(fs::read(outside).expect("outside sentinel"), b"retain");
 }
 
 #[test]

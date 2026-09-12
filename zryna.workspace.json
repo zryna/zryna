@@ -132,7 +132,8 @@
         "zryna-package",
         "zryna-semantics",
         "zryna-source",
-        "zryna-syntax"
+        "zryna-syntax",
+        "zryna-windows-filesystem"
       ],
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
