@@ -14,6 +14,12 @@ and current name through child operations, commit, rollback, and cleanup. No pub
 an arbitrary file handle. The API accepts one bounded portable ASCII component, never an ambient
 path, and provides no path-based fallback or replacement mode.
 
+Windows requires every handle to a descendant file or directory to close before an ancestor can be
+renamed. This applies even when a descendant was opened with delete sharing. Callers therefore
+finish validation while child capabilities and file identities are live, consume those descendants
+and every cloned child directory, and only then rename the still-retained exact root capability.
+The rename method neither discovers nor closes descendants for the caller.
+
 Removal consumes `OwnedDirectory`, marks the exact empty directory for deletion, closes its handle,
 and attempts a no-reparse open of the bound name relative to the retained parent. It returns success
 only for an unambiguous not-found result. A foreign replacement or another share-delete handle that
@@ -29,10 +35,12 @@ Unsafe operations are confined to the private Windows syscall module. Its invari
 5. native errors are surfaced after NTSTATUS-to-Win32 mapping, and deletion is not called confirmed
    merely because its authoritative handle accepted a delete disposition.
 
-Focused Windows tests exercise the complete same-handle lifecycle, sharing behavior, destination
-collisions, hostile pathname mutation, regular-file rejection, deletion-pending contention, exact
-255/256-unit bounds, and failure-path handle close. The repository structure gate independently
-enforces canonical lint tables and lexically inspects every Rust source path, including unreferenced,
-case-varied, and configuration-disabled files, while excluding comments and literals. This keeps the
-exact component manifest and private-module unsafe allowance as the only exception. The crate grants
+Focused Windows tests exercise the complete same-handle lifecycle, the required descendant-close
+precondition with and without delete sharing, the complete standalone-project handle topology,
+destination collisions, hostile pathname mutation, regular-file rejection, deletion-pending
+contention, exact 255/256-unit bounds, and failure-path handle close. The repository structure gate
+independently enforces canonical lint tables and lexically inspects every Rust source path, including
+unreferenced, case-varied, and configuration-disabled files, while excluding comments and literals.
+This keeps the exact component manifest and private-module unsafe allowance as the only exception.
+The crate grants
 no general filesystem authority and has no non-Windows API.
