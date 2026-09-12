@@ -545,30 +545,68 @@ fn replaced_cache_and_output_roots_reject_before_parent_capture() {
     let cache_project = TemporaryRoot::new("replaced-cache-root");
     let cache = ArtifactCacheRoot::prepare_for_project(cache_project.path()).expect("cache");
     let cache_path = cache.path().to_path_buf();
+    let cache_identity = same_file::Handle::from_path(&cache_path).expect("cache identity");
     let displaced_cache = cache_path.with_file_name("cache-displaced");
-    let cache_error = cache
-        .retained_directory_with_substitution_hook(|| {
-            fs::rename(&cache_path, &displaced_cache).expect("displace cache root");
-            fs::create_dir(&cache_path).expect("replacement cache root");
-        })
-        .expect_err("replaced cache root must reject");
-    assert_eq!(cache_error.code(), "ZRYNA-B4102");
+    let cache_outside = cache_project.path().join("cache-outside");
+    fs::write(&cache_outside, b"retain").expect("cache outside sentinel");
+    let cache_substitution_denied = Cell::new(false);
+    let cache_result = cache.retained_directory_with_substitution_hook(|| {
+        match fs::rename(&cache_path, &displaced_cache) {
+            Ok(()) => fs::create_dir(&cache_path).expect("replacement cache root"),
+            Err(error) if is_retained_handle_denial(&error) => {
+                cache_substitution_denied.set(true);
+            }
+            Err(error) => panic!("displace cache root: {error}"),
+        }
+    });
+    if cache_substitution_denied.get() {
+        drop(cache_result.expect("OS-protected cache root remains authenticated"));
+        cache.revalidate().expect("original cache root remains valid");
+        assert_eq!(
+            same_file::Handle::from_path(&cache_path).expect("current cache identity"),
+            cache_identity
+        );
+        assert!(!displaced_cache.exists());
+    } else {
+        let cache_error = cache_result.expect_err("replaced cache root must reject");
+        assert_eq!(cache_error.code(), "ZRYNA-B4102");
+        assert!(displaced_cache.exists());
+    }
     assert!(fs::read_dir(&cache_path).expect("test fixture").next().is_none());
-    assert!(displaced_cache.exists());
+    assert_eq!(fs::read(cache_outside).expect("cache outside sentinel"), b"retain");
 
     let output_project = TemporaryRoot::new("replaced-output-root");
     let output = ArtifactOutputRoot::prepare_for_workspace(output_project.path()).expect("output");
     let output_path = output.path().to_path_buf();
+    let output_identity = same_file::Handle::from_path(&output_path).expect("output identity");
     let displaced_output = output_path.with_file_name("out-displaced");
-    let output_error = output
-        .retained_directory_with_substitution_hook(|| {
-            fs::rename(&output_path, &displaced_output).expect("displace output root");
-            fs::create_dir(&output_path).expect("replacement output root");
-        })
-        .expect_err("replaced output root must reject");
-    assert_eq!(output_error.code(), "ZRYNA-D2002");
+    let output_outside = output_project.path().join("output-outside");
+    fs::write(&output_outside, b"retain").expect("output outside sentinel");
+    let output_substitution_denied = Cell::new(false);
+    let output_result = output.retained_directory_with_substitution_hook(|| {
+        match fs::rename(&output_path, &displaced_output) {
+            Ok(()) => fs::create_dir(&output_path).expect("replacement output root"),
+            Err(error) if is_retained_handle_denial(&error) => {
+                output_substitution_denied.set(true);
+            }
+            Err(error) => panic!("displace output root: {error}"),
+        }
+    });
+    if output_substitution_denied.get() {
+        drop(output_result.expect("OS-protected output root remains authenticated"));
+        output.revalidate().expect("original output root remains valid");
+        assert_eq!(
+            same_file::Handle::from_path(&output_path).expect("current output identity"),
+            output_identity
+        );
+        assert!(!displaced_output.exists());
+    } else {
+        let output_error = output_result.expect_err("replaced output root must reject");
+        assert_eq!(output_error.code(), "ZRYNA-D2002");
+        assert!(displaced_output.exists());
+    }
     assert!(fs::read_dir(&output_path).expect("test fixture").next().is_none());
-    assert!(displaced_output.exists());
+    assert_eq!(fs::read(output_outside).expect("output outside sentinel"), b"retain");
 }
 
 #[test]
