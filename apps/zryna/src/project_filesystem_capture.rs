@@ -1,7 +1,7 @@
 use std::{
     ffi::OsStr,
     fs, io,
-    path::{Component, Path, PathBuf},
+    path::{Component, Path},
 };
 
 use cap_fs_ext::DirExt as _;
@@ -23,7 +23,7 @@ fn capture_child(parent: &Dir, name: &OsStr) -> io::Result<Dir> {
 
 #[cfg(windows)]
 pub(super) fn capture_absolute_root(path: &Path) -> io::Result<(Vec<Dir>, Dir)> {
-    use std::path::Prefix;
+    use std::path::{PathBuf, Prefix};
 
     let mut components = path.components();
     let drive = match components.next() {

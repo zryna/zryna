@@ -293,6 +293,7 @@ impl RetainedStage {
         source: &OsStr,
         destination: &OsStr,
     ) -> Result<(), ProjectError> {
+        self.revalidate(parent, source)?;
         rename_noreplace(parent, source, destination)
     }
 
