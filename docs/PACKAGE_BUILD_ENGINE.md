@@ -84,10 +84,11 @@ unexpected inventory is left untouched. A later removal failure can leave a part
 exact stage and is reported as such instead of selecting another directory by path.
 
 Closing descendant handles creates an unavoidable validation-to-rename mutation window on
-Windows. The driver retains the exact root and authenticates it again after commit, but this is not
-protection from another process running as the same user and changing descendants during that
-window. A detected change is rolled back through the exact root; failed rollback preserves the
-committed directory and returns a failure.
+Windows. The driver retains the exact root, and post-commit authentication rejects mutations it
+observes. Another process running as the same user can race or follow that final validation, so
+descendant mutation is neither prevented nor guaranteed to be detected. An observed change is
+rolled back through the exact root; failed rollback preserves the committed directory and returns
+a failure.
 
 Both `offline` and `frozen` build modes expose no acquisition or network operation. `frozen`
 additionally requires a resolver result produced by exact existing-lock verification; an update

@@ -17,9 +17,10 @@ plan and output inventory; corrupt or partial entries reject instead of becoming
 and frozen modes expose no acquisition or network operation, and frozen additionally requires an
 exact existing-lock resolution. Windows package stages retain one exact owned root from atomic
 creation through capability-relative audit, commit, rollback, and consuming cleanup. Descendant
-handles close before each ancestor rename; this requirement leaves a documented same-user
-descendant-mutation window that post-commit authentication detects but does not prevent. See [the
-package build engine](../../docs/PACKAGE_BUILD_ENGINE.md).
+handles close before each ancestor rename. The exact root remains authoritative, but post-commit
+authentication rejects only mutations it observes; same-user descendant mutation can race or
+follow final validation and is neither prevented nor guaranteed to be detected. See [the package
+build engine](../../docs/PACKAGE_BUILD_ENGINE.md).
 
 The private [WASI command self-check](../../docs/WASI_COMMAND_SELF_CHECK_V1.md) binds real
 verified i32 source, empty composition requests, a separately audited component and an
