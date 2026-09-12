@@ -119,7 +119,6 @@ fn provider(root: &TemporaryRoot) -> FilesystemProvider {
         loaded_files: BTreeMap::new(),
         retained_files: Vec::new(),
         retained_packages: Vec::new(),
-        loaded_files: std::collections::BTreeMap::new(),
     }
 }
 

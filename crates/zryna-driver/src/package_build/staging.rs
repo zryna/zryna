@@ -113,10 +113,9 @@ impl StageRoot {
         #[cfg(windows)]
         {
             let _ = parent;
-            return self
-                .directory
+            self.directory
                 .remove_empty()
-                .map_err(|_| error("private stage directory could not be removed"));
+                .map_err(|_| error("private stage directory could not be removed"))
         }
         #[cfg(not(windows))]
         {
