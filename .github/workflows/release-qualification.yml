@@ -1,0 +1,232 @@
+name: Release qualification
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release-qualification-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22.22.1
+  PNPM_VERSION: 11.18.0
+  RUST_VERSION: 1.97.1
+
+jobs:
+  admit:
+    name: admit protected qualification source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout exact workflow tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.workflow_sha }}
+          path: tooling
+      - name: Checkout exact qualification source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+          path: source
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Install workflow dependencies outside the source checkout
+        run: pnpm --dir tooling install --frozen-lockfile
+      - name: Capture protected source identity
+        env:
+          ZRYNA_SOURCE_ROOT: ${{ github.workspace }}/source
+        run: |
+          mkdir -p .release/admission
+          node tooling/scripts/distribution-release/create-release-qualification-source.mjs \
+            > .release/admission/qualification-source.json
+      - name: Capture exact successful protected gates
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module -e "import { canonicalBounded } from './tooling/scripts/distribution-release/canonical.mjs'; import { createReleaseQualificationGates } from './tooling/scripts/distribution-release/create-preassembly-gates.mjs'; process.stdout.write(canonicalBounded(await createReleaseQualificationGates()) + '\\n')" \
+            > .release/admission/qualification-gates.json
+      - name: Upload immutable admission evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-qualification-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/admission
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: false
+          retention-days: 1
+
+  build:
+    name: qualify ${{ matrix.target }} replica ${{ matrix.replica }}
+    needs: admit
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            replica: 1
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            replica: 2
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            replica: 1
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            replica: 2
+    steps:
+      - name: Checkout exact workflow tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.workflow_sha }}
+          path: tooling
+      - name: Checkout exact qualification source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+          path: source
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Install workflow dependencies outside the source checkout
+        run: pnpm --dir tooling install --frozen-lockfile
+      - name: Download admission evidence from this run
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: release-qualification-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/admission
+      - name: Bind exact Unix tools
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cargo_path="$(rustup which --toolchain 1.97.1 cargo)"
+          rustc_path="$(rustup which --toolchain 1.97.1 rustc)"
+          {
+            echo "ZRYNA_CARGO_PATH=$cargo_path"
+            echo "ZRYNA_CARGO_SHA256=$(sha256sum "$cargo_path" | cut -d' ' -f1)"
+            echo "ZRYNA_RUSTC_PATH=$rustc_path"
+            echo "ZRYNA_RUSTC_SHA256=$(sha256sum "$rustc_path" | cut -d' ' -f1)"
+            echo "ZRYNA_RUSTUP_PATH=$(command -v rustup)"
+            echo "RUSTUP_HOME=$(rustup show home)"
+            echo "ZRYNA_QUALIFICATION_FETCH_PATH=/usr/local/bin:/usr/bin:/bin"
+          } >> "$GITHUB_ENV"
+      - name: Bind exact Windows tools and developer environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $cargoPath = (rustup which --toolchain 1.97.1 cargo).Trim()
+          $rustcPath = (rustup which --toolchain 1.97.1 rustc).Trim()
+          $rustupPath = (Get-Command rustup).Source
+          $vsRoot = 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise'
+          & "$vsRoot\Common7\Tools\Launch-VsDevShell.ps1" -SkipAutomaticLocation -Arch amd64 -HostArch amd64
+          $msvc = Get-ChildItem "$vsRoot\VC\Tools\MSVC" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          "ZRYNA_CARGO_PATH=$cargoPath" >> $env:GITHUB_ENV
+          "ZRYNA_CARGO_SHA256=$((Get-FileHash -Algorithm SHA256 -LiteralPath $cargoPath).Hash.ToLowerInvariant())" >> $env:GITHUB_ENV
+          "ZRYNA_RUSTC_PATH=$rustcPath" >> $env:GITHUB_ENV
+          "ZRYNA_RUSTC_SHA256=$((Get-FileHash -Algorithm SHA256 -LiteralPath $rustcPath).Hash.ToLowerInvariant())" >> $env:GITHUB_ENV
+          "ZRYNA_RUSTUP_PATH=$rustupPath" >> $env:GITHUB_ENV
+          "RUSTUP_HOME=$((rustup show home).Trim())" >> $env:GITHUB_ENV
+          $nativeBin = "$($msvc.FullName)\bin\Hostx64\x64"
+          "ZRYNA_LINKER_PATH=$nativeBin\link.exe" >> $env:GITHUB_ENV
+          "ZRYNA_INSPECTOR_PATH=$nativeBin\dumpbin.exe" >> $env:GITHUB_ENV
+          "ZRYNA_QUALIFICATION_PATH=$nativeBin;$env:SystemRoot\System32;$env:SystemRoot" >> $env:GITHUB_ENV
+          "INCLUDE=$env:INCLUDE" >> $env:GITHUB_ENV
+          "LIB=$env:LIB" >> $env:GITHUB_ENV
+          "LIBPATH=$env:LIBPATH" >> $env:GITHUB_ENV
+      - name: Acquire, compile, inspect, and verify one isolated replica
+        env:
+          CARGO_BUILD_JOBS: 3
+          ZRYNA_SOURCE_ROOT: ${{ github.workspace }}/source
+          ZRYNA_QUALIFICATION_WORK_ROOT: ${{ runner.temp }}/zryna-qualification-${{ matrix.target }}-${{ matrix.replica }}
+          ZRYNA_TARGET: ${{ matrix.target }}
+          ZRYNA_REPLICA: ${{ matrix.replica }}
+        run: >-
+          node tooling/scripts/distribution-release/run-release-qualification.mjs
+          --admission .release/admission
+          --output .release/build
+      - name: Upload one immutable qualification replica
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-qualification-build-${{ matrix.target }}-${{ matrix.replica }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/build
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: false
+          retention-days: 1
+
+  compare:
+    name: compare ${{ matrix.target }}
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc]
+    steps:
+      - name: Checkout exact workflow tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.workflow_sha }}
+          path: tooling
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Download first replica
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: release-qualification-build-${{ matrix.target }}-1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/first
+      - name: Download second replica
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: release-qualification-build-${{ matrix.target }}-2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/second
+      - name: Compare complete qualification bytes
+        env:
+          ZRYNA_TARGET: ${{ matrix.target }}
+        run: >-
+          node tooling/scripts/distribution-release/compare-release-qualifications.mjs
+          --first .release/first
+          --second .release/second
+          --output .release/comparison
+      - name: Upload byte-identical qualification subject
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-qualification-comparison-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/comparison
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: false
+          retention-days: 1

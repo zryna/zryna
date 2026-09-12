@@ -91,6 +91,13 @@ test('representative paths select only their owning optional contract lanes', ()
     ['tests/release-reproduction.test.mjs', ['distribution_release']],
     ['tests/release-evidence.test.mjs', ['distribution_release']],
     ['tests/release-qualification-source.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-acquisition.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-archive-capability.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-cargo.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-input-producer.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-compile.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-inspection.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-workflow.test.mjs', ['distribution_release']],
     ['tests/release-qualification-core.test.mjs', ['distribution_release']],
     ['tests/release-qualification-comparison.test.mjs', ['distribution_release']],
     ['tests/release-qualification-result.test.mjs', ['distribution_release']],
@@ -319,7 +326,7 @@ test('consolidation preserves every prior contract command and pinned action', (
 
 test('only CI handles pull requests and every superseded pull-request run cancels', () => {
   const names = readdirSync(resolve(root, '.github/workflows')).sort();
-  assert.deepEqual(names, ['ci.yml', 'documentation.yml', 'release.yml']);
+  assert.deepEqual(names, ['ci.yml', 'documentation.yml', 'release-qualification.yml', 'release.yml']);
   for (const name of names) {
     const candidate = workflow(name);
     if (!Object.hasOwn(candidate.on, 'pull_request')) continue;

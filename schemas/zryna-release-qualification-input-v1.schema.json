@@ -197,13 +197,13 @@
     },
     "tool": {
       "type": "object", "additionalProperties": false,
-      "required": ["name", "version", "origin", "size", "sha256", "signatureEvidenceSha256"],
+      "required": ["name", "version", "origin", "size", "sha256", "observationEvidenceSha256"],
       "properties": {
         "name": { "$ref": "#/$defs/name" }, "version": { "$ref": "#/$defs/ascii" },
         "origin": { "$ref": "#/$defs/ascii" },
         "size": { "type": "integer", "minimum": 1, "maximum": 536870912 },
         "sha256": { "$ref": "#/$defs/digest" },
-        "signatureEvidenceSha256": { "$ref": "#/$defs/digest" }
+        "observationEvidenceSha256": { "$ref": "#/$defs/digest" }
       }
     },
     "file": {

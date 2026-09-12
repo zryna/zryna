@@ -14,7 +14,7 @@ const artifact = (logicalPath, data) => ({ logicalPath, size: data.length, sha25
 const tool = (name, version, origin, digit) => ({
   name, version, origin, size: 100 + digit,
   sha256: digit.toString(16).repeat(64),
-  signatureEvidenceSha256: (digit + 1).toString(16).repeat(64),
+  observationEvidenceSha256: (digit + 1).toString(16).repeat(64),
 });
 
 function fixtures() {
