@@ -178,7 +178,7 @@ See [the existing alternative-target commands](CLI.md#examples) and platform pre
 using those targets; this walkthrough does not validate a new platform configuration.
 
 M2 supports the documented scalar subset, not all TypeScript. Packages, general I/O, browser/WASI
-integration, watch mode and editor tooling are not supplied by these examples. Public
-`--profile data-ownership-v1` tutorials must wait for the M3 conformance/activation gates #89/#90;
-internal ownership tests do not enable that CLI profile. Consult the [roadmap](ROADMAP.md) for
-those separate capabilities.
+integration, watch mode and editor tooling are not supplied by these examples. Exact public
+`--profile data-ownership-v1` is the separately selected M3 profile; use the complete
+[M3 beginner guide](M3_GETTING_STARTED.md); internal ownership tests do not enable that CLI profile
+or replace its public tutorial. Consult the [roadmap](ROADMAP.md) for separate capabilities.
