@@ -18,7 +18,6 @@ pub(super) fn publish_windows_stage(
     stage: RetainedStage,
     source_directory: RetainedSourceDirectory,
     parent: &CapturedParent,
-    stage_name: &OsStr,
     destination_name: &OsStr,
     contents: ProjectContents<'_>,
     checkpoint: impl FnOnce(),
@@ -27,14 +26,14 @@ pub(super) fn publish_windows_stage(
     {
         Ok(file) => file,
         Err(error) => {
-            return cleanup_incomplete(stage, source_directory, parent, stage_name, error);
+            return cleanup_incomplete(stage, source_directory, error);
         }
     };
     let lock_file = match write_new(stage.directory(), "zryna.lock.json", contents.lock) {
         Ok(file) => file,
         Err(error) => {
             drop(manifest_file);
-            return cleanup_incomplete(stage, source_directory, parent, stage_name, error);
+            return cleanup_incomplete(stage, source_directory, error);
         }
     };
     let source_file = match write_new(source_directory.directory(), "main.zry", contents.source) {
@@ -42,15 +41,15 @@ pub(super) fn publish_windows_stage(
         Err(error) => {
             drop(lock_file);
             drop(manifest_file);
-            return cleanup_incomplete(stage, source_directory, parent, stage_name, error);
+            return cleanup_incomplete(stage, source_directory, error);
         }
     };
     let open = OpenStage { stage, source_directory, manifest_file, lock_file, source_file };
     checkpoint();
-    let (open, validation) = open.validate(parent, stage_name, contents);
+    let (open, validation) = open.validate(parent, contents);
     match validation {
         Ok(()) => open.seal().commit(parent, destination_name),
-        Err(error) => match open.cleanup(parent, stage_name) {
+        Err(error) => match open.cleanup() {
             Ok(()) => Err(error),
             Err(_) => Err(cleanup_error()),
         },
@@ -60,11 +59,9 @@ pub(super) fn publish_windows_stage(
 fn cleanup_incomplete(
     stage: RetainedStage,
     source_directory: RetainedSourceDirectory,
-    parent: &CapturedParent,
-    stage_name: &OsStr,
     error: ProjectError,
 ) -> Result<(), ProjectError> {
-    match stage.cleanup(parent, stage_name, Some(source_directory)) {
+    match stage.cleanup(Some(source_directory)) {
         Ok(()) => Err(error),
         Err(_) => Err(cleanup_error()),
     }
@@ -101,13 +98,10 @@ impl OpenStage {
     fn validate(
         self,
         parent: &CapturedParent,
-        stage_name: &OsStr,
         contents: ProjectContents<'_>,
     ) -> (Self, Result<(), ProjectError>) {
         let validation: Result<(), ProjectError> = (|| {
             parent.revalidate()?;
-            self.stage.revalidate(parent, stage_name)?;
-            self.source_directory.revalidate(&self.stage)?;
             validate_inventory(
                 self.stage.directory(),
                 &["src", "zryna.lock.json", "zryna.package.json"],
@@ -130,12 +124,12 @@ impl OpenStage {
         SealedStage { stage }
     }
 
-    fn cleanup(self, parent: &CapturedParent, stage_name: &OsStr) -> io::Result<()> {
+    fn cleanup(self) -> io::Result<()> {
         let Self { stage, source_directory, manifest_file, lock_file, source_file } = self;
         drop(source_file);
         drop(lock_file);
         drop(manifest_file);
-        stage.cleanup(parent, stage_name, Some(source_directory))
+        stage.cleanup(Some(source_directory))
     }
 }
 

@@ -4,7 +4,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cap_fs_ext::{DirExt as _, FollowSymlinks, OpenOptionsFollowExt as _};
+#[cfg(not(windows))]
+use cap_fs_ext::DirExt as _;
+use cap_fs_ext::{FollowSymlinks, OpenOptionsFollowExt as _};
 use cap_std::fs::Dir;
 use same_file::Handle;
 #[cfg(windows)]
@@ -56,7 +58,11 @@ fn publish_with_checkpoint(
     let source_directory = match stage.create_source_directory() {
         Ok(source) => source,
         Err(error) => {
-            if stage.cleanup(&parent, &stage_name, None).is_err() {
+            #[cfg(windows)]
+            let cleanup = stage.cleanup(None);
+            #[cfg(not(windows))]
+            let cleanup = stage.cleanup(&parent, &stage_name, None);
+            if cleanup.is_err() {
                 return Err(ProjectError::cleanup(
                     "project source creation failed and its retained stage could not be removed",
                 ));
@@ -70,7 +76,6 @@ fn publish_with_checkpoint(
             stage,
             source_directory,
             &parent,
-            &stage_name,
             destination_name,
             ProjectContents { manifest, lock, source },
             checkpoint,
@@ -194,16 +199,10 @@ impl RetainedStage {
         &self.directory
     }
 
+    #[cfg(not(windows))]
     fn revalidate(&self, parent: &CapturedParent, name: &OsStr) -> Result<(), ProjectError> {
         self.revalidate_io(parent, name)
             .map_err(|_| ProjectError::publication("project stage identity changed before commit"))
-    }
-
-    #[cfg(windows)]
-    fn revalidate_io(&self, _parent: &CapturedParent, _name: &OsStr) -> io::Result<()> {
-        // The opaque owner is itself the authoritative handle. Do not create a duplicate handle:
-        // cleanup must close every other handle before it can confirm exact removal.
-        Ok(())
     }
 
     #[cfg(not(windows))]
@@ -243,18 +242,11 @@ impl RetainedStage {
     }
 
     #[cfg(windows)]
-    fn cleanup(
-        self,
-        parent: &CapturedParent,
-        name: &OsStr,
-        source: Option<RetainedSourceDirectory>,
-    ) -> io::Result<()> {
-        self.revalidate_io(parent, name)?;
+    fn cleanup(self, source: Option<RetainedSourceDirectory>) -> io::Result<()> {
         remove_file_if_present(self.directory(), "zryna.package.json")?;
         remove_file_if_present(self.directory(), "zryna.lock.json")?;
         match source {
             Some(source) => {
-                source.revalidate_io(&self)?;
                 remove_file_if_present(source.directory(), "main.zry")?;
                 source.owned.remove_empty()?;
             }
@@ -336,15 +328,10 @@ impl RetainedSourceDirectory {
         &self.directory
     }
 
+    #[cfg(not(windows))]
     fn revalidate(&self, stage: &RetainedStage) -> Result<(), ProjectError> {
         self.revalidate_io(stage)
             .map_err(|_| ProjectError::publication("project source directory identity changed"))
-    }
-
-    #[cfg(windows)]
-    fn revalidate_io(&self, _stage: &RetainedStage) -> io::Result<()> {
-        // The owned child cannot be reselected by pathname while its authoritative handle lives.
-        Ok(())
     }
 
     #[cfg(not(windows))]
