@@ -80,6 +80,17 @@ pub(super) fn link_or_reparse(metadata: &fs::Metadata) -> bool {
 }
 
 #[cfg(unix)]
+pub(super) fn mode_matches(metadata: &fs::Metadata, mode: u32) -> bool {
+    use std::os::unix::fs::MetadataExt as _;
+    metadata.mode() & 0o7777 == mode
+}
+
+#[cfg(windows)]
+pub(super) fn mode_matches(_: &fs::Metadata, mode: u32) -> bool {
+    [0o600, 0o644, 0o700, 0o755].contains(&mode)
+}
+
+#[cfg(unix)]
 pub(super) fn configure_read(options: &mut cap_std::fs::OpenOptions) {
     use cap_std::fs::OpenOptionsExt as _;
     options.custom_flags(libc::O_NONBLOCK);

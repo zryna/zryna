@@ -47,15 +47,7 @@ impl RetainedFile {
     }
 
     pub(super) fn mode_matches(&self, mode: u32) -> bool {
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::MetadataExt as _;
-            self.metadata.mode() & 0o7777 == mode
-        }
-        #[cfg(windows)]
-        {
-            [0o600, 0o644, 0o700, 0o755].contains(&mode)
-        }
+        platform::mode_matches(&self.metadata, mode)
     }
 }
 
