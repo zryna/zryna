@@ -2,6 +2,8 @@
 
 mod authenticated;
 mod filesystem;
+mod project_capture;
+pub(crate) use project_capture::CapturedProject;
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -99,13 +101,20 @@ pub fn resolve_package(
 pub(crate) fn resolve_project_package(
     request: &PackageResolutionRequest,
 ) -> Result<(PackageResolutionSuccess, Vec<PackageFile>), ResolveError> {
+    capture_project_package(request)
+        .map(|(success, captured)| (success, captured.into_root_files()))
+}
+
+pub(crate) fn capture_project_package(
+    request: &PackageResolutionRequest,
+) -> Result<(PackageResolutionSuccess, CapturedProject), ResolveError> {
     resolve_package_internal(request, Some(&request.package))
 }
 
 fn resolve_package_internal(
     request: &PackageResolutionRequest,
     local_scope: Option<&str>,
-) -> Result<(PackageResolutionSuccess, Vec<PackageFile>), ResolveError> {
+) -> Result<(PackageResolutionSuccess, CapturedProject), ResolveError> {
     let source_root = CapturedRoot::capture(&request.source_root)?;
     let git_cache = request.git_cache.as_deref().map(CapturedRoot::capture).transpose()?;
     let root_source = PackageSource {
@@ -158,7 +167,7 @@ fn resolve_package_internal(
             lock_path: request.source_root.join(&request.package).join(LOCK_NAME),
             published,
         },
-        root_files,
+        CapturedProject::new(provider, root_files),
     ))
 }
 
@@ -231,7 +240,12 @@ impl FilesystemProvider {
         let mut pending = vec![(root, String::new())];
         while let Some((directory, prefix)) = pending.pop() {
             let entries = enumerate_directory(&directory, entries_seen)?;
-            retained_package.retain_inventory(&directory, &prefix, &entries)?;
+            retained_package.retain_inventory(
+                &directory,
+                &prefix,
+                &entries,
+                is_root_package && prefix.is_empty(),
+            )?;
             let mut children = Vec::new();
             for entry in entries {
                 let name = entry.name;
@@ -368,13 +382,15 @@ impl RetainedPackage {
         directory: &Dir,
         path: &str,
         entries: &[PackageEntry],
+        project_state: bool,
     ) -> Result<(), ResolveError> {
         self.inventories.push(RetainedInventory {
             directory: directory.try_clone().map_err(|_| {
                 ResolveError::source("package directory capability cannot be retained")
             })?,
             path: path.to_owned(),
-            entries: entries.to_vec(),
+            entries: source_inventory(entries.to_vec(), project_state)?,
+            project_state,
         });
         Ok(())
     }
@@ -386,7 +402,7 @@ impl RetainedPackage {
             let current = open_descendant(reopened, &inventory.path)?;
             ensure_same_directory(&inventory.directory, &current)?;
             let entries = enumerate_directory(&current, &mut entries_seen)?;
-            if entries != inventory.entries {
+            if source_inventory(entries, inventory.project_state)? != inventory.entries {
                 return Err(ResolveError::source("package directory changed during resolution"));
             }
         }
@@ -413,6 +429,23 @@ struct RetainedInventory {
     directory: Dir,
     path: String,
     entries: Vec<PackageEntry>,
+    project_state: bool,
+}
+
+fn source_inventory(
+    mut entries: Vec<PackageEntry>,
+    project_state: bool,
+) -> Result<Vec<PackageEntry>, ResolveError> {
+    if project_state {
+        if entries
+            .iter()
+            .any(|entry| entry.name == ".zryna" && entry.kind != PackageEntryKind::Directory)
+        {
+            return Err(ResolveError::source("reserved project state is not a real directory"));
+        }
+        entries.retain(|entry| entry.name != ".zryna");
+    }
+    Ok(entries)
 }
 
 fn git_cache_key(source: &PackageSource) -> String {

@@ -20,7 +20,9 @@ function validateWorkflow(candidate) {
   assert.equal(platform['timeout-minutes'], 40);
   assert.deepEqual(platform.strategy, { 'fail-fast': false, matrix: { os: ['ubuntu-latest', 'windows-latest'] } });
   assert.deepEqual(platform.steps, jobs['m2-platform'].steps.map(step =>
-    step.run === 'pnpm m2:check' ? { run: 'pnpm m3:check' } : step));
+    step.run === 'pnpm m2:check' ? { run: 'pnpm m3:check', env: {
+      CARGO_BUILD_JOBS: 3, RUST_TEST_THREADS: 3,
+    } } : step));
   assert.deepEqual(jobs.m3, {
     name: 'm3', if: 'always()', needs: ['m0', 'm2', 'm3-platform'], 'runs-on': 'ubuntu-latest',
     steps: [{ name: 'Verify complete M3 gate', env: {
@@ -110,6 +112,8 @@ test('Linux/Windows aggregate retains M0-M2 and rejects bypasses', () => {
     w => { w.jobs['m3-platform']['continue-on-error'] = true; },
     w => w.jobs['m3-platform'].strategy.matrix.os.pop(),
     w => { w.jobs['m3-platform'].steps.at(-1).run = 'pnpm m3:quick'; },
+    w => { w.jobs['m3-platform'].steps.at(-1).env.CARGO_BUILD_JOBS += 1; },
+    w => { w.jobs['m3-platform'].steps.at(-1).env.RUST_TEST_THREADS += 1; },
     w => { w.jobs['m3-platform'].steps.at(-1)['continue-on-error'] = true; },
     w => w.jobs.m0.needs.pop(), w => w.jobs.m2.needs.pop(),
   ]) { const changed = workflow.toJS(); mutate(changed); assert.throws(() => validateWorkflow(changed)); }

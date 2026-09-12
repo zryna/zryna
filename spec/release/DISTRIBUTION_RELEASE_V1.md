@@ -29,6 +29,16 @@ Every production record binds one annotated tag-object SHA, its full peeled sour
 tree, `refs/tags/<tag>`, the tagged workflow bytes, source epoch, workflow run ID and attempt, and
 every required successful job at the same commit.
 
+The canonical `zryna.release-tag-receipt.v1` is the first protected-workflow handoff. Its producer
+accepts only the exact protected tag push context, requires the tag object to point directly to the
+release commit, and requires the isolated checkout HEAD to equal that peeled commit. It reads the
+tagged `.github/workflows/release.yml` as an ordinary non-executable Git blob and records its size
+and SHA-256 identity together with the tag object, commit, tree, and commit epoch. Lightweight or
+nested tags, mutable checkout content, wrong workflow refs, and symlink, executable, missing, or
+oversized workflow entries are rejected before build or signing work begins. This local Git-object
+receipt binds the inputs used by later jobs; repository ruleset enforcement and remote ref
+immutability remain separately authenticated hosted checks.
+
 Version 1 accepts only the existing three-decimal compiler version and binds beta/prerelease status
 as separate closed fields. Stable publication remains outside this issue. The schema requires one
 Windows x64 subject and one Linux x86-64 subject in canonical target order.
@@ -178,6 +188,17 @@ allowlist, re-reads and verifies the draft, then publishes once. Read-only prepa
 jobs perform no release mutation. Existing tags or releases, lightweight or wrongly peeled tags,
 wrong commit/tree,
 pending/skipped gates, missing attestations, digest drift, or extra assets stop publication.
+
+The checked-in `release.yml` already fixes this authority and job ordering, but remains deliberately
+fail closed while the accepted recipe digest, authenticated material acquisition, exact compile
+recipe, and deterministic SPDX producer remain unapproved. The bounded build orchestrator,
+two-replica byte comparison, evidence preparation, independent signature verification, and
+four-phase draft publisher are present as reviewable inactive integrations; none is production
+evidence. The admission job verifies the tag and required CI evidence before running
+`check-release-readiness.mjs`; that check rejects the current tree before any build.
+Removing or bypassing the readiness failure is not activation evidence. Activation requires one
+reviewed change that fills every named prerequisite, freezes the exact recipe digest, and completes
+the protected settings and dry-run evidence described here.
 
 The canonical envelope is limited to 262,144 UTF-8 bytes, 32 nested containers, 1,024 total
 containers, and 4,096 total JSON values, all inclusive. The CLI opens a direct regular file,

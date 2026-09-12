@@ -11,6 +11,7 @@
     "channel",
     "publication",
     "source",
+    "recipe",
     "workflow",
     "subjects",
     "releaseNotes",
@@ -26,6 +27,7 @@
     "channel": { "const": "beta" },
     "publication": { "const": "prerelease" },
     "source": { "$ref": "#/$defs/source" },
+    "recipe": { "$ref": "#/$defs/recipe" },
     "workflow": { "$ref": "#/$defs/workflow" },
     "subjects": {
       "type": "array",
@@ -114,6 +116,15 @@
           "minimum": 0,
           "maximum": 4294967295
         }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "sha256"],
+      "properties": {
+        "format": { "const": "zryna.distribution-recipe.v1" },
+        "sha256": { "$ref": "#/$defs/digest" }
       }
     },
     "workflow": {

@@ -99,6 +99,30 @@ enum PublicationPhase {
 
 type Checkpoint<'a> = &'a dyn Fn(PublicationPhase) -> Result<(), CommandFailure>;
 
+pub(crate) fn publish_installed_build(
+    prepared: &crate::ownership_pipeline::installed::PreparedInstalledOwnership<'_, '_>,
+) -> Result<PublishedOwnershipBundle, CommandFailure> {
+    if prepared.success().logical_export().is_some() {
+        return Err(transaction_failure("installed run requires sealed execution evidence"));
+    }
+    prepared.revalidate()?;
+    publish_with_checkpoint(prepared.success(), &|_| prepared.revalidate())
+}
+
+pub(crate) fn publish_installed_after_staging<Runner>(
+    prepared: &crate::ownership_pipeline::installed::PreparedInstalledOwnership<'_, '_>,
+    runner: Runner,
+) -> Result<PublishedOwnershipBundle, CommandFailure>
+where
+    Runner: FnOnce(
+        &Transaction,
+        &ArtifactOutputRoot,
+    ) -> Result<Vec<OwnershipManifestResult>, CommandFailure>,
+{
+    prepared.revalidate()?;
+    publish_with_runner(prepared.success(), &|_| prepared.revalidate(), runner)
+}
+
 /// Publishes all selected artifacts and manifest v3 with one create-only directory commit.
 ///
 /// The function either returns one complete bundle or removes its private transaction. Existing

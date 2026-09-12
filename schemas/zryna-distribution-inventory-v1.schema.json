@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-distribution-inventory-v1.schema.json",
+  "title": "Zryna distribution inventory v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "files"
+  ],
+  "properties": {
+    "format": {
+      "const": "zryna.distribution-inventory.v1"
+    },
+    "files": {
+      "$ref": "https://zryna.com/schemas/zryna-distribution-files-v1.schema.json"
+    }
+  }
+}

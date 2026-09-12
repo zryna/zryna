@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import test from 'node:test';
-import { createPreassemblyGates } from '../scripts/distribution-release/create-preassembly-gates.mjs';
-import { createSourceBuildReceipt } from '../scripts/distribution-release/create-source-build-receipt.mjs';
+import {
+  createPreassemblyGates, createReleaseQualificationGates,
+} from '../scripts/distribution-release/create-preassembly-gates.mjs';
+import {
+  createQualificationArchitectureReceipt,
+  createSourceBuildReceipt,
+} from '../scripts/distribution-release/create-source-build-receipt.mjs';
 
 const COMMIT = 'a'.repeat(40);
 const TREE = 'b'.repeat(40);
@@ -168,11 +173,111 @@ test('architecture producer rejects a tool path outside rustup exact selection',
   );
 });
 
+test('qualification architecture producer reuses the observation under a closed non-production identity', () => {
+  const qualificationEnvironment = {
+    ...environment,
+    GITHUB_EVENT_NAME: 'workflow_dispatch',
+    GITHUB_REF: 'refs/heads/main',
+    GITHUB_REF_TYPE: 'branch',
+    GITHUB_REF_NAME: 'main',
+    GITHUB_REF_PROTECTED: 'true',
+    GITHUB_WORKFLOW_SHA: COMMIT,
+    GITHUB_WORKFLOW_REF:
+      'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main',
+  };
+  const hashFile = (path) => ({ [CARGO]: CARGO_SHA256, [RUSTC]: RUSTC_SHA256 })[path];
+  const receipt = createQualificationArchitectureReceipt({
+    environment: qualificationEnvironment,
+    spawn: spawnFixture,
+    hashFile,
+    inspectFile: () => {},
+    inspectCargoConfig: () => {},
+    cwd: SOURCE_ROOT,
+  });
+  assert.equal(receipt.format, 'zryna.release-qualification-architecture.v1');
+  assert.equal(receipt.status, 'provisional-candidate');
+  assert.equal(receipt.productionAdmission, 'forbidden');
+  assert.deepEqual(receipt.source, {
+    repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main',
+    commit: COMMIT, tree: TREE,
+  });
+  assert.deepEqual(receipt.report, { diagnostics: [] });
+});
+
+test('qualification architecture producer rejects a tag or mutable workflow context', () => {
+  const base = {
+    ...environment,
+    GITHUB_EVENT_NAME: 'workflow_dispatch',
+    GITHUB_REF: 'refs/heads/main',
+    GITHUB_REF_TYPE: 'branch',
+    GITHUB_REF_NAME: 'main',
+    GITHUB_REF_PROTECTED: 'true',
+    GITHUB_WORKFLOW_SHA: COMMIT,
+    GITHUB_WORKFLOW_REF:
+      'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main',
+  };
+  for (const changed of [
+    { GITHUB_REF: 'refs/tags/v0.2.0' },
+    { GITHUB_REF_PROTECTED: 'false' },
+    { GITHUB_WORKFLOW_SHA: 'f'.repeat(40) },
+    { GITHUB_WORKFLOW_REF: 'zryna/zryna/.github/workflows/release.yml@refs/heads/main' },
+  ]) {
+    assert.throws(() => createQualificationArchitectureReceipt({
+      environment: { ...base, ...changed }, spawn: assert.fail, cwd: SOURCE_ROOT,
+    }), /R406-ARCH-PRODUCER: exact protected qualification workflow context is required/);
+  }
+});
+
 test('gate producer selects one live run and binds every job to its attempt', async () => {
   const receipt = await createPreassemblyGates({ environment, fetchImpl: githubFixture() });
   assert.deepEqual(receipt.requiredContexts, REQUIRED);
   assert.equal(receipt.runId, '123456789');
   assert(receipt.requiredJobs.every((job) => job.runId === '123456789' && job.runAttempt === 2));
+});
+
+test('qualification gate producer binds the same protected CI observation to main only', async () => {
+  const qualificationEnvironment = {
+    ...environment,
+    GITHUB_EVENT_NAME: 'workflow_dispatch',
+    GITHUB_REF: 'refs/heads/main',
+    GITHUB_REF_TYPE: 'branch',
+    GITHUB_REF_NAME: 'main',
+    GITHUB_REF_PROTECTED: 'true',
+    GITHUB_WORKFLOW_SHA: COMMIT,
+    GITHUB_WORKFLOW_REF:
+      'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main',
+  };
+  const receipt = await createReleaseQualificationGates({
+    environment: qualificationEnvironment, fetchImpl: githubFixture(),
+  });
+  assert.equal(receipt.format, 'zryna.release-qualification-gates.v1');
+  assert.equal(receipt.status, 'provisional-candidate');
+  assert.equal(receipt.productionAdmission, 'forbidden');
+  assert.equal(receipt.sourceRef, 'refs/heads/main');
+  assert.equal(receipt.sourceCommit, COMMIT);
+});
+
+test('qualification gate producer rejects a tag or unprotected main context before fetching', async () => {
+  const base = {
+    ...environment,
+    GITHUB_EVENT_NAME: 'workflow_dispatch',
+    GITHUB_REF: 'refs/heads/main',
+    GITHUB_REF_TYPE: 'branch',
+    GITHUB_REF_NAME: 'main',
+    GITHUB_REF_PROTECTED: 'true',
+    GITHUB_WORKFLOW_SHA: COMMIT,
+    GITHUB_WORKFLOW_REF:
+      'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main',
+  };
+  for (const changed of [
+    { GITHUB_REF: 'refs/tags/v0.2.0' },
+    { GITHUB_REF_PROTECTED: 'false' },
+    { GITHUB_WORKFLOW_SHA: 'f'.repeat(40) },
+  ]) {
+    await assert.rejects(() => createReleaseQualificationGates({
+      environment: { ...base, ...changed }, fetchImpl: assert.fail,
+    }), /R406-GATES-PRODUCER: exact protected main qualification workflow context/);
+  }
 });
 
 test('gate producer rejects jobs outside the selected attempt endpoint run', async () => {

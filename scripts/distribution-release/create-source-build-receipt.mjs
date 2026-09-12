@@ -8,6 +8,7 @@ import {
 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalBounded, sha256 } from './canonical.mjs';
+import { validateReleaseQualificationArchitecture } from './validate-release-qualification-architecture.mjs';
 import { validateSourceBuildReceipt } from './validate-source-build-receipt.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -128,7 +129,7 @@ function rejectCargoConfig(directory, label) {
   }
 }
 
-export function createSourceBuildReceipt({
+function createArchitectureObservation({
   environment = process.env,
   cwd = environment.ZRYNA_SOURCE_ROOT,
   spawn = spawnSync,
@@ -136,11 +137,6 @@ export function createSourceBuildReceipt({
   inspectFile = inspectActualExecutable,
   inspectCargoConfig = rejectCargoConfig,
 } = {}) {
-  if (environment.GITHUB_REPOSITORY !== 'zryna/zryna'
-    || environment.GITHUB_REF !== 'refs/tags/v0.2.0'
-    || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')) {
-    reject('exact protected repository, tag, and source SHA are required');
-  }
   if (!isAbsolute(cwd ?? '')) reject('ZRYNA_SOURCE_ROOT must name an absolute isolated checkout');
   if (!isAbsolute(environment.ZRYNA_RUSTUP_PATH ?? '')
     || !isAbsolute(environment.RUSTUP_HOME ?? '')) {
@@ -220,9 +216,9 @@ export function createSourceBuildReceipt({
     if (error?.message?.startsWith('R406-ARCH-PRODUCER:')) throw error;
     reject('tool executable could not be reread after the architecture command');
   }
-  return validateSourceBuildReceipt({
-    format: 'zryna.source-build-receipt.v1',
-    source: { repository: REPOSITORY, commit, tree },
+  return {
+    commit,
+    tree,
     command: COMMAND,
     toolchain: {
       channel: '1.97.1',
@@ -233,6 +229,51 @@ export function createSourceBuildReceipt({
     },
     inputs,
     report,
+  };
+}
+
+export function createSourceBuildReceipt(options = {}) {
+  const environment = options.environment ?? process.env;
+  if (environment.GITHUB_REPOSITORY !== 'zryna/zryna'
+    || environment.GITHUB_REF !== 'refs/tags/v0.2.0'
+    || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')) {
+    reject('exact protected repository, tag, and source SHA are required');
+  }
+  const { commit, tree, ...observation } = createArchitectureObservation({
+    ...options, environment,
+  });
+  return validateSourceBuildReceipt({
+    format: 'zryna.source-build-receipt.v1',
+    source: { repository: REPOSITORY, commit, tree },
+    ...observation,
+  });
+}
+
+export function createQualificationArchitectureReceipt(options = {}) {
+  const environment = options.environment ?? process.env;
+  if (environment.GITHUB_EVENT_NAME !== 'workflow_dispatch'
+    || environment.GITHUB_REPOSITORY !== 'zryna/zryna'
+    || environment.GITHUB_REF !== 'refs/heads/main'
+    || environment.GITHUB_REF_TYPE !== 'branch'
+    || environment.GITHUB_REF_NAME !== 'main'
+    || environment.GITHUB_REF_PROTECTED !== 'true'
+    || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')
+    || environment.GITHUB_WORKFLOW_SHA !== environment.GITHUB_SHA
+    || environment.GITHUB_WORKFLOW_REF !==
+      'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main') {
+    reject('exact protected qualification workflow context is required');
+  }
+  const { commit, tree, ...observation } = createArchitectureObservation({
+    ...options, environment,
+  });
+  return validateReleaseQualificationArchitecture({
+    format: 'zryna.release-qualification-architecture.v1',
+    status: 'provisional-candidate',
+    productionAdmission: 'forbidden',
+    source: {
+      repository: REPOSITORY, ref: 'refs/heads/main', commit, tree,
+    },
+    ...observation,
   });
 }
 

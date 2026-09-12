@@ -66,6 +66,7 @@ function fixture() {
       tree: 'b'.repeat(40),
       sourceDateEpoch: 1_789_081_200,
     },
+    recipe: { format: 'zryna.distribution-recipe.v1', sha256: 'd'.repeat(64) },
     workflow: {
       repository: 'zryna/zryna',
       path: '.github/workflows/release.yml',

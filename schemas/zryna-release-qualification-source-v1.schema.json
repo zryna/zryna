@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-release-qualification-source-v1.schema.json",
+  "title": "Zryna provisional release qualification source v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "status", "productionAdmission", "versionCandidate", "source", "workflow"],
+  "properties": {
+    "format": { "const": "zryna.release-qualification-source.v1" },
+    "status": { "const": "provisional-candidate" },
+    "productionAdmission": { "const": "forbidden" },
+    "versionCandidate": { "const": "0.2.0" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "ref", "commit", "tree", "sourceDateEpoch"],
+      "properties": {
+        "repository": { "const": "https://github.com/zryna/zryna" },
+        "ref": { "const": "refs/heads/main" },
+        "commit": { "$ref": "#/$defs/objectId" },
+        "tree": { "$ref": "#/$defs/objectId" },
+        "sourceDateEpoch": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "size", "sha256"],
+      "properties": {
+        "path": { "const": ".github/workflows/release-qualification.yml" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    }
+  },
+  "$defs": {
+    "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

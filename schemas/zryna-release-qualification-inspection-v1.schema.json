@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-release-qualification-inspection-v1.schema.json",
+  "title": "Zryna provisional release qualification binary inspection v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "status", "productionAdmission", "target", "sourceCommit",
+    "bindingSha256", "binary", "checks"
+  ],
+  "properties": {
+    "format": { "const": "zryna.release-qualification-inspection.v1" },
+    "status": { "const": "qualification-only" },
+    "productionAdmission": { "const": "forbidden" },
+    "target": { "enum": ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"] },
+    "sourceCommit": { "$ref": "#/$defs/objectId" },
+    "bindingSha256": { "$ref": "#/$defs/digest" },
+    "binary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["format", "architecture", "size", "sha256"],
+      "properties": {
+        "format": { "enum": ["ELF", "PE"] }, "architecture": { "const": "x86_64" },
+        "size": { "type": "integer", "minimum": 64, "maximum": 268435456 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "checks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identityMarker", "sourceRootOccurrences", "workRootOccurrences", "dynamicDependencies"],
+      "properties": {
+        "identityMarker": { "const": "qualification-binding-sha256" },
+        "sourceRootOccurrences": { "const": 0 },
+        "workRootOccurrences": { "const": 0 },
+        "dynamicDependencies": {
+          "type": "array", "minItems": 1, "maxItems": 64,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[ -~]+$" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+  }
+}

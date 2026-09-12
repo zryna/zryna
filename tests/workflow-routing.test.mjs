@@ -63,12 +63,44 @@ test('representative paths select only their owning optional contract lanes', ()
     ['schemas/zryna-distribution-build-input-v1.schema.json', ['distribution_release']],
     ['schemas/zryna-source-build-receipt-v1.schema.json', ['distribution_release']],
     ['schemas/zryna-preassembly-gates-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-tag-receipt-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-build-result-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-reproduction-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-qualification-source-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-qualification-architecture-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-qualification-gates-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-qualification-input-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-qualification-inspection-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-release-qualification-result-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-v1.schema.json', ['distribution_release']],
+    ['schemas/zryna-distribution-files-v1.schema.json', ['distribution_release']],
+    ['scripts/distribution/assemble.mjs', ['distribution_release']],
+    ['crates/zryna-driver/src/distribution/mod.rs', ['distribution_release']],
+    ['apps/zryna/src/installed.rs', ['distribution_release']],
+    ['tests/distribution-receipt-compatibility.test.mjs', ['distribution_release']],
+    ['tests/distribution-npm-materials.test.mjs', ['distribution_release']],
     ['scripts/distribution-release/validate.mjs', ['distribution_release']],
     ['spec/release/DISTRIBUTION_RELEASE_V1.md', ['distribution_release']],
     ['tests/distribution-release-v1.test.mjs', ['distribution_release']],
     ['tests/distribution-build-input-v1.test.mjs', ['distribution_release']],
     ['tests/source-build-receipt-v1.test.mjs', ['distribution_release']],
     ['tests/preassembly-gates-v1.test.mjs', ['distribution_release']],
+    ['tests/release-tag-receipt-v1.test.mjs', ['distribution_release']],
+    ['tests/protected-release-build.test.mjs', ['distribution_release']],
+    ['tests/release-workflow.test.mjs', ['distribution_release']],
+    ['tests/release-reproduction.test.mjs', ['distribution_release']],
+    ['tests/release-evidence.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-source.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-acquisition.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-archive-capability.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-cargo.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-input-producer.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-compile.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-inspection.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-workflow.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-core.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-comparison.test.mjs', ['distribution_release']],
+    ['tests/release-qualification-result.test.mjs', ['distribution_release']],
     ['tests/distribution-release-producers.test.mjs', ['distribution_release']],
     ['spec/diagnostics/STRUCTURED_DIAGNOSTICS_V2.md', ['diagnostics']],
     ['crates/zryna-source/src/lib.rs', ['diagnostics', 'provider_v4']],
@@ -258,6 +290,7 @@ test('consolidation preserves every prior contract command and pinned action', (
   assert.deepEqual(commands('distribution-release-contract'), [
     'pnpm install --frozen-lockfile',
     'pnpm release:contract',
+    'pnpm distribution:check',
   ]);
   assert.deepEqual(commands('package-release-contract'), [
     'pnpm install --frozen-lockfile',
@@ -293,7 +326,7 @@ test('consolidation preserves every prior contract command and pinned action', (
 
 test('only CI handles pull requests and every superseded pull-request run cancels', () => {
   const names = readdirSync(resolve(root, '.github/workflows')).sort();
-  assert.deepEqual(names, ['ci.yml', 'documentation.yml']);
+  assert.deepEqual(names, ['ci.yml', 'documentation.yml', 'release-qualification.yml', 'release.yml']);
   for (const name of names) {
     const candidate = workflow(name);
     if (!Object.hasOwn(candidate.on, 'pull_request')) continue;

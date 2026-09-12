@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalBounded } from './canonical.mjs';
 import { validatePreassemblyGatesShape } from './validate-preassembly-gates.mjs';
+import { validateReleaseQualificationGates } from './validate-release-qualification-gates.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const API = 'https://api.github.com';
@@ -107,17 +108,11 @@ function numericId(value, label) {
   return text;
 }
 
-export async function createPreassemblyGates({
+async function observeProtectedGates({
   environment = process.env, fetchImpl = fetch, requestTimeoutMs = REQUEST_TIMEOUT,
 } = {}) {
   const token = environment.GITHUB_TOKEN;
   const sourceCommit = environment.GITHUB_SHA;
-  if (!token || environment.GITHUB_REPOSITORY !== REPOSITORY
-    || environment.GITHUB_SERVER_URL !== 'https://github.com'
-    || environment.GITHUB_REF !== 'refs/tags/v0.2.0'
-    || !/^[0-9a-f]{40}$/.test(sourceCommit ?? '')) {
-    reject('exact protected workflow repository, tag, SHA, and token are required');
-  }
   if (!Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1
     || requestTimeoutMs > REQUEST_TIMEOUT) reject('request timeout is invalid');
   const query = new URLSearchParams({
@@ -178,8 +173,7 @@ export async function createPreassemblyGates({
       name, conclusion: 'success', sourceCommit, runId, runAttempt, jobId, checkRunId,
     };
   });
-  return validatePreassemblyGatesShape({
-    format: 'zryna.preassembly-gates.v1',
+  return {
     repository: `https://github.com/${REPOSITORY}`,
     workflow: WORKFLOW,
     runId,
@@ -188,6 +182,44 @@ export async function createPreassemblyGates({
     sourceCommit,
     requiredContexts: contexts,
     requiredJobs,
+  };
+}
+
+export async function createPreassemblyGates(options = {}) {
+  const environment = options.environment ?? process.env;
+  if (!environment.GITHUB_TOKEN || environment.GITHUB_REPOSITORY !== REPOSITORY
+    || environment.GITHUB_SERVER_URL !== 'https://github.com'
+    || environment.GITHUB_REF !== 'refs/tags/v0.2.0'
+    || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')) {
+    reject('exact protected workflow repository, tag, SHA, and token are required');
+  }
+  return validatePreassemblyGatesShape({
+    format: 'zryna.preassembly-gates.v1',
+    ...await observeProtectedGates({ ...options, environment }),
+  });
+}
+
+export async function createReleaseQualificationGates(options = {}) {
+  const environment = options.environment ?? process.env;
+  if (!environment.GITHUB_TOKEN || environment.GITHUB_EVENT_NAME !== 'workflow_dispatch'
+    || environment.GITHUB_REPOSITORY !== REPOSITORY
+    || environment.GITHUB_SERVER_URL !== 'https://github.com'
+    || environment.GITHUB_REF !== 'refs/heads/main'
+    || environment.GITHUB_REF_TYPE !== 'branch'
+    || environment.GITHUB_REF_NAME !== 'main'
+    || environment.GITHUB_REF_PROTECTED !== 'true'
+    || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')
+    || environment.GITHUB_WORKFLOW_SHA !== environment.GITHUB_SHA
+    || environment.GITHUB_WORKFLOW_REF !==
+      'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main') {
+    reject('exact protected main qualification workflow context and token are required');
+  }
+  return validateReleaseQualificationGates({
+    format: 'zryna.release-qualification-gates.v1',
+    status: 'provisional-candidate',
+    productionAdmission: 'forbidden',
+    sourceRef: 'refs/heads/main',
+    ...await observeProtectedGates({ ...options, environment }),
   });
 }
 

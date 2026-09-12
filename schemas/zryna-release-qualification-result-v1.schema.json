@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zryna.com/schemas/zryna-release-qualification-result-v1.schema.json",
+  "title": "Zryna provisional release qualification result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "status", "productionAdmission", "versionCandidate", "target", "replica",
+    "source", "recipeProposal", "artifacts"
+  ],
+  "properties": {
+    "format": { "const": "zryna.release-qualification-result.v1" },
+    "status": { "const": "qualification-only" },
+    "productionAdmission": { "const": "forbidden" },
+    "versionCandidate": { "const": "0.2.0" },
+    "target": { "enum": ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"] },
+    "replica": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ref", "commit", "tree", "sourceDateEpoch"],
+      "properties": {
+        "ref": { "const": "refs/heads/main" },
+        "commit": { "$ref": "#/$defs/objectId" }, "tree": { "$ref": "#/$defs/objectId" },
+        "sourceDateEpoch": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    },
+    "recipeProposal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["size", "sha256"],
+      "properties": {
+        "size": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "artifacts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["binding", "cli", "inventory", "archive", "inspection"],
+      "properties": {
+        "binding": { "$ref": "#/$defs/artifact" }, "cli": { "$ref": "#/$defs/artifact" },
+        "inventory": { "$ref": "#/$defs/artifact" }, "archive": { "$ref": "#/$defs/artifact" },
+        "inspection": { "$ref": "#/$defs/artifact" }
+      }
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "objectId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "path": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$" },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "size", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/path" },
+        "size": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}
