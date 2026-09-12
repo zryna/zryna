@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 
 mod filesystem;
 mod root;
+#[cfg(windows)]
+use filesystem::audit_inventory_directory;
 use filesystem::sha256;
 #[cfg(not(windows))]
 use filesystem::{collect_inventory, link_like, read_stable_file};
@@ -347,26 +349,12 @@ fn write_entry(
     let mut cleanup_inventory = BTreeSet::new();
     let stage_name =
         format!(".pending-{}-{}", std::process::id(), NEXT_STAGE.fetch_add(1, Ordering::Relaxed));
+    #[cfg(not(windows))]
     let stage = namespace.join(&stage_name);
     let writable =
         super::staging::WritableStage::create(&directory, &stage_name, PackageBuildError::cache)?;
     let preparation = (|| {
-        for output in outputs {
-            super::staging::write_file(
-                writable.directory(),
-                &output.path,
-                &output.bytes,
-                PackageBuildError::cache,
-            )?;
-            super::staging::record_path(&mut cleanup_inventory, &output.path);
-        }
-        super::staging::write_file(
-            writable.directory(),
-            ENTRY_MANIFEST,
-            &entry_bytes,
-            PackageBuildError::cache,
-        )?;
-        super::staging::record_path(&mut cleanup_inventory, ENTRY_MANIFEST);
+        write_stage(&writable, outputs, &entry_bytes, &mut cleanup_inventory)?;
         #[cfg(windows)]
         audit_inventory_directory(writable.directory(), &entry.outputs)?;
         #[cfg(not(windows))]
@@ -382,13 +370,8 @@ fn write_entry(
             &cleanup_inventory,
             PackageBuildError::cache,
         )?;
-        if let Some(winner) = read_entry(request, target, key, plan_key)? {
-            if winner == outputs {
-                return Ok(());
-            }
-            return Err(PackageBuildError::cache(
-                "winning cache entry differs from the compiled outputs",
-            ));
+        if matching_winner(request, target, key, plan_key, outputs)? {
+            return Ok(());
         }
         return Err(error);
     }
@@ -404,13 +387,8 @@ fn write_entry(
             &cleanup_inventory,
             PackageBuildError::cache,
         )?;
-        if let Some(winner) = read_entry(request, target, key, plan_key)? {
-            if winner == outputs {
-                return Ok(());
-            }
-            return Err(PackageBuildError::cache(
-                "winning cache entry differs from the compiled outputs",
-            ));
+        if matching_winner(request, target, key, plan_key, outputs)? {
+            return Ok(());
         }
         return Err(error);
     }
@@ -434,18 +412,56 @@ fn write_entry(
         &cleanup_inventory,
         PackageBuildError::cache,
     )?;
-    if let Some(winner) = read_entry(request, target, key, plan_key)? {
-        if winner == outputs {
-            return Ok(());
-        }
-        return Err(PackageBuildError::cache(
-            "winning cache entry differs from the compiled outputs",
-        ));
+    if matching_winner(request, target, key, plan_key, outputs)? {
+        return Ok(());
     }
     match verified {
         Err(error) => Err(error),
         Ok(_) => Err(PackageBuildError::cache("committed cache entry differs")),
     }
+}
+
+fn matching_winner(
+    request: &PackageBuildRequest<'_>,
+    target: &BuildTargetId,
+    key: &str,
+    plan_key: &str,
+    outputs: &[CompiledOutput],
+) -> Result<bool, PackageBuildError> {
+    let Some(winner) = read_entry(request, target, key, plan_key)? else {
+        return Ok(false);
+    };
+    if winner != outputs {
+        return Err(PackageBuildError::cache(
+            "winning cache entry differs from the compiled outputs",
+        ));
+    }
+    Ok(true)
+}
+
+fn write_stage(
+    stage: &super::staging::WritableStage,
+    outputs: &[CompiledOutput],
+    entry_bytes: &[u8],
+    cleanup_inventory: &mut BTreeSet<String>,
+) -> Result<(), PackageBuildError> {
+    for output in outputs {
+        super::staging::write_file(
+            stage.directory(),
+            &output.path,
+            &output.bytes,
+            PackageBuildError::cache,
+        )?;
+        super::staging::record_path(cleanup_inventory, &output.path);
+    }
+    super::staging::write_file(
+        stage.directory(),
+        ENTRY_MANIFEST,
+        entry_bytes,
+        PackageBuildError::cache,
+    )?;
+    super::staging::record_path(cleanup_inventory, ENTRY_MANIFEST);
+    Ok(())
 }
 
 fn encode_entry(entry: &CacheEntry) -> Result<Vec<u8>, PackageBuildError> {
@@ -461,19 +477,6 @@ fn audit_inventory(root: &Path, outputs: &[CacheOutput]) -> Result<(), PackageBu
     let mut actual = BTreeSet::new();
     collect_inventory(root, root, &mut actual)?;
     if actual != expected {
-        return Err(PackageBuildError::cache(
-            "cache entry inventory contains missing or extra paths",
-        ));
-    }
-    Ok(())
-}
-
-#[cfg(windows)]
-fn audit_inventory_directory(
-    root: &cap_std::fs::Dir,
-    outputs: &[CacheOutput],
-) -> Result<(), PackageBuildError> {
-    if super::staging::inventory(root, PackageBuildError::cache)? != expected_inventory(outputs) {
         return Err(PackageBuildError::cache(
             "cache entry inventory contains missing or extra paths",
         ));

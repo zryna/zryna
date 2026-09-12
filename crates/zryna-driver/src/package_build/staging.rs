@@ -92,7 +92,7 @@ impl SealedStage {
         #[cfg(not(any(target_os = "linux", windows)))]
         return Err(error(failure));
 
-        self.root.name = destination.to_owned();
+        destination.clone_into(&mut self.root.name);
         Ok(())
     }
 }
@@ -107,7 +107,7 @@ impl StageRoot {
 
     fn remove_empty(
         self,
-        parent: &Dir,
+        _parent: &Dir,
         error: fn(&str) -> PackageBuildError,
     ) -> Result<(), PackageBuildError> {
         #[cfg(windows)]
@@ -117,8 +117,8 @@ impl StageRoot {
             .map_err(|_| error("private stage directory could not be removed"));
         #[cfg(not(windows))]
         {
-            revalidate_name(parent, &self.name, &self.directory, error)?;
-            parent
+            revalidate_name(_parent, &self.name, &self.directory, error)?;
+            _parent
                 .remove_dir(&self.name)
                 .map_err(|_| error("private stage directory could not be removed"))
         }

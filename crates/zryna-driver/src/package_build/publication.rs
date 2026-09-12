@@ -69,6 +69,7 @@ pub(super) fn publish(
         std::process::id(),
         NEXT_STAGE.fetch_add(1, Ordering::Relaxed)
     );
+    #[cfg(not(windows))]
     let stage = request.output_root.path().join(&stage_name);
     let directory = request
         .output_root
@@ -83,31 +84,7 @@ pub(super) fn publish(
     let final_name = format!("{}.package-build", prepared.identity.cache_key());
     let final_path = request.output_root.path().join(&final_name);
     let preparation = (|| {
-        super::staging::write_file(
-            writable.directory(),
-            PLAN_NAME,
-            prepared.identity.bytes(),
-            PackageBuildError::publication,
-        )?;
-        super::staging::record_path(&mut cleanup_inventory, PLAN_NAME);
-        for target in targets {
-            for output in &target.outputs {
-                super::staging::write_file(
-                    writable.directory(),
-                    &output.path,
-                    &output.bytes,
-                    PackageBuildError::publication,
-                )?;
-                super::staging::record_path(&mut cleanup_inventory, &output.path);
-            }
-        }
-        super::staging::write_file(
-            writable.directory(),
-            PACKAGE_BUILD_MANIFEST_NAME,
-            &manifest_bytes,
-            PackageBuildError::publication,
-        )?;
-        super::staging::record_path(&mut cleanup_inventory, PACKAGE_BUILD_MANIFEST_NAME);
+        write_stage(&writable, prepared, targets, &manifest_bytes, &mut cleanup_inventory)?;
         #[cfg(windows)]
         audit_directory(writable.directory(), targets, prepared.identity.bytes(), &manifest_bytes)?;
         #[cfg(not(windows))]
@@ -163,6 +140,41 @@ pub(super) fn publish(
         return Err(error);
     }
     Ok(final_path.join(PACKAGE_BUILD_MANIFEST_NAME))
+}
+
+fn write_stage(
+    stage: &super::staging::WritableStage,
+    prepared: &PreparedPlan,
+    targets: &[MaterializedTarget],
+    manifest_bytes: &[u8],
+    cleanup_inventory: &mut BTreeSet<String>,
+) -> Result<(), PackageBuildError> {
+    super::staging::write_file(
+        stage.directory(),
+        PLAN_NAME,
+        prepared.identity.bytes(),
+        PackageBuildError::publication,
+    )?;
+    super::staging::record_path(cleanup_inventory, PLAN_NAME);
+    for target in targets {
+        for output in &target.outputs {
+            super::staging::write_file(
+                stage.directory(),
+                &output.path,
+                &output.bytes,
+                PackageBuildError::publication,
+            )?;
+            super::staging::record_path(cleanup_inventory, &output.path);
+        }
+    }
+    super::staging::write_file(
+        stage.directory(),
+        PACKAGE_BUILD_MANIFEST_NAME,
+        manifest_bytes,
+        PackageBuildError::publication,
+    )?;
+    super::staging::record_path(cleanup_inventory, PACKAGE_BUILD_MANIFEST_NAME);
+    Ok(())
 }
 
 fn manifest_bytes(

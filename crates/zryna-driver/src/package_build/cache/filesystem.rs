@@ -1,10 +1,29 @@
+#[cfg(not(windows))]
 use std::{collections::BTreeSet, fs, path::Path};
 
+#[cfg(not(windows))]
 use same_file::Handle;
 use sha2::{Digest as _, Sha256};
 
+#[cfg(not(windows))]
 use super::PackageBuildError;
 
+#[cfg(windows)]
+pub(super) fn audit_inventory_directory(
+    root: &cap_std::fs::Dir,
+    outputs: &[super::CacheOutput],
+) -> Result<(), super::PackageBuildError> {
+    if super::super::staging::inventory(root, super::PackageBuildError::cache)?
+        != super::expected_inventory(outputs)
+    {
+        return Err(super::PackageBuildError::cache(
+            "cache entry inventory contains missing or extra paths",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
 pub(super) fn collect_inventory(
     root: &Path,
     directory: &Path,
@@ -38,6 +57,7 @@ pub(super) fn collect_inventory(
     Ok(())
 }
 
+#[cfg(not(windows))]
 pub(super) fn read_stable_file(path: &Path, limit: usize) -> Result<Vec<u8>, PackageBuildError> {
     let before = Handle::from_path(path)
         .map_err(|_| PackageBuildError::cache("cache file cannot be retained"))?;
@@ -68,12 +88,6 @@ pub(super) fn read_stable_file(path: &Path, limit: usize) -> Result<Vec<u8>, Pac
 
 pub(super) fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
-}
-
-#[cfg(windows)]
-pub(super) fn link_like(metadata: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt as _;
-    metadata.file_type().is_symlink() || metadata.file_attributes() & 0x400 != 0
 }
 
 #[cfg(not(windows))]
