@@ -1,5 +1,6 @@
 //! Retained filesystem capabilities for source-only package resolution.
 
+mod authenticated;
 mod filesystem;
 mod project_capture;
 pub(crate) use project_capture::CapturedProject;
@@ -17,7 +18,10 @@ use zryna_package::{
     PackageSourceProvider, ResolveError, ResolvedGraph,
 };
 
+use authenticated::authenticated_sources;
 use filesystem::{CapturedRoot, RetainedFile, ensure_same_directory, publish_lock, read_retained};
+
+pub use authenticated::{AuthenticatedPackageFile, AuthenticatedPackageSources};
 
 const MANIFEST_NAME: &str = "zryna.package.json";
 const LOCK_NAME: &str = "zryna.lock.json";
@@ -52,6 +56,7 @@ pub struct PackageResolutionRequest {
 /// Complete authenticated graph and lock publication observation.
 pub struct PackageResolutionSuccess {
     graph: ResolvedGraph,
+    sources: Vec<AuthenticatedPackageSources>,
     lock_path: PathBuf,
     published: bool,
 }
@@ -61,6 +66,12 @@ impl PackageResolutionSuccess {
     /// Returns the authenticated graph.
     pub fn graph(&self) -> &ResolvedGraph {
         &self.graph
+    }
+
+    #[must_use]
+    /// Returns immutable source inventories in canonical package identity order.
+    pub fn sources(&self) -> &[AuthenticatedPackageSources] {
+        &self.sources
     }
 
     #[must_use]
@@ -138,6 +149,7 @@ fn resolve_package_internal(
         .cloned()
         .ok_or_else(|| ResolveError::source("root package source inventory is unavailable"))?;
     provider.revalidate()?;
+    let sources = authenticated_sources(&graph, &provider.loaded_files)?;
     let current_package_dir = provider.open_source_dir(&PackageSource {
         kind: PackageSourceKind::Local,
         locator: request.package.clone(),
@@ -151,6 +163,7 @@ fn resolve_package_internal(
     Ok((
         PackageResolutionSuccess {
             graph,
+            sources,
             lock_path: request.source_root.join(&request.package).join(LOCK_NAME),
             published,
         },

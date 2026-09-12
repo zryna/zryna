@@ -284,6 +284,34 @@
       "review": "https://github.com/zryna/zryna/issues/314"
     },
     {
+      "path": "crates/zryna-driver/src/package_build/tests.rs",
+      "kind": "test",
+      "owner": "driver maintainers",
+      "reason": "Deterministic package build-plan, cache replay, invalidation, and boundary tests",
+      "review": "https://github.com/zryna/zryna/issues/404"
+    },
+    {
+      "path": "crates/zryna-driver/src/package_build/tests/graph.rs",
+      "kind": "test",
+      "owner": "driver maintainers",
+      "reason": "Exact and first-extra authenticated package graph execution tests",
+      "review": "https://github.com/zryna/zryna/issues/404"
+    },
+    {
+      "path": "crates/zryna-driver/src/package_build/tests/hostile.rs",
+      "kind": "test",
+      "owner": "driver maintainers",
+      "reason": "Hostile cache, partial-write, compiler failure, and no-publication tests",
+      "review": "https://github.com/zryna/zryna/issues/404"
+    },
+    {
+      "path": "crates/zryna-driver/src/package_build/tests/invalidation.rs",
+      "kind": "test",
+      "owner": "driver maintainers",
+      "reason": "Source, toolchain, environment, and plan-identity invalidation tests",
+      "review": "https://github.com/zryna/zryna/issues/404"
+    },
+    {
       "path": "crates/zryna-driver/src/tests.rs",
       "kind": "test",
       "owner": "driver maintainers",

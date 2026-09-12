@@ -8,6 +8,20 @@ roots and prepopulated exact-commit Git-cache entries. It passes bounded bytes t
 root package's `zryna.lock.json`. It does not acquire source, invoke Git, compile packages, change
 module semantics, or authorize build execution.
 
+The separate internal package build engine consumes that exact resolved graph and its immutable
+authenticated source bytes. It constructs the canonical source-only resolved plan, executes only
+an explicit in-process pure-source compiler in deterministic dependencies-first order, validates
+or atomically fills target-keyed cache entries, and publishes one create-only bundle containing
+the exact plan, declared outputs, and package build manifest. Cache hits are rehashed against the
+plan and output inventory; corrupt or partial entries reject instead of becoming misses. Offline
+and frozen modes expose no acquisition or network operation, and frozen additionally requires an
+exact existing-lock resolution. Windows package stages retain one exact owned root from atomic
+creation through capability-relative audit, commit, rollback, and consuming cleanup. Descendant
+handles close before each ancestor rename. The exact root remains authoritative, but post-commit
+authentication rejects only mutations it observes; same-user descendant mutation can race or
+follow final validation and is neither prevented nor guaranteed to be detected. See [the package
+build engine](../../docs/PACKAGE_BUILD_ENGINE.md).
+
 `ProjectBuildRequest` and `ProjectRunRequest` keep an architecture-validated source compiler root
 separate from one explicit package-authenticated project root. The default M1 route resolves the
 project's frozen graph before compilation, uses only project-relative source and `.zryna` output,
