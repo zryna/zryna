@@ -11,6 +11,7 @@ use std::io;
 use std::os::windows::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use windows_sys::Win32::Foundation::ERROR_ALREADY_EXISTS;
 use windows_sys::Win32::Storage::FileSystem::{
     FILE_FLAG_BACKUP_SEMANTICS, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE, FILE_SHARE_READ,
     FILE_SHARE_WRITE,
@@ -95,6 +96,21 @@ fn retained_source_cannot_be_reselected_by_path() -> Result<(), Box<dyn std::err
 }
 
 #[test]
+fn exact_handle_renames_to_a_single_unit_name() -> Result<(), Box<dyn std::error::Error>> {
+    let root = TemporaryRoot::new("short-rename")?;
+    let parent = root.open()?;
+    let mut directory = create_directory(&parent, OsStr::new("a"))?;
+
+    directory.rename_noreplace(&parent, OsStr::new("b"))?;
+    assert!(!root.path().join("a").exists());
+    assert!(root.path().join("b").is_dir());
+
+    directory.remove_empty()?;
+    assert!(!root.path().join("b").exists());
+    Ok(())
+}
+
+#[test]
 fn no_replace_preserves_empty_and_nonempty_destinations() -> Result<(), Box<dyn std::error::Error>>
 {
     for (label, nonempty) in [("empty", false), ("nonempty", true)] {
@@ -111,9 +127,10 @@ fn no_replace_preserves_empty_and_nonempty_destinations() -> Result<(), Box<dyn 
             .expect_err("retained source mutation must fail before the collision check");
         assert_eq!(mutation.raw_os_error(), Some(SHARING_VIOLATION));
 
-        stage
+        let collision = stage
             .rename_noreplace(&parent, OsStr::new("final"))
             .expect_err("an existing destination must reject commit");
+        assert_eq!(collision.raw_os_error(), Some(ERROR_ALREADY_EXISTS as i32));
         assert_eq!(stage.directory().read("owned.txt")?, b"owned");
         assert!(root.path().join("stage").is_dir());
         assert!(root.path().join("final").is_dir());
@@ -138,9 +155,10 @@ fn rollback_collision_preserves_the_committed_and_foreign_directories()
 
     fs::create_dir(root.path().join("stage"))?;
     fs::write(root.path().join("stage/sentinel.txt"), b"foreign")?;
-    stage
+    let collision = stage
         .rename_noreplace(&parent, OsStr::new("stage"))
         .expect_err("rollback must not replace a foreign stage-name collision");
+    assert_eq!(collision.raw_os_error(), Some(ERROR_ALREADY_EXISTS as i32));
     assert_eq!(stage.directory().read("owned.txt")?, b"owned");
     assert_eq!(fs::read(root.path().join("stage/sentinel.txt"))?, b"foreign");
 

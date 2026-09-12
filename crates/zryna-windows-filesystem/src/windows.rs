@@ -5,14 +5,15 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::fs::File;
 use std::io;
-use std::mem::{align_of, offset_of, size_of};
+use std::mem::{align_of, size_of};
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
 use std::ptr::{addr_of_mut, null, null_mut};
 use windows_sys::Wdk::Foundation::OBJECT_ATTRIBUTES;
 use windows_sys::Wdk::Storage::FileSystem::{
     FILE_CREATE, FILE_DIRECTORY_FILE, FILE_OPEN, FILE_OPEN_REPARSE_POINT,
-    FILE_SYNCHRONOUS_IO_NONALERT, NtCreateFile,
+    FILE_RENAME_INFORMATION, FILE_RENAME_INFORMATION_0, FILE_SYNCHRONOUS_IO_NONALERT,
+    FileRenameInformation, NtCreateFile, NtSetInformationFile,
 };
 use windows_sys::Win32::Foundation::{
     ERROR_ALREADY_EXISTS, ERROR_FILE_NOT_FOUND, ERROR_INVALID_HANDLE, ERROR_PATH_NOT_FOUND,
@@ -21,8 +22,8 @@ use windows_sys::Win32::Foundation::{
 };
 use windows_sys::Win32::Storage::FileSystem::{
     DELETE, FILE_ATTRIBUTE_DIRECTORY, FILE_DISPOSITION_INFO, FILE_READ_ATTRIBUTES,
-    FILE_RENAME_INFO, FILE_RENAME_INFO_0, FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE,
-    FileDispositionInfo, FileRenameInfo, SYNCHRONIZE, SetFileInformationByHandle,
+    FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, FileDispositionInfo, SYNCHRONIZE,
+    SetFileInformationByHandle,
 };
 use windows_sys::Win32::System::IO::{IO_STATUS_BLOCK, IO_STATUS_BLOCK_0};
 
@@ -66,19 +67,26 @@ impl OwnedDirectory {
         let retained_parent = destination_parent.try_clone()?;
         let mut buffer = RenameBuffer::new(raw_handle(destination_parent.as_handle()), &name)?;
 
-        // SAFETY: `RenameBuffer` owns an initialized, ABI-aligned FILE_RENAME_INFO byte range of
-        // the exact reported length. Both handles remain live throughout the synchronous call.
+        let mut status_block = IO_STATUS_BLOCK {
+            Anonymous: IO_STATUS_BLOCK_0 { Status: STATUS_SUCCESS },
+            Information: 0,
+        };
+
+        // SAFETY: `RenameBuffer` owns an initialized, ABI-aligned FILE_RENAME_INFORMATION byte
+        // range of the reported length. The two handles remain live throughout the synchronous
+        // call.
         // ReplaceIfExists is false and no source pathname or fallback is supplied.
-        let succeeded = unsafe {
-            SetFileInformationByHandle(
+        let status = unsafe {
+            NtSetInformationFile(
                 raw_handle(self.directory.as_handle()),
-                FileRenameInfo,
+                &mut status_block,
                 buffer.as_mut_ptr().cast(),
                 buffer.byte_len,
+                FileRenameInformation,
             )
         };
-        if succeeded == 0 {
-            return Err(io::Error::last_os_error());
+        if status < 0 {
+            return Err(error_from_ntstatus(status));
         }
         self.parent = retained_parent;
         self.name = name;
@@ -232,15 +240,14 @@ struct RenameBuffer {
 impl RenameBuffer {
     fn new(destination_parent: HANDLE, name: &[u16]) -> io::Result<Self> {
         const {
-            assert!(align_of::<usize>() >= align_of::<FILE_RENAME_INFO>());
+            assert!(align_of::<usize>() >= align_of::<FILE_RENAME_INFORMATION>());
         }
 
-        let header_bytes = offset_of!(FILE_RENAME_INFO, FileName);
         let name_bytes = name
             .len()
             .checked_mul(size_of::<u16>())
             .ok_or_else(|| invalid_input("directory component length overflow"))?;
-        let byte_len = header_bytes
+        let byte_len = size_of::<FILE_RENAME_INFORMATION>()
             .checked_add(name_bytes)
             .ok_or_else(|| invalid_input("rename buffer length overflow"))?;
         let word_count = byte_len
@@ -254,10 +261,11 @@ impl RenameBuffer {
         let info = buffer.as_mut_ptr();
 
         // SAFETY: the zeroed usize allocation has at least `byte_len` initialized bytes and the
-        // const assertion proves sufficient FILE_RENAME_INFO alignment. Each field and the exact
-        // trailing UTF-16 byte range lie within that allocation.
+        // const assertion proves sufficient FILE_RENAME_INFORMATION alignment. The reported size
+        // includes the complete fixed structure plus every filename byte, as required by Windows.
+        // Each field and the trailing UTF-16 byte range lie within that allocation.
         unsafe {
-            (*info).Anonymous = FILE_RENAME_INFO_0 { ReplaceIfExists: false };
+            (*info).Anonymous = FILE_RENAME_INFORMATION_0 { ReplaceIfExists: false };
             (*info).RootDirectory = destination_parent;
             (*info).FileNameLength = u32::try_from(name_bytes).map_err(invalid_input)?;
             std::ptr::copy_nonoverlapping(
@@ -269,7 +277,7 @@ impl RenameBuffer {
         Ok(buffer)
     }
 
-    fn as_mut_ptr(&mut self) -> *mut FILE_RENAME_INFO {
+    fn as_mut_ptr(&mut self) -> *mut FILE_RENAME_INFORMATION {
         self.words.as_mut_ptr().cast()
     }
 }
