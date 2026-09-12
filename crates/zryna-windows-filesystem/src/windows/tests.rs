@@ -19,10 +19,8 @@ fn diagnostic_only_reports_open_descendant_rename_outcomes()
     ];
     let report = outcomes.iter().map(Outcome::report).collect::<Vec<_>>().join("; ");
 
-    Err(io::Error::other(format!(
-        "diagnostic-only open-descendant matrix (not a contract assertion): {report}"
-    ))
-    .into())
+    println!("diagnostic-only open-descendant matrix (not a contract assertion): {report}");
+    Ok(())
 }
 
 fn no_descendants() -> io::Result<Outcome> {
