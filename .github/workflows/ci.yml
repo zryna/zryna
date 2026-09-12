@@ -273,6 +273,9 @@ jobs:
       - name: Fetch locked Rust dependencies
         run: cargo fetch --locked
       - run: pnpm m3:check
+        env:
+          CARGO_BUILD_JOBS: 3
+          RUST_TEST_THREADS: 3
 
   m3:
     name: m3
