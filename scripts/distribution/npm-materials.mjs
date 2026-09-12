@@ -1,7 +1,8 @@
 import { createHash, createPublicKey, verify } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { inflateRawSync } from 'node:zlib';
-import { exactKeys, orderedPaths, parseCanonical, requireValue, sha256 } from './canonical.mjs';
+import { exactKeys, orderedPaths, parseCanonical, portablePath, requireValue, sha256 }
+  from './canonical.mjs';
 
 const RECORD_BYTES = readFileSync(new URL('./materials-typescript-v1.json', import.meta.url));
 const RECORD_SHA256 = 'f43639bd9decf44d95a094caad029a572851e4399c889da6071d4425203da3f6';
@@ -12,6 +13,7 @@ const MAX_KEYS = 64 * 1024;
 const MAX_ARCHIVE = 64 * 1024 * 1024;
 const MAX_EXPANDED = 64 * 1024 * 1024;
 const MAX_FILES = 512;
+const MAX_TAR_ENTRIES = 4096;
 
 function digest(algorithm, input, encoding = 'hex') {
   return createHash(algorithm).update(input).digest(encoding);
@@ -111,8 +113,31 @@ function crc32(input) {
 
 function gunzipSingle(input) {
   requireValue(input.length >= 18 && input[0] === 0x1f && input[1] === 0x8b
-    && input[2] === 8 && input[3] === 0, 'npm gzip header');
-  const compressed = input.subarray(10, input.length - 8);
+    && input[2] === 8 && (input[3] & 0xe0) === 0, 'npm gzip header');
+  const flags = input[3];
+  let offset = 10;
+  if (flags & 4) {
+    requireValue(offset + 2 <= input.length - 8, 'npm gzip extra header');
+    const size = input.readUInt16LE(offset);
+    offset += 2;
+    requireValue(size <= 4096 && offset + size <= input.length - 8, 'npm gzip extra header');
+    offset += size;
+  }
+  for (const flag of [8, 16]) {
+    if (flags & flag) {
+      const end = input.indexOf(0, offset);
+      requireValue(end >= offset && end - offset <= 1024 && end < input.length - 8,
+        'npm gzip text header');
+      offset = end + 1;
+    }
+  }
+  if (flags & 2) {
+    requireValue(offset + 2 <= input.length - 8
+      && input.readUInt16LE(offset) === (crc32(input.subarray(0, offset)) & 0xffff),
+    'npm gzip header checksum');
+    offset += 2;
+  }
+  const compressed = input.subarray(offset, input.length - 8);
   let result;
   try {
     result = inflateRawSync(compressed, { info: true, maxOutputLength: MAX_EXPANDED });
@@ -148,25 +173,45 @@ function headerChecksum(header) {
   return sum;
 }
 
-function parseTar(input, descriptor) {
+function parseTar(input, descriptor, root = 'package', allowedModes = new Set([0o644, 0o755])) {
+  requireValue(/^[A-Za-z0-9@][A-Za-z0-9@+._-]*$/.test(root), 'npm tar root');
   requireValue(input.length % BLOCK === 0, 'npm tar block framing');
   const files = [];
   const paths = new Set();
   let offset = 0;
   let unpacked = 0;
+  let longName = null;
+  let entries = 0;
   while (offset + BLOCK <= input.length) {
     const header = input.subarray(offset, offset + BLOCK);
     if (header.every(byte => byte === 0)) break;
-    requireValue(ascii(header, 257, 6, 'magic') === 'ustar'
-      && headerChecksum(header) === octal(header, 148, 8, 'checksum')
-      && (header[156] === 0 || header[156] === 48)
-      && ascii(header, 157, 100, 'link name') === '', 'npm tar ordinary file');
+    requireValue(['ustar', 'ustar '].includes(ascii(header, 257, 6, 'magic'))
+      && headerChecksum(header) === octal(header, 148, 8, 'checksum'), 'npm tar header');
+    const size = octal(header, 124, 12, 'size');
+    requireValue(size <= MAX_EXPANDED && offset + BLOCK + size <= input.length
+      && entries++ < MAX_TAR_ENTRIES, 'npm tar member');
+    const data = input.subarray(offset + BLOCK, offset + BLOCK + size);
+    const next = offset + BLOCK + Math.ceil(size / BLOCK) * BLOCK;
+    requireValue(input.subarray(offset + BLOCK + size, next).every(byte => byte === 0),
+      'npm tar padding');
+    if (header[156] === 76) {
+      requireValue(longName === null && size >= 2 && size <= 257 && data.at(-1) === 0
+        && header.subarray(157, 257).every(byte => byte === 0)
+        && data.subarray(0, -1).every(byte => byte >= 32 && byte <= 126),
+      'npm tar long name');
+      longName = data.subarray(0, -1).toString('ascii');
+      offset = next;
+      continue;
+    }
+    requireValue((header[156] === 0 || header[156] === 48)
+      && header.subarray(157, 257).every(byte => byte === 0), 'npm tar ordinary file');
     const name = ascii(header, 0, 100, 'name');
     const prefix = ascii(header, 345, 155, 'prefix');
-    const path = prefix ? `${prefix}/${name}` : name;
+    const path = longName ?? (prefix ? `${prefix}/${name}` : name);
+    longName = null;
     const segments = path.split('/');
     const folded = path.toLowerCase();
-    requireValue(path.length <= 256 && segments[0] === 'package' && segments.length <= 16
+    requireValue(path.length <= 256 && segments[0] === root && segments.length <= 16
       && segments.slice(1).every(segment => /^[A-Za-z0-9@+._-]+$/.test(segment)
         && !/[. ]$/.test(segment)
         && !/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(segment))
@@ -174,16 +219,21 @@ function parseTar(input, descriptor) {
       && [...paths].every(existing => !existing.startsWith(`${folded}/`)
         && !folded.startsWith(`${existing}/`)), 'npm tar path');
     paths.add(folded);
-    const size = octal(header, 124, 12, 'size');
-    const mode = octal(header, 100, 8, 'mode') & 0o777;
-    requireValue(size >= 1 && size <= MAX_EXPANDED && [0o644, 0o755].includes(mode)
+    const rawMode = octal(header, 100, 8, 'mode');
+    const mode = rawMode & 0o777;
+    requireValue(size >= 0 && size <= MAX_EXPANDED
+      && (rawMode === mode || rawMode === 0o100000 + mode)
+      && (allowedModes === null || allowedModes.has(mode))
       && offset + BLOCK + size <= input.length, 'npm tar member');
     unpacked += size;
-    requireValue(unpacked <= MAX_EXPANDED && files.length < MAX_FILES, 'npm tar expansion');
-    files.push({ path, mode, data: input.subarray(offset + BLOCK, offset + BLOCK + size) });
-    offset += BLOCK + Math.ceil(size / BLOCK) * BLOCK;
+    requireValue(unpacked <= MAX_EXPANDED && files.length < MAX_TAR_ENTRIES,
+      'npm tar expansion');
+    files.push({ path, mode, data });
+    offset = next;
   }
-  requireValue(files.length === descriptor.fileCount && unpacked === descriptor.unpackedSize
+  requireValue((descriptor.fileCount === undefined || files.length === descriptor.fileCount)
+    && (descriptor.unpackedSize === undefined || unpacked === descriptor.unpackedSize)
+    && longName === null
     && offset + 2 * BLOCK <= input.length
     && input.subarray(offset).every(byte => byte === 0), 'npm tar closure');
   return files;
@@ -234,6 +284,37 @@ export function captureNpmPackage(descriptor, input, keysDescriptor = RECORD.key
     const selected = members.get(expected.sourcePath);
     requireValue(selected?.data.length === expected.size && sha256(selected.data) === expected.sha256,
       'npm selected member');
+    return { path: expected.path, mode: expected.mode, data: Buffer.from(selected.data) };
+  });
+}
+
+// This pure boundary is for already authenticated crate archives. It performs complete bounded
+// gzip/tar framing and ordinary-member admission without fetching or extracting to a filesystem.
+export function captureTarGzipMembers(archive, descriptor) {
+  exactKeys(descriptor, ['root', 'size', 'sha256', 'files']);
+  requireValue(Buffer.isBuffer(archive) && archive.length === descriptor.size
+    && archive.length <= MAX_ARCHIVE && sha256(archive) === descriptor.sha256
+    && /^[A-Za-z0-9@][A-Za-z0-9@+._-]*$/.test(descriptor.root)
+    && Array.isArray(descriptor.files) && descriptor.files.length >= 1
+    && descriptor.files.length <= MAX_FILES, 'upstream tar descriptor');
+  const sourcePaths = new Set();
+  for (const expected of descriptor.files) {
+    exactKeys(expected, ['sourcePath', 'path', 'mode', 'size', 'sha256']);
+    portablePath(`${descriptor.root}/${expected.sourcePath}`);
+    requireValue(!sourcePaths.has(expected.sourcePath)
+      && Number.isSafeInteger(expected.mode) && expected.mode >= 0 && expected.mode <= 0o777
+      && Number.isSafeInteger(expected.size) && expected.size >= 1
+      && expected.size <= MAX_EXPANDED && /^[0-9a-f]{64}$/.test(expected.sha256),
+    'upstream selected descriptor');
+    sourcePaths.add(expected.sourcePath);
+  }
+  orderedPaths(descriptor.files.map(file => file.path));
+  const members = new Map(parseTar(gunzipSingle(archive), {}, descriptor.root, null)
+    .map(file => [file.path, file]));
+  return descriptor.files.map(expected => {
+    const selected = members.get(`${descriptor.root}/${expected.sourcePath}`);
+    requireValue(selected?.data.length === expected.size
+      && sha256(selected.data) === expected.sha256, 'upstream selected member');
     return { path: expected.path, mode: expected.mode, data: Buffer.from(selected.data) };
   });
 }
