@@ -37,6 +37,7 @@ mod ownership_manifest;
 mod ownership_pipeline;
 mod ownership_publication;
 mod ownership_runtime_v1;
+mod package_build;
 mod package_resolution;
 mod pipeline;
 mod pipeline_runtime;
@@ -80,8 +81,10 @@ pub use native::{
     publish_native_object, run_native_invocation, select_native_object_target,
 };
 pub use ownership_api::*;
+pub use package_build::*;
 pub use package_resolution::{
-    PackageLockMode, PackageResolutionRequest, PackageResolutionSuccess, resolve_package,
+    AuthenticatedPackageFile, AuthenticatedPackageSources, PackageLockMode,
+    PackageResolutionRequest, PackageResolutionSuccess, resolve_package,
 };
 pub use pipeline::{
     BuildRequest, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,
