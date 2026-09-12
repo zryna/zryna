@@ -57,6 +57,9 @@ The TypeScript 6 adapter is a bootstrap reader, not the language authority. It d
 The repository currently establishes and tests:
 
 - an authoritative `zryna.workspace.json` contract;
+- an isolated Windows filesystem foundation for atomic handle-returning directory creation,
+  same-handle no-replace rename, and exact-handle empty cleanup; it grants no public filesystem API
+  or platform support by itself;
 - a Rust architecture validator and `zryna architecture check` command;
 - an exact provider-neutral frontend handshake and fail-closed protocol-v2 executable syntax;
 - a fail-closed executable syntax protocol v2 with a shared JSON Schema, bounded flat

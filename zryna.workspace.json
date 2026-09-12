@@ -46,6 +46,13 @@
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
+      "id": "zryna-windows-filesystem",
+      "root": "crates/zryna-windows-filesystem",
+      "kind": "foundation",
+      "dependencies": [],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
+    },
+    {
       "id": "zryna-frontend",
       "root": "crates/zryna-frontend",
       "kind": "frontend",

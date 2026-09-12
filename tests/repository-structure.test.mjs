@@ -6,12 +6,99 @@ import test from 'node:test';
 import { checkRepository } from '../scripts/check-repository-structure.mjs';
 import { physicalLines, POLICY_PATH, validatePolicy } from '../scripts/structure/policy.mjs';
 import { git } from '../scripts/structure/repository.mjs';
+import { validateUnsafeRustDocuments } from '../scripts/structure/unsafe-rust.mjs';
 import { PREFLIGHT_COMMANDS, validatePreflightCommands } from '../scripts/run-preflight.mjs';
 import { validateManifestDocument, validatePackageDocument } from '../scripts/run-m0-conformance.mjs';
 
 const today = '2026-09-06';
 const lines = count => '// source\n'.repeat(count);
 const metadata = { owner: 'compiler maintainers', reason: 'One cohesive reviewed responsibility', review: 'https://github.com/zryna/zryna/issues/314' };
+
+function unsafeRustDocuments() {
+  const rust = `unsafe_code = "forbid"\nmissing_docs = "warn"\nrust_2018_idioms = { level = "deny", priority = -1 }\nunused_lifetimes = "deny"\nunused_qualifications = "deny"`;
+  const clippy = `all = { level = "deny", priority = -1 }\npedantic = { level = "warn", priority = -1 }\ndbg_macro = "deny"\ntodo = "deny"\nunimplemented = "deny"\nunwrap_used = "deny"`;
+  return new Map([
+    ['Cargo.toml', `[workspace.lints.rust]\n${rust}\n\n[workspace.lints.clippy]\n${clippy}\n`],
+    ['zryna.workspace.json', JSON.stringify({ members: [
+      { id: 'safe', root: 'crates/safe' },
+      { id: 'zryna-windows-filesystem', root: 'crates/zryna-windows-filesystem' },
+    ] })],
+    ['crates/safe/Cargo.toml', '[lints]\nworkspace = true\n'],
+    ['crates/safe/src/lib.rs', 'pub fn safe() {}\n'],
+    ['crates/zryna-windows-filesystem/Cargo.toml', `[lints.rust]\n${rust.replace('"forbid"', '"deny"')}\n\n[lints.clippy]\n${clippy}\n`],
+    ['crates/zryna-windows-filesystem/src/windows.rs', '#![allow(unsafe_code)]\nunsafe fn syscall() {}\n'],
+  ]);
+}
+
+test('unsafe exception rejects a second component lint override', () => {
+  for (const manifest of ['crates/safe/Cargo.toml', 'crates/unregistered/Cargo.toml']) {
+    const files = unsafeRustDocuments();
+    files.set(manifest, '[lints]\nworkspace = true\n\n[lints.rust]\nunsafe_code = "allow"\n');
+    assert.throws(() => validateUnsafeRustDocuments(files), /inherit workspace lints/);
+  }
+});
+
+test('unsafe exception rejects allowances and unsafe code outside the exact module', () => {
+  for (const [path, source] of [
+    ['crates/safe/src/lib.rs', '#![allow(unsafe_code)]\n'],
+    ['crates/safe/src/lib.rs', '#![cfg_attr(any(), allow(/* split */ unsafe_code))]\n'],
+    ['crates/safe/src/lib.rs', 'unsafe/* split */{}\n'],
+    ['crates/safe/src/lib.rs', '#[unsafe(no_mangle)]\npub extern "C" fn escaped() {}\n'],
+    ['crates/safe/src/lib.rs', '#[cfg(any())]\nunsafe fn disabled() {}\n'],
+    ['crates/safe/src/HIDDEN.RS', 'unsafe fn uppercase_extension() {}\n'],
+    ['unreferenced/unused.rs', 'unsafe fn unreferenced() {}\n'],
+  ]) {
+    const files = unsafeRustDocuments();
+    files.set(path, source);
+    assert.throws(() => validateUnsafeRustDocuments(files), /unsafe Rust is confined/);
+  }
+});
+
+test('unsafe lexical inspection ignores comments and every Rust literal form', () => {
+  const files = unsafeRustDocuments();
+  files.set('crates/safe/src/lib.rs', String.raw`
+// unsafe { #[allow(unsafe_code)] }
+/* outer unsafe { /* nested unsafe fn hidden() {} */ } */
+pub const TEXT: &str = "unsafe { #[unsafe(no_mangle)]";
+pub const BYTE_TEXT: &[u8] = b"unsafe {";
+pub const RAW: &str = r###"unsafe { #[allow(unsafe_code)]"###;
+pub const RAW_BYTES: &[u8] = br##"unsafe fn hidden() {}"##;
+pub const CHARACTER: char = '{';
+pub const ESCAPED: char = '\x7b';
+pub const UNICODE_ESCAPE: char = '\u{7b}';
+pub const QUOTE: char = '\'';
+pub const BYTE: u8 = b'{';
+pub const BYTE_ESCAPE: u8 = b'\x7b';
+pub fn retained<'a>(value: &'a str) -> &'a str { value }
+`);
+  assert.doesNotThrow(() => validateUnsafeRustDocuments(files));
+});
+
+test('lint manifests reject spaced, dotted, and quoted override spellings', () => {
+  for (const document of [
+    '[lints]\nworkspace = true\n\n[lints . rust]\nunsafe_code = "allow"\n',
+    '[lints]\nworkspace = true\n\n["lints"."rust"]\nunsafe_code = "allow"\n',
+    'lints.rust.unsafe_code = "allow"\n',
+    '[lints]\nworkspace = true\nrust . unsafe_code = "allow"\n',
+    '[ "lints" ]\nworkspace = true\n',
+  ]) {
+    const files = unsafeRustDocuments();
+    files.set('crates/safe/Cargo.toml', document);
+    assert.throws(() => validateUnsafeRustDocuments(files), /canonical|inherit/);
+  }
+});
+
+test('unsafe exception preserves workspace forbid, inherited defaults, and copied lints', () => {
+  for (const mutate of [
+    files => files.set('Cargo.toml', files.get('Cargo.toml').replace('unsafe_code = "forbid"', 'unsafe_code = "allow"')),
+    files => files.set('crates/safe/Cargo.toml', '[lints]\n'),
+    files => files.set('crates/zryna-windows-filesystem/Cargo.toml', files.get('crates/zryna-windows-filesystem/Cargo.toml').replace('todo = "deny"\n', '')),
+  ]) {
+    const files = unsafeRustDocuments();
+    mutate(files);
+    assert.throws(() => validateUnsafeRustDocuments(files));
+  }
+});
 
 test('frozen preflight and M0 declarations cannot silently omit structure enforcement', () => {
   assert.equal(PREFLIGHT_COMMANDS[0].id, 'repository-structure');

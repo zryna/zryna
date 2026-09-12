@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { INITIAL_COMMIT, POLICY_PATH, fail, physicalLines, reviewChanges, validatePolicy } from './structure/policy.mjs';
 import { blobs, commit, git, navigation, readSafe, renames, source, tree, workingPaths } from './structure/repository.mjs';
 import { history } from './structure/history.mjs';
+import { validateUnsafeRustWorkspace } from './structure/unsafe-rust.mjs';
 
 export function checkRepository({ root, base = process.env.ZRYNA_STRUCTURE_BASE,
   today = new Date().toISOString().slice(0, 10), bootstrap = INITIAL_COMMIT } = {}) {
@@ -29,6 +30,7 @@ export function checkRepository({ root, base = process.env.ZRYNA_STRUCTURE_BASE,
     messages.push(...reviewChanges(trustedPolicy, policy));
   }
   const paths = workingPaths(root);
+  validateUnsafeRustWorkspace(root, paths);
   const current = new Map();
   for (const path of paths.filter(source)) {
     const text = readSafe(root, path, true);

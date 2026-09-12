@@ -392,5 +392,5 @@ test('routing preserves all other pinned workflow authority', () => {
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');
-  assert.equal(digest, 'e1b8a8d42c69c8930c83e20f12ebdfd3246b079aab5361435c3f78adcdfc3f09');
+  assert.equal(digest, '1ed83fd89273d717aa880c985d87175efe6cceb6b5ba46c90d21f738dce21172');
 });
