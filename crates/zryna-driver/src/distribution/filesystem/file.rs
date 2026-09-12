@@ -68,7 +68,7 @@ fn read(
     file.seek(SeekFrom::Start(0)).map_err(|_| changed())?;
     let mut reader = file.take(limit + 1);
     let mut digest = Sha256::new();
-    let mut buffer = [0_u8; 64 * 1024];
+    let mut buffer = vec![0_u8; 64 * 1024].into_boxed_slice();
     let mut bytes = retain.then(Vec::new);
     let mut total = 0_u64;
     loop {

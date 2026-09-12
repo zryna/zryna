@@ -176,9 +176,8 @@ fn frozen_source_session_rejects_undeclared_state_file_before_reading_it() {
     let mut session = admission.begin().expect("captured source session");
     let path = zryna_source::NormalizedSourcePath::new(".zryna/hidden.zry".to_owned())
         .expect("portable state path");
-    let error = match session.read_source(&path) {
-        Ok(_) => panic!("undeclared file admitted"),
-        Err(error) => error,
+    let Err(error) = session.read_source(&path) else {
+        panic!("undeclared file admitted");
     };
     assert_eq!(error.code(), "ZRYNA-P4004");
     let entry =

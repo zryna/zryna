@@ -23,7 +23,7 @@ impl Case {
             ));
             match fs::create_dir(&path) {
                 Ok(()) => break path,
-                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
                 Err(error) => panic!("private fixture directory: {error}"),
             }
         };

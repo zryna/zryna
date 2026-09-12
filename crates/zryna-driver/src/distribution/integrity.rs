@@ -76,8 +76,13 @@ pub(super) fn validate_metadata(
         tree.digest("metadata/inventory.json")?.to_owned(),
     ));
     checksums.sort_by(|left, right| left.0.cmp(&right.0));
-    let expected =
-        checksums.iter().map(|(path, digest)| format!("{digest}  {path}\n")).collect::<String>();
+    let mut expected = String::new();
+    for (path, digest) in &checksums {
+        expected.push_str(digest);
+        expected.push_str("  ");
+        expected.push_str(path);
+        expected.push('\n');
+    }
     if tree.bytes("metadata/checksums.sha256")? != expected.as_bytes() {
         return Err(admission_error("installed checksum coverage mismatch"));
     }

@@ -78,7 +78,7 @@ impl ProviderStage {
                 .ok_or_else(stage_error)?;
             tree.capture_file(relative, record.size, false)?;
             let mut expected = record.clone();
-            expected.path = relative.to_owned();
+            relative.clone_into(&mut expected.path);
             expected.mode = 0o600;
             tree.matches(&expected)?;
         }
@@ -158,7 +158,7 @@ impl Drop for ProviderStage {
         }
         let mut keys =
             self.directories.keys().filter(|key| !key.is_empty()).cloned().collect::<Vec<_>>();
-        keys.sort_by(|left, right| right.len().cmp(&left.len()));
+        keys.sort_by_key(|key| std::cmp::Reverse(key.len()));
         for key in keys {
             self.directories.remove(&key);
             let (parent, name) = key.rsplit_once('/').unwrap_or(("", &key));

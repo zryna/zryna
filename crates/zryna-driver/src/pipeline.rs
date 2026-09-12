@@ -597,7 +597,7 @@ where
     checkpoint(ControlFlowPhase::Discovery)?;
     let closure = discover_module_closure(&source_root, entrypoint, &frontend)
         .map_err(|error| module_closure_failure(&error))?;
-    control_flow::finish(request, run, &node, &output_root, &final_bundle, closure, checkpoint)
+    control_flow::finish(request, run, &node, &output_root, &final_bundle, &closure, checkpoint)
 }
 
 fn compile_control_flow_selected(

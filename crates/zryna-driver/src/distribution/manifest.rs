@@ -50,7 +50,8 @@ pub(super) struct Source {
     pub(super) r#ref: String,
     pub(super) commit: String,
     pub(super) tree: String,
-    pub(super) source_date_epoch: u64,
+    #[serde(rename = "sourceDateEpoch")]
+    pub(super) epoch: u64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -105,7 +106,7 @@ impl Distribution {
             || self.source.r#ref != format!("refs/tags/v{}", self.version)
             || !hex(&self.source.commit, 40)
             || !hex(&self.source.tree, 40)
-            || self.source.source_date_epoch > u64::from(u32::MAX)
+            || self.source.epoch > u64::from(u32::MAX)
             || self.recipe.format != "zryna.distribution-recipe.v1"
             || !hex(&self.recipe.sha256, 64)
         {
@@ -301,4 +302,25 @@ fn role(path: &str, distribution: &Distribution) -> Result<&'static str, Diagnos
         return Ok("license");
     }
     Err(admission_error("path has no admitted distribution role"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Source;
+    use serde_json::json;
+
+    #[test]
+    fn source_epoch_keeps_its_exact_wire_name() {
+        let original = json!({
+            "repository": "https://github.com/zryna/zryna", "ref": "refs/tags/v0.2.0",
+            "commit": "1".repeat(40), "tree": "2".repeat(40), "sourceDateEpoch": 42,
+        });
+        let source: Source = serde_json::from_value(original.clone()).expect("wire source");
+        assert_eq!(source.epoch, 42);
+        assert_eq!(serde_json::to_value(source).expect("encoded source"), original);
+        let mut alias = original;
+        alias.as_object_mut().expect("source object").remove("sourceDateEpoch");
+        alias["epoch"] = json!(42);
+        assert!(serde_json::from_value::<Source>(alias).is_err());
+    }
 }

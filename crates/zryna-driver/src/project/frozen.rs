@@ -14,7 +14,7 @@ use super::ProjectAdmission;
 
 pub(super) enum RootPackageSources {
     Snapshot(Vec<zryna_package::PackageFile>),
-    Retained(crate::package_resolution::CapturedProject),
+    Retained(Box<crate::package_resolution::CapturedProject>),
 }
 
 impl RootPackageSources {
@@ -29,7 +29,7 @@ impl RootPackageSources {
         request: &crate::PackageResolutionRequest,
     ) -> Result<(crate::PackageResolutionSuccess, Self), zryna_package::ResolveError> {
         crate::package_resolution::capture_project_package(request)
-            .map(|(success, capture)| (success, Self::Retained(capture)))
+            .map(|(success, capture)| (success, Self::Retained(Box::new(capture))))
     }
 
     pub(super) fn root_file(&self, path: &str) -> Option<&[u8]> {

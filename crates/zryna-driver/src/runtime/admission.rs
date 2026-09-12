@@ -90,7 +90,7 @@ pub(super) fn authenticate(
     file.seek(SeekFrom::Start(0)).map_err(|_| authentication_error())?;
     let mut reader = file.take(expected.size + 1);
     let mut digest = Sha256::new();
-    let mut buffer = [0_u8; 64 * 1024];
+    let mut buffer = vec![0_u8; 64 * 1024].into_boxed_slice();
     let mut total = 0_u64;
     loop {
         let count = reader.read(&mut buffer).map_err(|_| authentication_error())?;

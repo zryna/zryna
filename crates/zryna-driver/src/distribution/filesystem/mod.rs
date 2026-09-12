@@ -31,7 +31,7 @@ struct Directory {
 
 pub(super) struct InstallationTree {
     path: PathBuf,
-    _anchors: Vec<Dir>,
+    anchors: Vec<Dir>,
     directories: BTreeMap<String, Directory>,
     files: BTreeMap<String, RetainedFile>,
 }
@@ -42,7 +42,7 @@ impl InstallationTree {
         let root = retained_directory(root)?;
         Ok(Self {
             path: path.to_owned(),
-            _anchors: anchors,
+            anchors,
             directories: BTreeMap::from([(String::new(), root)]),
             files: BTreeMap::new(),
         })
@@ -121,10 +121,10 @@ impl InstallationTree {
 
     pub(super) fn revalidate(&self) -> Result<(), Diagnostic> {
         let (anchors, current_root) = platform::absolute(&self.path).map_err(|_| changed())?;
-        if anchors.len() != self._anchors.len() {
+        if anchors.len() != self.anchors.len() {
             return Err(changed());
         }
-        for (current, retained) in anchors.iter().zip(&self._anchors) {
+        for (current, retained) in anchors.iter().zip(&self.anchors) {
             if platform::directory_identity(current).map_err(|_| changed())?
                 != platform::directory_identity(retained).map_err(|_| changed())?
             {

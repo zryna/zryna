@@ -28,12 +28,12 @@ pub(super) fn finish(
     node: &NodeRuntimeCapability,
     output_root: &ArtifactOutputRoot,
     final_bundle: &Path,
-    closure: VerifiedModuleClosure,
+    closure: &VerifiedModuleClosure,
     checkpoint: ControlFlowCheckpoint<'_>,
 ) -> Result<CommandSuccess, CommandFailure> {
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
     checkpoint(ControlFlowPhase::Semantics)?;
-    let scalar_source = crate::scalar_adapter_interface::lower_verified_scalar_source(&closure)
+    let scalar_source = crate::scalar_adapter_interface::lower_verified_scalar_source(closure)
         .map_err(|diagnostics| CommandFailure { kind: CommandFailureKind::Source, diagnostics })?;
     let verified_invocation = run
         .map(|invocation| {
@@ -103,7 +103,7 @@ pub(super) fn finish(
         node,
         output_root,
         final_bundle,
-        &closure,
+        closure,
         &prepared,
         diagnostics,
         checkpoint,
@@ -173,7 +173,7 @@ pub(crate) fn execute_installed(
         admission.execution().node()?,
         &output_root,
         &final_bundle,
-        closure,
+        &closure,
         &|_| admission.revalidate(),
     )?;
     admission.revalidate()?;

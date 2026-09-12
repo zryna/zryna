@@ -230,21 +230,7 @@ where
                 let target = zryna_source::resolve_explicit_zry_import(&path, &import.specifier)
                     .map_err(|_| invalid_import(&path))?;
                 register_portable(&mut portable, &target)?;
-                for binding in &import.bindings {
-                    let identity = EdgeIdentity {
-                        importer: path.clone(),
-                        specifier: import.specifier.clone(),
-                        imported: binding.imported.clone(),
-                        local: binding.local.clone(),
-                    };
-                    if edge_ids.len() >= MAX_MODULE_IMPORT_EDGES || !edge_ids.insert(identity) {
-                        return Err(rejected(diagnostic(
-                            "ZRYNA-D3301",
-                            Some(&path),
-                            "duplicate or excessive ownership import edge",
-                        )));
-                    }
-                }
+                register_import_edges(&mut edge_ids, &path, import)?;
                 if !discovered.contains_key(&target) && !imports.contains_key(&target) {
                     pending.insert(target);
                 }
@@ -346,6 +332,29 @@ where
     reject_cycles(&modules, &edges)?;
     let graph_sha256 = graph_identity(&entrypoint, &modules, &edges)?;
     Ok(VerifiedOwnershipModuleClosure { entrypoint, sources, syntax, modules, edges, graph_sha256 })
+}
+
+fn register_import_edges(
+    edges: &mut HashSet<EdgeIdentity>,
+    path: &NormalizedSourcePath,
+    import: &Import,
+) -> Result<(), ModuleClosureError> {
+    for binding in &import.bindings {
+        let identity = EdgeIdentity {
+            importer: path.clone(),
+            specifier: import.specifier.clone(),
+            imported: binding.imported.clone(),
+            local: binding.local.clone(),
+        };
+        if edges.len() >= MAX_MODULE_IMPORT_EDGES || !edges.insert(identity) {
+            return Err(rejected(diagnostic(
+                "ZRYNA-D3301",
+                Some(path),
+                "duplicate or excessive ownership import edge",
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn add(left: usize, right: usize) -> Result<usize, ModuleClosureError> {
