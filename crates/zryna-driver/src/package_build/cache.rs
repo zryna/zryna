@@ -4,12 +4,11 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
-#[cfg(not(windows))]
-use std::{fs, path::Path};
-
 #[cfg(windows)]
 use cap_fs_ext::DirExt as _;
 use serde::{Deserialize, Serialize};
+#[cfg(not(windows))]
+use std::{fs, path::Path};
 
 mod filesystem;
 mod root;

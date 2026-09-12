@@ -2084,11 +2084,7 @@ fn sync_directory(path: &Path) -> Result<(), CommandFailure> {
 }
 
 #[cfg(target_os = "linux")]
-pub(crate) fn rename_create_only(
-    root: &Dir,
-    source: &str,
-    destination: &str,
-) -> Result<(), CommandFailure> {
+fn rename_create_only(root: &Dir, source: &str, destination: &str) -> Result<(), CommandFailure> {
     use nix::fcntl::{RenameFlags, renameat2};
     use std::os::fd::AsFd;
 
@@ -2097,17 +2093,13 @@ pub(crate) fn rename_create_only(
 }
 
 #[cfg(windows)]
-pub(crate) fn rename_create_only(
-    root: &Dir,
-    source: &str,
-    destination: &str,
-) -> Result<(), CommandFailure> {
+fn rename_create_only(root: &Dir, source: &str, destination: &str) -> Result<(), CommandFailure> {
     root.rename(source, root, destination)
         .map_err(|_| transaction_error("create-only bundle commit failed"))
 }
 
 #[cfg(not(any(target_os = "linux", windows)))]
-pub(crate) fn rename_create_only(
+fn rename_create_only(
     _root: &Dir,
     _source: &str,
     _destination: &str,
