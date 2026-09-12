@@ -1802,6 +1802,7 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-driver",
  "zryna-package",
+ "zryna-windows-filesystem",
 ]
 
 [[package]]
@@ -2031,4 +2032,13 @@ dependencies = [
  "serde_json",
  "zryna-diagnostics",
  "zryna-source",
+]
+
+[[package]]
+name = "zryna-windows-filesystem"
+version = "0.1.0"
+dependencies = [
+ "cap-std",
+ "same-file",
+ "windows-sys 0.61.2",
 ]

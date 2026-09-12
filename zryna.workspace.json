@@ -46,6 +46,13 @@
       "allowedEntries": ["Cargo.toml", "README.md", "src"]
     },
     {
+      "id": "zryna-windows-filesystem",
+      "root": "crates/zryna-windows-filesystem",
+      "kind": "foundation",
+      "dependencies": [],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
+    },
+    {
       "id": "zryna-frontend",
       "root": "crates/zryna-frontend",
       "kind": "frontend",
@@ -140,7 +147,7 @@
       "id": "zryna",
       "root": "apps/zryna",
       "kind": "application",
-      "dependencies": ["zryna-abi", "zryna-architecture", "zryna-diagnostics", "zryna-driver", "zryna-package"],
+      "dependencies": ["zryna-abi", "zryna-architecture", "zryna-diagnostics", "zryna-driver", "zryna-package", "zryna-windows-filesystem"],
       "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     }
   ],

@@ -41,8 +41,14 @@ timestamps, process identifiers, inherited environment values, credentials, and 
 output. These protections do not make generated JavaScript, WebAssembly, or native code a sandbox
 for hostile source or a concurrently hostile workspace ancestor.
 
-The current workspace forbids unsafe Rust globally; any future exception requires an isolated
-approved component, a documented safety invariant, and dedicated tests.
+The workspace forbids unsafe Rust outside the approved `zryna-windows-filesystem` component. That
+isolated foundation owns only bounded Windows handle-relative creation, no-replace directory rename,
+and exact empty-directory deletion with retained-parent absence confirmation. Its public API is safe
+and accepts only its opaque created-directory capability plus retained parent capabilities and one
+portable component, never an arbitrary source handle or ambient path. Unsafe calls remain confined
+to its private syscall module, with checked ABI layouts and lengths, RAII handle transfer, documented
+invariants, dedicated hostile tests, explicit structure enforcement, and Windows CI. No other crate
+may weaken the workspace unsafe-code forbid.
 
 The downloadable-distribution release candidate adds a separate outer trust boundary without
 activating a release. A release must bind one protected annotated tag, exact commit and tree,

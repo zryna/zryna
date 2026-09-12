@@ -28,12 +28,26 @@ staging path must be real directories without links or Windows reparse points. P
 rules reject traversal, case-unstable spellings, and Windows device stems such as `con`, `nul`,
 `com1`, and `lpt1` on every host.
 
-Creation retains the resolved parent, stage, source directory, and each file by filesystem handle.
-It writes and cleans up only through those retained directories, rechecks their identities, exact
-inventories, and bytes before the no-replace commit, and leaves unexpected foreign content in a
-failed stage instead of deleting it. This detects persistent replacement observed at those checks;
-it is not an operating-system sandbox against an arbitrary same-user process that continues racing
-after validation.
+Creation retains the resolved parent, stage, source directory, and each file by filesystem handle
+through the final ordered identity, inventory, and byte validation. Before that validation seals,
+failure cleanup consumes the retained source and stage capabilities after known file handles close;
+unexpected foreign content makes cleanup fail closed without recursive deletion.
+
+Windows does not permit an ancestor directory rename while these descendant handles remain open.
+After successful final validation, creation therefore consumes the open stage state, closes every
+file and source-directory handle deepest-first, and retains only the authoritative stage handle and
+destination-parent authority. The sealed state exposes no directory accessor and immediately calls
+the same-handle no-replace rename without a callback, pathname reopen, or application revalidation.
+If that commit fails, `ZRYNA-C2004` reports the original collision or publication cause, closes the
+root handle, and preserves the now-untrusted stage without deleting any child. The foreign
+destination is never replaced.
+
+The required descendant-handle closure creates an unavoidable Windows boundary between the last
+complete content validation and the rename. The renamed object is the exact retained stage root,
+but an arbitrary same-user process can still mutate its descendants in that interval. Project
+creation is not an operating-system sandbox against such a concurrent mutator. Linux retains its
+unchanged handle-relative `renameat2(RENAME_NOREPLACE)` transaction, directory synchronization, and
+pre-commit revalidation.
 
 Generated compiler state is confined to the project-owned `.zryna` directory. That exact reserved
 directory is excluded from the package source inventory; no other undeclared project file is

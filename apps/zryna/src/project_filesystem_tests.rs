@@ -33,6 +33,7 @@ impl Drop for Case {
 }
 
 #[test]
+#[cfg(unix)]
 fn parent_replacement_cannot_redirect_creation_or_cleanup() {
     use std::os::unix::fs::symlink;
 
@@ -54,6 +55,119 @@ fn parent_replacement_cannot_redirect_creation_or_cleanup() {
     assert_eq!(fs::read(foreign.join("sentinel")).expect("sentinel"), b"preserve");
     assert!(!foreign.join("example").exists());
     assert!(!moved.join(".zryna-new-example.pending").exists());
+}
+
+#[test]
+#[cfg(windows)]
+fn retained_stage_cannot_be_reselected_before_commit() {
+    const SHARING_VIOLATION: i32 = 32;
+
+    let case = Case::new("stage-substitution");
+    let parent = case.root.join("parent");
+    let replacement = case.root.join("replacement");
+    fs::create_dir(&parent).expect("parent");
+    fs::create_dir(&replacement).expect("replacement");
+    fs::write(replacement.join("sentinel"), b"preserve").expect("replacement sentinel");
+    let destination = parent.join("example");
+    let stage = parent.join(".zryna-new-example.pending");
+    let moved = parent.join("moved-stage");
+
+    publish_with_checkpoint(&destination, "example", b"manifest", b"lock", b"source", || {
+        let error = fs::rename(&stage, &moved).expect_err("retained stage rename must fail");
+        assert_eq!(error.raw_os_error(), Some(SHARING_VIOLATION));
+        assert!(fs::rename(&replacement, &stage).is_err());
+    })
+    .expect("exact retained stage must commit");
+
+    assert_eq!(fs::read(destination.join("src/main.zry")).expect("source"), b"source");
+    assert_eq!(fs::read(replacement.join("sentinel")).expect("sentinel"), b"preserve");
+    assert!(!moved.exists());
+}
+
+#[test]
+fn existing_destination_fails_before_staging() {
+    let case = Case::new("existing-destination");
+    let parent = case.root.join("parent");
+    fs::create_dir(&parent).expect("parent");
+    let destination = parent.join("example");
+    let stage = parent.join(".zryna-new-example.pending");
+    fs::create_dir(&destination).expect("destination");
+    fs::write(destination.join("sentinel"), b"preserve").expect("destination sentinel");
+    let error =
+        publish_with_checkpoint(&destination, "example", b"manifest", b"lock", b"source", || {
+            panic!("checkpoint must not run for an initial collision")
+        })
+        .expect_err("an existing destination must fail before staging");
+
+    assert_eq!(error.code, "ZRYNA-C2002");
+    assert_eq!(fs::read(destination.join("sentinel")).expect("sentinel"), b"preserve");
+    assert!(!stage.exists());
+}
+
+#[test]
+#[cfg(windows)]
+fn validation_failure_closes_descendants_before_exact_cleanup() {
+    let case = Case::new("validation-cleanup");
+    let parent = case.root.join("parent");
+    fs::create_dir(&parent).expect("parent");
+    let destination = parent.join("example");
+    let stage = parent.join(".zryna-new-example.pending");
+    let error =
+        publish_with_checkpoint(&destination, "example", b"manifest", b"lock", b"source", || {
+            fs::write(stage.join("zryna.package.json"), b"changed")
+                .expect("same-user mutation before final validation");
+        })
+        .expect_err("changed bytes must fail final validation");
+
+    assert_eq!(error.code, "ZRYNA-C2003");
+    assert!(!destination.exists());
+    assert!(!stage.exists());
+}
+
+#[test]
+#[cfg(not(windows))]
+fn destination_collision_preserves_foreign_directory_and_cleans_stage() {
+    let case = Case::new("destination-collision");
+    let parent = case.root.join("parent");
+    fs::create_dir(&parent).expect("parent");
+    let destination = parent.join("example");
+    let stage = parent.join(".zryna-new-example.pending");
+
+    let error =
+        publish_with_checkpoint(&destination, "example", b"manifest", b"lock", b"source", || {
+            fs::create_dir(&destination).expect("racing destination");
+            fs::write(destination.join("sentinel"), b"preserve").expect("destination sentinel");
+        })
+        .expect_err("a destination collision must reject commit");
+
+    assert_eq!(error.code, "ZRYNA-C2002");
+    assert_eq!(fs::read(destination.join("sentinel")).expect("sentinel"), b"preserve");
+    assert!(!stage.exists());
+}
+
+#[test]
+#[cfg(windows)]
+fn post_seal_collision_preserves_foreign_destination_and_untrusted_stage() {
+    let case = Case::new("post-seal-destination-collision");
+    let parent = case.root.join("parent");
+    fs::create_dir(&parent).expect("parent");
+    let destination = parent.join("example");
+    let stage = parent.join(".zryna-new-example.pending");
+
+    let error =
+        publish_with_checkpoint(&destination, "example", b"manifest", b"lock", b"source", || {
+            fs::create_dir(&destination).expect("racing destination");
+            fs::write(destination.join("sentinel"), b"preserve").expect("destination sentinel");
+        })
+        .expect_err("a post-seal destination collision must preserve the stage");
+
+    assert_eq!(error.code, "ZRYNA-C2004");
+    assert!(error.message.contains("project destination appeared before commit"));
+    assert!(error.message.contains("preserved and is untrusted"));
+    assert_eq!(fs::read(destination.join("sentinel")).expect("sentinel"), b"preserve");
+    assert_eq!(fs::read(stage.join("zryna.package.json")).expect("manifest"), b"manifest");
+    assert_eq!(fs::read(stage.join("zryna.lock.json")).expect("lock"), b"lock");
+    assert_eq!(fs::read(stage.join("src/main.zry")).expect("source"), b"source");
 }
 
 #[test]

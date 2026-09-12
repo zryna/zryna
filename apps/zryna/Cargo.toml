@@ -26,5 +26,8 @@ zryna-package = { path = "../../crates/zryna-package" }
 [target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
 nix.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+zryna-windows-filesystem = { path = "../../crates/zryna-windows-filesystem" }
+
 [lints]
 workspace = true

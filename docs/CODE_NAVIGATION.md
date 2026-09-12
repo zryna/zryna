@@ -7,9 +7,9 @@ Resolve disagreements there, rather than changing this index into another author
 Source-size policy: [reviewed inventory](../scripts/repository-structure-policy.json),
 [read-only checker](../scripts/check-repository-structure.mjs); run `pnpm structure:check` and `node --test tests/repository-structure.test.mjs`.
 
-Public execution is default M1 `I32V1` or explicit M2 `--profile control-flow-v1`.
-M3 `DataOwnershipV1` remains an internal candidate: it has audited target/runtime and atomic bundle boundaries but does not activate a public CLI profile or general-purpose allocator.
-Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI](CLI.md) for exact command/platform contracts.
+Public execution is default M1 `I32V1`, explicit M2 `--profile control-flow-v1`, or explicit M3 `--profile data-ownership-v1`.
+M3 uses audited target/runtime and atomic manifest-v3 bundles, not a general-purpose allocator or public aggregate ABI.
+Use [GETTING_STARTED](GETTING_STARTED.md) for M1/M2, [M3_GETTING_STARTED](M3_GETTING_STARTED.md) for M3, and [CLI](CLI.md) for exact contracts.
 
 ## 1. Syntax recognition, source spans, or frontend transport
 
@@ -80,7 +80,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 
 ## 8. CLI options, manifests, or create-only publication
 
-- Start: [CLI reference](CLI.md), [driver README](../crates/zryna-driver/README.md), [manifest v2](M2_MANIFEST_V2.md), or the internal [M3 candidate driver and manifest](M3_CANDIDATE_DRIVER.md). For standalone creation and explicit project-root admission, use the [project guide](STANDALONE_PROJECTS.md), `apps/zryna/src/{project,project_filesystem}.rs`, `crates/zryna-driver/src/project.rs`, and `apps/zryna/tests/cli.rs`; the compiler checkout and project root remain separate authorities.
+- Start: [CLI reference](CLI.md), [driver README](../crates/zryna-driver/README.md), [manifest v2](M2_MANIFEST_V2.md), or the internal [M3 candidate driver and manifest](M3_CANDIDATE_DRIVER.md). For standalone creation and explicit project-root admission, use the [project guide](STANDALONE_PROJECTS.md), `apps/zryna/src/{project,project_filesystem,project_filesystem_capture,project_filesystem_windows}.rs`, `crates/zryna-driver/src/project.rs`, and `apps/zryna/tests/cli.rs`; the compiler checkout and project root remain separate authorities.
 - CLI parsing/rendering: `apps/zryna/src/main.rs::main`; explicit profile preselection: `apps/zryna/src/profile.rs::selects_typed_scalars`; orchestration: `crates/zryna-driver/src/lib.rs::compile_to_verified_ir` and `src/pipeline.rs::{build_workspace,run_workspace,build_control_flow_workspace,run_control_flow_workspace}`; target preparation is isolated in `src/pipeline/preparation.rs`.
 - Source-to-IR driver tests: `crates/zryna-driver/src/tests.rs`.
 - M3 candidate closure and dispatch: `crates/zryna-driver/src/{ownership_closure,ownership_pipeline}.rs`; strict manifest and transaction: `src/{ownership_manifest,ownership_publication}.rs`; complete internal build/run entrypoints: `src/ownership_commands.rs`.
@@ -92,7 +92,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for running existing programs and [CLI
 - Start: [STRICT_WORKSPACE](STRICT_WORKSPACE.md), `zryna.workspace.json`, and the relevant registered component README.
 - Enforcement: `crates/zryna-architecture/src/lib.rs::validate_workspace`; pull-request and manual CI: `.github/workflows/ci.yml`; main documentation publication: `.github/workflows/documentation.yml`; local gate entrypoints: `scripts/run-preflight.mjs`, `scripts/run-m0-conformance.mjs`.
 - Contract-lane routing: `scripts/classify-workflow-paths.mjs`; focus: `node --test tests/workflow-routing.test.mjs`. Downloadable release work starts at [release v1](../spec/release/DISTRIBUTION_RELEASE_V1.md), with schemas/producers/validators under `schemas/` and `scripts/distribution-release/`, cases in `tests/{distribution-release,distribution-build-input,source-build-receipt,preassembly-gates}-v1.test.mjs` and `tests/distribution-release-producers.test.mjs`, and `pnpm release:contract`. For gate changes also run `node --test tests/preflight.test.mjs tests/m0-conformance.test.mjs`.
-- Architecture focus: `cargo test --locked -p zryna-architecture`; `cargo run --locked -p zryna -- architecture check`.
+- Architecture focus: `cargo test --locked -p zryna-architecture`; `cargo run --locked -p zryna -- architecture check`. Windows transaction identity: [filesystem foundation](../crates/zryna-windows-filesystem/README.md), its opaque capability lifecycle, and `cargo test --locked -p zryna-windows-filesystem` on Windows. Standalone-project creation retains the complete stage topology through final validation, then consumes it to close every descendant before the original stage handle performs the no-replace rename. A post-seal commit failure preserves the untrusted stage and reports cleanup category `ZRYNA-C2004`; it does not reopen children for cleanup.
 - Gate predicate/timing helpers are imported by those tests. Preserve required checks, exact commands, pins, failure propagation, and security settings; timing headroom is not a performance claim.
 - Inspect actual current CI policy before editing: timeout values are intentionally not duplicated here. Finish with full gates and required hosted checks.
 
