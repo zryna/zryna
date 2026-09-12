@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -8,7 +8,7 @@ import { compileReleaseQualification } from '../scripts/distribution-release/com
 import { createQualificationFixture } from './release-qualification-fixture.mjs';
 
 function roots(t) {
-  const parent = mkdtempSync(join(tmpdir(), 'zryna-qualification-compile-'));
+  const parent = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-qualification-compile-')));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
   const sourceRoot = join(parent, 'source');
   const workRoot = join(parent, 'work');

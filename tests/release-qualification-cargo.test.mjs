@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -10,7 +12,7 @@ import {
 } from '../scripts/distribution-release/provision-qualification-cargo.mjs';
 
 test('fetches into one fresh Cargo home and binds every cached crate to captured bytes', (t) => {
-  const parent = mkdtempSync(join(tmpdir(), 'zryna-qualification-cargo-'));
+  const parent = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-qualification-cargo-')));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
   const sourceRoot = join(parent, 'source');
   const workRoot = join(parent, 'work');
@@ -61,7 +63,7 @@ test('fetches into one fresh Cargo home and binds every cached crate to captured
 });
 
 test('seeds only authenticated archives into the compile home and closes unpacked sources', (t) => {
-  const parent = mkdtempSync(join(tmpdir(), 'zryna-qualification-compile-home-'));
+  const parent = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-qualification-compile-home-')));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
   const bootstrapCargoHome = join(parent, 'bootstrap-cargo-home');
   const indexName = 'index.crates.io-1949cf8c6b5b557f';
