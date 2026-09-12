@@ -82,7 +82,7 @@ impl OwnedDirectory {
         let status = unsafe {
             NtSetInformationFile(
                 raw_handle(self.directory.as_handle()),
-                &mut status_block,
+                &raw mut status_block,
                 buffer.as_mut_ptr().cast(),
                 buffer.byte_len,
                 FileRenameInformation,
@@ -158,7 +158,7 @@ fn open_relative(
     let attributes = OBJECT_ATTRIBUTES {
         Length: u32::try_from(size_of::<OBJECT_ATTRIBUTES>()).map_err(invalid_input)?,
         RootDirectory: raw_handle(parent),
-        ObjectName: &unicode_name,
+        ObjectName: &raw const unicode_name,
         Attributes: OBJ_CASE_INSENSITIVE,
         SecurityDescriptor: null(),
         SecurityQualityOfService: null(),
@@ -172,10 +172,10 @@ fn open_relative(
     // returned handle is converted to an owning Rust handle exactly once after successful return.
     let status = unsafe {
         NtCreateFile(
-            &mut handle,
+            &raw mut handle,
             desired_access,
-            &attributes,
-            &mut status_block,
+            &raw const attributes,
+            &raw mut status_block,
             null(),
             FILE_ATTRIBUTE_DIRECTORY,
             share_access,
@@ -189,7 +189,7 @@ fn open_relative(
         return Err(error_from_ntstatus(status));
     }
     if handle.is_null() || handle == INVALID_HANDLE_VALUE {
-        return Err(io::Error::from_raw_os_error(ERROR_INVALID_HANDLE as i32));
+        return Err(io::Error::from_raw_os_error(ERROR_INVALID_HANDLE.cast_signed()));
     }
 
     // SAFETY: successful `NtCreateFile` returned one newly owned handle, checked above for both
@@ -224,11 +224,12 @@ fn confirm_absent(parent: BorrowedHandle<'_>, name: &[u16]) -> io::Result<()> {
     ) {
         Ok(found) => {
             drop(found);
-            Err(io::Error::from_raw_os_error(ERROR_ALREADY_EXISTS as i32))
+            Err(io::Error::from_raw_os_error(ERROR_ALREADY_EXISTS.cast_signed()))
         }
         Err(error)
             if matches!(error.raw_os_error(), Some(code)
-                if code == ERROR_FILE_NOT_FOUND as i32 || code == ERROR_PATH_NOT_FOUND as i32) =>
+                if code == ERROR_FILE_NOT_FOUND.cast_signed()
+                    || code == ERROR_PATH_NOT_FOUND.cast_signed()) =>
         {
             Ok(())
         }
