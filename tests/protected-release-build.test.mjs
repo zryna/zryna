@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs';
@@ -133,6 +134,14 @@ test('orchestrates authenticated prepare, compile, assemble, verify, and SPDX ou
     `${canonicalBounded(result)}\n`);
   assert.deepEqual(readFileSync(join(paths.outputRoot, result.artifacts.archive.path)),
     Buffer.from('archive'));
+  const sbom = parseCanonical(readFileSync(join(paths.outputRoot, result.artifacts.sbom.path), 'utf8'));
+  const fileSha1s = sbom.files.map(({ checksums }) =>
+    checksums.find(({ algorithm }) => algorithm === 'SHA1').checksumValue).sort();
+  assert.equal(
+    sbom.packages.find(({ SPDXID }) => SPDXID === 'SPDXRef-Package-zryna')
+      .packageVerificationCode.packageVerificationCodeValue,
+    createHash('sha1').update(fileSha1s.join('')).digest('hex'),
+  );
 });
 
 test('rejects execution while no exact recipe digest is accepted', async (t) => {
@@ -168,4 +177,18 @@ test('rejects an SPDX document that omits one authenticated archive relationship
     ...paths, target: TARGET, replica: 1,
     acceptedRecipeSha256: sha256(paths.recipeBytes), adapters: implementation,
   }), /R406-SPDX: SPDX subject, archive files, materials, licenses, or relationships differ/);
+});
+
+test('rejects the old invalid SPDX root package with contained but unanalyzed files', async (t) => {
+  const paths = fixture(t);
+  const implementation = adapters();
+  implementation.createReleaseSbom = async (context) => {
+    const value = parseCanonical(releaseSpdxBytes(context).toString('utf8'));
+    value.packages.find(({ SPDXID }) => SPDXID === 'SPDXRef-Package-zryna').filesAnalyzed = false;
+    return wire(value);
+  };
+  await assert.rejects(() => runProtectedBuild({
+    ...paths, target: TARGET, replica: 1,
+    acceptedRecipeSha256: sha256(paths.recipeBytes), adapters: implementation,
+  }), /R406-SPDX: root package must analyze its contained files with a verification code/);
 });

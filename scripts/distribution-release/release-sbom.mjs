@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import { canonical, canonicalBounded, parseCanonical, sha256 } from './canonical.mjs';
 
@@ -20,6 +21,10 @@ function exactKeys(value, expected, label) {
 
 function id(kind, value) {
   return `SPDXRef-${kind}-${sha256(Buffer.from(value, 'utf8')).slice(0, 24)}`;
+}
+
+function sha1(value) {
+  return createHash('sha1').update(value).digest('hex');
 }
 
 function decodedInventory(files) {
@@ -68,7 +73,7 @@ function finalGraph(files) {
       reject('authenticated archive bytes and material graph differ');
     }
     return {
-      path: file.path, size: file.data.length, sha256: sha256(file.data),
+      path: file.path, size: file.data.length, sha1: sha1(file.data), sha256: sha256(file.data),
       material: tuple.material, licenses: [...tuple.licenses],
     };
   }).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
@@ -105,16 +110,26 @@ export function createReleaseSpdx({ files, archive, source, target }) {
   const filesSpdx = graph.map((file) => ({
     SPDXID: fileIds.get(file.path),
     fileName: `./${file.path}`,
-    checksums: [{ algorithm: 'SHA256', checksumValue: file.sha256 }],
+    checksums: [
+      { algorithm: 'SHA1', checksumValue: file.sha1 },
+      { algorithm: 'SHA256', checksumValue: file.sha256 },
+    ],
     licenseConcluded: 'NOASSERTION',
     licenseInfoInFiles: ['NOASSERTION'],
     copyrightText: 'NOASSERTION',
     comment: canonical({ material: file.material, licenses: file.licenses }),
   }));
   const packages = [packageRecord(ROOT_PACKAGE, 'zryna', {
+    filesAnalyzed: true,
     versionInfo: VERSION,
     packageFileName: archive.filename,
     checksums: [{ algorithm: 'SHA256', checksumValue: archive.sha256 }],
+    packageVerificationCode: {
+      packageVerificationCodeValue: sha1(Buffer.from(
+        graph.map(({ sha1: digest }) => digest).sort().join(''), 'ascii',
+      )),
+    },
+    licenseInfoFromFiles: ['NOASSERTION'],
     sourceInfo: `${source.repository}@${source.commit}`,
   }), ...materials.map((material) => packageRecord(materialIds.get(material), material, {
     sourceInfo: canonical({
@@ -162,7 +177,8 @@ function validateOfficialShape(sbom) {
   for (const entry of sbom.packages ?? []) {
     const fields = entry.SPDXID === ROOT_PACKAGE
       ? ['SPDXID', 'name', 'downloadLocation', 'filesAnalyzed', 'licenseConcluded',
-        'licenseDeclared', 'copyrightText', 'versionInfo', 'packageFileName', 'checksums', 'sourceInfo']
+        'licenseDeclared', 'copyrightText', 'versionInfo', 'packageFileName', 'checksums',
+        'packageVerificationCode', 'licenseInfoFromFiles', 'sourceInfo']
       : ['SPDXID', 'name', 'downloadLocation', 'filesAnalyzed', 'licenseConcluded',
         'licenseDeclared', 'copyrightText', 'sourceInfo'];
     exactKeys(entry, fields, 'package');
@@ -174,6 +190,13 @@ function validateOfficialShape(sbom) {
   for (const entry of sbom.relationships ?? []) exactKeys(entry, [
     'spdxElementId', 'relationshipType', 'relatedSpdxElement',
   ], 'relationship');
+  const root = sbom.packages?.find(({ SPDXID }) => SPDXID === ROOT_PACKAGE);
+  if (root?.filesAnalyzed !== true
+    || !/^[0-9a-f]{40}$/.test(root.packageVerificationCode?.packageVerificationCodeValue ?? '')
+    || !Array.isArray(root.licenseInfoFromFiles) || root.licenseInfoFromFiles.length < 1
+    || sbom.packages.some((entry) => entry !== root && entry.filesAnalyzed !== false)) {
+    reject('root package must analyze its contained files with a verification code');
+  }
 }
 
 export function validateReleaseSpdx(sbomBytes, context) {
