@@ -70,7 +70,7 @@ export function provisionQualificationCargoHome({
   }
   if (Object.values(fetchEnvironment).some((value) => typeof value !== 'string'
     || value.length < 1 || /[\r\n\0]/.test(value))) reject('Cargo fetch environment differs');
-  const result = spawn(cargo, ['fetch', '--locked', '--target', target], {
+  const result = spawn(cargo, ['fetch', '--locked'], {
     cwd: sourceRoot, env: fetchEnvironment, encoding: null, maxBuffer: MAX_OUTPUT + 1,
     timeout: 10 * 60_000, windowsHide: true, shell: false,
   });

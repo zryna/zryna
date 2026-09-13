@@ -11,7 +11,7 @@ import {
   provisionQualificationCargoHome, seedQualificationCompileCargoHome,
 } from '../scripts/distribution-release/provision-qualification-cargo.mjs';
 
-test('fetches into one fresh Cargo home and binds every cached crate to captured bytes', (t) => {
+test('fetches the complete locked graph into one fresh Cargo home', (t) => {
   const parent = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-qualification-cargo-')));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
   const sourceRoot = join(parent, 'source');
@@ -38,7 +38,7 @@ test('fetches into one fresh Cargo home and binds every cached crate to captured
     spawn(executable, args, options) {
       called = true;
       assert.equal(executable, cargo);
-      assert.deepEqual(args, ['fetch', '--locked', '--target', target]);
+      assert.deepEqual(args, ['fetch', '--locked']);
       assert.equal(options.env.CARGO_NET_OFFLINE, 'false');
       const cache = join(options.env.CARGO_HOME, 'registry', 'cache',
         'index.crates.io-1949cf8c6b5b557f');
