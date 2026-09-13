@@ -141,6 +141,10 @@ test('freezes bounded no-shell command declarations', () => {
     M2_CONFORMANCE_COMMANDS.map(({ id }) => id),
     ['registry-and-fixture-contract', 'public-fixed-oracle-corpus', 'internal-boundary-evidence'],
   );
+  assert.deepEqual(
+    M2_CONFORMANCE_COMMANDS.map(({ timeout }) => timeout),
+    [30_000, 7 * 60_000, 10 * 60_000],
+  );
   for (const command of M2_CONFORMANCE_COMMANDS) {
     assert.equal(typeof command.executable, 'string');
     assert.ok(command.args.every((argument) => typeof argument === 'string'));
