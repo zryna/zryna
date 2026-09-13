@@ -49,7 +49,7 @@ test('canonical record byte ceiling rejects the first extra byte', () => {
 });
 
 test('reviewed Rust closure preserves exact target package and license counts', () => {
-  for (const [triple, packages, files] of [[target, 143, 291], ['x86_64-pc-windows-msvc', 151, 300]]) {
+  for (const [triple, packages, files] of [[target, 161, 324], ['x86_64-pc-windows-msvc', 168, 331]]) {
     const selected = rustMaterials(triple);
     assert.equal(selected.length, packages);
     assert.equal(selected.flatMap(record => record.files).length, files);

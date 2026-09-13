@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { encodeZip, decodeZip } from '../scripts/distribution/archive-zip.mjs';
 import { canonical, canonicalBounded, sha256 } from '../scripts/distribution-release/canonical.mjs';
 import {
   assembleQualification, prepareQualification, verifyQualification,
@@ -158,4 +159,32 @@ test('rejects a qualification file that aliases a parent directory', () => {
   }));
   assert.throws(() => prepareQualification(input, captured, receipts),
     /R406-QUALIFICATION-CORE: qualification file path, order, mode, or bytes differ/);
+});
+
+test('round-trips an authenticated Windows runtime executable through the real ZIP codec', async () => {
+  const { input, receipts } = fixtures();
+  const target = 'x86_64-pc-windows-msvc';
+  input.target = { triple: target, platformBaseline: { os: 'windows',
+    product: 'windows-server', version: '2022', architecture: 'x86_64',
+    runtime: 'operating-system-ucrt' } };
+  input.compile.argv[5] = target;
+  input.archive = { format: 'zip',
+    root: `zryna-qualification-0.2.0-${target}-${COMMIT.slice(0, 12)}`,
+    method: 'store', creator: 'unix-2.0', timestamp: '1980-01-01T00:00:00',
+    extraFields: false, comments: false };
+  const runtime = { path: 'runtime/node/node.exe', mode: 0o755, data: Buffer.from('node runtime') };
+  input.materials.files = [{ path: runtime.path, mode: runtime.mode, size: runtime.data.length,
+    sha256: sha256(runtime.data), role: 'runtime', material: 'node-22.22.1',
+    licenses: ['licenses/node-LICENSE'] }];
+  const prepared = prepareQualification(input, [runtime], receipts);
+  const cli = Buffer.concat([Buffer.alloc(64), Buffer.from(prepared.embeddingDigest)]);
+  const archivePrimitives = { requireArchiveRuntime() {}, encodeZip, decodeZip,
+    verifyCompiledIdentity() {} };
+  const assembled = await assembleQualification(prepared.binding,
+    { payload: prepared.payload, cli }, archivePrimitives);
+  const verified = await verifyQualification(assembled.archive, {
+    filename: assembled.filename, size: assembled.archive.length,
+    sha256: sha256(assembled.archive), binding: prepared.binding,
+  }, archivePrimitives);
+  assert.equal(verified.files.find(({ path }) => path === runtime.path).mode, 0o755);
 });

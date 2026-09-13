@@ -7,6 +7,29 @@ import {
 export const QUALIFICATION_COMMIT = 'b'.repeat(40);
 export const QUALIFICATION_TARGET = 'x86_64-unknown-linux-gnu';
 
+export function windowsQualificationEnvironment() {
+  const msvc = String.raw`C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.44.35207`;
+  const kits = String.raw`C:\Program Files (x86)\Windows Kits`;
+  return {
+    INCLUDE: [
+      `${msvc}\\include`, `${msvc}\\ATLMFC\\include`,
+      String.raw`C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\VS\include`,
+      `${kits}\\10\\include\\10.0.26100.0\\ucrt`, `${kits}\\10\\include\\10.0.26100.0\\um`,
+      `${kits}\\10\\include\\10.0.26100.0\\shared`, `${kits}\\10\\include\\10.0.26100.0\\winrt`,
+      `${kits}\\10\\include\\10.0.26100.0\\cppwinrt`, `${kits}\\NETFXSDK\\4.8\\include\\um`,
+    ].join(';'),
+    LIB: [`${msvc}\\ATLMFC\\lib\\x64`, `${msvc}\\lib\\x64`,
+      `${kits}\\NETFXSDK\\4.8\\lib\\um\\x64`, `${kits}\\10\\lib\\10.0.26100.0\\ucrt\\x64`,
+      `${kits}\\10\\lib\\10.0.26100.0\\um\\x64`].join(';'),
+    LIBPATH: [`${msvc}\\ATLMFC\\lib\\x64`, `${msvc}\\lib\\x64`,
+      `${msvc}\\lib\\x86\\store\\references`, `${kits}\\10\\UnionMetadata\\10.0.26100.0`,
+      `${kits}\\10\\References\\10.0.26100.0`, String.raw`C:\Windows\Microsoft.NET\Framework64\v4.0.30319`].join(';'),
+    ZRYNA_QUALIFICATION_PATH: [`${msvc}\\bin\\Hostx64\\x64`,
+      String.raw`C:\Windows\System32`, String.raw`C:\Windows`].join(';'),
+    SystemRoot: String.raw`C:\Windows`,
+  };
+}
+
 const artifact = (logicalPath, data) => ({ logicalPath, size: data.length, sha256: sha256(data) });
 const tool = (name, version, origin, digit) => ({
   name, version, origin, size: 100 + digit,

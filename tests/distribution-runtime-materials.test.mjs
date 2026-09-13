@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
 import test from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { captureTarGzipMembers } from '../scripts/distribution/npm-materials.mjs';
 import { nodeExpandedArchive, nodeMaterialMembers }
   from '../scripts/distribution/node-materials.mjs';
-import { rustMaterials } from '../scripts/distribution/rust-materials.mjs';
+import {
+  checkQualificationRustClosure, rustMaterials,
+} from '../scripts/distribution/rust-materials.mjs';
 
 const BLOCK = 512;
 
@@ -129,11 +132,34 @@ test('publishes exact Node member and expanded Linux tar requirements', () => {
 test('pins the complete target-specific Rust capture sets and Wasmtime license fanout', () => {
   const linux = rustMaterials('x86_64-unknown-linux-gnu');
   const windows = rustMaterials('x86_64-pc-windows-msvc');
-  assert.equal(linux.length, 143);
-  assert.equal(windows.length, 151);
+  assert.equal(linux.length, 161);
+  assert.equal(windows.length, 168);
   const upstream = 'https://raw.githubusercontent.com/bytecodealliance/wasmtime/'
     + '7bac2c2775808aaec5d4aa5627a5e447b51102cf/LICENSE';
   const destinations = new Set([...linux, ...windows].flatMap(record => record.files)
     .filter(file => file.origin === upstream).map(file => file.path));
-  assert.equal(destinations.size, 13);
+  assert.equal(destinations.size, 14);
+});
+
+test('qualification closure audit rejects an omitted normal registry dependency without network', () => {
+  const cargo = resolve('pinned-cargo');
+  const metadata = JSON.stringify({
+    packages: [
+      { id: 'zryna', name: 'zryna', source: null,
+        targets: [{ name: 'zryna', kind: ['bin'] }] },
+      { id: 'required', name: 'required-crate', version: '1.2.3',
+        source: 'registry+https://github.com/rust-lang/crates.io-index', targets: [] },
+    ],
+    workspace_members: ['zryna'],
+    resolve: { nodes: [
+      { id: 'zryna', deps: [{ pkg: 'required', dep_kinds: [{ kind: null, target: null }] }] },
+      { id: 'required', deps: [] },
+    ] },
+  });
+  const spawn = (_executable, args) => ({ error: null, status: 0, signal: null,
+    stdout: args[0] === 'which' ? `${cargo}\n`
+      : args[0] === '--version' ? 'cargo 1.97.1 (c980f4866 2026-06-30)\n' : metadata,
+    stderr: '' });
+  assert.throws(() => checkQualificationRustClosure({ spawn, materialRecords: () => [] }),
+    /material identities/);
 });

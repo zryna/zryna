@@ -154,8 +154,12 @@ export async function verifyQualification(archive, expected, suppliedPrimitives)
   }
   const primitives = suppliedPrimitives ?? await defaultPrimitives();
   primitives.requireArchiveRuntime();
+  const executablePaths = [
+    ...input.materials.files.filter(({ mode }) => mode === 0o755).map(({ path }) => path),
+    paths.cli,
+  ];
   const files = input.archive.format === 'zip'
-    ? primitives.decodeZip(archive, input.archive.root, [paths.cli])
+    ? primitives.decodeZip(archive, input.archive.root, executablePaths)
     : await primitives.decodeTar(archive, input.archive.root, input.source.sourceDateEpoch);
   validateFiles(files);
   const get = (path) => {
