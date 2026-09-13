@@ -24,13 +24,13 @@ function withoutPreflightBudgets(candidate) {
   const original = structuredClone(candidate);
   const job = original.jobs.preflight;
   assert.deepEqual(Object.keys(job).sort(), ['name', 'runs-on', 'steps', 'timeout-minutes']);
-  assert.equal(job['timeout-minutes'], 35);
+  assert.equal(job['timeout-minutes'], 40);
   const bootstrap = job.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@'));
   const execution = job.steps.filter(step => step.run === 'pnpm preflight');
   assert.equal(bootstrap.length, 1);
   assert.equal(execution.length, 1);
   assert.deepEqual(bootstrap[0], { ...pnpmStep, 'timeout-minutes': 10 });
-  assert.deepEqual(execution[0], { run: 'pnpm preflight', 'timeout-minutes': 20 });
+  assert.deepEqual(execution[0], { run: 'pnpm preflight', 'timeout-minutes': 25 });
   assert.equal(job.steps.at(-1), execution[0]);
   assert(job.steps.indexOf(bootstrap[0]) < job.steps.indexOf(execution[0]));
   assert.equal(job['timeout-minutes'] - bootstrap[0]['timeout-minutes'] - execution[0]['timeout-minutes'], 5);
@@ -44,7 +44,7 @@ function withoutPreflightBudgets(candidate) {
 
 test('preflight separates bounded bootstrap and execution budgets without changing commands', () => {
   assert.doesNotThrow(() => withoutPreflightBudgets(budgetWorkflow));
-  assert.equal(workflow.jobs.preflight['timeout-minutes'], 35);
+  assert.equal(workflow.jobs.preflight['timeout-minutes'], 40);
 });
 
 test('preflight budget removal, relocation, bypass and ambiguous targets fail closed', () => {
@@ -54,7 +54,7 @@ test('preflight budget removal, relocation, bypass and ambiguous targets fail cl
     w => w.jobs.preflight.steps.find(step => step.run === 'pnpm preflight'),
   ];
   for (const target of targets) {
-    for (const value of [undefined, null, true, 0, -1, 1.5, '20', '${{ 20 }}', 9, 11, 15, 19, 21, 30, 34, 36]) {
+    for (const value of [undefined, null, true, 0, -1, 1.5, '25', '${{ 25 }}', 9, 11, 15, 20, 24, 26, 30, 35, 39, 41]) {
       const changed = structuredClone(budgetWorkflow);
       if (value === undefined) delete target(changed)['timeout-minutes'];
       else target(changed)['timeout-minutes'] = value;
@@ -255,7 +255,7 @@ function evaluateGraph(jobs, leaves) {
 }
 
 test('CI starts independent authorities together with bounded preflight headroom', () => {
-  assert.equal(workflow.jobs.preflight['timeout-minutes'], 35);
+  assert.equal(workflow.jobs.preflight['timeout-minutes'], 40);
   assert.equal(workflow.jobs.rust['timeout-minutes'], 40);
   assert.equal(workflow.jobs.preflight.if, undefined);
   assert.equal(workflow.jobs.preflight.needs, undefined);
