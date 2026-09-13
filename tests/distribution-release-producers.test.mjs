@@ -93,7 +93,7 @@ function response(value, status = 200, {
   };
 }
 
-function githubFixture({ wrongRun = false } = {}) {
+function githubFixture({ wrongRun = false, branchOverride = {} } = {}) {
   const run = {
     id: 123456789, run_attempt: 2, repository: { full_name: 'zryna/zryna' },
     path: '.github/workflows/ci.yml', event: 'workflow_dispatch', head_branch: 'main',
@@ -110,14 +110,26 @@ function githubFixture({ wrongRun = false } = {}) {
     check_run_url: `https://api.github.com/repos/zryna/zryna/check-runs/${300 + index}`,
     workflow_name: 'CI',
   }));
+  const branch = {
+    name: 'main',
+    protected: true,
+    commit: { sha: COMMIT },
+    protection: {
+      required_status_checks: {
+        contexts: REQUIRED,
+        checks: REQUIRED.map((context) => ({ context, app_id: 15368 })),
+      },
+    },
+    ...branchOverride,
+  };
   return async (url, options) => {
     assert.equal(options.headers.Authorization, 'Bearer test-token');
     assert.equal(options.headers['Accept-Encoding'], 'identity');
     if (url.includes('/actions/workflows/ci.yml/runs?')) {
       return response({ total_count: 1, workflow_runs: [run] });
     }
-    if (url.endsWith('/branches/main/protection/required_status_checks')) {
-      return response({ contexts: REQUIRED, checks: [] });
+    if (url.endsWith('/branches/main')) {
+      return response(branch);
     }
     if (url.includes('/actions/runs/123456789/attempts/2/jobs?')) {
       return response({ total_count: jobs.length, jobs });
@@ -277,6 +289,37 @@ test('qualification gate producer rejects a tag or unprotected main context befo
     await assert.rejects(() => createReleaseQualificationGates({
       environment: { ...base, ...changed }, fetchImpl: assert.fail,
     }), /R406-GATES-PRODUCER: exact protected main qualification workflow context/);
+  }
+});
+
+test('gate producer rejects missing or mismatched protected branch evidence', async () => {
+  const cases = [
+    { protection: undefined },
+    { protected: false },
+    { name: 'release' },
+    { commit: { sha: 'f'.repeat(40) } },
+    {
+      protection: {
+        required_status_checks: {
+          contexts: REQUIRED.slice(1),
+          checks: REQUIRED.map((context) => ({ context, app_id: 15368 })),
+        },
+      },
+    },
+    {
+      protection: {
+        required_status_checks: {
+          contexts: REQUIRED,
+          checks: REQUIRED.slice(1).map((context) => ({ context, app_id: 15368 })),
+        },
+      },
+    },
+  ];
+  for (const branchOverride of cases) {
+    await assert.rejects(
+      createPreassemblyGates({ environment, fetchImpl: githubFixture({ branchOverride }) }),
+      /R406-GATES-PRODUCER: current main (protection identity|required status contexts)/,
+    );
   }
 });
 
