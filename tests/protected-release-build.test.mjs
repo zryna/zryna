@@ -14,7 +14,7 @@ const COMMIT = 'b'.repeat(40);
 const TREE = 'c'.repeat(40);
 const TARGET = 'x86_64-unknown-linux-gnu';
 const JOBS = ['adapter', 'm0', 'm2', 'm3', 'rust (ubuntu-latest)', 'rust (windows-latest)'];
-const QUALIFICATION_RECIPE = parseCanonical(readFileSync(new URL(
+const PRODUCTION_RECIPE = parseCanonical(readFileSync(new URL(
   '../scripts/distribution/release-recipe-v1.json', import.meta.url,
 ), 'utf8'));
 const CANDIDATE_JOBS = [
@@ -33,7 +33,7 @@ function wire(value) { return Buffer.from(`${canonicalBounded(value)}\n`); }
 
 function acceptedRecipe(overrides = {}) {
   return {
-    ...structuredClone(QUALIFICATION_RECIPE), status: 'production-accepted',
+    ...structuredClone(PRODUCTION_RECIPE), status: 'production-accepted',
     productionAdmission: 'allowed', versionCandidate: '0.2.0', ...overrides,
   };
 }
@@ -183,7 +183,9 @@ test('rejects execution while no exact recipe digest is accepted', async (t) => 
 });
 
 test('rejects matching-digest recipes without the exact production identity', async (t) => {
-  const proposal = wire(QUALIFICATION_RECIPE);
+  const proposal = wire(acceptedRecipe({
+    status: 'qualification-proposal', productionAdmission: 'forbidden',
+  }));
   const cases = [
     ['checked-in qualification proposal', proposal],
     ['missing admission', wire({

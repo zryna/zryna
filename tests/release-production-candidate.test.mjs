@@ -137,6 +137,7 @@ test('candidate runner fails closed while the production recipe digest is unacce
     : recipe });
   await assert.rejects(() => runProductionCandidateBuild({
     admissionRoot, outputRoot, sourceRoot, target: TARGET, replica: 1, spawn,
+    acceptedRecipeSha256: null,
     environment: {
       GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: 'zryna/zryna',
       GITHUB_REF: 'refs/heads/main', GITHUB_REF_TYPE: 'branch', GITHUB_REF_NAME: 'main',

@@ -10,7 +10,8 @@ const MAX_OUTPUT = 256 * 1024;
 const OBJECT_ID = /^[0-9a-f]{40}$/;
 
 // This value stays unset until #422's recipe bytes and production integration receive exact review.
-export const ACCEPTED_RECIPE_SHA256 = null;
+export const ACCEPTED_RECIPE_SHA256 =
+  'f03ac3062496ea9836523c5534f8d9552683829e4a33b49c77cf7d6983cb03e7';
 
 export const REQUIRED_RELEASE_PATHS = Object.freeze([
   '.github/workflows/release.yml',

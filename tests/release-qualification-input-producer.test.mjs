@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { canonicalBounded, sha256 } from '../scripts/distribution-release/canonical.mjs';
+import { canonicalBounded, parseCanonical, sha256 } from '../scripts/distribution-release/canonical.mjs';
 import { compileReleaseQualification } from '../scripts/distribution-release/compile-release-qualification.mjs';
 import { createReleaseQualificationInput } from '../scripts/distribution-release/create-release-qualification-input.mjs';
 import { qualificationHostEnvironment } from '../scripts/distribution-release/observe-qualification-tools.mjs';
@@ -11,7 +11,12 @@ import { windowsQualificationEnvironment } from './release-qualification-fixture
 
 const COMMIT = 'a'.repeat(40);
 const TREE = 'b'.repeat(40);
-const RECIPE = readFileSync(new URL('../scripts/distribution/release-recipe-v1.json', import.meta.url));
+const RECIPE = Buffer.from(`${canonicalBounded({
+  ...parseCanonical(readFileSync(new URL(
+    '../scripts/distribution/release-recipe-v1.json', import.meta.url,
+  ), 'utf8')),
+  productionAdmission: 'forbidden', status: 'qualification-proposal',
+})}\n`);
 
 function bytes(value) {
   return Buffer.from(`${canonicalBounded(value)}\n`);

@@ -111,7 +111,7 @@ test('all external actions are immutable pins and checkouts cannot retain creden
   }
 });
 
-test('admission fails before build until the reviewed recipe and integrations exist', () => {
+test('admission requires the reviewed recipe and complete integrations', () => {
   const admit = workflow.jobs.admit;
   const names = admit.steps.map(({ name }) => name).filter(Boolean);
   assert(names.indexOf('Capture protected tag identity')
@@ -129,7 +129,8 @@ test('admission fails before build until the reviewed recipe and integrations ex
   /check-release-readiness\.mjs/);
   assert.match(steps(admit, 'Require the exact successful production candidate')[0].run,
     /create-production-candidate-receipt\.mjs/);
-  assert.equal(ACCEPTED_RECIPE_SHA256, null);
+  assert.equal(ACCEPTED_RECIPE_SHA256,
+    'f03ac3062496ea9836523c5534f8d9552683829e4a33b49c77cf7d6983cb03e7');
 
   const source = resolve('release-readiness-source');
   const sha = 'a'.repeat(40);
@@ -160,10 +161,10 @@ test('admission fails before build until the reviewed recipe and integrations ex
 });
 
 test('readiness requires accepted production semantics after exact recipe digest binding', () => {
-  const proposal = readFileSync(resolve(root, 'scripts/distribution/release-recipe-v1.json'));
-  const accepted = wire({
-    ...parseCanonical(proposal.toString('utf8')),
-    status: 'production-accepted', productionAdmission: 'allowed',
+  const accepted = readFileSync(resolve(root, 'scripts/distribution/release-recipe-v1.json'));
+  const proposal = wire({
+    ...parseCanonical(accepted.toString('utf8')),
+    status: 'qualification-proposal', productionAdmission: 'forbidden',
   });
   const ready = readinessFixture(accepted);
   assert.deepEqual(checkReleaseReadiness({
