@@ -10,6 +10,7 @@ import {
   PREFLIGHT_COMMANDS,
   preflightCommandDigest,
   runPreflight,
+  selectPreflightCommands,
   validatePreflightCommands,
 } from '../scripts/run-preflight.mjs';
 
@@ -80,16 +81,33 @@ test('preflight stops at the first failure', () => {
   assert.deepEqual(started, ['first', 'fails']);
 });
 
+test('CI preflight partitions retain the exact frozen command set', () => {
+  const fast = selectPreflightCommands(['--fast-contracts']);
+  const compiler = selectPreflightCommands(['--compiler-contracts']);
+  assert.deepEqual(fast.map(({ id }) => id), ['repository-structure', 'portable-contract-tests']);
+  assert.deepEqual([...fast, ...compiler], PREFLIGHT_COMMANDS);
+  assert.equal(fast.some((command) => command.executable === 'cargo'), false);
+  assert.equal(compiler.every((command) => command.executable === 'cargo'), true);
+  for (const args of [['--unknown'], ['--fast-contracts', '--compiler-contracts']]) {
+    assert.throws(() => selectPreflightCommands(args), /usage/);
+  }
+});
+
 test('independent platform jobs start alongside preflight and aggregates require every gate', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const document = parseDocument(workflow);
   assert.deepEqual(document.errors, []);
   const parsed = document.toJS();
+  const fastContracts = workflowJob(workflow, 'fast-contracts');
   const ownedDataQuick = workflowJob(workflow, 'owned-data-quick');
   const preflight = workflowJob(workflow, 'preflight');
   const rust = workflowJob(workflow, 'rust');
   const adapterPlatform = workflowJob(workflow, 'adapter-platform');
   const aggregate = workflowJob(workflow, 'm0');
+
+  assert.match(fastContracts, /name: fast contract checks/);
+  assert.match(fastContracts, /run: node scripts\/run-preflight\.mjs --fast-contracts/);
+  assert.doesNotMatch(fastContracts, /needs:/);
 
   assert.match(ownedDataQuick, /name: owned data quick \(\$\{\{ matrix\.os \}\}\)/);
   assert.match(ownedDataQuick, /name: Verify M3 owned-data semantics\s+run: pnpm m3:owned:quick/);
@@ -99,7 +117,7 @@ test('independent platform jobs start alongside preflight and aggregates require
     'windows-latest',
   ]);
   assert.match(preflight, /name: preflight/);
-  assert.match(preflight, /run: pnpm preflight/);
+  assert.match(preflight, /run: node scripts\/run-preflight\.mjs --compiler-contracts/);
   assert.match(rust, /name: Fetch locked Rust dependencies\s+run: cargo fetch --locked/);
   assert.match(
     rust,
@@ -112,7 +130,9 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.doesNotMatch(rust, /needs:/);
   assert.doesNotMatch(adapterPlatform, /needs:/);
   assert.match(aggregate,
-    /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4\]/);
+    /needs: \[fast-contracts, owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4\]/);
+  assert.match(aggregate, /FAST_CONTRACTS_RESULT: \$\{\{ needs\.fast-contracts\.result \}\}/);
+  assert.match(aggregate, /test "\$FAST_CONTRACTS_RESULT" = success/);
   assert.match(
     aggregate,
     /OWNED_DATA_QUICK_RESULT: \$\{\{ needs\.owned-data-quick\.result \}\}/,
@@ -127,13 +147,15 @@ test('independent platform jobs start alongside preflight and aggregates require
   assert.equal(parsed.jobs.preflight.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@')).length, 1);
   assert.equal(parsed.jobs.preflight.steps.find(step => step.uses?.startsWith('pnpm/action-setup@'))['timeout-minutes'], 10);
   assert.deepEqual(parsed.jobs.preflight.steps.filter(step => step.run === 'pnpm preflight'), [
-    { run: 'pnpm preflight', 'timeout-minutes': 25 },
+  ]);
+  assert.deepEqual(parsed.jobs.preflight.steps.filter(step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts'), [
+    { run: 'node scripts/run-preflight.mjs --compiler-contracts', 'timeout-minutes': 25 },
   ]);
   assert.equal(parsed.jobs.rust.needs, undefined);
   assert.equal(parsed.jobs['adapter-platform'].needs, undefined);
-  assert.deepEqual(parsed.jobs.adapter.needs, ['preflight', 'adapter-platform']);
+  assert.deepEqual(parsed.jobs.adapter.needs, ['fast-contracts', 'preflight', 'adapter-platform']);
   assert.deepEqual(parsed.jobs.m0.needs,
-    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts', 'provider-conformance-v4']);
+    ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts', 'provider-conformance-v4']);
 });
 
 test('package exposes the exact documented preflight entrypoint', async () => {

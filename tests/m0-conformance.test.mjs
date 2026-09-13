@@ -229,11 +229,13 @@ test('required CI exposes a stable aggregate over Rust and adapter gates', async
   assert.match(adapter, /name: adapter/);
   assert.match(aggregate, /name: m0/);
   assert.match(aggregate, /if: always\(\)/);
-  assert.match(aggregate, /needs: \[owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4\]/);
+  assert.match(aggregate, /needs: \[fast-contracts, owned-data-quick, preflight, rust, adapter, route-contracts, provider-conformance-v4\]/);
   assert.match(
     aggregate,
     /OWNED_DATA_QUICK_RESULT: \$\{\{ needs\.owned-data-quick\.result \}\}/,
   );
+  assert.match(aggregate, /FAST_CONTRACTS_RESULT: \$\{\{ needs\.fast-contracts\.result \}\}/);
+  assert.match(aggregate, /test "\$FAST_CONTRACTS_RESULT" = success/);
   assert.match(aggregate, /test "\$OWNED_DATA_QUICK_RESULT" = success/);
   assert.match(aggregate, /PREFLIGHT_RESULT: \$\{\{ needs\.preflight\.result \}\}/);
   assert.match(aggregate, /RUST_RESULT: \$\{\{ needs\.rust\.result \}\}/);

@@ -242,7 +242,7 @@ test('CI retains every protected pull-request context and one manual full entry 
   assert.match(ci.concurrency.group, /pull_request\.number/);
   assert.match(ci.jobs['route-contracts'].steps.at(-1).run, /workflow-paths\.mjs --all/);
   assert.deepEqual(ci.jobs.m0.needs,
-    ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts',
+    ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts',
       'provider-conformance-v4']);
   assert.deepEqual(ci.jobs.m0.steps[0], {
     uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',

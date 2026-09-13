@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKSPACE_ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const EXPECTED_COMMANDS_SHA256 = 'b27402c8d6052eaf665be0d01855ee9febabd2167b459881c320833bce662c3b';
+const FAST_CONTRACT_IDS = Object.freeze(['repository-structure', 'portable-contract-tests']);
 
 export const PREFLIGHT_COMMANDS = Object.freeze([
   Object.freeze({
@@ -135,6 +136,19 @@ export function validatePreflightCommands(commands = PREFLIGHT_COMMANDS) {
   return commands;
 }
 
+export function selectPreflightCommands(args = [], commands = PREFLIGHT_COMMANDS) {
+  const validated = validatePreflightCommands(commands);
+  const fastCount = FAST_CONTRACT_IDS.length;
+  if (!FAST_CONTRACT_IDS.every((id, index) => validated[index]?.id === id)) {
+    throw new Error('fast contract commands are not the frozen preflight prefix');
+  }
+  if (args.length === 0) return validated;
+  if (args.length !== 1) throw new Error('usage: run-preflight.mjs [--fast-contracts | --compiler-contracts]');
+  if (args[0] === '--fast-contracts') return validated.slice(0, fastCount);
+  if (args[0] === '--compiler-contracts') return validated.slice(fastCount);
+  throw new Error('usage: run-preflight.mjs [--fast-contracts | --compiler-contracts]');
+}
+
 export function runPreflight(commands = PREFLIGHT_COMMANDS, spawn = spawnSync) {
   for (const [index, command] of commands.entries()) {
     console.log(`\n[preflight ${index + 1}/${commands.length}] ${command.id}`);
@@ -155,7 +169,7 @@ export function runPreflight(commands = PREFLIGHT_COMMANDS, spawn = spawnSync) {
 
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
   try {
-    runPreflight(validatePreflightCommands());
+    runPreflight(selectPreflightCommands(process.argv.slice(2)));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

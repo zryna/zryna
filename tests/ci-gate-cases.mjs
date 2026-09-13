@@ -9,7 +9,7 @@ const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml
 assert.deepEqual(document.errors, []);
 const budgetWorkflow = withoutBootstrapTiming(document.toJS());
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const bootstrapJobs = ['owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
+const bootstrapJobs = ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
 const nodeStep = {
   uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
   with: { 'node-version': '22.22.1' },
@@ -26,11 +26,11 @@ function withoutPreflightBudgets(candidate) {
   assert.deepEqual(Object.keys(job).sort(), ['name', 'runs-on', 'steps', 'timeout-minutes']);
   assert.equal(job['timeout-minutes'], 40);
   const bootstrap = job.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@'));
-  const execution = job.steps.filter(step => step.run === 'pnpm preflight');
+  const execution = job.steps.filter(step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts');
   assert.equal(bootstrap.length, 1);
   assert.equal(execution.length, 1);
   assert.deepEqual(bootstrap[0], { ...pnpmStep, 'timeout-minutes': 10 });
-  assert.deepEqual(execution[0], { run: 'pnpm preflight', 'timeout-minutes': 25 });
+  assert.deepEqual(execution[0], { run: 'node scripts/run-preflight.mjs --compiler-contracts', 'timeout-minutes': 25 });
   assert.equal(job.steps.at(-1), execution[0]);
   assert(job.steps.indexOf(bootstrap[0]) < job.steps.indexOf(execution[0]));
   assert.equal(job['timeout-minutes'] - bootstrap[0]['timeout-minutes'] - execution[0]['timeout-minutes'], 5);
@@ -51,7 +51,7 @@ test('preflight budget removal, relocation, bypass and ambiguous targets fail cl
   const targets = [
     w => w.jobs.preflight,
     w => w.jobs.preflight.steps.find(step => step.uses === pnpmStep.uses),
-    w => w.jobs.preflight.steps.find(step => step.run === 'pnpm preflight'),
+    w => w.jobs.preflight.steps.find(step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts'),
   ];
   for (const target of targets) {
     for (const value of [undefined, null, true, 0, -1, 1.5, '25', '${{ 25 }}', 9, 11, 15, 20, 24, 26, 30, 35, 39, 41]) {
@@ -68,7 +68,7 @@ test('preflight budget removal, relocation, bypass and ambiguous targets fail cl
   }
   for (const mutate of [
     steps => { steps.push(structuredClone(steps.find(step => step.uses === pnpmStep.uses))); },
-    steps => { steps.push(structuredClone(steps.find(step => step.run === 'pnpm preflight'))); },
+    steps => { steps.push(structuredClone(steps.find(step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts'))); },
     steps => { steps.splice(steps.findIndex(step => step.uses === pnpmStep.uses), 1); },
     steps => { steps.pop(); },
     steps => { const index = steps.findIndex(step => step.uses === pnpmStep.uses); [steps[index], steps[steps.length - 1]] = [steps.at(-1), steps[index]]; },
@@ -162,8 +162,8 @@ test('bootstrap toolchain and cache-order mutations fail closed in every setup j
   ]) assert.throws(() => bootstrapOrder(workflow, metadata));
 });
 const aggregateNeeds = {
-  adapter: ['preflight', 'adapter-platform'],
-  m0: ['owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts', 'provider-conformance-v4'],
+  adapter: ['fast-contracts', 'preflight', 'adapter-platform'],
+  m0: ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts', 'provider-conformance-v4'],
   m2: ['m0', 'm2-platform'],
 };
 const matrixJobs = ['owned-data-quick', 'rust', 'adapter-platform', 'm2-platform'];
@@ -255,10 +255,14 @@ function evaluateGraph(jobs, leaves) {
 }
 
 test('CI starts independent authorities together with bounded preflight headroom', () => {
+  assert.equal(workflow.jobs['fast-contracts']['timeout-minutes'], 10);
   assert.equal(workflow.jobs.preflight['timeout-minutes'], 40);
   assert.equal(workflow.jobs.rust['timeout-minutes'], 40);
   assert.equal(workflow.jobs.preflight.if, undefined);
   assert.equal(workflow.jobs.preflight.needs, undefined);
+  assert.equal(workflow.jobs['fast-contracts'].needs, undefined);
+  assert.equal(workflow.jobs['fast-contracts'].if, undefined);
+  assert.equal(workflow.jobs['fast-contracts']['continue-on-error'], undefined);
   for (const id of matrixJobs) {
     const job = workflow.jobs[id];
     assert.equal(job.needs, undefined, `${id}: must start independently`);
@@ -280,11 +284,11 @@ test('actual aggregate predicates reject every Cartesian non-success result', ()
       checked++;
     }
   }
-  assert.equal(checked, 117747);
+  assert.equal(checked, 823935);
 });
 
 test('each OS authority and preflight must succeed through the actual aggregate graph', () => {
-  const allSuccess = Object.fromEntries(['preflight', 'route-contracts', 'provider-conformance-v4', ...matrixJobs]
+  const allSuccess = Object.fromEntries(['fast-contracts', 'preflight', 'route-contracts', 'provider-conformance-v4', ...matrixJobs]
     .map(id => [id, 'success']));
   assert.equal(evaluateGraph(workflow.jobs, allSuccess).m2, 'success');
   for (const preflight of outcomes) {
@@ -392,5 +396,5 @@ test('routing preserves all other pinned workflow authority', () => {
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');
-  assert.equal(digest, '1ed83fd89273d717aa880c985d87175efe6cceb6b5ba46c90d21f738dce21172');
+  assert.equal(digest, '038347262f04accafbdfe4db293b232a90cbd7d3ca4044e2114bc68923a76215');
 });
