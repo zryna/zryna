@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { canonicalBounded, sha256 } from '../scripts/distribution-release/canonical.mjs';
+import { compileReleaseQualification } from '../scripts/distribution-release/compile-release-qualification.mjs';
 import { createReleaseQualificationInput } from '../scripts/distribution-release/create-release-qualification-input.mjs';
+import { qualificationHostEnvironment } from '../scripts/distribution-release/observe-qualification-tools.mjs';
+import { windowsQualificationEnvironment } from './release-qualification-fixture.mjs';
 
 const COMMIT = 'a'.repeat(40);
 const TREE = 'b'.repeat(40);
@@ -88,4 +93,47 @@ test('rejects receipt drift and production recipe admission', () => {
   recipe.productionAdmission = 'allowed';
   production.recipeBytes = bytes(recipe);
   assert.throws(() => createReleaseQualificationInput(production), /recipe proposal differs/);
+});
+
+test('retains bounded observed Windows developer environment through isolated compile', (t) => {
+  const value = fixture();
+  value.target = 'x86_64-pc-windows-msvc';
+  const observedEnvironment = windowsQualificationEnvironment();
+  value.tools.hostEnvironment = qualificationHostEnvironment(value.target, observedEnvironment);
+  const input = createReleaseQualificationInput(value);
+  assert.equal(input.compile.environment.find(({ name }) => name === 'INCLUDE').value,
+    observedEnvironment.INCLUDE);
+  const parent = realpathSync.native(mkdtempSync(
+    join(tmpdir(), 'zryna-qualification-producer-compile-')));
+  t.after(() => rmSync(parent, { recursive: true, force: true }));
+  const sourceRoot = join(parent, 'source');
+  const workRoot = join(parent, 'work');
+  const cargoHome = join(workRoot, 'cargo-home');
+  mkdirSync(sourceRoot);
+  mkdirSync(workRoot);
+  mkdirSync(cargoHome);
+  const paths = {};
+  const records = new Map([...input.toolchains, ...input.nativeTools]
+    .map((record) => [record.name, record]));
+  for (const [name, data] of [['cargo', Buffer.from('cargo')], ['rustc', Buffer.from('rustc')],
+    ['linker', Buffer.from('linker')]]) {
+    paths[name] = join(parent, `${name}.exe`);
+    writeFileSync(paths[name], data);
+    records.get(name).size = data.length;
+    records.get(name).sha256 = sha256(data);
+  }
+  const binding = Buffer.from(`${canonicalBounded(input)}\n`);
+  compileReleaseQualification({ binding, sourceRoot, workRoot, cargoHome,
+    observedTools: { toolchains: input.toolchains, nativeTools: input.nativeTools, paths },
+    spawn(_executable, _args, options) {
+      assert.equal(options.env.INCLUDE, observedEnvironment.INCLUDE);
+      const output = join(workRoot, 'target', input.target.triple, 'release');
+      mkdirSync(output, { recursive: true });
+      writeFileSync(join(output, 'zryna.exe'), Buffer.alloc(64, 7));
+      return { status: 0, signal: null, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0) };
+    } });
+
+  value.tools.hostEnvironment.INCLUDE = 'I'.repeat(1025);
+  assert.throws(() => createReleaseQualificationInput(value),
+    /host environment INCLUDE differs/);
 });

@@ -66,11 +66,15 @@ function recipe(bytes, target) {
 }
 
 function qualificationEnvironment(entries, hostEnvironment = {}) {
+  const maximums = Object.freeze({ INCLUDE: 1024, LIB: 768, LIBPATH: 768, PATH: 256,
+    SystemRoot: 260 });
   return entries.map(({ name, value }) => {
     const match = /^@host-([A-Za-z][A-Za-z0-9_]*)@$/.exec(value);
     if (!match) return { name, value };
     const observed = hostEnvironment[match[1]];
-    if (typeof observed !== 'string' || !/^[ -~]{1,512}$/.test(observed)) {
+    const maximum = maximums[match[1]];
+    if (!maximum || typeof observed !== 'string' || observed.length > maximum
+      || !/^[ -~]+$/.test(observed)) {
       reject(`host environment ${match[1]} differs`);
     }
     return { name, value: observed };
