@@ -18,6 +18,8 @@ const TAG = 'v0.2.1';
 const NAME = 'Zryna 0.2.1 beta';
 const MAX_RESPONSE = 2 * 1024 * 1024;
 const MAX_TIMEOUT = 5 * 60 * 1000;
+const RELEASE_PAGE_SIZE = 100;
+const MAX_RELEASE_PAGES = 100;
 const CHUNK = 1024 * 1024;
 
 function reject(message) {
@@ -179,19 +181,45 @@ function releaseIdentity(release, publication, expectedDraft) {
   return id;
 }
 
-function verifyAssets(release, publication, expectedNames) {
+function draftDownloadUrl(name, value) {
+  const suffix = `/${encodeURIComponent(name)}`;
+  const prefix = `https://github.com/${REPOSITORY}/releases/download/untagged-`;
+  if (typeof value !== 'string' || !value.startsWith(prefix) || !value.endsWith(suffix)) {
+    return null;
+  }
+  const slug = value.slice(prefix.length, -suffix.length);
+  return /^[0-9a-f]{20}$/.test(slug) ? slug : null;
+}
+
+function verifyAssets(release, publication, expectedNames, expectedDraft) {
   const expected = [...expectedNames].sort();
   const actual = release.assets.map(({ name }) => name).sort();
   if (canonical(actual) !== canonical(expected)) reject('GitHub release asset inventory differs');
+  const draftSlugs = new Set();
   for (const asset of release.assets) {
     const descriptor = publication.descriptors.get(asset.name);
-    numericId(asset.id, `${asset.name} asset ID`);
+    const assetId = numericId(asset.id, `${asset.name} asset ID`);
+    const publishedUrl = `https://github.com/${REPOSITORY}/releases/download/${TAG}/${encodeURIComponent(asset.name)}`;
+    const draftSlug = expectedDraft ? draftDownloadUrl(asset.name, asset.browser_download_url) : null;
     if (!descriptor || asset.state !== 'uploaded' || asset.size !== descriptor.size
       || asset.digest !== `sha256:${descriptor.sha256}`
-      || asset.browser_download_url !== `https://github.com/${REPOSITORY}/releases/download/${TAG}/${encodeURIComponent(asset.name)}`) {
+      || asset.url !== `${API}/repos/${REPOSITORY}/releases/assets/${assetId}`
+      || (expectedDraft ? draftSlug === null : asset.browser_download_url !== publishedUrl)) {
       reject(`${asset.name} server-side identity or digest differs`);
     }
+    if (draftSlug !== null) draftSlugs.add(draftSlug);
   }
+  if (draftSlugs.size > 1) reject('GitHub draft asset release identities differ');
+}
+
+function verifyDraftSubset(release, publication) {
+  const uploadedNames = release.assets.map(({ name }) => name);
+  if (new Set(uploadedNames).size !== uploadedNames.length
+    || uploadedNames.some((name) => !publication.envelope.assetAllowlist.includes(name))) {
+    reject('GitHub release asset inventory differs');
+  }
+  verifyAssets(release, publication, uploadedNames, true);
+  return new Set(uploadedNames);
 }
 
 function contentType(name) {
@@ -244,10 +272,21 @@ function retainedStream(directory, expected) {
 }
 
 async function getRelease(token, fetchImpl, timeoutMs) {
-  return request({
-    url: `${API}/repos/${REPOSITORY}/releases/tags/${TAG}`,
-    token, fetchImpl, timeoutMs, statuses: [200, 404],
-  });
+  const matches = [];
+  for (let page = 1; page <= MAX_RELEASE_PAGES; page += 1) {
+    const releases = await request({
+      url: `${API}/repos/${REPOSITORY}/releases?per_page=${RELEASE_PAGE_SIZE}&page=${page}`,
+      token, fetchImpl, timeoutMs,
+    });
+    if (!Array.isArray(releases) || releases.length > RELEASE_PAGE_SIZE) {
+      reject('GitHub release listing differs from the bounded API contract');
+    }
+    matches.push(...releases.filter((release) => release?.tag_name === TAG));
+    if (releases.length < RELEASE_PAGE_SIZE) break;
+    if (page === MAX_RELEASE_PAGES) reject('GitHub release listing exceeds the bounded page limit');
+  }
+  if (matches.length > 1) reject('multiple releases exist for the immutable tag');
+  return matches[0] ?? null;
 }
 
 export async function publishDraftRelease({ directory, phase, environment = process.env,
@@ -264,7 +303,11 @@ export async function publishDraftRelease({ directory, phase, environment = proc
   const token = environment.GITHUB_TOKEN;
   if (phase === 'create-draft') {
     const existing = await getRelease(token, fetchImpl, requestTimeoutMs);
-    if (existing !== null) reject('a release already exists for the immutable tag');
+    if (existing !== null) {
+      releaseIdentity(existing, publication, true);
+      verifyDraftSubset(existing, publication);
+      return existing;
+    }
     const created = await request({
       url: `${API}/repos/${REPOSITORY}/releases`, token, fetchImpl, timeoutMs: requestTimeoutMs,
       method: 'POST', statuses: [201], headers: { 'Content-Type': 'application/json' },
@@ -274,15 +317,16 @@ export async function publishDraftRelease({ directory, phase, environment = proc
       }),
     });
     releaseIdentity(created, publication, true);
-    verifyAssets(created, publication, []);
+    verifyAssets(created, publication, [], true);
     return created;
   }
   const release = await getRelease(token, fetchImpl, requestTimeoutMs);
   if (release === null) reject('the expected draft release is missing');
   const releaseId = releaseIdentity(release, publication, true);
   if (phase === 'upload') {
-    verifyAssets(release, publication, []);
+    const uploaded = verifyDraftSubset(release, publication);
     for (const name of publication.envelope.assetAllowlist) {
+      if (uploaded.has(name)) continue;
       const expected = publication.descriptors.get(name);
       const retained = retainedStream(directory, expected);
       try {
@@ -292,14 +336,14 @@ export async function publishDraftRelease({ directory, phase, environment = proc
           headers: { 'Content-Type': contentType(name), 'Content-Length': String(expected.size) },
           body: retained.stream,
         });
-        verifyAssets({ assets: [asset] }, publication, [name]);
+        verifyAssets({ assets: [asset] }, publication, [name], true);
       } finally {
         retained.close();
       }
     }
     return release;
   }
-  verifyAssets(release, publication, publication.envelope.assetAllowlist);
+  verifyAssets(release, publication, publication.envelope.assetAllowlist, true);
   if (phase === 'verify-draft') return release;
   const published = await request({
     url: `${API}/repos/${REPOSITORY}/releases/${releaseId}`,
@@ -308,7 +352,7 @@ export async function publishDraftRelease({ directory, phase, environment = proc
     body: JSON.stringify({ draft: false, prerelease: true, make_latest: 'false' }),
   });
   releaseIdentity(published, publication, false);
-  verifyAssets(published, publication, publication.envelope.assetAllowlist);
+  verifyAssets(published, publication, publication.envelope.assetAllowlist, false);
   return published;
 }
 
