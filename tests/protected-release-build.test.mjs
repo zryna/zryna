@@ -14,10 +14,20 @@ const COMMIT = 'b'.repeat(40);
 const TREE = 'c'.repeat(40);
 const TARGET = 'x86_64-unknown-linux-gnu';
 const JOBS = ['adapter', 'm0', 'm2', 'm3', 'rust (ubuntu-latest)', 'rust (windows-latest)'];
+const QUALIFICATION_RECIPE = parseCanonical(readFileSync(new URL(
+  '../scripts/distribution/release-recipe-v1.json', import.meta.url,
+), 'utf8'));
 
 function wire(value) { return Buffer.from(`${canonicalBounded(value)}\n`); }
 
-function fixture(t) {
+function acceptedRecipe(overrides = {}) {
+  return {
+    ...structuredClone(QUALIFICATION_RECIPE), status: 'production-accepted',
+    productionAdmission: 'allowed', versionCandidate: '0.2.0', ...overrides,
+  };
+}
+
+function fixture(t, recipeValue = acceptedRecipe()) {
   const parent = mkdtempSync(join(tmpdir(), 'zryna-protected-build-'));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
   const admissionRoot = join(parent, 'admission');
@@ -44,7 +54,7 @@ function fixture(t) {
       jobId: String(index + 10), checkRunId: String(index + 20),
     })),
   }));
-  const recipeBytes = wire({ format: 'zryna.distribution-recipe.v1', qualification: 'fixture' });
+  const recipeBytes = Buffer.isBuffer(recipeValue) ? recipeValue : wire(recipeValue);
   const spawn = (executable, args, options) => {
     assert.equal(executable, 'git');
     let stdout;
@@ -149,6 +159,31 @@ test('rejects execution while no exact recipe digest is accepted', async (t) => 
   await assert.rejects(() => runProtectedBuild({
     ...paths, target: TARGET, replica: 1, acceptedRecipeSha256: null, adapters: adapters(),
   }), /R406-PROTECTED-BUILD: recipe bytes differ from the independently accepted digest/);
+});
+
+test('rejects matching-digest recipes without the exact production identity', async (t) => {
+  const proposal = wire(QUALIFICATION_RECIPE);
+  const cases = [
+    ['checked-in qualification proposal', proposal],
+    ['missing admission', wire({
+      format: 'zryna.distribution-recipe.v1', status: 'production-accepted',
+      versionCandidate: '0.2.0',
+    })],
+    ['proposal with allowed admission', wire(acceptedRecipe({ status: 'qualification-proposal' }))],
+    ['accepted status with forbidden admission', wire(acceptedRecipe({
+      productionAdmission: 'forbidden',
+    }))],
+    ['unknown status', wire(acceptedRecipe({ status: 'reviewed-candidate' }))],
+    ['wrong format', wire(acceptedRecipe({ format: 'zryna.distribution-recipe.v2' }))],
+    ['wrong version', wire(acceptedRecipe({ versionCandidate: '0.2.1' }))],
+  ];
+  for (const [name, recipeBytes] of cases) {
+    const paths = fixture(t, recipeBytes);
+    await assert.rejects(() => runProtectedBuild({
+      ...paths, target: TARGET, replica: 1,
+      acceptedRecipeSha256: sha256(recipeBytes), adapters: adapters(),
+    }), /R406-PROTECTED-BUILD: recipe does not carry the accepted production identity/, name);
+  }
 });
 
 test('rejects a valid-looking SPDX header without complete archive and material coverage', async (t) => {

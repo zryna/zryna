@@ -11,6 +11,7 @@ import {
 import { validateBuildInput } from './validate-build-input.mjs';
 import { validatePreassemblyGatesShape } from './validate-preassembly-gates.mjs';
 import { validateReleaseTagReceiptText } from './validate-release-tag-receipt.mjs';
+import { validateProductionRecipeIdentity } from './validate-production-recipe.mjs';
 import { releaseSpdxBytes, validateReleaseSpdx } from './release-sbom.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -69,7 +70,7 @@ function validateRecipe(recipeBytes, acceptedDigest) {
     reject('recipe bytes differ from the independently accepted digest');
   }
   const value = parseCanonical(new TextDecoder('utf-8', { fatal: true }).decode(recipeBytes));
-  if (value?.format !== 'zryna.distribution-recipe.v1') reject('recipe format differs');
+  validateProductionRecipeIdentity(value, reject);
   return { value, reference: { format: value.format, sha256: acceptedDigest } };
 }
 

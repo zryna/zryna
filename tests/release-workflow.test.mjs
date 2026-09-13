@@ -4,6 +4,9 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import { parseDocument } from 'yaml';
 import {
+  canonicalBounded, parseCanonical, sha256,
+} from '../scripts/distribution-release/canonical.mjs';
+import {
   ACCEPTED_RECIPE_SHA256,
   checkReleaseReadiness,
   REQUIRED_RELEASE_PATHS,
@@ -14,6 +17,33 @@ const parsed = parseDocument(readFileSync(resolve(root, '.github/workflows/relea
 assert.deepEqual(parsed.errors, []);
 const workflow = parsed.toJS();
 const shaUse = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9a-f]{40}$/;
+
+function wire(value) { return Buffer.from(`${canonicalBounded(value)}\n`); }
+
+function readinessFixture(recipe) {
+  const source = resolve('release-readiness-source');
+  const sourceCommit = 'a'.repeat(40);
+  const spawn = (executable, args, options) => {
+    assert.equal(executable, 'git');
+    let output;
+    if (args[0] === 'ls-tree') {
+      const path = args.at(-1);
+      output = Buffer.from(`100644 blob ${'b'.repeat(40)}\t${path}\0`);
+    } else if (args[0] === 'cat-file') output = recipe;
+    else throw new Error(`unexpected git command ${args.join(' ')}`);
+    return { status: 0, stdout: options.encoding === null ? output : output.toString('utf8') };
+  };
+  return {
+    cwd: source,
+    environment: {
+      GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'zryna/zryna',
+      GITHUB_REF: 'refs/tags/v0.2.0', GITHUB_REF_PROTECTED: 'true',
+      GITHUB_SHA: sourceCommit, GITHUB_WORKFLOW_SHA: sourceCommit, ZRYNA_SOURCE_ROOT: source,
+    },
+    sourceCommit,
+    spawn,
+  };
+}
 
 function steps(job, name) {
   return job.steps.filter((step) => step.name === name);
@@ -121,6 +151,22 @@ test('admission fails before build until the reviewed recipe and integrations ex
     for (const path of REQUIRED_RELEASE_PATHS.slice(1)) assert.match(error.message, new RegExp(path));
     return true;
   });
+});
+
+test('readiness requires accepted production semantics after exact recipe digest binding', () => {
+  const proposal = readFileSync(resolve(root, 'scripts/distribution/release-recipe-v1.json'));
+  const accepted = wire({
+    ...parseCanonical(proposal.toString('utf8')),
+    status: 'production-accepted', productionAdmission: 'allowed',
+  });
+  const ready = readinessFixture(accepted);
+  assert.deepEqual(checkReleaseReadiness({
+    ...ready, acceptedRecipeSha256: sha256(accepted),
+  }), { sourceCommit: ready.sourceCommit, recipeSha256: sha256(accepted) });
+
+  assert.throws(() => checkReleaseReadiness({
+    ...readinessFixture(proposal), acceptedRecipeSha256: sha256(proposal),
+  }), /R406-RELEASE-NOT-READY: recipe does not carry the accepted production identity/);
 });
 
 test('two distinct clean build jobs feed platform-local byte reproduction', () => {
