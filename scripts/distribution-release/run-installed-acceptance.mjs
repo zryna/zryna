@@ -15,7 +15,7 @@ import {
 } from './release-files.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const MAX_OUTPUT = 256 * 1024;
 const TIMEOUT = 5 * 60_000;
 const DEFAULT_SYSTEM = Object.freeze({

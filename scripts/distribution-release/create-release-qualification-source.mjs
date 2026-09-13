@@ -123,7 +123,7 @@ export function createReleaseQualificationSource(options = {}) {
     format: 'zryna.release-qualification-source.v1',
     status: 'provisional-candidate',
     productionAdmission: 'forbidden',
-    versionCandidate: '0.2.0',
+    versionCandidate: '0.2.1',
     ...captured,
   });
 }

@@ -19,7 +19,7 @@ function fixture() {
     format: 'zryna.release-qualification-source.v1',
     status: 'provisional-candidate',
     productionAdmission: 'forbidden',
-    versionCandidate: '0.2.0',
+    versionCandidate: '0.2.1',
     source: {
       repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main',
       commit: COMMIT, tree: TREE, sourceDateEpoch: 1_789_081_200,
@@ -80,7 +80,7 @@ test('accepts and produces one truthful protected-main qualification source rece
 
 test('rejects production-tag identity, open fields, dirty source, and executable workflow', () => {
   for (const mutate of [
-    (value) => { value.source.ref = 'refs/tags/v0.2.0'; },
+    (value) => { value.source.ref = 'refs/tags/v0.2.1'; },
     (value) => { value.status = 'release'; },
     (value) => { value.tagObject = 'a'.repeat(40); },
   ]) {

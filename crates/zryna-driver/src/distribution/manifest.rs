@@ -316,7 +316,7 @@ mod tests {
     #[test]
     fn source_epoch_keeps_its_exact_wire_name() {
         let original = json!({
-            "repository": "https://github.com/zryna/zryna", "ref": "refs/tags/v0.2.0",
+            "repository": "https://github.com/zryna/zryna", "ref": "refs/tags/v0.2.1",
             "commit": "1".repeat(40), "tree": "2".repeat(40), "sourceDateEpoch": 42,
         });
         let source: Source = serde_json::from_value(original.clone()).expect("wire source");
@@ -330,9 +330,9 @@ mod tests {
 
     #[test]
     fn source_ref_accepts_the_exact_candidate_or_version_tag() {
-        assert!(source_ref_matches_version("refs/heads/main", "0.2.0"));
-        assert!(source_ref_matches_version("refs/tags/v0.2.0", "0.2.0"));
-        assert!(!source_ref_matches_version("refs/heads/feature", "0.2.0"));
-        assert!(!source_ref_matches_version("refs/tags/v0.2.1", "0.2.0"));
+        assert!(source_ref_matches_version("refs/heads/main", "0.2.1"));
+        assert!(source_ref_matches_version("refs/tags/v0.2.1", "0.2.1"));
+        assert!(!source_ref_matches_version("refs/heads/feature", "0.2.1"));
+        assert!(!source_ref_matches_version("refs/tags/v0.2.2", "0.2.1"));
     }
 }

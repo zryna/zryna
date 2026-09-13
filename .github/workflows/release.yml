@@ -2,7 +2,7 @@ name: Binary release
 
 on:
   push:
-    tags: [v0.2.0]
+    tags: [v0.2.1]
 
 concurrency:
   group: release-${{ github.ref }}
@@ -359,14 +359,14 @@ jobs:
         id: attest-linux
         uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
         with:
-          subject-path: .release/publication/zryna-0.2.0-x86_64-unknown-linux-gnu.tar.gz
+          subject-path: .release/publication/zryna-0.2.1-x86_64-unknown-linux-gnu.tar.gz
           create-storage-record: false
           show-summary: false
       - name: Attest Windows archive
         id: attest-windows
         uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
         with:
-          subject-path: .release/publication/zryna-0.2.0-x86_64-pc-windows-msvc.zip
+          subject-path: .release/publication/zryna-0.2.1-x86_64-pc-windows-msvc.zip
           create-storage-record: false
           show-summary: false
       - name: Bind exported attestations and prepare checksum and notes subjects
@@ -406,6 +406,10 @@ jobs:
           verify: true
           verify-cert-identity: ${{ github.server_url }}/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}
           verify-oidc-issuer: https://token.actions.githubusercontent.com
+      - name: Canonicalize the envelope signature bundle
+        run: >-
+          node tooling/scripts/distribution-release/canonicalize-envelope-signature.mjs
+          --directory .release/publication
       - name: Install the pinned independent signature verifier
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Verify exact signed publication inventory without signing authority

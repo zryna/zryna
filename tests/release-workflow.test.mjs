@@ -37,7 +37,7 @@ function readinessFixture(recipe) {
     cwd: source,
     environment: {
       GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'zryna/zryna',
-      GITHUB_REF: 'refs/tags/v0.2.0', GITHUB_REF_PROTECTED: 'true',
+      GITHUB_REF: 'refs/tags/v0.2.1', GITHUB_REF_PROTECTED: 'true',
       GITHUB_SHA: sourceCommit, GITHUB_WORKFLOW_SHA: sourceCommit, ZRYNA_SOURCE_ROOT: source,
     },
     sourceCommit,
@@ -50,7 +50,7 @@ function steps(job, name) {
 }
 
 test('release workflow has one exact protected-tag entry and non-cancellable run identity', () => {
-  assert.deepEqual(workflow.on, { push: { tags: ['v0.2.0'] } });
+  assert.deepEqual(workflow.on, { push: { tags: ['v0.2.1'] } });
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(workflow.concurrency, {
     group: 'release-${{ github.ref }}',
@@ -130,7 +130,7 @@ test('admission requires the reviewed recipe and complete integrations', () => {
   assert.match(steps(admit, 'Require the exact successful production candidate')[0].run,
     /create-production-candidate-receipt\.mjs/);
   assert.equal(ACCEPTED_RECIPE_SHA256,
-    'f03ac3062496ea9836523c5534f8d9552683829e4a33b49c77cf7d6983cb03e7');
+    'c9fb1ab9394a04a0c1e2ff4b69bab48d5e285f984f139c416d5b5c3ae879555f');
 
   const source = resolve('release-readiness-source');
   const sha = 'a'.repeat(40);
@@ -146,7 +146,7 @@ test('admission requires the reviewed recipe and complete integrations', () => {
     environment: {
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REPOSITORY: 'zryna/zryna',
-      GITHUB_REF: 'refs/tags/v0.2.0',
+      GITHUB_REF: 'refs/tags/v0.2.1',
       GITHUB_REF_PROTECTED: 'true',
       GITHUB_SHA: sha,
       GITHUB_WORKFLOW_SHA: sha,
@@ -250,6 +250,15 @@ test('evidence signing precedes the sole environment-gated draft publisher', () 
     '${{ github.server_url }}/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}');
   assert.match(signing.with.inputs, /SHA256SUMS\n/);
   assert.match(signing.with.inputs, /RELEASE_NOTES\.md\n?$/);
+  const evidenceNames = evidence.steps.map(({ name }) => name).filter(Boolean);
+  const envelopeSigning = evidenceNames.indexOf('Sign and verify the canonical release envelope');
+  const canonicalization = evidenceNames.indexOf('Canonicalize the envelope signature bundle');
+  const independentVerification = evidenceNames.indexOf(
+    'Verify exact signed publication inventory without signing authority');
+  assert(envelopeSigning < canonicalization && canonicalization < independentVerification);
+  assert.equal(steps(evidence, 'Canonicalize the envelope signature bundle').length, 1);
+  assert.match(steps(evidence, 'Canonicalize the envelope signature bundle')[0].run,
+    /canonicalize-envelope-signature\.mjs --directory \.release\/publication/);
 
   const publishNames = workflow.jobs.publish.steps.map(({ name }) => name).filter(Boolean);
   const phases = [

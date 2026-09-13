@@ -8,7 +8,7 @@ import { validateRustMaterials } from './rust-materials.mjs';
 export function validateDistribution(record, { productionCandidate = false } = {}) {
   exactKeys(record, ['format', 'version', 'source', 'target', 'recipe', 'files']);
   requireValue(record.format === 'zryna.distribution.v1', 'distribution format');
-  requireValue(record.version === '0.2.0', 'unapproved distribution version');
+  requireValue(record.version === '0.2.1', 'unapproved distribution version');
   exactKeys(record.source, ['repository', 'ref', 'commit', 'tree', 'sourceDateEpoch']);
   requireValue(record.source.repository === 'https://github.com/zryna/zryna'
     && record.source.ref === (productionCandidate ? 'refs/heads/main' : `refs/tags/v${record.version}`)

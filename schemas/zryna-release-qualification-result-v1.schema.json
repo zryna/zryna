@@ -12,7 +12,7 @@
     "format": { "const": "zryna.release-qualification-result.v1" },
     "status": { "const": "qualification-only" },
     "productionAdmission": { "const": "forbidden" },
-    "versionCandidate": { "const": "0.2.0" },
+    "versionCandidate": { "const": "0.2.1" },
     "target": { "enum": ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"] },
     "replica": { "type": "integer", "minimum": 1, "maximum": 2 },
     "source": {

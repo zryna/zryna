@@ -9,7 +9,7 @@
     "format": { "const": "zryna.release-qualification-source.v1" },
     "status": { "const": "provisional-candidate" },
     "productionAdmission": { "const": "forbidden" },
-    "versionCandidate": { "const": "0.2.0" },
+    "versionCandidate": { "const": "0.2.1" },
     "source": {
       "type": "object",
       "additionalProperties": false,

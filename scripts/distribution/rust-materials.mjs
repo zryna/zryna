@@ -6,7 +6,7 @@ import { bytes, parseCanonical, requireValue, sha256 } from './canonical.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const LOCK = readFileSync(new URL('./materials-rust-v1.json', import.meta.url));
-requireValue(sha256(LOCK) === 'ef8d04cb7d87ae3dfcaeddc1b164f3a9d34b9a27a40647eac453bbdc0f2451fa',
+requireValue(sha256(LOCK) === '184f88f0ad2b6144f1cabb70934c6c2517284ceb168396e08502303d4c043cca',
   'Rust material recipe identity');
 const RECORD = parseCanonical(LOCK);
 const TARGETS = ['x86_64-pc-windows-msvc', 'x86_64-unknown-linux-gnu'];

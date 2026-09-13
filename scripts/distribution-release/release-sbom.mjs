@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import { canonical, parseCanonical, sha256 } from './canonical.mjs';
 
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const DOCUMENT = 'SPDXRef-DOCUMENT';
 const ROOT_PACKAGE = 'SPDXRef-Package-zryna';
 const MAX_FILES = 512;
@@ -129,7 +129,7 @@ export function createReleaseSpdx({ files, archive, source, target, productionCa
   if (!/^[0-9a-f]{64}$/.test(archive?.sha256 ?? '')
     || !/^[0-9a-f]{40}$/.test(source?.commit ?? '')
     || source.repository !== 'https://github.com/zryna/zryna'
-    || source.ref !== (productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.0')) {
+    || source.ref !== (productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.1')) {
     reject('release source identity differs');
   }
   const materials = [...new Set(graph.map(({ material }) => material))].sort();

@@ -27,9 +27,9 @@ const COMMIT = 'a'.repeat(40);
 const TREE = 'b'.repeat(40);
 const RECIPE = { format: 'zryna.distribution-recipe.v1', sha256: 'c'.repeat(64) };
 const FILES = {
-  archive: `zryna-0.2.0-${TARGET}.tar.gz`,
-  buildReceipt: `zryna-0.2.0-${TARGET}.build-receipt.json`,
-  sbom: `zryna-0.2.0-${TARGET}.spdx.json`,
+  archive: `zryna-0.2.1-${TARGET}.tar.gz`,
+  buildReceipt: `zryna-0.2.1-${TARGET}.build-receipt.json`,
+  sbom: `zryna-0.2.1-${TARGET}.spdx.json`,
 };
 
 function authority() {
@@ -39,9 +39,9 @@ function authority() {
   ];
   return {
     format: 'zryna.release-production-candidate-authority.v1',
-    status: 'production-candidate', productionAdmission: 'forbidden', versionCandidate: '0.2.0',
+    status: 'production-candidate', productionAdmission: 'forbidden', versionCandidate: '0.2.1',
     observedSourceRef: 'refs/heads/main',
-    intendedRelease: { ref: 'refs/tags/v0.2.0', tagProvenance: 'not-observed' },
+    intendedRelease: { ref: 'refs/tags/v0.2.1', tagProvenance: 'not-observed' },
     source: { repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main',
       commit: COMMIT, tree: TREE, sourceDateEpoch: 1_789_081_200 },
     workflow: { path: '.github/workflows/release-production-candidate.yml',
@@ -75,7 +75,7 @@ function build(root, replica, archive = Buffer.from('candidate archive')) {
   }]));
   const value = {
     format: 'zryna.production-candidate-build-result.v1', status: 'production-candidate',
-    productionAdmission: 'forbidden', version: '0.2.0', target: TARGET, replica,
+    productionAdmission: 'forbidden', version: '0.2.1', target: TARGET, replica,
     observedSource: authority().source, intendedRelease: authority().intendedRelease,
     recipe: RECIPE, artifacts,
   };
@@ -89,7 +89,7 @@ test('candidate authority distinguishes observed main from an unobserved intende
   const value = authority();
   assert.equal(validateProductionCandidateAuthority(value), value);
   for (const mutate of [
-    (copy) => { copy.source.ref = 'refs/tags/v0.2.0'; },
+    (copy) => { copy.source.ref = 'refs/tags/v0.2.1'; },
     (copy) => { copy.intendedRelease.tagProvenance = 'observed'; },
     (copy) => { copy.productionAdmission = 'allowed'; },
     (copy) => { copy.format = 'zryna.release-qualification-source.v1'; },
@@ -167,7 +167,7 @@ test('candidate replicas reproduce and installed acceptance remains publication-
     /R406-REPRODUCTION: reproduction result schema differs/);
   const archiveSha256 = reproduced.artifacts.archive.sha256;
   const files = [
-    { path: 'VERSION', mode: 0o644, data: Buffer.from('0.2.0\n') },
+    { path: 'VERSION', mode: 0o644, data: Buffer.from('0.2.1\n') },
     { path: 'bin/zryna', mode: 0o755, data: Buffer.from('cli') },
     { path: 'runtime/node/bin/node', mode: 0o755, data: Buffer.from('runtime') },
     { path: 'lib/zryna/bootstrap/worker.mjs', mode: 0o644, data: Buffer.from('provider') },
@@ -176,7 +176,7 @@ test('candidate replicas reproduce and installed acceptance remains publication-
   const spawn = (executable, args) => {
     const tampered = executable.includes('tampered-');
     return { status: tampered ? 2 : 0, signal: null,
-      stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.0\n'
+      stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.1\n'
         : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
       stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
   };

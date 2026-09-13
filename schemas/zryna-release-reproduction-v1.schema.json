@@ -7,7 +7,7 @@
   "required": ["format", "version", "target", "source", "recipe", "artifacts", "builds", "comparison"],
   "properties": {
     "format": { "const": "zryna.release-reproduction.v1" },
-    "version": { "const": "0.2.0" },
+    "version": { "const": "0.2.1" },
     "target": { "enum": ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"] },
     "source": { "$ref": "#/$defs/source" },
     "recipe": {
@@ -64,7 +64,7 @@
       "required": ["repository", "ref", "tagObject", "commit", "tree", "sourceDateEpoch"],
       "properties": {
         "repository": { "const": "https://github.com/zryna/zryna" },
-        "ref": { "const": "refs/tags/v0.2.0" },
+        "ref": { "const": "refs/tags/v0.2.1" },
         "tagObject": { "$ref": "#/$defs/objectId" },
         "commit": { "$ref": "#/$defs/objectId" },
         "tree": { "$ref": "#/$defs/objectId" },

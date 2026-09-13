@@ -18,7 +18,7 @@ import { validateRelease, validateReleaseText } from '../scripts/distribution-re
 
 const digest = (index) => index.toString(16).padStart(64, '0');
 const artifact = (path, index) => ({ path, size: 100 + index, sha256: digest(index) });
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const TAG = `v${VERSION}`;
 const COMMIT = 'a'.repeat(40);
 const compare = (left, right) => left < right ? -1 : left > right ? 1 : 0;
@@ -137,12 +137,12 @@ test('accepts one canonical exact-identity Windows and Linux envelope', () => {
 
 test('rejects drift at source, workflow, signing, target, and platform boundaries', () => {
   for (const [code, mutate] of [
-    ['R406-SOURCE', (value) => { value.tag = 'v0.2.1'; }],
-    ['R406-SOURCE', (value) => { value.source.ref = 'refs/tags/v0.2.1'; }],
+    ['R406-SOURCE', (value) => { value.tag = 'v0.2.2'; }],
+    ['R406-SOURCE', (value) => { value.source.ref = 'refs/tags/v0.2.2'; }],
     ['R406-SOURCE', (value) => { value.source.tagObject = value.source.commit; }],
     ['R406-WORKFLOW', (value) => { value.workflow.commit = 'c'.repeat(40); }],
     ['R406-WORKFLOW', (value) => { value.workflow.requiredJobs[0].sourceCommit = 'c'.repeat(40); }],
-    ['R406-SIGNATURE', (value) => { value.signing.certificateIdentity = value.signing.certificateIdentity.replace(TAG, 'v0.2.1'); }],
+    ['R406-SIGNATURE', (value) => { value.signing.certificateIdentity = value.signing.certificateIdentity.replace(TAG, 'v0.2.2'); }],
     ['R406-TARGETS', (value) => { value.subjects.reverse(); }],
     ['R406-TARGETS', (value) => { value.subjects[0].target = 'x86_64-unknown-linux-gnu'; }],
     ['R406-PLATFORM', (value) => { value.subjects[0].platformBaseline = structuredClone(value.subjects[1].platformBaseline); }],
@@ -159,7 +159,7 @@ test('rejects missing protected checks and version-disconnected asset names', ()
   assert.throws(() => validateRelease(missingCheck), /R406-WORKFLOW:/);
 
   const archive = fixture();
-  archive.subjects[1].archive.path = archive.subjects[1].archive.path.replace(VERSION, '0.2.1');
+  archive.subjects[1].archive.path = archive.subjects[1].archive.path.replace(VERSION, '0.2.2');
   archive.assetAllowlist = archive.assetAllowlist
     .filter((path) => path !== `zryna-${VERSION}-x86_64-unknown-linux-gnu.tar.gz`);
   archive.assetAllowlist.push(archive.subjects[1].archive.path);
@@ -232,7 +232,7 @@ test('schema rejects false success, qualified equivalence, paths, and extra fiel
     (value) => { value.signing.envelopeSignaturePath = 'other.sigstore.json'; },
     (value) => { value.channel = 'stable'; },
     (value) => { value.publication = 'release'; },
-    (value) => { value.version = '0.2.0-beta.1'; },
+    (value) => { value.version = '0.2.1-beta.1'; },
   ]) {
     const value = fixture();
     mutate(value);
