@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
+import {
+  mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { sha256 } from '../scripts/distribution-release/canonical.mjs';
 import {
-  extractVerifiedProductionFiles, runInstalledAcceptance,
+  canonicalBounded, parseCanonical, sha256,
+} from '../scripts/distribution-release/canonical.mjs';
+import {
+  acceptReproducedRelease, extractVerifiedProductionFiles, runInstalledAcceptance,
 } from '../scripts/distribution-release/run-installed-acceptance.mjs';
 
 function file(path, mode = 0o644, value = path) {
@@ -93,6 +97,59 @@ test('uses the production Linux archive layout and relocated executable', async 
   });
   assert.equal(result.target, 'x86_64-unknown-linux-gnu');
   assert(executables.every((path) => path.endsWith(join('bin', 'zryna'))));
+});
+
+test('accepts the exact reproduced directory and emits one canonical receipt', async (t) => {
+  const f = fixture(t, 'x86_64-unknown-linux-gnu');
+  const inputRoot = join(f.root, 'reproduced');
+  const outputRoot = join(f.root, 'acceptance');
+  const workRoot = join(f.root, 'work');
+  mkdirSync(inputRoot);
+  mkdirSync(workRoot);
+  const artifacts = {
+    archive: { path: f.descriptor.filename, size: f.archive.length, sha256: sha256(f.archive) },
+    buildReceipt: { path: 'zryna-0.2.0-x86_64-unknown-linux-gnu.build-receipt.json',
+      size: 2, sha256: sha256('{}') },
+    sbom: { path: 'zryna-0.2.0-x86_64-unknown-linux-gnu.spdx.json',
+      size: 2, sha256: sha256('{}') },
+  };
+  const reproduction = {
+    format: 'zryna.release-reproduction.v1', version: '0.2.0',
+    target: 'x86_64-unknown-linux-gnu',
+    source: { ...f.descriptor.source, tagObject: 'd'.repeat(40) },
+    recipe: f.descriptor.recipe, artifacts,
+    builds: [
+      { replica: 1, manifestSha256: 'e'.repeat(64) },
+      { replica: 2, manifestSha256: 'f'.repeat(64) },
+    ],
+    comparison: 'byte-identical',
+  };
+  writeFileSync(join(inputRoot, 'reproduction.json'), `${canonicalBounded(reproduction)}\n`);
+  writeFileSync(join(inputRoot, artifacts.archive.path), f.archive);
+  writeFileSync(join(inputRoot, artifacts.buildReceipt.path), '{}');
+  writeFileSync(join(inputRoot, artifacts.sbom.path), '{}');
+  const spawn = (executable, args) => {
+    const tampered = executable.includes('tampered-');
+    return { status: tampered ? 2 : 0, signal: null,
+      stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.0\n'
+        : args[0] === 'run' ? '42\n' : ''),
+      stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
+  };
+  let expected;
+  const result = await acceptReproducedRelease({
+    inputRoot, outputRoot, workRoot, target: reproduction.target, spawn,
+    verifyArchiveImpl: async (_archive, descriptor) => {
+      expected = descriptor;
+      return { archiveSha256: f.descriptor.sha256, files: f.files, distribution: f.distribution };
+    },
+  });
+  assert.equal(expected.source.tagObject, undefined);
+  assert.equal(expected.target.triple, f.descriptor.target.triple);
+  assert.equal(expected.target.archiveFormat, 'tar-gzip');
+  assert.deepEqual(expected.target.platformBaseline,
+    { os: 'linux', distribution: 'ubuntu', version: '24.04', architecture: 'x86_64' });
+  assert.deepEqual(parseCanonical(readFileSync(join(outputRoot, 'installed-acceptance.json'), 'utf8')),
+    result);
 });
 
 test('rejects qualification names and paths before installed execution', async (t) => {

@@ -59,7 +59,9 @@ test('release workflow has one exact protected-tag entry and non-cancellable run
   assert.deepEqual(workflow.env, {
     NODE_VERSION: '22.22.1', PNPM_VERSION: '11.18.0', RUST_VERSION: '1.97.1',
   });
-  assert.deepEqual(Object.keys(workflow.jobs), ['admit', 'build', 'reproduce', 'evidence', 'publish']);
+  assert.deepEqual(Object.keys(workflow.jobs), [
+    'admit', 'build', 'reproduce', 'installed-acceptance', 'evidence', 'publish',
+  ]);
 });
 
 test('jobs keep read, signing, and publication authorities disjoint and ordered', () => {
@@ -74,7 +76,7 @@ test('jobs keep read, signing, and publication authorities disjoint and ordered'
   assert.equal(admit.needs, undefined);
   assert.equal(build.needs, 'admit');
   assert.equal(reproduce.needs, 'build');
-  assert.equal(evidence.needs, 'reproduce');
+  assert.deepEqual(evidence.needs, ['reproduce', 'installed-acceptance']);
   assert.equal(publish.needs, 'evidence');
   assert.equal(publish.environment, 'binary-release');
   for (const [id, job] of Object.entries(workflow.jobs)) {
@@ -177,6 +179,10 @@ test('two distinct clean build jobs feed platform-local byte reproduction', () =
     { os: 'windows-2022', target: 'x86_64-pc-windows-msvc', replica: 2 },
   ]);
   assert.equal(workflow.jobs.build.strategy['fail-fast'], false);
+  assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0]['working-directory'],
+    'source');
+  assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0].run,
+    'cargo fetch --locked');
   const build = steps(workflow.jobs.build,
     'Authenticate materials, prepare the recipe, and build one clean replica')[0];
   assert.match(build.run, /run-protected-build\.mjs/);
@@ -192,6 +198,23 @@ test('two distinct clean build jobs feed platform-local byte reproduction', () =
   assert.match(compare.run, /compare-release-builds\.mjs/);
   assert.match(compare.run, /--first \.release\/first/);
   assert.match(compare.run, /--second \.release\/second/);
+});
+
+test('both reproduced archives pass installed relocation, execution, and tamper acceptance', () => {
+  const acceptance = workflow.jobs['installed-acceptance'];
+  assert.equal(acceptance.needs, 'reproduce');
+  assert.deepEqual(acceptance.permissions, { contents: 'read' });
+  assert.deepEqual(acceptance.strategy.matrix.include, [
+    { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu' },
+    { os: 'windows-2022', target: 'x86_64-pc-windows-msvc' },
+  ]);
+  const run = steps(acceptance,
+    'Verify, relocate, execute, and tamper-test the installed archive')[0];
+  assert.equal(run.env.ZRYNA_TARGET, '${{ matrix.target }}');
+  assert.match(run.run, /run-installed-acceptance\.mjs/);
+  assert.match(run.run, /--input \.release\/reproduced/);
+  assert.match(run.run, /--output \.release\/acceptance/);
+  assert.match(run.run, /--work "\$\{\{ runner\.temp \}\}"/);
 });
 
 test('evidence signing precedes the sole environment-gated draft publisher', () => {

@@ -5,7 +5,11 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sha256 } from './canonical.mjs';
+import { canonicalBounded, sha256 } from './canonical.mjs';
+import { validateReproductionText } from './compare-release-builds.mjs';
+import {
+  createReleaseFile, exactReleaseNames, MAX_RELEASE_DOCUMENT, readReleaseFile,
+} from './release-files.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const VERSION = '0.2.0';
@@ -19,10 +23,15 @@ const TARGETS = Object.freeze({
   'x86_64-unknown-linux-gnu': {
     filename: `zryna-${VERSION}-x86_64-unknown-linux-gnu.tar.gz`,
     cli: 'bin/zryna', runtime: 'runtime/node/bin/node',
+    archiveFormat: 'tar-gzip',
+    platformBaseline: { os: 'linux', distribution: 'ubuntu', version: '24.04', architecture: 'x86_64' },
   },
   'x86_64-pc-windows-msvc': {
     filename: `zryna-${VERSION}-x86_64-pc-windows-msvc.zip`,
     cli: 'bin/zryna.exe', runtime: 'runtime/node/node.exe',
+    archiveFormat: 'zip',
+    platformBaseline: { os: 'windows', product: 'windows-server', version: '2022',
+      architecture: 'x86_64', runtime: 'operating-system-ucrt' },
   },
 });
 
@@ -176,7 +185,7 @@ export async function runInstalledAcceptance({
         'build', 'src/main.zry', '--project-root', 'hello', '--target', 'javascript', '--name', name,
       ], projectParent);
       if (result.status === 0 || !result.stderr.includes(Buffer.from('ZRYNA-C4220'))
-        || system.exists(join(projectParent, 'hello', '.zryna', 'out', name))) {
+        || system.exists(join(projectParent, 'hello', '.zryna', 'out', `${name}.build`))) {
         reject('tampered installation reached artifact execution');
       }
     }
@@ -191,7 +200,66 @@ export async function runInstalledAcceptance({
   }
 }
 
+async function defaultVerifyArchive(archive, descriptor) {
+  const { verifyArchive } = await import('../distribution/verify.mjs');
+  return verifyArchive(archive, descriptor);
+}
+
+export async function acceptReproducedRelease({
+  inputRoot, outputRoot, workRoot, target,
+  verifyArchiveImpl = defaultVerifyArchive, spawn = spawnSync, system = DEFAULT_SYSTEM,
+}) {
+  if (![inputRoot, outputRoot, workRoot].every((path) => isAbsolute(path) && resolve(path) === path)
+    || new Set([inputRoot, outputRoot, workRoot]).size !== 3 || !Object.hasOwn(TARGETS, target)) {
+    reject('distinct absolute input, output, and work roots and a supported target are required');
+  }
+  const reproduction = validateReproductionText(
+    readReleaseFile(inputRoot, 'reproduction.json', MAX_RELEASE_DOCUMENT).toString('utf8'), target,
+  );
+  exactReleaseNames(inputRoot, [
+    'reproduction.json', ...Object.values(reproduction.artifacts).map(({ path }) => path),
+  ]);
+  const archiveDescriptor = reproduction.artifacts.archive;
+  const { tagObject: _tagObject, ...source } = reproduction.source;
+  const targetDefinition = TARGETS[target];
+  const descriptor = {
+    ...archiveDescriptor, filename: archiveDescriptor.path, version: reproduction.version,
+    source,
+    target: { triple: target, archiveFormat: targetDefinition.archiveFormat,
+      platformBaseline: targetDefinition.platformBaseline },
+    recipe: reproduction.recipe,
+  };
+  const acceptance = await runInstalledAcceptance({
+    archive: readReleaseFile(inputRoot, archiveDescriptor.path), descriptor, workRoot,
+    verifyArchiveImpl, spawn, system,
+  });
+  system.make(outputRoot, { recursive: false, mode: 0o700 });
+  createReleaseFile(outputRoot, 'installed-acceptance.json',
+    Buffer.from(`${canonicalBounded(acceptance)}\n`));
+  exactReleaseNames(outputRoot, ['installed-acceptance.json']);
+  return acceptance;
+}
+
+function argumentsFrom(argv) {
+  const values = new Map();
+  for (let index = 0; index < argv.length; index += 2) {
+    if (!['--input', '--output', '--work'].includes(argv[index]) || argv[index + 1] === undefined
+      || values.has(argv[index])) reject('expected --input, --output, and --work once');
+    values.set(argv[index], resolve(argv[index + 1]));
+  }
+  if (values.size !== 3) reject('expected --input, --output, and --work once');
+  return values;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
-  console.error('R406-INSTALLED-ACCEPTANCE: use requires an authenticated release descriptor adapter');
-  process.exitCode = 1;
+  try {
+    const values = argumentsFrom(process.argv.slice(2));
+    await acceptReproducedRelease({
+      inputRoot: values.get('--input'), outputRoot: values.get('--output'),
+      workRoot: values.get('--work'), target: process.env.ZRYNA_TARGET,
+    });
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
 }

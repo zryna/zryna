@@ -123,6 +123,9 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       - name: Install tagged workflow dependencies outside the source checkout
         run: pnpm --dir tooling install --frozen-lockfile
+      - name: Fetch locked Rust dependencies
+        working-directory: source
+        run: cargo fetch --locked
       - name: Download exact admission evidence from this run
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
@@ -200,9 +203,57 @@ jobs:
           include-hidden-files: false
           retention-days: 1
 
+  installed-acceptance:
+    name: accept installed ${{ matrix.target }} archive
+    needs: reproduce
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+    steps:
+      - name: Checkout exact tagged workflow tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.workflow_sha }}
+          path: tooling
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Download exact reproduced subject
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: release-reproduced-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/reproduced
+      - name: Verify, relocate, execute, and tamper-test the installed archive
+        env:
+          ZRYNA_TARGET: ${{ matrix.target }}
+        run: >-
+          node tooling/scripts/distribution-release/run-installed-acceptance.mjs
+          --input .release/reproduced
+          --output .release/acceptance
+          --work "${{ runner.temp }}"
+      - name: Upload installed acceptance receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-installed-acceptance-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/acceptance
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: false
+          retention-days: 1
+
   evidence:
     name: attest and sign release evidence
-    needs: reproduce
+    needs: [reproduce, installed-acceptance]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
