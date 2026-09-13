@@ -52,6 +52,22 @@ test('qualification workflow pins actions and closes the replica topology', () =
   assert.equal(fetchPath[1], compilePath[1]);
 });
 
+test('every workflow tool consumer installs exact locked dependencies first', () => {
+  for (const id of ['admit', 'build', 'compare']) {
+    const steps = workflow.jobs[id].steps;
+    const checkout = steps.findIndex(step => step.name === 'Checkout exact workflow tooling');
+    const setup = steps.findIndex(step => step.uses?.startsWith('pnpm/action-setup@'));
+    const install = steps.findIndex(step =>
+      step.run === 'pnpm --dir tooling install --frozen-lockfile');
+    const consumer = steps.findIndex(step =>
+      typeof step.run === 'string' && step.run.includes('tooling/scripts/distribution-release/'));
+    assert(checkout >= 0, `${id}: exact tooling checkout is required`);
+    assert(setup > checkout, `${id}: pinned pnpm setup must follow tooling checkout`);
+    assert(install > setup, `${id}: locked tooling install must follow pnpm setup`);
+    assert(consumer > install, `${id}: tooling cannot execute before its locked install`);
+  }
+});
+
 test('qualification binds bounded expected Windows developer path identities', () => {
   const environment = windowsQualificationEnvironment();
   assert(environment.INCLUDE.length > 512 && environment.INCLUDE.length <= 1024);
