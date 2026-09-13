@@ -41,7 +41,7 @@ impl Case {
         }
         let distribution = serde_json::from_value(json!({
             "format": "zryna.distribution.v1", "version": env!("CARGO_PKG_VERSION"),
-            "source": {"repository": "https://github.com/zryna/zryna", "ref": "refs/tags/v0.2.0",
+            "source": {"repository": "https://github.com/zryna/zryna", "ref": "refs/tags/v0.2.1",
                 "commit": "a".repeat(40), "tree": "b".repeat(40), "sourceDateEpoch": 0},
             "target": {"triple": "x86_64-unknown-linux-gnu", "archiveFormat": "tar-gzip",
                 "platformBaseline": {"os": "linux", "distribution": "ubuntu", "version": "24.04", "architecture": "x86_64"}},

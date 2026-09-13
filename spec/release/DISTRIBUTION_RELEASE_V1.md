@@ -20,7 +20,7 @@ are not a production archive, SPDX document, SLSA statement, signature, or publi
 
 ## Candidate identity
 
-The proposed first downloadable compiler version is `0.2.0`, with tag `v0.2.0`. This avoids
+The proposed first downloadable compiler version is `0.2.1`, with tag `v0.2.1`. This avoids
 collision with the reserved source-only `v0.1.0` preview and preserves the package authority's
 existing strict three-decimal compiler compatibility grammar. The envelope independently requires
 `channel: beta` and `publication: prerelease`; the version does not assert stability. The value is
@@ -202,7 +202,7 @@ the protected settings and dry-run evidence described here.
 
 Production recipe admission additionally requires the canonical recipe to carry exact
 `format: "zryna.distribution-recipe.v1"`, `status: "production-accepted"`,
-`productionAdmission: "allowed"`, and `versionCandidate: "0.2.0"` fields. These markers are
+`productionAdmission: "allowed"`, and `versionCandidate: "0.2.1"` fields. These markers are
 necessary but not sufficient: the exact reviewed digest and every downstream recipe, material,
 source, toolchain, build, and release gate remain authoritative. The checked-in recipe deliberately
 remains a `qualification-proposal` with production admission `forbidden` and cannot be admitted by

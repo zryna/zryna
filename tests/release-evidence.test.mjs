@@ -1,17 +1,21 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
-  mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync,
+  existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { canonicalBounded, sha256 } from '../scripts/distribution-release/canonical.mjs';
+import {
+  canonicalizeEnvelopeSignature,
+} from '../scripts/distribution-release/canonicalize-envelope-signature.mjs';
 import { prepareReleaseEvidence } from '../scripts/distribution-release/prepare-release-evidence.mjs';
 import { publishDraftRelease } from '../scripts/distribution-release/publish-draft-release.mjs';
 import { releaseSpdxBytes } from '../scripts/distribution-release/release-sbom.mjs';
 import { verifySignedRelease } from '../scripts/distribution-release/verify-signed-release.mjs';
 
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const COMMIT = 'b'.repeat(40);
 const TREE = 'c'.repeat(40);
 const TAG_OBJECT = 'a'.repeat(40);
@@ -35,7 +39,7 @@ const CANDIDATE_JOBS = [
 function source(tagType = false) {
   return {
     repository: 'https://github.com/zryna/zryna',
-    ref: 'refs/tags/v0.2.0',
+    ref: 'refs/tags/v0.2.1',
     ...(tagType ? { tagType: 'annotated' } : {}),
     tagObject: TAG_OBJECT,
     commit: COMMIT,
@@ -128,7 +132,7 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
         buildDefinition: {
           buildType: 'https://actions.github.io/buildtypes/workflow/v1',
           externalParameters: { workflow: {
-            path: '.github/workflows/release.yml', ref: 'refs/tags/v0.2.0',
+            path: '.github/workflows/release.yml', ref: 'refs/tags/v0.2.1',
             repository: 'https://github.com/zryna/zryna',
           } },
           internalParameters: { github: {
@@ -136,13 +140,13 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
             runner_environment: 'github-hosted',
           } },
           resolvedDependencies: [{
-            uri: 'git+https://github.com/zryna/zryna@refs/tags/v0.2.0',
+            uri: 'git+https://github.com/zryna/zryna@refs/tags/v0.2.1',
             digest: { gitCommit: COMMIT },
           }],
         },
         runDetails: {
           builder: {
-            id: 'https://github.com/zryna/zryna/.github/workflows/release.yml@refs/tags/v0.2.0',
+            id: 'https://github.com/zryna/zryna/.github/workflows/release.yml@refs/tags/v0.2.1',
           },
           metadata: { invocationId: run },
         },
@@ -191,7 +195,7 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
     },
     environment: {
       GITHUB_TOKEN: 'test-token', GITHUB_SERVER_URL: 'https://github.com',
-      GITHUB_REPOSITORY: 'zryna/zryna', GITHUB_REF: 'refs/tags/v0.2.0',
+      GITHUB_REPOSITORY: 'zryna/zryna', GITHUB_REF: 'refs/tags/v0.2.1',
       GITHUB_SHA: COMMIT, GITHUB_WORKFLOW_SHA: COMMIT,
       GITHUB_RUN_ID: '987654321', GITHUB_RUN_ATTEMPT: '2',
       ZRYNA_LINUX_ATTESTATION: attestationPaths.linux,
@@ -211,7 +215,7 @@ function githubServer() {
   };
   const fetchImpl = async (url, options) => {
     const parsed = new URL(url);
-    if (options.method === 'GET' && parsed.pathname.endsWith('/releases/tags/v0.2.0')) {
+    if (options.method === 'GET' && parsed.pathname.endsWith('/releases/tags/v0.2.1')) {
       return release === null ? response(404, { message: 'Not Found' }) : response(200, release);
     }
     if (options.method === 'POST' && parsed.pathname.endsWith('/releases')) {
@@ -234,7 +238,7 @@ function githubServer() {
         state: 'uploaded',
         size: bytes.length,
         digest: `sha256:${sha256(bytes)}`,
-        browser_download_url: `https://github.com/zryna/zryna/releases/download/v0.2.0/${encodeURIComponent(name)}`,
+        browser_download_url: `https://github.com/zryna/zryna/releases/download/v0.2.1/${encodeURIComponent(name)}`,
       };
       release.assets.push(asset);
       return response(201, asset);
@@ -257,8 +261,81 @@ function prepareAll(paths) {
   writeFileSync(join(paths.outputRoot, 'SHA256SUMS.sigstore.json'), '{}\n');
   writeFileSync(join(paths.outputRoot, 'RELEASE_NOTES.md.sigstore.json'), '{}\n');
   prepareReleaseEvidence({ ...paths, phase: 'envelope' });
-  writeFileSync(join(paths.outputRoot, 'zryna-release-envelope-v1.sigstore.json'), '{}\n');
+  writeFileSync(join(paths.outputRoot,
+    'zryna-release-envelope-v1.json.sigstore.json'), '{}\n');
+  canonicalizeEnvelopeSignature(paths.outputRoot);
 }
+
+function prepareForEnvelopeSignature(paths) {
+  for (const phase of ['subjects', 'documents']) {
+    prepareReleaseEvidence({ ...paths, phase });
+  }
+  writeFileSync(join(paths.outputRoot, 'SHA256SUMS.sigstore.json'), '{}\n');
+  writeFileSync(join(paths.outputRoot, 'RELEASE_NOTES.md.sigstore.json'), '{}\n');
+  prepareReleaseEvidence({ ...paths, phase: 'envelope' });
+}
+
+test('canonicalizes the signer envelope bundle before independent verification', async (t) => {
+  const paths = fixture(t);
+  prepareForEnvelopeSignature(paths);
+  const actionPath = join(paths.outputRoot,
+    'zryna-release-envelope-v1.json.sigstore.json');
+  const canonicalPath = join(paths.outputRoot, 'zryna-release-envelope-v1.sigstore.json');
+  const signature = Buffer.from('{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}\n');
+  writeFileSync(actionPath, signature);
+  const result = spawnSync(process.execPath, [
+    resolve(import.meta.dirname, '..', 'scripts', 'distribution-release',
+      'canonicalize-envelope-signature.mjs'),
+    '--directory', paths.outputRoot,
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(existsSync(actionPath), false);
+  assert.deepEqual(readFileSync(canonicalPath), signature);
+  await verifySignedRelease({
+    directory: paths.outputRoot,
+    verifyArchiveImpl: paths.verifyArchiveImpl,
+    spawn: () => ({ status: 0, stdout: 'Verified OK', stderr: '' }),
+  });
+});
+
+test('canonicalizer rejects overwrite and extra-entry layouts without deleting the source', (t) => {
+  for (const scenario of ['overwrite', 'extra']) {
+    const paths = fixture(t);
+    prepareForEnvelopeSignature(paths);
+    const actionPath = join(paths.outputRoot,
+      'zryna-release-envelope-v1.json.sigstore.json');
+    const canonicalPath = join(paths.outputRoot, 'zryna-release-envelope-v1.sigstore.json');
+    const signature = Buffer.from(`${scenario} signature\n`);
+    writeFileSync(actionPath, signature);
+    if (scenario === 'overwrite') writeFileSync(canonicalPath, 'existing canonical\n');
+    else writeFileSync(join(paths.outputRoot, 'unexpected'), 'extra\n');
+
+    assert.throws(() => canonicalizeEnvelopeSignature(paths.outputRoot),
+      /R406-RELEASE-FILE: release file inventory differs/);
+    assert.deepEqual(readFileSync(actionPath), signature);
+    if (scenario === 'overwrite') {
+      assert.equal(readFileSync(canonicalPath, 'utf8'), 'existing canonical\n');
+    } else {
+      assert.equal(existsSync(canonicalPath), false);
+    }
+  }
+});
+
+test('canonicalizer rejects a linked signer output without creating the canonical path', (t) => {
+  const paths = fixture(t);
+  prepareForEnvelopeSignature(paths);
+  const outside = join(paths.outputRoot, '..', 'linked-signature');
+  mkdirSync(outside);
+  const actionPath = join(paths.outputRoot,
+    'zryna-release-envelope-v1.json.sigstore.json');
+  const canonicalPath = join(paths.outputRoot, 'zryna-release-envelope-v1.sigstore.json');
+  symlinkSync(outside, actionPath, process.platform === 'win32' ? 'junction' : 'dir');
+
+  assert.throws(() => canonicalizeEnvelopeSignature(paths.outputRoot),
+    /R406-RELEASE-FILE: release root contains a non-file entry/);
+  assert.equal(existsSync(actionPath), true);
+  assert.equal(existsSync(canonicalPath), false);
+});
 
 test('binds two reproduced archives, admission, provenance, checksums, and signed envelope', async (t) => {
   const paths = fixture(t);
@@ -286,7 +363,7 @@ test('rejects provenance drift and cryptographic verifier failure', async (t) =>
   const drift = fixture(t);
   prepareAll(drift);
   const provenance = join(drift.outputRoot,
-    'zryna-0.2.0-x86_64-unknown-linux-gnu.intoto.jsonl');
+    'zryna-0.2.1-x86_64-unknown-linux-gnu.intoto.jsonl');
   writeFileSync(provenance, '{}\n');
   await assert.rejects(() => verifySignedRelease({
     directory: drift.outputRoot,
@@ -328,8 +405,8 @@ test('signed-release admission rejects an envelope-bound header-only SBOM', asyn
   const paths = fixture(t, () => {}, (_bytes, { target, archive }) => Buffer.from(`${
     canonicalBounded({
       spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0', SPDXID: 'SPDXRef-DOCUMENT',
-      name: `zryna-0.2.0-${target.triple}`,
-      documentNamespace: `https://zryna.com/spdx/0.2.0/${target.triple}/${sha256(archive)}`,
+      name: `zryna-0.2.1-${target.triple}`,
+      documentNamespace: `https://zryna.com/spdx/0.2.1/${target.triple}/${sha256(archive)}`,
     })}\n`));
   prepareAll(paths);
   await assert.rejects(() => verifySignedRelease({

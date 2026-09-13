@@ -30,7 +30,7 @@ function tool(name, version, origin, digit) {
 function fixture() {
   const sourceBytes = bytes({
     format: 'zryna.release-qualification-source.v1', status: 'provisional-candidate',
-    productionAdmission: 'forbidden', versionCandidate: '0.2.0',
+    productionAdmission: 'forbidden', versionCandidate: '0.2.1',
     source: { repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main',
       commit: COMMIT, tree: TREE, sourceDateEpoch: 1_789_081_200 },
     workflow: { path: '.github/workflows/release-qualification.yml', size: 100,

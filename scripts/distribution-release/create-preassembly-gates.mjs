@@ -194,7 +194,7 @@ export async function createPreassemblyGates(options = {}) {
   const environment = options.environment ?? process.env;
   if (!environment.GITHUB_TOKEN || environment.GITHUB_REPOSITORY !== REPOSITORY
     || environment.GITHUB_SERVER_URL !== 'https://github.com'
-    || environment.GITHUB_REF !== 'refs/tags/v0.2.0'
+    || environment.GITHUB_REF !== 'refs/tags/v0.2.1'
     || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')) {
     reject('exact protected workflow repository, tag, SHA, and token are required');
   }

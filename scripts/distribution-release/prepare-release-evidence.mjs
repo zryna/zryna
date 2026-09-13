@@ -15,7 +15,7 @@ import { validateProductionCandidateReceiptText } from './create-production-cand
 import { validateRelease } from './validate.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const TARGETS = Object.freeze([
   { key: 'windows', triple: 'x86_64-pc-windows-msvc', extension: 'zip' },
   { key: 'linux', triple: 'x86_64-unknown-linux-gnu', extension: 'tar.gz' },
@@ -233,7 +233,7 @@ function writeSubjects(reproductions, outputRoot) {
 function releaseNotes(source, reproductions) {
   const archives = reproductions.map(({ reproduction }) => reproduction.artifacts.archive);
   return Buffer.from([
-    '# Zryna 0.2.0 beta',
+    '# Zryna 0.2.1 beta',
     '',
     'This prerelease contains the first reproducible downloadable Zryna compiler archives.',
     '',
