@@ -11,7 +11,7 @@ import {
   validateProductionCandidateReproduction,
 } from './compare-production-candidate-builds.mjs';
 import {
-  createReleaseFile, exactReleaseNames, MAX_RELEASE_DOCUMENT, readReleaseFile,
+  createReleaseFile, exactReleaseNames, MAX_RELEASE_DOCUMENT, MAX_RELEASE_FILE, readReleaseFile,
 } from './release-files.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -207,9 +207,9 @@ export async function runInstalledAcceptance({
   }
 }
 
-async function defaultVerifyArchive(archive, descriptor) {
+async function defaultVerifyArchive(archive, descriptor, options) {
   const { verifyArchive } = await import('../distribution/verify.mjs');
-  return verifyArchive(archive, descriptor);
+  return verifyArchive(archive, descriptor, options);
 }
 
 export async function acceptReproducedRelease({
@@ -237,7 +237,7 @@ export async function acceptReproducedRelease({
     recipe: reproduction.recipe,
   };
   const acceptance = await runInstalledAcceptance({
-    archive: readReleaseFile(inputRoot, archiveDescriptor.path), descriptor, workRoot,
+    archive: readReleaseFile(inputRoot, archiveDescriptor.path, MAX_RELEASE_FILE), descriptor, workRoot,
     verifyArchiveImpl, spawn, system,
   });
   system.make(outputRoot, { recursive: false, mode: 0o700 });
@@ -266,7 +266,7 @@ export async function acceptProductionCandidate({
   const archiveDescriptor = reproduction.artifacts.archive;
   const definition = TARGETS[target];
   const acceptance = await runInstalledAcceptance({
-    archive: readReleaseFile(inputRoot, archiveDescriptor.path),
+    archive: readReleaseFile(inputRoot, archiveDescriptor.path, MAX_RELEASE_FILE),
     descriptor: {
       ...archiveDescriptor, filename: archiveDescriptor.path, version: reproduction.version,
       source: reproduction.observedSource,
