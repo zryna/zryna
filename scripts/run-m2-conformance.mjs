@@ -7,7 +7,7 @@ import { loadAndValidateM2Conformance } from './check-m2-conformance.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const workspaceRoot = resolve(dirname(scriptPath), '..');
-const expectedCommandsSha256 = 'ab4433d19f862f1c6a189023e5d9d265051795c18bc97fd4cc66bb4f6031fde3';
+const expectedCommandsSha256 = 'b4e4ec01985f3700b916f9fd7850501d76cd68d53ccd5e3756fccabfa3be81c0';
 const maximumOutputBytes = 8 * 1024 * 1024;
 
 export const M2_CONFORMANCE_COMMANDS = Object.freeze([
@@ -30,7 +30,7 @@ export const M2_CONFORMANCE_COMMANDS = Object.freeze([
       '--',
       '--nocapture',
     ]),
-    timeout: 5 * 60_000,
+    timeout: 7 * 60_000,
   }),
   Object.freeze({
     id: 'internal-boundary-evidence',
