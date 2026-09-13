@@ -253,7 +253,11 @@ test('candidate installed-acceptance CLI reads archives beyond the document boun
     '--input', inputRoot, '--output', outputRoot, '--work', workRoot, '--candidate', 'true',
   ], { encoding: 'utf8', env: { ...process.env, ZRYNA_TARGET: TARGET } });
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /D422-ADMISSION: archive Node\/zlib recipe mismatch/);
+  const expectedRejection = process.versions.node === '22.22.1'
+      && process.versions.zlib === '1.3.1-e00f703'
+    ? /incorrect header check/
+    : /D422-ADMISSION: archive Node\/zlib recipe mismatch/;
+  assert.match(result.stderr, expectedRejection);
   assert.doesNotMatch(result.stderr, /must be one direct regular file within its byte bound/);
 });
 
