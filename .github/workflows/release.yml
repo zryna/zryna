@@ -86,7 +86,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     env:
-      CARGO_HOME: ${{ runner.temp }}/zryna-bootstrap-cargo
+      CARGO_HOME: ${{ github.workspace }}/zryna-bootstrap-cargo
     permissions:
       contents: read
     strategy:

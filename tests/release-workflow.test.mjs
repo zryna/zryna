@@ -185,7 +185,7 @@ test('two distinct clean build jobs feed platform-local byte reproduction', () =
   ]);
   assert.equal(workflow.jobs.build.strategy['fail-fast'], false);
   assert.equal(workflow.jobs.build.env.CARGO_HOME,
-    '${{ runner.temp }}/zryna-bootstrap-cargo');
+    '${{ github.workspace }}/zryna-bootstrap-cargo');
   assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0]['working-directory'],
     'source');
   assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0].run,

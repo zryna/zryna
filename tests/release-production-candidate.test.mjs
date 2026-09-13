@@ -239,7 +239,7 @@ test('candidate workflow is protected-main, read-only, and has no publisher or s
   assert.deepEqual(workflow.on, { workflow_dispatch: null });
   assert.deepEqual(Object.keys(workflow.jobs), ['admit', 'build', 'reproduce', 'installed-acceptance']);
   assert.equal(workflow.jobs.build.env.CARGO_HOME,
-    '${{ runner.temp }}/zryna-bootstrap-cargo');
+    '${{ github.workspace }}/zryna-bootstrap-cargo');
   for (const job of Object.values(workflow.jobs)) {
     assert.notEqual(job.permissions?.contents, 'write');
     assert.equal(job.permissions?.['id-token'], undefined);
