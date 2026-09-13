@@ -14,6 +14,7 @@ import { prepareReleaseEvidence } from '../scripts/distribution-release/prepare-
 import { publishDraftRelease } from '../scripts/distribution-release/publish-draft-release.mjs';
 import { releaseSpdxBytes } from '../scripts/distribution-release/release-sbom.mjs';
 import { verifySignedRelease } from '../scripts/distribution-release/verify-signed-release.mjs';
+import { githubServer } from './release-publisher-mock.mjs';
 
 const VERSION = '0.2.1';
 const COMMIT = 'b'.repeat(40);
@@ -204,56 +205,6 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
   };
 }
 
-function githubServer() {
-  let release = null;
-  let mutations = 0;
-  const response = (status, value) => {
-    const body = Buffer.from(JSON.stringify(value));
-    return new Response(body, { status, headers: {
-      'content-length': String(body.length), 'content-type': 'application/json',
-    } });
-  };
-  const fetchImpl = async (url, options) => {
-    const parsed = new URL(url);
-    if (options.method === 'GET' && parsed.pathname.endsWith('/releases/tags/v0.2.1')) {
-      return release === null ? response(404, { message: 'Not Found' }) : response(200, release);
-    }
-    if (options.method === 'POST' && parsed.pathname.endsWith('/releases')) {
-      mutations += 1;
-      const input = JSON.parse(options.body);
-      release = {
-        id: 41, url: 'https://api.github.com/repos/zryna/zryna/releases/41',
-        tag_name: input.tag_name, name: input.name, body: input.body,
-        draft: input.draft, prerelease: input.prerelease, assets: [],
-      };
-      return response(201, release);
-    }
-    if (options.method === 'POST' && parsed.hostname === 'uploads.github.com') {
-      mutations += 1;
-      const name = parsed.searchParams.get('name');
-      const bytes = Buffer.from(await new Response(options.body).arrayBuffer());
-      const asset = {
-        id: 100 + release.assets.length,
-        name,
-        state: 'uploaded',
-        size: bytes.length,
-        digest: `sha256:${sha256(bytes)}`,
-        browser_download_url: `https://github.com/zryna/zryna/releases/download/v0.2.1/${encodeURIComponent(name)}`,
-      };
-      release.assets.push(asset);
-      return response(201, asset);
-    }
-    if (options.method === 'PATCH' && parsed.pathname.endsWith('/releases/41')) {
-      mutations += 1;
-      const input = JSON.parse(options.body);
-      release = { ...release, draft: input.draft, prerelease: input.prerelease };
-      return response(200, release);
-    }
-    throw new Error(`unexpected request ${options.method} ${url}`);
-  };
-  return { fetchImpl, get release() { return release; }, get mutations() { return mutations; } };
-}
-
 function prepareAll(paths) {
   for (const phase of ['subjects', 'documents']) {
     prepareReleaseEvidence({ ...paths, phase });
@@ -416,10 +367,10 @@ test('signed-release admission rejects an envelope-bound header-only SBOM', asyn
   }), /R406-SPDX: document fields differ from the closed SPDX 2.3 profile/);
 });
 
-test('creates, fills, verifies, and publishes only the exact server-digested asset set', async (t) => {
+test('discovers, fills, verifies, and publishes one authenticated draft', async (t) => {
   const paths = fixture(t);
   prepareAll(paths);
-  const server = githubServer();
+  const server = githubServer({ decoyCount: 100 });
   const call = (phase) => publishDraftRelease({
     directory: paths.outputRoot, phase, environment: paths.environment,
     fetchImpl: server.fetchImpl, requestTimeoutMs: 5_000, verifyImpl: () => {},
@@ -436,18 +387,95 @@ test('creates, fills, verifies, and publishes only the exact server-digested ass
   assert.equal(server.mutations, 19);
 });
 
-test('refuses an existing release before mutation', async (t) => {
+test('resumes an exact partially uploaded draft without replacing assets', async (t) => {
   const paths = fixture(t);
   prepareAll(paths);
   const server = githubServer();
-  await publishDraftRelease({
-    directory: paths.outputRoot, phase: 'create-draft', environment: paths.environment,
+  const call = (phase) => publishDraftRelease({
+    directory: paths.outputRoot, phase, environment: paths.environment,
     fetchImpl: server.fetchImpl, requestTimeoutMs: 5_000, verifyImpl: () => {},
   });
+  await call('create-draft');
+  server.interruptUploadsAfter(2);
+  await assert.rejects(() => call('upload'), /simulated upload interruption/);
+  assert.equal(server.release.assets.length, 2);
   const mutations = server.mutations;
-  await assert.rejects(() => publishDraftRelease({
-    directory: paths.outputRoot, phase: 'create-draft', environment: paths.environment,
+  await call('create-draft');
+  assert.equal(server.mutations, mutations);
+  server.interruptUploadsAfter(null);
+  await call('upload');
+  assert.equal(server.release.assets.length, 17);
+  assert.equal(new Set(server.uploadNames).size, 17);
+  assert.equal(server.uploadNames.length, 17);
+  await call('verify-draft');
+});
+
+test('rejects wrong or ambiguous draft identities before mutation', async (t) => {
+  for (const scenario of ['wrong fields', 'duplicate tag']) {
+    const paths = fixture(t);
+    prepareAll(paths);
+    const server = githubServer();
+    const call = (phase) => publishDraftRelease({
+      directory: paths.outputRoot, phase, environment: paths.environment,
+      fetchImpl: server.fetchImpl, requestTimeoutMs: 5_000, verifyImpl: () => {},
+    });
+    await call('create-draft');
+    if (scenario === 'wrong fields') server.mutateRelease((release) => { release.name = 'wrong'; });
+    else server.addRelease({ ...server.release, id: 42,
+      url: 'https://api.github.com/repos/zryna/zryna/releases/42' });
+    const mutations = server.mutations;
+    await assert.rejects(() => call('upload'), scenario === 'wrong fields'
+      ? /GitHub release identity or state differs/
+      : /multiple releases exist for the immutable tag/);
+    assert.equal(server.mutations, mutations);
+  }
+});
+
+test('rejects wrong authenticated draft asset identities and URLs before resume', async (t) => {
+  for (const [label, mutate] of [
+    ['API identity', (asset) => { asset.url = `${asset.url}-wrong`; }],
+    ['published URL', (asset) => {
+      asset.browser_download_url = asset.browser_download_url.replace(
+        'untagged-0123456789abcdefabcd', 'v0.2.1');
+    }],
+    ['foreign draft URL', (asset) => {
+      asset.browser_download_url = asset.browser_download_url.replace(
+        'github.com/zryna/zryna', 'github.com/example/zryna');
+    }],
+    ['malformed draft slug', (asset) => {
+      asset.browser_download_url = asset.browser_download_url.replace(
+        'untagged-0123456789abcdefabcd', 'untagged-0123456789abcdefabcg');
+    }],
+  ]) {
+    const paths = fixture(t);
+    prepareAll(paths);
+    const server = githubServer();
+    const call = (phase) => publishDraftRelease({
+      directory: paths.outputRoot, phase, environment: paths.environment,
+      fetchImpl: server.fetchImpl, requestTimeoutMs: 5_000, verifyImpl: () => {},
+    });
+    await call('create-draft');
+    server.interruptUploadsAfter(1);
+    await assert.rejects(() => call('upload'), /simulated upload interruption/);
+    server.mutateRelease((release) => { mutate(release.assets[0]); });
+    const mutations = server.mutations;
+    await assert.rejects(() => call('upload'), /server-side identity or digest differs/, label);
+    assert.equal(server.mutations, mutations, label);
+  }
+});
+
+test('refuses an existing published release before mutation', async (t) => {
+  const paths = fixture(t);
+  prepareAll(paths);
+  const server = githubServer();
+  const call = (phase) => publishDraftRelease({
+    directory: paths.outputRoot, phase, environment: paths.environment,
     fetchImpl: server.fetchImpl, requestTimeoutMs: 5_000, verifyImpl: () => {},
-  }), /R406-PUBLISHER: a release already exists/);
+  });
+  await call('create-draft');
+  await call('upload');
+  await call('publish');
+  const mutations = server.mutations;
+  await assert.rejects(() => call('create-draft'), /GitHub release identity or state differs/);
   assert.equal(server.mutations, mutations);
 });
