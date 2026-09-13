@@ -84,9 +84,9 @@
         "repository": { "const": "https://github.com/zryna/zryna" },
         "ref": {
           "type": "string",
-          "minLength": 16,
+          "minLength": 15,
           "maxLength": 32,
-          "pattern": "^refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+$"
+          "pattern": "^(?:refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+|refs/heads/main)$"
         },
         "commit": { "$ref": "#/$defs/commit" },
         "tree": { "$ref": "#/$defs/commit" },

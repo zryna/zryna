@@ -1,15 +1,43 @@
 import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
-import { canonical, canonicalBounded, parseCanonical, sha256 } from './canonical.mjs';
+import { canonical, parseCanonical, sha256 } from './canonical.mjs';
 
 const VERSION = '0.2.0';
 const DOCUMENT = 'SPDXRef-DOCUMENT';
 const ROOT_PACKAGE = 'SPDXRef-Package-zryna';
 const MAX_FILES = 512;
+export const MAX_SPDX_BYTES = 2 * 1024 * 1024;
 const PATH = /^[A-Za-z0-9][A-Za-z0-9@+._-]*(?:\/[A-Za-z0-9@][A-Za-z0-9@+._-]*){0,11}$/;
 
 function reject(message) {
   throw new Error(`R406-SPDX: ${message}`);
+}
+
+function spdxBytes(value) {
+  const wire = `${canonical(value)}\n`;
+  if (Buffer.byteLength(wire, 'utf8') > MAX_SPDX_BYTES) reject('SPDX document exceeds its byte bound');
+  return Buffer.from(wire);
+}
+
+function parseSpdx(bytes) {
+  if (!Buffer.isBuffer(bytes) || bytes.length < 1 || bytes.length > MAX_SPDX_BYTES) {
+    reject('SPDX document exceeds its byte bound');
+  }
+  let text;
+  let value;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    value = JSON.parse(text);
+  } catch {
+    reject('SPDX document is not canonical UTF-8 JSON');
+  }
+  if (`${canonical(value)}\n` !== text) reject('SPDX document is not canonical UTF-8 JSON');
+  if ((Array.isArray(value.files) && value.files.length > MAX_FILES)
+    || (Array.isArray(value.packages) && value.packages.length > MAX_FILES + 1)
+    || (Array.isArray(value.relationships) && value.relationships.length > MAX_FILES * 2 + 1)) {
+    reject('SPDX graph exceeds its cardinality bound');
+  }
+  return value;
 }
 
 function exactKeys(value, expected, label) {
@@ -92,7 +120,7 @@ function packageRecord(SPDXID, name, extra = {}) {
   };
 }
 
-export function createReleaseSpdx({ files, archive, source, target }) {
+export function createReleaseSpdx({ files, archive, source, target, productionCandidate = false }) {
   const graph = finalGraph(files);
   if (archive?.filename !== `zryna-${VERSION}-${target}.tar.gz`
     && archive?.filename !== `zryna-${VERSION}-${target}.zip`) {
@@ -101,7 +129,9 @@ export function createReleaseSpdx({ files, archive, source, target }) {
   if (!/^[0-9a-f]{64}$/.test(archive?.sha256 ?? '')
     || !/^[0-9a-f]{40}$/.test(source?.commit ?? '')
     || source.repository !== 'https://github.com/zryna/zryna'
-    || source.ref !== 'refs/tags/v0.2.0') reject('release source identity differs');
+    || source.ref !== (productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.0')) {
+    reject('release source identity differs');
+  }
   const materials = [...new Set(graph.map(({ material }) => material))].sort();
   const materialIds = new Map(materials.map((material) => [material, id('Material', material)]));
   const fileIds = new Map(graph.map(({ path }) => [path, id('File', path)]));
@@ -200,13 +230,7 @@ function validateOfficialShape(sbom) {
 }
 
 export function validateReleaseSpdx(sbomBytes, context) {
-  let sbom;
-  try {
-    sbom = parseCanonical(new TextDecoder('utf-8', { fatal: true }).decode(sbomBytes));
-  } catch (error) {
-    if (error instanceof TypeError) reject('SBOM is not UTF-8');
-    throw error;
-  }
+  const sbom = parseSpdx(sbomBytes);
   validateOfficialShape(sbom);
   const expected = createReleaseSpdx(context);
   if (canonical(sbom) !== canonical(expected)) {
@@ -216,5 +240,5 @@ export function validateReleaseSpdx(sbomBytes, context) {
 }
 
 export function releaseSpdxBytes(context) {
-  return Buffer.from(`${canonicalBounded(createReleaseSpdx(context))}\n`);
+  return spdxBytes(createReleaseSpdx(context));
 }

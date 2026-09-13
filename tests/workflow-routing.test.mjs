@@ -326,7 +326,10 @@ test('consolidation preserves every prior contract command and pinned action', (
 
 test('only CI handles pull requests and every superseded pull-request run cancels', () => {
   const names = readdirSync(resolve(root, '.github/workflows')).sort();
-  assert.deepEqual(names, ['ci.yml', 'documentation.yml', 'release-qualification.yml', 'release.yml']);
+  assert.deepEqual(names, [
+    'ci.yml', 'documentation.yml', 'release-production-candidate.yml',
+    'release-qualification.yml', 'release.yml',
+  ]);
   for (const name of names) {
     const candidate = workflow(name);
     if (!Object.hasOwn(candidate.on, 'pull_request')) continue;

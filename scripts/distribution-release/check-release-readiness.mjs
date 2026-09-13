@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sha256 } from './canonical.mjs';
+import { parseCanonical, sha256 } from './canonical.mjs';
+import { validateProductionRecipeIdentity } from './validate-production-recipe.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const REF = 'refs/tags/v0.2.0';
@@ -9,15 +10,24 @@ const MAX_OUTPUT = 256 * 1024;
 const OBJECT_ID = /^[0-9a-f]{40}$/;
 
 // This value stays unset until #422's recipe bytes and production integration receive exact review.
-export const ACCEPTED_RECIPE_SHA256 = null;
+export const ACCEPTED_RECIPE_SHA256 =
+  'f03ac3062496ea9836523c5534f8d9552683829e4a33b49c77cf7d6983cb03e7';
 
 export const REQUIRED_RELEASE_PATHS = Object.freeze([
   '.github/workflows/release.yml',
+  '.github/workflows/release-production-candidate.yml',
   'scripts/distribution/release-recipe-v1.json',
+  'scripts/distribution/provision-release.mjs',
   'scripts/distribution-release/compare-release-builds.mjs',
+  'scripts/distribution-release/compare-production-candidate-builds.mjs',
+  'scripts/distribution-release/create-production-candidate-receipt.mjs',
   'scripts/distribution-release/prepare-release-evidence.mjs',
   'scripts/distribution-release/publish-draft-release.mjs',
   'scripts/distribution-release/run-protected-build.mjs',
+  'scripts/distribution-release/run-installed-acceptance.mjs',
+  'scripts/distribution-release/run-production-candidate-build.mjs',
+  'scripts/distribution-release/production-candidate-authority.mjs',
+  'scripts/distribution-release/validate-production-recipe.mjs',
   'scripts/distribution-release/verify-signed-release.mjs',
 ]);
 
@@ -53,6 +63,7 @@ export function checkReleaseReadiness({
   environment = process.env,
   cwd = environment.ZRYNA_SOURCE_ROOT,
   spawn = spawnSync,
+  acceptedRecipeSha256 = ACCEPTED_RECIPE_SHA256,
 } = {}) {
   if (environment.GITHUB_EVENT_NAME !== 'push'
     || environment.GITHUB_REPOSITORY !== 'zryna/zryna'
@@ -74,15 +85,17 @@ export function checkReleaseReadiness({
     else objects.set(path, object);
   }
   if (missing.length > 0) reject(`missing reviewed prerequisites: ${missing.join(', ')}`);
-  if (ACCEPTED_RECIPE_SHA256 === null) {
+  if (acceptedRecipeSha256 === null) {
     reject('no distribution recipe digest has received exact production review');
   }
   const recipeObject = objects.get('scripts/distribution/release-recipe-v1.json');
   const recipe = run(spawn, ['cat-file', 'blob', recipeObject], cwd, null);
-  if (sha256(recipe) !== ACCEPTED_RECIPE_SHA256) {
+  if (sha256(recipe) !== acceptedRecipeSha256) {
     reject('distribution recipe bytes differ from the accepted production digest');
   }
-  return { sourceCommit: environment.GITHUB_SHA, recipeSha256: ACCEPTED_RECIPE_SHA256 };
+  const value = parseCanonical(new TextDecoder('utf-8', { fatal: true }).decode(recipe));
+  validateProductionRecipeIdentity(value, reject);
+  return { sourceCommit: environment.GITHUB_SHA, recipeSha256: acceptedRecipeSha256 };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {

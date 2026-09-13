@@ -4,6 +4,9 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import { parseDocument } from 'yaml';
 import {
+  canonicalBounded, parseCanonical, sha256,
+} from '../scripts/distribution-release/canonical.mjs';
+import {
   ACCEPTED_RECIPE_SHA256,
   checkReleaseReadiness,
   REQUIRED_RELEASE_PATHS,
@@ -14,6 +17,33 @@ const parsed = parseDocument(readFileSync(resolve(root, '.github/workflows/relea
 assert.deepEqual(parsed.errors, []);
 const workflow = parsed.toJS();
 const shaUse = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9a-f]{40}$/;
+
+function wire(value) { return Buffer.from(`${canonicalBounded(value)}\n`); }
+
+function readinessFixture(recipe) {
+  const source = resolve('release-readiness-source');
+  const sourceCommit = 'a'.repeat(40);
+  const spawn = (executable, args, options) => {
+    assert.equal(executable, 'git');
+    let output;
+    if (args[0] === 'ls-tree') {
+      const path = args.at(-1);
+      output = Buffer.from(`100644 blob ${'b'.repeat(40)}\t${path}\0`);
+    } else if (args[0] === 'cat-file') output = recipe;
+    else throw new Error(`unexpected git command ${args.join(' ')}`);
+    return { status: 0, stdout: options.encoding === null ? output : output.toString('utf8') };
+  };
+  return {
+    cwd: source,
+    environment: {
+      GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'zryna/zryna',
+      GITHUB_REF: 'refs/tags/v0.2.0', GITHUB_REF_PROTECTED: 'true',
+      GITHUB_SHA: sourceCommit, GITHUB_WORKFLOW_SHA: sourceCommit, ZRYNA_SOURCE_ROOT: source,
+    },
+    sourceCommit,
+    spawn,
+  };
+}
 
 function steps(job, name) {
   return job.steps.filter((step) => step.name === name);
@@ -29,7 +59,9 @@ test('release workflow has one exact protected-tag entry and non-cancellable run
   assert.deepEqual(workflow.env, {
     NODE_VERSION: '22.22.1', PNPM_VERSION: '11.18.0', RUST_VERSION: '1.97.1',
   });
-  assert.deepEqual(Object.keys(workflow.jobs), ['admit', 'build', 'reproduce', 'evidence', 'publish']);
+  assert.deepEqual(Object.keys(workflow.jobs), [
+    'admit', 'build', 'reproduce', 'installed-acceptance', 'evidence', 'publish',
+  ]);
 });
 
 test('jobs keep read, signing, and publication authorities disjoint and ordered', () => {
@@ -44,7 +76,7 @@ test('jobs keep read, signing, and publication authorities disjoint and ordered'
   assert.equal(admit.needs, undefined);
   assert.equal(build.needs, 'admit');
   assert.equal(reproduce.needs, 'build');
-  assert.equal(evidence.needs, 'reproduce');
+  assert.deepEqual(evidence.needs, ['reproduce', 'installed-acceptance']);
   assert.equal(publish.needs, 'evidence');
   assert.equal(publish.environment, 'binary-release');
   for (const [id, job] of Object.entries(workflow.jobs)) {
@@ -79,13 +111,15 @@ test('all external actions are immutable pins and checkouts cannot retain creden
   }
 });
 
-test('admission fails before build until the reviewed recipe and integrations exist', () => {
+test('admission requires the reviewed recipe and complete integrations', () => {
   const admit = workflow.jobs.admit;
   const names = admit.steps.map(({ name }) => name).filter(Boolean);
   assert(names.indexOf('Capture protected tag identity')
     < names.indexOf('Capture exact successful protected gates'));
   assert(names.indexOf('Capture exact successful protected gates')
     < names.indexOf('Reject release until every reviewed production prerequisite is present'));
+  assert(names.indexOf('Reject release until every reviewed production prerequisite is present')
+    < names.indexOf('Require the exact successful production candidate'));
   assert.match(steps(admit, 'Capture protected tag identity')[0].run,
     /create-release-tag-receipt\.mjs/);
   assert.match(steps(admit, 'Capture exact successful protected gates')[0].run,
@@ -93,7 +127,10 @@ test('admission fails before build until the reviewed recipe and integrations ex
   assert.match(steps(admit,
     'Reject release until every reviewed production prerequisite is present')[0].run,
   /check-release-readiness\.mjs/);
-  assert.equal(ACCEPTED_RECIPE_SHA256, null);
+  assert.match(steps(admit, 'Require the exact successful production candidate')[0].run,
+    /create-production-candidate-receipt\.mjs/);
+  assert.equal(ACCEPTED_RECIPE_SHA256,
+    'f03ac3062496ea9836523c5534f8d9552683829e4a33b49c77cf7d6983cb03e7');
 
   const source = resolve('release-readiness-source');
   const sha = 'a'.repeat(40);
@@ -123,6 +160,22 @@ test('admission fails before build until the reviewed recipe and integrations ex
   });
 });
 
+test('readiness requires accepted production semantics after exact recipe digest binding', () => {
+  const accepted = readFileSync(resolve(root, 'scripts/distribution/release-recipe-v1.json'));
+  const proposal = wire({
+    ...parseCanonical(accepted.toString('utf8')),
+    status: 'qualification-proposal', productionAdmission: 'forbidden',
+  });
+  const ready = readinessFixture(accepted);
+  assert.deepEqual(checkReleaseReadiness({
+    ...ready, acceptedRecipeSha256: sha256(accepted),
+  }), { sourceCommit: ready.sourceCommit, recipeSha256: sha256(accepted) });
+
+  assert.throws(() => checkReleaseReadiness({
+    ...readinessFixture(proposal), acceptedRecipeSha256: sha256(proposal),
+  }), /R406-RELEASE-NOT-READY: recipe does not carry the accepted production identity/);
+});
+
 test('two distinct clean build jobs feed platform-local byte reproduction', () => {
   assert.deepEqual(workflow.jobs.build.strategy.matrix.include, [
     { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu', replica: 1 },
@@ -131,6 +184,16 @@ test('two distinct clean build jobs feed platform-local byte reproduction', () =
     { os: 'windows-2022', target: 'x86_64-pc-windows-msvc', replica: 2 },
   ]);
   assert.equal(workflow.jobs.build.strategy['fail-fast'], false);
+  assert.equal(workflow.jobs.build.env.CARGO_HOME,
+    '${{ github.workspace }}/zryna-bootstrap-cargo');
+  assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0]['working-directory'],
+    'source');
+  assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0].run,
+    'cargo fetch --locked');
+  assert.equal(steps(workflow.jobs.build, 'Bind exact Unix tools')[0].if,
+    "runner.os == 'Linux'");
+  assert.equal(steps(workflow.jobs.build,
+    'Bind exact Windows tools and developer environment')[0].if, "runner.os == 'Windows'");
   const build = steps(workflow.jobs.build,
     'Authenticate materials, prepare the recipe, and build one clean replica')[0];
   assert.match(build.run, /run-protected-build\.mjs/);
@@ -143,9 +206,28 @@ test('two distinct clean build jobs feed platform-local byte reproduction', () =
   ]);
   const compare = steps(workflow.jobs.reproduce,
     'Compare complete archive bytes and retained deterministic evidence')[0];
+  assert.equal(steps(workflow.jobs.reproduce, 'Install tagged workflow dependencies').length, 1);
   assert.match(compare.run, /compare-release-builds\.mjs/);
   assert.match(compare.run, /--first \.release\/first/);
   assert.match(compare.run, /--second \.release\/second/);
+});
+
+test('both reproduced archives pass installed relocation, execution, and tamper acceptance', () => {
+  const acceptance = workflow.jobs['installed-acceptance'];
+  assert.equal(acceptance.needs, 'reproduce');
+  assert.deepEqual(acceptance.permissions, { contents: 'read' });
+  assert.deepEqual(acceptance.strategy.matrix.include, [
+    { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu' },
+    { os: 'windows-2022', target: 'x86_64-pc-windows-msvc' },
+  ]);
+  assert.equal(steps(acceptance, 'Install tagged workflow dependencies').length, 1);
+  const run = steps(acceptance,
+    'Verify, relocate, execute, and tamper-test the installed archive')[0];
+  assert.equal(run.env.ZRYNA_TARGET, '${{ matrix.target }}');
+  assert.match(run.run, /run-installed-acceptance\.mjs/);
+  assert.match(run.run, /--input \.release\/reproduced/);
+  assert.match(run.run, /--output \.release\/acceptance/);
+  assert.match(run.run, /--work "\$\{\{ runner\.temp \}\}"/);
 });
 
 test('evidence signing precedes the sole environment-gated draft publisher', () => {

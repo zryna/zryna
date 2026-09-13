@@ -11,6 +11,7 @@ import {
 } from './release-files.mjs';
 import { validatePreassemblyGatesShape } from './validate-preassembly-gates.mjs';
 import { validateReleaseTagReceiptText } from './validate-release-tag-receipt.mjs';
+import { validateProductionCandidateReceiptText } from './create-production-candidate-receipt.mjs';
 import { validateRelease } from './validate.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -75,13 +76,19 @@ function loadAdmission(admissionRoot, reproductions) {
   if (!isAbsolute(admissionRoot) || resolve(admissionRoot) !== admissionRoot) {
     reject('admission root must be absolute and normalized');
   }
-  exactReleaseNames(admissionRoot, ['preassembly-gates.json', 'tag-receipt.json']);
+  exactReleaseNames(admissionRoot, [
+    'preassembly-gates.json', 'production-candidate-receipt.json', 'tag-receipt.json',
+  ]);
   const tag = validateReleaseTagReceiptText(utf8(
     readReleaseFile(admissionRoot, 'tag-receipt.json', MAX_RELEASE_DOCUMENT), 'tag receipt',
   ));
   const gates = validatePreassemblyGatesShape(parseCanonical(utf8(
     readReleaseFile(admissionRoot, 'preassembly-gates.json', MAX_RELEASE_DOCUMENT), 'gate receipt',
   )));
+  const candidate = validateProductionCandidateReceiptText(utf8(readReleaseFile(
+    admissionRoot, 'production-candidate-receipt.json', MAX_RELEASE_DOCUMENT,
+  ), 'production candidate receipt'), tag.source.commit,
+  reproductions[0].reproduction.recipe.sha256);
   const expectedSource = { ...tag.source };
   delete expectedSource.tagType;
   if (tag.version !== VERSION
@@ -90,7 +97,7 @@ function loadAdmission(admissionRoot, reproductions) {
     || gates.runUrl !== `https://github.com/zryna/zryna/actions/runs/${gates.runId}`) {
     reject('admission and reproduction identities differ');
   }
-  return { tag, gates };
+  return { tag, gates, candidate };
 }
 
 function decodeBase64(value) {

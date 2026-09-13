@@ -9,7 +9,6 @@ const REPOSITORY = 'zryna/zryna';
 const REPOSITORY_URL = 'https://github.com/zryna/zryna';
 const REF = 'refs/heads/main';
 const WORKFLOW = '.github/workflows/release-qualification.yml';
-const WORKFLOW_REF = `${REPOSITORY}/${WORKFLOW}@${REF}`;
 const MAX_OUTPUT = 256 * 1024;
 const OBJECT_ID = /^[0-9a-f]{40}$/;
 const DECIMAL = /^(0|[1-9][0-9]*)$/;
@@ -45,8 +44,8 @@ function samePath(left, right) {
   return normalize(left) === normalize(right);
 }
 
-function workflowEntry(bytes) {
-  const suffix = Buffer.from(`\t${WORKFLOW}\0`);
+function workflowEntry(bytes, workflow = WORKFLOW) {
+  const suffix = Buffer.from(`\t${workflow}\0`);
   if (!bytes.subarray(-suffix.length).equals(suffix) || bytes.indexOf(0) !== bytes.length - 1) {
     reject('qualification workflow tree entry is missing or ambiguous');
   }
@@ -56,10 +55,11 @@ function workflowEntry(bytes) {
   return match[3];
 }
 
-export function createReleaseQualificationSource({
+export function captureProtectedMainSource({
   environment = process.env,
   cwd = environment.ZRYNA_SOURCE_ROOT,
   spawn = spawnSync,
+  workflow = WORKFLOW,
 } = {}) {
   if (environment.GITHUB_EVENT_NAME !== 'workflow_dispatch'
     || environment.GITHUB_REPOSITORY !== REPOSITORY
@@ -67,7 +67,7 @@ export function createReleaseQualificationSource({
     || environment.GITHUB_REF_TYPE !== 'branch'
     || environment.GITHUB_REF_NAME !== 'main'
     || environment.GITHUB_REF_PROTECTED !== 'true'
-    || environment.GITHUB_WORKFLOW_REF !== WORKFLOW_REF
+    || environment.GITHUB_WORKFLOW_REF !== `${REPOSITORY}/${workflow}@${REF}`
     || !OBJECT_ID.test(environment.GITHUB_SHA ?? '')
     || environment.GITHUB_WORKFLOW_SHA !== environment.GITHUB_SHA) {
     reject('exact protected main qualification workflow context is required');
@@ -91,8 +91,8 @@ export function createReleaseQualificationSource({
   if (!DECIMAL.test(epochText) || Number(epochText) > 4294967295) {
     reject('qualification source epoch is outside its range');
   }
-  const entry = run(spawn, ['ls-tree', '-z', '--full-tree', commit, '--', WORKFLOW], cwd, null);
-  const workflowObject = workflowEntry(entry);
+  const entry = run(spawn, ['ls-tree', '-z', '--full-tree', commit, '--', workflow], cwd, null);
+  const workflowObject = workflowEntry(entry, workflow);
   const workflowSize = oneLine(spawn, ['cat-file', '-s', workflowObject], cwd);
   if (!DECIMAL.test(workflowSize) || Number(workflowSize) < 1
     || Number(workflowSize) > MAX_OUTPUT) {
@@ -105,11 +105,7 @@ export function createReleaseQualificationSource({
   if (oneLine(spawn, ['rev-parse', 'HEAD'], cwd) !== commit) {
     reject('qualification checkout changed while producing the receipt');
   }
-  return validateReleaseQualificationSource({
-    format: 'zryna.release-qualification-source.v1',
-    status: 'provisional-candidate',
-    productionAdmission: 'forbidden',
-    versionCandidate: '0.2.0',
+  return {
     source: {
       repository: REPOSITORY_URL,
       ref: REF,
@@ -117,7 +113,18 @@ export function createReleaseQualificationSource({
       tree,
       sourceDateEpoch: Number(epochText),
     },
-    workflow: { path: WORKFLOW, size: workflowBytes.length, sha256: sha256(workflowBytes) },
+    workflow: { path: workflow, size: workflowBytes.length, sha256: sha256(workflowBytes) },
+  };
+}
+
+export function createReleaseQualificationSource(options = {}) {
+  const captured = captureProtectedMainSource(options);
+  return validateReleaseQualificationSource({
+    format: 'zryna.release-qualification-source.v1',
+    status: 'provisional-candidate',
+    productionAdmission: 'forbidden',
+    versionCandidate: '0.2.0',
+    ...captured,
   });
 }
 

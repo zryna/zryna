@@ -200,6 +200,14 @@ Removing or bypassing the readiness failure is not activation evidence. Activati
 reviewed change that fills every named prerequisite, freezes the exact recipe digest, and completes
 the protected settings and dry-run evidence described here.
 
+Production recipe admission additionally requires the canonical recipe to carry exact
+`format: "zryna.distribution-recipe.v1"`, `status: "production-accepted"`,
+`productionAdmission: "allowed"`, and `versionCandidate: "0.2.0"` fields. These markers are
+necessary but not sufficient: the exact reviewed digest and every downstream recipe, material,
+source, toolchain, build, and release gate remain authoritative. The checked-in recipe deliberately
+remains a `qualification-proposal` with production admission `forbidden` and cannot be admitted by
+supplying its digest.
+
 The canonical envelope is limited to 262,144 UTF-8 bytes, 32 nested containers, 1,024 total
 containers, and 4,096 total JSON values, all inclusive. The CLI opens a direct regular file,
 uses a nonblocking descriptor acquisition on POSIX before confirming regular-file identity,
