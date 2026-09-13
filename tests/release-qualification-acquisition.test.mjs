@@ -32,6 +32,7 @@ test('bounded fetch retains only one exact identity-encoded response', async () 
   } });
   assert.deepEqual(captured, data);
   assert.equal(options.redirect, 'error');
+  assert.equal(options.headers.accept, 'application/octet-stream');
   assert.equal(options.headers['accept-encoding'], 'identity');
 
   await assert.rejects(() => fetchQualificationResource({
@@ -40,6 +41,41 @@ test('bounded fetch retains only one exact identity-encoded response', async () 
   await assert.rejects(() => fetchQualificationResource({
     url, maximum: data.length,
   }, { fetchImpl: async () => response(`${url}/redirected`, data) }), /response identity differs/);
+});
+
+test('bounded fetch requests and requires an exact JSON representation', async () => {
+  const data = Buffer.from('{"name":"example"}');
+  const url = 'https://registry.npmjs.org/example/1.0.0';
+  let options;
+  const descriptor = { url, maximum: data.length, size: data.length, digest: sha256(data),
+    accept: 'application/json', label: 'npm metadata example@1.0.0' };
+  const captured = await fetchQualificationResource(descriptor, {
+    fetchImpl: async (requested, supplied) => {
+      assert.equal(requested, url);
+      options = supplied;
+      return response(url, data, { headers: new Headers({
+        'content-length': String(data.length), 'content-type': 'application/json; charset=utf-8',
+      }) });
+    },
+  });
+  assert.deepEqual(captured, data);
+  assert.equal(options.headers.accept, 'application/json');
+  await assert.rejects(() => fetchQualificationResource(descriptor, {
+    fetchImpl: async () => response(url, Buffer.from('[object Object]'), {
+      headers: new Headers({ 'content-length': '15', 'content-type': 'application/octet-stream' }),
+    }),
+  }), /npm metadata example@1\.0\.0: response identity differs/);
+  await assert.rejects(() => fetchQualificationResource(descriptor, {
+    fetchImpl: async () => response(url, Buffer.from('[object Object]'), {
+      headers: new Headers({ 'content-length': '15', 'content-type': 'application/json' }),
+    }),
+  }), /npm metadata example@1\.0\.0: response length differs \(declared 15; expected 18\)/);
+  await assert.rejects(() => fetchQualificationResource(descriptor, {
+    fetchImpl: async () => response(url, data, {
+      headers: new Headers({ 'content-length': '9'.repeat(512),
+        'content-type': 'application/json' }),
+    }),
+  }), /response length differs \(declared invalid; expected 18\)/);
 });
 
 test('acquires exact Git, npm, Node, Rust, and upstream-license inputs before selection', async () => {
@@ -58,11 +94,15 @@ test('acquires exact Git, npm, Node, Rust, and upstream-license inputs before se
     [WASMTIME, upstreamLicense],
   ]);
   const fetched = [];
-  const fetchImpl = async (url) => {
+  const accepts = [];
+  const fetchImpl = async (url, options) => {
     fetched.push(url);
+    accepts.push(options.headers.accept);
     const data = urls.get(url);
     assert(data, `unexpected request ${url}`);
-    return response(url, data);
+    return response(url, data, { headers: new Headers({
+      'content-length': String(data.length), 'content-type': options.headers.accept,
+    }) });
   };
   const source = new Map([
     ['LICENSE', Buffer.from('root license')],
@@ -135,6 +175,10 @@ test('acquires exact Git, npm, Node, Rust, and upstream-license inputs before se
   assert.equal(files.length, source.size + 3);
   assert.deepEqual(result.rustCaptures, [{ identity: 'example-crate-1.2.3', archive: crate }]);
   assert.deepEqual(fetched, [...urls.keys()]);
+  assert.deepEqual(accepts, [
+    'application/json', 'application/json', 'application/octet-stream',
+    'application/octet-stream', 'application/octet-stream', 'application/octet-stream',
+  ]);
   assert.deepEqual(files.map(({ path }) => path), files.map(({ path }) => path).sort());
   assert.deepEqual(files.find(({ path }) => path === 'LICENSE').data, source.get('LICENSE'));
 });
