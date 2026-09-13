@@ -139,17 +139,22 @@ async function observeProtectedGates({
     || run.html_url !== runUrl || !Number.isInteger(runAttempt) || runAttempt < 1) {
     reject('selected CI run identity or conclusion differs');
   }
-  const protection = await request(
-    `/repos/${REPOSITORY}/branches/main/protection/required_status_checks`,
+  const branch = await request(
+    `/repos/${REPOSITORY}/branches/main`,
     token,
     fetchImpl,
     requestTimeoutMs,
   );
-  const contexts = [...new Set([
-    ...(Array.isArray(protection.contexts) ? protection.contexts : []),
-    ...(Array.isArray(protection.checks) ? protection.checks.map(({ context }) => context) : []),
-  ])].sort();
-  if (JSON.stringify(contexts) !== JSON.stringify(REQUIRED)) {
+  const statusChecks = branch?.protection?.required_status_checks;
+  if (branch?.name !== 'main' || branch.protected !== true
+    || branch?.commit?.sha !== sourceCommit
+    || !Array.isArray(statusChecks?.contexts) || !Array.isArray(statusChecks?.checks)) {
+    reject('current main protection identity is missing or differs from the release contract');
+  }
+  const contexts = [...statusChecks.contexts].sort();
+  const checkedContexts = statusChecks.checks.map((check) => check?.context).sort();
+  if (JSON.stringify(contexts) !== JSON.stringify(REQUIRED)
+    || JSON.stringify(checkedContexts) !== JSON.stringify(REQUIRED)) {
     reject('current main required status contexts differ from the release contract');
   }
   const jobsResponse = await request(
