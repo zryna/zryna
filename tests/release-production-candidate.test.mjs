@@ -18,6 +18,7 @@ import {
 import {
   acceptProductionCandidate,
 } from '../scripts/distribution-release/run-installed-acceptance.mjs';
+import { MAX_RELEASE_DOCUMENT } from '../scripts/distribution-release/release-files.mjs';
 import { runProductionCandidateBuild } from '../scripts/distribution-release/run-production-candidate-build.mjs';
 import { validateReleaseTagReceipt } from '../scripts/distribution-release/validate-release-tag-receipt.mjs';
 
@@ -63,10 +64,10 @@ function roots(t) {
   return root;
 }
 
-function build(root, replica) {
+function build(root, replica, archive = Buffer.from('candidate archive')) {
   mkdirSync(root);
   const bytes = {
-    archive: Buffer.from('candidate archive'), buildReceipt: Buffer.from('{}'),
+    archive, buildReceipt: Buffer.from('{}'),
     sbom: Buffer.from('{"spdxVersion":"SPDX-2.3"}'),
   };
   const artifacts = Object.fromEntries(Object.entries(FILES).map(([key, path]) => [key, {
@@ -181,11 +182,13 @@ test('candidate replicas reproduce and installed acceptance remains publication-
   };
   const receipt = await acceptProductionCandidate({
     inputRoot: reproducedRoot, outputRoot: acceptanceRoot, workRoot, target: TARGET, spawn,
-    verifyArchiveImpl: async () => ({ archiveSha256, files,
-      distribution: { files: [
+    verifyArchiveImpl: async (_archive, _descriptor, options) => {
+      assert.deepEqual(options, { productionCandidate: true });
+      return { archiveSha256, files, distribution: { files: [
         { path: 'lib/zryna/bootstrap/worker.mjs', role: 'provider' },
         { path: 'runtime/node/bin/node', role: 'runtime' },
-      ] } }),
+      ] } };
+    },
   });
   assert.equal(receipt.productionAdmission, 'forbidden');
   assert.equal(receipt.intendedRelease.tagProvenance, 'not-observed');
@@ -228,6 +231,30 @@ test('candidate installed-acceptance CLI recognizes the literal boolean switch',
   assert.equal(result.status, 1);
   assert.match(result.stderr, /production-candidate-reproduction\.json/);
   assert.doesNotMatch(result.stderr, /optional --candidate true/);
+});
+
+test('candidate installed-acceptance CLI reads archives beyond the document bound', (t) => {
+  const root = roots(t);
+  const firstRoot = join(root, 'first');
+  const secondRoot = join(root, 'second');
+  const inputRoot = join(root, 'input');
+  const outputRoot = join(root, 'output');
+  const workRoot = join(root, 'work');
+  const archive = Buffer.alloc(MAX_RELEASE_DOCUMENT + 1, 0x78);
+  build(firstRoot, 1, archive);
+  build(secondRoot, 2, archive);
+  compareProductionCandidateBuilds({
+    firstRoot, secondRoot, outputRoot: inputRoot, target: TARGET,
+  });
+  mkdirSync(workRoot);
+  const result = spawnSync(process.execPath, [
+    resolve(import.meta.dirname, '..', 'scripts', 'distribution-release',
+      'run-installed-acceptance.mjs'),
+    '--input', inputRoot, '--output', outputRoot, '--work', workRoot, '--candidate', 'true',
+  ], { encoding: 'utf8', env: { ...process.env, ZRYNA_TARGET: TARGET } });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /D422-ADMISSION: archive Node\/zlib recipe mismatch/);
+  assert.doesNotMatch(result.stderr, /must be one direct regular file within its byte bound/);
 });
 
 test('candidate workflow is protected-main, read-only, and has no publisher or signing authority', () => {
