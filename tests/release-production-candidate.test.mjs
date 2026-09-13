@@ -175,7 +175,7 @@ test('candidate replicas reproduce and installed acceptance remains publication-
     const tampered = executable.includes('tampered-');
     return { status: tampered ? 2 : 0, signal: null,
       stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.0\n'
-        : args[0] === 'run' ? '42\n' : ''),
+        : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
       stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
   };
   const receipt = await acceptProductionCandidate({

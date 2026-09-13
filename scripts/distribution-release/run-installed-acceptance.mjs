@@ -177,7 +177,8 @@ export async function runInstalledAcceptance({
         '--name', name];
       if (operation === 'run') args.push('--export', 'main');
       const result = success(spawn, executable, args, projectParent);
-      if (operation === 'run' && ![Buffer.from('42\n'), Buffer.from('42\r\n')]
+      if (operation === 'run' && ![Buffer.from(`${targetName}: i32 42\n`),
+        Buffer.from(`${targetName}: i32 42\r\n`)]
         .some((expected) => result.stdout.equals(expected))) reject(`${targetName} result differs`);
     }
 

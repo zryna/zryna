@@ -50,7 +50,7 @@ test('accepts one authenticated production archive through relocation, portable 
     calls.push({ executable, args, cwd: options.cwd, shell: options.shell });
     const tampered = executable.includes('tampered-');
     const stdout = args[0] === '--version' ? 'zryna 0.2.0\n'
-      : args[0] === 'run' ? '42\n' : '';
+      : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : '';
     return { status: tampered ? 2 : 0, signal: null,
       stdout: Buffer.from(tampered ? '' : stdout),
       stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
@@ -91,7 +91,7 @@ test('uses the production Linux archive layout and relocated executable', async 
       const tampered = executable.includes('tampered-');
       return { status: tampered ? 2 : 0, signal: null,
         stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.0\n'
-          : args[0] === 'run' ? '42\n' : ''),
+          : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
         stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
     },
   });
@@ -132,7 +132,7 @@ test('accepts the exact reproduced directory and emits one canonical receipt', a
     const tampered = executable.includes('tampered-');
     return { status: tampered ? 2 : 0, signal: null,
       stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.0\n'
-        : args[0] === 'run' ? '42\n' : ''),
+        : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
       stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
   };
   let expected;
@@ -198,6 +198,7 @@ test('fails closed when a tampered installation command succeeds', async (t) => 
       files: f.files, distribution: f.distribution }),
     spawn: (_executable, args) => ({ status: 0, signal: null,
       stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.0\n'
-        : args[0] === 'run' ? '42\n' : ''), stderr: Buffer.alloc(0) }),
+        : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
+      stderr: Buffer.alloc(0) }),
   }), /tampered installation reached artifact execution/);
 });
