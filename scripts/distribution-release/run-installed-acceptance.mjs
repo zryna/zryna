@@ -5,8 +5,11 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { canonicalBounded, sha256 } from './canonical.mjs';
+import { canonicalBounded, parseCanonical, sha256 } from './canonical.mjs';
 import { validateReproductionText } from './compare-release-builds.mjs';
+import {
+  validateProductionCandidateReproduction,
+} from './compare-production-candidate-builds.mjs';
 import {
   createReleaseFile, exactReleaseNames, MAX_RELEASE_DOCUMENT, readReleaseFile,
 } from './release-files.mjs';
@@ -40,9 +43,11 @@ function reject(message) {
 }
 
 function safePath(path) {
-  return typeof path === 'string' && path.length >= 1 && path.length <= 240
-    && !path.startsWith('qualification/') && !path.includes('\\')
-    && path.split('/').every((part) => /^[A-Za-z0-9][A-Za-z0-9._@+-]*$/.test(part)
+  if (typeof path !== 'string' || path.length < 1 || path.length > 240
+    || path.startsWith('qualification/') || path.includes('\\')) return false;
+  const parts = path.split('/');
+  return /^[A-Za-z0-9][A-Za-z0-9._@+-]*$/.test(parts[0])
+    && parts.slice(1).every((part) => /^[A-Za-z0-9@][A-Za-z0-9._@+-]*$/.test(part)
       && part !== '.' && part !== '..');
 }
 
@@ -126,7 +131,8 @@ function install(system, root, label, files) {
 }
 
 export async function runInstalledAcceptance({
-  archive, descriptor, workRoot, verifyArchiveImpl, spawn = spawnSync, system = DEFAULT_SYSTEM,
+  archive, descriptor, workRoot, verifyArchiveImpl, verifyOptions,
+  spawn = spawnSync, system = DEFAULT_SYSTEM,
 }) {
   if (!Buffer.isBuffer(archive) || !isAbsolute(workRoot) || resolve(workRoot) !== workRoot
     || descriptor?.version !== VERSION || !Object.hasOwn(TARGETS, descriptor?.target?.triple)
@@ -135,7 +141,7 @@ export async function runInstalledAcceptance({
     || typeof verifyArchiveImpl !== 'function') {
     reject('authenticated production archive descriptor is invalid');
   }
-  const verified = await verifyArchiveImpl(archive, descriptor);
+  const verified = await verifyArchiveImpl(archive, descriptor, verifyOptions);
   if (verified?.archiveSha256 !== descriptor.sha256 || !Array.isArray(verified.files)
     || verified.files.some(({ path }) => path.startsWith('qualification/'))) {
     reject('production archive verification did not close the expected bytes');
@@ -240,21 +246,70 @@ export async function acceptReproducedRelease({
   return acceptance;
 }
 
+export async function acceptProductionCandidate({
+  inputRoot, outputRoot, workRoot, target,
+  verifyArchiveImpl = defaultVerifyArchive, spawn = spawnSync, system = DEFAULT_SYSTEM,
+}) {
+  if (![inputRoot, outputRoot, workRoot].every((path) => isAbsolute(path) && resolve(path) === path)
+    || new Set([inputRoot, outputRoot, workRoot]).size !== 3 || !Object.hasOwn(TARGETS, target)) {
+    reject('distinct absolute candidate roots and a supported target are required');
+  }
+  const reproduction = validateProductionCandidateReproduction(parseCanonical(
+    readReleaseFile(inputRoot,
+      'production-candidate-reproduction.json', MAX_RELEASE_DOCUMENT).toString('utf8'),
+  ), target);
+  exactReleaseNames(inputRoot, [
+    'production-candidate-reproduction.json',
+    ...Object.values(reproduction.artifacts).map(({ path }) => path),
+  ]);
+  const archiveDescriptor = reproduction.artifacts.archive;
+  const definition = TARGETS[target];
+  const acceptance = await runInstalledAcceptance({
+    archive: readReleaseFile(inputRoot, archiveDescriptor.path),
+    descriptor: {
+      ...archiveDescriptor, filename: archiveDescriptor.path, version: reproduction.version,
+      source: reproduction.observedSource,
+      target: { triple: target, archiveFormat: definition.archiveFormat,
+        platformBaseline: definition.platformBaseline },
+      recipe: reproduction.recipe,
+    },
+    workRoot, verifyArchiveImpl, verifyOptions: { productionCandidate: true }, spawn, system,
+  });
+  const receipt = {
+    format: 'zryna.production-candidate-installed-acceptance.v1',
+    status: 'production-candidate', productionAdmission: 'forbidden',
+    observedSource: reproduction.observedSource, intendedRelease: reproduction.intendedRelease,
+    target, archiveSha256: acceptance.archiveSha256, checks: acceptance.checks,
+  };
+  system.make(outputRoot, { recursive: false, mode: 0o700 });
+  createReleaseFile(outputRoot, 'production-candidate-installed-acceptance.json',
+    Buffer.from(`${canonicalBounded(receipt)}\n`));
+  exactReleaseNames(outputRoot, ['production-candidate-installed-acceptance.json']);
+  return receipt;
+}
+
 function argumentsFrom(argv) {
   const values = new Map();
   for (let index = 0; index < argv.length; index += 2) {
-    if (!['--input', '--output', '--work'].includes(argv[index]) || argv[index + 1] === undefined
+    if (!['--input', '--output', '--work', '--candidate'].includes(argv[index])
+      || argv[index + 1] === undefined
       || values.has(argv[index])) reject('expected --input, --output, and --work once');
-    values.set(argv[index], resolve(argv[index + 1]));
+    values.set(argv[index], argv[index] === '--candidate'
+      ? argv[index + 1] : resolve(argv[index + 1]));
   }
-  if (values.size !== 3) reject('expected --input, --output, and --work once');
+  const candidate = values.get('--candidate');
+  if (values.size !== (candidate === undefined ? 3 : 4) || (candidate !== undefined && candidate !== 'true')) {
+    reject('expected --input, --output, and --work once with optional --candidate true');
+  }
   return values;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
   try {
     const values = argumentsFrom(process.argv.slice(2));
-    await acceptReproducedRelease({
+    const operation = values.get('--candidate') === 'true'
+      ? acceptProductionCandidate : acceptReproducedRelease;
+    await operation({
       inputRoot: values.get('--input'), outputRoot: values.get('--output'),
       workRoot: values.get('--work'), target: process.env.ZRYNA_TARGET,
     });

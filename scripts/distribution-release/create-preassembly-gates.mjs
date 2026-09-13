@@ -108,7 +108,7 @@ function numericId(value, label) {
   return text;
 }
 
-async function observeProtectedGates({
+export async function observeProtectedGates({
   environment = process.env, fetchImpl = fetch, requestTimeoutMs = REQUEST_TIMEOUT,
 } = {}) {
   const token = environment.GITHUB_TOKEN;

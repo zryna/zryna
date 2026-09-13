@@ -8,7 +8,7 @@ import { requireArchiveRuntime } from './runtime.mjs';
 
 // The caller obtains expected identities from an independently authenticated release subject.
 // This content verifier does not authenticate a signature or trust policy supplied beside bytes.
-export async function verifyArchive(archive, expected) {
+export async function verifyArchive(archive, expected, { productionCandidate = false } = {}) {
   requireArchiveRuntime();
   requireValue(Buffer.isBuffer(archive) && archive.length === expected.size
     && sha256(archive) === expected.sha256, 'archive differs from expected release subject');
@@ -31,7 +31,7 @@ export async function verifyArchive(archive, expected) {
   const excluded = new Set([paths.cli, 'metadata/distribution.json', 'metadata/inventory.json',
     'metadata/checksums.sha256']);
   const payload = files.filter(file => !excluded.has(file.path));
-  const prepared = prepare(distribution, payload);
+  const prepared = prepare(distribution, payload, { productionCandidate });
   requireValue(prepared.distribution.equals(distributionBytes), 'archive prepared record mismatch');
   requireValue(files.length === prepared.preparedDistribution.archiveFileCount, 'archive file count mismatch');
   const inventory = parseCanonical(get('metadata/inventory.json').data);

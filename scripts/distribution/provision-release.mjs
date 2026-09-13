@@ -176,11 +176,13 @@ export function createProductionProvisioner(injected = {}) {
 
   async function captureReleaseMaterials({
     recipe, recipeBytes, sourceRoot, source, target, architectureReceipt,
+    productionCandidate = false, localReview = false,
   }) {
+    const sourceCommit = localReview ? environment.ZRYNA_SOURCE_COMMIT : environment.GITHUB_SHA;
     if (!isAbsolute(sourceRoot ?? '') || !TARGETS.has(target?.triple)
       || target.triple !== environment.ZRYNA_TARGET
-      || source?.commit !== environment.GITHUB_SHA
-      || source?.ref !== 'refs/tags/v0.2.0'
+      || source?.commit !== sourceCommit
+      || source?.ref !== (productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.0')
       || !Buffer.isBuffer(recipeBytes)
       || !recipeBytes.equals(Buffer.from(`${canonicalBounded(recipe)}\n`))) {
       reject('exact production capture identity differs');
@@ -245,17 +247,22 @@ export function createProductionProvisioner(injected = {}) {
       sourceRoot,
       target: structuredClone(target),
       toolchains: toolchains(observed, architectureReceipt),
+      productionCandidate,
+      localReview,
     });
     return cloneFiles(captured);
   }
 
   async function compileReleaseCli({
     recipe, recipeBytes, sourceRoot, source, target, replica, preparedDistribution,
+    productionCandidate = false, localReview = false,
   }) {
     const key = `${source?.commit}:${target?.triple}:${sha256(recipeBytes ?? Buffer.alloc(0))}`;
     const state = pending.get(key);
     if (!state || ![1, 2].includes(replica)
       || environment.ZRYNA_REPLICA !== String(replica)
+      || state.productionCandidate !== productionCandidate
+      || state.localReview !== localReview
       || canonicalBounded({ recipe, source, target })
         !== canonicalBounded({ recipe: state.recipe, source: state.source, target: state.target })
       || sourceRoot !== state.sourceRoot || !recipeBytes.equals(state.recipeBytes)) {
@@ -265,21 +272,23 @@ export function createProductionProvisioner(injected = {}) {
     const expected = implementation.preparePayload({
       version: '0.2.0', source, target,
       recipe: { format: recipe.format, sha256: sha256(recipeBytes) },
-    }, cloneFiles(state.captured), state.architectureReceipt).preparedDistribution;
+    }, cloneFiles(state.captured), state.architectureReceipt,
+    { productionCandidate }).preparedDistribution;
     if (canonicalBounded(preparedDistribution) !== canonicalBounded(expected)
       || !/^[0-9a-f]{64}$/.test(preparedDistribution.sha256 ?? '')) {
       reject('prepared distribution differs from authenticated materials');
     }
     pending.delete(key);
     const runnerTemp = environment.RUNNER_TEMP;
+    const runId = localReview ? environment.ZRYNA_LOCAL_REPLAY_ID : environment.GITHUB_RUN_ID;
     if (!isAbsolute(runnerTemp ?? '') || !isAbsolute(state.bootstrapCargoHome ?? '')
       || samePath(runnerTemp, sourceRoot, system.platform)
       || samePath(state.bootstrapCargoHome, sourceRoot, system.platform)
-      || !/^[1-9][0-9]{0,19}$/.test(environment.GITHUB_RUN_ID ?? '')) {
+      || !/^[1-9][0-9]{0,19}$/.test(runId ?? '')) {
       reject('production compile roots differ');
     }
     const workRoot = join(runnerTemp,
-      `zryna-production-${target.triple}-${environment.GITHUB_RUN_ID}-${replica}`);
+      `zryna-production-${target.triple}-${runId}-${replica}`);
     const seeded = implementation.seedCargoHome({
       bootstrapCargoHome: state.bootstrapCargoHome,
       workRoot,

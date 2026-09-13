@@ -5,13 +5,13 @@ import { validateMaterials } from './material-record.mjs';
 import { validateSourceReceipt } from './source-receipt.mjs';
 import { validateRustMaterials } from './rust-materials.mjs';
 
-export function validateDistribution(record) {
+export function validateDistribution(record, { productionCandidate = false } = {}) {
   exactKeys(record, ['format', 'version', 'source', 'target', 'recipe', 'files']);
   requireValue(record.format === 'zryna.distribution.v1', 'distribution format');
   requireValue(record.version === '0.2.0', 'unapproved distribution version');
   exactKeys(record.source, ['repository', 'ref', 'commit', 'tree', 'sourceDateEpoch']);
   requireValue(record.source.repository === 'https://github.com/zryna/zryna'
-    && record.source.ref === `refs/tags/v${record.version}`
+    && record.source.ref === (productionCandidate ? 'refs/heads/main' : `refs/tags/v${record.version}`)
     && /^[0-9a-f]{40}$/.test(record.source.commit)
     && /^[0-9a-f]{40}$/.test(record.source.tree), 'source identity');
   requireValue(Number.isSafeInteger(record.source.sourceDateEpoch)
@@ -37,9 +37,9 @@ export function validateDistribution(record) {
 
 // The workflow supplies captured, authenticated source/material bytes. This pure operation
 // performs no network acquisition, command execution, path resolution or signing.
-export function prepare({ version, source, target, recipe, files }, capturedFiles) {
+export function prepare({ version, source, target, recipe, files }, capturedFiles, options) {
   const record = { format: 'zryna.distribution.v1', version, source, target, recipe, files };
-  validateDistribution(record);
+  validateDistribution(record, options);
   authenticateFiles(capturedFiles, files, target.triple);
   for (const path of ['metadata/materials.json', 'metadata/architecture-receipt.json']) {
     parseCanonical(capturedFiles.find(file => file.path === path).data);

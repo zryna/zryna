@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { ACCEPTED_RECIPE_SHA256 } from './check-release-readiness.mjs';
 import { canonical, canonicalBounded, parseCanonical, sha256 } from './canonical.mjs';
 import { createSourceBuildReceipt } from './create-source-build-receipt.mjs';
+import { validateProductionCandidateReceiptText } from './create-production-candidate-receipt.mjs';
 import {
   createReleaseFile, exactReleaseNames, MAX_RELEASE_DOCUMENT, readReleaseFile,
 } from './release-files.mjs';
@@ -74,7 +75,7 @@ function validateRecipe(recipeBytes, acceptedDigest) {
   return { value, reference: { format: value.format, sha256: acceptedDigest } };
 }
 
-async function defaultAdapters() {
+export async function defaultProductionAdapters() {
   const [{ preparePayload }, { assemble }, { verifyArchive }, provisioner] = await Promise.all([
     import('../distribution/payload.mjs'),
     import('../distribution/assemble.mjs'),
@@ -113,41 +114,55 @@ function gateDescriptor(gatesBytes, gates) {
 
 const VERSION = '0.2.0';
 
-export async function runProtectedBuild({
-  admissionRoot, outputRoot, sourceRoot, target, replica,
+export async function runAuthenticatedProductionBuild({
+  outputRoot, sourceRoot, target, replica, source, gatesBytes, gates, resultIdentity,
+  manifestName,
   environment = process.env, spawn = spawnSync,
-  acceptedRecipeSha256 = ACCEPTED_RECIPE_SHA256, adapters,
+  acceptedRecipeSha256 = ACCEPTED_RECIPE_SHA256, adapters, productionCandidate = false,
+  localReview = false, recipeBytesOverride,
 }) {
-  if (![admissionRoot, outputRoot, sourceRoot].every((path) => isAbsolute(path)
+  if (![outputRoot, sourceRoot].every((path) => isAbsolute(path)
     && resolve(path) === path) || !Object.hasOwn(TARGETS, target)
-    || ![1, 2].includes(replica) || new Set([admissionRoot, outputRoot, sourceRoot]).size !== 3) {
+    || ![1, 2].includes(replica) || outputRoot === sourceRoot
+    || !Buffer.isBuffer(gatesBytes) || gates?.sourceCommit !== source?.commit
+    || !['build-result.json', 'production-candidate-build-result.json',
+      'local-production-replay-build-result.json'].includes(manifestName)
+    || resultIdentity === null || typeof resultIdentity !== 'object') {
     reject('exact distinct absolute roots, supported target, and replica are required');
   }
-  if (environment.GITHUB_REPOSITORY !== 'zryna/zryna'
-    || environment.GITHUB_REF !== 'refs/tags/v0.2.0'
-    || environment.GITHUB_SHA !== environment.GITHUB_WORKFLOW_SHA
+  const localIdentity = localReview
+    && productionCandidate && environment.ZRYNA_LOCAL_REVIEW === 'true'
+    && environment.GITHUB_ACTIONS !== 'true' && environment.ZRYNA_SOURCE_COMMIT === source.commit
+    && resultIdentity.format === 'zryna.local-production-replay-build-result.v1'
+    && manifestName === 'local-production-replay-build-result.json'
+    && Buffer.isBuffer(recipeBytesOverride);
+  const workflowIdentity = !localReview
+    && environment.GITHUB_REPOSITORY === 'zryna/zryna'
+    && environment.GITHUB_SHA === environment.GITHUB_WORKFLOW_SHA
+    && environment.GITHUB_SHA === source.commit;
+  if ((!localIdentity && !workflowIdentity)
     || environment.ZRYNA_TARGET !== target || Number(environment.ZRYNA_REPLICA) !== replica) {
     reject('exact protected workflow build identity is required');
   }
-  exactReleaseNames(admissionRoot, ['preassembly-gates.json', 'tag-receipt.json']);
-  const tagBytes = readReleaseFile(admissionRoot, 'tag-receipt.json', MAX_RELEASE_DOCUMENT);
-  const tag = validateReleaseTagReceiptText(tagBytes.toString('utf8'));
-  const gatesBytes = readReleaseFile(admissionRoot, 'preassembly-gates.json', MAX_RELEASE_DOCUMENT);
-  const gates = validatePreassemblyGatesShape(parseCanonical(gatesBytes.toString('utf8')));
-  if (tag.version !== VERSION || tag.source.commit !== environment.GITHUB_SHA
-    || gates.sourceCommit !== tag.source.commit) reject('admission source identity differs');
-
-  const recipeBytes = gitBlob(spawn, sourceRoot, tag.source.commit, RECIPE_PATH);
+  if (localReview) {
+    const commit = runGit(spawn, ['rev-parse', 'HEAD'], sourceRoot, 'utf8').trim();
+    const tree = runGit(spawn, ['show', '-s', '--format=%T', 'HEAD'], sourceRoot, 'utf8').trim();
+    const status = runGit(spawn, [
+      'status', '--porcelain=v1', '--untracked-files=all', '--ignored=matching',
+    ], sourceRoot, 'utf8');
+    if (commit !== source.commit || tree !== source.tree || status.length !== 0
+      || source.ref !== 'refs/heads/main') reject('local review source identity differs');
+  } else if (recipeBytesOverride !== undefined) {
+    reject('workflow builds cannot override recipe bytes');
+  }
+  const recipeBytes = localReview
+    ? Buffer.from(recipeBytesOverride) : gitBlob(spawn, sourceRoot, source.commit, RECIPE_PATH);
   const recipe = validateRecipe(recipeBytes, acceptedRecipeSha256);
-  const implementation = adapters ?? await defaultAdapters();
+  const implementation = adapters ?? await defaultProductionAdapters();
   for (const name of ['preparePayload', 'assemble', 'verifyArchive', 'captureReleaseMaterials',
     'compileReleaseCli', 'createReleaseSbom', 'createArchitectureReceipt']) {
     if (typeof implementation[name] !== 'function') reject(`build adapter ${name} is missing`);
   }
-  const source = {
-    repository: tag.source.repository, ref: tag.source.ref, commit: tag.source.commit,
-    tree: tag.source.tree, sourceDateEpoch: tag.source.sourceDateEpoch,
-  };
   const targetRecord = {
     triple: target,
     archiveFormat: TARGETS[target].archiveFormat,
@@ -165,18 +180,18 @@ export async function runProtectedBuild({
   }), 'architecture receipt');
   const capturedMaterials = await implementation.captureReleaseMaterials({
     recipe: recipe.value, recipeBytes, sourceRoot, source, target: targetRecord,
-    architectureReceipt,
+    architectureReceipt, productionCandidate, localReview,
   });
   if (!Array.isArray(capturedMaterials)) reject('captured material list is missing');
   const prepared = implementation.preparePayload({
     version: VERSION, source, target: targetRecord, recipe: recipe.reference,
-  }, capturedMaterials, architectureReceipt);
+  }, capturedMaterials, architectureReceipt, { productionCandidate });
   if (!Buffer.isBuffer(prepared?.distribution) || !Array.isArray(prepared?.payload)) {
     reject('prepared distribution or payload is missing');
   }
   const compiled = await implementation.compileReleaseCli({
     recipe: recipe.value, recipeBytes, sourceRoot, source, target: targetRecord, replica,
-    preparedDistribution: prepared.preparedDistribution,
+    preparedDistribution: prepared.preparedDistribution, productionCandidate, localReview,
   });
   const cli = bytes(compiled?.cli, 'compiled CLI');
   if (!Array.isArray(compiled.toolchains)) reject('compiled toolchain evidence is missing');
@@ -200,11 +215,11 @@ export async function runProtectedBuild({
     },
     gateReceipt: gateDescriptor(gatesBytes, gates),
     recipe: recipe.reference,
-  });
+  }, { productionCandidate });
   const inputBytes = Buffer.from(`${canonicalBounded(input)}\n`);
   const assembled = await implementation.assemble(inputBytes, {
     distribution: prepared.distribution, payload: prepared.payload, cli, gates: gatesBytes,
-  });
+  }, { productionCandidate });
   const archive = bytes(assembled?.archive, 'release archive');
   const receipt = bytes(assembled?.receipt, 'build receipt');
   const archiveName = `zryna-${VERSION}-${target}.${TARGETS[target].extension}`;
@@ -212,7 +227,7 @@ export async function runProtectedBuild({
   const archiveDescriptor = { filename: archiveName, size: archive.length, sha256: sha256(archive) };
   const verified = await implementation.verifyArchive(archive, {
     ...archiveDescriptor, version: VERSION, source, target: targetRecord, recipe: recipe.reference,
-  });
+  }, { productionCandidate });
   if (verified?.archiveSha256 !== archiveDescriptor.sha256
     || canonical(verified?.distribution) !== canonical(prepared.record)
     || !Array.isArray(verified?.files)
@@ -225,9 +240,11 @@ export async function runProtectedBuild({
   }
   const sbom = bytes(await implementation.createReleaseSbom({
     files: verified.files, recipe: recipe.value, source, target, targetRecord, input, assembled, verified,
-    archive: archiveDescriptor,
+    archive: archiveDescriptor, productionCandidate,
   }), 'SPDX SBOM');
-  validateReleaseSpdx(sbom, { files: verified.files, source, target, archive: archiveDescriptor });
+  validateReleaseSpdx(sbom, {
+    files: verified.files, source, target, archive: archiveDescriptor, productionCandidate,
+  });
 
   mkdirSync(outputRoot, { recursive: false, mode: 0o700 });
   const prefix = `zryna-${VERSION}-${target}`;
@@ -237,8 +254,7 @@ export async function runProtectedBuild({
   createReleaseFile(outputRoot, buildReceiptName, receipt);
   createReleaseFile(outputRoot, sbomName, sbom);
   const result = {
-    format: 'zryna.release-build-result.v1', version: VERSION, target, replica,
-    source: { ...source, tagObject: tag.source.tagObject },
+    ...resultIdentity, version: VERSION, target, replica,
     recipe: recipe.reference,
     artifacts: {
       archive: { path: archiveName, size: archive.length, sha256: archiveDescriptor.sha256 },
@@ -246,9 +262,47 @@ export async function runProtectedBuild({
       sbom: { path: sbomName, size: sbom.length, sha256: sha256(sbom) },
     },
   };
-  createReleaseFile(outputRoot, 'build-result.json', Buffer.from(`${canonicalBounded(result)}\n`));
-  exactReleaseNames(outputRoot, ['build-result.json', archiveName, buildReceiptName, sbomName]);
+  createReleaseFile(outputRoot, manifestName, Buffer.from(`${canonicalBounded(result)}\n`));
+  exactReleaseNames(outputRoot, [manifestName, archiveName, buildReceiptName, sbomName]);
   return result;
+}
+
+export async function runProtectedBuild({
+  admissionRoot, outputRoot, sourceRoot, target, replica,
+  environment = process.env, spawn = spawnSync,
+  acceptedRecipeSha256 = ACCEPTED_RECIPE_SHA256, adapters,
+}) {
+  if (![admissionRoot, outputRoot, sourceRoot].every((path) => isAbsolute(path)
+    && resolve(path) === path) || new Set([admissionRoot, outputRoot, sourceRoot]).size !== 3) {
+    reject('exact distinct absolute roots are required');
+  }
+  if (environment.GITHUB_REPOSITORY !== 'zryna/zryna'
+    || environment.GITHUB_REF !== 'refs/tags/v0.2.0') {
+    reject('exact protected release tag context is required');
+  }
+  exactReleaseNames(admissionRoot, [
+    'preassembly-gates.json', 'production-candidate-receipt.json', 'tag-receipt.json',
+  ]);
+  const tagBytes = readReleaseFile(admissionRoot, 'tag-receipt.json', MAX_RELEASE_DOCUMENT);
+  const tag = validateReleaseTagReceiptText(tagBytes.toString('utf8'));
+  const gatesBytes = readReleaseFile(admissionRoot, 'preassembly-gates.json', MAX_RELEASE_DOCUMENT);
+  const gates = validatePreassemblyGatesShape(parseCanonical(gatesBytes.toString('utf8')));
+  validateProductionCandidateReceiptText(readReleaseFile(
+    admissionRoot, 'production-candidate-receipt.json', MAX_RELEASE_DOCUMENT,
+  ).toString('utf8'), tag.source.commit, acceptedRecipeSha256);
+  if (tag.version !== VERSION || tag.source.commit !== environment.GITHUB_SHA
+    || gates.sourceCommit !== tag.source.commit) reject('admission source identity differs');
+  const source = {
+    repository: tag.source.repository, ref: tag.source.ref, commit: tag.source.commit,
+    tree: tag.source.tree, sourceDateEpoch: tag.source.sourceDateEpoch,
+  };
+  return runAuthenticatedProductionBuild({
+    outputRoot, sourceRoot, target, replica, source, gatesBytes, gates,
+    resultIdentity: {
+      format: 'zryna.release-build-result.v1', source: { ...source, tagObject: tag.source.tagObject },
+    },
+    manifestName: 'build-result.json', environment, spawn, acceptedRecipeSha256, adapters,
+  });
 }
 
 function argumentsFrom(argv) {

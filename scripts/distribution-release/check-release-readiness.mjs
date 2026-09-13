@@ -14,13 +14,18 @@ export const ACCEPTED_RECIPE_SHA256 = null;
 
 export const REQUIRED_RELEASE_PATHS = Object.freeze([
   '.github/workflows/release.yml',
+  '.github/workflows/release-production-candidate.yml',
   'scripts/distribution/release-recipe-v1.json',
   'scripts/distribution/provision-release.mjs',
   'scripts/distribution-release/compare-release-builds.mjs',
+  'scripts/distribution-release/compare-production-candidate-builds.mjs',
+  'scripts/distribution-release/create-production-candidate-receipt.mjs',
   'scripts/distribution-release/prepare-release-evidence.mjs',
   'scripts/distribution-release/publish-draft-release.mjs',
   'scripts/distribution-release/run-protected-build.mjs',
   'scripts/distribution-release/run-installed-acceptance.mjs',
+  'scripts/distribution-release/run-production-candidate-build.mjs',
+  'scripts/distribution-release/production-candidate-authority.mjs',
   'scripts/distribution-release/validate-production-recipe.mjs',
   'scripts/distribution-release/verify-signed-release.mjs',
 ]);

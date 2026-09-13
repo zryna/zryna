@@ -64,6 +64,12 @@ jobs:
         env:
           ZRYNA_SOURCE_ROOT: ${{ github.workspace }}/source
         run: node tooling/scripts/distribution-release/check-release-readiness.mjs
+      - name: Require the exact successful production candidate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          node tooling/scripts/distribution-release/create-production-candidate-receipt.mjs
+          > .release/admission/production-candidate-receipt.json
       - name: Upload immutable admission evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -79,6 +85,8 @@ jobs:
     needs: admit
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    env:
+      CARGO_HOME: ${{ runner.temp }}/zryna-bootstrap-cargo
     permissions:
       contents: read
     strategy:
@@ -126,6 +134,45 @@ jobs:
       - name: Fetch locked Rust dependencies
         working-directory: source
         run: cargo fetch --locked
+      - name: Bind exact Unix tools
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cargo_path="$(rustup which --toolchain 1.97.1 cargo)"
+          rustc_path="$(rustup which --toolchain 1.97.1 rustc)"
+          {
+            echo "ZRYNA_CARGO_PATH=$cargo_path"
+            echo "ZRYNA_CARGO_SHA256=$(sha256sum "$cargo_path" | cut -d' ' -f1)"
+            echo "ZRYNA_RUSTC_PATH=$rustc_path"
+            echo "ZRYNA_RUSTC_SHA256=$(sha256sum "$rustc_path" | cut -d' ' -f1)"
+            echo "ZRYNA_RUSTUP_PATH=$(command -v rustup)"
+            echo "RUSTUP_HOME=$(rustup show home)"
+            echo "ZRYNA_QUALIFICATION_FETCH_PATH=/usr/local/bin:/usr/bin:/bin"
+          } >> "$GITHUB_ENV"
+      - name: Bind exact Windows tools and developer environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $cargoPath = (rustup which --toolchain 1.97.1 cargo).Trim()
+          $rustcPath = (rustup which --toolchain 1.97.1 rustc).Trim()
+          $rustupPath = (Get-Command rustup).Source
+          $vsRoot = 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise'
+          & "$vsRoot\Common7\Tools\Launch-VsDevShell.ps1" -SkipAutomaticLocation -Arch amd64 -HostArch amd64
+          $msvc = Get-ChildItem "$vsRoot\VC\Tools\MSVC" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          "ZRYNA_CARGO_PATH=$cargoPath" >> $env:GITHUB_ENV
+          "ZRYNA_CARGO_SHA256=$((Get-FileHash -Algorithm SHA256 -LiteralPath $cargoPath).Hash.ToLowerInvariant())" >> $env:GITHUB_ENV
+          "ZRYNA_RUSTC_PATH=$rustcPath" >> $env:GITHUB_ENV
+          "ZRYNA_RUSTC_SHA256=$((Get-FileHash -Algorithm SHA256 -LiteralPath $rustcPath).Hash.ToLowerInvariant())" >> $env:GITHUB_ENV
+          "ZRYNA_RUSTUP_PATH=$rustupPath" >> $env:GITHUB_ENV
+          "RUSTUP_HOME=$((rustup show home).Trim())" >> $env:GITHUB_ENV
+          $nativeBin = "$($msvc.FullName)\bin\Hostx64\x64"
+          "ZRYNA_LINKER_PATH=$nativeBin\link.exe" >> $env:GITHUB_ENV
+          "ZRYNA_INSPECTOR_PATH=$nativeBin\dumpbin.exe" >> $env:GITHUB_ENV
+          "ZRYNA_QUALIFICATION_PATH=$nativeBin;$env:SystemRoot\System32;$env:SystemRoot" >> $env:GITHUB_ENV
+          "ZRYNA_QUALIFICATION_FETCH_PATH=$nativeBin;$env:SystemRoot\System32;$env:SystemRoot" >> $env:GITHUB_ENV
+          "INCLUDE=$env:INCLUDE" >> $env:GITHUB_ENV
+          "LIB=$env:LIB" >> $env:GITHUB_ENV
+          "LIBPATH=$env:LIBPATH" >> $env:GITHUB_ENV
       - name: Download exact admission evidence from this run
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
@@ -175,6 +222,11 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Install tagged workflow dependencies
+        run: pnpm --dir tooling install --frozen-lockfile
       - name: Download first exact build replica
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
@@ -228,6 +280,11 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Install tagged workflow dependencies
+        run: pnpm --dir tooling install --frozen-lockfile
       - name: Download exact reproduced subject
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:

@@ -17,6 +17,17 @@ const JOBS = ['adapter', 'm0', 'm2', 'm3', 'rust (ubuntu-latest)', 'rust (window
 const QUALIFICATION_RECIPE = parseCanonical(readFileSync(new URL(
   '../scripts/distribution/release-recipe-v1.json', import.meta.url,
 ), 'utf8'));
+const CANDIDATE_JOBS = [
+  'admit protected production candidate',
+  'accept installed candidate x86_64-pc-windows-msvc',
+  'accept installed candidate x86_64-unknown-linux-gnu',
+  'build candidate x86_64-pc-windows-msvc replica 1',
+  'build candidate x86_64-pc-windows-msvc replica 2',
+  'build candidate x86_64-unknown-linux-gnu replica 1',
+  'build candidate x86_64-unknown-linux-gnu replica 2',
+  'reproduce candidate x86_64-pc-windows-msvc',
+  'reproduce candidate x86_64-unknown-linux-gnu',
+];
 
 function wire(value) { return Buffer.from(`${canonicalBounded(value)}\n`); }
 
@@ -55,6 +66,16 @@ function fixture(t, recipeValue = acceptedRecipe()) {
     })),
   }));
   const recipeBytes = Buffer.isBuffer(recipeValue) ? recipeValue : wire(recipeValue);
+  writeFileSync(join(admissionRoot, 'production-candidate-receipt.json'), wire({
+    format: 'zryna.production-candidate-receipt.v1', status: 'production-candidate-passed',
+    productionAdmission: 'candidate-prerequisite-only',
+    workflow: '.github/workflows/release-production-candidate.yml', sourceCommit: COMMIT,
+    recipeSha256: sha256(recipeBytes), runId: '987654321', runAttempt: 1,
+    runUrl: 'https://github.com/zryna/zryna/actions/runs/987654321',
+    requiredJobs: CANDIDATE_JOBS.map((name, index) => ({
+      name, conclusion: 'success', jobId: String(500 + index), checkRunId: String(600 + index),
+    })),
+  }));
   const spawn = (executable, args, options) => {
     assert.equal(executable, 'git');
     let stdout;
@@ -158,7 +179,7 @@ test('rejects execution while no exact recipe digest is accepted', async (t) => 
   const paths = fixture(t);
   await assert.rejects(() => runProtectedBuild({
     ...paths, target: TARGET, replica: 1, acceptedRecipeSha256: null, adapters: adapters(),
-  }), /R406-PROTECTED-BUILD: recipe bytes differ from the independently accepted digest/);
+  }), /R406-PRODUCTION-CANDIDATE-RECEIPT: receipt identity differs/);
 });
 
 test('rejects matching-digest recipes without the exact production identity', async (t) => {

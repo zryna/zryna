@@ -103,7 +103,7 @@ impl Distribution {
         if self.format != "zryna.distribution.v1"
             || self.version != env!("CARGO_PKG_VERSION")
             || self.source.repository != "https://github.com/zryna/zryna"
-            || self.source.r#ref != format!("refs/tags/v{}", self.version)
+            || !source_ref_matches_version(&self.source.r#ref, &self.version)
             || !hex(&self.source.commit, 40)
             || !hex(&self.source.tree, 40)
             || self.source.epoch > u64::from(u32::MAX)
@@ -178,6 +178,10 @@ impl Distribution {
         }
         Ok(())
     }
+}
+
+fn source_ref_matches_version(source_ref: &str, version: &str) -> bool {
+    source_ref == "refs/heads/main" || source_ref == format!("refs/tags/v{version}")
 }
 
 pub(super) fn hex(value: &str, length: usize) -> bool {
@@ -306,7 +310,7 @@ fn role(path: &str, distribution: &Distribution) -> Result<&'static str, Diagnos
 
 #[cfg(test)]
 mod tests {
-    use super::Source;
+    use super::{Source, source_ref_matches_version};
     use serde_json::json;
 
     #[test]
@@ -322,5 +326,13 @@ mod tests {
         alias.as_object_mut().expect("source object").remove("sourceDateEpoch");
         alias["epoch"] = json!(42);
         assert!(serde_json::from_value::<Source>(alias).is_err());
+    }
+
+    #[test]
+    fn source_ref_accepts_the_exact_candidate_or_version_tag() {
+        assert!(source_ref_matches_version("refs/heads/main", "0.2.0"));
+        assert!(source_ref_matches_version("refs/tags/v0.2.0", "0.2.0"));
+        assert!(!source_ref_matches_version("refs/heads/feature", "0.2.0"));
+        assert!(!source_ref_matches_version("refs/tags/v0.2.1", "0.2.0"));
     }
 }

@@ -16,13 +16,13 @@ function metadataTuple(path, data) {
     material: 'source', licenses: ['LICENSE'] };
 }
 
-export async function assemble(inputBytes, captured) {
+export async function assemble(inputBytes, captured, { productionCandidate = false } = {}) {
   requireArchiveRuntime();
   // The separate release boundary owns this schema and protected input admission.
   const { validateBuildInput } = await import('../distribution-release/validate-build-input.mjs');
-  const input = validateBuildInput(parseCanonical(inputBytes));
+  const input = validateBuildInput(parseCanonical(inputBytes), { productionCandidate });
   const distribution = parseCanonical(captured.distribution);
-  const prepared = prepare(distribution, captured.payload);
+  const prepared = prepare(distribution, captured.payload, { productionCandidate });
   requireValue(prepared.distribution.equals(captured.distribution), 'prepared record mismatch');
   for (const key of ['version', 'source', 'target', 'recipe']) {
     requireValue(bytes(input[key]).equals(bytes(distribution[key])), 'assembly identity mismatch');

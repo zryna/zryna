@@ -36,7 +36,7 @@ function tuple(file, target) {
 
 // Captured bytes must already come from authenticated source objects and material archives.
 // Constructing tuples here establishes neither acquisition provenance nor publication authority.
-export function preparePayload(identity, capturedMaterials, architectureReceipt) {
+export function preparePayload(identity, capturedMaterials, architectureReceipt, options) {
   orderedPaths(capturedMaterials.map(file => file.path));
   const target = identity.target.triple;
   const generated = installationDocuments(identity.version, target);
@@ -57,5 +57,5 @@ export function preparePayload(identity, capturedMaterials, architectureReceipt)
   files.push(...metadata.map(file => tuple(file, target)));
   payload.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
   files.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
-  return { ...prepare({ ...identity, files }, payload), payload };
+  return { ...prepare({ ...identity, files }, payload, options), payload };
 }

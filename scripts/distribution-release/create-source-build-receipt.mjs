@@ -277,6 +277,30 @@ export function createQualificationArchitectureReceipt(options = {}) {
   });
 }
 
+export function createProductionCandidateArchitectureReceipt(options = {}) {
+  const environment = options.environment ?? process.env;
+  if (environment.GITHUB_EVENT_NAME !== 'workflow_dispatch'
+    || environment.GITHUB_REPOSITORY !== 'zryna/zryna'
+    || environment.GITHUB_REF !== 'refs/heads/main'
+    || environment.GITHUB_REF_TYPE !== 'branch'
+    || environment.GITHUB_REF_NAME !== 'main'
+    || environment.GITHUB_REF_PROTECTED !== 'true'
+    || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')
+    || environment.GITHUB_WORKFLOW_SHA !== environment.GITHUB_SHA
+    || environment.GITHUB_WORKFLOW_REF !==
+      'zryna/zryna/.github/workflows/release-production-candidate.yml@refs/heads/main') {
+    reject('exact protected production-candidate workflow context is required');
+  }
+  const { commit, tree, ...observation } = createArchitectureObservation({
+    ...options, environment,
+  });
+  return validateSourceBuildReceipt({
+    format: 'zryna.source-build-receipt.v1',
+    source: { repository: REPOSITORY, commit, tree },
+    ...observation,
+  });
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
   try {
     process.stdout.write(`${canonicalBounded(createSourceBuildReceipt())}\n`);

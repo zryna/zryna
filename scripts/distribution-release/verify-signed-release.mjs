@@ -8,7 +8,7 @@ import {
   openReleaseFile,
   readReleaseFile,
 } from './release-files.mjs';
-import { validateReleaseSpdx } from './release-sbom.mjs';
+import { MAX_SPDX_BYTES, validateReleaseSpdx } from './release-sbom.mjs';
 import { validateReleaseText } from './validate.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -108,7 +108,7 @@ export async function verifySignedRelease({
       reject(`${subject.target} independent archive verification differs`);
     }
     validateReleaseSpdx(
-      readReleaseFile(directory, subject.sbom.path, MAX_RELEASE_DOCUMENT),
+      readReleaseFile(directory, subject.sbom.path, MAX_SPDX_BYTES),
       { files: verified.files, archive: { filename: subject.archive.path,
         size: subject.archive.size, sha256: subject.archive.sha256 },
       source: envelope.source, target: subject.target },

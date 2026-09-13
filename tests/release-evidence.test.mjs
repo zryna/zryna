@@ -20,6 +20,17 @@ const TARGETS = [
   { key: 'windows', triple: 'x86_64-pc-windows-msvc', extension: 'zip' },
   { key: 'linux', triple: 'x86_64-unknown-linux-gnu', extension: 'tar.gz' },
 ];
+const CANDIDATE_JOBS = [
+  'admit protected production candidate',
+  'accept installed candidate x86_64-pc-windows-msvc',
+  'accept installed candidate x86_64-unknown-linux-gnu',
+  'build candidate x86_64-pc-windows-msvc replica 1',
+  'build candidate x86_64-pc-windows-msvc replica 2',
+  'build candidate x86_64-unknown-linux-gnu replica 1',
+  'build candidate x86_64-unknown-linux-gnu replica 2',
+  'reproduce candidate x86_64-pc-windows-msvc',
+  'reproduce candidate x86_64-unknown-linux-gnu',
+];
 
 function source(tagType = false) {
   return {
@@ -160,6 +171,16 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
     requiredJobs: names.map((name, index) => ({
       name, conclusion: 'success', sourceCommit: COMMIT, runId: '123456789', runAttempt: 1,
       jobId: String(200 + index), checkRunId: String(300 + index),
+    })),
+  });
+  writeCanonical(join(admissionRoot, 'production-candidate-receipt.json'), {
+    format: 'zryna.production-candidate-receipt.v1', status: 'production-candidate-passed',
+    productionAdmission: 'candidate-prerequisite-only',
+    workflow: '.github/workflows/release-production-candidate.yml', sourceCommit: COMMIT,
+    recipeSha256: RECIPE, runId: '876543210', runAttempt: 1,
+    runUrl: 'https://github.com/zryna/zryna/actions/runs/876543210',
+    requiredJobs: CANDIDATE_JOBS.map((name, index) => ({
+      name, conclusion: 'success', jobId: String(500 + index), checkRunId: String(600 + index),
     })),
   });
   return {

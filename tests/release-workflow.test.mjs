@@ -118,6 +118,8 @@ test('admission fails before build until the reviewed recipe and integrations ex
     < names.indexOf('Capture exact successful protected gates'));
   assert(names.indexOf('Capture exact successful protected gates')
     < names.indexOf('Reject release until every reviewed production prerequisite is present'));
+  assert(names.indexOf('Reject release until every reviewed production prerequisite is present')
+    < names.indexOf('Require the exact successful production candidate'));
   assert.match(steps(admit, 'Capture protected tag identity')[0].run,
     /create-release-tag-receipt\.mjs/);
   assert.match(steps(admit, 'Capture exact successful protected gates')[0].run,
@@ -125,6 +127,8 @@ test('admission fails before build until the reviewed recipe and integrations ex
   assert.match(steps(admit,
     'Reject release until every reviewed production prerequisite is present')[0].run,
   /check-release-readiness\.mjs/);
+  assert.match(steps(admit, 'Require the exact successful production candidate')[0].run,
+    /create-production-candidate-receipt\.mjs/);
   assert.equal(ACCEPTED_RECIPE_SHA256, null);
 
   const source = resolve('release-readiness-source');
@@ -179,10 +183,16 @@ test('two distinct clean build jobs feed platform-local byte reproduction', () =
     { os: 'windows-2022', target: 'x86_64-pc-windows-msvc', replica: 2 },
   ]);
   assert.equal(workflow.jobs.build.strategy['fail-fast'], false);
+  assert.equal(workflow.jobs.build.env.CARGO_HOME,
+    '${{ runner.temp }}/zryna-bootstrap-cargo');
   assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0]['working-directory'],
     'source');
   assert.equal(steps(workflow.jobs.build, 'Fetch locked Rust dependencies')[0].run,
     'cargo fetch --locked');
+  assert.equal(steps(workflow.jobs.build, 'Bind exact Unix tools')[0].if,
+    "runner.os == 'Linux'");
+  assert.equal(steps(workflow.jobs.build,
+    'Bind exact Windows tools and developer environment')[0].if, "runner.os == 'Windows'");
   const build = steps(workflow.jobs.build,
     'Authenticate materials, prepare the recipe, and build one clean replica')[0];
   assert.match(build.run, /run-protected-build\.mjs/);
@@ -195,6 +205,7 @@ test('two distinct clean build jobs feed platform-local byte reproduction', () =
   ]);
   const compare = steps(workflow.jobs.reproduce,
     'Compare complete archive bytes and retained deterministic evidence')[0];
+  assert.equal(steps(workflow.jobs.reproduce, 'Install tagged workflow dependencies').length, 1);
   assert.match(compare.run, /compare-release-builds\.mjs/);
   assert.match(compare.run, /--first \.release\/first/);
   assert.match(compare.run, /--second \.release\/second/);
@@ -208,6 +219,7 @@ test('both reproduced archives pass installed relocation, execution, and tamper 
     { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu' },
     { os: 'windows-2022', target: 'x86_64-pc-windows-msvc' },
   ]);
+  assert.equal(steps(acceptance, 'Install tagged workflow dependencies').length, 1);
   const run = steps(acceptance,
     'Verify, relocate, execute, and tamper-test the installed archive')[0];
   assert.equal(run.env.ZRYNA_TARGET, '${{ matrix.target }}');

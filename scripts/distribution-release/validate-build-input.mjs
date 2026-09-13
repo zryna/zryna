@@ -33,12 +33,13 @@ function strictlySorted(values, project) {
   return true;
 }
 
-export function validateBuildInput(document) {
+export function validateBuildInput(document, { productionCandidate = false } = {}) {
   canonicalBounded(document);
   if (!validateSchema(document)) {
     reject('R406-BUILD-SCHEMA', ajv.errorsText(validateSchema.errors, { separator: '; ' }));
   }
-  if (document.tag !== `v${document.version}` || document.source.ref !== `refs/tags/${document.tag}`) {
+  const expectedRef = productionCandidate ? 'refs/heads/main' : `refs/tags/${document.tag}`;
+  if (document.tag !== `v${document.version}` || document.source.ref !== expectedRef) {
     reject('R406-BUILD-SOURCE', 'version, tag, and source ref differ');
   }
   const windows = document.target.triple === 'x86_64-pc-windows-msvc';
