@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { dirname, isAbsolute, resolve, win32 } from 'node:path';
 import { NODE_TARGETS, NODE_UPSTREAM } from '../distribution/materials.mjs';
 import { canonical, parseCanonical, sha256 } from './canonical.mjs';
 import { validateReleaseQualificationArchitecture } from './validate-release-qualification-architecture.mjs';
@@ -18,6 +18,39 @@ const TARGETS = Object.freeze({
     ],
   },
   'x86_64-pc-windows-msvc': { platform: 'win32', tools: null },
+});
+const WINDOWS_HOST_PATHS = Object.freeze({
+  INCLUDE: Object.freeze({ maximum: 1024, patterns: Object.freeze([
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\include$/i,
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\ATLMFC\\include$/i,
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\VS\\include$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\include\\[0-9]+(?:\.[0-9]+)+\\ucrt$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\include\\[0-9]+(?:\.[0-9]+)+\\um$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\include\\[0-9]+(?:\.[0-9]+)+\\shared$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\include\\[0-9]+(?:\.[0-9]+)+\\winrt$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\include\\[0-9]+(?:\.[0-9]+)+\\cppwinrt$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\NETFXSDK\\[0-9]+(?:\.[0-9]+)+\\include\\um$/i,
+  ]) }),
+  LIB: Object.freeze({ maximum: 768, patterns: Object.freeze([
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\ATLMFC\\lib\\x64$/i,
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\lib\\x64$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\NETFXSDK\\[0-9]+(?:\.[0-9]+)+\\lib\\um\\x64$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\lib\\[0-9]+(?:\.[0-9]+)+\\ucrt\\x64$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\lib\\[0-9]+(?:\.[0-9]+)+\\um\\x64$/i,
+  ]) }),
+  LIBPATH: Object.freeze({ maximum: 768, patterns: Object.freeze([
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\ATLMFC\\lib\\x64$/i,
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\lib\\x64$/i,
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\lib\\x86\\store\\references$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\UnionMetadata\\[0-9]+(?:\.[0-9]+)+$/i,
+    /^C:\\Program Files \(x86\)\\Windows Kits\\10\\References\\[0-9]+(?:\.[0-9]+)+$/i,
+    /^C:\\Windows\\Microsoft\.NET\\Framework64\\v[0-9]+(?:\.[0-9]+)+$/i,
+  ]) }),
+  PATH: Object.freeze({ maximum: 256, patterns: Object.freeze([
+    /^C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\[0-9]+(?:\.[0-9]+)+\\bin\\Hostx64\\x64$/i,
+    /^C:\\Windows\\System32$/i,
+    /^C:\\Windows$/i,
+  ]) }),
 });
 
 function reject(message) {
@@ -83,19 +116,36 @@ function windowsTools(environment) {
   ];
 }
 
-function hostEnvironment(target, environment) {
-  if (target !== 'x86_64-pc-windows-msvc') return {};
-  const result = {};
-  for (const [name, variable] of [
-    ['INCLUDE', 'INCLUDE'], ['LIB', 'LIB'], ['LIBPATH', 'LIBPATH'],
-    ['PATH', 'ZRYNA_QUALIFICATION_PATH'], ['SystemRoot', 'SystemRoot'],
-  ]) {
-    const value = environment[variable];
-    if (typeof value !== 'string' || !/^[ -~]{1,512}$/.test(value)) {
-      reject(`Windows ${variable} environment differs`);
-    }
-    result[name] = value;
+function windowsPathList(name, value) {
+  const specification = WINDOWS_HOST_PATHS[name];
+  if (typeof value !== 'string' || value.length < 1 || value.length > specification.maximum
+    || !/^[ -~]+$/.test(value)) reject(`Windows ${name} environment differs`);
+  const entries = value.split(';');
+  const normalized = entries.map(entry => win32.normalize(entry));
+  if (entries.length !== specification.patterns.length
+    || entries.some((entry, index) => entry.length < 1 || entry.length > 260
+      || entry.includes('/') || entry.split(/\\+/).some(part => part === '.' || part === '..')
+      || !win32.isAbsolute(entry) || !specification.patterns[index].test(normalized[index]))
+    || new Set(normalized.map(entry => entry.toLowerCase())).size !== normalized.length) {
+    reject(`Windows ${name} environment differs`);
   }
+  return value;
+}
+
+export function qualificationHostEnvironment(target, environment) {
+  if (target !== 'x86_64-pc-windows-msvc') return {};
+  const result = {
+    INCLUDE: windowsPathList('INCLUDE', environment.INCLUDE),
+    LIB: windowsPathList('LIB', environment.LIB),
+    LIBPATH: windowsPathList('LIBPATH', environment.LIBPATH),
+    PATH: windowsPathList('PATH', environment.ZRYNA_QUALIFICATION_PATH),
+  };
+  const systemRoot = environment.SystemRoot;
+  if (typeof systemRoot !== 'string' || systemRoot.length < 1 || systemRoot.length > 260
+    || !/^[ -~]+$/.test(systemRoot) || !/^C:\\Windows$/i.test(systemRoot)) {
+    reject('Windows SystemRoot environment differs');
+  }
+  result.SystemRoot = systemRoot;
   return result;
 }
 
@@ -140,6 +190,6 @@ export function observeQualificationTools({
     toolchains: primary.map(({ record }) => record),
     nativeTools: native.map(({ record }) => record),
     paths: Object.fromEntries([...primary, ...native].map(({ record, path }) => [record.name, path])),
-    hostEnvironment: hostEnvironment(target, environment),
+    hostEnvironment: qualificationHostEnvironment(target, environment),
   };
 }

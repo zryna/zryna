@@ -38,29 +38,37 @@ function exactUrl(value, hostname) {
 export async function fetchQualificationResource(descriptor, {
   fetchImpl = fetch, requestTimeoutMs = REQUEST_TIMEOUT,
 } = {}) {
-  const { url, maximum, size, digest } = descriptor;
+  const { url, maximum, size, digest, accept = 'application/octet-stream',
+    label = 'material' } = descriptor;
   if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > 512 * 1024 * 1024
     || (size !== undefined && (!Number.isSafeInteger(size) || size < 1 || size > maximum))
     || (digest !== undefined && !/^[0-9a-f]{64}$/.test(digest))
+    || !['application/json', 'application/octet-stream'].includes(accept)
+    || typeof label !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9 .@_+/:=-]{0,159}$/.test(label)
     || !Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1
     || requestTimeoutMs > REQUEST_TIMEOUT) reject('material resource descriptor differs');
+  const fail = (message) => reject(`${label}: ${message}`);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
   let response;
   try {
     response = await fetchImpl(url, {
       method: 'GET', redirect: 'error', signal: controller.signal,
-      headers: { accept: 'application/octet-stream', 'accept-encoding': 'identity' },
+      headers: { accept, 'accept-encoding': 'identity' },
     });
     if (!response || response.status !== 200 || response.url !== url || !response.body
-      || ![null, 'identity'].includes(response.headers.get('content-encoding'))) {
-      reject('material response identity differs');
+      || ![null, 'identity'].includes(response.headers.get('content-encoding'))
+      || (accept === 'application/json'
+        && response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase()
+          !== 'application/json')) {
+      fail('response identity differs');
     }
     const declared = response.headers.get('content-length');
     if (declared !== null && (!/^(0|[1-9][0-9]*)$/.test(declared)
       || Number(declared) < 1 || Number(declared) > maximum
       || (size !== undefined && Number(declared) !== size))) {
-      reject('material response length differs');
+      const observed = /^(0|[1-9][0-9]{0,15})$/.test(declared) ? declared : 'invalid';
+      fail(`response length differs (declared ${observed}; expected ${size ?? `at most ${maximum}`})`);
     }
     const chunks = [];
     let length = 0;
@@ -68,25 +76,25 @@ export async function fetchQualificationResource(descriptor, {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      if (!(value instanceof Uint8Array) || value.length < 1) reject('material response chunk differs');
+      if (!(value instanceof Uint8Array) || value.length < 1) fail('response chunk differs');
       length += value.length;
       if (length > maximum || (size !== undefined && length > size)) {
         await reader.cancel();
-        reject('material response exceeds its byte bound');
+        fail('response exceeds its byte bound');
       }
       chunks.push(Buffer.from(value));
     }
     const bytes = Buffer.concat(chunks, length);
     if (bytes.length < 1 || (size !== undefined && bytes.length !== size)
       || (digest !== undefined && sha256(bytes) !== digest)) {
-      reject('material response bytes differ');
+      fail(`response bytes differ (received ${bytes.length}; expected ${size ?? `at most ${maximum}`})`);
     }
     return bytes;
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('R406-QUALIFICATION-ACQUISITION:')) {
       throw error;
     }
-    reject('material request failed');
+    fail('request failed');
   } finally {
     clearTimeout(timeout);
   }
@@ -166,17 +174,19 @@ export async function acquireQualificationMaterials({
   const npm = implementation.typeScriptMaterialDescriptors();
   const keysUrl = exactUrl(npm.keys.url, 'registry.npmjs.org');
   const keys = await request({ url: keysUrl, maximum: npm.keys.size,
-    size: npm.keys.size, digest: npm.keys.sha256 });
+    size: npm.keys.size, digest: npm.keys.sha256, accept: 'application/json', label: 'npm keys' });
   const npmInputs = [];
   for (const entry of npm.packages) {
     const metadataUrl = exactUrl(entry.metadata.url, 'registry.npmjs.org');
     const archiveUrl = exactUrl(entry.tarball.url, 'registry.npmjs.org');
     npmInputs.push({
       metadata: await request({ url: metadataUrl, maximum: entry.metadata.size,
-        size: entry.metadata.size, digest: entry.metadata.sha256 }),
+        size: entry.metadata.size, digest: entry.metadata.sha256, accept: 'application/json',
+        label: `npm metadata ${entry.name ?? 'package'}@${entry.version ?? 'version'}` }),
       keys,
       archive: await request({ url: archiveUrl, maximum: entry.tarball.size,
-        size: entry.tarball.size, digest: entry.tarball.sha256 }),
+        size: entry.tarball.size, digest: entry.tarball.sha256,
+        label: `npm archive ${entry.name ?? 'package'}@${entry.version ?? 'version'}` }),
     });
   }
   if (typeof implementation.nodeTarget !== 'function') reject('material adapter nodeTarget is missing');
@@ -187,7 +197,8 @@ export async function acquireQualificationMaterials({
     'nodejs.org',
   );
   const nodeArchive = await request({ url: nodeUrl, maximum: nodeRecord.archiveSize,
-    size: nodeRecord.archiveSize, digest: nodeRecord.archiveSha256 });
+    size: nodeRecord.archiveSize, digest: nodeRecord.archiveSha256,
+    label: `Node archive ${target}` });
   const rustRecords = implementation.rustMaterials(target);
   const rustCaptures = [];
   for (const record of rustRecords) {
@@ -200,10 +211,11 @@ export async function acquireQualificationMaterials({
       'static.crates.io',
     );
     rustCaptures.push({ identity, archive: await request({
-      url, maximum: MAX_CRATE, digest: record.crateSha256,
+      url, maximum: MAX_CRATE, digest: record.crateSha256, label: `Rust crate ${identity}`,
     }) });
   }
-  const upstreamLicense = await request(upstreamLicenseDescriptor(rustRecords));
+  const upstreamLicense = await request({ ...upstreamLicenseDescriptor(rustRecords),
+    label: 'Wasmtime license' });
   const files = [
     ...SOURCE_FILES.map(([sourcePath, path]) => ({
       path, mode: 0o644, data: sourceBlob(spawn, sourceRoot, sourceCommit, sourcePath),
