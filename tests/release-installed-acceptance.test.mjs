@@ -9,7 +9,8 @@ import {
   canonicalBounded, parseCanonical, sha256,
 } from '../scripts/distribution-release/canonical.mjs';
 import {
-  acceptReproducedRelease, extractVerifiedProductionFiles, runInstalledAcceptance,
+  acceptReproducedRelease, admitReleaseTransition, extractVerifiedProductionFiles,
+  removeVerifiedProductionFiles, runInstalledAcceptance,
 } from '../scripts/distribution-release/run-installed-acceptance.mjs';
 
 function file(path, mode = 0o644, value = path) {
@@ -43,18 +44,40 @@ function fixture(t, target = 'x86_64-pc-windows-msvc') {
   return { root: resolve(root), archive, descriptor, files, distribution };
 }
 
+function mockInstalledCommands({ target = 'x86_64-pc-windows-msvc', calls, tamperSucceeds = false } = {}) {
+  return (executable, args, options) => {
+    calls?.push({ executable, args, cwd: options.cwd, shell: options.shell, env: options.env });
+    const tampered = executable.includes('tampered-');
+    const operation = args[0];
+    const targetName = args.includes('--target') ? args[args.indexOf('--target') + 1] : undefined;
+    const project = join(options.cwd, 'hello');
+    if (operation === 'new') {
+      mkdirSync(join(project, 'src'), { recursive: true });
+      writeFileSync(join(project, 'zryna.package.json'), '{}\n');
+      writeFileSync(join(project, 'zryna.lock.json'), '{}\n');
+      writeFileSync(join(project, 'src', 'main.zry'), 'export function main(): i32 { return 42; }\n');
+    } else if (['build', 'run'].includes(operation) && !tampered
+      && !(target.endsWith('windows-msvc') && targetName === 'native')) {
+      const name = args[args.indexOf('--name') + 1];
+      const bundle = join(project, '.zryna', 'out', `${name}.${operation}`);
+      mkdirSync(bundle, { recursive: true });
+      writeFileSync(join(bundle, 'zryna-manifest-v1.json'), '{}\n');
+    }
+    const nativeRejected = target.endsWith('windows-msvc') && targetName === 'native';
+    const rejectedTamper = tampered && !tamperSucceeds;
+    const stdout = operation === '--version' ? 'zryna 0.2.1\n'
+      : operation === 'run' ? `${targetName}: i32 42\n` : '';
+    return { status: rejectedTamper || nativeRejected ? 2 : 0, signal: null,
+      stdout: Buffer.from(rejectedTamper || nativeRejected ? '' : stdout),
+      stderr: Buffer.from(rejectedTamper ? 'error[ZRYNA-C4220]: changed installation\n'
+        : nativeRejected ? 'error[ZRYNA-N4002]: native unavailable\n' : '') };
+  };
+}
+
 test('accepts one authenticated production archive through relocation, portable targets, and tamper rejection', async (t) => {
   const f = fixture(t);
   const calls = [];
-  const spawn = (executable, args, options) => {
-    calls.push({ executable, args, cwd: options.cwd, shell: options.shell });
-    const tampered = executable.includes('tampered-');
-    const stdout = args[0] === '--version' ? 'zryna 0.2.1\n'
-      : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : '';
-    return { status: tampered ? 2 : 0, signal: null,
-      stdout: Buffer.from(tampered ? '' : stdout),
-      stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
-  };
+  const spawn = mockInstalledCommands({ calls });
   const result = await runInstalledAcceptance({
     archive: f.archive, descriptor: f.descriptor, workRoot: f.root, spawn,
     verifyArchiveImpl: async () => ({
@@ -62,21 +85,25 @@ test('accepts one authenticated production archive through relocation, portable 
     }),
   });
   assert.deepEqual(result.checks, {
-    relocated: true, version: true, project: true,
-    javascript: true, webassembly: true, tamperSubjects: 3,
+    collision: true, relocated: true, path: true, version: true, locale: 'tr_TR.UTF-8',
+    project: true, javascript: true, webassembly: true, native: 'unsupported',
+    tamperSubjects: 3, uninstall: true, userFilesRetained: true,
   });
-  assert.equal(calls.length, 9);
+  assert.equal(calls.length, 11);
   assert(calls.every(({ shell }) => shell === false));
-  assert(calls.every(({ executable }) => executable.includes('relocated')
+  assert(calls.slice(0, 2).every(({ executable }) => executable === 'zryna.exe'));
+  assert(calls.slice(2).every(({ executable }) => executable.includes('relocated')
     || executable.includes('tampered-')));
-  assert.deepEqual(calls.slice(0, 6).map(({ args }) => [args[0], args.includes('javascript'),
+  assert.deepEqual(calls.slice(0, 7).map(({ args }) => [args[0], args.includes('javascript'),
     args.includes('webassembly')]), [
-    ['--version', false, false], ['new', false, false],
+    ['--version', false, false], ['--version', false, false], ['new', false, false],
     ['build', true, false], ['run', true, false],
     ['build', false, true], ['run', false, true],
   ]);
-  assert.deepEqual(calls.slice(6).map(({ args }) => args.at(-1)),
+  assert.equal(calls[7].args[calls[7].args.indexOf('--name') + 1], 'native-rejection');
+  assert.deepEqual(calls.slice(8).map(({ args }) => args.at(-1)),
     ['tamper-0', 'tamper-1', 'tamper-2']);
+  assert(calls.every(({ env }) => !Object.keys(env).some((name) => name.startsWith('ZRYNA_'))));
 });
 
 test('uses the production Linux archive layout and relocated executable', async (t) => {
@@ -86,17 +113,13 @@ test('uses the production Linux archive layout and relocated executable', async 
     archive: f.archive, descriptor: f.descriptor, workRoot: f.root,
     verifyArchiveImpl: async () => ({ archiveSha256: f.descriptor.sha256,
       files: f.files, distribution: f.distribution }),
-    spawn: (executable, args) => {
-      executables.push(executable);
-      const tampered = executable.includes('tampered-');
-      return { status: tampered ? 2 : 0, signal: null,
-        stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.1\n'
-          : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
-        stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
-    },
+    spawn: mockInstalledCommands({ target: f.descriptor.target.triple,
+      calls: { push: ({ executable }) => executables.push(executable) } }),
   });
   assert.equal(result.target, 'x86_64-unknown-linux-gnu');
-  assert(executables.every((path) => path.endsWith(join('bin', 'zryna'))));
+  assert.equal(result.checks.native, 'built-and-ran');
+  assert(executables.slice(0, 2).every((path) => path === 'zryna'));
+  assert(executables.slice(2).every((path) => path.endsWith(join('bin', 'zryna'))));
 });
 
 test('accepts the exact reproduced directory and emits one canonical receipt', async (t) => {
@@ -128,13 +151,7 @@ test('accepts the exact reproduced directory and emits one canonical receipt', a
   writeFileSync(join(inputRoot, artifacts.archive.path), f.archive);
   writeFileSync(join(inputRoot, artifacts.buildReceipt.path), '{}');
   writeFileSync(join(inputRoot, artifacts.sbom.path), '{}');
-  const spawn = (executable, args) => {
-    const tampered = executable.includes('tampered-');
-    return { status: tampered ? 2 : 0, signal: null,
-      stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.1\n'
-        : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
-      stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
-  };
+  const spawn = mockInstalledCommands({ target: f.descriptor.target.triple });
   let expected;
   const result = await acceptReproducedRelease({
     inputRoot, outputRoot, workRoot, target: reproduction.target, spawn,
@@ -190,15 +207,36 @@ test('extraction rejects traversal, case collisions, and linked roots', (t) => {
   assert.throws(() => extractVerifiedProductionFiles(linked, [file('VERSION')]), /EEXIST/);
 });
 
+test('owned removal retains foreign files and rejects changed owned bytes before mutation', (t) => {
+  const f = fixture(t);
+  const installed = extractVerifiedProductionFiles(join(f.root, 'installed'), f.files);
+  writeFileSync(join(installed, 'foreign.txt'), 'retain\n');
+  removeVerifiedProductionFiles(installed, f.files);
+  assert.equal(readFileSync(join(installed, 'foreign.txt'), 'utf8'), 'retain\n');
+  assert(!f.files.some(({ path }) => {
+    try { readFileSync(join(installed, ...path.split('/'))); return true; } catch { return false; }
+  }));
+
+  const changed = extractVerifiedProductionFiles(join(f.root, 'changed'), f.files);
+  writeFileSync(join(changed, 'VERSION'), 'changed\n');
+  assert.throws(() => removeVerifiedProductionFiles(changed, f.files), /changed before removal/);
+  assert.equal(readFileSync(join(changed, 'bin', 'zryna.exe'), 'utf8'), 'compiled cli');
+});
+
+test('fixture-only release transition admission accepts upgrades and rejects downgrade or reinstall', () => {
+  assert.deepEqual(admitReleaseTransition('0.2.1', '0.2.2'),
+    { current: '0.2.1', candidate: '0.2.2', operation: 'upgrade' });
+  assert.throws(() => admitReleaseTransition('0.2.1', '0.2.0'), /downgrade is forbidden/);
+  assert.throws(() => admitReleaseTransition('0.2.1', '0.2.1'), /not an upgrade/);
+  assert.throws(() => admitReleaseTransition('0.2.1', '0.02.2'), /version is invalid/);
+});
+
 test('fails closed when a tampered installation command succeeds', async (t) => {
   const f = fixture(t);
   await assert.rejects(() => runInstalledAcceptance({
     archive: f.archive, descriptor: f.descriptor, workRoot: f.root,
     verifyArchiveImpl: async () => ({ archiveSha256: f.descriptor.sha256,
       files: f.files, distribution: f.distribution }),
-    spawn: (_executable, args) => ({ status: 0, signal: null,
-      stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.1\n'
-        : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
-      stderr: Buffer.alloc(0) }),
+    spawn: mockInstalledCommands({ tamperSucceeds: true }),
   }), /tampered installation reached artifact execution/);
 });

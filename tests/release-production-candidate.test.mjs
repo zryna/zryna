@@ -173,11 +173,24 @@ test('candidate replicas reproduce and installed acceptance remains publication-
     { path: 'lib/zryna/bootstrap/worker.mjs', mode: 0o644, data: Buffer.from('provider') },
     { path: 'metadata/distribution.json', mode: 0o644, data: Buffer.from('{}\n') },
   ];
-  const spawn = (executable, args) => {
+  const spawn = (executable, args, options) => {
     const tampered = executable.includes('tampered-');
+    const operation = args[0];
+    const project = join(options.cwd, 'hello');
+    if (operation === 'new') {
+      mkdirSync(join(project, 'src'), { recursive: true });
+      writeFileSync(join(project, 'zryna.package.json'), '{}\n');
+      writeFileSync(join(project, 'zryna.lock.json'), '{}\n');
+      writeFileSync(join(project, 'src', 'main.zry'), 'export function main(): i32 { return 42; }\n');
+    } else if (['build', 'run'].includes(operation) && !tampered) {
+      const name = args[args.indexOf('--name') + 1];
+      const bundle = join(project, '.zryna', 'out', `${name}.${operation}`);
+      mkdirSync(bundle, { recursive: true });
+      writeFileSync(join(bundle, 'zryna-manifest-v1.json'), '{}\n');
+    }
     return { status: tampered ? 2 : 0, signal: null,
-      stdout: Buffer.from(args[0] === '--version' ? 'zryna 0.2.1\n'
-        : args[0] === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
+      stdout: Buffer.from(operation === '--version' ? 'zryna 0.2.1\n'
+        : operation === 'run' ? `${args[args.indexOf('--target') + 1]}: i32 42\n` : ''),
       stderr: Buffer.from(tampered ? 'error[ZRYNA-C4220]: changed installation\n' : '') };
   };
   const receipt = await acceptProductionCandidate({

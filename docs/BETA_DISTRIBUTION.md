@@ -274,6 +274,10 @@ package/license hashes, upstream platform floor and remaining provenance checks.
 upstream requirements from Zryna clean-host evidence. The release version and supported baseline
 must be frozen only after exact-build loader inspection and qualifying clean-host execution.
 
+The observed user-local workflow, exact host prerequisites, PATH setup, first external project,
+owned-file removal, recovery behavior, and current upgrade blocker are recorded in
+[Downloadable beta installation and removal](BETA_INSTALLATION.md).
+
 Required evidence includes independent same-tag builds; protected-tag dry runs; clean offline
 archive installation without checkout or development tools; relocated version/project creation,
 JavaScript/WebAssembly build/run; deterministic inventory and license/SBOM/provenance validation;

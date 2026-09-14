@@ -422,6 +422,124 @@ jobs:
       - run: pnpm release:contract
       - run: pnpm distribution:check
 
+  published-release-clean-host:
+    name: published beta clean host (${{ matrix.target }})
+    if: needs.route-contracts.outputs.distribution_release == 'true'
+    needs: route-contracts
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu }
+          - { os: windows-2022, target: x86_64-pc-windows-msvc }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - run: pnpm install --frozen-lockfile
+      - name: Acquire the exact immutable public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path .release/public | Out-Null
+          gh api repos/zryna/zryna/releases/tags/v0.2.1 > .release/release-state.json
+          gh release download v0.2.1 --repo zryna/zryna --dir .release/public
+      - name: Verify and exercise the Linux release as an unprivileged user
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          ZRYNA_TARGET: ${{ matrix.target }}
+        run: |
+          mkdir -m 700 .release/linux-work .release/linux-output .release/hostile-bin
+          install -m 755 /bin/false .release/hostile-bin/zryna
+          node_path="$(command -v node)"
+          cosign_path="$(command -v cosign)"
+          PATH="$(realpath .release/hostile-bin):/usr/bin:/bin" "$node_path" \
+            scripts/distribution-release/run-published-acceptance.mjs \
+            --cosign "$cosign_path" \
+            --directory "$(realpath .release/public)" \
+            --output "$(realpath .release)/linux-output" \
+            --state "$(realpath .release/release-state.json)" \
+            --target "$ZRYNA_TARGET" \
+            --work "$(realpath .release/linux-work)"
+      - name: Verify and exercise the Windows release as a standard user
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          ZRYNA_TARGET: ${{ matrix.target }}
+        run: |
+          $user = 'zryna423'
+          $passwordText = "Zryna-423-$env:GITHUB_RUN_ID!"
+          $securePassword = ConvertTo-SecureString $passwordText -AsPlainText -Force
+          $credential = [System.Management.Automation.PSCredential]::new(".\$user", $securePassword)
+          $releaseRoot = (Resolve-Path .release/public).Path
+          $statePath = (Resolve-Path .release/release-state.json).Path
+          $releaseParent = (Resolve-Path .release).Path
+          $userRoot = Join-Path $releaseParent 'windows-work'
+          $workRoot = Join-Path $userRoot 'work'
+          $outputRoot = Join-Path $releaseParent 'windows-output'
+          $stdout = Join-Path $userRoot 'stdout.txt'
+          $stderr = Join-Path $userRoot 'stderr.txt'
+          $nodeSource = (Get-Command node).Source
+          $cosignSource = (Get-Command cosign).Source
+          net user $user $passwordText /add /passwordchg:no
+          if ($LASTEXITCODE -ne 0) { throw 'could not create the standard test user' }
+          try {
+            New-Item -ItemType Directory -Path $workRoot -Force | Out-Null
+            New-Item -ItemType Directory -Path $outputRoot | Out-Null
+            $node = Join-Path $userRoot 'node.exe'
+            $cosign = Join-Path $userRoot 'cosign.exe'
+            Copy-Item -LiteralPath $nodeSource -Destination $node
+            Copy-Item -LiteralPath $cosignSource -Destination $cosign
+            $hostile = Join-Path $userRoot 'hostile-bin'
+            New-Item -ItemType Directory -Path $hostile | Out-Null
+            Copy-Item -LiteralPath "$env:SystemRoot\System32\cmd.exe" `
+              -Destination (Join-Path $hostile 'zryna.exe')
+            $env:PATH = "$hostile;$env:PATH"
+            icacls $env:GITHUB_WORKSPACE /grant "${user}:(OI)(CI)RX" /T /Q | Out-Null
+            icacls $userRoot /grant "${user}:(OI)(CI)M" /T /Q | Out-Null
+            icacls $outputRoot /grant "${user}:(OI)(CI)M" /T /Q | Out-Null
+            icacls $userRoot /setowner $user /T /Q | Out-Null
+            icacls $outputRoot /setowner $user /T /Q | Out-Null
+            $arguments = @(
+              'scripts/distribution-release/run-published-acceptance.mjs',
+              '--cosign', $cosign,
+              '--directory', $releaseRoot, '--output', $outputRoot,
+              '--state', $statePath, '--target', $env:ZRYNA_TARGET, '--work', $workRoot
+            )
+            $process = Start-Process -FilePath $node -ArgumentList $arguments `
+              -WorkingDirectory $env:GITHUB_WORKSPACE -Credential $credential -LoadUserProfile `
+              -RedirectStandardOutput $stdout -RedirectStandardError $stderr -Wait -PassThru
+            Get-Content -LiteralPath $stdout
+            if ($process.ExitCode -ne 0) {
+              Get-Content -LiteralPath $stderr
+              throw "standard-user acceptance failed with exit $($process.ExitCode)"
+            }
+          } finally {
+            net user $user /delete | Out-Null
+          }
+      - name: Upload exact clean-host receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: published-beta-clean-host-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/*-output/published-clean-host-acceptance.json
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: false
+          retention-days: 7
+
   provider-conformance-v4:
     name: Provider conformance v4 (${{ matrix.os }})
     if: needs.route-contracts.outputs.provider_v4 == 'true'

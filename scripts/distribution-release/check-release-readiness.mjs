@@ -21,6 +21,8 @@ export const REQUIRED_RELEASE_PATHS = Object.freeze([
   'scripts/distribution-release/compare-release-builds.mjs',
   'scripts/distribution-release/compare-production-candidate-builds.mjs',
   'scripts/distribution-release/create-production-candidate-receipt.mjs',
+  'scripts/distribution-release/installed-execution.mjs',
+  'scripts/distribution-release/installed-lifecycle.mjs',
   'scripts/distribution-release/prepare-release-evidence.mjs',
   'scripts/distribution-release/publish-draft-release.mjs',
   'scripts/distribution-release/run-protected-build.mjs',

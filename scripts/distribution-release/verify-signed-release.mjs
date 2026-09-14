@@ -49,8 +49,8 @@ function verifyDescriptor(root, expected) {
   }
 }
 
-function invokeCosign(spawn, args) {
-  const result = spawn('cosign', args, {
+function invokeCosign(spawn, executable, args) {
+  const result = spawn(executable, args, {
     encoding: 'utf8', maxBuffer: MAX_VERIFIER_OUTPUT + 1, shell: false,
     timeout: 120_000, windowsHide: true,
   });
@@ -66,10 +66,13 @@ async function defaultVerifyArchive(archive, expected) {
 }
 
 export async function verifySignedRelease({
-  directory, spawn = spawnSync, verifyArchiveImpl = defaultVerifyArchive,
+  directory, cosign = 'cosign', spawn = spawnSync, verifyArchiveImpl = defaultVerifyArchive,
 }) {
   if (!isAbsolute(directory) || resolve(directory) !== directory) {
     reject('publication directory must be absolute and normalized');
+  }
+  if (cosign !== 'cosign' && (!isAbsolute(cosign) || resolve(cosign) !== cosign)) {
+    reject('cosign executable must be the command name or an absolute normalized path');
   }
   const envelopeName = 'zryna-release-envelope-v1.json';
   const envelope = validateReleaseText(readReleaseFile(
@@ -121,7 +124,7 @@ export async function verifySignedRelease({
     if (!provenance.equals(Buffer.concat([statement, Buffer.from('\n')]))) {
       reject(`${subject.target} provenance differs from its attestation payload`);
     }
-    invokeCosign(spawn, [
+    invokeCosign(spawn, cosign, [
       'verify-blob-attestation',
       '--bundle', resolve(directory, subject.attestation.path),
       '--type', 'https://slsa.dev/provenance/v1',
@@ -136,7 +139,7 @@ export async function verifySignedRelease({
     [envelope.releaseNotes.path, envelope.signing.releaseNotesSignature.path],
     [envelopeName, envelope.signing.envelopeSignaturePath],
   ]) {
-    invokeCosign(spawn, [
+    invokeCosign(spawn, cosign, [
       'verify-blob',
       '--bundle', resolve(directory, signature),
       '--certificate-identity', envelope.signing.certificateIdentity,
