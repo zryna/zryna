@@ -44,7 +44,9 @@ function fixture(t, target = 'x86_64-pc-windows-msvc') {
   return { root: resolve(root), archive, descriptor, files, distribution };
 }
 
-function mockInstalledCommands({ target = 'x86_64-pc-windows-msvc', calls, tamperSucceeds = false } = {}) {
+function mockInstalledCommands({
+  target = 'x86_64-pc-windows-msvc', calls, tamperSucceeds = false, version = '0.2.2',
+} = {}) {
   return (executable, args, options) => {
     calls?.push({ executable, args, cwd: options.cwd, shell: options.shell, env: options.env });
     const tampered = executable.includes('tampered-');
@@ -65,7 +67,7 @@ function mockInstalledCommands({ target = 'x86_64-pc-windows-msvc', calls, tampe
     }
     const nativeRejected = target.endsWith('windows-msvc') && targetName === 'native';
     const rejectedTamper = tampered && !tamperSucceeds;
-    const stdout = operation === '--version' ? 'zryna 0.2.2\n'
+    const stdout = operation === '--version' ? `zryna ${version}\n`
       : operation === 'run' ? `${targetName}: i32 42\n` : '';
     return { status: rejectedTamper || nativeRejected ? 2 : 0, signal: null,
       stdout: Buffer.from(rejectedTamper || nativeRejected ? '' : stdout),
@@ -120,6 +122,31 @@ test('uses the production Linux archive layout and relocated executable', async 
   assert.equal(result.checks.native, 'built-and-ran');
   assert(executables.slice(0, 2).every((path) => path === 'zryna'));
   assert(executables.slice(2).every((path) => path.endsWith(join('bin', 'zryna'))));
+});
+
+test('accepts the exact legacy public version only when explicitly selected', async (t) => {
+  const f = fixture(t, 'x86_64-unknown-linux-gnu');
+  const descriptor = {
+    ...f.descriptor,
+    version: '0.2.1',
+    filename: 'zryna-0.2.1-x86_64-unknown-linux-gnu.tar.gz',
+  };
+  const files = f.files.map((entry) => entry.path === 'VERSION'
+    ? { ...entry, data: Buffer.from('0.2.1\n') } : entry);
+  const result = await runInstalledAcceptance({
+    acceptedVersion: '0.2.1', archive: f.archive, descriptor, workRoot: f.root,
+    verifyArchiveImpl: async () => ({
+      archiveSha256: descriptor.sha256, files, distribution: f.distribution,
+    }),
+    spawn: mockInstalledCommands({ target: descriptor.target.triple, version: '0.2.1' }),
+  });
+  assert.equal(result.version, '0.2.1');
+
+  await assert.rejects(() => runInstalledAcceptance({
+    acceptedVersion: '0.2.0', archive: f.archive,
+    descriptor: { ...descriptor, version: '0.2.0' }, workRoot: f.root,
+    verifyArchiveImpl: async () => { throw new Error('must not verify'); },
+  }), /authenticated production archive descriptor is invalid/);
 });
 
 test('accepts the exact reproduced directory and emits one canonical receipt', async (t) => {

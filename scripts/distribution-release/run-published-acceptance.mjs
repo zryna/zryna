@@ -120,7 +120,7 @@ export async function acceptPublishedRelease({
     Object.values(TARGETS).find((value) => value !== target)),
     'wrong-platform archive');
   const installed = await runInstalledAcceptanceImpl({
-    archive, descriptor: expected, workRoot, verifyArchiveImpl,
+    acceptedVersion: envelope.version, archive, descriptor: expected, workRoot, verifyArchiveImpl,
   });
   const receipt = Object.freeze({
     format: 'zryna.published-clean-host-acceptance.v1',

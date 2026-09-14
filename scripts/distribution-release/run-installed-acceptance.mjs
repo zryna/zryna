@@ -19,6 +19,7 @@ export { admitReleaseTransition, removeVerifiedProductionFiles } from './install
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const VERSION = '0.2.2';
+const ACCEPTED_VERSIONS = new Set(['0.2.1', VERSION]);
 const DEFAULT_SYSTEM = Object.freeze({
   close: closeSync, exists: existsSync, lstat: lstatSync, make: mkdirSync,
   makeTemp: mkdtempSync, move: renameSync, open: openSync, read: readFileSync, remove: rmSync,
@@ -104,11 +105,13 @@ export function extractVerifiedProductionFiles(root, files, system = DEFAULT_SYS
 
 export async function runInstalledAcceptance({
   archive, descriptor, workRoot, verifyArchiveImpl, verifyOptions,
-  spawn = spawnSync, system = DEFAULT_SYSTEM,
+  acceptedVersion = VERSION, spawn = spawnSync, system = DEFAULT_SYSTEM,
 }) {
   if (!Buffer.isBuffer(archive) || !isAbsolute(workRoot) || resolve(workRoot) !== workRoot
-    || descriptor?.version !== VERSION || !Object.hasOwn(TARGETS, descriptor?.target?.triple)
+    || !ACCEPTED_VERSIONS.has(acceptedVersion) || descriptor?.version !== acceptedVersion
+    || !Object.hasOwn(TARGETS, descriptor?.target?.triple)
     || descriptor.filename !== TARGETS[descriptor.target.triple].filename
+      .replace(VERSION, acceptedVersion)
     || descriptor.size !== archive.length || descriptor.sha256 !== sha256(archive)
     || typeof verifyArchiveImpl !== 'function') {
     reject('authenticated production archive descriptor is invalid');
@@ -128,7 +131,7 @@ export async function runInstalledAcceptance({
   return executeInstalledAcceptance({
     archiveSha256: descriptor.sha256, extract: extractVerifiedProductionFiles, provider,
     spawn, system, target, targetTriple: descriptor.target.triple, verifiedFiles: verified.files,
-    version: VERSION, workRoot,
+    version: acceptedVersion, workRoot,
   });
 }
 
