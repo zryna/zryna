@@ -30,7 +30,7 @@ export function validateQualificationResult(value, target, replica) {
   if (value.target !== target || value.replica !== replica) {
     reject('qualification target or replica differs');
   }
-  const base = `zryna-qualification-0.2.2-${target}-${value.source.commit.slice(0, 12)}`;
+  const base = `zryna-qualification-0.2.3-${target}-${value.source.commit.slice(0, 12)}`;
   const expected = {
     binding: `${base}.input.json`,
     cli: `${base}.${target === 'x86_64-pc-windows-msvc' ? 'exe' : 'elf'}`,
@@ -133,7 +133,7 @@ export async function compareReleaseQualifications({
     format: 'zryna.release-qualification-comparison.v1',
     status: 'qualification-only',
     productionAdmission: 'forbidden',
-    versionCandidate: '0.2.2',
+    versionCandidate: '0.2.3',
     target,
     source: first.value.source,
     recipeProposal: first.value.recipeProposal,

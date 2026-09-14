@@ -44,7 +44,7 @@ function validateResult(value, expectedTarget, expectedReplica) {
   if (value.target !== expectedTarget || value.replica !== expectedReplica) {
     reject('build result target or replica differs');
   }
-  const base = `zryna-0.2.2-${expectedTarget}`;
+  const base = `zryna-0.2.3-${expectedTarget}`;
   const expected = {
     archive: `${base}.${TARGETS.get(expectedTarget)}`,
     buildReceipt: `${base}.build-receipt.json`,
@@ -77,7 +77,7 @@ export function validateReproduction(value, expectedTarget) {
     || value.builds[0].manifestSha256 === value.builds[1].manifestSha256) {
     reject('reproduction target or independent build identities differ');
   }
-  const base = `zryna-0.2.2-${expectedTarget}`;
+  const base = `zryna-0.2.3-${expectedTarget}`;
   const expected = {
     archive: `${base}.${TARGETS.get(expectedTarget)}`,
     buildReceipt: `${base}.build-receipt.json`,

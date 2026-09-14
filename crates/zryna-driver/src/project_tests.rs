@@ -24,6 +24,10 @@ struct Case {
 
 impl Case {
     fn new() -> Self {
+        Self::with_compatibility(env!("CARGO_PKG_VERSION"), "i32-v1")
+    }
+
+    fn with_compatibility(compiler: &str, profile: &str) -> Self {
         let parent = std::env::temp_dir().join(format!(
             "zryna-project-admission-{}-{}",
             std::process::id(),
@@ -44,8 +48,8 @@ impl Case {
             "version": "0.1.0",
             "source": package_source,
             "compatibility": {
-                "compiler": env!("CARGO_PKG_VERSION"),
-                "profile": "i32-v1",
+                "compiler": compiler,
+                "profile": profile,
                 "targets": ["javascript"],
             },
             "files": [{
@@ -79,6 +83,62 @@ impl Case {
             node_runtime: absolute_dummy_node(),
         }
     }
+}
+
+#[test]
+fn exact_public_patch_predecessor_is_admitted_without_relaxing_profile_or_lock_identity() {
+    assert_eq!(env!("CARGO_PKG_VERSION"), "0.2.3");
+    for predecessor in ["0.2.1", "0.2.2"] {
+        let legacy = Case::with_compatibility(predecessor, "i32-v1");
+        ProjectAdmission::discover(&legacy.request())
+            .unwrap_or_else(|_| panic!("{predecessor} project under 0.2.3 compiler"));
+    }
+
+    for incompatible_version in ["0.2.0", "0.2.4"] {
+        let incompatible = Case::with_compatibility(incompatible_version, "i32-v1");
+        let Err(failure) = ProjectAdmission::discover(&incompatible.request()) else {
+            panic!("unreviewed compiler {incompatible_version} must reject");
+        };
+        assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-P4009");
+    }
+
+    let missing_target = Case::with_compatibility("0.2.1", "i32-v1");
+    let mut request = missing_target.request();
+    request.targets = TargetSelection::WebAssembly;
+    let Err(failure) = ProjectAdmission::discover(&request) else {
+        panic!("undeclared target must reject");
+    };
+    assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-P4009");
+
+    let wrong_profile = Case::with_compatibility("0.2.1", "i32-v1");
+    let Err(failure) = ProjectAdmission::discover_profile(
+        &wrong_profile.request(),
+        "i32-v2",
+        super::RootPackageSources::snapshot,
+    ) else {
+        panic!("unreviewed profile must reject");
+    };
+    assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-P4009");
+
+    let stale = Case::with_compatibility("0.2.1", "i32-v1");
+    let lock_path = stale.project.join("zryna.lock.json");
+    let lock = fs::read_to_string(&lock_path).expect("legacy lock");
+    fs::write(&lock_path, lock.replace("\"compiler\":\"0.2.1\"", "\"compiler\":\"0.2.2\""))
+        .expect("stale lock fixture");
+    let Err(failure) = ProjectAdmission::discover(&stale.request()) else {
+        panic!("stale lock must reject");
+    };
+    assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-P4010");
+
+    let changed_source = Case::with_compatibility("0.2.1", "i32-v1");
+    replace(
+        &changed_source.project.join("src/main.zry"),
+        b"export function main(): i32 { return 7; }\n",
+    );
+    let Err(failure) = ProjectAdmission::discover(&changed_source.request()) else {
+        panic!("changed legacy source must reject");
+    };
+    assert_eq!(failure.diagnostics()[0].code(), "ZRYNA-P4004");
 }
 
 impl Drop for Case {

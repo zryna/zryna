@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import { canonical, parseCanonical, sha256 } from './canonical.mjs';
 
-const VERSION = '0.2.2';
-const RELEASE_VERSIONS = new Set(['0.2.1', VERSION]);
+const VERSION = '0.2.3';
+const RELEASE_VERSIONS = new Set(['0.2.1', '0.2.2', VERSION]);
 const DOCUMENT = 'SPDXRef-DOCUMENT';
 const ROOT_PACKAGE = 'SPDXRef-Package-zryna';
 const MAX_FILES = 512;

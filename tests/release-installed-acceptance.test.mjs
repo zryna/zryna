@@ -23,15 +23,15 @@ function fixture(t, target = 'x86_64-pc-windows-msvc') {
   const archive = Buffer.from('authenticated production archive');
   const windows = target === 'x86_64-pc-windows-msvc';
   const descriptor = {
-    version: '0.2.2', filename: `zryna-0.2.2-${target}.${windows ? 'zip' : 'tar.gz'}`,
+    version: '0.2.3', filename: `zryna-0.2.3-${target}.${windows ? 'zip' : 'tar.gz'}`,
     size: archive.length, sha256: sha256(archive),
-    source: { repository: 'https://github.com/zryna/zryna', ref: 'refs/tags/v0.2.2',
+    source: { repository: 'https://github.com/zryna/zryna', ref: 'refs/tags/v0.2.3',
       commit: 'a'.repeat(40), tree: 'b'.repeat(40), sourceDateEpoch: 1_789_081_200 },
     target: { triple: target, archiveFormat: windows ? 'zip' : 'tar-gzip', platformBaseline: {} },
     recipe: { format: 'zryna.distribution-recipe.v1', sha256: 'c'.repeat(64) },
   };
   const files = [
-    file('VERSION', 0o644, '0.2.2\n'),
+    file('VERSION', 0o644, '0.2.3\n'),
     file(windows ? 'bin/zryna.exe' : 'bin/zryna', 0o755, 'compiled cli'),
     file('lib/zryna/bootstrap/worker.mjs', 0o644, 'provider'),
     file('metadata/distribution.json', 0o644, '{}\n'),
@@ -45,7 +45,7 @@ function fixture(t, target = 'x86_64-pc-windows-msvc') {
 }
 
 function mockInstalledCommands({
-  target = 'x86_64-pc-windows-msvc', calls, tamperSucceeds = false, version = '0.2.2',
+  target = 'x86_64-pc-windows-msvc', calls, tamperSucceeds = false, version = '0.2.3',
 } = {}) {
   return (executable, args, options) => {
     calls?.push({ executable, args, cwd: options.cwd, shell: options.shell, env: options.env });
@@ -158,13 +158,13 @@ test('accepts the exact reproduced directory and emits one canonical receipt', a
   mkdirSync(workRoot);
   const artifacts = {
     archive: { path: f.descriptor.filename, size: f.archive.length, sha256: sha256(f.archive) },
-    buildReceipt: { path: 'zryna-0.2.2-x86_64-unknown-linux-gnu.build-receipt.json',
+    buildReceipt: { path: 'zryna-0.2.3-x86_64-unknown-linux-gnu.build-receipt.json',
       size: 2, sha256: sha256('{}') },
-    sbom: { path: 'zryna-0.2.2-x86_64-unknown-linux-gnu.spdx.json',
+    sbom: { path: 'zryna-0.2.3-x86_64-unknown-linux-gnu.spdx.json',
       size: 2, sha256: sha256('{}') },
   };
   const reproduction = {
-    format: 'zryna.release-reproduction.v1', version: '0.2.2',
+    format: 'zryna.release-reproduction.v1', version: '0.2.3',
     target: 'x86_64-unknown-linux-gnu',
     source: { ...f.descriptor.source, tagObject: 'd'.repeat(40) },
     recipe: f.descriptor.recipe, artifacts,
@@ -201,7 +201,7 @@ test('rejects qualification names and paths before installed execution', async (
   let spawned = false;
   await assert.rejects(() => runInstalledAcceptance({
     archive: f.archive,
-    descriptor: { ...f.descriptor, filename: 'zryna-qualification-0.2.2.zip' },
+    descriptor: { ...f.descriptor, filename: 'zryna-qualification-0.2.3.zip' },
     workRoot: f.root, spawn: () => { spawned = true; },
     verifyArchiveImpl: async () => ({ archiveSha256: f.descriptor.sha256,
       files: f.files, distribution: f.distribution }),
@@ -251,10 +251,10 @@ test('owned removal retains foreign files and rejects changed owned bytes before
 });
 
 test('fixture-only release transition admission accepts upgrades and rejects downgrade or reinstall', () => {
-  assert.deepEqual(admitReleaseTransition('0.2.1', '0.2.2'),
-    { current: '0.2.1', candidate: '0.2.2', operation: 'upgrade' });
-  assert.throws(() => admitReleaseTransition('0.2.2', '0.2.1'), /downgrade is forbidden/);
-  assert.throws(() => admitReleaseTransition('0.2.2', '0.2.2'), /not an upgrade/);
+  assert.deepEqual(admitReleaseTransition('0.2.1', '0.2.3'),
+    { current: '0.2.1', candidate: '0.2.3', operation: 'upgrade' });
+  assert.throws(() => admitReleaseTransition('0.2.3', '0.2.1'), /downgrade is forbidden/);
+  assert.throws(() => admitReleaseTransition('0.2.3', '0.2.3'), /not an upgrade/);
   assert.throws(() => admitReleaseTransition('0.2.1', '0.02.2'), /version is invalid/);
 });
 

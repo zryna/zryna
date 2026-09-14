@@ -37,7 +37,7 @@ function readinessFixture(recipe) {
     cwd: source,
     environment: {
       GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'zryna/zryna',
-      GITHUB_REF: 'refs/tags/v0.2.2', GITHUB_REF_PROTECTED: 'true',
+      GITHUB_REF: 'refs/tags/v0.2.3', GITHUB_REF_PROTECTED: 'true',
       GITHUB_SHA: sourceCommit, GITHUB_WORKFLOW_SHA: sourceCommit, ZRYNA_SOURCE_ROOT: source,
     },
     sourceCommit,
@@ -50,7 +50,7 @@ function steps(job, name) {
 }
 
 test('release workflow has one exact protected-tag entry and non-cancellable run identity', () => {
-  assert.deepEqual(workflow.on, { push: { tags: ['v0.2.2'] } });
+  assert.deepEqual(workflow.on, { push: { tags: ['v0.2.3'] } });
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(workflow.concurrency, {
     group: 'release-${{ github.ref }}',
@@ -95,18 +95,26 @@ test('public upgrade proof acquires both immutable versions on exact supported h
   assert.equal(job['timeout-minutes'], 30);
   assert.equal(job.strategy['fail-fast'], false);
   assert.deepEqual(job.strategy.matrix.include, [
-    { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu' },
-    { os: 'windows-2022', target: 'x86_64-pc-windows-msvc' },
+    { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu',
+      previous: '0.2.1', previous_tag: 'v0.2.1' },
+    { os: 'windows-2022', target: 'x86_64-pc-windows-msvc',
+      previous: '0.2.1', previous_tag: 'v0.2.1' },
+    { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu',
+      previous: '0.2.2', previous_tag: 'v0.2.2' },
+    { os: 'windows-2022', target: 'x86_64-pc-windows-msvc',
+      previous: '0.2.2', previous_tag: 'v0.2.2' },
   ]);
   const acquisition = steps(job, 'Acquire both exact immutable public releases')[0];
-  assert.match(acquisition.run, /releases\/tags\/v0\.2\.1/);
-  assert.match(acquisition.run, /gh release download v0\.2\.1/);
-  assert.match(acquisition.run, /releases\/tags\/v0\.2\.2/);
-  assert.match(acquisition.run, /gh release download v0\.2\.2/);
+  assert.match(acquisition.run, /releases\/tags\/\$env:ZRYNA_PREVIOUS_TAG/);
+  assert.match(acquisition.run, /gh release download \$env:ZRYNA_PREVIOUS_TAG/);
+  assert.match(acquisition.run, /releases\/tags\/v0\.2\.3/);
+  assert.match(acquisition.run, /gh release download v0\.2\.3/);
   const linux = steps(job, 'Exercise the Linux upgrade as an unprivileged user')[0];
   const windows = steps(job, 'Exercise the Windows upgrade as a standard user')[0];
   assert.match(linux.run, /run-published-upgrade-acceptance\.mjs/);
   assert.match(windows.run, /run-published-upgrade-acceptance\.mjs/);
+  assert.match(linux.run, /--previous-version "\$ZRYNA_PREVIOUS_VERSION"/);
+  assert.match(windows.run, /'--previous-version', \$env:ZRYNA_PREVIOUS_VERSION/);
   assert.match(windows.run, /Start-Process -FilePath \$node/);
   assert.match(windows.run, /-Credential \$credential -LoadUserProfile/);
   assert.match(windows.run, /net user \$user \/delete/);
@@ -156,7 +164,7 @@ test('admission requires the reviewed recipe and complete integrations', () => {
   assert.match(steps(admit, 'Require the exact successful production candidate')[0].run,
     /create-production-candidate-receipt\.mjs/);
   assert.equal(ACCEPTED_RECIPE_SHA256,
-    'c827a6b626f30dc25d8aba96334e049a14ed1fe9b20ba61d6d2bd49421bfa407');
+    '0f522abd343ba4e3c07a38d93c778fa7a0e30aac2295abe1f075091f6b6d7db1');
 
   const source = resolve('release-readiness-source');
   const sha = 'a'.repeat(40);
@@ -172,7 +180,7 @@ test('admission requires the reviewed recipe and complete integrations', () => {
     environment: {
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REPOSITORY: 'zryna/zryna',
-      GITHUB_REF: 'refs/tags/v0.2.2',
+      GITHUB_REF: 'refs/tags/v0.2.3',
       GITHUB_REF_PROTECTED: 'true',
       GITHUB_SHA: sha,
       GITHUB_WORKFLOW_SHA: sha,

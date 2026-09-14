@@ -15,7 +15,7 @@ import { validateProductionCandidateReceiptText } from './create-production-cand
 import { validateRelease } from './validate.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const VERSION = '0.2.2';
+const VERSION = '0.2.3';
 const TARGETS = Object.freeze([
   { key: 'windows', triple: 'x86_64-pc-windows-msvc', extension: 'zip' },
   { key: 'linux', triple: 'x86_64-unknown-linux-gnu', extension: 'tar.gz' },
@@ -233,9 +233,9 @@ function writeSubjects(reproductions, outputRoot) {
 function releaseNotes(source, reproductions) {
   const archives = reproductions.map(({ reproduction }) => reproduction.artifacts.archive);
   return Buffer.from([
-    '# Zryna 0.2.2 Developer Preview',
+    '# Zryna 0.2.3 Developer Preview',
     '',
-    'This patch prerelease carries the release-publisher recovery fix and the clean-host lifecycle gates required for the post-publication immutable v0.2.1 to v0.2.2 upgrade proof.',
+    'This corrective patch admits only the reviewed v0.2.1 and v0.2.2 standalone-project compiler identities while preserving exact profile, target, manifest, lock, and source checks. Upgrade support is established only if the post-publication public-release jobs produce canonical receipts on both supported hosts.',
     '',
     `Source: ${source.repository}/tree/${source.commit}`,
     `Tag: v${VERSION} (${source.tagObject})`,

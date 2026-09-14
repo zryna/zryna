@@ -94,6 +94,13 @@ tag resolution, registry or mirror lookup, transparent fetch, submodules, Git LF
 host/build dependencies, native recipes or libraries, arbitrary tools, deep/package imports,
 package type imports, source acquisition, compilation, cache execution, and package publication.
 
+The manifest and lock still carry one exact compiler identity. Standalone compilation normally
+requires that identity to equal the running compiler. The only reviewed exceptions are the
+explicit `0.2.1` project to `0.2.3` compiler and `0.2.2` project to `0.2.3` compiler transitions.
+This is a closed table, not a SemVer range; `0.2.0`, future or unrelated versions, profile changes,
+target omissions, manifest drift, stale locks, and source inventory changes continue to fail
+closed.
+
 ## Diagnostics
 
 | Code | Meaning |

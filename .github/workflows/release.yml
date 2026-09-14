@@ -2,7 +2,7 @@ name: Binary release
 
 on:
   push:
-    tags: [v0.2.2]
+    tags: [v0.2.3]
 
 concurrency:
   group: release-${{ github.ref }}
@@ -359,14 +359,14 @@ jobs:
         id: attest-linux
         uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
         with:
-          subject-path: .release/publication/zryna-0.2.2-x86_64-unknown-linux-gnu.tar.gz
+          subject-path: .release/publication/zryna-0.2.3-x86_64-unknown-linux-gnu.tar.gz
           create-storage-record: false
           show-summary: false
       - name: Attest Windows archive
         id: attest-windows
         uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
         with:
-          subject-path: .release/publication/zryna-0.2.2-x86_64-pc-windows-msvc.zip
+          subject-path: .release/publication/zryna-0.2.3-x86_64-pc-windows-msvc.zip
           create-storage-record: false
           show-summary: false
       - name: Bind exported attestations and prepare checksum and notes subjects
@@ -487,7 +487,7 @@ jobs:
           --directory .release/publication --phase publish
 
   published-upgrade:
-    name: published Developer Preview upgrade (${{ matrix.target }})
+    name: published ${{ matrix.previous_tag }} to v0.2.3 (${{ matrix.target }})
     needs: publish
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -497,8 +497,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu }
-          - { os: windows-2022, target: x86_64-pc-windows-msvc }
+          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu, previous: 0.2.1, previous_tag: v0.2.1 }
+          - { os: windows-2022, target: x86_64-pc-windows-msvc, previous: 0.2.1, previous_tag: v0.2.1 }
+          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu, previous: 0.2.2, previous_tag: v0.2.2 }
+          - { os: windows-2022, target: x86_64-pc-windows-msvc, previous: 0.2.2, previous_tag: v0.2.2 }
     steps:
       - name: Checkout exact tagged upgrade tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -519,18 +521,20 @@ jobs:
       - name: Acquire both exact immutable public releases
         env:
           GH_TOKEN: ${{ github.token }}
+          ZRYNA_PREVIOUS_TAG: ${{ matrix.previous_tag }}
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path .release/previous,.release/current | Out-Null
-          gh api repos/zryna/zryna/releases/tags/v0.2.1 > .release/previous-state.json
-          gh release download v0.2.1 --repo zryna/zryna --dir .release/previous
-          gh api repos/zryna/zryna/releases/tags/v0.2.2 > .release/current-state.json
-          gh release download v0.2.2 --repo zryna/zryna --dir .release/current
+          gh api "repos/zryna/zryna/releases/tags/$env:ZRYNA_PREVIOUS_TAG" > .release/previous-state.json
+          gh release download $env:ZRYNA_PREVIOUS_TAG --repo zryna/zryna --dir .release/previous
+          gh api repos/zryna/zryna/releases/tags/v0.2.3 > .release/current-state.json
+          gh release download v0.2.3 --repo zryna/zryna --dir .release/current
       - name: Exercise the Linux upgrade as an unprivileged user
         if: runner.os == 'Linux'
         shell: bash
         env:
           ZRYNA_TARGET: ${{ matrix.target }}
+          ZRYNA_PREVIOUS_VERSION: ${{ matrix.previous }}
         run: |
           mkdir -m 700 .release/upgrade-work release-evidence release-evidence/linux-upgrade
           node_path="$(command -v node)"
@@ -542,6 +546,7 @@ jobs:
             --output "$(realpath release-evidence/linux-upgrade)" \
             --previous "$(realpath .release/previous)" \
             --previous-state "$(realpath .release/previous-state.json)" \
+            --previous-version "$ZRYNA_PREVIOUS_VERSION" \
             --target "$ZRYNA_TARGET" \
             --work "$(realpath .release/upgrade-work)"
       - name: Exercise the Windows upgrade as a standard user
@@ -549,6 +554,7 @@ jobs:
         shell: pwsh
         env:
           ZRYNA_TARGET: ${{ matrix.target }}
+          ZRYNA_PREVIOUS_VERSION: ${{ matrix.previous }}
         run: |
           $user = 'zryna423'
           $passwordText = "Zr423-$env:GITHUB_RUN_ATTEMPT!"
@@ -590,6 +596,7 @@ jobs:
               '--output', $outputRoot,
               '--previous', (Resolve-Path .release/previous).Path,
               '--previous-state', (Resolve-Path .release/previous-state.json).Path,
+              '--previous-version', $env:ZRYNA_PREVIOUS_VERSION,
               '--target', $env:ZRYNA_TARGET,
               '--work', $workRoot
             )
@@ -608,7 +615,7 @@ jobs:
       - name: Upload exact public upgrade receipt
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: published-upgrade-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: published-upgrade-${{ matrix.previous }}-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: release-evidence/*-upgrade/published-upgrade-acceptance.json
           if-no-files-found: error
           compression-level: 0

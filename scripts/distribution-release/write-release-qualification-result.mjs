@@ -61,7 +61,7 @@ export async function writeReleaseQualificationResult({
     format: 'zryna.release-qualification-result.v1',
     status: 'qualification-only',
     productionAdmission: 'forbidden',
-    versionCandidate: '0.2.2',
+    versionCandidate: '0.2.3',
     target: input.target.triple,
     replica,
     source: {

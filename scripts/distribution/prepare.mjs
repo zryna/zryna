@@ -5,8 +5,8 @@ import { validateMaterials } from './material-record.mjs';
 import { validateSourceReceipt } from './source-receipt.mjs';
 import { validateRustMaterials } from './rust-materials.mjs';
 
-const VERSION = '0.2.2';
-const RELEASE_VERSIONS = new Set(['0.2.1', VERSION]);
+const VERSION = '0.2.3';
+const RELEASE_VERSIONS = new Set(['0.2.1', '0.2.2', VERSION]);
 
 export function validateDistribution(record, {
   acceptedVersion = VERSION, productionCandidate = false,

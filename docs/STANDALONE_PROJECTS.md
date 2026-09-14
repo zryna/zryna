@@ -93,3 +93,9 @@ publishing. Missing or noncanonical manifests/locks, changed checksums, extra fi
 outside the selected project tree, links, unsafe roots, incompatible compiler/profile/targets, or
 an existing output bundle fail without publication. Explicit profiles and `component` are not yet
 accepted with `--project-root`; the generated package declares default `i32-v1` only.
+
+Compiler identity remains exact except for two reviewed patch transitions: current `0.2.3` source
+may consume a project whose authenticated manifest and frozen lock both name compiler `0.2.1` or
+`0.2.2`. That closed table does not admit a range or change profile, target, package, lock, source,
+or filesystem validation. The immutable public `v0.2.2` binary predates this correction and still
+rejects a `0.2.1` project with `ZRYNA-P4009`.

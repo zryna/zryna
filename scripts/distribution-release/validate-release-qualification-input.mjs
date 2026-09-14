@@ -37,7 +37,7 @@ export function validateReleaseQualificationInput(document) {
       ajv.errorsText(validateSchema.errors, { separator: '; ' }));
   }
   const target = document.target.triple;
-  const expectedRoot = `zryna-qualification-0.2.2-${target}-${document.source.commit.slice(0, 12)}`;
+  const expectedRoot = `zryna-qualification-0.2.3-${target}-${document.source.commit.slice(0, 12)}`;
   const expectedFormat = target === 'x86_64-pc-windows-msvc' ? 'zip' : 'tar-gzip';
   if (document.archive.root !== expectedRoot || document.archive.format !== expectedFormat) {
     reject('R406-QUALIFICATION-ARCHIVE', 'target, root, and archive format differ');

@@ -13,7 +13,7 @@
     "format": { "const": "zryna.release-qualification-input.v1" },
     "status": { "const": "provisional-candidate" },
     "productionAdmission": { "const": "forbidden" },
-    "versionCandidate": { "const": "0.2.2" },
+    "versionCandidate": { "const": "0.2.3" },
     "source": { "$ref": "#/$defs/source" },
     "workflow": { "$ref": "#/$defs/workflow" },
     "target": { "$ref": "#/$defs/target" },
@@ -110,7 +110,7 @@
     "ascii": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[ -~]+$" },
     "environmentValue": { "type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^[ -~]+$" },
     "path": { "type": "string", "pattern": "^[A-Za-z0-9@][A-Za-z0-9@+._-]*(?:/[A-Za-z0-9@][A-Za-z0-9@+._-]*){0,11}$" },
-    "root": { "type": "string", "pattern": "^zryna-qualification-0\\.2\\.2-(?:x86_64-pc-windows-msvc|x86_64-unknown-linux-gnu)-[0-9a-f]{12}$" },
+    "root": { "type": "string", "pattern": "^zryna-qualification-0\\.2\\.3-(?:x86_64-pc-windows-msvc|x86_64-unknown-linux-gnu)-[0-9a-f]{12}$" },
     "artifact": {
       "type": "object", "additionalProperties": false,
       "required": ["logicalPath", "size", "sha256"],
