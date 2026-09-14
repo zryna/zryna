@@ -515,6 +515,14 @@ jobs:
             icacls $outputRoot /grant "${user}:(OI)(CI)M" /T /Q | Out-Null
             icacls $userRoot /setowner $user /T /Q | Out-Null
             icacls $outputRoot /setowner $user /T /Q | Out-Null
+            $localAppData = Join-Path $userRoot 'AppData\Local'
+            New-Item -ItemType Directory -Path $localAppData -Force | Out-Null
+            icacls $localAppData /setowner $user /T /Q | Out-Null
+            $env:HOME = $userRoot
+            $env:USERPROFILE = $userRoot
+            $env:LOCALAPPDATA = $localAppData
+            $env:TEMP = $userRoot
+            $env:TMP = $userRoot
             $arguments = @(
               'scripts/distribution-release/run-published-acceptance.mjs',
               '--cosign', $cosign,

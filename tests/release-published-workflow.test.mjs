@@ -52,6 +52,9 @@ test('each host runs the same published bytes without repository compiler substi
     /\$env:PATH = "\$hostile;\$env:PATH"/,
     /icacls \$userRoot \/setowner \$user/,
     /icacls \$outputRoot \/setowner \$user/,
+    /\$env:HOME = \$userRoot/,
+    /\$env:USERPROFILE = \$userRoot/,
+    /\$env:LOCALAPPDATA = \$localAppData/,
     /run-published-acceptance\.mjs/,
     /net user \$user \/delete/,
   ]) assert.match(windows.run, pattern);
