@@ -8,7 +8,7 @@ import { validateReleaseTagReceipt } from './validate-release-tag-receipt.mjs';
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const REPOSITORY = 'zryna/zryna';
 const REPOSITORY_URL = 'https://github.com/zryna/zryna';
-const TAG = 'v0.2.1';
+const TAG = 'v0.2.2';
 const REF = `refs/tags/${TAG}`;
 const WORKFLOW = '.github/workflows/release.yml';
 const WORKFLOW_REF = `${REPOSITORY}/${WORKFLOW}@${REF}`;

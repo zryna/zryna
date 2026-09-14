@@ -7,7 +7,7 @@ import { captureTarGzipMembers } from '../scripts/distribution/npm-materials.mjs
 import { nodeExpandedArchive, nodeMaterialMembers }
   from '../scripts/distribution/node-materials.mjs';
 import {
-  checkQualificationRustClosure, rustMaterials,
+  checkQualificationRustClosure, rustMaterials, validateRustMaterials,
 } from '../scripts/distribution/rust-materials.mjs';
 
 const BLOCK = 512;
@@ -139,6 +139,23 @@ test('pins the complete target-specific Rust capture sets and Wasmtime license f
   const destinations = new Set([...linux, ...windows].flatMap(record => record.files)
     .filter(file => file.origin === upstream).map(file => file.path));
   assert.equal(destinations.size, 14);
+});
+
+test('binds Rust material notices to the exact current or legacy Cargo lock', () => {
+  const target = 'x86_64-unknown-linux-gnu';
+  const entries = rustMaterials(target).flatMap(record => record.files)
+    .map(({ path, size, sha256: digest }) => ({ path, size, sha256: digest }));
+  const receipt = digest => ({ inputs: [{ logicalPath: 'Cargo.lock', sha256: digest }] });
+  assert.doesNotThrow(() => validateRustMaterials(entries, target,
+    receipt('baf9267bada161b9e2ddd6abddac4b0f029b5bb23177c11599c341a68b2130f9')));
+  assert.doesNotThrow(() => validateRustMaterials(entries, target,
+    receipt('fec1a746a6122a216255080e90ee39068578528feddec24c1e0d8bf9df3b8a38'), '0.2.1'));
+  assert.throws(() => validateRustMaterials(entries, target,
+    receipt('fec1a746a6122a216255080e90ee39068578528feddec24c1e0d8bf9df3b8a38')),
+  /Rust material lockfile identity/);
+  assert.throws(() => validateRustMaterials(entries, target,
+    receipt('fec1a746a6122a216255080e90ee39068578528feddec24c1e0d8bf9df3b8a38'), '0.2.0'),
+  /Rust material lockfile identity/);
 });
 
 test('qualification closure audit rejects an omitted normal registry dependency without network', () => {

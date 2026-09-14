@@ -6,9 +6,13 @@ import { bytes, parseCanonical, requireValue, sha256 } from './canonical.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const LOCK = readFileSync(new URL('./materials-rust-v1.json', import.meta.url));
-requireValue(sha256(LOCK) === '184f88f0ad2b6144f1cabb70934c6c2517284ceb168396e08502303d4c043cca',
+requireValue(sha256(LOCK) === 'f480d1165bced1cba2c86bd27e0fa10ba4a8eeb1851eecdc968cafa5530ace5f',
   'Rust material recipe identity');
 const RECORD = parseCanonical(LOCK);
+const CARGO_LOCKS = Object.freeze({
+  '0.2.1': 'fec1a746a6122a216255080e90ee39068578528feddec24c1e0d8bf9df3b8a38',
+  '0.2.2': RECORD.cargoLockSha256,
+});
 const TARGETS = ['x86_64-pc-windows-msvc', 'x86_64-unknown-linux-gnu'];
 const MAX_METADATA = 64 * 1024 * 1024;
 
@@ -28,9 +32,10 @@ export function rustMaterials(target) {
   return RECORD.packages.filter(record => selected.has(`${record.name}-${record.version}`));
 }
 
-export function validateRustMaterials(entries, target, architectureReceipt) {
+export function validateRustMaterials(entries, target, architectureReceipt, acceptedVersion = '0.2.2') {
   const lock = architectureReceipt.inputs.find(input => input.logicalPath === 'Cargo.lock');
-  requireValue(lock?.sha256 === RECORD.cargoLockSha256, 'Rust material lockfile identity');
+  requireValue(Object.hasOwn(CARGO_LOCKS, acceptedVersion)
+    && lock?.sha256 === CARGO_LOCKS[acceptedVersion], 'Rust material lockfile identity');
   const expected = rustMaterials(target).flatMap(record => record.files)
     .map(({ path, size, sha256: digest }) => ({ path, size, sha256: digest }))
     .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);

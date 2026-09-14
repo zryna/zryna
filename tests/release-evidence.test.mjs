@@ -16,7 +16,7 @@ import { releaseSpdxBytes } from '../scripts/distribution-release/release-sbom.m
 import { verifySignedRelease } from '../scripts/distribution-release/verify-signed-release.mjs';
 import { githubServer } from './release-publisher-mock.mjs';
 
-const VERSION = '0.2.1';
+const VERSION = '0.2.2';
 const COMMIT = 'b'.repeat(40);
 const TREE = 'c'.repeat(40);
 const TAG_OBJECT = 'a'.repeat(40);
@@ -40,7 +40,7 @@ const CANDIDATE_JOBS = [
 function source(tagType = false) {
   return {
     repository: 'https://github.com/zryna/zryna',
-    ref: 'refs/tags/v0.2.1',
+    ref: 'refs/tags/v0.2.2',
     ...(tagType ? { tagType: 'annotated' } : {}),
     tagObject: TAG_OBJECT,
     commit: COMMIT,
@@ -72,6 +72,22 @@ function archiveFiles(target) {
     { path: 'metadata/checksums.sha256', mode: 0o644, data: Buffer.from('checksums\n') },
   ].sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
 }
+
+test('SPDX generation binds the legacy release to its exact versioned identity', () => {
+  const target = 'x86_64-pc-windows-msvc';
+  const files = archiveFiles(target);
+  const archive = { filename: `zryna-0.2.1-${target}.zip`, size: 1, sha256: 'e'.repeat(64) };
+  const legacySource = { ...source(), ref: 'refs/tags/v0.2.1' };
+  const sbom = JSON.parse(releaseSpdxBytes({
+    files, archive, source: legacySource, target, version: '0.2.1',
+  }).toString('utf8'));
+  assert.equal(sbom.name, `zryna-0.2.1-${target}`);
+  assert.equal(sbom.packages[0].versionInfo, '0.2.1');
+  assert.throws(() => releaseSpdxBytes({
+    files, archive: { ...archive, filename: `zryna-0.2.0-${target}.zip` },
+    source: { ...legacySource, ref: 'refs/tags/v0.2.0' }, target, version: '0.2.0',
+  }), /archive subject name differs/);
+});
 
 function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
   const parent = mkdtempSync(join(tmpdir(), 'zryna-release-evidence-'));
@@ -133,7 +149,7 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
         buildDefinition: {
           buildType: 'https://actions.github.io/buildtypes/workflow/v1',
           externalParameters: { workflow: {
-            path: '.github/workflows/release.yml', ref: 'refs/tags/v0.2.1',
+            path: '.github/workflows/release.yml', ref: 'refs/tags/v0.2.2',
             repository: 'https://github.com/zryna/zryna',
           } },
           internalParameters: { github: {
@@ -141,13 +157,13 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
             runner_environment: 'github-hosted',
           } },
           resolvedDependencies: [{
-            uri: 'git+https://github.com/zryna/zryna@refs/tags/v0.2.1',
+            uri: 'git+https://github.com/zryna/zryna@refs/tags/v0.2.2',
             digest: { gitCommit: COMMIT },
           }],
         },
         runDetails: {
           builder: {
-            id: 'https://github.com/zryna/zryna/.github/workflows/release.yml@refs/tags/v0.2.1',
+            id: 'https://github.com/zryna/zryna/.github/workflows/release.yml@refs/tags/v0.2.2',
           },
           metadata: { invocationId: run },
         },
@@ -196,7 +212,7 @@ function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
     },
     environment: {
       GITHUB_TOKEN: 'test-token', GITHUB_SERVER_URL: 'https://github.com',
-      GITHUB_REPOSITORY: 'zryna/zryna', GITHUB_REF: 'refs/tags/v0.2.1',
+      GITHUB_REPOSITORY: 'zryna/zryna', GITHUB_REF: 'refs/tags/v0.2.2',
       GITHUB_SHA: COMMIT, GITHUB_WORKFLOW_SHA: COMMIT,
       GITHUB_RUN_ID: '987654321', GITHUB_RUN_ATTEMPT: '2',
       ZRYNA_LINUX_ATTESTATION: attestationPaths.linux,
@@ -314,7 +330,7 @@ test('rejects provenance drift and cryptographic verifier failure', async (t) =>
   const drift = fixture(t);
   prepareAll(drift);
   const provenance = join(drift.outputRoot,
-    'zryna-0.2.1-x86_64-unknown-linux-gnu.intoto.jsonl');
+    'zryna-0.2.2-x86_64-unknown-linux-gnu.intoto.jsonl');
   writeFileSync(provenance, '{}\n');
   await assert.rejects(() => verifySignedRelease({
     directory: drift.outputRoot,
@@ -356,8 +372,8 @@ test('signed-release admission rejects an envelope-bound header-only SBOM', asyn
   const paths = fixture(t, () => {}, (_bytes, { target, archive }) => Buffer.from(`${
     canonicalBounded({
       spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0', SPDXID: 'SPDXRef-DOCUMENT',
-      name: `zryna-0.2.1-${target.triple}`,
-      documentNamespace: `https://zryna.com/spdx/0.2.1/${target.triple}/${sha256(archive)}`,
+      name: `zryna-0.2.2-${target.triple}`,
+      documentNamespace: `https://zryna.com/spdx/0.2.2/${target.triple}/${sha256(archive)}`,
     })}\n`));
   prepareAll(paths);
   await assert.rejects(() => verifySignedRelease({
@@ -436,7 +452,7 @@ test('rejects wrong authenticated draft asset identities and URLs before resume'
     ['API identity', (asset) => { asset.url = `${asset.url}-wrong`; }],
     ['published URL', (asset) => {
       asset.browser_download_url = asset.browser_download_url.replace(
-        'untagged-0123456789abcdefabcd', 'v0.2.1');
+        'untagged-0123456789abcdefabcd', 'v0.2.2');
     }],
     ['foreign draft URL', (asset) => {
       asset.browser_download_url = asset.browser_download_url.replace(

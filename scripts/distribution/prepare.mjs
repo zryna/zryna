@@ -5,10 +5,17 @@ import { validateMaterials } from './material-record.mjs';
 import { validateSourceReceipt } from './source-receipt.mjs';
 import { validateRustMaterials } from './rust-materials.mjs';
 
-export function validateDistribution(record, { productionCandidate = false } = {}) {
+const VERSION = '0.2.2';
+const RELEASE_VERSIONS = new Set(['0.2.1', VERSION]);
+
+export function validateDistribution(record, {
+  acceptedVersion = VERSION, productionCandidate = false,
+} = {}) {
   exactKeys(record, ['format', 'version', 'source', 'target', 'recipe', 'files']);
   requireValue(record.format === 'zryna.distribution.v1', 'distribution format');
-  requireValue(record.version === '0.2.1', 'unapproved distribution version');
+  requireValue(RELEASE_VERSIONS.has(acceptedVersion)
+    && (!productionCandidate || acceptedVersion === VERSION)
+    && record.version === acceptedVersion, 'unapproved distribution version');
   exactKeys(record.source, ['repository', 'ref', 'commit', 'tree', 'sourceDateEpoch']);
   requireValue(record.source.repository === 'https://github.com/zryna/zryna'
     && record.source.ref === (productionCandidate ? 'refs/heads/main' : `refs/tags/v${record.version}`)
@@ -49,7 +56,7 @@ export function prepare({ version, source, target, recipe, files }, capturedFile
   const sourceReceipt = validateSourceReceipt(
     capturedFiles.find(file => file.path === 'metadata/architecture-receipt.json').data, record,
   );
-  validateRustMaterials(files, target.triple, sourceReceipt);
+  validateRustMaterials(files, target.triple, sourceReceipt, record.version);
   requireValue(capturedFiles.find(file => file.path === 'VERSION').data.equals(Buffer.from(`${version}\n`)),
     'VERSION does not match distribution');
   const distribution = bytes(record);

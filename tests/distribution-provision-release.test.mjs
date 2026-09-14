@@ -57,7 +57,7 @@ function fixture() {
   const cargoHome = resolve('bootstrap-cargo-home');
   const source = {
     repository: 'https://github.com/zryna/zryna',
-    ref: 'refs/tags/v0.2.1',
+    ref: 'refs/tags/v0.2.2',
     commit: COMMIT,
     tree: TREE,
     sourceDateEpoch: 1234,

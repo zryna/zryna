@@ -12,16 +12,16 @@ const TAG_OBJECT = 'a'.repeat(40);
 const COMMIT = 'b'.repeat(40);
 const TREE = 'c'.repeat(40);
 const WORKFLOW_OBJECT = 'd'.repeat(40);
-const WORKFLOW = Buffer.from('name: Release\non:\n  push:\n    tags: [v0.2.1]\n');
+const WORKFLOW = Buffer.from('name: Release\non:\n  push:\n    tags: [v0.2.2]\n');
 const ROOT = resolve('tag-receipt-source');
 
 function fixture() {
   return {
     format: 'zryna.release-tag-receipt.v1',
-    version: '0.2.1',
+    version: '0.2.2',
     source: {
       repository: 'https://github.com/zryna/zryna',
-      ref: 'refs/tags/v0.2.1',
+      ref: 'refs/tags/v0.2.2',
       tagType: 'annotated',
       tagObject: TAG_OBJECT,
       commit: COMMIT,
@@ -40,14 +40,14 @@ function environment() {
   return {
     GITHUB_EVENT_NAME: 'push',
     GITHUB_REPOSITORY: 'zryna/zryna',
-    GITHUB_REF: 'refs/tags/v0.2.1',
+    GITHUB_REF: 'refs/tags/v0.2.2',
     GITHUB_REF_TYPE: 'tag',
-    GITHUB_REF_NAME: 'v0.2.1',
+    GITHUB_REF_NAME: 'v0.2.2',
     GITHUB_REF_PROTECTED: 'true',
     GITHUB_SHA: COMMIT,
     GITHUB_WORKFLOW_SHA: COMMIT,
     GITHUB_WORKFLOW_REF:
-      'zryna/zryna/.github/workflows/release.yml@refs/tags/v0.2.1',
+      'zryna/zryna/.github/workflows/release.yml@refs/tags/v0.2.2',
     ZRYNA_SOURCE_ROOT: ROOT,
   };
 }
@@ -56,21 +56,21 @@ function responses() {
   const tag = Buffer.from([
     `object ${COMMIT}`,
     'type commit',
-    'tag v0.2.1',
+    'tag v0.2.2',
     'tagger Release Maintainer <release@example.invalid> 1789081200 +0000',
     '',
-    'Zryna 0.2.1',
+    'Zryna 0.2.2',
     '',
   ].join('\n'));
   return new Map([
     ['rev-parse\0--show-toplevel', `${ROOT}\n`],
     ['status\0--porcelain=v1\0--untracked-files=all\0--ignored=matching', ''],
-    ['show-ref\0--verify\0--hash\0refs/tags/v0.2.1', `${TAG_OBJECT}\n`],
+    ['show-ref\0--verify\0--hash\0refs/tags/v0.2.2', `${TAG_OBJECT}\n`],
     [`cat-file\0-t\0${TAG_OBJECT}`, 'tag\n'],
     [`cat-file\0-s\0${TAG_OBJECT}`, `${tag.length}\n`],
     [`cat-file\0tag\0${TAG_OBJECT}`, tag],
     [`cat-file\0-t\0${COMMIT}`, 'commit\n'],
-    ['rev-parse\0refs/tags/v0.2.1^{commit}', `${COMMIT}\n`],
+    ['rev-parse\0refs/tags/v0.2.2^{commit}', `${COMMIT}\n`],
     ['rev-parse\0HEAD', `${COMMIT}\n`],
     [`show\0-s\0--format=%T\0${COMMIT}`, `${TREE}\n`],
     [`show\0-s\0--format=%ct\0${COMMIT}`, '1789081200\n'],
@@ -116,8 +116,8 @@ test('accepts one canonical protected annotated-tag receipt', () => {
 
 test('rejects version, ref, tag-object, workflow, and nondeterministic drift', () => {
   for (const [code, mutate] of [
-    ['R406-TAG-SOURCE', (value) => { value.version = '0.2.2'; }],
-    ['R406-TAG-SOURCE', (value) => { value.source.ref = 'refs/tags/v0.2.2'; }],
+    ['R406-TAG-SOURCE', (value) => { value.version = '0.2.1'; }],
+    ['R406-TAG-SOURCE', (value) => { value.source.ref = 'refs/tags/v0.2.1'; }],
     ['R406-TAG-SOURCE', (value) => { value.source.tagObject = value.source.commit; }],
     ['R406-TAG-SCHEMA', (value) => { value.workflow.path = 'release.yml'; }],
     ['R406-TAG-SCHEMA', (value) => { value.runId = '123'; }],
@@ -140,7 +140,7 @@ test('producer rejects lightweight, nested, dirty, and non-ordinary workflow inp
 
   const nested = responses();
   const tag = Buffer.from([
-    `object ${'e'.repeat(40)}`, 'type tag', 'tag v0.2.1',
+    `object ${'e'.repeat(40)}`, 'type tag', 'tag v0.2.2',
     'tagger Release Maintainer <release@example.invalid> 1789081200 +0000', '', 'nested', '',
   ].join('\n'));
   nested.set(`cat-file\0-s\0${TAG_OBJECT}`, `${tag.length}\n`);
@@ -195,7 +195,7 @@ test('producer rejects workflow context, object-size, and read-size drift', () =
     const key = args.join('\0');
     let value = swapped.get(key);
     assert.notEqual(value, undefined, `unexpected command: ${args.join(' ')}`);
-    if (key === 'show-ref\0--verify\0--hash\0refs/tags/v0.2.1' && refReads++ === 1) {
+    if (key === 'show-ref\0--verify\0--hash\0refs/tags/v0.2.2' && refReads++ === 1) {
       value = `${'e'.repeat(40)}\n`;
     }
     return {

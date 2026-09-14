@@ -2,7 +2,7 @@ import { requireValue } from './canonical.mjs';
 import { targetPaths } from './inventory.mjs';
 
 export function installationDocuments(version, target) {
-  requireValue(version === '0.2.1', 'unapproved documentation version');
+  requireValue(version === '0.2.2', 'unapproved documentation version');
   targetPaths(target);
   const windows = target === 'x86_64-pc-windows-msvc';
   const command = windows ? '& $zryna' : '"$zryna"';

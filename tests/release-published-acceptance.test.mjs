@@ -72,6 +72,7 @@ test('binds immutable state and actual negative archive cases before installed a
   assert.equal(archiveCases[1].length, f.archive.length - 1);
   assert.equal(archiveCases[2].version, '0.2.0');
   assert(installed.archive.equals(f.archive));
+  assert.equal(installed.acceptedVersion, '0.2.1');
   assert.equal(installed.descriptor.source.commit, f.envelope.source.commit);
   assert.equal(receipt.release.immutable, true);
   assert.equal(receipt.checks.wrongPlatformRejected, true);

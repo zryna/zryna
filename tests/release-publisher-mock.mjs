@@ -63,7 +63,7 @@ export function githubServer({ decoyCount = 0 } = {}) {
         prerelease: input.prerelease,
         assets: release.assets.map((asset) => ({
           ...asset,
-          browser_download_url: `https://github.com/zryna/zryna/releases/download/v0.2.1/${encodeURIComponent(asset.name)}`,
+          browser_download_url: `https://github.com/zryna/zryna/releases/download/v0.2.2/${encodeURIComponent(asset.name)}`,
         })),
       };
       return response(200, release);

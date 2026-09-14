@@ -1,8 +1,9 @@
-# Downloadable beta installation and removal
+# Downloadable prerelease installation and removal
 
-Status: observed for the immutable `v0.2.1` prerelease by the #423 clean-host matrix. This page
-records the narrow archive workflow and its remaining upgrade limitation; it does not broaden the
-supported hosts, create a system-wide installer, or make the beta stable.
+Status: observed for the immutable `v0.2.1` beta by the #423 clean-host matrix. The `v0.2.2`
+Developer Preview adds a post-publication, two-release upgrade gate; its result is not established
+until that gate succeeds against both immutable public releases. This page does not broaden the
+supported hosts, create a system-wide installer, or make a prerelease stable.
 
 ## Supported clean hosts
 
@@ -94,15 +95,20 @@ Remove the session PATH entry after removal. If installation admission reports c
 bytes, stop using the installation, preserve user projects, and obtain and authenticate the whole
 archive again. Do not replace the provider, bundled Node runtime, metadata, or CLI individually.
 
-## Upgrade limitation
+## Upgrade proof boundary
 
-There is no eligible earlier public binary release: `v0.1.0` is source-only and `v0.2.0` has no
-published release. Consequently, `v0.2.1` has no honest release-to-release upgrade result. The
-fixture-level lifecycle admits only a strictly greater three-part version and rejects downgrade or
-same-version replacement before filesystem mutation, but this is not immutable upgrade evidence.
+`v0.1.0` is source-only and `v0.2.0` has no published release, so `v0.2.1` is the first eligible
+binary release. Candidate and fixture lifecycle results are not immutable upgrade evidence.
 
-Until a second authenticated binary release exists, install a newer release into a separate empty
-directory, authenticate and test it there, switch the session PATH only after success, and retain
-the old installation for rollback. Never extract over the old root. Real upgrade acceptance and
-the final upgrade/removal support claim remain open until that workflow is observed with two
-eligible immutable releases.
+After `v0.2.2` becomes immutable, the release workflow downloads the exact public `v0.2.1` and
+`v0.2.2` release states and complete signed asset allowlists on Ubuntu 24.04 and Windows Server
+2022. It authenticates and extracts both versions independently, uses the `v0.2.1` binary to create
+and run one external JavaScript/WebAssembly project, proves a downgrade request fails before old
+installation bytes change, and uses the `v0.2.2` binary to rebuild and run the same preserved
+project. It then removes only authenticated owned files from each installation while preserving
+the project, outputs, and unrelated files.
+
+Until that exact public workflow succeeds, the `v0.2.1` to `v0.2.2` upgrade claim remains pending.
+After success, the retained workflow run and its canonical upgrade receipt are the authoritative
+proof. Always install a newer release into a separate empty directory, switch the session PATH
+only after success, and retain the old installation for rollback. Never extract over the old root.

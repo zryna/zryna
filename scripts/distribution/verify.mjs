@@ -31,7 +31,9 @@ export async function verifyArchive(archive, expected, { productionCandidate = f
   const excluded = new Set([paths.cli, 'metadata/distribution.json', 'metadata/inventory.json',
     'metadata/checksums.sha256']);
   const payload = files.filter(file => !excluded.has(file.path));
-  const prepared = prepare(distribution, payload, { productionCandidate });
+  const prepared = prepare(distribution, payload, {
+    acceptedVersion: expected.version, productionCandidate,
+  });
   requireValue(prepared.distribution.equals(distributionBytes), 'archive prepared record mismatch');
   requireValue(files.length === prepared.preparedDistribution.archiveFileCount, 'archive file count mismatch');
   const inventory = parseCanonical(get('metadata/inventory.json').data);

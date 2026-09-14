@@ -8,7 +8,7 @@ import { validatePreassemblyGatesShape } from './validate-preassembly-gates.mjs'
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WORKFLOW = '.github/workflows/release-production-candidate.yml';
 const OBSERVED_REF = 'refs/heads/main';
-const INTENDED_REF = 'refs/tags/v0.2.1';
+const INTENDED_REF = 'refs/tags/v0.2.2';
 const OBJECT_ID = /^[0-9a-f]{40}$/;
 const DIGEST = /^[0-9a-f]{64}$/;
 
@@ -31,7 +31,7 @@ export function validateProductionCandidateAuthority(value) {
   ], 'authority');
   if (value.format !== 'zryna.release-production-candidate-authority.v1'
     || value.status !== 'production-candidate' || value.productionAdmission !== 'forbidden'
-    || value.versionCandidate !== '0.2.1' || value.observedSourceRef !== OBSERVED_REF) {
+    || value.versionCandidate !== '0.2.2' || value.observedSourceRef !== OBSERVED_REF) {
     reject('candidate identity differs');
   }
   exactKeys(value.intendedRelease, ['ref', 'tagProvenance'], 'intended release');
@@ -71,7 +71,7 @@ export async function createProductionCandidateAuthority({
   const gates = await observeProtectedGates({ environment, fetchImpl });
   return validateProductionCandidateAuthority({
     format: 'zryna.release-production-candidate-authority.v1',
-    status: 'production-candidate', productionAdmission: 'forbidden', versionCandidate: '0.2.1',
+    status: 'production-candidate', productionAdmission: 'forbidden', versionCandidate: '0.2.2',
     observedSourceRef: OBSERVED_REF,
     intendedRelease: { ref: INTENDED_REF, tagProvenance: 'not-observed' },
     ...captured,
