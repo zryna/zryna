@@ -216,7 +216,9 @@ fn validate_graph(
     profile: &str,
 ) -> Result<(), CommandFailure> {
     let compatibility = graph.compatibility();
-    if compatibility.compiler != env!("CARGO_PKG_VERSION") || compatibility.profile != profile {
+    if !compiler_version_is_compatible(&compatibility.compiler, env!("CARGO_PKG_VERSION"))
+        || compatibility.profile != profile
+    {
         return Err(project_error(
             "ZRYNA-P4009",
             CommandFailureKind::Source,
@@ -248,6 +250,10 @@ fn validate_graph(
         ));
     }
     Ok(())
+}
+
+fn compiler_version_is_compatible(project: &str, compiler: &str) -> bool {
+    project == compiler || matches!((project, compiler), ("0.2.1" | "0.2.2", "0.2.3"))
 }
 
 fn selected_targets(selection: TargetSelection) -> &'static [&'static str] {

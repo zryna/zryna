@@ -8,7 +8,7 @@ import {
 
 const COMMIT = 'a'.repeat(40);
 const TREE = 'b'.repeat(40);
-const VERSION = '0.2.2';
+const VERSION = '0.2.3';
 const digest = (index) => index.toString(16).padStart(64, '0');
 
 function fixture(target = 'x86_64-unknown-linux-gnu') {
@@ -168,7 +168,7 @@ test('rejects missing, stale, duplicate, and unsorted authenticated inputs', () 
 test('schema and canonical parser reject open or ambiguous inputs', () => {
   for (const mutate of [
     (value) => { value.channel = 'stable'; },
-    (value) => { value.version = '0.2.2-beta.1'; },
+    (value) => { value.version = '0.2.3-beta.1'; },
     (value) => { value.compiledCli.logicalPath = '../zryna'; },
     (value) => { value.privatePath = 'C:\\private'; },
     (value) => { value.target.platformBaseline.version = '22.04'; },

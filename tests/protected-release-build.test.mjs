@@ -34,7 +34,7 @@ function wire(value) { return Buffer.from(`${canonicalBounded(value)}\n`); }
 function acceptedRecipe(overrides = {}) {
   return {
     ...structuredClone(PRODUCTION_RECIPE), status: 'production-accepted',
-    productionAdmission: 'allowed', versionCandidate: '0.2.2', ...overrides,
+    productionAdmission: 'allowed', versionCandidate: '0.2.3', ...overrides,
   };
 }
 
@@ -47,9 +47,9 @@ function fixture(t, recipeValue = acceptedRecipe()) {
   mkdirSync(admissionRoot);
   mkdirSync(sourceRoot);
   writeFileSync(join(admissionRoot, 'tag-receipt.json'), wire({
-    format: 'zryna.release-tag-receipt.v1', version: '0.2.2',
+    format: 'zryna.release-tag-receipt.v1', version: '0.2.3',
     source: {
-      repository: 'https://github.com/zryna/zryna', ref: 'refs/tags/v0.2.2',
+      repository: 'https://github.com/zryna/zryna', ref: 'refs/tags/v0.2.3',
       tagType: 'annotated', tagObject: 'a'.repeat(40), commit: COMMIT, tree: TREE,
       sourceDateEpoch: 1_789_081_200,
     },
@@ -89,7 +89,7 @@ function fixture(t, recipeValue = acceptedRecipe()) {
     admissionRoot: resolve(admissionRoot), sourceRoot: resolve(sourceRoot),
     outputRoot: resolve(outputRoot), recipeBytes, spawn,
     environment: {
-      GITHUB_REPOSITORY: 'zryna/zryna', GITHUB_REF: 'refs/tags/v0.2.2',
+      GITHUB_REPOSITORY: 'zryna/zryna', GITHUB_REF: 'refs/tags/v0.2.3',
       GITHUB_SHA: COMMIT, GITHUB_WORKFLOW_SHA: COMMIT,
       ZRYNA_TARGET: TARGET, ZRYNA_REPLICA: '1',
     },
@@ -101,7 +101,7 @@ function adapters() {
   const indexed = [
     { path: 'LICENSE', mode: 0o644, data: Buffer.from('license\n'), material: 'source',
       licenses: ['LICENSE'], role: 'license' },
-    { path: 'VERSION', mode: 0o644, data: Buffer.from('0.2.2\n'), material: 'source',
+    { path: 'VERSION', mode: 0o644, data: Buffer.from('0.2.3\n'), material: 'source',
       licenses: ['LICENSE'], role: 'notice' },
   ].map((file) => ({ ...file, size: file.data.length, sha256: sha256(file.data) }));
   const inventory = wire({
@@ -145,7 +145,7 @@ function adapters() {
     }),
     assemble: async () => ({
       archive: Buffer.from('archive'), receipt: wire({ receipt: 'build' }),
-      filename: 'zryna-0.2.2-x86_64-unknown-linux-gnu.tar.gz', files,
+      filename: 'zryna-0.2.3-x86_64-unknown-linux-gnu.tar.gz', files,
     }),
     verifyArchive: async (archive) => ({
       archiveSha256: sha256(archive), distribution: preparedRecord, files,
@@ -190,7 +190,7 @@ test('rejects matching-digest recipes without the exact production identity', as
     ['checked-in qualification proposal', proposal],
     ['missing admission', wire({
       format: 'zryna.distribution-recipe.v1', status: 'production-accepted',
-      versionCandidate: '0.2.2',
+      versionCandidate: '0.2.3',
     })],
     ['proposal with allowed admission', wire(acceptedRecipe({ status: 'qualification-proposal' }))],
     ['accepted status with forbidden admission', wire(acceptedRecipe({
@@ -214,8 +214,8 @@ test('rejects a valid-looking SPDX header without complete archive and material 
   const implementation = adapters();
   implementation.createReleaseSbom = async ({ archive }) => wire({
     spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0', SPDXID: 'SPDXRef-DOCUMENT',
-    name: `zryna-0.2.2-${TARGET}`,
-    documentNamespace: `https://zryna.com/spdx/0.2.2/${TARGET}/${archive.sha256}`,
+    name: `zryna-0.2.3-${TARGET}`,
+    documentNamespace: `https://zryna.com/spdx/0.2.3/${TARGET}/${archive.sha256}`,
   });
   await assert.rejects(() => runProtectedBuild({
     ...paths, target: TARGET, replica: 1,

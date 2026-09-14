@@ -141,15 +141,17 @@ test('pins the complete target-specific Rust capture sets and Wasmtime license f
   assert.equal(destinations.size, 14);
 });
 
-test('binds Rust material notices to the exact current or legacy Cargo lock', () => {
+test('binds Rust material notices to the exact current and predecessor Cargo locks', () => {
   const target = 'x86_64-unknown-linux-gnu';
   const entries = rustMaterials(target).flatMap(record => record.files)
     .map(({ path, size, sha256: digest }) => ({ path, size, sha256: digest }));
   const receipt = digest => ({ inputs: [{ logicalPath: 'Cargo.lock', sha256: digest }] });
   assert.doesNotThrow(() => validateRustMaterials(entries, target,
-    receipt('baf9267bada161b9e2ddd6abddac4b0f029b5bb23177c11599c341a68b2130f9')));
+    receipt('78733d507b74bd9a343c938285ede13c3a607cae36cdad6d116f6c2b572e14f1')));
   assert.doesNotThrow(() => validateRustMaterials(entries, target,
     receipt('fec1a746a6122a216255080e90ee39068578528feddec24c1e0d8bf9df3b8a38'), '0.2.1'));
+  assert.doesNotThrow(() => validateRustMaterials(entries, target,
+    receipt('baf9267bada161b9e2ddd6abddac4b0f029b5bb23177c11599c341a68b2130f9'), '0.2.2'));
   assert.throws(() => validateRustMaterials(entries, target,
     receipt('fec1a746a6122a216255080e90ee39068578528feddec24c1e0d8bf9df3b8a38')),
   /Rust material lockfile identity/);

@@ -117,6 +117,35 @@ impl ProjectCase {
         case
     }
 
+    fn public_predecessor(version: &str) -> Self {
+        let case = Self::empty("hello");
+        fs::create_dir_all(case.root.join("src")).expect("legacy project source directory");
+        let files: [(&str, &[u8]); 3] = match version {
+            "0.2.1" => [
+                (
+                    "zryna.package.json",
+                    include_bytes!("fixtures/public-v0.2.1-hello/zryna.package.json"),
+                ),
+                ("zryna.lock.json", include_bytes!("fixtures/public-v0.2.1-hello/zryna.lock.json")),
+                ("src/main.zry", include_bytes!("fixtures/public-v0.2.1-hello/src/main.zry")),
+            ],
+            "0.2.2" => [
+                (
+                    "zryna.package.json",
+                    include_bytes!("fixtures/public-v0.2.2-hello/zryna.package.json"),
+                ),
+                ("zryna.lock.json", include_bytes!("fixtures/public-v0.2.2-hello/zryna.lock.json")),
+                ("src/main.zry", include_bytes!("fixtures/public-v0.2.2-hello/src/main.zry")),
+            ],
+            _ => panic!("unsupported public predecessor fixture {version}"),
+        };
+        for (relative, bytes) in files {
+            fs::write(case.root.join(relative), bytes)
+                .unwrap_or_else(|_| panic!("exact public v{version} scaffold file"));
+        }
+        case
+    }
+
     fn compiler_root() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
@@ -1675,6 +1704,77 @@ fn standalone_project_builds_and_runs_from_explicit_separate_roots() {
     assert_eq!(rejected.status.code(), Some(3));
     assert!(String::from_utf8_lossy(&rejected.stderr).contains("ZRYNA-P4004"));
     assert!(!case.root.join(".zryna/out/undeclared-build.build").exists());
+}
+
+#[test]
+fn exact_public_predecessor_projects_build_and_run_under_the_compatible_patch_compiler() {
+    assert_eq!(env!("CARGO_PKG_VERSION"), "0.2.3");
+    for version in ["0.2.1", "0.2.2"] {
+        exercise_public_predecessor(version);
+    }
+}
+
+fn exercise_public_predecessor(version: &str) {
+    let case = ProjectCase::public_predecessor(version);
+    let retained = ["zryna.package.json", "zryna.lock.json", "src/main.zry"].map(|relative| {
+        (relative, fs::read(case.root.join(relative)).expect("legacy project file"))
+    });
+    let unrelated = case.parent.join("user-notes.txt");
+    fs::write(&unrelated, b"retain project note\n").expect("external user file");
+
+    for target in ["javascript", "webassembly"] {
+        let build_name = format!("{target}-upgrade-build");
+        assert_success(&case.command(&[
+            "build",
+            "src/main.zry",
+            "--target",
+            target,
+            "--name",
+            &build_name,
+        ]));
+        let run_name = format!("{target}-upgrade-run");
+        let run = case.command(&[
+            "run",
+            "src/main.zry",
+            "--target",
+            target,
+            "--name",
+            &run_name,
+            "--export",
+            "main",
+        ]);
+        assert_success(&run);
+        assert_eq!(run.stdout, format!("{target}: i32 42\n").as_bytes());
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
+    {
+        assert_success(&case.command(&[
+            "build",
+            "src/main.zry",
+            "--target",
+            "native",
+            "--name",
+            "native-upgrade-build",
+        ]));
+        let run = case.command(&[
+            "run",
+            "src/main.zry",
+            "--target",
+            "native",
+            "--name",
+            "native-upgrade-run",
+            "--export",
+            "main",
+        ]);
+        assert_success(&run);
+        assert_eq!(run.stdout, b"native: i32 42\n");
+    }
+
+    for (relative, bytes) in retained {
+        assert_eq!(fs::read(case.root.join(relative)).expect("retained legacy file"), bytes);
+    }
+    assert_eq!(fs::read(unrelated).expect("retained external user file"), b"retain project note\n");
 }
 
 #[test]

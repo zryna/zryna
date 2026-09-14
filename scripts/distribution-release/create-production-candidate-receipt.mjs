@@ -136,7 +136,7 @@ export async function createProductionCandidateReceipt({
   if (!environment.GITHUB_TOKEN || environment.GITHUB_EVENT_NAME !== 'push'
     || environment.GITHUB_REPOSITORY !== REPOSITORY
     || environment.GITHUB_SERVER_URL !== 'https://github.com'
-    || environment.GITHUB_REF !== 'refs/tags/v0.2.2'
+    || environment.GITHUB_REF !== 'refs/tags/v0.2.3'
     || environment.GITHUB_REF_PROTECTED !== 'true' || !OBJECT_ID.test(sourceCommit ?? '')
     || environment.GITHUB_WORKFLOW_SHA !== sourceCommit
     || !Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1

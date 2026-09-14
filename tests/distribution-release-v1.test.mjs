@@ -18,7 +18,7 @@ import { validateRelease, validateReleaseText } from '../scripts/distribution-re
 
 const digest = (index) => index.toString(16).padStart(64, '0');
 const artifact = (path, index) => ({ path, size: 100 + index, sha256: digest(index) });
-const VERSION = '0.2.2';
+const VERSION = '0.2.3';
 const TAG = `v${VERSION}`;
 const COMMIT = 'a'.repeat(40);
 const compare = (left, right) => left < right ? -1 : left > right ? 1 : 0;
@@ -238,7 +238,7 @@ test('schema rejects false success, qualified equivalence, paths, and extra fiel
     (value) => { value.signing.envelopeSignaturePath = 'other.sigstore.json'; },
     (value) => { value.channel = 'stable'; },
     (value) => { value.publication = 'release'; },
-    (value) => { value.version = '0.2.2-beta.1'; },
+    (value) => { value.version = '0.2.3-beta.1'; },
   ]) {
     const value = fixture();
     mutate(value);

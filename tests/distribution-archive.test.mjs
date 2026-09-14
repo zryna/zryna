@@ -5,7 +5,7 @@ import { bytes, orderedPaths, parseCanonical, portablePath } from '../scripts/di
 import { encodeTar, decodeTar } from '../scripts/distribution/archive-tar.mjs';
 import { crc32, encodeZip, decodeZip } from '../scripts/distribution/archive-zip.mjs';
 
-const root = 'zryna-0.2.2-x86_64-unknown-linux-gnu';
+const root = 'zryna-0.2.3-x86_64-unknown-linux-gnu';
 const files = [
   { path: 'LICENSE', mode: 0o644, data: Buffer.from('license\n') },
   { path: 'bin/zryna', mode: 0o755, data: Buffer.from('compiler') },

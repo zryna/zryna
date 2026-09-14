@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -44,17 +44,21 @@ function release(root, version, commit, channel, name) {
   return { archive, directory, envelope, files, statePath };
 }
 
-function fixture(t) {
+function fixture(t, previousVersion = '0.2.1') {
   const root = resolve(mkdtempSync(join(tmpdir(), 'zryna-published-upgrade-test-')));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const outputRoot = join(root, 'output');
   const workRoot = join(root, 'work');
   mkdirSync(outputRoot);
   mkdirSync(workRoot);
-  const previous = release(root, '0.2.1',
-    '841c8aee901782c9f7bf442bfe8eb2fe6b7f6446', 'beta', 'Zryna 0.2.1 beta');
-  const current = release(root, '0.2.2', 'c'.repeat(40), 'developer-preview',
-    'Zryna 0.2.2 Developer Preview');
+  const predecessors = {
+    '0.2.1': ['841c8aee901782c9f7bf442bfe8eb2fe6b7f6446', 'beta', 'Zryna 0.2.1 beta'],
+    '0.2.2': ['c33d76615cafbd4b92e5321c85815bbc3ea4d375', 'developer-preview',
+      'Zryna 0.2.2 Developer Preview'],
+  };
+  const previous = release(root, previousVersion, ...predecessors[previousVersion]);
+  const current = release(root, '0.2.3', 'c'.repeat(40), 'developer-preview',
+    'Zryna 0.2.3 Developer Preview');
   return { current, outputRoot, previous, workRoot };
 }
 
@@ -62,6 +66,8 @@ function mockSpawn(executable, args, options) {
   const operation = args[0];
   const version = readFileSync(join(executable, '..', '..', 'VERSION'), 'utf8').trim();
   const project = join(options.cwd, 'hello');
+  assert.equal(existsSync(join(project, 'user-notes.txt')), false,
+    'upgrade proof must not weaken the authenticated project inventory');
   if (operation === 'new') {
     mkdirSync(join(project, 'src'), { recursive: true });
     writeFileSync(join(project, 'zryna.package.json'), '{}\n');
@@ -80,16 +86,18 @@ function mockSpawn(executable, args, options) {
   return { status: 0, signal: null, stdout: Buffer.from(stdout), stderr: Buffer.alloc(0) };
 }
 
-test('proves an exact immutable v0.2.1 to v0.2.2 upgrade and owned removal', async (t) => {
-  const f = fixture(t);
+for (const previousVersion of ['0.2.1', '0.2.2']) {
+test(`proves an exact immutable v${previousVersion} to v0.2.3 upgrade and owned removal`, async (t) => {
+  const f = fixture(t, previousVersion);
   const envelopes = new Map([
     [f.previous.directory, f.previous.envelope], [f.current.directory, f.current.envelope],
   ]);
-  const files = new Map([['0.2.1', f.previous.files], ['0.2.2', f.current.files]]);
+  const files = new Map([[previousVersion, f.previous.files], ['0.2.3', f.current.files]]);
   const receipt = await acceptPublishedUpgrade({
     currentDirectory: f.current.directory, currentStatePath: f.current.statePath,
     outputRoot: f.outputRoot, previousDirectory: f.previous.directory,
     previousStatePath: f.previous.statePath, workRoot: f.workRoot, target: TARGET,
+    previousVersion,
     requireCleanHostImpl: (target) => assert.equal(target, TARGET), spawn: mockSpawn,
     verifySignedReleaseImpl: async ({ directory }) => envelopes.get(directory),
     verifyArchiveImpl: async (archive, descriptor) => ({
@@ -97,9 +105,8 @@ test('proves an exact immutable v0.2.1 to v0.2.2 upgrade and owned removal', asy
     }),
   });
   assert.deepEqual(receipt.transition,
-    { current: '0.2.1', candidate: '0.2.2', operation: 'upgrade' });
-  assert.equal(receipt.previous.sourceCommit,
-    '841c8aee901782c9f7bf442bfe8eb2fe6b7f6446');
+    { current: previousVersion, candidate: '0.2.3', operation: 'upgrade' });
+  assert.equal(receipt.previous.sourceCommit, f.previous.envelope.source.commit);
   assert.equal(receipt.current.sourceCommit, 'c'.repeat(40));
   assert.equal(receipt.checks.downgradeRejectedBeforeMutation, true);
   assert.equal(receipt.checks.projectFilesRetained, true);
@@ -107,6 +114,7 @@ test('proves an exact immutable v0.2.1 to v0.2.2 upgrade and owned removal', asy
   assert.deepEqual(JSON.parse(readFileSync(
     join(f.outputRoot, 'published-upgrade-acceptance.json'), 'utf8')), receipt);
 });
+}
 
 test('rejects a relabeled previous release before archive execution', async (t) => {
   const f = fixture(t);
@@ -116,9 +124,23 @@ test('rejects a relabeled previous release before archive execution', async (t) 
     currentDirectory: f.current.directory, currentStatePath: f.current.statePath,
     outputRoot: f.outputRoot, previousDirectory: f.previous.directory,
     previousStatePath: f.previous.statePath, workRoot: f.workRoot, target: TARGET,
+    previousVersion: '0.2.1',
     requireCleanHostImpl: () => {}, verifySignedReleaseImpl: async ({ directory }) =>
       directory === f.previous.directory ? f.previous.envelope : f.current.envelope,
     verifyArchiveImpl: async () => { reachedArchive = true; },
   }), /v0\.2\.1 signed identity differs/);
   assert.equal(reachedArchive, false);
+});
+
+test('rejects an unreviewed predecessor before release verification', async (t) => {
+  const f = fixture(t);
+  let reachedVerification = false;
+  await assert.rejects(() => acceptPublishedUpgrade({
+    currentDirectory: f.current.directory, currentStatePath: f.current.statePath,
+    outputRoot: f.outputRoot, previousDirectory: f.previous.directory,
+    previousStatePath: f.previous.statePath, previousVersion: '0.2.0',
+    workRoot: f.workRoot, target: TARGET, requireCleanHostImpl: () => {},
+    verifySignedReleaseImpl: async () => { reachedVerification = true; },
+  }), /distinct absolute release, state, output, and work paths are required/);
+  assert.equal(reachedVerification, false);
 });

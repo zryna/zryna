@@ -112,7 +112,7 @@ function gateDescriptor(gatesBytes, gates) {
   };
 }
 
-const VERSION = '0.2.2';
+const VERSION = '0.2.3';
 
 export async function runAuthenticatedProductionBuild({
   outputRoot, sourceRoot, target, replica, source, gatesBytes, gates, resultIdentity,
@@ -277,7 +277,7 @@ export async function runProtectedBuild({
     reject('exact distinct absolute roots are required');
   }
   if (environment.GITHUB_REPOSITORY !== 'zryna/zryna'
-    || environment.GITHUB_REF !== 'refs/tags/v0.2.2') {
+    || environment.GITHUB_REF !== 'refs/tags/v0.2.3') {
     reject('exact protected release tag context is required');
   }
   exactReleaseNames(admissionRoot, [

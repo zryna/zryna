@@ -1,0 +1,1 @@
+{"compatibility":{"compiler":"0.2.2","profile":"i32-v1","targets":["javascript","native-linux-x86_64","webassembly"]},"dependencies":[],"files":[{"path":"src/main.zry","sha256":"a98387ac58fb3ebc639c8dd41d689e45448a291ebaea26ccebd15289bbbd4708","size":45}],"format":"zryna.package.v1","name":"hello","source":{"kind":"local","locator":"hello","revision":""},"version":"0.1.0"}

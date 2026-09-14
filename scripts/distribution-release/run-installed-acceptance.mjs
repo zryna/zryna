@@ -18,8 +18,8 @@ import { executeInstalledAcceptance } from './installed-execution.mjs';
 export { admitReleaseTransition, removeVerifiedProductionFiles } from './installed-lifecycle.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const VERSION = '0.2.2';
-const ACCEPTED_VERSIONS = new Set(['0.2.1', VERSION]);
+const VERSION = '0.2.3';
+const ACCEPTED_VERSIONS = new Set(['0.2.1', '0.2.2', VERSION]);
 const DEFAULT_SYSTEM = Object.freeze({
   close: closeSync, exists: existsSync, lstat: lstatSync, make: mkdirSync,
   makeTemp: mkdtempSync, move: renameSync, open: openSync, read: readFileSync, remove: rmSync,

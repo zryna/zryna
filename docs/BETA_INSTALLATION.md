@@ -1,9 +1,10 @@
 # Downloadable prerelease installation and removal
 
-Status: observed for the immutable `v0.2.1` beta by the #423 clean-host matrix. The `v0.2.2`
-Developer Preview adds a post-publication, two-release upgrade gate; its result is not established
-until that gate succeeds against both immutable public releases. This page does not broaden the
-supported hosts, create a system-wide installer, or make a prerelease stable.
+Status: observed for the immutable `v0.2.1` beta and `v0.2.2` Developer Preview by the #423
+clean-host matrices. The immutable `v0.2.2` release's public upgrade jobs failed because it
+rejected the exact `v0.2.1` project compiler identity. The `v0.2.3` corrective release remains a
+source candidate until its own public post-publication jobs produce canonical receipts. This page
+does not broaden the supported hosts, create a system-wide installer, or make a prerelease stable.
 
 ## Supported clean hosts
 
@@ -100,15 +101,16 @@ archive again. Do not replace the provider, bundled Node runtime, metadata, or C
 `v0.1.0` is source-only and `v0.2.0` has no published release, so `v0.2.1` is the first eligible
 binary release. Candidate and fixture lifecycle results are not immutable upgrade evidence.
 
-After `v0.2.2` becomes immutable, the release workflow downloads the exact public `v0.2.1` and
-`v0.2.2` release states and complete signed asset allowlists on Ubuntu 24.04 and Windows Server
-2022. It authenticates and extracts both versions independently, uses the `v0.2.1` binary to create
-and run one external JavaScript/WebAssembly project, proves a downgrade request fails before old
-installation bytes change, and uses the `v0.2.2` binary to rebuild and run the same preserved
-project. It then removes only authenticated owned files from each installation while preserving
-the project, outputs, and unrelated files.
+The `v0.2.2` release workflow downloaded the exact public `v0.2.1` and `v0.2.2` states and complete
+signed asset allowlists on Ubuntu 24.04 and Windows Server 2022. Acquisition and authentication
+succeeded, but both hosts then observed `ZRYNA-P4009` when `v0.2.2` tried to rebuild the unchanged
+project created by `v0.2.1`. No canonical upgrade receipt was produced, so `v0.2.2` is not evidence
+of a supported project upgrade.
 
-Until that exact public workflow succeeds, the `v0.2.1` to `v0.2.2` upgrade claim remains pending.
-After success, the retained workflow run and its canonical upgrade receipt are the authoritative
-proof. Always install a newer release into a separate empty directory, switch the session PATH
-only after success, and retain the old installation for rollback. Never extract over the old root.
+Current `0.2.3` source admits only two reviewed predecessor transitions: `0.2.1` to `0.2.3` and
+`0.2.2` to `0.2.3`. Exact-current identity remains accepted; every other compiler pair and every
+profile, target, manifest, frozen-lock, and source-inventory mismatch remains rejected. The future
+immutable `v0.2.3` release must run both transitions on both public hosts before either upgrade
+claim is accepted. Always install a newer release into a separate empty directory, switch the
+session PATH only after success, and retain the old installation for rollback. Never extract over
+the old root.

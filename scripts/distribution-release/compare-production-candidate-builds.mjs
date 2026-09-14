@@ -25,7 +25,7 @@ function exactKeys(value, keys, label) {
 }
 
 function artifactNames(target) {
-  const base = `zryna-0.2.2-${target}`;
+  const base = `zryna-0.2.3-${target}`;
   return {
     archive: `${base}.${TARGETS.get(target)}`,
     buildReceipt: `${base}.build-receipt.json`, sbom: `${base}.spdx.json`,
@@ -40,9 +40,9 @@ export function validateProductionCandidateBuildResult(value, target, replica) {
   ], 'build result');
   if (value.format !== 'zryna.production-candidate-build-result.v1'
     || value.status !== 'production-candidate' || value.productionAdmission !== 'forbidden'
-    || value.version !== '0.2.2' || value.target !== target || value.replica !== replica
+    || value.version !== '0.2.3' || value.target !== target || value.replica !== replica
     || value.observedSource?.ref !== 'refs/heads/main'
-    || value.intendedRelease?.ref !== 'refs/tags/v0.2.2'
+    || value.intendedRelease?.ref !== 'refs/tags/v0.2.3'
     || value.intendedRelease?.tagProvenance !== 'not-observed'
     || value.recipe?.format !== 'zryna.distribution-recipe.v1'
     || !/^[0-9a-f]{64}$/.test(value.recipe?.sha256 ?? '')) reject('build identity differs');
@@ -85,7 +85,7 @@ export function validateProductionCandidateReproduction(value, target) {
   ], 'reproduction');
   if (value.format !== 'zryna.production-candidate-reproduction.v1'
     || value.status !== 'production-candidate' || value.productionAdmission !== 'forbidden'
-    || value.version !== '0.2.2' || value.target !== target
+    || value.version !== '0.2.3' || value.target !== target
     || value.comparison !== 'byte-identical' || !Array.isArray(value.builds)
     || value.builds.length !== 2 || value.builds[0]?.replica !== 1
     || value.builds[1]?.replica !== 2

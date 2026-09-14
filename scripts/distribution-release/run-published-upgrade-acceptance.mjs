@@ -16,13 +16,20 @@ import { verifyArchive } from '../distribution/verify.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const REPOSITORY = 'zryna/zryna';
-const PREVIOUS = Object.freeze({
-  version: '0.2.1', tag: 'v0.2.1', channel: 'beta', name: 'Zryna 0.2.1 beta',
-  commit: '841c8aee901782c9f7bf442bfe8eb2fe6b7f6446',
+const PREDECESSORS = Object.freeze({
+  '0.2.1': Object.freeze({
+    version: '0.2.1', tag: 'v0.2.1', channel: 'beta', name: 'Zryna 0.2.1 beta',
+    commit: '841c8aee901782c9f7bf442bfe8eb2fe6b7f6446',
+  }),
+  '0.2.2': Object.freeze({
+    version: '0.2.2', tag: 'v0.2.2', channel: 'developer-preview',
+    name: 'Zryna 0.2.2 Developer Preview',
+    commit: 'c33d76615cafbd4b92e5321c85815bbc3ea4d375',
+  }),
 });
 const CURRENT = Object.freeze({
-  version: '0.2.2', tag: 'v0.2.2', channel: 'developer-preview',
-  name: 'Zryna 0.2.2 Developer Preview',
+  version: '0.2.3', tag: 'v0.2.3', channel: 'developer-preview',
+  name: 'Zryna 0.2.3 Developer Preview',
 });
 const TARGETS = Object.freeze({
   'x86_64-unknown-linux-gnu': { cli: 'bin/zryna', extension: 'tar.gz' },
@@ -137,20 +144,22 @@ function assertRetained(projectRoot, retained) {
 
 export async function acceptPublishedUpgrade({
   cosign = 'cosign', currentDirectory, currentStatePath, outputRoot, previousDirectory,
-  previousStatePath, workRoot, target, requireCleanHostImpl = requireCleanHost,
+  previousStatePath, previousVersion, workRoot, target, requireCleanHostImpl = requireCleanHost,
   spawn = spawnSync, verifyArchiveImpl = verifyArchive, verifySignedReleaseImpl = verifySignedRelease,
 }) {
   const paths = [currentDirectory, currentStatePath, outputRoot, previousDirectory,
     previousStatePath, workRoot];
   if (!paths.every((path) => isAbsolute(path) && resolve(path) === path)
-    || new Set(paths).size !== paths.length || !Object.hasOwn(TARGETS, target)) {
+    || new Set(paths).size !== paths.length || !Object.hasOwn(TARGETS, target)
+    || !Object.hasOwn(PREDECESSORS, previousVersion)) {
     reject('distinct absolute release, state, output, and work paths are required');
   }
   if (cosign !== 'cosign' && (!isAbsolute(cosign) || resolve(cosign) !== cosign)) {
     reject('cosign must be the command name or an absolute normalized path');
   }
+  const expectedPrevious = PREDECESSORS[previousVersion];
   requireCleanHostImpl(target);
-  const previous = await loadRelease({ cosign, directory: previousDirectory, expected: PREVIOUS,
+  const previous = await loadRelease({ cosign, directory: previousDirectory, expected: expectedPrevious,
     statePath: previousStatePath, target, verifyArchiveImpl, verifySignedReleaseImpl });
   const current = await loadRelease({ cosign, directory: currentDirectory, expected: CURRENT,
     statePath: currentStatePath, target, verifyArchiveImpl, verifySignedReleaseImpl });
@@ -163,17 +172,18 @@ export async function acceptPublishedUpgrade({
     const previousCli = join(previousRoot, ...TARGETS[target].cli.split('/'));
     const previousEnvironment = cleanInstalledEnvironment(previousCli, root);
     command(spawn, previousCli, ['--version'], projectParent, previousEnvironment,
-      `zryna ${PREVIOUS.version}`);
+      `zryna ${expectedPrevious.version}`);
     command(spawn, previousCli, ['new', 'hello'], projectParent, previousEnvironment);
     runPortableProject(spawn, previousCli, projectParent, previousEnvironment, 'before');
     const projectRoot = join(projectParent, 'hello');
     const retained = retainedProject(projectRoot);
-    writeFileSync(join(projectRoot, 'user-notes.txt'), 'retain project note\n', { flag: 'wx' });
+    const projectNote = join(projectParent, 'user-notes.txt');
+    writeFileSync(projectNote, 'retain project note\n', { flag: 'wx' });
     writeFileSync(join(previousRoot, 'unrelated.txt'), 'retain old-root file\n', { flag: 'wx' });
     const previousVersionBytes = readFileSync(join(previousRoot, 'VERSION'));
     let downgradeRejected = false;
     try {
-      admitReleaseTransition(CURRENT.version, PREVIOUS.version);
+      admitReleaseTransition(CURRENT.version, expectedPrevious.version);
     } catch {
       downgradeRejected = true;
     }
@@ -191,7 +201,7 @@ export async function acceptPublishedUpgrade({
     writeFileSync(join(currentRoot, 'unrelated.txt'), 'retain new-root file\n', { flag: 'wx' });
     removeVerifiedProductionFiles(previousRoot, previous.files);
     if (existsSync(previousCli) || !readFileSync(join(previousRoot, 'unrelated.txt'), 'utf8')
-      .includes('retain old-root') || !readFileSync(join(projectRoot, 'user-notes.txt'), 'utf8')
+      .includes('retain old-root') || !readFileSync(projectNote, 'utf8')
       .includes('retain project note')) reject('old-version removal changed foreign files');
     assertRetained(projectRoot, retained);
     removeVerifiedProductionFiles(currentRoot, current.files);
@@ -202,7 +212,7 @@ export async function acceptPublishedUpgrade({
 
     const receipt = Object.freeze({
       format: 'zryna.published-upgrade-acceptance.v1', transition,
-      previous: Object.freeze({ tag: PREVIOUS.tag, immutable: true,
+      previous: Object.freeze({ tag: expectedPrevious.tag, immutable: true,
         sourceCommit: previous.envelope.source.commit, archiveSha256: sha256(previous.archive) }),
       current: Object.freeze({ tag: CURRENT.tag, immutable: true,
         sourceCommit: current.envelope.source.commit, archiveSha256: sha256(current.archive) }),
@@ -221,13 +231,14 @@ export async function acceptPublishedUpgrade({
 
 function argumentsFrom(argv) {
   const names = ['--cosign', '--current', '--current-state', '--output', '--previous',
-    '--previous-state', '--target', '--work'];
+    '--previous-state', '--previous-version', '--target', '--work'];
   const values = new Map();
   for (let index = 0; index < argv.length; index += 2) {
     if (!names.includes(argv[index]) || argv[index + 1] === undefined || values.has(argv[index])) {
       reject('invalid arguments');
     }
-    values.set(argv[index], argv[index] === '--target' ? argv[index + 1] : resolve(argv[index + 1]));
+    values.set(argv[index], ['--target', '--previous-version'].includes(argv[index])
+      ? argv[index + 1] : resolve(argv[index + 1]));
   }
   if (values.size !== names.length) reject('every upgrade argument is required once');
   return values;
@@ -240,7 +251,8 @@ if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
       cosign: values.get('--cosign'), currentDirectory: values.get('--current'),
       currentStatePath: values.get('--current-state'), outputRoot: values.get('--output'),
       previousDirectory: values.get('--previous'), previousStatePath: values.get('--previous-state'),
-      target: values.get('--target'), workRoot: values.get('--work'),
+      previousVersion: values.get('--previous-version'), target: values.get('--target'),
+      workRoot: values.get('--work'),
     })));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
