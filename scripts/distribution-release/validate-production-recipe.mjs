@@ -2,7 +2,7 @@ const PRODUCTION_RECIPE_IDENTITY = Object.freeze({
   format: 'zryna.distribution-recipe.v1',
   status: 'production-accepted',
   productionAdmission: 'allowed',
-  versionCandidate: '0.2.1',
+  versionCandidate: '0.2.2',
 });
 
 export function validateProductionRecipeIdentity(value, reject) {

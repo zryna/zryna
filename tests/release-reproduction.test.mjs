@@ -9,7 +9,7 @@ import { canonicalBounded, sha256 } from '../scripts/distribution-release/canoni
 import { compareReleaseBuilds } from '../scripts/distribution-release/compare-release-builds.mjs';
 
 const TARGET = 'x86_64-unknown-linux-gnu';
-const BASE = `zryna-0.2.1-${TARGET}`;
+const BASE = `zryna-0.2.2-${TARGET}`;
 const FILES = {
   archive: `${BASE}.tar.gz`,
   buildReceipt: `${BASE}.build-receipt.json`,
@@ -19,7 +19,7 @@ const FILES = {
 function source() {
   return {
     repository: 'https://github.com/zryna/zryna',
-    ref: 'refs/tags/v0.2.1',
+    ref: 'refs/tags/v0.2.2',
     tagObject: 'a'.repeat(40),
     commit: 'b'.repeat(40),
     tree: 'c'.repeat(40),
@@ -35,7 +35,7 @@ function build(root, replica, mutate = () => {}) {
   };
   const value = {
     format: 'zryna.release-build-result.v1',
-    version: '0.2.1',
+    version: '0.2.2',
     target: TARGET,
     replica,
     source: source(),

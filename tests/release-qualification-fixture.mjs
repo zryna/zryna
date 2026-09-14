@@ -69,7 +69,7 @@ export async function createQualificationFixture() {
   const material = { path: 'LICENSE', mode: 0o644, data: Buffer.from('license\n') };
   const input = {
     format: 'zryna.release-qualification-input.v1', status: 'provisional-candidate',
-    productionAdmission: 'forbidden', versionCandidate: '0.2.1',
+    productionAdmission: 'forbidden', versionCandidate: '0.2.2',
     source: { repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main',
       commit: QUALIFICATION_COMMIT, tree: 'c'.repeat(40), sourceDateEpoch: 1_789_081_200 },
     workflow: { path: '.github/workflows/release-qualification.yml', sha256: 'a'.repeat(64) },
@@ -97,7 +97,7 @@ export async function createQualificationFixture() {
     environment: [{ name: 'SOURCE_DATE_EPOCH', value: '1789081200' }],
     encodedRustFlags: ['-Cdebuginfo=0'], encodedLinkerFlags: ['--build-id=none'] },
     archive: { format: 'tar-gzip',
-      root: `zryna-qualification-0.2.1-${QUALIFICATION_TARGET}-${QUALIFICATION_COMMIT.slice(0, 12)}`,
+      root: `zryna-qualification-0.2.2-${QUALIFICATION_TARGET}-${QUALIFICATION_COMMIT.slice(0, 12)}`,
       tarFormat: 'ustar', uid: 0, gid: 0, owner: '', group: '', entryMtime: 'source-epoch',
       gzipLevel: 9, gzipMtime: 0, gzipOs: 255 },
   };

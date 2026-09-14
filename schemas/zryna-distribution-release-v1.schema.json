@@ -24,7 +24,7 @@
     "format": { "const": "zryna.distribution-release.v1" },
     "version": { "$ref": "#/$defs/version" },
     "tag": { "$ref": "#/$defs/tag" },
-    "channel": { "const": "beta" },
+    "channel": { "enum": ["beta", "developer-preview"] },
     "publication": { "const": "prerelease" },
     "source": { "$ref": "#/$defs/source" },
     "recipe": { "$ref": "#/$defs/recipe" },

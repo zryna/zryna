@@ -37,7 +37,7 @@ function readinessFixture(recipe) {
     cwd: source,
     environment: {
       GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'zryna/zryna',
-      GITHUB_REF: 'refs/tags/v0.2.1', GITHUB_REF_PROTECTED: 'true',
+      GITHUB_REF: 'refs/tags/v0.2.2', GITHUB_REF_PROTECTED: 'true',
       GITHUB_SHA: sourceCommit, GITHUB_WORKFLOW_SHA: sourceCommit, ZRYNA_SOURCE_ROOT: source,
     },
     sourceCommit,
@@ -50,7 +50,7 @@ function steps(job, name) {
 }
 
 test('release workflow has one exact protected-tag entry and non-cancellable run identity', () => {
-  assert.deepEqual(workflow.on, { push: { tags: ['v0.2.1'] } });
+  assert.deepEqual(workflow.on, { push: { tags: ['v0.2.2'] } });
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(workflow.concurrency, {
     group: 'release-${{ github.ref }}',
@@ -61,11 +61,12 @@ test('release workflow has one exact protected-tag entry and non-cancellable run
   });
   assert.deepEqual(Object.keys(workflow.jobs), [
     'admit', 'build', 'reproduce', 'installed-acceptance', 'evidence', 'publish',
+    'published-upgrade',
   ]);
 });
 
 test('jobs keep read, signing, and publication authorities disjoint and ordered', () => {
-  const { admit, build, reproduce, evidence, publish } = workflow.jobs;
+  const { admit, build, reproduce, evidence, publish, 'published-upgrade': publishedUpgrade } = workflow.jobs;
   assert.deepEqual(admit.permissions, { actions: 'read', contents: 'read' });
   assert.deepEqual(build.permissions, { contents: 'read' });
   assert.deepEqual(reproduce.permissions, { contents: 'read' });
@@ -73,11 +74,13 @@ test('jobs keep read, signing, and publication authorities disjoint and ordered'
     actions: 'read', attestations: 'write', contents: 'read', 'id-token': 'write',
   });
   assert.deepEqual(publish.permissions, { actions: 'read', contents: 'write' });
+  assert.deepEqual(publishedUpgrade.permissions, { contents: 'read' });
   assert.equal(admit.needs, undefined);
   assert.equal(build.needs, 'admit');
   assert.equal(reproduce.needs, 'build');
   assert.deepEqual(evidence.needs, ['reproduce', 'installed-acceptance']);
   assert.equal(publish.needs, 'evidence');
+  assert.equal(publishedUpgrade.needs, 'publish');
   assert.equal(publish.environment, 'binary-release');
   for (const [id, job] of Object.entries(workflow.jobs)) {
     if (id !== 'publish') assert.equal(job.environment, undefined, id);
@@ -85,6 +88,29 @@ test('jobs keep read, signing, and publication authorities disjoint and ordered'
     if (id !== 'evidence') assert.equal(job.permissions.attestations, undefined, id);
     if (id !== 'publish') assert.notEqual(job.permissions.contents, 'write', id);
   }
+});
+
+test('public upgrade proof acquires both immutable versions on exact supported hosts', () => {
+  const job = workflow.jobs['published-upgrade'];
+  assert.equal(job['timeout-minutes'], 30);
+  assert.equal(job.strategy['fail-fast'], false);
+  assert.deepEqual(job.strategy.matrix.include, [
+    { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu' },
+    { os: 'windows-2022', target: 'x86_64-pc-windows-msvc' },
+  ]);
+  const acquisition = steps(job, 'Acquire both exact immutable public releases')[0];
+  assert.match(acquisition.run, /releases\/tags\/v0\.2\.1/);
+  assert.match(acquisition.run, /gh release download v0\.2\.1/);
+  assert.match(acquisition.run, /releases\/tags\/v0\.2\.2/);
+  assert.match(acquisition.run, /gh release download v0\.2\.2/);
+  const linux = steps(job, 'Exercise the Linux upgrade as an unprivileged user')[0];
+  const windows = steps(job, 'Exercise the Windows upgrade as a standard user')[0];
+  assert.match(linux.run, /run-published-upgrade-acceptance\.mjs/);
+  assert.match(windows.run, /run-published-upgrade-acceptance\.mjs/);
+  assert.match(windows.run, /Start-Process -FilePath \$node/);
+  assert.match(windows.run, /-Credential \$credential -LoadUserProfile/);
+  assert.match(windows.run, /net user \$user \/delete/);
+  assert.doesNotMatch(`${linux.run}\n${windows.run}`, /cargo|target[\\/]release|target[\\/]debug/);
 });
 
 test('all external actions are immutable pins and checkouts cannot retain credentials', () => {
@@ -130,7 +156,7 @@ test('admission requires the reviewed recipe and complete integrations', () => {
   assert.match(steps(admit, 'Require the exact successful production candidate')[0].run,
     /create-production-candidate-receipt\.mjs/);
   assert.equal(ACCEPTED_RECIPE_SHA256,
-    'c9fb1ab9394a04a0c1e2ff4b69bab48d5e285f984f139c416d5b5c3ae879555f');
+    'c827a6b626f30dc25d8aba96334e049a14ed1fe9b20ba61d6d2bd49421bfa407');
 
   const source = resolve('release-readiness-source');
   const sha = 'a'.repeat(40);
@@ -146,7 +172,7 @@ test('admission requires the reviewed recipe and complete integrations', () => {
     environment: {
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REPOSITORY: 'zryna/zryna',
-      GITHUB_REF: 'refs/tags/v0.2.1',
+      GITHUB_REF: 'refs/tags/v0.2.2',
       GITHUB_REF_PROTECTED: 'true',
       GITHUB_SHA: sha,
       GITHUB_WORKFLOW_SHA: sha,

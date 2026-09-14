@@ -182,7 +182,7 @@ export function createProductionProvisioner(injected = {}) {
     if (!isAbsolute(sourceRoot ?? '') || !TARGETS.has(target?.triple)
       || target.triple !== environment.ZRYNA_TARGET
       || source?.commit !== sourceCommit
-      || source?.ref !== (productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.1')
+      || source?.ref !== (productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.2')
       || !Buffer.isBuffer(recipeBytes)
       || !recipeBytes.equals(Buffer.from(`${canonicalBounded(recipe)}\n`))) {
       reject('exact production capture identity differs');
@@ -270,7 +270,7 @@ export function createProductionProvisioner(injected = {}) {
     }
     const implementation = await load();
     const expected = implementation.preparePayload({
-      version: '0.2.1', source, target,
+      version: '0.2.2', source, target,
       recipe: { format: recipe.format, sha256: sha256(recipeBytes) },
     }, cloneFiles(state.captured), state.architectureReceipt,
     { productionCandidate }).preparedDistribution;

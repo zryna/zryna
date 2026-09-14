@@ -27,7 +27,7 @@ const REQUIRED = [
 const environment = {
   GITHUB_REPOSITORY: 'zryna/zryna',
   GITHUB_SERVER_URL: 'https://github.com',
-  GITHUB_REF: 'refs/tags/v0.2.1',
+  GITHUB_REF: 'refs/tags/v0.2.2',
   GITHUB_SHA: COMMIT,
   GITHUB_TOKEN: 'test-token',
   CARGO_HOME,
@@ -229,7 +229,7 @@ test('qualification architecture producer rejects a tag or mutable workflow cont
       'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main',
   };
   for (const changed of [
-    { GITHUB_REF: 'refs/tags/v0.2.1' },
+    { GITHUB_REF: 'refs/tags/v0.2.2' },
     { GITHUB_REF_PROTECTED: 'false' },
     { GITHUB_WORKFLOW_SHA: 'f'.repeat(40) },
     { GITHUB_WORKFLOW_REF: 'zryna/zryna/.github/workflows/release.yml@refs/heads/main' },
@@ -282,7 +282,7 @@ test('qualification gate producer rejects a tag or unprotected main context befo
       'zryna/zryna/.github/workflows/release-qualification.yml@refs/heads/main',
   };
   for (const changed of [
-    { GITHUB_REF: 'refs/tags/v0.2.1' },
+    { GITHUB_REF: 'refs/tags/v0.2.2' },
     { GITHUB_REF_PROTECTED: 'false' },
     { GITHUB_WORKFLOW_SHA: 'f'.repeat(40) },
   ]) {

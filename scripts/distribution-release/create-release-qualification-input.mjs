@@ -57,7 +57,7 @@ function recipe(bytes, target) {
   }
   if (value.format !== 'zryna.distribution-recipe.v1'
     || value.productionAdmission !== 'forbidden' || value.status !== 'qualification-proposal'
-    || value.versionCandidate !== '0.2.1'
+    || value.versionCandidate !== '0.2.2'
     || JSON.stringify(value.compile.argv) !== JSON.stringify([
       'cargo', 'rustc', '--locked', '--release', '--target', '@target@',
       '-p', 'zryna', '--bin', 'zryna',
@@ -107,7 +107,7 @@ export function createReleaseQualificationInput({
   const windows = target === 'x86_64-pc-windows-msvc';
   return validateReleaseQualificationInput({
     format: 'zryna.release-qualification-input.v1',
-    status: 'provisional-candidate', productionAdmission: 'forbidden', versionCandidate: '0.2.1',
+    status: 'provisional-candidate', productionAdmission: 'forbidden', versionCandidate: '0.2.2',
     source: source.source,
     workflow: { path: source.workflow.path, sha256: source.workflow.sha256 },
     target: windows
@@ -130,11 +130,11 @@ export function createReleaseQualificationInput({
       encodedLinkerFlags: proposal.target.encodedLinkerFlags,
     },
     archive: windows
-      ? { format: 'zip', root: `zryna-qualification-0.2.1-${target}-${source.source.commit.slice(0, 12)}`,
+      ? { format: 'zip', root: `zryna-qualification-0.2.2-${target}-${source.source.commit.slice(0, 12)}`,
         method: 'store', creator: 'unix-2.0', timestamp: '1980-01-01T00:00:00',
         extraFields: false, comments: false }
       : { format: 'tar-gzip',
-        root: `zryna-qualification-0.2.1-${target}-${source.source.commit.slice(0, 12)}`,
+        root: `zryna-qualification-0.2.2-${target}-${source.source.commit.slice(0, 12)}`,
         tarFormat: 'ustar', uid: 0, gid: 0, owner: '', group: '', entryMtime: 'source-epoch',
         gzipLevel: 9, gzipMtime: 0, gzipOs: 255 },
   });

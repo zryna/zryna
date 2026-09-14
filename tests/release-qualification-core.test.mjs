@@ -29,7 +29,7 @@ function fixtures() {
     format: 'zryna.release-qualification-input.v1',
     status: 'provisional-candidate',
     productionAdmission: 'forbidden',
-    versionCandidate: '0.2.1',
+    versionCandidate: '0.2.2',
     source: {
       repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main',
       commit: COMMIT, tree: TREE, sourceDateEpoch: 1_789_081_200,
@@ -72,7 +72,7 @@ function fixtures() {
       encodedLinkerFlags: ['--build-id=none'],
     },
     archive: {
-      format: 'tar-gzip', root: `zryna-qualification-0.2.1-${TARGET}-${COMMIT.slice(0, 12)}`,
+      format: 'tar-gzip', root: `zryna-qualification-0.2.2-${TARGET}-${COMMIT.slice(0, 12)}`,
       tarFormat: 'ustar', uid: 0, gid: 0, owner: '', group: '', entryMtime: 'source-epoch',
       gzipLevel: 9, gzipMtime: 0, gzipOs: 255,
     },
@@ -126,7 +126,7 @@ test('prepares, assembles, and independently verifies qualification-only bytes',
 
 test('rejects production identity, unordered materials, and archive descriptor drift', async () => {
   const production = fixtures();
-  production.input.source.ref = 'refs/tags/v0.2.1';
+  production.input.source.ref = 'refs/tags/v0.2.2';
   assert.throws(() => validateReleaseQualificationInput(production.input),
     /R406-QUALIFICATION-INPUT-SCHEMA:/);
 
@@ -169,7 +169,7 @@ test('round-trips an authenticated Windows runtime executable through the real Z
     runtime: 'operating-system-ucrt' } };
   input.compile.argv[5] = target;
   input.archive = { format: 'zip',
-    root: `zryna-qualification-0.2.1-${target}-${COMMIT.slice(0, 12)}`,
+    root: `zryna-qualification-0.2.2-${target}-${COMMIT.slice(0, 12)}`,
     method: 'store', creator: 'unix-2.0', timestamp: '1980-01-01T00:00:00',
     extraFields: false, comments: false };
   const runtime = { path: 'runtime/node/node.exe', mode: 0o755, data: Buffer.from('node runtime') };

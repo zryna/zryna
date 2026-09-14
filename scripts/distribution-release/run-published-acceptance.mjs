@@ -21,7 +21,7 @@ function reject(message) {
   throw new Error(`R423-PUBLISHED-ACCEPTANCE: ${message}`);
 }
 
-function requireCleanHost(target) {
+export function requireCleanHost(target) {
   if (arch() !== 'x64' || TARGETS[platform()] !== target) reject('release target differs from host');
   if (platform() === 'linux') {
     const fields = Object.fromEntries(readFileSync('/etc/os-release', 'utf8').split('\n')

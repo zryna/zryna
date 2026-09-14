@@ -15,7 +15,7 @@ import { validateProductionCandidateReceiptText } from './create-production-cand
 import { validateRelease } from './validate.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const VERSION = '0.2.1';
+const VERSION = '0.2.2';
 const TARGETS = Object.freeze([
   { key: 'windows', triple: 'x86_64-pc-windows-msvc', extension: 'zip' },
   { key: 'linux', triple: 'x86_64-unknown-linux-gnu', extension: 'tar.gz' },
@@ -233,9 +233,9 @@ function writeSubjects(reproductions, outputRoot) {
 function releaseNotes(source, reproductions) {
   const archives = reproductions.map(({ reproduction }) => reproduction.artifacts.archive);
   return Buffer.from([
-    '# Zryna 0.2.1 beta',
+    '# Zryna 0.2.2 Developer Preview',
     '',
-    'This prerelease contains the first reproducible downloadable Zryna compiler archives.',
+    'This patch prerelease carries the release-publisher recovery fix and the clean-host lifecycle gates required for the post-publication immutable v0.2.1 to v0.2.2 upgrade proof.',
     '',
     `Source: ${source.repository}/tree/${source.commit}`,
     `Tag: v${VERSION} (${source.tagObject})`,
@@ -330,7 +330,7 @@ function writeEnvelope(reproductions, admission, outputRoot, environment) {
     format: 'zryna.distribution-release.v1',
     version: VERSION,
     tag: `v${VERSION}`,
-    channel: 'beta',
+    channel: 'developer-preview',
     publication: 'prerelease',
     source,
     recipe: reproductions[0].reproduction.recipe,

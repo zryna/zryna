@@ -8,7 +8,7 @@ import {
 
 const COMMIT = 'a'.repeat(40);
 const TREE = 'b'.repeat(40);
-const VERSION = '0.2.1';
+const VERSION = '0.2.2';
 const digest = (index) => index.toString(16).padStart(64, '0');
 
 function fixture(target = 'x86_64-unknown-linux-gnu') {
@@ -112,7 +112,7 @@ test('accepts canonical Linux and Windows build inputs', () => {
 
 test('rejects source, receipt, target, and fixed-path drift', () => {
   for (const [code, mutate] of [
-    ['R406-BUILD-SOURCE', (value) => { value.tag = 'v0.2.2'; }],
+    ['R406-BUILD-SOURCE', (value) => { value.tag = 'v0.2.1'; }],
     ['R406-BUILD-SOURCE', (value) => { value.architectureReceipt.sourceTree = COMMIT; }],
     ['R406-BUILD-SOURCE', (value) => { value.gateReceipt.sourceCommit = TREE; }],
     ['R406-BUILD-TARGET', (value) => { value.target.archiveFormat = 'zip'; }],
@@ -168,7 +168,7 @@ test('rejects missing, stale, duplicate, and unsorted authenticated inputs', () 
 test('schema and canonical parser reject open or ambiguous inputs', () => {
   for (const mutate of [
     (value) => { value.channel = 'stable'; },
-    (value) => { value.version = '0.2.1-beta.1'; },
+    (value) => { value.version = '0.2.2-beta.1'; },
     (value) => { value.compiledCli.logicalPath = '../zryna'; },
     (value) => { value.privatePath = 'C:\\private'; },
     (value) => { value.target.platformBaseline.version = '22.04'; },

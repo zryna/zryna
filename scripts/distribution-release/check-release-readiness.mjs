@@ -5,13 +5,13 @@ import { parseCanonical, sha256 } from './canonical.mjs';
 import { validateProductionRecipeIdentity } from './validate-production-recipe.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const REF = 'refs/tags/v0.2.1';
+const REF = 'refs/tags/v0.2.2';
 const MAX_OUTPUT = 256 * 1024;
 const OBJECT_ID = /^[0-9a-f]{40}$/;
 
 // This value binds the exact reviewed recipe bytes and production integration.
 export const ACCEPTED_RECIPE_SHA256 =
-  'c9fb1ab9394a04a0c1e2ff4b69bab48d5e285f984f139c416d5b5c3ae879555f';
+  'c827a6b626f30dc25d8aba96334e049a14ed1fe9b20ba61d6d2bd49421bfa407';
 
 export const REQUIRED_RELEASE_PATHS = Object.freeze([
   '.github/workflows/release.yml',
@@ -27,6 +27,7 @@ export const REQUIRED_RELEASE_PATHS = Object.freeze([
   'scripts/distribution-release/publish-draft-release.mjs',
   'scripts/distribution-release/run-protected-build.mjs',
   'scripts/distribution-release/run-installed-acceptance.mjs',
+  'scripts/distribution-release/run-published-upgrade-acceptance.mjs',
   'scripts/distribution-release/run-production-candidate-build.mjs',
   'scripts/distribution-release/production-candidate-authority.mjs',
   'scripts/distribution-release/validate-production-recipe.mjs',

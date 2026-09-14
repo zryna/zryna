@@ -235,7 +235,7 @@ function createArchitectureObservation({
 export function createSourceBuildReceipt(options = {}) {
   const environment = options.environment ?? process.env;
   if (environment.GITHUB_REPOSITORY !== 'zryna/zryna'
-    || environment.GITHUB_REF !== 'refs/tags/v0.2.1'
+    || environment.GITHUB_REF !== 'refs/tags/v0.2.2'
     || !/^[0-9a-f]{40}$/.test(environment.GITHUB_SHA ?? '')) {
     reject('exact protected repository, tag, and source SHA are required');
   }
