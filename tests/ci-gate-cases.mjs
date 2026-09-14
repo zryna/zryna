@@ -380,6 +380,8 @@ test('routing preserves all other pinned workflow authority', () => {
   delete original.jobs.m3;
   // The optional distribution lane is independently frozen by workflow-routing.test.mjs.
   delete original.jobs['distribution-release-contract'];
+  // Published clean-host evidence is independently frozen by release-published-workflow.test.mjs.
+  delete original.jobs['published-release-clean-host'];
   delete original.jobs['route-contracts'].outputs.distribution_release;
   original.jobs.preflight['timeout-minutes'] = 10;
   for (const id of ['rust', 'adapter-platform', 'm2-platform']) {
