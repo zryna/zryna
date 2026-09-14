@@ -462,7 +462,8 @@ jobs:
         env:
           ZRYNA_TARGET: ${{ matrix.target }}
         run: |
-          mkdir -m 700 .release/linux-work .release/linux-output .release/hostile-bin
+          mkdir -m 700 .release/linux-work .release/hostile-bin
+          mkdir -m 700 release-evidence release-evidence/linux-output
           install -m 755 /bin/false .release/hostile-bin/zryna
           node_path="$(command -v node)"
           cosign_path="$(command -v cosign)"
@@ -470,7 +471,7 @@ jobs:
             scripts/distribution-release/run-published-acceptance.mjs \
             --cosign "$cosign_path" \
             --directory "$(realpath .release/public)" \
-            --output "$(realpath .release)/linux-output" \
+            --output "$(realpath release-evidence)/linux-output" \
             --state "$(realpath .release/release-state.json)" \
             --target "$ZRYNA_TARGET" \
             --work "$(realpath .release/linux-work)"
@@ -481,7 +482,7 @@ jobs:
           ZRYNA_TARGET: ${{ matrix.target }}
         run: |
           $user = 'zryna423'
-          $passwordText = "Zryna-423-$env:GITHUB_RUN_ID!"
+          $passwordText = "Zr423-$env:GITHUB_RUN_ATTEMPT!"
           $securePassword = ConvertTo-SecureString $passwordText -AsPlainText -Force
           $credential = [System.Management.Automation.PSCredential]::new(".\$user", $securePassword)
           $releaseRoot = (Resolve-Path .release/public).Path
@@ -489,7 +490,8 @@ jobs:
           $releaseParent = (Resolve-Path .release).Path
           $userRoot = Join-Path $releaseParent 'windows-work'
           $workRoot = Join-Path $userRoot 'work'
-          $outputRoot = Join-Path $releaseParent 'windows-output'
+          $evidenceRoot = Join-Path $env:GITHUB_WORKSPACE 'release-evidence'
+          $outputRoot = Join-Path $evidenceRoot 'windows-output'
           $stdout = Join-Path $userRoot 'stdout.txt'
           $stderr = Join-Path $userRoot 'stderr.txt'
           $nodeSource = (Get-Command node).Source
@@ -498,7 +500,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'could not create the standard test user' }
           try {
             New-Item -ItemType Directory -Path $workRoot -Force | Out-Null
-            New-Item -ItemType Directory -Path $outputRoot | Out-Null
+            New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
             $node = Join-Path $userRoot 'node.exe'
             $cosign = Join-Path $userRoot 'cosign.exe'
             Copy-Item -LiteralPath $nodeSource -Destination $node
@@ -534,7 +536,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: published-beta-clean-host-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .release/*-output/published-clean-host-acceptance.json
+          path: release-evidence/*-output/published-clean-host-acceptance.json
           if-no-files-found: error
           compression-level: 0
           include-hidden-files: false

@@ -44,6 +44,7 @@ test('each host runs the same published bytes without repository compiler substi
   const windows = step('Verify and exercise the Windows release as a standard user');
   assert.equal(windows.if, "runner.os == 'Windows'");
   for (const pattern of [
+    /\$passwordText = "Zr423-\$env:GITHUB_RUN_ATTEMPT!"/,
     /net user \$user \$passwordText \/add/,
     /Start-Process -FilePath \$node/,
     /-Credential \$credential -LoadUserProfile/,
@@ -63,7 +64,7 @@ test('clean host receipts are exact short-lived evidence', () => {
     'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
   assert.match(upload.with.name,
     /^published-beta-clean-host-\$\{\{ matrix\.target \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}$/);
-  assert.equal(upload.with.path, '.release/*-output/published-clean-host-acceptance.json');
+  assert.equal(upload.with.path, 'release-evidence/*-output/published-clean-host-acceptance.json');
   assert.equal(upload.with['if-no-files-found'], 'error');
   assert.equal(upload.with['compression-level'], 0);
   assert.equal(upload.with['include-hidden-files'], false);
