@@ -114,7 +114,7 @@ export async function verifySignedRelease({
       readReleaseFile(directory, subject.sbom.path, MAX_SPDX_BYTES),
       { files: verified.files, archive: { filename: subject.archive.path,
         size: subject.archive.size, sha256: subject.archive.sha256 },
-      source: envelope.source, target: subject.target },
+      source: envelope.source, target: subject.target, version: envelope.version },
     );
     const bundle = readReleaseFile(directory, subject.attestation.path, MAX_RELEASE_DOCUMENT);
     const statement = statementFromAttestation(bundle, {

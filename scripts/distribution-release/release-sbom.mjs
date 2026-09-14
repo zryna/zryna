@@ -3,6 +3,7 @@ import { TextDecoder } from 'node:util';
 import { canonical, parseCanonical, sha256 } from './canonical.mjs';
 
 const VERSION = '0.2.2';
+const RELEASE_VERSIONS = new Set(['0.2.1', VERSION]);
 const DOCUMENT = 'SPDXRef-DOCUMENT';
 const ROOT_PACKAGE = 'SPDXRef-Package-zryna';
 const MAX_FILES = 512;
@@ -120,16 +121,19 @@ function packageRecord(SPDXID, name, extra = {}) {
   };
 }
 
-export function createReleaseSpdx({ files, archive, source, target, productionCandidate = false }) {
+export function createReleaseSpdx({
+  files, archive, source, target, version = VERSION, productionCandidate = false,
+}) {
   const graph = finalGraph(files);
-  if (archive?.filename !== `zryna-${VERSION}-${target}.tar.gz`
-    && archive?.filename !== `zryna-${VERSION}-${target}.zip`) {
+  if (!RELEASE_VERSIONS.has(version) || (productionCandidate && version !== VERSION)
+    || (archive?.filename !== `zryna-${version}-${target}.tar.gz`
+      && archive?.filename !== `zryna-${version}-${target}.zip`)) {
     reject('archive subject name differs');
   }
   if (!/^[0-9a-f]{64}$/.test(archive?.sha256 ?? '')
     || !/^[0-9a-f]{40}$/.test(source?.commit ?? '')
     || source.repository !== 'https://github.com/zryna/zryna'
-    || source.ref !== (productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.2')) {
+    || source.ref !== (productionCandidate ? 'refs/heads/main' : `refs/tags/v${version}`)) {
     reject('release source identity differs');
   }
   const materials = [...new Set(graph.map(({ material }) => material))].sort();
@@ -151,7 +155,7 @@ export function createReleaseSpdx({ files, archive, source, target, productionCa
   }));
   const packages = [packageRecord(ROOT_PACKAGE, 'zryna', {
     filesAnalyzed: true,
-    versionInfo: VERSION,
+    versionInfo: version,
     packageFileName: archive.filename,
     checksums: [{ algorithm: 'SHA256', checksumValue: archive.sha256 }],
     packageVerificationCode: {
@@ -185,11 +189,11 @@ export function createReleaseSpdx({ files, archive, source, target, productionCa
     SPDXID: DOCUMENT,
     spdxVersion: 'SPDX-2.3',
     dataLicense: 'CC0-1.0',
-    name: `zryna-${VERSION}-${target}`,
-    documentNamespace: `https://zryna.com/spdx/${VERSION}/${target}/${archive.sha256}`,
+    name: `zryna-${version}-${target}`,
+    documentNamespace: `https://zryna.com/spdx/${version}/${target}/${archive.sha256}`,
     creationInfo: {
       created: new Date(source.sourceDateEpoch * 1000).toISOString().replace('.000Z', 'Z'),
-      creators: [`Tool: zryna-release-sbom-${VERSION}`],
+      creators: [`Tool: zryna-release-sbom-${version}`],
     },
     documentDescribes: [ROOT_PACKAGE],
     packages,

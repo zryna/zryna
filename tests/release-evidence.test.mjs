@@ -73,6 +73,22 @@ function archiveFiles(target) {
   ].sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
 }
 
+test('SPDX generation binds the legacy release to its exact versioned identity', () => {
+  const target = 'x86_64-pc-windows-msvc';
+  const files = archiveFiles(target);
+  const archive = { filename: `zryna-0.2.1-${target}.zip`, size: 1, sha256: 'e'.repeat(64) };
+  const legacySource = { ...source(), ref: 'refs/tags/v0.2.1' };
+  const sbom = JSON.parse(releaseSpdxBytes({
+    files, archive, source: legacySource, target, version: '0.2.1',
+  }).toString('utf8'));
+  assert.equal(sbom.name, `zryna-0.2.1-${target}`);
+  assert.equal(sbom.packages[0].versionInfo, '0.2.1');
+  assert.throws(() => releaseSpdxBytes({
+    files, archive: { ...archive, filename: `zryna-0.2.0-${target}.zip` },
+    source: { ...legacySource, ref: 'refs/tags/v0.2.0' }, target, version: '0.2.0',
+  }), /archive subject name differs/);
+});
+
 function fixture(t, mutateStatement = () => {}, mutateSbom = (bytes) => bytes) {
   const parent = mkdtempSync(join(tmpdir(), 'zryna-release-evidence-'));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
