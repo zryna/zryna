@@ -1,6 +1,7 @@
 use std::{collections::BTreeSet, io::Write, time::Instant};
 
-use serde_json::Value;
+use serde_json::{Value, json};
+use zryna_driver::diagnostic_sessions::DiagnosticRevision;
 
 use super::{RevisionCompiler, Server};
 use crate::protocol::{self, Incoming};
@@ -16,15 +17,24 @@ pub const MAX_OUTSTANDING_REQUESTS: usize = 64;
 pub struct Outgoing {
     value: Value,
     completion: Option<String>,
+    formatting_revision: Option<DiagnosticRevision>,
 }
 
 impl Outgoing {
     pub(super) fn untracked(value: Value) -> Self {
-        Self { value, completion: None }
+        Self { value, completion: None, formatting_revision: None }
     }
 
     pub(super) fn tracked(value: Value, request_id: String) -> Self {
-        Self { value, completion: Some(request_id) }
+        Self { value, completion: Some(request_id), formatting_revision: None }
+    }
+
+    pub(super) fn formatting(
+        value: Value,
+        request_id: String,
+        revision: DiagnosticRevision,
+    ) -> Self {
+        Self { value, completion: Some(request_id), formatting_revision: Some(revision) }
     }
 
     /// Returns the JSON-RPC value that will be framed on the connection.
@@ -87,6 +97,7 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
                 request_id,
             ));
         }
+        output.extend(self.finish_formatting());
         output
     }
 
@@ -99,7 +110,7 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
     pub fn write_outgoing(
         &mut self,
         output: &mut impl Write,
-        outgoing: Outgoing,
+        mut outgoing: Outgoing,
     ) -> Result<(), String> {
         if outgoing
             .completion
@@ -107,6 +118,15 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
             .is_some_and(|request_id| !self.outstanding.ids.contains(request_id))
         {
             return Err("language-server response completion is stale".to_owned());
+        }
+        if outgoing
+            .formatting_revision
+            .is_some_and(|revision| self.session.active_revision() != Some(revision))
+            && outgoing.value.get("result").is_some()
+        {
+            let id = outgoing.value.get("id").cloned().and_then(protocol::decode_id);
+            outgoing.value = protocol::error(id.as_ref(), -32801, "Content modified");
+            outgoing.value["error"]["data"] = json!({"code":"ZRYNA-D4002"});
         }
         let bytes = serde_json::to_vec(&outgoing.value).map_err(|error| error.to_string())?;
         crate::framing::write_frame(output, &bytes).map_err(|error| error.to_string())?;

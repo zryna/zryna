@@ -91,6 +91,8 @@ fn stdio_process_preserves_revision_query_and_cancellation() {
     assert_eq!(receive(&receiver)["method"], "zryna/publishDiagnostics");
     assert_eq!(receive(&receiver)["method"], "textDocument/publishDiagnostics");
 
+    assert_formatting(&mut input, &receiver);
+
     send(
         &mut input,
         json!({
@@ -145,4 +147,17 @@ fn stdio_process_preserves_revision_query_and_cancellation() {
     let status = child.wait().unwrap_or_else(|error| panic!("wait server: {error}"));
     assert!(status.success(), "server failed: {status}");
     reader.join().unwrap_or_else(|_| panic!("reader thread"));
+}
+
+fn assert_formatting(input: &mut impl Write, receiver: &mpsc::Receiver<Value>) {
+    send(
+        input,
+        json!({"jsonrpc":"2.0","id":88,"method":"textDocument/formatting",
+            "params":{"textDocument":{"uri":"file:///workspace/src/main.zry"},
+                "options":{"tabSize":2,"insertSpaces":true}}}),
+    );
+    assert_eq!(
+        receive(receiver)["result"][0]["newText"],
+        "export function identity(x: i32): i32 {\n  return x;\n}\n"
+    );
 }

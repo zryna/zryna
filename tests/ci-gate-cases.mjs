@@ -354,6 +354,13 @@ test('M0 aggregate checks out the pinned verifier before execution', () => {
 test('routing preserves all other pinned workflow authority', () => {
   bootstrapOrder(workflow, packageDocument);
   const original = structuredClone(workflow);
+  const editorIndex = original.jobs.rust.steps.findIndex(step => step.name === "Verify and package editor client");
+  assert(editorIndex >= 0);
+  assert.deepEqual(original.jobs.rust.steps[editorIndex], {
+    name: "Verify and package editor client", run: "pnpm editor:check\npnpm editor:package\n",
+  });
+  assert.equal(original.jobs.rust.steps[editorIndex + 1].run, "node scripts/run-m0-conformance.mjs");
+  original.jobs.rust.steps.splice(editorIndex, 1);
   assert.deepEqual(original.env, {
     ZRYNA_STRUCTURE_BASE: "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.structure_base }}",
   });

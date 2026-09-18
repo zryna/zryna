@@ -9,7 +9,7 @@ driver-owned fixture support; the transport does not call or configure a fronten
 
 The server accepts `initialize`, `initialized`, `textDocument/didOpen`, full-text
 `textDocument/didChange`, `textDocument/didClose`, `textDocument/definition`, `$/cancelRequest`,
-`shutdown`, and `exit`. It negotiates `utf-8`, `utf-16`, or `utf-32` positions, defaults to
+`textDocument/formatting`, `textDocument/rangeFormatting`, `shutdown`, and `exit`. It negotiates `utf-8`, `utf-16`, or `utf-32` positions, defaults to
 `utf-16`, and accepts only `file:` documents strictly below the initialized root URI. Each source
 mutation creates a new immutable compiler revision. Diagnostics are published both as standard
 source diagnostics and as an exact `zryna/publishDiagnostics` notification carrying the complete
@@ -26,4 +26,8 @@ messages cannot select an executable, provider identity, filesystem read, networ
 or code execution. The current public semantic slice is the one-file protocol-v2 scalar profile,
 so one connection admits at most one open document until module resolution has a reviewed tooling
 authority. Control-flow/data-ownership queries, multi-file module resolution, hover, references, rename,
-completion, code actions, formatting, indexing, debugging, and execution are unsupported.
+completion, code actions, indexing, debugging, and execution are unsupported.
+
+The initial `scalar-format-v1` capability formats only verified scalar programs. See the
+[format contract and editor guide](../../docs/LANGUAGE_SERVER.md#scalar-format-v1). M2/M3
+formatting and marketplace publication remain outstanding under #409.

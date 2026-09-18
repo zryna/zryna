@@ -1,0 +1,83 @@
+{
+  "name": "zryna",
+  "displayName": "Zryna Developer Preview",
+  "description": "Verified scalar diagnostics, definitions and formatting for Zryna.",
+  "version": "0.1.0",
+  "publisher": "zryna",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zryna/zryna.git",
+    "directory": "editors/vscode-zryna"
+  },
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters"
+  ],
+  "main": "./src/extension.cjs",
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": false
+  },
+  "activationEvents": [
+    "onLanguage:zryna"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "zryna",
+        "aliases": [
+          "Zryna"
+        ],
+        "extensions": [
+          ".zry"
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Zryna",
+      "properties": {
+        "zryna.serverPath": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Absolute path to the explicitly installed compatible zryna-language-server executable."
+        },
+        "zryna.compilerRoot": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Absolute trusted compiler checkout with the pinned adapter installed. Not the edited project root."
+        },
+        "zryna.nodePath": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Absolute path to the pinned Node.js 22.22.1 executable."
+        }
+      }
+    }
+  },
+  "zrynaCompatibility": {
+    "compilerVersion": "0.2.3",
+    "requiredCapability": "scalar-format-v1",
+    "sourceBuildRequired": true,
+    "releasedCompilerCompatible": false,
+    "profiles": [
+      "scalar-v2"
+    ]
+  },
+  "scripts": {
+    "check": "node --check src/extension.cjs && node --check src/connection.cjs",
+    "test": "node --test test/*.test.cjs",
+    "package": "node ../../scripts/package-editor.mjs"
+  }
+}

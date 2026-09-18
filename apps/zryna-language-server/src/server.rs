@@ -4,25 +4,27 @@ use std::{
     time::Instant,
 };
 
+mod definitions;
+mod formatting;
 mod outgoing;
+use formatting::PendingFormatting;
 
 use outgoing::OutstandingRequests;
 pub use outgoing::{MAX_OUTSTANDING_REQUESTS, Outgoing};
 
 use serde_json::{Value, json};
 use zryna_driver::diagnostic_sessions::{
-    DiagnosticQueryResponse, DiagnosticRevision, DiagnosticSession, PendingDefinitionQuery,
-    QueryStatus, ToolingCompiler,
+    DiagnosticRevision, DiagnosticSession, PendingDefinitionQuery, ToolingCompiler,
 };
 use zryna_source::SourceMap;
 
 use crate::{
-    coordinates::{PositionEncoding, byte_range_to_positions, position_to_byte},
+    coordinates::PositionEncoding,
     diagnostics::{decode_report, standard_diagnostics},
     documents::{Document, source_map},
     params::{
-        CancelParams, DefinitionParams, DidChangeParams, DidCloseParams, DidOpenParams,
-        InitializeParams, decode_params, normalize_root_uri, path_below_root,
+        CancelParams, DidChangeParams, DidCloseParams, DidOpenParams, InitializeParams,
+        decode_params, normalize_root_uri, path_below_root,
     },
     protocol::{
         self, Incoming, RequestId, empty_params, log_invalid, log_message, response_message,
@@ -80,6 +82,7 @@ pub struct Server<Compiler> {
     documents: BTreeMap<String, Document>,
     active: Option<ActiveSnapshot>,
     pending: VecDeque<PendingDefinition>,
+    pending_formatting: VecDeque<PendingFormatting>,
     outstanding: OutstandingRequests,
     initialized: bool,
     shutting_down: bool,
@@ -103,6 +106,7 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
             documents: BTreeMap::new(),
             active: None,
             pending: VecDeque::new(),
+            pending_formatting: VecDeque::new(),
             outstanding: OutstandingRequests::new(),
             initialized: false,
             shutting_down: false,
@@ -128,7 +132,7 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
     /// Returns whether definition work is waiting for queued cancellation or revision changes.
     #[must_use]
     pub fn has_pending(&self) -> bool {
-        !self.pending.is_empty()
+        !self.pending.is_empty() || !self.pending_formatting.is_empty()
     }
 
     fn handle(&mut self, message: Incoming) -> Vec<Value> {
@@ -157,6 +161,11 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
             }
             "textDocument/definition" if message.id.is_some() && self.initialized => {
                 self.definition(message)
+            }
+            "textDocument/formatting" | "textDocument/rangeFormatting"
+                if message.id.is_some() && self.initialized =>
+            {
+                self.formatting(message)
             }
             "$/cancelRequest" if message.id.is_none() && self.initialized => {
                 self.cancel(message.params)
@@ -210,7 +219,10 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
                 "capabilities": {
                     "positionEncoding": self.encoding.as_str(),
                     "textDocumentSync": {"openClose":true,"change":1},
-                    "definitionProvider": true
+                    "definitionProvider": true,
+                    "documentFormattingProvider": true,
+                    "documentRangeFormattingProvider": true,
+                    "experimental": {"zrynaFormattingProfile":"scalar-format-v1"}
                 },
                 "serverInfo": {"name":"zryna-language-server","version":env!("CARGO_PKG_VERSION")}
             }),
@@ -278,51 +290,6 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
         output
     }
 
-    fn definition(&mut self, message: Incoming) -> Vec<Value> {
-        let Some(id) = message.id else {
-            return Vec::new();
-        };
-        let Some(params) = decode_params::<DefinitionParams>(message.params) else {
-            return vec![protocol::invalid_params(Some(&id))];
-        };
-        let Some(active) = self.active.as_ref() else {
-            return vec![protocol::error(Some(&id), -32803, "Analysis unavailable")];
-        };
-        let Some(document) = self.documents.get(&params.text_document.uri) else {
-            return vec![protocol::invalid_params(Some(&id))];
-        };
-        let Some(byte_offset) = position_to_byte(&document.text, params.position, self.encoding)
-        else {
-            return vec![protocol::invalid_params(Some(&id))];
-        };
-        let request = json!({
-            "query_version":1,
-            "request_id":id.internal(),
-            "snapshot":active.revision.handle().to_string(),
-            "revision":active.revision.revision(),
-            "method":"definition",
-            "params":{"path":document.path,"byte_offset":byte_offset},
-            "limits":{"work":100_000,"results":1}
-        });
-        let Ok(bytes) = serde_json::to_vec(&request) else {
-            return vec![protocol::error(Some(&id), -32603, "Internal error")];
-        };
-        match self.session.begin_definition(&bytes, Instant::now()) {
-            Ok(query) => {
-                self.pending.push_back(PendingDefinition {
-                    id,
-                    query,
-                    revision: active.revision,
-                    sources: active.sources.clone(),
-                });
-                Vec::new()
-            }
-            Err(response) => {
-                vec![self.definition_response(&id, active.revision, &active.sources, &response)]
-            }
-        }
-    }
-
     fn cancel(&mut self, params: Option<Value>) -> Vec<Value> {
         let Some(params) = decode_params::<CancelParams>(params) else {
             return vec![log_invalid()];
@@ -330,6 +297,7 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
         let Some(id) = protocol::decode_id(params.id) else {
             return vec![log_invalid()];
         };
+        self.cancel_formatting(&id);
         let _ = self.session.cancel(id.internal());
         Vec::new()
     }
@@ -417,60 +385,6 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
             )
         }));
         output
-    }
-
-    fn definition_response(
-        &self,
-        id: &RequestId,
-        revision: DiagnosticRevision,
-        sources: &SourceMap,
-        response: &DiagnosticQueryResponse,
-    ) -> Value {
-        match response.status() {
-            QueryStatus::Absent => protocol::response(id, &Value::Null),
-            QueryStatus::Ok => self
-                .definition_success(id, revision, sources, response)
-                .unwrap_or_else(|| protocol::error(Some(id), -32603, "Internal error")),
-            QueryStatus::Stale => protocol::error(Some(id), -32801, "Content modified"),
-            QueryStatus::Cancelled => protocol::error(Some(id), -32800, "Request cancelled"),
-            QueryStatus::Malformed => protocol::invalid_params(Some(id)),
-            QueryStatus::Unsupported => protocol::method_not_found(Some(id)),
-            QueryStatus::Unavailable => protocol::error(Some(id), -32803, "Analysis unavailable"),
-            QueryStatus::OverBudget => protocol::error(Some(id), -32803, "Request limit exceeded"),
-        }
-    }
-
-    fn definition_success(
-        &self,
-        id: &RequestId,
-        revision: DiagnosticRevision,
-        sources: &SourceMap,
-        response: &DiagnosticQueryResponse,
-    ) -> Option<Value> {
-        let value: Value = serde_json::from_str(response.encoded()?).ok()?;
-        if value.get("snapshot")?.as_str()? != revision.handle().to_string()
-            || value.get("revision")?.as_u64()? != revision.revision()
-            || value.get("request_id")?.as_str()? != id.internal()
-        {
-            return None;
-        }
-        let locations = value.get("result")?.get("locations")?.as_array()?;
-        let [location] = locations.as_slice() else {
-            return None;
-        };
-        let path = location.get("path")?.as_str()?;
-        let start = u32::try_from(location.get("byte_start")?.as_u64()?).ok()?;
-        let end = u32::try_from(location.get("byte_end")?.as_u64()?).ok()?;
-        let (uri, document) = self.documents.iter().find(|(_, document)| document.path == path)?;
-        let normalized = zryna_source::NormalizedSourcePath::new(path.to_owned()).ok()?;
-        let file = sources.file_id(&normalized)?;
-        let span = sources.span(file, start, end).ok()?;
-        let resolved = sources.resolve(span).ok()?;
-        if resolved.source().text() != document.text {
-            return None;
-        }
-        let range = byte_range_to_positions(&document.text, start, end, self.encoding)?;
-        Some(protocol::response(id, &json!({"uri":uri,"range":range})))
     }
 
     fn path_for_uri(&self, uri: &str) -> Option<String> {

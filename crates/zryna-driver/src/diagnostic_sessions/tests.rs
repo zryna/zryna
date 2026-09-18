@@ -7,6 +7,7 @@ use super::{DiagnosticRevision, DiagnosticSession};
 
 mod bounds;
 mod definition;
+mod formatting;
 mod hostile;
 mod lifecycle;
 

@@ -184,6 +184,10 @@ jobs:
         run: cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact
       - name: Verify documentation bundle contract
         run: pnpm docs:check
+      - name: Verify and package editor client
+        run: |
+          pnpm editor:check
+          pnpm editor:package
       - run: node scripts/run-m0-conformance.mjs
 
   adapter-platform:

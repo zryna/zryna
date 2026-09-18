@@ -694,5 +694,8 @@ document lifecycle, URI/version correlation, negotiated coordinate conversion an
 it depends only on the driver orchestrator and source foundation. Protocol input cannot select a
 frontend process or gain filesystem, build, runtime, network or mutation authority. The exact
 supported methods and omissions are documented in [Language server protocol v1](LANGUAGE_SERVER.md).
-A future editor extension may consume these diagnostics but will not duplicate or redefine
-architecture or compiler rules.
+The initial scalar editor client in `editors/vscode-zryna` is registered by the pnpm workspace;
+it is not a Rust compiler component and adds no compiler dependency edge. It consumes diagnostics,
+definitions and presentation-only edits without defining compiler rules. The driver derives bounded
+formatting plans from verified, semantically accepted scalar snapshots. M2/M3 formatting remains
+unsupported. The client package carries no compiler/runtime binary or download mechanism.
