@@ -123,7 +123,16 @@ fn semantic_records_have_an_exact_cache_charge() {
         .unwrap_or_else(|| panic!("semantic revision must retain definition facts"));
     assert_eq!(definitions.cache_bytes(), Some(3 * 24));
     let report_bytes = record.report.as_deref().map_or(0, str::len);
-    assert_eq!(session.cache_bytes(), "src/main.zry".len() + SOURCE.len() + report_bytes + 3 * 24);
+    assert_eq!(
+        session.cache_bytes(),
+        "src/main.zry".len()
+            + SOURCE.len()
+            + report_bytes
+            + 3 * 24
+            + "src/main.zry".len()
+            + "export function identity(x: i32): i32 {\n  return x;\n}\n".len()
+            + 8
+    );
 }
 
 #[test]

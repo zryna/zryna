@@ -38,11 +38,14 @@
     "m3:quick": "node scripts/run-m3-quick.mjs",
     "m3:registry": "node scripts/check-m3-conformance.mjs && node --test tests/m3-conformance.test.mjs",
     "m3:check": "node scripts/run-m3-conformance.mjs",
-    "m3:public": "cargo test --locked -p zryna --test m3_public"
+    "m3:public": "cargo test --locked -p zryna --test m3_public",
+    "editor:check": "pnpm --filter zryna check && pnpm --filter zryna test",
+    "editor:package": "pnpm --filter zryna package"
   },
   "devDependencies": {
     "ajv": "8.17.1",
     "playwright-core": "1.63.0",
-    "yaml": "2.8.1"
+    "yaml": "2.8.1",
+    "@vscode/vsce": "4.0.0"
   }
 }

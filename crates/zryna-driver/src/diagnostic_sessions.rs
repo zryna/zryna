@@ -2,7 +2,8 @@
 //!
 //! This compiler-host boundary retains exact source-map, structured-diagnostics-v2, and the first
 //! semantics-owned definition authority. Transports may compose this boundary but cannot inspect
-//! or reconstruct its semantic records. This module is not a formatter or executor.
+//! or reconstruct its semantic records. Verified scalar revisions also retain presentation-only
+//! formatting plans. This module grants no edit application or execution authority.
 
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -18,6 +19,7 @@ use zryna_diagnostics::{Diagnostic, protocol_v2};
 use zryna_semantics::definition_queries::DefinitionIndex;
 use zryna_source::{SourceMap, SourceMapIdentity};
 
+mod formatting;
 mod request;
 mod response;
 mod retention;
@@ -28,6 +30,8 @@ mod test_support;
 mod tooling_compiler;
 mod tooling_execution;
 
+use formatting::FormattingDocument;
+pub use formatting::{FormattingEdit, FormattingError};
 pub use response::{DiagnosticQueryResponse, QueryReason, QueryStatus};
 use retention::{checked_cache_charge, source_fingerprint_and_charge};
 pub use semantic_definition::PendingDefinitionQuery;
@@ -153,6 +157,7 @@ struct RevisionRecord {
     report: Option<Arc<str>>,
     definitions: Option<Arc<DefinitionIndex>>,
     cache_bytes: usize,
+    formatting: Option<FormattingDocument>,
 }
 
 #[derive(Clone, Debug)]
@@ -224,7 +229,7 @@ impl DiagnosticSession {
     ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
         let report = protocol_v2::render_json(diagnostics, &sources)
             .map_err(DiagnosticSessionError::Diagnostics)?;
-        self.admit(sources, Some(report.into()), None)
+        self.admit(sources, Some(report.into()), None, None)
     }
 
     /// Admits successful protocol-v2 semantic state for definition queries.
@@ -246,7 +251,10 @@ impl DiagnosticSession {
         }
         let report = protocol_v2::render_json(syntax.diagnostics(), &sources)
             .map_err(DiagnosticSessionError::Diagnostics)?;
-        self.admit(sources, Some(report.into()), Some(Arc::new(definitions)))
+        {
+            let formatting = FormattingDocument::prepare(syntax, &sources);
+            self.admit(sources, Some(report.into()), Some(Arc::new(definitions)), formatting)
+        }
     }
 
     /// Admits one verified protocol-v2 analysis for tooling diagnostics and definition queries.
@@ -273,7 +281,15 @@ impl DiagnosticSession {
             Ok(definitions) if definitions.is_bound_to(&sources) => {
                 let report = protocol_v2::render_json(syntax.diagnostics(), &sources)
                     .map_err(DiagnosticSessionError::Diagnostics)?;
-                self.admit(sources, Some(report.into()), Some(Arc::new(definitions)))
+                {
+                    let formatting = FormattingDocument::prepare(syntax, &sources);
+                    self.admit(
+                        sources,
+                        Some(report.into()),
+                        Some(Arc::new(definitions)),
+                        formatting,
+                    )
+                }
             }
             Ok(_) => Err(DiagnosticSessionError::SemanticAuthority),
             Err(diagnostics) => self.admit_diagnostics(sources, &diagnostics),
@@ -289,7 +305,7 @@ impl DiagnosticSession {
         &mut self,
         sources: SourceMap,
     ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
-        self.admit(sources, None, None)
+        self.admit(sources, None, None, None)
     }
 
     /// Returns the currently active revision, when one has been admitted.
@@ -315,6 +331,7 @@ impl DiagnosticSession {
         sources: SourceMap,
         report: Option<Arc<str>>,
         definitions: Option<Arc<DefinitionIndex>>,
+        formatting: Option<FormattingDocument>,
     ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
         if self.next_revision > MAX_REVISION {
             return Err(DiagnosticSessionError::RevisionExhausted);
@@ -329,15 +346,21 @@ impl DiagnosticSession {
         let cache_bytes = checked_cache_charge(
             source_bytes,
             report.as_ref().map_or(0, |value| value.len()),
-            semantic_bytes,
+            semantic_bytes + formatting.as_ref().map_or(0, FormattingDocument::cache_bytes),
         )?;
         let description = DiagnosticRevision {
             handle: DiagnosticSnapshotHandle { session: self.session, serial: self.next_revision },
             revision: self.next_revision,
             source_fingerprint,
         };
-        let record =
-            Arc::new(RevisionRecord { description, sources, report, definitions, cache_bytes });
+        let record = Arc::new(RevisionRecord {
+            description,
+            sources,
+            report,
+            definitions,
+            cache_bytes,
+            formatting,
+        });
         let mut projected_cache = self
             .cache_bytes
             .checked_add(cache_bytes)

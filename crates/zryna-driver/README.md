@@ -64,7 +64,9 @@ protocol-v2 semantic checking. The boundary issues non-reused revision handles, 
 accepted request, response, queue, cache, cancellation and deadline bounds, and rechecks the active
 revision before publication. The registered thin language-server transport composes these opaque
 authorities without inspecting semantic records. The driver adds no general symbol coverage,
-formatting, edit application or execution capability.
+edit application or execution capability. After successful scalar admission, the session also
+retains a bounded presentation-only formatting plan derived from the exact verified syntax.
+Active-revision document/range requests return edits; unsupported or partial inputs reject.
 
 The tooling compiler supports the lockfile's exact pnpm layout: the adapter package link must
 resolve to `@typescript/typescript6` 6.0.2, whose compatibility wrapper resolves the staged

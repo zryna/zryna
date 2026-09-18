@@ -1,8 +1,8 @@
 # Language server protocol v1
 
 Status: public, bounded stdio transport for the existing protocol-v2 scalar diagnostic session and
-definition query. This does not expand the language profile, semantic query inventory, compiler
-execution surface, or editor-extension distribution.
+definition query, with the opt-in scalar-format-v1 presentation surface. This does not expand the language profile, semantic query inventory, compiler
+execution surface. The initial editor package is described below; marketplace publication remains pending.
 
 ## Start and initialize
 
@@ -36,12 +36,14 @@ source-limit violations fail closed through URI or `zryna-source` validation.
 | `textDocument/didChange` | Require exactly one full-text replacement and a strictly increasing version. |
 | `textDocument/didClose` | Remove the overlay, invalidate its revision, and clear published diagnostics. |
 | `textDocument/definition` | Resolve the selected scalar function/parameter identifier through the semantics-owned definition index. |
-| `$/cancelRequest` | Cancel one admitted definition query by its exact JSON-RPC ID. |
+| `textDocument/formatting` | Format a verified scalar document with the canonical style. |
+| `textDocument/rangeFormatting` | Format only complete verified functions inside the selection. |
+| `$/cancelRequest` | Cancel one admitted definition or formatting query by its exact JSON-RPC ID. |
 | `shutdown`, `exit` | End the connection in order without executing project code. |
 
 The protocol-v2 scalar profile admits at most one open document per connection. Full-text sync is
 deliberate; incremental range edits are not advertised or accepted. Hover,
-references, rename, completion, code actions, formatting, symbols/indexing, debugging, builds,
+references, rename, completion, code actions, symbols/indexing, debugging, builds,
 execution, module resolution, control-flow/data-ownership queries, and workspace mutation are not
 implemented. Unknown requests receive `Method not found`; unknown notifications have no effect.
 
@@ -90,3 +92,94 @@ Focused verification is `cargo test --locked -p zryna-language-server`. It cover
 initialization, lifecycle, same-length revision races, cancellation/recovery, URI and coordinate
 hostiles, unsupported methods, exact diagnostics, definition positions, and the real stdio process
 on the supported CI operating systems. Complete repository gates remain required before merge.
+
+## Scalar format v1
+
+This initial formatter supports only the existing one-file protocol-v2 scalar profile: exported
+functions with explicit i32 parameters/results and the admitted return, reference, integer and
+addition expressions. It consumes the exact verified snapshot only after successful scalar semantic
+admission. M2 control-flow/modules and M3 data/ownership formatting remain unsupported; their
+compiler support does not imply editor support. Parenthesized expressions, classes, imports,
+incomplete syntax and semantic errors receive no edits. Issue #409 remains open for the broader
+admitted surface and marketplace publication.
+
+The canonical style uses two spaces inside function bodies, one space between words and around
+addition, no space before commas/colons/semicolons or inside parameter parentheses, a space after
+commas/colons, and LF after opening/closing braces and semicolons. Nonempty documents end with LF.
+Token spellings/order, comment bytes (including newlines inside block comments), integer spelling
+and declaration identity remain unchanged. The formatter never inserts/removes tokens, sorts
+imports, evaluates code, or writes files. Line-comment terminators become LF; comments remain in
+token order, although a trailing comment after a semicolon occupies the following line.
+Formatting options are parsed for LSP compatibility; tabSize must be positive, but the canonical
+style does not depend on editor indentation preferences.
+
+Document formatting returns either one whole-document edit or an empty list for canonical text.
+Range formatting requires exact negotiated coordinates and accepts complete function spans plus
+surrounding trivia. It does not expand the selection: intersecting a partial function rejects the
+whole request, and trivia-only/empty selections return no edits. Each returned edit covers only
+one complete function, preserves text before/after it byte-for-byte, and omits a new trailing LF
+outside that function. All edits derive from the retained active revision; cancellation, close,
+replacement and expiry reject pending work. Applying the edits belongs to the editor.
+
+The prepared document is capped at 131,072 UTF-8 bytes; unavailable/over-limit preparation cannot
+produce edits. Its exact text, path and function-boundary bytes count against the existing session
+cache. JSON results remain capped at 1 MiB and 10,000 edits; definition and formatting share the
+32-request queue. No text is sent over a network.
+
+| Stable code | Meaning |
+| --- | --- |
+| ZRYNA-D4001 | No admitted formatting state: invalid/unsupported syntax or semantics, unavailable diagnostics, unsupported whitespace or preparation limit. |
+| ZRYNA-D4002 | Requested revision is no longer active (LSP ContentModified). |
+| ZRYNA-D4003 | Invalid coordinate, reversed selection or partial function. |
+| ZRYNA-D4004 | Request/result limit exceeded. |
+
+Failures carry the code in LSP error.data.code and never contain result edits. Existing compiler
+diagnostics remain authoritative. Some incomplete provider reports cannot be represented by the
+existing diagnostic-v2 contract; their analysis remains unavailable and formatting still fails
+closed with D4001. Cancelled requests use LSP RequestCancelled; expired requests fail without edits.
+
+## Initial editor installation and compatibility
+
+The VS Code/Open VSX package lives in editors/vscode-zryna. It is a local installable Developer
+Preview, not a marketplace publication. It provides diagnostics, definition, document formatting
+and range formatting for one active local file at a time. Switching files starts a fresh bounded
+connection; it does not enable module resolution. It has no runtime package dependencies, telemetry,
+download/update behavior, debugging, workspace command execution or filesystem write service.
+Diagnostic messages render as plain text, and edits/definitions are validated against the same
+document and version before returning them to VS Code.
+
+| Extension | Editor engine | Required compiler | Source profile |
+| --- | --- | --- | --- |
+| 0.1.0 | VS Code-compatible API >=1.82.0 | Tested source build of zryna-language-server 0.2.3 advertising scalar-format-v1 | One-file scalar-v2 |
+| 0.1.0 | Same | Public immutable v0.2.3 binaries | Incompatible: no formatting capability |
+
+The semantic package version alone is insufficient: the extension verifies server name/version,
+UTF-16 positions, both formatting methods and the exact scalar-format-v1 capability before sending
+document contents. No new compiler release/tag is created by this work; distributing this server
+in a future compiler release is a separate release dependency.
+
+From the matching reviewed source checkout, use the pinned toolchains:
+
+~~~text
+pnpm install --frozen-lockfile
+pnpm preflight
+pnpm m0:check
+cargo build --locked -p zryna-language-server
+pnpm editor:check
+pnpm editor:package
+code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.1.0.vsix
+~~~
+
+Set zryna.serverPath, zryna.compilerRoot and zryna.nodePath in USER settings to absolute paths.
+The first names the built target/debug/zryna-language-server executable (.exe on Windows); the
+second names that trusted compiler checkout with its pinned adapter dependencies, and the third
+names the exact Node.js 22.22.1 executable. Workspace-provided overrides are ignored. The extension
+is disabled in untrusted or virtual workspaces. Open the edited project's folder and a .zry file,
+then use the editor's Format Document/Format Selection or Go to Definition commands. This does
+not add a zryna fmt CLI command or any compiler execution flag.
+
+Packaging uses pinned @vscode/vsce 4.0.0 without dependencies or signing. Its optional signing
+executable installer is explicitly disabled; the VSIX contains only its manifest, two client
+modules, README, changelog and license. Publication requires reviewed exact-package provenance,
+a configured marketplace publisher/namespace and its credentials. None are provisioned or embedded
+by this package. See the package changelog for the initial release notes.

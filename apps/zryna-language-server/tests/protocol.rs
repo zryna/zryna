@@ -291,7 +291,7 @@ fn malformed_foreign_and_unsupported_messages_cannot_publish() {
     let unsupported = request(
         &mut server,
         json!({
-            "jsonrpc":"2.0","id":"x","method":"textDocument/formatting","params":{}
+            "jsonrpc":"2.0","id":"x","method":"textDocument/rename","params":{}
         }),
     );
     assert_eq!(unsupported[0]["error"]["code"], -32601);
@@ -442,3 +442,6 @@ fn shutdown_requires_ordered_exit() {
     assert!(request(&mut server, json!({"jsonrpc":"2.0","method":"exit"})).is_empty());
     assert!(server.should_exit());
 }
+
+#[path = "protocol/formatting.rs"]
+mod formatting;

@@ -260,3 +260,9 @@ comparison. M2 closure evidence includes authenticated compiler documentation pl
 provenance recorded by Issue #57; those publication checks do not change command semantics.
 M1 closure evidence includes website publication of versioned status and reference data from the
 authenticated compiler documentation bundle tracked in Issue #21.
+
+## Editor formatting
+
+Formatting is exposed through the separately built language server.
+See [the scalar formatter and editor installation contract](LANGUAGE_SERVER.md#scalar-format-v1)
+for exact source-build compatibility, supported syntax, range behavior and commands.
