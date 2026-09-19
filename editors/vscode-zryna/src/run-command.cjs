@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('node:fs/promises');
-const { join } = require('node:path');
+const { isAbsolute, join } = require('node:path');
 const { selectRun, sourceText } = require('./run-input.cjs');
 const { runProject, regularFile, verifyOutput } = require('./run-project.cjs');
 const { stopRuns } = require('./run-process.cjs');
@@ -52,7 +52,13 @@ function registerRun(vscode, context) {
           throw new Error('Source changed during selection. Run again to use the new saved version.');
         }
         const compiler = vscode.workspace.getConfiguration('zryna').inspect('compilerPath')?.globalValue;
-        if (!context.globalStorageUri || context.globalStorageUri.scheme !== 'file') throw new Error('Local extension storage is unavailable.');
+        const storage = context.globalStorageUri;
+        const localUserData = storage?.scheme === 'vscode-userdata'
+          && context.extensionUri?.scheme === 'file' && !context.extensionUri.authority;
+        if (!storage || (storage.scheme !== 'file' && !localUserData) || storage.authority
+          || typeof storage.fsPath !== 'string' || !isAbsolute(storage.fsPath)) {
+          throw new Error('Local extension storage is unavailable.');
+        }
         output.clear();
         output.show(true);
         output.appendLine(`Saved file: ${document.uri.fsPath}\n${selection.name}(${selection.args.join(', ')}) — ${selection.target}`);
@@ -62,7 +68,7 @@ function registerRun(vscode, context) {
           checkDocument(document);
           const lifetime = { get isCancellationRequested() { return disposed || token.isCancellationRequested; },
             onCancellationRequested: callback => token.onCancellationRequested(callback) };
-          last = await runProject({ compiler, storage: join(context.globalStorageUri.fsPath, 'runs'), bytes,
+          last = await runProject({ compiler, storage: join(storage.fsPath, 'runs'), bytes,
             selection, token: lifetime, report: text => output.appendLine(text) });
         });
         output.appendLine(`Output folder: ${last.folder}\nArtifact: ${last.file}`);
