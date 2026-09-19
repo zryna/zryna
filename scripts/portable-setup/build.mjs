@@ -48,7 +48,8 @@ export async function buildSetup({ release, cosign, server, vsix, output }) {
     'src/run-process.cjs', 'src/run-project.cjs', 'syntaxes/zryna.tmLanguage.json'];
   if (entries.length !== expected.length + 2) throw new Error('VSIX inventory differs.');
   for (const path of expected) {
-    if (!entries.find(entry => entry.name === `extension/${path}`)?.data
+    const packaged = { 'CHANGELOG.md': 'changelog.md', 'README.md': 'readme.md', LICENSE: 'LICENSE.txt' }[path] ?? path;
+    if (!entries.find(entry => entry.name === `extension/${packaged}`)?.data
       .equals(readFileSync(join(root, 'editors/vscode-zryna', path)))) throw new Error(`VSIX source differs: ${path}`);
   }
   const envelope = await verifySignedRelease({ directory: release, cosign });
