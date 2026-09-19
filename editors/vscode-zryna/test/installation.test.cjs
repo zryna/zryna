@@ -7,7 +7,8 @@ const path = require('node:path');
 const { verifyInstallation, configuredInstallation, hash } = require('../src/installation.cjs');
 
 function fixture(t) {
-  const parent = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'zryna-setup-test-')));
+  // The native API expands Windows short-name aliases in hosted temporary directories.
+  const parent = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'zryna-setup-test-')));
   t.after(() => fs.rmSync(parent, { recursive: true, force: true }));
   const root = path.join(parent, 'setup');
   fs.mkdirSync(root);

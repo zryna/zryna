@@ -38,6 +38,9 @@ old installation. Projects and editor profiles must live outside this directory.
 pnpm, a source checkout nor a separately installed Node is needed for the packaged JavaScript,
 core WebAssembly, scalar diagnostics or formatting capabilities.
 
+Use full absolute paths with ordinary directories, without symlinks, junctions or Windows 8.3
+short-name aliases. The verifier rejects noncanonical paths rather than following redirects.
+
 ## Windows installation
 
 In PowerShell, select the extracted root and the reviewed manifest digest:
