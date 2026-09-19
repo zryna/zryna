@@ -26,7 +26,7 @@ if (inventory.error || inventory.status !== 0
   throw new Error('Editor package inventory differs from the reviewed source files.');
 }
 mkdirSync(dirname(output), { recursive: true });
-const result = spawnSync(process.execPath, [cli, 'package', '--no-dependencies', '--out', output], {
+const result = spawnSync(process.execPath, [cli, 'package', '--no-dependencies', '--no-gitHubIssueLinking', '--out', output], {
   cwd: join(root, 'editors/vscode-zryna'), stdio: 'inherit', shell: false, windowsHide: true,
 });
 if (result.error) throw result.error;
