@@ -9,12 +9,14 @@ function fixture(mode) {
   const commands = {};
   const errors = [];
   const runs = [];
+  const actions = [];
   let storageReads = 0;
   const disposable = () => ({ dispose() {} });
   const bytes = Buffer.from('export function main():i32{return 1;}');
   const document = { languageId: 'zryna', uri: { scheme: 'file', fsPath: '/project/main.zry' }, version: 1,
     isDirty: mode === 'dirty', isClosed: mode === 'closed' };
   const vscode = {
+    Uri: { file: file => ({ scheme: 'file', fsPath: file }) },
     ProgressLocation: { Notification: 1 },
     workspace: { isTrusted: mode !== 'untrusted', getWorkspaceFolder: () => ({}),
       onDidChangeTextDocument: disposable, onDidCloseTextDocument: disposable, onDidChangeConfiguration: disposable,
@@ -23,20 +25,24 @@ function fixture(mode) {
       createOutputChannel: () => ({ appendLine() {}, show() {}, clear() {} }),
       showErrorMessage: async message => errors.push(message), showInformationMessage: async () => undefined,
       withProgress: async (_, action) => action({}, { isCancellationRequested: mode === 'cancel-progress' }) },
-    commands: { registerCommand: (name, fn) => { commands[name] = fn; return { dispose() {} }; } },
+    commands: { registerCommand: (name, fn) => { commands[name] = fn; return { dispose() {} }; },
+      executeCommand: async (...args) => actions.push(args) },
     languages: { createDiagnosticCollection: disposable, registerDocumentFormattingEditProvider: disposable,
       registerDocumentRangeFormattingEditProvider: disposable, registerDefinitionProvider: disposable },
   };
   const dependencies = {
     './installation.cjs': { configuredInstallation: () => null },
-    'node:fs/promises': {}, 'node:path': path,
+    'node:fs/promises': { lstat: async () => ({ isFile: () => true, isSymbolicLink: () => false }) }, 'node:path': path,
     './run-process.cjs': { stopRuns() {} },
     './run-input.cjs': { sourceText: bytes => bytes.toString(), selectRun: async () => {
       if (mode === 'cancel') return;
       if (mode === 'stale') document.version++;
       return { name: 'main', args: [], target: 'javascript' };
     } },
-    './run-project.cjs': { regularFile: async () => bytes, runProject: async input => {
+    './run-project.cjs': { regularFile: async () => bytes, verifyOutput: async () => {
+      if (mode === 'tampered-output') throw new Error('Output integrity differs.');
+      actions.push(['verified']);
+    }, runProject: async input => {
       if (input.token.isCancellationRequested) throw new Error('Run cancelled.');
       runs.push(input); return { target: 'javascript', folder: '/storage/output', file: '/storage/output/main.mjs' };
     } },
@@ -57,7 +63,7 @@ function fixture(mode) {
     },
   }));
   vscode.window.activeTextEditor = { document };
-  return { commands, errors, runs, get storageReads() { return storageReads; } };
+  return { commands, errors, runs, actions, get storageReads() { return storageReads; } };
 }
 
 test('registration never runs; trust, unsaved, stale and cancelled input never executes', async () => {
@@ -96,4 +102,20 @@ test('nonlocal or unavailable host storage never executes', async () => {
     assert.deepEqual(f.errors, ['Local extension storage is unavailable.'], mode);
     assert.equal(f.runs.length, 0, mode);
   }
+});
+
+test('reveal verifies output before moving focus and passes the generated file explicitly', async () => {
+  const f = fixture('ok');
+  await f.commands['zryna.run']();
+  await f.commands['zryna.revealRunOutput']();
+  assert.deepEqual(f.errors, []);
+  assert.deepEqual(f.actions, [
+    ['verified'], ['workbench.action.focusActiveEditorGroup'],
+    ['revealFileInOS', { scheme: 'file', fsPath: '/storage/output/main.mjs' }],
+  ]);
+  const rejected = fixture('tampered-output');
+  await rejected.commands['zryna.run']();
+  await rejected.commands['zryna.revealRunOutput']();
+  assert.deepEqual(rejected.errors, ['Output integrity differs.']);
+  assert.deepEqual(rejected.actions, []);
 });

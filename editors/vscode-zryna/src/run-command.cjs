@@ -27,7 +27,10 @@ function registerRun(vscode, context) {
     const stat = await fs.lstat(result.file);
     if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('The last output is unavailable. Run again.');
     if (kind === 'javascript') await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(result.file)));
-    else await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(result.file));
+    else {
+      await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+      await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(result.file));
+    }
   }
   const handle = action => async () => {
     try { await action(); } catch (error) {
