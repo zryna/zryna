@@ -7,7 +7,7 @@ import { withoutBootstrapTiming } from './npm-timing-workflow-cases.mjs';
 
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
-const budgetWorkflow = withoutBootstrapTiming(document.toJS());
+const budgetWorkflow = withoutBootstrapTiming(withoutPortableSetup(document.toJS()));
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const bootstrapJobs = ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
 const nodeStep = {
@@ -19,6 +19,17 @@ const pnpmStep = {
   with: { version: '11.18.0' },
 };
 const workflow = withoutPreflightBudgets(budgetWorkflow);
+
+function withoutPortableSetup(candidate) {
+  const original = structuredClone(candidate);
+  assert.deepEqual(original.jobs['portable-setup'], {
+    name: 'portable setup', needs: ['route-contracts', 'm0'],
+    if: "needs.route-contracts.outputs.distribution_release == 'true'",
+    uses: './.github/workflows/portable-setup.yml',
+  });
+  delete original.jobs['portable-setup'];
+  return original;
+}
 
 function withoutPreflightBudgets(candidate) {
   const original = structuredClone(candidate);
@@ -37,12 +48,7 @@ function withoutPreflightBudgets(candidate) {
   delete bootstrap[0]['timeout-minutes'];
   delete execution[0]['timeout-minutes'];
   for (const other of Object.values(original.jobs)) {
-    if (other.uses) {
-      assert.equal(other.uses, './.github/workflows/portable-setup.yml');
-      assert.equal(other.steps, undefined);
-    } else {
-      for (const step of other.steps) assert.equal(step['timeout-minutes'], undefined);
-    }
+    for (const step of other.steps) assert.equal(step['timeout-minutes'], undefined);
   }
   return original;
 }
