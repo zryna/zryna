@@ -8,7 +8,7 @@ const fs = require('node:fs/promises');
 async function run() {
   const config = JSON.parse(await fs.readFile(process.env.ZRYNA_EDITOR_SMOKE_CONFIG, 'utf8'));
   const settings = vscode.workspace.getConfiguration('zryna');
-  for (const key of ['serverPath', 'compilerRoot', 'nodePath']) {
+  for (const key of ['serverPath', 'compilerRoot', 'nodePath', ...(config.compilerPath ? ['compilerPath'] : [])]) {
     await settings.update(key, config[key], vscode.ConfigurationTarget.Global);
   }
   const extension = vscode.extensions.getExtension('zryna.zryna');
@@ -33,6 +33,8 @@ async function run() {
   const selection = new vscode.Range(0, 0, document.lineCount - 1, 0);
   const rangeEdits = await vscode.commands.executeCommand('vscode.executeFormatRangeProvider', uri, selection, options);
   assert.equal(rangeEdits?.length ?? 0, 0);
+  const runResults = config.compilerPath
+    ? await require('./run-smoke.cjs').runSmoke(extension, config, document) : undefined;
   const invalid = new vscode.WorkspaceEdit();
   invalid.replace(uri, selection, 'class Unsupported {}\n');
   await vscode.workspace.applyEdit(invalid);
@@ -47,7 +49,7 @@ async function run() {
   await fs.writeFile(config.resultPath, JSON.stringify({
     installed: extension.id, version: extension.packageJSON.version,
     formatting: true, idempotence: true, definition: true, range: true, malformedPreserved: true,
-    editorVersion: vscode.version, platform: process.platform,
+    editorVersion: vscode.version, platform: process.platform, runResults,
   }, null, 2));
 }
 

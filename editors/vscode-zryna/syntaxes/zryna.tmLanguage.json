@@ -1,0 +1,16 @@
+{
+  "name": "Zryna",
+  "scopeName": "source.zryna",
+  "patterns": [
+    { "name": "comment.line.double-slash.zryna", "begin": "//", "end": "$" },
+    { "name": "comment.block.zryna", "begin": "/\\*", "end": "\\*/" },
+    { "name": "string.quoted.double.zryna", "begin": "\"", "end": "\"", "patterns": [{ "name": "constant.character.escape.zryna", "match": "\\\\." }] },
+    { "name": "keyword.control.zryna", "match": "\\b(?:export|function|return|if|else|while|let|const|import|from|struct|enum|match)\\b" },
+    { "name": "storage.type.zryna", "match": "\\b(?:i32|bool|String|Vec)\\b" },
+    { "name": "constant.language.zryna", "match": "\\b(?:true|false)\\b" },
+    { "name": "constant.numeric.zryna", "match": "\\b[0-9]+\\b" },
+    { "name": "entity.name.function.zryna", "match": "\\b[A-Za-z_][A-Za-z_0-9]*(?=\\s*\\()" },
+    { "name": "keyword.operator.zryna", "match": "[+*/%=!<>-]" },
+    { "name": "punctuation.zryna", "match": "[{}();,:\\[\\]]" }
+  ]
+}

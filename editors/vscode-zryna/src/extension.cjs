@@ -2,6 +2,7 @@
 
 const vscode = require('vscode');
 const { Connection } = require('./connection.cjs');
+const { registerRun } = require('./run-command.cjs');
 
 let active;
 let starting = Promise.resolve();
@@ -128,6 +129,7 @@ async function disconnect() {
 }
 
 function activate(context) {
+  registerRun(vscode, context);
   diagnostics = vscode.languages.createDiagnosticCollection('zryna');
   const selector = { scheme: 'file', language: 'zryna' };
   context.subscriptions.push(diagnostics,

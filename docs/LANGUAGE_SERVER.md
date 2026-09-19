@@ -144,14 +144,15 @@ The VS Code/Open VSX package lives in editors/vscode-zryna. It is a local instal
 Preview, not a marketplace publication. It provides diagnostics, definition, document formatting
 and range formatting for one active local file at a time. Switching files starts a fresh bounded
 connection; it does not enable module resolution. It has no runtime package dependencies, telemetry,
-download/update behavior, debugging, workspace command execution or filesystem write service.
+download/update behavior, debugging or general filesystem write service. A separate explicit
+editor Run command is described below; it does not add execution to the language-server protocol.
 Diagnostic messages render as plain text, and edits/definitions are validated against the same
 document and version before returning them to VS Code.
 
 | Extension | Editor engine | Required compiler | Source profile |
 | --- | --- | --- | --- |
-| 0.1.0 | VS Code-compatible API >=1.82.0 | Tested source build of zryna-language-server 0.2.3 advertising scalar-format-v1 | One-file scalar-v2 |
-| 0.1.0 | Same | Public immutable v0.2.3 binaries | Incompatible: no formatting capability |
+| 0.2.0 | VS Code-compatible API >=1.82.0 | Tested source build of zryna-language-server 0.2.3 advertising scalar-format-v1 | One-file scalar-v2 |
+| 0.2.0 | Same | Public immutable v0.2.3 language server | Incompatible: no formatting capability |
 
 The semantic package version alone is insufficient: the extension verifies server name/version,
 UTF-16 positions, both formatting methods and the exact scalar-format-v1 capability before sending
@@ -167,7 +168,7 @@ pnpm m0:check
 cargo build --locked -p zryna-language-server
 pnpm editor:check
 pnpm editor:package
-code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.1.0.vsix
+code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.2.0.vsix
 ~~~
 
 Set zryna.serverPath, zryna.compilerRoot and zryna.nodePath in USER settings to absolute paths.
@@ -179,7 +180,36 @@ then use the editor's Format Document/Format Selection or Go to Definition comma
 not add a zryna fmt CLI command or any compiler execution flag.
 
 Packaging uses pinned @vscode/vsce 4.0.0 without dependencies or signing. Its optional signing
-executable installer is explicitly disabled; the VSIX contains only its manifest, two client
-modules, README, changelog and license. Publication requires reviewed exact-package provenance,
+executable installer is explicitly disabled; the VSIX contains only its manifest, client/Run
+modules, lexical grammar, README, changelog and license. Publication requires reviewed exact-package provenance,
 a configured marketplace publisher/namespace and its credentials. None are provisioned or embedded
 by this package. See the package changelog for the initial release notes.
+
+## Explicit editor Run
+
+Issue #457 adds lexical highlighting and an explicit Zryna: Run Saved File command. This newly
+authorized command supersedes #409's original no-project-execution scope only for a user-triggered
+run in a trusted local workspace. Opening/saving, diagnostics, definition and formatting never
+execute project code. The language-server protocol and its execution exclusions remain unchanged.
+
+Set zryna.compilerPath in user settings to the absolute official installed v0.2.3 compiler
+executable, separately from the source-built formatting server. Workspace overrides are ignored.
+Run prompts for one exported function with explicit i32 parameters/result, JavaScript/WebAssembly,
+and every required canonical signed 32-bit argument. There are no hardcoded invocation values.
+Lexical discovery is advisory; compiler admission remains authoritative. The standalone i32-v1
+package source limit is 1024 UTF-8 bytes; M2/M3, modules, bool invocation and native Windows
+executables are outside this command's scope.
+
+Unsaved input is rejected, and source changes during selection require a fresh invocation. Each
+saved snapshot goes to a new compiler-created project in extension global storage. The extension
+updates only its generated source inventory size/hash, invokes package resolve in update mode,
+then invokes the installed compiler directly with an argument array and no shell or root/runtime
+override. It does not bypass package authentication or insert executable helpers. Picker
+cancellation starts no processes; progress cancellation and bounded subprocess deadlines stop
+waiting. Run directories are retained for inspection and manual cleanup. No source files are
+rewritten. The output channel identifies the snapshot and reports actual compiler results/errors.
+
+Open Generated JavaScript and Reveal Run Output use the latest successful invocation's actual
+artifact after checking the manifest source/invocation and emitted bytes/hash. JavaScript opens
+as source; Wasm is revealed in the OS file explorer. This is an editor package update, with no
+compiler release/tag or marketplace publication. Broader formatting and publication remain #409.

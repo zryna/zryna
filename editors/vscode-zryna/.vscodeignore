@@ -5,3 +5,8 @@
 !LICENSE
 !src/extension.cjs
 !src/connection.cjs
+!src/run-command.cjs
+!src/run-input.cjs
+!src/run-process.cjs
+!src/run-project.cjs
+!syntaxes/zryna.tmLanguage.json
