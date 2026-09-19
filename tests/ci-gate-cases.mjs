@@ -37,7 +37,12 @@ function withoutPreflightBudgets(candidate) {
   delete bootstrap[0]['timeout-minutes'];
   delete execution[0]['timeout-minutes'];
   for (const other of Object.values(original.jobs)) {
-    for (const step of other.steps) assert.equal(step['timeout-minutes'], undefined);
+    if (other.uses) {
+      assert.equal(other.uses, './.github/workflows/portable-setup.yml');
+      assert.equal(other.steps, undefined);
+    } else {
+      for (const step of other.steps) assert.equal(step['timeout-minutes'], undefined);
+    }
   }
   return original;
 }
