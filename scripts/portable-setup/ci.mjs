@@ -1,12 +1,16 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
-import { resolve, join, dirname } from 'node:path';
+import { resolve, join, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 
 const source = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const output = resolve(process.argv[2] ?? '');
-if (process.argv.length !== 3 || output === source || output.startsWith(`${source}/`)) throw new Error('External evidence directory required.');
+const outputRelative = relative(source, output);
+if (process.argv.length !== 3 || !outputRelative
+  || (!isAbsolute(outputRelative) && outputRelative.split(/[\\/]/)[0] !== '..')) {
+  throw new Error('External evidence directory required.');
+}
 const digest = file => createHash('sha256').update(readFileSync(file)).digest('hex');
 const target = process.platform === 'win32' ? 'x86_64-pc-windows-msvc' : 'x86_64-unknown-linux-gnu';
 const suffix = process.platform === 'win32' ? '.exe' : '';
