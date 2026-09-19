@@ -34,9 +34,10 @@ function fixture({ trusted = true, capability = 'scalar-format-v1', editResult =
     constructor(config) { launched.push(config); }
     async request(method) {
       if (method === 'initialize') return {
-        serverInfo: { name: 'zryna-language-server', version: '0.2.3' },
+        serverInfo: { name: 'zryna-language-server', version: '0.3.0' },
         capabilities: { positionEncoding: 'utf-16', documentFormattingProvider: true,
-          documentRangeFormattingProvider: true, experimental: { zrynaFormattingProfile: capability } },
+          documentRangeFormattingProvider: true, experimental: { zrynaFormattingProfile: capability,
+            zrynaInstallationProfile: 'portable-setup-v1' } },
       };
       return typeof editResult === 'function' ? editResult(document) : editResult;
     }
@@ -45,6 +46,7 @@ function fixture({ trusted = true, capability = 'scalar-format-v1', editResult =
     async stop() { this.closed = true; }
   }
   const sandbox = { module: { exports: {} }, require: name => name === 'vscode' ? vscode
+    : name === './installation.cjs' ? { configuredInstallation: () => null }
     : name === './run-command.cjs' ? { registerRun() {} } : { Connection } };
   vm.runInNewContext(readFileSync(resolve(__dirname, '../src/extension.cjs'), 'utf8'), sandbox);
   sandbox.module.exports.activate({ subscriptions: [] });
@@ -65,7 +67,7 @@ test('workspace executable overrides are ignored and incompatible servers receiv
   const f = fixture({ capability: undefined });
   // Use an explicit incompatible value rather than the fixture's default capability.
   const old = fixture({ capability: 'old-scalar-server' });
-  await assert.rejects(old.providers.format.provideDocumentFormattingEdits(old.document, {}), /released v0.2.3/);
+  await assert.rejects(old.providers.format.provideDocumentFormattingEdits(old.document, {}), /server 0.3.0/);
   assert.equal(old.sent.length, 0);
   assert.equal(old.launched[0].serverPath, resolve('trusted-serverPath'));
   await f.deactivate();

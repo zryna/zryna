@@ -28,6 +28,7 @@ function fixture(mode) {
       registerDocumentRangeFormattingEditProvider: disposable, registerDefinitionProvider: disposable },
   };
   const dependencies = {
+    './installation.cjs': { configuredInstallation: () => null },
     'node:fs/promises': {}, 'node:path': path,
     './run-process.cjs': { stopRuns() {} },
     './run-input.cjs': { sourceText: bytes => bytes.toString(), selectRun: async () => {

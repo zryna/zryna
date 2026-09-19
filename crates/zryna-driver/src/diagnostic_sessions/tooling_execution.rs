@@ -1,6 +1,8 @@
 //! Captured executable closure for the pinned tooling frontend.
 
 mod capture;
+#[cfg(test)]
+mod installed_tests;
 mod stage;
 #[cfg(test)]
 mod tests;
@@ -23,6 +25,11 @@ pub(super) struct ToolingExecutionClosure {
 }
 
 impl ToolingExecutionClosure {
+    pub(super) fn capture_installed(root: &Path) -> Result<Self, Diagnostic> {
+        let captured = CapturedToolingClosure::capture_installed(root)?;
+        Ok(Self { stage: ToolingStage::create(&captured)? })
+    }
+
     pub(super) fn capture(root: &Path) -> Result<Self, Diagnostic> {
         let captured = CapturedToolingClosure::capture(root)?;
         Ok(Self { stage: ToolingStage::create(&captured)? })

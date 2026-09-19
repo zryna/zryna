@@ -63,6 +63,50 @@ impl ToolingCompiler {
             ToolingExecutionClosure::capture(root).map_err(ToolingCompilerError::Configuration)?;
         let node = NodeRuntimeCapability::discover(node, root)
             .map_err(ToolingCompilerError::Configuration)?;
+        Self::from_execution(execution, node)
+    }
+
+    /// Captures the fixed scalar tooling runtime from an independently verified distribution.
+    ///
+    /// No checkout, package manager, runtime override, or ambient provider search is used.
+    /// Initial executable authentication remains the installer's responsibility.
+    ///
+    /// # Errors
+    /// Rejects unsafe paths or any worker, dependency or runtime bytes differing from the pins.
+    pub fn discover_installed(root: &Path) -> Result<Self, ToolingCompilerError> {
+        let execution = ToolingExecutionClosure::capture_installed(root)
+            .map_err(ToolingCompilerError::Configuration)?;
+        let (path, size, digest) = if cfg!(all(target_os = "windows", target_arch = "x86_64")) {
+            (
+                "runtime/node/node.exe",
+                87_059_456,
+                "923a41f268ab49ede2e3363fbdd9e790609e385c6f3ca880b4ee9a56a8133e5a",
+            )
+        } else if cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+            (
+                "runtime/node/bin/node",
+                124_674_920,
+                "243fd8938011479f41b3de101842150fa990f33fbbb3f7aabd330857f2d79e1d",
+            )
+        } else {
+            return Err(configuration_error(
+                "unsupported installed tooling host",
+                "use a verified Windows or Linux x86-64 setup",
+            ));
+        };
+        let node = NodeRuntimeCapability::discover_authenticated(
+            &root.join(path),
+            root,
+            crate::runtime::ExpectedRuntime { size, sha256: digest.to_owned() },
+        )
+        .map_err(ToolingCompilerError::Configuration)?;
+        Self::from_execution(execution, node)
+    }
+
+    fn from_execution(
+        execution: ToolingExecutionClosure,
+        node: NodeRuntimeCapability,
+    ) -> Result<Self, ToolingCompilerError> {
         let expected = ProviderExpectation::new(
             "typescript-6",
             "6.0.3",

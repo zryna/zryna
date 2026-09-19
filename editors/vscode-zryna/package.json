@@ -2,7 +2,7 @@
   "name": "zryna",
   "displayName": "Zryna Developer Preview",
   "description": "Syntax highlighting, scalar formatting and explicit JavaScript/WebAssembly Run for Zryna.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "zryna",
   "license": "Apache-2.0",
   "repository": {
@@ -54,6 +54,14 @@
     "configuration": {
       "title": "Zryna",
       "properties": {
+        "zryna.installationPath": {
+          "type": "string", "default": "", "scope": "application",
+          "description": "Absolute path to the independently verified complete portable setup."
+        },
+        "zryna.installationDigest": {
+          "type": "string", "default": "", "scope": "application",
+          "description": "Reviewed SHA-256 of setup.json supplied with the verified candidate."
+        },
         "zryna.compilerPath": {
           "type": "string",
           "default": "",
@@ -84,8 +92,10 @@
   "zrynaCompatibility": {
     "compilerVersion": "0.2.3",
     "requiredCapability": "scalar-format-v1",
-    "sourceBuildRequired": true,
-    "releasedCompilerCompatible": false,
+    "serverVersion": "0.3.0",
+    "installationCapability": "portable-setup-v1",
+    "sourceBuildRequired": false,
+    "releasedCompilerCompatible": true,
     "profiles": [
       "scalar-v2"
     ]

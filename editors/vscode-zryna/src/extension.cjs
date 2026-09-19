@@ -3,12 +3,15 @@
 const vscode = require('vscode');
 const { Connection } = require('./connection.cjs');
 const { registerRun } = require('./run-command.cjs');
+const { configuredInstallation } = require('./installation.cjs');
 
 let active;
 let starting = Promise.resolve();
 let diagnostics;
 
 function configuration() {
+  const installation = configuredInstallation(vscode);
+  if (installation) return installation;
   const config = vscode.workspace.getConfiguration('zryna');
   // Executables are selected only through explicit user configuration, never workspace settings.
   return Object.fromEntries(['serverPath', 'compilerRoot', 'nodePath'].map(key =>
@@ -60,7 +63,8 @@ async function connect(document) {
   if (active?.uri === document.uri.toString() && !active.connection.closed) return active;
   await disconnect();
   const state = { document, uri: document.uri.toString() };
-  state.connection = new Connection(configuration(), (method, params) => publish(state, method, params), () => {
+  const config = configuration();
+  state.connection = new Connection(config, (method, params) => publish(state, method, params), () => {
     diagnostics.delete(document.uri);
   });
   active = state;
@@ -69,10 +73,12 @@ async function connect(document) {
       rootUri: folder.uri.toString(), capabilities: { general: { positionEncodings: ['utf-16'] } },
     });
     const cap = result?.capabilities;
-    if (result?.serverInfo?.name !== 'zryna-language-server' || result.serverInfo.version !== '0.2.3'
+    if (result?.serverInfo?.name !== 'zryna-language-server' || result.serverInfo.version !== '0.3.0'
+      || cap?.experimental?.zrynaInstallationProfile !== 'portable-setup-v1'
+      || (config.installed && cap?.experimental?.zrynaSourceCommit !== config.manifest.sourceCommit)
       || cap?.experimental?.zrynaFormattingProfile !== 'scalar-format-v1'
       || cap.positionEncoding !== 'utf-16' || !cap.documentFormattingProvider || !cap.documentRangeFormattingProvider) {
-      throw new Error('This extension needs the matching source build with scalar-format-v1; released v0.2.3 is incompatible.');
+      throw new Error('This extension requires language server 0.3.0 with scalar-format-v1 and portable-setup-v1.');
     }
     state.connection.notify('initialized', {});
     state.connection.notify('textDocument/didOpen', { textDocument: {

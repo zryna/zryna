@@ -151,8 +151,8 @@ document and version before returning them to VS Code.
 
 | Extension | Editor engine | Required compiler | Source profile |
 | --- | --- | --- | --- |
-| 0.2.0 | VS Code-compatible API >=1.82.0 | Tested source build of zryna-language-server 0.2.3 advertising scalar-format-v1 | One-file scalar-v2 |
-| 0.2.0 | Same | Public immutable v0.2.3 language server | Incompatible: no formatting capability |
+| 0.3.0 | VS Code-compatible API >=1.82.0 | Server 0.3.0 advertising scalar-format-v1 and portable-setup-v1 | One-file scalar-v2 |
+| 0.3.0 | Same | Public immutable v0.2.3 language server | Incompatible: no formatting capability |
 
 The semantic package version alone is insufficient: the extension verifies server name/version,
 UTF-16 positions, both formatting methods and the exact scalar-format-v1 capability before sending
@@ -168,7 +168,7 @@ pnpm m0:check
 cargo build --locked -p zryna-language-server
 pnpm editor:check
 pnpm editor:package
-code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.2.0.vsix
+code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.3.0.vsix
 ~~~
 
 Set zryna.serverPath, zryna.compilerRoot and zryna.nodePath in USER settings to absolute paths.
@@ -186,6 +186,13 @@ a configured marketplace publisher/namespace and its credentials. None are provi
 by this package. See the package changelog for the initial release notes.
 
 ## Explicit editor Run
+
+The [portable setup candidate](PORTABLE_SETUP.md) adds a standalone installation path without
+changing Run's source/target limits. User settings select an installation and independently
+supplied manifest digest; complete file verification precedes server startup. The server's exact
+source revision must match the manifest before the client transmits document contents. Installed
+mode uses fixed authenticated Node/provider bytes from the unchanged compiler 0.2.3 distribution.
+The outer candidate is not authenticated by that compiler's signature and is not a public release.
 
 Issue #457 adds lexical highlighting and an explicit Zryna: Run Saved File command. This newly
 authorized command supersedes #409's original no-project-execution scope only for a user-triggered

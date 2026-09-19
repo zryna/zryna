@@ -7,6 +7,16 @@ or M3 data/ownership profiles. Unsupported or incomplete input receives no edits
 
 ## Installation
 
+The portable **0.1.0-candidate.1** setup combines the unchanged compiler 0.2.3 with server/editor
+0.3.0 and a pinned runtime. Follow the [portable setup guide](https://github.com/zryna/zryna/blob/main/docs/PORTABLE_SETUP.md).
+Verify the reviewer-delivered archive identity before execution. This is a review candidate, not
+a public beta or marketplace release. Its isolated installer creates a new profile with user
+settings `zryna.installationPath` and `zryna.installationDigest`. The entire installation is checked
+against that independently supplied digest before source transmission. Existing profiles and
+projects remain untouched. No checkout, Rust or separately installed Node is needed.
+
+For development only, explicit source configuration remains available:
+
 Build the matching reviewed compiler source with Node.js 22.22.1, pnpm 11.18.0 and Rust 1.97.1:
 
 ```text
@@ -16,7 +26,7 @@ pnpm m0:check
 cargo build --locked -p zryna-language-server
 pnpm editor:check
 pnpm editor:package
-code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.2.0.vsix
+code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.3.0.vsix
 ```
 
 Set these **user settings** to absolute paths:
@@ -36,12 +46,12 @@ Formatting has one canonical two-space/LF style. Comments and token spellings re
 
 | Extension | Editor | Server |
 | --- | --- | --- |
-| 0.2.0 | VS Code-compatible API >=1.82.0 | Matching source-built `zryna-language-server` 0.2.3 with `scalar-format-v1` |
-| 0.2.0 | Same | Public released v0.2.3 server is incompatible with formatting; the installed compiler supports Run |
+| 0.3.0 | VS Code-compatible API >=1.82.0 | Server 0.3.0 with `scalar-format-v1` and `portable-setup-v1`; installed mode checks exact source revision |
+| 0.3.0 | Same | Public released v0.2.3 server is incompatible; the unchanged installed compiler 0.2.3 supports Run |
 
 The extension verifies the exact capability before sending source. A package-version match alone
-is insufficient. No compiler binary release is included; a future distribution release is needed
-for standalone installation. The package is VSIX-compatible with VS Code/Open VSX clients, but
+is insufficient. The VSIX alone contains no compiler; the portable candidate supplies the matched
+setup. The package is VSIX-compatible with VS Code/Open VSX clients, but
 marketplace publication requires a configured publisher and credentials and is still pending.
 
 ## Boundaries
