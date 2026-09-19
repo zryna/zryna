@@ -1,8 +1,8 @@
 {
   "name": "zryna",
   "displayName": "Zryna Developer Preview",
-  "description": "Verified scalar diagnostics, definitions and formatting for Zryna.",
-  "version": "0.1.0",
+  "description": "Syntax highlighting, scalar formatting and explicit JavaScript/WebAssembly Run for Zryna.",
+  "version": "0.2.0",
   "publisher": "zryna",
   "license": "Apache-2.0",
   "repository": {
@@ -31,6 +31,15 @@
     "onLanguage:zryna"
   ],
   "contributes": {
+    "commands": [
+      { "command": "zryna.run", "title": "Zryna: Run Saved File" },
+      { "command": "zryna.openGeneratedJavaScript", "title": "Zryna: Open Generated JavaScript" },
+      { "command": "zryna.revealRunOutput", "title": "Zryna: Reveal Run Output" }
+    ],
+    "menus": {
+      "editor/title": [{ "command": "zryna.run", "when": "editorLangId == zryna && isWorkspaceTrusted", "group": "navigation" }]
+    },
+    "grammars": [{ "language": "zryna", "scopeName": "source.zryna", "path": "./syntaxes/zryna.tmLanguage.json" }],
     "languages": [
       {
         "id": "zryna",
@@ -45,6 +54,12 @@
     "configuration": {
       "title": "Zryna",
       "properties": {
+        "zryna.compilerPath": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Absolute installed v0.2.3 zryna compiler executable for explicit Run. Separate from the source-built language server."
+        },
         "zryna.serverPath": {
           "type": "string",
           "default": "",
@@ -76,7 +91,7 @@
     ]
   },
   "scripts": {
-    "check": "node --check src/extension.cjs && node --check src/connection.cjs",
+    "check": "node --check src/extension.cjs && node --check src/connection.cjs && node --check src/run-command.cjs && node --check src/run-input.cjs && node --check src/run-process.cjs && node --check src/run-project.cjs",
     "test": "node --test test/*.test.cjs",
     "package": "node ../../scripts/package-editor.mjs"
   }

@@ -44,7 +44,8 @@ function fixture({ trusted = true, capability = 'scalar-format-v1', editResult =
     fail() { this.closed = true; }
     async stop() { this.closed = true; }
   }
-  const sandbox = { module: { exports: {} }, require: name => name === 'vscode' ? vscode : { Connection } };
+  const sandbox = { module: { exports: {} }, require: name => name === 'vscode' ? vscode
+    : name === './run-command.cjs' ? { registerRun() {} } : { Connection } };
   vm.runInNewContext(readFileSync(resolve(__dirname, '../src/extension.cjs'), 'utf8'), sandbox);
   sandbox.module.exports.activate({ subscriptions: [] });
   return { document, launched, sent, providers, deactivate: sandbox.module.exports.deactivate };
