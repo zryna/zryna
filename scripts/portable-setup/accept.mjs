@@ -75,6 +75,10 @@ try {
     textDocument: { uri }, options: { tabSize: 2, insertSpaces: true },
   });
   assert.ok(edits.length > 0);
+  const definition = await connection.request('textDocument/definition', {
+    textDocument: { uri }, position: { line: 0, character: bytes.toString().indexOf('x+y') },
+  });
+  assert.equal(definition.uri, uri);
   connection.notify('textDocument/didChange', { textDocument: { uri, version: 2 },
     contentChanges: [{ text: 'export function bad(x:i32):i32{return missing;}\n' }] });
   try {
@@ -103,7 +107,7 @@ verifyInstallation(relocated, digest);
 const receipt = { format: 'zryna.portable-acceptance.v1', sourceCommit: config.manifest.sourceCommit,
   manifestSha256: digest, target: config.manifest.target, runtimePathIsolated: true,
   compilerStarter: { javascript: 42, webassembly: 42 }, editorRun: { javascript: 9, webassembly: 26 },
-  formatting: true, diagnostics: true, sourcePreserved: sourceHash, relocated: true,
+  formatting: true, diagnostics: true, definition: true, sourcePreserved: sourceHash, relocated: true,
   mismatchRejected: true, substitutedWorkerRejected: true,
   environment: { platform: process.platform, hostRelease: require('node:os').release(),
     independentCleanMachine: false }, installation: relocated };
