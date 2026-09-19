@@ -31,6 +31,19 @@ use zryna_driver::diagnostic_sessions::ToolingCompiler;
 pub fn run_stdio(compiler_root: &Path, node: &Path) -> Result<(), String> {
     let compiler =
         ToolingCompiler::discover(compiler_root, node).map_err(|error| error.to_string())?;
+    serve(compiler)
+}
+
+/// Serves scalar tooling with the fixed runtime from a verified installed distribution.
+///
+/// # Errors
+/// Rejects incompatible runtime bytes, malformed framing and protocol or I/O failures.
+pub fn run_installed_stdio(root: &Path) -> Result<(), String> {
+    let compiler = ToolingCompiler::discover_installed(root).map_err(|error| error.to_string())?;
+    serve(compiler)
+}
+
+fn serve(compiler: ToolingCompiler) -> Result<(), String> {
     let mut server = Server::new(compiler).map_err(|error| error.to_string())?;
     let (sender, receiver) = mpsc::sync_channel(32);
     let reader = thread::spawn(move || {

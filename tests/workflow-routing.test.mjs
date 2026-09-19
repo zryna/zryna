@@ -327,7 +327,7 @@ test('consolidation preserves every prior contract command and pinned action', (
 test('only CI handles pull requests and every superseded pull-request run cancels', () => {
   const names = readdirSync(resolve(root, '.github/workflows')).sort();
   assert.deepEqual(names, [
-    'ci.yml', 'documentation.yml', 'release-production-candidate.yml',
+    'ci.yml', 'documentation.yml', 'portable-setup.yml', 'release-production-candidate.yml',
     'release-qualification.yml', 'release.yml',
   ]);
   for (const name of names) {
@@ -336,6 +336,9 @@ test('only CI handles pull requests and every superseded pull-request run cancel
     assert.equal(candidate.concurrency['cancel-in-progress'], true, name);
     assert.match(candidate.concurrency.group, /pull_request\.number/, name);
   }
+  assert.equal(Object.hasOwn(workflow('portable-setup.yml').on, 'pull_request'), false);
+  assert.equal(ci.jobs['portable-setup'].uses, './.github/workflows/portable-setup.yml');
+  assert.deepEqual(ci.jobs['portable-setup'].needs, ['route-contracts', 'm0']);
 });
 
 test('main runs only documentation validation and publication with short retention', () => {

@@ -73,6 +73,49 @@ pub(super) struct CapturedToolingClosure {
 }
 
 impl CapturedToolingClosure {
+    pub(super) fn capture_installed(root: &Path) -> Result<Self, Diagnostic> {
+        if !root.is_absolute() {
+            return Err(execution_error("installed tooling root must be absolute"));
+        }
+        let root = capture_absolute(root)?;
+        let bootstrap = open_dir(&root, &["lib", "zryna", "bootstrap"])?;
+        let worker = capture_file(&bootstrap, &["worker.mjs"], MAX_WORKER_BYTES)?;
+        let expected_worker = include_bytes!("../../../../../adapters/typescript-6/src/worker.mjs");
+        if worker.bytes != expected_worker {
+            return Err(execution_error("installed worker differs from this tooling build"));
+        }
+        let wrapper_manifest = capture_file(
+            &bootstrap,
+            &["node_modules", "@typescript", "typescript6", "package.json"],
+            MAX_MANIFEST_BYTES,
+        )?;
+        let wrapper = capture_file(
+            &bootstrap,
+            &["node_modules", "@typescript", "typescript6", "lib", "typescript.js"],
+            MAX_WRAPPER_BYTES,
+        )?;
+        let typescript_manifest = capture_file(
+            &bootstrap,
+            &["node_modules", "@typescript", "old", "package.json"],
+            MAX_MANIFEST_BYTES,
+        )?;
+        let typescript = capture_file(
+            &bootstrap,
+            &["node_modules", "@typescript", "old", "lib", "typescript.js"],
+            MAX_TYPESCRIPT_BYTES,
+        )?;
+        require_digest(&wrapper_manifest, WRAPPER_MANIFEST_SHA256, "compatibility manifest")?;
+        require_digest(&wrapper, WRAPPER_SHA256, "compatibility wrapper")?;
+        require_digest(
+            &typescript_manifest,
+            TYPESCRIPT_MANIFEST_SHA256,
+            "implementation manifest",
+        )?;
+        require_digest(&typescript, TYPESCRIPT_SHA256, "TypeScript runtime")?;
+        validate_graph(&wrapper_manifest.bytes, &wrapper.bytes, &typescript_manifest.bytes)?;
+        Ok(Self { worker, wrapper_manifest, wrapper, typescript_manifest, typescript })
+    }
+
     pub(super) fn capture(root: &Path) -> Result<Self, Diagnostic> {
         if !root.is_absolute() {
             return Err(execution_error("tooling compiler root must be absolute"));

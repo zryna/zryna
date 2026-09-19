@@ -222,7 +222,9 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
                     "definitionProvider": true,
                     "documentFormattingProvider": true,
                     "documentRangeFormattingProvider": true,
-                    "experimental": {"zrynaFormattingProfile":"scalar-format-v1"}
+                    "experimental": {"zrynaFormattingProfile":"scalar-format-v1",
+                        "zrynaInstallationProfile":"portable-setup-v1",
+                        "zrynaSourceCommit":option_env!("ZRYNA_TOOLING_SOURCE_COMMIT")}
                 },
                 "serverInfo": {"name":"zryna-language-server","version":env!("CARGO_PKG_VERSION")}
             }),

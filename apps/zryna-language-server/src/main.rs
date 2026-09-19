@@ -3,7 +3,21 @@
 use std::{env, path::PathBuf, process::ExitCode};
 
 fn main() -> ExitCode {
-    match arguments().and_then(|(root, node)| zryna_language_server::run_stdio(&root, &node)) {
+    let args = env::args_os().skip(1).collect::<Vec<_>>();
+    if args.len() == 1 && args[0] == "--version" {
+        println!(
+            "zryna-language-server {} portable-setup-v1 {}",
+            env!("CARGO_PKG_VERSION"),
+            option_env!("ZRYNA_TOOLING_SOURCE_COMMIT").unwrap_or("source-build")
+        );
+        return ExitCode::SUCCESS;
+    }
+    let result = if args.len() == 2 && args[0] == "--installed-root" {
+        zryna_language_server::run_installed_stdio(&PathBuf::from(&args[1]))
+    } else {
+        arguments().and_then(|(root, node)| zryna_language_server::run_stdio(&root, &node))
+    };
+    match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("zryna-language-server: {error}");

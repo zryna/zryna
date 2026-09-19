@@ -698,4 +698,7 @@ The initial scalar editor client in `editors/vscode-zryna` is registered by the 
 it is not a Rust compiler component and adds no compiler dependency edge. It consumes diagnostics,
 definitions and presentation-only edits without defining compiler rules. The driver derives bounded
 formatting plans from verified, semantically accepted scalar snapshots. M2/M3 formatting remains
-unsupported. The client package carries no compiler/runtime binary or download mechanism.
+unsupported. The client VSIX carries no compiler/runtime binary or download mechanism. A separate
+portable setup candidate binds the server, VSIX and unchanged signed compiler installation.
+Installed tooling authenticates fixed runtime/provider bytes through driver-owned capture and
+private staging, without a compiler checkout or additional application dependency edge.

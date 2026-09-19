@@ -5,6 +5,7 @@ const { isAbsolute, join } = require('node:path');
 const { selectRun, sourceText } = require('./run-input.cjs');
 const { runProject, regularFile, verifyOutput } = require('./run-project.cjs');
 const { stopRuns } = require('./run-process.cjs');
+const { configuredInstallation } = require('./installation.cjs');
 
 function registerRun(vscode, context) {
   const output = vscode.window.createOutputChannel('Zryna Run');
@@ -26,7 +27,10 @@ function registerRun(vscode, context) {
     const stat = await fs.lstat(result.file);
     if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('The last output is unavailable. Run again.');
     if (kind === 'javascript') await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(result.file)));
-    else await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(result.file));
+    else {
+      await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+      await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(result.file));
+    }
   }
   const handle = action => async () => {
     try { await action(); } catch (error) {
@@ -51,7 +55,8 @@ function registerRun(vscode, context) {
         if (document.version !== version || !(await regularFile(document.uri.fsPath, 1024 * 1024)).equals(bytes)) {
           throw new Error('Source changed during selection. Run again to use the new saved version.');
         }
-        const compiler = vscode.workspace.getConfiguration('zryna').inspect('compilerPath')?.globalValue;
+        const compiler = configuredInstallation(vscode)?.compilerPath
+          ?? vscode.workspace.getConfiguration('zryna').inspect('compilerPath')?.globalValue;
         const storage = context.globalStorageUri;
         const localUserData = storage?.scheme === 'vscode-userdata'
           && context.extensionUri?.scheme === 'file' && !context.extensionUri.authority;

@@ -21,6 +21,13 @@ Run the binary with absolute compiler workspace and pinned Node.js 22.22.1 paths
 zryna-language-server --compiler-root <absolute-path> --node <absolute-node-path>
 ```
 
+Server 0.3.0 also accepts `--installed-root <absolute-verified-compiler-directory>`. It captures
+the fixed distribution bootstrap closure, requires worker bytes equal to this build, and verifies
+bundled Node/TypeScript hashes before execution. It reuses the same private staging and semantic
+authority without a checkout, package manager or runtime override. Initial server authenticity
+belongs to the independently verified setup, not adjacent checksums. `--version` reports version,
+capability and embedded source revision. See [portable setup](../../docs/PORTABLE_SETUP.md).
+
 The compiler root supplies the fixed registered `adapters/typescript-6/src/worker.mjs`; protocol
 messages cannot select an executable, provider identity, filesystem read, network request, build,
 or code execution. The current public semantic slice is the one-file protocol-v2 scalar profile,

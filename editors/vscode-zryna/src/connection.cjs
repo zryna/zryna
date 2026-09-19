@@ -8,7 +8,8 @@ const MAX_FRAME = 16 * 1024 * 1024;
 
 class Connection {
   constructor(config, onNotification, onFailure, launch = spawn) {
-    if (![config.serverPath, config.compilerRoot, config.nodePath].every(value =>
+    if (!(config.installed ? [config.serverPath, config.compilerRoot]
+      : [config.serverPath, config.compilerRoot, config.nodePath]).every(value =>
       typeof value === 'string' && isAbsolute(value) && !value.includes('\0'))) {
       throw new Error('Configure absolute Zryna server, compiler and Node paths in user settings.');
     }
@@ -18,7 +19,9 @@ class Connection {
     this.onNotification = onNotification;
     this.onFailure = onFailure;
     this.closed = false;
-    this.child = launch(config.serverPath, ['--compiler-root', config.compilerRoot, '--node', config.nodePath], {
+    const args = config.installed ? ['--installed-root', config.compilerRoot]
+      : ['--compiler-root', config.compilerRoot, '--node', config.nodePath];
+    this.child = launch(config.serverPath, args, {
       cwd: config.compilerRoot, shell: false, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'],
     });
     this.child.stdout.on('data', bytes => {

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.3.0 — portable setup candidate
+
+- Verify complete portable installations against an independently supplied manifest digest.
+- Require matching server 0.3.0 and exact installed source revision before sending source.
+- Reuse the immutable compiler 0.2.3 runtime without a checkout or separate Node installation.
+- Retain development configuration, workspace trust and explicit saved-source Run.
+
 ## 0.2.0
 
 - Add lexical syntax highlighting.
@@ -14,6 +21,6 @@
 - Explicit user-configured local compiler/runtime paths and capability compatibility checks.
 - Cancellation, stale-result rejection, bounded transport and inert diagnostic rendering.
 
-This package requires the matching source build; public v0.2.3 binaries do not provide formatting.
+The original packages required a matching source build; public v0.2.3 servers lack formatting.
 M2/M3 formatting and marketplace publication remain pending. A built or installed VSIX is not a
 marketplace release. No new compiler tag or binary release accompanies this package.

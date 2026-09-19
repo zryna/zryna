@@ -5,6 +5,7 @@
 !LICENSE
 !src/extension.cjs
 !src/connection.cjs
+!src/installation.cjs
 !src/run-command.cjs
 !src/run-input.cjs
 !src/run-process.cjs
