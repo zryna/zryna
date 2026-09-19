@@ -20,6 +20,12 @@ env:
   ZRYNA_STRUCTURE_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.structure_base }}
 
 jobs:
+  portable-setup:
+    name: portable setup
+    needs: [route-contracts, m0]
+    if: needs.route-contracts.outputs.distribution_release == 'true'
+    uses: ./.github/workflows/portable-setup.yml
+
   fast-contracts:
     name: fast contract checks
     timeout-minutes: 10

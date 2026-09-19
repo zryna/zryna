@@ -1,15 +1,7 @@
 name: Portable setup candidate
 
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/portable-setup.yml'
-      - 'scripts/portable-setup/**'
-      - 'scripts/package-editor.mjs'
-      - 'editors/vscode-zryna/**'
-      - 'apps/zryna-language-server/**'
-      - 'crates/zryna-driver/src/diagnostic_sessions/**'
-      - 'docs/PORTABLE_SETUP.md'
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -42,6 +34,7 @@ jobs:
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - run: pnpm install --frozen-lockfile
       - run: pnpm editor:check
+      - run: node --test tests/portable-vsix.test.mjs
       - name: Bind verifier
         shell: pwsh
         run: '"ZRYNA_COSIGN=$((Get-Command cosign).Source)" >> $env:GITHUB_ENV'
