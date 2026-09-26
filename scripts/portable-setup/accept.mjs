@@ -80,6 +80,7 @@ try {
     rootUri: pathToFileURL(project).href, capabilities: { general: { positionEncodings: ['utf-16'] } },
   });
   assert.equal(initialize.serverInfo.version, '0.4.0');
+  assert.equal(initialize.capabilities.definitionProvider, true);
   assert.equal(initialize.capabilities.experimental.zrynaSourceCommit, config.manifest.sourceCommit);
   const uri = pathToFileURL(join(project, 'main.zry')).href;
   connection.notify('initialized', {});
@@ -112,6 +113,7 @@ try {
     initializationOptions: { zrynaProfile: 'control-flow-v1' },
   });
   assert.equal(initialize.serverInfo.version, '0.4.0');
+  assert.equal(initialize.capabilities.definitionProvider, false);
   assert.equal(initialize.capabilities.experimental.zrynaAnalysisProfile, 'control-flow-v1');
   assert.equal(initialize.capabilities.experimental.zrynaFormattingProfile, 'control-flow-format-v1');
   assert.equal(initialize.capabilities.experimental.zrynaSourceCommit, config.manifest.sourceCommit);
