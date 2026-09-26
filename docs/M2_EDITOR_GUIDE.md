@@ -18,9 +18,11 @@ compiler boundary. Selecting a Run profile also selects the matching editor prof
 after all Run choices are complete.
 
 The editor does not run code when a file opens, changes, formats, or saves. Use
-**Zryna: Run Saved File** explicitly. Select an exported function, the profile,
-JavaScript or WebAssembly, and each typed input. Save first; an unsaved revision is
-never substituted for the saved source. Canceling a picker starts no compiler run.
+**Zryna: Run Saved File** explicitly. Select the profile, an exported function,
+JavaScript or WebAssembly, then enter each prompted value. The function signature
+determines whether a prompt accepts an integer or Boolean. Save first; an unsaved
+revision is never substituted for the saved source. Canceling a picker starts no
+compiler run.
 
 ## Try local bindings and direct calls
 
@@ -39,9 +41,10 @@ export function main(value: i32): i32 {
 }
 ```
 
-Run `main` with `i32:5`. The expected result is `i32 13` on both JavaScript and
-WebAssembly. **Format Document** applies the canonical two-space/LF style; a second
-format should make no edit. Formatting incomplete or unsupported source makes no edit.
+Run `main` and enter `5` for its integer input. The expected result is `i32 13`
+on both JavaScript and WebAssembly. **Format Document** applies the canonical
+two-space/LF style; a second format should make no edit. Formatting incomplete or
+unsupported source makes no edit.
 For a selected range, choose complete functions. Range formatting returns edits only
 for complete functions and leaves bytes outside the selection untouched. A partial
 function selection makes no edit.
@@ -60,9 +63,9 @@ export function main(positive: bool, value: i32): i32 {
 }
 ```
 
-Run with `bool:true`, `i32:13` to get `i32 13`. Run with `bool:false`, `i32:13`
-to get `i32 -13`. Select the types and values explicitly; `bool` has no numeric
-truthiness conversion.
+Enter `true` and `13` to get `i32 13`. Enter `false` and `13` to get
+`i32 -13`. The prompts follow the function's `bool`, `i32` signature; `bool`
+has no numeric truthiness conversion.
 
 For a loop, replace the file with this source and save:
 
@@ -78,7 +81,7 @@ export function main(count: i32): i32 {
 }
 ```
 
-`i32:0` returns `i32 0`; `i32:5` returns `i32 15` on both targets. Each Run
+Entering `0` returns `i32 0`; entering `5` returns `i32 15` on both targets. Each Run
 uses a fresh isolated compiler project and records the saved source identity in the
 **Zryna Run** output. **Zryna: Open Generated JavaScript** opens the last successful
 JavaScript artifact, and **Zryna: Reveal Run Output** selects the actual output file.
@@ -92,7 +95,8 @@ The compiler may report additional related diagnostics on the same invalid sourc
 Incomplete syntax receives a diagnostic and no formatting edit or Run bundle.
 Top-level variables are outside this profile; use initialized locals inside a
 function. The editor stages one saved file for Run, so imports are not available
-there. The formatter also excludes imports and grouping parentheses around expressions. `break`,
+there. The formatter also excludes imports and standalone grouping parentheses
+around expressions, such as `(a + b)`. `break`,
 `continue`, `for`, classes, implicit truthiness, recursion, and M3 ownership/data
 syntax are outside this M2 editor mode. M2 does not offer Go to
 Definition; the scalar editor mode retains its existing definition support.
@@ -100,7 +104,9 @@ Definition; the scalar editor mode retains its existing definition support.
 The extension serves one active local document at a time and requires workspace
 trust. M2 formatting accepts at most 131,072 UTF-8 source bytes; M2 Run accepts at
 most 2 MiB. The existing scalar Run limit remains 1,024 UTF-8 bytes. Run accepts
-only saved files, explicit `i32`/`bool` inputs and scalar results.
+only saved files, exact `i32`/`bool` inputs and scalar results. The `i32:5` and
+`bool:true` spellings belong to the CLI's `--arg` syntax; enter just `5` or `true`
+in the editor prompts.
 It does not execute native Windows programs, download toolchains, or provide a
 debugger. The compiler remains responsible for source validity, exact types, source
 authentication and published artifacts. For the complete language boundary, see
