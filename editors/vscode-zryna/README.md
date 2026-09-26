@@ -68,6 +68,11 @@ separate system-temp cache. Neither command disables Workspace Trust or edits a 
 profile. A local Code executable may be passed before `--prepare-trust` when testing an installed
 version; this does not pin that version.
 
+Only one run may use this retained state at a time. Another invocation fails immediately while
+`run.lock` exists and leaves the active run untouched. If VS Code cannot be confirmed closed after
+a timeout, the launcher retains the lock, source, and run files for inspection. Clear a stale lock
+only after verifying that no acceptance VS Code process still uses the printed state directory.
+
 ```powershell
 pnpm editor:host-acceptance -- '<verified setup directory>' '<setup.json SHA-256>'
 ```
