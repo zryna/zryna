@@ -102,7 +102,7 @@ syntax are outside this M2 editor mode. M2 does not offer Go to
 Definition; the scalar editor mode retains its existing definition support.
 
 The extension serves one active local document at a time and requires workspace
-trust. M2 formatting accepts at most 131,072 UTF-8 source bytes; M2 Run accepts at
+trust. M2 formatted output is capped at 131,072 UTF-8 bytes; M2 Run accepts at
 most 2 MiB. The existing scalar Run limit remains 1,024 UTF-8 bytes. Run accepts
 only saved files, exact `i32`/`bool` inputs and scalar results. The `i32:5` and
 `bool:true` spellings belong to the CLI's `--arg` syntax; enter just `5` or `true`
