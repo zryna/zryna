@@ -43,6 +43,53 @@ Open the edited project's folder and a `.zry` file. Use **Format Document**, **F
 fresh connection. Range formatting accepts complete functions only and never expands a selection.
 Formatting has one canonical two-space/LF style. Comments and token spellings remain unchanged.
 
+## Real extension-host acceptance
+
+The opt-in Windows desktop acceptance harness launches VS Code 1.138.0 through
+`@vscode/test-electron` with a dedicated workspace, user-data directory, extension directory,
+and global storage outside normal VS Code profiles. It uses a separately verified complete portable
+setup, not a source rebuild. After independently checking the candidate archive and `setup.json`
+digest, establish trust once:
+
+```powershell
+pnpm editor:host-acceptance -- '<verified setup directory>' '<setup.json SHA-256>' --prepare-trust
+```
+
+In the first VS Code window, use **Manage Workspace Trust** to trust only the printed test
+workspace. A small test extension runs the API checks in the real extension host, records the
+result, and closes this isolated VS Code instance. Later runs use the same command without
+`--prepare-trust`; an absent trust decision fails immediately with an instruction to prepare it.
+The state path is stable for this checkout, under the system temp
+directory as `zryna-vscode-host-state-<checkout hash>`. Its isolated VS Code profile and empty
+workspace directory remain so VS Code can remember that exact trust decision. The test source,
+compiler run projects, and per-run result files are removed after every run. Remove the dedicated
+state directory to revoke this harness's saved trust and data. The pinned VS Code download has a
+separate system-temp cache. Neither command disables Workspace Trust or edits a normal VS Code
+profile. A local Code executable may be passed before `--prepare-trust` when testing an installed
+version; this does not pin that version.
+
+Only one run may use this retained state at a time. Another invocation fails immediately while
+`run.lock` exists and leaves the active run untouched. If VS Code cannot be confirmed closed after
+a timeout, the launcher retains the lock, source, and run files for inspection. Clear a stale lock
+only after verifying that no acceptance VS Code process still uses the printed state directory.
+
+```powershell
+pnpm editor:host-acceptance -- '<verified setup directory>' '<setup.json SHA-256>'
+```
+
+The host checks activation, scalar and M2 profile selection, scalar definition, M2 diagnostics and
+recovery, format idempotence, real JavaScript and WebAssembly return values, and opening generated
+JavaScript. It uses a validated command argument for Run so the interactive picker remains available
+to users. The API tests do not prove status-bar appearance, rendered Problems layout, notification
+presentation, or OS file explorer behavior; those require a separate visual review. The harness is
+not part of `editor:check` or default CI.
+
+On a local Windows run against the `cb60922` candidate, the one-time trusted setup completed in
+23.0 seconds; two consecutive cached, unattended acceptance runs completed in 24.0 and 24.0
+seconds. The first VS Code download in an earlier probe took 102 seconds including a failed trust
+check, so a complete cold acceptance duration has not been measured. These are observations,
+not duration guarantees. Linux and CI behavior remain unverified.
+
 ## Compatibility
 
 | Extension | Editor | Server |

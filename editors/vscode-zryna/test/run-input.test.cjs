@@ -55,3 +55,17 @@ test('control-flow picker binds bool and i32 arguments without defaults', async 
   assert.deepEqual(selected, { profile: 'control-flow-v1', name: 'choose', target: 'javascript',
     args: [{ type: 'bool', value: 'false' }, { type: 'i32', value: '-8' }], resultType: 'bool' });
 });
+
+test('programmatic Run selection uses the same export and typed argument checks', async () => {
+  const bytes = Buffer.from('export function choose(yes:bool, value:i32):i32{return value;}');
+  const window = { showQuickPick() { throw new Error('picker opened'); } };
+  const chosen = { profile: 'control-flow-v1', name: 'choose', target: 'webassembly',
+    args: [{ type: 'bool', value: 'true' }, { type: 'i32', value: '-8' }] };
+  assert.deepEqual(await selectRun(window, bytes, chosen), { ...chosen, resultType: 'i32' });
+  for (const invalid of [
+    { ...chosen, name: 'missing' }, { ...chosen, target: 'native' },
+    { ...chosen, args: [{ type: 'bool', value: 'True' }, chosen.args[1]] },
+    { ...chosen, args: [chosen.args[1], chosen.args[0]] },
+    { ...chosen, args: [] },
+  ]) await assert.rejects(selectRun(window, bytes, invalid), /Invalid Run selection/);
+});

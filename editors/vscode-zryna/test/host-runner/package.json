@@ -1,0 +1,12 @@
+{
+  "name": "zryna-host-acceptance",
+  "displayName": "Zryna Host Acceptance",
+  "version": "0.0.1",
+  "publisher": "zryna",
+  "private": true,
+  "engines": { "vscode": "^1.82.0" },
+  "main": "./extension.cjs",
+  "extensionKind": ["workspace"],
+  "activationEvents": ["onStartupFinished"],
+  "capabilities": { "untrustedWorkspaces": { "supported": true } }
+}
