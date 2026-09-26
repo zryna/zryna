@@ -33,6 +33,7 @@
   "contributes": {
     "commands": [
       { "command": "zryna.selectEditorProfile", "title": "Zryna: Select Editor Profile" },
+      { "command": "zryna.showGlobalDiagnostics", "title": "Zryna: Show Project Diagnostics" },
       { "command": "zryna.run", "title": "Zryna: Run Saved File" },
       { "command": "zryna.openGeneratedJavaScript", "title": "Zryna: Open Generated JavaScript" },
       { "command": "zryna.revealRunOutput", "title": "Zryna: Reveal Run Output" }

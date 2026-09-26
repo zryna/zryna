@@ -60,7 +60,8 @@ marketplace publication requires a configured publisher and credentials and is s
 The extension runs only in trusted local-file workspaces. Executable paths come exclusively from
 user settings; workspace overrides are ignored. It downloads nothing,
 provides no debugging commands, transmits no source over a network, and has no telemetry or
-runtime dependencies. Compiler diagnostics remain inert plain text. Editor APIs apply explicitly
+runtime dependencies. Compiler diagnostics remain inert plain text. Global errors without an exact
+source range appear in the status bar and **Zryna Diagnostics** output. Editor APIs apply explicitly
 requested edits; the extension provides no general filesystem write service.
 
 Default scalar formatting supports the protocol-v2 i32 function/return/reference/literal/addition

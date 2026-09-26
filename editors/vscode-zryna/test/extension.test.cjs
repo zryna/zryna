@@ -16,6 +16,9 @@ function fixture({ trusted = true, capability, analysisProfile, editResult = [],
   const initialized = [];
   const connections = [];
   const published = [];
+  const events = {};
+  const output = { lines: [], shown: 0 };
+  const status = { visible: false, show() { this.visible = true; }, hide() { this.visible = false; }, dispose() {} };
   const storage = { profile: savedProfile };
   let releaseInitialize;
   const initializeGate = deferInitialize ? new Promise(resolveGate => { releaseInitialize = resolveGate; }) : null;
@@ -37,9 +40,17 @@ function fixture({ trusted = true, capability, analysisProfile, editResult = [],
       isTrusted: trusted,
       getWorkspaceFolder: () => ({ uri: { toString: () => 'file:///project' } }),
       getConfiguration: () => ({ inspect: key => ({ globalValue: resolve(`trusted-${key}`), workspaceValue: 'hostile-workspace-command' }) }),
-      onDidChangeTextDocument: disposable, onDidCloseTextDocument: disposable, onDidChangeConfiguration: disposable,
+      onDidChangeTextDocument: callback => { events.change = callback; return disposable(); },
+      onDidCloseTextDocument: disposable, onDidChangeConfiguration: disposable,
     },
-    window: { onDidChangeActiveTextEditor: disposable, showQuickPick: async items => items[1] },
+    window: {
+      onDidChangeActiveTextEditor: callback => { events.editor = callback; return disposable(); },
+      showQuickPick: async items => items[1],
+      createStatusBarItem: () => status,
+      createOutputChannel: () => ({ ...disposable(), appendLine(line) { output.lines.push(line); },
+        clear() { output.lines = []; }, show() { output.shown++; } }),
+    },
+    StatusBarAlignment: { Left: 1 },
     commands: { registerCommand: (name, callback) => { commands[name] = callback; return disposable(); } },
     languages: {
       createDiagnosticCollection: () => ({ ...disposable(), delete() {}, set(uri, values) { published.push([uri, values]); } }),
@@ -81,6 +92,7 @@ function fixture({ trusted = true, capability, analysisProfile, editResult = [],
     get: () => storage.profile, async update(_, value) { storage.profile = value; },
   } });
   return { document, launched, sent, requests, providers, initialized, connections, published, commands, storage, vscode,
+    events, output, status,
     releaseInitialize, deactivate: sandbox.module.exports.deactivate };
 }
 
@@ -188,6 +200,40 @@ test('profile switch suppresses old diagnostics and restores scalar definition',
   const location = await f.providers.definition.provideDefinition(f.document, { line: 0, character: 16 });
   assert.equal(location.range.start.character, 16);
   assert.equal(f.requests.filter(method => method === 'textDocument/definition').length, 1);
+  await f.deactivate();
+});
+
+test('global errors show project status without inventing a source range and clear on revision or profile change', async () => {
+  const f = fixture({ savedProfile: 'control-flow-v1' });
+  f.vscode.window.activeTextEditor = { document: f.document };
+  await f.providers.format.provideDocumentFormattingEdits(f.document, {});
+  const m2 = f.connections[0];
+  const report = version => ({ documents: [{ uri: f.document.uri.toString(), version }],
+    report: { schema_version: 2, diagnostics: [{ code: 'ZRYNA-F1103', severity: 'error',
+      message: 'ZRYNA-F1103: frontend worker rejected a protocol request', location: { kind: 'global' } }] } });
+  m2.onNotification('zryna/publishDiagnostics', report(1));
+  m2.onNotification('textDocument/publishDiagnostics', {
+    uri: f.document.uri.toString(), version: 1, diagnostics: [],
+  });
+  assert.equal(f.status.visible, true);
+  assert.match(f.status.text, /Zryna: 1 project error/);
+  assert.match(f.status.tooltip, /ZRYNA-F1103/);
+  assert.equal(f.published.at(-1)[1].length, 0);
+  f.commands['zryna.showGlobalDiagnostics']();
+  assert.equal(f.output.shown, 1);
+  assert.equal(f.output.lines.filter(line => line.includes('ZRYNA-F1103')).length, 1);
+  f.document.version = 2;
+  f.events.change({ document: f.document, contentChanges: [{}] });
+  assert.equal(f.status.visible, false);
+  assert.equal(f.output.lines.length, 0);
+  m2.onNotification('zryna/publishDiagnostics', report(1));
+  assert.equal(f.status.visible, false);
+  m2.onNotification('zryna/publishDiagnostics', report(2));
+  assert.equal(f.status.visible, true);
+  await f.commands['zryna.selectEditorProfile']('i32-v1');
+  assert.equal(f.status.visible, false);
+  m2.onNotification('zryna/publishDiagnostics', report(2));
+  assert.equal(f.status.visible, false);
   await f.deactivate();
 });
 

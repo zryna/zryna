@@ -9,6 +9,8 @@ let active;
 let starting = Promise.resolve();
 let profileSwitching = Promise.resolve();
 let diagnostics;
+let globalStatus;
+let globalOutput;
 let editorProfile = 'i32-v1';
 
 function configuration() {
@@ -38,6 +40,26 @@ function validPosition(position, document) {
 }
 
 function publish(state, method, params) {
+  if (method === 'zryna/publishDiagnostics') {
+    if (active !== state || state.profile !== editorProfile
+      || !Array.isArray(params?.documents) || params.documents.length > 10000
+      || !params.documents.some(item => item?.uri === state.uri && item.version === state.document.version)
+      || params.report?.schema_version !== 2 || !Array.isArray(params.report.diagnostics)
+      || params.report.diagnostics.length > 10000) return;
+    const messages = params.report.diagnostics.filter(item => item?.location?.kind === 'global'
+      && item.severity === 'error'
+      && typeof item.code === 'string' && item.code.length <= 80
+      && typeof item.message === 'string' && item.message.length <= 1000)
+      .map(item => item.message.startsWith(item.code) ? item.message : `${item.code}: ${item.message}`);
+    state.globalMessages = messages;
+    globalOutput.clear();
+    if (messages.length) {
+      globalOutput.appendLine(`Zryna project diagnostics for ${state.uri} (version ${state.document.version}):`);
+      for (const message of messages) globalOutput.appendLine(message);
+    }
+    updateGlobalStatus();
+    return;
+  }
   if (method !== 'textDocument/publishDiagnostics' || active !== state
     || params?.uri !== state.uri || params.version !== state.document.version) return;
   if (!Array.isArray(params.diagnostics) || params.diagnostics.length > 10000) return;
@@ -56,6 +78,17 @@ function publish(state, method, params) {
   } catch { diagnostics.delete(state.document.uri); }
 }
 
+function updateGlobalStatus() {
+  const messages = active?.globalMessages;
+  if (!messages?.length || vscode.window.activeTextEditor?.document !== active.document) {
+    globalStatus?.hide();
+    return;
+  }
+  globalStatus.text = `$(error) Zryna: ${messages.length} project error${messages.length === 1 ? '' : 's'}`;
+  globalStatus.tooltip = messages.join('\n');
+  globalStatus.show();
+}
+
 async function connect(document) {
   if (document.isClosed || !vscode.workspace.isTrusted || document.uri.scheme !== 'file' || document.languageId !== 'zryna') {
     throw new Error('Zryna requires a trusted local file workspace.');
@@ -70,6 +103,9 @@ async function connect(document) {
   const config = configuration();
   state.connection = new Connection(config, (method, params) => publish(state, method, params), () => {
     diagnostics.delete(document.uri);
+    state.globalMessages = [];
+    if (active === state) globalOutput.clear();
+    updateGlobalStatus();
   });
   active = state;
   try {
@@ -142,6 +178,8 @@ async function disconnect() {
   active = undefined;
   if (previous) {
     diagnostics?.delete(previous.document.uri);
+    globalStatus?.hide();
+    globalOutput?.clear();
     await previous.connection.stop().catch(() => {});
   }
 }
@@ -150,8 +188,12 @@ function activate(context) {
   editorProfile = context.workspaceState?.get('zryna.editorProfile') === 'control-flow-v1' ? 'control-flow-v1' : 'i32-v1';
   registerRun(vscode, context);
   diagnostics = vscode.languages.createDiagnosticCollection('zryna');
+  globalOutput = vscode.window.createOutputChannel('Zryna Diagnostics');
+  globalStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+  globalStatus.command = 'zryna.showGlobalDiagnostics';
   const selector = { scheme: 'file', language: 'zryna' };
-  context.subscriptions.push(diagnostics,
+  context.subscriptions.push(diagnostics, globalOutput, globalStatus,
+    vscode.commands.registerCommand('zryna.showGlobalDiagnostics', () => globalOutput.show()),
     vscode.languages.registerDocumentFormattingEditProvider(selector, {
       provideDocumentFormattingEdits: (document, options, token) => format(document, null, options, token),
     }),
@@ -201,6 +243,9 @@ function activate(context) {
             contentChanges: [{ text: event.document.getText() }],
           });
           diagnostics.delete(event.document.uri);
+          active.globalMessages = [];
+          globalOutput.clear();
+          updateGlobalStatus();
         } catch (error) { active.connection.fail(error); }
       }
     }),
@@ -211,7 +256,9 @@ function activate(context) {
       if (event.affectsConfiguration('zryna')) void disconnect();
     }),
     vscode.window.onDidChangeActiveTextEditor(editor => {
+      globalStatus.hide();
       if (editor?.document.languageId === 'zryna') void ensure(editor.document).catch(() => {});
+      updateGlobalStatus();
     }),
   );
   const document = vscode.window.activeTextEditor?.document;

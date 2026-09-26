@@ -18,11 +18,13 @@ function fixture(mode) {
   const vscode = {
     Uri: { file: file => ({ scheme: 'file', fsPath: file }) },
     ProgressLocation: { Notification: 1 },
+    StatusBarAlignment: { Left: 1 },
     workspace: { isTrusted: mode !== 'untrusted', getWorkspaceFolder: () => ({}),
       onDidChangeTextDocument: disposable, onDidCloseTextDocument: disposable, onDidChangeConfiguration: disposable,
       getConfiguration: () => ({ inspect: () => ({ globalValue: '/trusted/compiler', workspaceValue: '/untrusted/compiler' }) }) },
     window: { onDidChangeActiveTextEditor: disposable,
       createOutputChannel: () => ({ appendLine() {}, show() {}, clear() {} }),
+      createStatusBarItem: () => ({ show() {}, hide() {}, dispose() {} }),
       showErrorMessage: async message => errors.push(message), showInformationMessage: async () => undefined,
       withProgress: async (_, action) => action({}, { isCancellationRequested: mode === 'cancel-progress' }) },
     commands: { registerCommand: (name, fn) => { commands[name] = fn; return { dispose() {} }; },

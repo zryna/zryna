@@ -93,6 +93,8 @@ In M2 mode, assigning to `const` reports `ZRYNA-M2005`, an unresolved local name
 reports `ZRYNA-M2004`, and an exact local type mismatch reports `ZRYNA-M2006`.
 The compiler may report additional related diagnostics on the same invalid source.
 Incomplete syntax receives a diagnostic and no formatting edit or Run bundle.
+When the compiler cannot give an exact source range, the status bar shows a
+Zryna project error. Select it to read the message in **Zryna Diagnostics**.
 Top-level variables are outside this profile; use initialized locals inside a
 function. The editor stages one saved file for Run, so imports are not available
 there. The formatter also excludes imports and standalone grouping parentheses
