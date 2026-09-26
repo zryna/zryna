@@ -84,8 +84,9 @@ workspaces are rejected. Opening, editing, formatting and saving never execute p
 Default Run supports the installed compiler's one-file `i32-v1` profile: explicit i32
 parameters/result, integer literals, references and addition, with a **1024 UTF-8-byte** package
 source limit. Explicit `control-flow-v1` Run supports the bounded one-file local M2 syntax above
-and i32/bool parameters/results. i32 arguments are canonical decimal integers from -2147483648
-through 2147483647; bool arguments are exact `true` or `false`. The picker is lexical discovery,
+and i32/bool parameters/results, with a **2 MiB** source limit. i32 arguments are canonical
+decimal integers from -2147483648 through 2147483647; bool arguments are exact `true` or `false`.
+The picker is lexical discovery,
 not semantic validation; the compiler remains authoritative and may reject an offered function
 or program. Imports, M3 ownership, classes and native Windows executables are unsupported.
 

@@ -93,9 +93,9 @@ The extension does not download tools, run on save, auto-save, or execute arbitr
 
 The default editor profile retains the one-file `i32-v1` Run subset and its 1,024 UTF-8-byte
 package limit. Explicit `control-flow-v1` enables bounded local `let`/`const`, direct calls,
-`if`/`else`, `while`, and exact i32/bool inputs for saved-source Run. It does not enable
-imports, parenthesized expressions, globals or M3 ownership in the editor. The server serves one
-open document per connection; M2 formatted output is capped at 131,072 bytes.
+`if`/`else`, `while`, and exact i32/bool inputs for saved-source Run, capped at 2 MiB of source.
+Imports, parenthesized expressions, globals and M3 ownership remain outside the editor. The server
+serves one open document per connection; M2 formatted output is capped at 131,072 bytes.
 Go to Definition applies only to the scalar profile. The compiler remains the authority for
 accepted source, invocation and resource limits. Opening, editing, formatting and saving never
 execute project code.
