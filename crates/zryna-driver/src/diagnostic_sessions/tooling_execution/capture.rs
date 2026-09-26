@@ -28,6 +28,8 @@ const TYPESCRIPT_MANIFEST_SHA256: &str =
 const TYPESCRIPT_SHA256: &str = "569177652966bd528c319171c7dd22860dbf72bde116cbc4f644f1d02bb12e39";
 
 const WORKER: &[&str] = &["adapters", "typescript-6", "src", "worker.mjs"];
+const WORKER_V3: &[&str] = &["adapters", "typescript-6", "src", "worker-v3.mjs"];
+const LIMITS_V3: &[&str] = &["adapters", "typescript-6", "src", "limits-v3.mjs"];
 const WRAPPER_MANIFEST: &[&str] = &[
     "node_modules",
     ".pnpm",
@@ -66,6 +68,8 @@ pub(super) struct CapturedFile {
 
 pub(super) struct CapturedToolingClosure {
     pub(super) worker: CapturedFile,
+    pub(super) worker_v3: CapturedFile,
+    pub(super) limits_v3: CapturedFile,
     pub(super) wrapper_manifest: CapturedFile,
     pub(super) wrapper: CapturedFile,
     pub(super) typescript_manifest: CapturedFile,
@@ -84,6 +88,9 @@ impl CapturedToolingClosure {
         if worker.bytes != expected_worker {
             return Err(execution_error("installed worker differs from this tooling build"));
         }
+        let worker_v3 = capture_file(&bootstrap, &["worker-v3.mjs"], MAX_WORKER_BYTES)?;
+        let limits_v3 = capture_file(&bootstrap, &["limits-v3.mjs"], MAX_WORKER_BYTES)?;
+        verify_v3_workers(&worker_v3, &limits_v3)?;
         let wrapper_manifest = capture_file(
             &bootstrap,
             &["node_modules", "@typescript", "typescript6", "package.json"],
@@ -113,7 +120,15 @@ impl CapturedToolingClosure {
         )?;
         require_digest(&typescript, TYPESCRIPT_SHA256, "TypeScript runtime")?;
         validate_graph(&wrapper_manifest.bytes, &wrapper.bytes, &typescript_manifest.bytes)?;
-        Ok(Self { worker, wrapper_manifest, wrapper, typescript_manifest, typescript })
+        Ok(Self {
+            worker,
+            worker_v3,
+            limits_v3,
+            wrapper_manifest,
+            wrapper,
+            typescript_manifest,
+            typescript,
+        })
     }
 
     pub(super) fn capture(root: &Path) -> Result<Self, Diagnostic> {
@@ -124,14 +139,25 @@ impl CapturedToolingClosure {
         let root = capture_absolute(root_path)?;
         authenticate_adapter_link(&root, root_path)?;
         let worker = capture_file(&root, WORKER, MAX_WORKER_BYTES)?;
+        let worker_v3 = capture_file(&root, WORKER_V3, MAX_WORKER_BYTES)?;
+        let limits_v3 = capture_file(&root, LIMITS_V3, MAX_WORKER_BYTES)?;
+        verify_v3_workers(&worker_v3, &limits_v3)?;
         let wrapper_manifest = capture_file(&root, WRAPPER_MANIFEST, MAX_MANIFEST_BYTES)?;
         let wrapper = capture_file(&root, WRAPPER, MAX_WRAPPER_BYTES)?;
         let typescript_manifest = capture_file(&root, TYPESCRIPT_MANIFEST, MAX_MANIFEST_BYTES)?;
         let typescript = capture_file(&root, TYPESCRIPT, MAX_TYPESCRIPT_BYTES)?;
-        let total = [&worker, &wrapper_manifest, &wrapper, &typescript_manifest, &typescript]
-            .into_iter()
-            .try_fold(0_usize, |total, file| total.checked_add(file.bytes.len()))
-            .ok_or_else(|| execution_error("tooling executable closure byte count overflowed"))?;
+        let total = [
+            &worker,
+            &worker_v3,
+            &limits_v3,
+            &wrapper_manifest,
+            &wrapper,
+            &typescript_manifest,
+            &typescript,
+        ]
+        .into_iter()
+        .try_fold(0_usize, |total, file| total.checked_add(file.bytes.len()))
+        .ok_or_else(|| execution_error("tooling executable closure byte count overflowed"))?;
         if total > MAX_CLOSURE_BYTES {
             return Err(execution_error("tooling executable closure exceeds its byte limit"));
         }
@@ -148,8 +174,25 @@ impl CapturedToolingClosure {
             "TypeScript implementation manifest",
         )?;
         require_digest(&typescript, TYPESCRIPT_SHA256, "TypeScript 6.0.3 runtime bundle")?;
-        Ok(Self { worker, wrapper_manifest, wrapper, typescript_manifest, typescript })
+        Ok(Self {
+            worker,
+            worker_v3,
+            limits_v3,
+            wrapper_manifest,
+            wrapper,
+            typescript_manifest,
+            typescript,
+        })
     }
+}
+
+fn verify_v3_workers(worker: &CapturedFile, limits: &CapturedFile) -> Result<(), Diagnostic> {
+    if worker.bytes != include_bytes!("../../../../../adapters/typescript-6/src/worker-v3.mjs")
+        || limits.bytes != include_bytes!("../../../../../adapters/typescript-6/src/limits-v3.mjs")
+    {
+        return Err(execution_error("protocol-v3 tooling worker differs from this tooling build"));
+    }
+    Ok(())
 }
 
 fn authenticate_adapter_link(root: &Dir, root_path: &Path) -> Result<(), Diagnostic> {

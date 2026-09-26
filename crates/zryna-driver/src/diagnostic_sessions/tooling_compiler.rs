@@ -2,19 +2,21 @@ use std::{ffi::OsString, fmt, path::Path};
 
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::{
-    FrontendCapabilities, ProviderExpectation, WorkerFrontend, WorkerLimits, WorkerSpec, syntax_v2,
+    FrontendCapabilities, ProviderExpectation, ProviderExpectationV3, WorkerFrontend,
+    WorkerFrontendV3, WorkerLimits, WorkerLimitsV3, WorkerSpec, WorkerSpecV3, syntax_v2,
 };
-use zryna_source::SourceMap;
+use zryna_source::{NormalizedSourcePath, SourceMap};
 
 use super::tooling_execution::ToolingExecutionClosure;
 use super::{DiagnosticRevision, DiagnosticSession, DiagnosticSessionError};
 use crate::runtime::{NodeRuntimeCapability, node_compatible_path};
 
-/// A pinned protocol-v2 compiler frontend retained by a tooling transport.
+/// Pinned protocol-v2 and protocol-v3 compiler frontends retained by a tooling transport.
 #[derive(Debug)]
 pub struct ToolingCompiler {
     node: NodeRuntimeCapability,
     frontend: WorkerFrontend,
+    frontend_v3: WorkerFrontendV3,
     execution: ToolingExecutionClosure,
 }
 
@@ -132,7 +134,31 @@ impl ToolingCompiler {
                 "restore the registered adapter and pinned runtime paths",
             )
         })?;
-        Ok(Self { node, frontend: WorkerFrontend::new(spec), execution })
+        let expected_v3 = ProviderExpectationV3::new("typescript-6", "6.0.3").map_err(|_| {
+            configuration_error(
+                "the fixed control-flow tooling frontend expectation is invalid",
+                "restore the registered protocol-v3 adapter contract",
+            )
+        })?;
+        let spec_v3 = WorkerSpecV3::new(
+            node.executable().map_err(ToolingCompilerError::Configuration)?,
+            vec![OsString::from(node_compatible_path(&execution.worker_v3()))],
+            node_compatible_path(execution.working_directory()),
+            expected_v3,
+            WorkerLimitsV3::default(),
+        )
+        .map_err(|_| {
+            configuration_error(
+                "the fixed control-flow tooling frontend process could not be configured",
+                "restore the registered adapter and pinned runtime paths",
+            )
+        })?;
+        Ok(Self {
+            node,
+            frontend: WorkerFrontend::new(spec),
+            frontend_v3: WorkerFrontendV3::new(spec_v3),
+            execution,
+        })
     }
 
     /// Analyzes and admits one exact in-memory source revision.
@@ -155,7 +181,36 @@ impl ToolingCompiler {
         self.node.revalidate().map_err(ToolingCompilerError::Configuration)?;
         match analysis {
             Ok(syntax) => session.admit_analysis(sources, &syntax),
-            Err(error) => session.admit_diagnostics(sources, error.diagnostics()),
+            Err(error) => session.admit_worker_failure(sources, &error),
+        }
+        .map_err(ToolingCompilerError::Session)
+    }
+
+    /// Analyzes one in-memory M2 source revision with the authenticated protocol-v3 worker.
+    ///
+    /// The selected entry must belong to the supplied source map. No file lookup, module
+    /// discovery, artifact publication, or workspace program execution occurs here.
+    ///
+    /// # Errors
+    ///
+    /// Rejects runtime replacement or failed revision admission.
+    pub fn admit_control_flow(
+        &self,
+        session: &mut DiagnosticSession,
+        sources: SourceMap,
+        entrypoint: &NormalizedSourcePath,
+    ) -> Result<DiagnosticRevision, ToolingCompilerError> {
+        if sources.file_id(entrypoint).is_none() {
+            return Err(ToolingCompilerError::Session(DiagnosticSessionError::SemanticAuthority));
+        }
+        self.node.revalidate().map_err(ToolingCompilerError::Configuration)?;
+        self.execution.revalidate().map_err(ToolingCompilerError::Configuration)?;
+        let analysis = self.frontend_v3.analyze_verified_v3(&sources);
+        self.execution.revalidate().map_err(ToolingCompilerError::Configuration)?;
+        self.node.revalidate().map_err(ToolingCompilerError::Configuration)?;
+        match analysis {
+            Ok(syntax) => session.admit_control_flow_analysis(sources, &syntax, entrypoint),
+            Err(error) => session.admit_worker_failure(sources, &error),
         }
         .map_err(ToolingCompilerError::Session)
     }

@@ -14,7 +14,7 @@ use zryna_diagnostics::Diagnostic;
 use capture::CapturedToolingClosure;
 use stage::ToolingStage;
 
-/// A fixed, private copy of every non-runtime byte the tooling worker can execute.
+/// A fixed, private copy of every non-runtime byte the tooling workers can execute.
 ///
 /// The capture assumes a trusted compiler installation at discovery time and a private host
 /// staging directory. It prevents later workspace path replacement from changing execution; it
@@ -37,6 +37,10 @@ impl ToolingExecutionClosure {
 
     pub(super) fn worker(&self) -> &Path {
         self.stage.worker()
+    }
+
+    pub(super) fn worker_v3(&self) -> std::path::PathBuf {
+        self.stage.worker_v3()
     }
 
     pub(super) fn working_directory(&self) -> &Path {

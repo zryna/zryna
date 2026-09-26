@@ -39,7 +39,7 @@ for (const tool of ['node', 'cargo', 'rustc', 'pnpm']) {
 }
 assert.equal(command(config.compilerPath, ['--version']), 'zryna 0.2.3');
 assert.equal(command(config.serverPath, ['--version']),
-  `zryna-language-server 0.3.0 portable-setup-v1 ${config.manifest.sourceCommit}`);
+  `zryna-language-server 0.4.0 portable-setup-v1 ${config.manifest.sourceCommit}`);
 command(config.compilerPath, ['new', 'hello']);
 for (const target of ['javascript', 'webassembly']) {
   assert.equal(command(config.compilerPath, ['run', 'src/main.zry', '--project-root', 'hello',
@@ -48,14 +48,27 @@ for (const target of ['javascript', 'webassembly']) {
 const project = join(work, 'practice');
 mkdirSync(project);
 copyFileSync(join(relocated, 'examples/main.zry'), join(project, 'main.zry'));
+copyFileSync(join(relocated, 'examples/control-flow.zry'), join(project, 'control-flow.zry'));
 const bytes = readFileSync(join(project, 'main.zry'));
 const sourceHash = hash(bytes);
+const m2Bytes = readFileSync(join(project, 'control-flow.zry'));
+const m2SourceHash = hash(m2Bytes);
 const reports = [];
 const invocation = async (executable, argv, cwd) => ({ stdout: command(executable, argv, cwd), stderr: '' });
 for (const [target, name, values, expected] of [['javascript', 'add', ['13', '-4'], 9],
   ['webassembly', 'double', ['13'], 26]]) {
   const result = await runProject({ compiler: config.compilerPath, storage: join(work, 'run-storage'),
-    bytes, selection: { target, name, args: values }, report: line => reports.push(line) }, invocation);
+    bytes, selection: { profile: 'i32-v1', target, name, args: values.map(value => ({ type: 'i32', value })),
+      resultType: 'i32' }, report: line => reports.push(line) }, invocation);
+  assert.ok(existsSync(result.file));
+  assert.ok(reports.some(line => line.includes(`${target}: i32 ${expected}`)));
+}
+for (const [target, enabled, count, expected] of [['javascript', 'true', '5', 10],
+  ['webassembly', 'false', '3', -6]]) {
+  const result = await runProject({ compiler: config.compilerPath, storage: join(work, 'run-storage'),
+    bytes: m2Bytes, selection: { profile: 'control-flow-v1', target, name: 'accumulate',
+      args: [{ type: 'bool', value: enabled }, { type: 'i32', value: count }], resultType: 'i32' },
+    report: line => reports.push(line) }, invocation);
   assert.ok(existsSync(result.file));
   assert.ok(reports.some(line => line.includes(`${target}: i32 ${expected}`)));
 }
@@ -66,7 +79,8 @@ try {
   const initialize = await connection.request('initialize', {
     rootUri: pathToFileURL(project).href, capabilities: { general: { positionEncodings: ['utf-16'] } },
   });
-  assert.equal(initialize.serverInfo.version, '0.3.0');
+  assert.equal(initialize.serverInfo.version, '0.4.0');
+  assert.equal(initialize.capabilities.definitionProvider, true);
   assert.equal(initialize.capabilities.experimental.zrynaSourceCommit, config.manifest.sourceCommit);
   const uri = pathToFileURL(join(project, 'main.zry')).href;
   connection.notify('initialized', {});
@@ -90,25 +104,78 @@ try {
   assert.ok(notices.some(value => value.method === 'textDocument/publishDiagnostics'
     && value.params.version === 2 && value.params.diagnostics.length > 0));
 } finally { await connection.stop(); }
-assert.equal(hash(readFileSync(join(project, 'main.zry'))), sourceHash);
-assert.throws(() => verifyInstallation(relocated, '0'.repeat(64)));
-const worker = join(relocated, 'compiler/lib/zryna/bootstrap/worker.mjs');
-const savedWorker = readFileSync(worker);
+const m2Notices = [];
+const m2Connection = new Connection(config, (method, params) => m2Notices.push({ method, params }), () => {},
+  (executable, argv, options) => spawn(executable, argv, { ...options, env }));
 try {
-  writeFileSync(worker, 'throw new Error("substituted worker");\n');
-  assert.throws(() => verifyInstallation(relocated, digest));
-  const rejected = spawnSync(config.serverPath, ['--installed-root', config.compilerRoot], {
-    cwd: work, env, shell: false, windowsHide: true, encoding: 'utf8', timeout: 10000,
+  const initialize = await m2Connection.request('initialize', {
+    rootUri: pathToFileURL(project).href, capabilities: { general: { positionEncodings: ['utf-16'] } },
+    initializationOptions: { zrynaProfile: 'control-flow-v1' },
   });
-  assert.notEqual(rejected.status, 0);
-  assert.match(rejected.stderr, /installed worker differs/);
-} finally { writeFileSync(worker, savedWorker); }
+  assert.equal(initialize.serverInfo.version, '0.4.0');
+  assert.equal(initialize.capabilities.definitionProvider, false);
+  assert.equal(initialize.capabilities.experimental.zrynaAnalysisProfile, 'control-flow-v1');
+  assert.equal(initialize.capabilities.experimental.zrynaFormattingProfile, 'control-flow-format-v1');
+  assert.equal(initialize.capabilities.experimental.zrynaSourceCommit, config.manifest.sourceCommit);
+  const uri = pathToFileURL(join(project, 'control-flow.zry')).href;
+  m2Connection.notify('initialized', {});
+  m2Connection.notify('textDocument/didOpen', { textDocument: { uri, languageId: 'zryna', version: 1,
+    text: m2Bytes.toString() } });
+  const edits = await m2Connection.request('textDocument/formatting', {
+    textDocument: { uri }, options: { tabSize: 2, insertSpaces: true },
+  });
+  assert.ok(edits.length > 0);
+  m2Connection.notify('textDocument/didChange', { textDocument: { uri, version: 2 },
+    contentChanges: [{ text: 'export function bad(x:i32):i32{let y:i32=missing;return y;}\n' }] });
+  try {
+    const invalid = await m2Connection.request('textDocument/formatting', {
+      textDocument: { uri }, options: { tabSize: 2, insertSpaces: true },
+    });
+    assert.equal(invalid.length, 0);
+  } catch (error) { assert.match(error.message, /ZRYNA|format|revision|rejected/i); }
+  assert.ok(m2Notices.some(value => value.method === 'textDocument/publishDiagnostics'
+    && value.params.version === 2 && value.params.diagnostics.length > 0));
+} finally { await m2Connection.stop(); }
+assert.equal(hash(readFileSync(join(project, 'main.zry'))), sourceHash);
+assert.equal(hash(readFileSync(join(project, 'control-flow.zry'))), m2SourceHash);
+assert.throws(() => verifyInstallation(relocated, '0'.repeat(64)));
+for (const name of ['worker.mjs', 'worker-v3.mjs', 'limits-v3.mjs']) {
+  const worker = join(relocated, 'compiler/lib/zryna/bootstrap', name);
+  const savedWorker = readFileSync(worker);
+  try {
+    writeFileSync(worker, 'throw new Error("substituted worker");\n');
+    assert.throws(() => verifyInstallation(relocated, digest));
+    const rejected = spawnSync(config.serverPath, ['--installed-root', config.compilerRoot], {
+      cwd: work, env, shell: false, windowsHide: true, encoding: 'utf8', timeout: 10000,
+    });
+    assert.notEqual(rejected.status, 0, name);
+    assert.match(rejected.stderr, /ZRYNA-D3001/, name);
+    assert.match(rejected.stderr, name === 'worker.mjs'
+      ? /installed worker differs from this tooling build/
+      : /protocol-v3 tooling worker differs from this tooling build/, name);
+  } finally { writeFileSync(worker, savedWorker); }
+}
+for (const name of ['worker-v3.mjs', 'limits-v3.mjs']) {
+  const worker = join(relocated, 'compiler/lib/zryna/bootstrap', name);
+  const missing = join(work, name);
+  renameSync(worker, missing);
+  try {
+    assert.throws(() => verifyInstallation(relocated, digest));
+    const rejected = spawnSync(config.serverPath, ['--installed-root', config.compilerRoot], {
+      cwd: work, env, shell: false, windowsHide: true, encoding: 'utf8', timeout: 10000,
+    });
+    assert.notEqual(rejected.status, 0, name);
+    assert.match(rejected.stderr, /ZRYNA-D3001/, name);
+  } finally { renameSync(missing, worker); }
+}
 verifyInstallation(relocated, digest);
 const receipt = { format: 'zryna.portable-acceptance.v1', sourceCommit: config.manifest.sourceCommit,
   manifestSha256: digest, target: config.manifest.target, runtimePathIsolated: true,
-  compilerStarter: { javascript: 42, webassembly: 42 }, editorRun: { javascript: 9, webassembly: 26 },
-  formatting: true, diagnostics: true, definition: true, sourcePreserved: sourceHash, relocated: true,
-  mismatchRejected: true, substitutedWorkerRejected: true,
+  compilerStarter: { javascript: 42, webassembly: 42 },
+  editorRun: { scalar: { javascript: 9, webassembly: 26 }, controlFlow: { javascript: 10, webassembly: -6 } },
+  formatting: { scalar: true, controlFlow: true }, diagnostics: { scalar: true, controlFlow: true },
+  scalarDefinition: true, sourcePreserved: { scalar: sourceHash, controlFlow: m2SourceHash }, relocated: true,
+  mismatchRejected: true, substitutedWorkerRejected: true, missingWorkerRejected: true,
   environment: { platform: process.platform, hostRelease: require('node:os').release(),
     independentCleanMachine: false }, installation: relocated };
 writeFileSync(join(work, 'acceptance.json'), `${JSON.stringify(receipt, null, 2)}\n`, { flag: 'wx' });

@@ -7,7 +7,9 @@ use std::{
 mod definitions;
 mod formatting;
 mod outgoing;
+mod profiles;
 use formatting::PendingFormatting;
+use profiles::AnalysisProfile;
 
 use outgoing::OutstandingRequests;
 pub use outgoing::{MAX_OUTSTANDING_REQUESTS, Outgoing};
@@ -16,16 +18,13 @@ use serde_json::{Value, json};
 use zryna_driver::diagnostic_sessions::{
     DiagnosticRevision, DiagnosticSession, PendingDefinitionQuery, ToolingCompiler,
 };
-use zryna_source::SourceMap;
+use zryna_source::{NormalizedSourcePath, SourceMap};
 
 use crate::{
     coordinates::PositionEncoding,
     diagnostics::{decode_report, standard_diagnostics},
     documents::{Document, source_map},
-    params::{
-        CancelParams, DidChangeParams, DidCloseParams, DidOpenParams, InitializeParams,
-        decode_params, normalize_root_uri, path_below_root,
-    },
+    params::{CancelParams, DidChangeParams, DidCloseParams, DidOpenParams, decode_params},
     protocol::{
         self, Incoming, RequestId, empty_params, log_invalid, log_message, response_message,
     },
@@ -46,6 +45,18 @@ pub trait RevisionCompiler {
         session: &mut DiagnosticSession,
         sources: SourceMap,
     ) -> Result<DiagnosticRevision, Self::Error>;
+
+    /// Analyzes the explicit public M2 profile for one normalized entrypoint.
+    ///
+    /// # Errors
+    ///
+    /// Returns the compiler boundary's stable configuration or admission failure.
+    fn admit_control_flow(
+        &mut self,
+        session: &mut DiagnosticSession,
+        sources: SourceMap,
+        entrypoint: &NormalizedSourcePath,
+    ) -> Result<DiagnosticRevision, Self::Error>;
 }
 
 impl RevisionCompiler for ToolingCompiler {
@@ -57,6 +68,15 @@ impl RevisionCompiler for ToolingCompiler {
         sources: SourceMap,
     ) -> Result<DiagnosticRevision, Self::Error> {
         ToolingCompiler::admit(self, session, sources)
+    }
+
+    fn admit_control_flow(
+        &mut self,
+        session: &mut DiagnosticSession,
+        sources: SourceMap,
+        entrypoint: &NormalizedSourcePath,
+    ) -> Result<DiagnosticRevision, Self::Error> {
+        ToolingCompiler::admit_control_flow(self, session, sources, entrypoint)
     }
 }
 
@@ -79,6 +99,7 @@ pub struct Server<Compiler> {
     session: DiagnosticSession,
     root_uri: Option<String>,
     encoding: PositionEncoding,
+    profile: AnalysisProfile,
     documents: BTreeMap<String, Document>,
     active: Option<ActiveSnapshot>,
     pending: VecDeque<PendingDefinition>,
@@ -103,6 +124,7 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
             session: DiagnosticSession::try_new()?,
             root_uri: None,
             encoding: PositionEncoding::Utf16,
+            profile: AnalysisProfile::Scalar,
             documents: BTreeMap::new(),
             active: None,
             pending: VecDeque::new(),
@@ -193,42 +215,6 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
                 .as_ref()
                 .map_or_else(Vec::new, |id| vec![protocol::method_not_found(Some(id))]),
         }
-    }
-
-    fn initialize(&mut self, message: Incoming) -> Vec<Value> {
-        let Some(id) = message.id.as_ref() else {
-            return Vec::new();
-        };
-        if self.initialized {
-            return vec![protocol::invalid_request()];
-        }
-        let Some(params) = decode_params::<InitializeParams>(message.params) else {
-            return vec![protocol::invalid_params(Some(id))];
-        };
-        let Some(root_uri) = normalize_root_uri(&params.root_uri) else {
-            return vec![protocol::invalid_params(Some(id))];
-        };
-        self.encoding = PositionEncoding::select(
-            params.capabilities.general.as_ref().and_then(|g| g.position_encodings.as_deref()),
-        );
-        self.root_uri = Some(root_uri);
-        self.initialized = true;
-        vec![protocol::response(
-            id,
-            &json!({
-                "capabilities": {
-                    "positionEncoding": self.encoding.as_str(),
-                    "textDocumentSync": {"openClose":true,"change":1},
-                    "definitionProvider": true,
-                    "documentFormattingProvider": true,
-                    "documentRangeFormattingProvider": true,
-                    "experimental": {"zrynaFormattingProfile":"scalar-format-v1",
-                        "zrynaInstallationProfile":"portable-setup-v1",
-                        "zrynaSourceCommit":option_env!("ZRYNA_TOOLING_SOURCE_COMMIT")}
-                },
-                "serverInfo": {"name":"zryna-language-server","version":env!("CARGO_PKG_VERSION")}
-            }),
-        )]
     }
 
     fn did_open(&mut self, params: Option<Value>) -> Vec<Value> {
@@ -328,7 +314,20 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
     }
 
     fn admit_sources(&mut self, sources: SourceMap) -> Vec<Value> {
-        match self.compiler.admit(&mut self.session, sources.clone()) {
+        let admitted = match self.profile {
+            AnalysisProfile::Scalar => self.compiler.admit(&mut self.session, sources.clone()),
+            AnalysisProfile::ControlFlow => {
+                let Some(path) = self.documents.values().next().map(|document| &document.path)
+                else {
+                    return vec![log_message("missing M2 entrypoint")];
+                };
+                let Ok(entrypoint) = NormalizedSourcePath::new(path.clone()) else {
+                    return vec![log_message("invalid M2 entrypoint")];
+                };
+                self.compiler.admit_control_flow(&mut self.session, sources.clone(), &entrypoint)
+            }
+        };
+        match admitted {
             Ok(revision) => {
                 self.active = Some(ActiveSnapshot { revision, sources });
                 self.publish_diagnostics(revision)
@@ -387,10 +386,5 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
             )
         }));
         output
-    }
-
-    fn path_for_uri(&self, uri: &str) -> Option<String> {
-        let root = self.root_uri.as_ref()?;
-        path_below_root(root, uri)
     }
 }

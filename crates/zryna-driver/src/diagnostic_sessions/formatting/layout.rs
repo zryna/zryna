@@ -1,6 +1,12 @@
 //! Whitespace layout after source-bound scalar syntax and semantic admission.
 //! Every non-whitespace byte, including comments and punctuation, is retained in order.
 
+mod control_flow;
+
+pub(super) fn format_control_flow(source: &str) -> Option<String> {
+    control_flow::format(source)
+}
+
 pub(super) fn format(source: &str) -> Option<String> {
     let tokens = tokens(source)?;
     let mut output = String::new();

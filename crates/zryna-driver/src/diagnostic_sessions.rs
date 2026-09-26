@@ -15,9 +15,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use zryna_diagnostics::{Diagnostic, protocol_v2};
+use zryna_diagnostics::{Diagnostic, Severity, protocol_v2};
+use zryna_frontend::{WorkerError, WorkerFailure};
 use zryna_semantics::definition_queries::DefinitionIndex;
-use zryna_source::{SourceMap, SourceMapIdentity};
+use zryna_source::{NormalizedSourcePath, SourceMap, SourceMapIdentity};
 
 mod formatting;
 mod request;
@@ -232,6 +233,25 @@ impl DiagnosticSession {
         self.admit(sources, Some(report.into()), None, None)
     }
 
+    pub(crate) fn admit_worker_failure(
+        &mut self,
+        sources: SourceMap,
+        error: &WorkerError,
+    ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
+        if !error.diagnostics().is_empty() {
+            return self.admit_diagnostics(sources, error.diagnostics());
+        }
+        let guidance = if error.failure() == WorkerFailure::ProviderRejected {
+            "remove unsupported syntax or top-level declarations; check the selected profile"
+        } else {
+            "verify the pinned Node.js runtime and TypeScript frontend, then retry"
+        };
+        self.admit_diagnostics(
+            sources,
+            &[Diagnostic::error(error.code(), None, error.to_string(), guidance)],
+        )
+    }
+
     /// Admits successful protocol-v2 semantic state for definition queries.
     ///
     /// # Errors
@@ -292,6 +312,43 @@ impl DiagnosticSession {
                 }
             }
             Ok(_) => Err(DiagnosticSessionError::SemanticAuthority),
+            Err(diagnostics) => self.admit_diagnostics(sources, &diagnostics),
+        }
+    }
+
+    /// Admits one exact in-memory protocol-v3 M2 analysis without loading source files.
+    ///
+    /// The selected entry belongs to this source map. Verified M2 semantics owns names, types,
+    /// direct calls, and control flow; scalar definition facts are not inferred from v3 syntax.
+    /// Provider and semantic errors are retained as ready structured diagnostics.
+    ///
+    /// # Errors
+    ///
+    /// Rejects foreign source authority, an absent entry, invalid diagnostics, or retention
+    /// exhaustion.
+    pub fn admit_control_flow_analysis(
+        &mut self,
+        sources: SourceMap,
+        syntax: &zryna_frontend::syntax_v3::ProjectSyntaxSnapshot,
+        entrypoint: &NormalizedSourcePath,
+    ) -> Result<DiagnosticRevision, DiagnosticSessionError> {
+        if !syntax.is_bound_to(&sources) {
+            return Err(DiagnosticSessionError::SemanticAuthority);
+        }
+        let entry = sources.file_id(entrypoint).ok_or(DiagnosticSessionError::SemanticAuthority)?;
+        if syntax.diagnostics().iter().any(|diagnostic| diagnostic.severity() == Severity::Error) {
+            return self.admit_diagnostics(sources, syntax.diagnostics());
+        }
+        let input =
+            zryna_semantics::control_flow_v1::SemanticInput::try_new(syntax, &sources, entry)
+                .ok_or(DiagnosticSessionError::SemanticAuthority)?;
+        match zryna_semantics::control_flow_v1::lower(input) {
+            Ok(_) => {
+                let report = protocol_v2::render_json(syntax.diagnostics(), &sources)
+                    .map_err(DiagnosticSessionError::Diagnostics)?;
+                let formatting = FormattingDocument::prepare_control_flow(syntax, &sources);
+                self.admit(sources, Some(report.into()), None, formatting)
+            }
             Err(diagnostics) => self.admit_diagnostics(sources, &diagnostics),
         }
     }

@@ -9,11 +9,13 @@ use zryna_driver::diagnostic_sessions::{
 use zryna_language_server::{
     MAX_OUTSTANDING_REQUESTS, Outgoing, RevisionCompiler, Server, read_frame, write_frame,
 };
-use zryna_source::SourceMap;
+use zryna_source::{NormalizedSourcePath, SourceMap};
 
 struct EmptyCompiler;
 
 struct SemanticCompiler;
+
+struct ControlFlowCompiler;
 
 impl RevisionCompiler for EmptyCompiler {
     type Error = DiagnosticSessionError;
@@ -22,6 +24,15 @@ impl RevisionCompiler for EmptyCompiler {
         &mut self,
         session: &mut DiagnosticSession,
         sources: SourceMap,
+    ) -> Result<DiagnosticRevision, Self::Error> {
+        session.admit_diagnostics(sources, &[])
+    }
+
+    fn admit_control_flow(
+        &mut self,
+        session: &mut DiagnosticSession,
+        sources: SourceMap,
+        _entrypoint: &NormalizedSourcePath,
     ) -> Result<DiagnosticRevision, Self::Error> {
         session.admit_diagnostics(sources, &[])
     }
@@ -36,6 +47,37 @@ impl RevisionCompiler for SemanticCompiler {
         sources: SourceMap,
     ) -> Result<DiagnosticRevision, Self::Error> {
         admit_single_function_fixture(session, sources)
+    }
+
+    fn admit_control_flow(
+        &mut self,
+        session: &mut DiagnosticSession,
+        sources: SourceMap,
+        _entrypoint: &NormalizedSourcePath,
+    ) -> Result<DiagnosticRevision, Self::Error> {
+        admit_single_function_fixture(session, sources)
+    }
+}
+
+impl RevisionCompiler for ControlFlowCompiler {
+    type Error = DiagnosticSessionError;
+
+    fn admit(
+        &mut self,
+        _session: &mut DiagnosticSession,
+        _sources: SourceMap,
+    ) -> Result<DiagnosticRevision, Self::Error> {
+        panic!("scalar admission selected for M2")
+    }
+
+    fn admit_control_flow(
+        &mut self,
+        session: &mut DiagnosticSession,
+        sources: SourceMap,
+        entrypoint: &NormalizedSourcePath,
+    ) -> Result<DiagnosticRevision, Self::Error> {
+        assert_eq!(entrypoint.as_str(), "src/main.zry");
+        session.admit_diagnostics(sources, &[])
     }
 }
 
@@ -106,6 +148,62 @@ fn semantic_initialized() -> Server<SemanticCompiler> {
     assert_eq!(output.len(), 1);
     let _ = request(&mut server, json!({"jsonrpc":"2.0","method":"initialized","params":{}}));
     server
+}
+
+fn control_flow_initialized() -> Server<ControlFlowCompiler> {
+    let mut server = Server::new(ControlFlowCompiler).expect("session");
+    let output = request(
+        &mut server,
+        json!({
+            "jsonrpc":"2.0","id":1,"method":"initialize","params":{
+                "rootUri":"file:///workspace",
+                "capabilities":{"general":{"positionEncodings":["utf-16"]}},
+                "initializationOptions":{"zrynaProfile":"control-flow-v1"}
+            }
+        }),
+    );
+    assert_eq!(
+        output[0]["result"]["capabilities"]["experimental"]["zrynaAnalysisProfile"],
+        "control-flow-v1"
+    );
+    assert_eq!(
+        output[0]["result"]["capabilities"]["experimental"]["zrynaFormattingProfile"],
+        "control-flow-format-v1"
+    );
+    assert_eq!(output[0]["result"]["capabilities"]["definitionProvider"], false);
+    server
+}
+
+#[test]
+fn explicit_m2_selects_entrypoint_and_rejects_unavailable_definition() {
+    let mut server = control_flow_initialized();
+    let published =
+        open(&mut server, 1, "export function f(): i32 { let x: i32 = 1; return x; }\n");
+    assert_eq!(published[0]["method"], "zryna/publishDiagnostics");
+    assert_eq!(published[1]["params"]["version"], 1);
+    assert_eq!(definition(&mut server, 2, 0, 46)[0]["error"]["code"], -32601);
+    let changed =
+        change(&mut server, 2, "export function f(): i32 { const x: i32 = 2; return x; }\n");
+    assert_eq!(changed[0]["params"]["revision"], 2);
+}
+
+#[test]
+fn invalid_profile_cannot_initialize_or_admit_source() {
+    let mut server = Server::new(EmptyCompiler).expect("session");
+    for options in [
+        json!({"zrynaProfile":"data-ownership-v1"}),
+        json!({"zrynaProfile":"control-flow-v1","other":true}),
+        json!(1),
+    ] {
+        let rejected = request(
+            &mut server,
+            json!({"jsonrpc":"2.0","id":1,"method":"initialize",
+            "params":{"rootUri":"file:///workspace","capabilities":{},"initializationOptions":options}}),
+        );
+        assert_eq!(rejected[0]["error"]["code"], -32602);
+    }
+    let unopened = open(&mut server, 1, "export function f(): i32 { return 1; }\n");
+    assert!(unopened.is_empty());
 }
 
 fn open<Compiler: RevisionCompiler>(

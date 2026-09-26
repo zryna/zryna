@@ -43,7 +43,7 @@ struct RetainedFile {
     sha256: [u8; 32],
 }
 
-/// Fixed five-file stage. Unix owner permissions and Windows inherited private ACLs are trusted.
+/// Fixed seven-file stage. Unix owner permissions and Windows inherited private ACLs are trusted.
 #[derive(Debug)]
 pub(super) struct ToolingStage {
     path: PathBuf,
@@ -80,6 +80,20 @@ impl ToolingStage {
             create_directory(&mut stage.directories, SCOPE, "old", OLD)?;
             create_directory(&mut stage.directories, OLD, "lib", OLD_LIB)?;
             stage_file(&stage.directories, &mut stage.files, ROOT, "worker.mjs", &captured.worker)?;
+            stage_file(
+                &stage.directories,
+                &mut stage.files,
+                ROOT,
+                "worker-v3.mjs",
+                &captured.worker_v3,
+            )?;
+            stage_file(
+                &stage.directories,
+                &mut stage.files,
+                ROOT,
+                "limits-v3.mjs",
+                &captured.limits_v3,
+            )?;
             stage_file(
                 &stage.directories,
                 &mut stage.files,
@@ -125,6 +139,10 @@ impl ToolingStage {
 
     pub(super) fn worker(&self) -> &Path {
         &self.worker
+    }
+
+    pub(super) fn worker_v3(&self) -> PathBuf {
+        self.working_directory.join("worker-v3.mjs")
     }
 
     pub(super) fn working_directory(&self) -> &Path {
@@ -173,8 +191,15 @@ impl ToolingStage {
     }
 
     fn cleanup(&mut self) {
-        for key in ["old-runtime", "old-manifest", "wrapper-runtime", "wrapper-manifest", "worker"]
-        {
+        for key in [
+            "old-runtime",
+            "old-manifest",
+            "wrapper-runtime",
+            "wrapper-manifest",
+            "worker-v3",
+            "limits-v3",
+            "worker",
+        ] {
             let Some(file) = self.files.remove(key) else { continue };
             let Some(parent) = self.directories.get(file.parent) else { return };
             let Ok(current) = open_regular(&parent.dir, file.name) else { return };
@@ -308,6 +333,8 @@ fn stage_file(
     }
     let key = match (parent_key, name) {
         (ROOT, "worker.mjs") => "worker",
+        (ROOT, "worker-v3.mjs") => "worker-v3",
+        (ROOT, "limits-v3.mjs") => "limits-v3",
         (WRAPPER, "package.json") => "wrapper-manifest",
         (WRAPPER_LIB, "typescript.js") => "wrapper-runtime",
         (OLD, "package.json") => "old-manifest",
@@ -324,6 +351,8 @@ fn stage_file(
 fn file_name(key: &str) -> &'static str {
     match key {
         "worker" => "worker.mjs",
+        "worker-v3" => "worker-v3.mjs",
+        "limits-v3" => "limits-v3.mjs",
         "wrapper-manifest" | "old-manifest" => "package.json",
         "wrapper-runtime" | "old-runtime" => "typescript.js",
         _ => "",
@@ -332,7 +361,10 @@ fn file_name(key: &str) -> &'static str {
 
 fn validate_inventory(key: &str, directory: &Dir) -> Result<(), Diagnostic> {
     let expected: BTreeSet<String> = match key {
-        ROOT => ["node_modules", "worker.mjs"].map(str::to_owned).into_iter().collect(),
+        ROOT => ["node_modules", "worker.mjs", "worker-v3.mjs", "limits-v3.mjs"]
+            .map(str::to_owned)
+            .into_iter()
+            .collect(),
         MODULES => ["@typescript"].map(str::to_owned).into_iter().collect(),
         SCOPE => ["old", "typescript6"].map(str::to_owned).into_iter().collect(),
         WRAPPER | OLD => ["lib", "package.json"].map(str::to_owned).into_iter().collect(),

@@ -7,7 +7,11 @@ const { configuredInstallation } = require('./installation.cjs');
 
 let active;
 let starting = Promise.resolve();
+let profileSwitching = Promise.resolve();
 let diagnostics;
+let globalStatus;
+let globalOutput;
+let editorProfile = 'i32-v1';
 
 function configuration() {
   const installation = configuredInstallation(vscode);
@@ -36,6 +40,26 @@ function validPosition(position, document) {
 }
 
 function publish(state, method, params) {
+  if (method === 'zryna/publishDiagnostics') {
+    if (active !== state || state.profile !== editorProfile
+      || !Array.isArray(params?.documents) || params.documents.length > 10000
+      || !params.documents.some(item => item?.uri === state.uri && item.version === state.document.version)
+      || params.report?.schema_version !== 2 || !Array.isArray(params.report.diagnostics)
+      || params.report.diagnostics.length > 10000) return;
+    const messages = params.report.diagnostics.filter(item => item?.location?.kind === 'global'
+      && item.severity === 'error'
+      && typeof item.code === 'string' && item.code.length <= 80
+      && typeof item.message === 'string' && item.message.length <= 1000)
+      .map(item => item.message.startsWith(item.code) ? item.message : `${item.code}: ${item.message}`);
+    state.globalMessages = messages;
+    globalOutput.clear();
+    if (messages.length) {
+      globalOutput.appendLine(`Zryna project diagnostics for ${state.uri} (version ${state.document.version}):`);
+      for (const message of messages) globalOutput.appendLine(message);
+    }
+    updateGlobalStatus();
+    return;
+  }
   if (method !== 'textDocument/publishDiagnostics' || active !== state
     || params?.uri !== state.uri || params.version !== state.document.version) return;
   if (!Array.isArray(params.diagnostics) || params.diagnostics.length > 10000) return;
@@ -54,32 +78,56 @@ function publish(state, method, params) {
   } catch { diagnostics.delete(state.document.uri); }
 }
 
+function updateGlobalStatus() {
+  const messages = active?.globalMessages;
+  if (!messages?.length || vscode.window.activeTextEditor?.document !== active.document) {
+    globalStatus?.hide();
+    return;
+  }
+  globalStatus.text = `$(error) Zryna: ${messages.length} project error${messages.length === 1 ? '' : 's'}`;
+  globalStatus.tooltip = messages.join('\n');
+  globalStatus.show();
+}
+
 async function connect(document) {
   if (document.isClosed || !vscode.workspace.isTrusted || document.uri.scheme !== 'file' || document.languageId !== 'zryna') {
     throw new Error('Zryna requires a trusted local file workspace.');
   }
   const folder = vscode.workspace.getWorkspaceFolder(document.uri);
   if (!folder) throw new Error('Open the Zryna project folder first.');
-  if (active?.uri === document.uri.toString() && !active.connection.closed) return active;
+  if (active?.uri === document.uri.toString() && active.profile === editorProfile && active.ready
+    && !active.connection.closed) return active;
   await disconnect();
-  const state = { document, uri: document.uri.toString() };
+  const state = { document, uri: document.uri.toString(), profile: editorProfile };
+  const version = document.version;
   const config = configuration();
   state.connection = new Connection(config, (method, params) => publish(state, method, params), () => {
     diagnostics.delete(document.uri);
+    state.globalMessages = [];
+    if (active === state) globalOutput.clear();
+    updateGlobalStatus();
   });
   active = state;
   try {
     const result = await state.connection.request('initialize', {
       rootUri: folder.uri.toString(), capabilities: { general: { positionEncodings: ['utf-16'] } },
+      ...(state.profile === 'control-flow-v1' ? { initializationOptions: { zrynaProfile: 'control-flow-v1' } } : {}),
     });
     const cap = result?.capabilities;
-    if (result?.serverInfo?.name !== 'zryna-language-server' || result.serverInfo.version !== '0.3.0'
+    const m2 = state.profile === 'control-flow-v1';
+    if (result?.serverInfo?.name !== 'zryna-language-server' || result.serverInfo.version !== '0.4.0'
       || cap?.experimental?.zrynaInstallationProfile !== 'portable-setup-v1'
       || (config.installed && cap?.experimental?.zrynaSourceCommit !== config.manifest.sourceCommit)
-      || cap?.experimental?.zrynaFormattingProfile !== 'scalar-format-v1'
-      || cap.positionEncoding !== 'utf-16' || !cap.documentFormattingProvider || !cap.documentRangeFormattingProvider) {
-      throw new Error('This extension requires language server 0.3.0 with scalar-format-v1 and portable-setup-v1.');
+      || cap?.experimental?.zrynaAnalysisProfile !== (m2 ? 'control-flow-v1' : 'scalar-v2')
+      || cap?.experimental?.zrynaFormattingProfile !== (m2 ? 'control-flow-format-v1' : 'scalar-format-v1')
+      || cap.positionEncoding !== 'utf-16' || cap.definitionProvider !== !m2
+      || !cap.documentFormattingProvider || !cap.documentRangeFormattingProvider) {
+      throw new Error('This extension requires a matching Zryna 0.4.0 server and editor profile.');
     }
+    if (active !== state || editorProfile !== state.profile || document.version !== version || document.isClosed) {
+      throw new Error('The document changed before the Zryna connection was ready.');
+    }
+    state.definitionProvider = cap.definitionProvider;
     state.connection.notify('initialized', {});
     state.connection.notify('textDocument/didOpen', { textDocument: {
       uri: state.uri, languageId: 'zryna', version: document.version, text: document.getText(),
@@ -130,15 +178,22 @@ async function disconnect() {
   active = undefined;
   if (previous) {
     diagnostics?.delete(previous.document.uri);
+    globalStatus?.hide();
+    globalOutput?.clear();
     await previous.connection.stop().catch(() => {});
   }
 }
 
 function activate(context) {
+  editorProfile = context.workspaceState?.get('zryna.editorProfile') === 'control-flow-v1' ? 'control-flow-v1' : 'i32-v1';
   registerRun(vscode, context);
   diagnostics = vscode.languages.createDiagnosticCollection('zryna');
+  globalOutput = vscode.window.createOutputChannel('Zryna Diagnostics');
+  globalStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+  globalStatus.command = 'zryna.showGlobalDiagnostics';
   const selector = { scheme: 'file', language: 'zryna' };
-  context.subscriptions.push(diagnostics,
+  context.subscriptions.push(diagnostics, globalOutput, globalStatus,
+    vscode.commands.registerCommand('zryna.showGlobalDiagnostics', () => globalOutput.show()),
     vscode.languages.registerDocumentFormattingEditProvider(selector, {
       provideDocumentFormattingEdits: (document, options, token) => format(document, null, options, token),
     }),
@@ -147,11 +202,38 @@ function activate(context) {
     }),
     vscode.languages.registerDefinitionProvider(selector, {
       async provideDefinition(document, position, token) {
+        const state = await ensure(document);
+        if (!state.definitionProvider) return null;
         const result = await query(document, 'textDocument/definition', { position }, token);
         if (result === null) return null;
         if (result?.uri !== document.uri.toString()) throw new Error('Foreign definition result.');
         return new vscode.Location(document.uri, range(result.range, document));
       },
+    }),
+    vscode.commands.registerCommand('zryna.selectEditorProfile', selected => {
+      const next = profileSwitching.catch(() => {}).then(async () => {
+        if (selected === undefined) {
+          const choice = await vscode.window.showQuickPick([
+            { label: 'Scalar (i32-v1)', profile: 'i32-v1' },
+            { label: 'M2 control flow (control-flow-v1)', profile: 'control-flow-v1' },
+          ], { placeHolder: 'Select the Zryna editor profile' });
+          if (!choice) return;
+          selected = choice.profile;
+        }
+        if (selected !== 'i32-v1' && selected !== 'control-flow-v1') throw new Error('Invalid Zryna editor profile.');
+        if (selected === editorProfile) {
+          const document = vscode.window.activeTextEditor?.document;
+          if (document?.languageId === 'zryna') await ensure(document);
+          return;
+        }
+        await context.workspaceState.update('zryna.editorProfile', selected);
+        editorProfile = selected;
+        await disconnect();
+        const document = vscode.window.activeTextEditor?.document;
+        if (document?.languageId === 'zryna') await ensure(document);
+      });
+      profileSwitching = next;
+      return next;
     }),
     vscode.workspace.onDidChangeTextDocument(event => {
       if (active?.ready && active.document === event.document && event.contentChanges.length) {
@@ -161,6 +243,9 @@ function activate(context) {
             contentChanges: [{ text: event.document.getText() }],
           });
           diagnostics.delete(event.document.uri);
+          active.globalMessages = [];
+          globalOutput.clear();
+          updateGlobalStatus();
         } catch (error) { active.connection.fail(error); }
       }
     }),
@@ -171,7 +256,9 @@ function activate(context) {
       if (event.affectsConfiguration('zryna')) void disconnect();
     }),
     vscode.window.onDidChangeActiveTextEditor(editor => {
+      globalStatus.hide();
       if (editor?.document.languageId === 'zryna') void ensure(editor.document).catch(() => {});
+      updateGlobalStatus();
     }),
   );
   const document = vscode.window.activeTextEditor?.document;

@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { canonicalVsix, vsixEntries } from '../scripts/portable-setup/vsix.mjs';
+import { verifyEditorManifest } from '../scripts/portable-setup/build.mjs';
 import { encodeZip } from '../scripts/distribution/archive-zip.mjs';
 
 function fixture() {
   return encodeZip('extension', [{ path: 'package.json', mode: 0o644,
-    data: Buffer.from('{"name":"zryna","version":"0.3.0"}') }]);
+    data: Buffer.from('{"name":"zryna","version":"0.4.0"}') }]);
 }
 
 test('VSIX canonicalization retains every content byte and normalizes both timestamp fields', () => {
@@ -37,4 +38,35 @@ test('VSIX parser rejects missing end, foreign method, encryption and excessive 
     mutate(bytes, vsixEntries(bytes)[1]);
     assert.throws(() => vsixEntries(bytes));
   }
+});
+
+test('candidate assembly rejects a VSIX with mismatched server, editor or profile metadata', () => {
+  const metadata = {
+    name: 'zryna', version: '0.4.0', zrynaCompatibility: {
+      compilerVersion: '0.2.3', serverVersion: '0.4.0', installationCapability: 'portable-setup-v1',
+      requiredCapabilities: { 'scalar-v2': 'scalar-format-v1', 'control-flow-v1': 'control-flow-format-v1' },
+      profiles: ['scalar-v2', 'control-flow-v1'], sourceBuildRequired: false,
+      releasedCompilerCompatible: true,
+    },
+  };
+  const entries = [{ name: 'extension/package.json', data: Buffer.from(JSON.stringify(metadata)) }];
+  assert.doesNotThrow(() => verifyEditorManifest(entries));
+  for (const [field, value] of [['version', '0.3.0'], ['version', '0.5.0']]) {
+    const original = metadata[field];
+    metadata[field] = value;
+    entries[0].data = Buffer.from(JSON.stringify(metadata));
+    assert.throws(() => verifyEditorManifest(entries), /compatibility/);
+    metadata[field] = original;
+  }
+  for (const [field, value] of [['compilerVersion', '0.3.0'], ['serverVersion', '0.3.0'],
+    ['installationCapability', 'portable-setup-v2']]) {
+    const original = metadata.zrynaCompatibility[field];
+    metadata.zrynaCompatibility[field] = value;
+    entries[0].data = Buffer.from(JSON.stringify(metadata));
+    assert.throws(() => verifyEditorManifest(entries), /compatibility/);
+    metadata.zrynaCompatibility[field] = original;
+  }
+  metadata.zrynaCompatibility.requiredCapabilities['control-flow-v1'] = 'scalar-format-v1';
+  entries[0].data = Buffer.from(JSON.stringify(metadata));
+  assert.throws(() => verifyEditorManifest(entries), /compatibility/);
 });
