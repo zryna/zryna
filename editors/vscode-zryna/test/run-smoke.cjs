@@ -19,7 +19,8 @@ async function runSmoke(extension, config, document) {
     window: {
       get activeTextEditor() { return vscode.window.activeTextEditor; },
       createOutputChannel: () => ({ appendLine: text => lines.push(text), clear() {}, show() {}, dispose() {} }),
-      showQuickPick: async items => typeof items[0] === 'string' ? target : items.find(item => item.label === 'add'),
+      showQuickPick: async (items, options) => options.title.includes('profile') ? 'i32-v1'
+        : typeof items[0] === 'string' ? target : items.find(item => item.label === 'add'),
       showInputBox: async () => ['13', '-4'][argument++],
       showErrorMessage: async text => errors.push(text), showInformationMessage: async () => undefined,
       withProgress: (options, task) => vscode.window.withProgress(options, task),
@@ -27,7 +28,10 @@ async function runSmoke(extension, config, document) {
     },
     commands: {
       registerCommand: (id, fn) => { callbacks[id] = fn; return { dispose() {} }; },
-      executeCommand: async (id, uri) => { assert.equal(id, 'revealFileInOS'); revealed.push(uri.fsPath); },
+      executeCommand: async (id, value) => {
+        if (id === 'zryna.selectEditorProfile') { assert.equal(value, 'i32-v1'); return; }
+        assert.equal(id, 'revealFileInOS'); revealed.push(value.fsPath);
+      },
     },
   };
   const context = { subscriptions: [], globalStorageUri: vscode.Uri.file(config.runStorage) };

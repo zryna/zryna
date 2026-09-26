@@ -26,7 +26,11 @@ function fixture(mode) {
       showErrorMessage: async message => errors.push(message), showInformationMessage: async () => undefined,
       withProgress: async (_, action) => action({}, { isCancellationRequested: mode === 'cancel-progress' }) },
     commands: { registerCommand: (name, fn) => { commands[name] = fn; return { dispose() {} }; },
-      executeCommand: async (...args) => actions.push(args) },
+      executeCommand: async (...args) => {
+        actions.push(args);
+        if (mode === 'switch-stale' && args[0] === 'zryna.selectEditorProfile') document.version++;
+        if (mode === 'switch-dirty' && args[0] === 'zryna.selectEditorProfile') document.isDirty = true;
+      } },
     languages: { createDiagnosticCollection: disposable, registerDocumentFormattingEditProvider: disposable,
       registerDocumentRangeFormattingEditProvider: disposable, registerDefinitionProvider: disposable },
   };
@@ -34,10 +38,10 @@ function fixture(mode) {
     './installation.cjs': { configuredInstallation: () => null },
     'node:fs/promises': { lstat: async () => ({ isFile: () => true, isSymbolicLink: () => false }) }, 'node:path': path,
     './run-process.cjs': { stopRuns() {} },
-    './run-input.cjs': { sourceText: bytes => bytes.toString(), selectRun: async () => {
+    './run-input.cjs': { SOURCE_LIMITS: { 'control-flow-v1': 2 * 1024 * 1024 }, selectRun: async () => {
       if (mode === 'cancel') return;
       if (mode === 'stale') document.version++;
-      return { name: 'main', args: [], target: 'javascript' };
+      return { profile: 'i32-v1', name: 'main', args: [], target: 'javascript', resultType: 'i32' };
     } },
     './run-project.cjs': { regularFile: async () => bytes, verifyOutput: async () => {
       if (mode === 'tampered-output') throw new Error('Output integrity differs.');
@@ -67,11 +71,13 @@ function fixture(mode) {
 }
 
 test('registration never runs; trust, unsaved, stale and cancelled input never executes', async () => {
-  for (const mode of ['untrusted', 'dirty', 'closed', 'stale', 'cancel', 'cancel-progress']) {
+  for (const mode of ['untrusted', 'dirty', 'closed', 'stale', 'cancel', 'cancel-progress',
+    'switch-stale', 'switch-dirty']) {
     const f = fixture(mode);
     assert.equal(f.runs.length, 0);
     await f.commands['zryna.run']();
     assert.equal(f.runs.length, 0, mode);
+    assert.deepEqual(f.actions, mode.startsWith('switch-') ? [['zryna.selectEditorProfile', 'i32-v1']] : [], mode);
     if (mode !== 'cancel') assert.equal(f.errors.length, 1, mode);
   }
 });
@@ -83,6 +89,7 @@ test('explicit command uses only user executable and exact saved bytes', async (
   assert.equal(f.runs.length, 1);
   assert.equal(f.runs[0].compiler, '/trusted/compiler');
   assert.equal(f.runs[0].bytes.toString(), 'export function main():i32{return 1;}');
+  assert.deepEqual(f.actions, [['zryna.selectEditorProfile', 'i32-v1']]);
 });
 
 test('activation forwards desktop user-data storage from the host context', async () => {
@@ -110,6 +117,7 @@ test('reveal verifies output before moving focus and passes the generated file e
   await f.commands['zryna.revealRunOutput']();
   assert.deepEqual(f.errors, []);
   assert.deepEqual(f.actions, [
+    ['zryna.selectEditorProfile', 'i32-v1'],
     ['verified'], ['workbench.action.focusActiveEditorGroup'],
     ['revealFileInOS', { scheme: 'file', fsPath: '/storage/output/main.mjs' }],
   ]);
@@ -117,5 +125,5 @@ test('reveal verifies output before moving focus and passes the generated file e
   await rejected.commands['zryna.run']();
   await rejected.commands['zryna.revealRunOutput']();
   assert.deepEqual(rejected.errors, ['Output integrity differs.']);
-  assert.deepEqual(rejected.actions, []);
+  assert.deepEqual(rejected.actions, [['zryna.selectEditorProfile', 'i32-v1']]);
 });

@@ -1,14 +1,17 @@
 'use strict';
 
-const MAX_SOURCE_BYTES = 1024;
+const SOURCE_LIMITS = Object.freeze({ 'i32-v1': 1024, 'control-flow-v1': 2 * 1024 * 1024 });
 
-function sourceText(bytes) {
-  if (bytes.length > MAX_SOURCE_BYTES) throw new Error('Standalone Run supports at most 1024 UTF-8 source bytes.');
+function sourceText(bytes, profile = 'i32-v1') {
+  if (!Object.hasOwn(SOURCE_LIMITS, profile)) throw new Error('Unsupported Run profile.');
+  const limit = SOURCE_LIMITS[profile];
+  if (bytes.length > limit) throw new Error(`Run ${profile} supports at most ${limit} UTF-8 source bytes.`);
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
 }
 
 // Lexical discovery is a picker aid only. The compiler validates the complete saved source.
-function exportsIn(text) {
+function exportsIn(text, profile = 'i32-v1') {
+  if (!Object.hasOwn(SOURCE_LIMITS, profile)) throw new Error('Unsupported Run profile.');
   const tokens = text.match(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|[A-Za-z_$][\w$]*|\S/g) ?? [];
   const clean = tokens.filter(token => !token.startsWith('//') && !token.startsWith('/*'));
   const found = [];
@@ -24,34 +27,48 @@ function exportsIn(text) {
     let valid = true;
     while (cursor < clean.length && clean[cursor] !== ')') {
       const parameter = clean[cursor++];
-      if (!/^[A-Za-z_][A-Za-z_0-9]*$/.test(parameter) || clean[cursor++] !== ':' || clean[cursor++] !== 'i32') {
+      if (!/^[A-Za-z_][A-Za-z_0-9]*$/.test(parameter) || clean[cursor++] !== ':') {
         valid = false;
         break;
       }
-      parameters.push(parameter);
+      const type = clean[cursor++];
+      if (type !== 'i32' && (profile !== 'control-flow-v1' || type !== 'bool')) {
+        valid = false;
+        break;
+      }
+      parameters.push({ name: parameter, type });
       if (clean[cursor] === ')') break;
       if (clean[cursor++] !== ',') { valid = false; break; }
     }
-    if (valid && clean[cursor++] === ')' && clean[cursor++] === ':' && clean[cursor++] === 'i32'
-      && clean[cursor] === '{') found.push({ name, parameters });
+    if (!valid || clean[cursor++] !== ')' || clean[cursor++] !== ':') continue;
+    const resultType = clean[cursor++];
+    if ((resultType === 'i32' || (profile === 'control-flow-v1' && resultType === 'bool'))
+      && clean[cursor] === '{') found.push({ name, parameters, resultType });
   }
   if (new Set(found.map(item => item.name)).size !== found.length) throw new Error('Duplicate exported function names.');
-  if (!found.length) throw new Error('No exported function with explicit i32 parameters and i32 result. Run supports the standalone i32-v1 profile.');
+  if (!found.length) throw new Error(`No exported function with explicit ${profile === 'i32-v1' ? 'i32' : 'i32/bool'} parameters and result. Run supports the selected ${profile} profile.`);
   return found;
 }
 
-function argumentError(value) {
-  if (!/^(?:0|-?[1-9][0-9]*)$/.test(value) || !Number.isInteger(Number(value))
-    || Number(value) < -2147483648 || Number(value) > 2147483647) {
+function argumentError(value, type = 'i32') {
+  if (type === 'bool') return value === 'true' || value === 'false' ? undefined : 'Enter exactly true or false.';
+  if (type !== 'i32' || typeof value !== 'string' || !/^(?:0|-?[1-9][0-9]*)$/.test(value)
+    || !Number.isInteger(Number(value)) || Number(value) < -2147483648 || Number(value) > 2147483647) {
     return 'Enter an i32 decimal integer from -2147483648 to 2147483647 (no spaces or leading zeros).';
   }
   return undefined;
 }
 
 async function selectRun(window, bytes) {
-  const choices = exportsIn(sourceText(bytes));
+  const profile = await window.showQuickPick(['i32-v1', 'control-flow-v1'], {
+    title: 'Zryna: Select Run profile', ignoreFocusOut: true,
+  });
+  if (!profile) return;
+  const choices = exportsIn(sourceText(bytes, profile), profile);
   const selected = await window.showQuickPick(choices.map(item => ({
-    label: item.name, description: `(${item.parameters.map(name => `${name}: i32`).join(', ')}): i32`, item,
+    label: item.name,
+    description: `(${item.parameters.map(parameter => `${parameter.name}: ${parameter.type}`).join(', ')}): ${item.resultType}`,
+    item,
   })), { title: 'Zryna: Run saved source — select export', ignoreFocusOut: true });
   if (!selected) return;
   const target = await window.showQuickPick(['javascript', 'webassembly'], {
@@ -60,14 +77,15 @@ async function selectRun(window, bytes) {
   if (!target) return;
   const args = [];
   for (const parameter of selected.item.parameters) {
-    const value = await window.showInputBox({ title: `Zryna: ${selected.item.name} — ${parameter}: i32`,
-      prompt: 'Required signed 32-bit decimal integer', validateInput: argumentError, ignoreFocusOut: true });
+    const value = await window.showInputBox({ title: `Zryna: ${selected.item.name} — ${parameter.name}: ${parameter.type}`,
+      prompt: parameter.type === 'bool' ? 'Required true or false' : 'Required signed 32-bit decimal integer',
+      validateInput: input => argumentError(input, parameter.type), ignoreFocusOut: true });
     if (value === undefined) return;
-    const error = argumentError(value);
+    const error = argumentError(value, parameter.type);
     if (error) throw new Error(error);
-    args.push(value);
+    args.push({ type: parameter.type, value });
   }
-  return { name: selected.item.name, target, args };
+  return { profile, name: selected.item.name, target, args, resultType: selected.item.resultType };
 }
 
-module.exports = { sourceText, exportsIn, argumentError, selectRun };
+module.exports = { SOURCE_LIMITS, sourceText, exportsIn, argumentError, selectRun };

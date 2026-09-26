@@ -2,7 +2,7 @@
 
 const fs = require('node:fs/promises');
 const { isAbsolute, join } = require('node:path');
-const { selectRun, sourceText } = require('./run-input.cjs');
+const { selectRun, SOURCE_LIMITS } = require('./run-input.cjs');
 const { runProject, regularFile, verifyOutput } = require('./run-project.cjs');
 const { stopRuns } = require('./run-process.cjs');
 const { configuredInstallation } = require('./installation.cjs');
@@ -47,12 +47,11 @@ function registerRun(vscode, context) {
         const document = vscode.window.activeTextEditor?.document;
         checkDocument(document);
         const version = document.version;
-        const bytes = await regularFile(document.uri.fsPath, 1024 * 1024);
-        sourceText(bytes);
+        const bytes = await regularFile(document.uri.fsPath, SOURCE_LIMITS['control-flow-v1']);
         const selection = await selectRun(vscode.window, bytes);
         if (!selection) return;
         checkDocument(document);
-        if (document.version !== version || !(await regularFile(document.uri.fsPath, 1024 * 1024)).equals(bytes)) {
+        if (document.version !== version || !(await regularFile(document.uri.fsPath, SOURCE_LIMITS['control-flow-v1'])).equals(bytes)) {
           throw new Error('Source changed during selection. Run again to use the new saved version.');
         }
         const compiler = configuredInstallation(vscode)?.compilerPath
@@ -66,13 +65,21 @@ function registerRun(vscode, context) {
         }
         output.clear();
         output.show(true);
-        output.appendLine(`Saved file: ${document.uri.fsPath}\n${selection.name}(${selection.args.join(', ')}) — ${selection.target}`);
+        output.appendLine(`Saved file: ${document.uri.fsPath}\n${selection.profile}: ${selection.name}(${selection.args.map(argument => `${argument.type}:${argument.value}`).join(', ')}) — ${selection.target}`);
         last = undefined;
         await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification,
           title: 'Zryna: Running saved source', cancellable: true }, async (_, token) => {
           checkDocument(document);
           const lifetime = { get isCancellationRequested() { return disposed || token.isCancellationRequested; },
             onCancellationRequested: callback => token.onCancellationRequested(callback) };
+          if (lifetime.isCancellationRequested) throw new Error('Run cancelled.');
+          await vscode.commands.executeCommand('zryna.selectEditorProfile', selection.profile);
+          checkDocument(document);
+          if (lifetime.isCancellationRequested) throw new Error('Run cancelled.');
+          if (document.version !== version
+            || !(await regularFile(document.uri.fsPath, SOURCE_LIMITS['control-flow-v1'])).equals(bytes)) {
+            throw new Error('Source changed during selection. Run again to use the new saved version.');
+          }
           last = await runProject({ compiler, storage: join(storage.fsPath, 'runs'), bytes,
             selection, token: lifetime, report: text => output.appendLine(text) });
         });
