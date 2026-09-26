@@ -87,8 +87,8 @@ The extension does not download tools, run on save, auto-save, or execute arbitr
    invalid source makes no edit. Undo that edit; unsaved source is never executed by Run.
 6. Copy `examples/control-flow.zry` into the same practice folder. Open it and select
    **Zryna: Select Editor Profile**, then **M2 control flow**. Format the complete file twice;
-   the second request should make no edit. Run `accumulate` with JavaScript, `bool:true` and
-   `i32:5`; expect `javascript: i32 10`. Run again with WebAssembly, `bool:false` and `i32:3`;
+   the second request should make no edit. Run `accumulate` with JavaScript, then enter `true`
+   and `5`; expect `javascript: i32 10`. Run again with WebAssembly, enter `false` and `3`;
    expect `webassembly: i32 -6`. These runs require explicit profile, target, export and inputs.
 
 The default editor profile retains the one-file `i32-v1` Run subset and its 1,024 UTF-8-byte
