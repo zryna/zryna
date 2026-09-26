@@ -346,7 +346,8 @@ impl DiagnosticSession {
             Ok(_) => {
                 let report = protocol_v2::render_json(syntax.diagnostics(), &sources)
                     .map_err(DiagnosticSessionError::Diagnostics)?;
-                self.admit(sources, Some(report.into()), None, None)
+                let formatting = FormattingDocument::prepare_control_flow(syntax, &sources);
+                self.admit(sources, Some(report.into()), None, formatting)
             }
             Err(diagnostics) => self.admit_diagnostics(sources, &diagnostics),
         }

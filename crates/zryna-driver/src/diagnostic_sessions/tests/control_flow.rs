@@ -5,7 +5,9 @@ use zryna_frontend::{ProviderExpectationV3, WorkerFrontendV3, WorkerLimitsV3, Wo
 use zryna_source::NormalizedSourcePath;
 
 use super::{request, sources};
-use crate::diagnostic_sessions::{DiagnosticSession, DiagnosticSessionError, QueryStatus};
+use crate::diagnostic_sessions::{
+    DiagnosticSession, DiagnosticSessionError, FormattingError, QueryReason, QueryStatus,
+};
 
 const PATH: &str = "src/main.zry";
 
@@ -132,4 +134,45 @@ fn switching_profiles_invalidates_pending_m2_work() {
         .admit_diagnostics(sources(PATH, "export function value(): i32 { return 2; }"), &[])
         .expect("scalar replacement");
     assert_eq!(session.finish_diagnostics(pending, now).status(), QueryStatus::Stale);
+}
+
+#[test]
+fn formatting_and_definition_respect_m2_semantics_and_revision() {
+    let text =
+        "export function value(flag:bool):i32{const x:i32=1;if(flag){return x;}else{return 0;}}";
+    let (mut session, report) = analyze(text);
+    assert!(codes(&report).is_empty());
+    let revision = session.active_revision().expect("M2 revision");
+    let edits = session.format_source(revision, PATH, None).expect("verified M2 formatting");
+    assert_eq!(edits.len(), 1);
+    assert!(edits[0].text.contains("const x: i32 = 1;"));
+    assert_eq!(session.format_source(revision, PATH, Some(0..5)), Err(FormattingError::Range));
+
+    let now = Instant::now();
+    let pending = session
+        .begin_definition(
+            &request(
+                "m2-definition",
+                revision,
+                100_000,
+                "definition",
+                json!({"path": PATH, "byte_offset": 16}),
+            ),
+            now,
+        )
+        .expect("bounded definition request");
+    let definition = session.finish_definition(pending, now);
+    assert_eq!(
+        (definition.status(), definition.reason()),
+        (QueryStatus::Unavailable, Some(QueryReason::Analysis))
+    );
+
+    let bad = sources(PATH, "export function bad(): i32 { const x: i32 = 1; x = 2; return x; }");
+    let syntax = frontend().analyze_verified_v3(&bad).expect("invalid semantic syntax");
+    let entry = NormalizedSourcePath::new(PATH).expect("entry");
+    let bad_revision = session
+        .admit_control_flow_analysis(bad, &syntax, &entry)
+        .expect("ready semantic rejection");
+    assert_eq!(session.format_source(bad_revision, PATH, None), Err(FormattingError::Unavailable));
+    assert_eq!(session.format_source(revision, PATH, None), Err(FormattingError::Stale));
 }
