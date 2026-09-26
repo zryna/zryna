@@ -96,7 +96,7 @@ pub(super) struct InitializeParams {
     #[serde(default)]
     root_path: Option<Value>,
     #[serde(default)]
-    initialization_options: Option<Value>,
+    pub(super) initialization_options: Option<Value>,
     #[serde(default)]
     trace: Option<Value>,
     #[serde(default)]

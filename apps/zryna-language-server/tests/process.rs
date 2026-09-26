@@ -161,3 +161,122 @@ fn assert_formatting(input: &mut impl Write, receiver: &mpsc::Receiver<Value>) {
         "export function identity(x: i32): i32 {\n  return x;\n}\n"
     );
 }
+
+#[test]
+fn stdio_m2_routes_control_flow_and_rejects_invalid_edits() {
+    let compiler_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .expect("compiler root");
+    let mut child = Command::new(env!("CARGO_BIN_EXE_zryna-language-server"))
+        .args(["--compiler-root"])
+        .arg(compiler_root)
+        .args(["--node"])
+        .arg(node_executable())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn server");
+    let mut input = child.stdin.take().expect("server stdin");
+    let output = child.stdout.take().expect("server stdout");
+    let (sender, receiver) = mpsc::channel();
+    let reader = thread::spawn(move || {
+        let mut output = BufReader::new(output);
+        while let Ok(Some(bytes)) = read_frame(&mut output) {
+            let value = serde_json::from_slice(&bytes).expect("server JSON");
+            if sender.send(value).is_err() {
+                break;
+            }
+        }
+    });
+
+    send(
+        &mut input,
+        json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+            "rootUri":"file:///workspace","capabilities":{"general":{"positionEncodings":["utf-16"]}},
+            "initializationOptions":{"zrynaProfile":"control-flow-v1"}
+        }}),
+    );
+    let initialized = receive(&receiver);
+    assert_eq!(
+        initialized["result"]["capabilities"]["experimental"]["zrynaAnalysisProfile"],
+        "control-flow-v1"
+    );
+    assert_eq!(initialized["result"]["capabilities"]["definitionProvider"], false);
+    send(&mut input, json!({"jsonrpc":"2.0","method":"initialized","params":{}}));
+    let loop_source = "export function main(count: i32): i32 { let i: i32 = 0; let sum: i32 = 0; while (i < count) { i = i + 1; sum = sum + i; } return sum; }\n";
+    send(
+        &mut input,
+        json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":"file:///workspace/src/main.zry","languageId":"zryna","version":1,"text":loop_source
+        }}}),
+    );
+    let accepted = receive(&receiver);
+    assert_eq!(accepted["method"], "zryna/publishDiagnostics");
+    assert_eq!(accepted["params"]["report"]["diagnostics"], json!([]));
+    assert_eq!(receive(&receiver)["params"]["version"], 1);
+
+    send(
+        &mut input,
+        json!({"jsonrpc":"2.0","id":2,"method":"textDocument/formatting",
+        "params":{"textDocument":{"uri":"file:///workspace/src/main.zry"},
+        "options":{"tabSize":2,"insertSpaces":true}}}),
+    );
+    let formatted = receive(&receiver);
+    assert!(
+        formatted["result"][0]["newText"].as_str().is_some_and(|text| text.contains("while ("))
+    );
+
+    let branch_and_call = "function twice(value: i32): i32 { return value * 2; }\nexport function main(positive: bool, value: i32): i32 { const doubled: i32 = twice(value); if (positive) { return doubled; } else { return -doubled; } }\n";
+    send(
+        &mut input,
+        json!({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+            "textDocument":{"uri":"file:///workspace/src/main.zry","version":2},
+            "contentChanges":[{"text":branch_and_call}]
+        }}),
+    );
+    let accepted_branch = receive(&receiver);
+    assert_eq!(accepted_branch["params"]["report"]["diagnostics"], json!([]));
+    assert_eq!(receive(&receiver)["params"]["version"], 2);
+
+    let invalid =
+        "export function main(): i32 { const value: i32 = 3; value = 4; return value; }\n";
+    send(
+        &mut input,
+        json!({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+            "textDocument":{"uri":"file:///workspace/src/main.zry","version":3},
+            "contentChanges":[{"text":invalid}]
+        }}),
+    );
+    let report = receive(&receiver);
+    assert_eq!(report["params"]["documents"][0]["version"], 3);
+    assert!(
+        report["params"]["report"]["diagnostics"]
+            .as_array()
+            .is_some_and(|items| items.iter().any(|item| item["code"] == "ZRYNA-M2005"))
+    );
+    let standard = receive(&receiver);
+    assert_eq!(standard["params"]["version"], 3);
+    assert!(
+        standard["params"]["diagnostics"]
+            .as_array()
+            .is_some_and(|items| items.iter().any(|item| item["code"] == "ZRYNA-M2005"))
+    );
+    send(
+        &mut input,
+        json!({"jsonrpc":"2.0","id":3,"method":"textDocument/formatting",
+        "params":{"textDocument":{"uri":"file:///workspace/src/main.zry"},
+        "options":{"tabSize":2,"insertSpaces":true}}}),
+    );
+    let rejected = receive(&receiver);
+    assert_eq!(rejected["error"]["data"]["code"], "ZRYNA-D4001");
+    assert!(rejected.get("result").is_none());
+
+    send(&mut input, json!({"jsonrpc":"2.0","id":4,"method":"shutdown"}));
+    assert!(receive(&receiver)["result"].is_null());
+    send(&mut input, json!({"jsonrpc":"2.0","method":"exit"}));
+    drop(input);
+    assert!(child.wait().expect("wait server").success());
+    reader.join().expect("reader thread");
+}

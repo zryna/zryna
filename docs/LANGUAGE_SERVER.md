@@ -1,8 +1,9 @@
 # Language server protocol v1
 
-Status: public, bounded stdio transport for the existing protocol-v2 scalar diagnostic session and
-definition query, with the opt-in scalar-format-v1 presentation surface. This does not expand the language profile, semantic query inventory, compiler
-execution surface. The initial editor package is described below; marketplace publication remains pending.
+Status: bounded stdio transport for protocol-v2 scalar diagnostics, definition, and formatting,
+plus explicitly selected `control-flow-v1` diagnostics and formatting for the local M2 editor.
+The M2 selection adds no definition index, compiler execution method, or M3 support. Marketplace
+publication remains pending.
 
 ## Start and initialize
 
@@ -27,6 +28,16 @@ client-listed `utf-8`, `utf-16`, or `utf-32` position encoding and otherwise use
 traversal, non-portable paths, case aliases, invalid UTF-8, queries/fragments, NUL, backslashes, and
 source-limit violations fail closed through URI or `zryna-source` validation.
 
+Without `initializationOptions`, the connection retains protocol-v2 scalar admission and
+`scalar-format-v1`. Exact `initializationOptions: {"zrynaProfile":"control-flow-v1"}` selects
+protocol-v3 M2 admission and `control-flow-format-v1`. Unknown profile values or additional option
+fields reject initialization before any source is admitted. The initialize response echoes the
+selected `experimental.zrynaAnalysisProfile` (`scalar-v2` or `control-flow-v1`) and
+`experimental.zrynaFormattingProfile` (`scalar-format-v1` or `control-flow-format-v1`). It also
+advertises `portable-setup-v1` and, in installed mode, the exact embedded source commit. The
+0.4.0 extension checks these fields, position encoding, method capabilities, and installed source
+identity before `didOpen` sends text.
+
 ## Supported methods
 
 | Method | Contract |
@@ -35,16 +46,16 @@ source-limit violations fail closed through URI or `zryna-source` validation.
 | `textDocument/didOpen` | Admit one `zryna` full-text overlay with a nonnegative version. |
 | `textDocument/didChange` | Require exactly one full-text replacement and a strictly increasing version. |
 | `textDocument/didClose` | Remove the overlay, invalidate its revision, and clear published diagnostics. |
-| `textDocument/definition` | Resolve the selected scalar function/parameter identifier through the semantics-owned definition index. |
-| `textDocument/formatting` | Format a verified scalar document with the canonical style. |
+| `textDocument/definition` | Resolve scalar function/parameter identifiers through the semantics-owned index. Unavailable in M2 connections. |
+| `textDocument/formatting` | Format a verified document under the selected profile. |
 | `textDocument/rangeFormatting` | Format only complete verified functions inside the selection. |
 | `$/cancelRequest` | Cancel one admitted definition or formatting query by its exact JSON-RPC ID. |
 | `shutdown`, `exit` | End the connection in order without executing project code. |
 
-The protocol-v2 scalar profile admits at most one open document per connection. Full-text sync is
+Both selected profiles admit at most one open document per connection. Full-text sync is
 deliberate; incremental range edits are not advertised or accepted. Hover,
 references, rename, completion, code actions, symbols/indexing, debugging, builds,
-execution, module resolution, control-flow/data-ownership queries, and workspace mutation are not
+execution, module resolution, M2 definition, data-ownership queries, and workspace mutation are not
 implemented. Unknown requests receive `Method not found`; unknown notifications have no effect.
 
 ## Revisions, diagnostics, and definitions
@@ -68,7 +79,7 @@ Each ready revision emits two notifications:
   and retains original guidance/location in inert `data`. It never invents a document range for a
   global or workspace label.
 
-Definition requests use the active document and negotiated position to derive one exact UTF-8 byte
+Scalar definition requests use the active document and negotiated position to derive one exact UTF-8 byte
 offset. Token ends, whitespace, comments, and EOF return `null`; invalid lines/columns, UTF-8 scalar
 splits, UTF-16 surrogate splits, and non-round-trippable CRLF interiors reject. A successful result
 contains the declaration URI and exact converted range issued by the retained semantic index.
@@ -95,13 +106,13 @@ on the supported CI operating systems. Complete repository gates remain required
 
 ## Scalar format v1
 
-This initial formatter supports only the existing one-file protocol-v2 scalar profile: exported
+The scalar formatter supports only the existing one-file protocol-v2 scalar profile: exported
 functions with explicit i32 parameters/results and the admitted return, reference, integer and
 addition expressions. It consumes the exact verified snapshot only after successful scalar semantic
-admission. M2 control-flow/modules and M3 data/ownership formatting remain unsupported; their
-compiler support does not imply editor support. Parenthesized expressions, classes, imports,
-incomplete syntax and semantic errors receive no edits. Issue #409 remains open for the broader
-admitted surface and marketplace publication.
+admission. Parenthesized expressions, classes, imports,
+incomplete syntax and semantic errors receive no edits. The separately selected M2 formatter
+handles its reviewed one-file control-flow surface; imports and M3 remain outside this editor
+connection. Issue #409 remains open for its full formatter and marketplace acceptance.
 
 The canonical style uses two spaces inside function bodies, one space between words and around
 addition, no space before commas/colons/semicolons or inside parameter parentheses, a space after
@@ -138,10 +149,29 @@ diagnostics remain authoritative. Some incomplete provider reports cannot be rep
 existing diagnostic-v2 contract; their analysis remains unavailable and formatting still fails
 closed with D4001. Cancelled requests use LSP RequestCancelled; expired requests fail without edits.
 
-## Initial editor installation and compatibility
+## Control-flow format v1
+
+Selecting `control-flow-v1` at initialization admits one authenticated protocol-v3 source file
+through the compiler-owned M2 analysis path. The one-file local editor surface supports i32/bool
+functions, `let`/`const`, assignment, `if`/`else`, `while`, direct calls, and admitted arithmetic
+and comparisons. Imports, M3 ownership/data syntax, classes, and global variables are outside
+this connection. The server does not infer M2 from source text or fall back to scalar analysis.
+The selected M2 connection advertises `definitionProvider: false`; definition requests return
+`Method not found` until a separately verified M2 definition index exists.
+
+`control-flow-format-v1` consumes only a verified, semantically accepted M2 snapshot. It keeps
+token spellings and comments in order, uses two-space nesting and LF, and returns one whole-document
+edit or no edit when already canonical. Range formatting accepts complete function spans only;
+each edit stays inside its selected function and preserves every byte outside. Partial function
+selections reject with `ZRYNA-D4003`; empty or trivia-only selections return no edits. Invalid,
+unsupported, or semantically rejected input returns `ZRYNA-D4001` with no edits. Stale revisions
+return `ZRYNA-D4002`, and result limits return `ZRYNA-D4004`. The formatted result cap is 131,072
+UTF-8 bytes. Cancellation and source replacement cannot publish old edits.
+
+## Local editor installation and compatibility
 
 The VS Code/Open VSX package lives in editors/vscode-zryna. It is a local installable Developer
-Preview, not a marketplace publication. It provides diagnostics, definition, document formatting
+Preview, not a marketplace publication. It provides diagnostics, scalar definition, document formatting
 and range formatting for one active local file at a time. Switching files starts a fresh bounded
 connection; it does not enable module resolution. It has no runtime package dependencies, telemetry,
 download/update behavior, debugging or general filesystem write service. A separate explicit
@@ -151,13 +181,17 @@ document and version before returning them to VS Code.
 
 | Extension | Editor engine | Required compiler | Source profile |
 | --- | --- | --- | --- |
-| 0.3.0 | VS Code-compatible API >=1.82.0 | Server 0.3.0 advertising scalar-format-v1 and portable-setup-v1 | One-file scalar-v2 |
-| 0.3.0 | Same | Public immutable v0.2.3 language server | Incompatible: no formatting capability |
+| 0.4.0 | VS Code-compatible API >=1.82.0 | Server 0.4.0 advertising scalar-v2, scalar-format-v1, and portable-setup-v1 | One-file scalar; definition available |
+| 0.4.0 | Same | Server 0.4.0 advertising control-flow-v1, control-flow-format-v1, and portable-setup-v1 | One-file M2; definition unavailable |
+| 0.4.0 | Same | Server 0.3.0 or public immutable v0.2.3 server | Incompatible |
 
-The semantic package version alone is insufficient: the extension verifies server name/version,
-UTF-16 positions, both formatting methods and the exact scalar-format-v1 capability before sending
-document contents. No new compiler release/tag is created by this work; distributing this server
-in a future compiler release is a separate release dependency.
+The package version alone is insufficient: the extension verifies server name/version, UTF-16
+positions, both formatting methods, the exact selected analysis/formatting capability and installed
+source revision before sending document contents. The editor profile defaults to `i32-v1` for
+scalar definition compatibility. **Zryna: Select Editor Profile** offers `i32-v1` and
+`control-flow-v1`; it stores the choice per workspace and reconnects before admitting the active
+document. The explicit Run picker selects the same editor profile before execution. Neither
+selection nor formatting executes source. No new compiler release or tag is created by this work.
 
 From the matching reviewed source checkout, use the pinned toolchains:
 
@@ -168,7 +202,7 @@ pnpm m0:check
 cargo build --locked -p zryna-language-server
 pnpm editor:check
 pnpm editor:package
-code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.3.0.vsix
+code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.4.0.vsix
 ~~~
 
 Set zryna.serverPath, zryna.compilerRoot and zryna.nodePath in USER settings to absolute paths.
@@ -176,7 +210,8 @@ The first names the built target/debug/zryna-language-server executable (.exe on
 second names that trusted compiler checkout with its pinned adapter dependencies, and the third
 names the exact Node.js 22.22.1 executable. Workspace-provided overrides are ignored. The extension
 is disabled in untrusted or virtual workspaces. Open the edited project's folder and a .zry file,
-then use the editor's Format Document/Format Selection or Go to Definition commands. This does
+then select an editor profile and use Format Document/Format Selection. Go to Definition is
+available in scalar mode. This does
 not add a zryna fmt CLI command or any compiler execution flag.
 
 Packaging uses pinned @vscode/vsce 4.0.0 without dependencies or signing. Its optional signing
@@ -201,11 +236,14 @@ execute project code. The language-server protocol and its execution exclusions 
 
 Set zryna.compilerPath in user settings to the absolute official installed v0.2.3 compiler
 executable, separately from the source-built formatting server. Workspace overrides are ignored.
-Run prompts for one exported function with explicit i32 parameters/result, JavaScript/WebAssembly,
-and every required canonical signed 32-bit argument. There are no hardcoded invocation values.
-Lexical discovery is advisory; compiler admission remains authoritative. The standalone i32-v1
-package source limit is 1024 UTF-8 bytes; M2/M3, modules, bool invocation and native Windows
-executables are outside this command's scope.
+Run first prompts for `i32-v1` or `control-flow-v1`, then one exported function, JavaScript or
+WebAssembly, and each required input. M1 accepts canonical signed i32 values; M2 also accepts
+exact `true`/`false` bool inputs and results. There are no hardcoded invocation values. After a
+complete selection, Run switches the active editor connection to the selected profile and checks
+the saved source again before compiling. Cancellation during selection starts no process. Lexical
+discovery is advisory; compiler admission remains authoritative. The one-file source limit is 1024
+UTF-8 bytes for `i32-v1` and 2 MiB for `control-flow-v1`. Imported modules, M3, classes, global
+variables, and native Windows executables are outside this command's scope.
 
 Unsaved input is rejected, and source changes during selection require a fresh invocation. Each
 saved snapshot goes to a new compiler-created project in extension global storage. The extension

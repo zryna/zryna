@@ -1,4 +1,4 @@
-use super::{PendingDefinition, RevisionCompiler, Server};
+use super::{PendingDefinition, RevisionCompiler, Server, profiles::AnalysisProfile};
 use crate::{
     coordinates::{byte_range_to_positions, position_to_byte},
     params::{DefinitionParams, decode_params},
@@ -14,6 +14,9 @@ impl<Compiler: RevisionCompiler> Server<Compiler> {
         let Some(id) = message.id else {
             return Vec::new();
         };
+        if self.profile == AnalysisProfile::ControlFlow {
+            return vec![protocol::method_not_found(Some(&id))];
+        }
         let Some(params) = decode_params::<DefinitionParams>(message.params) else {
             return vec![protocol::invalid_params(Some(&id))];
         };
