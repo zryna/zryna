@@ -46,21 +46,31 @@ Formatting has one canonical two-space/LF style. Comments and token spellings re
 ## Real extension-host acceptance
 
 The opt-in Windows desktop acceptance harness launches VS Code 1.138.0 through
-`@vscode/test-electron` with a new temporary workspace, user-data directory, extension directory,
-and global storage. It uses a separately verified complete portable setup, not a source rebuild.
-After independently checking the candidate archive and `setup.json` digest, run:
+`@vscode/test-electron` with a dedicated workspace, user-data directory, extension directory,
+and global storage outside normal VS Code profiles. It uses a separately verified complete portable
+setup, not a source rebuild. After independently checking the candidate archive and `setup.json`
+digest, establish trust once:
+
+```powershell
+pnpm editor:host-acceptance -- '<verified setup directory>' '<setup.json SHA-256>' --prepare-trust
+```
+
+In the first VS Code window, use **Manage Workspace Trust** to trust only the printed test
+workspace. A small test extension runs the API checks in the real extension host, records the
+result, and closes this isolated VS Code instance. Later runs use the same command without
+`--prepare-trust`; an absent trust decision fails immediately with an instruction to prepare it.
+The state path is stable for this checkout, under the system temp
+directory as `zryna-vscode-host-state-<checkout hash>`. Its isolated VS Code profile and empty
+workspace directory remain so VS Code can remember that exact trust decision. The test source,
+compiler run projects, and per-run result files are removed after every run. Remove the dedicated
+state directory to revoke this harness's saved trust and data. The pinned VS Code download has a
+separate system-temp cache. Neither command disables Workspace Trust or edits a normal VS Code
+profile. A local Code executable may be passed before `--prepare-trust` when testing an installed
+version; this does not pin that version.
 
 ```powershell
 pnpm editor:host-acceptance -- '<verified setup directory>' '<setup.json SHA-256>'
 ```
-
-VS Code opens the disposable folder in Restricted Mode. In the separate test window, use the
-**Manage Workspace Trust** editor to trust that folder. The harness waits up to 120 seconds for
-VS Code to report the workspace as trusted, then runs the real extension and compiler. It never
-disables Workspace Trust or edits an existing VS Code profile. The temporary workspace, editor
-data, compiler run projects, and results are removed after the run. The pinned VS Code download
-is cached in the system temp directory for repeat runs. A local Code executable may be passed as a third argument when testing
-an installed version; this does not pin that version.
 
 The host checks activation, scalar and M2 profile selection, scalar definition, M2 diagnostics and
 recovery, format idempotence, real JavaScript and WebAssembly return values, and opening generated
@@ -69,11 +79,11 @@ to users. The API tests do not prove status-bar appearance, rendered Problems la
 presentation, or OS file explorer behavior; those require a separate visual review. The harness is
 not part of `editor:check` or default CI.
 
-On a local Windows run against the `cb60922` candidate, the first uncached VS Code download
-and trust probe took 102 seconds; that probe stopped because the workspace was untrusted.
-A cached acceptance run passed in 121 seconds end to end, including a manual trust decision.
-A later cached run timed out after 122 seconds without trust, so it is not a test result.
-These observations do not establish a fixed cold or warm duration, nor Linux or CI behavior.
+On a local Windows run against the `cb60922` candidate, the one-time trusted setup completed in
+23.0 seconds; two consecutive cached, unattended acceptance runs completed in 24.0 and 24.0
+seconds. The first VS Code download in an earlier probe took 102 seconds including a failed trust
+check, so a complete cold acceptance duration has not been measured. These are observations,
+not duration guarantees. Linux and CI behavior remain unverified.
 
 ## Compatibility
 

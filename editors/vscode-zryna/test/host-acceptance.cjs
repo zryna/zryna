@@ -59,14 +59,13 @@ async function run() {
   const started = Date.now();
   try {
     assert.equal(vscode.workspace.workspaceFolders?.length, 1);
-    const trustStarted = Date.now();
     if (!vscode.workspace.isTrusted) {
-      console.log('Trust the disposable Zryna test workspace in the VS Code window to continue.');
+      assert.equal(config.prepareTrust, true,
+        'Workspace is untrusted. Run once with --prepare-trust and trust the isolated folder.');
       await vscode.commands.executeCommand('workbench.trust.manage');
-      await until(() => vscode.workspace.isTrusted, 'manual trust of disposable workspace', 120000);
+      await until(() => vscode.workspace.isTrusted, 'manual trust of isolated workspace', 120000);
     }
     assert.equal(vscode.workspace.isTrusted, true);
-    result.trustWaitMs = Date.now() - trustStarted;
     result.checks.push('explicit workspace trust');
     const settings = vscode.workspace.getConfiguration('zryna');
     await settings.update('installationPath', config.setup, vscode.ConfigurationTarget.Global);
