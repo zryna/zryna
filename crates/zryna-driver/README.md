@@ -72,13 +72,22 @@ The tooling compiler supports the lockfile's exact pnpm layout: the adapter pack
 resolve to `@typescript/typescript6` 6.0.2, whose compatibility wrapper resolves the staged
 `@typescript/old` name to the actual TypeScript 6.0.3 implementation. It captures the fixed worker,
 wrapper, package manifests, and implementation through retained no-follow filesystem authorities,
-then copies that five-file executable closure into one bounded private stage. Node receives only
+then copies the fixed executable closure into one bounded private stage. Node receives only
 the staged worker and staged package graph; later replacement or deletion below the original
 compiler root cannot select different executable bytes. The stage is revalidated before and after
 each admission and cleanup removes only its fixed identity-checked inventory. This boundary assumes
 the pinned installation is trusted when discovery begins and that owner-private Unix permissions
 or the corresponding inherited Windows ACL remain private. It is not immunity against an
 arbitrary same-user process or a hostile operating system racing execution.
+
+For an explicit local `control-flow-v1` editor session, `ToolingCompiler::admit_control_flow`
+uses that same captured worker through its exact protocol-v3 handshake. The driver binds the
+verified syntax and selected entry to the supplied in-memory source map, then runs the M2
+semantic lowerer and mandatory IR verifier before reporting an accepted revision. Syntax and
+semantic failures remain ready structured diagnostics. This admission reads no ambient module
+files, executes no workspace program, and grants no build or Run authority. The existing
+protocol-v2 `admit` path and its scalar definition index remain available; M2 definition lookup
+is unavailable until a separate verified M2 index exists.
 
 The default public success profile is the one-file, explicitly typed `i32` subset documented by
 `zryna-semantics`. Source-level `bool` remains rejected by `I32V1`. The separate

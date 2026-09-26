@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
-use zryna_source::{SourceFileInput, SourceMap};
+use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 
 use crate::diagnostic_sessions::{DiagnosticSession, ToolingCompiler};
 
@@ -27,6 +27,8 @@ impl CompilerFixture {
         let fixture = Self { root };
         let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         copy(&repository, &fixture.root, "adapters/typescript-6/src/worker.mjs");
+        copy(&repository, &fixture.root, "adapters/typescript-6/src/worker-v3.mjs");
+        copy(&repository, &fixture.root, "adapters/typescript-6/src/limits-v3.mjs");
         for relative in [
             "node_modules/.pnpm/@typescript+typescript6@6.0.2/node_modules/@typescript/typescript6/package.json",
             "node_modules/.pnpm/@typescript+typescript6@6.0.2/node_modules/@typescript/typescript6/lib/typescript.js",
@@ -140,6 +142,48 @@ fn post_capture_substitute_and_deleted_dependency_never_execute() {
     let mut session = DiagnosticSession::try_new().expect("diagnostic session");
     compiler.admit(&mut session, sources).expect("staged worker admission");
     assert!(!marker.exists(), "the replacement worker must never execute");
+
+    let marker_v3 = fixture.root.join("v3-substitute-executed");
+    fs::write(
+        fixture.root.join("adapters/typescript-6/src/worker-v3.mjs"),
+        format!(
+            "import fs from 'node:fs'; fs.writeFileSync({}, 'executed');\n",
+            serde_json::to_string(&marker_v3).expect("marker path")
+        ),
+    )
+    .expect("replace original v3 worker after capture");
+    fs::write(fixture.root.join("adapters/typescript-6/src/limits-v3.mjs"), "throw 1;\n")
+        .expect("replace original v3 limits after capture");
+    let sources = SourceMap::build(vec![SourceFileInput {
+        path: "src/main.zry".to_owned(),
+        text: "export function identity(value: i32): i32 { let result: i32 = value; return result; }\n"
+            .to_owned(),
+    }])
+    .expect("valid M2 source");
+    let entry = NormalizedSourcePath::new("src/main.zry").expect("entry path");
+    let mut session = DiagnosticSession::try_new().expect("M2 diagnostic session");
+    let revision = compiler
+        .admit_control_flow(&mut session, sources, &entry)
+        .expect("staged v3 worker admission");
+    let request = serde_json::json!({
+        "query_version": 1,
+        "request_id": "v3",
+        "snapshot": revision.handle().to_string(),
+        "revision": revision.revision(),
+        "method": "diagnostics",
+        "params": {},
+        "limits": {"work": 100_000, "results": 10_000},
+    });
+    let now = std::time::Instant::now();
+    let pending = session
+        .begin_diagnostics(&serde_json::to_vec(&request).expect("request"), now)
+        .expect("M2 diagnostic query");
+    let response = session.finish_diagnostics(pending, now);
+    assert_eq!(response.status(), crate::diagnostic_sessions::QueryStatus::Ok);
+    let json: serde_json::Value =
+        serde_json::from_str(response.encoded().expect("report")).expect("JSON report");
+    assert_eq!(json["result"]["report"]["diagnostics"], serde_json::json!([]));
+    assert!(!marker_v3.exists(), "the replacement v3 worker must never execute");
 }
 
 #[test]

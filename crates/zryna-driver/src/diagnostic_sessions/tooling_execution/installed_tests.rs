@@ -20,6 +20,8 @@ fn installed_closure_rejects_missing_changed_worker_and_dependency_bytes() {
     let bootstrap = root.join("lib/zryna/bootstrap");
     let mappings = [
         ("adapters/typescript-6/src/worker.mjs", "worker.mjs"),
+        ("adapters/typescript-6/src/worker-v3.mjs", "worker-v3.mjs"),
+        ("adapters/typescript-6/src/limits-v3.mjs", "limits-v3.mjs"),
         (
             "node_modules/.pnpm/@typescript+typescript6@6.0.2/node_modules/@typescript/typescript6/package.json",
             "node_modules/@typescript/typescript6/package.json",
