@@ -149,7 +149,10 @@ for (const name of ['worker.mjs', 'worker-v3.mjs', 'limits-v3.mjs']) {
       cwd: work, env, shell: false, windowsHide: true, encoding: 'utf8', timeout: 10000,
     });
     assert.notEqual(rejected.status, 0, name);
-    assert.match(rejected.stderr, /installed .* differs/, name);
+    assert.match(rejected.stderr, /ZRYNA-D3001/, name);
+    assert.match(rejected.stderr, name === 'worker.mjs'
+      ? /installed worker differs from this tooling build/
+      : /protocol-v3 tooling worker differs from this tooling build/, name);
   } finally { writeFileSync(worker, savedWorker); }
 }
 for (const name of ['worker-v3.mjs', 'limits-v3.mjs']) {
@@ -162,6 +165,7 @@ for (const name of ['worker-v3.mjs', 'limits-v3.mjs']) {
       cwd: work, env, shell: false, windowsHide: true, encoding: 'utf8', timeout: 10000,
     });
     assert.notEqual(rejected.status, 0, name);
+    assert.match(rejected.stderr, /ZRYNA-D3001/, name);
   } finally { renameSync(missing, worker); }
 }
 verifyInstallation(relocated, digest);
