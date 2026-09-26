@@ -126,6 +126,30 @@ fn m2_range_layout_preserves_bytes_outside_the_selected_function() {
 fn m2_operator_boundaries_survive_formatting() {
     let cases = [
         (
+            "export function spaced():i32{return - 1;}",
+            "export function spaced(): i32 {\n  return - 1;\n}\n",
+        ),
+        (
+            "export function wrapped():i32{return -\n1;}",
+            "export function wrapped(): i32 {\n  return - 1;\n}\n",
+        ),
+        (
+            "export function commented():i32{return -/* kept */1;}",
+            "export function commented(): i32 {\n  return - /* kept */ 1;\n}\n",
+        ),
+        (
+            "export function line_comment():i32{return - // kept\n1;}",
+            "export function line_comment(): i32 {\n  return - // kept\n  1;\n}\n",
+        ),
+        (
+            "export function atomic():i32{return -1;}",
+            "export function atomic(): i32 {\n  return -1;\n}\n",
+        ),
+        (
+            "export function repeated():i32{return - -1;}",
+            "export function repeated(): i32 {\n  return - -1;\n}\n",
+        ),
+        (
             "export function neg(x:i32):i32{return - -x;}",
             "export function neg(x: i32): i32 {\n  return - -x;\n}\n",
         ),
@@ -164,5 +188,10 @@ fn m2_operator_boundaries_survive_formatting() {
                 .expect("formatted ESM")
                 .source,
         );
+        let mut before = serde_json::to_value(&syntax).expect("original syntax value");
+        let mut after = serde_json::to_value(&reparsed).expect("formatted syntax value");
+        erase_coordinates(&mut before);
+        erase_coordinates(&mut after);
+        assert_eq!(before, after, "verified operator topology and token identities");
     }
 }

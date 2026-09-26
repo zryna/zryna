@@ -12,6 +12,7 @@ enum Kind {
 struct Token<'a> {
     text: &'a str,
     kind: Kind,
+    separated_before: bool,
 }
 
 pub(super) fn format(source: &str) -> Option<String> {
@@ -114,7 +115,8 @@ fn needs_space(
         return previous.text != "(";
     }
     if previous_unary && previous.text == "-" {
-        return false;
+        return token.separated_before
+            && token.text.as_bytes().first().is_some_and(u8::is_ascii_digit);
     }
     true
 }
@@ -122,7 +124,9 @@ fn needs_space(
 fn tokenize(mut source: &str) -> Option<Vec<Token<'_>>> {
     let mut result = Vec::new();
     while !source.is_empty() {
-        source = source.trim_start_matches([' ', '\t', '\r', '\n']);
+        let trimmed = source.trim_start_matches([' ', '\t', '\r', '\n']);
+        let separated_before = trimmed.len() != source.len();
+        source = trimmed;
         if source.is_empty() {
             break;
         }
@@ -147,7 +151,7 @@ fn tokenize(mut source: &str) -> Option<Vec<Token<'_>>> {
             }
             (end, Kind::Word)
         };
-        result.push(Token { text: &source[..end], kind });
+        result.push(Token { text: &source[..end], kind, separated_before });
         source = &source[end..];
     }
     Some(result)
