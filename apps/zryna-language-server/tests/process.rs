@@ -162,6 +162,41 @@ fn assert_formatting(input: &mut impl Write, receiver: &mpsc::Receiver<Value>) {
     );
 }
 
+fn assert_invalid_m2_revision(input: &mut impl Write, receiver: &mpsc::Receiver<Value>) {
+    let invalid =
+        "export function main(): i32 { const value: i32 = 3; value = 4; return value; }\n";
+    send(
+        input,
+        json!({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+            "textDocument":{"uri":"file:///workspace/src/main.zry","version":3},
+            "contentChanges":[{"text":invalid}]
+        }}),
+    );
+    let report = receive(receiver);
+    assert_eq!(report["params"]["documents"][0]["version"], 3);
+    assert!(
+        report["params"]["report"]["diagnostics"]
+            .as_array()
+            .is_some_and(|items| items.iter().any(|item| item["code"] == "ZRYNA-M2005"))
+    );
+    let standard = receive(receiver);
+    assert_eq!(standard["params"]["version"], 3);
+    assert!(
+        standard["params"]["diagnostics"]
+            .as_array()
+            .is_some_and(|items| items.iter().any(|item| item["code"] == "ZRYNA-M2005"))
+    );
+    send(
+        input,
+        json!({"jsonrpc":"2.0","id":3,"method":"textDocument/formatting",
+        "params":{"textDocument":{"uri":"file:///workspace/src/main.zry"},
+        "options":{"tabSize":2,"insertSpaces":true}}}),
+    );
+    let rejected = receive(receiver);
+    assert_eq!(rejected["error"]["data"]["code"], "ZRYNA-D4001");
+    assert!(rejected.get("result").is_none());
+}
+
 #[test]
 fn stdio_m2_routes_control_flow_and_rejects_invalid_edits() {
     let compiler_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -240,38 +275,7 @@ fn stdio_m2_routes_control_flow_and_rejects_invalid_edits() {
     assert_eq!(accepted_branch["params"]["report"]["diagnostics"], json!([]));
     assert_eq!(receive(&receiver)["params"]["version"], 2);
 
-    let invalid =
-        "export function main(): i32 { const value: i32 = 3; value = 4; return value; }\n";
-    send(
-        &mut input,
-        json!({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
-            "textDocument":{"uri":"file:///workspace/src/main.zry","version":3},
-            "contentChanges":[{"text":invalid}]
-        }}),
-    );
-    let report = receive(&receiver);
-    assert_eq!(report["params"]["documents"][0]["version"], 3);
-    assert!(
-        report["params"]["report"]["diagnostics"]
-            .as_array()
-            .is_some_and(|items| items.iter().any(|item| item["code"] == "ZRYNA-M2005"))
-    );
-    let standard = receive(&receiver);
-    assert_eq!(standard["params"]["version"], 3);
-    assert!(
-        standard["params"]["diagnostics"]
-            .as_array()
-            .is_some_and(|items| items.iter().any(|item| item["code"] == "ZRYNA-M2005"))
-    );
-    send(
-        &mut input,
-        json!({"jsonrpc":"2.0","id":3,"method":"textDocument/formatting",
-        "params":{"textDocument":{"uri":"file:///workspace/src/main.zry"},
-        "options":{"tabSize":2,"insertSpaces":true}}}),
-    );
-    let rejected = receive(&receiver);
-    assert_eq!(rejected["error"]["data"]["code"], "ZRYNA-D4001");
-    assert!(rejected.get("result").is_none());
+    assert_invalid_m2_revision(&mut input, &receiver);
 
     send(&mut input, json!({"jsonrpc":"2.0","id":4,"method":"shutdown"}));
     assert!(receive(&receiver)["result"].is_null());

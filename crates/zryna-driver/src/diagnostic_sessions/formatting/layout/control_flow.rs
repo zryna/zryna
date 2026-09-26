@@ -45,10 +45,11 @@ pub(super) fn format(source: &str) -> Option<String> {
             depth = depth.checked_sub(1)?;
             newline(&mut output);
         }
-        if token.text == "else" && previous.is_some_and(|last| last.text == "}") {
-            if output.ends_with('\n') {
-                output.pop();
-            }
+        if token.text == "else"
+            && previous.is_some_and(|last| last.text == "}")
+            && output.ends_with('\n')
+        {
+            output.pop();
         }
         if !output.is_empty()
             && !output.ends_with('\n')
