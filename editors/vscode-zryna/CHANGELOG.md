@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.4.0 — M2 editor candidate
+
+- Add an explicit editor profile selection for scalar-v2 and control-flow-v1 source.
+- Require matching server 0.4.0 capabilities and exact installed source revision before sending source.
+- Bind the unchanged compiler 0.2.3 to a separately verified portable setup candidate.
+- Extend formatting and explicit Run within the bounded control-flow-v1 language profile.
+
 ## 0.3.0 — portable setup candidate
 
 - Verify complete portable installations against an independently supplied manifest digest.
@@ -22,5 +29,5 @@
 - Cancellation, stale-result rejection, bounded transport and inert diagnostic rendering.
 
 The original packages required a matching source build; public v0.2.3 servers lack formatting.
-M2/M3 formatting and marketplace publication remain pending. A built or installed VSIX is not a
+M3 formatting and marketplace publication remain pending. A built or installed VSIX is not a
 marketplace release. No new compiler tag or binary release accompanies this package.

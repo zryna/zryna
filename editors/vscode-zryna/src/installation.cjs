@@ -5,15 +5,17 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 
 const FORMAT = 'zryna.portable-setup.v1';
-const CANDIDATE = '0.1.0-candidate.1';
+const CANDIDATE = '0.1.0-candidate.2';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 function reject() { throw new Error('Zryna setup identity or files differ. Restore the verified complete candidate.'); }
 
 function ordinary(filename, directory = false) {
-  const stat = fs.lstatSync(filename);
-  if (stat.isSymbolicLink() || !(directory ? stat.isDirectory() : stat.isFile())
-    || fs.realpathSync.native(filename).toLowerCase() !== path.resolve(filename).toLowerCase()) reject();
-  return stat;
+  try {
+    const stat = fs.lstatSync(filename);
+    if (stat.isSymbolicLink() || !(directory ? stat.isDirectory() : stat.isFile())
+      || fs.realpathSync.native(filename).toLowerCase() !== path.resolve(filename).toLowerCase()) reject();
+    return stat;
+  } catch { reject(); }
 }
 
 function rootDirectory(root) {
@@ -36,8 +38,8 @@ function verifyInstallation(root, digest, platform = process.platform) {
   const manifest = JSON.parse(bytes);
   const target = { win32: 'x86_64-pc-windows-msvc', linux: 'x86_64-unknown-linux-gnu' }[platform];
   if (process.arch !== 'x64' || !target || manifest.format !== FORMAT || manifest.candidate !== CANDIDATE
-    || manifest.target !== target || manifest.compilerVersion !== '0.2.3' || manifest.serverVersion !== '0.3.0'
-    || manifest.editorVersion !== '0.3.0' || manifest.capability !== 'portable-setup-v1'
+    || manifest.target !== target || manifest.compilerVersion !== '0.2.3' || manifest.serverVersion !== '0.4.0'
+    || manifest.editorVersion !== '0.4.0' || manifest.capability !== 'portable-setup-v1'
     || !/^[a-f0-9]{40}$/.test(manifest.sourceCommit ?? '') || !Array.isArray(manifest.files)
     || manifest.files.length < 10 || manifest.files.length > 1024) reject();
   const expected = new Map();
@@ -79,7 +81,7 @@ function verifyInstallation(root, digest, platform = process.platform) {
   const compilerRoot = path.join(root, 'compiler');
   const serverPath = path.join(root, 'bin', `zryna-language-server${suffix}`);
   const compilerPath = path.join(compilerRoot, 'bin', `zryna${suffix}`);
-  const vsix = path.join(root, 'editor', 'zryna-0.3.0.vsix');
+  const vsix = path.join(root, 'editor', 'zryna-0.4.0.vsix');
   for (const filename of [serverPath, compilerPath, vsix]) ordinary(filename);
   return { serverPath, compilerPath, compilerRoot, installed: true, manifest };
 }

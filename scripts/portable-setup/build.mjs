@@ -13,9 +13,25 @@ import { canonicalVsix, vsixEntries } from './vsix.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(import.meta.url);
 const { hash, verifyInstallation } = require('../../editors/vscode-zryna/src/installation.cjs');
-const candidate = '0.1.0-candidate.1';
+const candidate = '0.1.0-candidate.2';
 const target = process.platform === 'win32' ? 'x86_64-pc-windows-msvc' : 'x86_64-unknown-linux-gnu';
 const suffix = process.platform === 'win32' ? '.exe' : '';
+
+export function verifyEditorManifest(entries) {
+  const packaged = entries.find(entry => entry.name === 'extension/package.json');
+  if (!packaged) throw new Error('VSIX package manifest is missing.');
+  const metadata = JSON.parse(packaged.data);
+  const compatibility = metadata.zrynaCompatibility;
+  if (metadata.name !== 'zryna' || metadata.version !== '0.4.0'
+    || compatibility?.compilerVersion !== '0.2.3' || compatibility.serverVersion !== '0.4.0'
+    || compatibility.installationCapability !== 'portable-setup-v1'
+    || compatibility.requiredCapabilities?.['scalar-v2'] !== 'scalar-format-v1'
+    || compatibility.requiredCapabilities?.['control-flow-v1'] !== 'control-flow-format-v1'
+    || JSON.stringify(compatibility.profiles) !== JSON.stringify(['scalar-v2', 'control-flow-v1'])
+    || compatibility.sourceBuildRequired !== false || compatibility.releasedCompilerCompatible !== true) {
+    throw new Error('VSIX component compatibility differs from the candidate.');
+  }
+}
 
 function run(executable, args) {
   const result = spawnSync(executable, args, { cwd: root, encoding: 'utf8', shell: false,
@@ -37,12 +53,13 @@ export async function buildSetup({ release, cosign, server, vsix, output }) {
   const sourceTree = run('git', ['show', '-s', '--format=%T', 'HEAD']);
   const epoch = Number(run('git', ['show', '-s', '--format=%ct', 'HEAD']));
   if (run('git', ['status', '--porcelain', '--untracked-files=all'])) throw new Error('Commit the reviewed candidate before packaging.');
-  if (run(server, ['--version']) !== `zryna-language-server 0.3.0 portable-setup-v1 ${sourceCommit}`) {
+  if (run(server, ['--version']) !== `zryna-language-server 0.4.0 portable-setup-v1 ${sourceCommit}`) {
     throw new Error('Server source identity differs from candidate.');
   }
   const vsixBytes = readFileSync(vsix);
   if (!canonicalVsix(vsixBytes).equals(vsixBytes)) throw new Error('VSIX timestamps must be canonical.');
   const entries = vsixEntries(vsixBytes);
+  verifyEditorManifest(entries);
   const expected = ['CHANGELOG.md', 'LICENSE', 'README.md', 'package.json', 'src/connection.cjs',
     'src/extension.cjs', 'src/installation.cjs', 'src/run-command.cjs', 'src/run-input.cjs',
     'src/run-process.cjs', 'src/run-project.cjs', 'syntaxes/zryna.tmLanguage.json'];
@@ -66,11 +83,12 @@ export async function buildSetup({ release, cosign, server, vsix, output }) {
   const files = verified.files.map(file => ({ ...file, path: `compiler/${file.path}` }));
   const add = (path, data, mode = 0o644) => files.push({ path, data: Buffer.from(data), mode });
   add(`bin/zryna-language-server${suffix}`, readFileSync(server), 0o755);
-  add('editor/zryna-0.3.0.vsix', readFileSync(vsix));
+  add('editor/zryna-0.4.0.vsix', readFileSync(vsix));
   add('installation.cjs', readFileSync(join(root, 'editors/vscode-zryna/src/installation.cjs')));
   add('setup.cjs', readFileSync(join(root, 'scripts/portable-setup/setup.cjs')));
   add('README.md', readFileSync(join(root, 'docs/PORTABLE_SETUP.md')));
   add('examples/main.zry', 'export function add(x:i32,y:i32):i32{return x+y;}\nexport function double(x:i32):i32{return x+x;}\n');
+  add('examples/control-flow.zry', 'function twice(value:i32):i32{return value+value;}\nexport function accumulate(enabled:bool,count:i32):i32{const step:i32=twice(1);let i:i32=0;let total:i32=0;while(i<count){i=i+1;total=total+step;}if(enabled){return total;}else{return -total;}}\n');
   add('install.cmd', '@echo off\r\n"%~dp0compiler\\runtime\\node\\node.exe" "%~dp0setup.cjs" %*\r\n');
   add('install.sh', '#!/bin/sh\nset -eu\nroot=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "$root/compiler/runtime/node/bin/node" "$root/setup.cjs" "$@"\n', 0o755);
   for (const name of ['zryna-release-envelope-v1.json', 'zryna-release-envelope-v1.sigstore.json',
@@ -79,7 +97,7 @@ export async function buildSetup({ release, cosign, server, vsix, output }) {
   const manifest = {
     format: 'zryna.portable-setup.v1', candidate, status: 'review-candidate', productionAdmission: 'forbidden',
     target, sourceCommit, sourceTree, sourceDateEpoch: epoch,
-    compilerVersion: '0.2.3', serverVersion: '0.3.0', editorVersion: '0.3.0', capability: 'portable-setup-v1',
+    compilerVersion: '0.2.3', serverVersion: '0.4.0', editorVersion: '0.4.0', capability: 'portable-setup-v1',
     compilerArchive: subject.archive, compilerSource: envelope.source.commit,
     files: files.map(({ path, data, mode }) => ({ path, size: data.length, sha256: hash(data), mode })),
   };

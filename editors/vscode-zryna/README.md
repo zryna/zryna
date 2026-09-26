@@ -1,14 +1,15 @@
 # Zryna Developer Preview
 
-Thin local editor integration for Zryna's verified scalar diagnostics, definitions and formatter.
-Lexical syntax highlighting and explicit **Zryna: Run Saved File** are included.
-This is an initial **scalar-only** package. It does not format the compiler's M2 control-flow/modules
-or M3 data/ownership profiles. Unsupported or incomplete input receives no edits.
+Thin local editor integration for Zryna's verified scalar and bounded M2 diagnostics and formatter.
+Lexical syntax highlighting and explicit **Zryna: Run Saved File** are included. The default
+profile is scalar `i32-v1`; select `control-flow-v1` for local `let`/`const`, direct calls,
+`if`/`else` and `while`. Imports and M3 data/ownership remain outside the editor. Unsupported
+or incomplete input receives no edits.
 
 ## Installation
 
-The portable **0.1.0-candidate.1** setup combines the unchanged compiler 0.2.3 with server/editor
-0.3.0 and a pinned runtime. Follow the [portable setup guide](https://github.com/zryna/zryna/blob/main/docs/PORTABLE_SETUP.md).
+The portable **0.1.0-candidate.2** setup combines the unchanged compiler 0.2.3 with server/editor
+0.4.0 and a pinned runtime. Follow the [portable setup guide](https://github.com/zryna/zryna/blob/main/docs/PORTABLE_SETUP.md).
 Verify the reviewer-delivered archive identity before execution. This is a review candidate, not
 a public beta or marketplace release. Its isolated installer creates a new profile with user
 settings `zryna.installationPath` and `zryna.installationDigest`. The entire installation is checked
@@ -26,7 +27,7 @@ pnpm m0:check
 cargo build --locked -p zryna-language-server
 pnpm editor:check
 pnpm editor:package
-code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.3.0.vsix
+code --install-extension /absolute/compiler/checkout/.zryna/out/zryna-0.4.0.vsix
 ```
 
 Set these **user settings** to absolute paths:
@@ -46,8 +47,8 @@ Formatting has one canonical two-space/LF style. Comments and token spellings re
 
 | Extension | Editor | Server |
 | --- | --- | --- |
-| 0.3.0 | VS Code-compatible API >=1.82.0 | Server 0.3.0 with `scalar-format-v1` and `portable-setup-v1`; installed mode checks exact source revision |
-| 0.3.0 | Same | Public released v0.2.3 server is incompatible; the unchanged installed compiler 0.2.3 supports Run |
+| 0.4.0 | VS Code-compatible API >=1.82.0 | Server 0.4.0 with `scalar-format-v1` for default scalar and `control-flow-format-v1` for explicit M2, plus `portable-setup-v1`; installed mode checks exact source revision |
+| 0.4.0 | Same | Public released v0.2.3 server and older 0.3.0 server are incompatible; the unchanged installed compiler 0.2.3 supports Run |
 
 The extension verifies the exact capability before sending source. A package-version match alone
 is insufficient. The VSIX alone contains no compiler; the portable candidate supplies the matched
@@ -62,25 +63,31 @@ provides no debugging commands, transmits no source over a network, and has no t
 runtime dependencies. Compiler diagnostics remain inert plain text. Editor APIs apply explicitly
 requested edits; the extension provides no general filesystem write service.
 
-Formatting supports the existing protocol-v2 i32 function/return/reference/literal/addition slice.
-Imports, parenthesized expressions, control flow, ownership/data syntax and classes remain
-unsupported. Malformed/unavailable revisions, partial ranges, cancellation and stale documents
-produce no edits. See the [language server and format contract](https://github.com/zryna/zryna/blob/main/docs/LANGUAGE_SERVER.md).
+Default scalar formatting supports the protocol-v2 i32 function/return/reference/literal/addition
+slice, and Go to Definition. Select **Zryna: Select Editor Profile** to use explicit
+`control-flow-v1` diagnostics and formatting for the bounded local M2 syntax. M2 has no definition
+index; Go to Definition is scalar-only. M2 formatting requires a semantically accepted single
+file and caps the formatted result at 131,072 bytes. Imports, parenthesized expressions, globals,
+classes and M3 syntax remain outside this editor formatter. Malformed/unavailable revisions, partial ranges,
+cancellation and stale documents produce no edits. See the
+[language server and format contract](https://github.com/zryna/zryna/blob/main/docs/LANGUAGE_SERVER.md).
 
 ## Run and inspect output
 
 Save the active `.zry` file, then choose **Zryna: Run Saved File** from the command palette or editor
-title. Choose an exported function, JavaScript or WebAssembly, and each required i32 argument.
+title. Choose a profile, an exported function, JavaScript or WebAssembly, and each required typed
+argument. The default scalar profile accepts i32; explicit M2 accepts i32 and bool.
 There is no default export or argument. Cancel any picker to stop without starting the compiler.
 The progress notification supports cancellation. Unsaved/closed/virtual files and untrusted
 workspaces are rejected. Opening, editing, formatting and saving never execute project code.
 
-Run supports the installed compiler's one-file `i32-v1` profile: explicit i32 parameters/result,
-integer literals, references and addition. The package source limit is **1024 UTF-8 bytes**.
-Arguments must be canonical decimal integers between -2147483648 and 2147483647. The picker is
-lexical discovery, not semantic validation; the compiler remains authoritative and may reject an
-offered function or the complete program. Highlighting does not imply language/profile support.
-M2/M3 programs, imports, bool arguments and native Windows executables are not supported by Run.
+Default Run supports the installed compiler's one-file `i32-v1` profile: explicit i32
+parameters/result, integer literals, references and addition, with a **1024 UTF-8-byte** package
+source limit. Explicit `control-flow-v1` Run supports the bounded one-file local M2 syntax above
+and i32/bool parameters/results. i32 arguments are canonical decimal integers from -2147483648
+through 2147483647; bool arguments are exact `true` or `false`. The picker is lexical discovery,
+not semantic validation; the compiler remains authoritative and may reject an offered function
+or program. Imports, M3 ownership, classes and native Windows executables are unsupported.
 
 Each invocation uses a fresh compiler-created project in extension global storage under `runs`.
 It copies saved bytes into `src/main.zry`, updates the generated manifest size/SHA-256, and invokes
@@ -98,4 +105,4 @@ Run state is retained for inspection, including failed/cancelled scaffolds; the 
 identifies the project. Remove old run directories manually when no run is active.
 
 This explicit execution scope follows #457 and supersedes #409's earlier no-execution boundary
-only for this command. Formatter expansion and marketplace publication remain open in #409.
+only for this command. Marketplace publication remains open in #409.
