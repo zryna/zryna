@@ -1,18 +1,20 @@
-//! Presentation-only scalar formatting bound to retained verified syntax.
+//! Presentation-only scalar and bounded control-flow formatting bound to verified syntax.
 
 use std::{fmt, ops::Range};
 
-use zryna_frontend::syntax_v2::ProjectSyntaxSnapshot;
+use zryna_frontend::{syntax_v2, syntax_v3};
 use zryna_source::SourceMap;
 
 use super::{DiagnosticRevision, DiagnosticSession};
 
+#[cfg(test)]
+mod control_flow_tests;
 mod layout;
 
 /// A formatting failure never carries edits.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FormattingError {
-    /// The document did not pass the admitted scalar analysis.
+    /// The document did not pass the admitted formatting analysis.
     Unavailable,
     /// The requested revision is no longer active.
     Stale,
@@ -42,7 +44,7 @@ impl fmt::Display for FormattingError {
             "{}: {}",
             self.code(),
             match self {
-                Self::Unavailable => "formatting requires verified scalar syntax and semantics",
+                Self::Unavailable => "formatting requires verified syntax and semantics",
                 Self::Stale => "formatting revision is no longer active",
                 Self::Range => "formatting range must contain complete functions",
                 Self::Limit => "formatting result exceeds the response limit",
@@ -69,10 +71,14 @@ pub(super) struct FormattingDocument {
     path: String,
     complete: String,
     functions: Vec<Range<u32>>,
+    control_flow: bool,
 }
 
 impl FormattingDocument {
-    pub(super) fn prepare(syntax: &ProjectSyntaxSnapshot, sources: &SourceMap) -> Option<Self> {
+    pub(super) fn prepare(
+        syntax: &syntax_v2::ProjectSyntaxSnapshot,
+        sources: &SourceMap,
+    ) -> Option<Self> {
         if !syntax.is_bound_to(sources) {
             return None;
         }
@@ -86,6 +92,31 @@ impl FormattingDocument {
             path: file.path().as_str().to_owned(),
             complete,
             functions: file.functions().iter().map(|f| f.span().start()..f.span().end()).collect(),
+            control_flow: false,
+        })
+    }
+
+    pub(super) fn prepare_control_flow(
+        syntax: &syntax_v3::ProjectSyntaxSnapshot,
+        sources: &SourceMap,
+    ) -> Option<Self> {
+        if !syntax.is_bound_to(sources) {
+            return None;
+        }
+        let [file] = syntax.files() else { return None };
+        if !file.imports().is_empty() {
+            return None;
+        }
+        let source = sources.source(file.id())?;
+        let complete = layout::format_control_flow(source.text())?;
+        if complete.len() > super::MAX_RESPONSE_BYTES / 8 {
+            return None;
+        }
+        Some(Self {
+            path: file.path().as_str().to_owned(),
+            complete,
+            functions: file.functions().iter().map(|f| f.span().start()..f.span().end()).collect(),
+            control_flow: true,
         })
     }
 
@@ -95,7 +126,7 @@ impl FormattingDocument {
 }
 
 impl DiagnosticSession {
-    /// Returns edits only for the active semantically accepted scalar revision.
+    /// Returns edits only for the active semantically accepted formatting revision.
     ///
     /// A range may surround whole functions and trivia, but may not intersect a partial function.
     /// Edits stay inside the selection and preserve all text outside each selected function.
@@ -140,7 +171,12 @@ impl DiagnosticSession {
                     return Err(FormattingError::Range);
                 }
                 let original = &source[function.start as usize..function.end as usize];
-                let text = layout::format(original).ok_or(FormattingError::Unavailable)?;
+                let text = if document.control_flow {
+                    layout::format_control_flow(original)
+                } else {
+                    layout::format(original)
+                }
+                .ok_or(FormattingError::Unavailable)?;
                 let text = text.strip_suffix('\n').unwrap_or(&text);
                 if original != text {
                     edits.push(FormattingEdit {
