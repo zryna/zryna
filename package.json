@@ -40,12 +40,14 @@
     "m3:check": "node scripts/run-m3-conformance.mjs",
     "m3:public": "cargo test --locked -p zryna --test m3_public",
     "editor:check": "pnpm --filter zryna check && pnpm --filter zryna test",
+    "editor:host-acceptance": "node scripts/run-editor-host-acceptance.mjs",
     "editor:package": "pnpm --filter zryna package"
   },
   "devDependencies": {
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.0.0",
     "ajv": "8.17.1",
     "playwright-core": "1.63.0",
-    "yaml": "2.8.1",
-    "@vscode/vsce": "4.0.0"
+    "yaml": "2.8.1"
   }
 }

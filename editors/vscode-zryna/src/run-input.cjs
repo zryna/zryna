@@ -59,7 +59,18 @@ function argumentError(value, type = 'i32') {
   return undefined;
 }
 
-async function selectRun(window, bytes) {
+async function selectRun(window, bytes, requested) {
+  if (requested !== undefined) {
+    const { profile, name, target, args } = requested ?? {};
+    if (!Object.hasOwn(SOURCE_LIMITS, profile) || !['javascript', 'webassembly'].includes(target)
+      || typeof name !== 'string' || !Array.isArray(args)) throw new Error('Invalid Run selection.');
+    const candidate = exportsIn(sourceText(bytes, profile), profile).find(item => item.name === name);
+    if (!candidate || args.length !== candidate.parameters.length
+      || args.some((argument, index) => argument?.type !== candidate.parameters[index].type
+        || argumentError(argument.value, argument.type))) throw new Error('Invalid Run selection.');
+    return { profile, name, target, args: args.map(argument => ({ type: argument.type, value: argument.value })),
+      resultType: candidate.resultType };
+  }
   const profile = await window.showQuickPick(['i32-v1', 'control-flow-v1'], {
     title: 'Zryna: Select Run profile', ignoreFocusOut: true,
   });

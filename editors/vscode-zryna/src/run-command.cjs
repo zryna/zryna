@@ -32,15 +32,15 @@ function registerRun(vscode, context) {
       await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(result.file));
     }
   }
-  const handle = action => async () => {
-    try { await action(); } catch (error) {
+  const handle = action => async (...args) => {
+    try { return await action(...args); } catch (error) {
       output.appendLine(error.message);
       output.show(true);
       await vscode.window.showErrorMessage(error.message.slice(0, 500));
     }
   };
   context.subscriptions.push(output, { dispose() { disposed = true; stopRuns(); } },
-    vscode.commands.registerCommand('zryna.run', handle(async () => {
+    vscode.commands.registerCommand('zryna.run', handle(async requested => {
       if (busy) throw new Error('A Zryna Run is already in progress. Cancel it or wait for completion.');
       busy = true;
       try {
@@ -48,7 +48,7 @@ function registerRun(vscode, context) {
         checkDocument(document);
         const version = document.version;
         const bytes = await regularFile(document.uri.fsPath, SOURCE_LIMITS['control-flow-v1']);
-        const selection = await selectRun(vscode.window, bytes);
+        const selection = await selectRun(vscode.window, bytes, requested);
         if (!selection) return;
         checkDocument(document);
         if (document.version !== version || !(await regularFile(document.uri.fsPath, SOURCE_LIMITS['control-flow-v1'])).equals(bytes)) {
@@ -90,6 +90,7 @@ function registerRun(vscode, context) {
           ...(completed.target === 'javascript' ? ['Open JavaScript'] : []), 'Reveal Output').then(action => {
           if (action) return handle(() => inspect(action === 'Open JavaScript' ? 'javascript' : 'folder', completed))();
         });
+        return completed;
       } finally { busy = false; }
     })),
     vscode.commands.registerCommand('zryna.openGeneratedJavaScript', handle(() => inspect('javascript'))),

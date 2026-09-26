@@ -43,6 +43,38 @@ Open the edited project's folder and a `.zry` file. Use **Format Document**, **F
 fresh connection. Range formatting accepts complete functions only and never expands a selection.
 Formatting has one canonical two-space/LF style. Comments and token spellings remain unchanged.
 
+## Real extension-host acceptance
+
+The opt-in Windows desktop acceptance harness launches VS Code 1.138.0 through
+`@vscode/test-electron` with a new temporary workspace, user-data directory, extension directory,
+and global storage. It uses a separately verified complete portable setup, not a source rebuild.
+After independently checking the candidate archive and `setup.json` digest, run:
+
+```powershell
+pnpm editor:host-acceptance -- '<verified setup directory>' '<setup.json SHA-256>'
+```
+
+VS Code opens the disposable folder in Restricted Mode. In the separate test window, use the
+**Manage Workspace Trust** editor to trust that folder. The harness waits up to 120 seconds for
+VS Code to report the workspace as trusted, then runs the real extension and compiler. It never
+disables Workspace Trust or edits an existing VS Code profile. The temporary workspace, editor
+data, compiler run projects, and results are removed after the run. The pinned VS Code download
+is cached in the system temp directory for repeat runs. A local Code executable may be passed as a third argument when testing
+an installed version; this does not pin that version.
+
+The host checks activation, scalar and M2 profile selection, scalar definition, M2 diagnostics and
+recovery, format idempotence, real JavaScript and WebAssembly return values, and opening generated
+JavaScript. It uses a validated command argument for Run so the interactive picker remains available
+to users. The API tests do not prove status-bar appearance, rendered Problems layout, notification
+presentation, or OS file explorer behavior; those require a separate visual review. The harness is
+not part of `editor:check` or default CI.
+
+On a local Windows run against the `cb60922` candidate, the first uncached VS Code download
+and trust probe took 102 seconds; that probe stopped because the workspace was untrusted.
+A cached acceptance run passed in 121 seconds end to end, including a manual trust decision.
+A later cached run timed out after 122 seconds without trust, so it is not a test result.
+These observations do not establish a fixed cold or warm duration, nor Linux or CI behavior.
+
 ## Compatibility
 
 | Extension | Editor | Server |
