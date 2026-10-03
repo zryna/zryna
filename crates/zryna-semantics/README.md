@@ -46,6 +46,57 @@ future universal profile implemented consistently by every active backend.
 
 This crate owns language meaning and must never depend on a replaceable frontend provider.
 
+## Internal bounded-generics declaration context
+
+`bounded_generics_v1::SemanticInput` accepts only complete verified protocol-v5 syntax bound to
+its original immutable `SourceMap`, an original selected entry, and provider success.
+`resolve_declarations` retains that input and resolves the complete exact module closure,
+original function/data declarations, named imports and declaration-owned type parameters.
+An import alias keeps its target's original module, kind and source index; source template
+visibility creates no executable export. Independently constructed equal-text maps cannot
+reuse these identities.
+
+Original imported data targets are computed before module/name diagnostics. The complete
+project-wide imported-type shadow check returns D7001 before any M3002/M3016 candidate can
+consume diagnostic slots. Missing, private, wrong-case or function targets do not create visible
+data types. Context errors are source-bound, canonically ordered and capped at 255 ordinary
+entries plus the M7201 terminal diagnostic; failures return no partial context.
+
+This isolated phase establishes declaration bindings only. Opaque template-body checking,
+closed arguments/instantiation, successor layouts and mandatory IR, runtime declarations,
+provider parity, target execution and driver/profile admission remain separate requirements.
+It provides no conversion to existing M3 authority. Its focused tests and compile-fail
+obligations require execution evidence before this implementation can be considered verified.
+
+The separate `bounded_generics_v1::body_types::check_body_types` consumes that exact declaration
+context and checks every original body, including unused templates. Its implementation
+retains declaration-owned opaque parameters, explicit ordered substitutions, exact nominal and
+Option/Result identities, lexical bindings and borrowed match payload types. Source predicate
+rows derive Copy/Clone requirements without expanding substituted type trees or nominal fields.
+Opaque-operation diagnostics precede generic argument and exact-type candidates; allocation and
+internal failures return no partial context and do not become source resource diagnostics.
+
+The read-only result reports original expression types and actual table/predicate capacity bytes.
+It retains use occurrences without certifying initialization, moves, loans, cleanup, closed
+instances, recursive layout validity or target execution. Source-backed body fixtures now execute
+in the cloud continuation. The large owner fixture builds typed units one at a time and preserves
+its exact owner/predicate counts. Exact-revision commands and counts belong to the continuation
+receipt and draft PR. The driver and public profiles do not select this phase.
+
+`bounded_generics_v1::instantiation::discover` consumes the exact original body authority. It
+retains finite supplied trees, original nominal/function identities, sorted complete key
+inventories and deduplicated dependency pairs. Original-declaration value predicates reject
+non-storable nominal arguments before generated body expansion. Explicit work stacks distinguish
+source function recursion and declaration-generated expansion from finite supplied nesting and
+same-key indirection. Compiler-owned Option/Result payloads participate in dependency discovery.
+Synthetic exact/first-extra tests cover the function, data, edge and key-byte limits; independent
+source tests cover depth, ordered forwarding, imported aliases, diamond replay and UTF-8 spans.
+
+This semantic inventory grants no executable IDs, layouts, ownership/drop plans or backend
+authority. Full diagnostic/path conformance, successor layout/raw-IR serialization, owned standard
+enum operations, provider parity, cross-target execution and driver admission remain issue #416
+work. See [the continuation boundary](../../docs/M7_GENERIC_CONTINUATION.md).
+
 ## Internal M2 semantics boundary
 
 The separate `control_flow_v1` module consumes only an exact source-map-bound verified
