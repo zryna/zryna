@@ -25,8 +25,8 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for M1/M2, [M3_GETTING_STARTED](M3_GET
 
 - Start: [semantics README](../crates/zryna-semantics/README.md), [M2 control-flow semantics](M2_CONTROL_FLOW_SEMANTICS.md), [module closure](M2_MODULE_CLOSURE.md).
 - Entries: `crates/zryna-semantics/src/lib.rs::{SemanticInput::try_new,lower}` for M1; `src/control_flow_v1.rs::lower` for M2.
-- Filesystem/module authority: `crates/zryna-driver/src/module_closure.rs::discover_module_closure`; `src/module_closure/entry.rs` has separate internal native entries for import-only and import-prefix/straight-line-function closure. Do not put resolution into the adapter or backend.
-- Focus: `cargo test --locked -p zryna-semantics`; closure tests in driver `module_closure_tests.rs`; `pnpm m2:quick` for cross-phase M2 checks.
+- Filesystem/module authority: `crates/zryna-driver/src/module_closure.rs::discover_module_closure`; `src/module_closure/entry.rs` has separate internal native entries for import-only and import-prefix/straight-line-function closure. Native retained sources and versioned snapshots start at `src/module_closure/native_sources.rs`, with `graph.rs` and `verification.rs` helpers; [ownership and lifecycle](NATIVE_SOURCE_SNAPSHOTS.md) maps capability checks and import discovery. Do not put resolution into the adapter or backend.
+- Focus: `cargo test --locked -p zryna-semantics`; closure tests in driver `module_closure_tests.rs`; `cargo test --locked -p zryna-driver --lib module_closure::native_sources::tests -- --include-ignored` for complete native source and resource proof; `pnpm m2:quick` for cross-phase M2 checks.
 - Source legality and backend profile acceptance are separate. Finish with the full gates below.
 
 ## 3. Internal M3 ownership, constructors, borrowing, or cleanup
@@ -48,7 +48,7 @@ Use [GETTING_STARTED](GETTING_STARTED.md) for M1/M2, [M3_GETTING_STARTED](M3_GET
 
 - Start: [layout README](../crates/zryna-layout/README.md), [IR README](../crates/zryna-ir/README.md), [M3 IR contract](M3_DATA_OWNERSHIP_IR.md).
 - Layout authority: `crates/zryna-layout/src/lib.rs::{verify,VerifiedLayouts::type_by_id}`. Raw graphs are not sealed layouts.
-- IR authority: `crates/zryna-ir/src/lib.rs::verify`, `src/control_flow_v1.rs::verify`, or `src/data_ownership_v1.rs::verify`; select one profile, preserving the others.
+- IR authority: `crates/zryna-ir/src/lib.rs::verify`, `src/control_flow_v1.rs::verify`, or `src/data_ownership_v1.rs::verify`; select one profile, preserving the others. The internal `src/generic_v1/{copy_v1,source_body,wire}.rs` Copy lane has a [separate wire/source contract](../spec/ir/GENERIC_COPY_WIRE_V1.md), generic runtime issuer and `generic_copy_v1::emit` JavaScript consumer. Focus with `cargo test --locked -p zryna-ir generic_v1::copy_v1` and `cargo test --locked -p zryna-backend-javascript generic_copy_v1`; full owned/loan/drop acceptance remains unfinished.
 - Indexed authority: `src/data_ownership_v1/indexed_borrows.rs` retains exact container/referent bounds; `indexed_access.rs` seals transient child projection without a dynamic place. Neighboring `tests/indexed_access*.rs` provide independent malformed-input and resource evidence.
 - Focus: `pnpm m3:layout`; `cargo test --locked -p zryna-ir` and `cargo test --locked -p zryna-ir --doc`; inspect the matching profile's hostile/raw fixtures.
 - Include forged authority, resource boundaries, deterministic replay, and opaque-view tests as applicable. Full verification is not replaceable by producer checks.
