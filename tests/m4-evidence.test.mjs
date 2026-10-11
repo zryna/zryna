@@ -2,14 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { digest, parseCanonical } from '../scripts/m4/registry-files.mjs';
 import { retained, exact, MAX_LOG, processResult } from '../scripts/m4/evidence-input.mjs';
 import { rustAccounting, requireNodeTests } from '../scripts/m4/evidence-counts.mjs';
 import { m1Accounting, m2RetainedAccounting, m2RetainedProof, foundationStages } from '../scripts/m4/evidence-foundations.mjs';
 import { sourceAccounting, sourceCommands } from '../scripts/m4/evidence-source.mjs';
 import { browserArgv, browserProofs } from '../scripts/m4/evidence-browser.mjs';
-import { installedNames } from '../scripts/m4/evidence-installed.mjs';
+import { installedNames, readInstalledArchitectureReceipt } from '../scripts/m4/evidence-installed.mjs';
+import { bytes as distributionBytes } from '../scripts/distribution/canonical.mjs';
+import { ClosedEvidenceStage, retainedOutputFiles, stageM4Evidence } from '../scripts/m4/collect-output.mjs';
 import { positive, invocationArgv } from '../scripts/m4/installed-cases.mjs';
 import { installedByteCases, installedByteSource, validateInstalledByteSource, validateInstalledByteDenial } from '../scripts/m4/installed-byte-boundary.mjs';
 import { prepareByteSources, observedByteSource, verifyByteOutcome } from './installed-command-qualification/byte-boundary.mjs';
@@ -360,6 +362,163 @@ test('produced observation bytes reject duplicate fields and unsupported seriali
   }
   assert.throws(() => producedJson(Buffer.from([0xff])));
   assert.throws(() => validateInstalledObservation({ schema: 'zryna.wasi-command-manifest.v1', runtimeAuthority: true }, {}, {}), /closed keys/);
+});
+
+function architectureFixture() {
+  return { format: 'zryna.source-build-receipt.v1',
+    source: { repository: 'https://github.com/zryna/zryna', commit: '1'.repeat(40), tree: '2'.repeat(40) },
+    command: ['cargo', 'run', '--locked', '-p', 'zryna', '--', 'architecture', 'check', '--json'],
+    toolchain: { channel: '1.97.1', cargoVersion: 'cargo 1.97.1 (c980f4866 2026-06-30)', cargoSha256: '3'.repeat(64),
+      rustcVersion: 'rustc 1.97.1 (8bab26f4f 2026-07-14)', rustcSha256: '4'.repeat(64) },
+    inputs: ['Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', 'zryna.workspace.json']
+      .map(logicalPath => ({ logicalPath, size: 1, sha256: '5'.repeat(64) })), report: { diagnostics: [] } };
+}
+test('installed architecture reads the original typed distribution wire without rewriting its bytes or digest', () => temporary(root => {
+  const document = architectureFixture();
+  const bytes = distributionBytes(document);
+  const descriptor = file(root, 'installed/architecture-receipt.json', bytes);
+  assert.throws(() => parseCanonical(bytes), /not canonical JSON/); // Counterfactual prior M4 reader.
+  assert.deepEqual(readInstalledArchitectureReceipt(descriptor, root), document);
+  assert(readFileSync(path.join(root, descriptor.path)).equals(bytes));
+  assert.equal(descriptor.sha256, digest(bytes));
+  assert.throws(() => readInstalledArchitectureReceipt({ ...descriptor, sha256: '0'.repeat(64) }, root), /retained digest/);
+}));
+test('installed architecture native wire rejects duplicates, alternate trivia, malformed UTF-8, oversized and invalid schema records', () => temporary(root => {
+  const base = architectureFixture();
+  const wire = distributionBytes(base);
+  const duplicate = Buffer.from(wire.toString().replace('"format":', '"format":"duplicate","format":'));
+  const badDocuments = [
+    { ...base, authenticated: true }, { ...base, report: { diagnostics: [{ severity: 'error' }] } },
+    { ...base, command: ['cargo', 'check'] }, { ...base, source: { ...base.source, commit: 'main' } },
+    { ...base, toolchain: { ...base.toolchain, channel: '1.97.0' } }, { ...base, inputs: [...base.inputs].reverse() },
+  ];
+  const hostile = [duplicate, Buffer.from(`${JSON.stringify(base, null, 2)}\n`), Buffer.concat([wire, wire]),
+    Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), wire]),
+    Buffer.from([0xff]), Buffer.alloc(256 * 1024 + 1), ...badDocuments.map(distributionBytes)];
+  for (const [index, bytes] of hostile.entries()) {
+    const descriptor = file(root, `installed/${index}.json`, bytes);
+    assert.throws(() => readInstalledArchitectureReceipt(descriptor, root));
+  }
+}));
+
+function stagedFixture(descriptors = []) {
+  const receipt = { tools: descriptors.map(versionLog => ({ versionLog })), sourceState: {}, results: [] };
+  return { receipt, bytes: Buffer.from(`${JSON.stringify(receipt, null, 2)}\n`) };
+}
+function stagePlan(descriptors) {
+  const fixture = stagedFixture(descriptors);
+  return retainedOutputFiles(fixture.receipt, fixture.bytes);
+}
+const stageDescriptor = (name, bytes = 1) => ({ path: name, bytes, sha256: '1'.repeat(64) });
+test('closed artifact plan includes only referenced files and the original receipt last within the unchanged ZIP count', () => {
+  const selected = [stageDescriptor('logs/actual.stdout.log'), stageDescriptor('observations/node.version.log')];
+  const files = stagePlan(selected);
+  assert.deepEqual(files.slice(0, -1), selected);
+  assert.equal(files.at(-1).path, 'receipt.json');
+  assert.equal(stagePlan(Array.from({ length: 255 }, (_, index) => stageDescriptor(`logs/${index}.log`))).length, 256);
+  assert.throws(() => stagePlan(Array.from({ length: 256 }, (_, index) => stageDescriptor(`logs/${index}.log`))), /entry count/);
+});
+test('closed artifact plan rejects path aliases, duplicate identities, parent-file conflicts and unsupported records', () => {
+  for (const names of [['logs/a', 'logs/a'], ['logs/A', 'logs/a'], ['receipt.json'], ['RECEIPT.JSON'],
+    ['logs', 'logs/a'], ['logs/A', 'logs/a/nested'], ['../outside'], ['logs/../a'], ['logs\\a'], ['/absolute']]) {
+    assert.throws(() => stagePlan(names.map(name => stageDescriptor(name))));
+  }
+  for (const changed of [{ ...stageDescriptor('a'), bytes: -1 }, { ...stageDescriptor('a'), bytes: 1.5 },
+    { ...stageDescriptor('a'), sha256: 'wrong' }, { ...stageDescriptor('a'), authority: true }]) {
+    assert.throws(() => stagePlan([changed]));
+  }
+  const fixture = stagedFixture();
+  assert.throws(() => retainedOutputFiles(fixture.receipt, Buffer.from(JSON.stringify(fixture.receipt))), /canonical/);
+  assert.throws(() => retainedOutputFiles({ ...fixture.receipt, passed: true }, fixture.bytes), /receipt value identity/);
+});
+test('closed artifact plan requires consistent directory prefix spelling across portable files', () => {
+  assert.equal(stagePlan(['logs/A/x', 'logs/A/y', 'logs/B/z'].map(name => stageDescriptor(name))).length, 4);
+  for (const names of [['logs/A/x', 'logs/a/y'], ['Logs/a', 'logs/B/c'], ['logs/A/X/a', 'logs/A/x/b']]) {
+    assert.throws(() => stagePlan(names.map(name => stageDescriptor(name))), /directory prefix case alias/);
+  }
+  assert.throws(() => stagePlan(['logs/A', 'logs/a/x'].map(name => stageDescriptor(name))), /parent file conflict/);
+});
+test('closed artifact plan preserves per-file and aggregate byte ceilings including the original receipt', () => {
+  const maximum = 256 * 1024 * 1024;
+  assert.throws(() => stagePlan([stageDescriptor('too-large', maximum + 1)]), /file byte bound/);
+  assert.throws(() => stagePlan([stageDescriptor('a', maximum), stageDescriptor('b', maximum), stageDescriptor('c', maximum)]), /aggregate byte bound/);
+  assert.equal(stagePlan([stageDescriptor('a', maximum), stageDescriptor('b', maximum)]).length, 3);
+});
+test('closed artifact plan reserves exact conservative ZIP32 overhead and rejects its first extra byte', () => {
+  const maximum = 256 * 1024 * 1024;
+  const descriptors = [stageDescriptor('a', maximum), stageDescriptor('b', maximum), stageDescriptor('c', maximum - 4096)];
+  const fixture = stagedFixture(descriptors);
+  const files = retainedOutputFiles(fixture.receipt, fixture.bytes);
+  const overhead = 22 + files.reduce((sum, item) => sum + 30 + 46 + 16 + 2 * Buffer.byteLength(item.path, 'utf8'), 0);
+  descriptors[2].bytes = 768 * 1024 * 1024 - 2 * maximum - fixture.bytes.length - overhead;
+  assert.equal(stagedFixture(descriptors).bytes.length, fixture.bytes.length);
+  assert.equal(stagePlan(descriptors).length, 4);
+  descriptors[2].bytes++;
+  assert.throws(() => stagePlan(descriptors), /ZIP byte bound including supported record overhead/);
+});
+test('closed stage copies byte-identical selected files create-only without copying native installation/project trees', () => temporary(parent => {
+  const root = path.join(parent, 'original');
+  mkdirSync(root);
+  const descriptor = file(root, 'logs/actual.log', 'actual original log\n');
+  file(root, 'installed/private/project.zry', 'private original project');
+  const stage = new ClosedEvidenceStage(root);
+  try {
+    stage.create(); stage.write(descriptor, readFileSync(path.join(root, descriptor.path)));
+    assert.equal(readFileSync(path.join(stage.target, descriptor.path), 'utf8'), 'actual original log\n');
+    assert(!existsSync(path.join(stage.target, 'installed')));
+    assert.throws(() => stage.write(descriptor, readFileSync(path.join(root, descriptor.path))), /EEXIST/);
+    assert.throws(() => new ClosedEvidenceStage(root), /already exists/);
+  } finally { stage.close(); }
+}));
+test('closed stage rejects changed source ancestors and linked output directories without redirecting writes', () => temporary(parent => {
+  const root = path.join(parent, 'original');
+  mkdirSync(root);
+  const descriptor = { path: 'logs/actual.log', bytes: 1, sha256: digest(Buffer.from('a')) };
+  const stage = new ClosedEvidenceStage(root);
+  try {
+    stage.create();
+    const outside = path.join(parent, 'outside'); mkdirSync(outside);
+    symlinkSync(outside, path.join(stage.target, 'logs'), 'junction');
+    assert.throws(() => stage.write(descriptor, Buffer.from('a')));
+    assert(!existsSync(path.join(outside, 'actual.log')));
+    renameSync(root, `${root}-moved`); mkdirSync(root);
+    assert.throws(() => stage.unchanged(), /identity changed/);
+  } finally { stage.close(); }
+}));
+test('closed stage rejects descriptor substitutions, traversal and changed retained subdirectories', () => temporary(parent => {
+  const root = path.join(parent, 'original'); mkdirSync(root);
+  const descriptor = { path: 'logs/first.log', bytes: 1, sha256: digest(Buffer.from('a')) };
+  const stage = new ClosedEvidenceStage(root);
+  try {
+    stage.create();
+    assert.throws(() => stage.write(descriptor, Buffer.from('b')), /digest identity/);
+    assert.throws(() => stage.write({ ...descriptor, bytes: 2 }, Buffer.from('a')), /bytes identity/);
+    assert.throws(() => stage.write({ ...descriptor, path: '../escape' }, Buffer.from('a')), /unsafe portable path/);
+    stage.write(descriptor, Buffer.from('a'));
+    renameSync(path.join(stage.target, 'logs'), path.join(stage.target, 'old-logs'));
+    mkdirSync(path.join(stage.target, 'logs'));
+    assert.throws(() => stage.write({ ...descriptor, path: 'logs/next.log' }, Buffer.from('a')), /identity changed/);
+    assert(!existsSync(path.join(stage.target, 'logs/next.log')));
+  } finally { stage.close(); }
+}));
+test('closed stage rejects a linked source ancestor and noncanonical evidence path before creation', () => temporary(parent => {
+  const root = path.join(parent, 'original'); mkdirSync(root);
+  const linked = path.join(parent, 'linked'); symlinkSync(root, linked, 'junction');
+  assert.throws(() => new ClosedEvidenceStage(linked), /non-linked directory/);
+  assert.throws(() => new ClosedEvidenceStage(`${root}${path.sep}..${path.sep}original`), /canonical absolute/);
+  assert(!existsSync(`${linked}-retained`));
+}));
+test('full native evidence validation is mandatory before any retained stage output is created', async () => {
+  const parent = mkdtempSync(path.join(os.tmpdir(), 'm4-stage-native-'));
+  try {
+    const root = path.join(parent, 'original'); mkdirSync(root);
+    const base = envelopeFixture(root);
+    file(root, 'receipt.json', `${JSON.stringify(base.receipt, null, 2)}\n`);
+    const registry = loadAndValidateM4Conformance();
+    await assert.rejects(stageM4Evidence(base.receipt, { root, sourceRoot: workspaceRoot, registry, expected: base.expected }),
+      /complete fixed ordered gate inventory/);
+    assert(!existsSync(`${root}-retained`));
+  } finally { rmSync(parent, { recursive: true, force: true }); }
 });
 test('receipt loader rejects noncanonical, duplicate, oversize and malformed UTF-8 inputs before composition', async () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'm4-raw-receipt-'));

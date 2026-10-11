@@ -681,10 +681,19 @@ jobs:
           node scripts/run-m4-conformance.mjs --lane core --evidence "$env:RUNNER_TEMP/m4-core-evidence" --expected-commit $candidate --expected-tree $tree --source-ref $sourceRef --context $context
           if ($LASTEXITCODE -ne 0) { throw 'M4 core conformance failed' }
       - name: Preserve M4 core receipt and complete execution logs
-        if: always()
+        if: success()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: m4-core-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m4-core-evidence-retained/**
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve failed M4 core diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m4-core-diagnostics-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/m4-core-evidence/**
           if-no-files-found: error
           retention-days: 90

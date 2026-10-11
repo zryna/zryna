@@ -10,6 +10,23 @@ const workflow = name => {
   assert.deepEqual(result.errors, []);
   return result.toJS();
 };
+function artifactUploads(job, lane, evidence) {
+  const uploads = job.steps.filter(step => step.uses?.startsWith('actions/upload-artifact@'));
+  assert.equal(uploads.length, 2, 'exact success/diagnostic uploads');
+  const [success, diagnostic] = uploads;
+  assert.equal(success.if, 'success()');
+  assert.equal(diagnostic.if, 'failure()');
+  assert.equal(success.with.path, `${'${{ runner.temp }}'}/${evidence}-retained/**`);
+  assert.equal(diagnostic.with.path, `${'${{ runner.temp }}'}/${evidence}/**`);
+  assert.equal(success.with.name, `m4-${lane}-${'${{ matrix.os }}'}-${'${{ github.event.pull_request.head.sha || github.sha }}'}-${'${{ github.run_id }}'}-${'${{ github.run_attempt }}'}`);
+  assert.equal(diagnostic.with.name, success.with.name.replace(`m4-${lane}-`, `m4-${lane}-diagnostics-`));
+  for (const upload of uploads) {
+    assert.equal(upload.uses, 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
+    assert.equal(upload.with['if-no-files-found'], 'error');
+    assert.equal(upload.with['compression-level'], 0);
+    assert.equal(upload.with['retention-days'], 90);
+  }
+}
 test('M4 adds all six host lanes and exact candidate receipts without changing historical foundation authority', () => {
   assert.doesNotThrow(() => withoutM4Workflow(workflow('ci.yml')));
   for (const [name, lane, key, baselines] of [
@@ -32,11 +49,28 @@ test('M4 adds all six host lanes and exact candidate receipts without changing h
     assert.doesNotMatch(execution.run, /github\.head_ref|github\.ref/);
     assert.match(execution.run, /--expected-commit \$candidate --expected-tree \$tree/);
     assert.equal(execution['continue-on-error'], undefined);
-    const upload = job.steps.at(-1);
-    assert.equal(upload.if, 'always()');
-    assert.equal(upload.with['if-no-files-found'], 'error');
-    assert.equal(upload.with['compression-level'], 0);
-    assert.match(upload.with.name, /github\.run_id.*github\.run_attempt/);
+    artifactUploads(job, lane, lane === 'browser' ? 'browser-conformance-evidence' : 'installed-h1-evidence');
+  }
+});
+test('M4 successful artifact inventory is distinct from failed diagnostics for every lane', () => {
+  artifactUploads(workflow('ci.yml').jobs['m4-platform'], 'core', 'm4-core-evidence');
+  for (const [name, key, lane, evidence] of [
+    ['ci.yml', 'm4-platform', 'core', 'm4-core-evidence'],
+    ['browser-conformance.yml', 'conformance', 'browser', 'browser-conformance-evidence'],
+    ['installed-command-h1.yml', 'qualify', 'installed', 'installed-h1-evidence'],
+  ]) {
+    const original = workflow(name).jobs[key];
+    for (const mutate of [
+      job => { job.steps.at(-2).if = 'always()'; },
+      job => { job.steps.at(-1).if = 'success()'; },
+      job => { job.steps.at(-2).with.path = job.steps.at(-1).with.path; },
+      job => { job.steps.at(-1).with.name = job.steps.at(-2).with.name; },
+      job => { job.steps.at(-2).with['retention-days'] = 7; },
+      job => { job.steps.at(-2).uses = 'actions/upload-artifact@main'; },
+    ]) {
+      const changed = structuredClone(original); mutate(changed);
+      assert.throws(() => artifactUploads(changed, lane, evidence));
+    }
   }
 });
 test('M4 source, proofs, schemas, support and examples always select the M4 lane', () => {

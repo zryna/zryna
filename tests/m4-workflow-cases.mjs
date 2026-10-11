@@ -17,7 +17,18 @@ export function withoutM4Workflow(candidate) {
   assert(core.steps.some(step => step.run === 'pnpm m4:registry && pnpm m4:evidence:contract'));
   for (const step of core.steps) {
     assert.equal(step['continue-on-error'], undefined);
-    if (step.if !== undefined) assert.equal(step.if, 'always()');
+    if (step.if !== undefined) assert(step === core.steps.at(-2) || step === core.steps.at(-1), 'only closed uploads are conditional');
+  }
+  const uploads = core.steps.filter(step => step.uses?.startsWith('actions/upload-artifact@'));
+  assert.deepEqual(uploads, core.steps.slice(-2), 'exact final upload pair');
+  for (const [index, upload] of uploads.entries()) {
+    assert.equal(upload.if, index === 0 ? 'success()' : 'failure()');
+    assert.equal(upload.uses, 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
+    assert.deepEqual(upload.with, {
+      name: `m4-core-${index === 0 ? '' : 'diagnostics-'}${'${{ matrix.os }}'}-${'${{ github.event.pull_request.head.sha || github.sha }}'}-${'${{ github.run_id }}'}-${'${{ github.run_attempt }}'}`,
+      path: `${'${{ runner.temp }}'}/m4-core-evidence${index === 0 ? '-retained' : ''}/**`,
+      'if-no-files-found': 'error', 'retention-days': 90, 'compression-level': 0,
+    });
   }
   for (const lane of ['browser', 'installed']) {
     assert.deepEqual(jobs[`m4-${lane}`], {

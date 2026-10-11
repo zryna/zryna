@@ -289,13 +289,13 @@
   "sources": [
     {
       "path": ".github/workflows/browser-conformance.yml",
-      "bytes": 3817,
-      "sha256": "a5c1d92a0db6e56a62bf8b9bdbd617d8ae91a1caca2a13a0cb43ecf2d849c110"
+      "bytes": 4326,
+      "sha256": "dd94fb12379c91825a40f8eb7f4a92a8e9a8f23ffcc40de9b656e92f42f6c2c0"
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 29041,
-      "sha256": "fc199462af9c26fc5b1019f33a7d939a86fa00e660207cfbc81090a2ecc263fd"
+      "bytes": 29531,
+      "sha256": "b1aee21259b4e2003cd9f4d78892c40c693e120a1c679ae66672a04e6cd214e4"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -304,8 +304,8 @@
     },
     {
       "path": ".github/workflows/installed-command-h1.yml",
-      "bytes": 4802,
-      "sha256": "72798fad9de9075231a515347f1bd1cd187d450ca9c8d78111e6a2f6c5199da0"
+      "bytes": 5308,
+      "sha256": "37f9945966567f50ad44beefe4f576a42cfc1ce429cfdf23a3a3140d16bf6cea"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -2154,8 +2154,8 @@
     },
     {
       "path": "scripts/m4/collect-output.mjs",
-      "bytes": 4032,
-      "sha256": "809a61e9765dc7ce95b7ad18176aaca3577c2cda246faccea9b6d686733dd51b"
+      "bytes": 12487,
+      "sha256": "0b802b9995caeb9807f444004da439a1e8b882ae8b1763a65f7ebebaf681a50f"
     },
     {
       "path": "scripts/m4/evidence-browser-byte-boundary.mjs",
@@ -2189,8 +2189,8 @@
     },
     {
       "path": "scripts/m4/evidence-installed.mjs",
-      "bytes": 8135,
-      "sha256": "f70c758f7e530cf9ee15f17c21088232e3cf8b6b720d2a650fc3d62cf02c66a1"
+      "bytes": 8729,
+      "sha256": "82d9c67edf488cfb6f29d4539cdba238b157842763ab791ca4044b6d870d6e07"
     },
     {
       "path": "scripts/m4/evidence-node.mjs",
@@ -2339,18 +2339,18 @@
     },
     {
       "path": "scripts/run-m4-conformance.mjs",
-      "bytes": 7100,
-      "sha256": "b46d4efabb1d3569126ef3aafdec77ffd3507e75ebd566514c17abd8d173cb63"
+      "bytes": 7094,
+      "sha256": "f472209c8da1653ccf9b6aa2988103c0475e208a857014ef0ca6cebfe714734d"
     },
     {
       "path": "scripts/scalar-host/acquire-browser.py",
-      "bytes": 7849,
-      "sha256": "95b9974527cd1ad11d297d5e63c14b8616352f8860cff3a21f3b77a7f8887336"
+      "bytes": 7970,
+      "sha256": "c1c2e0b473599dcc55d8413eb85b5b58b82c05479bb3834994deb28b8b473476"
     },
     {
       "path": "scripts/scalar-host/run-conformance.mjs",
-      "bytes": 7998,
-      "sha256": "bbe45136523880a6cb4ff19407cc6d5a413e0f1a9cac93a322ac69c138b5f16d"
+      "bytes": 9400,
+      "sha256": "acbdef5584b57c0531fde06889380c9a5290012ddfb9eeb62e637c6b253e2b21"
     },
     {
       "path": "spec/wit/capability-profiles-v1/worlds.wit",
@@ -2449,8 +2449,8 @@
     },
     {
       "path": "tests/m4-evidence.test.mjs",
-      "bytes": 38276,
-      "sha256": "d425559f5df9d2e1665844f358b0c19b90c0e46a84973424ade858577e39a124"
+      "bytes": 49146,
+      "sha256": "6c3e003db887afeb3709b1fe5cbd7992d28f0c5195b626327652e4a67ced87e4"
     },
     {
       "path": "tests/m4-fixtures/allocation-core/capacity-inspect.mjs",
@@ -2509,13 +2509,18 @@
     },
     {
       "path": "tests/m4-workflow-cases.mjs",
-      "bytes": 2389,
-      "sha256": "f9e41d4f6d748a3455ca305a516232869874ace38b93d361be7404f3390b6815"
+      "bytes": 3276,
+      "sha256": "8e0466a70f5fb5f74789347e325914e6d21a2cf89a1882dd555f95f4d54ee19d"
     },
     {
       "path": "tests/m4-workflow.test.mjs",
-      "bytes": 4130,
-      "sha256": "cba55106306b52261365074785d16d21792cdcdda393c6100e3a3bc20187e452"
+      "bytes": 6179,
+      "sha256": "c85a1360eff275fa63e9a4a52d2e4ea16aae4426107bf951ee44e954aa2c5204"
+    },
+    {
+      "path": "tests/scalar-host-conformance.test.mjs",
+      "bytes": 9336,
+      "sha256": "9d75ed5784ea5d5ffdb3b3ffd8e6b801cdb0b21de79e8cc002c0cc01d3acb947"
     },
     {
       "path": "tests/scalar-host/binding.mjs",

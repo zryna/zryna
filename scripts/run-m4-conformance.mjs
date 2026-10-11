@@ -6,10 +6,10 @@ import { spawnSync } from 'node:child_process';
 import { loadAndValidateM4Conformance, expectedRegistrySha256 } from './check-m4-conformance.mjs';
 import { parseCanonical, readStableFile } from './m4/registry-files.mjs';
 import { MAX_LOG, MAX_RECEIPT, exact, reject } from './m4/evidence-input.mjs';
-import { selectM4Gates, resolveM4Argv, validateM4Evidence } from './m4/evidence.mjs';
+import { selectM4Gates, resolveM4Argv } from './m4/evidence.mjs';
 import { actualFile, observedSource, readObservation } from './m4/observe-context.mjs';
 import { sourceCommands } from './m4/evidence-source.mjs';
-import { retain, browserAttachments, installedAttachments } from './m4/collect-output.mjs';
+import { retain, browserAttachments, installedAttachments, stageM4Evidence } from './m4/collect-output.mjs';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 function options(argv) {
@@ -96,7 +96,7 @@ export async function runM4(options) {
   if (failure) throw failure;
   const expected = { source, registrySha256: expectedRegistrySha256, evidenceDirectory: root,
     host: receipt.host, lane: receipt.lane, workflow: receipt.workflow, tools, materials: receipt.materials };
-  await validateM4Evidence(receipt, { root, sourceRoot, registry, expected });
+  await stageM4Evidence(receipt, { root, sourceRoot, registry, expected });
   console.log('M4 lane execution collected; hosted authentication, other lanes/hosts, source gaps and live publication remain separate.');
   return receipt;
 }

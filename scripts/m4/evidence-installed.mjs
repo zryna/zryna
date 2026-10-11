@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { verifyArchive } from '../distribution/verify.mjs';
+import { validateSourceBuildReceiptText } from '../distribution-release/validate-source-build-receipt.mjs';
+import { MAX_ENVELOPE_BYTES } from '../distribution-release/canonical.mjs';
 import { digest } from './registry-files.mjs';
 import { installedNames, positive, invocationArgv } from './installed-cases.mjs';
 import { producedJson, validateInstalledObservation } from './installed-observation.mjs';
 import { installedByteCases, validateInstalledByteSource, validateInstalledByteDenial } from './installed-byte-boundary.mjs';
 export { installedNames } from './installed-cases.mjs';
-import { attachmentMap, array, exact, integer, MAX_ARTIFACT, retained, retainedJson, reject, sha, text } from './evidence-input.mjs';
+import { attachmentMap, array, exact, integer, MAX_ARTIFACT, retained, retainedJson, reject, sha, text, utf8 } from './evidence-input.mjs';
+
+export function readInstalledArchitectureReceipt(descriptor, root) {
+  // Preserve the distribution producer's sorted compact wire and original digest.
+  const bytes = retained(descriptor, root, MAX_ENVELOPE_BYTES);
+  const text = utf8(bytes);
+  assert(Buffer.from(text, 'utf8').equals(bytes), 'original native UTF-8 byte identity');
+  return validateSourceBuildReceiptText(text);
+}
 
 export async function installedAccounting(result, { root, sourceRoot, source, host, evidenceDirectory, tools, registry }) {
   const files = attachmentMap(result);
@@ -18,7 +28,7 @@ export async function installedAccounting(result, { root, sourceRoot, source, ho
   const report = retainedJson(get('qualification.json'), root);
   const candidate = retainedJson(get('candidate.json'), root);
   const invocations = retainedJson(get('invocations.json'), root);
-  const architecture = retainedJson(get('architecture-receipt.json'), root);
+  const architecture = readInstalledArchitectureReceipt(get('architecture-receipt.json'), root);
   const paths = host.os === 'windows' ? path.win32 : path.posix;
   array(invocations, 31, 'installed invocation inventory');
   assert.deepEqual(invocations.map(item => item.name), installedNames, 'all 31 real invocation identities');
