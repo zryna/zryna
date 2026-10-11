@@ -2,6 +2,29 @@ import { createHash } from 'node:crypto';
 import { digest } from './registry-files.mjs';
 import { requireEqual } from './hosted-expectations.mjs';
 
+export function authenticateWorkflowReference(reference, repository, workflowPath, executionCommit, run) {
+  if (typeof reference.sha !== 'string' || !/^[a-f0-9]{40}$/.test(reference.sha)) {
+    throw new Error('M4 hosted: invalid platform workflow commit');
+  }
+  requireEqual(reference.path, `${repository}/${workflowPath}@${reference.sha}`, 'platform workflow path/commit');
+  requireEqual(reference.sha, executionCommit, 'platform execution workflow commit');
+  if (typeof reference.ref !== 'string' || reference.ref.length > 1024
+      || !/^(?:refs\/(?:heads|pull)\/[A-Za-z0-9_./-]+|[a-f0-9]{40})$/.test(reference.ref)) {
+    throw new Error('M4 hosted: invalid platform workflow ref');
+  }
+  let expectedRef = `refs/heads/${run.head_branch}`;
+  if (run.event === 'pull_request') {
+    if (!Array.isArray(run.pull_requests)) throw new Error('M4 hosted: platform PR references required');
+    const attached = run.pull_requests.filter(item => item.head?.sha === run.head_sha && item.head?.ref === run.head_branch);
+    requireEqual(attached.length, 1, 'exact platform-attached PR');
+    if (!Number.isSafeInteger(attached[0].number) || attached[0].number < 1) {
+      throw new Error('M4 hosted: invalid platform PR number');
+    }
+    expectedRef = `refs/pull/${attached[0].number}/merge`;
+  }
+  requireEqual(reference.ref, expectedRef, 'platform workflow event ref');
+}
+
 // The execution commit is supplied independently. In a PR it can be a synthetic merge;
 // its identity stays distinct from the candidate checkout and authenticated API run head.
 export async function authenticateWorkflow(expectations, api, run) {
@@ -25,17 +48,14 @@ export async function authenticateWorkflow(expectations, api, run) {
   requireEqual(run.id, provenance.runId, 'workflow run id');
   requireEqual(run.run_attempt, provenance.attempt, 'workflow run attempt');
   requireEqual(run.head_sha, expectations.source.commit, 'workflow run candidate');
+  requireEqual(run.head_branch, expectations.source.ref.slice('refs/heads/'.length), 'workflow run source branch');
+  requireEqual(run.event, provenance.event, 'workflow run event');
   if (!Array.isArray(run.referenced_workflows)) throw new Error('M4 hosted: platform workflow references required');
   for (const workflowPath of ['.github/workflows/browser-conformance.yml', '.github/workflows/installed-command-h1.yml']) {
     const refs = run.referenced_workflows.filter(item => typeof item.path === 'string'
       && item.path.startsWith(`${expectations.repository}/${workflowPath}@`));
     requireEqual(refs.length, 1, 'exact platform-attached reusable workflow');
-    if (typeof refs[0].ref !== 'string' || refs[0].ref.length > 1024
-        || !/^(?:refs\/(?:heads|pull)\/[A-Za-z0-9_./-]+|[a-f0-9]{40})$/.test(refs[0].ref)) {
-      throw new Error('M4 hosted: invalid platform workflow ref');
-    }
-    requireEqual(refs[0].path, `${expectations.repository}/${workflowPath}@${refs[0].ref}`, 'platform workflow path/ref');
-    requireEqual(refs[0].sha, execution.commit, 'platform execution workflow commit');
+    authenticateWorkflowReference(refs[0], expectations.repository, workflowPath, execution.commit, run);
   }
   if (provenance.event === 'pull_request') {
     requireEqual(event.commit, execution.commit, 'supported PR event/workflow attachment');

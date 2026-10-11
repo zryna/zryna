@@ -10,7 +10,7 @@ import { validateExpectations, HOSTED_LANES } from '../scripts/m4/hosted-expecta
 import { verifyM4CIResult } from '../scripts/m4/verify-ci-result.mjs';
 import { digest } from '../scripts/m4/registry-files.mjs';
 import { boundedResponse, githubApi } from '../scripts/m4/hosted-api.mjs';
-import { authenticateWorkflow } from '../scripts/m4/hosted-workflow.mjs';
+import { authenticateWorkflow, authenticateWorkflowReference } from '../scripts/m4/hosted-workflow.mjs';
 import { authenticateAggregate } from '../scripts/m4/hosted-aggregate.mjs';
 import { createHash } from 'node:crypto';
 import { deflateRawSync } from 'node:zlib';
@@ -227,8 +227,9 @@ test('immutable workflow/event source authentication keeps a synthetic merge dis
     sha: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex'),
   };
   const run = { id: value.jobs[0].runId, run_attempt: value.jobs[0].attempt, head_sha: value.source.commit,
+    head_branch: 'candidate', event: 'pull_request', pull_requests: [{ number: 42, head: { sha: value.source.commit, ref: 'candidate' } }],
     referenced_workflows: ['browser-conformance', 'installed-command-h1', 'portable-setup'].map(name => ({
-      path: `${value.repository}/.github/workflows/${name}.yml@refs/pull/42/merge`, ref: 'refs/pull/42/merge',
+      path: `${value.repository}/.github/workflows/${name}.yml@${value.workflowExecution.commit}`, ref: 'refs/pull/42/merge',
       sha: value.workflowExecution.commit,
     })) };
   await authenticateWorkflow(value, async path => responses[path], run);
@@ -246,7 +247,22 @@ test('immutable workflow/event source authentication keeps a synthetic merge dis
     x => { x.referenced_workflows[0].sha = '9'.repeat(40); },
     x => { x.referenced_workflows[0].ref = 'refs/heads/unrelated'; },
     x => { x.referenced_workflows[0].path = 'attacker/compiler/.github/workflows/browser-conformance.yml@refs/pull/42/merge'; },
+    x => { delete x.pull_requests; }, x => { x.pull_requests.push(structuredClone(x.pull_requests[0])); },
+    x => { x.pull_requests[0].head.sha = '9'.repeat(40); }, x => { x.pull_requests[0].head.ref = 'unrelated'; },
   ]) { const changed = structuredClone(run); mutate(changed); await assert.rejects(authenticateWorkflow(value, async path => responses[path], changed)); }
+});
+test('recorded GitHub SHA-suffixed reusable workflow references keep event refs independently bound', () => {
+  const commit = '444d7576130d0d163b2ba76482d1222751475630', head = '99fa28f14ab524d704ac947eca7c53ddeaa89a31';
+  const file = '.github/workflows/browser-conformance.yml', repository = 'zryna/zryna';
+  const record = { path: `${repository}/${file}@${commit}`, sha: commit, ref: 'refs/pull/549/merge' };
+  const run = { event: 'pull_request', head_sha: head, head_branch: 'm4-conformance-closure',
+    pull_requests: [{ number: 549, head: { sha: head, ref: 'm4-conformance-closure' } }] };
+  authenticateWorkflowReference(record, repository, file, commit, run);
+  for (const change of [{ path: `${repository}/${file}@${record.ref}` }, { path: `${repository}/${file}@${'9'.repeat(40)}` },
+    { sha: '9'.repeat(40) }, { ref: 'refs/pull/550/merge' }, { ref: 'refs/heads/unrelated' }, { ref: 'x'.repeat(1025) }]) {
+    assert.throws(() => authenticateWorkflowReference({ ...record, ...change }, repository, file, commit, run));
+  }
+  authenticateWorkflowReference({ ...record, ref: 'refs/heads/main' }, repository, file, commit, { event: 'workflow_dispatch', head_branch: 'main' });
 });
 test('M4 aggregate must be the successful completed exact-run/attempt GitHub Actions check', async () => {
   const value = expectations();

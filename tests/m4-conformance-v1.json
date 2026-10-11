@@ -2234,8 +2234,8 @@
     },
     {
       "path": "scripts/m4/hosted-workflow.mjs",
-      "bytes": 4604,
-      "sha256": "368d7870a3cb7f69bafc4bb519cd130b79382f04d95f04712da65e5d5b7d5213"
+      "bytes": 5826,
+      "sha256": "3c2c4caa578bd4de044c9e8ab2debeeeb7c22714090815a437fba0e4aa360e93"
     },
     {
       "path": "scripts/m4/installed-byte-boundary.mjs",
@@ -2469,8 +2469,8 @@
     },
     {
       "path": "tests/m4-hosted.test.mjs",
-      "bytes": 18311,
-      "sha256": "7c379430994bf76666792e8d21ba57eee6b1b313a50a71b152dae8a5698d1a7f"
+      "bytes": 19910,
+      "sha256": "d1c8de932c47257dde2bd7048a3e9ac3278f1027127edf305af3d81026e687e2"
     },
     {
       "path": "tests/m4-limit-contract-fixtures.mjs",
