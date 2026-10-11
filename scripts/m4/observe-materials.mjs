@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, realpathSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { digest, readStableFile } from './registry-files.mjs';
@@ -29,15 +29,49 @@ function findExecutable(name) {
   }
   reject(`actual ${name} executable absent from PATH`);
 }
-function pnpmScript() {
-  const launcher = findExecutable('pnpm');
-  const candidates = [launcher.endsWith('.cjs') ? launcher : null,
-    path.join(path.dirname(launcher), 'node_modules/pnpm/bin/pnpm.cjs'),
-    path.join(path.dirname(launcher), '../lib/node_modules/pnpm/bin/pnpm.cjs'),
-    path.join(path.dirname(launcher), '../pnpm/bin/pnpm.cjs'),
-    path.join(path.dirname(launcher), 'pnpm.cjs')].filter(Boolean);
-  const selected = candidates.find(candidate => existsSync(candidate));
-  if (!selected) reject('direct pinned pnpm JS entry required; shell launchers are not executed');
+export function resolvePnpmScript(launcher = findExecutable('pnpm')) {
+  const actual = realpathSync(launcher);
+  let target = actual;
+  if (!/^pnpm\.(?:mjs|cjs)$/.test(path.basename(actual))) {
+    if (!['pnpm', 'pnpm.cmd'].includes(path.basename(actual))) reject('unsupported pnpm launcher metadata');
+    // pnpm/action-setup's self-updater emits this metadata in its extensionless shim.
+    // Windows selects pnpm.cmd; its same-directory pnpm sidecar carries the same target.
+    const files = [actual];
+    if (path.basename(actual) === 'pnpm.cmd') files.push(path.join(path.dirname(actual), 'pnpm'));
+    const markers = [];
+    for (const filename of files) {
+      if (!existsSync(filename)) continue;
+      const bytes = readStableFile(realpathSync(filename), 64 * 1024, 'pnpm launcher metadata');
+      const lines = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split(/\r?\n/);
+      for (const line of lines.filter(value => value.includes('cmd-shim-target='))) {
+        const match = /^# cmd-shim-target=(.+)$/.exec(line);
+        if (!match) reject('malformed direct pnpm target metadata');
+        markers.push(match[1]);
+      }
+    }
+    if (markers.length !== 1 || !path.isAbsolute(markers[0]) || markers[0].split(/[\\/]/).some(part => part === '.' || part === '..')) {
+      reject('one absolute direct pnpm JS target required; shell launchers are not executed');
+    }
+    target = markers[0];
+  }
+  if (!/^pnpm\.(?:mjs|cjs)$/.test(path.basename(target)) || path.basename(path.dirname(target)) !== 'bin') {
+    reject('unsupported direct pnpm JS target');
+  }
+  const targetStat = lstatSync(target);
+  if (!targetStat.isFile() || targetStat.isSymbolicLink()) reject('regular direct pnpm target required');
+  const selected = path.join(path.dirname(realpathSync(target)), 'pnpm.cjs');
+  const entry = path.join(path.dirname(selected), 'pnpm.mjs');
+  for (const filename of [selected, entry]) {
+    const stat = lstatSync(filename);
+    if (!stat.isFile() || stat.isSymbolicLink()) reject('regular direct pnpm JS entries required');
+    readStableFile(filename, 64 * 1024, 'direct pnpm JS entry');
+  }
+  const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(readStableFile(
+    path.join(path.dirname(selected), '../package.json'), 64 * 1024, 'pinned pnpm package')));
+  if (manifest.name !== 'pnpm' || manifest.version !== '11.18.0' || manifest.bin?.pnpm !== 'bin/pnpm.mjs') {
+    reject('exact pinned pnpm package identity required');
+  }
+  // Keep the independently pinned compatibility entry; it imports this package's pnpm.mjs.
   return realpathSync(selected);
 }
 export function observedTools() {
@@ -45,7 +79,7 @@ export function observedTools() {
   const rustup = findExecutable('rustup');
   const files = { node: realpathSync(process.execPath),
     rustc: versionOutput(rustup, ['which', '--toolchain', '1.97.1', 'rustc']),
-    cargo: versionOutput(rustup, ['which', '--toolchain', '1.97.1', 'cargo']), pnpm: pnpmScript() };
+    cargo: versionOutput(rustup, ['which', '--toolchain', '1.97.1', 'cargo']), pnpm: resolvePnpmScript() };
   return Object.entries(pins).map(([name, version]) => {
     const executable = actualFile(files[name], 512 * 1024 * 1024);
     const versionArgv = name === 'pnpm' ? [files.node, executable.path, '--version'] : [executable.path, '--version'];

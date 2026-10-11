@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { digest, parseCanonical } from '../scripts/m4/registry-files.mjs';
 import { retained, exact, MAX_LOG, processResult } from '../scripts/m4/evidence-input.mjs';
 import { rustAccounting, requireNodeTests } from '../scripts/m4/evidence-counts.mjs';
@@ -16,6 +16,7 @@ import { prepareByteSources, observedByteSource, verifyByteOutcome } from './ins
 import { producedJson, validateInstalledObservation } from '../scripts/m4/installed-observation.mjs';
 import { composeM4Evidence, selectM4Gates, requireM4ResultInventory, resolveM4Argv, normalizeM4Host, loadM4Evidence, validateM4Evidence } from '../scripts/m4/evidence.mjs';
 import { loadAndValidateM4Conformance, workspaceRoot, expectedRegistrySha256 } from '../scripts/check-m4-conformance.mjs';
+import { resolvePnpmScript } from '../scripts/m4/observe-materials.mjs';
 
 const selector = 'public_boundary::exact_limit_then_first_extra';
 const actual = `running 1 test\ntest ${selector} ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.02s\n`;
@@ -393,8 +394,9 @@ function envelopeFixture(root) {
   const workflow = { repository: 'zryna/zryna', runId: 1, attempt: 1, jobName: 'M4 core (ubuntu-latest)', jobKey: 'm4',
     workflowPath: '.github/workflows/ci.yml', workflowSha256: '5'.repeat(64), event: 'pull_request',
     headCommit: '6'.repeat(40), executionCommit: '6'.repeat(40), checkoutCommit: source.commit };
-  const expected = { source, registrySha256: expectedRegistrySha256, evidenceDirectory: root, host, lane: 'core', workflow, tools, materials };
-  const receipt = { format: 'zryna.m4-evidence.v1', registrySha256: expectedRegistrySha256, evidenceDirectory: root,
+  const evidenceDirectory = '/observed/m4-envelope';
+  const expected = { source, registrySha256: expectedRegistrySha256, evidenceDirectory, host, lane: 'core', workflow, tools, materials };
+  const receipt = { format: 'zryna.m4-evidence.v1', registrySha256: expectedRegistrySha256, evidenceDirectory,
     source: { ...source, cleanBefore: true, cleanAfter: true }, sourceState, host, lane: 'core', workflow, tools, materials, results: [] };
   return { expected, receipt };
 }
@@ -428,3 +430,54 @@ test('hostile complete envelopes cannot change external candidate, image, workfl
     }
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+function pnpmLayout(root) {
+  // Synthetic discovery fixture shaped by the retained actual action self-update; no execution claim.
+  const home = path.join(root, 'node_modules/.bin');
+  const packageRoot = path.join(home, 'store/v11/links/pnpm/11.18.0/package/node_modules/pnpm');
+  const packageAlias = path.join(home, 'global/v11/unique-update/node_modules/pnpm');
+  mkdirSync(path.join(packageRoot, 'bin'), { recursive: true });
+  mkdirSync(path.dirname(packageAlias), { recursive: true });
+  symlinkSync(packageRoot, packageAlias, 'junction');
+  const manifest = path.join(packageRoot, 'package.json');
+  writeFileSync(manifest, JSON.stringify({ name: 'pnpm', version: '11.18.0', bin: { pnpm: 'bin/pnpm.mjs' } }));
+  const cjs = path.join(packageRoot, 'bin/pnpm.cjs'), mjs = path.join(packageRoot, 'bin/pnpm.mjs');
+  writeFileSync(cjs, "#!/usr/bin/env node\n// CommonJS shim for compatibility with older Corepack versions\nimport('./pnpm.mjs')\n");
+  writeFileSync(mjs, 'throw new Error("discovery must never execute this fixture");\n');
+  const target = path.join(packageAlias, 'bin/pnpm.mjs');
+  const launcher = path.join(home, 'pnpm');
+  const marker = `# cmd-shim-target=${target.replaceAll('\\', '/')}\n`;
+  writeFileSync(launcher, `#!/bin/sh\nexit 99\n${marker}`);
+  return { home, manifest, cjs, mjs, target, launcher, marker };
+}
+test('pnpm direct MJS and compatibility CJS launchers preserve the independently pinned CJS identity', () => temporary(root => {
+  const layout = pnpmLayout(root);
+  for (const launcher of [layout.mjs, layout.cjs]) assert.equal(resolvePnpmScript(launcher), realpathSync(layout.cjs));
+  assert.equal(digest(readFileSync(layout.cjs)), '67b035e322203961795e8e34ca63a08c37a4386eda94107fb3d28f3246d882ad');
+}));
+test('pnpm managed Linux global/store layout resolves the unique target without invoking its shell launcher', () => temporary(root => {
+  const layout = pnpmLayout(root);
+  assert.equal(resolvePnpmScript(layout.launcher), realpathSync(layout.cjs));
+}));
+test('pnpm Windows cmd family reads the generated extensionless sidecar and retains direct CJS invocation', () => temporary(root => {
+  const layout = pnpmLayout(root), cmd = path.join(layout.home, 'pnpm.cmd');
+  writeFileSync(cmd, '@SETLOCAL\r\n@node "%~dp0\\global\\v11\\unique-update\\node_modules\\pnpm\\bin\\pnpm.mjs" %*\r\n');
+  assert.equal(resolvePnpmScript(cmd), realpathSync(layout.cjs));
+}));
+for (const [name, mutate, error] of [
+  ['duplicate metadata', layout => writeFileSync(layout.launcher, layout.marker + layout.marker), /one absolute/],
+  ['relative metadata', layout => writeFileSync(layout.launcher, '# cmd-shim-target=relative/pnpm/bin/pnpm.mjs\n'), /one absolute/],
+  ['unknown metadata', layout => writeFileSync(layout.launcher, '# unknown-target=pnpm.mjs\n'), /one absolute/],
+  ['malformed metadata', layout => writeFileSync(layout.launcher, 'exec cmd-shim-target=pnpm.mjs\n'), /malformed/],
+  ['oversize metadata', layout => writeFileSync(layout.launcher, Buffer.alloc(64 * 1024 + 1)), /byte limit/],
+  ['unsupported JS target', layout => writeFileSync(layout.launcher, `# cmd-shim-target=${path.join(layout.home, 'other.mjs')}\n`), /unsupported direct/],
+  ['wrong package name', layout => writeFileSync(layout.manifest, '{"name":"other","version":"11.18.0","bin":{"pnpm":"bin/pnpm.mjs"}}'), /exact pinned/],
+  ['wrong package version', layout => writeFileSync(layout.manifest, '{"name":"pnpm","version":"11.19.0","bin":{"pnpm":"bin/pnpm.mjs"}}'), /exact pinned/],
+  ['wrong package bin', layout => writeFileSync(layout.manifest, '{"name":"pnpm","version":"11.18.0","bin":{"pnpm":"bin/other.mjs"}}'), /exact pinned/],
+  ['missing CJS sibling', layout => rmSync(layout.cjs), /ENOENT/],
+  ['missing MJS sibling', layout => { writeFileSync(layout.launcher, `# cmd-shim-target=${layout.cjs.replaceAll('\\', '/')}\n`); rmSync(layout.mjs); }, /ENOENT/],
+  ['nonregular CJS sibling', layout => { rmSync(layout.cjs); mkdirSync(layout.cjs); }, /regular direct/],
+  ['nonregular MJS sibling', layout => { rmSync(layout.mjs); mkdirSync(layout.mjs); }, /regular direct/],
+]) test(`pnpm discovery rejects ${name} before any launcher execution`, () => temporary(root => {
+  const layout = pnpmLayout(root); mutate(layout); assert.throws(() => resolvePnpmScript(layout.launcher), error);
+}));
