@@ -2509,8 +2509,8 @@
     },
     {
       "path": "tests/m4-workflow.test.mjs",
-      "bytes": 4131,
-      "sha256": "0349d89aa832a625d019e68a707acc765082944b1c149d179d15b2eaa5873d7a"
+      "bytes": 4130,
+      "sha256": "cba55106306b52261365074785d16d21792cdcdda393c6100e3a3bc20187e452"
     },
     {
       "path": "tests/scalar-host/binding.mjs",
