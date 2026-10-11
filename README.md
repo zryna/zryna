@@ -2,6 +2,12 @@
 
 Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
 See [the public M3 surface](docs/M3_PUBLIC_PROFILE.md) and [the beginner guide](docs/M3_GETTING_STARTED.md).
+
+This change introduces the [bounded WASI command profile](docs/WASI_COMMAND_GETTING_STARTED.md)
+when integrated: one source file, empty grants or one explicit private environment key, and
+checkout or newly verified complete-installation execution. Its
+[review and integration record](docs/WASI_COMMAND_H1_REVIEW.md) tracks the remaining final checks.
+Existing immutable beta archives do not gain command support.
 The component checkpoints below retain their historical implementation boundaries; they do not
 limit or independently expand the integrated public surface. M0–M2 remain unchanged.
 

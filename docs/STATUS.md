@@ -340,18 +340,36 @@ remain outside M3.
   bundles with a deterministic profile-specific manifest. Windows native and `all` run reject
   before publication with `ZRYNA-N4002`; there is no partial-target fallback.
 
+## Bounded WASI command support introduced by this change
+
+When integrated, this change activates the [command profile](WASI_COMMAND_GETTING_STARTED.md)
+for one source file and sole `main(): bool`, empty grants or one owner-private literal-key
+environment request, and a distinct create-only execution record. It accepts the checkout
+route and a newly content-verified complete installation with fixed Node 22.22.1, Wasmtime
+48.0.1 and pinned WASI 0.2.12. The envelope remains 100,000 fuel, five seconds and one fixed
+16 MiB memory; the exhaustive grant table denies other host capabilities.
+
+Evidence covers supervised Linux x86-64 and hosted Ubuntu 24.04 x86-64 / Windows Server
+2022 x64. The [review record](WASI_COMMAND_H1_REVIEW.md) distinguishes the reviewed baseline
+from follow-up delta and final checks. Existing immutable beta archives remain without H1
+support. No signed release, production readiness, Windows desktop, general plain-cloud or
+performance qualification follows. Server activation and whole-M4 publication remain open
+under #401 and #402.
+
 ## Deliberately unsupported
 
-Public source-level Boolean execution requires explicit `control-flow-v1` or `data-ownership-v1`; it remains rejected by
-the default M1 path. The compiler-owned M2 gate checks three-target equivalence for one fixed
+Public Boolean execution in the scalar target profiles requires explicit `control-flow-v1`
+or `data-ownership-v1`; it remains rejected by the default M1 path. The bounded command
+profile instead maps its sole `main(): bool` to the pinned WIT command result. The compiler-owned M2 gate checks three-target equivalence for one fixed
 source control-flow and module oracle; it is not a claim of general language completeness. The
 M1/M2 scalar profiles do not claim heap values, an allocator or a tracing-GC profile. Their
 scalar-only surface is not a general zero-runtime or GC-free guarantee for data profiles.
 Explicit M3 uses bounded owned allocation and deterministic cleanup under its
 [public profile](M3_PUBLIC_PROFILE.md). The browser scalar profile above runs only its sealed,
 import-free core through the generated browser loader; it does not instantiate a Component Model
-artifact in a general component runtime. No current profile claims tracing GC, WASI/component
-host execution, Windows or macOS native execution, static native executables, package resolution,
+artifact in a general component runtime. WASI command execution is confined to the explicit
+bounded profile above. No current profile claims tracing GC, general WASI/component host
+execution, Windows or macOS native execution, static native executables, package resolution,
 watch mode, incremental builds, or production readiness.
 
 ## Evidence and reference

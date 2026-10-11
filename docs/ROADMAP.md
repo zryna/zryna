@@ -497,6 +497,13 @@ implementation, conformance and activation. This is `specified-only`; #167 and t
 preserves explicit host-outcome, u64 and async implementation gates. No runtime, generator, selector, publication or M3
 gate change is included, and existing pinned WIT worlds remain unchanged.
 
+Issue #400's [bounded WASI command change](WASI_COMMAND_GETTING_STARTED.md) introduces public
+activation when integrated: one file and `main(): bool`, empty grants or one explicitly
+private literal-key environment value, fixed limits and checkout/new complete-installation
+execution. [Independent review and final revision evidence](WASI_COMMAND_H1_REVIEW.md) are
+recorded separately. Existing immutable beta archives remain excluded; server acceptance
+(#401) and whole-M4 conformance/publication (#402) remain unfinished. This does not close M4.
+
 Completion gate: components expose self-described interfaces and receive no filesystem, network, clock, randomness, or environment capability unless the selected profile declares it.
 
 ## M5 — Packages and Reproducible Releases

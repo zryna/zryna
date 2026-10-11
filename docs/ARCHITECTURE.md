@@ -176,6 +176,14 @@ from this stage.
 component and cannot depend on `zryna-frontend`; backends cannot depend on either provider layer.
 The architecture engine has a negative graph fixture for both forbidden edges.
 
+The distinct H1 command verifier additionally allows `zryna-ir -> zryna-syntax` solely to
+authenticate the distinct opaque command source requirement. This is a compiler-to-foundation
+edge; it introduces no frontend dependency or provider semantics. Syntax authenticates source
+occurrences, while the mandatory command IR verifier must independently prove the exact effect,
+owned layout and cleanup. Existing M3 IR acceptance remains unchanged; this dependency
+edge itself grants no runtime authority. The separate bounded command support and integration
+record are documented in [the review note](WASI_COMMAND_H1_REVIEW.md).
+
 ## Source and diagnostic authority
 
 `zryna-source` is below diagnostics and every provider. One immutable bounded `SourceMap` owns
