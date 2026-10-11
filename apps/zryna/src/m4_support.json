@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "843ccfc68c957a73e2760864b4c70d8fd80b8d6a0eade35db9d3a86e7d90769b",
+  "registrySha256": "2c1a3d6d22dd8dbb20658a4ae7278fa68bed194642674796473c164495d5289d",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -5114,8 +5114,8 @@
     },
     {
       "path": "scripts/m4/collect-output.mjs",
-      "bytes": 12487,
-      "sha256": "0b802b9995caeb9807f444004da439a1e8b882ae8b1763a65f7ebebaf681a50f"
+      "bytes": 13327,
+      "sha256": "50af362a052145c3d93dc20de4a1b877a05b2a242f67a8bf872253857502dfed"
     },
     {
       "path": "scripts/m4/evidence-browser-byte-boundary.mjs",
@@ -5409,8 +5409,8 @@
     },
     {
       "path": "tests/m4-evidence.test.mjs",
-      "bytes": 49146,
-      "sha256": "6c3e003db887afeb3709b1fe5cbd7992d28f0c5195b626327652e4a67ced87e4"
+      "bytes": 51524,
+      "sha256": "78a79ec59e50f2cbc20c7c50163210e8a3735f73436342b5e5de3953cc98980b"
     },
     {
       "path": "tests/m4-fixtures/allocation-core/capacity-inspect.mjs",

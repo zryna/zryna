@@ -11,13 +11,13 @@ import { sourceAccounting, sourceCommands } from '../scripts/m4/evidence-source.
 import { browserArgv, browserProofs } from '../scripts/m4/evidence-browser.mjs';
 import { installedNames, readInstalledArchitectureReceipt } from '../scripts/m4/evidence-installed.mjs';
 import { bytes as distributionBytes } from '../scripts/distribution/canonical.mjs';
-import { ClosedEvidenceStage, retainedOutputFiles, stageM4Evidence } from '../scripts/m4/collect-output.mjs';
+import { ClosedEvidenceStage, retainedOutputFiles, snapshotM4Evidence, stageM4Evidence } from '../scripts/m4/collect-output.mjs';
 import { positive, invocationArgv } from '../scripts/m4/installed-cases.mjs';
 import { installedByteCases, installedByteSource, validateInstalledByteSource, validateInstalledByteDenial } from '../scripts/m4/installed-byte-boundary.mjs';
 import { prepareByteSources, observedByteSource, verifyByteOutcome } from './installed-command-qualification/byte-boundary.mjs';
 import { producedJson, validateInstalledObservation } from '../scripts/m4/installed-observation.mjs';
 import { composeM4Evidence, selectM4Gates, requireM4ResultInventory, resolveM4Argv, normalizeM4Host, loadM4Evidence, validateM4Evidence } from '../scripts/m4/evidence.mjs';
-import { loadAndValidateM4Conformance, workspaceRoot, expectedRegistrySha256 } from '../scripts/check-m4-conformance.mjs';
+import { calculateM4Coverage, loadAndValidateM4Conformance, workspaceRoot, expectedRegistrySha256 } from '../scripts/check-m4-conformance.mjs';
 import { resolvePnpmScript } from '../scripts/m4/observe-materials.mjs';
 
 const selector = 'public_boundary::exact_limit_then_first_extra';
@@ -519,6 +519,42 @@ test('full native evidence validation is mandatory before any retained stage out
       /complete fixed ordered gate inventory/);
     assert(!existsSync(`${root}-retained`));
   } finally { rmSync(parent, { recursive: true, force: true }); }
+});
+test('M4 snapshot recovers a distinct source-validated registry authority after copying caller values', () => {
+  const registry = loadAndValidateM4Conformance();
+  const callerCopy = structuredClone(registry);
+  assert.deepEqual(callerCopy, registry);
+  assert.throws(() => calculateM4Coverage(callerCopy), /independently validated contract authority/);
+  const snapshot = snapshotM4Evidence({ label: 'synthetic isolation input; no receipt certificate' },
+    { registry, sourceRoot: workspaceRoot, expected: { label: 'test-only' } });
+  assert.notEqual(snapshot.context.registry, registry);
+  assert.notEqual(snapshot.context.registry, callerCopy);
+  assert.deepEqual(snapshot.context.registry, registry);
+  assert.deepEqual(calculateM4Coverage(snapshot.context.registry), calculateM4Coverage(registry));
+});
+test('M4 snapshot rejects unvalidated byte-equal caller registry copies and mutated validated registries', () => {
+  const registry = loadAndValidateM4Conformance();
+  assert.throws(() => snapshotM4Evidence({}, { sourceRoot: workspaceRoot, registry: structuredClone(registry) }),
+    /independently validated contract authority/);
+  registry.rows[0].id = 'mutated-after-original-validation';
+  assert.throws(() => snapshotM4Evidence({}, { sourceRoot: workspaceRoot, registry }),
+    /snapshot registry equals freshly pinned source authority/);
+});
+test('M4 private snapshot isolates later caller registry, receipt and expected mutations without freezing caller input', () => {
+  const registry = loadAndValidateM4Conformance();
+  const beforeCoverage = calculateM4Coverage(registry);
+  const receipt = { rows: [{ label: 'before' }] };
+  const options = { sourceRoot: workspaceRoot, registry, expected: { source: { commit: 'before' } } };
+  const snapshot = snapshotM4Evidence(receipt, options);
+  registry.rows[0].id = 'mutated-after-snapshot';
+  receipt.rows[0].label = 'after';
+  options.expected.source.commit = 'after';
+  options.sourceRoot = '/mutated-after-snapshot';
+  assert.equal(snapshot.observed.rows[0].label, 'before');
+  assert.equal(snapshot.context.expected.source.commit, 'before');
+  assert.equal(snapshot.context.sourceRoot, workspaceRoot);
+  assert.notEqual(snapshot.context.registry.rows[0].id, registry.rows[0].id);
+  assert.deepEqual(calculateM4Coverage(snapshot.context.registry), beforeCoverage);
 });
 test('receipt loader rejects noncanonical, duplicate, oversize and malformed UTF-8 inputs before composition', async () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'm4-raw-receipt-'));

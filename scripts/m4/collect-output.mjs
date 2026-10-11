@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { digest, inventory, parseCanonical, portablePath, readStableFile } from './registry-files.mjs';
 import { MAX_ARTIFACT, MAX_LOG, MAX_RECEIPT, exact, retained } from './evidence-input.mjs';
 import { validateM4Evidence } from './evidence.mjs';
+import { calculateM4Coverage, loadAndValidateM4Conformance } from '../check-m4-conformance.mjs';
 import { actualFile } from './observe-materials.mjs';
 import { installedByteCases, validateInstalledByteSource } from './installed-byte-boundary.mjs';
 import { installedNames, positive } from './installed-cases.mjs';
@@ -206,10 +207,23 @@ export class ClosedEvidenceStage {
   }
 }
 
-export async function stageM4Evidence(receipt, options) {
-  // No caller flag or alternate validator can skip the complete native evidence contract.
+export function snapshotM4Evidence(receipt, options) {
+  // Reject an unvalidated caller copy even when its bytes equal a source registry.
+  calculateM4Coverage(options.registry);
   const observed = structuredClone(receipt);
   const context = structuredClone(options);
+  // WeakMap authority does not survive cloning. Recover only a new source-validated
+  // private identity, after comparing the immutable caller snapshot to actual pins.
+  const authority = loadAndValidateM4Conformance(path.join(context.sourceRoot, 'tests/m4-conformance-v1.json'),
+    { root: context.sourceRoot });
+  assert.deepEqual(context.registry, authority, 'snapshot registry equals freshly pinned source authority');
+  context.registry = authority;
+  return { observed, context };
+}
+
+export async function stageM4Evidence(receipt, options) {
+  // No caller flag or alternate validator can skip the complete native evidence contract.
+  const { observed, context } = snapshotM4Evidence(receipt, options);
   await validateM4Evidence(observed, context);
   const outside = path.relative(context.sourceRoot, context.root);
   assert(outside && (path.isAbsolute(outside) || outside.split(path.sep)[0] === '..'), 'retained stage must be outside checkout');
