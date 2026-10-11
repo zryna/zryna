@@ -1,6 +1,11 @@
 use super::*;
 use object::{Object as _, ObjectKind};
 
+struct ObservationOptions<'a> {
+    wrap: bool,
+    inputs: Option<&'a RetainedLinkInputs>,
+}
+
 pub(crate) fn compile_object(
     root: &ArtifactOutputRoot,
     source: &[u8],
@@ -93,6 +98,50 @@ pub(crate) fn observe(
     runtime: Option<&CompiledObject>,
     wrap: bool,
 ) -> Result<Observation, Failure> {
+    observe_inner(
+        root,
+        requirements,
+        library,
+        foreign,
+        client_source,
+        runtime,
+        &ObservationOptions { wrap, inputs: None },
+    )
+}
+
+pub(crate) fn observe_with_inventory(
+    root: &ArtifactOutputRoot,
+    requirements: &HandleLinkRequirements,
+    library: &CapturedForeignLibrary,
+    foreign: &CompiledObject,
+    client_source: &[u8],
+    runtime: Option<&CompiledObject>,
+    request: &InventoryRequest<'_>,
+) -> Result<Observation, Failure> {
+    request.inputs.check_binding(requirements, library)?;
+    request.inputs.check_tools(foreign.tools())?;
+    observe_inner(
+        root,
+        requirements,
+        library,
+        foreign,
+        client_source,
+        runtime,
+        &ObservationOptions { wrap: request.wrap, inputs: Some(request.inputs) },
+    )
+}
+
+fn observe_inner(
+    root: &ArtifactOutputRoot,
+    requirements: &HandleLinkRequirements,
+    library: &CapturedForeignLibrary,
+    foreign: &CompiledObject,
+    client_source: &[u8],
+    runtime: Option<&CompiledObject>,
+    options: &ObservationOptions<'_>,
+) -> Result<Observation, Failure> {
+    let wrap = options.wrap;
+    let inputs = options.inputs;
     check_foreign(requirements, library, foreign)?;
     if runtime.map(|value| value.source.as_slice()) != requirements.private_runtime_source()
         || runtime.is_some_and(|value| value.tools() != foreign.tools())
@@ -152,31 +201,22 @@ pub(crate) fn observe(
         }
         let link = process::invoke(stage, foreign.tools(), args)?;
         invocation = Some(link.clone());
-        if !link.status.success() || !link.stderr.is_empty() {
-            return Err(rejected().into());
-        }
-        let trace = process::trace(&link.stdout)?;
-        let executable = stage.capability_file_path("invocation.elf")?;
-        let final_elf = staging::bytes(&executable, native::MAX_NATIVE_EXECUTABLE_BYTES)?;
-        let (_, audited) = native::audit_staged_executable(&executable, "zryna_c_v0_i_dispatch")?;
-        if final_elf != *audited {
-            return Err(rejected().into());
-        }
-        let dependencies = elf::read(&final_elf)?;
-        // There is intentionally no executable mode, Run phase, loader lookup or permission seal.
-        Ok(Observation {
-            requirements: requirements.clone(),
-            library: library.clone(),
-            foreign: foreign.clone(),
-            client: client.clone(),
-            runtime: runtime.cloned(),
+        postlink::audit(
+            &stages,
             link,
-            final_elf,
-            dependencies,
-            trace,
-        })
+            &postlink::Inputs {
+                requirements,
+                library,
+                foreign,
+                client: &client,
+                runtime,
+                inventory: inputs,
+            },
+        )
     })()
     .map_err(|mut failure| {
+        failure.comparator_stage = failure.comparator_stage.or(Some("link-process"));
+        failure.retain_objects(requirements, foreign, &client, runtime);
         failure.invocations.extend(invocation.iter().cloned());
         failure.invocations.extend(completed.iter().cloned());
         failure

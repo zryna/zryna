@@ -6,36 +6,8 @@ use crate::native::{self, NativeStage, ProcessPhase};
 use std::{ffi::OsString, path::PathBuf};
 mod runtime;
 
-pub(super) fn observe_link(
-    fixture: &Fixture,
-    requirements: &HandleLinkRequirements,
-    library: &CapturedForeignLibrary,
-    foreign: &linked_output::CompiledObject,
-    client: &str,
-) -> Result<linked_output::Observation, linked_output::Failure> {
-    linked_output::check_foreign(requirements, library, foreign)?;
-    let runtime = runtime::compile_observed(fixture, requirements, foreign.tools())?;
-    let private_header =
-        requirements.object().program().source().runtime_abi().native_linux_x86_64_header();
-    if Some(&sha(private_header)) != requirements.private_runtime_header_sha256() {
-        return Err(linked_output::rejected().into());
-    }
-    let source = format!(
-        "{}\n{}\n#include <assert.h>\n#include <stdlib.h>\n#include <string.h>\n{}\n{client}",
-        std::str::from_utf8(private_header).map_err(|_| linked_output::rejected())?,
-        requirements.object().header(),
-        include_str!("oracle.c")
-    );
-    linked_output::observe(
-        &fixture.observation_root()?,
-        requirements,
-        library,
-        foreign,
-        source.as_bytes(),
-        Some(&runtime),
-        true,
-    )
-}
+mod linked_observer;
+pub(super) use linked_observer::observe_link;
 
 const SANITIZERS: [&str; 3] =
     ["-fsanitize=address,undefined", "-fno-sanitize-recover=all", "-fno-omit-frame-pointer"];
@@ -216,12 +188,36 @@ fn linked_observation_retains_original_byte_runtime_without_executing_it() {
     let requirements = requirements(&capture::reference(), "copied");
     let foreign = fixture.compile_observed(&library_source()).expect("real foreign fixture object");
     let library = accept(&requirements, foreign.bytes(), &["free", "malloc"]);
+    linked_observer::check_disaffiliated_control(&fixture, &requirements, &library, &foreign);
     let observation =
         observe_link(&fixture, &requirements, &library, &foreign, "int main(void){abort();}")
-            .expect("ordinary byte compile/link-only observation");
+            .unwrap_or_else(|failure| {
+                let directory = std::env::var_os("ZRYNA_LINKED_OUTPUT_EVIDENCE_DIR").map_or_else(
+                    || fixture.acquired_path().with_file_name("failed-byte"),
+                    |root| PathBuf::from(root).join("failed-byte"),
+                );
+                failure
+                    .export(&directory)
+                    .expect("retain actual failed byte artifacts create-only");
+                panic!(
+                    "byte observation failed at {:?}; codes {:?}; retained {}",
+                    failure.comparator_stage,
+                    failure.diagnostics.iter().map(Diagnostic::code).collect::<Vec<_>>(),
+                    directory.display()
+                );
+            });
     fixture.empty();
     let report = observation.report();
     assert_eq!(report["target_executed"], false);
+    if std::env::var_os("ZRYNA_LINK_INVENTORY_EXPECTATION_FILE").is_some() {
+        assert_eq!(report["inventory_qualification_requested"], true);
+        assert!(report["selected_material_comparison"]["materials"].is_array());
+        assert!(report["declared_provider_closure_comparison"]["providers"].is_array());
+        eprintln!("m5-private-byte-inventory-qualified {report}");
+    } else {
+        assert_eq!(report["inventory_qualification_requested"], false);
+        eprintln!("m5-private-byte-inventory-not-requested");
+    }
     assert!(report["private_runtime_object_sha256"].is_string());
     assert_eq!(report["runtime_compile"]["tools"], report["foreign_compile"]["tools"]);
     let directory = std::env::var_os("ZRYNA_LINKED_OUTPUT_EVIDENCE_DIR").map_or_else(

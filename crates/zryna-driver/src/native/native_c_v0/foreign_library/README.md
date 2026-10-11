@@ -76,19 +76,82 @@ execution, cache or publication capability. GCC itself may create executable fil
 After stage cleanup, a create-only private evidence export can retain the actual artifacts;
 `ZRYNA_LINKED_OUTPUT_EVIDENCE_DIR` selects an existing external parent for the scalar/byte
 test exports. Without it, each test uses its disposable fixture root. Failure records retain
-actual invocation status/stdout/stderr; existing execution and sanitizer paths remain separate.
+actual invocation status/stdout/stderr. Successful-link audit failures additionally keep the
+bounded raw final ELF and actual program/foreign/client/private-runtime object and source bytes
+through cleanup, with the exact comparator stage. A create-only `failed-scalar` or `failed-byte`
+export under the configured evidence parent writes these bytes and the failure receipt before
+its test reports failure. No failed artifact is qualification or executable authority.
+Existing execution and sanitizer paths remain separate.
 
-Observed PT_INTERP, DT_NEEDED, RPATH/RUNPATH, all dynamic entries and raw GNU version sections
-are requirements, never an approved provider inventory. Trace output is not complete input-use
-attestation. The unchanged limited executable audit still applies, but no full dependency or
-loader audit is claimed. Independently issued ordered tool/sysroot/startup/runtime expectations,
-authoritative loader/provider/version/load-search policy and production recipe/host admission
-remain explicitly missing. Source or output hashes cannot issue those authorities. No other
-PR's toolchain or sanitizer runtime policy is borrowed.
+The legacy observer retains PT_INTERP, DT_NEEDED, RPATH/RUNPATH, dynamic entries and GNU
+version sections as requirements. The optional private comparison below checks a separately
+issued selected material inventory and declared provider graph. Neither mode supplies an
+approved production provider inventory. Trace output is not complete input-use attestation.
+The unchanged limited executable audit still applies. Production ordered inputs, authoritative
+loader/provider/load-search policy and recipe/host admission remain explicitly missing.
+Source or output hashes cannot issue those authorities. No other PR's toolchain or sanitizer
+runtime policy is borrowed.
+
+## Independently pinned private inventory comparison
+
+`linked_output/acquisition.rs` owns closed expectation parsing, original source/library binding,
+selected byte snapshots and data reporting. Its `files.rs` walks canonical ancestors with
+owned directory descriptors, rejects links and nonregular leaves without blocking on FIFOs,
+and checks before/open/after identities. `inventory.rs` validates names, case/parent conflicts,
+role-specific bounds and the exact ordered trace slots. `observed.rs` compares the actual
+producer-bound object path aliases and final ELF. `postlink.rs` owns bounded final-byte retention,
+limited native/legacy metadata checks and the optional declared inventory comparison. The
+producer keeps compiler/link invocation ownership and cleanup attribution. The byte consumer checks retained inputs
+against the originating tool capability before any new private-runtime compile. A test-only
+thread-local invocation-attempt counter starts its control after the prior foreign prerequisite;
+the real independently pinned hostile-role control preserves bytes while changing only the
+driver/linker Tool roles and proves no new runtime, client or link attempt. The separately owned `closure/` modules
+parse the declared ELF64 little-endian x86-64 ET_DYN providers and ET_EXEC result, dynamic
+tags, symbol kinds, GNU version definitions/requirements, and the exact direct/transitive
+SONAME graph. Unknown or malformed constructs reject; no loader search or resolver executes.
+
+A qualified private fixture must supply `observe_with_inventory` an opaque retained input
+request. The original `observe` interface remains an unqualified compile/link observation.
+The scalar and byte consumers accept the exact external expectation path and raw SHA-256 via
+`ZRYNA_LINK_INVENTORY_EXPECTATION_FILE` and `ZRYNA_LINK_INVENTORY_EXPECTATION_SHA256`.
+Both absent means legacy observation only; partial configuration, malformed input or a wrong
+pin rejects. Positive qualification runs must set both and assert the report's
+`inventory_qualification_requested` field and non-null comparison records. The selected test
+names are `linked_observation_retains_real_scalar_objects_and_never_runs_client` and
+`linked_observation_retains_original_byte_runtime_without_executing_it`. Their explicit
+`m5-private-scalar-inventory-qualified` / `m5-private-byte-inventory-qualified` records are
+separate from the legacy `not-requested` records.
+
+The private `zryna.private-link-inventory.v1` manifest supplies target, canonical copied root,
+selected material IDs/roles/relative paths/exact lengths/SHA-256, canonical `original_path`
+and optional linker `trace_path`, an ordered slot list and a closed provider expectation.
+The trace path may retain an independently observed spelling such as a toolchain `../` alias;
+it is never treated as canonical byte identity. Object slots (`client`, `program`, `foreign`,
+`runtime`) come from the actual producer stages. `material:<id>` and `member:<id>:<member>`
+slots preserve every repeated archive occurrence, rather than reducing the trace to a set.
+Tools have a 64 MiB per-file private capture bound; other materials retain the existing 32 MiB
+native executable bound. At most 64 selected files and 128 MiB of retained material bytes are
+allowed, including at most eight Tool entries. Provider snapshots share those immutable buffers. The manifest itself retains the
+existing bounded native tool-output limit. These are private data limits, not runtime grants.
+
+Independent expected hashes must exist before capture. Capture validates the declared retained
+provider graph before any newly affected observer compile/link process. Original tool paths
+must also agree with the originating discovered tool capability. All selected original paths
+are compared with their retained snapshots before and after the newly affected client/link
+processes. This is an ordinary before/after comparison: transient input replacement, compiler
+child shared-library dependencies and complete linker IO are not attested. Selected named
+files are not a wildcard inventory of the copied directory and are not an interpretation of
+the production #361 sysroot digest. Expected hashes or allow-weak/IFUNC/TLS metadata flags
+cannot grant execution safety, host isolation, cache writes, publication or native activation.
+
+Create-only exports include each `acquired-<id>.bin` snapshot and the observation receipt,
+with comparison data distinct from the unchanged missing-prerequisite denials. Structural
+fixtures cover boundaries and rejected mutations without claiming host qualification; actual
+scalar/byte qualification needs the independently frozen host inputs and real processes.
 
 The normative acceptance owner remains
 [`NATIVE_C_INTEROP_V0_ACCEPTANCE.md`](../../../../../../spec/abi/NATIVE_C_INTEROP_V0_ACCEPTANCE.md).
-Draft #534 is the cumulative review route toward main for the source,
+Merged #534 is the cumulative review route retained in main for the source,
 typed-flow/IR/MIR, scalar, handle, byte-copy, private runtime and shared process
 work, plus this retained-object boundary and separate-object fixture evidence.
 Its #515/#520/#521/#524/#525/#527/#533 predecessor commits, branches and evidence

@@ -36,8 +36,20 @@ impl Fixture {
             "{}\n#include <assert.h>\n#include <stdlib.h>\n#include <limits.h>\n{client}",
             requirements.object().header()
         );
+        let root = self.observation_root()?;
+        if let Some(inputs) = linked_output::capture_from_environment(requirements, library)? {
+            return linked_output::observe_with_inventory(
+                &root,
+                requirements,
+                library,
+                foreign,
+                source.as_bytes(),
+                None,
+                &linked_output::InventoryRequest { inputs: &inputs, wrap: false },
+            );
+        }
         linked_output::observe(
-            &self.observation_root()?,
+            &root,
             requirements,
             library,
             foreign,
