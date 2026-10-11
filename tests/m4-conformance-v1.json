@@ -2423,6 +2423,11 @@
       "sha256": "e63082c2637936ba50d68c056e2ca4c627138dc86df57ce1d54b5a0aabfcdc1f"
     },
     {
+      "path": "tests/m2-manifest-contract.test.mjs",
+      "bytes": 4032,
+      "sha256": "fee44795ce6cd891a4f0c8aeeb1777cefd1744d65134c049d09c72233e94da41"
+    },
+    {
       "path": "tests/m3-conformance-v1.json",
       "bytes": 32696,
       "sha256": "1d29f8d5c24cf1215d64f340576934f674f5cfb89a51d4f82a3882fe75cb36b9"
