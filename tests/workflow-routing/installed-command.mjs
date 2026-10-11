@@ -13,7 +13,8 @@ export function registerInstalledCommandContract(workflow) {
     assert.equal(checkout.with['persist-credentials'], false);
     const qualification = job.steps.find(step => step.name === 'Build, verify, relocate and invoke the installed candidate');
     assert.equal(qualification.env.CARGO_NET_OFFLINE, true);
-    assert.match(qualification.run, /tests\/installed-command-qualification\/run\.mjs/);
+    assert.match(qualification.run, /scripts\/run-m4-conformance\.mjs --lane installed/);
+    assert.equal(Object.hasOwn(candidate.on, 'workflow_call'), true);
     assert(!job.steps.some(step => /publish|release create|sudo|runas/i.test(step.run ?? '')));
   });
 }

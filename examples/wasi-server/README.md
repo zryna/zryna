@@ -50,3 +50,8 @@ The cross-platform fixture `apps/zryna/tests/fixtures/private_file.rs` creates t
 for real CLI tests. Installed distributions do not support this server selector.
 
 The separate [clock/status example](CLOCK_EXAMPLE.md) shows denied and granted guest clock authority using the same status source and additional private guest files. Status-only guest grants remain empty.
+
+This example maps to the checkout status row in [the M4 matrix](../../docs/M4_SUPPORT.md);
+[CLOCK_EXAMPLE.md](CLOCK_EXAMPLE.md) maps to the separate clock/status row. The matrix is a
+static contract. Running either example does not authenticate both-host conformance, publication,
+installed server support or production readiness. Use fresh private inputs and output stems.

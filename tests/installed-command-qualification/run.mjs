@@ -5,6 +5,8 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, unlinkS
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prepare } from './prepare.mjs';
+import { writePrivateFile, request } from './inputs.mjs';
+import { prepareByteSources, observedByteSource, verifyByteOutcome } from './byte-boundary.mjs';
 import { sha256 } from '../../scripts/distribution/canonical.mjs';
 
 const source = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -23,6 +25,7 @@ for (const path of [project, cwd, emptyPath]) mkdirSync(path);
 for (const name of ['pure', 'error', 'lookup']) {
   writeFileSync(join(project, `${name}.zry`), readFileSync(join(source, `examples/wasi-command/${name}.zry`)));
 }
+prepareByteSources(source, project);
 writeFileSync(join(project, 'dependency.zry'), 'import { main } from "./pure.zry"; export function other(): bool { return main(); }');
 const executable = join(relocated, paths.cli);
 const rows = [];
@@ -34,6 +37,7 @@ const common = ['--target', 'wasi-command', '--profile', 'command-h1-v1', '--exp
 const manifestName = 'zryna-wasi-command-manifest-v1.json';
 function invoke(name, entry, extras = [], expected = undefined, projectRoot = project, verb = 'run', directory = cwd) {
   assertCurrent();
+  const sourceBefore = name.startsWith('component-bytes-') ? observedByteSource(name, source, project) : null;
   const args = [verb, entry, ...common, '--name', name,
     ...(projectRoot ? ['--project-root', projectRoot] : []), ...extras];
   const result = spawnSync(executable, args, { cwd: directory, env: environment, shell: false,
@@ -65,39 +69,15 @@ function invoke(name, entry, extras = [], expected = undefined, projectRoot = pr
     }
     row.manifestSha256 = sha256(data);
     row.componentSha256 = sha256(component);
+    if (sourceBefore) verifyByteOutcome(row, sourceBefore, observedByteSource(name, source, project), component);
   } else {
     assert.notEqual(result.status, 0, 'negative must reject');
     assert(!existsSync(bundle), 'negative must publish no bundle');
+    if (sourceBefore) verifyByteOutcome(row, sourceBefore, observedByteSource(name, source, project));
   }
   return row;
 }
-function privateFile(name, document) {
-  const path = join(output, `${name}.json`);
-  const text = typeof document === 'string' ? document : JSON.stringify(document);
-  if (process.platform !== 'win32') writeFileSync(path, text, { flag: 'wx', mode: 0o600 });
-  else {
-    const script = `$ErrorActionPreference = 'Stop'
-$path = $env:ZRYNA_PRIVATE_PATH
-$bytes = [Text.Encoding]::UTF8.GetBytes($env:ZRYNA_PRIVATE_TEXT)
-$user = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
-$acl = [System.Security.AccessControl.FileSecurity]::new()
-$acl.SetOwner($user)
-$acl.SetAccessRuleProtection($true, $false)
-foreach ($sid in @($user, [System.Security.Principal.SecurityIdentifier]::new('S-1-5-18'))) {
- $acl.AddAccessRule([System.Security.AccessControl.FileSystemAccessRule]::new($sid,'FullControl','Allow'))
-}
-$file = [IO.FileStream]::new($path, [IO.FileMode]::CreateNew, [Security.AccessControl.FileSystemRights]::Write, [IO.FileShare]::None, 4096, [IO.FileOptions]::None, $acl)
-try { $file.Write($bytes, 0, $bytes.Length) } finally { $file.Dispose() }`;
-    const result = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script],
-      { env: { ...process.env, ZRYNA_PRIVATE_PATH: path, ZRYNA_PRIVATE_TEXT: text }, encoding: 'utf8' });
-    assert.equal(result.status, 0, result.stderr);
-  }
-  return ['--grant-file', path];
-}
-function request(value, key = 'MODE', capability = 'environment') {
-  return { schema: 'zryna.wasi-command-request.v1', world: 'zryna:capability-profiles/command@0.1.0',
-    grant: { capability, key }, input: value === undefined ? { present: false } : { present: true, value } };
-}
+const privateFile = (name, document) => writePrivateFile(output, name, document);
 invoke('pure', 'pure.zry', [], { runReturn: 'ok', input: 'none' });
 invoke('declared-error', 'error.zry', [], { runReturn: 'err', input: 'none' });
 invoke('found', 'lookup.zry', privateFile('found-input', request('test-only-secret-value')), { runReturn: 'ok', input: 'present' });
@@ -122,12 +102,17 @@ invoke('inside-installation', 'pure.zry', [], undefined, relocated);
 invoke('contains-installation', 'pure.zry', [], undefined, output);
 invoke('default-directory', 'pure.zry', [], { runReturn: 'ok', input: 'none' }, null, 'run', project);
 const before = sha256(readFileSync(join(project, '.zryna/out/pure.wasi-command-run', manifestName)));
-const repeated = spawnSync(executable, ['run', 'pure.zry', ...common, '--project-root', project, '--name', 'pure'],
+const repeatedArgs = ['run', 'pure.zry', ...common, '--project-root', project, '--name', 'pure'];
+const repeated = spawnSync(executable, repeatedArgs,
   { cwd, env: environment, encoding: 'utf8', shell: false, timeout: 90_000 });
 assert.ifError(repeated.error);
 assert.notEqual(repeated.status, 0);
 assert.equal(sha256(readFileSync(join(project, '.zryna/out/pure.wasi-command-run', manifestName))), before);
-rows.push({ name: 'existing-output-preserved', exitCode: repeated.status, preservedManifestSha256: before });
+rows.push({ name: 'existing-output-preserved', arguments: repeatedArgs, exitCode: repeated.status,
+  bundleExists: existsSync(join(project, '.zryna/out/pure.wasi-command-run')),
+  stdout: repeated.stdout, stderr: repeated.stderr, preservedManifestSha256: before });
+invoke('component-bytes-exact', 'exact.zry', [], { runReturn: 'ok', input: 'none' });
+invoke('component-bytes-first-extra', 'extra.zry');
 for (const [name, path] of [['provider-tamper', 'lib/zryna/bootstrap/worker-v4.mjs'], ['runtime-tamper', paths.node], ['metadata-tamper', 'metadata/distribution.json']]) {
   const full = join(relocated, path);
   const original = readFileSync(full);
@@ -144,7 +129,8 @@ invoke('restored-installation', 'pure.zry', [], { runReturn: 'ok', input: 'none'
 writeFileSync(join(output, 'invocations.json'), `${JSON.stringify(rows, null, 2)}\n`);
 assertCurrent();
 const result = { ...proof, format: 'zryna.installed-command-qualification.v1',
-  platform: process.platform, node: process.version, outsideCheckout: true,
+  platform: process.platform, node: process.version, nodeExecutable: realpathSync(process.execPath),
+  sourceDirectory: source, outsideCheckout: true,
   installation: relocated, project, cwd, invocationPath: executable,
   inheritedToolOverrides: false, pathContainsBuildTools: false,
   rows: rows.map(row => ({ name: row.name, exitCode: row.exitCode, manifestSha256: row.manifestSha256,

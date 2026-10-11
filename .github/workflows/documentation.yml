@@ -1,25 +1,46 @@
 name: Documentation publication
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Completed successful full CI run on this exact current main revision
+        required: true
+        type: string
+      ci_attempt:
+        description: Exact successful CI attempt
+        required: true
+        type: string
+      expectations_sha256:
+        description: Independently reviewed canonical hosted expectations SHA256
+        required: true
+        type: string
+      expectations_json:
+        description: Independently reviewed canonical hosted expectations JSON (including final LF)
+        required: true
+        type: string
 
 concurrency:
   group: documentation-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 jobs:
   docs-publish:
     name: documentation
-    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.22.1
@@ -33,6 +54,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify documentation bundle contract
         run: pnpm docs:check
+      - name: Authenticate completed exact-main full CI and all M4 evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          M4_CI_RUN_ID: ${{ inputs.ci_run_id }}
+          M4_CI_ATTEMPT: ${{ inputs.ci_attempt }}
+          M4_EXPECTATIONS_JSON: ${{ inputs.expectations_json }}
+          M4_EXPECTATIONS_SHA256: ${{ inputs.expectations_sha256 }}
+          M4_RETAINED: ${{ runner.temp }}/m4-publication-${{ github.run_id }}-${{ github.run_attempt }}
+        run: node scripts/m4/verify-publication.mjs --expectations-sha256 "$M4_EXPECTATIONS_SHA256" --retained "$M4_RETAINED"
       - name: Export authenticated next documentation bundle
         id: docs-bundle
         run: |
@@ -40,18 +70,28 @@ jobs:
             --channel next \
             --source-commit "${{ github.sha }}" \
             --source-ref "${{ github.ref }}" \
-            --output .zryna/out/docs/next)"
+            --output .zryna/out/docs/next-${{ github.run_id }}-${{ github.run_attempt }})"
           printf '%s' "$digest" | grep -Eq '^[0-9a-f]{64}$'
           echo "manifest-sha256=$digest" >> "$GITHUB_OUTPUT"
           printf 'Compiler commit: `%s`\nDocumentation manifest SHA-256: `%s`\n' \
             "${{ github.sha }}" "$digest" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain independently authenticated publication gate metadata
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zryna-docs-gate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m4-publication-${{ github.run_id }}-${{ github.run_attempt }}/expectations.json
+            ${{ runner.temp }}/m4-publication-${{ github.run_id }}-${{ github.run_attempt }}/publication-gate.json
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: true
+          retention-days: 90
       - name: Upload authenticated next documentation bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zryna-docs-next-${{ github.sha }}-${{ steps.docs-bundle.outputs.manifest-sha256 }}
-          path: .zryna/out/docs/next
+          path: .zryna/out/docs/next-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
           compression-level: 0
           include-hidden-files: true
-          # Each main update supersedes the previous next-channel candidate.
-          retention-days: 7
+          retention-days: 90

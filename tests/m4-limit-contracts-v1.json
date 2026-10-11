@@ -1,0 +1,3012 @@
+{
+  "format": "zryna.m4-limit-contracts.v1",
+  "contracts": [
+    {
+      "id": "component-component-bytes",
+      "rowIds": [
+        "component-linux",
+        "component-windows"
+      ],
+      "limitId": "component-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "emission",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/scalar_component/audit.rs",
+          "symbol": "MAX_COMPONENT_BYTES/check_byte_budget"
+        }
+      ],
+      "guardScopes": [
+        "production-component-audit",
+        "production-component-audit"
+      ],
+      "publicRequirement": "emission-only",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "component-public-build"
+      ]
+    },
+    {
+      "id": "browser-component-bytes",
+      "rowIds": [
+        "browser-linux",
+        "browser-windows"
+      ],
+      "limitId": "component-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "loader",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/scalar_component/audit.rs",
+          "symbol": "MAX_COMPONENT_BYTES/check_byte_budget owning audit ceiling"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/scalar_component/mod.rs",
+          "symbol": "emit_scalar_component canonical authenticated browser component factory"
+        },
+        {
+          "path": "crates/zryna-driver/src/browser_component.rs",
+          "symbol": "generate from ValidatedScalarComponent"
+        },
+        {
+          "path": "crates/zryna-driver/src/browser_component/loader.js",
+          "symbol": "instantiateBrowserComponent exact sealed expectedBytes and componentSha256"
+        }
+      ],
+      "guardScopes": [
+        "production-component-audit",
+        "production-component-audit"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-browser-source-authenticated-canonical-component-byte-boundary",
+        "public-browser-source-authenticated-canonical-component-byte-boundary"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "browser-node-public",
+        "browser-chrome-public"
+      ]
+    },
+    {
+      "id": "browser-deadline",
+      "rowIds": [
+        "browser-linux",
+        "browser-windows"
+      ],
+      "limitId": "deadline",
+      "minimum": 1,
+      "maximum": 30000,
+      "unit": "milliseconds",
+      "semantics": "reject-first-extra",
+      "domain": "loader",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/browser_component/loader.js",
+          "symbol": "instantiateBrowserComponent deadlineMs accepted1..30000"
+        },
+        {
+          "path": "tests/browser-component/run.mjs",
+          "symbol": "actual Node/Chrome deadline admission corpus"
+        }
+      ],
+      "guardScopes": [
+        "public-node-loader-option-admission",
+        "public-node-loader-option-admission"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "pinned-chrome-loader-option-admission",
+        "pinned-chrome-loader-option-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "browser-node-public",
+        "browser-chrome-public"
+      ]
+    },
+    {
+      "id": "command-component-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "component-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/component_audit.rs",
+          "symbol": "audit byte ceiling"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/shell.rs",
+          "symbol": "MAX_BYTES"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/language_audit.rs",
+          "symbol": "audit authenticated sourcecode/deny padding"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/artifact.rs",
+          "symbol": "Artifact factory/issuer/source/code/composition canonical revalidation"
+        },
+        {
+          "path": "crates/zryna-syntax/src/command_h1_v1.rs",
+          "symbol": "authenticated public H1 source/literal spans"
+        },
+        {
+          "path": "crates/zryna-source/src/lib.rs",
+          "symbol": "source bytes/span authentication"
+        }
+      ],
+      "guardScopes": [
+        "private-H1-whole-graph-component-byte-policy-language-denies-padding",
+        "private-H1-whole-graph-component-byte-policy-language-denies-padding"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-checkout-H1-source-authenticated-canonical-ceiling-execution",
+        "public-checkout-H1-source-authenticated-canonical-ceiling-execution"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-request-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "request-bytes",
+      "minimum": 0,
+      "maximum": 4096,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_request.rs",
+          "symbol": "admit/MAX_REQUEST_BYTES/MAX_KEY_BYTES/MAX_VALUE_BYTES"
+        }
+      ],
+      "guardScopes": [
+        "production-request-parser",
+        "production-request-parser"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-key-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "key-bytes",
+      "minimum": 1,
+      "maximum": 64,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_request.rs",
+          "symbol": "admit/MAX_REQUEST_BYTES/MAX_KEY_BYTES/MAX_VALUE_BYTES"
+        }
+      ],
+      "guardScopes": [
+        "production-request-parser",
+        "production-request-parser"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-value-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "value-bytes",
+      "minimum": 0,
+      "maximum": 1024,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_request.rs",
+          "symbol": "admit/MAX_REQUEST_BYTES/MAX_KEY_BYTES/MAX_VALUE_BYTES"
+        }
+      ],
+      "guardScopes": [
+        "production-request-parser",
+        "production-request-parser"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-manifest-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "manifest-bytes",
+      "minimum": 0,
+      "maximum": 16384,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/manifest/observation.rs",
+          "symbol": "limits max_manifest_bytes16384"
+        },
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/manifest/validation.rs",
+          "symbol": "validate"
+        }
+      ],
+      "guardScopes": [
+        "production-manifest-decoder",
+        "production-manifest-decoder"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-transfer-live",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "transfer-live",
+      "minimum": 0,
+      "maximum": 16,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-transfer-allocations",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "transfer-allocations",
+      "minimum": 0,
+      "maximum": 4096,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-transfer-allocation-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "transfer-allocation-bytes",
+      "minimum": 0,
+      "maximum": 4096,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-transfer-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "transfer-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-fuel",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "fuel",
+      "minimum": 0,
+      "maximum": 100000,
+      "unit": "fuel-units",
+      "semantics": "fixed-enforcement",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-engine-measured-fixed-fuel-enforcement"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "command-fuel-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-deadline",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "deadline",
+      "minimum": 1,
+      "maximum": 5000,
+      "unit": "milliseconds",
+      "semantics": "fixed-enforcement",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "sealed-command-execution"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "command-deadline-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-wasm-stack",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "wasm-stack",
+      "minimum": 0,
+      "maximum": 65536,
+      "unit": "bytes",
+      "semantics": "fixed-enforcement",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-engine-stack-trap"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "command-wasm-stack-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-backtrace-frames",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "backtrace-frames",
+      "minimum": 0,
+      "maximum": 1,
+      "unit": "count",
+      "semantics": "truncate-output",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-engine-diagnostic-frame-truncation"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "command-backtrace-frames-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-instances",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "instances",
+      "minimum": 0,
+      "maximum": 2,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-raw-core-instances",
+        "private-production-StoreLimits-raw-core-instances"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-memories",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "memories",
+      "minimum": 0,
+      "maximum": 1,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-raw-core-object-count",
+        "private-production-StoreLimits-raw-core-object-count"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-tables",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "tables",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-raw-core-object-count",
+        "private-production-StoreLimits-raw-core-object-count"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-memory-bytes",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "memory-bytes",
+      "minimum": 0,
+      "maximum": 16777216,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-ResourceLimiter-memory-policy",
+        "private-production-ResourceLimiter-memory-policy"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "command-memory-pages",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "memory-pages",
+      "minimum": 0,
+      "maximum": 256,
+      "unit": "pages",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-host-Memory-grow",
+        "private-production-StoreLimits-host-Memory-grow"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "command-public-pure",
+        "command-public-input"
+      ]
+    },
+    {
+      "id": "installed-command-component-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "component-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/component_audit.rs",
+          "symbol": "audit byte ceiling"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/shell.rs",
+          "symbol": "MAX_BYTES"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/language_audit.rs",
+          "symbol": "audit authenticated sourcecode/deny padding"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/artifact.rs",
+          "symbol": "Artifact factory/issuer/source/code/composition canonical revalidation"
+        },
+        {
+          "path": "crates/zryna-syntax/src/command_h1_v1.rs",
+          "symbol": "authenticated public H1 source/literal spans"
+        },
+        {
+          "path": "crates/zryna-source/src/lib.rs",
+          "symbol": "source bytes/span authentication"
+        }
+      ],
+      "guardScopes": [
+        "private-H1-whole-graph-component-byte-policy-language-denies-padding",
+        "private-H1-whole-graph-component-byte-policy-language-denies-padding"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "fresh-content-verified-installed-command",
+        "fresh-content-verified-installed-command"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-request-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "request-bytes",
+      "minimum": 0,
+      "maximum": 4096,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_request.rs",
+          "symbol": "admit/MAX_REQUEST_BYTES/MAX_KEY_BYTES/MAX_VALUE_BYTES"
+        }
+      ],
+      "guardScopes": [
+        "production-request-parser",
+        "production-request-parser"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-key-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "key-bytes",
+      "minimum": 1,
+      "maximum": 64,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_request.rs",
+          "symbol": "admit/MAX_REQUEST_BYTES/MAX_KEY_BYTES/MAX_VALUE_BYTES"
+        }
+      ],
+      "guardScopes": [
+        "production-request-parser",
+        "production-request-parser"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-value-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "value-bytes",
+      "minimum": 0,
+      "maximum": 1024,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_request.rs",
+          "symbol": "admit/MAX_REQUEST_BYTES/MAX_KEY_BYTES/MAX_VALUE_BYTES"
+        }
+      ],
+      "guardScopes": [
+        "production-request-parser",
+        "production-request-parser"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-manifest-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "manifest-bytes",
+      "minimum": 0,
+      "maximum": 16384,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/manifest/observation.rs",
+          "symbol": "limits max_manifest_bytes16384"
+        },
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/manifest/validation.rs",
+          "symbol": "validate"
+        }
+      ],
+      "guardScopes": [
+        "production-manifest-decoder",
+        "production-manifest-decoder"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-transfer-live",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "transfer-live",
+      "minimum": 0,
+      "maximum": 16,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-transfer-allocations",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "transfer-allocations",
+      "minimum": 0,
+      "maximum": 4096,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-transfer-allocation-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "transfer-allocation-bytes",
+      "minimum": 0,
+      "maximum": 4096,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-transfer-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "transfer-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/canonical.rs",
+          "symbol": "canonical storage limits/accounting"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/command_h1_v1/storage/audit.rs",
+          "symbol": "audit sealed storage"
+        }
+      ],
+      "guardScopes": [
+        "sealed-storage-core-execution",
+        "sealed-storage-core-execution"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-fuel",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "fuel",
+      "minimum": 0,
+      "maximum": 100000,
+      "unit": "fuel-units",
+      "semantics": "fixed-enforcement",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-engine-measured-fixed-fuel-enforcement"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "installed-command-fuel-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-deadline",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "deadline",
+      "minimum": 1,
+      "maximum": 5000,
+      "unit": "milliseconds",
+      "semantics": "fixed-enforcement",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "sealed-command-execution"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "installed-command-deadline-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-wasm-stack",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "wasm-stack",
+      "minimum": 0,
+      "maximum": 65536,
+      "unit": "bytes",
+      "semantics": "fixed-enforcement",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-engine-stack-trap"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "installed-command-wasm-stack-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-backtrace-frames",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "backtrace-frames",
+      "minimum": 0,
+      "maximum": 1,
+      "unit": "count",
+      "semantics": "truncate-output",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-engine-diagnostic-frame-truncation"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "installed-command-backtrace-frames-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-instances",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "instances",
+      "minimum": 0,
+      "maximum": 2,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-raw-core-instances",
+        "private-production-StoreLimits-raw-core-instances"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-memories",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "memories",
+      "minimum": 0,
+      "maximum": 1,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-raw-core-object-count",
+        "private-production-StoreLimits-raw-core-object-count"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-tables",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "tables",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-raw-core-object-count",
+        "private-production-StoreLimits-raw-core-object-count"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-memory-bytes",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "memory-bytes",
+      "minimum": 0,
+      "maximum": 16777216,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-ResourceLimiter-memory-policy",
+        "private-production-ResourceLimiter-memory-policy"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "installed-command-memory-pages",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "memory-pages",
+      "minimum": 0,
+      "maximum": 256,
+      "unit": "pages",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "guardScopes": [
+        "private-production-StoreLimits-host-Memory-grow",
+        "private-production-StoreLimits-host-Memory-grow"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "installed-pure",
+        "installed-found"
+      ]
+    },
+    {
+      "id": "server-status-body-bytes",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "body-bytes",
+      "minimum": 1,
+      "maximum": 65536,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-header-bytes",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "header-bytes",
+      "minimum": 64,
+      "maximum": 8192,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-header-fields",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "header-fields",
+      "minimum": 0,
+      "maximum": 32,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-path-bytes",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "path-bytes",
+      "minimum": 0,
+      "maximum": 256,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-attempts",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "attempts",
+      "minimum": 1,
+      "maximum": 64,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "public-server-configuration-admission"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "public-server-configuration-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-configuration-bytes",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "configuration-bytes",
+      "minimum": 1,
+      "maximum": 1024,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_workspace/approval.rs",
+          "symbol": "Listener::capture"
+        },
+        {
+          "path": "crates/zryna-driver/src/command_request/capture.rs",
+          "symbol": "CapturedFile::capture"
+        }
+      ],
+      "guardScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-listener-approval-bytes",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "listener-approval-bytes",
+      "minimum": 1,
+      "maximum": 1024,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_workspace/approval.rs",
+          "symbol": "Listener::capture"
+        },
+        {
+          "path": "crates/zryna-driver/src/command_request/capture.rs",
+          "symbol": "CapturedFile::capture"
+        }
+      ],
+      "guardScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-request-deadline",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "request-deadline",
+      "minimum": 1,
+      "maximum": 5000,
+      "unit": "milliseconds",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-service-lifetime",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "service-lifetime",
+      "minimum": 1,
+      "maximum": 30000,
+      "unit": "milliseconds",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-concurrent-requests",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "concurrent-requests",
+      "minimum": 0,
+      "maximum": 1,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::envelope requests1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_lifecycle/registry.rs",
+          "symbol": "Registry admission active request quota"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_lifecycle/limits.rs",
+          "symbol": "Limits::validate"
+        }
+      ],
+      "guardScopes": [
+        "private-Config-bound-production-lifecycle-real-Store-admission",
+        "private-Config-bound-production-lifecycle-real-Store-admission"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-guest-memory",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "guest-memory",
+      "minimum": 0,
+      "maximum": 65536,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/envelope.rs",
+          "symbol": "Envelope::validate/store_limits/engine"
+        }
+      ],
+      "guardScopes": [
+        "private-Config-bound-Envelope-and-ResourceLimiter-memory-policy",
+        "private-Config-bound-Envelope-and-ResourceLimiter-memory-policy"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-guest-fuel",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "guest-fuel",
+      "minimum": 0,
+      "maximum": 100000,
+      "unit": "fuel-units",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/envelope.rs",
+          "symbol": "Envelope::validate/store_limits/engine"
+        }
+      ],
+      "guardScopes": [
+        "private-Config-bound-Envelope-fuel-admission",
+        "private-Config-bound-Envelope-fuel-admission"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-guest-resources",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "guest-resources",
+      "minimum": 0,
+      "maximum": 5,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "guardScopes": [
+        "private-production-resource-registry",
+        "private-production-resource-registry"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "server-status-guest-resources-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-guest-callbacks",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "guest-callbacks",
+      "minimum": 0,
+      "maximum": 8,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "guardScopes": [
+        "private-production-Host-enter-policy",
+        "private-production-Host-enter-policy"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "server-status-guest-callbacks-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-status-component-bytes",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "component-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/audit.rs",
+          "symbol": "audit MAX_BYTES before decoder/canonical replay"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/shell.rs",
+          "symbol": "MAX_BYTES canonical graph"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/bridge.rs",
+          "symbol": "fixed Reply/ClockRead bridge"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/mod.rs",
+          "symbol": "scalar_export enforces noarg i32 scalar signature"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/prepared.rs",
+          "symbol": "Prepared::new_public solefunction"
+        },
+        {
+          "path": "crates/zryna-ir/src/lib.rs",
+          "symbol": "MAX_IR_EXPRESSIONS_PER_FUNCTION/MAX_IR_EXPORT_NAME_BYTES"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/scalar_audit.rs",
+          "symbol": "audit_profile restricts canonical scalar opcodes"
+        }
+      ],
+      "guardScopes": [],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "server-status-component-bytes-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-status-public"
+      ]
+    },
+    {
+      "id": "server-clock-body-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "body-bytes",
+      "minimum": 1,
+      "maximum": 65536,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-header-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "header-bytes",
+      "minimum": 64,
+      "maximum": 8192,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-header-fields",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "header-fields",
+      "minimum": 0,
+      "maximum": 32,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-path-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "path-bytes",
+      "minimum": 0,
+      "maximum": 256,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "production-loopback-transport"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-attempts",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "attempts",
+      "minimum": 1,
+      "maximum": 64,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "production-loopback-transport",
+        "public-server-configuration-admission"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "production-loopback-transport",
+        "public-server-configuration-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-configuration-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "configuration-bytes",
+      "minimum": 1,
+      "maximum": 1024,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_workspace/approval.rs",
+          "symbol": "Listener::capture"
+        },
+        {
+          "path": "crates/zryna-driver/src/command_request/capture.rs",
+          "symbol": "CapturedFile::capture"
+        }
+      ],
+      "guardScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-listener-approval-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "listener-approval-bytes",
+      "minimum": 1,
+      "maximum": 1024,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_workspace/approval.rs",
+          "symbol": "Listener::capture"
+        },
+        {
+          "path": "crates/zryna-driver/src/command_request/capture.rs",
+          "symbol": "CapturedFile::capture"
+        }
+      ],
+      "guardScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-CLI-private-file-capture-and-loopback-execution",
+        "public-CLI-private-file-capture-and-loopback-execution"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-request-deadline",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "request-deadline",
+      "minimum": 1,
+      "maximum": 5000,
+      "unit": "milliseconds",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-service-lifetime",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "service-lifetime",
+      "minimum": 1,
+      "maximum": 30000,
+      "unit": "milliseconds",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::validate/Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_transport/framing.rs",
+          "symbol": "parse"
+        }
+      ],
+      "guardScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-server-configuration-admission",
+        "public-server-configuration-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-concurrent-requests",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "concurrent-requests",
+      "minimum": 0,
+      "maximum": 1,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::envelope requests1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_lifecycle/registry.rs",
+          "symbol": "Registry admission active request quota"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_lifecycle/limits.rs",
+          "symbol": "Limits::validate"
+        }
+      ],
+      "guardScopes": [
+        "private-Config-bound-production-lifecycle-real-Store-admission",
+        "private-Config-bound-production-lifecycle-real-Store-admission"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-guest-memory",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-memory",
+      "minimum": 0,
+      "maximum": 65536,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/envelope.rs",
+          "symbol": "Envelope::validate/store_limits/engine"
+        }
+      ],
+      "guardScopes": [
+        "private-Config-bound-Envelope-and-ResourceLimiter-memory-policy",
+        "private-Config-bound-Envelope-and-ResourceLimiter-memory-policy"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-guest-fuel",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-fuel",
+      "minimum": 0,
+      "maximum": 100000,
+      "unit": "fuel-units",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_transport/config.rs",
+          "symbol": "Config::envelope"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/envelope.rs",
+          "symbol": "Envelope::validate/store_limits/engine"
+        }
+      ],
+      "guardScopes": [
+        "private-Config-bound-Envelope-fuel-admission",
+        "private-Config-bound-Envelope-fuel-admission"
+      ],
+      "publicRequirement": "guard-prerequisite",
+      "publicScopes": [],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-guest-resources",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-resources",
+      "minimum": 0,
+      "maximum": 5,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "guardScopes": [
+        "private-production-resource-registry",
+        "private-production-resource-registry"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "server-clock-guest-resources-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-guest-callbacks",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-callbacks",
+      "minimum": 0,
+      "maximum": 8,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "guardScopes": [
+        "private-production-Host-enter-policy",
+        "private-production-Host-enter-policy"
+      ],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "server-clock-guest-callbacks-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-component-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "component-bytes",
+      "minimum": 0,
+      "maximum": 1048576,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/audit.rs",
+          "symbol": "audit MAX_BYTES before decoder/canonical replay"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/shell.rs",
+          "symbol": "MAX_BYTES canonical graph"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/bridge.rs",
+          "symbol": "fixed Reply/ClockRead bridge"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/mod.rs",
+          "symbol": "scalar_export enforces noarg i32 scalar signature"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/prepared.rs",
+          "symbol": "Prepared::new_public solefunction"
+        },
+        {
+          "path": "crates/zryna-ir/src/lib.rs",
+          "symbol": "MAX_IR_EXPRESSIONS_PER_FUNCTION/MAX_IR_EXPORT_NAME_BYTES"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/scalar_audit.rs",
+          "symbol": "audit_profile restricts canonical scalar opcodes"
+        }
+      ],
+      "guardScopes": [],
+      "publicRequirement": "reviewed-exclusion",
+      "publicScopes": [],
+      "allowedExclusionIds": [
+        "server-clock-component-bytes-public-input-exclusion"
+      ],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-guest-request-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-request-bytes",
+      "minimum": 1,
+      "maximum": 2048,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_workspace/guest.rs",
+          "symbol": "Guest::capture exact request1/separate approval1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/grants.rs",
+          "symbol": "Approval::one_monotonic_clock_read/Grants::admit effective<=approval; privateMAX_CLOCK_READS16 notpublic1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::new/Host::clock remaining quota checked_sub before provider/output"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke monotonic now"
+        }
+      ],
+      "guardScopes": [
+        "public-checkout-server-clock",
+        "public-checkout-server-clock"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-checkout-server-clock",
+        "public-checkout-server-clock"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-guest-approval-bytes",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-approval-bytes",
+      "minimum": 1,
+      "maximum": 1024,
+      "unit": "bytes",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_workspace/guest.rs",
+          "symbol": "Guest::capture exact request1/separate approval1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/grants.rs",
+          "symbol": "Approval::one_monotonic_clock_read/Grants::admit effective<=approval; privateMAX_CLOCK_READS16 notpublic1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::new/Host::clock remaining quota checked_sub before provider/output"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke monotonic now"
+        }
+      ],
+      "guardScopes": [
+        "public-checkout-server-clock",
+        "public-checkout-server-clock"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-checkout-server-clock",
+        "public-checkout-server-clock"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    },
+    {
+      "id": "server-clock-clock-reads",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "clock-reads",
+      "minimum": 1,
+      "maximum": 1,
+      "unit": "count",
+      "semantics": "reject-first-extra",
+      "domain": "runtime",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_workspace/guest.rs",
+          "symbol": "Guest::capture exact request1/separate approval1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/grants.rs",
+          "symbol": "Approval::one_monotonic_clock_read/Grants::admit effective<=approval; privateMAX_CLOCK_READS16 notpublic1"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::new/Host::clock remaining quota checked_sub before provider/output"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke monotonic now"
+        }
+      ],
+      "guardScopes": [
+        "private-production-host-operation-real-Store-clock-quota",
+        "private-production-host-operation-real-Store-clock-quota"
+      ],
+      "publicRequirement": "reachable-pair",
+      "publicScopes": [
+        "public-server-clock-request-admission-and-execution",
+        "public-server-clock-request-admission"
+      ],
+      "allowedExclusionIds": [],
+      "requiredBindingCaseIds": [
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "command-fuel-public-input-exclusion",
+      "code": "fixed-fuel-budget-not-selectable-input",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "fuel",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "h1-fixed-fuel-enforcement"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "command-deadline-public-input-exclusion",
+      "code": "fixed-duration-not-selectable-input",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "deadline",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "command-deadline-cleanup"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "command-wasm-stack-public-input-exclusion",
+      "code": "native-stack-byte-occupancy-not-observable",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "wasm-stack",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "h1-private-stack-enforcement"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "command-backtrace-frames-public-input-exclusion",
+      "code": "diagnostic-frame-truncation-not-rejection",
+      "rowIds": [
+        "command-linux",
+        "command-windows"
+      ],
+      "limitId": "backtrace-frames",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "h1-backtrace-output-cap"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "installed-command-fuel-public-input-exclusion",
+      "code": "fixed-fuel-budget-not-selectable-input",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "fuel",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "h1-fixed-fuel-enforcement"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "installed-command-deadline-public-input-exclusion",
+      "code": "fixed-duration-not-selectable-input",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "deadline",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "command-deadline-cleanup"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "installed-command-wasm-stack-public-input-exclusion",
+      "code": "native-stack-byte-occupancy-not-observable",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "wasm-stack",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "h1-private-stack-enforcement"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "installed-command-backtrace-frames-public-input-exclusion",
+      "code": "diagnostic-frame-truncation-not-rejection",
+      "rowIds": [
+        "installed-command-linux",
+        "installed-command-windows"
+      ],
+      "limitId": "backtrace-frames",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/command_h1_runtime/envelope.rs",
+          "symbol": "engine/limits/FUEL/DEADLINE"
+        }
+      ],
+      "proofCaseIds": [
+        "h1-backtrace-output-cap"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "server-status-guest-resources-public-input-exclusion",
+      "code": "fixed-public-handler-cannot-exhaust-guard",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "guest-resources",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "proofCaseIds": [
+        "server-private-resource-quota-exact-limit",
+        "server-private-resource-quota-first-extra",
+        "server-public-envelope-binding",
+        "server-status-public"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "server-status-guest-callbacks-public-input-exclusion",
+      "code": "fixed-public-handler-cannot-exhaust-guard",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "guest-callbacks",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "proofCaseIds": [
+        "server-private-callback-quota-exact-limit",
+        "server-private-callback-quota-first-extra",
+        "server-public-envelope-binding",
+        "server-status-public"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "server-status-component-bytes-public-input-exclusion",
+      "code": "canonical-public-shape-below-ceiling",
+      "rowIds": [
+        "server-status-linux",
+        "server-status-windows"
+      ],
+      "limitId": "component-bytes",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/audit.rs",
+          "symbol": "audit MAX_BYTES before decoder/canonical replay"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/shell.rs",
+          "symbol": "MAX_BYTES canonical graph"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/bridge.rs",
+          "symbol": "fixed Reply/ClockRead bridge"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/mod.rs",
+          "symbol": "scalar_export enforces noarg i32 scalar signature"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/prepared.rs",
+          "symbol": "Prepared::new_public solefunction"
+        },
+        {
+          "path": "crates/zryna-ir/src/lib.rs",
+          "symbol": "MAX_IR_EXPRESSIONS_PER_FUNCTION/MAX_IR_EXPORT_NAME_BYTES"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/scalar_audit.rs",
+          "symbol": "audit_profile restricts canonical scalar opcodes"
+        }
+      ],
+      "proofCaseIds": [
+        "server-public-shape-size-exclusion",
+        "server-component-first-extra-length-guard",
+        "server-public-envelope-binding",
+        "server-status-public"
+      ],
+      "quantitative": {
+        "kind": "canonical-single-scalar-component",
+        "baselineCaseId": "server-public-shape-size-exclusion",
+        "baselineMaximumBytes": 8212,
+        "expressionNodes": 16383,
+        "maximumLiteralBytes": 6,
+        "exportOccurrences": 2,
+        "maximumExportBytes": 128,
+        "framingAllowanceBytes": 256,
+        "maximumBytes": 66067
+      }
+    },
+    {
+      "id": "server-clock-guest-resources-public-input-exclusion",
+      "code": "fixed-public-handler-cannot-exhaust-guard",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-resources",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "proofCaseIds": [
+        "server-private-resource-quota-exact-limit",
+        "server-private-resource-quota-first-extra",
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "server-clock-guest-callbacks-public-input-exclusion",
+      "code": "fixed-public-handler-cannot-exhaust-guard",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "guest-callbacks",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-driver/src/server_runtime/resources.rs",
+          "symbol": "Resources::insert/take"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/host.rs",
+          "symbol": "Host::enter"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/operations.rs",
+          "symbol": "invoke fixed mediated operation topology"
+        }
+      ],
+      "proofCaseIds": [
+        "server-private-callback-quota-exact-limit",
+        "server-private-callback-quota-first-extra",
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ],
+      "quantitative": null
+    },
+    {
+      "id": "server-clock-component-bytes-public-input-exclusion",
+      "code": "canonical-public-shape-below-ceiling",
+      "rowIds": [
+        "server-clock-linux",
+        "server-clock-windows"
+      ],
+      "limitId": "component-bytes",
+      "sourceBindings": [
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/audit.rs",
+          "symbol": "audit MAX_BYTES before decoder/canonical replay"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/shell.rs",
+          "symbol": "MAX_BYTES canonical graph"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/bridge.rs",
+          "symbol": "fixed Reply/ClockRead bridge"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/component_server/mod.rs",
+          "symbol": "scalar_export enforces noarg i32 scalar signature"
+        },
+        {
+          "path": "crates/zryna-driver/src/server_runtime/prepared.rs",
+          "symbol": "Prepared::new_public solefunction"
+        },
+        {
+          "path": "crates/zryna-ir/src/lib.rs",
+          "symbol": "MAX_IR_EXPRESSIONS_PER_FUNCTION/MAX_IR_EXPORT_NAME_BYTES"
+        },
+        {
+          "path": "crates/zryna-backend-webassembly/src/scalar_audit.rs",
+          "symbol": "audit_profile restricts canonical scalar opcodes"
+        }
+      ],
+      "proofCaseIds": [
+        "server-public-shape-size-exclusion",
+        "server-component-first-extra-length-guard",
+        "server-public-envelope-binding",
+        "server-clock-public"
+      ],
+      "quantitative": {
+        "kind": "canonical-single-scalar-component",
+        "baselineCaseId": "server-public-shape-size-exclusion",
+        "baselineMaximumBytes": 8272,
+        "expressionNodes": 16383,
+        "maximumLiteralBytes": 6,
+        "exportOccurrences": 2,
+        "maximumExportBytes": 128,
+        "framingAllowanceBytes": 256,
+        "maximumBytes": 66127
+      }
+    }
+  ],
+  "modeRequirements": [
+    {
+      "mode": "checkout-build",
+      "requiredCaseKinds": [
+        "positive",
+        "negative",
+        "identity",
+        "reproducibility",
+        "capability-denial"
+      ]
+    },
+    {
+      "mode": "checkout-browser",
+      "requiredCaseKinds": [
+        "positive",
+        "negative",
+        "identity",
+        "reproducibility",
+        "capability-denial"
+      ]
+    },
+    {
+      "mode": "checkout-run",
+      "requiredCaseKinds": [
+        "positive",
+        "negative",
+        "identity",
+        "reproducibility",
+        "capability-denial",
+        "publication",
+        "lifecycle"
+      ]
+    },
+    {
+      "mode": "fresh-content-verified-installation",
+      "requiredCaseKinds": [
+        "positive",
+        "negative",
+        "identity",
+        "reproducibility",
+        "capability-denial",
+        "publication",
+        "lifecycle"
+      ]
+    },
+    {
+      "mode": "checkout-serve",
+      "requiredCaseKinds": [
+        "positive",
+        "negative",
+        "identity",
+        "reproducibility",
+        "capability-denial",
+        "lifecycle"
+      ]
+    }
+  ]
+}

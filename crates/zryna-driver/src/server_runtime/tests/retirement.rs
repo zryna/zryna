@@ -1,3 +1,6 @@
+#[path = "retirement/public_serial.rs"]
+mod public_serial;
+
 use std::{
     sync::{atomic::AtomicBool, mpsc},
     thread,

@@ -658,3 +658,13 @@ evidence; it is not inferred from preview or beta usage.
 Completion gate: one immutable `v1.0.0` release satisfies the frozen compatibility contract,
 supported-platform matrix, reproducibility and security evidence, distribution audit, and tested
 support and rollback procedures.
+
+## M4 support and closure authority
+
+[The fixed M4 matrix](M4_SUPPORT.md) and `zryna support --json` project the same
+checked registry. This is a static contract with six modes and two bounded hosted contracts;
+it does not authenticate this checkout's execution, CI, installation, signing or publication.
+[The conformance record](M4_CONFORMANCE.md) defines the separate exact-revision evidence needed
+for closure. Existing M0–M3 profiles and their historical support contracts remain unchanged.
+Installed component/browser/server, existing immutable beta H1, other browsers, desktop Windows,
+general cloud hosting, signed public releases and production admission remain excluded.

@@ -10,6 +10,9 @@ use zryna_diagnostics::Diagnostic;
 use zryna_ir::command_h1_v1::{ProgramIdentity, VerifiedProgram};
 use zryna_ownership_runtime_abi::VerifiedOwnershipRuntimeAbi;
 use zryna_source::SourceMap;
+#[cfg(test)]
+#[path = "artifact/tests/byte_boundary.rs"]
+mod byte_boundary;
 mod fingerprint;
 #[cfg(test)]
 mod tests;

@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod cli_paths;
 mod command_h1;
 mod installed;
 mod ownership;
@@ -11,7 +12,9 @@ mod project;
 mod project_filesystem;
 mod render;
 mod server;
+mod support;
 
+use cli_paths::{absolute_workspace_path, cli_path_error};
 use render::{render_cli_failure, render_failure, render_success};
 
 use std::{ffi::OsString, path::PathBuf, process::ExitCode};
@@ -53,6 +56,8 @@ enum Command {
     Build(CompileOptions),
     /// Compile and invoke one scalar export, then commit one atomic target bundle.
     Run(RunOptions),
+    /// Report the compiled public M4 contract without authenticating execution.
+    Support(support::Options),
     /// Run one finite pure-source loopback server and commit its teardown record.
     Serve(server::Options),
 }
@@ -133,6 +138,7 @@ fn main() -> ExitCode {
         Command::Build(options) => run_build(options),
         Command::Run(options) => run_command(options),
         Command::Serve(options) => server::run(&options),
+        Command::Support(options) => support::report(&options),
     }
 }
 
@@ -321,18 +327,6 @@ fn build_request(options: CompileOptions) -> Result<ProfileBuildRequest, Diagnos
         }
         Some(CliProfile::CommandH1V1) => return Err(command_h1::configuration_error()),
     })
-}
-
-fn absolute_workspace_path(path: &PathBuf) -> Result<PathBuf, Diagnostic> {
-    if path.is_absolute() {
-        Ok(path.clone())
-    } else {
-        Ok(std::env::current_dir().map_err(|_| cli_path_error())?.join(path))
-    }
-}
-
-fn cli_path_error() -> Diagnostic {
-    profile::cli_path_error()
 }
 
 #[cfg(test)]

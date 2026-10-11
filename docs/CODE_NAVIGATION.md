@@ -146,5 +146,5 @@ pnpm m0:check
 Use the repository-pinned toolchains. Keep Linux and Windows M0/required hosted checks mandatory before merge. Quick filters omit some expensive/ignored boundaries; retain the complete gate's required ignored-test execution and doctests. For a custom filter, first inspect `-- --list` and verify actual nonzero matching tests; never report discovery as execution. Record the exact revision, command, exit status, and executed/ignored counts; do not reuse stale binaries as evidence for changed source.
 
 ## Keeping this index current
-
 Update routes and links alongside moved entrypoints; recheck component registration, neighboring tests and gate references. Prefer stable symbols and search the owning component first; this index grants no exceptions. M3 conformance: [contract](M3_CONFORMANCE.md), [registry](../tests/m3-conformance-v1.json), [candidate corpus](../crates/zryna-driver/src/ownership_commands/conformance.rs), and [commands](../scripts/lib/m3-gates.mjs).
+Public M4 static support: [matrix](M4_SUPPORT.md), [evidence boundary](M4_CONFORMANCE.md), `scripts/m4/support.mjs`, `apps/zryna/src/support.rs`, and `apps/zryna/tests/support_contract.rs`. CLI path helpers remain in `apps/zryna/src/cli_paths.rs`; `main.rs` retains dispatch ownership.

@@ -180,3 +180,21 @@ fn private_clock_denial_never_reads_a_provider_and_closes_real_transport() {
     assert_eq!(running.runtime.denials.load(Ordering::SeqCst), 1);
     running.finish();
 }
+
+#[test]
+fn public_request_deadline5000_and_first_extra5001_configuration_admission() {
+    let exact = br#"{"listen":"127.0.0.1:0","attempts":1,"header_bytes":1024,"body_bytes":32,"request_ms":5000,"service_ms":30000}"#;
+    let admitted = Config::parse(exact).expect("maximum request deadline admitted");
+    assert_eq!(admitted.request_timeout, Duration::from_secs(5));
+    let extra = std::str::from_utf8(exact).expect("ASCII config").replace("5000,", "5001,");
+    assert_eq!(Config::parse(extra.as_bytes()).err(), Some(Error::Config));
+}
+
+#[test]
+fn public_service_deadline30000_and_first_extra30001_configuration_admission() {
+    let exact = br#"{"listen":"127.0.0.1:0","attempts":1,"header_bytes":1024,"body_bytes":32,"request_ms":5000,"service_ms":30000}"#;
+    let admitted = Config::parse(exact).expect("maximum service deadline admitted");
+    assert_eq!(admitted.service_timeout, Duration::from_secs(30));
+    let extra = std::str::from_utf8(exact).expect("ASCII config").replace("30000}", "30001}");
+    assert_eq!(Config::parse(extra.as_bytes()).err(), Some(Error::Config));
+}

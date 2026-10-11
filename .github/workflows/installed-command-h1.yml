@@ -3,6 +3,12 @@ name: Installed H1 command candidate
 on:
   pull_request:
     paths:
+      - scripts/m4/**
+      - scripts/run-m4-conformance.mjs
+      - scripts/check-m4-conformance.mjs
+      - tests/m4*
+      - schemas/zryna-m4-*
+      - docs/M4_*
       - .github/workflows/installed-command-h1.yml
       - apps/zryna/**
       - crates/**
@@ -13,12 +19,13 @@ on:
       - tests/installed-command-qualification/**
       - examples/wasi-command/**
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: installed-h1-${{ github.event.pull_request.number || github.ref }}
+  group: installed-h1-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,6 +38,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
+      M4_WORKFLOW_PATH: .github/workflows/installed-command-h1.yml
+      M4_SOURCE_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
       CARGO_BUILD_JOBS: 2
       RUST_TEST_THREADS: 2
       CARGO_PROFILE_DEV_DEBUG: 0
@@ -74,17 +83,21 @@ jobs:
         env:
           CARGO_NET_OFFLINE: true
         run: |
-          node tests/installed-command-qualification/run.mjs "$env:RUNNER_TEMP/installed-h1-evidence"
+          $candidate = '${{ github.event.pull_request.head.sha || github.sha }}'
+          $tree = git rev-parse 'HEAD^{tree}'
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate tree observation failed' }
+          $sourceRef = $env:M4_SOURCE_REF
+          $context = Join-Path $env:RUNNER_TEMP 'm4-installed-context.json'
+          node scripts/m4/observe-context.mjs --lane installed --output $context --job-name '${{ github.workflow == 'CI' && 'm4 installed / ' || '' }}fresh installed H1 (${{ matrix.os }})' --source-ref $sourceRef --expected-commit $candidate --expected-tree $tree
+          if ($LASTEXITCODE -ne 0) { throw 'M4 host context failed' }
+          node scripts/run-m4-conformance.mjs --lane installed --evidence "$env:RUNNER_TEMP/installed-h1-evidence" --expected-commit $candidate --expected-tree $tree --source-ref $sourceRef --context $context
           if ($LASTEXITCODE -ne 0) { throw 'Installed command qualification failed' }
       - name: Preserve candidate receipts and actual invocation logs
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: installed-h1-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: |
-            ${{ runner.temp }}/installed-h1-evidence/qualification.json
-            ${{ runner.temp }}/installed-h1-evidence/candidate.json
-            ${{ runner.temp }}/installed-h1-evidence/architecture-receipt.json
-            ${{ runner.temp }}/installed-h1-evidence/invocations.json
+          name: m4-installed-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/installed-h1-evidence/**
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 90
+          compression-level: 0

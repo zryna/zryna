@@ -20,8 +20,11 @@ The command verifies that the commit, ref, clean tracked worktree, and GitHub wo
 agree. A semantic-version channel must equal the compiler package version and use the matching
 immutable `refs/tags/v<version>` ref.
 
-The official `next` artifact is published only by the dedicated `main`-push documentation job after
-the aggregate required `m3` job (which retains M0–M2) succeeds. Its artifact name and job summary bind the exact compiler
+The official `next` artifact is published only by the dedicated manual documentation dispatch on
+exact current `main`. The job validates documentation, then authenticates a completed successful
+full CI run and all M4 evidence for the same immutable revision before exporting. The dispatch
+requires the CI run ID and attempt plus independently reviewed expectations JSON and its SHA-256;
+both the bundle and authenticated gate metadata are retained for 90 days. Its artifact name and job summary bind the exact compiler
 commit and manifest SHA-256 as `zryna-docs-next-<commit>-<manifest-sha256>`; consumers authenticate
 both values from that immutable workflow run before importing any bytes.
 

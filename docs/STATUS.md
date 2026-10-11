@@ -411,3 +411,13 @@ release only and emits no graceful certificate. The [status contract](WASI_SERVE
 records exact limits. Installed server execution, immutable beta support, production deployment,
 signed release claims and whole-M4 conformance/publication (#402) remain excluded. Historical
 candidate receipts do not qualify a revised integration.
+
+## Public M4 support contract
+
+[The fixed M4 matrix](M4_SUPPORT.md) and `zryna support --json` project the same
+checked registry. This is a static contract with six modes and two bounded hosted contracts;
+it does not authenticate this checkout's execution, CI, installation, signing or publication.
+[The conformance record](M4_CONFORMANCE.md) defines the separate exact-revision evidence needed
+for closure. Existing M0–M3 profiles and their historical support contracts remain unchanged.
+Installed component/browser/server, existing immutable beta H1, other browsers, desktop Windows,
+general cloud hosting, signed public releases and production admission remain excluded.

@@ -9,6 +9,14 @@ use std::{
     time::Instant,
 };
 
+#[cfg(test)]
+#[path = "tests/callback_limits.rs"]
+mod callback_limits;
+
+#[cfg(test)]
+#[path = "tests/clock_quota.rs"]
+mod clock_quota;
+
 use wasmtime::{Engine, Store, UpdateDeadline};
 
 use super::{

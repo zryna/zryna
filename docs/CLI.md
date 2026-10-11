@@ -58,6 +58,7 @@ and manifest v3 are documented in [M3 driver](M3_CANDIDATE_DRIVER.md).
 ```text
 zryna architecture check [--root <PATH>] [--json]
 zryna doctor             [--root <PATH>] [--json]
+zryna support            [--json]
 zryna package resolve <PACKAGE> --source-root <PATH> --mode <frozen|update> [--git-cache <PATH>] [--json]
 zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> --node <PATH> [--profile <control-flow-v1|data-ownership-v1|browser-component-v1>] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
@@ -321,3 +322,19 @@ authenticated compiler documentation bundle tracked in Issue #21.
 Formatting is exposed through the separately built language server.
 See [the scalar formatter and editor installation contract](LANGUAGE_SERVER.md#scalar-format-v1)
 for exact source-build compatibility, supported syntax, range behavior and commands.
+
+## Static M4 support contract
+
+[The fixed M4 matrix](M4_SUPPORT.md) and `zryna support --json` project the same
+checked registry. This is a static contract with six modes and two bounded hosted contracts;
+it does not authenticate this checkout's execution, CI, installation, signing or publication.
+[The conformance record](M4_CONFORMANCE.md) defines the separate exact-revision evidence needed
+for closure. Existing M0–M3 profiles and their historical support contracts remain unchanged.
+Installed component/browser/server, existing immutable beta H1, other browsers, desktop Windows,
+general cloud hosting, signed public releases and production admission remain excluded.
+
+`support` accepts only `--json` and `--help`; top-level `zryna --version` is unchanged. It reads compiled contract
+bytes and accepts no source, root, runtime, grant or evidence selector. It succeeds outside a
+checkout without creating output or executing a profile. JSON carries no containing commit:
+the registry digest identifies contract bytes; authenticated evidence separately binds the
+actual candidate source commit/tree. This avoids a source/hash cycle and stale certification.

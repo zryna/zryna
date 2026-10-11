@@ -231,4 +231,7 @@ pub fn emit_verified(program: &VerifiedProgram) -> Result<DualTargetArtifacts, V
 }
 
 #[cfg(test)]
+#[path = "runtime_boundary_tests/fuel_meter.rs"]
+mod runtime_boundary_tests;
+#[cfg(test)]
 mod tests;

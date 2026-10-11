@@ -1,4 +1,4 @@
-use super::super::support::{Case, Running, common};
+use crate::support::{Case, Running, common};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{fs, process::Command};

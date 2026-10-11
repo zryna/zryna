@@ -1,0 +1,347 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "contracts",
+    "exclusions",
+    "modeRequirements"
+  ],
+  "properties": {
+    "format": {
+      "const": "zryna.m4-limit-contracts.v1"
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "rowIds",
+          "limitId",
+          "minimum",
+          "maximum",
+          "unit",
+          "semantics",
+          "domain",
+          "sourceBindings",
+          "guardScopes",
+          "publicRequirement",
+          "publicScopes",
+          "allowedExclusionIds",
+          "requiredBindingCaseIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,99}$"
+          },
+          "rowIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,99}$"
+            },
+            "minItems": 1,
+            "maxItems": 12,
+            "uniqueItems": true
+          },
+          "limitId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,99}$"
+          },
+          "minimum": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "maximum": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740990
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "semantics": {
+            "enum": [
+              "reject-first-extra",
+              "fixed-enforcement",
+              "truncate-output"
+            ]
+          },
+          "domain": {
+            "enum": [
+              "emission",
+              "loader",
+              "runtime"
+            ]
+          },
+          "sourceBindings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "symbol"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "maxLength": 240,
+                  "pattern": "^[A-Za-z0-9_.-][A-Za-z0-9_./{}-]*$"
+                },
+                "symbol": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                }
+              }
+            },
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true
+          },
+          "guardScopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "minItems": 0,
+            "maxItems": 2
+          },
+          "publicRequirement": {
+            "enum": [
+              "reachable-pair",
+              "reviewed-exclusion",
+              "emission-only",
+              "guard-prerequisite"
+            ]
+          },
+          "publicScopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "minItems": 0,
+            "maxItems": 2
+          },
+          "allowedExclusionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,99}$"
+            },
+            "minItems": 0,
+            "maxItems": 8,
+            "uniqueItems": true
+          },
+          "requiredBindingCaseIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,99}$"
+            },
+            "minItems": 0,
+            "maxItems": 16,
+            "uniqueItems": true
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "code",
+          "rowIds",
+          "limitId",
+          "sourceBindings",
+          "proofCaseIds",
+          "quantitative"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,99}$"
+          },
+          "code": {
+            "enum": [
+              "native-stack-byte-occupancy-not-observable",
+              "fixed-duration-not-selectable-input",
+              "diagnostic-frame-truncation-not-rejection",
+              "canonical-public-shape-below-ceiling",
+              "fixed-public-handler-cannot-exhaust-guard",
+              "fixed-fuel-budget-not-selectable-input"
+            ]
+          },
+          "rowIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,99}$"
+            },
+            "minItems": 1,
+            "maxItems": 12,
+            "uniqueItems": true
+          },
+          "limitId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,99}$"
+          },
+          "sourceBindings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "symbol"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "maxLength": 240,
+                  "pattern": "^[A-Za-z0-9_.-][A-Za-z0-9_./{}-]*$"
+                },
+                "symbol": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                }
+              }
+            },
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true
+          },
+          "proofCaseIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,99}$"
+            },
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "quantitative": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "baselineCaseId",
+                  "baselineMaximumBytes",
+                  "expressionNodes",
+                  "maximumLiteralBytes",
+                  "exportOccurrences",
+                  "maximumExportBytes",
+                  "framingAllowanceBytes",
+                  "maximumBytes"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "canonical-single-scalar-component"
+                  },
+                  "baselineCaseId": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]{0,99}$"
+                  },
+                  "baselineMaximumBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740990
+                  },
+                  "expressionNodes": {
+                    "const": 16383
+                  },
+                  "maximumLiteralBytes": {
+                    "const": 6
+                  },
+                  "exportOccurrences": {
+                    "const": 2
+                  },
+                  "maximumExportBytes": {
+                    "const": 128
+                  },
+                  "framingAllowanceBytes": {
+                    "const": 256
+                  },
+                  "maximumBytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740990
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 128,
+      "uniqueItems": true
+    },
+    "modeRequirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "requiredCaseKinds"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "requiredCaseKinds": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "positive",
+                "negative",
+                "exact-limit",
+                "first-extra",
+                "capability-denial",
+                "lifecycle",
+                "publication",
+                "reproducibility",
+                "identity"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 9,
+            "uniqueItems": true
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 6,
+      "uniqueItems": true
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zryna.com/schemas/zryna-m4-limit-contracts-v1.schema.json"
+}

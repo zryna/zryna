@@ -3,6 +3,12 @@ name: Pinned browser conformance
 on:
   pull_request:
     paths:
+      - scripts/m4/**
+      - scripts/run-m4-conformance.mjs
+      - scripts/check-m4-conformance.mjs
+      - tests/m4*
+      - schemas/zryna-m4-*
+      - docs/M4_*
       - .github/workflows/browser-conformance.yml
       - scripts/scalar-host/**
       - tests/scalar-host/**
@@ -21,12 +27,13 @@ on:
       - package.json
       - pnpm-lock.yaml
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pinned-browser-${{ github.event.pull_request.number || github.ref }}
+  group: pinned-browser-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -39,6 +46,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
+      M4_WORKFLOW_PATH: .github/workflows/browser-conformance.yml
+      M4_SOURCE_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: 0
@@ -66,15 +75,21 @@ jobs:
       - name: Execute pinned browser and full-ceiling transport proofs
         shell: pwsh
         run: |
-          node scripts/scalar-host/run-conformance.mjs "$env:RUNNER_TEMP/browser-conformance-evidence"
+          $candidate = '${{ github.event.pull_request.head.sha || github.sha }}'
+          $tree = git rev-parse 'HEAD^{tree}'
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate tree observation failed' }
+          $sourceRef = $env:M4_SOURCE_REF
+          $context = Join-Path $env:RUNNER_TEMP 'm4-browser-context.json'
+          node scripts/m4/observe-context.mjs --lane browser --output $context --job-name '${{ github.workflow == 'CI' && 'm4 browser / ' || '' }}pinned browser (${{ matrix.os }})' --source-ref $sourceRef --expected-commit $candidate --expected-tree $tree
+          if ($LASTEXITCODE -ne 0) { throw 'M4 host context failed' }
+          node scripts/run-m4-conformance.mjs --lane browser --evidence "$env:RUNNER_TEMP/browser-conformance-evidence" --expected-commit $candidate --expected-tree $tree --source-ref $sourceRef --context $context
           if ($LASTEXITCODE -ne 0) { throw 'Pinned browser conformance failed' }
       - name: Preserve exact-head receipts, inventory and execution logs
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: pinned-browser-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: |
-            ${{ runner.temp }}/browser-conformance-evidence/*.json
-            ${{ runner.temp }}/browser-conformance-evidence/*.log
+          name: m4-browser-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/browser-conformance-evidence/**
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 90
+          compression-level: 0

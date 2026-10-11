@@ -1,3 +1,6 @@
+#[path = "tests/public_size_bound.rs"]
+mod public_size_bound;
+
 use sha2::{Digest, Sha256};
 use wasm_encoder::ComponentSection;
 use wasmparser::{Parser, Payload};
