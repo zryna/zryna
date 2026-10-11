@@ -1,5 +1,20 @@
 # Zryna CLI reference
 
+## Bounded public source-checkout server profiles
+
+This change introduces bounded public Linux x64/Windows x64 source-checkout support when
+integrated after #400 and the required #401 review and exact-revision gates:
+
+- `serve ENTRY --profile server-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --name FRESH` authenticates one no-argument i32 status export, returns status 200–599 with an empty body, and retains empty guest grants.
+- `serve ENTRY --profile server-clock-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --guest-request PRIVATE --guest-approval PRIVATE --name FRESH` additionally performs one actual monotonic read per admitted request through the generated guest arrangement. Separate private guest request/root approval files are required; the timestamp is discarded and no source-language clock intrinsic is added.
+
+Both profiles require separate configuration-bound listener approval, literal 127.0.0.1,
+finite budgets and serial requests. Create-only manifest v1/status and v2/clock records follow
+actual Store/resource/listener teardown; forced termination proves OS handle release only.
+See the [status contract](WASI_SERVER_STATUS_V1.md), [clock contract](WASI_SERVER_CLOCK_STATUS_V1.md)
+and [denied/granted example](../examples/wasi-server/CLOCK_EXAMPLE.md). Installed server execution,
+production deployment and whole-M4 conformance/publication (#402) remain excluded.
+
 ## Bounded WASI command profile
 
 The source-checkout route `run ENTRY --target wasi-command --profile command-h1-v1

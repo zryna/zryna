@@ -8,6 +8,10 @@ when integrated: one source file, empty grants or one explicit private environme
 checkout or newly verified complete-installation execution. Its
 [review and integration record](docs/WASI_COMMAND_H1_REVIEW.md) tracks the remaining final checks.
 Existing immutable beta archives do not gain command support.
+The [bounded server profiles](docs/WASI_SERVER_STATUS_V1.md) introduce explicit source-checkout
+loopback status and separately approved one-read clock/status support at reviewed #401
+integration. Their [review record](docs/WASI_SERVER_REVIEW.md) retains the required final gates;
+whole-M4 conformance and publication remain #402.
 The component checkpoints below retain their historical implementation boundaries; they do not
 limit or independently expand the integrated public surface. M0–M2 remain unchanged.
 

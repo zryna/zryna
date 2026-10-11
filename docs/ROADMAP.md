@@ -501,8 +501,20 @@ Issue #400's [bounded WASI command change](WASI_COMMAND_GETTING_STARTED.md) intr
 activation when integrated: one file and `main(): bool`, empty grants or one explicitly
 private literal-key environment value, fixed limits and checkout/new complete-installation
 execution. [Independent review and final revision evidence](WASI_COMMAND_H1_REVIEW.md) are
-recorded separately. Existing immutable beta archives remain excluded; server acceptance
-(#401) and whole-M4 conformance/publication (#402) remain unfinished. This does not close M4.
+recorded separately. Existing immutable beta archives remain excluded; whole-M4
+conformance/publication (#402) remains unfinished. This does not close M4.
+
+Issue #401's bounded server change introduces public Linux x64/Windows x64 source-checkout
+support when integrated after #400 and the required combined-revision review and exact-revision
+gates. `server-status-v1` admits one no-argument i32 status export (200–599, empty body) with empty
+guest grants; `server-clock-status-v1` adds one actual monotonic read per admitted request through
+the generated arrangement and separate private guest request/root approval. Both retain separate
+configuration-bound listener approval, finite 127.0.0.1 budgets and create-only v1/v2 records after
+observed teardown. See the [status contract](WASI_SERVER_STATUS_V1.md),
+[clock contract](WASI_SERVER_CLOCK_STATUS_V1.md) and
+[denied/granted example](../examples/wasi-server/CLOCK_EXAMPLE.md). No source clock intrinsic,
+installed server execution or production deployment is added. Whole-M4 conformance and public
+matrix/publication remain #402.
 
 Completion gate: components expose self-described interfaces and receive no filesystem, network, clock, randomness, or environment capability unless the selected profile declares it.
 

@@ -353,8 +353,7 @@ Evidence covers supervised Linux x86-64 and hosted Ubuntu 24.04 x86-64 / Windows
 2022 x64. The [review record](WASI_COMMAND_H1_REVIEW.md) distinguishes the reviewed baseline
 from follow-up delta and final checks. Existing immutable beta archives remain without H1
 support. No signed release, production readiness, Windows desktop, general plain-cloud or
-performance qualification follows. Server activation and whole-M4 publication remain open
-under #401 and #402.
+performance qualification follows. Whole-M4 conformance/publication remains open under #402.
 
 ## Deliberately unsupported
 
@@ -394,3 +393,21 @@ watch mode, incremental builds, or production readiness.
 - [Syntax protocol v4](SYNTAX_PROTOCOL_V4.md)
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)
+
+## Bounded public source-checkout WASI server profiles
+
+This change introduces bounded public Linux x64/Windows x64 source-checkout server support when
+integrated after #400 and the required #401 combined-revision review and exact-revision gates.
+`server-status-v1` authenticates one no-argument i32 export, returns status 200–599 with an empty
+body and retains empty guest grants. The distinct
+[clock/status arrangement](WASI_SERVER_CLOCK_STATUS_V1.md) performs one actual monotonic guest
+read per admitted request through the generated arrangement and separately approved private
+guest inputs; it discards the timestamp and adds no source-language clock intrinsic.
+
+Both profiles retain literal 127.0.0.1, finite budgets, separate configuration-bound listener
+approval and input identities through admission, response and create-only manifest v1/v2 commit.
+Records observe actual Store/resource/listener teardown; forced termination proves OS handle
+release only and emits no graceful certificate. The [status contract](WASI_SERVER_STATUS_V1.md)
+records exact limits. Installed server execution, immutable beta support, production deployment,
+signed release claims and whole-M4 conformance/publication (#402) remain excluded. Historical
+candidate receipts do not qualify a revised integration.

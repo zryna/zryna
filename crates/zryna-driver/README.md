@@ -300,3 +300,14 @@ declaration string/report boundary proofs, the transitive A→B→C mixed-select
 independent acceptance still need explicit evidence. Arbitrary foreign libraries and actual host
 authorization/containment retain their separate owning requirements. No CLI selector,
 executable publication or Windows native C target is added.
+
+## Bounded public server composition
+
+`serve_workspace` composes the existing lifecycle/runtime/transport with authenticated source,
+private identity-bound configuration/root listener approval and a separate create-only final
+record. This status route keeps empty guest grants; private clock probes stay separate. The owning
+[contract](../../docs/WASI_SERVER_STATUS_V1.md) records bounded public source-checkout support
+at integration after #400 and the required #401 gates, with installed server execution excluded. `ServerReadiness` supports explicit cancellation, with final publication
+only after joined and observed teardown.
+
+`serve_clock_workspace` composes the distinct one-read clock/status arrangement with `ClockServerRunRequest`, preserving the original status API and its empty grants. Separate private guest request/root approval identities are retained and revalidated; v2 records actual reads/denials after teardown. The callback budget and other runtime bounds are unchanged. See [the clock contract](../../docs/WASI_SERVER_CLOCK_STATUS_V1.md).

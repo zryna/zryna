@@ -32,6 +32,13 @@ and the first extra input byte rejects before process launch. Its raw transport 
 substitute for source verification or browser conformance.
 
 The ordinary test command ignores the resource test and therefore supplies no browser proof.
+The dedicated `browser-conformance.yml` workflow executes the two actual-browser tests and the
+32 MiB transport test on Linux x64 and Windows x64. Its runner, `node
+scripts/scalar-host/run-conformance.mjs <absolute-new-evidence-directory>`, verifies the frozen
+archive hash, publisher receipt and complete inventory before execution, checks each cargo run
+executed exactly one passing non-ignored test, and retains exact-commit receipts and bounded logs.
+It keeps Chromium sandboxing enabled and uploads no browser binaries. A missing fixture,
+acquisition or sandbox failure fails the lane rather than skipping it.
 All commands above are required in the separately provisioned Linux x64 and Windows x64
 conformance/CI lanes before #387 acceptance. A missing fixture, unreviewed hash, timeout or cleanup
 failure fails that lane; it is never a successful skip. Keep the required frozen install,
@@ -111,11 +118,17 @@ same 32 MiB stdin limit including JSON/helpers/metadata. That fixture bound is n
 artifact ceiling or evidence for full-ceiling transport. Required full-ceiling execution remains
 separate from the small cross-host scalar fixture.
 
-## Candidate evidence
+## Historical candidate evidence and revision scope
 
-The implementation is an unverified local candidate. Linux x64 and Windows x64 browser
-archive/inventory hashes are pinned from reviewed publisher-HTTPS acquisition receipts. Frozen
-installation and metadata-only fixture preparation do not establish host execution. Rust source
-tests, Node target execution, real browser execution, resource limits, preflight, M0, M2 and hosted
-conformance are **UNRUN** until an exact candidate receipt records observed commands, nonzero counts
-and platforms. This file specifies required evidence; it records no passing execution.
+The initial local candidate had **UNRUN** source, Node, browser, resource, preflight, M0, M2 and
+hosted conformance checks. Reviewed publisher-HTTPS acquisition receipts pinned the Linux x64
+and Windows x64 browser archive/inventory hashes; frozen installation and metadata-only fixture
+preparation alone did not establish execution.
+
+At preserved revision `2dfee16257bf9c0812bb3d47c49e724637ddd0a7`, the
+[dedicated hosted run](https://github.com/zryna/zryna/actions/runs/38077001600) recorded the
+component/browser agreement, scalar/browser agreement and separate 32 MiB transport proof on
+Linux x64 and Windows x64: each command executed exactly one passing non-ignored test. Those
+receipts qualify only that revision. They do not establish new combined-revision CI or replace
+the preserved local M0 cleanup failure or full-M3 fixed-budget timeout. Required checks above
+must be recorded again for a revised integration.
