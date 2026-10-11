@@ -1,16 +1,16 @@
-# Bounded WASI command H1 contract: owner decisions accepted
+# Bounded WASI command H1 contract
 
-Status: **five bounded owner decisions accepted; required independent review pending**.
+Status: **bounded activation prepared for integration; follow-up review and final gates pending**.
 Repository owner accepted the five bounded decisions on 2026-10-09.
-This document records the bounded resolution of
-[#400](https://github.com/zryna/zryna/issues/400). It activates nothing, assigns no current
-supported CLI selector or ABI, and does not revise the pinned
+This document records the bounded contract introduced when the reviewed
+[#400](https://github.com/zryna/zryna/issues/400) change integrates. It does not revise the pinned
 [#167 WIT registry](../spec/wit/CAPABILITY_PROFILES_V1.md). Its source and host decisions were
 required to be accepted before implementation. Acceptance was not recorded before the review
 implementation; later acceptance does not retroactively satisfy that historical prerequisite.
-Required independent review remains necessary before public support, which is not activated.
-The [checkout and installed review candidate](WASI_COMMAND_GETTING_STARTED.md) contains a bounded
-H1 review implementation; execution evidence does not constitute independent review. The earlier
+Independent agent review of the complete original 315-path candidate is now recorded in the
+[review note](WASI_COMMAND_H1_REVIEW.md); follow-up changes and their final gates remain
+subject to review and integration acceptance. The [checkout and installed walkthrough](WASI_COMMAND_GETTING_STARTED.md)
+describes only this bounded H1 route. Execution evidence does not constitute independent review. The earlier
 [readiness assessment](WASI_COMMAND_ACTIVATION_PROPOSAL.md) records the original prerequisites
 and alternatives.
 
@@ -18,7 +18,8 @@ The selected denial transport is **A: retain the pinned WASI host trap**. This r
 denial transport. The source gate, F1 allocation/conversion, grant capture, run mapping and
 manifest below received the bounded owner acceptance recorded here. Selection of A alone did
 not accept those decisions or establish execution evidence. The matching narrow #357/#358
-reconciliation already exists; required independent implementation review remains outstanding.
+reconciliation already exists; the review note keeps baseline review, follow-up findings and
+final integration evidence distinct.
 
 ## Recorded bounded owner acceptance
 
@@ -33,11 +34,12 @@ Repository owner accepted the five bounded decisions on 2026-10-09.
 | CLI, manifest and bounded host scope | Existing checkout/installed grammar and examples, distinct WIT return versus trap/denial, fixed limits, privacy, teardown and atomic create-only records; supervised Linux x86-64 / authenticated hosted Ubuntu and hosted Windows x64 evidence |
 
 This accepts the bounded behavior, not implementation correctness or public activation.
-Required independent implementation review remains outstanding. Local Windows execution is unvalidated;
+The original implementation has received independent agent review; follow-up review and final
+revision evidence remain pending. Local Windows execution is unvalidated;
 no full plain-cloud baseline or performance validation is claimed.
 Existing releases and M1–M3 profiles gain no H1 support retroactively.
 
-## Fixed inputs and proposed compatibility boundary
+## Fixed inputs and compatibility boundary
 
 The command world is exactly `zryna:capability-profiles/command@0.1.0`; its WASI interfaces are
 exactly `0.2.12`. The [#357 profile contract](../spec/language/CROSS_TARGET_PROFILES_V1.md)
@@ -55,12 +57,12 @@ packages before command component construction. The selected command world has 1
 imports, 16 resolved imports including `wasi:io`, and only `wasi:cli/run@0.2.12` exported.
 An audit of `worlds.wit` alone is insufficient. No runtime path opens a substitute WIT file.
 
-**Proposed version identities:** a new `command-h1-v1` language gate, an explicit
+**Version identities:** a new `command-h1-v1` language gate, an explicit
 `wasi-command` target, `zryna.wasi-command-request.v1` for the private grant file, and
 `zryna.command-h1.host.v1` for the exact host policy, plus
 `zryna.wasi-command-manifest.v1` in a distinct
 `zryna-wasi-command-manifest-v1.json` create-only bundle. These spellings and the CLI grammar
-below are review candidates, not supported arguments. Do not reinterpret M1–M3, the browser
+below define the bounded support introduced upon integration. Do not reinterpret M1–M3, the browser
 component manifest, the #167 request schema, or historical registry bytes. A change to source
 outcomes, import set, grant interpretation, or result mapping requires a reviewed new command
 profile/manifest version; a change to pinned WIT imports requires its own new WIT identity.
@@ -103,8 +105,7 @@ The built-in name `EnvLookupV1` is reserved, not a user-defined enum. The existi
 expression shape can name its two closed arms as `"EnvLookupV1.Found"` and
 `"EnvLookupV1.Missing"`; the new semantic and IR verifiers must authenticate the arm
 names, active owned payload and reverse cleanup. Other v4 match syntax remains unchanged.
-The following source example is implemented by the review candidate; public support remains
-inactive pending required independent review:
+The following source example implements this bounded contract:
 
 ```ts
 export function main(): bool {
@@ -147,7 +148,7 @@ WIT identity and compatibility contract; it is outside this candidate.
 
 ## Explicit request, grant, and host behavior
 
-Proposed CLI shape (for review only):
+Checkout CLI shape:
 
 ```text
 zryna run <ENTRYPOINT> --target wasi-command --profile command-h1-v1
@@ -256,7 +257,7 @@ prefixes without publishing a result. Invalid canonical data, realloc, lifting, 
 failure is fatal: invalidate the store, reclaim independently held host resources, and do
 not retry guest cleanup or relabel the failure as missing/denied.
 
-### F1 memory and allocator acceptance candidate
+### F1 memory and allocator boundary
 
 The command-specific core uses exactly one fixed 256-page memory32 (16,777,216 bytes). It
 reserves `[0, 65,536)` for null/static state, bounds the **command-only** private language
@@ -320,15 +321,17 @@ entries before emitting the existing E1 trap and publishes no `Found`. A trap du
 canonical allocation, lowering, lifting, or release is fatal:
 discard the store and independently tracked host state without a guest
 cleanup retry. The immutable host snapshot remains outside guest memory until the mediated
-call. This candidate needs an independent implementation and audit before F1 is accepted.
+call. Independent implementation/audit coverage and follow-up findings are recorded in the
+review note; scope acceptance alone does not establish correctness.
 
 Acceptance fixtures must distinguish bytes 15,728,639/15,728,640 at the private boundary
 and 16,777,215/16,777,216 at the transfer boundary; test empty, present-empty, multibyte,
 and 1,024/1,025-byte values; first-extra list item and key byte; repeated calls with
 complete ledger drain; resize-copy-release and forged/double release; wrong old allocation
 length before copy; canonical allocation failure and subsequent fresh-instance recovery;
-and absence of a borrowed guest-memory view after the callback. These are future tests,
-not executed evidence.
+and absence of a borrowed guest-memory view after the callback. These are required observations;
+the review note maps their existing test coverage and distinguishes original hosted evidence
+from final follow-up checks.
 
 ## Manifest and one-run authority
 
@@ -504,15 +507,17 @@ These rows specify required observations; the table itself is not execution evid
 Exact-revision execution receipts remain separate from owner acceptance. Implementation review needs
 the WIT contract, source/IR and independent component audits, focused driver/CLI tests,
 manifest inventory/execution-record checks, fixed examples, and required Linux and Windows gates on
-the reviewed revision. #400 stays open and unsupported while required independent review remains
-pending; the five bounded owner decisions above are now accepted.
+the reviewed revision. #400 remains open until the follow-up findings, exact final revision
+gates and integration acceptance are complete. The five bounded owner decisions and original
+independent review are recorded separately; this support change does not close #401 or #402.
 
 ## Installed candidate invocation
 
-Both checkout and freshly installed candidate H1 execute the same one-file, one-key contract.
+Both checkout and newly verified complete installed H1 execute the same one-file, one-key contract.
 Installed `--project-root` selects a real source/output directory outside the installation;
 `--root` and `--node` overrides reject. The build-bound compiler supplies its authenticated
 bundled provider/runtime and retains installation, source and private-input proofs through commit.
 Existing frozen package compatibility remains unchanged: H1 accepts no dependency imports.
 Linux/Windows qualification requires actual fresh relocated installs and positive/negative
-command runs; no release or public support is implied before full acceptance and final review.
+command runs. Integration introduces only this bounded command support; no signed release,
+production admission or whole-M4 publication is inferred.

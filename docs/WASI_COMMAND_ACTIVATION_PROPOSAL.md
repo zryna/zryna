@@ -2,16 +2,17 @@
 
 Status: **historical prerequisite proposal; five bounded H1 owner decisions now accepted**.
 The [H1 contract acceptance record](WASI_COMMAND_H1_CONTRACT_DRAFT.md#recorded-bounded-owner-acceptance)
-records the 2026-10-09 decision. Required independent review and public activation remain pending.
+records the 2026-10-09 decision. The [review note](WASI_COMMAND_H1_REVIEW.md) now records
+independent review of the original candidate and the follow-up gates required for integration.
 This is a review input for
 [#400](https://github.com/zryna/zryna/issues/400), not an executable profile, CLI contract,
 manifest version, or support claim. It changes none of the accepted WIT sources, registry,
 schemas, or existing public M1–M3 behavior.
 This assessment records the original prerequisites and alternatives. The
-[checkout and installed H1 review candidate](WASI_COMMAND_GETTING_STARTED.md) contains a bounded
-H1 review implementation. The bounded owner decisions below were accepted after implementation;
-that decision does not retroactively satisfy the original prerequisite. Candidate execution
-does not establish public support.
+[checkout and installed H1 walkthrough](WASI_COMMAND_GETTING_STARTED.md) describes the bounded
+change prepared for integration. The bounded owner decisions below were accepted after implementation;
+that decision does not retroactively satisfy the original prerequisite. This historical proposal does not establish current support; the bounded activation change
+and its integration evidence are recorded separately.
 The [bounded H1 contract draft](WASI_COMMAND_H1_CONTRACT_DRAFT.md) develops the recommended
 choice with selected pinned-interface host-trap transport A. That selection does not accept
 the remaining source, conversion or public runtime contract. Its one-run grant/manifest
@@ -40,8 +41,8 @@ the WASI consumer proof, and public activation separate. In the
 [#358 library contract](../spec/libraries/MINIMAL_CORE_HOST_V0.md), F1 value conversion and
 cleanup and F2 concrete host outcomes must be accepted before an H1–H5 host operation is
 implemented. Those decisions were missing when this assessment was written; their later bounded
-acceptance is recorded above. The historical prerequisite gap and required independent review
-are not resolved by that later acceptance.
+acceptance is recorded above. The historical prerequisite gap was not resolved by later scope acceptance. Independent
+implementation review and integration evidence are separate events recorded in the review note.
 
 ## Smallest proposed useful slice
 

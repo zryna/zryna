@@ -1,4 +1,5 @@
 use super::lower;
+mod indexed_scalars;
 mod resources;
 use zryna_ir::data_ownership_v1::{VerifiedBlock, VerifiedFunction, VerifiedModule};
 use zryna_source::{SourceFileInput, SourceMap};

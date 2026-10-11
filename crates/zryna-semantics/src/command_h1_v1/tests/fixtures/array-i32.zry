@@ -1,0 +1,1 @@
+export function main(): bool { const items: FixedArray<i32, 2> = FixedArray<i32, 2>([11, 12]); return items[0] + 1 === items[1]; }
