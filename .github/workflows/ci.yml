@@ -114,6 +114,10 @@ jobs:
     # Allow a nominal 5 minutes for other setup/cleanup beyond the 10/25-minute steps.
     timeout-minutes: 40
     runs-on: ubuntu-latest
+    # Keep cold builds within the execution budget without changing test checks.
+    env:
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

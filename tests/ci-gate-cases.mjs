@@ -39,7 +39,9 @@ function withoutPortableSetup(candidate) {
 function withoutPreflightBudgets(candidate) {
   const original = structuredClone(candidate);
   const job = original.jobs.preflight;
-  assert.deepEqual(Object.keys(job).sort(), ['name', 'runs-on', 'steps', 'timeout-minutes']);
+  assert.deepEqual(Object.keys(job).sort(), ['env', 'name', 'runs-on', 'steps', 'timeout-minutes']);
+  assert.deepEqual(job.env, { CARGO_PROFILE_DEV_DEBUG: 0, CARGO_PROFILE_TEST_DEBUG: 0 });
+  delete job.env;
   assert.equal(job['timeout-minutes'], 40);
   const bootstrap = job.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@'));
   const execution = job.steps.filter(step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts');
@@ -61,6 +63,35 @@ function withoutPreflightBudgets(candidate) {
 test('preflight separates bounded bootstrap and execution budgets without changing commands', () => {
   assert.doesNotThrow(() => withoutPreflightBudgets(budgetWorkflow));
   assert.equal(workflow.jobs.preflight['timeout-minutes'], 40);
+});
+
+test('preflight omits debug symbols without overriding compiler or test checks', () => {
+  for (const key of ['CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG']) {
+    for (const value of [undefined, null, true, false, '0', 1, 2, '${{ 0 }}']) {
+      const changed = structuredClone(budgetWorkflow);
+      if (value === undefined) delete changed.jobs.preflight.env[key];
+      else changed.jobs.preflight.env[key] = value;
+      assert.throws(() => withoutPreflightBudgets(changed));
+    }
+  }
+  for (const key of ['CARGO_PROFILE_DEV_DEBUG_ASSERTIONS', 'CARGO_PROFILE_TEST_DEBUG_ASSERTIONS',
+    'CARGO_PROFILE_DEV_OVERFLOW_CHECKS', 'CARGO_PROFILE_TEST_OVERFLOW_CHECKS',
+    'CARGO_PROFILE_DEV_OPT_LEVEL', 'CARGO_PROFILE_TEST_OPT_LEVEL', 'RUSTFLAGS', 'RUST_TEST_THREADS']) {
+    const changed = structuredClone(budgetWorkflow);
+    changed.jobs.preflight.env[key] = 'false';
+    assert.throws(() => withoutPreflightBudgets(changed));
+  }
+  const changed = structuredClone(budgetWorkflow);
+  delete changed.jobs.preflight.env;
+  assert.throws(() => withoutPreflightBudgets(changed));
+  for (const target of [w => w, w => w.jobs.rust,
+    w => w.jobs.preflight.steps.at(-1)]) {
+    const relocated = structuredClone(budgetWorkflow);
+    const symbols = relocated.jobs.preflight.env;
+    delete relocated.jobs.preflight.env;
+    target(relocated).env = symbols;
+    assert.throws(() => withoutPreflightBudgets(relocated));
+  }
 });
 
 test('preflight budget removal, relocation, bypass and ambiguous targets fail closed', () => {
