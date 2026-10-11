@@ -1149,9 +1149,17 @@
             "maxItems": 24
           },
           "hosts": {
-            "const": [
-              "linux",
-              "windows"
+            "enum": [
+              [
+                "linux"
+              ],
+              [
+                "windows"
+              ],
+              [
+                "linux",
+                "windows"
+              ]
             ]
           },
           "accounting": {

@@ -1,6 +1,6 @@
 // Independent reviewed authorities. Regenerate only after explicit source/contract review.
-export const expectedRegistrySha256 = "2c1a3d6d22dd8dbb20658a4ae7278fa68bed194642674796473c164495d5289d";
-export const expectedSchemaSha256 = "ca16633fc69c3342331e456d2c9ecdc0678d17b3034c48ba61347d26531f6c21";
+export const expectedRegistrySha256 = "ee8dac03b0e9ba854d7a772dd66ecfe08730de6d485e81ad69d18e72ed0b2a1a";
+export const expectedSchemaSha256 = "374ac36e2020cec22d016861f20d2a37095683a52abb043140498576a817d7bc";
 export const maximumRegistryBytes = 512 * 1024;
 export const maximumSourceBytes = 2 * 1024 * 1024;
 export const rowInventory = Object.freeze(["component-linux", "component-windows", "browser-linux", "browser-windows", "command-linux", "command-windows", "installed-command-linux", "installed-command-windows", "server-status-linux", "server-status-windows", "server-clock-linux", "server-clock-windows"]);
@@ -10,10 +10,10 @@ export const sectionSha256 = Object.freeze({
   "scope": "2ec67fcde9731a4cc3823081bf846ffae357a5e3d429cc2bc13575714a4e5b12",
   "toolchains": "44c8610ac4234413a5ff541fee4eef8be0a69478e44c827eca6ce05ab26fc868",
   "foundations": "10f39f299594cd4640c74d84d8e3d16a73c39ae560be360619c2be3b2b050500",
-  "sources": "080c50776adb2bf473f794da55e547a6b12005465f5705390786ecf440823b71",
-  "rows": "b6d2e0899e005b40cb74ab036e58a1dc94e40a8aaebd412541be9b25d9025564",
-  "cases": "6f03ff0eee7d4f14613d630894d516e5adb86a250ebd77b46550be8a5aa7a82c",
-  "gates": "398b9b83a4353961996588340e75f4a5afa9baa74f637b4a2023b616660fbd4b",
+  "sources": "224326e936784c15c7bfd1ce8396775b739effc00744b1336d910dcd18b0b525",
+  "rows": "cd577213574191e204257caf39b438ff36b3646a607433f2708e29ffab118463",
+  "cases": "6b30c4685f672602e93c6fbb690244280e2d17a8fe4d2b4aacd351c818e133c0",
+  "gates": "d6179ed95040788b03c2f3af080a6f0655970c9c1e42a1c58bda3da0d4cc6d76",
   "exclusions": "e8a8006d24dd6a58067520b83e42c795e859df5f4c8875e41b772749a67a30f1",
   "contractPlan": "5209288bef99c2fc1103ac93a352d228e798ab9068e3c3b4a8027a9c9249dc72"
 });

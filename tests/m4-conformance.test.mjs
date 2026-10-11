@@ -11,6 +11,7 @@ import {
 } from '../scripts/check-m4-conformance.mjs';
 import { inventory, operationalSourcePath, parseCanonical, portablePath, readerOpenFlags, readStableFile } from '../scripts/m4/registry-files.mjs';
 import { pinnedBrowserTests } from '../scripts/m4/named-gate-cases.mjs';
+import { selectM4Gates } from '../scripts/m4/evidence.mjs';
 
 const original = () => parseCanonical(readStableFile(registryPath, 512 * 1024));
 const mutant = edit => {
@@ -273,5 +274,22 @@ test('workflow dot-directory paths are portable while traversal components rejec
     '.github/workflows/browser-conformance.yml');
   for (const relative of ['.', '..', '../escape', 'fixtures/../escape', 'fixtures/./source.zry']) {
     assert.throws(() => portablePath(relative), /unsafe portable path/);
+  }
+});
+
+test('clock retained-input proofs select their owning host without a zero-test substitute', () => {
+  const registry = original();
+  const unix = registry.cases.find(entry => entry.id === 'server-clock-revocation');
+  const windows = registry.cases.find(entry => entry.id === 'server-clock-retained-inputs-windows');
+  assert.deepEqual(unix.rowIds, ['server-clock-linux']);
+  assert.deepEqual(windows.rowIds, ['server-clock-windows']);
+  for (const [host, required, forbidden] of [['linux', unix, windows], ['windows', windows, unix]]) {
+    const gates = selectM4Gates(registry, 'core', host);
+    assert(gates.some(gate => gate.id === required.gateId && gate.argv.includes(required.test.selector)));
+    assert(!gates.some(gate => gate.id === forbidden.gateId));
+    assert.equal(gates.length, 80);
+  }
+  for (const hosts of [[], ['windows', 'linux'], ['linux', 'linux'], ['darwin']]) {
+    assert.throws(() => validateM4Conformance(mutant(value => { value.gates[0].hosts = hosts; })), /closed schema/);
   }
 });

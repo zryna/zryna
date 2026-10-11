@@ -3,7 +3,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, rmSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { authenticateJob } from '../scripts/m4/verify-hosted.mjs';
+import { authenticateJob, loadHostedRegistry } from '../scripts/m4/verify-hosted.mjs';
+import { calculateM4Coverage, workspaceRoot } from '../scripts/check-m4-conformance.mjs';
 import { zipEntries, verifyRetainedArchive } from '../scripts/m4/hosted-archive.mjs';
 import { validateExpectations, HOSTED_LANES } from '../scripts/m4/hosted-expectations.mjs';
 import { verifyM4CIResult } from '../scripts/m4/verify-ci-result.mjs';
@@ -41,6 +42,20 @@ function expectations() {
     })),
   };
 }
+
+test('publication registry loader preserves source authority and rejects changed registry bytes', () => {
+  const registry = loadHostedRegistry(workspaceRoot);
+  assert.equal(calculateM4Coverage(registry).contractComplete, true);
+  assert.throws(() => calculateM4Coverage(structuredClone(registry)), /independently validated contract authority/);
+  const root = mkdtempSync(join(tmpdir(), 'zryna-m4-hosted-registry-'));
+  try {
+    mkdirSync(join(root, 'tests'));
+    const changed = structuredClone(registry);
+    changed.sources[0].sha256 = '0'.repeat(64);
+    writeFileSync(join(root, 'tests/m4-conformance-v1.json'), `${JSON.stringify(changed, null, 2)}\n`);
+    assert.throws(() => loadHostedRegistry(root), /registry digest mismatch/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
 function metadata(value, job) {
   const prefix = `/repos/${value.repository}`;
   const created = '2030-01-01T00:01:00Z';

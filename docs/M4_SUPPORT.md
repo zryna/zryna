@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`2c1a3d6d22dd8dbb20658a4ae7278fa68bed194642674796473c164495d5289d`. The matrix defines six bounded modes on the two
+`ee8dac03b0e9ba854d7a772dd66ecfe08730de6d485e81ad69d18e72ed0b2a1a`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "2c1a3d6d22dd8dbb20658a4ae7278fa68bed194642674796473c164495d5289d",
+  "registrySha256": "ee8dac03b0e9ba854d7a772dd66ecfe08730de6d485e81ad69d18e72ed0b2a1a",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -5337,18 +5337,18 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "scripts/m4/verify-docs-artifact.mjs",
-      "bytes": 9969,
-      "sha256": "5060c61b2fd60b7f0a959fd3d3ebdc74a298bee3b036dc117a1371ddf621dc0a"
+      "bytes": 9922,
+      "sha256": "b7e0d1809b678c63e5fb37bdbcfb029787e206025eceb1d08a282c17d3c7c97a"
     },
     {
       "path": "scripts/m4/verify-hosted.mjs",
-      "bytes": 8427,
-      "sha256": "1646af51ac6261160a85fefd790594ce72e4a5db52e1f5578f9c376c7d22bd18"
+      "bytes": 8575,
+      "sha256": "09b1e4e3b35b7ca8b0079904c16cf5ce8452d41519a8bf494bd89c44b3e1e6b5"
     },
     {
       "path": "scripts/m4/verify-publication.mjs",
-      "bytes": 7479,
-      "sha256": "cd0bdd9fb96f26c9be820edf6abf0849a0b4d4a8060c40d03cc7e82388ba3c90"
+      "bytes": 7416,
+      "sha256": "7201af17db1145e02f05ca9d632ce2b36e1808acc834e7a0d35572acc0c8f412"
     },
     {
       "path": "scripts/run-m0-conformance.mjs",
@@ -5477,8 +5477,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "tests/m4-conformance.test.mjs",
-      "bytes": 13960,
-      "sha256": "07c518db78cdf1080cc0c93962f5f729d660d1666b632d665111c5a3bcc599aa"
+      "bytes": 15035,
+      "sha256": "65b877604419a876feec6f39b3957415e063fff96ef8ada4620efe43be59420e"
     },
     {
       "path": "tests/m4-evidence.test.mjs",
@@ -5502,8 +5502,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "tests/m4-hosted.test.mjs",
-      "bytes": 17390,
-      "sha256": "d309a4d7d68a816ac5197143cc8b63d9dbc5f42cd9761ccf550484236c4e7a2f"
+      "bytes": 18311,
+      "sha256": "7c379430994bf76666792e8d21ba57eee6b1b313a50a71b152dae8a5698d1a7f"
     },
     {
       "path": "tests/m4-limit-contract-fixtures.mjs",
@@ -23382,8 +23382,7 @@ zryna.m4.support.v1:begin
         {
           "id": "server-clock-revocation",
           "rowIds": [
-            "server-clock-linux",
-            "server-clock-windows"
+            "server-clock-linux"
           ],
           "kind": "lifecycle",
           "fixture": [
@@ -25678,27 +25677,26 @@ zryna.m4.support.v1:begin
           "proofScope": "public-checkout-server-clock"
         },
         {
-          "id": "server-clock-revocation",
+          "id": "server-clock-retained-inputs-windows",
           "rowIds": [
-            "server-clock-linux",
             "server-clock-windows"
           ],
           "kind": "lifecycle",
           "fixture": [
             "apps/zryna/tests/wasi_server/clock_tests.rs"
           ],
-          "gateId": "case-server-clock-revocation",
+          "gateId": "case-server-clock-retained-inputs-windows",
           "test": {
             "runner": "rust",
             "package": "zryna",
             "target": "wasi_server",
-            "selector": "clock_tests::guest_request_replacement_and_approval_revocation_stop_service_without_record",
+            "selector": "clock_tests::retained_guest_inputs_block_writes_and_replacement_then_keep_exact_permission",
             "source": "apps/zryna/tests/wasi_server/clock_tests.rs",
             "ignoredByDefault": false
           },
           "oracle": {
             "assertions": [
-              "original guest input replacement/revocation suppresses response/final record"
+              "retained guest request and approval reject writes and replacement on Windows; admitted request serves HTTP 200; exactly one actual guest clock read; confirmed teardown"
             ],
             "diagnosticCodes": []
           },
@@ -27214,7 +27212,7 @@ zryna.m4.support.v1:begin
         "case-server-clock-denial",
         "case-server-clock-no-intrinsic",
         "case-server-clock-idle",
-        "case-server-clock-revocation",
+        "case-server-clock-retained-inputs-windows",
         "case-server-guest-request-bytes-exact-limit",
         "case-server-body-bytes-exact-limit",
         "case-server-header-bytes-exact-limit",

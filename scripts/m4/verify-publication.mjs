@@ -5,8 +5,8 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { githubApi } from './hosted-api.mjs';
 import { validateExpectations } from './hosted-expectations.mjs';
-import { verifyM4Hosted } from './verify-hosted.mjs';
-import { digest, parseCanonical, readStableFile } from './registry-files.mjs';
+import { loadHostedRegistry, verifyM4Hosted } from './verify-hosted.mjs';
+import { digest, parseCanonical } from './registry-files.mjs';
 import { downloadPublicationArchive, retainPublicationArchive } from './retain-publication.mjs';
 import { checkSupportFiles, canonicalSupportBytes } from './support.mjs';
 import { loadPublicationWorkflowInventory, verifyCompletePublicationJobs } from './publication-workflows.mjs';
@@ -73,7 +73,7 @@ export async function verifyPublication({ expectations, root, retainedRoot, api 
     const archive = await download(expectations.repository, job.artifact);
     retainPublicationArchive(join(retainedRoot, `${job.lane}-${job.baseline}`), archive);
   }
-  const registry = parseCanonical(readStableFile(join(root, 'tests/m4-conformance-v1.json'), 8 * 1024 * 1024));
+  const registry = loadHostedRegistry(root);
   const hosted = await verifyM4Hosted({ expectations, root, retainedRoot, registry, api });
   assert.equal(hosted.executionComplete, true, 'complete authenticated execution matrix required before docs export');
   const support = checkSupportFiles(root);

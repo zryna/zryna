@@ -6,7 +6,7 @@ import { githubApi } from './hosted-api.mjs';
 import { zipEntries } from './hosted-archive.mjs';
 import { validateExpectations, exactKeys } from './hosted-expectations.mjs';
 import { digest, parseCanonical, readStableFile } from './registry-files.mjs';
-import { verifyM4Hosted } from './verify-hosted.mjs';
+import { loadHostedRegistry, verifyM4Hosted } from './verify-hosted.mjs';
 import { authenticatePublicationFoundation } from './verify-publication.mjs';
 import { downloadPublicationArchive, retainPublicationArchive } from './retain-publication.mjs';
 import { checkSupportFiles, extractM4SupportFence, canonicalSupportBytes } from './support.mjs';
@@ -91,7 +91,7 @@ export async function verifyDocsArtifact({ expected, root, output, api = githubA
   for (const entry of hostedExpectations.jobs) {
     retainPublicationArchive(join(output, `${entry.lane}-${entry.baseline}`), await download('zryna/zryna', entry.artifact));
   }
-  const registry = parseCanonical(readStableFile(join(root, 'tests/m4-conformance-v1.json'), 8 * 1024 * 1024));
+  const registry = loadHostedRegistry(root);
   const hosted = await verifyM4Hosted({ expectations: hostedExpectations, root, retainedRoot: output, registry, api });
   assert.equal(hosted.executionComplete, true, 'complete authenticated execution matrix');
   const docsZip = await download('zryna/zryna', expected.docsArtifact);

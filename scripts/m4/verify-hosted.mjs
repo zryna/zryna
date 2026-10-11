@@ -8,6 +8,11 @@ import { authenticateWorkflow } from './hosted-workflow.mjs';
 import { authenticateAggregate } from './hosted-aggregate.mjs';
 import { digest, parseCanonical, readStableFile } from './registry-files.mjs';
 import { loadM4Evidence, composeM4Evidence } from './evidence.mjs';
+import { loadAndValidateM4Conformance } from '../check-m4-conformance.mjs';
+
+export function loadHostedRegistry(root) {
+  return loadAndValidateM4Conformance(join(root, 'tests/m4-conformance-v1.json'), { root });
+}
 
 function git(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 1024 * 1024,
@@ -125,7 +130,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const bytes = readStableFile(resolve(args[1]), 8 * 1024 * 1024);
     requireEqual(digest(bytes), args[3], 'externally supplied expectations digest');
     const root = resolve(import.meta.dirname, '../..');
-    const registry = parseCanonical(readStableFile(join(root, 'tests/m4-conformance-v1.json'), 8 * 1024 * 1024));
+    const registry = loadHostedRegistry(root);
     const result = await verifyM4Hosted({ expectations: parseCanonical(bytes), retainedRoot: resolve(args[5]), root, registry });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
