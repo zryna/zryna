@@ -1,15 +1,16 @@
 # Bounded WASI command walkthrough
 
-Status: implementation review candidate. The five bounded
-[owner decisions are accepted](WASI_COMMAND_H1_CONTRACT_DRAFT.md#recorded-bounded-owner-acceptance).
-Required exact-revision Linux/Windows gates and independent implementation review remain
-necessary before public support; support is not activated.
+This change introduces the bounded `command-h1-v1` profile when integrated. The
+[review record](WASI_COMMAND_H1_REVIEW.md) tracks its reviewed baseline, follow-up changes and
+remaining final checks. Support covers supervised Linux x86-64 and the qualified hosted
+Ubuntu 24.04 x86-64 / Windows Server 2022 x64 environments. Other hosts and performance
+guarantees are not part of this boundary.
 The [H1 contract](WASI_COMMAND_H1_CONTRACT_DRAFT.md) specifies its source, grant, conversion,
 denial and execution-record boundaries. The [activation proposal](WASI_COMMAND_ACTIVATION_PROPOSAL.md)
 records the prerequisite decisions.
 
 This route runs one source file, either from a compiler checkout or an independently verified
-complete installation built from this candidate. The installed executable uses only its bundled
+new complete installation built from this change. The installed executable uses only its bundled
 Node.js 22.22.1 and authenticated protocol-v4 provider; both routes execute a fresh pinned
 Wasmtime 48.0.1 engine. Existing published archives do not acquire H1 support retroactively.
 
@@ -44,7 +45,7 @@ Ordinary profiles reject `--grant-file` rather than silently accepting host auth
 
 ## Installed invocation outside a checkout
 
-Use a newly built, independently verified complete candidate installation. Create a separate
+Use a newly built, independently verified complete installation. Create a separate
 real directory named `command-project`, and copy only the desired `.zry` example into it.
 No repository marker, package manifest or lockfile is required for this one-file H1 route.
 
@@ -61,7 +62,8 @@ The installed route revalidates retained installation, provider stage, runtime, 
 request identities before execution and through atomic commit. Moving the complete installation
 is supported; changing, omitting or adding installation files rejects admission. Existing output
 is never replaced. Installed and checkout H1 share exactly the same source, grant, WIT, resource,
-result and manifest contract. This is candidate qualification, not a package release.
+result and manifest contract. Installation content qualification does not establish a signed
+package release or production admission.
 
 ## One explicit environment value
 

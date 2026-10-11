@@ -3,7 +3,7 @@
 This example uses the existing `status-200.zry` source with the distinct audited clock/status
 arrangement. The source itself computes only the status; the generated guest arrangement reads
 and discards one monotonic timestamp per request. See the
-[contract](../../docs/WASI_SERVER_CLOCK_STATUS_V1.md) for exact limits and candidate status.
+[contract](../../docs/WASI_SERVER_CLOCK_STATUS_V1.md) for exact limits, the bounded support scope and integration requirements.
 
 First create the private configuration and listener approval from [the status example](README.md).
 On Linux, add two fresh private guest files in that same caller-owned input directory:
@@ -51,4 +51,5 @@ confirmed teardown. Use fresh names/files when repeating the example.
 
 Windows uses the same JSON with the contract's protected owner/SYSTEM private ACLs. Its actual
 CLI tests verify retained input handles prevent writes/replacement and forced host termination
-releases those handles. Installed beta packages do not advertise this candidate profile.
+releases those handles, without certifying graceful guest cleanup. Installed distributions do not
+support this server profile.

@@ -65,12 +65,13 @@ startup cannot create a guest Store or release its reservation while those bytes
 The existing expiry owner may finish detached-entry bookkeeping just after guest/input teardown;
 quota remains reserved through that final bookkeeping, and shutdown waits for it as well.
 
-Whole #401 acceptance remains open: reviewed #400 interface composition, source/interface capability
-admission, shipped build/run selectors, reviewed granted/denied public local example, current
-supported-host evidence and public support documentation remain dependencies. The private loopback implementation
-and fixed pure-source process corpus are independently implemented in the same dedicated target.
-Streaming bodies, outgoing HTTP and random providers are not requirements for the minimum interface.
-The source-checkout status and clock/status compositions remain review candidates; whole-issue
-completion and installed public support are separate gates.
+The explicit source-checkout `serve` selectors already compose `serve_workspace` and
+`serve_clock_workspace`, retained guest admission and the denied/granted public local example.
+#401 requires these bounded server selectors, not additional build/run routes. Integration after
+#400 still requires review of the combined revision, required local/hosted gates and owning issue
+acceptance. Private runtime envelopes above allow 8 resources/16 callbacks; both public profiles
+narrow those limits to 5 resources/8 callbacks. Streaming bodies, outgoing HTTP and random
+providers are not requirements for this minimum interface. Installed server execution and
+whole-M4 conformance/publication remain outside the bounded public source-checkout support.
 
 Production composition also selects the distinct one-read clock/status arrangement after exact caller-private guest request/root approval admission. Private multi-read/subscription/timer probes do not become public source requirements. The same Store-local accounting records actual clock reads in the separate public v2 record; empty-grant status behavior is unchanged.

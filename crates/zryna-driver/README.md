@@ -305,9 +305,9 @@ executable publication or Windows native C target is added.
 
 `serve_workspace` composes the existing lifecycle/runtime/transport with authenticated source,
 private identity-bound configuration/root listener approval and a separate create-only final
-record. The guest request set stays empty; private clock probes stay separate. The owning
-[contract](../../docs/WASI_SERVER_STATUS_V1.md) records the source-checkout scope and remaining
-review/support gates. `ServerReadiness` supports explicit cancellation, with final publication
+record. This status route keeps empty guest grants; private clock probes stay separate. The owning
+[contract](../../docs/WASI_SERVER_STATUS_V1.md) records bounded public source-checkout support
+at integration after #400 and the required #401 gates, with installed server execution excluded. `ServerReadiness` supports explicit cancellation, with final publication
 only after joined and observed teardown.
 
 `serve_clock_workspace` composes the distinct one-read clock/status arrangement with `ClockServerRunRequest`, preserving the original status API and its empty grants. Separate private guest request/root approval identities are retained and revalidated; v2 records actual reads/denials after teardown. The callback budget and other runtime bounds are unchanged. See [the clock contract](../../docs/WASI_SERVER_CLOCK_STATUS_V1.md).

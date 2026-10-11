@@ -8,6 +8,25 @@ mod fixture;
 use fixture::{Granted, document};
 
 #[test]
+fn approved_clock_non_zry_entrypoints_reject_before_ready_or_publication() {
+    use super::source_tests::{assert_selection_rejected, source_with_suffix};
+    let _guard = guard();
+    for suffix in [".txt", ".js", ".ZRY", ""] {
+        let granted = Granted::new(1);
+        let (_owned, logical) = source_with_suffix(
+            &granted.case,
+            suffix,
+            "export function status(): i32 { return 200; }",
+        );
+        assert_selection_rejected(
+            &granted.case,
+            "server-clock-status-v1",
+            granted.command(&logical),
+        );
+    }
+}
+
+#[test]
 fn granted_clock_profile_executes_one_read_per_store_and_records_actual_teardown() {
     let _guard = guard();
     for status in [200, 599] {

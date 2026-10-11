@@ -340,25 +340,35 @@ remain outside M3.
   bundles with a deterministic profile-specific manifest. Windows native and `all` run reject
   before publication with `ZRYNA-N4002`; there is no partial-target fallback.
 
+## Bounded WASI command support introduced by this change
+
+When integrated, this change activates the [command profile](WASI_COMMAND_GETTING_STARTED.md)
+for one source file and sole `main(): bool`, empty grants or one owner-private literal-key
+environment request, and a distinct create-only execution record. It accepts the checkout
+route and a newly content-verified complete installation with fixed Node 22.22.1, Wasmtime
+48.0.1 and pinned WASI 0.2.12. The envelope remains 100,000 fuel, five seconds and one fixed
+16 MiB memory; the exhaustive grant table denies other host capabilities.
+
+Evidence covers supervised Linux x86-64 and hosted Ubuntu 24.04 x86-64 / Windows Server
+2022 x64. The [review record](WASI_COMMAND_H1_REVIEW.md) distinguishes the reviewed baseline
+from follow-up delta and final checks. Existing immutable beta archives remain without H1
+support. No signed release, production readiness, Windows desktop, general plain-cloud or
+performance qualification follows. Whole-M4 conformance/publication remains open under #402.
+
 ## Deliberately unsupported
 
-The [bounded WASI command implementation candidate](WASI_COMMAND_GETTING_STARTED.md) has a
-separate checkout/installed candidate selector, audited component, owner-private one-key input and distinct
-execution manifest. Its five bounded [owner decisions are accepted](WASI_COMMAND_H1_CONTRACT_DRAFT.md#recorded-bounded-owner-acceptance).
-Required exact-revision Linux/Windows gates and independent implementation review remain
-necessary before public support; support is not activated.
-The supported profiles here do not inherit its host authority.
-
-Public source-level Boolean execution requires explicit `control-flow-v1` or `data-ownership-v1`; it remains rejected by
-the default M1 path. The compiler-owned M2 gate checks three-target equivalence for one fixed
+Public Boolean execution in the scalar target profiles requires explicit `control-flow-v1`
+or `data-ownership-v1`; it remains rejected by the default M1 path. The bounded command
+profile instead maps its sole `main(): bool` to the pinned WIT command result. The compiler-owned M2 gate checks three-target equivalence for one fixed
 source control-flow and module oracle; it is not a claim of general language completeness. The
 M1/M2 scalar profiles do not claim heap values, an allocator or a tracing-GC profile. Their
 scalar-only surface is not a general zero-runtime or GC-free guarantee for data profiles.
 Explicit M3 uses bounded owned allocation and deterministic cleanup under its
 [public profile](M3_PUBLIC_PROFILE.md). The browser scalar profile above runs only its sealed,
 import-free core through the generated browser loader; it does not instantiate a Component Model
-artifact in a general component runtime. No current profile claims tracing GC, WASI/component
-host execution, Windows or macOS native execution, static native executables, package resolution,
+artifact in a general component runtime. WASI command execution is confined to the explicit
+bounded profile above. No current profile claims tracing GC, general WASI/component host
+execution, Windows or macOS native execution, static native executables, package resolution,
 watch mode, incremental builds, or production readiness.
 
 ## Evidence and reference
@@ -384,13 +394,20 @@ watch mode, incremental builds, or production readiness.
 - [Scalar ABI v1](../spec/abi/SCALAR_V1.md)
 - [Language overview](../spec/language/OVERVIEW.md)
 
-## Bounded WASI server review candidate
+## Bounded public source-checkout WASI server profiles
 
-The source-checkout `server-status-v1` route authenticates one no-argument i32 status function and
-runs a finite loopback service with empty guest grants. Separate private configuration and root
-listener approval retain their identities through admission, response publication and create-only
-server result commit. The [contract](WASI_SERVER_STATUS_V1.md) records limits and observations.
-This candidate does not expand immutable beta support. Independent review, final hosted
-qualification and whole M4 closure remain required.
+This change introduces bounded public Linux x64/Windows x64 source-checkout server support when
+integrated after #400 and the required #401 combined-revision review and exact-revision gates.
+`server-status-v1` authenticates one no-argument i32 export, returns status 200–599 with an empty
+body and retains empty guest grants. The distinct
+[clock/status arrangement](WASI_SERVER_CLOCK_STATUS_V1.md) performs one actual monotonic guest
+read per admitted request through the generated arrangement and separately approved private
+guest inputs; it discards the timestamp and adds no source-language clock intrinsic.
 
-The distinct [clock/status arrangement](WASI_SERVER_CLOCK_STATUS_V1.md) supplies the bounded nonempty guest example: a separately approved one-read clock import before the authenticated status export. Its v2 record reports actual clock reads and teardown. This is a review candidate; independent review, exact-candidate evidence and enclosing #400/#401/#402 acceptance remain required.
+Both profiles retain literal 127.0.0.1, finite budgets, separate configuration-bound listener
+approval and input identities through admission, response and create-only manifest v1/v2 commit.
+Records observe actual Store/resource/listener teardown; forced termination proves OS handle
+release only and emits no graceful certificate. The [status contract](WASI_SERVER_STATUS_V1.md)
+records exact limits. Installed server execution, immutable beta support, production deployment,
+signed release claims and whole-M4 conformance/publication (#402) remain excluded. Historical
+candidate receipts do not qualify a revised integration.

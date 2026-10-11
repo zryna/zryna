@@ -1,28 +1,35 @@
 # Zryna CLI reference
 
-## Bounded server review candidate
+## Bounded public source-checkout server profiles
 
-The source-checkout `serve ENTRY --profile server-status-v1 --export NAME --node PINNED
---server-config PRIVATE --listener-approval PRIVATE --name FRESH` route authenticates one pure
-status source, serves finite loopback requests with empty guest grants, and commits a separate
-server result only after actual teardown. Its [contract](WASI_SERVER_STATUS_V1.md) specifies
-root listener permission, limits, records and remaining review/conformance gates. It is not an
-installed beta support expansion and does not satisfy the nonempty granted-guest example or M4
-closure by itself.
+This change introduces bounded public Linux x64/Windows x64 source-checkout support when
+integrated after #400 and the required #401 review and exact-revision gates:
 
-## Bounded command review candidate
+- `serve ENTRY --profile server-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --name FRESH` authenticates one no-argument i32 status export, returns status 200–599 with an empty body, and retains empty guest grants.
+- `serve ENTRY --profile server-clock-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --guest-request PRIVATE --guest-approval PRIVATE --name FRESH` additionally performs one actual monotonic read per admitted request through the generated guest arrangement. Separate private guest request/root approval files are required; the timestamp is discarded and no source-language clock intrinsic is added.
+
+Both profiles require separate configuration-bound listener approval, literal 127.0.0.1,
+finite budgets and serial requests. Create-only manifest v1/status and v2/clock records follow
+actual Store/resource/listener teardown; forced termination proves OS handle release only.
+See the [status contract](WASI_SERVER_STATUS_V1.md), [clock contract](WASI_SERVER_CLOCK_STATUS_V1.md)
+and [denied/granted example](../examples/wasi-server/CLOCK_EXAMPLE.md). Installed server execution,
+production deployment and whole-M4 conformance/publication (#402) remain excluded.
+
+## Bounded WASI command profile
 
 The source-checkout route `run ENTRY --target wasi-command --profile command-h1-v1
 --export main --node PINNED [--grant-file ABSOLUTE_FILE]` executes the separately verified
-command profile. A complete candidate installation instead accepts
+command profile. A newly verified complete installation instead accepts
 `run ENTRY --project-root PROJECT --target wasi-command --profile command-h1-v1 --export main
 [--grant-file ABSOLUTE_FILE]`, without compiler-root or Node overrides. It uses its authenticated
 bundled runtime/provider and one project-relative source file, without dependency packages.
 Both routes accept no scalar arguments or build-only selection. The [command walkthrough](WASI_COMMAND_GETTING_STARTED.md) covers private
 input creation, the initial grant table, typed WIT results, limits and create-only bundles;
 the [manifest reference](WASI_COMMAND_MANIFEST_V1.md) specifies its distinct execution record.
-The five bounded [owner decisions are accepted](WASI_COMMAND_H1_CONTRACT_DRAFT.md#recorded-bounded-owner-acceptance).
-Required independent review remains pending and public support is not activated.
+This change introduces this bounded route when integrated; the
+[review record](WASI_COMMAND_H1_REVIEW.md) tracks final revision checks and acceptance.
+Supported evidence covers supervised Linux x86-64, hosted Ubuntu 24.04 x86-64 and hosted
+Windows Server 2022 x64. Existing immutable beta archives do not support this route.
 Existing M1–M3 profiles retain their contracts below.
 
 ## Public M3 profile
@@ -55,7 +62,7 @@ zryna package resolve <PACKAGE> --source-root <PATH> --mode <frozen|update> [--g
 zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> --node <PATH> [--profile <control-flow-v1|data-ownership-v1|browser-component-v1>] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main --node <PATH> [--grant-file <ABSOLUTE_PATH>] [--root <PATH>] [--name <STEM>] [--json]
-zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main [--project-root <PATH>] [--grant-file <ABSOLUTE_PATH>] [--name <STEM>] [--json] # installed candidate
+zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main [--project-root <PATH>] [--grant-file <ABSOLUTE_PATH>] [--name <STEM>] [--json] # newly verified complete installation
 ```
 
 `architecture check` and `doctor` run the same mandatory fail-closed workspace gate. Every checkout
@@ -301,8 +308,8 @@ M1 differential suite requires those observations and the manifest to agree. Pac
 non-relative/package imports, watch mode, incremental or remote builds, general browser APIs, WASI,
 Windows or macOS native execution, static native executables, overwrite behavior, and
 runtime-enforced comparison inside an ordinary end-user command remain outside the current slice.
-The separate bounded command candidate described above is under review and does not enlarge
-those scalar target contracts.
+The separate bounded WASI command profile above has its own explicit selector and grants.
+Those scalar target contracts retain their exclusions.
 The repository-owned [M2 conformance gate](M2_CONFORMANCE.md) performs fixed-oracle three-target
 comparison. M2 closure evidence includes authenticated compiler documentation plus website and live
 provenance recorded by Issue #57; those publication checks do not change command semantics.
@@ -314,5 +321,3 @@ authenticated compiler documentation bundle tracked in Issue #21.
 Formatting is exposed through the separately built language server.
 See [the scalar formatter and editor installation contract](LANGUAGE_SERVER.md#scalar-format-v1)
 for exact source-build compatibility, supported syntax, range behavior and commands.
-
-The distinct `server-clock-status-v1` arrangement additionally requires private `--guest-request` and `--guest-approval` files for exactly one monotonic read per request. See its [contract](WASI_SERVER_CLOCK_STATUS_V1.md) and [denied/granted example](../examples/wasi-server/CLOCK_EXAMPLE.md). It adds no source-language clock intrinsic and remains a source-checkout review candidate.

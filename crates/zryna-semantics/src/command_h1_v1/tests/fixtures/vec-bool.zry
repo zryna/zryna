@@ -1,0 +1,1 @@
+export function main(): bool { const items: Vec<bool> = Vec<bool>([true, false]); return items[0] !== items[1]; }

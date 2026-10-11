@@ -1,19 +1,21 @@
-# Internal server lifecycle candidate (#401)
+# Internal server lifecycle (#401)
 
 This module owns bounded lifecycle leases and joined retirement. It is retained in the dedicated
 `server_lifecycle` target and is now composed by the authenticated source-checkout server route.
 Lifecycle success alone does not establish component identity, grants, executable host behavior or
 supported-host qualification. The public composition contract is
-[server-status-v1](../../../../docs/WASI_SERVER_STATUS_V1.md); #401 remains open.
+[server-status-v1](../../../../docs/WASI_SERVER_STATUS_V1.md), with the separately approved
+[clock/status arrangement](../../../../docs/WASI_SERVER_CLOCK_STATUS_V1.md). Their bounded
+public source-checkout support is introduced at integration after #400 and the required #401 gates.
 
 The unchanged pinned world is `zryna:capability-profiles/server@0.1.0`, exporting
 `wasi:http/incoming-handler@0.2.12`. Its explicit imports are monotonic clock, wall clock,
 outgoing HTTP and secure random, all at `0.2.12`. It has no filesystem or environment import.
-The WIT closure and grant composition must be authenticated before a future runtime adapter
-starts this lifecycle. PR #513, inspected read-only at
-`0445169bb98d738a214de7ebcd914240aec73acb`, supplies command-specific implementation-candidate
-mechanics, not a reviewed server grant or execution interface. No code from that branch is
-imported here.
+The composed `server_runtime` authenticates the WIT closure and grants before starting this
+lifecycle. Historically, PR #513 was inspected read-only at
+`0445169bb98d738a214de7ebcd914240aec73acb` for command-specific candidate mechanics; that
+inspection did not establish a server grant or execution interface. Current server composition
+uses `server_workspace` and the runtime documented in `../server_runtime/README.md`.
 
 ## Internal behavior
 
@@ -27,13 +29,13 @@ The fixed upper bounds are 64 live request reservations, 65,536 incoming body by
 65,536 outgoing body bytes, 8 MiB reserved body/metadata storage, and a five-second request
 lifetime. Configuration may lower these limits; zero and the first extra unit reject. Before
 copying input, admission charges its exact method, path and body lengths plus the entire
-configured maximum response size. Guest linear memory, stack and fuel are separate future
-runtime obligations, not measured by this buffer ledger.
+configured maximum response size. Guest linear memory, stack and fuel are separate
+`server_runtime` obligations, not measured by this buffer ledger.
 
 The registry owns buffers and at most one transferred adapter resource per request. Resource
-transfer is an ownership operation only: the future trusted adapter must independently verify
+transfer is an ownership operation only: the trusted runtime adapter must independently verify
 and grant its resource before transferring it. Request and cancellation handles cannot recover
-or clone the resource. This candidate supplies no guest capability; a denied callback destroys
+or clone the resource. This lifecycle module supplies no guest capability; a denied callback destroys
 the request. A second resource transfer rejects and drops only the rejected resource.
 
 Cancellation is idempotent. Request identifiers never reuse a live or retired identifier within
@@ -41,7 +43,7 @@ one host, and handles retain their original registry identity across repeated ho
 Dropping a request revokes it. A deadline worker autonomously removes expired requests, wakes
 when an earlier deadline is admitted, and destroys their buffers and resources without another
 callback. Callback and response boundaries independently check expiry. This does not interrupt
-running guest code: a future runtime must enforce fuel, memory and epoch interruption itself.
+running guest code: the composed `server_runtime` enforces fuel, memory and epoch interruption.
 
 A response consumes the request, admits a status in 200–599 and at most the configured body
 limit, and prepares its bytes while holding the publication/cancellation lock. Invalid responses
@@ -50,7 +52,7 @@ response; cancellation after that consuming claim is idempotent. After resource 
 successful publication rechecks host activity
 and expiry under that lock. Termination or expiry during cleanup suppresses the response even if
 response preparation started first. A successful final check orders the response before later
-termination. HTTP outparam binding and wire publication remain future adapter obligations.
+termination. HTTP outparam binding and wire publication belong to `server_runtime` and `server_transport`.
 
 Resources are destroyed outside the registry lock. Their quota remains charged until actual
 destruction completes. Shutdown stops admission, destroys outstanding entries, joins the owned
@@ -90,8 +92,8 @@ rustc --edition 2024 --test -D warnings \
 /tmp/zryna-server-lifecycle-tests --test-threads=2
 ```
 
-Runtime wiring requires a
-reviewed server artifact and incoming-handler adapter, reviewed grant admission and revocation,
-per-store memory/fuel/deadline limits, and exact-revision Linux and Windows execution evidence.
-The unchanged enclosing issue still requires its fixed server corpus, public local-only example,
-conformance, documentation and host evidence before any public support claim.
+The composed runtime supplies the authenticated artifact/incoming-handler arrangement, grant
+admission and revocation, and per-Store memory/fuel/deadline limits. Lifecycle-only tests do not
+establish that composition. #401 integration after #400 requires review and exact-revision Linux
+and Windows evidence for the fixed corpus, local denied/granted example and required gates;
+whole-M4 publication remains #402.

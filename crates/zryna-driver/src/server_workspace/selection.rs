@@ -2,7 +2,7 @@
 
 use super::{CommandFailure, CommandFailureKind, ServerRunRequest, failure};
 use crate::ArtifactOutputRoot;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use zryna_source::NormalizedSourcePath;
 
 pub(super) fn validate_selection(
@@ -27,6 +27,12 @@ pub(super) fn validate_selection(
     let entry = NormalizedSourcePath::new(request.entrypoint.clone()).map_err(|_| {
         failure("ZRYNA-C4201", "Server source must be a portable workspace-relative file.")
     })?;
+    if Path::new(entry.as_str()).extension().and_then(|value| value.to_str()) != Some("zry") {
+        return Err(failure(
+            "ZRYNA-C4201",
+            "Server source must be a portable workspace-relative .zry file.",
+        ));
+    }
     let report = crate::check_workspace(&request.workspace_root);
     if !report.is_valid() {
         return Err(CommandFailure {

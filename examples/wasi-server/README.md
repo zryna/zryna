@@ -2,7 +2,7 @@
 
 This source-checkout example computes status 200 or 599 with an empty body. Guest grants are empty;
 root approval permits only the exact finite loopback configuration. See the
-[profile contract](../../docs/WASI_SERVER_STATUS_V1.md) for limits and candidate status.
+[profile contract](../../docs/WASI_SERVER_STATUS_V1.md) for the bounded support scope and integration requirements.
 
 On Linux, create fresh caller-private configuration and approval:
 
@@ -47,6 +47,6 @@ the final record. Missing, false or mismatched root approval never starts a list
 
 Windows uses the same JSON with owner/SYSTEM-only protected ACLs, as required by the contract.
 The cross-platform fixture `apps/zryna/tests/fixtures/private_file.rs` creates those exact ACLs
-for real CLI tests. Installed beta packages do not advertise this candidate selector.
+for real CLI tests. Installed distributions do not support this server selector.
 
 The separate [clock/status example](CLOCK_EXAMPLE.md) shows denied and granted guest clock authority using the same status source and additional private guest files. Status-only guest grants remain empty.

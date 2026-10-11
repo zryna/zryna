@@ -1,8 +1,9 @@
 # Bounded source-checkout server status profile
 
-`server-status-v1` implements the first bounded public server slice for #401. It is a review
-candidate and does not expand the immutable beta distribution's support matrix or close M4.
-Nonempty granted guest execution and the whole #401/#402 evidence remain required.
+This change introduces bounded public source-checkout `server-status-v1` support on Linux x64
+and Windows x64 when integrated after #400 and the required #401 review and exact-revision gates.
+Installed server execution, immutable beta archives, production deployment and whole-M4
+conformance/publication (#402) remain excluded.
 
 ```text
 zryna serve <ENTRYPOINT> --profile server-status-v1 --export <NAME> --node <ABSOLUTE_PATH> --server-config <ABSOLUTE_PATH> --listener-approval <ABSOLUTE_PATH> --name <FRESH_STEM> [--root <PATH>] [--json]
@@ -14,8 +15,8 @@ I32V1 semantics and IR, then emits and independently audits the pinned server co
 with one no-argument i32 function is admitted. Dependencies, extra functions/interfaces, non-i32
 results, raw snapshots/IR/components, arguments and guest grant flags are rejected. Responses have
 an empty body and status 200–599. Invalid computed statuses reject the request without a response.
-Installed distributions reject this route. Linux x64 and Windows x64 need exact-candidate evidence
-before support is claimed.
+Installed distributions reject this route. Support is limited to Linux x64 and Windows x64
+source checkouts with the pinned toolchain.
 
 ## Configuration and explicit root permission
 
@@ -86,9 +87,11 @@ reports that completion; exit 5 reports deadline/cancellation/host failure. Inpu
 retains its existing category. Diagnostics C4201–C4205 respectively identify selection/input,
 retained identity, preparation, service/teardown and record failures.
 
-Run `cargo test --locked -p zryna --test wasi_server`, retain both private server targets, existing
-command/browser suites, complete local gates and exact-head Linux/Windows checks. This slice
-cannot waive granted guest execution or authorize M4 closure. See the
-[local example](../examples/wasi-server/README.md).
+#401 integration requires `cargo test --locked -p zryna --test wasi_server`, both private server
+targets, command/browser regressions, required local gates and exact-revision Linux/Windows
+checks. Historical candidate results do not qualify a revised integration. The separately
+approved [clock/status example](../examples/wasi-server/CLOCK_EXAMPLE.md) supplies the bounded
+nonempty guest case; status-only grants remain empty. Whole-M4 acceptance and publication stay
+with #402. See the [local status example](../examples/wasi-server/README.md).
 
 The distinct [clock/status arrangement](WASI_SERVER_CLOCK_STATUS_V1.md) admits its own narrowly scoped guest clock request and separate root approval. It does not change the empty-grant status profile or admit a source-language clock intrinsic.

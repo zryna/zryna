@@ -3,9 +3,10 @@
 This backend module emits an internal candidate for
 `zryna:capability-profiles/server@0.1.0`. It does not select, start or grant a
 server host. The driver must authenticate source/composition, the exact
-component, its explicit host policy and limits before construction. Public
-server support, listener selection and the complete #401 acceptance remain
-separate work.
+component, its explicit host policy and limits before construction. The
+[public source-checkout contract](../../../../docs/WASI_SERVER_STATUS_V1.md)
+defines listener selection and bounded support at #401 integration; backend
+emission alone establishes neither host support nor whole-M4 acceptance.
 
 `emit_server_response` accepts a verified scalar program and one existing
 no-argument i32 export. The compiler-produced core is embedded unchanged. A

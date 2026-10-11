@@ -4,16 +4,20 @@ This bounded transport retains its private `server_runtime` process corpus. The 
 `server-status-v1` route now composes it through `server_workspace`, adding retained source/root
 admission, private configuration and explicit listener approval, revocation guards and separate
 create-only records. The [public composition contract](../../../../docs/WASI_SERVER_STATUS_V1.md)
-keeps guest grants empty and leaves independent review, supported-host evidence and nonempty
-granted-guest execution open. The private stdin protocol remains unshipped.
+keeps status-only guest grants empty. The distinct
+[clock/status route](../../../../docs/WASI_SERVER_CLOCK_STATUS_V1.md) supplies the separately
+approved one-read guest example. Integration after #400 requires combined-revision review and
+required supported-host gates. The private stdin protocol remains unshipped.
 
 Preparation consumes one immutable `SourceMap` snapshot through the normal authenticated
 TypeScript worker, source-bound syntax verification, semantic lowering, verified IR and the
 independent final component audit. Only the no-argument `i32` export can compute a status
-200–599; the pinned WASI handler constructs an empty response body. This transport always chooses
-`Reply`, empty requests and `deny_all`. Neither source bytes nor configuration can request clock,
-environment, filesystem, random or outgoing network authority. The private runtime's separate
-clock-policy probes remain distinct from accepted source/interface grant admission.
+200–599; the pinned WASI handler constructs an empty response body. The private stdin protocol
+always chooses `Reply`, empty requests and `deny_all`. Public `server_workspace` composition
+also admits the fixed `ClockRead` arrangement through separate private guest request/root approval
+files; listener configuration alone grants no guest clock access. Environment, filesystem,
+randomness and outgoing network remain denied. Private multi-read clock probes remain distinct
+from the public one-read arrangement and do not add a source-language clock intrinsic.
 
 Configuration is strict JSON, at most 1024 bytes, rejecting duplicate/unknown fields. It names
 only a literal `127.0.0.1` socket address (port 0 requests an ephemeral port), 1–64 total accepted
@@ -89,7 +93,7 @@ cargo test --locked -p zryna-driver --test server_lifecycle
 ```
 
 Both require the repository's frozen adapter dependencies and provisioned Node. Tests do not
-silently skip a missing frontend. Shipped CLI registration, trusted source capture/root approval
-and accepted current-grant/result-record composition must be coordinated with their owners for
-whole #401 acceptance beyond the bounded empty-guest public route. Streaming, outgoing HTTP and random providers
+silently skip a missing frontend. Public CLI registration, retained source/root approvals and
+status-v1/clock-status-v1 result records are implemented by `server_workspace`; their combined
+revision still needs the required #401 review and gates after #400. Streaming, outgoing HTTP and random providers
 are not necessary for this minimum request/response interface.

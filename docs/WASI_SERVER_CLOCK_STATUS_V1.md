@@ -1,7 +1,9 @@
 # Bounded server clock/status arrangement
 
-`server-clock-status-v1` is the distinct source-checkout granted capability example for #401.
-It is a review candidate. It does not expand installed beta support or close #401/#402.
+This change introduces bounded public source-checkout `server-clock-status-v1` support on
+Linux x64 and Windows x64 when integrated after #400 and the required #401 review and
+exact-revision gates. It is the distinct granted guest example; installed server execution,
+immutable beta archives, production deployment and whole-M4 publication (#402) remain excluded.
 
 ```text
 zryna serve <ENTRYPOINT> --profile server-clock-status-v1 --export <NAME> --node <ABSOLUTE_PATH> --server-config <ABSOLUTE_PATH> --listener-approval <ABSOLUTE_PATH> --guest-request <ABSOLUTE_PATH> --guest-approval <ABSOLUTE_PATH> --name <FRESH_STEM> [--root <PATH>] [--json]
@@ -62,5 +64,5 @@ exit categories. Forced termination releases OS handles but cannot certify grace
 
 The [local denied/granted example](../examples/wasi-server/CLOCK_EXAMPLE.md) requires all four
 private input files. Retain both original server test targets, command/browser regressions,
-required local conformance and exact-candidate supported-host evidence. Independent review and
-whole #400/#401/#402 acceptance still govern integration and public support.
+required local conformance and exact-revision supported-host evidence for #401 integration after
+#400. Historical candidate results do not qualify a revised integration or close #402.

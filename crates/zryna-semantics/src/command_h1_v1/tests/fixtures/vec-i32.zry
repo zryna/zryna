@@ -1,0 +1,1 @@
+export function main(): bool { const items: Vec<i32> = Vec<i32>([11, 12]); return items[0] + 1 === items[1]; }

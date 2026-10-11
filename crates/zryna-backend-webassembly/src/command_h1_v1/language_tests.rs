@@ -8,6 +8,7 @@ use zryna_syntax::{command_h1_v1, v4};
 
 mod cleanup;
 mod frontier;
+mod vector_growth;
 
 type Realloc = TypedFunc<(i32, i32, i32, i32), i32>;
 

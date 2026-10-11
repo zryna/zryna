@@ -21,6 +21,8 @@ pub(super) fn derive(
             T::Call(1),
         ]);
         out.extend([T::Local(2), T::Local(2), T::Constant(12), T::Add, T::Store]);
+        // The cloned allocation contains length elements, so its capacity must match.
+        out.extend([T::Local(2), T::Constant(8), T::Add, T::Local(1), T::Store]);
     } else {
         out.extend([constant(ty.size())?, T::Call(1)]);
     }

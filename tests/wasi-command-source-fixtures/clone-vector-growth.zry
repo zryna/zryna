@@ -1,0 +1,10 @@
+export function main(): bool {
+  let original: Vec<i32> = Vec<i32>([]);
+  push(original, 1);
+  push(original, 2);
+  push(original, 3);
+  let copied: Vec<i32> = clone(original);
+  const neighbor: Vec<i32> = Vec<i32>([11, 12]);
+  push(copied, 4);
+  return neighbor[0] === 11;
+}

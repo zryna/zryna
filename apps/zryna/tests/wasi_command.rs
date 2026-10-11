@@ -105,9 +105,11 @@ fn actual_cli_unused_helper_match_cannot_consume_the_lookup_result() {
 #[test]
 fn actual_cli_pure_and_declared_error_commit_distinct_complete_command_bundles() {
     let _guard = guard();
-    for (source, expected, exit) in
-        [("examples/wasi-command/pure.zry", "ok", 0), ("examples/wasi-command/error.zry", "err", 5)]
-    {
+    for (source, expected, exit) in [
+        ("examples/wasi-command/pure.zry", "ok", 0),
+        ("examples/wasi-command/error.zry", "err", 5),
+        ("tests/wasi-command-source-fixtures/clone-vector-growth.zry", "ok", 0),
+    ] {
         let case = Case::new();
         let output = case.run(source, None, &[]);
         assert_eq!(output.status.code(), Some(exit), "{}", String::from_utf8_lossy(&output.stderr));
