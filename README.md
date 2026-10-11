@@ -456,3 +456,8 @@ Zryna is an independent project and is not affiliated with, endorsed by, or spon
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
+[The fixed M4 support contract](docs/M4_SUPPORT.md) and `zryna support --json` expose the
+same bounded matrix. [M4 conformance](docs/M4_CONFORMANCE.md) keeps exact-revision execution,
+hosted checks and live publication separate from this static report. Neither the report nor
+source presence closes #402 or creates a signed release or production admission.

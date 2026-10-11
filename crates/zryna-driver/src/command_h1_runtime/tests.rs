@@ -1,10 +1,16 @@
+mod backtrace_limits;
 mod consume;
 mod deadline;
 mod denied_probes;
+mod envelope_limits;
 mod execution;
+mod fuel_limits;
 mod host;
+mod memory_policy;
+mod object_limits;
 mod preparation;
 pub(in crate::command_h1_runtime) mod private_input;
+mod stack_limits;
 
 use std::{
     path::Path,

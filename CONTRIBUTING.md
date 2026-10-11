@@ -116,9 +116,10 @@ Finish the approved local checks and batch related fixes before publishing one r
 Avoid publishing intermediate revisions only to use hosted checks as an edit loop. The manual CI
 dispatch remains available when maintainers deliberately need the complete required and contract
 matrix; supply its `structure_base` input with the full trusted ancestor commit. Generated
-next-channel documentation bundles are retained for seven days because each
-main-branch publication supersedes the preceding candidate; release artifacts follow their
-separate release retention policy.
+next-channel documentation publication uses a dedicated manual dispatch on exact current `main`.
+It validates documentation, then authenticates a completed successful full CI run and all M4
+evidence for that immutable revision before exporting. Both the bundle and authenticated gate
+metadata are retained for 90 days; release artifacts follow their separate release retention policy.
 
 Run `pnpm preflight` during the edit loop. It stops at the first portable contract, formatting,
 architecture, workspace-check, frontend, or syntax failure and normally reuses warm local build state. It is a

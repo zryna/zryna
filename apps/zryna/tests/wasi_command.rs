@@ -1,6 +1,8 @@
 //! Actual source-checkout CLI acceptance on Linux and Windows with pinned syntax provider.
 #![forbid(unsafe_code)]
 
+#[path = "wasi_command/byte_boundary.rs"]
+mod byte_boundary;
 #[path = "wasi_command/support.rs"]
 mod support;
 

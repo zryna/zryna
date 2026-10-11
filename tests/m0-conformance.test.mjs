@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { parseDocument } from 'yaml';
+import { assertDocumentationPublicationContract } from './workflow-routing/inventory-contracts.mjs';
 
 import {
   loadAndValidateManifest,
@@ -202,7 +204,9 @@ test('main documentation publication revalidates and binds exact provenance', as
   assert.ok(rust.indexOf(docsCheck) > -1, 'missing documentation bundle validation');
   assert.ok(rust.indexOf(docsCheck) < rust.indexOf(completeGate), 'documentation validation must precede M0');
   assert.doesNotMatch(rust, /Export authenticated next documentation bundle/);
-  assert.match(workflow, /push:\n    branches: \[main\]/);
+  const document = parseDocument(workflow);
+  assert.deepEqual(document.errors, []);
+  assertDocumentationPublicationContract(document.toJS());
   assert.doesNotMatch(publisher, /needs:/);
   assert.ok(publisher.indexOf(docsCheck) > -1, 'publisher must revalidate documentation');
   assert.ok(
@@ -219,7 +223,7 @@ test('main documentation publication revalidates and binds exact provenance', as
   assert.match(publisher, /Compiler commit:[\s\S]*Documentation manifest SHA-256:/);
   assert.match(publisher, /compression-level: 0/);
   assert.match(publisher, /include-hidden-files: true/);
-  assert.match(publisher, /retention-days: 7/);
+  assert.equal([...publisher.matchAll(/retention-days: 90/g)].length, 2);
 });
 
 test('required CI exposes a stable aggregate over Rust and adapter gates', async () => {

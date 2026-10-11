@@ -3,9 +3,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{fs, net::TcpListener};
 
-#[path = "clock_support.rs"]
-mod fixture;
-use fixture::{Granted, document};
+use super::clock_fixture::{Granted, document};
 
 #[test]
 fn approved_clock_non_zry_entrypoints_reject_before_ready_or_publication() {

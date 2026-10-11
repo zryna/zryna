@@ -2298,6 +2298,34 @@
       "owner": "WebAssembly backend maintainers",
       "reason": "Test-only Wasmtime fixtures registered exclusively by the cfg(test) legacy_frontier_tests module; no production module inclusion",
       "review": "https://github.com/zryna/zryna/issues/400"
+    },
+    {
+      "path": "tests/m4-evidence.test.mjs",
+      "kind": "test",
+      "owner": "M4 conformance maintainers",
+      "reason": "Node test entrypoint for independent malformed raw Rust/Node accounting, candidate receipt, source identity and installed observation rejection; no production imports",
+      "review": "https://github.com/zryna/zryna/issues/402"
+    },
+    {
+      "path": "tests/m4-hosted.test.mjs",
+      "kind": "test",
+      "owner": "M4 conformance maintainers",
+      "reason": "Node test entrypoint for independent malformed hosted provenance, aggregate, retained archive and receipt rejection; no production imports",
+      "review": "https://github.com/zryna/zryna/issues/402"
+    },
+    {
+      "path": "tests/m4-workflow-cases.mjs",
+      "kind": "test",
+      "owner": "M4 conformance maintainers",
+      "reason": "Assertions used only by CI foundation/M4 workflow test entrypoints to authenticate the additive M4 delta before historical snapshots; no production imports",
+      "review": "https://github.com/zryna/zryna/issues/402"
+    },
+    {
+      "path": "tests/m4-workflow.test.mjs",
+      "kind": "test",
+      "owner": "M4 conformance maintainers",
+      "reason": "Node test entrypoint for fixed M4 hosted workflow/routing contracts and independent mutation rejection; no production imports",
+      "review": "https://github.com/zryna/zryna/issues/402"
     }
   ],
   "exceptions": [],

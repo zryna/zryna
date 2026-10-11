@@ -1,3 +1,4 @@
+import { withoutM4Workflow } from './m4-workflow-cases.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -11,7 +12,7 @@ import { withoutNativeRecipeTests } from './native-recipe-test-selection.test.mj
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
 const budgetWorkflow = withoutBootstrapTiming(withoutPortableSetup(withoutNativeSourceResources(
-  withoutStabilityTests(withoutNativeRecipeTests(document.toJS())))));
+  withoutStabilityTests(withoutNativeRecipeTests(withoutM4Workflow(document.toJS()))))));
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const bootstrapJobs = ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
 const nodeStep = {

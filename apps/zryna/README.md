@@ -80,3 +80,7 @@ installed server execution and whole-M4 publication (#402) remain excluded. See 
 `cargo test --locked -p zryna --test wasi_server` for real public-route evidence.
 
 The distinct `serve --profile server-clock-status-v1` adds exactly one separately approved guest clock read per request and a v2 observed result. Both private guest files are required; the timestamp is discarded and no source clock intrinsic is admitted. See [the clock contract](../../docs/WASI_SERVER_CLOCK_STATUS_V1.md) and retain original command/server/browser regressions.
+
+`zryna support --json` returns the compiled [M4 static contract](../../docs/M4_SUPPORT.md)
+without source preparation, runtime execution, grant capture or evidence authentication. Its
+registry digest and exact rows are checked against the canonical registry and documentation.

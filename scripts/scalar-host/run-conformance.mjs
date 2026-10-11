@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
-  copyFileSync, createReadStream, existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync,
+  copyFileSync, createReadStream, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs';
-import { isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyBrowser } from '../../tests/scalar-host/browser-fixture.mjs';
 
@@ -38,6 +38,33 @@ export function requireExactCandidate(identity, state, expected) {
     throw new Error('conformance requires an unchanged, clean exact candidate');
   }
   return identity.stdout.trim();
+}
+
+export function cleanupBrowserRuntime(evidence, successful = false) {
+  if (successful !== true) return;
+  if (!isAbsolute(evidence)) throw new Error('absolute browser evidence directory required');
+  const parents = [];
+  for (let directory = resolve(evidence);;) {
+    const state = lstatSync(directory);
+    if (!state.isDirectory() || state.isSymbolicLink()) throw new Error('linked or non-directory browser evidence ancestor');
+    parents.push([directory, state]);
+    const parent = dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  const owned = ['config', 'data'].map(name => {
+    const directory = join(evidence, name);
+    const state = lstatSync(directory);
+    if (!state.isDirectory() || state.isSymbolicLink()) throw new Error('linked or non-directory browser runtime root');
+    return [directory, state];
+  });
+  // Validate both roots and their ancestry before removing either owned tree.
+  for (const [directory, before] of [...parents, ...owned]) {
+    const after = lstatSync(directory);
+    if (!after.isDirectory() || after.isSymbolicLink() || before.dev !== after.dev ||
+        before.ino !== after.ino || before.mode !== after.mode) throw new Error('browser runtime directory identity changed');
+  }
+  for (const [directory] of owned) rmSync(directory, { recursive: true });
 }
 
 async function digestArchive(file) {
@@ -135,6 +162,7 @@ async function main(evidence) {
     await verifyBrowser(browserRoot);
     requireExactCandidate(run('final-identity', 'git', ['rev-parse', 'HEAD'], 10_000),
       run('final-working-tree', 'git', ['status', '--porcelain'], 10_000), report.commit);
+    cleanupBrowserRuntime(evidence, true);
     report.passed = true;
     record();
   } catch (error) {

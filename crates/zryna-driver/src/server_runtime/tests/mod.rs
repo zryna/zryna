@@ -1,8 +1,11 @@
 mod admission;
 mod epoch;
 mod execution;
+mod fuel_limits;
+mod memory_policy;
 mod probe_execution;
 pub(super) mod probes;
+mod public_limits;
 mod retirement;
 mod startup;
 

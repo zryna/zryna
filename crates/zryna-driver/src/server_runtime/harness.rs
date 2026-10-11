@@ -1,6 +1,8 @@
 //! Internal exact-world execution/denial/teardown evidence; no public selector or listener.
 #![forbid(unsafe_code)]
 
+#[path = "../runtime_boundary_tests/fuel_meter.rs"]
+mod runtime_boundary_tests;
 #[path = "../server_lifecycle/mod.rs"]
 mod server_lifecycle;
 #[path = "mod.rs"]

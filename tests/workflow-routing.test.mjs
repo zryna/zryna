@@ -12,11 +12,18 @@ import test from 'node:test';
 import { parseDocument } from 'yaml';
 
 import {
-  CONTRACT_LANES,
-  classifyGitDiff,
-  classifyWorkflowPaths,
-  formatWorkflowOutputs,
+  CONTRACT_LANES as ALL_CONTRACT_LANES,
+  classifyGitDiff as classifyAllGitDiff,
+  classifyWorkflowPaths as classifyAllWorkflowPaths,
+  formatWorkflowOutputs as formatAllWorkflowOutputs,
 } from '../scripts/classify-workflow-paths.mjs';
+
+// Existing optional lanes retain their exact ownership assertions; M4 is independently tested.
+const CONTRACT_LANES = ALL_CONTRACT_LANES.filter(lane => lane !== 'm4');
+const legacy = result => Object.fromEntries(CONTRACT_LANES.map(lane => [lane, result[lane]]));
+const classifyGitDiff = (...args) => legacy(classifyAllGitDiff(...args));
+const classifyWorkflowPaths = (...args) => legacy(classifyAllWorkflowPaths(...args));
+const formatWorkflowOutputs = value => formatAllWorkflowOutputs({ ...value, m4: false }).replace('m4=false\n', '');
 
 const root = resolve(import.meta.dirname, '..');
 const workflow = (name) => {

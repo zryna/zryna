@@ -6,6 +6,7 @@ use zryna_source::{SourceFileInput, SourceMap};
 use crate::{emit_scalar_component, pinned_wit_sources};
 
 use super::{audit, component_export_name, encode, exports, metadata};
+mod byte_boundary;
 
 fn program() -> zryna_ir::VerifiedProgram {
     let sources =

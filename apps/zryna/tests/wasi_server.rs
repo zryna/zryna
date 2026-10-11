@@ -1,10 +1,15 @@
 //! Real source-checkout CLI, private root approval and actual loopback teardown evidence.
 #![forbid(unsafe_code)]
+#[path = "wasi_server/clock_support.rs"]
+mod clock_fixture;
 #[path = "wasi_server/support.rs"]
 mod support;
 use serde_json::{Value, json};
 use std::{fs, net::TcpListener};
 use support::{Case, exchange, frame, guard};
+
+#[path = "wasi_server/configuration_bounds.rs"]
+mod configuration_bounds;
 
 #[path = "wasi_server/source_tests.rs"]
 mod source_tests;

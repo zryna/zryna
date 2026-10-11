@@ -353,7 +353,9 @@ Evidence covers supervised Linux x86-64 and hosted Ubuntu 24.04 x86-64 / Windows
 2022 x64. The [review record](WASI_COMMAND_H1_REVIEW.md) distinguishes the reviewed baseline
 from follow-up delta and final checks. Existing immutable beta archives remain without H1
 support. No signed release, production readiness, Windows desktop, general plain-cloud or
-performance qualification follows. Whole-M4 conformance/publication remains open under #402.
+performance qualification follows. Whole-M4 conformance and publication use the separate
+[M4 conformance record](M4_CONFORMANCE.md) and #402 authority; this profile evidence does not
+establish them.
 
 ## Deliberately unsupported
 
@@ -409,5 +411,16 @@ approval and input identities through admission, response and create-only manife
 Records observe actual Store/resource/listener teardown; forced termination proves OS handle
 release only and emits no graceful certificate. The [status contract](WASI_SERVER_STATUS_V1.md)
 records exact limits. Installed server execution, immutable beta support, production deployment,
-signed release claims and whole-M4 conformance/publication (#402) remain excluded. Historical
-candidate receipts do not qualify a revised integration.
+signed release claims remain excluded. Whole-M4 conformance and publication use the separate
+[M4 conformance record](M4_CONFORMANCE.md) and #402 authority; this profile evidence does not
+establish them. Historical candidate receipts do not qualify a revised integration.
+
+## Public M4 support contract
+
+[The fixed M4 matrix](M4_SUPPORT.md) and `zryna support --json` project the same
+checked registry. This is a static contract with six modes and two bounded hosted contracts;
+it does not authenticate this checkout's execution, CI, installation, signing or publication.
+[The conformance record](M4_CONFORMANCE.md) defines the separate exact-revision evidence needed
+for closure. Existing M0–M3 profiles and their historical support contracts remain unchanged.
+Installed component/browser/server, existing immutable beta H1, other browsers, desktop Windows,
+general cloud hosting, signed public releases and production admission remain excluded.
