@@ -1,11 +1,14 @@
 //! Prerequisite byte cleanup proof, before separate reviewed real-library admission.
 
 use super::*;
+mod failure_atomicity;
 mod harness;
 mod malformed;
 mod prefixes;
+mod process_faults;
 mod provenance;
 mod reference;
+mod utf8;
 
 fn requirements(captured: &capture::Capture, name: &str) -> HandleLinkRequirements {
     let ir = zryna_native_c_ir::lower(&captured.sources, &captured.authority)

@@ -46,6 +46,25 @@ The C library, runtime and client also run with ASan/UBSan. Instrumented objects
 remain rejected by production capture; the generated machine code is not
 instrumented, and these observations do not establish arbitrary C body safety.
 
+Separate-object regression definitions also require the complete valid/invalid UTF-8
+corpus to cross a direct client-owned `--wrap=sum_bytes` call counter. Valid calls
+increment it once, corruption leaves it zero, and a missing-increment counter mutant
+must fail before receiving no-entry credit. The seven-definition C fixture remains
+unchanged; zero malloc/free counts do not demonstrate zero calls. Ordinary and
+sanitizer links select this fixed instrumentation only for the new UTF-8 tests.
+
+Error-status output-write derivatives retain the seven strong definitions and original
+operation policy; actual output bytes and unknown obligations grant no guessed release.
+Their physical oracle's explicit disposal remains separate from generated cleanup.
+The release-fault derivative declares `_Exit` and a client-owned release observer as
+additional exact dependencies. The observer checks the live ledger, physical C owner
+and pending private allocations before exit 86; an early non-null output-channel mutant
+must fail the same assertion. This client-only sensitivity control publishes the
+initialized private copy's actual data pointer with length and capacity three;
+generated machine code remains unchanged. A new pristine process
+proves stage recovery, not cleanup of a terminated foreign owner. These test definitions
+are not production library approval or host-isolation/recipe admission.
+
 `tests/execution/bytes/reference-provenance.json` records the exact existing
 fixture body, normative header/policy and private-runtime template at preserved
 checkpoint `42f8e80`. Local proof logs record the actual compiled object and
