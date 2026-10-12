@@ -190,3 +190,34 @@ granting recipe execution, host permission or public activation.
 Plain cloud descendant cleanup and a scoped init/subreaper run must remain
 distinct evidence. Passing the latter cannot be reported as a clean plain
 baseline. #417 stays open until its complete acceptance requirements are met.
+
+## Distinct Rust-profile artifact data
+
+The public data-only `RustProfileLibraryInput`, `CapturedRustProfileLibrary` and
+`capture_rust_profile_library` API is separate from the unchanged GCC-style capture.
+A private production parser validates the bounded ELF64 x86-64 function-section
+profile of exactly add/sum_bytes and eight sections against genuine original Zryna source/header/policy and independent foreign
+source/object expectations. The measured fixture bytes retain `.text.add`,
+`.text.sum_bytes`, the combined section/symbol string table and original `.comment`;
+no bytes are stripped or rewritten to fit the C profile. Unknown symbols,
+relocations, dynamic/TLS/unwind/constructor/writable sections and substituted
+original requirements reject. Foreign-source and object bytes each have the
+existing 8 MiB prehash/precopy bound. Their combined immutable buffers retain at
+most 16 MiB; this is not qualified tool-inventory storage or execution authority.
+
+A capture binds only to its original selected object and source-map/declaration
+issuer. A separate genuine issuer may create its own separately bound capture.
+The issuer authenticates Zryna source/header/policy only: independently retained
+Rust source and ELF bytes do not prove that a compiler produced one from the
+other. The type has no execution method or conversion to `CapturedForeignLibrary`
+or the GCC-origin `CompiledObject`/`Invocation`. No CLI/profile/guest support,
+compilation-origin, host, provider, publication or recipe grant follows.
+
+The registered `rust_abi::profile_tests` use the actual independently observed
+1064-byte object as data and genuine scalar/byte issuers. Their source/binding,
+malformed-table, closed-symbol, material-substitution, limit and recovery checks
+are distinct from Rust compilation, generated-wrapper/reverse execution,
+malformed-status/write-on-error and sanitizer qualification. Existing normative
+#417 obligations and all production missing-prerequisite denials remain. The
+actual 157802496-byte Rust driver exceeds unchanged 64 MiB tool/128 MiB private aggregate
+limits; this data API neither omits that dependency nor raises those limits.
