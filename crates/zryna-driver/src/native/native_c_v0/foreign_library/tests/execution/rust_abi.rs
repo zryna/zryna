@@ -4,6 +4,7 @@ use object::{Architecture, BinaryFormat, Object as _, ObjectKind};
 use sha2::{Digest as _, Sha256};
 
 mod capture;
+mod profile_tests;
 
 #[test]
 fn rust_fixture_documents_feed_genuine_source_machine_and_backend_issuers() {

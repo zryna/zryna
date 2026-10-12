@@ -7,6 +7,11 @@ use zryna_diagnostics::Diagnostic;
 use zryna_native_mir::native_c_v0::contract::Direction;
 
 mod audit;
+mod rust_profile;
+
+pub use rust_profile::{
+    CapturedRustProfileLibrary, RustProfileLibraryInput, capture_rust_profile_library,
+};
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod linked_output;
 
@@ -88,14 +93,7 @@ impl CapturedForeignLibrary {
     /// # Errors
     /// Returns identity failure before a linker or foreign call can consume mismatched inputs.
     pub fn check_binding(&self, requirements: &HandleLinkRequirements) -> Result<(), Diagnostic> {
-        if requirements.object_sha256() != self.requirements.object_sha256()
-            || requirements.declaration_sha256() != self.requirements.declaration_sha256()
-            || requirements.object().program().source().source_map_identity()
-                != self.requirements.object().program().source().source_map_identity()
-        {
-            return Err(identity_error());
-        }
-        Ok(())
+        check_requirements_binding(&self.requirements, requirements)
     }
 }
 
@@ -112,6 +110,22 @@ pub fn capture_foreign_library(
     if input.object_bytes.len() > zryna_backend_native::MAX_NATIVE_OBJECT_BYTES {
         return Err(audit::limit_error());
     }
+    let definitions = checked_material(requirements, input)?;
+    let dependencies = audit::check(input.object_bytes, &definitions, input.dependency_symbols)?;
+    Ok(CapturedForeignLibrary {
+        requirements: requirements.clone(),
+        library_id: input.library_id.to_owned(),
+        bytes: Arc::from(input.object_bytes),
+        object_sha256: *input.object_sha256,
+        definitions,
+        dependencies,
+    })
+}
+
+fn checked_material(
+    requirements: &HandleLinkRequirements,
+    input: &ForeignLibraryInput<'_>,
+) -> Result<BTreeSet<String>, Diagnostic> {
     let authority = requirements
         .object()
         .program()
@@ -137,15 +151,21 @@ pub fn capture_foreign_library(
         })
         .map(|declaration| declaration.symbol.clone())
         .collect::<BTreeSet<_>>();
-    let dependencies = audit::check(input.object_bytes, &definitions, input.dependency_symbols)?;
-    Ok(CapturedForeignLibrary {
-        requirements: requirements.clone(),
-        library_id: input.library_id.to_owned(),
-        bytes: Arc::from(input.object_bytes),
-        object_sha256: *input.object_sha256,
-        definitions,
-        dependencies,
-    })
+    Ok(definitions)
+}
+
+fn check_requirements_binding(
+    original: &HandleLinkRequirements,
+    requirements: &HandleLinkRequirements,
+) -> Result<(), Diagnostic> {
+    if requirements.object_sha256() != original.object_sha256()
+        || requirements.declaration_sha256() != original.declaration_sha256()
+        || requirements.object().program().source().source_map_identity()
+            != original.object().program().source().source_map_identity()
+    {
+        return Err(identity_error());
+    }
+    Ok(())
 }
 
 fn identity_error() -> Diagnostic {
