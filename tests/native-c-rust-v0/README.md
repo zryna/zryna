@@ -1,10 +1,12 @@
 # Rust library C-ABI source fixture
 
-This #417 slice supplies independent Rust-library materials and Linux x86-64
-source-issuer tests. The workspace tests authenticate source documents and emit
-Zryna objects; they do not compile or execute the foreign Rust program. It adds
-no accepted Rust ELF profile, execution recipe, public guest capability or
-production native grant.
+This #417 fixture supplies independent Rust-library source data and Linux x86-64
+source-issuer tests, a distinct bounded data-only Rust ELF capture profile, and
+six ordinary test-owned execution observers. The source-issuer tests authenticate
+documents and emit Zryna objects without compiling the foreign program. The
+ordinary observers instead require a fresh trusted Rust compile and actual
+separate C client/runtime/link execution. These remain distinct evidence and
+supply no qualified execution recipe, public guest capability or production grant.
 
 library.rs is a safe data module containing FOREIGN_RUST_SOURCE. Its exact
 1696-byte raw-string payload retains the independently authored foreign program
@@ -44,18 +46,30 @@ reverse-client.c must be separately compiled against the actual emitted
 reverse-exports.h; no hand-authored generated header is supplied. The reverse
 client exercises a pure Zryna export, not a Rust-library import.
 
-Next, after source validation, retain the exact pinned Rust 1.97.1 ordinary
-compile invocation and inspect the genuine no_std object sections, symbols,
-dependencies and relocations. Unknown ELF output must not be rewritten or
-accepted by loosening the GCC audit. A Rust-specific object capture/profile
-and all link/runtime consumers are still unimplemented. The GCC-origin
-CompiledObject and qualified material inventory must not be borrowed.
+The implemented Rust-specific data profile retains the genuine no_std object
+sections, symbols and source expectations separately from the unchanged GCC
+capture. Ordinary observers record the fresh pinned Rust1.97.1 invocation,
+original producer snapshots, actual final function bytes and real shim-call
+targets before execution. This does not authenticate a complete compiler input
+closure or qualified recipe. Unknown ELF must not be rewritten or accepted by
+loosening either audit. Rust data is never borrowed as a GCC-origin CompiledObject
+or a qualified material inventory.
 The actual 157,802,496-byte rustc_driver exceeds unchanged 64 MiB tool and
 128 MiB total retained-material limits. Complete Rust tool inventory and
 isolated recipe qualification remain absent; no file is omitted or relabelled.
 
-Actual wrapper controls still require implementation: independent C entry-count
-wrapping, 4096 versus 4097 pre-entry rejection, bad element/count and private
-allocation cleanup, undeclared-status and write-on-error Rust mutants, original
-issuer substitution, retained foreign-object snapshots, failure cleanup and
-recovery. This source fixture does not close #417 or #405.
+The six ordinary observers implement independent C entry counting and its live
+missing-increment sensitivity, 4096/4097 Vec<i32> element packing and pre-entry
+rejection, bad elements, selected private allocation cleanup, original-issuer
+and producer-record substitution refusal, retained foreign snapshots and pristine
+recovery. Counts prove their selected calls/allocations, not global leak absence
+or pointer non-retention. The standalone raw-client4097 status1/sentinel4242
+case is distinct from the wrapper4097 no-entry test.
+
+The separate private result-fault draft adds tests that freshly compile Rust-source
+status7 and status1/output-write controls, independent C result assertions and a live
+nonfaulting-control failure followed by new pristine recovery. Its compilation,
+profile, execution and complete revision gates remain pending. It cannot inherit
+the pristine1696-byte source/function certificate. Rust-backed sanitizer evidence,
+SQLite library-specific prerequisites/proof and the full normative resource/fault
+matrix remain separate. This fixture does not close #417 or #405.

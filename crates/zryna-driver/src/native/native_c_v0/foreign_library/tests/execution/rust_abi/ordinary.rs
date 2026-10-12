@@ -21,6 +21,7 @@ mod controls;
 mod export;
 mod material;
 mod process;
+mod result_faults;
 use super::object_fixture as reference;
 mod rust_measurement;
 mod stage;
