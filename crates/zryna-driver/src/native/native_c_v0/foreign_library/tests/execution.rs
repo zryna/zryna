@@ -5,6 +5,7 @@ use std::{fmt::Write as _, os::unix::process::ExitStatusExt as _};
 mod boolean;
 mod bytes;
 mod harness;
+mod rust_abi;
 use harness::Fixture;
 
 fn library_source() -> String {

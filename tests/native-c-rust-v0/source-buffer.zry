@@ -1,0 +1,7 @@
+function sum(bytes: Vec<i32>): i32 {
+  const loan: FfiBytes = Ffi.borrowBytes(bytes);
+  const out: FfiI32Out = Ffi.outI32();
+  const status: i32 = Ffi.rawCall("fixture-rust-c-v0@0/sum_bytes", loan, Ffi.byteLength(loan), out);
+  if (status !== 0) { return Ffi.foreignError("fixture-rust-c-v0@0/sum_bytes", status); }
+  return Ffi.readI32(out);
+}
