@@ -221,3 +221,48 @@ malformed-status/write-on-error and sanitizer qualification. Existing normative
 #417 obligations and all production missing-prerequisite denials remain. The
 actual 157802496-byte Rust driver exceeds unchanged 64 MiB tool/128 MiB private aggregate
 limits; this data API neither omits that dependency nor raises those limits.
+
+## Ordinary trusted Rust-backed execution observer
+
+The new Linux x86-64 `tests/execution/rust_abi/ordinary` observer is test-owned.
+Its six nonignored selectors require a fresh ordinary Rust1.97.1 compile of the
+exact safe fixture payload before observation; no absent-input pass or historical
+receipt fallback is permitted. Verification of this draft remains pending.
+Direct official compiler/driver content pins and the exact sysroot/argv are
+recorded separately from ordinary per-run GCC/objdump host observations.
+GCC acquisition and its selected tool snapshots precede the effect baseline;
+these snapshots do not qualify upstream packages or a complete provider graph.
+The historical1064-byte object is only an independent function/profile reference.
+Fresh original object bytes, actual Rust command records and retained evidence
+remain distinct from actual C client/runtime/link observations. Immutable original
+producer snapshots bind mutable hostile-control views to actual records and the
+retained receipt; serialized success cannot reconstruct this private observation. Rust data is never
+stored in a GCC `CompiledObject`/`Invocation` or converted to a production grant.
+
+Three positive selectors observe actual generated scalar and packed-byte imports,
+and an independent C client of pure generated scalar exports. Byte4096 versus
+4097 means4096 versus4097 Vec<i32> elements packed as bytes, with range checking,
+physical selected-allocation cleanup and actual shim-entry counter sensitivity.
+Rust-call attribution additionally requires exact original function bytes and
+verified final real-call targets. The ledger covers only its selected observed
+allocations; counters do not prove global leak absence or pointer non-retention.
+The latter remains a reviewed fixed-source contract plus observed valid calls.
+All six selectors are runtime-bearing, including the binding/material controls that
+run pristine scalar recovery after their negative assertions. They reject original
+producer record/tool/sysroot/argv/status/receipt substitution and same-capture mode
+mismatches before new C effects, and
+retain the genuinely failed counter mutant followed by pristine recovery.
+
+The existing bounded native helper clears child environment to its six fixed
+public fields. Outer managed auth/proxy/CA policy is unchanged; children do not
+inherit those values. Ordinary nonzero child exits retain actual status and raw
+bounded streams. A helper `Diagnostic` error exposes no raw final status/streams;
+the receipt marks these unavailable and retains safely available artifacts.
+Each new module is at most300 physical lines;30s compile/link,5s execution and
+existing cleanup/stream/object limits remain unchanged. Raw failure products and
+comparator phases are retained before stage cleanup in exclusive external output.
+No network-denial, kernel isolation, complete actual tool input-use or sysroot
+closure is claimed. The157802496-byte Rust driver is streamed for ordinary
+identity checks; it still exceeds64MiB tool/128MiB private-inventory limits.
+All production missing-prerequisite denials and remaining #405/#417 obligations
+remain. This observer does not authorize public guest support or Rust native ABI.

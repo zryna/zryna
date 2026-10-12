@@ -4,6 +4,8 @@ use object::{Architecture, BinaryFormat, Object as _, ObjectKind};
 use sha2::{Digest as _, Sha256};
 
 mod capture;
+mod object_fixture;
+mod ordinary;
 mod profile_tests;
 
 #[test]
