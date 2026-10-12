@@ -4,7 +4,9 @@ use super::super::super::super::linked_output;
 use super::*;
 use crate::native::{self, NativeStage, ProcessPhase};
 use std::{ffi::OsString, path::PathBuf};
+mod entry_counter;
 mod runtime;
+pub(super) use entry_counter::{Counter, observe as observe_with_sum_counter};
 
 mod linked_observer;
 pub(super) use linked_observer::observe_link;
@@ -41,13 +43,39 @@ pub(super) fn observe_with_timeout(
     sanitized: bool,
     timeout: std::time::Duration,
 ) -> Result<native::BoundedProcessOutput, Diagnostic> {
+    execute(
+        fixture,
+        requirements,
+        captured,
+        library,
+        client,
+        Execution { sanitized, timeout, counter: None },
+    )
+}
+
+#[derive(Clone, Copy)]
+struct Execution {
+    sanitized: bool,
+    timeout: std::time::Duration,
+    counter: Option<Counter>,
+}
+
+fn execute(
+    fixture: &Fixture,
+    requirements: &HandleLinkRequirements,
+    captured: &CapturedForeignLibrary,
+    library: &str,
+    client: &str,
+    execution: Execution,
+) -> Result<native::BoundedProcessOutput, Diagnostic> {
+    let Execution { sanitized, timeout, counter } = execution;
     captured.check_binding(requirements).expect("genuine original byte issuer");
     // A separately rebuilt ordinary object must match the captured artifact before this source
     // may produce an instrumented observation object. This is provenance, never approval.
     assert_eq!(sha(&fixture.compile(library)), *captured.object_sha256());
     let foreign = if sanitized {
         let bytes = fixture.compile_variant(library, &SANITIZERS);
-        reject(requirements, &bytes, &["free", "malloc"]);
+        reject(requirements, &bytes, &captured.dependencies().collect::<Vec<_>>());
         bytes
     } else {
         captured.bytes().to_vec()
@@ -70,6 +98,11 @@ pub(super) fn observe_with_timeout(
             .private_runtime_header_sha256()
             .expect("independent byte fixture prerequisite")
     );
+    let client = if counter.is_some() {
+        format!("{}\n{client}", entry_counter::client_source(counter))
+    } else {
+        client.to_owned()
+    };
     let source = format!(
         "{}\n{}\n#include <assert.h>\n#include <stdlib.h>\n#include <string.h>\n{}\n{client}",
         std::str::from_utf8(private_header).expect("independent byte fixture prerequisite"),
@@ -82,7 +115,7 @@ pub(super) fn observe_with_timeout(
     let executable = stage
         .capability_file_path("invocation.elf")
         .expect("independent byte fixture prerequisite");
-    let args = link_arguments(&stage, runtime_object, sanitized);
+    let args = link_arguments(&stage, runtime_object, sanitized, counter);
     private_stage.revalidate().expect("independent byte fixture prerequisite");
     let linked = super::super::harness::compile(&stage, &args);
     assert!(linked.status.success(), "{}", String::from_utf8_lossy(&linked.stderr));
@@ -96,6 +129,8 @@ pub(super) fn observe_with_timeout(
     eprintln!(
         "417-byte-evidence {}",
         serde_json::json!({
+        "counter":counter.map(Counter::evidence_name),
+        "link_arguments_bytes":args.iter().map(|argument| argument.as_encoded_bytes()).collect::<Vec<_>>(),
         "sanitized":sanitized,"library_source_sha256":hex(&sha(library.as_bytes())),
         "captured_foreign_object_sha256":hex(captured.object_sha256()),
         "observed_foreign_object_sha256":hex(&sha(&foreign)),
@@ -140,7 +175,12 @@ fn hex(bytes: &[u8; 32]) -> String {
     })
 }
 
-fn link_arguments(stage: &NativeStage, runtime_object: PathBuf, sanitized: bool) -> Vec<OsString> {
+fn link_arguments(
+    stage: &NativeStage,
+    runtime_object: PathBuf,
+    sanitized: bool,
+    counter: Option<Counter>,
+) -> Vec<OsString> {
     let executable = stage.capability_file_path("invocation.elf").expect("executable capability");
     let mut args: Vec<OsString> = [
         "-std=c11",
@@ -161,6 +201,9 @@ fn link_arguments(stage: &NativeStage, runtime_object: PathBuf, sanitized: bool)
     .collect();
     if sanitized {
         args.extend(SANITIZERS.map(Into::into));
+    }
+    if counter.is_some() {
+        args.push("-Wl,--wrap=sum_bytes".into());
     }
     args.extend([
         "-o".into(),
