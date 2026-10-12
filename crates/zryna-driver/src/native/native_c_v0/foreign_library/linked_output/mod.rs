@@ -5,8 +5,11 @@ use crate::native::{self, ArtifactOutputRoot, LinuxX8664LinkToolchain, NativeSta
 use std::{ffi::OsString, path::PathBuf, process::ExitStatus};
 use zryna_diagnostics::Diagnostic;
 
+mod acquisition;
+mod closure;
 mod elf;
 mod export;
+mod postlink;
 mod process;
 mod producer;
 mod runtime_object;
@@ -22,6 +25,12 @@ pub(crate) struct Invocation {
     status: ExitStatus,
     stdout: Vec<u8>,
     stderr: Vec<u8>,
+}
+
+/// A qualified fixture always carries retained independent inputs; it cannot select legacy mode.
+pub(crate) struct InventoryRequest<'a> {
+    pub(crate) inputs: &'a RetainedLinkInputs,
+    pub(crate) wrap: bool,
 }
 
 /// Actual source/object and originating tool invocation; no reviewed acquisition expectation.
@@ -45,10 +54,19 @@ impl CompiledObject {
 pub(crate) struct Failure {
     pub(crate) diagnostics: Vec<Diagnostic>,
     pub(crate) invocations: Vec<Invocation>,
+    pub(crate) final_elf: Option<Vec<u8>>,
+    pub(crate) comparator_stage: Option<&'static str>,
+    pub(crate) artifacts: Vec<(&'static str, Vec<u8>)>,
 }
 impl From<Diagnostic> for Failure {
     fn from(error: Diagnostic) -> Self {
-        Self { diagnostics: vec![error], invocations: Vec::new() }
+        Self {
+            diagnostics: vec![error],
+            invocations: Vec::new(),
+            final_elf: None,
+            comparator_stage: None,
+            artifacts: Vec::new(),
+        }
     }
 }
 
@@ -64,6 +82,7 @@ pub(crate) struct Observation {
     final_elf: Vec<u8>,
     dependencies: elf::Dependencies,
     trace: Vec<String>,
+    inventory: Option<(RetainedLinkInputs, closure::ClosureInventory)>,
 }
 
 pub(crate) const MISSING: [&str; 3] = [
@@ -72,7 +91,10 @@ pub(crate) const MISSING: [&str; 3] = [
     "authenticated-recipe-and-host-admission-for-production-execution",
 ];
 
-pub(crate) use producer::{check_foreign, compile_object, observe};
+pub(crate) use acquisition::{RetainedLinkInputs, capture_from_environment};
+#[cfg(test)]
+pub(crate) use process::invocation_attempts;
+pub(crate) use producer::{check_foreign, compile_object, observe, observe_with_inventory};
 
 pub(super) fn rejected() -> Diagnostic {
     native::native_error(

@@ -13,7 +13,19 @@ fn linked_observation_retains_real_scalar_objects_and_never_runs_client() {
     );
     let observation = fixture
         .observe_link(&requirements, &library, &foreign, &client)
-        .expect("compile/link only");
+        .unwrap_or_else(|failure| {
+            let directory = std::env::var_os("ZRYNA_LINKED_OUTPUT_EVIDENCE_DIR").map_or_else(
+                || fixture.0.join("failed-scalar"),
+                |root| PathBuf::from(root).join("failed-scalar"),
+            );
+            failure.export(&directory).expect("retain actual failed scalar artifacts create-only");
+            panic!(
+                "scalar observation failed at {:?}; codes {:?}; retained {}",
+                failure.comparator_stage,
+                failure.diagnostics.iter().map(Diagnostic::code).collect::<Vec<_>>(),
+                directory.display()
+            );
+        });
     fixture.empty();
     assert!(!marker.exists(), "client side effect proves the observer did not run it");
     observation.check_elf_rejection_controls();
@@ -24,6 +36,15 @@ fn linked_observation_retains_real_scalar_objects_and_never_runs_client() {
     let report = observation.report();
     assert_eq!(report["execution_authorized"], false);
     assert_eq!(report["target_executed"], false);
+    if std::env::var_os("ZRYNA_LINK_INVENTORY_EXPECTATION_FILE").is_some() {
+        assert_eq!(report["inventory_qualification_requested"], true);
+        assert!(report["selected_material_comparison"]["materials"].is_array());
+        assert!(report["declared_provider_closure_comparison"]["providers"].is_array());
+        eprintln!("m5-private-scalar-inventory-qualified {report}");
+    } else {
+        assert_eq!(report["inventory_qualification_requested"], false);
+        eprintln!("m5-private-scalar-inventory-not-requested");
+    }
     assert_eq!(
         report["missing_prerequisites"]
             .as_array()

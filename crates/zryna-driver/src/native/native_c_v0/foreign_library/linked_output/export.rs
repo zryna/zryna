@@ -34,6 +34,10 @@ impl Observation {
             "private_runtime_object_sha256":self.runtime.as_ref().map(|value|digest(&value.bytes)),
             "final_elf_sha256":digest(&self.final_elf),"observed_linker_order":self.trace,
             "observed_ELF_requirements":self.dependencies,
+            "selected_material_comparison":self.inventory.as_ref().map(|(inputs,_)|inputs.report()),
+            "declared_provider_closure_comparison":self.inventory.as_ref().map(|(_,closure)|closure),
+            "inventory_qualification_requested":self.inventory.is_some(),
+            "selected_original_link_bytes_compared_before_and_after":self.inventory.is_some(),
             "foreign_compile":invocation(&self.foreign.invocation),
             "client_compile":invocation(&self.client.invocation),
             "runtime_compile":self.runtime.as_ref().map(|value|invocation(&value.invocation)),
@@ -44,9 +48,6 @@ impl Observation {
     }
 
     pub(crate) fn export(&self, destination: &Path) -> std::io::Result<()> {
-        use std::os::unix::fs::DirBuilderExt as _;
-        let mut builder = fs::DirBuilder::new();
-        builder.mode(0o700).create(destination)?;
         let mut artifacts: Vec<(&str, &[u8])> = vec![
             ("program.o", self.requirements.object().bytes()),
             ("foreign.o", &self.foreign.bytes),
@@ -94,28 +95,47 @@ impl Observation {
                     .ok_or_else(|| std::io::Error::other("original policy missing"))?,
             ),
         ]);
-        let mut inventory = Vec::new();
-        for (name, bytes) in artifacts {
-            let mut file = fs::OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .mode(0o600)
-                .open(destination.join(name))?;
-            file.write_all(bytes)?;
-            file.sync_all()?;
-            inventory
-                .push(serde_json::json!({"path":name,"bytes":bytes.len(),"sha256":digest(bytes)}));
-        }
-        let mut report = self.report();
-        report["artifacts"] = serde_json::json!(inventory);
+        let material_names = self
+            .inventory
+            .as_ref()
+            .map(|(inputs, _)| {
+                inputs
+                    .exported_materials()
+                    .map(|(id, bytes)| (format!("acquired-{id}.bin"), bytes))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        artifacts.extend(material_names.iter().map(|(name, bytes)| (name.as_str(), *bytes)));
+        export(destination, artifacts, self.report())
+    }
+}
+
+fn export(
+    destination: &Path,
+    artifacts: Vec<(&str, &[u8])>,
+    mut report: serde_json::Value,
+) -> std::io::Result<()> {
+    use std::os::unix::fs::DirBuilderExt as _;
+    fs::DirBuilder::new().mode(0o700).create(destination)?;
+    let mut inventory = Vec::new();
+    for (name, bytes) in artifacts {
         let mut file = fs::OpenOptions::new()
             .write(true)
             .create_new(true)
             .mode(0o600)
-            .open(destination.join("receipt.json"))?;
-        file.write_all(&serde_json::to_vec_pretty(&report)?)?;
-        file.sync_all()
+            .open(destination.join(name))?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        inventory.push(serde_json::json!({"path":name,"bytes":bytes.len(),"sha256":digest(bytes)}));
     }
+    report["artifacts"] = serde_json::json!(inventory);
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(destination.join("receipt.json"))?;
+    file.write_all(&serde_json::to_vec_pretty(&report)?)?;
+    file.sync_all()
 }
 
 impl Failure {
@@ -123,6 +143,52 @@ impl Failure {
         serde_json::json!({"kind":"failed-private-compile-link-observation","execution_authorized":false,
             "target_executed":false,"missing_prerequisites":MISSING,
             "diagnostics":self.diagnostics.iter().map(Diagnostic::code).collect::<Vec<_>>(),
+            "comparator_stage":self.comparator_stage,
+            "failed_final_elf_bytes":self.final_elf.as_ref().map(Vec::len),
+            "failed_final_elf_sha256":self.final_elf.as_ref().map(|bytes|digest(bytes)),
             "invocations":self.invocations.iter().map(invocation).collect::<Vec<_>>()})
     }
+    pub(super) fn retain_objects(
+        &mut self,
+        requirements: &HandleLinkRequirements,
+        foreign: &CompiledObject,
+        client: &CompiledObject,
+        runtime: Option<&CompiledObject>,
+    ) {
+        self.artifacts.extend([
+            ("program.o", requirements.object().bytes().to_vec()),
+            ("program-header.h", requirements.object().header().as_bytes().to_vec()),
+            ("foreign.o", foreign.bytes.clone()),
+            ("foreign.c", foreign.source.clone()),
+            ("client.o", client.bytes.clone()),
+            ("client.c", client.source.clone()),
+        ]);
+        if let Some(runtime) = runtime {
+            self.artifacts.extend([
+                ("private-runtime.o", runtime.bytes.clone()),
+                ("private-runtime.c", runtime.source.clone()),
+            ]);
+        }
+    }
+    pub(crate) fn export(&self, destination: &Path) -> std::io::Result<()> {
+        if self.final_elf.as_ref().is_some_and(|bytes| {
+            bytes.is_empty() || bytes.len() > native::MAX_NATIVE_EXECUTABLE_BYTES
+        }) {
+            return Err(std::io::Error::other(
+                "failed final ELF exceeds existing native byte boundary",
+            ));
+        }
+        let mut artifacts = self
+            .artifacts
+            .iter()
+            .map(|(name, bytes)| (*name, bytes.as_slice()))
+            .collect::<Vec<_>>();
+        if let Some(bytes) = &self.final_elf {
+            artifacts.push(("failed-final.elf", bytes));
+        }
+        export(destination, artifacts, self.report())
+    }
 }
+
+#[cfg(test)]
+mod failure_tests;

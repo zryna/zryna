@@ -20,7 +20,13 @@ pub(super) fn finish<T>(
     let cleanup = stages.iter().flat_map(NativeStage::cleanup).collect::<Vec<_>>();
     match result {
         Ok(value) if cleanup.is_empty() => Ok(value),
-        Ok(_) => Err(Failure { diagnostics: cleanup, invocations: completed.to_vec() }),
+        Ok(_) => Err(Failure {
+            diagnostics: cleanup,
+            invocations: completed.to_vec(),
+            final_elf: None,
+            comparator_stage: None,
+            artifacts: Vec::new(),
+        }),
         Err(mut failure) => {
             failure.diagnostics.extend(cleanup);
             Err(failure)

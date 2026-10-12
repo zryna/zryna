@@ -1,10 +1,18 @@
 use super::*;
+#[cfg(test)]
+thread_local! { static ATTEMPTS:std::cell::Cell<usize>=const {std::cell::Cell::new(0)}; }
+#[cfg(test)]
+pub(crate) fn invocation_attempts() -> usize {
+    ATTEMPTS.get()
+}
 
 pub(super) fn invoke(
     stage: &NativeStage,
     tools: &LinuxX8664LinkToolchain,
     arguments: Vec<OsString>,
 ) -> Result<Invocation, Failure> {
+    #[cfg(test)]
+    ATTEMPTS.set(ATTEMPTS.get() + 1);
     native::revalidate_tool(&tools.driver, &tools.driver_identity)?;
     native::revalidate_tool(&tools.linker, &tools.linker_identity)?;
     stage.revalidate()?;
@@ -38,8 +46,11 @@ pub(super) fn validate(stage: &NativeStage, actual: Invocation) -> Result<Invoca
         native::revalidate_tool(&tools.linker, &tools.linker_identity)?;
         stage.revalidate()
     })();
-    validation
-        .map_err(|error| Failure { diagnostics: vec![error], invocations: vec![actual.clone()] })?;
+    validation.map_err(|error| {
+        let mut failure: Failure = error.into();
+        failure.invocations.push(actual.clone());
+        failure
+    })?;
     Ok(actual)
 }
 
