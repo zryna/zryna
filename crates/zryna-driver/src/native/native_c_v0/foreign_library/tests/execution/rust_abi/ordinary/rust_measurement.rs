@@ -30,7 +30,11 @@ impl OrdinaryRustMeasurement {
         capture_data(requirements, &self.object, &self.source)
     }
     fn check_origin(&self) -> Result<(), Diagnostic> {
+        self.check_sealed_data()?;
         self.original.rust.check()?;
+        self.check_sealed_data()
+    }
+    fn check_sealed_data(&self) -> Result<(), Diagnostic> {
         if sha(&self.object) != self.original.object_sha
             || observed_records(&self.records) != self.original.records
             || self.rust_observations != self.original.rust.report()
