@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "95c7014a740d41c4882b9480518191ae801be3164b7ba2ae11e037a018e97379",
+  "registrySha256": "09e54f43c53121595c9341d2b0ab78485200361563bf6399ccfe3ed1733b4819",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -4729,8 +4729,13 @@
     },
     {
       "path": "crates/zryna-source/src/lib.rs",
-      "bytes": 34628,
-      "sha256": "0bde3512dfa7b085483f32bccbd351b98f35b8e1b21606d6ba4f8a4c087b800c"
+      "bytes": 33303,
+      "sha256": "86d795fd66f60ce2038855a6326856bc8f67e11d4bacd9069f5bb03b59dfbddc"
+    },
+    {
+      "path": "crates/zryna-source/src/span_validation.rs",
+      "bytes": 1658,
+      "sha256": "c4221f43439c75d2c0c9bdeacbade2ea40a5b6698a3d8d8a442a5f2cef9cb030"
     },
     {
       "path": "crates/zryna-syntax/Cargo.toml",
