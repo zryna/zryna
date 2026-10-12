@@ -10,8 +10,7 @@ use crate::native::native_c_v0::{
 };
 use sha2::{Digest as _, Sha256};
 
-#[path = "object_fixture.rs"]
-mod object_fixture;
+use super::object_fixture;
 use object_fixture::ORIGINAL_RUST_OBJECT;
 mod definition_controls;
 
