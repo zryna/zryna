@@ -137,6 +137,86 @@ class OwnedCompilerInputs(unittest.TestCase):
             self.assertNotEqual(first['sha256'], second['sha256'])
             self.assertNotEqual(first['epoch'], second['epoch'])
 
+    def inventory_fixture(self, directory):
+        root = Path(directory)
+        dependencies, sysroot = root / 'deps', root / 'sysroot'
+        dependencies.mkdir()
+        (sysroot / 'lib/rustlib/x86_64-unknown-linux-gnu/lib').mkdir(parents=True)
+        metadata = dependencies / 'libchecked.rmeta'
+        metadata.write_bytes(b'')
+        (dependencies / 'libcompiled.rlib').write_bytes(b'compiled library')
+        return dependencies, sysroot, metadata
+
+    def test_empty_metadata_keeps_full_zero_hash_epoch_and_replay_without_default_admission(self):
+        with tempfile.TemporaryDirectory() as directory:
+            deps, sysroot, metadata = self.inventory_fixture(directory)
+            with self.assertRaises(AssertionError):
+                owned_inputs.file_pin(metadata)
+            rows = owned_inputs.snapshot_inputs(deps, sysroot)
+            row = next(row for row in rows if row['path'] == str(metadata))
+            self.assertEqual(row['bytes'], 0)
+            self.assertEqual(row['sha256'], 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
+            self.assertEqual(row['epoch'][5], 0)
+            self.assertEqual(row, owned_inputs.file_pin(metadata, allow_empty=True))
+            owned_inputs.check_inputs(rows, deps, sysroot)
+
+    def test_empty_loadable_libraries_never_receive_metadata_exception(self):
+        for suffix in ('.rlib', '.so'):
+            with tempfile.TemporaryDirectory() as directory:
+                deps, sysroot, _ = self.inventory_fixture(directory)
+                (deps / ('libempty' + suffix)).write_bytes(b'')
+                with self.assertRaises(AssertionError):
+                    owned_inputs.snapshot_inputs(deps, sysroot)
+
+    def test_empty_metadata_growth_and_same_empty_replacement_fail_replay(self):
+        for replacement in (b'new metadata bytes', b''):
+            with tempfile.TemporaryDirectory() as directory:
+                deps, sysroot, metadata = self.inventory_fixture(directory)
+                rows = owned_inputs.snapshot_inputs(deps, sysroot)
+                other = deps / 'replacement'
+                other.write_bytes(replacement)
+                other.replace(metadata)
+                with self.assertRaises(AssertionError):
+                    owned_inputs.check_inputs(rows, deps, sysroot)
+
+    def test_empty_metadata_removal_and_new_empty_metadata_fail_replay(self):
+        for change in ('remove', 'add'):
+            with tempfile.TemporaryDirectory() as directory:
+                deps, sysroot, metadata = self.inventory_fixture(directory)
+                rows = owned_inputs.snapshot_inputs(deps, sysroot)
+                if change == 'remove':
+                    metadata.unlink()
+                else:
+                    (deps / 'libextra.rmeta').write_bytes(b'')
+                with self.assertRaises(AssertionError):
+                    owned_inputs.check_inputs(rows, deps, sysroot)
+
+    def test_metadata_exception_keeps_nonregular_symlink_and_per_file_limit_rejections(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            folder = root / 'directory.rmeta'
+            folder.mkdir()
+            target = root / 'target'
+            target.write_bytes(b'abc')
+            linked = root / 'linked.rmeta'
+            linked.symlink_to(target)
+            for path in (folder, linked):
+                with self.assertRaises(AssertionError):
+                    owned_inputs.file_pin(path, allow_empty=True)
+            with self.assertRaises(AssertionError):
+                owned_inputs.file_pin(target, maximum=2, allow_empty=True)
+
+    def test_empty_metadata_does_not_relax_explicit_boolean_total_or_entry_limits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            deps, sysroot, metadata = self.inventory_fixture(directory)
+            for value in (0, 1, None):
+                with self.assertRaises(AssertionError):
+                    owned_inputs.file_pin(metadata, allow_empty=value)
+            for name, maximum in (('INPUT_BYTES', 1), ('INPUT_ENTRIES', 1)):
+                with patch.object(owned_inputs, name, maximum):
+                    with self.assertRaises(AssertionError):
+                        owned_inputs.snapshot_inputs(deps, sysroot)
+
     def test_normal_mirror_appends_only_fixed_main_and_rejects_extra_file(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -10,11 +10,13 @@ INPUT_BYTES = 6 * 1024 * 1024 * 1024  # Existing normal Cargo target bound; no p
 INPUT_ENTRIES = 10000
 
 
-def file_pin(path, maximum=512 * 1024 * 1024):
+def file_pin(path, maximum=512 * 1024 * 1024, *, allow_empty=False):
+    assert isinstance(allow_empty, bool)
     path = Path(path)
     with Directory(path.parent) as parent:
         before = os.stat(path.name, dir_fd=parent.fd, follow_symlinks=False)
-        assert stat.S_ISREG(before.st_mode) and 0 < before.st_size <= maximum
+        assert stat.S_ISREG(before.st_mode) and (0 if allow_empty else 1) <= before.st_size <= maximum, (
+            'regular compiler input size', str(path), before.st_mode, before.st_size, maximum)
         fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent.fd)
         try:
             assert stamp(os.fstat(fd)) == stamp(before)
@@ -44,7 +46,7 @@ def snapshot_inputs(dependencies, sysroot):
     assert paths and len(paths) == len(set(paths))
     rows, total = [], 0
     for path in paths:
-        row = file_pin(path)
+        row = file_pin(path, allow_empty=path.suffix == '.rmeta')
         total += row['bytes']
         assert total <= INPUT_BYTES
         rows.append(row)

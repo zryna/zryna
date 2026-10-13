@@ -10,6 +10,10 @@ const requiredStep = Object.freeze({
   name: 'Verify stability evidence validator hostile cases',
   run: 'node scripts/stability-gates/check-tests.mjs',
 });
+const requiredRustStep = Object.freeze({
+  uses: 'dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c',
+  with: { toolchain: '1.97.1', components: 'rustfmt, clippy' },
+});
 const parsed = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(parsed.errors, []);
 const workflow = parsed.toJS();
@@ -25,6 +29,18 @@ export function withoutStabilityTests(candidate) {
   assert.equal(job.strategy['fail-fast'], false);
   assert.deepEqual(job.strategy.matrix, { os: ['ubuntu-latest', 'windows-latest'] });
   assert.equal(job['runs-on'], '${{ matrix.os }}');
+  const rustIndices = job.steps.flatMap((step, index) =>
+    /^dtolnay\/rust-toolchain@/u.test(step.uses ?? '') ? [index] : []);
+  assert.deepEqual(rustIndices, [1]);
+  const rustIndex = rustIndices[0];
+  assert.deepEqual(job.steps[rustIndex], requiredRustStep);
+  assert.deepEqual(job.steps[rustIndex - 1], {
+    uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', with: { 'fetch-depth': 0 },
+  });
+  assert.deepEqual(job.steps[rustIndex + 1], {
+    uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
+    with: { 'node-version': '22.22.1' },
+  });
   const indices = job.steps.flatMap((step, index) => step.name === requiredStep.name ? [index] : []);
   assert.equal(indices.length, 1);
   const index = indices[0];
@@ -49,6 +65,7 @@ export function withoutStabilityTests(candidate) {
   assert.equal(last.env.ADAPTER_RESULT, '${{ needs.adapter.result }}');
   assert.equal(last.run, 'node scripts/verify-provider-v4-ci-result.mjs && test "$FAST_CONTRACTS_RESULT" = success && test "$OWNED_DATA_QUICK_RESULT" = success && test "$PREFLIGHT_RESULT" = success && test "$RUST_RESULT" = success && test "$ADAPTER_RESULT" = success && test "$ROUTING_RESULT" = success');
   job.steps.splice(index, 1);
+  job.steps.splice(rustIndex, 1);
   assert(!/Verify stability evidence validator hostile cases|stability-gates\/check-tests\.mjs/u.test(JSON.stringify(original)));
   return original;
 }
@@ -124,6 +141,12 @@ test('both platform authorities require stability tests through the M0 aggregate
 
 test('stability CI omission, bypass, relocation and aggregate weakening reject', () => {
   for (const mutate of [
+    w => { w.jobs['adapter-platform'].steps.splice(1, 1); },
+    w => { w.jobs['adapter-platform'].steps[1].with.toolchain = 'stable'; },
+    w => { delete w.jobs['adapter-platform'].steps[1].with.components; },
+    w => { w.jobs['adapter-platform'].steps[1].if = 'false'; },
+    w => { w.jobs['adapter-platform'].steps[1]['continue-on-error'] = true; },
+    w => { w.jobs['adapter-platform'].steps.push(w.jobs['adapter-platform'].steps[1]); },
     (w, i) => { w.jobs['adapter-platform'].steps.splice(i, 1); },
     (w, i) => { w.jobs['adapter-platform'].steps[i].if = "runner.os == 'Linux'"; },
     (w, i) => { w.jobs['adapter-platform'].steps[i]['continue-on-error'] = true; },
