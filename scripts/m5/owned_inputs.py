@@ -6,6 +6,13 @@ import stat
 from capture_io import Directory, REPORT_LIMIT, read, sha, stamp, write_json
 
 SOURCE_ROOTS = ('crates/zryna-driver/src', 'tests', 'runtime', 'spec', 'adapters', 'examples')
+# Existing --cfg=test driver modules consume these exact cross-crate source files.
+SOURCE_FILES = (
+    'crates/zryna-native-mir/tests/native_c_v0/capture.rs',
+    'crates/zryna-native-c-ir/tests/capture.rs',
+    'crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs',
+    'crates/zryna-ownership-runtime-abi/include/zryna_ownership_runtime_v1.h',
+)
 INPUT_BYTES = 6 * 1024 * 1024 * 1024  # Existing normal Cargo target bound; no private inventory claim.
 INPUT_ENTRIES = 10000
 
@@ -78,8 +85,9 @@ def mirror(repo, output, source):
     root = Path(output) / 'mirror'
     with Directory(output) as held:
         os.mkdir('mirror', mode=0o700, dir_fd=held.fd)
-    rows = [row for row in source['files'] if any(
+    rows = [row for row in source['files'] if row['path'] in SOURCE_FILES or any(
         row['path'].startswith(prefix + '/') for prefix in SOURCE_ROOTS)]
+    assert set(SOURCE_FILES) <= {row['path'] for row in rows}, 'complete fixed cross-crate includes'
     assert rows and len(rows) <= INPUT_ENTRIES
     total, manifest = 0, []
     for row in rows:
@@ -97,7 +105,8 @@ def mirror(repo, output, source):
                          'originalSha256': row['sha256'], 'mirrorBytes': len(data),
                          'mirrorSha256': sha(data)})
     with Directory(output) as held:
-        write_json(held, 'SOURCE_MIRROR.json', {'roots': SOURCE_ROOTS, 'files': manifest,
+        write_json(held, 'SOURCE_MIRROR.json', {'roots': SOURCE_ROOTS,
+            'includeFiles': SOURCE_FILES, 'files': manifest,
             'appendOnly': 'crates/zryna-driver/src/lib.rs + source-owned fixed main',
             'originalSourceBytes': total})
     return root, manifest
