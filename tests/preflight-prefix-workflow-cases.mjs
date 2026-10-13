@@ -35,7 +35,10 @@ const uploadStep = {
 const runtimeStep = {
   name: 'Execute reviewed ordinary sanitizer runtime',
   'timeout-minutes': 5,
-  env: { M5_PREFIX_CANDIDATE: '${{ github.event.pull_request.head.sha || github.sha }}' },
+  env: {
+    M5_PREFIX_CANDIDATE: '${{ github.event.pull_request.head.sha || github.sha }}',
+    CARGO_BUILD_JOBS: '2', RUST_TEST_THREADS: '2', CARGO_INCREMENTAL: '0',
+  },
   run: 'python3 -B scripts/m5/collect_owned_sanitizer_runtime.py --output "$RUNNER_TEMP/m5-ordinary-sanitizer-runtime"',
 };
 const runtimeUploadStep = {
@@ -209,6 +212,12 @@ test('reviewed ordinary runtime suffix rejects alternate commands profiles budge
     run => { run.if = 'always()'; },
     run => { run['continue-on-error'] = true; },
     run => { run.env.M5_PREFIX_CANDIDATE = '${{ github.sha }}'; },
+    run => { delete run.env.CARGO_BUILD_JOBS; },
+    run => { run.env.CARGO_BUILD_JOBS = '3'; },
+    run => { delete run.env.RUST_TEST_THREADS; },
+    run => { run.env.RUST_TEST_THREADS = '3'; },
+    run => { delete run.env.CARGO_INCREMENTAL; },
+    run => { run.env.CARGO_INCREMENTAL = '1'; },
     run => { run.env.ZRYNA_RUST_ORDINARY_PREFIX_CAPTURE = '1'; },
     run => { run.run = run.run.replace('python3 -B', 'python3'); },
     run => { run.run += '\ntrue'; },
