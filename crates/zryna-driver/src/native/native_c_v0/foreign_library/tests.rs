@@ -225,3 +225,10 @@ fn foreign_artifact_and_allocated_storage_bounds_reject_before_materialization()
     reject(&requirements, &bytes, &[]);
     accept(&requirements, &synthetic(|_| {}), &[]);
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn m5_owned_sanitizer_runtime(
+    parent: &std::path::Path,
+) -> Result<serde_json::Value, Diagnostic> {
+    execution::m5_owned_sanitizer_runtime(parent)
+}

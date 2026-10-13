@@ -76,3 +76,10 @@ fn independently_recaptured_equal_documents_do_not_replace_original_issuers() {
         assert!(!program.source().belongs_to(&independent.sources));
     }
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn m5_owned_sanitizer_runtime(
+    parent: &std::path::Path,
+) -> Result<serde_json::Value, zryna_diagnostics::Diagnostic> {
+    ordinary::m5_owned_sanitizer_runtime(parent)
+}

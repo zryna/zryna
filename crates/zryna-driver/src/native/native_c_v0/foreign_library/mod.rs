@@ -178,3 +178,10 @@ fn identity_error() -> Diagnostic {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(crate) fn m5_owned_sanitizer_runtime(
+    parent: &std::path::Path,
+) -> Result<serde_json::Value, Diagnostic> {
+    tests::m5_owned_sanitizer_runtime(parent)
+}

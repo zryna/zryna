@@ -165,6 +165,19 @@ jobs:
           path: ${{ runner.temp }}/m5-ordinary-sanitizer-prefix
           if-no-files-found: error
           retention-days: 7
+      - name: Execute reviewed ordinary sanitizer runtime
+        timeout-minutes: 5
+        env:
+          M5_PREFIX_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 -B scripts/m5/collect_owned_sanitizer_runtime.py --output "$RUNNER_TEMP/m5-ordinary-sanitizer-runtime"
+      - name: Upload reviewed ordinary sanitizer runtime
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m5-ordinary-sanitizer-runtime-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m5-ordinary-sanitizer-runtime
+          if-no-files-found: error
+          retention-days: 7
 
   rust:
     name: rust (${{ matrix.os }})

@@ -1,6 +1,8 @@
 //! Independent closed hook/layout/material expectations; no product pins or origin imports.
 use super::*;
 use object::{Object as _, ObjectSymbol as _};
+mod owned;
+pub(super) use owned::{RuntimeCase, RuntimeProfile};
 struct Provider {
     path: &'static str,
     bytes: usize,

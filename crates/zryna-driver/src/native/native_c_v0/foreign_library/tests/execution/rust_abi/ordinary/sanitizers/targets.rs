@@ -60,6 +60,7 @@ pub(super) fn verify(
     session: &mut Session<'_>,
     stages: &[native::NativeStage],
     case: Case,
+    profile: Option<policy::RuntimeCase<'_>>,
 ) -> Result<observation::Observation, Diagnostic> {
     let bytes =
         session.artifacts.iter().find(|(n, _)| n == "final.elf").ok_or_else(rejected)?.1.clone();
@@ -84,8 +85,9 @@ pub(super) fn verify(
     let observation = observation::Observation::capture(session)?;
     observation.check(session, stages)?;
     session.phase = "unavailable-independent-sanitizer-bindings";
-    let bindings = policy::reviewed(case).ok_or_else(rejected)?;
-    bindings.materials(case)?;
+    let profile = profile.ok_or_else(rejected)?;
+    profile.check(case, session.tools)?;
+    let bindings = profile.bindings();
     let callsite = compare(&bytes, &data, bindings)?;
     let redirected = machine::redirect(&bytes, callsite)?;
     super::super::targets::compare_functions(original, &redirected)?;

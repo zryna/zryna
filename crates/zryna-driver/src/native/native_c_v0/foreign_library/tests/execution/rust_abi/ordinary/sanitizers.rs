@@ -7,6 +7,7 @@ mod observation;
 mod observe;
 mod policy;
 mod prefix_capture;
+mod runtime;
 mod source;
 mod targets;
 mod tests;
@@ -24,4 +25,8 @@ impl Case {
             Self::SignedOverflow => "sanitizer-signed-overflow",
         }
     }
+}
+
+pub(super) fn m5_owned_sanitizer_runtime(parent: &Path) -> Result<serde_json::Value, Diagnostic> {
+    runtime::measure(parent)
 }

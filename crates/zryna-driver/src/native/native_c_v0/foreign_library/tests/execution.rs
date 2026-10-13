@@ -188,3 +188,10 @@ fn actual_unresolved_external_link_failure_cleans_owned_stage() {
     let snapshot = accept(&requirements, &valid, &["free", "malloc"]);
     assert!(fixture.run(&requirements, &snapshot, client, false, true).success());
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn m5_owned_sanitizer_runtime(
+    parent: &std::path::Path,
+) -> Result<serde_json::Value, Diagnostic> {
+    rust_abi::m5_owned_sanitizer_runtime(parent)
+}
