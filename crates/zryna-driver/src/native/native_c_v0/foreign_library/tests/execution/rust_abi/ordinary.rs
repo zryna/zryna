@@ -24,6 +24,7 @@ mod process;
 mod result_faults;
 use super::object_fixture as reference;
 mod rust_measurement;
+mod sanitizers;
 mod stage;
 mod targets;
 mod tests;

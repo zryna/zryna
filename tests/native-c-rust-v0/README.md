@@ -2,7 +2,7 @@
 
 This #417 fixture supplies independent Rust-library source data and Linux x86-64
 source-issuer tests, a distinct bounded data-only Rust ELF capture profile, and
-six ordinary test-owned execution observers. The source-issuer tests authenticate
+nine ordinary test-owned execution observers. The source-issuer tests authenticate
 documents and emit Zryna objects without compiling the foreign program. The
 ordinary observers instead require a fresh trusted Rust compile and actual
 separate C client/runtime/link execution. These remain distinct evidence and
@@ -58,7 +58,7 @@ The actual 157,802,496-byte rustc_driver exceeds unchanged 64 MiB tool and
 128 MiB total retained-material limits. Complete Rust tool inventory and
 isolated recipe qualification remain absent; no file is omitted or relabelled.
 
-The six ordinary observers implement independent C entry counting and its live
+The six original ordinary observers implement independent C entry counting and its live
 missing-increment sensitivity, 4096/4097 Vec<i32> element packing and pre-entry
 rejection, bad elements, selected private allocation cleanup, original-issuer
 and producer-record substitution refusal, retained foreign snapshots and pristine
@@ -66,10 +66,15 @@ recovery. Counts prove their selected calls/allocations, not global leak absence
 or pointer non-retention. The standalone raw-client4097 status1/sentinel4242
 case is distinct from the wrapper4097 no-entry test.
 
-The separate private result-fault draft adds tests that freshly compile Rust-source
-status7 and status1/output-write controls, independent C result assertions and a live
-nonfaulting-control failure followed by new pristine recovery. Its compilation,
-profile, execution and complete revision gates remain pending. It cannot inherit
-the pristine1696-byte source/function certificate. Rust-backed sanitizer evidence,
-SQLite library-specific prerequisites/proof and the full normative resource/fault
-matrix remain separate. This fixture does not close #417 or #405.
+The three separate result-fault observers freshly compile Rust-source status7
+and status1/output-write controls. Independent C assertions require HostAbiFailure,
+no exposed output, selected cleanup and poisoned-context refusal. A separately
+compiled nonfaulting control must fail the same live oracle, followed by fresh
+pristine recovery. These observers passed the Linux compiler-contract and M0
+execution gates on the reviewed source integrated by PR #555. Modified control
+sources have separate measurements and cannot inherit the pristine1696-byte
+source/function certificate.
+
+C-client/private-runtime sanitizer diagnostics, SQLite library-specific
+prerequisites/proof and the full normative resource/fault matrix remain separate.
+This fixture does not close #417 or #405.
