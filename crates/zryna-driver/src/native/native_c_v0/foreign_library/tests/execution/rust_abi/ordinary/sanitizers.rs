@@ -6,6 +6,7 @@ mod machine;
 mod observation;
 mod observe;
 mod policy;
+mod prefix_capture;
 mod source;
 mod targets;
 mod tests;

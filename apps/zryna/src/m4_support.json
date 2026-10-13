@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "09e54f43c53121595c9341d2b0ab78485200361563bf6399ccfe3ed1733b4819",
+  "registrySha256": "b4e2acb39c31cb9ec765b072a1ca8c6ae4ff705e5ab0dd358ae57f8c7f6f7412",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3254,8 +3254,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 29688,
-      "sha256": "2624181130cf708408e48d9758d55c904d2b08313ac6fc2d54f282dacbb0ffb7"
+      "bytes": 30551,
+      "sha256": "f9ea56e4c375ec4691ef057b8ec1c1173896855a0238fa074e314cf43cf1d13b"
     },
     {
       "path": ".github/workflows/documentation.yml",

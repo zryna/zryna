@@ -150,6 +150,21 @@ jobs:
         run: cargo fetch --locked
       - run: node scripts/run-preflight.mjs --compiler-contracts
         timeout-minutes: 25
+      - name: Capture ordinary sanitizer compiler prefix
+        timeout-minutes: 5
+        env:
+          M5_PREFIX_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 -B -m unittest discover -s scripts/m5/tests -p 'test_*.py'
+          python3 -B scripts/m5/collect_ordinary_sanitizer_prefix.py --output "$RUNNER_TEMP/m5-ordinary-sanitizer-prefix"
+      - name: Upload ordinary sanitizer compiler prefix
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m5-ordinary-sanitizer-prefix-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m5-ordinary-sanitizer-prefix
+          if-no-files-found: error
+          retention-days: 7
 
   rust:
     name: rust (${{ matrix.os }})

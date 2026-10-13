@@ -1,4 +1,5 @@
 import { withoutM4Workflow } from './m4-workflow-cases.mjs';
+import { withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -12,7 +13,7 @@ import { withoutNativeRecipeTests } from './native-recipe-test-selection.test.mj
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
 const budgetWorkflow = withoutBootstrapTiming(withoutPortableSetup(withoutNativeSourceResources(
-  withoutStabilityTests(withoutNativeRecipeTests(withoutM4Workflow(document.toJS()))))));
+  withoutStabilityTests(withoutNativeRecipeTests(withoutM4Workflow(withoutOrdinarySanitizerPrefix(document.toJS())))))));
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const bootstrapJobs = ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
 const nodeStep = {
@@ -36,29 +37,6 @@ function withoutPortableSetup(candidate) {
   return original;
 }
 
-function withoutPreflightBudgets(candidate) {
-  const original = structuredClone(candidate);
-  const job = original.jobs.preflight;
-  assert.deepEqual(Object.keys(job).sort(), ['env', 'name', 'runs-on', 'steps', 'timeout-minutes']);
-  assert.deepEqual(job.env, { CARGO_PROFILE_DEV_DEBUG: 0, CARGO_PROFILE_TEST_DEBUG: 0 });
-  delete job.env;
-  assert.equal(job['timeout-minutes'], 40);
-  const bootstrap = job.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@'));
-  const execution = job.steps.filter(step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts');
-  assert.equal(bootstrap.length, 1);
-  assert.equal(execution.length, 1);
-  assert.deepEqual(bootstrap[0], { ...pnpmStep, 'timeout-minutes': 10 });
-  assert.deepEqual(execution[0], { run: 'node scripts/run-preflight.mjs --compiler-contracts', 'timeout-minutes': 25 });
-  assert.equal(job.steps.at(-1), execution[0]);
-  assert(job.steps.indexOf(bootstrap[0]) < job.steps.indexOf(execution[0]));
-  assert.equal(job['timeout-minutes'] - bootstrap[0]['timeout-minutes'] - execution[0]['timeout-minutes'], 5);
-  delete bootstrap[0]['timeout-minutes'];
-  delete execution[0]['timeout-minutes'];
-  for (const other of Object.values(original.jobs)) {
-    for (const step of other.steps) assert.equal(step['timeout-minutes'], undefined);
-  }
-  return original;
-}
 
 test('preflight separates bounded bootstrap and execution budgets without changing commands', () => {
   assert.doesNotThrow(() => withoutPreflightBudgets(budgetWorkflow));

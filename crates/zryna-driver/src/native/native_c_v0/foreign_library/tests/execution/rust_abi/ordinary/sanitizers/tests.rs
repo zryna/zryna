@@ -53,4 +53,6 @@ fn ordinary_rust_byte_c_sanitizer_compiler_prefix_refuses_unavailable_bindings_b
         }
         assert!(!records.iter().any(|record| record["name"].as_str() == Some("run")));
     }
+    prefix_capture::retain_if_requested(&parent, &report)
+        .expect("closed opt-in compiler-prefix report retention");
 }
