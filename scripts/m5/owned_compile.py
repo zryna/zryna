@@ -32,30 +32,86 @@ def rust_tools():
     return {'selected': str(selected), 'sysroot': str(root), 'pins': pins}
 
 
+def feature_vector(value):
+    assert isinstance(value, list) and all(isinstance(item, str) and item for item in value)
+    assert value == sorted(set(value)), 'sorted unique Cargo feature vector'
+    return value
+
+
+def source_features(spec, workspace):
+    if isinstance(spec, str):
+        spec = {}
+    assert isinstance(spec, dict)
+    inherited = workspace if spec.get('workspace') is True else {}
+    if isinstance(inherited, str):
+        inherited = {}
+    assert isinstance(inherited, dict)
+    requested = set()
+    for declaration in (inherited, spec):
+        features = declaration.get('features', [])
+        assert isinstance(features, list) and all(isinstance(item, str) and item for item in features)
+        assert len(features) == len(set(features))
+        requested.update(features)
+        assert isinstance(declaration.get('default-features', True), bool)
+    defaults = (inherited.get('default-features', True) or spec.get('default-features', False)
+                if spec.get('workspace') is True else spec.get('default-features', True))
+    return requested, defaults
+
+
 def direct_externs(repo, metadata, messages, dependency_directory):
     package = next(p for p in metadata['packages'] if p['manifest_path'] ==
                    str(Path(repo) / 'crates/zryna-driver/Cargo.toml'))
     assert package['name'] == 'zryna-driver'
     manifest = tomllib.loads(read(Path(package['manifest_path']), REPORT_LIMIT).decode())
+    workspace = tomllib.loads(read(Path(repo) / 'Cargo.toml', REPORT_LIMIT).decode())['workspace']['dependencies']
     required = set(manifest['dependencies']) | set(manifest['dev-dependencies'])
-    node = next(n for n in metadata['resolve']['nodes'] if n['id'] == package['id'])
+    nodes = [n for n in metadata['resolve']['nodes'] if n['id'] == package['id']]
+    assert len(nodes) == 1, 'unique originating driver resolve node'
+    node = nodes[0]
     rows = []
     for name in sorted(required):
         matches = [d for d in node['deps'] if d['name'] == name.replace('-', '_') and any(
             kind['kind'] in (None, 'dev') and kind['target'] is None for kind in d['dep_kinds'])]
         assert len(matches) == 1, ('exact direct dependency package ID', name)
         dependency = matches[0]
+        resolved = [n for n in metadata['resolve']['nodes'] if n['id'] == dependency['pkg']]
+        assert len(resolved) == 1, ('unique direct dependency resolve node', name)
+        features = feature_vector(resolved[0]['features'])
+        packages = [p for p in metadata['packages'] if p['id'] == dependency['pkg']]
+        assert len(packages) == 1, ('unique direct dependency package', name)
+        assert isinstance(packages[0]['features'], dict)
+        for section, kind in (('dependencies', None), ('dev-dependencies', 'dev')):
+            if name not in manifest[section]:
+                continue
+            spec = manifest[section][name]
+            if isinstance(spec, dict) and spec.get('workspace') is True:
+                assert name in workspace, ('source workspace dependency', name)
+            requested, defaults = source_features(spec, workspace.get(name, {}))
+            declarations = [d for d in package['dependencies'] if
+                            (d.get('rename') or d['name']) == name and
+                            d['kind'] == kind and d['target'] is None]
+            assert len(declarations) == 1, ('exact source direct declaration', name, kind)
+            declaration = declarations[0]
+            declared = declaration['features']
+            assert isinstance(declared, list) and all(isinstance(f, str) and f for f in declared)
+            assert len(declared) == len(set(declared)) and set(declared) == requested
+            assert declaration['uses_default_features'] is defaults
+            assert requested <= set(features), ('source-requested direct features', name)
+            if defaults and 'default' in packages[0]['features']:
+                assert 'default' in features, ('source-requested default features', name)
         artifacts = [m for m in messages if m.get('reason') == 'compiler-artifact' and
                      m['package_id'] == dependency['pkg'] and m['target']['kind'] == ['lib']]
         eligible = []
         for artifact in artifacts:
+            actual_features = feature_vector(artifact['features'])
             assert artifact['profile']['opt_level'] == '0' and not artifact['profile']['test']
             assert artifact['profile']['debuginfo'] == 0
             for filename in artifact['filenames']:
                 path = Path(filename)
                 if path.suffix == '.rlib':
                     assert path.parent == dependency_directory
-                    eligible.append((artifact, path))
+                    if actual_features == features:
+                        eligible.append((artifact, path))
         assert len(eligible) == 1, ('unambiguous actual compiled direct library', name)
         artifact, path = eligible[0]
         pin = file_pin(path)

@@ -15,21 +15,35 @@ class OwnedCompilerInputs(unittest.TestCase):
         repo = Path('/pure-fixture/repo')
         deps = Path('/pure-fixture/target/debug/deps')
         package = {'id': 'driver-id', 'name': 'zryna-driver', 'version': '0.2.3',
-                   'manifest_path': str(repo / 'crates/zryna-driver/Cargo.toml')}
-        metadata = {'packages': [package], 'resolve': {'nodes': [{
+                   'manifest_path': str(repo / 'crates/zryna-driver/Cargo.toml'),
+                   'dependencies': [
+                       {'name': 'serde', 'rename': None, 'kind': None, 'target': None,
+                        'features': ['derive'], 'uses_default_features': True},
+                       {'name': 'wasmparser', 'rename': None, 'kind': 'dev', 'target': None,
+                        'features': [], 'uses_default_features': True}]}
+        metadata = {'packages': [package, {'id': 'serde-id', 'features': {'default': [], 'derive': []}},
+                                 {'id': 'wasmparser-id', 'features': {}}], 'resolve': {'nodes': [{
             'id': 'driver-id', 'deps': [
                 {'name': 'serde', 'pkg': 'serde-id', 'dep_kinds': [{'kind': None, 'target': None}]},
-                {'name': 'wasmparser', 'pkg': 'wasmparser-id', 'dep_kinds': [{'kind': 'dev', 'target': None}]}]}]}}
+                {'name': 'wasmparser', 'pkg': 'wasmparser-id', 'dep_kinds': [{'kind': 'dev', 'target': None}]}]},
+            {'id': 'serde-id', 'features': ['alloc', 'default', 'derive', 'serde_derive', 'std']},
+            {'id': 'wasmparser-id', 'features': []}]}}
         messages = [{'reason': 'compiler-artifact', 'package_id': name + '-id',
                      'target': {'kind': ['lib']}, 'profile': {'opt_level': '0', 'test': False, 'debuginfo': 0},
                      'features': [], 'filenames': [str(deps / ('lib' + name + '-abc.rlib'))]}
                     for name in ('serde', 'wasmparser')]
-        manifest = b'[dependencies]\nserde="1"\n[dev-dependencies]\nwasmparser="1"\n'
+        messages[0]['features'] = ['alloc', 'default', 'derive', 'serde_derive', 'std']
+        manifest = b'[dependencies]\nserde.workspace=true\n[dev-dependencies]\nwasmparser="1"\n'
         return repo, deps, metadata, messages, manifest
 
     def select(self, fixture):
         repo, deps, metadata, messages, manifest = fixture
-        with patch.object(owned_compile, 'read', return_value=manifest), patch.object(
+        def source(path, maximum):
+            if path == repo / 'Cargo.toml':
+                return b'[workspace.dependencies]\nserde={version="1",features=["derive"]}\n'
+            self.assertEqual(path, repo / 'crates/zryna-driver/Cargo.toml')
+            return manifest
+        with patch.object(owned_compile, 'read', side_effect=source), patch.object(
                 owned_compile, 'file_pin', side_effect=lambda path: {'path': str(path)}):
             return owned_compile.direct_externs(repo, metadata, messages, deps)
 
@@ -55,6 +69,63 @@ class OwnedCompilerInputs(unittest.TestCase):
         fixture[3][0]['filenames'] = ['/pure-fixture/other/libserde-abc.rlib']
         with self.assertRaises(AssertionError):
             self.select(fixture)
+
+    def host_serde(self, fixture):
+        artifact = dict(fixture[3][0], features=['alloc'],
+                        filenames=[str(fixture[1] / 'libserde-host-alloc.rlib')])
+        fixture[3].append(artifact)
+        return artifact
+
+    def test_actual_serde_host_alloc_decoy_cannot_select_normal_direct_library(self):
+        fixture = self.fixture()
+        self.host_serde(fixture)
+        for messages in (fixture[3], list(reversed(fixture[3]))):
+            selected = self.select((*fixture[:3], messages, fixture[4]))[0][0]
+            self.assertEqual(selected['features'], ['alloc', 'default', 'derive', 'serde_derive', 'std'])
+            self.assertEqual(selected['input']['path'], str(fixture[1] / 'libserde-abc.rlib'))
+
+    def test_alloc_only_serde_cannot_replace_missing_exact_full_library(self):
+        fixture = self.fixture()
+        self.host_serde(fixture)
+        fixture[3].pop(0)
+        with self.assertRaises(AssertionError):
+            self.select(fixture)
+
+    def test_emitted_feature_drift_rejects_without_subset_fallback(self):
+        fixture = self.fixture()
+        fixture[3][0]['features'].remove('std')
+        with self.assertRaises(AssertionError):
+            self.select(fixture)
+
+    def test_matching_resolve_and_artifact_cannot_drop_source_derive_or_default(self):
+        for feature in ('derive', 'default'):
+            fixture = self.fixture()
+            fixture[2]['resolve']['nodes'][1]['features'].remove(feature)
+            fixture[3][0]['features'].remove(feature)
+            with self.assertRaises(AssertionError):
+                self.select(fixture)
+
+    def test_duplicate_exact_full_serde_stays_ambiguous_despite_host_decoy(self):
+        fixture = self.fixture()
+        self.host_serde(fixture)
+        fixture[3].append(dict(fixture[3][0],
+                              filenames=[str(fixture[1] / 'libserde-second-full.rlib')]))
+        with self.assertRaises(AssertionError):
+            self.select(fixture)
+
+    def test_malformed_feature_vectors_and_ambiguous_nodes_reject(self):
+        for features in (['derive', 'alloc'], ['alloc', 'alloc'], 'alloc', [1], ['']):
+            for location in ('resolve', 'artifact'):
+                fixture = self.fixture()
+                row = fixture[2]['resolve']['nodes'][1] if location == 'resolve' else fixture[3][0]
+                row['features'] = features
+                with self.assertRaises(AssertionError):
+                    self.select(fixture)
+        for index in (0, 1):
+            fixture = self.fixture()
+            fixture[2]['resolve']['nodes'].append(dict(fixture[2]['resolve']['nodes'][index]))
+            with self.assertRaises(AssertionError):
+                self.select(fixture)
 
     def test_exact_full_file_epoch_and_hash_detect_replacement(self):
         with tempfile.TemporaryDirectory() as directory:
