@@ -266,3 +266,19 @@ closure is claimed. The157802496-byte Rust driver is streamed for ordinary
 identity checks; it still exceeds64MiB tool/128MiB private-inventory limits.
 All production missing-prerequisite denials and remaining #405/#417 obligations
 remain. This observer does not authorize public guest support or Rust native ABI.
+
+## Private actual Rust malformed-result controls
+
+Three additional test-only result-fault selectors separately compile closed Rust-source
+controls for undeclared status7 and status1 with an actual output write. A distinct
+constructor-owned hostile observation retains actual source/object/process/receipt
+snapshots; it never inherits the pristine1696-byte source/function certificate or
+constructs production authority. Independent C shims forward exact calls to Rust,
+observe real status/output/input bytes and selected private cleanup, and expose no
+foreign allocation/release obligation for this two-operation borrowed-buffer fixture.
+A freshly compiled nonfaulting control must fail the live classification oracle;
+a separate new pristine compile/capture/normal byte call then proves recovery.
+No C-produced status override is reported as a Rust mutant. Actual compilation,
+profile acceptance, execution and focused/canonical verification of these draft
+selectors remain pending. Ordinary observations do not establish sanitizer,
+SQLite, whole#405/#417, host isolation, complete inputs or public support.
