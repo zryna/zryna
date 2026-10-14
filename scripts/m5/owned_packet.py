@@ -11,6 +11,36 @@ ORDER = ('sanitizer-positive', 'sanitizer-heap-overrun', 'sanitizer-positive',
          'sanitizer-signed-overflow', 'sanitizer-positive')
 
 
+def digest32(value):
+    assert isinstance(value, list) and len(value) == 32
+    assert all(type(byte) is int and 0 <= byte <= 255 for byte in value)
+    return bytes(value).hex()
+
+
+def parse_runtime_output(stdout, stderr, root):
+    assert isinstance(stdout, bytes) and 0 < len(stdout) <= REPORT_LIMIT
+    assert isinstance(stderr, bytes) and len(stderr) <= REPORT_LIMIT
+    report = parse_json(stdout)
+    assert isinstance(report, dict)
+    assert report['format'] == 'zryna.m5.ordinary-explicit-sanitizer-five-attempt-observation.v1'
+    assert report['existing_assertions_completed'] is True
+    assert isinstance(report['attempts'], list)
+    assert [a['case'] for a in report['attempts']] == list(ORDER)
+    root = Path(root)
+    assert root.is_absolute() and '..' not in root.parts
+    paths = [report['fresh_rust_evidence']] + [a['evidence'] for a in report['attempts']]
+    assert len(paths) == 6 and all(isinstance(p, str) for p in paths)
+    assert len(set(paths)) == 6
+    for value in paths:
+        directory = Path(value)
+        assert str(directory) == value and directory.is_absolute()
+        assert directory != root and directory.is_relative_to(root) and '..' not in directory.parts
+        assert not any(ord(c) < 32 or ord(c) == 127 for c in value)
+    expected = ''.join('m5-ordinary-rust-evidence ' + value + '\n' for value in paths).encode('utf-8')
+    assert stderr == expected, 'exact six originating evidence markers'
+    return report
+
+
 def records(value, names, negative=False):
     assert [r['name'] for r in value] == list(names)
     for row in value:
@@ -59,12 +89,14 @@ def validate(report, root, catalog):
     assert report['provider_script_references'] == 'UNRESOLVED_OPAQUE_DATA'
     assert report['source_bytes'] == 1696 and report['source_sha256'] == SOURCE_SHA
     assert [a['case'] for a in report['attempts']] == list(ORDER)
+    rust_object = digest32(report['fresh_rust_object_sha256'])
+    zryna_object = digest32(report['genuine_zryna_object_sha256'])
     records(report['rust_records'], RUST_RECORDS)
     rust, rust_files = receipt(report['fresh_rust_evidence'], root,
         report['fresh_rust_receipt_bytes'], report['fresh_rust_receipt_sha256'], False)
     assert rust['records'] == report['rust_records'] and rust['comparator_stage'] == 'fresh-rust-profile-reference'
     assert len(rust_files['foreign.rs']) == 1696 and sha(rust_files['foreign.rs']) == SOURCE_SHA
-    assert sha(rust_files['foreign-original.o']) == report['fresh_rust_object_sha256']
+    assert sha(rust_files['foreign-original.o']) == rust_object
     assert rust_files['rust-version.stderr.log'] == b''
     assert rust_files['rust-compile.stdout.log'] == rust_files['rust-compile.stderr.log'] == b''
     observed, receipts, seen, traces = [], [(Path(report['fresh_rust_evidence']), rust_files)], {report['fresh_rust_evidence']}, None
@@ -90,8 +122,8 @@ def validate(report, root, catalog):
         assert set(files) == set(products) | {n + suffix for n in names for suffix in ('.stdout.log', '.stderr.log')}
         for name, product in products.items():
             assert len(files[name]) == product['bytes'] and sha(files[name]) == product['sha256']
-        assert sha(files['foreign.o']) == report['fresh_rust_object_sha256']
-        assert sha(files['program.o']) == report['genuine_zryna_object_sha256']
+        assert sha(files['foreign.o']) == rust_object
+        assert sha(files['program.o']) == zryna_object
         assert all(files[n + '.stderr.log'] == b'' for n in C_RECORDS)
         out, err = bytes(attempt['actual_run_stdout']), bytes(attempt['actual_run_stderr'])
         assert out == files['run.stdout.log'] and err == files['run.stderr.log']

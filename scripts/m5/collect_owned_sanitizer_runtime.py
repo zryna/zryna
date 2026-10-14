@@ -11,7 +11,7 @@ from capture_providers import capture, walk, copy_hash, tool_identity, TOOL_ROOT
 from fixed_tools import select
 from collect_ordinary_sanitizer_prefix import REPO, context, source, verify_materials
 from owned_compile import compile_owned, recheck
-from owned_packet import validate
+from owned_packet import parse_runtime_output, validate
 
 
 def fixed_tools(catalog):
@@ -100,8 +100,7 @@ def collect(output):
     env['ZRYNA_RUST_ORDINARY_EVIDENCE_PARENT'] = str(output / 'observations')
     stdout, stderr = run([sealed['product']['path'], str(output / 'observations')],
         output, 'owning-runtime', resources, env=env, maximum=REPORT_LIMIT)
-    assert stderr == b'' and len(stdout) <= REPORT_LIMIT
-    report = parse_json(stdout)
+    report = parse_runtime_output(stdout, stderr, output / 'observations')
     with Directory(output / 'observations') as held:
         report_pin = write_json(held, 'runtime-report.json', report)
     observations, observed_tools = validate(report, output / 'observations', catalog)
