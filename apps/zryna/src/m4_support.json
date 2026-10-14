@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "2e844ac231d6d0e9b5d4e47b24d996e8a2ae34b1a3a552c8e966449ddd851928",
+  "registrySha256": "455ac02b40ff1a3a91f8ad4de6a86065aa5e9052d30b56553a011d3211b8c140",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -4644,8 +4644,8 @@
     },
     {
       "path": "crates/zryna-driver/src/server_transport/tests.rs",
-      "bytes": 6401,
-      "sha256": "31ae2f04cac605984c2ef0675d0ffee2d2225efbc40167bfb737b878e355128a"
+      "bytes": 7898,
+      "sha256": "5b1757b78bbdf6d2207a139d584e50e314711ec9b0af13eaa0887f5aefec557b"
     },
     {
       "path": "crates/zryna-driver/src/server_workspace/approval.rs",
