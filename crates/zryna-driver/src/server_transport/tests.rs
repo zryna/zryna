@@ -84,10 +84,7 @@ impl Running {
         assert_eq!(self.observation.socket_handles.load(Ordering::SeqCst), 0);
         assert_eq!(self.observation.reserved_bytes.load(Ordering::SeqCst), 0);
         clean(&self.runtime);
-        assert!(
-            TcpStream::connect_timeout(&self.address, Duration::from_millis(100)).is_err(),
-            "listener really closed"
-        );
+        assert_listener_closed(self.address);
     }
 }
 impl Drop for Running {
@@ -98,6 +95,29 @@ impl Drop for Running {
         }
     }
 }
+// A Linux loopback connect can establish with itself when its automatically
+// assigned source endpoint equals the closed listener's destination endpoint.
+// Only that exact observation may retry; a real peer always fails immediately.
+fn assert_listener_closed(address: SocketAddr) {
+    let deadline = Instant::now() + Duration::from_millis(100);
+    for _ in 0..3 {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        assert!(!remaining.is_zero(), "listener really closed: cleanup probe deadline exhausted");
+        let Ok(stream) = TcpStream::connect_timeout(&address, remaining) else {
+            return;
+        };
+        let local = stream.local_addr().expect("successful cleanup probe local endpoint");
+        let peer = stream.peer_addr().expect("successful cleanup probe peer endpoint");
+        assert!(
+            local == address && peer == address,
+            "listener really closed: successful distinct-endpoint probe: target={address} local={local} peer={peer}"
+        );
+        // Release this self-connected probe before another attempt can allocate a source port.
+        drop(stream);
+    }
+    panic!("listener really closed: three TCP self-connections prevented closure verification");
+}
+
 pub(super) fn clean(observation: &RuntimeObservation) {
     assert_eq!(observation.live(), (0, 0));
     assert_eq!(observation.input_copies.load(Ordering::SeqCst), 0);
@@ -133,6 +153,14 @@ pub(super) fn exchange(address: SocketAddr, bytes: &[u8]) -> Vec<u8> {
         assert_eq!(error.kind(), std::io::ErrorKind::ConnectionReset);
     }
     response
+}
+
+#[test]
+#[should_panic(expected = "listener really closed: successful distinct-endpoint probe")]
+fn cleanup_probe_rejects_an_actual_live_listener() {
+    let listener =
+        std::net::TcpListener::bind("127.0.0.1:0").expect("live negative-control listener");
+    assert_listener_closed(listener.local_addr().expect("live negative-control address"));
 }
 
 #[test]

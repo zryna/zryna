@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`b4e2acb39c31cb9ec765b072a1ca8c6ae4ff705e5ab0dd358ae57f8c7f6f7412`. The matrix defines six bounded modes on the two
+`455ac02b40ff1a3a91f8ad4de6a86065aa5e9052d30b56553a011d3211b8c140`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "b4e2acb39c31cb9ec765b072a1ca8c6ae4ff705e5ab0dd358ae57f8c7f6f7412",
+  "registrySha256": "455ac02b40ff1a3a91f8ad4de6a86065aa5e9052d30b56553a011d3211b8c140",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3327,8 +3327,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 30551,
-      "sha256": "f9ea56e4c375ec4691ef057b8ec1c1173896855a0238fa074e314cf43cf1d13b"
+      "bytes": 31584,
+      "sha256": "65037ce4811cf9cd4b99b8ac383507e8b8b5aa811a1cd85807b08ef5c9a9e0d2"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -4432,8 +4432,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/lib.rs",
-      "bytes": 9100,
-      "sha256": "b08eabd16e104301dcd90379935afdd53616f51f274f250c6e259e9606aa6e51"
+      "bytes": 9395,
+      "sha256": "411e98ca86cef3139356e9f75b4fbba2a697a923d1a7e592b19f91f95ba814d9"
     },
     {
       "path": "crates/zryna-driver/src/native.rs",
@@ -4717,8 +4717,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/server_transport/tests.rs",
-      "bytes": 6401,
-      "sha256": "31ae2f04cac605984c2ef0675d0ffee2d2225efbc40167bfb737b878e355128a"
+      "bytes": 7898,
+      "sha256": "5b1757b78bbdf6d2207a139d584e50e314711ec9b0af13eaa0887f5aefec557b"
     },
     {
       "path": "crates/zryna-driver/src/server_workspace/approval.rs",

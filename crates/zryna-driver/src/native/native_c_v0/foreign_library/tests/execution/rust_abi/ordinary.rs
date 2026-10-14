@@ -220,3 +220,8 @@ fn capture_import_artifacts(session: &mut Session<'_>, request: &ImportRequest<'
         ("library-policy.json".into(), capture::POLICY.to_vec()),
     ]);
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn m5_owned_sanitizer_runtime(parent: &Path) -> Result<serde_json::Value, Diagnostic> {
+    sanitizers::m5_owned_sanitizer_runtime(parent)
+}
