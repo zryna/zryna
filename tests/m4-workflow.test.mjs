@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { parseDocument } from 'yaml';
-import { withoutM4Workflow } from './m4-workflow-cases.mjs';
+import { withoutM4Workflow, withoutSQLiteFixture } from './m4-workflow-cases.mjs';
 import { classifyWorkflowPaths } from '../scripts/classify-workflow-paths.mjs';
 
 const workflow = name => {
@@ -104,5 +104,63 @@ test('M4 matches preserve conservative foundation routing for unclassified helpe
       diagnostics: true, distribution_release: true, package_release: true,
       provider_v4: true, wit: true, m4: true,
     }, path);
+  }
+});
+
+
+test('SQLite acquisition projects only three authenticated prerequisites without changing any owner', () => {
+  const original = workflow('ci.yml');
+  const before = structuredClone(original);
+  const expected = structuredClone(original);
+  for (const id of ['preflight', 'rust', 'm4-platform']) {
+    const steps = expected.jobs[id].steps;
+    const index = steps.findIndex(step => step.name === 'Prepare pinned SQLite source fixture');
+    steps.splice(index, 1);
+  }
+  assert.deepEqual(withoutSQLiteFixture(original), expected);
+  assert.deepEqual(original, before);
+});
+
+test('SQLite prerequisites reject changed commands, conditions, deadlines and locator authority', () => {
+  for (const id of ['preflight', 'rust', 'm4-platform']) {
+    for (const mutate of [
+      step => { delete step.if; }, step => { step.if = 'always()'; },
+      step => { step.if = "runner.os == 'Windows'"; },
+      step => { step['continue-on-error'] = true; },
+      step => { step['timeout-minutes'] = 4; }, step => { delete step['timeout-minutes']; },
+      step => { step.shell = 'pwsh'; },
+      step => { step.run = step.run.replace('python3 -B', 'python3'); },
+      step => { step.run += 'true\n'; },
+      step => { step.run = step.run.replace(' >> ', ' > '); },
+      step => { step.run = step.run.replace('zryna-sqlite-source', 'other-source'); },
+      step => { step.env = { ZRYNA_SQLITE_FIXTURE_ROOT: '/tmp/unchecked' }; },
+    ]) {
+      const changed = workflow('ci.yml');
+      mutate(changed.jobs[id].steps.find(step => step.name === 'Prepare pinned SQLite source fixture'));
+      assert.throws(() => withoutSQLiteFixture(changed));
+    }
+  }
+});
+
+test('SQLite prerequisite removal, duplication, relocation and extra invocation reject', () => {
+  for (const id of ['preflight', 'rust', 'm4-platform']) {
+    for (const mutate of [
+      (steps, index) => { steps.splice(index, 1); },
+      (steps, index) => { steps.push(structuredClone(steps[index])); },
+      (steps, index) => { [steps[index], steps[index + 1]] = [steps[index + 1], steps[index]]; },
+    ]) {
+      const changed = workflow('ci.yml');
+      const steps = changed.jobs[id].steps;
+      mutate(steps, steps.findIndex(step => step.name === 'Prepare pinned SQLite source fixture'));
+      assert.throws(() => withoutSQLiteFixture(changed));
+    }
+  }
+  for (const mutate of [
+    value => { value.env.ZRYNA_SQLITE_FIXTURE_ROOT = '/tmp/unchecked'; },
+    value => { value.jobs.rust.env = { ZRYNA_SQLITE_FIXTURE_ROOT: '/tmp/unchecked' }; },
+    value => { value.jobs['fast-contracts'].steps.push({ run: 'python3 scripts/m5/prepare_sqlite_fixture.py' }); },
+  ]) {
+    const changed = workflow('ci.yml'); mutate(changed);
+    assert.throws(() => withoutSQLiteFixture(changed));
   }
 });

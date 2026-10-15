@@ -1,7 +1,11 @@
 //! Actual private runtime compilation, retaining its original rendered source and stage.
+use super::super::super::linked_output;
 use super::*;
-use crate::native::NativeStage;
-use std::fs;
+use crate::native::{self, NativeStage};
+use std::{ffi::OsString, fs};
+
+const SANITIZERS: [&str; 3] =
+    ["-fsanitize=address,undefined", "-fno-sanitize-recover=all", "-fno-omit-frame-pointer"];
 
 pub(super) fn compile_observed(
     fixture: &Fixture,
@@ -61,7 +65,7 @@ pub(super) fn compile(
         "-o".into(),
         runtime_object.clone().into_os_string(),
     ]);
-    let built = super::super::super::harness::compile(&stage, &args);
+    let built = harness::compile(&stage, &args);
     assert!(built.status.success(), "{}", String::from_utf8_lossy(&built.stderr));
     assert!(built.stdout.is_empty() && built.stderr.is_empty());
     let runtime_bytes =

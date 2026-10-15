@@ -33,6 +33,10 @@ repository = "https://github.com/zryna/zryna"
 homepage = "https://zryna.com"
 authors = ["Aditya Nandlal"]
 
+# Keep repeated full-byte tool authentication fast in development and conformance tests.
+[profile.dev.package.sha2]
+opt-level = 3
+
 [workspace.dependencies]
 anyhow = "1.0.99"
 cap-fs-ext = { version = "=4.0.2", default-features = false, features = ["std"] }

@@ -1,6 +1,6 @@
 # Resolved build plan v0
 
-Status: integrated source-only contract with a **proposed D2 native alignment** for
+Status: integrated source-only contract with an **integrated specification-only D2 native alignment** for
 [#361](https://github.com/zryna/zryna/issues/361), within M5. The schema and checker validate
 synthetic records only. They do not resolve packages, read a workspace, acquire inputs, execute a
 tool, compile, link, populate a cache, or publish an artifact. Existing compiler/runtime behavior,
@@ -56,9 +56,10 @@ The subsequently integrated [#364 review](../abi/NATIVE_C_INTEROP_V0_REVIEW.md#e
 specifies the exact C ABI tuple; it does not retroactively accept #361's appendix or prove FFI.
 Source-only v0 acceptance does not wait for this appendix or the rest of M7.
 
-The prospective D2 successor below defines two explicit states for the same specified tuple:
+The D2 successor integrated by [PR #537](https://github.com/zryna/zryna/pull/537)
+defines two explicit states for the same specified tuple:
 `proposed-specified-native-c-interop-v0` and specification-only `specified-native-c-interop-v0`.
-Approval and integration of this successor remain pending in the separate decision record. Neither
+Its normal integration is recorded in the separate decision record. Neither
 state supplies acquisition, runtime artifact, execution, cache-reuse, linking, publication or grant
 authority. The driver and #362 remain their owners; no existing record is automatically upgraded.
 
@@ -248,8 +249,9 @@ remain driver operations and cannot be authorized by the presence of these ident
 
 ### Proposed D2 native C v0 alignment
 
-This specification-only successor is **prospective**, pending independent exact-revision review
-and normal integration with a factual [D2 decision record](../abi/NATIVE_C_INTEROP_V0_REVIEW.md#prospective-d2-native-appendix-contract-decision).
+This specification-only successor was integrated by PR #537 at
+`adfb937de61d005c8496ec584e71846044dc045f`, as recorded in the factual
+[D2 decision record](../abi/NATIVE_C_INTEROP_V0_REVIEW.md#prospective-d2-native-appendix-contract-decision).
 It defines the explicit `specified-native-c-interop-v0` state alongside the retained proposed state;
 recognizing either grammar records no reviewer identity, approval, integration or execution.
 Passing tests, integrating #364, closing a parent issue or supplying an approval Boolean cannot
@@ -413,8 +415,8 @@ part of that slice.
   trust decision owned by #362.
 - Confirm whether #168 records this plan key as a provenance material/reference; #168 remains the
   record owner and must domain-separate any such digest in its own versioned extension.
-- Independently review this exact successor's #364 tuple mapping, specification-only receipt and
-  runtime-artifact evidence separation before completing the prospective D2 contract decision;
+- Independently review changes to this successor's #364 tuple mapping, specification-only receipt and
+  runtime-artifact evidence separation against the integrated D2 contract decision;
   retain legacy/proposed/source-only validity without relabeling any state. Only real review and
   integration outcomes may replace pending decision fields; runtime artifact authority stays separate.
 - Review any renamed field or changed projection as a cache-format change. Do not silently accept

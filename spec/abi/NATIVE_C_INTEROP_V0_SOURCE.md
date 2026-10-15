@@ -8,9 +8,12 @@ declarations, typed bodies, native C IR and MIR; reviewed Linux fixture tests em
 link and execute audited objects. The private source-selection checkpoint
 [`09882e4`](https://github.com/zryna/zryna/commit/09882e42e36200d376e1f1d8f79ac8b87d59b349)
 passed [exact-revision CI](https://github.com/zryna/zryna/actions/runs/37267662189).
-The public CLI/provider routes do not admit these forms. Full #417 acceptance
-still requires the native appendix decision, declaration boundary/report proofs,
-the transitive-native review vector and independent review. No selector is activated.
+The public CLI/provider routes do not admit these forms. The specification-only native
+appendix decision is integrated in [PR #537](https://github.com/zryna/zryna/pull/537).
+Private declaration boundary/report tests and transitive-native selection tests are
+implementation evidence; full #417 acceptance requires independent review and exact-revision
+qualification of the complete conformance profile. Native recipe isolation remains separate
+#405 work. No selector is activated.
 
 ## Closed sidecar syntax
 

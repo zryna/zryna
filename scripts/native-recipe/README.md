@@ -20,8 +20,8 @@ validation failures, verifies the complete source material closure, denies
 pure-source and playground recipes, checks exact declared tool/input byte maps,
 and requires the independent caller's expected recipe digest. The digest must
 come from operator policy, never a package or colocated checksum. Even an exact
-match then rejects as `TRUST-NATIVE`: the native appendix still has
-`provisional-pending-364` status, and #417 plus actual host enforcement have no
+match then rejects as `TRUST-NATIVE`: the integrated specification-only native
+appendix grants no execution, and #417 plus actual host enforcement have no
 authenticated integration capability here. Caller-supplied approval, sandbox
 and FFI booleans cannot unlock execution. Policy reason identifiers are internal
 contract categories, not new public compiler diagnostic codes.

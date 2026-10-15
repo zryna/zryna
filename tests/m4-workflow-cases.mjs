@@ -1,8 +1,39 @@
 import assert from 'node:assert/strict';
 
+const sqliteSetup = {
+  name: 'Prepare pinned SQLite source fixture', if: "runner.os == 'Linux'",
+  'timeout-minutes': 3, shell: 'bash',
+  run: `python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source"
+printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
+`,
+};
+
+// Authenticate this exact prerequisite before projecting the unchanged legacy workflow.
+export function withoutSQLiteFixture(candidate) {
+  const copy = structuredClone(candidate);
+  for (const [id, target] of [
+    ['preflight', step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts'],
+    ['rust', step => step.name === 'Verify M2 driver security'],
+    ['m4-platform', step => step.name === 'Execute complete M0 through M4 core matrix'],
+  ]) {
+    const steps = copy.jobs[id].steps;
+    const setups = steps.filter(step => step.name === sqliteSetup.name);
+    const executions = steps.filter(target);
+    assert.equal(setups.length, 1, `${id}: one required SQLite setup`);
+    assert.equal(executions.length, 1, `${id}: one owning execution`);
+    assert.deepEqual(setups[0], sqliteSetup, `${id}: exact required source acquisition`);
+    const index = steps.indexOf(executions[0]);
+    assert(index > 0);
+    assert.equal(steps[index - 1], setups[0], `${id}: setup immediately precedes owner`);
+    steps.splice(index - 1, 1);
+  }
+  assert(!/sqlite/i.test(JSON.stringify(copy)), 'no other SQLite setup, locator or bypass');
+  return copy;
+}
+
 // Authenticate the additive M4 routing/lanes before existing foundation snapshot checks.
 export function withoutM4Workflow(candidate) {
-  const copy = structuredClone(candidate);
+  const copy = withoutSQLiteFixture(candidate);
   const jobs = copy.jobs;
   const core = jobs['m4-platform'];
   assert.equal(core.name, 'm4 (${{ matrix.os }})');

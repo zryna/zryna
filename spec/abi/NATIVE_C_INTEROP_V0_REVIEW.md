@@ -154,20 +154,20 @@ role or stale digest must fail without constructing a sealed value. MIR cannot
 erase an IR release obligation or introduce a new external symbol.
 
 The separate [#361 D2 package alignment](../package/RESOLVED_BUILD_PLAN_V0.md#proposed-d2-native-c-v0-alignment)
-is a prospective specification-only successor, not appendix acceptance recorded by this #364 review.
+is an integrated specification-only successor, separate from this #364 review.
 PR #393 accepted only the source-only contract with a draft native appendix. This successor defines
 explicit proposed and specification-only states with the same closed #364 tuple, preserves both
 historical grammars without auto-upgrade, and returns denied native admission in either state.
-Its prospective decision below requires actual independent successor review and normal integration.
+Its normal integration is recorded below; historical review and test receipts retain their original scope.
 That decision can resolve D2's #361 native-appendix-contract prerequisite only; runtime artifacts,
 IR/MIR implementation, policy admission, linking, FFI conformance and public support remain separate.
 
 ### Prospective D2 native-appendix-contract decision
 
-This records the genuine user authorization and parent-reported independent review below, not
-executed conformance or a completed repository integration. The earlier predecessor review and
+This records the genuine user authorization, parent-reported independent review and normal
+specification integration below. The earlier predecessor review and
 the reviewed successor remain distinct. Reviewer identity was not supplied and is not inferred.
-Current-main requalification, changed-layout review and the actual merge revision remain pending.
+Historical candidate receipts do not qualify subsequent implementation changes.
 
 | Decision input or outcome | Recorded fact or pending requirement |
 | --- | --- |
@@ -180,8 +180,8 @@ Current-main requalification, changed-layout review and the actual merge revisio
 | Independent successor reviewer identity and disposition | Identity not supplied; parent-reported disposition above is no substantive defect. No identity or formal repository review submission is inferred from authorship or passing tests |
 | Historical Linux/Windows build-plan receipts | Both hosts executed all 16 cases, including both D2 states and negatives, for workflow head `be289c2793e4e42ec30831937861cdb8d533c3e3` at test merge `d20f00c171536da2f334619bc885a4adf1387300`, whose complete tree equals the reviewed successor tree. [CI run](https://github.com/zryna/zryna/actions/runs/37297956313). These historical receipts do not qualify a new integration head |
 | Repository approval decision | User explicitly authorized Ready and normal merge in the parent conversation on 2026-10-08; parent Ready action was confirmed at 17:41 UTC. Approval is for this specification-only prerequisite, subject to current-base tests and review; no retroactive PR #393 native approval or execution admission |
-| Normal integration revision | Pending actual integration; no merge or issue closure recorded here |
-| Effective specification disposition | Normal integration and final candidate qualification remain pending; user authorization and Ready status do not themselves complete integration |
+| Normal integration revision | [PR #537](https://github.com/zryna/zryna/pull/537), merged 2026-10-08 at `adfb937de61d005c8496ec584e71846044dc045f`, tree `6cd7652ccc3a648cb2f1b0c4e8e4a6ce82384b79` |
+| Effective specification disposition | The specification-only native appendix prerequisite is integrated. Both explicit states continue to deny native execution; this decision does not establish #417 implementation acceptance or close #405 |
 
 The successor review must check the identical fixed ABI tuple and closed constraints in both new
 states, string/numeric wire-type boundaries, unchanged source-only canonical bytes/key/receipt,

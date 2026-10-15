@@ -5,7 +5,7 @@ use super::*;
 use crate::native::{self, NativeStage, ProcessPhase};
 use std::{ffi::OsString, path::PathBuf};
 mod entry_counter;
-mod runtime;
+use super::super::private_byte_runtime as runtime;
 pub(super) use entry_counter::{Counter, observe as observe_with_sum_counter};
 
 mod linked_observer;

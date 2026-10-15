@@ -208,6 +208,24 @@ test('exact H1 source binding admits both candidate targets with unchanged mater
   }
 });
 
+test('H1 candidate binding authenticates current workspace bytes and rejects an unreviewed manifest', () => {
+  const inputs = ['Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', 'zryna.workspace.json']
+    .map(logicalPath => {
+      const data = readFileSync(new URL(`../${logicalPath}`, import.meta.url));
+      return { logicalPath, size: data.length, sha256: sha256(data) };
+    });
+  const changed = Buffer.concat([readFileSync(new URL('../Cargo.toml', import.meta.url)),
+    Buffer.from('\n# unreviewed manifest change\n')]);
+  for (const target of ['x86_64-unknown-linux-gnu', 'x86_64-pc-windows-msvc']) {
+    const value = commandCandidate(target);
+    value.receipt.inputs = inputs;
+    assert.doesNotThrow(() => validateCommandCandidate(value));
+    value.receipt.inputs = inputs.map(input => input.logicalPath === 'Cargo.toml'
+      ? { ...input, size: changed.length, sha256: sha256(changed) } : input);
+    assert.throws(() => validateCommandCandidate(value), /Rust material lockfile identity/);
+  }
+});
+
 test('H1 source binding cannot replace tagged or predecessor release lock pins', () => {
   assert.throws(() => validateCommandCandidate(commandCandidate(), { productionCandidate: false }),
     /Rust material lockfile identity/);
