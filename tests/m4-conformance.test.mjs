@@ -95,9 +95,12 @@ test('missing extra and duplicate row case and gate identities reject', () => {
 test('unregistered fixture unsafe paths and case-colliding sources reject', () => {
   for (const edit of [value => { value.sources[0].path = '../escape'; },
     value => { value.cases[0].fixture.push('tests/not-registered.zry'); },
-    value => { value.sources.push({ ...value.sources[0], path: value.sources[0].path.toUpperCase() }); }]) {
+    value => { value.sources[1].path = value.sources[0].path.toUpperCase(); }]) {
     assert.throws(() => validateM4Conformance(mutant(edit)), /unsafe|fixture|case collision/);
   }
+  assert.throws(() => validateM4Conformance(mutant(value => {
+    while (value.sources.length <= 512) value.sources.push({ ...value.sources[0] });
+  })), /closed schema rejected \/sources/u);
 });
 
 test('changed fixed oracle and foundation identity reject independently of file digest', () => {

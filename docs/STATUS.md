@@ -424,3 +424,16 @@ it does not authenticate this checkout's execution, CI, installation, signing or
 for closure. Existing M0–M3 profiles and their historical support contracts remain unchanged.
 Installed component/browser/server, existing immutable beta H1, other browsers, desktop Windows,
 general cloud hosting, signed public releases and production admission remain excluded.
+
+## Explicit native compile recipe library API
+
+The [bounded native recipe API](NATIVE_RECIPES_V0.md) separates authenticated source/ABI
+planning, independent trusted-operator approval and a fixed Linux x86-64 Docker session.
+Pure-source and untrusted-playground modes deny recipes; trusted-native classification grants
+no execution by itself. The two-role session is compile-only and requires complete root/input/
+output audit plus confirmed cleanup. Local Linux x86-64 production-API qualification passed
+two fresh successful compilations and specific output, compiler-error and 30-second timeout
+refusals with confirmed cleanup and unchanged project state. Issue acceptance additionally
+requires independent review and full policy/supported-host CI for the exact candidate; local
+session evidence alone does not certify those gates. No CLI/profile, native cache, release,
+linking or loading authority is activated.

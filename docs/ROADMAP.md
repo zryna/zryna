@@ -558,6 +558,16 @@ and #361's validated target/runtime-only source-plan boundary; native recipes ad
 and relevant #364 ABI decisions. Registry hosting and M6 playground implementation stay deferred.
 This policy draft creates no resolver, sandbox, execution mode or public support.
 
+The explicit [native compile recipe library API](NATIVE_RECIPES_V0.md) now separates
+source/ABI-bound planning, caller-selected trust modes, independent operator approval and a
+fixed Linux x86-64 two-role Docker session. Its compile-only result requires audited output
+and confirmed cleanup. Local Linux production-API qualification passed two fresh successful
+compilations and specific output, compiler-error and actual 30-second timeout controls.
+Issue acceptance additionally requires independent review and full policy/foundation and
+supported-host CI for the exact candidate; local session evidence alone does not certify those
+gates. No CLI/profile, native cache, release, linking, loading or playground recipe activation
+is added.
+
 Completion gate: a clean environment reproduces and verifies every published artifact from a tagged source revision.
 
 ## M6 — Developer Tooling

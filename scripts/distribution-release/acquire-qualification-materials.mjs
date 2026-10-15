@@ -178,6 +178,7 @@ function upstreamLicenseDescriptor(records) {
 
 export async function acquireQualificationMaterials({
   sourceRoot, sourceCommit, sourceRef = 'refs/tags/v0.2.3', target, archiveCapability,
+  productionCandidate = false, distribution, architectureReceipt,
   fetchImpl = fetch, spawn = spawnSync, requestTimeoutMs = REQUEST_TIMEOUT, adapters,
 }) {
   if (!isAbsolute(sourceRoot ?? '') || !/^[0-9a-f]{40}$/.test(sourceCommit ?? '')
@@ -192,6 +193,12 @@ export async function acquireQualificationMaterials({
     'captureNodeMaterials', 'captureRustMaterials', 'rustMaterials']) {
     if (typeof implementation[name] !== 'function') reject(`material adapter ${name} is missing`);
   }
+  if (productionCandidate && (productionCandidate !== true || sourceRef !== 'refs/heads/main'
+    || distribution?.source?.ref !== sourceRef || distribution?.source?.commit !== sourceCommit)) {
+    reject('candidate material source differs');
+  }
+  const materialContext = { productionCandidate, distribution, architectureReceipt };
+  const rustRecords = implementation.rustMaterials(target, materialContext);
   const request = (descriptor) => fetchQualificationResource(descriptor,
     { fetchImpl, requestTimeoutMs });
   const npm = implementation.typeScriptMaterialDescriptors();
@@ -222,7 +229,6 @@ export async function acquireQualificationMaterials({
   const nodeArchive = await request({ url: nodeUrl, maximum: nodeRecord.archiveSize,
     size: nodeRecord.archiveSize, digest: nodeRecord.archiveSha256,
     label: `Node archive ${target}` });
-  const rustRecords = implementation.rustMaterials(target);
   const rustCaptures = [];
   for (const record of rustRecords) {
     const identity = `${record.name}-${record.version}`;
@@ -245,7 +251,7 @@ export async function acquireQualificationMaterials({
     })),
     ...await implementation.captureNodeMaterials(target, nodeArchive, archiveCapability),
     ...implementation.captureTypeScriptMaterials(npmInputs),
-    ...implementation.captureRustMaterials(target, rustCaptures, upstreamLicense),
+    ...implementation.captureRustMaterials(target, rustCaptures, upstreamLicense, materialContext),
   ].sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
   orderedPaths(files.map(({ path }) => path));
   if (files.some(({ mode, data }) => ![0o644, 0o755].includes(mode)

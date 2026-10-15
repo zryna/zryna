@@ -152,7 +152,7 @@
         "zryna-syntax",
         "zryna-windows-filesystem"
       ],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "examples"]
     },
     {
       "id": "zryna-language-server",

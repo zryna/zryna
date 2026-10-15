@@ -295,11 +295,26 @@ object emission. At
 [`09882e4`](https://github.com/zryna/zryna/commit/09882e42e36200d376e1f1d8f79ac8b87d59b349),
 [all 33 exact-revision CI jobs passed](https://github.com/zryna/zryna/actions/runs/37267662189).
 Four unsupported single selections reject before the emitter; the native-only Linux fixture
-emits an audited object. Full #417 acceptance remains pending: the #361 native appendix decision,
-declaration string/report boundary proofs, the transitive A→B→C mixed-selection vector and
-independent acceptance still need explicit evidence. Arbitrary foreign libraries and actual host
-authorization/containment retain their separate owning requirements. No CLI selector,
+emits an audited object. The bounded #417 compiler/interop implementation was subsequently
+integrated by [merge b7a9dfc](https://github.com/zryna/zryna/commit/b7a9dfc15b54a6318778f7184292e9e813621f9c).
+That integration grants no recipe or host permission. Arbitrary foreign libraries and actual
+host authorization/containment retain their separate owning requirements. No CLI selector,
 executable publication or Windows native C target is added.
+
+### Explicit native compile recipe API
+
+The [native recipe library contract](../../docs/NATIVE_RECIPES_V0.md) documents
+`prepare_native_recipe`, `approve_native_recipe`, `prepare_and_approve_native_recipe` and the
+Linux x86-64-only `execute_native_recipe` session. Genuine retained source/ABI issuers and exact
+independent operator/tool-root approval precede host execution. Pure-source and playground
+modes deny recipes. The fixed two-role Docker mechanism audits the sole object only after
+recipe namespace kill/wait and constructs success only after confirmed owned cleanup.
+Local Linux production-API qualification passed two fresh successful compilations and specific
+wrong-output, compiler-error and actual 30-second timeout refusals, with confirmed cleanup and
+unchanged project state. Issue acceptance additionally requires independent review and full
+policy/supported-host CI for the exact candidate; local session evidence alone does not certify
+those gates. The [ordinary-driver example](examples/native_recipe_conformance/README.md) requires explicit
+execution. No CLI/profile, native cache, release, linking or loading authority is added.
 
 ## Bounded public server composition
 

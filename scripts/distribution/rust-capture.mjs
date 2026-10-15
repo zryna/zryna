@@ -6,8 +6,8 @@ const MAX_CRATE = 64 * 1024 * 1024;
 const UPSTREAM_WASMTIME =
   'https://raw.githubusercontent.com/bytecodealliance/wasmtime/7bac2c2775808aaec5d4aa5627a5e447b51102cf/LICENSE';
 
-export function captureRustMaterials(target, captures, upstreamLicense) {
-  const records = rustMaterials(target);
+export function captureRustMaterials(target, captures, upstreamLicense, context) {
+  const records = rustMaterials(target, context);
   requireValue(Array.isArray(captures) && captures.length === records.length
     && Buffer.isBuffer(upstreamLicense), 'Rust material capture set');
   const files = [];

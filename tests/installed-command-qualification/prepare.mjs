@@ -83,9 +83,21 @@ export async function prepare(source, output) {
     const actual = files.find(file => file.path === path).data;
     if (actual.length !== expected[0] || sha256(actual) !== expected[1]) throw new Error('Node pin differs');
   }
+  const identity = { version: '0.2.3',
+    // The unchanged installation wire supports intended main candidate identity. The actual
+    // observed ref is recorded separately below; this is never protected-main admission proof.
+    source: { repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main', commit: head,
+      tree, sourceDateEpoch: epoch },
+    target: { triple: target, archiveFormat: paths.format, platformBaseline: process.platform === 'win32'
+      ? { os: 'windows', product: 'windows-server', version: '2022', architecture: 'x86_64', runtime: 'operating-system-ucrt' }
+      : { os: 'linux', distribution: 'ubuntu', version: '24.04', architecture: 'x86_64' } },
+    recipe: { format: 'zryna.distribution-recipe.v1',
+      sha256: sha256(readFileSync(join(source, 'scripts/distribution/release-recipe-v1.json'))) } };
+  const materialContext = { productionCandidate: true, distribution: identity,
+    architectureReceipt: JSON.parse(receipt.toString('utf8')) };
   const metadata = JSON.parse(run(cargo, ['metadata', '--format-version=1', '--locked', '--offline', '--filter-platform', target], source, buildEnv));
   const runtimeClosureAudit = checkQualificationRustClosure({ cwd: source });
-  for (const record of rustMaterials(target)) {
+  for (const record of rustMaterials(target, materialContext)) {
     const pkg = metadata.packages.find(pkg => pkg.name === record.name && pkg.version === record.version);
     if (!pkg) throw new Error(`Missing pinned Rust material ${record.name}-${record.version}`);
     for (const expected of record.files) {
@@ -100,16 +112,6 @@ export async function prepare(source, output) {
     }
   }
   files.sort((a, b) => a.path < b.path ? -1 : 1);
-  const identity = { version: '0.2.3',
-    // The unchanged installation wire supports intended main candidate identity. The actual
-    // observed ref is recorded separately below; this is never protected-main admission proof.
-    source: { repository: 'https://github.com/zryna/zryna', ref: 'refs/heads/main', commit: head,
-      tree, sourceDateEpoch: epoch },
-    target: { triple: target, archiveFormat: paths.format, platformBaseline: process.platform === 'win32'
-      ? { os: 'windows', product: 'windows-server', version: '2022', architecture: 'x86_64', runtime: 'operating-system-ucrt' }
-      : { os: 'linux', distribution: 'ubuntu', version: '24.04', architecture: 'x86_64' } },
-    recipe: { format: 'zryna.distribution-recipe.v1',
-      sha256: sha256(readFileSync(join(source, 'scripts/distribution/release-recipe-v1.json'))) } };
   assertCurrent();
   const prepared = preparePayload(identity, files, receipt, { productionCandidate: true });
   const digest = sha256(prepared.distribution);
@@ -160,7 +162,7 @@ export async function prepare(source, output) {
     productionArchiveContentVerified: true,
     qualificationLockSha256: sha256(readFileSync(join(source, 'Cargo.lock'))),
     rustMaterialBindingSha256: sha256(readFileSync(join(source, 'scripts/distribution/command-h1-rust-binding-v1.json'))),
-    runtimeClosure: rustMaterials(target).map(record => `${record.name}-${record.version}`),
+    runtimeClosure: rustMaterials(target, materialContext).map(record => `${record.name}-${record.version}`),
     runtimeClosureAudit,
     archiveContentRoundTripVerified: true,
     archive: expected, cliSha256: sha256(cli), distributionSha256: digest,
