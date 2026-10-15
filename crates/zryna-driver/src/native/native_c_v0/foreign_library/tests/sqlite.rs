@@ -1,4 +1,4 @@
-//! Distinct SQLite source/declaration and ownership issuers; no library execution grant.
+//! Distinct `SQLite` source/declaration and ownership issuers; no library execution grant.
 
 use super::*;
 use zryna_semantics::native_c_v0::{
