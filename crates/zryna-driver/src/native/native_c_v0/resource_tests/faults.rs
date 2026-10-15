@@ -87,3 +87,46 @@ int main(void) {{
     );
     run(&artifact, &client, true);
 }
+
+#[test]
+fn generated_negative_seed_releases_the_earlier_handle_without_failed_output_exposure() {
+    let mut body = acquisitions("acquire", 2);
+    for (original, replacement) in [
+        ("\"fixture-c-v0@0/fixture_open\", 0, o0", "\"fixture-c-v0@0/fixture_open\", 7, o0"),
+        ("\"fixture-c-v0@0/fixture_open\", 1, o1", "\"fixture-c-v0@0/fixture_open\", -1, o1"),
+    ] {
+        assert_eq!(body.matches(original).count(), 1);
+        body = body.replacen(original, replacement, 1);
+        assert_eq!(body.matches(replacement).count(), 1);
+    }
+    let artifact = emit(&capture::compact_handle(&body), "acquire");
+    let entry = entry(&artifact, "acquire");
+    let client = format!(
+        r"
+int main(void) {{
+  struct zryna_c_v0_context context;
+  zryna_c_v0_context_initialize(&context);
+  struct zryna_c_v0_inputs inputs = {{0}};
+  for (size_t repetition=0; repetition<2; ++repetition) {{
+    struct zryna_c_v0_outcome outcome = {{.tag=99,.status=99,.value=4242,.unresolved=99}};
+    fixture_test_reset();
+    fixture_test_fail_allocation(2); /* Negative seed must not reach this allocation. */
+    assert({entry}(&context,&inputs,&outcome) == 1);
+    assert(outcome.tag == 1 && outcome.status == 1 && outcome.trap == 0);
+    assert(outcome.value == 0 && outcome.reserved == 0 && outcome.unresolved == 0);
+    struct fixture_test_observation observed = fixture_test_observe();
+    assert(observed.calls == 3 && observed.allocation_attempts == 1);
+    assert(observed.allocations == 1 && observed.releases == 1 && observed.live == 0);
+    assert(observed.handle_writes == 1 && observed.i32_writes == 0);
+    assert(observed.pointer_writes == 0 && observed.count_writes == 0);
+    assert(fixture_test_release_at(0).acquisition == 1);
+    assert(fixture_test_release_at(0).kind == FIXTURE_TEST_HANDLE);
+    assert(context.busy == 0 && context.live == 0 && context.reserved == 0 && context.poisoned == 0);
+  }}
+  return 0;
+}}
+"
+    );
+    run(&artifact, &client, true);
+    run_sanitized(&artifact, &client);
+}
