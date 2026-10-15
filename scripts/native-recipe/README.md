@@ -6,6 +6,14 @@ package manifest, #168 provenance field, serialized recipe schema, CLI selector,
 executor, cache admission or publication path. The current driver continues to
 reject package recipes. PR #506's source-only trust regressions remain separate.
 
+These JavaScript prerequisite checkers remain deliberately non-executing. The separate typed
+[Rust native recipe API](../../docs/NATIVE_RECIPES_V0.md) now owns explicit source/ABI planning,
+independent operator approval and Linux-only session enforcement. Its existence does not add a
+success path here, approve package recipes or turn the synthetic checks below into host proof.
+The historical #417/specification-only blockers described below apply to this checker's
+unavailable authority channel; they do not describe the current compiler/interop integration.
+
+
 `describeNativeRecipe` independently validates the complete plan against the
 branded #168 package authority, takes an immutable private snapshot, and derives
 a domain-separated review digest. The digest binds the whole plan key, exact

@@ -10,6 +10,13 @@ const LOCK = readFileSync(new URL('./materials-rust-v1.json', import.meta.url));
 requireValue(sha256(LOCK) === '32b6343a6dfae19d7c3cdcc50658762c2c0ad08aca15124bdce85b28db38a84b',
   'Rust material recipe identity');
 const RECORD = parseCanonical(LOCK);
+const CANDIDATE_LOCK = readFileSync(new URL('./materials-rust-command-candidate-v1.json', import.meta.url));
+requireValue(sha256(CANDIDATE_LOCK) === '499be6581463e71e54ede6d2c5807c346173f34e7505e6faeaae95944c254483',
+  'candidate Rust material recipe identity');
+const CANDIDATE = parseCanonical(CANDIDATE_LOCK);
+requireValue(CANDIDATE.format === 'zryna.command-candidate-rust-materials.v1'
+  && CANDIDATE.status === 'review-candidate' && CANDIDATE.productionAdmission === 'forbidden'
+  && CANDIDATE.baseMaterialRecordSha256 === sha256(LOCK), 'candidate Rust material recipe status');
 const CARGO_LOCKS = Object.freeze({
   '0.2.1': 'fec1a746a6122a216255080e90ee39068578528feddec24c1e0d8bf9df3b8a38',
   '0.2.2': 'baf9267bada161b9e2ddd6abddac4b0f029b5bb23177c11599c341a68b2130f9',
@@ -28,10 +35,30 @@ function command(spawn, executable, args, cwd, maximum = 65536) {
   return result.stdout.trim();
 }
 
-export function rustMaterials(target) {
+export function rustMaterials(target, {
+  productionCandidate = false, distribution, architectureReceipt,
+} = {}) {
   requireValue(Object.hasOwn(RECORD.targets, target), 'Rust material target');
+  if (productionCandidate) {
+    requireValue(productionCandidate === true && matchesCommandH1RustBinding(
+      architectureReceipt, distribution, target, sha256(LOCK), sha256(CANDIDATE_LOCK)),
+    'candidate Rust material source binding');
+    return candidateMaterials(target);
+  }
   const selected = new Set(RECORD.targets[target]);
   return RECORD.packages.filter(record => selected.has(`${record.name}-${record.version}`));
+}
+
+// Descriptor data for checking the current source closure; this grants no distribution authority.
+function candidateMaterials(target) {
+  requireValue(Object.hasOwn(CANDIDATE.targets, target), 'candidate Rust material target');
+  const selected = new Set(CANDIDATE.targets[target]);
+  const additions = CANDIDATE.packages.filter(record => selected.has(`${record.name}-${record.version}`));
+  const records = [...rustMaterials(target), ...additions].sort((left, right) =>
+    `${left.name}-${left.version}` < `${right.name}-${right.version}` ? -1 : 1);
+  requireValue(new Set(records.map(record => `${record.name}-${record.version}`)).size === records.length,
+    'candidate Rust material duplicate');
+  return records;
 }
 
 export function validateRustMaterials(entries, target, architectureReceipt, acceptedVersion = '0.2.3', {
@@ -41,9 +68,10 @@ export function validateRustMaterials(entries, target, architectureReceipt, acce
   const releaseLock = Object.hasOwn(CARGO_LOCKS, acceptedVersion)
     && lock?.sha256 === CARGO_LOCKS[acceptedVersion];
   const commandCandidateLock = productionCandidate === true && acceptedVersion === '0.2.3'
-    && matchesCommandH1RustBinding(architectureReceipt, distribution, target, sha256(LOCK));
+    && matchesCommandH1RustBinding(architectureReceipt, distribution, target, sha256(LOCK), sha256(CANDIDATE_LOCK));
   requireValue(releaseLock || commandCandidateLock, 'Rust material lockfile identity');
-  const expected = rustMaterials(target).flatMap(record => record.files)
+  const records = commandCandidateLock ? candidateMaterials(target) : rustMaterials(target);
+  const expected = records.flatMap(record => record.files)
     .map(({ path, size, sha256: digest }) => ({ path, size, sha256: digest }))
     .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   const actual = entries.filter(entry => entry.path.startsWith('licenses/rust/'))
@@ -52,7 +80,7 @@ export function validateRustMaterials(entries, target, architectureReceipt, acce
 }
 
 export function checkQualificationRustClosure({
-  cwd = resolve('.'), spawn = spawnSync, materialRecords = rustMaterials,
+  cwd = resolve('.'), spawn = spawnSync, materialRecords = candidateMaterials,
 } = {}) {
   const cargo = command(spawn, 'rustup', ['which', '--toolchain', '1.97.1', 'cargo'], cwd);
   requireValue(isAbsolute(cargo), 'qualification Rust closure Cargo path');

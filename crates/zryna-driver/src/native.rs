@@ -5,13 +5,13 @@ mod link;
 /// Internal total-scalar native C linking; resource-bearing entries remain separate.
 pub mod native_c_v0;
 pub(crate) mod ownership;
+pub(crate) mod recipe;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use link::link_and_audit_native_invocation;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod stage_input;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod stage_support;
-
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use stage_support::{
     NativeStageIdentity, native_stage_error, native_stage_identity, stage_cleanup_warning,

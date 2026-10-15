@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { bytes, parseCanonical, requireValue, sha256 } from './canonical.mjs';
 
 const INPUT = readFileSync(new URL('./command-h1-rust-binding-v1.json', import.meta.url));
-requireValue(sha256(INPUT) === 'c96432cbc95a51066ada21e2f145ace5a2a94afb30a9a54a2060545523185a31',
+requireValue(sha256(INPUT) === 'bf39322c0104f119416f7151f139e783800a695bc3e5bc30afe8852e1b418f7f',
   'command H1 Rust binding identity');
 const BINDING = parseCanonical(INPUT);
 requireValue(BINDING.format === 'zryna.command-h1-rust-material-binding.v1'
@@ -11,14 +11,18 @@ requireValue(BINDING.format === 'zryna.command-h1-rust-material-binding.v1'
 
 // This exact content binding is available only to the existing main-candidate context.
 // It establishes no protected-main, gate, signature, recipe-execution or release authority.
-export function matchesCommandH1RustBinding(receipt, distribution, target, materialRecordSha256) {
-  if (distribution?.version !== BINDING.versionCandidate
+export function matchesCommandH1RustBinding(
+  receipt, distribution, target, materialRecordSha256, candidateMaterialRecordSha256,
+) {
+  if (!/^[0-9a-f]{64}$/.test(candidateMaterialRecordSha256 ?? '')
+    || distribution?.version !== BINDING.versionCandidate
     || distribution?.source?.repository !== BINDING.sourceRepository
     || distribution?.source?.ref !== BINDING.sourceRef
     || distribution?.target?.triple !== target
     || distribution?.recipe?.format !== 'zryna.distribution-recipe.v1'
     || distribution?.recipe?.sha256 !== BINDING.recipeSha256
     || materialRecordSha256 !== BINDING.materialRecordSha256
+    || candidateMaterialRecordSha256 !== BINDING.candidateMaterialRecordSha256
     || !['repository', 'commit', 'tree'].every(key =>
       receipt?.source?.[key] === distribution.source[key])
     || !Array.isArray(receipt?.inputs)) return false;

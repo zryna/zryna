@@ -130,6 +130,12 @@ export function createProductionProvisioner(injected = {}) {
       sourceCommit: source.commit,
       sourceRef: source.ref,
       target: target.triple,
+      productionCandidate,
+      architectureReceipt: architecture.receipt,
+      distribution: {
+        version: '0.2.3', source, target,
+        recipe: { format: recipe.format, sha256: sha256(recipeBytes) },
+      },
       archiveCapability,
       spawn,
       fetchImpl: injected.fetchImpl,

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { sha256 } from '../scripts/distribution/canonical.mjs';
 import {
@@ -78,8 +79,11 @@ test('bounded fetch requests and requires an exact JSON representation', async (
   }), /response length differs \(declared invalid; expected 18\)/);
 });
 
-for (const sourceRef of ['refs/heads/main', 'refs/tags/v0.2.3', undefined]) {
-  test(`acquires exact materials for ${sourceRef ?? 'legacy default'}`, async () => {
+for (const [sourceRef, productionCandidate] of [
+  ['refs/heads/main', false], ['refs/tags/v0.2.3', false], [undefined, false],
+  ['refs/heads/main', true],
+]) {
+  test(`acquires exact materials for ${sourceRef ?? 'legacy default'} candidate=${productionCandidate}`, async () => {
     const keys = Buffer.from('keys');
     const metadata = Buffer.from('metadata');
     const npmArchive = Buffer.from('npm archive');
@@ -183,8 +187,16 @@ for (const sourceRef of ['refs/heads/main', 'refs/tags/v0.2.3', undefined]) {
         assert.equal(capability.name, 'selectors');
         return [selected.node];
       },
-      rustMaterials: () => [rustRecord],
-      captureRustMaterials(target, captures, license) {
+      rustMaterials(target, context) {
+        assert.equal(context.productionCandidate, productionCandidate);
+        assert.equal(context.distribution?.source?.commit, COMMIT);
+        assert.equal(context.architectureReceipt?.source?.commit, COMMIT);
+        return [rustRecord];
+      },
+      captureRustMaterials(target, captures, license, context) {
+        assert.equal(context.productionCandidate, productionCandidate);
+        assert.equal(context.distribution?.source?.commit, COMMIT);
+        assert.equal(context.architectureReceipt?.source?.commit, COMMIT);
         assert.equal(target, 'x86_64-unknown-linux-gnu');
         assert.deepEqual(captures, [{ identity: 'example-crate-1.2.3', archive: crate }]);
         assert.deepEqual(license, upstreamLicense);
@@ -193,6 +205,8 @@ for (const sourceRef of ['refs/heads/main', 'refs/tags/v0.2.3', undefined]) {
     };
     const result = await acquireQualificationMaterials({
       sourceRoot: resolve('qualification-source'), sourceCommit: COMMIT, sourceRef,
+      productionCandidate, distribution: { source: { ref: sourceRef, commit: COMMIT } },
+      architectureReceipt: { source: { commit: COMMIT } },
       target: 'x86_64-unknown-linux-gnu', archiveCapability: { name: 'selectors' },
       fetchImpl, spawn, adapters,
     });
@@ -208,3 +222,41 @@ for (const sourceRef of ['refs/heads/main', 'refs/tags/v0.2.3', undefined]) {
     assert.deepEqual(files.find(({ path }) => path === 'LICENSE').data, source.get('LICENSE'));
   });
 }
+
+
+test('candidate acquisition rejects mismatched context before fetching any bytes', async () => {
+  for (const distribution of [undefined, { source: { ref: 'refs/tags/v0.2.3', commit: COMMIT } },
+    { source: { ref: 'refs/heads/main', commit: 'b'.repeat(40) } }]) {
+    let requests = 0;
+    await assert.rejects(() => acquireQualificationMaterials({
+      sourceRoot: resolve('qualification-source'), sourceCommit: COMMIT, sourceRef: 'refs/heads/main',
+      target: 'x86_64-unknown-linux-gnu', productionCandidate: true, distribution,
+      fetchImpl: async () => { requests++; throw new Error('unexpected acquisition'); },
+    }), /candidate material source differs/);
+    assert.equal(requests, 0);
+  }
+});
+
+
+test('candidate acquisition authenticates exact recipe and source inputs before requesting materials', async () => {
+  const binding = JSON.parse(readFileSync(new URL(
+    '../scripts/distribution/command-h1-rust-binding-v1.json', import.meta.url)));
+  const source = { repository: 'https://github.com/zryna/zryna',
+    ref: 'refs/heads/main', commit: COMMIT, tree: 'b'.repeat(40) };
+  for (const substituteRecipe of [true, false]) {
+    const receipt = { source, inputs: structuredClone(binding.inputs) };
+    const distribution = { version: '0.2.3', source,
+      target: { triple: 'x86_64-unknown-linux-gnu' },
+      recipe: { format: 'zryna.distribution-recipe.v1', sha256: binding.recipeSha256 } };
+    if (substituteRecipe) distribution.recipe.sha256 = '0'.repeat(64);
+    else receipt.inputs[0].sha256 = '0'.repeat(64);
+    let requests = 0;
+    await assert.rejects(() => acquireQualificationMaterials({
+      sourceRoot: resolve('qualification-source'), sourceCommit: COMMIT, sourceRef: source.ref,
+      target: distribution.target.triple, productionCandidate: true, distribution,
+      architectureReceipt: receipt,
+      fetchImpl: async () => { requests++; throw new Error('unexpected acquisition'); },
+    }), /candidate Rust material source binding/);
+    assert.equal(requests, 0);
+  }
+});
