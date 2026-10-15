@@ -2045,12 +2045,12 @@
     {
       "path": "scripts/distribution/command-h1-rust-binding-v1.json",
       "bytes": 895,
-      "sha256": "2a539bf0c4b2042a3b731ca9ce1841230c7baf36ec1ce2869b029d22106b179b"
+      "sha256": "c96432cbc95a51066ada21e2f145ace5a2a94afb30a9a54a2060545523185a31"
     },
     {
       "path": "scripts/distribution/command-h1-rust-binding.mjs",
       "bytes": 1525,
-      "sha256": "086b4adccc066b70f9d1f227e02fe5d81bc885b0e44419ecdaacd81b6d019b90"
+      "sha256": "c33e047838491cbeb67344223b13dc3446037b3f4a68eacca1773f591eec3bd6"
     },
     {
       "path": "scripts/distribution/documents.mjs",
