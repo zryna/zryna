@@ -75,6 +75,8 @@ execution gates on the reviewed source integrated by PR #555. Modified control
 sources have separate measurements and cannot inherit the pristine1696-byte
 source/function certificate.
 
-C-client/private-runtime sanitizer diagnostics, SQLite library-specific
-prerequisites/proof and the full normative resource/fault matrix remain separate.
+C-client/private-runtime sanitizer diagnostics and the full normative
+resource/fault matrix remain separate. The independent SQLite allocator proof is
+documented in `tests/native-c-sqlite-v0/README.md`; its results do not qualify this
+Rust fixture or grant production recipe admission.
 This fixture does not close #417 or #405.

@@ -165,3 +165,12 @@ fn sqlite_independent_policy_rejects_allocator_release_and_abi_substitutions() {
     }
     capture();
 }
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn execution_fixture() -> (HandleLinkRequirements, LibraryMaterial<'static>) {
+    let (sources, authority) = capture();
+    (
+        requirements(&sources, &authority),
+        LibraryMaterial { library_id: ID, header_bytes: HEADER, policy_bytes: POLICY },
+    )
+}

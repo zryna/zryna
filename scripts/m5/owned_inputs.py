@@ -6,12 +6,13 @@ import stat
 from capture_io import Directory, REPORT_LIMIT, read, sha, stamp, write_json
 
 SOURCE_ROOTS = ('crates/zryna-driver/src', 'tests', 'runtime', 'spec', 'adapters', 'examples')
-# Existing --cfg=test driver modules consume these exact cross-crate source files.
+# Existing --cfg=test driver modules consume these exact source files and fixture manifest.
 SOURCE_FILES = (
     'crates/zryna-native-mir/tests/native_c_v0/capture.rs',
     'crates/zryna-native-c-ir/tests/capture.rs',
     'crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs',
     'crates/zryna-ownership-runtime-abi/include/zryna_ownership_runtime_v1.h',
+    'scripts/m5/sqlite_fixture.json',
 )
 INPUT_BYTES = 6 * 1024 * 1024 * 1024  # Existing normal Cargo target bound; no private inventory claim.
 INPUT_ENTRIES = 10000

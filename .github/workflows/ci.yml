@@ -111,7 +111,7 @@ jobs:
   preflight:
     name: preflight
     # #369: cold execution reached the 15-minute deadline after bootstrap completed.
-    # Allow a nominal 5 minutes for other setup/cleanup beyond the 10/25-minute steps.
+    # Five minutes beyond the 10/25-minute steps includes bounded SQLite setup.
     timeout-minutes: 40
     runs-on: ubuntu-latest
     # Keep cold builds within the execution budget without changing test checks.
@@ -148,6 +148,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Fetch locked Rust dependencies
         run: cargo fetch --locked
+      - name: Prepare pinned SQLite source fixture
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source"
+          printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
       - run: node scripts/run-preflight.mjs --compiler-contracts
         timeout-minutes: 25
       - name: Capture ordinary sanitizer compiler prefix
@@ -216,6 +223,13 @@ jobs:
         run: cargo fetch --locked
       - name: Verify M2 semantics
         run: cargo test --locked -p zryna-semantics --lib control_flow_v1
+      - name: Prepare pinned SQLite source fixture
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source"
+          printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
       - name: Verify M2 driver security
         run: cargo test --locked -p zryna-driver --lib
       - name: Verify native source resource limits
@@ -707,6 +721,13 @@ jobs:
       - run: cargo fetch --locked
       - name: Verify M4 registry and hostile evidence contracts
         run: pnpm m4:registry && pnpm m4:evidence:contract
+      - name: Prepare pinned SQLite source fixture
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source"
+          printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
       - name: Execute complete M0 through M4 core matrix
         shell: pwsh
         run: |

@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`455ac02b40ff1a3a91f8ad4de6a86065aa5e9052d30b56553a011d3211b8c140`. The matrix defines six bounded modes on the two
+`f9dc885af08752bc5f3f11a2deb4de66def1935a93c5d950cd5052bb762df97b`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "455ac02b40ff1a3a91f8ad4de6a86065aa5e9052d30b56553a011d3211b8c140",
+  "registrySha256": "f9dc885af08752bc5f3f11a2deb4de66def1935a93c5d950cd5052bb762df97b",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3327,8 +3327,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 31584,
-      "sha256": "65037ce4811cf9cd4b99b8ac383507e8b8b5aa811a1cd85807b08ef5c9a9e0d2"
+      "bytes": 32627,
+      "sha256": "d38e793c411c56e21185cdee07c4c888951d460e0d6da263e4c6b4a31585c576"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -5547,13 +5547,13 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "tests/m4-workflow-cases.mjs",
-      "bytes": 3276,
-      "sha256": "8e0466a70f5fb5f74789347e325914e6d21a2cf89a1882dd555f95f4d54ee19d"
+      "bytes": 4785,
+      "sha256": "e249b6b28393f1801adb73308a0f9c4ac2e8ea471537cfbc828f67832fb965a3"
     },
     {
       "path": "tests/m4-workflow.test.mjs",
-      "bytes": 6179,
-      "sha256": "c85a1360eff275fa63e9a4a52d2e4ea16aae4426107bf951ee44e954aa2c5204"
+      "bytes": 8954,
+      "sha256": "3936df9217216c6ea66152893a138b635c81e163b01914ec3d05560b6d035036"
     },
     {
       "path": "tests/scalar-host-conformance.test.mjs",

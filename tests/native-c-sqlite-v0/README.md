@@ -40,11 +40,30 @@ allocation wrapper delegates successful allocations to real SQLite. Injected
 failure is distinct from an observed real SQLite out-of-memory condition. This
 client does not execute the generated Zryna entry or prove private-copy cleanup.
 
-Run the source-bound Rust tests from the repository root:
+On Linux x86-64, prepare the pinned source-only fixture outside the checkout,
+then run the source-bound and generated-wrapper tests from the repository root:
 
 ```sh
+sqlite_fixture_parent=$(mktemp -d)
+export ZRYNA_SQLITE_FIXTURE_ROOT="$sqlite_fixture_parent/source"
+python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$ZRYNA_SQLITE_FIXTURE_ROOT"
 cargo test --locked -p zryna-driver --lib sqlite_ -- --nocapture
 ```
+
+The acquisition helper authenticates the fixed official archive before parsing,
+checks both extracted source files against `scripts/m5/sqlite_fixture.json`, and
+creates a private read-only cache. An existing cache must match exactly; it is
+never repaired or overwritten. The runtime tests independently rehash the source
+and header. Required Linux CI lanes perform this setup before driver execution;
+missing source input fails the test.
+
+The generated client checks distinct private storage, exact matching SQLite
+release, private-copy allocation failure, malformed result lengths, and recovery.
+A missing-release derivative must fail the live-owner assertion. ASan and UBSan
+cover the C provider, adapter, private runtime and client, with independent live
+diagnostic controls; the emitted Zryna object remains unchanged. The provider
+uses a separate bounded test role and does not acquire production adapter or
+native recipe admission.
 
 For the direct C oracle, supply independently acquired SQLite 3.54.0 source and
 header in `SQLITE_AMALGAMATION`. Their SHA-256 values are
@@ -73,6 +92,6 @@ restore the original adapter and rerun the oracle to check fresh recovery.
 Upstream amalgamation/header acquisition and checksum provenance are separate
 inputs. No upstream source archive or amalgamation is vendored here. These files
 alone establish no artifact provenance, accepted compiler/link/runtime policy,
-public source grant, SQLite execution result, sanitizer result or #417/#405
-closure. Owning source-bound observations, generated-wrapper execution and the
-production linking/host prerequisites remain separate acceptance gates.
+public source grant or #417/#405 closure. Execution and sanitizer claims require
+the actual owning test results; production linking and host prerequisites remain
+separate acceptance gates.

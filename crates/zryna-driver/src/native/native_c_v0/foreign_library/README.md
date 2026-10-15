@@ -70,10 +70,11 @@ fixture body, normative header/policy and private-runtime template at preserved
 checkpoint `42f8e80`. Local proof logs record the actual compiled object and
 rendered source digests. These are reviewed fixture prerequisites with no
 production approval. Controlled hostile derivatives are identified by their
-actual source digest; they are not approved library bodies. No exact operator-
-approved SQLite or Rust-shim source/policy or authentic #405 host-admission
-capability is available here. The normative stage order requires the audited
-raw boundary and reviewed library-specific ownership policy before those proofs.
+actual source digest; they are not approved library bodies. The separate SQLite
+and Rust-shim fixtures retain their own source and operation policies. Neither
+issues an authentic #405 host-admission capability. The normative stage order
+requires the audited raw boundary and library-specific ownership policy before
+those proofs.
 
 ## Full-feature acceptance still open
 
@@ -184,7 +185,7 @@ granting recipe execution, host permission or public activation.
 | Foreign object identity/inventory | Immutable actual ET_REL bytes, full strong definition/dependency inventory, raw tables and relocation audit; independent hostile producers and exact limit cases. | Ordered real-library/runtime/sysroot/tool acquisition, authenticated library review and plan binding. A supplied dependency list is no execution permission. |
 | Executable fixture calls | Separate C scalar/handle and byte/private-runtime calls, allocation failures and mixed reverse-release trace, malformed metadata, physical missing-release mutant, actual linker failure and SIGABRT. Independent C library/runtime/client ASan/UBSan observations. | Reconcile the complete normative matrix on the final integrated revision, including remaining byte modes and fault cases. The helper's existing executable audit only checks its limited required-symbol/ELF rules, not a complete linked dependency inventory. |
 | Recipe and host authorization (#405) | No grant introduced. Existing unconditional recipe admission guards remain authoritative. | Actual independent supervisor/OS enforcement proof, approved ordered build inputs, retained tool identities, complete linked-output/runtime dependency audit, create-only publication and cache/provenance binding. Hashes and caller flags cannot replace these. |
-| Real libraries | Tiny reviewed fixture with explicit malloc/free dependency inventory. | Separate SQLite and Rust C-ABI shim proofs, each with exact acquired artifacts, operation policies, cleanup/failure matrix and provenance. |
+| Real libraries | Separate SQLite allocator and Rust C-ABI shim fixtures with source-bound policies and generated-wrapper tests; SQLite includes private-copy, malformed-length and missing-release controls. | Final-revision owning conformance results and production artifact/recipe provenance; private fixture observations do not authorize a native recipe. |
 | Platforms and release | Linux x86-64 fixture tests; portable structural tests. No CLI/profile activation. | Windows validation runs separately; no Windows native-C or sanitizer result is implied. Public activation, release and deployment require separate decisions. |
 
 Plain cloud descendant cleanup and a scoped init/subreaper run must remain
