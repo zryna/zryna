@@ -11,6 +11,7 @@ use super::super::test_capture as capture;
 mod execution;
 mod limits;
 mod relocations;
+mod sqlite;
 mod support;
 mod tables;
 

@@ -1,0 +1,11 @@
+function copied(bytes: Vec<i32>): Vec<i32> {
+  const loan: FfiBytes = Ffi.borrowBytes(bytes);
+  const out: FfiBytesOut = Ffi.outBytes();
+  const length: FfiCountOut = Ffi.outCount();
+  const status: i32 = Ffi.rawCall("fixture-sqlite-c-v0@0/sqlite_fixture_copy_bytes", loan, Ffi.byteLength(loan), out, length);
+  if (status !== 0) { return Ffi.foreignError("fixture-sqlite-c-v0@0/sqlite_fixture_copy_bytes", status); }
+  const foreign: FfiOwnedBytes = Ffi.takeBytes(out, length);
+  const value: Vec<i32> = Ffi.copyBytes(foreign);
+  Ffi.release("fixture-sqlite-c-v0@0/sqlite_fixture_release_bytes", foreign);
+  return value;
+}
