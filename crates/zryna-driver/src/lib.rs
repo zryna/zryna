@@ -109,6 +109,7 @@ pub use native::recipe::{
     NativeRecipeSuccess, NativeToolRootApproval, execute_native_recipe, native_recipe_environment,
     native_recipe_policy_identity, native_tool_root_identity,
 };
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use native::recipe::{NativeToolRootEntry, NativeToolRootKind, NativeToolRootMetadata};
 pub use native::{
     LinuxX8664LinkToolchain, MAX_NATIVE_EXECUTABLE_BYTES, MAX_NATIVE_LINK_TIMEOUT,

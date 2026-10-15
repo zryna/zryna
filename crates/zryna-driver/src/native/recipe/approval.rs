@@ -111,6 +111,7 @@ impl ApprovedNativeRecipe {
 }
 
 /// Audits data against independent output expectations; it issues no host/session success.
+#[cfg(any(all(target_os = "linux", target_arch = "x86_64"), test))]
 pub(super) fn capture_output(
     approved: &ApprovedNativeRecipe,
     bytes: &[u8],

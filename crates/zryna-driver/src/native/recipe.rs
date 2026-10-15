@@ -2,10 +2,11 @@
 
 mod api;
 mod approval;
+#[cfg(any(all(target_os = "linux", target_arch = "x86_64"), test))]
 mod archive;
 mod plan;
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod engine;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod session;
@@ -20,6 +21,7 @@ pub use api::{
     prepare_and_approve_native_recipe, prepare_native_recipe,
 };
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use archive::{
     Metadata as NativeToolRootMetadata, RootEntry as NativeToolRootEntry,
     RootKind as NativeToolRootKind,
