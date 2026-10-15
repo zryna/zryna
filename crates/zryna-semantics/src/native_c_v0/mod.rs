@@ -12,6 +12,7 @@ use zryna_syntax::{
     native_c_v0::{self, raw},
 };
 
+mod closure;
 mod identity;
 mod policy;
 mod resources;

@@ -2,6 +2,7 @@ use super::super::CapturedForeignLibrary;
 use super::*;
 mod fixture;
 mod mutations;
+mod publication;
 use fixture::Fixture;
 use mutations::*;
 

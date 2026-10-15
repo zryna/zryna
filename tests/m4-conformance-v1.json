@@ -319,8 +319,8 @@
     },
     {
       "path": "Cargo.toml",
-      "bytes": 2958,
-      "sha256": "d3c1bdf6df1dc856c5001948f654041a6505e331970b986e44ba9f704f5114a8"
+      "bytes": 3089,
+      "sha256": "2cb9e0e48ea2f1fb493e95d60d0f8287ac3a82e843f1e55c2f1becb051dd2dde"
     },
     {
       "path": "LICENSE",

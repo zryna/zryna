@@ -45,6 +45,8 @@ impl NativeAuthority {
     }
 }
 
+mod closure;
+
 type NativeAuthorities = BTreeMap<String, NativeAuthority>;
 type SourceIdentities = BTreeMap<String, Vec<SourceMapIdentity>>;
 type Closures = BTreeMap<String, BTreeSet<String>>;
@@ -143,6 +145,7 @@ fn verify(
         .iter()
         .map(|(id, issuer)| issuer.binding().map(|binding| (id.clone(), binding)))
         .collect::<Result<BTreeMap<_, _>, _>>()?;
+    closure::check(native)?;
     let (closures, witnesses) = derive(&graph, &native_ids);
     select(&graph, pure, &witnesses)?;
     Ok(ValidatedNativeComposition {
