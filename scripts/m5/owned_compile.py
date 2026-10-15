@@ -145,7 +145,7 @@ def compile_owned(repo, output, resources, source):
     tools = rust_tools()
     cargo_env = cargo_environment(tools, os.environ)
     cargo_args = [tools['pins'][2]['path'], 'test', '--locked', '-p', 'zryna-driver', '--lib', '--no-run',
-                  '--message-format=json']
+                  '--message-format=json', '--config', 'profile.dev.package.sha2.opt-level=0']
     raw, _ = run(cargo_args, output, 'cargo-no-run', resources, env=cargo_env)
     messages = [parse_json(line) for line in raw.splitlines() if line]
     assert messages and messages[-1] == {'reason': 'build-finished', 'success': True}

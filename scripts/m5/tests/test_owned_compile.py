@@ -52,6 +52,25 @@ class OwnedCompilerInputs(unittest.TestCase):
         self.assertEqual([r['packageID'] for r in rows], ['serde-id', 'wasmparser-id'])
         self.assertEqual(version, '0.2.3')
 
+    def test_optimized_test_or_debug_artifacts_remain_rejected(self):
+        for change in ({'opt_level': '3'}, {'test': True}, {'debuginfo': 1}):
+            fixture = self.fixture()
+            fixture[3][0]['profile'] = dict(fixture[3][0]['profile'], **change)
+            with self.assertRaises(AssertionError):
+                self.select(fixture)
+
+    def test_owned_compile_fixes_unoptimized_dependency_profile_before_any_product(self):
+        tools = {'pins': [{'path': '/fixed/rustc'}, {}, {'path': '/fixed/cargo'}]}
+        with patch.dict(owned_compile.os.environ, owned_compile.OVERRIDES, clear=True), patch.object(
+                owned_compile, 'rust_tools', return_value=tools), patch.object(
+                owned_compile, 'run', side_effect=RuntimeError('stop before process')) as run:
+            with self.assertRaisesRegex(RuntimeError, 'stop before process'):
+                owned_compile.compile_owned('/fixed/repo', '/fixed/output', object(), {})
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[0], ['/fixed/cargo', 'test', '--locked', '-p',
+            'zryna-driver', '--lib', '--no-run', '--message-format=json', '--config',
+            'profile.dev.package.sha2.opt-level=0'])
+
     def test_missing_dev_library_rejects_instead_of_silent_partial_compile(self):
         fixture = self.fixture()
         fixture[3].pop()
