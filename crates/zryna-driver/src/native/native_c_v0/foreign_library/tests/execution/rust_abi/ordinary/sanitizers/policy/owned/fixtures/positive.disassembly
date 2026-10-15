@@ -1,0 +1,356 @@
+
+/proc/37239/fd/4/invocation.elf:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .text:
+
+0000000000401a44 <__wrap_sum_bytes>:
+  401a44:	push   %rbp
+  401a45:	mov    %rsp,%rbp
+  401a48:	sub    $0x40,%rsp
+  401a4c:	mov    %rdi,-0x28(%rbp)
+  401a50:	mov    %rsi,-0x30(%rbp)
+  401a54:	mov    %rdx,-0x38(%rbp)
+  401a58:	mov    0x19241(%rip),%rax        # 41aca0 <shim_calls>
+  401a5f:	add    $0x1,%rax
+  401a63:	mov    %rax,0x19236(%rip)        # 41aca0 <shim_calls>
+  401a6a:	mov    0x194af(%rip),%rax        # 41af20 <expected_length>
+  401a71:	cmp    %rax,-0x30(%rbp)
+  401a75:	jne    401a7e <__wrap_sum_bytes+0x3a>
+  401a77:	cmpq   $0x0,-0x38(%rbp)
+  401a7c:	jne    401a9c <__wrap_sum_bytes+0x58>
+  401a7e:	call   401130 <__asan_handle_no_return@plt>
+  401a83:	mov    $0x40c720,%ecx
+  401a88:	mov    $0x69,%edx
+  401a8d:	mov    $0x40c020,%esi
+  401a92:	mov    $0x40c160,%edi
+  401a97:	call   4010e0 <__assert_fail@plt>
+  401a9c:	cmpq   $0x0,-0x30(%rbp)
+  401aa1:	jne    401aaa <__wrap_sum_bytes+0x66>
+  401aa3:	cmpq   $0x0,-0x28(%rbp)
+  401aa8:	je     401ad6 <__wrap_sum_bytes+0x92>
+  401aaa:	cmpq   $0x0,-0x30(%rbp)
+  401aaf:	je     401ab8 <__wrap_sum_bytes+0x74>
+  401ab1:	cmpq   $0x0,-0x28(%rbp)
+  401ab6:	jne    401ad6 <__wrap_sum_bytes+0x92>
+  401ab8:	call   401130 <__asan_handle_no_return@plt>
+  401abd:	mov    $0x40c720,%ecx
+  401ac2:	mov    $0x6a,%edx
+  401ac7:	mov    $0x40c020,%esi
+  401acc:	mov    $0x40c1a0,%edi
+  401ad1:	call   4010e0 <__assert_fail@plt>
+  401ad6:	movq   $0x0,-0x10(%rbp)
+  401ade:	jmp    401c2d <__wrap_sum_bytes+0x1e9>
+  401ae3:	mov    -0x28(%rbp),%rdx
+  401ae7:	mov    -0x10(%rbp),%rax
+  401aeb:	add    %rdx,%rax
+  401aee:	mov    -0x10(%rbp),%rcx
+  401af2:	test   %rcx,%rcx
+  401af5:	js     401b10 <__wrap_sum_bytes+0xcc>
+  401af7:	cmp    %rdx,%rax
+  401afa:	jae    401b15 <__wrap_sum_bytes+0xd1>
+  401afc:	mov    -0x28(%rbp),%rcx
+  401b00:	mov    %rax,%rdx
+  401b03:	mov    %rcx,%rsi
+  401b06:	mov    $0x410660,%edi
+  401b0b:	call   401200 <__ubsan_handle_pointer_overflow_abort@plt>
+  401b10:	cmp    %rax,%rdx
+  401b13:	jb     401afc <__wrap_sum_bytes+0xb8>
+  401b15:	mov    -0x28(%rbp),%rdx
+  401b19:	mov    -0x10(%rbp),%rax
+  401b1d:	add    %rdx,%rax
+  401b20:	test   %rax,%rax
+  401b23:	jne    401b34 <__wrap_sum_bytes+0xf0>
+  401b25:	mov    $0x0,%esi
+  401b2a:	mov    $0x4106e0,%edi
+  401b2f:	call   401040 <__ubsan_handle_type_mismatch_v1_abort@plt>
+  401b34:	mov    %rax,%rdx
+  401b37:	mov    %rdx,%rcx
+  401b3a:	shr    $0x3,%rcx
+  401b3e:	add    $0x7fff8000,%rcx
+  401b45:	movzbl (%rcx),%ecx
+  401b48:	test   %cl,%cl
+  401b4a:	setne  %sil
+  401b4e:	mov    %rdx,%rdi
+  401b51:	and    $0x7,%edi
+  401b54:	cmp    %cl,%dil
+  401b57:	setge  %cl
+  401b5a:	and    %esi,%ecx
+  401b5c:	test   %cl,%cl
+  401b5e:	je     401b68 <__wrap_sum_bytes+0x124>
+  401b60:	mov    %rdx,%rdi
+  401b63:	call   401170 <__asan_report_load1@plt>
+  401b68:	movzbl (%rax),%edi
+  401b6b:	mov    0x193ee(%rip),%rcx        # 41af60 <input_values>
+  401b72:	mov    -0x10(%rbp),%rax
+  401b76:	lea    0x0(,%rax,4),%rdx
+  401b7e:	mov    %rcx,%rsi
+  401b81:	lea    (%rsi,%rdx,1),%rax
+  401b85:	mov    %rdx,%r8
+  401b88:	test   %r8,%r8
+  401b8b:	js     401ba2 <__wrap_sum_bytes+0x15e>
+  401b8d:	cmp    %rsi,%rax
+  401b90:	jae    401ba7 <__wrap_sum_bytes+0x163>
+  401b92:	mov    %rax,%rdx
+  401b95:	mov    %rcx,%rsi
+  401b98:	mov    $0x410720,%edi
+  401b9d:	call   401200 <__ubsan_handle_pointer_overflow_abort@plt>
+  401ba2:	cmp    %rax,%rsi
+  401ba5:	jb     401b92 <__wrap_sum_bytes+0x14e>
+  401ba7:	lea    (%rcx,%rdx,1),%rax
+  401bab:	mov    %rax,%rdx
+  401bae:	test   %rax,%rax
+  401bb1:	je     401bbe <__wrap_sum_bytes+0x17a>
+  401bb3:	mov    %rdx,%rcx
+  401bb6:	and    $0x3,%ecx
+  401bb9:	test   %rcx,%rcx
+  401bbc:	je     401bcb <__wrap_sum_bytes+0x187>
+  401bbe:	mov    %rdx,%rsi
+  401bc1:	mov    $0x4107a0,%edi
+  401bc6:	call   401040 <__ubsan_handle_type_mismatch_v1_abort@plt>
+  401bcb:	mov    %rax,%rdx
+  401bce:	mov    %rdx,%rcx
+  401bd1:	shr    $0x3,%rcx
+  401bd5:	add    $0x7fff8000,%rcx
+  401bdc:	movzbl (%rcx),%ecx
+  401bdf:	test   %cl,%cl
+  401be1:	setne  %r8b
+  401be5:	mov    %rdx,%rsi
+  401be8:	and    $0x7,%esi
+  401beb:	add    $0x3,%esi
+  401bee:	cmp    %cl,%sil
+  401bf1:	setge  %cl
+  401bf4:	and    %r8d,%ecx
+  401bf7:	test   %cl,%cl
+  401bf9:	je     401c03 <__wrap_sum_bytes+0x1bf>
+  401bfb:	mov    %rdx,%rdi
+  401bfe:	call   4010d0 <__asan_report_load4@plt>
+  401c03:	mov    (%rax),%eax
+  401c05:	cmp    %al,%dil
+  401c08:	je     401c28 <__wrap_sum_bytes+0x1e4>
+  401c0a:	call   401130 <__asan_handle_no_return@plt>
+  401c0f:	mov    $0x40c720,%ecx
+  401c14:	mov    $0x6b,%edx
+  401c19:	mov    $0x40c020,%esi
+  401c1e:	mov    $0x40c1e0,%edi
+  401c23:	call   4010e0 <__assert_fail@plt>
+  401c28:	addq   $0x1,-0x10(%rbp)
+  401c2d:	mov    -0x10(%rbp),%rax
+  401c31:	cmp    -0x30(%rbp),%rax
+  401c35:	jb     401ae3 <__wrap_sum_bytes+0x9f>
+  401c3b:	mov    -0x38(%rbp),%rdx
+  401c3f:	mov    -0x30(%rbp),%rcx
+  401c43:	mov    -0x28(%rbp),%rax
+  401c47:	mov    %rcx,%rsi
+  401c4a:	mov    %rax,%rdi
+  401c4d:	call   406230 <sum_bytes>
+  401c52:	mov    %eax,-0x14(%rbp)
+  401c55:	cmpl   $0x0,-0x14(%rbp)
+  401c59:	je     401c79 <__wrap_sum_bytes+0x235>
+  401c5b:	call   401130 <__asan_handle_no_return@plt>
+  401c60:	mov    $0x40c720,%ecx
+  401c65:	mov    $0x6d,%edx
+  401c6a:	mov    $0x40c020,%esi
+  401c6f:	mov    $0x40c220,%edi
+  401c74:	call   4010e0 <__assert_fail@plt>
+  401c79:	movl   $0x0,-0x18(%rbp)
+  401c80:	movq   $0x0,-0x8(%rbp)
+  401c88:	jmp    401e8f <__wrap_sum_bytes+0x44b>
+  401c8d:	mov    -0x28(%rbp),%rdx
+  401c91:	mov    -0x8(%rbp),%rax
+  401c95:	add    %rdx,%rax
+  401c98:	mov    -0x8(%rbp),%rcx
+  401c9c:	test   %rcx,%rcx
+  401c9f:	js     401cba <__wrap_sum_bytes+0x276>
+  401ca1:	cmp    %rdx,%rax
+  401ca4:	jae    401cbf <__wrap_sum_bytes+0x27b>
+  401ca6:	mov    -0x28(%rbp),%rcx
+  401caa:	mov    %rax,%rdx
+  401cad:	mov    %rcx,%rsi
+  401cb0:	mov    $0x4107e0,%edi
+  401cb5:	call   401200 <__ubsan_handle_pointer_overflow_abort@plt>
+  401cba:	cmp    %rax,%rdx
+  401cbd:	jb     401ca6 <__wrap_sum_bytes+0x262>
+  401cbf:	mov    -0x28(%rbp),%rdx
+  401cc3:	mov    -0x8(%rbp),%rax
+  401cc7:	add    %rdx,%rax
+  401cca:	test   %rax,%rax
+  401ccd:	jne    401cde <__wrap_sum_bytes+0x29a>
+  401ccf:	mov    $0x0,%esi
+  401cd4:	mov    $0x410820,%edi
+  401cd9:	call   401040 <__ubsan_handle_type_mismatch_v1_abort@plt>
+  401cde:	mov    %rax,%rdx
+  401ce1:	mov    %rdx,%rcx
+  401ce4:	shr    $0x3,%rcx
+  401ce8:	add    $0x7fff8000,%rcx
+  401cef:	movzbl (%rcx),%ecx
+  401cf2:	test   %cl,%cl
+  401cf4:	setne  %sil
+  401cf8:	mov    %rdx,%rdi
+  401cfb:	and    $0x7,%edi
+  401cfe:	cmp    %cl,%dil
+  401d01:	setge  %cl
+  401d04:	and    %esi,%ecx
+  401d06:	test   %cl,%cl
+  401d08:	je     401d12 <__wrap_sum_bytes+0x2ce>
+  401d0a:	mov    %rdx,%rdi
+  401d0d:	call   401170 <__asan_report_load1@plt>
+  401d12:	movzbl (%rax),%edi
+  401d15:	mov    0x19244(%rip),%rcx        # 41af60 <input_values>
+  401d1c:	mov    -0x8(%rbp),%rax
+  401d20:	lea    0x0(,%rax,4),%rdx
+  401d28:	mov    %rcx,%rsi
+  401d2b:	lea    (%rsi,%rdx,1),%rax
+  401d2f:	mov    %rdx,%r8
+  401d32:	test   %r8,%r8
+  401d35:	js     401d4c <__wrap_sum_bytes+0x308>
+  401d37:	cmp    %rsi,%rax
+  401d3a:	jae    401d51 <__wrap_sum_bytes+0x30d>
+  401d3c:	mov    %rax,%rdx
+  401d3f:	mov    %rcx,%rsi
+  401d42:	mov    $0x410860,%edi
+  401d47:	call   401200 <__ubsan_handle_pointer_overflow_abort@plt>
+  401d4c:	cmp    %rax,%rsi
+  401d4f:	jb     401d3c <__wrap_sum_bytes+0x2f8>
+  401d51:	lea    (%rcx,%rdx,1),%rax
+  401d55:	mov    %rax,%rdx
+  401d58:	test   %rax,%rax
+  401d5b:	je     401d68 <__wrap_sum_bytes+0x324>
+  401d5d:	mov    %rdx,%rcx
+  401d60:	and    $0x3,%ecx
+  401d63:	test   %rcx,%rcx
+  401d66:	je     401d75 <__wrap_sum_bytes+0x331>
+  401d68:	mov    %rdx,%rsi
+  401d6b:	mov    $0x4108a0,%edi
+  401d70:	call   401040 <__ubsan_handle_type_mismatch_v1_abort@plt>
+  401d75:	mov    %rax,%rdx
+  401d78:	mov    %rdx,%rcx
+  401d7b:	shr    $0x3,%rcx
+  401d7f:	add    $0x7fff8000,%rcx
+  401d86:	movzbl (%rcx),%ecx
+  401d89:	test   %cl,%cl
+  401d8b:	setne  %r8b
+  401d8f:	mov    %rdx,%rsi
+  401d92:	and    $0x7,%esi
+  401d95:	add    $0x3,%esi
+  401d98:	cmp    %cl,%sil
+  401d9b:	setge  %cl
+  401d9e:	and    %r8d,%ecx
+  401da1:	test   %cl,%cl
+  401da3:	je     401dad <__wrap_sum_bytes+0x369>
+  401da5:	mov    %rdx,%rdi
+  401da8:	call   4010d0 <__asan_report_load4@plt>
+  401dad:	mov    (%rax),%eax
+  401daf:	cmp    %al,%dil
+  401db2:	je     401dd2 <__wrap_sum_bytes+0x38e>
+  401db4:	call   401130 <__asan_handle_no_return@plt>
+  401db9:	mov    $0x40c720,%ecx
+  401dbe:	mov    $0x6e,%edx
+  401dc3:	mov    $0x40c020,%esi
+  401dc8:	mov    $0x40c1e0,%edi
+  401dcd:	call   4010e0 <__assert_fail@plt>
+  401dd2:	mov    0x19187(%rip),%rcx        # 41af60 <input_values>
+  401dd9:	mov    -0x8(%rbp),%rax
+  401ddd:	lea    0x0(,%rax,4),%rdx
+  401de5:	mov    %rcx,%rsi
+  401de8:	lea    (%rsi,%rdx,1),%rax
+  401dec:	mov    %rdx,%rdi
+  401def:	test   %rdi,%rdi
+  401df2:	js     401e09 <__wrap_sum_bytes+0x3c5>
+  401df4:	cmp    %rsi,%rax
+  401df7:	jae    401e0e <__wrap_sum_bytes+0x3ca>
+  401df9:	mov    %rax,%rdx
+  401dfc:	mov    %rcx,%rsi
+  401dff:	mov    $0x4108e0,%edi
+  401e04:	call   401200 <__ubsan_handle_pointer_overflow_abort@plt>
+  401e09:	cmp    %rax,%rsi
+  401e0c:	jb     401df9 <__wrap_sum_bytes+0x3b5>
+  401e0e:	lea    (%rcx,%rdx,1),%rax
+  401e12:	mov    %rax,%rdx
+  401e15:	test   %rax,%rax
+  401e18:	je     401e25 <__wrap_sum_bytes+0x3e1>
+  401e1a:	mov    %rdx,%rcx
+  401e1d:	and    $0x3,%ecx
+  401e20:	test   %rcx,%rcx
+  401e23:	je     401e32 <__wrap_sum_bytes+0x3ee>
+  401e25:	mov    %rdx,%rsi
+  401e28:	mov    $0x410920,%edi
+  401e2d:	call   401040 <__ubsan_handle_type_mismatch_v1_abort@plt>
+  401e32:	mov    %rax,%rdx
+  401e35:	mov    %rdx,%rcx
+  401e38:	shr    $0x3,%rcx
+  401e3c:	add    $0x7fff8000,%rcx
+  401e43:	movzbl (%rcx),%ecx
+  401e46:	test   %cl,%cl
+  401e48:	setne  %dil
+  401e4c:	mov    %rdx,%rsi
+  401e4f:	and    $0x7,%esi
+  401e52:	add    $0x3,%esi
+  401e55:	cmp    %cl,%sil
+  401e58:	setge  %cl
+  401e5b:	and    %edi,%ecx
+  401e5d:	test   %cl,%cl
+  401e5f:	je     401e69 <__wrap_sum_bytes+0x425>
+  401e61:	mov    %rdx,%rdi
+  401e64:	call   4010d0 <__asan_report_load4@plt>
+  401e69:	mov    (%rax),%eax
+  401e6b:	mov    -0x18(%rbp),%edx
+  401e6e:	add    %eax,%edx
+  401e70:	jno    401e87 <__wrap_sum_bytes+0x443>
+  401e72:	movslq %eax,%rdx
+  401e75:	mov    -0x18(%rbp),%eax
+  401e78:	cltq
+  401e7a:	mov    %rax,%rsi
+  401e7d:	mov    $0x4109e0,%edi
+  401e82:	call   4011f0 <__ubsan_handle_add_overflow_abort@plt>
+  401e87:	mov    %edx,-0x18(%rbp)
+  401e8a:	addq   $0x1,-0x8(%rbp)
+  401e8f:	mov    -0x8(%rbp),%rax
+  401e93:	cmp    -0x30(%rbp),%rax
+  401e97:	jb     401c8d <__wrap_sum_bytes+0x249>
+  401e9d:	mov    -0x38(%rbp),%rax
+  401ea1:	cmpq   $0x0,-0x38(%rbp)
+  401ea6:	je     401eb3 <__wrap_sum_bytes+0x46f>
+  401ea8:	mov    %rax,%rdx
+  401eab:	and    $0x3,%edx
+  401eae:	test   %rdx,%rdx
+  401eb1:	je     401ec0 <__wrap_sum_bytes+0x47c>
+  401eb3:	mov    %rax,%rsi
+  401eb6:	mov    $0x410960,%edi
+  401ebb:	call   401040 <__ubsan_handle_type_mismatch_v1_abort@plt>
+  401ec0:	mov    -0x38(%rbp),%rax
+  401ec4:	mov    %rax,%rdx
+  401ec7:	shr    $0x3,%rdx
+  401ecb:	add    $0x7fff8000,%rdx
+  401ed2:	movzbl (%rdx),%edx
+  401ed5:	test   %dl,%dl
+  401ed7:	setne  %sil
+  401edb:	mov    %rax,%rcx
+  401ede:	and    $0x7,%ecx
+  401ee1:	add    $0x3,%ecx
+  401ee4:	cmp    %dl,%cl
+  401ee6:	setge  %dl
+  401ee9:	and    %esi,%edx
+  401eeb:	test   %dl,%dl
+  401eed:	je     401ef7 <__wrap_sum_bytes+0x4b3>
+  401eef:	mov    %rax,%rdi
+  401ef2:	call   4010d0 <__asan_report_load4@plt>
+  401ef7:	mov    -0x38(%rbp),%rax
+  401efb:	mov    (%rax),%eax
+  401efd:	cmp    %eax,-0x18(%rbp)
+  401f00:	je     401f20 <__wrap_sum_bytes+0x4dc>
+  401f02:	call   401130 <__asan_handle_no_return@plt>
+  401f07:	mov    $0x40c720,%ecx
+  401f0c:	mov    $0x6f,%edx
+  401f11:	mov    $0x40c020,%esi
+  401f16:	mov    $0x40c260,%edi
+  401f1b:	call   4010e0 <__assert_fail@plt>
+  401f20:	mov    -0x14(%rbp),%eax
+  401f23:	leave
+  401f24:	ret
+
+Disassembly of section .fini:

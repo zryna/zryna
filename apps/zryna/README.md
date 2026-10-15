@@ -38,3 +38,49 @@ Default-M1 `build` and `run` accept `--project-root <PATH>` while `--root` conti
 separately architecture-validated source checkout. Project source and generated `.zryna` state stay
 outside the compiler tree; see the [standalone project guide](../../docs/STANDALONE_PROJECTS.md).
 This source-checkout workflow does not expand the advertised v0.1.0 preview support matrix.
+
+## Implementation navigation
+
+The binary entry is [src/main.rs](src/main.rs). Inputs are parsed command options, explicit roots,
+entrypoint/profile/target selections and typed scalar arguments. Outputs are rendered diagnostics,
+command summaries and exit statuses; the driver owns verified artifacts and bundle transactions.
+
+| Private area | Responsibility |
+| --- | --- |
+| [profile.rs](src/profile.rs), [ownership.rs](src/ownership.rs) | Exact CLI selection and M3 request composition |
+| [installed.rs](src/installed.rs) | Installed command routing through retained driver authority |
+| [package.rs](src/package.rs) | Source-only package resolution options and output |
+| [project.rs](src/project.rs), [project_filesystem.rs](src/project_filesystem.rs) | Deterministic project scaffolding and create-only publication |
+| [render.rs](src/render.rs) | Stable text/JSON rendering and exit mapping |
+
+The application depends on the architecture engine, driver and package resolver plus diagnostic/ABI
+foundations. Semantic lowering, provider protocol implementation and backend codegen belong below
+the driver; lower compiler crates must not depend on this application. Command flags cannot bypass
+the architecture or capability checks.
+
+Existing focused integration targets run from the repository root:
+
+```sh
+cargo test --locked -p zryna --test cli
+cargo test --locked -p zryna --test m3_public
+```
+
+[CLI tests](tests/cli.rs) cover options, failure rendering and command transactions;
+[M2 conformance](tests/m2_conformance.rs) and [public M3 tests](tests/m3_public.rs) cover their
+separate profile routes. Runtime-dependent cases require the pinned tools in the root README.
+
+## Bounded public source-checkout server profiles
+
+`serve --profile server-status-v1` adds the explicit source-checkout pure-status route with private
+configuration, separate identity-bound listener approval, finite loopback lifetime and create-only
+server records. This change introduces bounded public Linux x64/Windows x64 source-checkout
+support when integrated after #400 and the required #401 gates. Its guest grants remain empty;
+installed server execution and whole-M4 publication (#402) remain excluded. See the
+[profile contract](../../docs/WASI_SERVER_STATUS_V1.md) and
+`cargo test --locked -p zryna --test wasi_server` for real public-route evidence.
+
+The distinct `serve --profile server-clock-status-v1` adds exactly one separately approved guest clock read per request and a v2 observed result. Both private guest files are required; the timestamp is discarded and no source clock intrinsic is admitted. See [the clock contract](../../docs/WASI_SERVER_CLOCK_STATUS_V1.md) and retain original command/server/browser regressions.
+
+`zryna support --json` returns the compiled [M4 static contract](../../docs/M4_SUPPORT.md)
+without source preparation, runtime execution, grant capture or evidence authentication. Its
+registry digest and exact rows are checked against the canonical registry and documentation.

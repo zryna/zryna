@@ -6,7 +6,9 @@ use sha2::{Digest as _, Sha256};
 
 use super::{BuildPlanConfiguration, PackageBuildError, PackageBuildRequest};
 
+mod source_projection;
 mod validation;
+use source_projection::source_plan;
 use validation::validate_configuration;
 
 const PLAN_DOMAIN: &[u8] = b"ZRYNA-RESOLVED-BUILD-PLAN-V0\0plan\0";
@@ -196,13 +198,22 @@ pub(super) struct PreparedPlan {
 pub(super) fn prepare(
     request: &PackageBuildRequest<'_>,
 ) -> Result<PreparedPlan, PackageBuildError> {
-    if request.mode == super::PackageBuildMode::Frozen && request.resolution.published() {
+    let identity = prepare_identity(request.resolution, &request.configuration, request.mode)?;
+    Ok(PreparedPlan { identity, package_order: dependency_order(request.resolution.graph())? })
+}
+
+pub(super) fn prepare_identity(
+    resolution: &crate::PackageResolutionSuccess,
+    configuration: &BuildPlanConfiguration,
+    mode: super::PackageBuildMode,
+) -> Result<BuildPlanIdentity, PackageBuildError> {
+    if mode == super::PackageBuildMode::Frozen && resolution.published() {
         return Err(PackageBuildError::plan(
             "frozen build requires an exact pre-existing authenticated lock",
         ));
     }
-    validate_configuration(request.resolution, &request.configuration)?;
-    let source_plan = source_plan(request)?;
+    validate_configuration(resolution, configuration)?;
+    let source_plan = source_plan(resolution, configuration)?;
     let mut projection = json!({
         "$schema": SCHEMA,
         "format": "zryna.resolved-build-plan.v0",
@@ -220,8 +231,7 @@ pub(super) fn prepare(
     if bytes.len() > 262_144 {
         return Err(PackageBuildError::plan("canonical build plan exceeds 262144 bytes"));
     }
-    let target_cache_keys = request
-        .configuration
+    let target_cache_keys = configuration
         .targets
         .iter()
         .map(|target| {
@@ -229,88 +239,7 @@ pub(super) fn prepare(
             Ok((target.id.clone(), domain_hash(TARGET_DOMAIN, &bytes)))
         })
         .collect::<Result<_, PackageBuildError>>()?;
-    Ok(PreparedPlan {
-        identity: BuildPlanIdentity { bytes, cache_key, target_cache_keys },
-        package_order: dependency_order(request.resolution.graph())?,
-    })
-}
-
-fn source_plan(request: &PackageBuildRequest<'_>) -> Result<Value, PackageBuildError> {
-    let graph = request.resolution.graph();
-    let identities: BTreeMap<_, _> = graph
-        .packages()
-        .iter()
-        .map(|package| (package.instance().manifest_id(), package.instance().source_sha256()))
-        .collect();
-    let packages = graph
-        .packages()
-        .iter()
-        .map(|package| {
-            let dependencies = package
-                .dependencies()
-                .iter()
-                .map(|(alias, id)| {
-                    let source = identities.get(id.as_str()).ok_or_else(|| {
-                        PackageBuildError::plan("dependency identity is absent from resolved graph")
-                    })?;
-                    Ok(json!({
-                        "alias": alias,
-                        "graphRole": "target/runtime",
-                        "package": { "id": id, "sourceSha256": source }
-                    }))
-                })
-                .collect::<Result<Vec<_>, PackageBuildError>>()?;
-            Ok(json!({
-                "dependencies": dependencies,
-                "graphRole": "target/runtime",
-                "package": {
-                    "id": package.instance().manifest_id(),
-                    "sourceSha256": package.instance().source_sha256()
-                }
-            }))
-        })
-        .collect::<Result<Vec<_>, PackageBuildError>>()?;
-    let sources = request
-        .resolution
-        .sources()
-        .iter()
-        .flat_map(|package| {
-            package.files().iter().map(move |file| {
-                json!({
-                    "graphRole": "target/runtime",
-                    "package": {
-                        "id": package.package_id(),
-                        "sourceSha256": package.source_sha256()
-                    },
-                    "path": file.path(),
-                    "sha256": file.sha256(),
-                    "size": file.bytes().len()
-                })
-            })
-        })
-        .collect::<Vec<_>>();
-    let root = graph
-        .packages()
-        .iter()
-        .find(|package| package.instance().manifest_id() == graph.root())
-        .ok_or_else(|| PackageBuildError::plan("resolved root package is absent"))?;
-    let configuration = &request.configuration;
-    Ok(json!({
-        "compiler": configuration.compiler,
-        "executionPolicy": configuration.execution_policy,
-        "host": configuration.host,
-        "hostTools": configuration.host_tools,
-        "outputs": configuration.outputs,
-        "packageLockSha256": graph.lock_sha256(),
-        "packages": packages,
-        "profile": configuration.profile,
-        "rootPackage": {
-            "id": root.instance().manifest_id(),
-            "sourceSha256": root.instance().source_sha256()
-        },
-        "sources": sources,
-        "targets": configuration.targets
-    }))
+    Ok(BuildPlanIdentity { bytes, cache_key, target_cache_keys })
 }
 
 fn dependency_order(

@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+mod cli_paths;
+mod command_h1;
 mod installed;
 mod ownership;
 mod package;
@@ -9,7 +11,10 @@ mod profile;
 mod project;
 mod project_filesystem;
 mod render;
+mod server;
+mod support;
 
+use cli_paths::{absolute_workspace_path, cli_path_error};
 use render::{render_cli_failure, render_failure, render_success};
 
 use std::{ffi::OsString, path::PathBuf, process::ExitCode};
@@ -51,6 +56,10 @@ enum Command {
     Build(CompileOptions),
     /// Compile and invoke one scalar export, then commit one atomic target bundle.
     Run(RunOptions),
+    /// Report the compiled public M4 contract without authenticating execution.
+    Support(support::Options),
+    /// Run one finite pure-source loopback server and commit its teardown record.
+    Serve(server::Options),
 }
 
 #[derive(Debug, Subcommand)]
@@ -106,6 +115,9 @@ struct RunOptions {
     /// Ordered canonical typed argument, for example --arg=i32:42.
     #[arg(long = "arg", value_parser = profile::parse_scalar_argument)]
     arguments: Vec<ScalarValue>,
+    /// Absolute owner-private explicit command request file.
+    #[arg(long)]
+    grant_file: Option<PathBuf>,
 }
 
 fn main() -> ExitCode {
@@ -120,11 +132,13 @@ fn main() -> ExitCode {
     };
     match cli.command {
         Command::Architecture { command: ArchitectureCommand::Check(options) }
-        | Command::Doctor(options) => run_architecture_check(&options),
+        | Command::Doctor(options) => render::run_architecture_check(&options),
         Command::Package { command } => package::run(command),
         Command::New(options) => project::create(&options),
         Command::Build(options) => run_build(options),
         Command::Run(options) => run_command(options),
+        Command::Serve(options) => server::run(&options),
+        Command::Support(options) => support::report(&options),
     }
 }
 
@@ -148,30 +162,15 @@ where
     Cli::from_arg_matches(&matches)
 }
 
-fn run_architecture_check(options: &ArchitectureOptions) -> ExitCode {
-    let root = match absolute_workspace_path(&options.root) {
-        Ok(root) => root,
-        Err(diagnostic) => {
-            return render_cli_failure(CommandKind::Build, options.json, 2, &[diagnostic]);
-        }
-    };
-    let report = zryna_driver::check_workspace(&root);
-    if options.json {
-        match serde_json::to_string_pretty(&report) {
-            Ok(output) => println!("{output}"),
-            Err(_) => return ExitCode::from(70),
-        }
-    } else if report.is_valid() {
-        println!("Zryna architecture check passed");
-    } else {
-        for diagnostic in &report.diagnostics {
-            eprintln!("{diagnostic}");
-        }
-    }
-    if report.is_valid() { ExitCode::SUCCESS } else { ExitCode::from(1) }
-}
-
 fn run_build(options: CompileOptions) -> ExitCode {
+    if command_h1::selected(&options) {
+        return render_cli_failure(
+            CommandKind::Build,
+            options.json,
+            2,
+            &[command_h1::configuration_error()],
+        );
+    }
     if zryna_driver::distribution::InstalledCompiler::is_distribution_build() {
         return installed::execute(options, None);
     }
@@ -203,6 +202,9 @@ fn run_build(options: CompileOptions) -> ExitCode {
 }
 
 fn run_command(options: RunOptions) -> ExitCode {
+    if command_h1::selected(&options.compile) || options.grant_file.is_some() {
+        return command_h1::run(&options);
+    }
     if zryna_driver::distribution::InstalledCompiler::is_distribution_build() {
         return installed::execute(options.compile, Some((options.export, options.arguments)));
     }
@@ -277,7 +279,7 @@ fn build_request(options: CompileOptions) -> Result<ProfileBuildRequest, Diagnos
         }
         TargetSelection::BrowserComponent
     } else {
-        options.target.into()
+        options.target.ordinary()?
     };
     if let Some(project_root) = project_root {
         if options.profile.is_some() {
@@ -323,143 +325,9 @@ fn build_request(options: CompileOptions) -> Result<ProfileBuildRequest, Diagnos
                 node_runtime: node,
             })
         }
+        Some(CliProfile::CommandH1V1) => return Err(command_h1::configuration_error()),
     })
 }
 
-fn absolute_workspace_path(path: &PathBuf) -> Result<PathBuf, Diagnostic> {
-    if path.is_absolute() {
-        Ok(path.clone())
-    } else {
-        Ok(std::env::current_dir().map_err(|_| cli_path_error())?.join(path))
-    }
-}
-
-fn cli_path_error() -> Diagnostic {
-    profile::cli_path_error()
-}
-
 #[cfg(test)]
-mod tests {
-    use super::{CliProfile, Command, parse_cli_from, profile};
-    use zryna_abi::ScalarValue;
-
-    #[test]
-    fn target_and_node_are_required() {
-        let error = parse_cli_from(["zryna", "build", "src/main.zry"])
-            .expect_err("target and node must be required");
-        let rendered = error.to_string();
-        assert!(rendered.contains("--target"));
-        assert!(rendered.contains("--node"));
-    }
-
-    #[test]
-    fn package_resolution_requires_an_explicit_mode() {
-        let error = parse_cli_from(["zryna", "package", "resolve", "packages/app"])
-            .expect_err("package lock mode must be explicit");
-        assert!(error.to_string().contains("--mode"));
-        assert!(matches!(
-            parse_cli_from(["zryna", "package", "resolve", "packages/app", "--mode", "frozen"])
-                .expect("package command")
-                .command,
-            Command::Package { .. }
-        ));
-    }
-
-    #[test]
-    fn scalar_arguments_are_canonical() {
-        assert_eq!(
-            profile::parse_scalar_argument("i32:-2147483648"),
-            Ok(ScalarValue::I32(i32::MIN))
-        );
-        assert_eq!(
-            profile::parse_scalar_argument("i32:2147483647"),
-            Ok(ScalarValue::I32(i32::MAX))
-        );
-        for rejected in ["i32:+1", "i32:01", "i32:-0", "i32: 1", "bool:true"] {
-            assert!(profile::parse_scalar_argument(rejected).is_err(), "{rejected}");
-        }
-    }
-
-    #[test]
-    fn control_flow_profile_and_boolean_arguments_are_explicit() {
-        let cli = parse_cli_from([
-            "zryna",
-            "run",
-            "src/main.zry",
-            "--target",
-            "javascript",
-            "--profile",
-            "control-flow-v1",
-            "--node",
-            "/node",
-            "--export",
-            "main",
-            "--arg=bool:true",
-        ])
-        .expect("exact control-flow profile must parse");
-        let Command::Run(options) = cli.command else {
-            panic!("run command must parse");
-        };
-        assert_eq!(options.compile.profile, Some(CliProfile::ControlFlowV1));
-        assert_eq!(options.arguments, [ScalarValue::Bool(true)]);
-        assert_eq!(profile::parse_control_flow_argument("bool:true"), Ok(ScalarValue::Bool(true)));
-        assert_eq!(
-            profile::parse_control_flow_argument("bool:false"),
-            Ok(ScalarValue::Bool(false))
-        );
-        assert_eq!(profile::parse_control_flow_argument("i32:-1"), Ok(ScalarValue::I32(-1)));
-        for rejected in ["bool:True", "bool:1", "bool:false ", "bool:"] {
-            assert!(profile::parse_control_flow_argument(rejected).is_err(), "{rejected}");
-        }
-    }
-
-    #[test]
-    fn omitted_profile_remains_m1_and_unknown_profiles_fail() {
-        let cli = parse_cli_from([
-            "zryna",
-            "build",
-            "src/main.zry",
-            "--target",
-            "javascript",
-            "--node",
-            "/node",
-        ])
-        .expect("legacy M1 command must still parse");
-        let Command::Build(options) = cli.command else {
-            panic!("build command must parse");
-        };
-        assert_eq!(options.profile, None);
-
-        let error = parse_cli_from([
-            "zryna",
-            "build",
-            "src/main.zry",
-            "--target",
-            "javascript",
-            "--profile",
-            "m2",
-            "--node",
-            "/node",
-        ])
-        .expect_err("profile aliases must fail");
-        assert!(error.to_string().contains("control-flow-v1"));
-    }
-
-    #[test]
-    fn component_build_target_is_explicit() {
-        let cli = parse_cli_from([
-            "zryna",
-            "build",
-            "src/main.zry",
-            "--target",
-            "component",
-            "--node",
-            "/node",
-        ])
-        .expect("component build target");
-        let Command::Build(options) = cli.command else {
-            panic!("build command must parse");
-        };
-        assert_eq!(options.target, super::CliTarget::Component);
-    }
-}
+mod tests;

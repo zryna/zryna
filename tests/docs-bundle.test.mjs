@@ -11,6 +11,7 @@ import './docs-playground.test.mjs';
 import './docs-playground-output.test.mjs';
 import './native-c-review-contract.test.mjs';
 import './beta-documentation-contract.test.mjs';
+import './m4-public-docs.test.mjs';
 
 import {
   compilerWorkspaceRoot,
@@ -237,6 +238,9 @@ test('registry exports the exact implemented and planned publication inventory',
   assert.deepEqual(
     registry.documents,
     [
+      { id: 'examples/wasi-command', source: 'examples/wasi-command/README.md', path: 'documents/examples/wasi-command.md', title: 'Bounded H1 command examples' },
+      { id: 'examples/wasi-server-clock', source: 'examples/wasi-server/CLOCK_EXAMPLE.md', path: 'documents/examples/wasi-server-clock.md', title: 'Denied and granted clock status example' },
+      { id: 'examples/wasi-server-status', source: 'examples/wasi-server/README.md', path: 'documents/examples/wasi-server-status.md', title: 'Finite local status service' },
       { id: 'reference/aggregate-layout-v1', source: 'spec/memory-model/AGGREGATE_LAYOUT_V1.md', path: 'documents/reference/aggregate-layout-v1.md', title: 'Aggregate layout v1' },
       { id: 'reference/architecture', source: 'docs/ARCHITECTURE.md', path: 'documents/reference/architecture.md', title: 'Compiler architecture' },
       { id: 'reference/browser-component-v1', source: 'docs/BROWSER_COMPONENT_V1.md', path: 'documents/reference/browser-component-v1.md', title: 'Browser scalar component profile v1' },
@@ -277,12 +281,18 @@ test('registry exports the exact implemented and planned publication inventory',
       { id: 'reference/m3-public-profile', source: 'docs/M3_PUBLIC_PROFILE.md', path: 'documents/reference/m3-public-profile.md', title: 'Public DataOwnershipV1 profile' },
       { id: 'reference/m3-shared-weak-authority', source: 'docs/M3_SHARED_WEAK_AUTHORITY.md', path: 'documents/reference/m3-shared-weak-authority.md', title: 'M3 Shared and Weak authority contract' },
       { id: 'reference/m3-shared-weak-evidence', source: 'docs/M3_SHARED_WEAK_EVIDENCE.md', path: 'documents/reference/m3-shared-weak-evidence.md', title: 'M3 Shared and Weak evidence matrix' },
+      { id: 'reference/m4-conformance', source: 'docs/M4_CONFORMANCE.md', path: 'documents/reference/m4-conformance.md', title: 'Public M4 conformance and publication' },
+      { id: 'reference/m4-support', source: 'docs/M4_SUPPORT.md', path: 'documents/reference/m4-support.md', title: 'Fixed public M4 support contract' },
       { id: 'reference/m6-conformance', source: 'spec/tooling/M6_CONFORMANCE_V1.md', path: 'documents/reference/m6-conformance.md', title: 'M6 tooling conformance v1' },
       { id: 'reference/m6-tooling', source: 'docs/M6_TOOLING.md', path: 'documents/reference/m6-tooling.md', title: 'M6 tooling support and evidence' },
       { id: 'reference/memory-model', source: 'spec/memory-model/OVERVIEW.md', path: 'documents/reference/memory-model.md', title: 'Memory model direction' },
       { id: 'reference/ownership-runtime-v1', source: 'spec/abi/OWNERSHIP_RUNTIME_V1.md', path: 'documents/reference/ownership-runtime-v1.md', title: 'Ownership runtime ABI v1' },
       { id: 'reference/scalar-abi-v1', source: 'spec/abi/SCALAR_V1.md', path: 'documents/reference/scalar-abi-v1.md', title: 'Scalar ABI v1' },
       { id: 'reference/syntax-protocol-v4', source: 'docs/SYNTAX_PROTOCOL_V4.md', path: 'documents/reference/syntax-protocol-v4.md', title: 'Syntax protocol v4' },
+      { id: 'reference/wasi-command-getting-started', source: 'docs/WASI_COMMAND_GETTING_STARTED.md', path: 'documents/reference/wasi-command-getting-started.md', title: 'Bounded WASI command walkthrough' },
+      { id: 'reference/wasi-command-manifest-v1', source: 'docs/WASI_COMMAND_MANIFEST_V1.md', path: 'documents/reference/wasi-command-manifest-v1.md', title: 'WASI command execution manifest v1' },
+      { id: 'reference/wasi-server-clock-status-v1', source: 'docs/WASI_SERVER_CLOCK_STATUS_V1.md', path: 'documents/reference/wasi-server-clock-status-v1.md', title: 'Bounded server clock and status profile' },
+      { id: 'reference/wasi-server-status-v1', source: 'docs/WASI_SERVER_STATUS_V1.md', path: 'documents/reference/wasi-server-status-v1.md', title: 'Bounded source-checkout server status profile' },
       { id: 'status/current', source: 'docs/STATUS.md', path: 'documents/status/current.md', title: 'Compiler status' },
       { id: 'status/m0-conformance', source: 'docs/M0_CONFORMANCE.md', path: 'documents/status/m0-conformance.md', title: 'M0 architecture conformance' },
       { id: 'status/m1-conformance', source: 'docs/M1_CONFORMANCE.md', path: 'documents/status/m1-conformance.md', title: 'M1 three-target conformance' },

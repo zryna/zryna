@@ -1,5 +1,37 @@
 # Zryna CLI reference
 
+## Bounded public source-checkout server profiles
+
+This change introduces bounded public Linux x64/Windows x64 source-checkout support when
+integrated after #400 and the required #401 review and exact-revision gates:
+
+- `serve ENTRY --profile server-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --name FRESH` authenticates one no-argument i32 status export, returns status 200–599 with an empty body, and retains empty guest grants.
+- `serve ENTRY --profile server-clock-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --guest-request PRIVATE --guest-approval PRIVATE --name FRESH` additionally performs one actual monotonic read per admitted request through the generated guest arrangement. Separate private guest request/root approval files are required; the timestamp is discarded and no source-language clock intrinsic is added.
+
+Both profiles require separate configuration-bound listener approval, literal 127.0.0.1,
+finite budgets and serial requests. Create-only manifest v1/status and v2/clock records follow
+actual Store/resource/listener teardown; forced termination proves OS handle release only.
+See the [status contract](WASI_SERVER_STATUS_V1.md), [clock contract](WASI_SERVER_CLOCK_STATUS_V1.md)
+and [denied/granted example](../examples/wasi-server/CLOCK_EXAMPLE.md). Installed server execution,
+production deployment and whole-M4 conformance/publication (#402) remain excluded.
+
+## Bounded WASI command profile
+
+The source-checkout route `run ENTRY --target wasi-command --profile command-h1-v1
+--export main --node PINNED [--grant-file ABSOLUTE_FILE]` executes the separately verified
+command profile. A newly verified complete installation instead accepts
+`run ENTRY --project-root PROJECT --target wasi-command --profile command-h1-v1 --export main
+[--grant-file ABSOLUTE_FILE]`, without compiler-root or Node overrides. It uses its authenticated
+bundled runtime/provider and one project-relative source file, without dependency packages.
+Both routes accept no scalar arguments or build-only selection. The [command walkthrough](WASI_COMMAND_GETTING_STARTED.md) covers private
+input creation, the initial grant table, typed WIT results, limits and create-only bundles;
+the [manifest reference](WASI_COMMAND_MANIFEST_V1.md) specifies its distinct execution record.
+This change introduces this bounded route when integrated; the
+[review record](WASI_COMMAND_H1_REVIEW.md) tracks final revision checks and acceptance.
+Supported evidence covers supervised Linux x86-64, hosted Ubuntu 24.04 x86-64 and hosted
+Windows Server 2022 x64. Existing immutable beta archives do not support this route.
+Existing M1–M3 profiles retain their contracts below.
+
 ## Public M3 profile
 
 Exact `--profile data-ownership-v1` on `build` and `run` selects the authenticated protocol-v4
@@ -26,14 +58,19 @@ and manifest v3 are documented in [M3 driver](M3_CANDIDATE_DRIVER.md).
 ```text
 zryna architecture check [--root <PATH>] [--json]
 zryna doctor             [--root <PATH>] [--json]
+zryna support            [--json]
 zryna package resolve <PACKAGE> --source-root <PATH> --mode <frozen|update> [--git-cache <PATH>] [--json]
 zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> --node <PATH> [--profile <control-flow-v1|data-ownership-v1|browser-component-v1>] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
+zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main --node <PATH> [--grant-file <ABSOLUTE_PATH>] [--root <PATH>] [--name <STEM>] [--json]
+zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main [--project-root <PATH>] [--grant-file <ABSOLUTE_PATH>] [--name <STEM>] [--json] # newly verified complete installation
 ```
 
-`architecture check` and `doctor` run the same mandatory fail-closed workspace gate. Every
+`architecture check` and `doctor` run the same mandatory fail-closed workspace gate. Every checkout
 `build` and `run` performs that gate before reading source, creating output, discovering a target
 runtime, or doing target work. There is no bypass flag.
+Installed commands validate the build-bound installation and its retained source architecture
+receipt; they require no compiler checkout and accept no compiler-root/runtime override.
 Architecture and doctor `--json` output retains the existing deterministic `ValidationReport`
 shape containing its `diagnostics` array.
 
@@ -207,7 +244,13 @@ consumers must use its structured fields rather than parse text output.
 | `6` | cleanup could not be confirmed |
 
 Stable diagnostic codes are the precise failure identity. Clap parse errors retain status `2`.
-No failure status advertises a partial bundle.
+No failure status advertises a partial bundle. The command candidate commits a complete execution
+record for a declared WIT `err`, denied callback or trap when publication succeeds: these use
+status `5`, or `6` if teardown is unconfirmed. Its version-1 JSON response uses `execution`
+instead of the ordinary target `results` array, plus exact `profile` and `target` selectors.
+Command flags and invocation-mode validation use status `2`. Private grant-file capture,
+decoding and source/grant admission belong to source preparation and use status `3`, including
+an omitted lookup grant, a wrong environment key or a grant supplied to pure source.
 
 ## Runtime and process limits
 
@@ -266,6 +309,8 @@ M1 differential suite requires those observations and the manifest to agree. Pac
 non-relative/package imports, watch mode, incremental or remote builds, general browser APIs, WASI,
 Windows or macOS native execution, static native executables, overwrite behavior, and
 runtime-enforced comparison inside an ordinary end-user command remain outside the current slice.
+The separate bounded WASI command profile above has its own explicit selector and grants.
+Those scalar target contracts retain their exclusions.
 The repository-owned [M2 conformance gate](M2_CONFORMANCE.md) performs fixed-oracle three-target
 comparison. M2 closure evidence includes authenticated compiler documentation plus website and live
 provenance recorded by Issue #57; those publication checks do not change command semantics.
@@ -277,3 +322,19 @@ authenticated compiler documentation bundle tracked in Issue #21.
 Formatting is exposed through the separately built language server.
 See [the scalar formatter and editor installation contract](LANGUAGE_SERVER.md#scalar-format-v1)
 for exact source-build compatibility, supported syntax, range behavior and commands.
+
+## Static M4 support contract
+
+[The fixed M4 matrix](M4_SUPPORT.md) and `zryna support --json` project the same
+checked registry. This is a static contract with six modes and two bounded hosted contracts;
+it does not authenticate this checkout's execution, CI, installation, signing or publication.
+[The conformance record](M4_CONFORMANCE.md) defines the separate exact-revision evidence needed
+for closure. Existing M0–M3 profiles and their historical support contracts remain unchanged.
+Installed component/browser/server, existing immutable beta H1, other browsers, desktop Windows,
+general cloud hosting, signed public releases and production admission remain excluded.
+
+`support` accepts only `--json` and `--help`; top-level `zryna --version` is unchanged. It reads compiled contract
+bytes and accepts no source, root, runtime, grant or evidence selector. It succeeds outside a
+checkout without creating output or executing a profile. JSON carries no containing commit:
+the registry digest identifies contract bytes; authenticated evidence separately binds the
+actual candidate source commit/tree. This avoids a source/hash cycle and stale certification.

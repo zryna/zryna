@@ -60,6 +60,7 @@ jobs:
       package_release: ${{ steps.routes.outputs.package_release }}
       provider_v4: ${{ steps.routes.outputs.provider_v4 }}
       wit: ${{ steps.routes.outputs.wit }}
+      m4: ${{ steps.routes.outputs.m4 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -110,9 +111,13 @@ jobs:
   preflight:
     name: preflight
     # #369: cold execution reached the 15-minute deadline after bootstrap completed.
-    # Allow a nominal 5 minutes for other setup/cleanup beyond the 10/25-minute steps.
+    # Five minutes beyond the 10/25-minute steps includes bounded SQLite setup.
     timeout-minutes: 40
     runs-on: ubuntu-latest
+    # Keep cold builds within the execution budget without changing test checks.
+    env:
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -143,8 +148,46 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Fetch locked Rust dependencies
         run: cargo fetch --locked
+      - name: Prepare pinned SQLite source fixture
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source"
+          printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
       - run: node scripts/run-preflight.mjs --compiler-contracts
         timeout-minutes: 25
+      - name: Capture ordinary sanitizer compiler prefix
+        timeout-minutes: 5
+        env:
+          M5_PREFIX_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 -B -m unittest discover -s scripts/m5/tests -p 'test_*.py'
+          python3 -B scripts/m5/collect_ordinary_sanitizer_prefix.py --output "$RUNNER_TEMP/m5-ordinary-sanitizer-prefix"
+      - name: Upload ordinary sanitizer compiler prefix
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m5-ordinary-sanitizer-prefix-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m5-ordinary-sanitizer-prefix
+          if-no-files-found: error
+          retention-days: 7
+      - name: Execute reviewed ordinary sanitizer runtime
+        timeout-minutes: 5
+        env:
+          M5_PREFIX_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+          CARGO_BUILD_JOBS: '2'
+          RUST_TEST_THREADS: '2'
+          CARGO_INCREMENTAL: '0'
+        run: python3 -B scripts/m5/collect_owned_sanitizer_runtime.py --output "$RUNNER_TEMP/m5-ordinary-sanitizer-runtime"
+      - name: Upload reviewed ordinary sanitizer runtime
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m5-ordinary-sanitizer-runtime-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m5-ordinary-sanitizer-runtime
+          if-no-files-found: error
+          retention-days: 7
 
   rust:
     name: rust (${{ matrix.os }})
@@ -180,6 +223,13 @@ jobs:
         run: cargo fetch --locked
       - name: Verify M2 semantics
         run: cargo test --locked -p zryna-semantics --lib control_flow_v1
+      - name: Prepare pinned SQLite source fixture
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source"
+          printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
       - name: Verify M2 driver security
         run: cargo test --locked -p zryna-driver --lib
       - name: Verify native source resource limits
@@ -226,6 +276,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.22.1
@@ -422,6 +476,7 @@ jobs:
           version: 11.18.0
       - run: pnpm install --frozen-lockfile
       - run: pnpm package:contract
+      - run: pnpm build-plan:contract
       - run: cargo test --locked -p zryna-package
 
   distribution-release-contract:
@@ -638,3 +693,114 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm wit:contract
+
+  m4-platform:
+    name: m4 (${{ matrix.os }})
+    if: needs.route-contracts.outputs.m4 == 'true'
+    needs: route-contracts
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      M4_WORKFLOW_PATH: .github/workflows/ci.yml
+      M4_SOURCE_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
+      CARGO_BUILD_JOBS: 3
+      RUST_TEST_THREADS: 3
+    steps:
+      - name: Checkout exact M4 candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: cargo fetch --locked
+      - name: Verify M4 registry and hostile evidence contracts
+        run: pnpm m4:registry && pnpm m4:evidence:contract
+      - name: Prepare pinned SQLite source fixture
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source"
+          printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
+      - name: Execute complete M0 through M4 core matrix
+        shell: pwsh
+        run: |
+          $candidate = '${{ github.event.pull_request.head.sha || github.sha }}'
+          $tree = git rev-parse 'HEAD^{tree}'
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate tree observation failed' }
+          $sourceRef = $env:M4_SOURCE_REF
+          $context = Join-Path $env:RUNNER_TEMP 'm4-core-context.json'
+          node scripts/m4/observe-context.mjs --lane core --output $context --job-name 'm4 (${{ matrix.os }})' --source-ref $sourceRef --expected-commit $candidate --expected-tree $tree
+          if ($LASTEXITCODE -ne 0) { throw 'M4 host context failed' }
+          node scripts/run-m4-conformance.mjs --lane core --evidence "$env:RUNNER_TEMP/m4-core-evidence" --expected-commit $candidate --expected-tree $tree --source-ref $sourceRef --context $context
+          if ($LASTEXITCODE -ne 0) { throw 'M4 core conformance failed' }
+      - name: Preserve M4 core receipt and complete execution logs
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m4-core-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m4-core-evidence-retained/**
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve failed M4 core diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m4-core-diagnostics-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m4-core-evidence/**
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  m4-browser:
+    name: m4 browser
+    if: needs.route-contracts.outputs.m4 == 'true'
+    needs: route-contracts
+    uses: ./.github/workflows/browser-conformance.yml
+
+  m4-installed:
+    name: m4 installed
+    if: needs.route-contracts.outputs.m4 == 'true'
+    needs: route-contracts
+    uses: ./.github/workflows/installed-command-h1.yml
+
+  m4:
+    name: m4
+    if: always()
+    needs: [route-contracts, m3, m4-platform, m4-browser, m4-installed]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify every required M4 host lane
+        env:
+          M4_REQUIRED: ${{ needs.route-contracts.outputs.m4 }}
+          ROUTING_RESULT: ${{ needs.route-contracts.result }}
+          M3_RESULT: ${{ needs.m3.result }}
+          M4_CORE_RESULT: ${{ needs.m4-platform.result }}
+          M4_BROWSER_RESULT: ${{ needs.m4-browser.result }}
+          M4_INSTALLED_RESULT: ${{ needs.m4-installed.result }}
+        run: node scripts/m4/verify-ci-result.mjs

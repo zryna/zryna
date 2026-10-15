@@ -1,28 +1,39 @@
 use std::{
     collections::BTreeMap,
     fs,
-    io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
 };
 
-use cap_fs_ext::{DirExt, FollowSymlinks, OpenOptionsFollowExt};
+use cap_fs_ext::DirExt;
 use cap_std::fs::{Dir, File};
 use same_file::Handle;
-use sha2::{Digest, Sha256};
 use zryna_diagnostics::Diagnostic;
 
-use super::{capture::CapturedToolingClosure, execution_error};
+use super::{
+    capture::{CapturedToolingClosure, V4Layout},
+    execution_error,
+};
 
 mod creation;
 #[cfg(test)]
 mod creation_tests;
+mod filesystem;
 mod inventory;
+mod v4;
+#[cfg(test)]
+mod v4_tests;
 
 use creation::{
     create_directory, create_root, open_owned_regular, original_identity, seal_directory_states,
     stage_file,
 };
-use inventory::validate_inventory;
+#[cfg(target_os = "linux")]
+use filesystem::capability_root;
+use filesystem::{
+    configure_create, configure_read, directory_identity, hash_handle, metadata_is_link_or_reparse,
+    open_regular, same_file_state, validate_root_path,
+};
+use inventory::{cleanup_keys, validate_inventory};
 
 const ROOT: &str = "";
 const MODULES: &str = "node_modules";
@@ -61,9 +72,10 @@ struct RetainedFile {
     sha256: [u8; 32],
 }
 
-/// Fixed nine-file stage. Unix owner permissions and Windows inherited private ACLs are trusted.
+/// Fixed authenticated worker/dependency stage. Unix owner permissions and Windows inherited private ACLs are trusted.
 #[derive(Debug)]
 pub(super) struct ToolingStage {
+    v4_layout: V4Layout,
     path: PathBuf,
     worker: PathBuf,
     working_directory: PathBuf,
@@ -76,7 +88,9 @@ pub(super) struct ToolingStage {
 impl ToolingStage {
     pub(super) fn create(captured: &CapturedToolingClosure) -> Result<Self, Diagnostic> {
         captured.validate_size()?;
+        let layout = v4::layout(&captured.v4)?;
         let mut stage = create_root()?;
+        stage.v4_layout = layout;
         let prepared = (|| {
             create_directory(&mut stage, ROOT, "node_modules", MODULES)?;
             create_directory(&mut stage, MODULES, "@typescript", SCOPE)?;
@@ -97,6 +111,7 @@ impl ToolingStage {
             ] {
                 stage_file(&mut stage, parent, name, file)?;
             }
+            v4::stage(&mut stage, captured)?;
             seal_directory_states(&mut stage.directories)?;
             #[cfg(target_os = "linux")]
             {
@@ -167,7 +182,7 @@ impl ToolingStage {
             {
                 return Err(stage_changed());
             }
-            validate_inventory(key, directory.directory()?)?;
+            validate_inventory(key, directory.directory()?, self.v4_layout)?;
         }
         for file in self.files.values() {
             let parent = self.bound_directory(file.parent)?;
@@ -229,24 +244,25 @@ impl ToolingStage {
 
     fn cleanup(&mut self) -> Result<(), Diagnostic> {
         let mut failures = Vec::new();
-        for key in [
-            "old-runtime",
-            "old-manifest",
-            "wrapper-runtime",
-            "wrapper-manifest",
-            "worker-v3",
-            "limits-v3",
-            "worker-v4",
-            "limits-v4",
-            "worker",
-        ] {
+        for key in cleanup_keys(self.v4_layout) {
             if self.files.contains_key(key)
                 && let Err(error) = self.cleanup_file(key)
             {
                 failures.push(format!("file {key}: {}", error.message()));
             }
         }
-        for key in [OLD_LIB, OLD, WRAPPER_LIB, WRAPPER, SCOPE, MODULES, ROOT] {
+        for key in [
+            v4::SYNTAX,
+            v4::BOUNDARY,
+            v4::V4,
+            OLD_LIB,
+            OLD,
+            WRAPPER_LIB,
+            WRAPPER,
+            SCOPE,
+            MODULES,
+            ROOT,
+        ] {
             let name = self.directories.get(key).map(|directory| directory.name.clone());
             if self.directories.contains_key(key)
                 && let Err(error) = self.cleanup_directory(key)
@@ -284,118 +300,6 @@ fn with_cleanup(primary: Diagnostic, cleanup: Result<(), Diagnostic>) -> Diagnos
             primary.guidance(),
         ),
     }
-}
-
-fn validate_root_path(path: &Path) -> Result<Dir, Diagnostic> {
-    let metadata = fs::symlink_metadata(path).map_err(|_| stage_changed())?;
-    if !metadata.is_dir() || metadata_is_link_or_reparse(&metadata) {
-        return Err(stage_changed());
-    }
-    Dir::open_ambient_dir(path, cap_std::ambient_authority()).map_err(|_| stage_changed())
-}
-
-fn open_regular(parent: &Dir, name: &str) -> Result<Handle, Diagnostic> {
-    let mut options = cap_std::fs::OpenOptions::new();
-    options.read(true).follow(FollowSymlinks::No);
-    configure_read(&mut options);
-    parent
-        .open_with(name, &options)
-        .map(File::into_std)
-        .and_then(Handle::from_file)
-        .map_err(|_| stage_changed())
-}
-
-fn hash_handle(handle: &mut Handle) -> Result<[u8; 32], Diagnostic> {
-    handle.as_file_mut().seek(SeekFrom::Start(0)).map_err(|_| stage_changed())?;
-    let mut digest = Sha256::new();
-    let mut limited = handle.as_file_mut().take(16 * 1_024 * 1_024 + 1);
-    std::io::copy(&mut limited, &mut digest).map_err(|_| stage_changed())?;
-    if limited.limit() == 0 {
-        return Err(stage_changed());
-    }
-    Ok(digest.finalize().into())
-}
-
-fn directory_identity(directory: &Dir) -> Result<Handle, Diagnostic> {
-    directory
-        .try_clone()
-        .map(Dir::into_std_file)
-        .and_then(Handle::from_file)
-        .map_err(|_| stage_changed())
-}
-
-#[cfg(target_os = "linux")]
-fn capability_root(
-    directories: &BTreeMap<&'static str, RetainedDirectory>,
-) -> Result<PathBuf, Diagnostic> {
-    use std::os::fd::AsRawFd as _;
-    let root = directories.get(ROOT).ok_or_else(stage_changed)?;
-    Ok(PathBuf::from(format!("/proc/{}/fd/{}", std::process::id(), root.directory()?.as_raw_fd())))
-}
-
-#[cfg(unix)]
-fn configure_create(options: &mut cap_std::fs::OpenOptions) {
-    use cap_std::fs::OpenOptionsExt as _;
-    options.mode(0o600);
-}
-
-#[cfg(windows)]
-fn configure_create(options: &mut cap_std::fs::OpenOptions) {
-    use cap_std::fs::OpenOptionsExt as _;
-    options.share_mode(1 | 4);
-}
-
-#[cfg(not(any(unix, windows)))]
-fn configure_create(_options: &mut cap_std::fs::OpenOptions) {}
-
-#[cfg(unix)]
-fn configure_read(options: &mut cap_std::fs::OpenOptions) {
-    use cap_std::fs::OpenOptionsExt as _;
-    options.custom_flags(libc::O_NONBLOCK);
-}
-
-#[cfg(windows)]
-fn configure_read(options: &mut cap_std::fs::OpenOptions) {
-    use cap_std::fs::OpenOptionsExt as _;
-    options.share_mode(1);
-}
-
-#[cfg(not(any(unix, windows)))]
-fn configure_read(_options: &mut cap_std::fs::OpenOptions) {}
-
-#[cfg(unix)]
-fn same_file_state(left: &fs::Metadata, right: &fs::Metadata) -> bool {
-    use std::os::unix::fs::MetadataExt;
-    left.size() == right.size()
-        && left.mtime() == right.mtime()
-        && left.mtime_nsec() == right.mtime_nsec()
-        && left.ctime() == right.ctime()
-        && left.ctime_nsec() == right.ctime_nsec()
-}
-
-#[cfg(windows)]
-fn same_file_state(left: &fs::Metadata, right: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt;
-    left.file_attributes() == right.file_attributes()
-        && left.creation_time() == right.creation_time()
-        && left.last_write_time() == right.last_write_time()
-        && left.file_size() == right.file_size()
-}
-
-#[cfg(not(any(unix, windows)))]
-fn same_file_state(_left: &fs::Metadata, _right: &fs::Metadata) -> bool {
-    false
-}
-
-#[cfg(windows)]
-fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt;
-    metadata.file_type().is_symlink() || metadata.file_attributes() & 0x0400 != 0
-}
-
-#[cfg(not(windows))]
-fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
-    metadata.file_type().is_symlink()
 }
 
 fn stage_changed() -> Diagnostic {

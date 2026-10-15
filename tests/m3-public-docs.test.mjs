@@ -35,26 +35,38 @@ test('complete beginner sources and commands bind to the independent executable 
 
 function publication(workflow) {
   const job = workflow.jobs['docs-publish'];
-  assert.equal(job.needs, undefined);
+  assert.equal(job.if, "github.ref == 'refs/heads/main'");
+  const gate = job.steps.find(step => step.name === 'Authenticate completed exact-main full CI and all M4 evidence');
+  assert(gate?.run.includes('scripts/m4/verify-publication.mjs'));
+  assert(job.steps.indexOf(gate) < job.steps.findIndex(step => step.id === 'docs-bundle'));
+  assert.equal(gate.env.M4_EXPECTATIONS_SHA256, '${{ inputs.expectations_sha256 }}');
+  assert.equal(gate.env.M4_CI_RUN_ID, '${{ inputs.ci_run_id }}');
+  assert.equal(gate.env.M4_CI_ATTEMPT, '${{ inputs.ci_attempt }}');
   const exportStep = job.steps.find(step => step.id === 'docs-bundle');
   assert(exportStep.run.includes('--source-commit "${{ github.sha }}"'));
   assert(exportStep.run.includes('--source-ref "${{ github.ref }}"'));
   const upload = job.steps.at(-1);
   assert.equal(upload.with.name, 'zryna-docs-next-${{ github.sha }}-${{ steps.docs-bundle.outputs.manifest-sha256 }}');
   assert.equal(upload.with['if-no-files-found'], 'error');
-  assert.equal(upload.with['retention-days'], 7);
+  assert.equal(upload.with['retention-days'], 90);
 }
 
 test('published M3 bytes use the protected main publication workflow', () => {
   const workflow = parseDocument(
     readFileSync(`${workspaceRoot}/.github/workflows/documentation.yml`, 'utf8'),
   ).toJS();
-  assert.deepEqual(workflow.on, { push: { branches: ['main'] } });
+  assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch']);
+  for (const name of ['ci_run_id', 'ci_attempt', 'expectations_sha256', 'expectations_json']) {
+    assert.equal(workflow.on.workflow_dispatch.inputs[name].required, true);
+  }
+  assert.equal(workflow.permissions.actions, 'read');
+  assert.equal(workflow.permissions.checks, 'read');
   publication(workflow);
   for (const mutate of [
-    w => { w.jobs['docs-publish'].needs = 'm3'; },
+    w => { w.jobs['docs-publish'].if = 'true'; },
+    w => { w.jobs['docs-publish'].steps = w.jobs['docs-publish'].steps.filter(step => !step.run?.includes('scripts/m4/verify-publication.mjs')); },
     w => { w.jobs['docs-publish'].steps.at(-1).with.name = 'latest'; },
-    w => { w.jobs['docs-publish'].steps.at(-1).with['retention-days'] = 90; },
+    w => { w.jobs['docs-publish'].steps.at(-1).with['retention-days'] = 7; },
   ]) {
     const changed = structuredClone(workflow); mutate(changed);
     assert.throws(() => publication(changed));

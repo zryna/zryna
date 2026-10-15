@@ -97,6 +97,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "autocfg"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
+
+[[package]]
 name = "bitflags"
 version = "2.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -779,6 +785,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "memoffset"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "multiversion"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -816,6 +831,7 @@ dependencies = [
  "cfg-if",
  "cfg_aliases",
  "libc",
+ "memoffset",
 ]
 
 [[package]]
@@ -1854,7 +1870,9 @@ dependencies = [
  "zryna-abi",
  "zryna-diagnostics",
  "zryna-ir",
+ "zryna-native-c-ir",
  "zryna-native-mir",
+ "zryna-ownership-runtime-abi",
  "zryna-semantics",
  "zryna-source",
  "zryna-syntax",
@@ -1868,6 +1886,7 @@ dependencies = [
  "sha2",
  "wasm-encoder 0.258.0",
  "wasmparser 0.258.0",
+ "wasmtime",
  "wit-component 0.258.0",
  "wit-parser 0.258.0",
  "zryna-diagnostics",
@@ -1915,7 +1934,9 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-frontend",
  "zryna-ir",
+ "zryna-native-c-ir",
  "zryna-native-mir",
+ "zryna-ownership-runtime-abi",
  "zryna-package",
  "zryna-process",
  "zryna-semantics",
@@ -1949,6 +1970,7 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-layout",
  "zryna-source",
+ "zryna-syntax",
 ]
 
 [[package]]
@@ -1973,13 +1995,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "zryna-native-c-ir"
+version = "0.2.3"
+dependencies = [
+ "serde_json",
+ "sha2",
+ "zryna-diagnostics",
+ "zryna-ir",
+ "zryna-layout",
+ "zryna-ownership-runtime-abi",
+ "zryna-semantics",
+ "zryna-source",
+ "zryna-syntax",
+]
+
+[[package]]
 name = "zryna-native-mir"
 version = "0.2.3"
 dependencies = [
+ "serde_json",
+ "sha2",
  "zryna-abi",
  "zryna-diagnostics",
  "zryna-ir",
  "zryna-layout",
+ "zryna-native-c-ir",
  "zryna-ownership-runtime-abi",
  "zryna-semantics",
  "zryna-source",
@@ -2024,6 +2064,7 @@ name = "zryna-semantics"
 version = "0.2.3"
 dependencies = [
  "serde_json",
+ "sha2",
  "zryna-abi",
  "zryna-diagnostics",
  "zryna-ir",
@@ -2047,6 +2088,7 @@ version = "0.2.3"
 dependencies = [
  "serde",
  "serde_json",
+ "sha2",
  "zryna-diagnostics",
  "zryna-source",
 ]

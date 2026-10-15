@@ -1,0 +1,35 @@
+{
+  "archiveBytes": 2990479,
+  "archiveRoot": "sqlite-amalgamation-3540000",
+  "archiveSha3_256": "7b670a62fdfbd672b75fef004cb703c8a3e87d3a5cc7d675b4a08337004a2d93",
+  "files": {
+    "sqlite3.c": {
+      "bytes": 9580800,
+      "maxBytes": 16777216,
+      "sha256": "2da161e310ef0aba3465f22a4d12b8a43723236f0942fa76e8aac523c3317243"
+    },
+    "sqlite3.h": {
+      "bytes": 695737,
+      "maxBytes": 2097152,
+      "sha256": "cd20a2877bc82b94e36c1093b727dd87cfa3c1d581aac6e240925535cbd90166"
+    }
+  },
+  "format": "zryna.sqlite-source-fixture.v1",
+  "limits": {
+    "archiveBytes": 4194304,
+    "entries": 16,
+    "expandedBytes": 33554432,
+    "requestSeconds": 20,
+    "totalSeconds": 60
+  },
+  "members": [
+    "shell.c",
+    "sqlite3.c",
+    "sqlite3.h",
+    "sqlite3ext.h"
+  ],
+  "sourceId": "2026-10-09 15:46:58 be8d059e9a49089ab2dce5ed26dd87aaf598fdc5fbe0b107c0dd758464bcd5e3",
+  "url": "https://www.sqlite.org/2026/sqlite-amalgamation-3540000.zip",
+  "version": "3.54.0",
+  "versionNumber": 3054000
+}

@@ -2,6 +2,13 @@
 
 The only compiler component allowed to orchestrate frontend, verification, and backend phases.
 
+The separate [bounded WASI command candidate](../../docs/WASI_COMMAND_GETTING_STARTED.md)
+retains real semantic lowering, one exact root-approved private input, audited component and
+composition authorities through consuming execution and create-only publication. Its
+`command_request`, `command_h1_runtime` and `command_h1_workspace` modules own those boundaries;
+the distinct [manifest](../../docs/WASI_COMMAND_MANIFEST_V1.md) cannot recreate run authority.
+Complete public platform acceptance remains separate from this bounded implementation candidate.
+
 The internal [native source snapshot route](../../docs/NATIVE_SOURCE_SNAPSHOTS.md) retains workspace
 or frozen package capabilities, reads each exact source once, seals the original source map and
 canonical graph before complete native parsing, then applies existing v2/v3/v4 verifiers. Source
@@ -209,6 +216,13 @@ stage so public-path replacement cannot substitute code, bounds and isolates the
 group, decodes its exact four-byte result channel, and returns the ABI authority's typed
 `ScalarOutcome`.
 
+On Linux x86-64, private stage writers and driver-owned child spawning share an exclusion gate.
+The writer closes before releasing the gate, and spawning releases it before waiting for the
+child. This prevents a concurrently forked driver child from retaining a CLOEXEC writable
+snapshot descriptor until exec and making another snapshot exec fail `ETXTBSY`. Gate poison
+fails closed; process errors are neither swallowed nor retried. Independently spawned processes
+in an embedding application are outside this coordination boundary.
+
 The public CLI composes these library boundaries through driver-owned profile-specific build and
 run requests. Each request performs the mandatory architecture gate first. M1 authenticates and
 verifies one entrypoint once. M2 discovers one final module graph and lowers it once. Each path
@@ -240,3 +254,85 @@ Linux x86-64 native artifacts execute and publish through one private transactio
 manifest v3 identity. Exact public `--profile data-ownership-v1` calls these same library entrypoints and publishes
 the public `zryna-data-ownership-v1` manifest identity. See the
 [candidate driver and manifest contract](../../docs/M3_CANDIDATE_DRIVER.md).
+
+## Internal native C scalar invocation
+
+`native_c_v0::prepare_scalar_export` consumes the backend's sealed scalar-export artifact and an
+exact logical export key. It rejects wrong arity or carrier types before staging, generates one
+strict typed C11 harness, and uses the existing retained GNU toolchain, bounded process runner,
+link audit and consuming stage cleanup. The private prepared executable retains its object and
+source authority. Results use the existing four-byte scalar channel; process exit is health only.
+Unsupported hosts reject before staging. No public selector or executable publication is added.
+
+Linux tests in `src/native/native_c_v0/tests.rs` link the independently authored reverse C client,
+exercise wrapping i32 arithmetic, zero/7/8/9/16 argument exports, C-int and Bool32, and reject wrong
+requests, missing symbols, header mismatches and noncanonical raw Boolean arguments. Run
+`cargo test --locked -p zryna-driver --lib native_c_v0`. The raw tiny-C fixture's manual resource
+cleanup is separate evidence from the private handle execution increment below.
+
+## Internal native C handle linking requirements
+
+`native_c_v0::resource_identity::handle_link_requirements` retains the backend's independently
+audited private handle artifact and its complete original source/machine authority. It records
+exact object bytes, the generated private header and the established declaration-domain digest,
+plus exact retained header/policy hashes for every required library. The original artifact exposes
+selected entry ordinals and complete imported operation/signature/kind/allocator/release views.
+This immutable requirement record is a #405 integration input; it grants no foreign artifact,
+native recipe execution or OS isolation permission. Existing recipe denial remains in force.
+
+Linux-only `resource_tests` link independently captured C fixture bytes to real generated handle
+bodies through the existing retained GNU link/audit/process boundary. They observe successful
+read/open/close, declared failure with no output exposure, reverse automatic cleanup, later failure
+cleanup, 64 accepted acquisitions and refusal before the 65th foreign call. Independent fault
+wrappers test null/unknown/alias outcomes, corrupt nominal release identity and a process exit
+during release. Corrupt identity deliberately retains the obligation and allocation; it is refusal
+evidence without a leak-free claim. Sanitizer runs separately instrument the C fixture and caller
+for success/error and 64-owner cleanup; the generated machine object is not ASan-instrumented,
+and sanitizer executables do not acquire the production closed executable seal.
+
+Byte selections use the same retained requirement boundary. When exact private runtime imports
+are required, it also retains checked runtime C source bytes, their SHA-256 and the retained
+runtime header SHA-256. The renderer uses the sealed target/layout/runtime records; these source
+requirements supply no acquisition or execution permission. Linux-only byte tests execute actual
+generated String loans, packed Vec loans, foreign byte copies and cleanup-before-result transfer.
+Separate C wrappers observe declared private traps, unknown statuses, malformed byte policies,
+failure atomicity, alias refusal and failed releases. Unresolved fault cases deliberately retain
+allocations; subsequent oracle disposal is not generated cleanup or leak-free evidence.
+
+These tests remain private reviewed fixture linkage. The private source-selection entry now
+authenticates original source/declaration/material issuers before semantic, IR, MIR and real
+object emission. At
+[`09882e4`](https://github.com/zryna/zryna/commit/09882e42e36200d376e1f1d8f79ac8b87d59b349),
+[all 33 exact-revision CI jobs passed](https://github.com/zryna/zryna/actions/runs/37267662189).
+Four unsupported single selections reject before the emitter; the native-only Linux fixture
+emits an audited object. The bounded #417 compiler/interop implementation was subsequently
+integrated by [merge b7a9dfc](https://github.com/zryna/zryna/commit/b7a9dfc15b54a6318778f7184292e9e813621f9c).
+That integration grants no recipe or host permission. Arbitrary foreign libraries and actual
+host authorization/containment retain their separate owning requirements. No CLI selector,
+executable publication or Windows native C target is added.
+
+### Explicit native compile recipe API
+
+The [native recipe library contract](../../docs/NATIVE_RECIPES_V0.md) documents
+`prepare_native_recipe`, `approve_native_recipe`, `prepare_and_approve_native_recipe` and the
+Linux x86-64-only `execute_native_recipe` session. Genuine retained source/ABI issuers and exact
+independent operator/tool-root approval precede host execution. Pure-source and playground
+modes deny recipes. The fixed two-role Docker mechanism audits the sole object only after
+recipe namespace kill/wait and constructs success only after confirmed owned cleanup.
+Local Linux production-API qualification passed two fresh successful compilations and specific
+wrong-output, compiler-error and actual 30-second timeout refusals, with confirmed cleanup and
+unchanged project state. Issue acceptance additionally requires independent review and full
+policy/supported-host CI for the exact candidate; local session evidence alone does not certify
+those gates. The [ordinary-driver example](examples/native_recipe_conformance/README.md) requires explicit
+execution. No CLI/profile, native cache, release, linking or loading authority is added.
+
+## Bounded public server composition
+
+`serve_workspace` composes the existing lifecycle/runtime/transport with authenticated source,
+private identity-bound configuration/root listener approval and a separate create-only final
+record. This status route keeps empty guest grants; private clock probes stay separate. The owning
+[contract](../../docs/WASI_SERVER_STATUS_V1.md) records bounded public source-checkout support
+at integration after #400 and the required #401 gates, with installed server execution excluded. `ServerReadiness` supports explicit cancellation, with final publication
+only after joined and observed teardown.
+
+`serve_clock_workspace` composes the distinct one-read clock/status arrangement with `ClockServerRunRequest`, preserving the original status API and its empty grants. Separate private guest request/root approval identities are retained and revalidated; v2 records actual reads/denials after teardown. The callback budget and other runtime bounds are unchanged. See [the clock contract](../../docs/WASI_SERVER_CLOCK_STATUS_V1.md).

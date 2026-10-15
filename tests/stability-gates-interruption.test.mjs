@@ -118,6 +118,7 @@ async function exerciseCollector(startupDelay = false) {
   const readyPath = resolve(directory, 'ready.json');
   const trace = resolve(directory, 'lifetime.jsonl');
   mkdirSync(repository);
+  cpSync(resolve(root, 'rust-toolchain.toml'), resolve(repository, 'rust-toolchain.toml'));
   cpSync(resolve(root, 'scripts/stability-gates'), resolve(repository, 'scripts/stability-gates'), { recursive: true });
   mkdirSync(resolve(repository, 'tests'));
   cpSync(resolve(root, 'tests/stability-gates-v1.json'), resolve(repository, 'tests/stability-gates-v1.json'));

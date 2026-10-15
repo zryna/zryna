@@ -20,6 +20,15 @@ pub use plan::{
     BuildRuntimeIdentity, BuildTarget, BuildTargetId, ExecutionPolicyIdentity,
 };
 
+// Pure identity projection for driver-owned recipe admission; no cache or output root is opened.
+pub(crate) fn prepare_source_plan_identity(
+    resolution: &PackageResolutionSuccess,
+    configuration: &BuildPlanConfiguration,
+    mode: PackageBuildMode,
+) -> Result<BuildPlanIdentity, PackageBuildError> {
+    plan::prepare_identity(resolution, configuration, mode)
+}
+
 /// Exact package-build manifest filename.
 pub const PACKAGE_BUILD_MANIFEST_NAME: &str = "zryna-package-build-manifest-v1.json";
 

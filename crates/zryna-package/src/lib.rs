@@ -6,6 +6,7 @@ mod canonical;
 mod identity;
 mod model;
 mod resolver;
+mod source_trust;
 mod validation;
 
 pub use identity::{GraphRole, PackageInstance, PackageSemanticDomain};
@@ -13,6 +14,9 @@ pub use model::{Compatibility, PackageSource, PackageSourceKind};
 pub use resolver::{
     LockMode, PackageFile, PackageMaterial, PackageSourceProvider, ResolveError, ResolvedGraph,
     ResolvedPackage, resolve,
+};
+pub use source_trust::{
+    NativeRecipeDisposition, SourceTrustMode, SourceTrustModeError, native_recipe_disposition,
 };
 
 /// Validates one closed package source tuple without opening material.

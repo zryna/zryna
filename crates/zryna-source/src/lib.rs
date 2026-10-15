@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+mod span_validation;
+
 use std::collections::BTreeMap;
 use std::fmt;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -405,7 +407,7 @@ impl SourceMap {
     /// or offset inside a UTF-8 code point.
     pub fn span(&self, file: FileId, start: u32, end: u32) -> Result<Span, SourceError> {
         let span = Span { file, start, end };
-        self.resolve(span)?;
+        self.validated_source(span)?;
         Ok(span)
     }
 
@@ -440,38 +442,7 @@ impl SourceMap {
     ///
     /// Returns a source error if the file or range is not valid for this map.
     pub fn resolve(&self, span: Span) -> Result<ResolvedSpan<'_>, SourceError> {
-        let source = self.source(span.file).ok_or_else(|| unknown_file(span.file))?;
-        if span.start > span.end {
-            return Err(invalid_span_order(span.file, span.start, span.end));
-        }
-        let source_len = u32::try_from(source.text.len()).map_err(|_| {
-            SourceError::new(
-                "ZRYNA-S1007",
-                Some(source.path.as_str().to_owned()),
-                "source length exceeds the supported offset range",
-                "reduce the source file before analysis",
-            )
-        })?;
-        if span.end > source_len {
-            return Err(SourceError::new(
-                "ZRYNA-S1007",
-                Some(source.path.as_str().to_owned()),
-                format!(
-                    "source span {}..{} exceeds file length {source_len}",
-                    span.start, span.end
-                ),
-                "keep source ranges within the referenced file",
-            ));
-        }
-        let start =
-            usize::try_from(span.start).map_err(|_| invalid_boundary(source, span.start))?;
-        let end = usize::try_from(span.end).map_err(|_| invalid_boundary(source, span.end))?;
-        if !source.text.is_char_boundary(start) {
-            return Err(invalid_boundary(source, span.start));
-        }
-        if !source.text.is_char_boundary(end) {
-            return Err(invalid_boundary(source, span.end));
-        }
+        let source = self.validated_source(span)?;
         Ok(ResolvedSpan {
             source,
             start: resolve_position(source, span.start),

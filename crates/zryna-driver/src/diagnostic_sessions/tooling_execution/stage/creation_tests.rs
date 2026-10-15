@@ -29,10 +29,10 @@ pub(super) fn checkpoint(point: &'static str) -> Result<(), Diagnostic> {
     })
 }
 
-struct Fault;
+pub(super) struct Fault;
 
 impl Fault {
-    fn arm(point: &'static str) -> Self {
+    pub(super) fn arm(point: &'static str) -> Self {
         FAILURE.with(|failure| {
             assert!(failure.get().is_none());
             failure.set(Some(point));

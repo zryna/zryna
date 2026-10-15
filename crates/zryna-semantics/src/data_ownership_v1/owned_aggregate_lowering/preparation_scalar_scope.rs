@@ -14,6 +14,7 @@ pub(super) struct ScalarFrame {
     pub(super) ty: Ty,
     pub(super) at: Span,
     pub(super) start: usize,
+    pub(super) child_start: usize,
     pub(super) next: usize,
     pub(super) waiting: bool,
 }
@@ -72,13 +73,17 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
     ) -> Option<VisitOutcome> {
         if frame.waiting {
             let value = result.take()?;
-            let step = self.steps.last()?;
+            // Indexed operands close their access scope after producing the value. Those
+            // cleanup steps have no result; the child's final typed step still owns it.
+            let step =
+                self.steps[frame.child_start..].iter().rev().find(|step| step.value.is_some())?;
             assert_eq!(step.value, Some(value), "scalar child owns its final typed result");
             frame.values.push((value, step.ty));
         }
         if let Some(&id) = frame.inputs.get(frame.next) {
             frame.next += 1;
             frame.waiting = true;
+            frame.child_start = self.steps.len();
             frames.push(Frame::Scalar(frame));
             frames.push(Frame::Visit(id, None));
             Some(VisitOutcome::Deferred)
@@ -122,6 +127,7 @@ impl<'f> PreparationContext<'_, 'f, '_, '_> {
             ty,
             at,
             start,
+            child_start: start,
             next: 0,
             waiting: false,
         })

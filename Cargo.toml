@@ -13,6 +13,7 @@ members = [
   "crates/zryna-driver",
   "crates/zryna-frontend",
   "crates/zryna-ir",
+  "crates/zryna-native-c-ir",
   "crates/zryna-layout",
   "crates/zryna-ownership-runtime-abi",
   "crates/zryna-package",
@@ -32,6 +33,10 @@ license = "Apache-2.0"
 repository = "https://github.com/zryna/zryna"
 homepage = "https://zryna.com"
 authors = ["Aditya Nandlal"]
+
+# Keep repeated full-byte tool authentication fast in development and conformance tests.
+[profile.dev.package.sha2]
+opt-level = 3
 
 [workspace.dependencies]
 anyhow = "1.0.99"

@@ -7,14 +7,22 @@
 //! ```
 
 mod authority;
+mod command_h1;
 mod command_source;
 mod graph;
 mod model;
+#[allow(dead_code, reason = "private native composition precedes public activation")]
+mod native_c;
 mod policy;
 mod quota;
 mod verification;
 
+pub(crate) use command_h1::CommandH1Composition;
 pub(crate) use command_source::{PureCommandSource, compile_pure_command};
+
+pub(crate) fn command_registry_ceilings() -> Result<[u64; 10], Vec<Diagnostic>> {
+    Ok(policy::Policy::load()?.limits(model::Row::WitCommand))
+}
 
 #[cfg(test)]
 mod tests;

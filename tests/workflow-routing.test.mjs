@@ -1,7 +1,10 @@
 import './native-provider-activation-workflow.test.mjs';
+import { registerWorkflowInventoryContracts } from './workflow-routing/inventory-contracts.mjs';
+import { registerInstalledCommandContract } from './workflow-routing/installed-command.mjs';
+import { registerPackageContracts } from './workflow-routing/package-contracts.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import {
   dirname, relative, resolve, sep,
 } from 'node:path';
@@ -9,11 +12,18 @@ import test from 'node:test';
 import { parseDocument } from 'yaml';
 
 import {
-  CONTRACT_LANES,
-  classifyGitDiff,
-  classifyWorkflowPaths,
-  formatWorkflowOutputs,
+  CONTRACT_LANES as ALL_CONTRACT_LANES,
+  classifyGitDiff as classifyAllGitDiff,
+  classifyWorkflowPaths as classifyAllWorkflowPaths,
+  formatWorkflowOutputs as formatAllWorkflowOutputs,
 } from '../scripts/classify-workflow-paths.mjs';
+
+// Existing optional lanes retain their exact ownership assertions; M4 is independently tested.
+const CONTRACT_LANES = ALL_CONTRACT_LANES.filter(lane => lane !== 'm4');
+const legacy = result => Object.fromEntries(CONTRACT_LANES.map(lane => [lane, result[lane]]));
+const classifyGitDiff = (...args) => legacy(classifyAllGitDiff(...args));
+const classifyWorkflowPaths = (...args) => legacy(classifyAllWorkflowPaths(...args));
+const formatWorkflowOutputs = value => formatAllWorkflowOutputs({ ...value, m4: false }).replace('m4=false\n', '');
 
 const root = resolve(import.meta.dirname, '..');
 const workflow = (name) => {
@@ -282,82 +292,11 @@ test('classification failure runs all optional lanes and each matrix uses its ex
   }
 });
 
-test('consolidation preserves every prior contract command and pinned action', () => {
-  const commands = (id) => ci.jobs[id].steps.flatMap((step) => step.run ? [step.run] : []);
-  assert.deepEqual(commands('diagnostics-contract'), [
-    'pnpm install --frozen-lockfile',
-    'pnpm diagnostics:contract',
-    'cargo test --locked -p zryna-diagnostics',
-    'cargo clippy --locked -p zryna-diagnostics --all-targets -- -D warnings',
-    'cargo fmt --all -- --check',
-  ]);
-  assert.deepEqual(commands('distribution-release-contract'), [
-    'pnpm install --frozen-lockfile',
-    'pnpm release:contract',
-    'pnpm distribution:check',
-  ]);
-  assert.deepEqual(commands('package-release-contract'), [
-    'pnpm install --frozen-lockfile',
-    'pnpm package:contract',
-    'cargo test --locked -p zryna-package',
-  ]);
-  assert.deepEqual(commands('provider-conformance-v4'), [
-    'pnpm install --frozen-lockfile',
-    'pnpm provider:conformance:v4',
-    'node scripts/run-native-lexer-resource-tests.mjs',
-  ]);
-  assert.deepEqual(commands('wit-capability-contract'), [
-    'pnpm install --frozen-lockfile',
-    'pnpm wit:contract',
-  ]);
-  for (const id of [
-    'diagnostics-contract',
-    'distribution-release-contract',
-    'package-release-contract',
-    'provider-conformance-v4',
-    'wit-capability-contract',
-  ]) {
-    const uses = ci.jobs[id].steps.flatMap((step) => step.uses ? [step.uses] : []);
-    assert(uses.includes('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'));
-    assert(uses.includes('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020'));
-    assert(uses.includes('pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86'));
-    if (id === 'package-release-contract') {
-      assert(uses.includes('dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c'));
-    }
-    assert(!uses.some((use) => use.endsWith('@main')));
-  }
-});
+registerPackageContracts(ci);
 
-test('pull-request workflows stay inventoried and every superseded run cancels', () => {
-  const names = readdirSync(resolve(root, '.github/workflows')).sort();
-  assert.deepEqual(names, [
-    'ci.yml', 'documentation.yml', 'native-provider-activation.yml', 'portable-setup.yml',
-    'release-production-candidate.yml',
-    'release-qualification.yml', 'release.yml',
-  ]);
-  for (const name of names) {
-    const candidate = workflow(name);
-    if (!Object.hasOwn(candidate.on, 'pull_request')) continue;
-    assert.equal(candidate.concurrency['cancel-in-progress'], true, name);
-    assert.match(candidate.concurrency.group, /pull_request\.number/, name);
-  }
-  assert.equal(Object.hasOwn(workflow('portable-setup.yml').on, 'pull_request'), false);
-  assert.equal(ci.jobs['portable-setup'].uses, './.github/workflows/portable-setup.yml');
-  assert.deepEqual(ci.jobs['portable-setup'].needs, ['route-contracts', 'm0']);
-});
+registerInstalledCommandContract(workflow);
 
-test('main runs only documentation validation and publication with short retention', () => {
-  assert.deepEqual(documentation.on, { push: { branches: ['main'] } });
-  assert.deepEqual(Object.keys(documentation.jobs), ['docs-publish']);
-  assert.equal(documentation.concurrency['cancel-in-progress'], true);
-  const publisher = documentation.jobs['docs-publish'];
-  assert.equal(publisher.needs, undefined);
-  assert(publisher.steps.some((step) => step.run === 'pnpm docs:check'));
-  const upload = publisher.steps.at(-1);
-  assert.equal(upload.uses,
-    'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02');
-  assert.equal(upload.with['retention-days'], 7);
-});
+registerWorkflowInventoryContracts({ workflow, root, ci, documentation });
 
 test('required Rust platform jobs include playground contracts and Linux helper units', () => {
   const rust = ci.jobs.rust;

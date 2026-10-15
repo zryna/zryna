@@ -2,6 +2,16 @@
 
 Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
 See [the public M3 surface](docs/M3_PUBLIC_PROFILE.md) and [the beginner guide](docs/M3_GETTING_STARTED.md).
+
+This change introduces the [bounded WASI command profile](docs/WASI_COMMAND_GETTING_STARTED.md)
+when integrated: one source file, empty grants or one explicit private environment key, and
+checkout or newly verified complete-installation execution. Its
+[review and integration record](docs/WASI_COMMAND_H1_REVIEW.md) tracks the remaining final checks.
+Existing immutable beta archives do not gain command support.
+The [bounded server profiles](docs/WASI_SERVER_STATUS_V1.md) introduce explicit source-checkout
+loopback status and separately approved one-read clock/status support at reviewed #401
+integration. Their [review record](docs/WASI_SERVER_REVIEW.md) retains the required final gates;
+whole-M4 conformance and publication remain #402.
 The component checkpoints below retain their historical implementation boundaries; they do not
 limit or independently expand the integrated public surface. M0–M2 remain unchanged.
 
@@ -446,3 +456,8 @@ Zryna is an independent project and is not affiliated with, endorsed by, or spon
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
+[The fixed M4 support contract](docs/M4_SUPPORT.md) and `zryna support --json` expose the
+same bounded matrix. [M4 conformance](docs/M4_CONFORMANCE.md) keeps exact-revision execution,
+hosted checks and live publication separate from this static report. Neither the report nor
+source presence closes #402 or creates a signed release or production admission.

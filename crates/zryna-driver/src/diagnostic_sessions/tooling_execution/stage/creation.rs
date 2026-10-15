@@ -16,10 +16,11 @@ use same_file::Handle;
 use zryna_diagnostics::Diagnostic;
 
 use super::super::capture::{CapturedFile, capture_absolute};
+use super::inventory::file_key;
 use super::{
-    MODULES, OLD, OLD_LIB, ROOT, RetainedDirectory, RetainedFile, SCOPE, ToolingStage, WRAPPER,
-    WRAPPER_LIB, configure_create, configure_read, directory_identity, execution_error,
-    hash_handle, metadata_is_link_or_reparse, open_regular, same_file_state, stage_changed,
+    MODULES, OLD, OLD_LIB, ROOT, RetainedDirectory, RetainedFile, SCOPE, ToolingStage, V4Layout,
+    WRAPPER, WRAPPER_LIB, configure_create, configure_read, directory_identity, execution_error,
+    hash_handle, metadata_is_link_or_reparse, open_regular, same_file_state, stage_changed, v4,
     with_cleanup,
 };
 
@@ -45,6 +46,7 @@ pub(super) fn create_root_in(temp: &Path) -> Result<ToolingStage, Diagnostic> {
             Ok(()) => {
                 let path = temp.join(&name);
                 let mut stage = ToolingStage {
+                    v4_layout: V4Layout::Legacy,
                     worker: path.join("worker.mjs"),
                     working_directory: path.clone(),
                     path,
@@ -97,7 +99,7 @@ pub(super) fn create_directory(
     name: &'static str,
     key: &'static str,
 ) -> Result<(), Diagnostic> {
-    if !matches!(
+    let known_dependency = matches!(
         (parent_key, name, key),
         (ROOT, "node_modules", MODULES)
             | (MODULES, "@typescript", SCOPE)
@@ -105,8 +107,15 @@ pub(super) fn create_directory(
             | (WRAPPER, "lib", WRAPPER_LIB)
             | (SCOPE, "old", OLD)
             | (OLD, "lib", OLD_LIB)
-    ) || stage.directories.contains_key(key)
-    {
+    );
+    let known_module = stage.v4_layout == V4Layout::Modular
+        && matches!(
+            (parent_key, name, key),
+            (ROOT, "v4", v4::V4)
+                | (v4::V4, "boundary", v4::BOUNDARY)
+                | (v4::V4, "syntax", v4::SYNTAX)
+        );
+    if !(known_dependency || known_module) || stage.directories.contains_key(key) {
         return Err(stage_changed());
     }
     let parent = stage.bound_directory(parent_key)?;
@@ -265,19 +274,4 @@ pub(super) fn open_owned_regular(parent: &Dir, name: &str) -> Result<File, Diagn
         options.share_mode(1 | 2 | 4);
     }
     parent.open_with(name, &options).map_err(|_| stage_changed())
-}
-
-fn file_key(parent: &str, name: &str) -> Result<&'static str, Diagnostic> {
-    match (parent, name) {
-        (ROOT, "worker.mjs") => Ok("worker"),
-        (ROOT, "worker-v3.mjs") => Ok("worker-v3"),
-        (ROOT, "limits-v3.mjs") => Ok("limits-v3"),
-        (ROOT, "worker-v4.mjs") => Ok("worker-v4"),
-        (ROOT, "limits-v4.mjs") => Ok("limits-v4"),
-        (WRAPPER, "package.json") => Ok("wrapper-manifest"),
-        (WRAPPER_LIB, "typescript.js") => Ok("wrapper-runtime"),
-        (OLD, "package.json") => Ok("old-manifest"),
-        (OLD_LIB, "typescript.js") => Ok("old-runtime"),
-        _ => Err(stage_changed()),
-    }
 }

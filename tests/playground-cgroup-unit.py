@@ -2,120 +2,18 @@
 
 from contextlib import ExitStack
 import os
-import pathlib
 import sys
-import tempfile
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] /
-                      "examples/playground/restricted"))
-import cgroup
-from cgroup import JobGroup, PolicyError
-
-
-NATIVE_OPEN = os.open
-NATIVE_CLOSE = os.close
-NATIVE_STAT = os.stat
-NATIVE_RMDIR = os.rmdir
-DEFAULT = object()
-
-
-def fd_count():
-    return len(os.listdir("/proc/self/fd"))
-
-
-def evidence(error):
-    result = [error]
-    if isinstance(error, BaseExceptionGroup):
-        for nested in error.exceptions:
-            result.extend(evidence(nested))
-    cleanup = getattr(error, "cleanup", None)
-    if cleanup is not None:
-        result.extend(evidence(cleanup))
-    return result
-
-
-class Controls:
-    """Only control-file data is mocked; directory handles and identities are real."""
-    def __init__(self, root):
-        self.root = root
-        self.values = {}
-        self.calls = []
-        self.fault = lambda *_args: DEFAULT
-
-    def __call__(self, fd, name, value=None):
-        self.calls.append((name, value))
-        override = self.fault(fd, name, value)
-        if override is not DEFAULT:
-            return override
-        if value is not None:
-            self.values[name] = str(value)
-            return None
-        if os.fstat(fd).st_ino == self.root.stat().st_ino:
-            return {"cgroup.type": "domain", "cgroup.subtree_control": "cpu cpuset memory pids",
-                    "cgroup.procs": "", "cpuset.cpus.effective": "0-3",
-                    "cpuset.mems.effective": "0"}[name]
-        if name in self.values:
-            return self.values[name]
-        return {"cpuset.cpus.effective": "0-1", "memory.events": "max 0\noom 0\noom_kill 0",
-                "pids.events": "max 0", "cgroup.events": "populated 0"}[name]
-
-
-class Fixture:
-    def __init__(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="playground-unit-")
-        self.mount = pathlib.Path(self.temporary.name)
-        self.root = self.mount / "delegated"
-        self.root.mkdir()
-        self.controls = Controls(self.root)
-        self.groups = []
-        self.stack = ExitStack()
-        mountinfo = f"10 1 0:1 / {self.mount} rw - cgroup2 cgroup rw\n"
-        self.stack.enter_context(patch("cgroup.pathlib.Path.read_text", return_value=mountinfo))
-        self.stack.enter_context(patch("cgroup.control", self.controls))
-        self.stack.enter_context(patch("cgroup.os.open", side_effect=self.open))
-
-    @staticmethod
-    def open(name, flags, *args, **kwargs):
-        # A real disposable descriptor satisfies the constructor's kill-file open probe.
-        if name == "cgroup.kill":
-            return NATIVE_OPEN("/dev/null", os.O_WRONLY)
-        return NATIVE_OPEN(name, flags, *args, **kwargs)
-
-    def create(self, clock=lambda: 0):
-        group = JobGroup.__new__(JobGroup)
-        self.groups.append(group)
-        JobGroup.__init__(group, str(self.root), 536_870_912, 32, clock=clock)
-        return group
-
-    def close(self):
-        self.stack.close()
-        for group in self.groups:
-            for attribute in ["fd", "root_fd"]:
-                fd = getattr(group, attribute, None)
-                if fd is not None:
-                    NATIVE_CLOSE(fd)
-                    setattr(group, attribute, None)
-        self.temporary.cleanup()
+from playground_cgroup_fixtures import (
+    DEFAULT, NATIVE_RMDIR, NATIVE_STAT, PolicyError, cgroup, fd_count, GroupFixtureCase,
+)
+from playground_cgroup_cleanup_cases import CleanupEvidence
 
 
 @unittest.skipUnless(sys.platform == "linux", "Linux directory descriptors required")
-class GroupLifetime(unittest.TestCase):
-    def setUp(self):
-        self.before = fd_count()
-        self.fixtures = []
-
-    def tearDown(self):
-        for fixture in reversed(self.fixtures):
-            fixture.close()
-        self.assertEqual(fd_count(), self.before)
-
-    def fixture(self):
-        fixture = Fixture()
-        self.fixtures.append(fixture)
-        return fixture
-
+class GroupLifetime(GroupFixtureCase):
     def test_real_owned_directory_limits_baseline_and_successful_close(self):
         fixture = self.fixture()
         group = fixture.create()
@@ -366,61 +264,6 @@ class GroupLifetime(unittest.TestCase):
                 self.assertIsNone(group.root_fd)
                 self.assertEqual(fd_count(), before - 2)
 
-    def test_close_attempts_both_handle_releases_and_retains_all_failure_evidence(self):
-        fixture = self.fixture()
-        group = fixture.create()
-        primary = PolicyError("PLAYGROUND-KILL-FAILED")
-        releases = []
-        errors = [OSError("child close acknowledgement"), OSError("root close acknowledgement")]
-        def kill(_fd, name, _value):
-            if name == "cgroup.kill":
-                raise primary
-            return DEFAULT
-        fixture.controls.fault = kill
-        def close(fd):
-            # Model a reported close error after release; both real descriptors are disposed.
-            NATIVE_CLOSE(fd)
-            releases.append(fd)
-            raise errors[len(releases) - 1]
-        before = fd_count()
-        owned = [group.fd, group.root_fd]
-        with patch("cgroup.os.close", side_effect=close):
-            with self.assertRaises(PolicyError) as failure:
-                group.close(lambda: self.fail("failed kill must not reap"), 2)
-        self.assertIs(failure.exception, primary)
-        self.assertEqual(releases, owned)
-        self.assertTrue(all(error in evidence(primary) for error in errors))
-        self.assertEqual(fd_count(), before - 2)
-        self.assertTrue(group.path.is_dir())
-
-    def test_constructor_primary_rollback_and_close_failures_remain_separate(self):
-        fixture = self.fixture()
-        primary = PolicyError("PLAYGROUND-LIMIT-WRITE-FAILED")
-        cleanup = OSError("owned removal acknowledgement")
-        close_errors = [OSError("child close acknowledgement"), OSError("root close acknowledgement")]
-        releases = []
-        owned = []
-        def fault(fd, name, value):
-            if name == "memory.max" and value is not None:
-                owned.extend([fd, fixture.groups[-1].root_fd])
-                raise primary
-            return DEFAULT
-        fixture.controls.fault = fault
-        def close(fd):
-            NATIVE_CLOSE(fd)
-            if fd in owned:
-                releases.append(fd)
-                raise close_errors[len(releases) - 1]
-        before = fd_count()
-        with patch("cgroup.os.rmdir", side_effect=cleanup), patch("cgroup.os.close", side_effect=close):
-            with self.assertRaises(PolicyError) as failure:
-                fixture.create()
-        self.assertIs(failure.exception, primary)
-        self.assertIs(primary.cleanup, cleanup)
-        self.assertTrue(all(error in evidence(primary) for error in close_errors))
-        self.assertEqual(len(releases), 2)
-        self.assertEqual(fd_count(), before)
-        self.assertIsNotNone(fixture.groups[-1].name)
 
 
 if __name__ == "__main__":

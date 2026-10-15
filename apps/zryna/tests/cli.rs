@@ -18,6 +18,8 @@ use sha2::Digest;
 use zryna_abi::{RawHostScalar, ScalarTarget, ScalarType, ScalarValue, normalize_result};
 
 static NEXT_CASE: AtomicU64 = AtomicU64::new(0);
+#[path = "fixtures/browser_byte_boundary.rs"]
+mod browser_byte_boundary;
 
 struct WorkspaceCase {
     root: PathBuf,
@@ -587,6 +589,7 @@ fn run_browser_component_fixture(browser_root: Option<&Path>) {
         .output()
         .expect("browser component fixture must start");
     assert_success(&output);
+    browser_byte_boundary::run(browser_root);
 }
 
 #[test]

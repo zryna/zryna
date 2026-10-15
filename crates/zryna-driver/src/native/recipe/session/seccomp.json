@@ -1,0 +1,210 @@
+{
+  "architectures": [
+    "SCMP_ARCH_X86_64"
+  ],
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "defaultErrnoRet": 1,
+  "syscalls": [
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "names": [
+        "read",
+        "write",
+        "readv",
+        "writev",
+        "pread64",
+        "close",
+        "close_range",
+        "lseek",
+        "fstat",
+        "newfstatat",
+        "stat",
+        "lstat",
+        "statx",
+        "statfs",
+        "fstatfs",
+        "access",
+        "faccessat",
+        "faccessat2",
+        "readlink",
+        "readlinkat",
+        "open",
+        "openat",
+        "getdents64",
+        "fcntl",
+        "dup",
+        "dup2",
+        "dup3",
+        "pipe",
+        "pipe2",
+        "unlink",
+        "unlinkat",
+        "rename",
+        "renameat",
+        "renameat2",
+        "ftruncate",
+        "truncate",
+        "fchmod",
+        "fchmodat",
+        "chmod",
+        "fsync",
+        "fdatasync",
+        "utimensat",
+        "brk",
+        "munmap",
+        "mremap",
+        "madvise",
+        "rt_sigaction",
+        "rt_sigprocmask",
+        "rt_sigreturn",
+        "rt_sigsuspend",
+        "sigaltstack",
+        "set_tid_address",
+        "set_robust_list",
+        "rseq",
+        "futex",
+        "getpid",
+        "getppid",
+        "gettid",
+        "getuid",
+        "geteuid",
+        "getgid",
+        "getegid",
+        "getgroups",
+        "getcwd",
+        "chdir",
+        "fchdir",
+        "wait4",
+        "waitid",
+        "fork",
+        "vfork",
+        "execve",
+        "exit",
+        "exit_group",
+        "kill",
+        "tgkill",
+        "getrandom",
+        "clock_gettime",
+        "clock_getres",
+        "clock_nanosleep",
+        "nanosleep",
+        "gettimeofday",
+        "times",
+        "getrusage",
+        "uname",
+        "sched_getaffinity",
+        "prlimit64",
+        "getrlimit",
+        "setrlimit",
+        "restart_syscall"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 0,
+          "op": "SCMP_CMP_EQ",
+          "value": 17
+        }
+      ],
+      "names": [
+        "clone"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 0,
+          "op": "SCMP_CMP_EQ",
+          "value": 16657
+        }
+      ],
+      "names": [
+        "clone"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 38,
+      "names": [
+        "clone3"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 2,
+          "op": "SCMP_CMP_MASKED_EQ",
+          "value": 4,
+          "valueTwo": 0
+        }
+      ],
+      "names": [
+        "mmap"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 2,
+          "op": "SCMP_CMP_MASKED_EQ",
+          "value": 6,
+          "valueTwo": 4
+        },
+        {
+          "index": 3,
+          "op": "SCMP_CMP_MASKED_EQ",
+          "value": 32,
+          "valueTwo": 0
+        }
+      ],
+      "names": [
+        "mmap"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 2,
+          "op": "SCMP_CMP_MASKED_EQ",
+          "value": 4,
+          "valueTwo": 0
+        }
+      ],
+      "names": [
+        "mprotect"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 0,
+          "op": "SCMP_CMP_EQ",
+          "value": 4098
+        }
+      ],
+      "names": [
+        "arch_prctl"
+      ]
+    },
+    {
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 0,
+          "op": "SCMP_CMP_EQ",
+          "value": 4099
+        }
+      ],
+      "names": [
+        "arch_prctl"
+      ]
+    }
+  ]
+}

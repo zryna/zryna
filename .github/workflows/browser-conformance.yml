@@ -1,0 +1,105 @@
+name: Pinned browser conformance
+
+on:
+  pull_request:
+    paths:
+      - scripts/m4/**
+      - scripts/run-m4-conformance.mjs
+      - scripts/check-m4-conformance.mjs
+      - tests/m4*
+      - schemas/zryna-m4-*
+      - docs/M4_*
+      - .github/workflows/browser-conformance.yml
+      - scripts/scalar-host/**
+      - tests/scalar-host/**
+      - tests/browser-component/**
+      - tests/scalar-host-conformance.test.mjs
+      - spec/wit/**
+      - spec/abi/**
+      - crates/**
+      - apps/zryna/**
+      - adapters/typescript-6/**
+      - Cargo.lock
+      - Cargo.toml
+      - zryna.workspace.json
+      - workspace.yaml
+      - rust-toolchain.toml
+      - package.json
+      - pnpm-lock.yaml
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pinned-browser-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    name: pinned browser (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      M4_WORKFLOW_PATH: .github/workflows/browser-conformance.yml
+      M4_SOURCE_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - run: pnpm install --frozen-lockfile
+      - run: cargo fetch --locked
+      - name: Verify fail-closed proof accounting
+        run: node --test tests/scalar-host-conformance.test.mjs
+      - name: Execute pinned browser and full-ceiling transport proofs
+        shell: pwsh
+        run: |
+          $candidate = '${{ github.event.pull_request.head.sha || github.sha }}'
+          $tree = git rev-parse 'HEAD^{tree}'
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate tree observation failed' }
+          $sourceRef = $env:M4_SOURCE_REF
+          $context = Join-Path $env:RUNNER_TEMP 'm4-browser-context.json'
+          node scripts/m4/observe-context.mjs --lane browser --output $context --job-name '${{ github.workflow == 'CI' && 'm4 browser / ' || '' }}pinned browser (${{ matrix.os }})' --source-ref $sourceRef --expected-commit $candidate --expected-tree $tree
+          if ($LASTEXITCODE -ne 0) { throw 'M4 host context failed' }
+          node scripts/run-m4-conformance.mjs --lane browser --evidence "$env:RUNNER_TEMP/browser-conformance-evidence" --expected-commit $candidate --expected-tree $tree --source-ref $sourceRef --context $context
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned browser conformance failed' }
+      - name: Preserve exact-head receipts, inventory and execution logs
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m4-browser-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/browser-conformance-evidence-retained/**
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+      - name: Preserve failed M4 browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m4-browser-diagnostics-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/browser-conformance-evidence/**
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0

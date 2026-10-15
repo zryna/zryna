@@ -1,0 +1,17 @@
+# Explicit native recipe conformance
+
+Build this example with the ordinary driver. It executes only when explicitly invoked on the admitted Linux x86-64 host; other hosts fail. It has no ignored tests, missing-environment success path, native profile selector or cache/release/link/load admission.
+
+```sh
+cargo run --locked -p zryna-driver --example native_recipe_conformance -- /absolute/operator-root.json /absolute/sqlite3.h GCC_VERSION
+```
+
+An optional fourth argument, `TIMEOUT_OPERATOR_ROOT_JSON`, runs a fifth session using a separately reviewed trusted fault compiler that exceeds the real 30-second deadline. This approval must keep the normal supervisor, headers, libraries, aliases, metadata, other tools and Engine owner unchanged; only the regular GCC body/hash/size and image identity may differ. The fault tool is explicitly identified as `timeout-control`, never claimed as successful GCC output. The call must return the exact timeout refusal after at least29 and under36 seconds, confirm cleanup and preserve all project bytes. A cleanup error or another refusal cannot pass. The receipt reports `timeoutChecked:true` and three negative sessions only when that case actually runs and satisfies its assertions; the ordinary three-argument invocation reports `timeoutChecked:false` and two negative sessions.
+
+The operator supplies an independently reviewed `NativeToolRootApproval` JSON file for the exact closed compiler image, plus its independently identified GCC/cc1 version. The JSON is approval data; the actual production session independently checks the full image inventory, tool hashes, effective policy, input/output bytes, namespace lifecycle and cleanup. Do not derive approval from package content, an unreviewed image or its fresh output. The other tools use the declared descriptor version `sha256-pinned-root-v0`; their actual exact byte hashes remain mandatory.
+
+The SQLite header must be exactly695737 bytes with SHA-256 `cd20a2877bc82b94e36c1093b727dd87cfa3c1d581aac6e240925535cbd90166`, matching the existing source-owned SQLite acquisition manifest. The expected output1232-byte digest is fixed independently from the retained closed-tool fixture, never learned from a new session.
+
+Two fresh, frozen, real package/source/ABI issuers call the same public prepare/approve/execute APIs as any explicit library caller. The example checks exact complete object inventory, original source/machine binding, independent root identity, distinct session ownership, deterministic output and unchanged project/cache/output/lock bytes. Two further real sessions reject an independently approved wrong output size and an authenticated C source containing `#error`. Each must reach its specific output-audit or compiler-exit refusal, confirm cleanup and preserve the project; an earlier enforcement failure or cleanup error cannot satisfy these controls. A closed receipt prints only after all four sessions meet their assertions. An example process failure is a failed run; normal compilation of the example is not an execution pass.
+
+The trusted Zryna compiler identity is the actual example executable's bytes and crate version. Its profile configuration hash binds the retained normative data-ownership profile; its runtime identity binds the actual checked private-runtime source retained by the original ABI pipeline. These are declared source-plan identities, not public profile or release activation. Container-executed GCC, cc1, assembler, supervisor and loader identities come from the separately approved full root.

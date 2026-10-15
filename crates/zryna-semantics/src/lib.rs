@@ -2,11 +2,16 @@
 
 #![forbid(unsafe_code)]
 
+pub mod command_h1_v1;
 pub mod control_flow_v1;
 pub mod data_ownership_v1;
 pub mod definition_queries;
+/// Source-bound native C declarations, without typed body or executable authority.
+pub mod native_c_v0;
 
-use std::{cmp::Ordering, collections::BTreeMap};
+use std::collections::BTreeMap;
+mod diagnostic_order;
+use diagnostic_order::compare_diagnostics;
 
 use zryna_abi::{AbiViolationKind, raw as raw_abi, verify_v1};
 use zryna_diagnostics::{Diagnostic, Severity};
@@ -17,25 +22,9 @@ use zryna_syntax::v2::{
     ProjectSyntaxSnapshot, StatementKind, TypeSyntax, TypeSyntaxKind,
 };
 
-/// Maximum retained semantic diagnostics, including the terminal budget diagnostic.
-pub const MAX_SEMANTIC_DIAGNOSTICS: usize = 256;
+mod limits;
 
-const _: () = {
-    assert!(zryna_syntax::v2::MAX_FUNCTIONS_PER_PROJECT <= zryna_ir::MAX_IR_FUNCTIONS);
-    assert!(
-        zryna_syntax::v2::MAX_PARAMETERS_PER_FUNCTION <= zryna_ir::MAX_IR_PARAMETERS_PER_FUNCTION
-    );
-    assert!(
-        zryna_syntax::v2::MAX_PARAMETERS_PER_PROJECT <= zryna_ir::MAX_IR_PARAMETERS_PER_PROGRAM
-    );
-    assert!(
-        zryna_syntax::v2::MAX_EXPRESSIONS_PER_FUNCTION <= zryna_ir::MAX_IR_EXPRESSIONS_PER_FUNCTION
-    );
-    assert!(
-        zryna_syntax::v2::MAX_EXPRESSIONS_PER_PROJECT <= zryna_ir::MAX_IR_EXPRESSIONS_PER_PROGRAM
-    );
-    assert!(zryna_syntax::v2::MAX_EXPRESSION_DEPTH <= zryna_ir::MAX_IR_EXPRESSION_DEPTH);
-};
+pub use limits::MAX_SEMANTIC_DIAGNOSTICS;
 
 /// Inputs that a future semantic implementation must consume without frontend authority.
 ///
@@ -472,34 +461,6 @@ impl SemanticErrors {
     fn finish(mut self) -> Vec<Diagnostic> {
         self.diagnostics.sort_by(compare_diagnostics);
         self.diagnostics
-    }
-}
-
-fn compare_diagnostics(left: &Diagnostic, right: &Diagnostic) -> Ordering {
-    match (left.primary_span(), right.primary_span()) {
-        (Some(left_span), Some(right_span)) => (
-            left_span.file().index(),
-            left_span.start(),
-            left_span.end(),
-            left.code(),
-            left.message(),
-            left.guidance(),
-        )
-            .cmp(&(
-                right_span.file().index(),
-                right_span.start(),
-                right_span.end(),
-                right.code(),
-                right.message(),
-                right.guidance(),
-            )),
-        (Some(_), None) => Ordering::Less,
-        (None, Some(_)) => Ordering::Greater,
-        (None, None) => (left.code(), left.message(), left.guidance()).cmp(&(
-            right.code(),
-            right.message(),
-            right.guidance(),
-        )),
     }
 }
 
