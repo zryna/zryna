@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, lstat, readFile, realpath, writeFile, link, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
@@ -77,22 +77,30 @@ test('expired absolute FD-read deadline refuses before accepting or parsing byte
 if (process.platform === 'win32') {
   test('trusted System32 runtime observation preserves identity without material link waiver', async () => {
     const root = await realpath(process.env.SystemRoot);
-    const file = await realpath(join(root, 'System32', 'cryptbase.dll'));
-    assert.equal(dirname(file), join(root, 'System32'));
-    const state = await lstat(file, { bigint: true });
-    assert(state.isFile() && !state.isSymbolicLink() && state.nlink > 0n && state.ino !== 0n);
     const deadline = performance.now() + 10000;
     const runtimeDependency = await createRuntimeDependencyDescriptor(deadline);
-    const observed = await runtimeDependency(file);
-    assert.equal(observed.bytes, Number(state.size));
-    assert.equal(observed.sha256, digest(await readFile(file)));
-    assert.equal(observed.identity.links, String(state.nlink));
-    assert.equal(observed.identity.ino, String(state.ino));
-    assert.deepEqual(observed.admission, {
-      policy: 'trusted-windows-system32-runtime-module-v1',
-      links: String(state.nlink), publisherAuthenticated: false,
-    });
-    if (state.nlink === 1n) assert.equal((await descriptor(file, deadline)).sha256, observed.sha256);
-    else await assert.rejects(descriptor(file, deadline));
+    const catalog = [
+      ['cryptbase.dll'], ['WindowsPowerShell', 'v1.0', 'pwrshsip.dll'],
+      ['wbem', 'fastprox.dll'], ['wbem', 'wbemprox.dll'], ['wbem', 'wbemsvc.dll'],
+    ];
+    for (const parts of catalog) {
+      const expectedPath = join(root, 'System32', ...parts);
+      const file = await realpath(expectedPath);
+      assert.equal(file, expectedPath);
+      const state = await lstat(file, { bigint: true });
+      assert(state.isFile() && !state.isSymbolicLink() && state.nlink > 0n && state.ino !== 0n);
+      const observed = await runtimeDependency(file);
+      assert.equal(observed.bytes, Number(state.size));
+      assert.equal(observed.sha256, digest(await readFile(file)));
+      assert.equal(observed.identity.links, String(state.nlink));
+      assert.equal(observed.identity.ino, String(state.ino));
+      assert.deepEqual(observed.admission, {
+        policy: parts.length === 1 ? 'trusted-windows-system32-runtime-module-v1'
+          : 'trusted-windows-system32-named-runtime-module-v1',
+        links: String(state.nlink), publisherAuthenticated: false,
+      });
+      if (state.nlink === 1n) assert.equal((await descriptor(file, deadline)).sha256, observed.sha256);
+      else await assert.rejects(descriptor(file, deadline));
+    }
   });
 }
