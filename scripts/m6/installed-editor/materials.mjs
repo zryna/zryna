@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { remaining } from './process.mjs';
 import { lstat, readFile, readdir, readlink, realpath, writeFile } from 'node:fs/promises';
-import { basename, join, relative, sep } from 'node:path';
+import { basename, dirname, join, relative, sep } from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { decodeTar } from '../../distribution/archive-tar.mjs';
@@ -16,6 +16,7 @@ import { EDITOR_ARCHIVES, EDITOR_VERSION } from './pins.mjs';
 
 const require = createRequire(import.meta.url);
 const { verifyInstallation } = require('../../../editors/vscode-zryna/src/installation.cjs');
+const { editorCli } = require('../../portable-setup/setup.cjs');
 export const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 export async function canonicalJson(file, limit = 262144, deadline = performance.now() + 30000) {
   const bytes = await readBytes(file, deadline, limit);
@@ -147,8 +148,13 @@ export async function verifyEditorArchive(archive, deadline) {
 export async function verifyEditor(root, deadline) {
   const base = process.platform === 'win32' ? root : join(root, 'VSCode-linux-x64');
   const executable = join(base, process.platform === 'win32' ? 'Code.exe' : 'code');
-  const product = JSON.parse(await readFile(join(base, 'resources/app/product.json'), 'utf8'));
-  const packageData = JSON.parse(await readFile(join(base, 'resources/app/package.json'), 'utf8'));
+  let app = join(base, 'resources/app');
+  if (process.platform === 'win32') {
+    app = dirname(dirname(editorCli(executable)));
+    await ordinaryRoot(app);
+  }
+  const product = JSON.parse(await readFile(join(app, 'product.json'), 'utf8'));
+  const packageData = JSON.parse(await readFile(join(app, 'package.json'), 'utf8'));
   assert.equal(packageData.version, EDITOR_VERSION);
   assert.match(product.commit, /^[a-f0-9]{40}$/);
   return { executable, descriptor: await descriptor(executable, deadline), productCommit: product.commit,

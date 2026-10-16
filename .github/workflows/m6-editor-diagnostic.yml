@@ -1,4 +1,4 @@
-name: M6 owned Windows ZIP diagnostic only
+name: M6 owned Windows VSIX installation diagnostic only
 on:
   push:
     branches: [m6-editor-diagnostic-20261016]
@@ -8,8 +8,8 @@ concurrency:
   group: m6-editor-diagnostic-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  windows-owned-zip:
-    name: Authenticated Windows ZIP through original owner only
+  windows-owned-vsix:
+    name: Original owned canonical VSIX install and strict inventory
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -20,23 +20,25 @@ jobs:
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
         with: {version: 11.18.0}
       - run: pnpm install --frozen-lockfile
-      - name: One actual authenticated acquisition and original owned extraction
+      - name: One protected official extraction and current-source VSIX installation
         shell: pwsh
         run: |
-          $root = Join-Path $env:RUNNER_TEMP ('m6-owned-zip-{0}-{1}' -f $env:GITHUB_RUN_ID, $env:GITHUB_RUN_ATTEMPT)
+          $root = Join-Path $env:RUNNER_TEMP ('m6-owned-vsix-{0}-{1}' -f $env:GITHUB_RUN_ID, $env:GITHUB_RUN_ATTEMPT)
           New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
-          $env:M6_ZIP_DIAGNOSTIC_ROOT = $root
-          node m6-owned-zip-diagnostic.mjs
-          if ($LASTEXITCODE -ne 0) { throw 'Owned ZIP diagnostic did not pass' }
-      - name: Retain bounded observations without archive or extracted tree
+          $env:M6_VSIX_DIAGNOSTIC_ROOT = $root
+          node m6-owned-vsix-diagnostic.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Owned VSIX diagnostic did not pass' }
+      - name: Retain actual inventory and raw package before strict-validator admission
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: m6-windows-owned-zip-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: m6-windows-owned-vsix-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/m6-owned-zip-${{ github.run_id }}-${{ github.run_attempt }}/*.json
-            ${{ runner.temp }}/m6-owned-zip-${{ github.run_id }}-${{ github.run_attempt }}/commands
-            ${{ runner.temp }}/m6-owned-zip-${{ github.run_id }}-${{ github.run_attempt }}/material/EDITOR_ARCHIVE.json
-            ${{ runner.temp }}/m6-owned-zip-${{ github.run_id }}-${{ github.run_attempt }}/material/official-editor-download.*
+            ${{ runner.temp }}/m6-owned-vsix-${{ github.run_id }}-${{ github.run_attempt }}/*.json
+            ${{ runner.temp }}/m6-owned-vsix-${{ github.run_id }}-${{ github.run_attempt }}/*.raw
+            ${{ runner.temp }}/m6-owned-vsix-${{ github.run_id }}-${{ github.run_attempt }}/*.vsix
+            ${{ runner.temp }}/m6-owned-vsix-${{ github.run_id }}-${{ github.run_attempt }}/commands
+            ${{ runner.temp }}/m6-owned-vsix-${{ github.run_id }}-${{ github.run_attempt }}/material/EDITOR_ARCHIVE.json
+            ${{ runner.temp }}/m6-owned-vsix-${{ github.run_id }}-${{ github.run_attempt }}/material/official-editor-download.*
           if-no-files-found: warn
           retention-days: 14
