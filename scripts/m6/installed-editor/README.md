@@ -34,7 +34,11 @@ serialization or body changes fail; there is no general metadata stripping or no
 This qualified installer behavior is separate from the still-required actual GUI/host checks.
 
 Workspace trust and the normal editor sandbox remain enabled. The runner first proves its fresh
-folder untrusted and the installed extension inactive, then the parent clicks the normal exact
+folder untrusted. Each fresh registry sample distinguishes an absent trust-disabled extension
+from a present extension at the exact installed path with `isActive === false`. Absence supplies
+no registry path match or inactive API object; the physical installed payload is independently
+verified in either case. After trust, the exact registered path and actual activation are mandatory.
+The parent clicks the normal exact
 folder trust dialog through pinned Playwright/CDP on the owned loopback endpoint. Parent-folder
 trust stays unselected. No --no-sandbox, --disable-workspace-trust or fabricated trust database is
 used. The CDP channel belongs only to this trusted GUI harness, never to the product or user code.
@@ -79,7 +83,8 @@ their single-link requirement.
 Archive/setup inputs are consumed from retained no-follow, identity-checked descriptors
 and copied while hashing into fresh private protected files. Extraction reads only these
 captured files. The trust negative actually opens a `.zry` document while untrusted and
-observes inactive extension/absent diagnostics before the normal exact-folder GUI action.
+records fresh absent-or-inactive registry observations and absent diagnostics before the normal
+exact-folder GUI action. A present extension with a wrong path or active state fails immediately.
 
 All corrected helper behavior, PowerShell/.NET handle semantics, loaded dependency
 availability and both real GUI lanes require independent review and actual runs for the selected source.

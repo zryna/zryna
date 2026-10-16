@@ -9,12 +9,49 @@ import { canonicalJson, inventory, sha, verifyInstalled, verifyEditorArchive } f
 import { debuggerEndpoint, waitJson } from './trust.mjs';
 import { remaining } from './process.mjs';
 import { EDITOR_ARCHIVES } from './pins.mjs';
+import untrusted from './untrusted.cjs';
+const { observeUntrustedExtension } = untrusted;
 
 async function fixture(t) {
   const root = await mkdtemp(join(await realpath(tmpdir()), 'm6-installed-editor-unit-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   return root;
 }
+
+test('untrusted registry absence is distinct from a registered inactive extension', () => {
+  const path = '/authenticated/installed-extension';
+  assert.deepEqual(observeUntrustedExtension(undefined, path),
+    { registered: false, active: null, path: null });
+  assert.deepEqual(observeUntrustedExtension({ extensionPath: path, isActive: false }, path),
+    { registered: true, active: false, path });
+  for (const entry of [null, false, {}, { extensionPath: path },
+    { extensionPath: path, isActive: 0 }, { extensionPath: 42, isActive: false }]) {
+    assert.throws(() => observeUntrustedExtension(entry, path), error => {
+      assert.equal(error.untrustedRegistryObservation.registered, true);
+      return true;
+    });
+  }
+});
+
+test('fresh registry samples reject activation or path changes and retain the actual discriminator', () => {
+  const path = '/authenticated/installed-extension';
+  const entries = [undefined, { extensionPath: path, isActive: false }, undefined];
+  assert.deepEqual(entries.map(entry => observeUntrustedExtension(entry, path)), [
+    { registered: false, active: null, path: null },
+    { registered: true, active: false, path },
+    { registered: false, active: null, path: null },
+  ]);
+  for (const entry of [{ extensionPath: path, isActive: true },
+    { extensionPath: '/other/extension', isActive: false }]) {
+    observeUntrustedExtension({ extensionPath: path, isActive: false }, path);
+    assert.throws(() => observeUntrustedExtension(entry, path), error => {
+      assert.equal(error.untrustedRegistryObservation.path, entry.extensionPath);
+      assert.equal(error.untrustedRegistryObservation.active, entry.isActive);
+      assert.equal(error.untrustedRegistryObservation.expectedPath, path);
+      return true;
+    });
+  }
+});
 
 test('closed installed-editor argv rejects missing, extra, relative and foreign source identities', () => {
   const root = process.platform === 'win32' ? 'C:\\m6' : '/m6';
