@@ -2,6 +2,7 @@ import './native-provider-activation-workflow.test.mjs';
 import { registerWorkflowInventoryContracts } from './workflow-routing/inventory-contracts.mjs';
 import { registerInstalledCommandContract } from './workflow-routing/installed-command.mjs';
 import { registerPackageContracts } from './workflow-routing/package-contracts.mjs';
+import { registerRequiredPlatformContracts } from './workflow-routing/platform-contracts.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -226,52 +227,6 @@ test('git diff execution fails safe without shell pipeline semantics', () => {
   assert.deepEqual(classifyGitDiff('main', head, () => assert.fail('must not spawn')), all);
 });
 
-test('CI retains every protected pull-request context and one manual full entry point', () => {
-  assert.deepEqual(ci.on, {
-    pull_request: null,
-    workflow_dispatch: { inputs: { structure_base: {
-      description: 'Full trusted ancestor commit for repository structure validation',
-      required: true,
-      type: 'string',
-    } } },
-  });
-  assert.equal(ci.env.ZRYNA_STRUCTURE_BASE,
-    "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.structure_base }}");
-  const contexts = [
-    ...ci.jobs.rust.strategy.matrix.os.map((os) => ci.jobs.rust.name.replace('${{ matrix.os }}', os)),
-    ci.jobs.adapter.name,
-    ci.jobs.m0.name,
-    ci.jobs.m2.name,
-    ci.jobs.m3.name,
-  ];
-  assert.deepEqual(contexts, [
-    'rust (ubuntu-latest)',
-    'rust (windows-latest)',
-    'adapter',
-    'm0',
-    'm2',
-    'm3',
-  ]);
-  assert.equal(ci.concurrency['cancel-in-progress'], true);
-  assert.match(ci.concurrency.group, /pull_request\.number/);
-  assert.match(ci.jobs['route-contracts'].steps.at(-1).run, /workflow-paths\.mjs --all/);
-  assert.deepEqual(ci.jobs.m0.needs,
-    ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter', 'route-contracts',
-      'provider-conformance-v4']);
-  assert.deepEqual(ci.jobs.m0.steps[0], {
-    uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
-    with: { 'fetch-depth': 0 },
-  });
-  const m0Gate = ci.jobs.m0.steps.at(-1);
-  assert.match(m0Gate.run, /ROUTING_RESULT/);
-  assert.match(m0Gate.run, /verify-provider-v4-ci-result\.mjs/);
-  assert.equal(m0Gate.env.PROVIDER_V4_REQUIRED,
-    '${{ needs.route-contracts.outputs.provider_v4 }}');
-  assert.equal(m0Gate.env.PROVIDER_V4_RESULT,
-    '${{ needs.provider-conformance-v4.result }}');
-  assert.equal(ci.jobs.m0.if, 'always()');
-});
-
 test('classification failure runs all optional lanes and each matrix uses its exact output', () => {
   const route = ci.jobs['route-contracts'];
   const command = route.steps.at(-1).run;
@@ -298,17 +253,4 @@ registerInstalledCommandContract(workflow);
 
 registerWorkflowInventoryContracts({ workflow, root, ci, documentation });
 
-test('required Rust platform jobs include playground contracts and Linux helper units', () => {
-  const rust = ci.jobs.rust;
-  assert.deepEqual(rust.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
-  const contracts = rust.steps.filter(step => step.name === 'Verify restricted playground and M6 contracts');
-  assert.deepEqual(contracts, [{ name: 'Verify restricted playground and M6 contracts',
-    run: 'pnpm playground:contract\npnpm m6:contract\n' }]);
-  const helpers = rust.steps.filter(step => step.name === 'Verify Linux playground helper units');
-  assert.deepEqual(helpers, [{ name: 'Verify Linux playground helper units', if: "runner.os == 'Linux'",
-    env: { PYTHONDONTWRITEBYTECODE: '1' }, run: 'python3 tests/playground-host-unit.py\n' +
-      'python3 tests/playground-cgroup-unit.py\npython3 tests/playground-join-unit.py\n' +
-      'python3 tests/playground-helper-policy-unit.py\n' }]);
-  assert(rust.steps.indexOf(contracts[0]) < rust.steps.indexOf(helpers[0]));
-  assert.equal(rust.steps.at(-1).run, 'node scripts/run-m0-conformance.mjs');
-});
+registerRequiredPlatformContracts(ci);

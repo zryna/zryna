@@ -39,7 +39,7 @@ export function createContainedCliAdapter(approval) {
       if (context.signal.aborted) throw failure('ABORTED');
       const body = Buffer.from(JSON.stringify({ approval: trusted, operationId: input.id }) + '\n');
       if (body.length > 16384) fail();
-      const child = childProcess.spawn('/usr/bin/python3', ['-I', '-S', main], { cwd: path.dirname(main),
+      const child = childProcess.spawn('/usr/bin/python3', ['-I', '-S', '-B', main], { cwd: path.dirname(main),
         env: { PATH: '/nonexistent', LC_ALL: 'C.UTF-8', HOME: '/nonexistent' },
         stdio: ['pipe', 'pipe', 'pipe', 'pipe'], windowsHide: true });
       const job = { child, id: input.id, stdout: [], stderr: [], stdoutBytes: 0, stderrBytes: 0,

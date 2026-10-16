@@ -47,8 +47,8 @@ test('adapter invokes only fixed trusted interpreter/owner and fixed opID, holds
   t.mock.method(childProcess, 'spawn', (...args) => { calls.push(args); return fake; });
   const owner = createContainedCliAdapter(approval); const controller = new AbortController();
   const pending = owner.adapter.run(findOperation('build-addition'), context(controller.signal));
-  assert.equal(calls[0][0], '/usr/bin/python3'); assert.deepEqual(calls[0][1].slice(0, 2), ['-I', '-S']);
-  assert.match(calls[0][1][2], /\/cli-parity\/cli_main\.py$/);
+  assert.equal(calls[0][0], '/usr/bin/python3'); assert.deepEqual(calls[0][1].slice(0, 3), ['-I', '-S', '-B']);
+  assert.equal(calls[0][1].length, 4); assert.match(calls[0][1][3], /\/cli-parity\/cli_main\.py$/);
   assert.deepEqual(calls[0][2].env, { PATH: '/nonexistent', LC_ALL: 'C.UTF-8', HOME: '/nonexistent' });
   respond(fake); const captured = await pending; assert.equal(captured.stderr.length, 0);
   assert.equal(owner.evidence().length, 0);
