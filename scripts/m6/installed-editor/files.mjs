@@ -118,12 +118,18 @@ export async function createRuntimeDependencyDescriptor(deadline) {
     const directDll = system32 !== null && typeof path === 'string' && isAbsolute(path)
       && path === resolve(path) && dirname(path) === system32
       && /^[A-Za-z0-9_-][A-Za-z0-9._-]*\.dll$/i.test(basename(path));
-    const platformModule = directDll && await realpath(path) === path;
+    const namedDll = system32 !== null && [
+      ['WindowsPowerShell', 'v1.0', 'pwrshsip.dll'],
+      ['wbem', 'fastprox.dll'], ['wbem', 'wbemprox.dll'], ['wbem', 'wbemsvc.dll'],
+    ].some(parts => path === join(system32, ...parts));
+    const platformModule = (directDll || namedDll) && await realpath(path) === path;
     remaining(deadline);
     const result = await retainedRead(path, { deadline, maxBytes: 512 * 1024 * 1024,
       admit: platformModule ? runtimeModuleRegular : regular }, async () => {});
     return { ...result, admission: {
-      policy: platformModule ? 'trusted-windows-system32-runtime-module-v1' : 'single-link-ordinary-v1',
+      policy: !platformModule ? 'single-link-ordinary-v1'
+        : namedDll ? 'trusted-windows-system32-named-runtime-module-v1'
+          : 'trusted-windows-system32-runtime-module-v1',
       links: result.identity.links, publisherAuthenticated: false,
     } };
   };

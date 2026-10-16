@@ -59,9 +59,12 @@ unknown cleanup or timeout prevents acceptance. Closing the Node pipe references
 bounds the driver; it never turns unknown process cleanup into success.
 
 Windows runtime-module observations distinguish ordinary system DLL hardlinks from supplied
-materials. Only loaded dependencies at canonical direct `SystemRoot\System32\*.dll` paths may
-have multiple stable links. Retained handles, complete hashes and before/after identities include
-the actual link count; receipts name this policy and make no publisher-authentication claim.
+materials. Loaded dependencies at canonical direct `SystemRoot\System32\*.dll` paths may have
+multiple stable links. Four named DLLs under System32 also qualify:
+`WindowsPowerShell\v1.0\pwrshsip.dll`, `wbem\fastprox.dll`, `wbem\wbemprox.dll` and
+`wbem\wbemsvc.dll`. Retained handles, complete hashes and before/after identities include the
+actual link count; receipts distinguish direct and named policies and make no
+publisher-authentication claim.
 Requested targets, supervisor executables, helper sources, archives and supplied materials retain
 their single-link requirement.
 
