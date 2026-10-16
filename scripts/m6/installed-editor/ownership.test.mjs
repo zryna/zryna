@@ -1,25 +1,16 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, isAbsolute, join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import test from 'node:test';
 import { launchOwned } from './owner-client.mjs';
-import { ordinaryRoot } from './files.mjs';
 
 async function fixture(t) {
-  const retained = process.env.ZRYNA_M6_EDITOR_CONTROL_RECORDS;
-  if (retained) assert(process.platform === 'win32' && isAbsolute(retained) && retained === resolve(retained));
-  const base = await realpath(retained ?? tmpdir());
-  if (retained) {
-    await ordinaryRoot(base);
-    assert(/^m6-owner-controls-[1-9][0-9]*-[1-9][0-9]*$/.test(basename(base)));
-  }
-  const stage = await mkdtemp(join(base, 'm6-process-owner-unit-'));
+  const stage = await mkdtemp(join(await realpath(tmpdir()), 'm6-process-owner-unit-'));
   const output = join(stage, 'records');
   await mkdir(output);
-  // Diagnostic retention preserves failure/unknown observations and never grants cleanup.
-  if (!retained) t.after(() => rm(stage, { recursive: true, force: true }));
+  t.after(() => rm(stage, { recursive: true, force: true }));
   return { stage, output, cwd: stage, env: { ...process.env } };
 }
 
