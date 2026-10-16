@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {mkdir,mkdtemp,realpath,lstat,writeFile,access} from 'node:fs/promises';
+import {mkdir,mkdtemp,realpath,lstat,writeFile,access,readdir} from 'node:fs/promises';
 import {constants} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {delimiter,join,resolve} from 'node:path';
@@ -43,6 +43,15 @@ try {
   const extraction={method:'owned-powershell-system-io-compression-zipfile',helper,runtime:await descriptor(await realpath(runtime),deadline)};
   await writeFile(join(root,'EXTRACTION_BEFORE.json'),JSON.stringify({archive,extraction,stage,source:process.env.GITHUB_SHA},null,2)+'\n',{flag:'wx'});
   await command(runtime,['-NoLogo','-NoProfile','-NonInteractive','-File',helper.captured.path,protectedEditor.captured.path,editorRoot],{cwd:stage,stage,env:{...process.env},output:commands,deadline,name:'extract-authenticated-editor'});
+  const layout=[];
+  for(const relative of ['', 'resources', 'resources/app', 'VSCode-win32-x64']){
+    const path=relative?join(editorRoot,...relative.split('/')):editorRoot;
+    let entries=null,error=null;
+    try{const all=await readdir(path,{withFileTypes:true});assert(all.length<=256);entries=all.map(x=>({name:x.name,directory:x.isDirectory(),file:x.isFile(),symlink:x.isSymbolicLink()}));}
+    catch(e){error=String(e.message).slice(0,2048);}
+    layout.push({path,entries,error});
+  }
+  await writeFile(join(root,'EXTRACTED_ROOT_LAYOUT.json'),JSON.stringify({stage,editorRoot,layout,diagnosticOnly:true,qualification:false},null,2)+'\n',{flag:'wx'});
   const editor=await verifyEditor(editorRoot,deadline);
   await writeFile(join(root,'EXTRACTED_EDITOR.json'),JSON.stringify(editor,null,2)+'\n',{flag:'wx'});
   accepted=true;
