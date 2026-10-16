@@ -129,10 +129,10 @@ mod tests {
     #[cfg(windows)]
     #[test]
     fn high_bit_windows_status_is_kept_as_unsigned_raw_status() {
-        let record = failure_record(&output(0xc0000005, Vec::new(), Vec::new()))
+        let record = failure_record(&output(0xc000_0005, Vec::new(), Vec::new()))
             .expect("bounded failed output");
         assert_eq!(record["capture"]["success"], false);
-        assert_eq!(record["capture"]["windowsRawStatus"], 0xc0000005_u32);
-        assert_eq!(record["capture"]["exitCode"], -1073741819_i32);
+        assert_eq!(record["capture"]["windowsRawStatus"], 0xc000_0005_u32);
+        assert_eq!(record["capture"]["exitCode"], -1_073_741_819_i32);
     }
 }
