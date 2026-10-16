@@ -1,0 +1,30 @@
+name: Windows native file identity controls only
+on:
+  push:
+    branches: [m6-windows-native-file-identity-controls-20261016]
+permissions:
+  contents: read
+concurrency:
+  group: m6-windows-native-file-identity-controls-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  windows-native-identity-controls:
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Record actual Python and require actual Windows
+        shell: pwsh
+        run: |
+          python -VV
+          if ($LASTEXITCODE -ne 0) { throw 'Python version observation failed' }
+          python -I -B -c "import os; assert os.name == 'nt'"
+          if ($LASTEXITCODE -ne 0) { throw 'Actual Windows required' }
+      - name: Five real native identity and mutation controls
+        shell: pwsh
+        run: |
+          python -I -B m6-native-identity-controls/test_windows_file_identity.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Native Windows identity controls failed' }
