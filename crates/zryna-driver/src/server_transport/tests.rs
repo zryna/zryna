@@ -146,13 +146,39 @@ pub(super) fn connect(address: SocketAddr) -> TcpStream {
 pub(super) fn exchange(address: SocketAddr, bytes: &[u8]) -> Vec<u8> {
     let mut stream = connect(address);
     stream.write_all(bytes).expect("client request");
-    stream.shutdown(Shutdown::Write).expect("client frame ends");
+    finish_client_frame(&stream).expect("client frame ends");
     let mut response = Vec::new();
     let result = stream.take(512).read_to_end(&mut response);
     if let Err(error) = result {
         assert_eq!(error.kind(), std::io::ErrorKind::ConnectionReset);
     }
     response
+}
+
+pub(super) fn finish_client_frame(stream: &TcpStream) -> std::io::Result<()> {
+    // A complete request can be rejected or answered before this client half-closes.
+    // The caller still checks the response and the server's owning observations.
+    match stream.shutdown(Shutdown::Write) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotConnected => Ok(()),
+        result => result,
+    }
+}
+
+#[test]
+fn client_frame_finalization_accepts_an_already_closed_completed_connection() {
+    let running = Running::start(config(1, 1000), "200");
+    let mut stream = connect(running.address);
+    stream.write_all(&frame(running.address, b"complete")).expect("complete request");
+    let mut response = Vec::new();
+    (&mut stream).take(512).read_to_end(&mut response).expect("complete response and EOF");
+    assert_eq!(response, b"HTTP/1.1 200 Zryna\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+    until(|| running.observation.served.load(Ordering::SeqCst) == 1);
+    assert_eq!(running.runtime.stores_created.load(Ordering::SeqCst), 1);
+    running.finish();
+    if let Err(error) = stream.shutdown(Shutdown::Both) {
+        assert_eq!(error.kind(), std::io::ErrorKind::NotConnected);
+    }
+    finish_client_frame(&stream).expect("already closed client has no write half to finish");
 }
 
 #[test]
