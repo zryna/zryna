@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { constants } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { remaining } from './process.mjs';
 
@@ -25,11 +25,11 @@ export async function ordinaryRoot(root) {
     current = parent;
   }
 }
-async function retainedRead(path, { deadline, maxBytes, expected }, consume) {
+async function retainedRead(path, { deadline, maxBytes, expected, admit = regular }, consume) {
   remaining(deadline);
   await ordinaryRoot(dirname(path));
   const before = await lstat(path, { bigint: true });
-  regular(before);
+  admit(before);
   assert(before.size <= BigInt(maxBytes));
   // POSIX rejects final links in open itself. Windows additionally binds regular path and
   // retained-handle identities before and after every complete operation; no link fallback.
@@ -37,7 +37,7 @@ async function retainedRead(path, { deadline, maxBytes, expected }, consume) {
     | (process.platform === 'win32' ? 0 : constants.O_NONBLOCK));
   try {
     const held = await fd.stat({ bigint: true });
-    regular(held);
+    admit(held);
     assert.deepEqual(fingerprint(held), fingerprint(before));
     const hash = createHash('sha256');
     const buffer = Buffer.alloc(65536);
@@ -55,7 +55,7 @@ async function retainedRead(path, { deadline, maxBytes, expected }, consume) {
     }
     const after = await fd.stat({ bigint: true });
     const pathAfter = await lstat(path, { bigint: true });
-    regular(after); regular(pathAfter);
+    admit(after); admit(pathAfter);
     assert.deepEqual(fingerprint(after), fingerprint(before));
     assert.deepEqual(fingerprint(pathAfter), fingerprint(before));
     assert.equal(BigInt(total), held.size);
@@ -92,6 +92,41 @@ export async function capture(path, destination, expected, deadline) {
     remaining(deadline);
     return { source, captured: { path: destination, bytes: source.bytes, sha256: source.sha256 } };
   } finally { await fd.close(); }
+}
+
+// Runtime-module observation only; supplied archives/materials keep regular() unchanged.
+function runtimeModuleRegular(stat) {
+  assert(stat.isFile() && !stat.isSymbolicLink() && stat.nlink > 0n && stat.ino !== 0n,
+    'Ordinary trusted platform runtime module identity required.');
+}
+export async function createRuntimeDependencyDescriptor(deadline) {
+  assert(Number.isFinite(deadline));
+  remaining(deadline);
+  let system32 = null;
+  if (process.platform === 'win32') {
+    // Bind only the trusted Node bootstrap environment, never options.env or a material path.
+    const root = process.env.SystemRoot;
+    assert(typeof root === 'string' && root.length <= 32768 && isAbsolute(root));
+    const canonicalRoot = await realpath(root);
+    await ordinaryRoot(canonicalRoot);
+    system32 = join(canonicalRoot, 'System32');
+    await ordinaryRoot(system32);
+  }
+  remaining(deadline);
+  return async path => {
+    remaining(deadline);
+    const directDll = system32 !== null && typeof path === 'string' && isAbsolute(path)
+      && path === resolve(path) && dirname(path) === system32
+      && /^[A-Za-z0-9_-][A-Za-z0-9._-]*\.dll$/i.test(basename(path));
+    const platformModule = directDll && await realpath(path) === path;
+    remaining(deadline);
+    const result = await retainedRead(path, { deadline, maxBytes: 512 * 1024 * 1024,
+      admit: platformModule ? runtimeModuleRegular : regular }, async () => {});
+    return { ...result, admission: {
+      policy: platformModule ? 'trusted-windows-system32-runtime-module-v1' : 'single-link-ordinary-v1',
+      links: result.identity.links, publisherAuthenticated: false,
+    } };
+  };
 }
 
 export async function readBytes(path, deadline, maxBytes) {
