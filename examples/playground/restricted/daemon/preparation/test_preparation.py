@@ -11,6 +11,7 @@ import unittest
 from compose import candidate, encode
 from emit import run
 from handles import Sources
+import ui_plan
 from plan import MAX_PLAN, decode, validate
 
 
@@ -136,6 +137,21 @@ class Preparation(unittest.TestCase):
             decode(b'{"role":"compiler","role":"evaluator"}')
         with self.assertRaises(ValueError):
             decode(b'{"value":NaN}')
+
+
+class UiPlanClosure(unittest.TestCase):
+    def test_fixed_diagnostics_module_is_required_without_opening_other_script_paths(self):
+        files = [{'path': name, 'sourcePath': '/tmp/fixed-inert-source', 'bytes': 1, 'sha256': 'a' * 64,
+                  'mode': 365 if name in ('supervisor', 'ui-supervisor', 'app/compiler', 'lib64/ld-linux-x86-64.so.2') else 292}
+                 for name in ui_plan.REQUIRED]
+        self.assertIn('app/browser-diagnostics.mjs', [item['path'] for item in ui_plan.candidate(files)['files']])
+        without = [item for item in files if item['path'] != 'app/browser-diagnostics.mjs']
+        with self.assertRaises(ValueError):
+            ui_plan.candidate(without)
+        for replacement in [{'path': 'app/arbitrary-debug.mjs'}, {'mode': 365}]:
+            changed = [dict(item, **replacement) if item['path'] == 'app/browser-diagnostics.mjs' else item for item in files]
+            with self.assertRaises(ValueError):
+                ui_plan.candidate(changed)
 
 
 if __name__ == '__main__':

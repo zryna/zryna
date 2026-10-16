@@ -47,12 +47,12 @@ test('real service status/security/body bytes survive and absent browser authent
 test('held first compile is canceled with no host effects; a later real service request is reusable', async () => {
   await fixture(async ({ broker, record, auth, events, location, hostCalls }) => {
     const headers = [...auth, { name: 'origin', value: location.origin }, { name: 'content-type', value: 'application/json' }];
-    const pending = broker.request(record(1, 'compile', headers,
-      JSON.stringify({ version: 1, revision: 1, source: 'export function zero(): i32 { return 0; }\n' })));
+    const body = JSON.stringify({ version: 1, revision: 1, source: 'export function zero(): i32 { return 0; }\n' });
+    const pending = broker.request(record(1, 'compile', headers, body));
     assert.deepEqual(events, [{ version: 1, type: 'probe-paused', id: 1 }]);
     assert.equal(hostCalls(), 0); assert.equal(broker.abort(1), null);
     assert.deepEqual(await pending, { version: 1, type: 'aborted', id: 1 });
-    assert.deepEqual(broker.audit(), [{ id: 1, route: 'compile', aborted: true, dispatched: false }]);
+    assert.deepEqual(broker.audit(), [{ id: 1, route: 'compile', aborted: true, dispatched: false, requestBytes: Buffer.byteLength(body), requestSha256: sha256(Buffer.from(body)) }]);
     const response = await broker.request(record(2, 'cancel', headers, '{"cancelled":true}'));
     assert.equal(response.status, 200); assert.equal(hostCalls(), 0);
     assert.throws(() => broker.abort(1), /UI-TRANSPORT/);

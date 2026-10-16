@@ -33,6 +33,18 @@ export function headerPairs(value, allowed) {
 export function selectBrowserHeaders(headers) {
   return requestNames.filter(name => Object.hasOwn(headers, name)).map(name => ({ name, value: headers[name] }));
 }
+export function selectNetworkHeaders(request) {
+  const selected = Object.create(null);let count = 0;let hosts = 0;
+  if (request.rawHeaders.length > 64) fail('INTERCEPT_HEADERS');
+  for (let i = 0; i < request.rawHeaders.length; i += 2) {
+    const name = request.rawHeaders[i].toLowerCase(), value = request.rawHeaders[i + 1];
+    if (name === 'host' && ++hosts !== 1) fail('INTERCEPT_HEADERS');
+    if (!['authorization', 'origin', 'sec-fetch-site', 'content-type'].includes(name)) continue;
+    if (Object.hasOwn(selected, name) || /[^\x20-\x7e]/.test(value) || (count += name.length + value.length) > bounds.headers) fail('INTERCEPT_HEADERS');
+    selected[name] = value;
+  }
+  return selectBrowserHeaders(selected);
+}
 export function routeFor(url, method, expectedOrigin) {
   origin(expectedOrigin);
   if (typeof url !== 'string' || url.length > 512) fail('ROUTES_003');

@@ -19,7 +19,8 @@ export function validateFailureEvidence(value) {
     if (seen.has(row.id) || !Object.hasOwn(routes, row.route) || row.route === 'asset:worker.mjs') fail();
     seen.add(row.id);const route = routes[row.route];
     if (Object.hasOwn(row, 'aborted')) {
-      exact(row, ['id', 'route', 'aborted', 'dispatched']);
+      exact(row, ['id', 'route', 'aborted', 'dispatched', 'requestBytes', 'requestSha256']);
+      if (!Number.isSafeInteger(row.requestBytes) || row.requestBytes < 0 || row.requestBytes > route.input || !hash(row.requestSha256)) fail();
       if (row.aborted !== true || typeof row.dispatched !== 'boolean') fail();
     } else {
       exact(row, ['id', 'route', 'method', 'requestBytes', 'requestSha256', 'status', 'responseBytes', 'responseSha256']);
@@ -50,15 +51,17 @@ function inspectResult(value, configuration, audit, resources) {
   envelope(value, 'result', ['runId', 'phase', 'transport', 'abort', 'initial', 'state', 'scripts',
     'axBefore', 'axAfter', 'axUpdates', 'corpus', 'audibleAssistiveTechnology', 'browserClosed']);
   if (value.runId !== configuration.runId || value.phase !== 'initial-abort-static-ax' ||
-      value.transport !== 'operator-stdio-http-interception-v1' || value.corpus !== 'unrun' ||
+      value.transport !== 'operator-stdio-browser-loopback-http-v1' || value.corpus !== 'unrun' ||
       value.audibleAssistiveTechnology !== 'unrun' || value.browserClosed !== true ||
       Buffer.byteLength(JSON.stringify(value)) > 1048576) fail('SESSION_004');
-  exact(value.abort, ['id', 'route', 'paused', 'event', 'acknowledged']);
+  exact(value.abort, ['id', 'route', 'paused', 'event', 'acknowledged', 'httpResponseClosed', 'requestBytes', 'requestSha256']);
   integer(value.abort.id, bounds.requests);
   if (value.abort.route !== 'compile' || value.abort.paused !== true ||
-      value.abort.event !== 'requestfailed' || value.abort.acknowledged !== true) fail('SESSION_005');
+      value.abort.event !== 'requestfailed' || value.abort.acknowledged !== true || value.abort.httpResponseClosed !== true ||
+      !Number.isSafeInteger(value.abort.requestBytes) || value.abort.requestBytes < 0 || value.abort.requestBytes > routes.compile.input || !hash(value.abort.requestSha256)) fail('SESSION_005');
   const actualAbort = audit.find(entry => entry.id === value.abort.id);
-  if (!actualAbort?.aborted || actualAbort.dispatched !== false || actualAbort.route !== 'compile') fail('SESSION_006');
+  if (!actualAbort?.aborted || actualAbort.dispatched !== false || actualAbort.route !== 'compile' || actualAbort.requestBytes !== value.abort.requestBytes ||
+      actualAbort.requestSha256 !== value.abort.requestSha256) fail('SESSION_006');
   if (audit.some(entry => entry.route === 'evaluate' || entry.route === 'compile' && !entry.aborted)) fail('SESSION_007');
   exact(value.initial, ['pathname', 'hashRemoved', 'title', 'status', 'role', 'live']);
   if (value.initial.pathname !== configuration.launchPath || value.initial.hashRemoved !== true ||
@@ -164,7 +167,7 @@ export function createHostSession({ configuration, send, resourcePins }) {
     failureEvidence(failure) {
       if (failure) firstBranch ??= transportBranch(failure);
       const audit = broker.audit().map(row => {
-        if (row.aborted) return { id: row.id, route: row.route, aborted: true, dispatched: row.dispatched };
+        if (row.aborted) return { id: row.id, route: row.route, aborted: true, dispatched: row.dispatched, requestBytes: row.requestBytes, requestSha256: row.requestSha256 };
         const { id, route, method, requestBytes, requestSha256, status, responseBytes, responseSha256 } = row;
         return { id, route, method, requestBytes, requestSha256, status, responseBytes, responseSha256 };
       });

@@ -95,7 +95,8 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
       }
       job.abortReceived = true;
       job.request?.destroy();
-      audit.push(Object.freeze({ id, route: job.name, aborted: true, dispatched: job.state === 'live' }));
+      audit.push(Object.freeze({ id, route: job.name, aborted: true, dispatched: job.state === 'live',
+        requestBytes: job.body.length, requestSha256: sha256(job.body) }));
       complete(job, { version: 1, type: 'aborted', id });
       return null;
     },

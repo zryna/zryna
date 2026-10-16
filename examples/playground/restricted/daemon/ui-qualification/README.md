@@ -7,13 +7,16 @@ The root-reviewed design is recorded in the task artifact
 `/tmp/M6_410_REAL_UI_STDIO_QUALIFICATION_PROPOSAL_20261015.md` (initial approval
 SHA256 `41760ed35edf89d0dde3fa52d8f5db780f45bc59b303e15af4a0be0b7a473d77`).
 The implementation currently covers the **initial abort/static/AX probe only**.
+The fixed loopback refinement is recorded in
+`/workspace/scratch/M6_410_UI_LOOPBACK_TRANSPORT_PROPOSAL_20261016.md`
+(SHA256 `f09579c4a5889afbbd639d16325142f402d62f9f8b903c0a7c993539da3527de`).
 Corpus, Unicode diagnostic navigation, arbitrary inert diagnostic markup,
 full keyboard/contrast/live-region cases and actual daemon cancellation remain
 separate real-browser gates. Audible assistive-technology output is unrun.
 
 `inner.mjs` must be installed as the fixed `/app/ui-driver.mjs`; copy its relative
 module closure into `/app` unchanged: `browser-probe.mjs`, `browser-intercept.mjs`,
-`framing.mjs`, `routes.mjs`, `wire.mjs`, `plan.mjs`. The sealed runtime supplies only
+`framing.mjs`, `routes.mjs`, `wire.mjs`, `plan.mjs`, `browser-diagnostics.mjs`. The sealed runtime supplies only
 the independently approved `/materials/runtime/node/bin/node`, complete pinned
 Playwright/Chrome closure, and required DSOs. `planBytes()` emits the exact compact
 `/resources/ui-plan.json` bytes (root-owned ordinary 0444; resources directory0555).
@@ -40,8 +43,14 @@ handle a thrown protocol failure by stopping admission and executing owned clean
 Do not treat malformed/truncated engine or application EOF as a result; call
 decoder.end(), demux.end(), and session.eof(). `send` must be a bounded serialized
 frame writer to attached container stdin, attached before start. Both directions
-must retain their aggregate budgets. Do not use a TTY, socket/tcp tunnel, HTTP
-proxy, host network, engine socket mount, or generic command transport.
+must retain their aggregate budgets. Do not use a TTY, host tunnel/proxy, host
+network, engine socket mount, or generic command transport. The image-pinned
+trusted UI adapter binds only tcp4 `127.0.0.1` at the original selectedOrigin port
+inside the existing net-none namespace. It validates the actual listener, Host and
+local/peer addresses and forwards only fixed routes through stdio. Chromium
+therefore creates the real request headers; no Playwright request-stage header
+snapshot or synthetic Fetch Metadata is used. The original service/profile stays
+unchanged. Socket/body/request bounds and listener-close ownership are explicit.
 
 The broker forwards actual browser request headers only, without inserting missing
 Authorization/Origin/Sec-Fetch-Site. It forwards actual response statuses, security
@@ -55,7 +64,23 @@ audit records. The caller must preserve this rule when storing raw protocol data
 After an accepted start, a failed inner driver emits one closed `failure` record
 after browser cleanup. It contains only the matching run ID, fixed phase/cause
 enums, the first fixed transport-validator branch, and separate intercept/context/
-browser cleanup-failure bits. Recognized Playwright error categories use fixed
+browser cleanup-failure bits. Fixed precleanup lifecycle booleans distinguish page,
+context and whole-browser closure. A read-only adapter to the exact pinned in-process
+Playwright Browser mapping observes its existing literal Chrome ChildProcess only: stable
+object/PID checks, precleanup native exit code/closed signal enum, and finite stderr
+token categories. Missing/detached mappings, unknown lines and truncation are explicit.
+Only bounded token classification occurs in memory; no raw browser logs are persisted.
+Live diagnostics inspect at most1024 original-process stderr header prefixes of256
+characters; at most64 recognized fatal/abort candidates receive1024 prefix/suffix
+classification. Only closed summaries persist; live truncation is explicit. A
+separate final scan examines at most64 original-process stderr entries from the
+existing bounded collector, with at most1024 prefix and1024 suffix characters each.
+It runs independently of ordinary stderr noise limits and retains only fixed fatal
+token categories, explicit scan status, and at most4 basename.cc/line pairs from
+anchored Chromium FATAL headers (basename or safe relative sourcepath, cc/h/c/cpp).
+Header PARSED/UNPARSED/UNSEEN status is explicit; URI/query/fragment/assertion/suffix
+text cannot supply a source location. Raw assertion messages, paths, URLs and logs are
+discarded. Token categories are observations, not proof of a resource/profile cause. Recognized Playwright error categories use fixed
 API-prefix/message matches; all unknown exception text is discarded. The host rejects the run with a fixed
 `PLAYGROUND-UI-INNER-...` code; no exception text or browser log is forwarded.
 An early owner receipt must not overtake application stdout: await the helper's
@@ -66,17 +91,21 @@ audit: fixed route/method, request ID, status, byte counts and SHA hashes only.
 It omits every header value and body; persist it only through
 `validateFailureEvidence`. Diagnostic projection errors must never skip cleanup.
 
-The first compile interception is deliberately held **before HTTP dispatch**.
-Real UI keyboard compilation and Cancel must produce a genuine Chromium
-requestfailed event while page.route is waiting. Only that event sends abort;
-the host's matching transport acknowledgement releases the route. This proves
-interception cancellation fidelity without starting a guest, delaying its budget,
-or supplying a fake response. If Chrome does not produce the event within1second,
-the initial probe fails with abort unproved; do not expand acceptance or claim
-real daemon cancellation. A separately reviewed CDP Fetch adapter or a capable
-native browser host is then required. The actual UI /cancel request still goes
-to the real launcher/service. Response-versus-abort races acknowledge only a known
-completed ID once and cannot acknowledge foreign/live ownership.
+The first compile remains held by the outer broker **before product HTTP dispatch**.
+The local listener associates exactly one initial compile with its actual
+Playwright Request by route/method/body-byte count/SHA. Real UI keyboard compilation
+and Cancel must produce both that Request's genuine Chromium `requestfailed`
+event and a local HTTP response/socket close before any reply was ended. Only
+both matching events plus the host's paused acknowledgement permit one abort.
+The host acknowledges that exact held ID; the closed proof includes socket-close
+and request-hash fields which must match its actual dispatched=false audit row.
+Neither a fixture event, server abort nor timeout establishes browser acceptance.
+If both events are not proved within the existing1second bounds, record abort
+unproved and do not claim actual daemon cancellation or expand into the corpus.
+The actual authenticated UI /cancel request still reaches the original service.
+Unknown, duplicate or ambiguous associations fail closed. CDP Debugger/AX attaches
+after real navigation to the final page target, before UI interactions and static
+checks; Debugger.enable records the scripts already loaded on that target.
 
 `session.result` validates the initial probe against actual transport audit/resource
 hashes and records `fullQualification:false,containerCleanupConfirmed:false`.

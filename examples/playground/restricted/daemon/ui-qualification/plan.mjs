@@ -3,8 +3,9 @@ import { closeSync, constants, fstatSync, openSync, readSync } from 'node:fs';
 import { decode, fail, sha256 } from './wire.mjs';
 
 export const initialPlan = Object.freeze({ format: 'zryna.playground-ui-qualification-plan.v1', version: 1,
-  phase: 'initial-abort-static-ax', transport: 'operator-stdio-http-interception-v1',
-  abortProbe: 'hold-first-compile-before-dispatch', lifetimeMs: 300000, cleanupMs: 2000 });
+  phase: 'initial-abort-static-ax', transport: 'operator-stdio-browser-loopback-http-v1',
+  listener: 'tcp4:127.0.0.1:same-origin-port',
+  abortProbe: 'requestfailed-and-response-close-before-dispatch', lifetimeMs: 300000, cleanupMs: 2000 });
 export const planBytes = () => Buffer.from(JSON.stringify(initialPlan));
 export function readImagePlan() {
   let directory; let file;

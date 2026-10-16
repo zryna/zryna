@@ -9,7 +9,7 @@ MOUNTS = {'app', 'resources', 'materials', 'tmp', 'dev', 'proc', 'sys'}
 REQUIRED = {'supervisor', 'ui-supervisor', 'app/compiler', 'resources/materials-manifest.json',
             'licenses/zryna-LICENSE', 'lib64/ld-linux-x86-64.so.2', 'resources/ui-plan.json',
             *('app/' + name + '.mjs' for name in
-              ['ui-driver', 'browser-probe', 'browser-intercept', 'framing', 'routes', 'wire', 'plan'])}
+              ['ui-driver', 'browser-probe', 'browser-intercept', 'browser-diagnostics', 'framing', 'routes', 'wire', 'plan'])}
 
 
 def validate(document):

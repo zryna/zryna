@@ -1,6 +1,7 @@
 // Protocol-negative tests only. No browser, compiler or qualification success is simulated.
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { emptyBrowserProcess } from './wire.mjs';
 import { createHostSession, validateFailureEvidence } from './host-session.mjs';
 import { routes } from './routes.mjs';
 import { sha256 } from './wire.mjs';
@@ -18,8 +19,8 @@ test('source-only host session rejects a fabricated passing record without actua
   await session.begin(); assert.equal(sent.length, 1);
   assert.throws(() => session.begin(), /UI-TRANSPORT/);
   const record = { version: 1, type: 'result', runId: configuration.runId, phase: 'initial-abort-static-ax',
-    transport: 'operator-stdio-http-interception-v1', abort: { id: 1, route: 'compile', paused: true,
-      event: 'requestfailed', acknowledged: true }, initial: {}, state: {}, scripts: [],
+    transport: 'operator-stdio-browser-loopback-http-v1', abort: { id: 1, route: 'compile', paused: true,
+      event: 'requestfailed', acknowledged: true, httpResponseClosed: true, requestBytes: 2, requestSha256: sha256(Buffer.from('{}')) }, initial: {}, state: {}, scripts: [],
     axBefore: [], axAfter: [], axUpdates: [], corpus: 'unrun', audibleAssistiveTechnology: 'unrun', browserClosed: true };
   assert.throws(() => session.accept(record), /UI-TRANSPORT/);
   await assert.rejects(session.result, /UI-TRANSPORT/);
@@ -38,7 +39,7 @@ test('EOF and deliberate stop settle the incomplete session and never establish 
 test('closed inner failure preserves fixed phase/cause without admitting arbitrary strings or another run', async () => {
   const selected = fixture();await selected.session.begin();
   selected.session.accept({ version: 1, type: 'failure', runId: selected.configuration.runId,
-    phase: 'INITIAL_STATE', cause: 'INITIAL_HASH', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, branch: 'UNSPECIFIED' });
+    phase: 'INITIAL_STATE', cause: 'INITIAL_HASH', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: emptyBrowserProcess(), branch: 'UNSPECIFIED' });
   await assert.rejects(selected.session.result, error => {
     assert.equal(error.message, 'PLAYGROUND-UI-INNER-INITIAL-STATE-INITIAL-HASH');
     assert.match(error.message, /^PLAYGROUND-[A-Z0-9-]{1,100}$/);
@@ -46,11 +47,13 @@ test('closed inner failure preserves fixed phase/cause without admitting arbitra
   });
   assert.equal(selected.session.audit().length, 0);await selected.session.stop();
   for (const extra of [{ runId: 'f'.repeat(32) }, { phase: 'private URL/#capability' },
-    { cause: 'Bearer secret' }, { cleanupFailed: 0 }, { raw: 'private stderr' },
+    { lifecycle: { browserDisconnected: 1, pageClosed: false, pageCrashed: false, contextClosed: false } },
+    { lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false, raw: 'secret' } },
+    { process: { ...emptyBrowserProcess(), raw: 'private' } }, { process: null }, { lifecycle: null }, { phase: 'CDP_SETUP' }, { cause: 'Bearer secret' }, { cleanupFailed: 0 }, { raw: 'private stderr' },
     { branch: 'private branch' }, { cleanup: { intercept: true, context: false, browser: false } }]) {
     const invalid = fixture();await invalid.session.begin();
     assert.throws(() => invalid.session.accept({ version: 1, type: 'failure', runId: invalid.configuration.runId,
-      phase: 'NAVIGATE', cause: 'TRANSPORT', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, branch: 'UNSPECIFIED', ...extra }), /UI-TRANSPORT/);
+      phase: 'NAVIGATE', cause: 'TRANSPORT', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: emptyBrowserProcess(), branch: 'UNSPECIFIED', ...extra }), /UI-TRANSPORT/);
     await assert.rejects(invalid.session.result, /UI-TRANSPORT/);await invalid.session.stop();
   }
 });

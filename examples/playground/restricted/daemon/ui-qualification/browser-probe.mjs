@@ -1,40 +1,19 @@
 // First real-browser gate only. No corpus expansion until abort fidelity is actually proved.
 import { setTimeout as pause } from 'node:timers/promises';
-import { start, transportBranch } from './wire.mjs';
+import { start, transportBranch, emptyBrowserProcess, classifyBrowserError } from './wire.mjs';
+import { observeBrowserProcess } from './browser-diagnostics.mjs';
+export { observeBrowserProcess } from './browser-diagnostics.mjs';
 import { interceptBrowser } from './browser-intercept.mjs';
 
 const causes = new WeakMap();
 const noCleanup = () => ({ intercept: false, context: false, browser: false });
+const noLifecycle = () => ({ browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false });
 function rejected(cause) { const error = new Error('PLAYGROUND-UI-PROBE-CHECK'); causes.set(error,
-  { cause, cleanupFailed: false, cleanup: noCleanup(), branch: 'UNSPECIFIED' }); return error; }
+  { cause, cleanupFailed: false, cleanup: noCleanup(), lifecycle: noLifecycle(), process: emptyBrowserProcess(), branch: 'UNSPECIFIED' }); return error; }
 export function browserFailure(error) {
   const retained = causes.get(error);
   if (retained) return Object.freeze(structuredClone(retained));
-  let cause = error?.name === 'TimeoutError' ? 'TIMEOUT' :
-    error?.message === 'PLAYGROUND-UI-TRANSPORT' ? 'TRANSPORT' :
-    error?.message === 'PLAYGROUND-UI-STOPPED' ? 'STOPPED' :
-    error?.message === 'PLAYGROUND-UI-ABORT-UNPROVED' ? 'ABORT_UNPROVED' : 'UNKNOWN';
-  // Recognize only fixed Playwright API prefixes and literal failure categories.
-  // The remaining message may contain a launch URL/capability; it is never retained.
-  const prefixes = ['page.goto', 'page.evaluate', 'page.waitForFunction', 'locator.waitFor',
-    'locator.click', 'locator.fill', 'locator.press', 'browserType.launch', 'browser.newContext',
-    'browserContext.newPage', 'browserContext.newCDPSession', 'browserContext.unroute',
-    'browserContext.close', 'browser.close', 'route.fulfill', 'route.abort', 'cdpSession.send'];
-  const text = typeof error?.message === 'string' && error.message.length <= 65536 ? error.message : '';
-  const prefix = prefixes.find(value => text.startsWith(value + ': '));
-  const message = prefix ? text.slice(prefix.length + 2) : '';
-  if (cause === 'UNKNOWN' && prefix) {
-    if (/^net::ERR_FAILED(?: at |;|$)/.test(message)) cause = 'NET_ERR_FAILED';
-    else if (/^net::ERR_ABORTED(?: at |;|$)/.test(message)) cause = 'NET_ERR_ABORTED';
-    else if (/^(?:Target page, context or browser has been closed|Target closed\.?)(?:\n|$)/.test(message) ||
-      /^Protocol error \((?:Target\.disposeBrowserContext|Target\.closeTarget|Target\.createTarget|Browser\.close)\): Target closed\.?/.test(message)) cause = 'TARGET_CLOSED';
-    else if (/^Page crashed(?:\n|$)/.test(message)) cause = 'PAGE_CRASHED';
-    else if (/^(?:Frame was detached|Navigating frame was detached)(?:\n|$)/.test(message)) cause = 'FRAME_DETACHED';
-    else if (message.startsWith('Navigation to ') && message.includes(' is interrupted by another navigation')) cause = 'NAVIGATION_INTERRUPTED';
-    else if (message.startsWith('Error: strict mode violation:') || message.startsWith('strict mode violation:')) cause = 'STRICT_MODE';
-    else if (message.startsWith('Protocol error (')) cause = 'PROTOCOL_ERROR';
-  }
-  return Object.freeze({ cause, cleanupFailed: false, cleanup: noCleanup(), branch: transportBranch(error) });
+  return Object.freeze({ cause: classifyBrowserError(error), cleanupFailed: false, cleanup: noCleanup(), lifecycle: noLifecycle(), process: emptyBrowserProcess(), branch: transportBranch(error) });
 }
 
 async function until(predicate, milliseconds) {
@@ -59,9 +38,10 @@ function axSummary(nodes) {
 export async function runInitialBrowserProbe({ chromium, configuration, send, register, signal, checkpoint = () => {} }) {
   const selected = start(configuration);
   let browser; let context; let intercept; let primary; let result;
-  let firstBranch = 'UNSPECIFIED';
+  let firstBranch = 'UNSPECIFIED';let processObservation = emptyBrowserProcess();let stopProcess;
   const cleanup = [];
-  const cleanupBits = noCleanup();
+  const cleanupBits = noCleanup();const lifecycle = noLifecycle();let observing = true;
+  const observed = name => () => { if (observing) lifecycle[name] = true; };
   const mark = value => { if (!primary) checkpoint(value); };
   let cancel;
   const cancelled = new Promise((_, reject) => {
@@ -77,24 +57,32 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
       chromiumSandbox: true, headless: true, timeout: 5000,
       env: { PATH: '/materials/runtime/node/bin', LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8', TZ: 'UTC',
         HOME: '/tmp', TMPDIR: '/tmp', XDG_CONFIG_HOME: '/tmp/chrome-config', XDG_CACHE_HOME: '/tmp/chrome-cache' } });
+    stopProcess = observeBrowserProcess(browser);
+    browser.on('disconnected', observed('browserDisconnected'));
     if (signal?.aborted) throw new Error('PLAYGROUND-UI-STOPPED');
     mark('CONTEXT');
     context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: false,
       viewport: { width: 1280, height: 960 }, reducedMotion: 'reduce' });
+    context.on('close', observed('contextClosed'));
     mark('INTERCEPT');intercept = await interceptBrowser(context, selected.origin, send);
     register(record => intercept.accept(record));
     const work = (async () => {
       mark('PAGE');const page = await context.newPage();
+      page.on('close', observed('pageClosed'));page.on('crash', observed('pageCrashed'));
       page.setDefaultTimeout(5000);
-      mark('CDP_SETUP');const cdp = await context.newCDPSession(page);
-      await cdp.send('Accessibility.enable');
+      mark('NAVIGATE');await page.goto(`${selected.origin}${selected.launchPath}#${selected.capability}`, { waitUntil: 'load', timeout: 10000 });
+      mark('SOURCE_READY');
+      const source = page.getByRole('textbox', { name: 'Source', exact: true });
+      await source.waitFor();
+      await page.waitForFunction(() => !document.getElementById('source').disabled, undefined, { timeout: 5000 });
+      mark('CDP_ATTACH');const cdp = await context.newCDPSession(page);
       const updates = [];
       cdp.on('Accessibility.nodesUpdated', event => {
         try { if (updates.length < 32) updates.push(axSummary(event.nodes)); }
         catch (error) { primary ??= error;intercept.invalidate(); }
       });
+      mark('AX_ENABLE');await cdp.send('Accessibility.enable');
       const scripts = new Set();
-      await cdp.send('Debugger.enable');
       cdp.on('Debugger.scriptParsed', event => {
         if (event.url.startsWith(selected.origin + '/examples/playground/restricted/') && scripts.size < 32) {
           scripts.add(event.url.slice(selected.origin.length));
@@ -102,11 +90,7 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
           primary ??= rejected('SCRIPT_SOURCE');intercept.invalidate();
         }
       });
-      mark('NAVIGATE');await page.goto(`${selected.origin}${selected.launchPath}#${selected.capability}`, { waitUntil: 'load', timeout: 10000 });
-      mark('SOURCE_READY');
-      const source = page.getByRole('textbox', { name: 'Source', exact: true });
-      await source.waitFor();
-      await page.waitForFunction(() => !document.getElementById('source').disabled, undefined, { timeout: 5000 });
+      mark('DEBUGGER_ENABLE');await cdp.send('Debugger.enable');
       mark('INITIAL_STATE');const initial = await page.evaluate(() => ({ pathname: location.pathname, hashRemoved: location.hash === '',
         title: document.title, status: document.getElementById('status').textContent,
         role: document.getElementById('status').getAttribute('role'),
@@ -136,7 +120,7 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
       if (state.compileDisabled || !state.runDisabled || state.diagnosticChildren !== 0) throw rejected('FINAL_CONTROLS');
       mark('RESULT');
       result = { version: 1, type: 'result', runId: selected.runId,
-        phase: 'initial-abort-static-ax', transport: 'operator-stdio-http-interception-v1',
+        phase: 'initial-abort-static-ax', transport: 'operator-stdio-browser-loopback-http-v1',
         abort, initial, state, scripts: [...scripts].sort(),
         axBefore: axSummary(before.nodes), axAfter: axSummary(after.nodes), axUpdates: updates,
         corpus: 'unrun', audibleAssistiveTechnology: 'unrun', browserClosed: false };
@@ -148,6 +132,7 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
     if (firstBranch === 'UNSPECIFIED') firstBranch = transportBranch(primary);
   }
   finally {
+    observing = false;processObservation = stopProcess?.() ?? processObservation;
     signal?.removeEventListener('abort', cancel);
     try { await intercept?.stop(); } catch (error) { cleanupBits.intercept = true;cleanup.push(error); }
     try { await context?.close(); } catch (error) { cleanupBits.context = true;cleanup.push(error); }
@@ -155,9 +140,9 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
   }
   if (cleanup.length) {
     const error = new AggregateError([...(primary ? [primary] : []), ...cleanup], 'PLAYGROUND-UI-CLEANUP');
-    causes.set(error, { ...browserFailure(primary), branch: firstBranch, cleanupFailed: true, cleanup: cleanupBits });throw error;
+    causes.set(error, { ...browserFailure(primary), branch: firstBranch, cleanupFailed: true, cleanup: cleanupBits, lifecycle, process: processObservation });throw error;
   }
-  if (primary) { causes.set(primary, { ...browserFailure(primary), branch: firstBranch });throw primary; }
+  if (primary) { causes.set(primary, { ...browserFailure(primary), branch: firstBranch, lifecycle, process: processObservation });throw primary; }
   result.browserClosed = true;
   return result;
 }

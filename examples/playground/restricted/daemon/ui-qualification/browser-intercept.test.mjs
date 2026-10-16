@@ -1,57 +1,89 @@
-// Deferred header fixtures only: no actual browser, socket, compiler or qualification claim.
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { interceptBrowser } from './browser-intercept.mjs';
-import { bounds } from './wire.mjs';
-
-const origin = 'http://127.0.0.1:12345';
-const deferred = () => { let resolve; const promise = new Promise(value => { resolve = value; }); return { promise, resolve }; };
-async function fixture() {
-  let handler; const sent = []; const waiters = new Map();
-  const context = { on() {}, off() {}, async route(_, value) { handler = value; }, async unroute() {} };
-  const intercept = await interceptBrowser(context, origin, value => {
-    sent.push(value); waiters.get(sent.length)?.();
-  });
-  const waitFor = size => sent.length >= size ? Promise.resolve() : new Promise(resolve => waiters.set(size, resolve));
-  function request(path = '/examples/playground/restricted/') {
-    const headers = deferred(); const aborted = [];
-    const value = { url: () => origin + path, method: () => 'GET', resourceType: () => 'document',
-      postDataBuffer: () => null, allHeaders: () => headers.promise };
-    const operation = handler({ request: () => value, async abort(reason) { aborted.push(reason); },
-      async fulfill() { assert.fail('fixture has no successful browser response'); } });
-    return { headers, aborted, operation };
-  }
-  return { intercept, sent, request, waitFor };
+// Real local TCP/HTTP fixtures and explicit browser-event fixtures only; no actual browser acceptance.
+import assert from 'node:assert/strict';import test from 'node:test';
+import { EventEmitter } from 'node:events';import { createServer, request as httpRequest } from 'node:http';
+import { interceptBrowser } from './browser-intercept.mjs';import { bounds, sha256 } from './wire.mjs';
+const headers = ['content-type','cache-control','content-security-policy','x-content-type-options','referrer-policy','cross-origin-opener-policy','cross-origin-resource-policy'].map(name=>({name,value:name==='content-type'?'text/plain':name==='content-security-policy'?"default-src 'none'":'same-origin'}));
+async function unusedOrigin() { const server=createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;await new Promise(resolve=>server.close(resolve));return origin; }
+async function fixture(sendOverride) {
+ const origin=await unusedOrigin(),context=new EventEmitter(),sent=[],waiters=new Map();
+ const proxy=await interceptBrowser(context,origin,record=>{sent.push(record);waiters.get(sent.length)?.();return sendOverride?.(record);});
+ function request(path='/examples/playground/restricted/',method='GET',body='',extra={}) {
+  const request=httpRequest(origin+path,{method,agent:false,...extra});
+  const result=new Promise((resolve,reject)=>{request.once('error',reject);request.once('response',response=>{const chunks=[];response.on('data',v=>chunks.push(v));response.on('error',reject);response.on('end',()=>resolve({status:response.statusCode,headers:response.headers,body:Buffer.concat(chunks)}));});});result.catch(()=>{});
+  if(body!==null)request.end(body);return{request,result};
+ }
+ return{origin,context,proxy,sent,request,wait:size=>sent.length>=size?Promise.resolve():new Promise(resolve=>waiters.set(size,resolve))};
 }
-test('concurrent header reads reserve unique consecutive IDs in actual send order', async () => {
-  const f = await fixture();
-  const first = f.request(); const second = f.request('/examples/playground/restricted/style.css');
-  second.headers.resolve({}); await f.waitFor(1);
-  assert.equal(f.sent[0].id, 1); assert.equal(f.sent[0].route, 'asset:style.css');
-  first.headers.resolve({}); await f.waitFor(2);
-  assert.deepEqual(f.sent.map(value => value.id), [1, 2]);
-  assert.equal(f.sent[1].route, 'index');
-  await f.intercept.stop(); await Promise.all([first.operation, second.operation]);
+const reply=(id,body='actual bounded reply',selected=headers)=>({version:1,type:'response',id,status:200,headers:selected,bodyBase64:Buffer.from(body).toString('base64')});
+function browserCompile(f,body='{}') { return {url:()=>f.origin+'/compile',method:()=>'POST',resourceType:()=>'fetch',postDataBuffer:()=>Buffer.from(body)}; }
+
+test('actual loopback HTTP forwards observed headers unchanged and preserves status/security/body',async()=>{
+ const f=await fixture();try{
+  const first=f.request('/session');await f.wait(1);assert.deepEqual(f.sent[0].headers,[]);f.proxy.accept(reply(1));assert.equal((await first.result).status,200);
+  const second=f.request('/session','GET','',{headers:{authorization:'Bearer fixture','sec-fetch-site':'same-origin',origin:f.origin}});await f.wait(2);
+  assert.deepEqual(Object.fromEntries(f.sent[1].headers.map(v=>[v.name,v.value])),{authorization:'Bearer fixture','sec-fetch-site':'same-origin',origin:f.origin});
+  f.proxy.accept(reply(2));const actual=await second.result;assert.equal(actual.body.toString(),'actual bounded reply');assert.equal(actual.headers['content-security-policy'],"default-src 'none'");
+ }finally{await f.proxy.stop();}
 });
-test('simultaneous header completions cannot overbook the pending bound', async () => {
-  const f = await fixture(); const limit = bounds.live + bounds.queued;
-  const requests = Array.from({ length: limit + 1 }, () => f.request());
-  for (const request of requests) request.headers.resolve({});
-  await f.waitFor(limit); await requests.at(-1).operation;
-  assert.equal(f.sent.length, limit);
-  assert.deepEqual(f.sent.map(value => value.id), Array.from({ length: limit }, (_, index) => index + 1));
-  assert.deepEqual(requests.at(-1).aborted, ['failed']);
-  await assert.rejects(f.intercept.failures, /UI-TRANSPORT/);
-  await f.intercept.stop(); await Promise.all(requests.map(value => value.operation));
+test('asynchronous body completion reserves unique IDs in actual send order',async()=>{
+ const f=await fixture();try{
+  const first=f.request('/cancel','POST',null,{headers:{'content-length':'2'}});first.request.write('{');
+  const second=f.request('/cancel','POST','{}');await f.wait(1);assert.equal(f.sent[0].id,1);assert.equal(Buffer.from(f.sent[0].bodyBase64,'base64').toString(),'{}');
+  first.request.end('}');await f.wait(2);assert.deepEqual(f.sent.map(v=>v.id),[1,2]);f.proxy.accept(reply(1));f.proxy.accept(reply(2));await Promise.all([first.result,second.result]);
+ }finally{await f.proxy.stop();}
 });
-test('stop while headers are pending fences subsequent ID reservation and send', async () => {
-  const f = await fixture(); const request = f.request();
-  await f.intercept.stop(); request.headers.resolve({}); await request.operation;
-  assert.equal(f.sent.length, 0); assert.deepEqual(request.aborted, ['failed']);
+test('binding the exact original port rejects collision without selecting another listener',async()=>{
+ const server=createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));try{
+  await assert.rejects(interceptBrowser(new EventEmitter(),`http://127.0.0.1:${server.address().port}`,()=>{}),error=>error.code==='EADDRINUSE');
+ }finally{await new Promise(resolve=>server.close(resolve));}
 });
-test('the first route validator branch is retained before abort can trigger a different navigation error', async () => {
-  const f = await fixture();const request = f.request('/unapproved-route');
-  assert.match(f.intercept.failureBranch(), /^ROUTES_[0-9]{3}$/);
-  await request.operation;await assert.rejects(f.intercept.failures, /UI-TRANSPORT/);
-  assert.equal(f.sent.length, 0);await f.intercept.stop();
+test('unknown routes, duplicate selected headers and oversized bodies fail before forwarding',async()=>{
+ for(const options of [f=>f.request('/unapproved-route'),f=>f.request('/session','GET','',{headers:['Host',new URL(f.origin).host,'Authorization','one','Authorization','two']}),f=>f.request('/cancel','POST','x'.repeat(1025))]){
+  const f=await fixture();try{const pending=options(f);await assert.rejects(f.proxy.failures,/UI-TRANSPORT/);await assert.rejects(pending.result);assert.equal(f.sent.length,0);}finally{await f.proxy.stop();}
+ }
+});
+test('missing security headers are never repaired and duplicate or foreign host records reject',async()=>{
+ const f=await fixture();try{const request=f.request();await f.wait(1);assert.throws(()=>f.proxy.accept(reply(1,'x',[])),/UI-TRANSPORT/);assert.throws(()=>f.proxy.accept(reply(99)),/UI-TRANSPORT/);await f.proxy.stop();await assert.rejects(request.result);}finally{await f.proxy.stop();}
+});
+test('both actual local socket close and the matching browser requestfailed are required for abort',async()=>{
+ for(const browserFirst of [true,false]){
+  const f=await fixture();try{
+   const browser=browserCompile(f);f.context.emit('request',browser);const request=f.request('/compile','POST','{}');await f.wait(1);f.proxy.accept({version:1,type:'probe-paused',id:1});
+   if(browserFirst)f.context.emit('requestfailed',browser);else{request.request.destroy();await assert.rejects(request.result);await new Promise(resolve=>setImmediate(resolve));}
+   assert.equal(f.sent.filter(v=>v.type==='abort').length,0);
+   if(browserFirst){request.request.destroy();await assert.rejects(request.result);}else f.context.emit('requestfailed',browser);
+   await f.wait(2);assert.deepEqual(f.sent[1],{version:1,type:'abort',id:1});assert.deepEqual(f.proxy.abortProof(),[]);
+   f.proxy.accept({version:1,type:'aborted',id:1});assert.deepEqual(f.proxy.abortProof(),[{id:1,route:'compile',paused:true,event:'requestfailed',acknowledged:true,httpResponseClosed:true,requestBytes:2,requestSha256:sha256(Buffer.from('{}'))}]);
+   assert.throws(()=>f.proxy.accept({version:1,type:'aborted',id:1}),/UI-TRANSPORT/);
+  }finally{await f.proxy.stop();}
+ }
+});
+test('compile hash mismatch, a second compile and foreign requestfailed cannot establish proof',async()=>{
+ for(const kind of ['hash','second','foreign']){
+  const f=await fixture();try{
+   const browser=browserCompile(f,kind==='hash'?'different':'{}');f.context.emit('request',browser);const request=f.request('/compile','POST','{}');
+   if(kind==='hash'){await assert.rejects(f.proxy.failures,/UI-TRANSPORT/);await assert.rejects(request.result);assert.equal(f.sent.length,0);}
+   else{await f.wait(1);f.proxy.accept({version:1,type:'probe-paused',id:1});f.context.emit(kind==='second'?'request':'requestfailed',browserCompile(f));await assert.rejects(f.proxy.failures,/UI-TRANSPORT/);await f.proxy.stop();await assert.rejects(request.result);}
+   assert.deepEqual(f.proxy.abortProof(),[]);assert.equal(f.sent.filter(v=>v.type==='abort').length,0);
+  }finally{await f.proxy.stop();}
+ }
+});
+test('a host pause can precede the browser event without exposing an unassociated cancellation proof',async()=>{
+ const f=await fixture();try{
+  const request=f.request('/compile','POST','{}');await f.wait(1);f.proxy.accept({version:1,type:'probe-paused',id:1});assert.equal(f.proxy.probeState(),null);
+  const browser=browserCompile(f);f.context.emit('request',browser);assert.equal(f.proxy.probeState().id,1);
+  request.request.destroy();await assert.rejects(request.result);f.context.emit('requestfailed',browser);await f.wait(2);
+  f.proxy.accept({version:1,type:'aborted',id:1});assert.equal(f.proxy.abortProof()[0].requestSha256,sha256(Buffer.from('{}')));
+ }finally{await f.proxy.stop();}
+});
+test('owned pending sockets and body readers close; a stalled stdio send has one finite cleanup', {timeout:6000},async()=>{
+ const f=await fixture(()=>new Promise(()=>{}));const request=f.request('/session');await f.wait(1);const start=performance.now(),stopping=f.proxy.stop();assert.equal(stopping,f.proxy.stop());await assert.rejects(stopping,/UI-CLEANUP/);assert.ok(performance.now()-start<3000);await assert.rejects(request.result);
+ const rejected=httpRequest(f.origin+'/session');const result=new Promise(resolve=>rejected.once('error',resolve));rejected.end();assert.equal((await result).code,'ECONNREFUSED');
+ const reader=await fixture();const body=reader.request('/cancel','POST',null,{headers:{'content-length':'10'}});body.request.write('x');await new Promise(resolve=>setImmediate(resolve));await reader.proxy.stop();await assert.rejects(body.result);assert.equal(reader.sent.length,0);
+});
+test('accepted sockets and pending jobs cannot exceed the existing live plus queue bound',async()=>{
+ const f=await fixture();const requests=[];try{
+  for(let i=0;i<bounds.live+bounds.queued;i++)requests.push(f.request('/session'));await f.wait(bounds.live+bounds.queued);
+  const extra=f.request('/session');await assert.rejects(extra.result);await assert.rejects(f.proxy.failures,/UI-TRANSPORT/);assert.equal(f.sent.length,bounds.live+bounds.queued);
+ }finally{await f.proxy.stop();await Promise.allSettled(requests.map(v=>v.result));}
 });
