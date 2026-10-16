@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $known = @{}
 $rootProcess = $null
 $completed = $false
+$controlInput = $null; $controlReader = $null; $stopRead = $null
 $failures = [System.Collections.Generic.List[string]]::new()
 $clock = [System.Diagnostics.Stopwatch]::StartNew()
 function Emit([string]$kind, [hashtable]$data) {
@@ -117,14 +118,17 @@ function KillHeld {
 function TraceStopRead([string]$phase, $task) {
   try {
     $elapsed = $clock.ElapsedMilliseconds
-    $readerType = [Console]::In.GetType().FullName
+    $consoleReaderType = [Console]::In.GetType().FullName
+    $actualControlReaderType = $controlReader.GetType().FullName
     $dotnet = [Environment]::Version.ToString()
     $taskCompleted = if ($null -eq $task) { $null } else { [bool]$task.IsCompleted }
-    if ($readerType.Length -gt 256) { $readerType = $readerType.Substring(0, 256) }
+    if ($consoleReaderType.Length -gt 256) { $consoleReaderType = $consoleReaderType.Substring(0, 256) }
+    if ($actualControlReaderType.Length -gt 256) { $actualControlReaderType = $actualControlReaderType.Substring(0, 256) }
     if ($dotnet.Length -gt 128) { $dotnet = $dotnet.Substring(0, 128) }
     $line = ConvertTo-Json -Compress -Depth 3 -InputObject @{
       diagnosticOnly = $true; qualification = $false; phase = $phase
-      elapsedMs = $elapsed; readerType = $readerType; dotnet = $dotnet
+      elapsedMs = $elapsed; consoleReaderType = $consoleReaderType; dotnet = $dotnet
+      actualControlReaderType = $actualControlReaderType
       taskIsCompleted = $taskCompleted
     }
     if ($line.Length -le 2048) {
@@ -137,7 +141,11 @@ function NewRead($stream) {
   return @{ stream = $stream; buffer = [byte[]]::new(65536); task = $null; done = $false; size = 0 }
 }
 try {
-  $config = ConvertFrom-Json -AsHashtable -InputObject ([Console]::In.ReadLine())
+  # One reader owns all control bytes, including any read-ahead from config/start.
+  $controlInput = [Console]::OpenStandardInput()
+  $controlReader = [IO.StreamReader]::new(
+    $controlInput, [Text.UTF8Encoding]::new($false, $true), $false, 4096, $true)
+  $config = ConvertFrom-Json -AsHashtable -InputObject ($controlReader.ReadLine())
   $expected = @('args','cleanupMs','cwd','program','stage','timeoutMs')
   if ((($config.Keys | Sort-Object) -join ',') -ne ($expected -join ',')) { throw 'Closed owner config required.' }
   foreach ($key in @('program','cwd','stage')) {
@@ -155,7 +163,7 @@ try {
   $dependencies = @($dependencies | Where-Object { $_ } | Sort-Object -Unique)
   Emit 'ready' @{ dependencies = $dependencies; runtime = (Get-Process -Id $PID).Path; pid = $PID;
     powershell = $PSVersionTable.PSVersion.ToString(); dotnet = [Environment]::Version.ToString() }
-  if ([Console]::In.ReadLine() -ne '{"op":"start"}') { throw 'Explicit owner start required.' }
+  if ($controlReader.ReadLine() -ne '{"op":"start"}') { throw 'Explicit owner start required.' }
   $start = [Diagnostics.ProcessStartInfo]::new()
   $start.FileName = $config.program; $start.WorkingDirectory = $config.cwd
   $start.UseShellExecute = $false; $start.CreateNoWindow = $false
@@ -197,7 +205,7 @@ try {
   Emit 'started' @{ pid = $rootProcess.Id }
   $reads = @((NewRead $rootProcess.StandardOutput.BaseStream), (NewRead $rootProcess.StandardError.BaseStream))
   TraceStopRead 'BEFORE_READ_LINE_ASYNC' $null
-  $stopRead = [Console]::In.ReadLineAsync()
+  $stopRead = $controlReader.ReadLineAsync()
   TraceStopRead 'AFTER_READ_LINE_ASYNC' $stopRead
   $deadline = $clock.ElapsedMilliseconds + [long]$config.timeoutMs
   $cleanup = $null; $quiet = $null; $rootStatus = $null
@@ -253,4 +261,10 @@ try {
     try { $rootProcess.StandardOutput.Dispose(); $rootProcess.StandardError.Dispose() } catch {}
   }
   foreach ($item in $known.Values) { $item.process.Dispose() }
+  # Never dispose an active read or wait for control input during process cleanup.
+  # A still-pending .NET worker read and its wrappers end with this owner process.
+  if ($null -eq $stopRead -or $stopRead.IsCompleted) {
+    try { if ($controlReader) { $controlReader.Dispose() } } catch { }
+    try { if ($controlInput) { $controlInput.Dispose() } } catch { }
+  }
 }
