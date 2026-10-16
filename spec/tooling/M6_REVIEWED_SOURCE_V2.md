@@ -1,6 +1,6 @@
 # M6 reviewed-source playground route v2
 
-Version: 2. Status: implementation and runtime qualification are pending. This document
+Version: 2. Status: final integration qualification and public publication are pending. This document
 specifies a separate source-checkout composition for issue #410. It records no completed
 acceptance, publication, supported launcher or milestone closure.
 
@@ -40,9 +40,10 @@ private retained snapshot protects consumption; it does not by itself authentica
 ## Separate approval and receipt domain
 
 The closed daemon operator record is version 2, with `composition_kind` exactly
-`reviewed-source-v1` and an independently approved `composition_sha256`. Its policy digest
-binds that domain, both runtime image identities, complete material manifests and volume
-provenance, actual compiler executable, binding template, WIT closure, CPUs and seccomp policy.
+`reviewed-source-v1` and an independently approved `composition_sha256`. The approval pins
+both runtime image identities separately. Its image-independent policy digest binds that
+domain, complete material manifests and volume provenance, actual compiler executable,
+binding template, WIT closure, CPUs and seccomp policy.
 Approval comes through the operator's trusted channel before guest effects.
 
 For this separately identified route only, the existing wire field
@@ -153,6 +154,194 @@ Only these proposed implementation-specific identities change on this separate r
 The nested original compiler signature, immutable artifacts, independent download and actual
 runnable playground exercise remain required publication cases. This mapping does not waive
 any original issue gate or activate the unimplemented standalone toolkit route.
+
+## Operator invocation
+
+This is an operator template for the implemented API, not a published installer or a supported
+public service. Final runtime qualification, immutable publication and the complete acceptance
+record remain pending. No command below acquires authority from an adjacent manifest.
+
+Before starting, the operator independently authenticates the bootstrap source (including the
+publication verifier and its transitive imports), this session script, Node 22.22.1 and the
+selected Git commit/tree. Use a private nonroot Linux amd64 host with the reviewed local Engine
+and kernel capabilities. Prepare and review the exact compiler/evaluator images and sealed
+material volumes with the [private preparation helpers](../../examples/playground/restricted/daemon/preparation/README.md).
+Their returned records are unapproved observations. Approval follows full inventory review,
+provisioning-writer removal and writable-alias exclusion; generating a plan or importing an
+image does not approve it. There is no automatic generic Docker installation command.
+
+For public admission the independently reviewed input set contains:
+
+| Input | Required identity and authority |
+| --- | --- |
+| Compiler publication | Actual immutable `v0.1.0-playground-compiler.1` assets, exact repository/workflow/push identity and independently selected integration commit/tree |
+| Publication policy | Closed version-1 policy binding source/tag object, envelope, archive, binary and provenance digests; the released `candidate-policy.json` is review input, not approval |
+| Verifier and trust root | Independently pinned offline verifier executable, owner, size/hash and trusted-root bytes/hash; authentication does not disable transparency-log or certificate checks |
+| Launcher descriptor | Closed `zryna.playground-source-launcher.v2` record with `compositionKind: reviewed-source-v1`, `source.kind: git-revision`, exact source inventory, Node/compiler/template/WIT and authenticated publication-receipt identity |
+| Daemon approval | Independently approved closed version-2 record for that composition, both runtime images, sealed materials/provenance and fixed policy controls |
+| Receipt file | Exact bytes of `JSON.stringify(compilerPublicationReceipt(capability))`, without a newline, whose descriptor was independently approved for this composition |
+
+The verifier policy has exactly `version`, `path`, `bytes`, `sha256`, `ownerUid`,
+`trustedRootBytes` and `trustedRootSha256`. The publication policy and launcher descriptor use
+the closed schemas in the reviewed verifier and `launcher-policy.mjs`; do not invent missing
+fields or copy a working-snapshot candidate into the public domain. Changing publication
+status/receipt changes the composition digest and requires a fresh independent approval.
+The original opaque capability remains in memory in the original pretrusted module instance;
+serializing its receipt and importing it later cannot restore that authority.
+
+Save the following as `m6-source-session.mjs` at the root of the already authenticated checkout.
+Replace only `inputPin` with the independently approved descriptor of an operator input file.
+That file has exactly seven keys: `policy`, `verifierPolicy`, `envelope`, `bundle`, `archive`,
+`trustedRoot`, `reviewedLauncher`. Every value is an independently approved ordinary-file
+capture descriptor with exactly `path` (absolute), `bytes`, `sha256` and `ownerUid`.
+These are trusted operator inputs, never request parameters or browser inputs. The descriptor
+for the input file must come through a trusted channel; hashing an untrusted input file now
+cannot approve it. Retain and review the actual receipt file before approving the final
+launcher descriptor. This script deliberately does not generate an approval.
+
+```js
+import { captureFile } from './examples/playground/restricted/daemon/launcher-capture.mjs';
+import { closedJson, exact } from './examples/playground/restricted/daemon/launcher-policy.mjs';
+import { authenticateCompilerPublication } from
+  './examples/playground/restricted/daemon/compiler-publication-capability.mjs';
+import { createPublishedSourceLauncher } from
+  './examples/playground/restricted/daemon/launcher.mjs';
+
+// Operator-reviewed constants; zero bytes makes this unconfigured template reject.
+const inputPin = { path: '/operator/reviewed-inputs.json', bytes: 0,
+  sha256: 'REPLACE_WITH_INDEPENDENTLY_APPROVED_SHA256', ownerUid: 1000 };
+const limits = { policy: 262144, verifierPolicy: 262144, envelope: 262144,
+  bundle: 1048576, archive: 513 * 1024 * 1024, trustedRoot: 262144,
+  reviewedLauncher: 262144 };
+const captures = [];
+let service;
+let signal;
+let interrupted = false;
+const stopped = new Promise(resolve => { signal = () => { interrupted = true; resolve(); }; });
+const failures = [];
+process.once('SIGINT', signal);
+process.once('SIGTERM', signal);
+try {
+  const input = captureFile(inputPin, 262144); captures.push(input);
+  const pins = closedJson(input.bytes, 262144);
+  exact(pins, Object.keys(limits));
+  const data = {};
+  for (const [name, maximum] of Object.entries(limits)) {
+    const file = captureFile(pins[name], maximum); captures.push(file);
+    data[name] = file.bytes;
+  }
+  const publication = await authenticateCompilerPublication({
+    policy: closedJson(data.policy, limits.policy),
+    verifierPolicy: closedJson(data.verifierPolicy, limits.verifierPolicy),
+    envelope: data.envelope, bundle: data.bundle, archive: data.archive,
+    trustedRoot: data.trustedRoot,
+  });
+  for (const file of captures) file.revalidate();
+  service = await createPublishedSourceLauncher(
+    closedJson(data.reviewedLauncher, limits.reviewedLauncher), publication);
+  for (const file of captures) file.revalidate();
+  if (interrupted) throw new Error('Operator interrupted startup');
+  await service.launch();
+  // Private terminal only: the fragment is a secret capability. Do not retain this URL in logs.
+  process.stdout.write(`${service.takeLaunchUrl()}\n`);
+  await stopped;
+} catch (primary) { failures.push(primary); }
+finally {
+  try { if (service) await service.stop(); } catch (cleanup) { failures.push(cleanup); }
+  for (const file of captures.reverse()) {
+    try { file.close(); } catch (cleanup) { failures.push(cleanup); }
+  }
+  process.removeListener('SIGINT', signal);
+  process.removeListener('SIGTERM', signal);
+}
+if (failures.length) throw new AggregateError(failures, 'Source session failed');
+```
+
+Run it with the independently approved absolute Node executable and script paths, without
+inherited Node loader options. For example, after replacing the two operator-selected paths:
+
+```text
+env -i PATH=/usr/bin:/bin /absolute/pinned/node /absolute/reviewed-checkout/m6-source-session.mjs
+```
+
+Open the printed loopback URL privately on that host. The fragment must not be copied into
+shared logs, tickets or durable acceptance evidence. `takeLaunchUrl()` succeeds once. The
+listener exposes the fixed source UI on `127.0.0.1`; it does not accept a user-selected host,
+Engine, guest command or filesystem root. Stop with Ctrl-C and await `service.stop()`.
+If creation, operation or cleanup rejects, preserve the actual failure and sanitized
+`service.recovery()` information when available, then use the exact owned-resource recovery
+procedure. Do not force-delete uncertain objects or submit another operation after unknown cleanup.
+
+Private prepublication qualification instead calls `createSourceLauncher(reviewedCandidate)`
+with an independently approved `qualification-candidate` descriptor and matching candidate
+receipt. It returns `qualificationOnly: true`. It neither authenticates a published compiler
+nor supplies a public launcher capability. A working snapshot is admitted only in that private
+domain; the public source and compiler commit/tree must match exactly.
+
+### Editable-source exercise
+
+In the source editor enter:
+
+```zryna
+export function add(a: i32, b: i32): i32 {
+  return a + b;
+}
+```
+
+Compile, select the returned `add` export, enter `20` and `22`, and run. The expected scalar
+observation is `42`; retain the actual component identity and bounded result receipt without
+the launch secret. Edit the return expression to `a - b`, compile again and run the same
+arguments; the expected value is `-2`. An edit must invalidate the previous executable/result.
+Introduce a syntax error and compile: actual bounded compiler diagnostics must appear, with
+no newly runnable component. Restore the valid source before the next operation. Cancel an
+in-flight operation and await complete cleanup; a late success must not replace cancellation.
+These are exercise inputs and expected behavior, not recorded passes or a replacement for
+the complete corpus, accessibility and containment obligations.
+
+## Publication and exported documentation
+
+The compiler publisher reserves exactly seven immutable release assets:
+`compiler-envelope.json`, `compiler-envelope.sigstore.json`, `candidate-policy.json`,
+`zryna-playground-compiler-0.1.0-x86_64-unknown-linux-gnu.tar.gz`,
+`publication-evidence.tar.gz`, `publication-evidence-index.json` and
+`publication-evidence-index.sigstore.json`. This list specifies the planned publication;
+it does not assert that the release exists. The evidence index/layout are version 2: two
+fixed canonical nested replica evidence archives retain every selected crate/license,
+metadata, dependency-tree proof and before/after build-command capture within the unchanged
+finite aggregate limits. They are inert evidence, not a second executable delivery route.
+
+The final source, runnable guide and website registry must land before the exact protected
+compiler source is frozen. The publisher requires successful complete CI on that same main
+commit and an independently reviewed actual qualification packet. Publishing at one commit
+then editing the integration while reusing the old compiler capability cannot establish the
+required source/compiler identity. The separate 23-gate record still needs its own complete
+actual receipts and durable retention; the seven compiler assets do not publish those gates.
+
+The website registry includes this document and the tooling support page. From the final
+clean `main` checkout, after replacing `EXACT_MAIN_COMMIT` with its independently reviewed
+40-character commit and choosing a fresh child of `.zryna/out/docs`, export with:
+
+```text
+/absolute/pinned/node scripts/docs/export.mjs --channel next --source-commit EXACT_MAIN_COMMIT --source-ref refs/heads/main --output .zryna/out/docs/m6-next
+```
+
+The exporter verifies Git provenance and emits the exact manifest digest. Validate against
+independently retained expectations:
+
+```text
+/absolute/pinned/node scripts/docs/check.mjs --bundle .zryna/out/docs/m6-next --expected-manifest-sha256 REVIEWED_MANIFEST_SHA256 --expected-channel next --expected-source-commit EXACT_MAIN_COMMIT --expected-source-ref refs/heads/main
+```
+
+For official acquisition, the existing manual `documentation.yml` workflow additionally requires
+the successful exact-main full CI run/attempt and independently reviewed canonical hosted
+expectations JSON/digest; see [documentation publication](../../docs/DOCUMENTATION_BUNDLES.md).
+It retains the authenticated bundle and gate metadata as finite-lived CI artifacts. Independently
+validate every document, retain that digest with the actual runnable-guide
+exercise and final gate record, and use the website's authenticated bundle-import process.
+Export alone is not deployment. `next` identifies the exact main source documentation; it
+claims no compiler/toolkit release. The protected `playground-0.1.0` channel and
+`export-playground.mjs` remain exclusively the original standalone v1 route and its
+`playground-v0.1.0` protected source. The new compiler tag does not authorize that channel.
 
 ## Required actual acceptance
 

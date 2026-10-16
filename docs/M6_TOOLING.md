@@ -1,12 +1,13 @@
 # M6 tooling support and evidence
 
-Status: final integration verification is pending. The restricted source playground and its
-separate toolkit are under verification; neither has a supported launcher, published toolkit
-or completed M6 acceptance. This page records the bounded tooling surface and the evidence
+Status: final integration verification is pending. The reviewed-source playground v2 and
+separate standalone toolkit v1 remain under verification. The source launcher API exists;
+public compiler publication, supported installation and completed M6 acceptance remain pending. This page records the bounded tooling surface and the evidence
 required before those claims can change. It does not activate debugging or additional query forms.
 
 The [M6 conformance contract v1](../spec/tooling/M6_CONFORMANCE_V1.md) defines the common evidence
-identity and complete acceptance matrix. Existing [architecture](ARCHITECTURE.md),
+identity and complete acceptance matrix. The separate [reviewed-source route v2](../spec/tooling/M6_REVIEWED_SOURCE_V2.md)
+preserves those obligations while specifying its own source, publication and daemon authority. Existing [architecture](ARCHITECTURE.md),
 [standalone projects](STANDALONE_PROJECTS.md), [language-server and editor contracts](LANGUAGE_SERVER.md),
 and [portable setup](PORTABLE_SETUP.md) retain their own compatibility and release status.
 
@@ -22,8 +23,8 @@ Component versions identify different products; they are not interchangeable rel
 | Editor extension | VSIX 0.5.0; VS Code-compatible API >=1.82.0 | Diagnostics, scalar definition, M1–M3 formatting; explicit saved-file Run for scalar/M2 JavaScript or core WebAssembly | Separately published extension with historical installed-host evidence. Publication does not authenticate an outer setup or close the new integration. |
 | Portable setup | 0.1.0-candidate.3; compiler 0.2.3, server/VSIX 0.5.0 | Reviewed complete installation, isolated editor profile, explicit compiler/editor exercises and relocation | Internal review/user-acceptance candidate. No public outer publisher signature; production admission remains forbidden. |
 | Fixed-component example | Existing `browser-component-v1` bundle | Local execution of fixed `examples/universal/add.zry` with editable scalar inputs | Independently documented [example](../examples/playground/README.md). It does not compile edited source or establish source-playground acceptance. |
-| Restricted source playground | `restricted-browser-v1` transport; `browser-component-v1` output | Candidate one-file source compilation, compiler-owned diagnostics and admitted scalar component evaluation | Under verification. Actual positive compiler/browser/isolation acceptance and a supported launcher remain pending. |
-| Restricted toolkit | Proposed 0.1.0, proposed `playground-v0.1.0` immutable prerelease | Separate authenticated compiler/material/binding/WIT/browser/policy composition | Not published. Outer publisher authentication, durable artifacts and final integration receipts are pending. |
+| Reviewed-source playground v2 | `reviewed-source-v1` composition; playground compiler 0.1.0; `restricted-browser-v1` transport; `browser-component-v1` output | Operator-reviewed source launcher API, dedicated Docker compiler/browser, one-file compilation and scalar evaluation | Private qualification implementation. Published compiler, complete final gates and supported public installation remain pending. |
+| Standalone toolkit v1 | Proposed 0.1.0, proposed `playground-v0.1.0` immutable prerelease | Separate authenticated compiler/material/binding/WIT/browser/policy composition | Not published. Outer publisher authentication, durable artifacts and final integration receipts are pending. |
 
 The extension requires the exact selected analysis/formatting capability and matching server
 source identity before transmitting source. An immutable compiler release's older server is not
@@ -85,67 +86,65 @@ Run pickers after saving. Invalid source must yield actual compiler diagnostics 
 edits. Follow [portable setup's editor exercise](PORTABLE_SETUP.md#editor-exercise) for concrete
 sources, exports and expected values. Opening, editing, formatting and saving never execute code.
 
-## Restricted playground workflow and limits
+## Reviewed-source playground v2 workflow and limits
 
-The intended complete workflow is: verify the independently authenticated toolkit and host
-receipts; start a dedicated supervised browser session; edit admitted example source; compile;
-inspect actual source diagnostics; choose a returned export; enter canonical signed i32 values;
-run; inspect the observed value and authenticated component hash. Editing or Cancel must invalidate
-pending observations and retain one-operation admission until containment-wide cleanup is confirmed.
+The [operator invocation and publication inputs](../spec/tooling/M6_REVIEWED_SOURCE_V2.md#operator-invocation)
+describe the implemented source launcher API. It requires a pretrusted Node/bootstrap,
+independently approved complete source composition, exact runtime images and sealed material
+volumes, and a closed daemon approval. Public admission additionally requires the original
+opaque capability from actual playground-compiler publication verification. A downloaded
+policy JSON, a source build or a candidate receipt cannot replace that capability.
 
-This workflow is not presently an installation command. No launcher command, download URL,
-public service endpoint or successful end-to-end session is advertised here. A supported launcher,
-its exact invocation, immutable signed artifact locations and reproduced user exercise must be
-added to this page only after the corresponding conformance receipts are accepted.
+After the operator starts the loopback session, open its privately retrieved launch URL, edit
+admitted source, compile, inspect actual diagnostics, choose a returned export, enter canonical
+signed i32 values and run. Inspect the observed value and component hash. Editing or Cancel
+invalidates pending observations; another operation waits for complete owned cleanup.
+The guide gives a concrete `add(20, 22)` exercise with expected result 42. Those instructions
+are reproducible inputs, not a claim that final acceptance or public publication has passed.
 
-The candidate compiles exact editable UTF-8 source at fixed logical path `src/main.zry` through
-the existing scalar compiler, mandatory IR verifier, component audit and deterministic bindings.
-It does not derive executable results from preset answers or a source catalogue. Only returned
-exports with scalar i32 parameters/results may be evaluated. Inputs span -2147483648 through
-2147483647; negative zero, spaces, leading zeros, plus signs, fractions and exponents reject.
+The source is exact editable UTF-8 at fixed logical path `src/main.zry`, passed through the
+scalar compiler, mandatory IR verifier, component audit and deterministic bindings. Only
+returned exports with scalar i32 parameters/results are admitted. Inputs span -2147483648
+through 2147483647; negative zero, spaces, leading zeros, plus signs, fractions and exponents reject.
 
-| Candidate boundary | Required finite restriction | Acceptance status |
+| Source v2 boundary | Required finite restriction | Final acceptance status |
 | --- | --- | --- |
-| Source/request | 4096 UTF-8 source bytes inclusive; 32768 request bytes; one fixed source/revision carrier | Implementation under verification; exact/first-extra and malformed-carrier evidence required. |
-| Compiler output | 1277956 frame bytes; 4096 stderr bytes; component <=1048576 bytes; each binding <=65536 bytes | Actual compiler output and hostile output-boundary evidence pending. |
-| Diagnostics | Compiler schema 1; <=65536 report bytes and 256 diagnostics; messages/guidance <=4096 bytes each | Actual CLI/report parity pending; LSP diagnostics v2 is unchanged. |
-| Compilation | 10 seconds plus 2 seconds for teardown; 512 MiB memory, zero swap, 32 tasks, two-CPU quota and effective cpuset | Actual containment/resource/deadline acceptance pending. Threads count as tasks. |
-| Evaluation | 5 seconds plus 2 seconds for teardown; independent host watchdog and one operation, no queue | Whole browser process-tree cancellation and deadline proof pending. |
-| Dedicated browser | Proposed 1 GiB memory, 256 tasks and two CPUs | Proposed numeric baseline is not accepted; independent finite-policy and positive resource proof required. |
-| Toolkit inventory | At most 128 files/materials; each file <=256 MiB; expanded files <=512 MiB; bounded archive and metadata | Publication schema checks alone do not authenticate any executable. |
+| Source/request | 4096 UTF-8 source bytes inclusive; 32768 request bytes; fixed source/revision carrier | Exact/first-extra and malformed-carrier evidence required. |
+| Compiler output | 1277956 frame bytes; 4096 stderr bytes; component <=1048576 bytes; each binding <=65536 bytes | Actual output and hostile-boundary evidence required. |
+| Diagnostics | Compiler schema 1; <=65536 report bytes and 256 records; message/guidance <=4096 bytes each | Actual CLI/report parity required; LSP diagnostics v2 is unchanged. |
+| Compiler | Whole operation 10 seconds; 512 MiB memory; zero swap; 32 tasks; two CPUs | Actual containment, resource and deadline execution proof required. Threads count as tasks. |
+| Evaluator | Whole operation 5 seconds; 1 GiB memory; zero swap; 256 tasks; two CPUs; real Chrome sandbox | Actual browser process-tree, cancellation and resource proof required. |
+| Cleanup | One shared additional 2 seconds; one operation, no queue | Complete owned cleanup required before acknowledgement. Unknown cleanup poisons admission. |
+| Writable storage | Separate input/output named local-driver tmpfs volumes, 2 MiB each; compiler scratch 64 MiB; evaluator scratch 128 MiB; browser shared memory 64 MiB | Actual mount, quota and boundary observations required. |
+| Trusted materials | Compiler <=64 files/192 MiB; evaluator <=512 files/1 GiB; sealed read-only volumes with complete per-operation audit | Inventory/configuration checks do not replace execution proof. |
 
-The dedicated compiler startup now separates material staging from runtime admission. After
-authenticated namespace copies, it requires inherited CORE 0, FSIZE 256 MiB and NOFILE 512
-soft/hard readbacks. Authentic provider staging lowers FSIZE to 12 MiB and bounds the nine-file
-closure to 16 MiB. The same retained stage is revalidated before final FSIZE 1277956 and
-NOFILE 128 limits are read back, ahead of the first authenticated Node probe. Consuming compile
-completion verifies owned-stage cleanup before returning a response; cleanup failures reject
-without a successful frame. This lifecycle source and its prospective hostile/process tests
-remain under verification, including the explicitly selected authentic-provider resource test.
+The reviewed execution-host baseline is nonroot Linux amd64 with the fixed local Docker
+Engine, authenticated socket peer and actual kernel/cgroup/namespace/seccomp capabilities.
+The source provider validates the complete runtime rather than accepting an arbitrary daemon
+or a distribution package by name. Chrome 153.0.8010.12 and playwright-core 1.63.0 are selected
+material pins. Windows transport tests establish transport behavior or rejection, not a Windows
+restricted execution host. This route does not require the v1 proposal's bubblewrap provider.
 
-Actual parent launch topology remains separate. A direct child of a helper with hard FSIZE
-1 MiB and an effective 128 MiB ancestor memory cap cannot supply the larger copying and
-compiler envelope. Those helper guards remain required. A separately reviewed parent setup
-envelope, inherited limit trace, effective ancestor controls and whole-tree cleanup proof are
-required before genuine positive compilation is accepted.
+Packages, imports, source-selected files/commands/targets, native execution, ambient host grants
+and arbitrary dependency fetching remain excluded. Host availability failures are separate
+from source diagnostics. All source/diagnostic/error text is inert; keyboard, labels, focus,
+announcements and Unicode navigation require actual browser accessibility evidence.
 
-The candidate host surface is non-root Ubuntu 24.04 x86-64 with an operator-provided empty,
-already delegated cgroup v2 domain containing cpu, cpuset, memory and pids controllers. Actual
-kernel, namespace, seccomp and helper capabilities must be authenticated and demonstrated.
-The official fixed bubblewrap 0.12 acquisition route remains under review; no distribution-package
-safety claim is implied. Chrome 153.0.8010.12 and playwright-core 1.63.0 are the selected browser
-test pins, not evidence of containment. Windows transport tests do not establish Windows host admission.
+## Separate standalone toolkit v1 proposal
 
-Packages, imports, user-selected files/commands/targets, native execution, ambient host capabilities
-and arbitrary dependency fetching are excluded. Host or compiler availability errors remain separate
-from source diagnostics. Diagnostic/source/error text is inert; keyboard use, labels, error focus,
-live announcements and Unicode locations require actual browser accessibility evidence.
+The [v1 contract](../spec/tooling/M6_CONFORMANCE_V1.md) retains its signed whole-toolkit archive,
+proposed `playground-v0.1.0` publisher and protected documentation channel. Its proposed
+nonroot Ubuntu 24.04 x86-64 host uses a separately reviewed delegated cgroup v2 domain and
+bubblewrap 0.12 acquisition route. Its bounded toolkit archive and inherited staging/helper
+limits belong to that proposal; they are not source v2 installation prerequisites or proof.
+No standalone toolkit publication or supported launcher is advertised. Source v2 qualification
+cannot mint a v1 archive capability or relabel its historical receipts.
 
 ## Final acceptance record
 
 All advertised surfaces must be exercised against one authenticated integration commit and tree,
-with exact per-artifact source/version/hash identities. The [v1 matrix](../spec/tooling/M6_CONFORMANCE_V1.md)
-requires complete commands, platforms/profiles, nonzero counts, durable logs/documents/artifacts,
+with exact per-artifact source/version/hash identities. The [v1 matrix](../spec/tooling/M6_CONFORMANCE_V1.md) and
+[v2 successor mapping](../spec/tooling/M6_REVIEWED_SOURCE_V2.md#explicit-successor-mapping) require complete commands, platforms/profiles, nonzero counts, durable logs/documents/artifacts,
 signature/provenance receipts and required hosted results. Earlier binaries or passing unit fixtures
 cannot supply a missing final integration row.
 

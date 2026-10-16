@@ -279,6 +279,12 @@
       "title": "M6 tooling conformance v1"
     },
     {
+      "id": "reference/m6-reviewed-source-v2",
+      "source": "spec/tooling/M6_REVIEWED_SOURCE_V2.md",
+      "path": "documents/reference/m6-reviewed-source-v2.md",
+      "title": "M6 reviewed-source playground route v2"
+    },
+    {
       "id": "reference/m6-tooling",
       "source": "docs/M6_TOOLING.md",
       "path": "documents/reference/m6-tooling.md",
