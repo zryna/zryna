@@ -6,6 +6,11 @@ use super::{
     node_compatible_path, run_bounded_with_timeout, runtime_error,
 };
 
+#[cfg(test)]
+use super::BoundedOutput;
+#[cfg(test)]
+mod browser_capture;
+
 impl NodeRuntimeCapability {
     pub(crate) fn run_webassembly_module(
         &self,
@@ -33,6 +38,8 @@ impl NodeRuntimeCapability {
             working_directory,
             stdout_limit,
             PROCESS_TIMEOUT,
+            #[cfg(test)]
+            None,
         )
     }
 
@@ -49,6 +56,7 @@ impl NodeRuntimeCapability {
             working_directory,
             64 * 1024,
             Duration::from_secs(30),
+            Some(browser_capture::record_failure),
         )
     }
 
@@ -59,6 +67,7 @@ impl NodeRuntimeCapability {
         working_directory: &Path,
         stdout_limit: usize,
         timeout: Duration,
+        #[cfg(test)] observe_failure: Option<fn(&BoundedOutput)>,
     ) -> Result<Vec<u8>, Diagnostic> {
         if script.len() > MAX_INLINE_MODULE_BYTES || module.len() > MAX_WEBASSEMBLY_INPUT_BYTES {
             return Err(runtime_error(
@@ -90,6 +99,10 @@ impl NodeRuntimeCapability {
         )?;
         self.revalidate()?;
         if !output.status.success() || !output.stderr.is_empty() {
+            #[cfg(test)]
+            if let Some(observe_failure) = observe_failure {
+                observe_failure(&output);
+            }
             return Err(invalid_result_frame());
         }
         Ok(output.stdout)
