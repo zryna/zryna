@@ -63,7 +63,7 @@ class Engine:
         if self.cleanup_fail and ('/kill' in path or method == 'DELETE'):
             raise TimeoutError('fixture cleanup failure')
         if path.endswith('/start'):
-            self.state['State'].update(Status='running', Pid=321, Running=True)
+            self.state['State'].update(Status='running', Pid=321, Running=True, StartedAt='fixture-start')
         elif '/kill?' in path:
             self.state['State'].update(Status='exited', Pid=0, Running=False, ExitCode=137)
         elif '/wait?' in path:
@@ -89,8 +89,8 @@ class LifecycleTests(unittest.TestCase):
                 'receipt': {'format': 'zryna.playground-ui-proc-audit.v1', 'version': 1, 'sysrqTrigger': 'absent-enoent'}}),
             mock.patch.object(lifecycle.kernel, 'initial', return_value={'pid': 321, 'ticks': '100',
                               'cid': CID, 'membership': '0::/../docker/' + CID + '\n', 'startedAt': 'fixture-start'}),
-            mock.patch.object(lifecycle.kernel, 'capture', return_value={'pid': 321, 'ticks': '100',
-                              'cid': CID, 'membership': '0::/../docker/' + CID + '\n', 'startedAt': 'fixture-start'}),
+            mock.patch.object(lifecycle.kernel, 'acquire', return_value={'pid': 321, 'ticks': '100',
+                              'cid': CID, 'membership': '0::/../docker/' + CID + '\n', 'startedAt': 'fixture-start', 'processes': {'processes': [{'pid': 321, 'ticks': '100', 'parent': 10}, {'pid': 322, 'ticks': '100', 'parent': 321}]}}),
             mock.patch.object(lifecycle.kernel, 'gone', return_value={'originalInitAbsent': True, 'cgroup': 'removed'}),
             mock.patch.object(lifecycle, 'audit', return_value={'receipt': {'version': 1, 'rootSha256': 'f' * 64,
                                                                    'files': 419, 'bytes': 548525078}}),
@@ -119,7 +119,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue(self.owner.stop()['removed'])
 
     def test_detailed_kernel_failure_keeps_provisional_init_for_proven_reap(self):
-        with mock.patch.object(lifecycle.kernel, 'capture', side_effect=ValueError('fixture missing observation')):
+        with mock.patch.object(lifecycle.kernel, 'acquire', side_effect=ValueError('fixture missing observation')):
             with self.assertRaises(ValueError):
                 self.owner.start()
         record = self.owner.stop()
@@ -133,7 +133,7 @@ class LifecycleTests(unittest.TestCase):
                 initial = {'pid': 321, 'ticks': '100', 'cid': CID,
                            'membership': '0::/../docker/' + CID + '\n', 'startedAt': 'fixture-start'}
                 owner = lifecycle.Owner(approval(), Engine())
-                with mock.patch.object(lifecycle.kernel, 'capture', return_value={**initial, **changed}):
+                with mock.patch.object(lifecycle.kernel, 'acquire', return_value={**initial, **changed}):
                     with self.assertRaises(ValueError):
                         owner.start()
                 self.assertEqual(owner.init, initial)
@@ -226,6 +226,31 @@ class LifecycleTests(unittest.TestCase):
     def test_docker_null_oom_readback_does_not_strand_created_running_owner(self):
         self.owner.start();self.engine.state['HostConfig']['OomKillDisable'] = None
         self.assertTrue(self.owner.stop()['removed'])
+
+    def test_acquisition_caps_engine_inspect_and_restores_same_absolute_deadline(self):
+        previous = self.engine.deadline
+        self.owner.cid = CID
+        self.owner.record['initialIdentity'] = {'fixture': True}
+        seen = []
+        def observe(*args):
+            seen.append(self.engine.deadline)
+            return {'fixture': True}
+        with mock.patch.object(self.owner, 'inspect', side_effect=observe), \
+                mock.patch.object(lifecycle.kernel, 'acquire', side_effect=lambda callback, *args: [callback(), callback()]):
+            self.owner.capture_phase(object(), 'POST_PROC_AUDIT')
+        self.assertEqual(seen[0], seen[1])
+        self.assertLessEqual(seen[0], time.monotonic() + 1)
+        self.assertLess(seen[0], previous)
+        self.assertEqual(self.engine.deadline, previous)
+        for where in ('inspect', 'acquire'):
+            with mock.patch.object(self.owner, 'inspect', side_effect=RuntimeError() if where == 'inspect' else observe), \
+                    mock.patch.object(lifecycle.kernel, 'acquire', side_effect=(lambda callback, *args: callback()) if where == 'inspect' else RuntimeError()):
+                with self.assertRaises(RuntimeError):
+                    self.owner.capture_phase(object(), 'POST_PROC_AUDIT')
+            self.assertEqual(self.engine.deadline, previous)
+        self.owner.ready = True
+        with self.assertRaises(ValueError):
+            self.owner.capture_phase(object(), 'POST_MATERIAL_AUDIT')
 
     def test_approval_cannot_select_socket_user_network_or_command(self):
         for changed in [{'socket': '/tmp/engine.sock'}, {'version': True}, {'material': {}}]:

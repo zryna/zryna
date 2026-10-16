@@ -28,7 +28,7 @@ class Owner:
                        'qualificationOnly': True, 'name': self.name, 'nonce': self.nonce,
                        'containerId': None, 'audit': None, 'kernel': [], 'inspect': [], 'wait': None,
                        'removed': False, 'dockerRemoved': False, 'kernelReapProven': False,
-                       'failure': None, 'cleanupFailure': None, 'ownershipUnconfirmed': False}
+                       'failure': None, 'cleanupFailure': None, 'ownershipUnconfirmed': False, 'acquisition': []}
 
     def inspect(self, engine=None):
         state = (engine or self.engine).json('GET', '/containers/' + self.cid + '/json')
@@ -51,6 +51,20 @@ class Owner:
             require(self.cid is not None and alias['Id'] == self.cid, 'UI only original owner material mount')
             self.inspect(selected_engine)
         return actual
+
+    def capture_phase(self, proc_proof, phase, anchors=None):
+        require(not self.ready and phase in ('POST_PROC_AUDIT', 'POST_MATERIAL_AUDIT'),
+                'kernel acquisition only before private capability')
+        previous = self.engine.deadline
+        limit = min(previous, time.monotonic() + 1)
+        self.engine.deadline = limit
+        try:
+            record = {}
+            self.record['acquisition'].append(record)
+            return kernel.acquire(self.inspect, self.cid, limit, proc_proof, self.record['initialIdentity'], phase, record, anchors)
+        finally:
+            # Restore the same absolute owner deadline, never a newly computed allowance.
+            self.engine.deadline = previous
 
     def start(self):
         require(not self.attempted and not self.stopped, 'UI owner one admission')
@@ -77,14 +91,15 @@ class Owner:
         self.record['initialIdentity'] = self.init
         proc_proof = run_proc(self.engine, self.cid)
         self.record['procAudit'] = proc_description(proc_proof, self.cid)
-        audited = kernel.capture(self.inspect(), self.cid, self.engine.deadline, proc_proof)
+        audited = self.capture_phase(proc_proof, 'POST_PROC_AUDIT')
         require(all(audited[key] == self.init[key] for key in ['pid', 'ticks', 'cid', 'membership', 'startedAt']),
                 'UI original init unchanged across native proc audit')
         self.init = audited
         self.record['kernel'].append(self.init)
         self.record['audit'] = audit(self.engine, self.cid, self.selected['material'])
         self.record['volumeAfterAudit'] = self.volume()
-        self.record['kernel'].append(kernel.capture(self.inspect(), self.cid, self.engine.deadline, proc_proof))
+        self.record['kernel'].append(self.capture_phase(proc_proof, 'POST_MATERIAL_AUDIT',
+            self.record['kernel'][0]['processes']['processes']))
         require(self.record['kernel'][0]['pid'] == self.record['kernel'][1]['pid'] and
                 self.record['kernel'][0]['ticks'] == self.record['kernel'][1]['ticks'], 'UI stable audited init')
         self.ready = True

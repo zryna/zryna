@@ -64,6 +64,21 @@ The transport modules do not provision engine objects. The separate `owner.mjs`
 trusted operator entry owns one creation-scoped container through the fixed local
 Engine socket; it exposes no command, URL, socket or mount selector.
 
+Before releasing the capability, each post-proc-audit and post-material-audit
+kernel snapshot uses one acquisition window of at most one second within the
+original owner deadline, including its Engine inspect. It admits at most three
+fresh complete captures. A discarded candidate must prove that exactly one
+selected nonleader task was already absent at its first membership read:
+OPEN/ENOENT, absent stat and status on both sides, unchanged original init and
+leader epochs/membership, the same cgroup losing exactly that task, and a complete
+PPid inventory with no escaped or unreaped owned descendant. The task must remain
+absent after that inventory. Every other capture failure is fatal. Every accepted
+candidate passes the full original capture guards and retains the pre-audit
+CID/PID/start epoch; later candidates cannot adopt a replacement. Typed acquisition
+rows preserve the discarded witness and accepted snapshot. The bound never renews
+the owner deadline, never applies after capability release, and does not change
+the separate cleanup deadline.
+
 Use `createHostSession({configuration,send,resourcePins})` around the actual launch
 origin/capability and independently reviewed fixed resource byte/SHA pins. The
 operator obtains the launch URL once; do not log it. `begin()` sends one private

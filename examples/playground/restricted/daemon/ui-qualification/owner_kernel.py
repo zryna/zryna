@@ -21,7 +21,11 @@ def bounded_deadline(deadline, maximum):
 
 def read(path, deadline, maximum=16384):
     require(time.monotonic() < deadline, 'observation deadline')
-    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    except FileNotFoundError as error:
+        error._ui_kernel_syscall = 'OPEN'
+        raise
     try:
         require(stat.S_ISREG(os.fstat(descriptor).st_mode), 'ordinary kernel metadata')
         data = bytearray()
@@ -132,7 +136,7 @@ def network(pid, deadline, links):
             'meaning': 'Actual only-loopback/no-external-routes; unavailable namespace links are not guessed.'}
 
 
-def process_tree(pid, group, membership, deadline):
+def process_tree(pid, group, membership, deadline, candidate=None):
     procs = numbers(read(group + '/cgroup.procs', deadline))
     threads = numbers(read(group + '/cgroup.threads', deadline))
     current = read(group + '/pids.current', deadline).strip()
@@ -146,8 +150,9 @@ def process_tree(pid, group, membership, deadline):
                 and read(f'/proc/{process}/cgroup', deadline) == membership, 'same-group UI process')
         require(ticks(process, deadline) == first, 'stable UI process identity')
         captured[process] = {'pid': process, 'ticks': first, 'parent': int(status['PPid'])}
+    owner_cgroup.note_tree(candidate, pid, group, membership, procs, threads, int(current), captured)
     for thread in threads:
-        require(read(f'/proc/{thread}/cgroup', deadline) == membership, 'same-group UI thread')
+        require(owner_cgroup.thread_membership(candidate, read, fields, thread, deadline) == membership, 'same-group UI thread')
     observed = owner_proc.inventory(read, deadline)
     for process in procs:
         require(process in observed and observed[process]['ticks'] == captured[process]['ticks'] and
@@ -174,7 +179,7 @@ def process_tree(pid, group, membership, deadline):
                                  'unrelatedZombiesObserved': sum(value['state'] == 'Z' for value in observed.values())}}
 
 
-def capture(state, cid, deadline, proc_proof=None):
+def capture(state, cid, deadline, proc_proof=None, candidate=None):
     bounded_deadline(deadline, 300)
     pid = state['State']['Pid']
     require(state['Id'] == cid and type(pid) is int and pid > 1 and state['State']['Running'] is True
@@ -192,7 +197,7 @@ def capture(state, cid, deadline, proc_proof=None):
     require(actual == expected, 'actual fixed UI numeric cgroup controls')
     actual['cpuset.cpus.effective'] = read(group + '/cpuset.cpus.effective', deadline)
     require(actual['cpuset.cpus.effective'] in ['0-1\n', '0,1\n'], 'actual cgroup fixed CPU set')
-    tree = process_tree(pid, group, membership, deadline)
+    tree = process_tree(pid, group, membership, deadline, candidate)
     mountinfo = read(f'/proc/{pid}/mountinfo', deadline, 262144)
     observed_mounts = mounts(mountinfo, cid, proc_proof)
     links = namespace_links(pid, deadline)
@@ -203,6 +208,16 @@ def capture(state, cid, deadline, proc_proof=None):
             'status': raw, 'membership': membership, 'cgroupPath': group, 'cgroupMapping': mapping, 'cgroup': actual,
             'processes': tree, 'mountinfo': mountinfo, 'mounts': observed_mounts,
             'namespaceLinks': links, 'network': net}
+
+
+def acquire(inspect, cid, deadline, proc_proof, original, phase, record, anchors=None):
+    def observe(limit, candidate):
+        state = inspect()
+        require(all(state['State'][key] == original[name] for key, name in [('Pid', 'pid'), ('StartedAt', 'startedAt')]) and
+                state['Id'] == original['cid'] == cid and state['RestartCount'] == 0, 'retained pre-audit Docker identity')
+        return capture(state, cid, limit, proc_proof, candidate)
+    return owner_cgroup.acquire(observe,
+        read, fields, numbers, original, cid, deadline, phase, record, anchors)
 
 
 def initial(state, cid, deadline):

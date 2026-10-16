@@ -41,3 +41,42 @@ test('reservation precedes ownership and every later record binds to its exact n
   const reserved=createOwnerControl({onReady(){},onClosed(){}});reserve(reserved);
   assert.throws(()=>reserved.push(encode({type:'closed',receipt:{...receipt(),nonce:'d'.repeat(32)}})));
 });
+const acquisition=()=>({format:'zryna.ui-kernel-acquisition.v1',version:1,phase:'POST_PROC_AUDIT',
+  status:'accepted',windowMs:1000,acceptedAttempt:2,attempts:[{
+    number:1,status:'retired-task',failure:'OPEN_ENOENT_FIRST',task:323,
+    before:{processes:[321,322],threads:[321,322,323],current:3},
+    after:{processes:[321,322],threads:[321,322],current:2},
+    targetBefore:{statAbsent:true,statusAbsent:true,state:null,ticks:null,tgid:null},
+    targetAfter:{statAbsent:true,statusAbsent:true,state:null,ticks:null,tgid:null},
+    initStable:true,leadersStable:true,visibleProcesses:3,unrelatedZombies:1,noEscapedOwnedDescendants:true,
+    leaders:[{pid:321,ticks:'100',parent:10},{pid:322,ticks:'100',parent:321}],
+  },{
+    number:2,status:'accepted',failure:null,task:null,
+    before:{processes:[321,322],threads:[321,322],current:2},after:{processes:[321,322],threads:[321,322],current:2},
+    targetBefore:null,targetAfter:null,initStable:true,leadersStable:true,visibleProcesses:3,
+    unrelatedZombies:1,noEscapedOwnedDescendants:true,
+    leaders:[{pid:321,ticks:'100',parent:10},{pid:322,ticks:'100',parent:321}],
+  }]});
+test('bounded acquisition receipt binds every accepted and retired task epoch with typed counts',()=>{
+  const value={...receipt(),acquisition:[acquisition()]};validateOwnerReceipt(value);
+  const mutations=[phase=>phase.windowMs=2000,phase=>phase.version=true,phase=>phase.acceptedAttempt=true,
+    phase=>phase.attempts[0].before.current=true,phase=>phase.attempts[0].visibleProcesses=false,
+    phase=>phase.attempts[0].targetBefore.statAbsent=1,phase=>phase.attempts[0].leadersStable=false,
+    phase=>phase.attempts[0].after.threads=[321,324],phase=>phase.attempts[0].after.current=3,
+    phase=>phase.attempts[1].leaders[1].ticks='101',phase=>phase.attempts[0].failure='EACCES',
+    phase=>phase.attempts[0].before.threads=[321,322,323,324],phase=>phase.attempts.push(phase.attempts[1]),
+    phase=>phase.attempts[0].before.path='/proc/323/cgroup'];
+  for(const mutate of mutations){const changed=structuredClone(value);mutate(changed.acquisition[0]);
+    assert.throws(()=>validateOwnerReceipt(changed));}
+  const second=acquisition();second.phase='POST_MATERIAL_AUDIT';
+  validateOwnerReceipt({...receipt(),acquisition:[acquisition(),second]});
+  second.attempts.forEach(row=>row.leaders[1].ticks='101');
+  assert.throws(()=>validateOwnerReceipt({...receipt(),acquisition:[acquisition(),second]}));
+});
+test('retirement followed by an unobserved fatal epoch still preserves validated cleanup receipt',()=>{
+  const phase=acquisition();phase.status='failed';phase.acceptedAttempt=null;
+  Object.assign(phase.attempts[1],{status:'fatal',leaders:null,before:null,after:null,
+    initStable:null,leadersStable:null,noEscapedOwnedDescendants:null,visibleProcesses:null,unrelatedZombies:null});
+  validateOwnerReceipt({...receipt(),acquisition:[phase]});
+  phase.attempts[1].status='accepted';assert.throws(()=>validateOwnerReceipt({...receipt(),acquisition:[phase]}));
+});
