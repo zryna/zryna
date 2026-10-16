@@ -1,0 +1,35 @@
+name: Independent Windows M4 read-only observation diagnostic
+on:
+  push:
+    branches: [m6-m4-observation-diagnostic-20261016]
+permissions:
+  contents: read
+jobs:
+  probe:
+    name: Exact bounded Windows host observations
+    runs-on: windows-latest
+    timeout-minutes: 5
+    defaults:
+      run: {working-directory: product}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: {ref: cd95a99fc1cb0e36b14551b75452454fd9bbe456, persist-credentials: false, path: product}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: {ref: '${{ github.sha }}', persist-credentials: false, path: operator}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with: {node-version: 22.22.1}
+      - name: Observe exact original finite Git and Windows caption calls
+        shell: pwsh
+        run: |
+          $env:M4_PROBE_OUTPUT = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'm4-context-probe'))
+          node ../operator/m6-m4-observation-probe.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Actual bounded observation diagnostic failed' }
+      - name: Retain exact bounded read-only observations including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: m6-m4-observation-DIAGNOSTIC-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m4-context-probe
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 90
