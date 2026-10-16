@@ -92,8 +92,9 @@ def topology(text, cid):
             'no bounded scratch subtree overmount')
     for target in result:
         require(not any(target == '/' + name or target.startswith('/' + name + '/')
-                        for name in ['app', 'resources', 'lib', 'lib64', 'supervisor', 'ui-supervisor']),
+                        for name in ['app', 'resources', 'lib', 'lib64', 'supervisor', 'ui-supervisor', 'etc/fonts']),
                 'no approved runtime image overmount')
+    require('/etc' not in result, 'no fixed fontconfig ancestor overmount')
     return result
 
 

@@ -7,7 +7,9 @@ CONFIG = {'User': '65534:65534', 'Entrypoint': ['/ui-supervisor'], 'Cmd': [],
           'WorkingDir': '/tmp', 'Env': ENV}
 MOUNTS = {'app', 'resources', 'materials', 'tmp', 'dev', 'proc', 'sys'}
 REQUIRED = {'supervisor', 'ui-supervisor', 'app/compiler', 'resources/materials-manifest.json',
-            'licenses/zryna-LICENSE', 'lib64/ld-linux-x86-64.so.2', 'resources/ui-plan.json',
+            'licenses/zryna-LICENSE', 'etc/fonts/fonts.conf',
+            'resources/fonts/NimbusSans-Regular.otf', 'resources/fonts/NimbusMonoPS-Regular.otf',
+            'licenses/fonts/fonts-urw-base35-copyright', 'lib64/ld-linux-x86-64.so.2', 'resources/ui-plan.json',
             *('app/' + name + '.mjs' for name in
               ['ui-driver', 'browser-probe', 'browser-intercept', 'browser-diagnostics', 'framing', 'routes', 'wire', 'plan'])}
 

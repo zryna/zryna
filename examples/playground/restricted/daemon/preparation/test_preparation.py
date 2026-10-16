@@ -8,6 +8,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from compose import candidate, encode
 from emit import run
 from handles import Sources
@@ -152,6 +153,30 @@ class UiPlanClosure(unittest.TestCase):
             changed = [dict(item, **replacement) if item['path'] == 'app/browser-diagnostics.mjs' else item for item in files]
             with self.assertRaises(ValueError):
                 ui_plan.candidate(changed)
+
+
+    def test_fixed_font_root_requires_each_font_config_license_and_rejects_other_paths(self):
+        files = [{'path': name, 'sourcePath': '/tmp/fixed-inert-source', 'bytes': 1, 'sha256': 'a' * 64,
+                  'mode': 365 if name in ('supervisor', 'ui-supervisor', 'app/compiler', 'lib64/ld-linux-x86-64.so.2') else 292}
+                 for name in ui_plan.REQUIRED]
+        for name in ['etc/fonts/fonts.conf', 'resources/fonts/NimbusSans-Regular.otf',
+                     'resources/fonts/NimbusMonoPS-Regular.otf', 'licenses/fonts/fonts-urw-base35-copyright']:
+            with self.subTest(name=name):
+                with self.assertRaises(ValueError):
+                    ui_plan.candidate([item for item in files if item['path'] != name])
+                for replacement in [{'path': name + '.other'}, {'mode': 365}]:
+                    with self.assertRaises(ValueError):
+                        ui_plan.candidate([dict(item, **replacement) if item['path'] == name else item for item in files])
+        config = Path(__file__).with_name('ui-fonts.conf').read_bytes()
+        self.assertNotIn(b'<!DOCTYPE', config);self.assertNotIn(b'<!ENTITY', config)
+        root = ET.fromstring(config);self.assertEqual(root.tag, 'fontconfig')
+        self.assertTrue(all(not element.attrib for element in root.iter()))
+        self.assertEqual([element.text for element in root.findall('dir')], ['/resources/fonts'])
+        self.assertEqual([element.text for element in root.findall('cachedir')], ['/tmp/zryna-fontconfig-cache'])
+        self.assertEqual({element.tag for element in root.iter()}, {'fontconfig', 'dir', 'cachedir', 'alias', 'family', 'prefer'})
+        aliases = {alias.findtext('family'): alias.findtext('prefer/family') for alias in root.findall('alias')}
+        self.assertEqual(aliases, {**dict.fromkeys(['Sans', 'Arial', 'sans-serif', 'system-ui'], 'Nimbus Sans'),
+                                  **dict.fromkeys(['monospace', 'ui-monospace'], 'Nimbus Mono PS')})
 
 
 if __name__ == '__main__':

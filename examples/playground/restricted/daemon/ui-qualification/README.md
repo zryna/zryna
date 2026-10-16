@@ -25,6 +25,16 @@ the external operator start record's plan digest to agree. No argv, path or comm
 selector is supported. Separate image identity/config/kernel/supervisor review and
 complete material audit must finish **before** transmitting the capability.
 
+The trusted UI image also contains a fixed system font root: the default
+`/etc/fonts/fonts.conf` reads only `/resources/fonts`, holding the pinned packaged
+Nimbus Sans and Nimbus Mono PS regular faces. The complete package copyright and
+font license accompany those unmodified data files. Fixed fallback aliases cover
+Sans/Arial/system-ui and monospace; cache writes use the existing bounded `/tmp`.
+There are no ambient font directories, includes, web fonts or font selectors.
+The image identity and exact closed inventory pin this data separately from the
+unchanged shared419-file evaluator material. Kernel readback rejects overmounts
+of `/etc`, `/etc/fonts` and the existing protected resources tree.
+
 The parent operator owns the actual launcher and a distinct fixed-300-second UI
 container. The production compiler/evaluator supervisor is unchanged. Guest active
 budgets remain10/5seconds plus2seconds cleanup. The trusted UI object's external
