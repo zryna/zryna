@@ -5,6 +5,9 @@ const VALUES = Object.freeze({ target_abi: [''], target_arch: ['x86_64'], target
   target_env: ['gnu'], target_family: ['unix'], target_feature: ['fxsr', 'sse', 'sse2'],
   target_has_atomic: ['8', '16', '32', '64', 'ptr'], target_os: ['linux'],
   target_pointer_width: ['64'], target_vendor: ['unknown'] });
+// The fixed release recipe supplies no --cfg overrides and never invokes Miri.
+// These exact rustix dependency predicates are therefore false, not unknown target authority.
+const DISABLED_FLAGS = Object.freeze(['miri', 'rustix_use_libc', 'rustix_use_experimental_asm']);
 
 // A closed target-only cfg grammar supplements the builder's retained --filter-platform call.
 // Unknown cfg keys cannot silently select another compilation recipe.
@@ -53,7 +56,7 @@ export function compilerTargetMatches(value) {
       requireValue(typeof selected === 'string', 'compiler target cfg string');
       return VALUES[name].includes(selected);
     }
-    requireValue(['unix', 'windows'].includes(name), 'compiler target cfg flag');
+    requireValue(['unix', 'windows', ...DISABLED_FLAGS].includes(name), 'compiler target cfg flag');
     return name === 'unix';
   }
   take('cfg'); take('(');

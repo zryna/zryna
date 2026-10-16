@@ -65,15 +65,19 @@ export async function buildCompiler({sourceRoot,cargoHome,output,admissionRoot,r
   }
   requireValue(run(cargo,['--version']).toString().startsWith('cargo 1.97.1 ') &&
     run(rustc,['--version']).toString().startsWith('rustc 1.97.1 '),'compiler actual toolchain versions');
-  const metadataBytes=run(cargo,['metadata','--format-version=1','--locked','--offline','--filter-platform',TARGET],
-    64*1024*1024);
-  writeNew(join(output,'cargo-metadata.json'),metadataBytes);
-  const metadata=JSON.parse(metadataBytes),cargoLock=ordinary(join(sourceRoot,'Cargo.lock'));
-  const treeBytes=run(cargo,['tree','--locked','--offline','--target',TARGET,'--package',PRODUCT,
-    '--edges','normal,build','--prefix','none','--format','{p}']);
-  const treeProof=bytes(validateCompilerTree(treeBytes,metadata,sourceRoot));
-  writeNew(join(output,'tree-identities.json'),treeProof);
-  const selected=selectCompilerCrates(metadata,sourceRoot);
+  function graph(suffix) {
+    const metadataBytes=run(cargo,['metadata','--format-version=1','--locked','--offline','--filter-platform',TARGET],
+      64*1024*1024);
+    writeNew(join(output,`cargo-metadata${suffix}.json`),metadataBytes);
+    const metadata=JSON.parse(metadataBytes);
+    const treeBytes=run(cargo,['tree','--locked','--offline','--target',TARGET,'--package',PRODUCT,
+      '--edges','normal,build','--prefix','none','--format','{p}']);
+    const treeProof=bytes(validateCompilerTree(treeBytes,metadata,sourceRoot));
+    writeNew(join(output,`tree-identities${suffix}.json`),treeProof);
+    return {metadataBytes,metadata,treeBytes,treeProof};
+  }
+  const beforeGraph=graph(''),cargoLock=ordinary(join(sourceRoot,'Cargo.lock'));
+  const selected=selectCompilerCrates(beforeGraph.metadata,sourceRoot,beforeGraph.treeBytes);
   const crateArchives=selected.map(pkg=>{
     const cacheRoot=dirname(pkg.manifest_path),index=basename(dirname(cacheRoot));
     return {identity:`${pkg.name}-${pkg.version}`,cacheRoot,
@@ -81,11 +85,15 @@ export async function buildCompiler({sourceRoot,cargoHome,output,admissionRoot,r
   });
   const upstreamPath=environment.M6_WASMTIME_LICENSE;
   const upstreamLicense=upstreamPath?ordinary(upstreamPath):null;
-  const capture=()=>captureCompilerMaterials({metadata,source:admission.source,sourceRoot,cargoLock,crateArchives,upstreamLicense});
-  const material=capture();
+  const capture=value=>captureCompilerMaterials({metadata:value.metadata,cargoTree:value.treeBytes,
+    source:admission.source,sourceRoot,cargoLock,crateArchives,upstreamLicense});
+  const material=capture(beforeGraph);
   run(cargo,['build','--locked','--offline','--release','--target',TARGET,'--package',PRODUCT,'--bin',PRODUCT],
     4*1024*1024,30*60*1000);
-  const after=capture();
+  const afterGraph=graph('-after');
+  requireValue(bytes(beforeGraph.metadata).equals(bytes(afterGraph.metadata)) &&
+    beforeGraph.treeProof.equals(afterGraph.treeProof),'compiler build unchanged actual Cargo selection');
+  const after=capture(afterGraph);
   requireValue(material.materials.equals(after.materials) && material.closure.equals(after.closure),
     'compiler build unchanged dependency cache');
   const afterSource=captureSource({cwd:sourceRoot,environment});
@@ -96,10 +104,12 @@ export async function buildCompiler({sourceRoot,cargoHome,output,admissionRoot,r
   mkdirSync(join(output,'licenses'),{mode:0o700});
   for(const file of material.files){const path=join(output,file.path);mkdirSync(dirname(path),{recursive:true,mode:0o700});writeNew(path,file.data);}
   const inputs=Object.fromEntries(Object.entries(inputPaths).map(([key,path])=>[key,describe(path,ordinary(join(sourceRoot,path)))]));
-  const receipt={format:'zryna.playground-compiler-replica.v1',version:1,source:admission.source,replica,
+  const receipt={format:'zryna.playground-compiler-replica.v2',version:2,source:admission.source,replica,
     run:admission.run,job:jobIdentity,runner:environment.RUNNER_NAME,
     compiler:describe('compiler.bin',binary),inputs,materials:describe('rust-materials.json',material.materials),
-    closure:describe('material-closure.json',material.closure),tree:describe('tree-identities.json',treeProof),toolchain:{rust:'1.97.1',node:'22.22.1',pnpm:'11.18.0'},
+    closure:describe('material-closure.json',material.closure),tree:describe('tree-identities.json',beforeGraph.treeProof),
+    revalidation:{metadata:describe('cargo-metadata-after.json',afterGraph.metadataBytes),
+      tree:describe('tree-identities-after.json',afterGraph.treeProof)},toolchain:{rust:'1.97.1',node:'22.22.1',pnpm:'11.18.0'},
     tools:{cargo:describe('cargo',ordinary(cargo,64*1024*1024)),rustc:describe('rustc',ordinary(rustc,256*1024*1024))},
     recipe:{target:TARGET,package:PRODUCT,profile:'release',locked:true,incremental:false,sourceCommit:admission.source.commit},
     commands:proofs};

@@ -15,7 +15,19 @@ function localPath(sourceRoot, path) {
   return selected;
 }
 
-export function compilerMetadataSelection(metadata, sourceRoot) {
+function optionalEdge(pkg, dep, kinds, target) {
+  requireValue(Array.isArray(pkg.dependencies) && pkg.dependencies.length <= 1024 &&
+    typeof dep.name === 'string', 'compiler tree missing mandatory dependency declaration');
+  for (const kind of kinds) {
+    const declarations = pkg.dependencies.filter(value => value.name === target.name &&
+      (value.rename ?? value.name).replaceAll('-', '_') === dep.name &&
+      value.kind === kind.kind && value.target === kind.target);
+    requireValue(declarations.length === 1 && declarations[0].optional === true,
+      'compiler tree missing mandatory dependency');
+  }
+}
+
+export function compilerMetadataSelection(metadata, sourceRoot, packageIds = null) {
   requireValue(typeof sourceRoot === 'string' && isAbsolute(sourceRoot)
     && resolve(sourceRoot) === sourceRoot && metadata?.version === 1
     && metadata.workspace_root === sourceRoot, 'compiler metadata source root');
@@ -34,6 +46,9 @@ export function compilerMetadataSelection(metadata, sourceRoot) {
     && localPath(sourceRoot, roots[0].manifest_path) === `apps/${APP}/Cargo.toml`
     && Array.isArray(roots[0].targets) && roots[0].targets.some(target =>
       target.name === APP && target.kind?.includes('bin')), 'compiler metadata sole app root');
+  if (packageIds !== null) requireValue(packageIds instanceof Set && packageIds.size > 0 &&
+    packageIds.size <= 512 && packageIds.has(roots[0].id) && [...packageIds].every(id => packages.has(id)),
+  'compiler tree exact selected package identities');
   const pending = [roots[0].id];
   const selected = new Set();
   const edges = [];
@@ -59,12 +74,18 @@ export function compilerMetadataSelection(metadata, sourceRoot) {
       const kinds = dep.dep_kinds.filter(kind => kind.kind !== 'dev'
         && compilerTargetMatches(kind.target));
       if (kinds.length) {
+        if (packageIds !== null && !packageIds.has(dep.pkg)) {
+          optionalEdge(packages.get(id), dep, kinds, packages.get(dep.pkg));
+          continue;
+        }
         pending.push(dep.pkg);
         edges.push({ from: id, to: dep.pkg, kinds: kinds.map(kind => ({ ...kind })) });
         requireValue(edges.length <= 8192, 'compiler metadata edge budget');
       }
     }
   }
+  if (packageIds !== null) requireValue(selected.size === packageIds.size &&
+    [...selected].every(id => packageIds.has(id)), 'compiler tree exact reachable package closure');
   for (const id of selected) {
     const pkg = packages.get(id);
     requireValue(typeof pkg.name === 'string' && /^[A-Za-z0-9_-]+$/.test(pkg.name)
@@ -83,8 +104,8 @@ export function compilerMetadataSelection(metadata, sourceRoot) {
   return { selected, packages, edgeCount: edges.length };
 }
 
-export function selectCompilerGraph({ metadata, sourceRoot, cargoLock, approved }) {
-  const { selected, packages, edgeCount } = compilerMetadataSelection(metadata, sourceRoot);
+export function selectCompilerGraph({ metadata, sourceRoot, cargoLock, approved, packageIds = null }) {
+  const { selected, packages, edgeCount } = compilerMetadataSelection(metadata, sourceRoot, packageIds);
   const locked = compilerLockPackages(cargoLock);
   const identities = new Set();
   const external = [];

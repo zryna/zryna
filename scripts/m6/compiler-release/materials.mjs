@@ -6,6 +6,7 @@ import { compilerMetadataSelection, COMPILER_TARGET, selectCompilerGraph } from 
 import { identity, REGISTRY } from './material-lock.mjs';
 import { validateCompilerCrateCache } from './material-cache.mjs';
 import { captureCompilerLicenses } from './material-licenses.mjs';
+import { compilerTreeSelection } from './material-tree.mjs';
 
 export const MATERIAL_PINS = Object.freeze({
   base: '32b6343a6dfae19d7c3cdcc50658762c2c0ad08aca15124bdce85b28db38a84b',
@@ -43,8 +44,9 @@ function validateMaterialSource(source) {
 
 // Cargo's locked/offline/filter-platform invocation and raw metadata are retained by the builder.
 // This helper never promotes the old CLI candidate or runs a dependency resolver.
-export function selectCompilerCrates(metadata, sourceRoot) {
-  const { selected, packages } = compilerMetadataSelection(metadata, sourceRoot);
+export function selectCompilerCrates(metadata, sourceRoot, cargoTree) {
+  const packageIds = compilerTreeSelection(cargoTree, metadata, sourceRoot).packageIds;
+  const { selected, packages } = compilerMetadataSelection(metadata, sourceRoot, packageIds);
   const seen = new Set();
   const result = [];
   for (const id of selected) {
@@ -62,10 +64,12 @@ export function selectCompilerCrates(metadata, sourceRoot) {
 }
 
 export function captureCompilerMaterials(input) {
-  exactKeys(input, ['metadata', 'source', 'sourceRoot', 'cargoLock', 'crateArchives', 'upstreamLicense']);
-  const { metadata, source, sourceRoot, cargoLock, crateArchives, upstreamLicense } = input;
+  exactKeys(input, ['metadata', 'source', 'sourceRoot', 'cargoLock', 'cargoTree', 'crateArchives', 'upstreamLicense']);
+  const { metadata, source, sourceRoot, cargoLock, cargoTree, crateArchives, upstreamLicense } = input;
   validateMaterialSource(source);
-  const { external, proof } = selectCompilerGraph({ metadata, sourceRoot, cargoLock, approved: APPROVED });
+  const { packageIds, proof: tree } = compilerTreeSelection(cargoTree, metadata, sourceRoot);
+  const { external, proof } = selectCompilerGraph({ metadata, sourceRoot, cargoLock, approved: APPROVED, packageIds });
+  proof.treeIdentitySetSha256 = tree.identitySetSha256;
   requireValue(Array.isArray(crateArchives) && crateArchives.length === external.length,
     'compiler exact original crate capture count');
   const captures = new Map();

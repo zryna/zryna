@@ -11,8 +11,14 @@ release replicas and provides `compiler-assembled-RUN-ATTEMPT` with an inert exa
 Candidate building needs no qualification packet and grants no public authority.
 All original crate archives and every executed extracted dependency source file
 are independently checked against the approved material union before and after
-build. The actual app normal/build cargo-tree identity set must exactly equal the
-metadata-selected closure; workspace-wide feature overapproximation rejects.
+build. The actual fixed app normal/build Cargo tree selects identities from the
+workspace metadata; only absent edges explicitly declared optional with matching
+dependency aliases, targets and kinds may be pruned. Unknown identities, missing
+mandatory dependencies, ambiguous identities and unreachable extras reject. This
+uses Cargo's package-scoped feature resolution without reimplementing it. Both raw
+metadata and tree are retained and rerun immediately after the build; their exact
+selection and all authenticated selected caches must remain unchanged. Replica
+receipt/tree-proof v2 records this before/after check and all seven actual commands.
 No target/guest can choose commands, Cargo flags or dependencies.
 
 An authorized maintainer separately obtains the actual candidate, qualifies that
@@ -70,7 +76,17 @@ claiming public acceptance or deleting/reverting it.
 
 The immutable assets include the entire reviewed packet/raw evidence, API tag/CI
 observations, both actual build/material proofs and reproduction, under a signed
-finite evidence index. Expiring Actions artifacts are transport only. The signing
+finite evidence index. Evidence index/layout version 2 keeps the two complete replica
+inventories in exactly `replica1-evidence.tar.gz` and `replica2-evidence.tar.gz` inside
+`publication-evidence.tar.gz`. Each canonical nested archive retains every original
+metadata, command-output and license byte (excluding the separately published compiler
+binary), with a complete hashed inventory; neither replica's duplicate licenses are
+dropped. Nesting stops at those two fixed subjects. `decodePublicationEvidence` verifies
+both levels, exact inventories and source/epoch with unchanged 400-file per-replica,
+500-file outer, 96-MiB compressed archive and 96-MiB aggregate expanded-byte bounds
+(including the generated layout record). The shared 512-file distribution limit remains
+unchanged. A flat v1 archive cannot masquerade as this v2 layout.
+Expiring Actions artifacts are transport only. The signing
 bundle/index avoid archive/self-hash cycles; final publication/API observations
 and failure logs are retained separately for the owning independent acceptance.
 

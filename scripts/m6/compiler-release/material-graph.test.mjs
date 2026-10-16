@@ -14,8 +14,10 @@ test('compiler graph selects sole app normal/build closure and both independent 
   assert.equal(selected.external.length, 1);
   assert.equal(selected.external[0].pin.name, 'autocfg');
   assert.equal(selected.proof.selectedNodeCount, 2);
-  assert.equal(selectCompilerCrates(input.metadata, input.sourceRoot)[0].manifest_path,
+  const cargoTree=Buffer.from('zryna-playground-compiler v0.1.0 (/synthetic-source/apps/zryna-playground-compiler)\nautocfg v1.5.1\n');
+  assert.equal(selectCompilerCrates(input.metadata, input.sourceRoot,cargoTree)[0].manifest_path,
     '/synthetic-cache/autocfg-1.5.1/Cargo.toml');
+  assert.throws(()=>selectCompilerCrates(input.metadata,input.sourceRoot),/tree byte budget/);
   for (const [name, pin] of [['materials-rust-v1.json', MATERIAL_PINS.base],
     ['materials-rust-command-candidate-v1.json', MATERIAL_PINS.additions]]) {
     assert.equal(sha256(readFileSync(new URL(`../../distribution/${name}`, import.meta.url))), pin);
@@ -55,6 +57,33 @@ test('fixed Linux x86 target handles ordinary cfg expressions and refuses unknow
   assert.equal(selectCompilerGraph(input).external.length, 1);
 });
 
+test('locked rustix Linux raw dependencies retain their exact non-Miri no-override recipe', () => {
+  // Actual rustix normal-dependency condition retained by Cargo --filter-platform on this lock.
+  const condition = 'cfg(all(not(rustix_use_libc), not(miri), target_os = "linux", '
+    + 'any(target_endian = "little", any(target_arch = "s390x", target_arch = "powerpc")), '
+    + 'any(target_arch = "arm", all(target_arch = "aarch64", target_pointer_width = "64"), '
+    + 'target_arch = "riscv64", all(rustix_use_experimental_asm, target_arch = "powerpc"), '
+    + 'all(rustix_use_experimental_asm, target_arch = "powerpc64"), '
+    + 'all(rustix_use_experimental_asm, target_arch = "s390x"), '
+    + 'all(rustix_use_experimental_asm, target_arch = "mips"), '
+    + 'all(rustix_use_experimental_asm, target_arch = "mips32r6"), '
+    + 'all(rustix_use_experimental_asm, target_arch = "mips64"), '
+    + 'all(rustix_use_experimental_asm, target_arch = "mips64r6"), '
+    + 'target_arch = "x86", all(target_arch = "x86_64", target_pointer_width = "64"))))';
+  assert.equal(compilerTargetMatches(condition), true);
+  const input = graphFixture();
+  input.metadata.resolve.nodes[0].deps[0].dep_kinds[0].target = condition;
+  assert.equal(selectCompilerGraph(input).external.length, 1);
+  for (const flag of ['miri', 'rustix_use_libc', 'rustix_use_experimental_asm']) {
+    assert.equal(compilerTargetMatches(`cfg(${flag})`), false);
+    assert.equal(compilerTargetMatches(`cfg(not(${flag}))`), true);
+  }
+  for (const condition of ['cfg(rustix_unreviewed)', 'cfg(miri="true")',
+    'cfg(rustix_use_libc="true")', 'cfg(all(unix, unknown_flag))']) {
+    assert.throws(() => compilerTargetMatches(condition));
+  }
+});
+
 for (const [name, mutate] of [
   ['duplicate package id', x => x.metadata.packages.push(x.metadata.packages[1])],
   ['duplicate node id', x => x.metadata.resolve.nodes.push(x.metadata.resolve.nodes[1])],
@@ -92,7 +121,8 @@ test('public capture rejects fabricated source, missing captures and metadata-on
   const graph = graphFixture();
   const source = { repository: 'https://github.com/zryna/zryna', commit: '1'.repeat(40),
     tree: '2'.repeat(40), sourceDateEpoch: 1700000000 };
-  const input = { ...graph, source, crateArchives: [], upstreamLicense: null };
+  const cargoTree=Buffer.from('zryna-playground-compiler v0.1.0 (/synthetic-source/apps/zryna-playground-compiler)\nautocfg v1.5.1\n');
+  const input = { ...graph, source, cargoTree, crateArchives: [], upstreamLicense: null };
   delete input.approved;
   assert.throws(() => captureCompilerMaterials(input), /capture count/);
   assert.throws(() => captureCompilerMaterials({ ...input, source: { ...source, ref: 'fake' } }));

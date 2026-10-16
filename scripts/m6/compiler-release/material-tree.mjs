@@ -10,7 +10,7 @@ const FOOTERS = new Set([
 
 // Compares package identities only. This is not an assertion about resolver2 compilation units
 // or the precise features actually executed by rustc. The builder retains the real fixed command.
-export function validateCompilerTree(stdout, metadata, sourceRoot) {
+export function compilerTreeSelection(stdout, metadata, sourceRoot) {
   requireValue(Buffer.isBuffer(stdout) && stdout.length > 0 && stdout.length <= 2 * 1024 * 1024,
     'compiler tree byte budget');
   const text = new TextDecoder('utf-8', { fatal: true }).decode(stdout);
@@ -58,16 +58,26 @@ export function validateCompilerTree(stdout, metadata, sourceRoot) {
     requireValue(variants.includes(suffix), 'compiler tree closed package annotation');
     seen.add(key);
   }
-  const wanted = [...expected.keys()].sort();
-  requireValue(!first && bytes([...seen].sort()).equals(bytes(wanted)),
-    'compiler tree exact app normal/build package closure');
+  requireValue(!first, 'compiler tree exact app normal/build package closure');
+  // Cargo metadata resolves all workspace features. The fixed package-scoped Cargo tree
+  // selects its actual identities; only explicitly optional metadata edges may disappear.
+  const packageIds = new Set([...seen].map(key => expected.get(key).id));
+  const projected = compilerMetadataSelection(metadata, sourceRoot, packageIds);
+  const wanted = [...projected.selected].map(id => identity(projected.packages.get(id))).sort();
+  requireValue(bytes([...seen].sort()).equals(bytes(wanted)), 'compiler tree exact app normal/build package closure');
   const records = wanted.map(key => {
     const pkg = expected.get(key);
     return { name: pkg.name, version: pkg.version, source: pkg.source };
   });
-  return { format: 'zryna.playground-compiler-cargo-tree-identities.v1', version: 1,
+  const proof = { format: 'zryna.playground-compiler-cargo-tree-identities.v2', version: 2,
     target: COMPILER_TARGET, selection: { package: 'zryna-playground-compiler',
       edges: ['normal', 'build'], features: 'default' }, packageCount: records.length,
     registryPackageCount: records.filter(pkg => pkg.source !== null).length,
+    metadataProjection: 'fixed-cargo-tree-with-only-explicit-optional-edges-pruned',
     stdoutSha256: sha256(stdout), identitySetSha256: sha256(bytes(records)), packages: records };
+  return { proof, packageIds };
+}
+
+export function validateCompilerTree(stdout, metadata, sourceRoot) {
+  return compilerTreeSelection(stdout, metadata, sourceRoot).proof;
 }
