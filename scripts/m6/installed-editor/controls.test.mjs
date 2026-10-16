@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, writeFile, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -11,7 +11,7 @@ import { remaining } from './process.mjs';
 import { EDITOR_ARCHIVES } from './pins.mjs';
 
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), 'm6-installed-editor-unit-'));
+  const root = await mkdtemp(join(await realpath(tmpdir()), 'm6-installed-editor-unit-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   return root;
 }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -7,7 +7,7 @@ import test from 'node:test';
 import { launchOwned } from './owner-client.mjs';
 
 async function fixture(t) {
-  const stage = await mkdtemp(join(tmpdir(), 'm6-process-owner-unit-'));
+  const stage = await mkdtemp(join(await realpath(tmpdir()), 'm6-process-owner-unit-'));
   const output = join(stage, 'records');
   await mkdir(output);
   t.after(() => rm(stage, { recursive: true, force: true }));

@@ -1,18 +1,31 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile, link, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, writeFile, link, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { capture, descriptor, readBytes } from './files.mjs';
+import { capture, descriptor, ordinaryRoot, readBytes } from './files.mjs';
 
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), 'm6-retained-file-unit-'));
+  const root = await mkdtemp(join(await realpath(tmpdir()), 'm6-retained-file-unit-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   return root;
 }
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+
+test('canonical temporary roots retain directory-alias refusal for supplied materials', async t => {
+  const root = await fixture(t), directory = join(root, 'ordinary'), alias = join(root, 'alias');
+  assert.equal(await realpath(root), root);
+  await mkdir(directory);
+  const source = join(directory, 'source');
+  await writeFile(source, 'ordinary material');
+  await ordinaryRoot(directory);
+  await symlink(directory, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(ordinaryRoot(alias));
+  await assert.rejects(descriptor(join(alias, 'source')));
+  assert.equal((await descriptor(source)).sha256, digest(Buffer.from('ordinary material')));
+});
 
 test('retained-FD capture consumes exact synthetic bytes and preserves the protected copy', async t => {
   const root = await fixture(t), source = join(root, 'source');

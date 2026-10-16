@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, copyFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, copyFile, realpath, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,7 +43,7 @@ async function run(values) {
   const output = values.output;
   await ordinaryRoot(dirname(output));
   await mkdir(output, { recursive: false, mode: 0o700 });
-  const stage = await mkdtemp(join(tmpdir(), 'zryna-m6-installed-editor-'));
+  const stage = await mkdtemp(join(await realpath(tmpdir()), 'zryna-m6-installed-editor-'));
   const logs = join(output, 'commands');
   await mkdir(logs);
   const prepareDeadline = performance.now() + 600000;
@@ -86,8 +86,8 @@ async function run(values) {
       '[zryna]': { 'editor.defaultFormatter': 'zryna.zryna' },
     }, null, 2)}\n`, { flag: 'wx' });
     const cliArgs = ['--user-data-dir', userData, '--extensions-dir', extensions];
-    const cli = process.platform === 'win32' ? [editorCli(editor.executable)] : [];
-    const cliEnv = { ...process.env, ...(process.platform === 'win32' ? { ELECTRON_RUN_AS_NODE: '1' } : {}) };
+    const cli = [editorCli(editor.executable)];
+    const cliEnv = { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
     await command(editor.executable, [...cli, ...cliArgs, '--install-extension', setup.vsix],
       { ...options, env: cliEnv, name: 'install-exact-vsix' });
     const listed = await command(editor.executable, [...cli, ...cliArgs, '--list-extensions', '--show-versions'],
