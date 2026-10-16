@@ -106,6 +106,12 @@ and finite byte/time budgets. Unknown routes, redirects, headers, workers or
 noncanonical targets fail. Capability/header/job-token values never enter its
 audit records. The caller must preserve this rule when storing raw protocol data;
 **do not persist raw stdio, Playwright traces, HAR, console output or launch URLs**.
+Transport failures retain a closed event-site code. Browser request failures map
+only exact known network-error categories; unrecognized metadata becomes UNKNOWN.
+These diagnostics identify the observed boundary and do not establish its cause.
+The driver latches the first observed failure, phase and branch before owned
+browser cleanup. A later stream error remains fatal and cannot replace that
+earlier cause; finalized cleanup and process observations are retained separately.
 The initial compile remains held before host dispatch until both the matching
 browser `requestfailed` and actual HTTP response-close are observed. Only its
 acknowledged abort, successful `/cancel` and drained initial job admit the single

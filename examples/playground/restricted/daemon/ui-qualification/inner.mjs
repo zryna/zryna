@@ -10,9 +10,12 @@ export async function runUiDriver(input, output, loadChromium, planSha256) {
   const cancellation = new AbortController();
   let started = false; let accept = null; let terminal = false; let rejectStream;
   let configuration = null; let phase = 'LOAD_CHROMIUM';
-  let failureObservation = null;
+  let failureObservation = null;let firstFailure = null;let completedObservation = null;
+  const remember = (error, observation) => {
+    if (!firstFailure) firstFailure = Object.freeze({ error, phase, observation: observation ?? browserFailure(error) });
+  };
   const checkpoint = value => { if (!innerPhases.includes(value)) fail();phase = value; };
-  const streamFailure = new Promise((_, reject) => { rejectStream = reject; });
+  const streamFailure = new Promise((_, reject) => { rejectStream = error => { remember(error);reject(error); }; });
   streamFailure.catch(() => {});
   let resolveStart;
   const initial = new Promise(resolve => { resolveStart = resolve; });
@@ -36,23 +39,27 @@ export async function runUiDriver(input, output, loadChromium, planSha256) {
     configuration = candidate;
     const chromium = await loadChromium();
     const run = runInitialBrowserProbe({ chromium, configuration,
-      send: record => writer.write(record), register: handler => { accept = handler; }, signal: cancellation.signal, checkpoint });
+      send: record => writer.write(record), register: handler => { accept = handler; }, signal: cancellation.signal, checkpoint,
+      onFailure(error, branch) { remember(error, Object.freeze({ ...browserFailure(error), branch })); },
+      onCleanup(observed) { completedObservation ??= observed; } });
     let result;
     try { result = await Promise.race([run, streamFailure]); }
     catch (error) {
-      cancellation.abort();
-      try { await run; } catch (stopped) {
-        const cleanup = browserFailure(stopped);
-        failureObservation = { ...browserFailure(error), cleanupFailed: cleanup.cleanupFailed, cleanup: cleanup.cleanup, lifecycle: cleanup.lifecycle, process: cleanup.process };
+      remember(error);cancellation.abort();
+      let completed = null;
+      try { await run; } catch (stopped) { completed = browserFailure(stopped); }
+      const cleanup = completedObservation ?? completed;
+      if (cleanup) {
+        failureObservation = { ...firstFailure.observation, cleanupFailed: cleanup.cleanupFailed, cleanup: cleanup.cleanup, lifecycle: cleanup.lifecycle, process: cleanup.process };
       }
-      throw error;
+      throw firstFailure.error;
     }
     terminal = true; await writer.write(result); await writer.stop();
   } catch (error) {
     if (configuration && !terminal) {
       terminal = true;
       const record = innerFailure({ version: 1, type: 'failure', runId: configuration.runId,
-        phase, ...(failureObservation ?? browserFailure(error)) }, configuration.runId);
+        phase: firstFailure?.phase ?? phase, ...(failureObservation ?? firstFailure?.observation ?? browserFailure(error)) }, configuration.runId);
       await writer.write(record);await writer.stop();
     }
     throw error;

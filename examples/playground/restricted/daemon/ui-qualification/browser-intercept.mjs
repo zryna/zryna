@@ -1,6 +1,6 @@
 // Trusted UI-only tcp4 loopback bridge. The browser supplies actual network headers.
 import { createServer } from 'node:http';
-import { bounds, envelope, fail, integer, tagTransport, transportBranch, origin, sha256 } from './wire.mjs';
+import { bounds, envelope, fail, integer, tagTransport, transportBranch, requestFailureBranch, origin, sha256 } from './wire.mjs';
 import { routeFor, routes, responseRecord, selectNetworkHeaders } from './routes.mjs';
 
 export async function interceptBrowser(context, selectedOrigin, send) {
@@ -9,10 +9,12 @@ export async function interceptBrowser(context, selectedOrigin, send) {
   let compileRequest = null;let compileJob = null;let totalIn = 0;let totalOut = 0;let corpusEnabled = false;
   const pending = new Map(), completed = new Map(), sockets = new Set(), operations = new Set(), transmissions = new Set(), aborts = [], pages = new Set();
   const failures = new Promise((_, reject) => { rejectFailure = reject; });failures.catch(() => {});
-  const broken = error => { firstFailure ??= tagTransport(error instanceof Error ? error : new Error('PLAYGROUND-UI-TRANSPORT'), 'INTERCEPT_EVENT');rejectFailure(firstFailure); };
+  const broken = (error, branch = 'INTERCEPT_EVENT') => { firstFailure ??= tagTransport(error instanceof Error ? error : new Error('PLAYGROUND-UI-TRANSPORT'), branch);rejectFailure(firstFailure); };
+  const pageEvents = Object.fromEntries(['worker', 'websocket', 'download', 'popup'].map(name => [name, () => broken(null, 'INTERCEPT_PAGE_' + name.toUpperCase())]));
+  const serviceWorker = () => broken(null, 'INTERCEPT_SERVICE_WORKER');
   const transmit = record => {
     const operation = Promise.resolve().then(() => { if (stopped) throw new Error('PLAYGROUND-UI-STOPPED');return send(record); });
-    transmissions.add(operation);operation.then(() => transmissions.delete(operation), error => { transmissions.delete(operation);broken(error); });return operation;
+    transmissions.add(operation);operation.then(() => transmissions.delete(operation), error => { transmissions.delete(operation);broken(error, 'INTERCEPT_SEND'); });return operation;
   };
   function associated(job) {
     return compileRequest && job === compileJob && compileRequest.bytes === job.bytes && compileRequest.sha256 === job.sha256;
@@ -31,16 +33,16 @@ export async function interceptBrowser(context, selectedOrigin, send) {
       if (compileRequest || body.length > routes.compile.input) fail('INTERCEPT_003');
       compileRequest = { request, bytes: body.length, sha256: sha256(body), failed: false };
       if (compileJob && !associated(compileJob)) fail('INTERCEPT_006');abortIfProved(compileJob);
-    } catch (error) { broken(error); }
+    } catch (error) { broken(error, 'INTERCEPT_REQUEST_EVENT'); }
   };
   const requestFailed = request => {
     if (stopped) return;
-    if (!compileRequest || request !== compileRequest.request) { broken();return; }
+    if (!compileRequest || request !== compileRequest.request) { broken(null, requestFailureBranch(request));return; }
     compileRequest.failed = true;abortIfProved(compileJob);
   };
   const pageStarted = page => {
-    if (pages.size) { broken();return; }pages.add(page);
-    for (const name of ['worker', 'websocket', 'download', 'popup']) page.on(name, broken);
+    if (pages.size) { broken(null, 'INTERCEPT_SECOND_PAGE');return; }pages.add(page);
+    for (const [name, handler] of Object.entries(pageEvents)) page.on(name, handler);
   };
   async function serve(request, response) {
     let job = null;let slot = false;let closed = false;
@@ -49,7 +51,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
       closed = true;
       if (!job) return;
       job.httpClosed = true;
-      if (job !== compileJob) { job.reject(new Error('PLAYGROUND-UI-TRANSPORT'));broken(); }
+      if (job !== compileJob) { job.reject(new Error('PLAYGROUND-UI-TRANSPORT'));broken(null, 'INTERCEPT_RESPONSE_CLOSE'); }
       else abortIfProved(job);
     };
     response.on('close', closedByBrowser);request.on('aborted', closedByBrowser);
@@ -79,8 +81,8 @@ export async function interceptBrowser(context, selectedOrigin, send) {
       const actual = responseRecord(record, name);totalOut += actual.body.length;
       if (totalOut > bounds.aggregate || closed) fail('INTERCEPT_010');
       response.writeHead(record.status, { ...actual.headers, connection: 'close' });
-      await new Promise((resolve, reject) => { response.once('error', reject);response.once('close', () => response.writableFinished ? resolve() : reject(new Error('PLAYGROUND-UI-TRANSPORT')));response.end(actual.body, resolve); });
-    } catch (error) { if (!stopped) broken(error);response.destroy(); }
+      await new Promise((resolve, reject) => { response.once('error', error => reject(tagTransport(error, 'INTERCEPT_RESPONSE_ERROR')));response.once('close', () => response.writableFinished ? resolve() : reject(tagTransport(new Error('PLAYGROUND-UI-TRANSPORT'), 'INTERCEPT_RESPONSE_INCOMPLETE')));response.end(actual.body, resolve); });
+    } catch (error) { if (!stopped) broken(error, 'INTERCEPT_SERVE');response.destroy(); }
     finally { if (slot) reading--;if (job) pending.delete(job.id); }
   }
   const server = createServer({ maxHeaderSize: bounds.headers }, (request, response) => {
@@ -88,18 +90,18 @@ export async function interceptBrowser(context, selectedOrigin, send) {
   });
   server.maxConnections = maximum;server.maxRequestsPerSocket = 1;server.headersTimeout = 5000;server.requestTimeout = 12000;server.keepAliveTimeout = 1;
   server.on('connection', socket => {
-    if (stopped || sockets.size >= maximum) { socket.destroy();broken();return; }
-    sockets.add(socket);socket.setTimeout(5000);socket.on('error', () => {});socket.on('timeout', () => { socket.destroy();if (!stopped) broken(); });socket.once('close', () => sockets.delete(socket));
+    if (stopped || sockets.size >= maximum) { socket.destroy();broken(null, 'INTERCEPT_SOCKET_LIMIT');return; }
+    sockets.add(socket);socket.setTimeout(5000);socket.on('error', () => {});socket.on('timeout', () => { socket.destroy();if (!stopped) broken(null, 'INTERCEPT_SOCKET_TIMEOUT'); });socket.once('close', () => sockets.delete(socket));
   });
-  server.on('drop', broken);
-  server.on('clientError', (_error, socket) => { socket.destroy();if (!stopped) broken(); });server.on('error', broken);
+  server.on('drop', () => broken(null, 'INTERCEPT_DROP'));
+  server.on('clientError', (_error, socket) => { socket.destroy();if (!stopped) broken(null, 'INTERCEPT_CLIENT_ERROR'); });server.on('error', error => broken(error, 'INTERCEPT_SERVER_ERROR'));
   try {
     await new Promise((resolve, reject) => { server.once('error', reject);server.listen({ host: '127.0.0.1', port: Number(target.port), exclusive: true }, () => { server.off('error', reject);resolve(); }); });
     const actual = server.address();if (!actual || actual.address !== '127.0.0.1' || actual.family !== 'IPv4' || actual.port !== Number(target.port)) fail('INTERCEPT_001');
   } catch (error) { for (const socket of sockets) socket.destroy();server.close(() => {});throw error; }
-  context.on('request', requestStarted);context.on('requestfailed', requestFailed);context.on('serviceworker', broken);context.on('page', pageStarted);
+  context.on('request', requestStarted);context.on('requestfailed', requestFailed);context.on('serviceworker', serviceWorker);context.on('page', pageStarted);
   return Object.freeze({
-    failures, failureBranch() { return transportBranch(firstFailure); },invalidate() { broken(); },
+    failures, failureBranch() { return transportBranch(firstFailure); },invalidate() { broken(null, 'INTERCEPT_INVALIDATE'); },
     accept(record) {
       if (stopped) fail('INTERCEPT_005');
       if (record?.type === 'probe-paused') {
@@ -132,8 +134,8 @@ export async function interceptBrowser(context, selectedOrigin, send) {
     },
     stop() {
       if (stopping) return stopping;stopped = true;
-      context.off('request', requestStarted);context.off('requestfailed', requestFailed);context.off('serviceworker', broken);context.off('page', pageStarted);
-      for (const page of pages) for (const name of ['worker', 'websocket', 'download', 'popup']) page.off(name, broken);
+      context.off('request', requestStarted);context.off('requestfailed', requestFailed);context.off('serviceworker', serviceWorker);context.off('page', pageStarted);
+      for (const page of pages) for (const [name, handler] of Object.entries(pageEvents)) page.off(name, handler);
       const closed = new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
       for (const job of pending.values()) job.reject(new Error('PLAYGROUND-UI-STOPPED'));
       for (const socket of sockets) socket.destroy();server.closeAllConnections();

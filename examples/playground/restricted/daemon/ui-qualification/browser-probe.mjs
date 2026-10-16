@@ -36,7 +36,7 @@ function axSummary(nodes) {
         .map(value => ({ name: value.name, value: value.value?.value ?? null })) };
   });
 }
-export async function runInitialBrowserProbe({ chromium, configuration, send, register, signal, checkpoint = () => {} }) {
+export async function runInitialBrowserProbe({ chromium, configuration, send, register, signal, checkpoint = () => {}, onFailure = () => {}, onCleanup = () => {} }) {
   const selected = start(configuration);
   let browser; let context; let intercept; let primary; let result;
   let firstBranch = 'UNSPECIFIED';let processObservation = emptyBrowserProcess();let stopProcess;
@@ -133,6 +133,7 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
   } catch (error) {
     primary ??= error;firstBranch = intercept?.failureBranch() ?? 'UNSPECIFIED';
     if (firstBranch === 'UNSPECIFIED') firstBranch = transportBranch(primary);
+    try { onFailure(primary, firstBranch); } catch { /* Observation cannot interrupt owned cleanup. */ }
   }
   finally {
     observing = false;processObservation = stopProcess?.() ?? processObservation;
@@ -141,6 +142,9 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
     try { await context?.close(); } catch (error) { cleanupBits.context = true;cleanup.push(error); }
     try { await browser?.close(); } catch (error) { cleanupBits.browser = true;cleanup.push(error); }
   }
+  try { onCleanup(Object.freeze(structuredClone({ cleanupFailed: cleanup.length > 0,
+    cleanup: cleanupBits, lifecycle, process: processObservation }))); }
+  catch { /* Observation cannot replace the primary failure or cleanup outcome. */ }
   if (cleanup.length) {
     const error = new AggregateError([...(primary ? [primary] : []), ...cleanup], 'PLAYGROUND-UI-CLEANUP');
     causes.set(error, { ...browserFailure(primary), branch: firstBranch, cleanupFailed: true, cleanup: cleanupBits, lifecycle, process: processObservation });throw error;
