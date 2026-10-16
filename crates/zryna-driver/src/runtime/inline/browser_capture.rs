@@ -27,10 +27,10 @@ fn failure_record(output: &BoundedOutput) -> Option<serde_json::Value> {
         return None;
     }
     #[cfg(windows)]
-    let windows_raw_status = {
-        use std::os::windows::process::ExitStatusExt as _;
-        Some(output.status.into_raw())
-    };
+    let windows_raw_status = output
+        .status
+        .code()
+        .map(|code| u32::from_ne_bytes(code.to_ne_bytes()));
     #[cfg(not(windows))]
     let windows_raw_status: Option<u32> = None;
 
