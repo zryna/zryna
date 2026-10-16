@@ -44,6 +44,25 @@ test('full-suite accounting retains executed and ignored outcomes separately', (
   assert.equal(rustAccounting(output).passed, 2);
   assert.equal(rustAccounting(output).ignored, 1);
 });
+test('inherited isolated Rust harness closes before its still-running parent suite', () => {
+  // Reproduces the M0 CI reap proof's inherited stdout, including the repeated name.
+  const proof = 'restricted_browser::daemon::kernel::proc_scan::tests::actual_unreaped_child_remains_visible_until_wait_reaps_it';
+  const footer = count => `test result: ok. ${count} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n`;
+  const nested = (inner, outer) => `running 2 tests\nrunning 1 test\ntest ${proof} ... ok\n${footer(inner)}test ${proof} ... ok\ntest another ... ok\n${footer(outer)}`;
+  const output = nested(1, 2);
+  assert.deepEqual(rustAccounting(output), { passed: 3, ignored: 0, names: [proof, proof, 'another'] });
+  assert.throws(() => rustAccounting(output, proof), /exact Rust proof summary count/);
+  for (const hostile of [
+    output.replace('running 1 test', 'running 2 tests'),
+    nested(2, 1),
+    output.replace('running 1 test\n', ''),
+    output.replace(footer(1), ''),
+    output + footer(1),
+    output + 'running 0 tests\n',
+    footer(1) + output,
+    output.replace(`test ${proof} ... ok\n`, ''),
+  ]) assert.throws(() => rustAccounting(hostile));
+});
 function nodeRow(number, name, { depth = 0, type = 'test', skip = false, children = '', childCount = 0 } = {}) {
   const pad = '    '.repeat(depth);
   const plan = children ? `${pad}    1..${childCount}\n` : '';

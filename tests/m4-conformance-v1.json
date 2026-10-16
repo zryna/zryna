@@ -2184,8 +2184,8 @@
     },
     {
       "path": "scripts/m4/evidence-counts.mjs",
-      "bytes": 2479,
-      "sha256": "5834a3c2fbf59f729cf7f1c6d4b61a2945a6c5561f8384cd4831fff3fd81b506"
+      "bytes": 2842,
+      "sha256": "0204bd388a709ba4dcf36be4f6cfff9181b32e8d2dacdb9a7129c05060f5f0ce"
     },
     {
       "path": "scripts/m4/evidence-foundations.mjs",
@@ -2459,8 +2459,8 @@
     },
     {
       "path": "tests/m4-evidence.test.mjs",
-      "bytes": 51524,
-      "sha256": "78a79ec59e50f2cbc20c7c50163210e8a3735f73436342b5e5de3953cc98980b"
+      "bytes": 52726,
+      "sha256": "1cb39154128a885553f69136a5fbfcefb8467a5ae6186a689b2fd5c7d8ed80ec"
     },
     {
       "path": "tests/m4-fixtures/allocation-core/capacity-inspect.mjs",

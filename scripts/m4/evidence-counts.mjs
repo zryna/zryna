@@ -10,9 +10,19 @@ export function rustAccounting(output, selector = null) {
     passed: Number(match[2]), failed: Number(match[3]), ignored: Number(match[4]), measured: Number(match[5]) }));
   if (!summaries.length || !rows.length) reject('missing actual named Rust rows or summaries');
   if ((output.match(/^test result:.*$/gm) ?? []).length !== summaries.length) reject('unparsed or truncated Rust summary');
-  const declared = [...output.matchAll(/^running (\d+) tests?$/gm)].map(match => Number(match[1]));
-  if (declared.length !== summaries.length || summaries.some((item, index) =>
-    declared[index] !== item.passed + item.failed + item.ignored + item.measured)) reject('Rust running block/footer count mismatch');
+  // An isolated proof may inherit stdout inside its parent libtest harness.
+  // Its footer closes the innermost running block, before the parent's footer.
+  const running = []; let completed = 0;
+  for (const match of output.matchAll(/^running (\d+) tests?$|^test result:.*$/gm)) {
+    if (match[1] !== undefined) running.push(Number(match[1]));
+    else {
+      const item = summaries[completed++];
+      if (running.pop() !== item.passed + item.failed + item.ignored + item.measured) {
+        reject('Rust running block/footer count mismatch');
+      }
+    }
+  }
+  if (running.length || completed !== summaries.length) reject('Rust running block/footer count mismatch');
   if (summaries.some(item => item.status !== 'ok' || item.failed || item.measured)) reject('failed or measured Rust suite');
   const total = key => summaries.reduce((sum, item) => sum + item[key], 0);
   assert.equal(rows.filter(item => item.outcome === 'ok').length, total('passed'), 'Rust passing row accounting');
