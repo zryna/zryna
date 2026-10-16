@@ -1,5 +1,5 @@
 import { withoutM4Workflow } from './m4-workflow-cases.mjs';
-import { withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
+import { withoutInstalledEditorWorkflow, withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -35,7 +35,7 @@ function withoutPortableSetup(candidate) {
     uses: './.github/workflows/portable-setup.yml',
   });
   delete original.jobs['portable-setup'];
-  return original;
+  return withoutInstalledEditorWorkflow(original);
 }
 
 

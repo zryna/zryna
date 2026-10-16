@@ -83,6 +83,22 @@ test('publisher write and OIDC permissions are unavailable to dispatch/build job
   }
 });
 
+test('independent Cargo home uses runtime runner paths before toolchain and fetch',()=>{
+  const workflow=parse(readFileSync(new URL('../../../.github/workflows/playground-compiler-release.yml',import.meta.url),'utf8'));
+  const build=workflow.jobs.build;
+  // GitHub rejects runner.temp in job-level env before it creates any jobs.
+  assert.equal(build.env,undefined);
+  const home=build.steps.filter(step=>step.name==='Select isolated compiler Cargo home');
+  assert.deepEqual(home,[{name:'Select isolated compiler Cargo home',
+    run:'printf \'CARGO_HOME=%s\\n\' "$RUNNER_TEMP/compiler-cargo" >> "$GITHUB_ENV"'}]);
+  const selected=build.steps.indexOf(home[0]);
+  const toolchain=build.steps.findIndex(step=>step.uses?.startsWith('dtolnay/rust-toolchain@'));
+  const fetch=build.steps.findIndex(step=>step.run==='cargo fetch --locked --target x86_64-unknown-linux-gnu');
+  assert(selected>=0 && selected<toolchain && toolchain<fetch);
+  const producer=build.steps.find(step=>step.name==='Validate complete dependency cache and build fixed offline release');
+  assert.match(producer.run,/--cargo-home "\$CARGO_HOME"/);
+});
+
 test('qualification obligation list cannot be mutated after its registry pin',()=>{
   assert.throws(()=>qualificationRegistry.obligations.push('forged'));
 });

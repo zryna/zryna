@@ -89,6 +89,18 @@ export function withoutOrdinarySanitizerPrefix(candidate) {
   return original;
 }
 
+export function withoutInstalledEditorWorkflow(candidate) {
+  const original = structuredClone(candidate);
+  assert.deepEqual(original.jobs['m6-installed-editor'], {
+    name: 'm6 installed editor', needs: ['route-contracts', 'portable-setup'],
+    if: "needs.route-contracts.outputs.distribution_release == 'true'",
+    permissions: { contents: 'read', actions: 'read' },
+    uses: './.github/workflows/m6-installed-editor.yml',
+  });
+  delete original.jobs['m6-installed-editor'];
+  return original;
+}
+
 export function withoutPreflightBudgets(candidate) {
   const original = structuredClone(candidate);
   const job = original.jobs.preflight;
@@ -200,9 +212,26 @@ test('reviewed ordinary runtime suffix authenticates exact execution and upload 
     uses: './.github/workflows/portable-setup.yml',
   });
   delete legacy.jobs['portable-setup'];
-  assert.deepEqual(withoutPreflightBudgets(withoutBootstrapTiming(legacy)).jobs.preflight.steps.at(-1), {
+  assert.deepEqual(withoutPreflightBudgets(withoutBootstrapTiming(withoutInstalledEditorWorkflow(legacy))).jobs.preflight.steps.at(-1), {
     run: 'node scripts/run-preflight.mjs --compiler-contracts',
   });
+});
+
+test('installed editor projection authenticates the complete reusable job before removal', () => {
+  const expected = structuredClone(current);
+  delete expected.jobs['m6-installed-editor'];
+  assert.deepEqual(withoutInstalledEditorWorkflow(current), expected);
+  for (const mutate of [
+    job => { job.uses = './.github/workflows/portable-setup.yml'; },
+    job => { job.permissions.contents = 'write'; },
+    job => { job.needs.pop(); },
+    job => { job.if = 'always()'; },
+    job => { job.secrets = 'inherit'; },
+  ]) {
+    const changed = structuredClone(current);
+    mutate(changed.jobs['m6-installed-editor']);
+    assert.throws(() => withoutInstalledEditorWorkflow(changed));
+  }
 });
 
 test('reviewed ordinary runtime suffix rejects alternate commands profiles budgets and upload authority', () => {

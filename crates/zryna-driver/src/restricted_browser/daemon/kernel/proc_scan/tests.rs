@@ -38,6 +38,22 @@ fn stat_parser_preserves_zombies_and_parent_when_command_contains_parentheses() 
 
 #[test]
 fn actual_unreaped_child_remains_visible_until_wait_reaps_it() {
+    // Other parallel tests own children too. Run the whole-process reap proof in
+    // its own test process so a foreign test's child cannot invalidate the result.
+    const ISOLATED: &str = "ZRYNA_REAP_SCAN_TEST_CHILD";
+    if std::env::var_os(ISOLATED).is_none() {
+        let status = Command::new(std::env::current_exe().expect("current test executable"))
+            .args([
+                "--exact",
+                "restricted_browser::daemon::kernel::proc_scan::tests::actual_unreaped_child_remains_visible_until_wait_reaps_it",
+                "--nocapture",
+            ])
+            .env(ISOLATED, "1")
+            .status()
+            .expect("isolated actual reap proof");
+        assert!(status.success(), "isolated actual reap proof must pass");
+        return;
+    }
     // try_wait would itself reap the child, so observe its kernel state instead.
     let mut child = Command::new("/bin/true").spawn().expect("owned inert child");
     let result = (|| {

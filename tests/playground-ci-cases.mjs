@@ -8,7 +8,19 @@ const contracts = { name: 'Verify restricted playground and M6 contracts',
 const helpers = { name: 'Verify Linux playground helper units', if: "runner.os == 'Linux'",
   env: { PYTHONDONTWRITEBYTECODE: '1' }, run: 'python3 tests/playground-host-unit.py\n' +
     'python3 tests/playground-cgroup-unit.py\npython3 tests/playground-join-unit.py\n' +
-    'python3 tests/playground-helper-policy-unit.py\n' };
+    'python3 tests/playground-helper-policy-unit.py\n' +
+    'python3 -B examples/playground/restricted/daemon/preparation/test_preparation.py\n' +
+    "python3 -B -m unittest discover -s tests -p 'playground_operator*.py'\n" };
+const publication = { name: 'Verify Linux compiler publication boundaries',
+  if: "runner.os == 'Linux'",
+  run: 'node --test --test-concurrency=1 scripts/m6/compiler-release/*.test.mjs' };
+const operator = { name: 'Verify Linux operator qualification contracts',
+  if: "runner.os == 'Linux'", env: { PYTHONDONTWRITEBYTECODE: '1' },
+  run: 'node --test --test-concurrency=1 examples/playground/restricted/daemon/launcher*.test.mjs\n' +
+    'node --test --test-concurrency=1 examples/playground/restricted/daemon/cli-parity/*.test.mjs\n' +
+    'node --test --test-concurrency=1 examples/playground/restricted/daemon/ui-qualification/*.test.mjs\n' +
+    "python3 -B -m unittest discover -s examples/playground/restricted/daemon/cli-parity -p 'test_*.py'\n" +
+    "python3 -B -m unittest discover -s examples/playground/restricted/daemon/ui-qualification -p 'test_owner_*.py'\n" };
 
 // Remove only the exact reviewed addition before authenticating all prior CI authority.
 export function withoutPlaygroundContracts(candidate) {
@@ -17,9 +29,11 @@ export function withoutPlaygroundContracts(candidate) {
   assert(index > 0);
   assert.deepEqual(steps[index], contracts);
   assert.deepEqual(steps[index + 1], helpers);
-  assert.equal(steps[index + 2].name, 'Verify documentation bundle contract');
-  steps.splice(index, 2);
-  assert(!/playground:contract|m6:contract|playground-.*-unit\.py/.test(JSON.stringify(original)));
+  assert.deepEqual(steps[index + 2], publication);
+  assert.deepEqual(steps[index + 3], operator);
+  assert.equal(steps[index + 4].name, 'Verify documentation bundle contract');
+  steps.splice(index, 4);
+  assert(!/playground:contract|m6:contract|playground-.*-unit\.py|compiler-release\/\*\.test|daemon\/launcher\*\.test/.test(JSON.stringify(original)));
   return original;
 }
 
@@ -34,6 +48,8 @@ test('playground CI removal, bypass, duplicate and relocation mutations fail clo
     (steps, i) => { steps[i].run += 'true\n'; },
     (steps, i) => { steps[i + 1].if = 'false'; },
     (steps, i) => { steps[i + 1].run = 'true\n'; },
+    (steps, i) => { steps[i + 2].run += ' || true'; },
+    (steps, i) => { steps[i + 3].env.PYTHONDONTWRITEBYTECODE = '0'; },
     (steps, i) => { steps.push(structuredClone(steps[i])); },
     (steps, i) => { [steps[i + 1], steps[i + 2]] = [steps[i + 2], steps[i + 1]]; },
   ]) {
