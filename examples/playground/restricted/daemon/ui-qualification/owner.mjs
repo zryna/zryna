@@ -69,16 +69,21 @@ export async function qualifyInitialUi({tools,approval,launcher,resourcePins,sig
       origin:url.origin,launchPath:url.pathname,capability:url.hash.slice(1),planSha256:selected.ui_plan_sha256},
       send:record=>writer.write(record),resourcePins});
     decoder=createFrameDecoder(record=>session.accept(record));await guarded(session.begin());
-    const observation=await guarded(Promise.race([session.result,closed.then(()=>{throw new Error('PLAYGROUND-UI-EARLY-OWNER-CLOSE');})]));
+    const observation=await guarded(Promise.race([session.result,closed.then(async()=>{
+      // The control pipe may close first; drain application stdout before discarding a terminal failure frame.
+      await childClosed;throw new Error('PLAYGROUND-UI-EARLY-OWNER-CLOSE');
+    })]));
     const outcome=await completion.stop();
     if(primary)throw primary;
     if(!streamEnded || receipt.failure || !receipt.kernelReapProven || receipt.wait?.StatusCode!==0 || closedStatus?.code!==0)fail();
     return Object.freeze({...observation,containerCleanupConfirmed:true,owner:outcome,fullQualification:false});
   }catch(error){
     primary??=error;
+    try{session?.failureEvidence(primary);}catch{/* Diagnostics must never prevent owned cleanup. */}
     let cleanup=null;try{if(completion)await completion.stop();else if(!child)captured.cleanup();}catch(error){cleanup=error;}
     const failure=new AggregateError([primary,...(cleanup?[cleanup]:[])],'PLAYGROUND-UI-QUALIFICATION-FAILED');
     failure.recovery=completion?.recovery()??{helperSnapshot:captured.root,ownershipUnconfirmed:Boolean(child)};
+    try{failure.transport=session?.failureEvidence(primary)??null;}catch{failure.transport=null;}
     throw failure;
   }finally{clearTimeout(timer);signal?.removeEventListener('abort',aborted);}
 }

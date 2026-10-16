@@ -1,7 +1,7 @@
 // Protocol-negative tests only. No browser, compiler or qualification success is simulated.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createHostSession } from './host-session.mjs';
+import { createHostSession, validateFailureEvidence } from './host-session.mjs';
 import { routes } from './routes.mjs';
 import { sha256 } from './wire.mjs';
 import { createService } from '../../service.mjs';
@@ -35,6 +35,36 @@ test('EOF and deliberate stop settle the incomplete session and never establish 
   await assert.rejects(third.result, /UI-STOPPED/);
   assert.ok(third.recovery());
 });
+test('closed inner failure preserves fixed phase/cause without admitting arbitrary strings or another run', async () => {
+  const selected = fixture();await selected.session.begin();
+  selected.session.accept({ version: 1, type: 'failure', runId: selected.configuration.runId,
+    phase: 'INITIAL_STATE', cause: 'INITIAL_HASH', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, branch: 'UNSPECIFIED' });
+  await assert.rejects(selected.session.result, error => {
+    assert.equal(error.message, 'PLAYGROUND-UI-INNER-INITIAL-STATE-INITIAL-HASH');
+    assert.match(error.message, /^PLAYGROUND-[A-Z0-9-]{1,100}$/);
+    return true;
+  });
+  assert.equal(selected.session.audit().length, 0);await selected.session.stop();
+  for (const extra of [{ runId: 'f'.repeat(32) }, { phase: 'private URL/#capability' },
+    { cause: 'Bearer secret' }, { cleanupFailed: 0 }, { raw: 'private stderr' },
+    { branch: 'private branch' }, { cleanup: { intercept: true, context: false, browser: false } }]) {
+    const invalid = fixture();await invalid.session.begin();
+    assert.throws(() => invalid.session.accept({ version: 1, type: 'failure', runId: invalid.configuration.runId,
+      phase: 'NAVIGATE', cause: 'TRANSPORT', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, branch: 'UNSPECIFIED', ...extra }), /UI-TRANSPORT/);
+    await assert.rejects(invalid.session.result, /UI-TRANSPORT/);await invalid.session.stop();
+  }
+});
+test('first failing transport validator survives teardown and accepts no error-message branch spoof', async () => {
+  const selected = fixture();await selected.session.begin();
+  assert.throws(() => selected.session.accept({ version: 1, type: 'request', id: 2,
+    route: 'index', method: 'GET', headers: [], bodyBase64: '' }), /UI-TRANSPORT/);
+  await assert.rejects(selected.session.result, /UI-TRANSPORT/);
+  assert.equal(selected.session.failureEvidence().firstBranch, 'BROKER_004');
+  await selected.session.stop();assert.equal(selected.session.failureEvidence().firstBranch, 'BROKER_004');
+  const unmarked = fixture();
+  assert.equal(unmarked.session.failureEvidence(new Error('BROKER_004 private URL/#capability')).firstBranch, 'UNSPECIFIED');
+  await unmarked.session.stop();
+});
 test('stalled attached-stdin transmission cannot hold HTTP or outer cleanup beyond two seconds', { timeout: 5000 }, async () => {
   const templateBytes = Buffer.from('inert no-host-operation test');
   const service = createService({ evaluationMode: 'supervised-host', host: {
@@ -56,6 +86,14 @@ test('stalled attached-stdin transmission cannot hold HTTP or outer cleanup beyo
     await session.begin();
     session.accept({ version: 1, type: 'request', id: 1, route: 'index', method: 'GET', headers: [], bodyBase64: '' });
     await writing;
+    const evidence = session.failureEvidence();
+    assert.equal(evidence.audit.length, 1);assert.equal(evidence.audit[0].route, 'index');
+    assert.equal(evidence.audit[0].status, 200);assert.equal(evidence.audit[0].responseSha256, sha256(Buffer.from('x')));
+    assert.ok(!JSON.stringify(evidence).includes(configuration.capability));
+    assert.ok(!JSON.stringify(evidence).includes('securityHeaders'));
+    assert.throws(() => validateFailureEvidence({ ...evidence, firstBranch: 'private URL/#capability' }), /UI-TRANSPORT/);
+    assert.throws(() => validateFailureEvidence({ ...evidence, audit: [{ ...evidence.audit[0], headers: 'Bearer private' }] }), /UI-TRANSPORT/);
+    evidence.audit[0].route = 'private URL';assert.equal(session.failureEvidence().audit[0].route, 'index');
     const before = performance.now(); const stop = session.stop();
     assert.equal(stop, session.stop());
     await assert.rejects(stop, /UI-CLEANUP/);

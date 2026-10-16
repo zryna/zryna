@@ -1,11 +1,11 @@
 // Trusted operator-only fixed-origin HTTP transport. No target or command comes from the UI.
 import { request as httpRequest } from 'node:http';
-import { bounds, fail, hash, integer, origin, sha256 } from './wire.mjs';
+import { bounds, fail, hash, integer, origin, sha256, tagTransport } from './wire.mjs';
 import { requestRecord, responseHeaders } from './routes.mjs';
 
 export function createHttpBroker({ origin: selectedOrigin, capability, holdCompileProbe = false, onEvent = () => {} }) {
   origin(selectedOrigin);
-  if (!hash(capability) || typeof holdCompileProbe !== 'boolean') fail();
+  if (!hash(capability) || typeof holdCompileProbe !== 'boolean') fail('BROKER_001');
   const target = new URL(selectedOrigin);
   const jobs = new Map(); const finished = new Map(); const sockets = new Set(); const queue = []; const audit = [];
   let nextId = 1; let live = 0; let closed = false; let recovery = null; let held = false; let closing = null;
@@ -18,7 +18,7 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
     }
     job.state = 'done'; clearTimeout(job.timer); jobs.delete(job.id);
     if (!error) finished.set(job.id, { reply: reply.type, abortReceived: job.abortReceived });
-    if (error) job.reject(error); else job.resolve(reply);
+    if (error) job.reject(tagTransport(error, 'HTTP_ERROR')); else job.resolve(reply);
     pump();
   }
   function dispatch(job) {
@@ -29,7 +29,7 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
       headers: { ...job.headers, 'content-length': job.body.length } }, response => {
       try {
         if (!Number.isInteger(response.statusCode) || response.statusCode < 200 || response.statusCode > 599 ||
-            response.statusCode >= 300 && response.statusCode < 400) fail();
+            response.statusCode >= 300 && response.statusCode < 400) fail('BROKER_002');
         selectedHeaders = responseHeaders(response.rawHeaders);
       } catch (error) { request.destroy(error); return; }
       response.on('data', chunk => {
@@ -68,9 +68,9 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
   return Object.freeze({
     request(record) {
       const waiting = [...jobs.values()].filter(job => job.state === 'queued' || job.state === 'held').length;
-      if (closed || jobs.size >= bounds.live + bounds.queued || waiting >= bounds.queued) fail();
+      if (closed || jobs.size >= bounds.live + bounds.queued || waiting >= bounds.queued) fail('BROKER_003');
       const checked = requestRecord(record, selectedOrigin, capability);
-      if (record.id !== nextId++) fail();
+      if (record.id !== nextId++) fail('BROKER_004');
       const job = { id: record.id, name: record.route, method: record.method, ...checked, abortReceived: false,
         state: 'queued', request: null, reaped: Promise.resolve(), timer: null };
       const result = new Promise((resolve, reject) => { job.resolve = resolve; job.reject = reject; });
@@ -86,10 +86,10 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
     abort(id) {
       integer(id, bounds.requests);
       const job = jobs.get(id);
-      if (closed) fail();
+      if (closed) fail('BROKER_005');
       if (!job) {
         const terminal = finished.get(id);
-        if (!terminal || terminal.reply !== 'response' || terminal.abortReceived) fail();
+        if (!terminal || terminal.reply !== 'response' || terminal.abortReceived) fail('BROKER_006');
         terminal.abortReceived = true;
         return { version: 1, type: 'aborted', id };
       }

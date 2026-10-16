@@ -6,7 +6,7 @@ export function createFrameDecoder(accept) {
   let total = 0; let count = 0; let closed = false;
   return Object.freeze({
     push(chunk) {
-      if (closed || !(chunk instanceof Uint8Array) || (total += chunk.length) > bounds.aggregate) fail();
+      if (closed || !(chunk instanceof Uint8Array) || (total += chunk.length) > bounds.aggregate) fail('FRAMING_001');
       let offset = 0;
       while (offset < chunk.length) {
         if (!payload) {
@@ -15,7 +15,7 @@ export function createFrameDecoder(accept) {
           offset += length; headerBytes += length;
           if (headerBytes !== 4) continue;
           const size = header.readUInt32LE();
-          if (!size || size > bounds.frame || ++count > bounds.frames) fail();
+          if (!size || size > bounds.frame || ++count > bounds.frames) fail('FRAMING_002');
           payload = Buffer.alloc(size); used = 0;
         }
         const length = Math.min(payload.length - used, chunk.length - offset);
@@ -28,7 +28,7 @@ export function createFrameDecoder(accept) {
         }
       }
     },
-    end() { closed = true; if (headerBytes || payload) fail(); },
+    end() { closed = true; if (headerBytes || payload) fail('FRAMING_003'); },
   });
 }
 
@@ -37,10 +37,10 @@ export function createFrameWriter(stream) {
   let chain = Promise.resolve();
   return Object.freeze({
     write(value) {
-      if (stopped) fail();
+      if (stopped) fail('FRAMING_004');
       const bytes = Buffer.from(JSON.stringify(value));
       if (!bytes.length || bytes.length > bounds.frame || ++count > bounds.frames ||
-          (total += bytes.length + 4) > bounds.aggregate || (pending += bytes.length + 4) > bounds.frame * 2) fail();
+          (total += bytes.length + 4) > bounds.aggregate || (pending += bytes.length + 4) > bounds.frame * 2) fail('FRAMING_005');
       const frame = Buffer.alloc(bytes.length + 4);
       frame.writeUInt32LE(bytes.length); frame.set(bytes, 4);
       const sent = chain.then(() => new Promise((resolve, reject) => {

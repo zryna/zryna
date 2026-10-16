@@ -18,14 +18,14 @@ const responseNames = [...security, 'x-zryna-job', 'x-zryna-receipt'];
 const transportNames = ['content-length', 'date', 'connection', 'keep-alive', 'transfer-encoding'];
 
 export function headerPairs(value, allowed) {
-  if (!Array.isArray(value) || value.length > 16) fail();
+  if (!Array.isArray(value) || value.length > 16) fail('ROUTES_001');
   const headers = Object.create(null);
   let total = 0;
   for (const entry of value) {
     exact(entry, ['name', 'value']);
     if (!allowed.includes(entry.name) || Object.hasOwn(headers, entry.name) ||
         typeof entry.value !== 'string' || /[^\x20-\x7e]/.test(entry.value) ||
-        (total += entry.name.length + entry.value.length) > bounds.headers) fail();
+        (total += entry.name.length + entry.value.length) > bounds.headers) fail('ROUTES_002');
     headers[entry.name] = entry.value;
   }
   return headers;
@@ -35,46 +35,46 @@ export function selectBrowserHeaders(headers) {
 }
 export function routeFor(url, method, expectedOrigin) {
   origin(expectedOrigin);
-  if (typeof url !== 'string' || url.length > 512) fail();
+  if (typeof url !== 'string' || url.length > 512) fail('ROUTES_003');
   const parsed = new URL(url);
   if (parsed.origin !== expectedOrigin || parsed.search || parsed.hash || parsed.username || parsed.password ||
-      url !== expectedOrigin + parsed.pathname) fail();
+      url !== expectedOrigin + parsed.pathname) fail('ROUTES_004');
   const found = Object.entries(routes).find(([, route]) => route.path === parsed.pathname && route.method === method);
-  if (!found || found[0] === 'asset:worker.mjs') fail();
+  if (!found || found[0] === 'asset:worker.mjs') fail('ROUTES_005');
   return found[0];
 }
 export function requestRecord(value, expectedOrigin, capability) {
   envelope(value, 'request', ['id', 'route', 'method', 'headers', 'bodyBase64']);
   integer(value.id, bounds.requests);
-  if (!Object.hasOwn(routes, value.route) || value.route === 'asset:worker.mjs') fail();
+  if (!Object.hasOwn(routes, value.route) || value.route === 'asset:worker.mjs') fail('ROUTES_006');
   const route = routes[value.route];
-  if (value.method !== route.method) fail();
+  if (value.method !== route.method) fail('ROUTES_007');
   const headers = headerPairs(value.headers, requestNames);
   if (headers.authorization !== undefined && headers.authorization !== `Bearer ${capability}` ||
       headers.origin !== undefined && headers.origin !== expectedOrigin ||
       headers['sec-fetch-site'] !== undefined && !['none', 'same-origin'].includes(headers['sec-fetch-site']) ||
-      headers['content-type'] !== undefined && headers['content-type'] !== 'application/json') fail();
+      headers['content-type'] !== undefined && headers['content-type'] !== 'application/json') fail('ROUTES_008');
   return { route, headers, body: binary(value.bodyBase64, route.input) };
 }
 export function responseHeaders(raw) {
-  if (!Array.isArray(raw) || raw.length % 2 || raw.length > 64) fail();
+  if (!Array.isArray(raw) || raw.length % 2 || raw.length > 64) fail('ROUTES_009');
   const selected = []; const seen = new Set(); let total = 0;
   for (let index = 0; index < raw.length; index += 2) {
     const name = raw[index].toLowerCase(); const value = raw[index + 1];
     if (seen.has(name) || ![...responseNames, ...transportNames].includes(name) ||
         typeof value !== 'string' || /[^\x20-\x7e]/.test(value) ||
-        (total += name.length + value.length) > bounds.headers) fail();
+        (total += name.length + value.length) > bounds.headers) fail('ROUTES_010');
     seen.add(name);
     if (responseNames.includes(name)) selected.push({ name, value });
   }
-  if (security.some(name => !seen.has(name))) fail();
+  if (security.some(name => !seen.has(name))) fail('ROUTES_011');
   return selected;
 }
 export function responseRecord(value, route) {
   envelope(value, 'response', ['id', 'status', 'headers', 'bodyBase64']);
   integer(value.id, bounds.requests); integer(value.status, 599);
-  if (value.status < 200 || value.status >= 300 && value.status < 400) fail();
+  if (value.status < 200 || value.status >= 300 && value.status < 400) fail('ROUTES_012');
   const headers = headerPairs(value.headers, responseNames);
-  if (security.some(name => !Object.hasOwn(headers, name))) fail();
+  if (security.some(name => !Object.hasOwn(headers, name))) fail('ROUTES_013');
   return { headers, body: binary(value.bodyBase64, routes[route].output) };
 }

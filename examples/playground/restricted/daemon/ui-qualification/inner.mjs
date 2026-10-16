@@ -1,7 +1,7 @@
 // Fixed private test entrypoint. Image/material auditing and ownership are external prerequisites.
 import { createFrameDecoder, createFrameWriter } from './framing.mjs';
-import { bounds, fail, hash, start } from './wire.mjs';
-import { runInitialBrowserProbe } from './browser-probe.mjs';
+import { bounds, fail, hash, start, innerPhases, innerFailure } from './wire.mjs';
+import { runInitialBrowserProbe, browserFailure } from './browser-probe.mjs';
 import { readImagePlan } from './plan.mjs';
 
 export async function runUiDriver(input, output, loadChromium, planSha256) {
@@ -9,6 +9,9 @@ export async function runUiDriver(input, output, loadChromium, planSha256) {
   const writer = createFrameWriter(output);
   const cancellation = new AbortController();
   let started = false; let accept = null; let terminal = false; let rejectStream;
+  let configuration = null; let phase = 'LOAD_CHROMIUM';
+  let failureObservation = null;
+  const checkpoint = value => { if (!innerPhases.includes(value)) fail();phase = value; };
   const streamFailure = new Promise((_, reject) => { rejectStream = reject; });
   streamFailure.catch(() => {});
   let resolveStart;
@@ -19,28 +22,40 @@ export async function runUiDriver(input, output, loadChromium, planSha256) {
     else if (!accept) fail();
     else accept(record);
   });
-  const data = chunk => { try { decoder.push(chunk); } catch { rejectStream(new Error('PLAYGROUND-UI-TRANSPORT')); } };
+  const data = chunk => { try { decoder.push(chunk); } catch (error) { rejectStream(error); } };
   const ended = () => {
-    try { decoder.end(); } catch { rejectStream(new Error('PLAYGROUND-UI-TRANSPORT')); return; }
+    try { decoder.end(); } catch (error) { rejectStream(error); return; }
     if (!terminal) rejectStream(new Error('PLAYGROUND-UI-TRANSPORT'));
   };
   const failed = () => rejectStream(new Error('PLAYGROUND-UI-TRANSPORT'));
   input.on('data', data); input.on('end', ended); input.on('error', failed); output.on('error', failed);
   const timer = setTimeout(() => rejectStream(new Error('PLAYGROUND-UI-DEADLINE')), bounds.lifetimeMs);
   try {
-    const configuration = await Promise.race([initial, streamFailure]);
-    if (configuration.planSha256 !== planSha256) fail();
+    const candidate = await Promise.race([initial, streamFailure]);
+    if (candidate.planSha256 !== planSha256) fail();
+    configuration = candidate;
     const chromium = await loadChromium();
     const run = runInitialBrowserProbe({ chromium, configuration,
-      send: record => writer.write(record), register: handler => { accept = handler; }, signal: cancellation.signal });
+      send: record => writer.write(record), register: handler => { accept = handler; }, signal: cancellation.signal, checkpoint });
     let result;
     try { result = await Promise.race([run, streamFailure]); }
     catch (error) {
       cancellation.abort();
-      try { await run; } catch { /* fixed bounded failure; external owner preserves cleanup state */ }
+      try { await run; } catch (stopped) {
+        const cleanup = browserFailure(stopped);
+        failureObservation = { ...browserFailure(error), cleanupFailed: cleanup.cleanupFailed, cleanup: cleanup.cleanup };
+      }
       throw error;
     }
     terminal = true; await writer.write(result); await writer.stop();
+  } catch (error) {
+    if (configuration && !terminal) {
+      terminal = true;
+      const record = innerFailure({ version: 1, type: 'failure', runId: configuration.runId,
+        phase, ...(failureObservation ?? browserFailure(error)) }, configuration.runId);
+      await writer.write(record);await writer.stop();
+    }
+    throw error;
   } finally {
     clearTimeout(timer); input.off('data', data); input.off('end', ended); input.off('error', failed);
     input.pause();

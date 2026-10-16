@@ -52,6 +52,20 @@ noncanonical targets fail. Capability/header/job-token values never enter its
 audit records. The caller must preserve this rule when storing raw protocol data;
 **do not persist raw stdio, Playwright traces, HAR, console output or launch URLs**.
 
+After an accepted start, a failed inner driver emits one closed `failure` record
+after browser cleanup. It contains only the matching run ID, fixed phase/cause
+enums, the first fixed transport-validator branch, and separate intercept/context/
+browser cleanup-failure bits. Recognized Playwright error categories use fixed
+API-prefix/message matches; all unknown exception text is discarded. The host rejects the run with a fixed
+`PLAYGROUND-UI-INNER-...` code; no exception text or browser log is forwarded.
+An early owner receipt must not overtake application stdout: await the helper's
+actual close/drain before falling back to an early-close error. A failure record
+never establishes successful browser work or container cleanup.
+The outer failure also exposes a bounded validated projection of the actual HTTP
+audit: fixed route/method, request ID, status, byte counts and SHA hashes only.
+It omits every header value and body; persist it only through
+`validateFailureEvidence`. Diagnostic projection errors must never skip cleanup.
+
 The first compile interception is deliberately held **before HTTP dispatch**.
 Real UI keyboard compilation and Cancel must produce a genuine Chromium
 requestfailed event while page.route is waiting. Only that event sends abort;
