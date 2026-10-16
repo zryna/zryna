@@ -38,7 +38,11 @@ jobs:
           node --test scripts/m6/installed-editor/controls.test.mjs scripts/m6/installed-editor/files.test.mjs scripts/m6/installed-editor/ownership.test.mjs scripts/m6/installed-editor/installer-metadata.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Required installed-editor controls failed' }
       - name: Acquire independently pinned official editor archive
-        run: node scripts/m6/installed-editor-acquire.mjs "${{ runner.temp }}/m6-editor-material"
+        shell: pwsh
+        run: |
+          $material = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'm6-editor-material'))
+          node scripts/m6/installed-editor-acquire.mjs $material
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned editor acquisition failed' }
       - name: Select pins from authenticated same-workflow portable build artifact
         shell: pwsh
         run: |
@@ -75,13 +79,16 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $handoff = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'm6-editor-handoff'))
+          $archive = [IO.Path]::GetFullPath((Join-Path (Join-Path $env:RUNNER_TEMP 'm6-editor-material') 'editor.zip'))
+          $output = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'm6-installed-editor'))
           node scripts/m6/installed-editor.mjs `
-            --handoff "$env:RUNNER_TEMP/m6-editor-handoff" `
-            --editor-archive "$env:RUNNER_TEMP/m6-editor-material/editor.zip" `
+            --handoff $handoff `
+            --editor-archive $archive `
             --source-commit $env:M6_SOURCE_COMMIT --source-tree $env:M6_SOURCE_TREE `
             --source-epoch $env:M6_SOURCE_EPOCH `
             --setup-archive-sha256 $env:M6_SETUP_ARCHIVE_SHA --setup-manifest-sha256 $env:M6_SETUP_MANIFEST_SHA `
-            --server-sha256 $env:M6_SERVER_SHA --vsix-sha256 $env:M6_VSIX_SHA --output "$env:RUNNER_TEMP/m6-installed-editor"
+            --server-sha256 $env:M6_SERVER_SHA --vsix-sha256 $env:M6_VSIX_SHA --output $output
           if ($LASTEXITCODE) { throw 'Required installed-editor acceptance failed' }
       - name: Retain actual source-bound editor observations and failures
         if: always()

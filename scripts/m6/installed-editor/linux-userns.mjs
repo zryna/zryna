@@ -11,7 +11,7 @@ export async function awaitLinuxUserns({output,stage,editor,deadline}) {
  assert(root&&root===resolve(root)&&/^m6-editor-linux-[1-9][0-9]*-[1-9][0-9]*$/.test(root.split('/').at(-1)));
  await ordinaryRoot(root);const parent=await lstat(root);
  assert(parent.uid===process.getuid()&&parent.gid===process.getgid()&&(parent.mode&0o777)===0o700);
- assert(stage.startsWith(join(root,'tmp','zryna-m6-installed-editor-')));
+ assert(stage.startsWith(join(root,'tmp','m6e-')));
  const prepared=await descriptor(join(output,'PREPARED.json'),deadline);
  const helper=await descriptor(join(dirname(editor.executable),'chrome-sandbox'),deadline);
  const request={format:'zryna.m6-editor-linux-userns-request.v1',root,output,stage,invocationId:process.env.INVOCATION_ID,uid:process.getuid(),gid:process.getgid(),

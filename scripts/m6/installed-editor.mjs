@@ -45,7 +45,7 @@ async function run(values) {
   const output = values.output;
   await ordinaryRoot(dirname(output));
   await mkdir(output, { recursive: false, mode: 0o700 });
-  const stage = await mkdtemp(join(await realpath(tmpdir()), 'zryna-m6-installed-editor-'));
+  const stage = await mkdtemp(join(await realpath(tmpdir()), 'm6e-'));
   const logs = join(output, 'commands');
   await mkdir(logs);
   const prepareDeadline = performance.now() + 600000;

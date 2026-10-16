@@ -114,7 +114,7 @@ def grant():
  global profile,code,helper,loaded
  marker,ms=ordinary(root+'/REQUEST.ready',0);need(ms.st_uid==c['uid'] and ms.st_gid==c['gid'] and stat.S_IMODE(ms.st_mode)==0o400,'original runner completed request marker');raw,request_stat=ordinary(root+'/REQUEST.json',65536);request=json.loads(raw);need(request_stat.st_uid==c['uid'] and request_stat.st_gid==c['gid'],'runner request identity')
  need(set(request)==set(['format','root','output','stage','invocationId','uid','gid','productCommit','prepared','code','helper']) and request['format']=='zryna.m6-editor-linux-userns-request.v1' and request['root']==root and request['output']==values['--output'] and request['uid']==c['uid'] and request['gid']==c['gid'],'fixed request');need(request['invocationId']==record['originalUnit']['InvocationID'],'request from original service invocation')
- stage=canonical(request['stage']);need(os.path.dirname(stage)==root+'/tmp' and re.fullmatch('zryna-m6-installed-editor-[A-Za-z0-9]+',os.path.basename(stage)),'exact mkdtemp stage')
+ stage=canonical(request['stage']);need(os.path.dirname(stage)==root+'/tmp' and re.fullmatch('m6e-[A-Za-z0-9]+',os.path.basename(stage)),'exact mkdtemp stage')
  code=stage+'/editor/VSCode-linux-x64/code';helper=stage+'/editor/VSCode-linux-x64/chrome-sandbox';canonical(os.path.dirname(code))
  need(request['productCommit']=='7debcd0e2acdea1c52de81bf9ee1620444407dda','authenticated product commit')
  need(request['code']['path']==code and request['code']['bytes']==219843800 and request['code']['sha256']=='34912494509486296a3bd9aecb512694c98523d0f6f23cfceb5a95b5088c721b','exact Code')
