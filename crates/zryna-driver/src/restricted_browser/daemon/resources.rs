@@ -113,12 +113,19 @@ impl Resources<'_> {
             &[204],
         )?;
         let value = self.inspect(index)?;
-        self.containers[index].init = Some(kernel::capture(
+        // Ownership survives a later admission refusal; it never authorizes execution.
+        self.containers[index].init =
+            Some(kernel::capture_owned(&value, self.id(index)?, self.client.deadline)?);
+        kernel::same(
+            self.containers[index]
+                .init
+                .as_ref()
+                .ok_or_else(|| reject("PLAYGROUND-HOST-KERNEL", "original init identity absent"))?,
             &value,
             self.id(index)?,
             self.approval.record.cpus,
             self.client.deadline,
-        )?);
+        )?;
         self.live(index)
     }
 

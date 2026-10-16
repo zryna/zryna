@@ -2,12 +2,18 @@ use super::{Result, reject};
 use serde_json::Value;
 use std::{collections::BTreeSet, fs::File, io::Read, time::Instant};
 
+mod ownership;
 mod proc_scan;
 
+pub(super) use ownership::{capture_owned, cleanup_owned};
+
+#[derive(Debug, PartialEq, Eq)]
 pub(super) struct Init {
     pub pid: u32,
     pub ticks: String,
     started: String,
+    cid: String,
+    membership: String,
 }
 
 fn read(pid: u32, name: &str, deadline: Instant) -> Result<String> {
@@ -131,12 +137,7 @@ pub(super) fn capture(state: &Value, cid: &str, cpus: [u16; 2], deadline: Instan
     {
         return Err(reject("PLAYGROUND-HOST-KERNEL", "actual private PID1 unproved"));
     }
-    if !read(pid, "cgroup", deadline)?
-        .lines()
-        .any(|line| line.starts_with("0::/") && line.ends_with(&format!("/docker/{cid}")))
-    {
-        return Err(reject("PLAYGROUND-HOST-KERNEL", "owned actual cgroup membership unproved"));
-    }
+    let membership = ownership::membership(&read(pid, "cgroup", deadline)?, cid)?;
     let started = state["State"]["StartedAt"]
         .as_str()
         .filter(|value| !value.is_empty())
@@ -145,7 +146,7 @@ pub(super) fn capture(state: &Value, cid: &str, cpus: [u16; 2], deadline: Instan
     if ticks(pid, deadline)? != first {
         return Err(reject("PLAYGROUND-HOST-KERNEL", "init changed during observation"));
     }
-    Ok(Init { pid, ticks: first, started })
+    Ok(Init { pid, ticks: first, started, cid: cid.to_owned(), membership })
 }
 
 pub(super) fn same(
@@ -156,7 +157,7 @@ pub(super) fn same(
     deadline: Instant,
 ) -> Result<()> {
     let current = capture(state, cid, cpus, deadline)?;
-    if current.pid != init.pid || current.ticks != init.ticks || current.started != init.started {
+    if current != *init {
         return Err(reject("PLAYGROUND-HOST-KERNEL", "original namespace init changed"));
     }
     Ok(())

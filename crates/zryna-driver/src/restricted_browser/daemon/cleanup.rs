@@ -82,22 +82,17 @@ impl Resources<'_> {
             string(&item.requested, "Image")?,
             &item.requested,
         )?;
-        let recovered;
-        let init = if let Some(init) = &item.init {
-            Some(init)
-        } else if value["State"]["Running"] == true {
-            recovered = kernel::capture(&value, cid, self.approval.record.cpus, client.deadline)?;
-            Some(&recovered)
-        } else {
-            None
-        };
-        client.empty(Method::Delete, &format!("/containers/{cid}?force=1&v=0"), &[204])?;
+        // Rejected admission cannot erase ownership or become a cleanup prerequisite.
+        // A missing anchor cannot be replaced by a later process in the same container.
+        kernel::cleanup_owned(item.init.as_ref(), &value, cid, client.deadline)?;
+        let force = u8::from(value["State"]["Running"] == true);
+        client.empty(Method::Delete, &format!("/containers/{cid}?force={force}&v=0"), &[204])?;
         if client.lookup("containers", cid)?.is_some()
             || client.lookup("containers", &item.name)?.is_some()
         {
             return Err(reject("PLAYGROUND-HOST-TEARDOWN", "owned container removal unconfirmed"));
         }
-        if let Some(init) = init {
+        if let Some(init) = &item.init {
             kernel::gone(init, client.deadline)?;
         }
         self.containers[index].removed = true;

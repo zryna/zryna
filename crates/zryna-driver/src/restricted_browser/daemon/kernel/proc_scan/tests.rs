@@ -77,7 +77,13 @@ fn actual_unreaped_child_remains_visible_until_wait_reaps_it() {
 #[test]
 fn expired_observation_and_substituted_original_init_fail_closed() {
     let pid = std::process::id();
-    let init = Init { pid, ticks: "0".to_owned(), started: "test".to_owned() };
+    let init = Init {
+        pid,
+        ticks: "0".to_owned(),
+        started: "test".to_owned(),
+        cid: "a".repeat(64),
+        membership: String::new(),
+    };
     assert!(children_reaped(&init, future()).is_err());
     assert!(scan(pid, Instant::now()).is_err());
 }
