@@ -104,11 +104,16 @@ def complete_task(before, after, leaders):
 
 def retired_task(read, fields, numbers, original, tree, error, row, deadline):
     task = row['task']
+    prior, known = row.get('priorTask'), tree.get('first', {}).get(task)
+    require((row['failure'] == 'OPEN_ENOENT_FIRST' and prior is None) or
+            (row['failure'] == 'OPEN_ENOENT_LAST' and type(known) is tuple and len(known) == 4 and
+             prior == {'ticks': known[0], 'tgid': known[1], 'stateBefore': known[2],
+                       'stateAfter': known[3], 'membershipVerified': True}), 'exact first or proven-known last membership failure')
     require(type(task) is int and task in tree['threads'] and task not in tree['processes'] and
             error.errno == 2 and error.filename == f'/proc/{task}/cgroup' and
             getattr(error, '_ui_kernel_syscall', None) == 'OPEN' and
             all(row[key][field] is True for key in ('targetBefore', 'targetAfter')
-                for field in ('statAbsent', 'statusAbsent')), 'only witnessed retired first-membership task')
+                for field in ('statAbsent', 'statusAbsent')), 'only witnessed retired first or proven-known last membership task')
     after = task_group(read, numbers, tree['group'], deadline)
     row['after'] = after
     before = row['before']

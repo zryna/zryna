@@ -167,6 +167,7 @@ def process_tree(pid, group, membership, deadline, candidate=None):
     owner_cgroup.note_site(candidate, 'TREE_FIRST')
     for thread in threads:
         require(owner_cgroup.thread_membership(candidate, read, fields, thread, deadline) == membership, 'same-group UI thread')
+        owner_cgroup.note_first(candidate, thread)
     owner_cgroup.note_site(candidate, 'TREE_INVENTORY')
     observed = owner_proc.inventory(read, deadline)
     for process in procs:
@@ -186,7 +187,7 @@ def process_tree(pid, group, membership, deadline, candidate=None):
     require(all(ticks(process, deadline) == captured[process]['ticks'] for process in procs),
             'all UI process identities stable through tree observation')
     owner_cgroup.note_site(candidate, 'TREE_LAST_MEMBERSHIPS')
-    require(all(read(f'/proc/{thread}/cgroup', deadline) == membership for thread in threads),
+    require(all(owner_cgroup.last_membership(candidate, read, fields, thread, deadline) == membership for thread in threads),
             'all original UI thread memberships stable through global observation')
     owner_cgroup.note_site(candidate, 'TREE_FINAL_GROUP')
     require(numbers(read(group + '/cgroup.procs', deadline)) == procs

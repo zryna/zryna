@@ -68,13 +68,22 @@ Before releasing the capability, each post-proc-audit and post-material-audit
 kernel snapshot uses one acquisition window of at most one second within the
 original owner deadline, including its Engine inspect. It admits at most three
 fresh complete captures. A discarded candidate must prove that exactly one
-selected nonleader task was already absent at its first membership read:
-OPEN/ENOENT, absent stat and status on both sides, unchanged original init and
-leader epochs/membership, the same cgroup losing exactly that task, and a complete
+selected nonleader task ended. The FIRST variant requires exact membership
+OPEN/ENOENT and absent stat/status before and after that failed read. The LAST
+variant first retains an immutable live epoch/Tgid and membership proof only
+after the original FIRST equality check passes. Its final membership read must
+fail with exact OPEN/ENOENT; both `targetBefore` and `targetAfter` are then
+post-failure stat/status absence samples. Its `priorTask` records the earlier
+verified live epoch, rather than claiming absence before the failed LAST read.
+Both variants require unchanged original init and leader epochs/membership,
+the same cgroup losing exactly that task, and a complete
 PPid inventory with no escaped or unreaped owned descendant. The task must remain
 absent after that inventory. Every other capture failure is fatal. Every accepted
 candidate passes the full original capture guards and retains the pre-audit
-CID/PID/start epoch; later candidates cannot adopt a replacement. Typed acquisition
+CID/PID/start epoch and leader anchors; later candidates cannot adopt a replacement.
+The discarded witness forbids added threads. A later fresh candidate observes its
+own complete current thread set and must prove every member through all guards.
+Typed acquisition
 rows preserve the discarded witness and accepted snapshot. The bound never renews
 the owner deadline, never applies after capability release, and does not change
 the separate cleanup deadline.

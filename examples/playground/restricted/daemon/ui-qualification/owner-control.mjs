@@ -99,6 +99,15 @@ function ioFailure(value,row,initialPid){
     value.subject==='OWNED_TID'&&(!row.before?.threads.includes(value.pid)||row.before.processes.includes(value.pid))||
     row.status==='accepted')fail();
 }
+function priorTask(row){
+  const value=row.priorTask;exact(value,['ticks','tgid','stateBefore','stateAfter','membershipVerified']);
+  if(row.failure!=='OPEN_ENOENT_LAST'||row.status==='accepted'||row.task===null||!row.before||
+    row.before.processes.includes(row.task)||!row.before.threads.includes(row.task)||
+    typeof value.ticks!=='string'||!(/^[0-9]{1,20}$/).test(value.ticks)||
+    !integer(value.tgid,1,4294967295)||!row.before.processes.includes(value.tgid)||
+    !['stateBefore','stateAfter'].every(key=>typeof value[key]==='string'&&(/^[RSDTWtKPI]$/).test(value[key]))||
+    value.membershipVerified!==true)fail();
+}
 export function validateAcquisitions(value,initialPid){
   if(!Array.isArray(value)||value.length>2)fail();
   value.forEach((phase,index)=>{
@@ -110,15 +119,16 @@ export function validateAcquisitions(value,initialPid){
     phase.attempts.forEach((row,attempt)=>{
       exact(row,['number','status','failure','task','before','after','targetBefore','targetAfter','initStable',
         'leadersStable','visibleProcesses','unrelatedZombies','noEscapedOwnedDescendants','leaders',
-        ...(Object.hasOwn(row,'ioFailure')?['ioFailure']:[])]);
+        ...(Object.hasOwn(row,'ioFailure')?['ioFailure']:[]),...(Object.hasOwn(row,'priorTask')?['priorTask']:[])]);
       if(row.number!==attempt+1||!['accepted','retired-task','fatal'].includes(row.status)||
-        ![null,'OPEN_ENOENT_FIRST','OTHER'].includes(row.failure)||row.task!==null&&!integer(row.task,1,4294967295)||
+        ![null,'OPEN_ENOENT_FIRST','OPEN_ENOENT_LAST','OTHER'].includes(row.failure)||row.task!==null&&!integer(row.task,1,4294967295)||
         ['initStable','leadersStable','noEscapedOwnedDescendants'].some(key=>row[key]!==null&&typeof row[key]!=='boolean')||
         row.visibleProcesses!==null&&!integer(row.visibleProcesses,0,8192)||
         row.unrelatedZombies!==null&&!integer(row.unrelatedZombies,0,row.visibleProcesses??8192))fail();
       for(const key of ['before','after'])if(row[key]!==null)group(row[key]);
       for(const key of ['targetBefore','targetAfter'])if(row[key]!==null)epoch(row[key]);
       if(Object.hasOwn(row,'ioFailure'))ioFailure(row.ioFailure,row,initialPid);
+      if(Object.hasOwn(row,'priorTask'))priorTask(row);else if(row.failure==='OPEN_ENOENT_LAST')fail();
       if(row.leaders!==null){leaders(row.leaders);if(!row.before||
         JSON.stringify(row.leaders.map(leader=>leader.pid))!==JSON.stringify(row.before.processes))fail();}
       if(row.status!=='fatal'){
@@ -131,7 +141,7 @@ export function validateAcquisitions(value,initialPid){
         if(phase.status!=='accepted'||attempt!==phase.attempts.length-1||row.failure!==null||row.task!==null||
           row.targetBefore!==null||row.targetAfter!==null||JSON.stringify(row.before)!==JSON.stringify(row.after))fail();
       }else if(row.status==='retired-task'){
-        if(row.failure!=='OPEN_ENOENT_FIRST'||row.task===null||row.before.processes.includes(row.task)||
+        if(!['OPEN_ENOENT_FIRST','OPEN_ENOENT_LAST'].includes(row.failure)||row.task===null||row.before.processes.includes(row.task)||
           !row.before.threads.includes(row.task)||row.after.threads.includes(row.task)||
           row.after.threads.some(pid=>!row.before.threads.includes(pid))||row.before.current-row.after.current!==1||
           row.before.threads.filter(pid=>!row.after.threads.includes(pid)).length!==1||

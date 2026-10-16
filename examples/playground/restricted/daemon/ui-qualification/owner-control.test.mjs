@@ -105,3 +105,21 @@ test('optional escaping IO diagnostic has closed fields and captured numeric rol
   const accepted=acquisition();accepted.attempts.at(-1).ioFailure=value.acquisition[0].attempts[0].ioFailure;
   assert.throws(()=>validateOwnerReceipt({...receipt(),acquisition:[accepted]}));
 });
+test('LAST retirement requires its earlier live membership proof and postfailure absence variant',()=>{
+  const phase=acquisition(),row=phase.attempts[0];row.failure='OPEN_ENOENT_LAST';
+  row.priorTask={ticks:'100',tgid:322,stateBefore:'R',stateAfter:'S',membershipVerified:true};
+  const value={...receipt(),acquisition:[phase]};validateOwnerReceipt(value);
+  const mutations=[row=>delete row.priorTask,row=>row.priorTask.membershipVerified=false,
+    row=>row.priorTask.membershipVerified=1,row=>row.priorTask.tgid=true,row=>row.priorTask.tgid=999,
+    row=>row.priorTask.ticks=100,row=>row.priorTask.stateBefore='Z',row=>row.priorTask.stateAfter='X',
+    row=>row.priorTask.path='/proc/323/cgroup',row=>row.failure='OPEN_ENOENT_FIRST',
+    row=>row.task=322,row=>row.targetBefore.statAbsent=false,row=>row.targetAfter.statusAbsent=false];
+  for(const mutate of mutations){const changed=structuredClone(value);mutate(changed.acquisition[0].attempts[0]);
+    assert.throws(()=>validateOwnerReceipt(changed));}
+  const fatal=structuredClone(value);fatal.acquisition[0].status='failed';fatal.acquisition[0].acceptedAttempt=null;
+  fatal.acquisition[0].attempts=fatal.acquisition[0].attempts.slice(0,1);
+  Object.assign(fatal.acquisition[0].attempts[0],{status:'fatal',after:null,targetBefore:null,targetAfter:null});
+  validateOwnerReceipt(fatal);
+  const forged=acquisition();forged.attempts.at(-1).priorTask=row.priorTask;
+  assert.throws(()=>validateOwnerReceipt({...receipt(),acquisition:[forged]}));
+});

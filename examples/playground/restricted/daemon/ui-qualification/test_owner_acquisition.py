@@ -214,7 +214,7 @@ class AcquisitionTests(unittest.TestCase):
         self.assertEqual(self.record['status'], 'failed')
         self.assertIsNone(cgroup._ACTIVE)
 
-    def test_last_membership_missing_never_qualifies_for_acquisition(self):
+    def test_last_membership_missing_with_present_task_never_qualifies_for_acquisition(self):
         def change(path, limit, maximum=16384):
             if path in ('/proc/323/stat', '/proc/323/status'):
                 return self.rows[path]
@@ -227,7 +227,9 @@ class AcquisitionTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             self.run_capture(change)
         self.assertEqual(len(self.record['attempts']), 1)
-        self.assertIsNone(self.record['attempts'][0]['task'])
+        self.assertEqual(self.record['attempts'][0]['task'], 323)
+        self.assertEqual(self.record['attempts'][0]['failure'], 'OPEN_ENOENT_LAST')
+        self.assertFalse(self.record['attempts'][0]['targetBefore']['statAbsent'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -78,7 +78,7 @@ def note_tree(candidate, pid, group, membership, procs, threads, current, captur
     candidate.anchors = leaders
     candidate.row['leaders'] = leaders
     candidate.tree = {'processes': list(procs), 'threads': list(threads), 'current': current,
-                      'group': group, 'leaders': leaders}
+                      'group': group, 'leaders': leaders, 'first': candidate.first}
     candidate.row['before'] = {key: candidate.tree[key] for key in ('processes', 'threads', 'current')}
 
 
@@ -104,7 +104,43 @@ def thread_membership(candidate, read, fields, thread, deadline):
         raise
     after = owner_proc.task_epoch(read, fields, thread, deadline)
     owner_proc.complete_task(before, after, candidate.tree['processes'])
+    candidate.pending = (thread, before['ticks'], before['tgid'], before['state'], after['state'], value)
     return value
+
+
+def note_first(candidate, thread):
+    if candidate is None:
+        return
+    require(type(candidate) is _Candidate and _ACTIVE is candidate and candidate.tree is not None,
+            'original first-membership proof context')
+    if thread in candidate.tree['processes']:
+        return
+    pending = candidate.pending
+    require(thread not in candidate.first and type(pending) is tuple and len(pending) == 6 and
+            pending[0] == thread and pending[5] == candidate.original['membership'], 'actual first membership equality passed')
+    candidate.first[thread], candidate.pending = pending[1:5], None
+
+
+def last_membership(candidate, read, fields, thread, deadline):
+    path = f'/proc/{thread}/cgroup'
+    try:
+        return read(path, deadline)
+    except FileNotFoundError as error:
+        if (type(candidate) is _Candidate and _ACTIVE is candidate and candidate.tree is not None and
+                thread in candidate.first and thread in candidate.tree['threads'] and
+                thread not in candidate.tree['processes'] and error.errno == 2 and error.filename == path and
+                getattr(error, '_ui_kernel_syscall', None) == 'OPEN'):
+            candidate.error = error
+            ticks, tgid, before, after = candidate.first[thread]
+            candidate.row.update(task=thread, failure='OPEN_ENOENT_LAST', priorTask={
+                'ticks': ticks, 'tgid': tgid, 'stateBefore': before, 'stateAfter': after, 'membershipVerified': True})
+            try:
+                # Both LAST samples follow the failed OPEN; FIRST retains its pre/post-OPEN samples.
+                candidate.row['targetBefore'] = owner_proc.task_epoch(read, fields, thread, deadline)
+                candidate.row['targetAfter'] = owner_proc.task_epoch(read, fields, thread, deadline)
+            except BaseException:
+                raise error
+        raise
 
 
 def _init_epoch(read, original, deadline):
@@ -178,6 +214,7 @@ def acquire(capture, read, fields, numbers, original, cid, deadline, phase, reco
             record['attempts'].append(row)
             candidate = _Candidate()
             candidate.original, candidate.anchors, candidate.tree, candidate.error, candidate.row = dict(original), anchors, None, None, row
+            candidate.first, candidate.pending = {}, None
             candidate.site = None
             _ACTIVE = candidate
             try:
