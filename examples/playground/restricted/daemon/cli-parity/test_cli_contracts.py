@@ -72,6 +72,23 @@ class ContractTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 streams(raw)
 
+    def test_container_nullable_oom_readback_preserves_enabled_killer_for_admission_and_cleanup(self):
+        selected = approval(); expected = configuration(selected, '1' * 32)
+        engine = Engine(operation('build-addition'))
+        name = 'zryna410-cli-' + '1' * 32
+        engine.json('POST', '/containers/create?name=' + name, expected)
+        for cleanup in [False, True]:
+            for value in [False, None]:
+                state = copy.deepcopy(engine.state); state['HostConfig']['OomKillDisable'] = value
+                cli_identity.container(state, CID, name, expected, cleanup=cleanup)
+            for value in [True, 0, '', [], {}]:
+                state = copy.deepcopy(engine.state); state['HostConfig']['OomKillDisable'] = value
+                with self.assertRaises(ValueError):
+                    cli_identity.container(state, CID, name, expected, cleanup=cleanup)
+            state = copy.deepcopy(engine.state); del state['HostConfig']['OomKillDisable']
+            with self.assertRaises(ValueError):
+                cli_identity.container(state, CID, name, expected, cleanup=cleanup)
+
     def test_container_readback_rejects_hidden_authority_and_original_image_mutation(self):
         selected = approval(); expected = configuration(selected, '1' * 32)
         engine = Engine(operation('build-addition'))

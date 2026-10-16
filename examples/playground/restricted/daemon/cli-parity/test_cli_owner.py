@@ -30,8 +30,8 @@ class OwnerTests(unittest.TestCase):
         self.assertEqual(result['operationStatus'], 'captured-source-outcome')
         self.assertTrue(result['cleanupConfirmed']); self.assertTrue(self.engine.deleted)
         self.assertEqual(len(result['kernel']), 3); self.assertEqual(result['ownedVolumes'], [])
-        self.assertTrue(result['projectBeforeUpload']['fullInventoryChecked'])
-        self.assertTrue(result['projectAfterUpload']['fullInventoryChecked'])
+        self.assertTrue(result['projectBeforeUpload']['empty'])
+        self.assertEqual(len(result['projectAfterUpload']['files']), 3)
         self.assertEqual(result['exec']['capture']['exitCode'], 0)
         calls = len(self.engine.calls)
         self.assertIs(self.owner.stop(), result); self.assertEqual(len(self.engine.calls), calls)
@@ -47,12 +47,10 @@ class OwnerTests(unittest.TestCase):
         self.assertIn('reap', result)
 
     def test_changed_source_readback_never_executes(self):
-        original = cli_owner.project_capture
-        def capture(engine, cid, selected, populated):
-            if populated:
-                raise ValueError('inert changed staged source')
-            return original(engine, cid, selected, populated)
-        with mock.patch.object(cli_owner, 'project_capture', side_effect=capture):
+        def stage(engine, cid, identifier, record):
+            engine.populated = True
+            raise ValueError('inert changed staged source')
+        with mock.patch.object(cli_owner, 'project_stage', side_effect=stage):
             result = self.owner.run()
         self.assertTrue(self.engine.populated); self.assertFalse(self.engine.exec_started)
         self.assertTrue(result['cleanupConfirmed'])

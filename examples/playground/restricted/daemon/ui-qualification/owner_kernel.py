@@ -80,8 +80,8 @@ def security(status, pid):
             and all(value.isdigit() and int(value) > 0 for value in namespace), 'private PID1 readback')
 
 
-def mounts(text, cid):
-    result = owner_mounts.resolve(text, cid)
+def mounts(text, cid, proc_proof=None):
+    result = owner_mounts.resolve(text, cid, proc_proof)
     for target, size in [('/tmp', 131072), ('/dev/shm', 65536)]:
         entry = result[target]
         require(entry['filesystem'] == 'tmpfs' and {'rw', 'nosuid', 'nodev', 'noexec'} <= set(entry['options'])
@@ -174,7 +174,7 @@ def process_tree(pid, group, membership, deadline):
                                  'unrelatedZombiesObserved': sum(value['state'] == 'Z' for value in observed.values())}}
 
 
-def capture(state, cid, deadline):
+def capture(state, cid, deadline, proc_proof=None):
     bounded_deadline(deadline, 300)
     pid = state['State']['Pid']
     require(state['Id'] == cid and type(pid) is int and pid > 1 and state['State']['Running'] is True
@@ -194,7 +194,7 @@ def capture(state, cid, deadline):
     require(actual['cpuset.cpus.effective'] in ['0-1\n', '0,1\n'], 'actual cgroup fixed CPU set')
     tree = process_tree(pid, group, membership, deadline)
     mountinfo = read(f'/proc/{pid}/mountinfo', deadline, 262144)
-    observed_mounts = mounts(mountinfo, cid)
+    observed_mounts = mounts(mountinfo, cid, proc_proof)
     links = namespace_links(pid, deadline)
     net = network(pid, deadline, links)
     require(ticks(pid, deadline) == first and read(f'/proc/{pid}/cgroup', deadline) == membership,
@@ -212,7 +212,8 @@ def initial(state, cid, deadline):
     first = ticks(pid, deadline)
     membership = read(f'/proc/{pid}/cgroup', deadline)
     require(ticks(pid, deadline) == first, 'stable provisional init identity')
-    return {'pid': pid, 'ticks': first, 'cid': cid, 'membership': membership}
+    return {'pid': pid, 'ticks': first, 'cid': cid, 'membership': membership,
+            'startedAt': state['State']['StartedAt']}
 
 
 def gone(init, deadline):

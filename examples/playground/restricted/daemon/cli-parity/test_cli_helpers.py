@@ -41,12 +41,22 @@ def project_tar(operation, populated):
     return output.getvalue()
 
 
+def stage_receipt(operation):
+    root = {'dev': 123, 'ino': 456, 'uid': 65534, 'gid': 65534, 'mode': 0o700}
+    return {'version': 1, 'operationId': operation['id'], 'sourceStaged': True, 'filesystem': 'tmpfs',
+        'before': {'empty': True, 'root': copy.deepcopy(root)}, 'after': {'root': copy.deepcopy(root),
+        'src': {'mode': 0o700, 'uid': 65534, 'gid': 65534, 'sameDevice': True},
+        'files': sorted([{'path': f['path'], 'bytes': f['bytes'], 'mode': 0o600, 'uid': 65534,
+                         'gid': 65534, 'nlink': 1, 'sha256': f['sha256']}
+                        for f in operation['projectFiles']], key=lambda f: f['path'])}}
+
+
 class Engine:
     def __init__(self, operation):
         self.operation = operation
         self.engine_uid, self.deadline = 65534, time.monotonic() + 9
         self.state, self.calls, self.populated = None, [], False
-        self.deleted = self.exec_started = self.lose_create = self.cleanup_fail = False
+        self.deleted = self.exec_started = self.stage_started = self.lose_create = self.cleanup_fail = False
         self.last_status = 200
 
     def json(self, method, path, value=None):
@@ -93,8 +103,12 @@ class Engine:
                     return len(data)
             return b'', kwargs['emitter'](Output())
         elif path.startswith('/exec/') and path.endswith('/start'):
-            self.exec_started = True
-            raw = b'{"synthetic":"never actual CLI evidence"}'
+            if self.exec_request['Cmd'][0] == '/opt/zryna-release/runtime/node/bin/node':
+                self.stage_started = self.populated = True
+                raw = json.dumps(stage_receipt(self.operation)).encode()
+            else:
+                self.exec_started = True
+                raw = b'{"synthetic":"never actual CLI evidence"}'
             return struct.pack('>BBBBI', 1, 0, 0, 0, len(raw)) + raw, None
         elif '/kill?' in path:
             self.state['State'].update(Status='exited', Pid=0, Running=False, ExitCode=137)

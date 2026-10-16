@@ -1,6 +1,7 @@
 /* Private trusted UI test role; production supervisor.c and its four modes stay separate. */
 #include "supervisor_sys.h"
 #include "ui-supervisor-limits.h"
+#include "ui-supervisor-proc.h"
 
 static char *const ui_environment[]={"PATH=/materials/runtime/node/bin","LC_ALL=C.UTF-8",
   "LANG=C.UTF-8","TMPDIR=/tmp","HOME=/nonexistent","TZ=UTC","SOURCE_DATE_EPOCH=0",0};
@@ -25,8 +26,14 @@ static void ui_wait(long child) {
 }
 void ui_start(unsigned long *stack) {
   close_inherited();verify_process_policy();
-  require(stack[0]==1 && same(((char **)(stack+1))[0],"/ui-supervisor"),"PLAYGROUND-UI-MODE\n");
+  char **arguments=(char **)(stack+1);
+  require(stack[0]>=1 && same(arguments[0],"/ui-supervisor") && (stack[0]==1 ||
+    (stack[0]==2 && same(arguments[1],"proc-audit"))),"PLAYGROUND-UI-MODE\n");
   kernel_watchdog();
+  if(stack[0]==2) {
+    require(sc(39,0,0,0)>1 && sc(37,2,0,0)>0,"PLAYGROUND-UI-PROC-WATCHDOG\n");
+    ui_proc_audit();
+  }
   /* This separate, pretrusted test role has the explicitly reviewed 300s lifetime. */
   long previous=sc(37,300,0,0);
   require(previous>0 && previous<=12,"PLAYGROUND-UI-WATCHDOG\n");

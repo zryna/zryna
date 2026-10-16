@@ -6,9 +6,9 @@ from urllib.parse import urlencode
 from cli_common import require, sha256
 from cli_engine import Engine, decode
 from cli_config import approval, configuration
-from cli_plan import operation, project_archive
+from cli_plan import operation
 from cli_exec import run as execute
-from cli_archive import capture as project_capture
+from cli_stage import run as project_stage
 import cli_identity as identity
 import cli_kernel as kernel
 
@@ -91,17 +91,12 @@ class Owner:
             self.retain_init(self.inspect(), self.engine)
             self.observe()
             phase = 'fixed-source-upload'
-            self.record['projectBeforeUpload'] = project_capture(self.engine, self.cid, self.operation, False)
-            archive = project_archive(self.operation)
-            def emit(output):
-                output.write(archive)
-                return {'bytes': len(archive), 'sha256': sha256(archive), 'operationId': self.operation['id']}
-            self.record['sourceUpload'] = self.engine.request('PUT', '/containers/' + self.cid +
-                '/archive?path=%2Fwork%2Fproject&noOverwriteDirNonDir=1&copyUIDGID=1', emitter=emit,
-                stream_maximum=32768, statuses=(200,))[1]
-            self.record['projectAfterUpload'] = project_capture(self.engine, self.cid, self.operation, True)
+            self.record['sourceUpload'] = {}
+            staged = project_stage(self.engine, self.cid, self.operation['id'], self.record['sourceUpload'])
+            self.record['projectBeforeUpload'] = staged['before']
+            self.record['projectAfterUpload'] = staged['after']
             phase = 'before-exec-kernel'
-            self.observe()
+            self.observe(retry=True)
             phase = 'fixed-cli-exec'
             execute(self.engine, self.cid, self.operation['id'], self.record['exec'])
             phase = 'after-exec-kernel'

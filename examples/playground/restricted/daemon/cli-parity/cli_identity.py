@@ -55,6 +55,10 @@ def container(state, cid, name, expected, cleanup=False):
         else:
             require(key in config_defaults and value == config_defaults[key], 'CLI inherited process selector')
     for key, value in expected['HostConfig'].items():
+        if key == 'OomKillDisable':
+            require(value is False and key in host and (host[key] is False or host[key] is None),
+                    'CLI OOM killer remains enabled; nullable Docker readback')
+            continue
         require(host.get(key) == value or key == 'Mounts' and value == [] and host.get(key) is None,
                 'CLI fixed host control: ' + key)
     nullable_lists = ['CapAdd', 'Devices', 'DeviceRequests', 'DeviceCgroupRules', 'Binds', 'VolumesFrom',

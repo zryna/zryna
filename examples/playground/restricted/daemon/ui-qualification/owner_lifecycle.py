@@ -10,7 +10,7 @@ from owner_config import approval, configuration
 import owner_identity as identity
 import owner_kernel as kernel
 from owner_attach import attach
-from owner_audit import run as audit
+from owner_audit import run as audit, run_proc, proc_description
 
 
 class Owner:
@@ -75,11 +75,16 @@ class Owner:
         state = self.inspect()
         self.init = kernel.initial(state, self.cid, self.engine.deadline)
         self.record['initialIdentity'] = self.init
-        self.init = kernel.capture(state, self.cid, self.engine.deadline)
+        proc_proof = run_proc(self.engine, self.cid)
+        self.record['procAudit'] = proc_description(proc_proof, self.cid)
+        audited = kernel.capture(self.inspect(), self.cid, self.engine.deadline, proc_proof)
+        require(all(audited[key] == self.init[key] for key in ['pid', 'ticks', 'cid', 'membership', 'startedAt']),
+                'UI original init unchanged across native proc audit')
+        self.init = audited
         self.record['kernel'].append(self.init)
         self.record['audit'] = audit(self.engine, self.cid, self.selected['material'])
         self.record['volumeAfterAudit'] = self.volume()
-        self.record['kernel'].append(kernel.capture(self.inspect(), self.cid, self.engine.deadline))
+        self.record['kernel'].append(kernel.capture(self.inspect(), self.cid, self.engine.deadline, proc_proof))
         require(self.record['kernel'][0]['pid'] == self.record['kernel'][1]['pid'] and
                 self.record['kernel'][0]['ticks'] == self.record['kernel'][1]['ticks'], 'UI stable audited init')
         self.ready = True

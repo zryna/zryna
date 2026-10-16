@@ -62,7 +62,11 @@ def container(state, cid, name, expected, cleanup=False):
         else:
             require(key in config_defaults and value == config_defaults[key], 'UI inherited process selector')
     for key, value in expected['HostConfig'].items():
-        require(host.get(key) == value, 'UI fixed host control: ' + key)
+        if key == 'OomKillDisable':
+            require(value is False and key in host and (host[key] is False or host[key] is None),
+                    'UI OOM killer stays enabled; Docker false may inspect as null')
+        else:
+            require(host.get(key) == value, 'UI fixed host control: ' + key)
     nullable_lists = ['CapAdd', 'Devices', 'DeviceRequests', 'DeviceCgroupRules', 'Binds', 'VolumesFrom',
                       'ExtraHosts', 'GroupAdd', 'Links', 'Dns', 'DnsOptions', 'DnsSearch', 'BlkioWeightDevice',
                       'BlkioDeviceReadBps', 'BlkioDeviceWriteBps', 'BlkioDeviceReadIOps', 'BlkioDeviceWriteIOps']

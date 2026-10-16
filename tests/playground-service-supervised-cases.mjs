@@ -148,3 +148,26 @@ test('supervised teardown failure closes future compilation admission permanentl
   // Let fixture cleanup finish without suppressing the already established poisoned state.
   f.host.finish = async () => false;
 });
+
+test('supervised HTTP preserves UTF8 rejection before host dispatch', async t => {
+  const f = await supervised(t);
+  await expectError(await f.send('/compile', null, { raw: Buffer.from([0xff]) }), 'PLAYGROUND-UTF8');
+  assert.equal(f.calls.compile.length, 0);
+  assert.equal(f.evaluations.length, 0);
+  assert.equal(f.calls.finish.at(-1).cancelled, true);
+});
+
+test('supervised HTTP preserves bounded policy codes and sanitizes unknown host failures', async t => {
+  const f = await supervised(t);
+  for (const [message, expected] of [
+    ['PLAYGROUND-CODE8', 'PLAYGROUND-CODE8'],
+    [`PLAYGROUND-${'A'.repeat(100)}`, `PLAYGROUND-${'A'.repeat(100)}`],
+    [`PLAYGROUND-${'A'.repeat(101)}`, 'PLAYGROUND-HOST'],
+    ['private fixture failure /unavailable/path', 'PLAYGROUND-HOST'],
+    ['PLAYGROUND-', 'PLAYGROUND-HOST'],
+    ['PLAYGROUND-BAD_CODE', 'PLAYGROUND-HOST'],
+  ]) {
+    f.host.compile = async () => { throw new Error(message); };
+    await expectError(await f.send('/compile', sourceRequest), expected);
+  }
+});

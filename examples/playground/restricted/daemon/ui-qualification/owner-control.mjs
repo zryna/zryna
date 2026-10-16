@@ -4,7 +4,7 @@ export function validateOwnerReceipt(value) {
   const required=['format','version','qualificationOnly','name','nonce','containerId','audit','kernel','inspect',
     'wait','removed','dockerRemoved','kernelReapProven','failure','cleanupFailure','ownershipUnconfirmed'];
   const optional=['imageBefore','volumeBefore','volumeAfterAudit','volumeAfterCleanup','imageAfter','channelTerminal','reap',
-    'initialIdentity','kernelIdentityFailure'];
+    'initialIdentity','kernelIdentityFailure','procAudit'];
   if(!value || typeof value!=='object' || Array.isArray(value) ||
     !required.every(key=>Object.hasOwn(value,key)) || Object.keys(value).some(key=>!required.includes(key)&&!optional.includes(key)))fail();
   if(value.format!=='zryna.playground-ui-owner-observation.v1' || value.version!==1 || value.qualificationOnly!==true ||

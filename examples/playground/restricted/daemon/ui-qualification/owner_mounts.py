@@ -97,7 +97,9 @@ def topology(text, cid):
     return result
 
 
-def resolve(text, cid):
+def resolve(text, cid, proc_proof=None):
+    from owner_audit import proc_description
+    proc_receipt = proc_description(proc_proof, cid)['receipt'] if proc_proof is not None else None
     result = topology(text, cid)
     require('/proc' in result, 'actual fixed UI proc mount exists')
     proc = result['/proc']
@@ -105,6 +107,13 @@ def resolve(text, cid):
             {'rw', 'nosuid', 'nodev', 'noexec'} <= set(proc['options']) and 'ro' not in proc['options'],
             'sole UI proc permits own sandbox namespace maps with fixed safety flags')
     for target in PROC_READONLY:
+        require(not any(path.startswith(target + '/') for path in result), 'no protected proc subtree overmount')
+        if target == '/proc/sysrq-trigger' and target not in result:
+            require(proc_receipt is not None and proc_receipt['sysrqTrigger'] == 'absent-enoent',
+                    'missing sysrq interface requires actual same-container native ENOENT proof')
+            continue
+        if target == '/proc/sysrq-trigger' and proc_receipt is not None:
+            require(proc_receipt['sysrqTrigger'] == 'present-readonly', 'actual proc proof matches present interface')
         require(target in result, 'all five fixed proc protections exist')
         cell = result[target]
         require('stack' not in cell and cell['parentId'] == proc['id'] and
@@ -112,5 +121,4 @@ def resolve(text, cid):
                 cell['filesystem'] == cell['source'] == 'proc' and cell['superOptions'] == proc['superOptions'] and
                 {'ro', 'nosuid', 'nodev', 'noexec'} <= set(cell['options']) and 'rw' not in cell['options'],
                 'exact read-only bind of selected proc protection')
-        require(not any(path.startswith(target + '/') for path in result), 'no protected proc subtree overmount')
     return result

@@ -176,7 +176,7 @@ export function createService({ host, authority, witSha256, templateBytes, resou
     } catch (error) {
       if (job) { try { await finish(job, true); } catch { poisoned = true; } }
       if (!response.destroyed) {
-        const message = /^PLAYGROUND-[A-Z-]+$/.test(error?.message) ? error.message : 'PLAYGROUND-HOST';
+        const message = /^PLAYGROUND-[A-Z0-9-]{1,100}$/.test(error?.message) ? error.message : 'PLAYGROUND-HOST';
         send(response, message === 'PLAYGROUND-BUSY' ? 409 : 400, JSON.stringify({ policyError: message }));
       }
     }

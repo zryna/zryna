@@ -1,0 +1,13 @@
+{
+  "scope": "Actual failed initial UI mount topology; sysrq-trigger absent. Passing parser replay requires synthetic typed Engine proc proof and is not an actual native audit claim.",
+  "sourceReceipt": {
+    "path": "/workspace/scratch/M6_410_REAL_UI_INITIAL_QUALIFICATION_20261016/RUN1/ACTUAL_RUNNING_MOUNTINFO.txt",
+    "sha256": "d352b3d58160700967c3e31e95be5ba1fc83b473082ca07a65650575ef3fc7f2"
+  },
+  "containerId": "6caee8121820e9eff2ee91bcc710eef0037cdea41379655ee38459b38884fe4e",
+  "fixture": {
+    "path": "actual-ui-proc4-mountinfo.txt",
+    "bytes": 3793,
+    "sha256": "d352b3d58160700967c3e31e95be5ba1fc83b473082ca07a65650575ef3fc7f2"
+  }
+}

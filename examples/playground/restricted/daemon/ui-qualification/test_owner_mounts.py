@@ -5,6 +5,8 @@ from pathlib import Path
 import unittest
 import owner_mounts
 import owner_kernel
+import owner_audit
+from test_owner_proc_audit import Engine as AuditEngine
 
 FIXTURE = Path(__file__).parent / 'fixtures' / 'actual-compiler-mountinfo.txt'
 PROVENANCE = json.loads(FIXTURE.with_name('actual-compiler-mountinfo.provenance.json').read_text())
@@ -82,6 +84,32 @@ class MountTests(unittest.TestCase):
         for text in changed:
             with self.subTest(text=text[-100:]), self.assertRaises(ValueError):
                 owner_mounts.resolve(text, CID)
+
+    def test_absent_fifth_requires_original_target_bound_fixed_exec_proof_and_presence_agreement(self):
+        missing = '\n'.join(line for line in self.ui.splitlines() if not line.startswith('254 ')) + '\n'
+        absent = owner_audit.run_proc(AuditEngine('absent-enoent', CID), CID)
+        present = owner_audit.run_proc(AuditEngine('present-readonly', CID), CID)
+        self.assertNotIn('/proc/sysrq-trigger', owner_mounts.resolve(missing, CID, absent))
+        self.assertIn('/proc/sysrq-trigger', owner_mounts.resolve(self.ui, CID, present))
+        for text, proof in [(missing, None), (missing, present), (self.ui, absent),
+                            (missing, owner_audit.proc_description(absent, CID))]:
+            with self.assertRaises(ValueError):
+                owner_mounts.resolve(text, CID, proof)
+        with self.assertRaises(ValueError):
+            owner_mounts.resolve(missing, 'f' * 64, absent)
+        contradictory = missing + '999 229 0:99 / /proc/sysrq-trigger/hidden ro - tmpfs tmpfs ro\n'
+        with self.assertRaises(ValueError):
+            owner_mounts.resolve(contradictory, CID, absent)
+
+    def test_actual_failed_ui_four_mounts_replay_needs_synthetic_typed_proof_not_generic_skip(self):
+        path = FIXTURE.with_name('actual-ui-proc4-mountinfo.txt')
+        provenance = json.loads(path.with_name('actual-ui-proc4-mountinfo.provenance.json').read_text())
+        data = path.read_bytes();cid = provenance['containerId']
+        self.assertEqual(hashlib.sha256(data).hexdigest(), provenance['fixture']['sha256'])
+        with self.assertRaises(ValueError):
+            owner_kernel.mounts(data.decode(), cid)
+        proof = owner_audit.run_proc(AuditEngine('absent-enoent', cid), cid)
+        self.assertNotIn('/proc/sysrq-trigger', owner_kernel.mounts(data.decode(), cid, proof))
 
     def test_disconnected_cyclic_extra_layers_duplicate_id_and_hidden_children_fail(self):
         changed = [change(self.actual, 214, lambda line: line.replace('214 229 ', '214 227 ')),

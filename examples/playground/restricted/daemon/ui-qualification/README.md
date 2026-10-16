@@ -83,7 +83,9 @@ endpoint is `/var/run/docker.sock`, API1.49, with actual peer UID65534 checked.
 Creation uses the closed nonroot/read-only/net-none/cap-zero policy. A pre-start
 duplex attach is opened before start. Complete fixed `/supervisor audit`, volume
 provenance/alias checks and actual host kernel observations precede `ready` and
-the first private start/capability bytes. Kernel observation failure is fatal;
+the first private start/capability bytes. A fixed readonly `/ui-supervisor
+proc-audit` exec also verifies the same container's proc protections before the
+first full host kernel capture. Kernel observation failure is fatal;
 unavailable process-tree or reap metadata is never treated as a pass. Descendant
 containment uses the complete visible `/proc/*/stat` PPid inventory including
 zombies, bounded to8192numeric entries,16KiB per stat and the original deadline.
@@ -121,6 +123,19 @@ fail. This fixed profile permits Chromium's own user-namespace uid/gid mappings;
 whole-proc read-only prevents those required writes. UID65534, capabilities,
 NNP, seccomp, private namespaces and all numeric budgets remain fixed. The caller
 cannot select another proc policy. Compiler/CLI whole-proc protection is separate.
+When the kernel has no `/proc/sysrq-trigger` interface, the missing fifth mount
+requires an original target-bound proof from the fixed native proc audit exec.
+The native mode uses no-follow O_PATH descriptors and procfs/statfs checks;
+it accepts only actual ENOENT or a present ordinary proc file on a read-only
+mount. It checks all four always-required proc directories as read-only procfs.
+EACCES, ENOTDIR, symlinks, other errors and contradictory host mount readbacks
+fail. The fixed five requested ReadonlyPaths remain unchanged. The proof binds
+the actual container and exec identity/zero exit through an internal object;
+plain JSON, copies and foreign-container proofs cannot authorize absence. Original
+PID/start identity brackets the audit. Its two-second watchdog is an inner fuse
+within the existing UI lifetime, with no new permission or renewed allowance.
+Docker's observed `OomKillDisable:null` is accepted only as the representation of
+the explicitly requested false setting; true, numeric zero and absent fields fail.
 
 `tools` is independently selected operator input, not an authentication result.
 It has `python`, the exact thirteen `helperNames` file descriptors, and

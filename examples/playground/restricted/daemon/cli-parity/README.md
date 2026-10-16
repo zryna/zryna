@@ -45,8 +45,12 @@ volumes, host mounts or credential variables.
 
 The owner records actual image/configuration, namespace, network, cgroup limits,
 mount and original PID1 identities before source upload and after CLI execution.
-Complete project tar readbacks establish the initial empty directory and the
-three exact staged files before EngineExec starts the CLI. Captured stdout and
+One hash-pinned trusted Node bootstrap runs inside the admitted namespace. It
+proves the actual project tmpfs is empty with UID/GID 65534 and mode 0700,
+creates only the three opaque source files using exclusive opens, and reads back
+their complete inventory, hashes, ownership and modes before CLI execution.
+Docker archive APIs observe the image backing directory rather than this live
+tmpfs, so their directory metadata cannot establish writable staging. Captured stdout and
 stderr are separately bounded to 64 KiB, and actual CLI exit status is retained.
 The complete visible-proc scan includes zombies and rejects denied reads. The
 managed cloud cgroup mapping admits only the observed mount-root/observer-PID

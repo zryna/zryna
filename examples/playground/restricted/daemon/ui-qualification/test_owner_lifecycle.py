@@ -84,9 +84,13 @@ class LifecycleTests(unittest.TestCase):
         stream.close.side_effect = lambda: setattr(self, 'closed', True)
         self.stack = []
         for patch in [mock.patch.object(lifecycle, 'attach', return_value=stream),
+            mock.patch.object(lifecycle, 'run_proc', return_value=object()),
+            mock.patch.object(lifecycle, 'proc_description', return_value={'execId': 'c' * 64,
+                'receipt': {'format': 'zryna.playground-ui-proc-audit.v1', 'version': 1, 'sysrqTrigger': 'absent-enoent'}}),
             mock.patch.object(lifecycle.kernel, 'initial', return_value={'pid': 321, 'ticks': '100',
-                              'cid': CID, 'membership': '0::/../docker/' + CID + '\n'}),
-            mock.patch.object(lifecycle.kernel, 'capture', return_value={'pid': 321, 'ticks': '100'}),
+                              'cid': CID, 'membership': '0::/../docker/' + CID + '\n', 'startedAt': 'fixture-start'}),
+            mock.patch.object(lifecycle.kernel, 'capture', return_value={'pid': 321, 'ticks': '100',
+                              'cid': CID, 'membership': '0::/../docker/' + CID + '\n', 'startedAt': 'fixture-start'}),
             mock.patch.object(lifecycle.kernel, 'gone', return_value={'originalInitAbsent': True, 'cgroup': 'removed'}),
             mock.patch.object(lifecycle, 'audit', return_value={'receipt': {'version': 1, 'rootSha256': 'f' * 64,
                                                                    'files': 419, 'bytes': 548525078}}),
@@ -122,6 +126,18 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(self.owner.ready);self.assertTrue(record['removed'])
         self.assertTrue(record['dockerRemoved']);self.assertTrue(record['kernelReapProven'])
         self.assertEqual(record['initialIdentity']['ticks'], '100')
+
+    def test_native_proc_audit_is_bracketed_by_original_init_identity(self):
+        for changed in [{'ticks': 'changed'}, {'pid': 322}, {'startedAt': 'later-start'}]:
+            with self.subTest(changed=changed):
+                initial = {'pid': 321, 'ticks': '100', 'cid': CID,
+                           'membership': '0::/../docker/' + CID + '\n', 'startedAt': 'fixture-start'}
+                owner = lifecycle.Owner(approval(), Engine())
+                with mock.patch.object(lifecycle.kernel, 'capture', return_value={**initial, **changed}):
+                    with self.assertRaises(ValueError):
+                        owner.start()
+                self.assertEqual(owner.init, initial)
+                self.assertFalse(owner.ready)
 
     def test_unknown_kernel_identity_cannot_be_hidden_by_successful_docker_removal(self):
         with mock.patch.object(lifecycle.kernel, 'initial', side_effect=PermissionError('fixture unknown identity')):
@@ -192,6 +208,24 @@ class LifecycleTests(unittest.TestCase):
                 state = copy.deepcopy(self.engine.state);state['HostConfig'].update(extra)
                 with self.assertRaises(ValueError):
                     identity.container(state, CID, 'zryna410-ui-' + 'e' * 32, expected)
+
+    def test_only_false_and_docker_null_oom_readback_preserve_enabled_killer(self):
+        expected = lifecycle.configuration(approval(), 'e' * 32)
+        self.engine.json('POST', '/containers/create?name=zryna410-ui-' + 'e' * 32, expected)
+        for value in [False, None]:
+            state = copy.deepcopy(self.engine.state);state['HostConfig']['OomKillDisable'] = value
+            identity.container(state, CID, 'zryna410-ui-' + 'e' * 32, expected)
+        for value in [True, 0, 1, 'false', {}, []]:
+            state = copy.deepcopy(self.engine.state);state['HostConfig']['OomKillDisable'] = value
+            with self.assertRaises(ValueError):
+                identity.container(state, CID, 'zryna410-ui-' + 'e' * 32, expected)
+        state = copy.deepcopy(self.engine.state);del state['HostConfig']['OomKillDisable']
+        with self.assertRaises(ValueError):
+            identity.container(state, CID, 'zryna410-ui-' + 'e' * 32, expected)
+
+    def test_docker_null_oom_readback_does_not_strand_created_running_owner(self):
+        self.owner.start();self.engine.state['HostConfig']['OomKillDisable'] = None
+        self.assertTrue(self.owner.stop()['removed'])
 
     def test_approval_cannot_select_socket_user_network_or_command(self):
         for changed in [{'socket': '/tmp/engine.sock'}, {'version': True}, {'material': {}}]:
