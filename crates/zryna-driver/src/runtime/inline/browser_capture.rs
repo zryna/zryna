@@ -14,10 +14,7 @@ pub(super) fn record_failure(output: &BoundedOutput) {
         return;
     };
     // The original R3006 is returned even if this diagnostic write fails.
-    let _ = writeln!(
-        std::io::stderr().lock(),
-        "browserFixtureRuntimeCapture={record}"
-    );
+    let _ = writeln!(std::io::stderr().lock(), "browserFixtureRuntimeCapture={record}");
 }
 
 fn failure_record(output: &BoundedOutput) -> Option<serde_json::Value> {
@@ -27,10 +24,8 @@ fn failure_record(output: &BoundedOutput) -> Option<serde_json::Value> {
         return None;
     }
     #[cfg(windows)]
-    let windows_raw_status = output
-        .status
-        .code()
-        .map(|code| u32::from_ne_bytes(code.to_ne_bytes()));
+    let windows_raw_status =
+        output.status.code().map(|code| u32::from_ne_bytes(code.to_ne_bytes()));
     #[cfg(not(windows))]
     let windows_raw_status: Option<u32> = None;
 
@@ -80,11 +75,7 @@ mod tests {
     }
 
     fn output(code: u32, stdout: Vec<u8>, stderr: Vec<u8>) -> BoundedOutput {
-        BoundedOutput {
-            status: status(code),
-            stdout,
-            stderr,
-        }
+        BoundedOutput { status: status(code), stdout, stderr }
     }
 
     #[test]
@@ -120,22 +111,12 @@ mod tests {
 
     #[test]
     fn exact_capture_ceilings_remain_bounded_and_complete() {
-        let record = failure_record(&output(
-            7,
-            vec![b'o'; STDOUT_LIMIT],
-            vec![b'e'; STDERR_LIMIT],
-        ))
-        .expect("inclusive capture limits");
+        let record = failure_record(&output(7, vec![b'o'; STDOUT_LIMIT], vec![b'e'; STDERR_LIMIT]))
+            .expect("inclusive capture limits");
         assert_eq!(record["capture"]["stdoutBytes"], STDOUT_LIMIT);
         assert_eq!(record["capture"]["stderrBytes"], STDERR_LIMIT);
-        assert_eq!(
-            record["capture"]["stdoutHex"].as_str().expect("hex").len(),
-            STDOUT_LIMIT * 2
-        );
-        assert_eq!(
-            record["capture"]["stderrHex"].as_str().expect("hex").len(),
-            STDERR_LIMIT * 2
-        );
+        assert_eq!(record["capture"]["stdoutHex"].as_str().expect("hex").len(), STDOUT_LIMIT * 2);
+        assert_eq!(record["capture"]["stderrHex"].as_str().expect("hex").len(), STDERR_LIMIT * 2);
         assert!(serde_json::to_vec(&record).expect("record").len() < 166 * 1024);
     }
 
