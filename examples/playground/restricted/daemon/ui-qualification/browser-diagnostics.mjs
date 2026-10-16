@@ -1,6 +1,6 @@
 // Fixed observation of the existing browser only; no process launcher or policy selector.
 import { ChildProcess } from 'node:child_process';
-import { emptyBrowserProcess, browserProcessExit, browserProcessLog, scanBrowserFatal, fatalCandidate, inspectBrowserFatal, bounds } from './wire.mjs';
+import { sha256, tagTransport, emptyBrowserProcess, browserProcessExit, browserProcessLog, scanBrowserFatal, fatalCandidate, inspectBrowserFatal, bounds } from './wire.mjs';
 import { routeFor } from './routes.mjs';
 
 // Read-only diagnostic of the exact child from the pinned in-process Playwright mapping.
@@ -80,4 +80,40 @@ export function observeBrowserRequests(context, selectedOrigin) {
     },
     stop() { stopped = true;context.off('request', started);context.off('response', responded);context.off('requestfinished', finished); },
   });
+}
+
+// Same original fatal page/resource guards, shared to keep the transport module bounded.
+export function guardBrowserPages(context, broken) {
+  const pages = new Set();
+  const events = Object.fromEntries(['worker', 'websocket', 'download', 'popup'].map(name => [name, () => broken(null, 'INTERCEPT_PAGE_' + name.toUpperCase())]));
+  const serviceWorker = () => broken(null, 'INTERCEPT_SERVICE_WORKER');
+  const started = page => {
+    if (pages.size) { broken(null, 'INTERCEPT_SECOND_PAGE');return; }pages.add(page);
+    for (const [name, handler] of Object.entries(events)) page.on(name, handler);
+  };
+  context.on('serviceworker', serviceWorker);context.on('page', started);
+  return () => { context.off('serviceworker', serviceWorker);context.off('page', started);
+    for (const page of pages) for (const [name, handler] of Object.entries(events)) page.off(name, handler); };
+}
+
+// A provisional event remains bound to the same actual Request and its observed status.
+export function classifyRequestFailure(request, observations, completion) {
+  const branch = requestFailureBranch(request);
+  const error = observations.failed(request, tagTransport(new Error('PLAYGROUND-UI-TRANSPORT'), branch));
+  if (completion && branch === 'INTERCEPT_REQUEST_FAILED_ERR_ABORTED' && completion.browserTerminal(request, 'ERR_ABORTED')) return null;
+  return error;
+}
+
+// Legacy transport-only fixtures also retain identity without retaining the body.
+export function requestBodyIdentity(request) {
+  const body = request.postDataBuffer() ?? Buffer.alloc(0);
+  return { bytes: body.length, sha256: sha256(body) };
+}
+
+// Fatal closed completion observations use the same actual response/Request identity.
+export function observeCompletionResponses(context, current, stopped, broken) {
+  const responded = response => { if (!stopped()) { try { current()?.browserResponse(response); } catch (error) { broken(error); } } };
+  const finished = request => { if (!stopped()) { try { current()?.browserTerminal(request, 'FINISHED'); } catch (error) { broken(error); } } };
+  context.on('response', responded);context.on('requestfinished', finished);
+  return () => { context.off('response', responded);context.off('requestfinished', finished); };
 }

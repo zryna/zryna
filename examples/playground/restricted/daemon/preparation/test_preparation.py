@@ -151,6 +151,22 @@ class UiPlanClosure(unittest.TestCase):
                     ui_plan.candidate([dict(item, **replacement) if item['path'] == name else item
                                       for item in files if item['path'] != name or replacement is not None])
 
+    def test_completion_helpers_have_only_fixed_readonly_image_paths(self):
+        files = [{'path': name, 'sourcePath': '/tmp/fixed-inert-source', 'bytes': 1, 'sha256': 'a' * 64,
+                  'mode': 365 if name in ('supervisor', 'ui-supervisor', 'app/compiler', 'lib64/ld-linux-x86-64.so.2') else 292}
+                 for name in ui_plan.REQUIRED]
+        for name in ['app/completion-ledger.mjs', 'app/completion-record.mjs',
+                     'app/browser-loopback.mjs', 'app/browser-presentation-negative.mjs']:
+            self.assertIn(name, [item['path'] for item in ui_plan.candidate(files)['files']])
+            with self.assertRaises(ValueError):
+                ui_plan.candidate([item for item in files if item['path'] != name])
+            for replacement in [{'path': name + '.other'}, {'mode': 365}]:
+                with self.assertRaises(ValueError):
+                    ui_plan.candidate([dict(item, **replacement) if item['path'] == name else item for item in files])
+        extra = dict(files[0], path='app/completion-host.mjs', mode=292)
+        with self.assertRaises(ValueError):
+            ui_plan.candidate([*files, extra])
+
     def test_fixed_diagnostics_module_is_required_without_opening_other_script_paths(self):
         files = [{'path': name, 'sourcePath': '/tmp/fixed-inert-source', 'bytes': 1, 'sha256': 'a' * 64,
                   'mode': 365 if name in ('supervisor', 'ui-supervisor', 'app/compiler', 'lib64/ld-linux-x86-64.so.2') else 292}

@@ -4,6 +4,8 @@ import { bounds, envelope, exact, fail, hash, integer, start, innerFailure, tran
 import { routes } from './routes.mjs';
 import { createCorpusTrace } from './corpus-trace.mjs';
 import { inspectCorpus } from './corpus-observation.mjs';
+import { inspectCompletionLedger } from './completion-host.mjs';
+import { completionProof } from './completion-record.mjs';
 
 // Failure evidence is a projection of owned observations, never raw protocol or headers.
 export function validateFailureEvidence(value) {
@@ -51,10 +53,10 @@ function pinnedResources(selected) {
 }
 function inspectResult(value, configuration, audit, resources, compilerEvidence) {
   envelope(value, 'result', ['runId', 'phase', 'transport', 'abort', 'initial', 'state', 'scripts',
-    'axBefore', 'axAfter', 'axUpdates', 'corpus', 'audibleAssistiveTechnology', 'browserClosed']);
+    'axBefore', 'axAfter', 'axUpdates', 'corpus', 'audibleAssistiveTechnology', 'browserClosed', 'completionLedger', 'completionProof']);
   if (value.runId !== configuration.runId || value.phase !== 'initial-abort-corpus-ax' ||
       value.transport !== 'operator-stdio-browser-loopback-http-v1' ||
-      value.audibleAssistiveTechnology !== 'unrun' || value.browserClosed !== true ||
+      value.audibleAssistiveTechnology !== 'unrun' || value.browserClosed !== true || value.completionProof !== completionProof ||
       Buffer.byteLength(JSON.stringify(value)) > 1048576) fail('SESSION_004');
   exact(value.abort, ['id', 'route', 'paused', 'event', 'acknowledged', 'httpResponseClosed', 'requestBytes', 'requestSha256']);
   integer(value.abort.id, bounds.requests);
@@ -107,7 +109,9 @@ function inspectResult(value, configuration, audit, resources, compilerEvidence)
   }
   if (!audit.some(entry => entry.route === 'session' && entry.status === 200) ||
       !audit.some(entry => entry.route === 'cancel' && entry.status === 200)) fail('SESSION_017');
-  return structuredClone(value);
+  const completionEvidence = inspectCompletionLedger(value.completionLedger, { audit, trace: compilerEvidence,
+    corpus: value.corpus, abort: value.abort, initial: value.initial, state: value.state });
+  return { observation: structuredClone(value), completionEvidence };
 }
 export function createHostSession({ configuration, send, resourcePins }) {
   const selected = start(configuration);
@@ -166,10 +170,10 @@ export function createHostSession({ configuration, send, resourcePins }) {
           error = new Error(`PLAYGROUND-UI-INNER-${observed.phase.replaceAll('_', '-')}-${observed.cause.replaceAll('_', '-')}${observed.cleanupFailed ? '-CLEANUP' : ''}`);
           rejectResult(error);
         } else if (record?.type === 'result') {
-          if (!corpusBegun || broker.activeIds().length) fail('SESSION_021');
+          if (!corpusBegun || broker.activeIds().length || broker.pendingInspections() || operations.size || transmissions.size) fail('SESSION_021');
           const compilerEvidence = trace.complete();
           const inspected = inspectResult(record, selected, broker.audit(), resources, compilerEvidence);
-          terminal = true; resolveResult(Object.freeze({ observation: inspected,
+          terminal = true; resolveResult(Object.freeze({ ...inspected,
             transportAudit: broker.audit(), compilerEvidence, fullQualification: false, containerCleanupConfirmed: false }));
         } else fail('SESSION_022');
       } catch (failure) { broken(failure);throw error; }

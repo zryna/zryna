@@ -50,7 +50,7 @@ export async function runUiDriver(input, output, loadChromium, planSha256) {
       try { await run; } catch (stopped) { completed = browserFailure(stopped); }
       const cleanup = completedObservation ?? completed;
       if (cleanup) {
-        failureObservation = { ...firstFailure.observation, cleanupFailed: cleanup.cleanupFailed, cleanup: cleanup.cleanup, lifecycle: cleanup.lifecycle, process: cleanup.process };
+        failureObservation = { ...firstFailure.observation, cleanupFailed: cleanup.cleanupFailed, cleanup: cleanup.cleanup, lifecycle: cleanup.lifecycle, process: cleanup.process, completionFailure: cleanup.completionFailure ?? null };
       }
       throw firstFailure.error;
     }

@@ -1,10 +1,12 @@
+import { validateCompletionFailure, validateRequestObservation } from './completion-record.mjs';
+export { validateRequestObservation } from './completion-record.mjs';
 // Private operator test protocol, never a guest capability or a general HTTP API.
 import { createHash } from 'node:crypto';
 
 export const bounds = Object.freeze({ frame: 2097152, aggregate: 67108864, frames: 1024,
   requests: 256, live: 4, queued: 32, headers: 4096, stderr: 16384, lifetimeMs: 300000 });
 // Closed validator sites only. Error text, URLs and protocol values never become branch labels.
-export const transportBranches = Object.freeze(["UNSPECIFIED", "CORPUS_SOURCE", "CORPUS_RECEIPT", "CORPUS_STATUS", "CORPUS_SCALAR", "CORPUS_DOM", "CORPUS_AX", "CORPUS_UNICODE", "HTTP_ERROR", "INTERCEPT_EVENT", "INTERCEPT_HEADERS", "INTERCEPT_SEND", "INTERCEPT_WAIT", "INTERCEPT_FULFILL", "WIRE_001", "WIRE_002", "WIRE_003", "WIRE_004", "WIRE_005", "WIRE_006", "WIRE_007", "WIRE_008", "WIRE_009", "WIRE_010", "WIRE_011", "WIRE_012", "WIRE_013", "WIRE_014", "WIRE_015", "WIRE_016", "ROUTES_001", "ROUTES_002", "ROUTES_003", "ROUTES_004", "ROUTES_005", "ROUTES_006", "ROUTES_007", "ROUTES_008", "ROUTES_009", "ROUTES_010", "ROUTES_011", "ROUTES_012", "ROUTES_013", "FRAMING_001", "FRAMING_002", "FRAMING_003", "FRAMING_004", "FRAMING_005", "ENGINE_001", "ENGINE_002", "ENGINE_003", "ENGINE_004", "BROKER_001", "BROKER_002", "BROKER_003", "BROKER_004", "BROKER_005", "BROKER_006", "SESSION_001", "SESSION_002", "SESSION_003", "SESSION_004", "SESSION_005", "SESSION_006", "SESSION_007", "SESSION_008", "SESSION_009", "SESSION_010", "SESSION_011", "SESSION_012", "SESSION_013", "SESSION_014", "SESSION_015", "SESSION_016", "SESSION_017", "SESSION_018", "SESSION_019", "SESSION_020", "SESSION_021", "SESSION_022", "INTERCEPT_001", "INTERCEPT_002", "INTERCEPT_003", "INTERCEPT_004", "INTERCEPT_005", "INTERCEPT_006", "INTERCEPT_007", "INTERCEPT_008", "INTERCEPT_009", "INTERCEPT_010", "INTERCEPT_REQUEST_EVENT", "INTERCEPT_SECOND_PAGE", "INTERCEPT_RESPONSE_CLOSE", "INTERCEPT_RESPONSE_ERROR", "INTERCEPT_RESPONSE_INCOMPLETE", "INTERCEPT_SERVE", "INTERCEPT_SOCKET_LIMIT", "INTERCEPT_SOCKET_TIMEOUT", "INTERCEPT_DROP", "INTERCEPT_CLIENT_ERROR", "INTERCEPT_SERVER_ERROR", "INTERCEPT_SERVICE_WORKER", "INTERCEPT_INVALIDATE", "INTERCEPT_PAGE_WORKER", "INTERCEPT_PAGE_WEBSOCKET", "INTERCEPT_PAGE_DOWNLOAD", "INTERCEPT_PAGE_POPUP", "INTERCEPT_REQUEST_FAILED_UNKNOWN", "INTERCEPT_REQUEST_FAILED_ERR_ABORTED", "INTERCEPT_REQUEST_FAILED_ERR_FAILED", "INTERCEPT_REQUEST_FAILED_ERR_EMPTY_RESPONSE", "INTERCEPT_REQUEST_FAILED_ERR_CONNECTION_CLOSED", "INTERCEPT_REQUEST_FAILED_ERR_CONNECTION_RESET", "INTERCEPT_REQUEST_FAILED_ERR_CONNECTION_REFUSED", "INTERCEPT_REQUEST_FAILED_ERR_TIMED_OUT", "INTERCEPT_REQUEST_FAILED_ERR_INVALID_RESPONSE", "INTERCEPT_REQUEST_FAILED_ERR_CONTENT_LENGTH_MISMATCH", "INTERCEPT_REQUEST_FAILED_ERR_INCOMPLETE_CHUNKED_ENCODING", "INTERCEPT_REQUEST_FAILED_ERR_BLOCKED_BY_RESPONSE", "INTERCEPT_REQUEST_FAILED_ERR_BLOCKED_BY_CLIENT", "INTERCEPT_REQUEST_FAILED_ERR_BLOCKED_BY_CSP", "INTERCEPT_REQUEST_FAILED_ERR_NETWORK_CHANGED", "INTERCEPT_REQUEST_FAILED_ERR_HTTP_RESPONSE_CODE_FAILURE"]);
+export const transportBranches = Object.freeze(["UNSPECIFIED", "COMPLETION_UNPROVEN", "CORPUS_SOURCE", "CORPUS_RECEIPT", "CORPUS_STATUS", "CORPUS_SCALAR", "CORPUS_DOM", "CORPUS_AX", "CORPUS_UNICODE", "HTTP_ERROR", "INTERCEPT_EVENT", "INTERCEPT_HEADERS", "INTERCEPT_SEND", "INTERCEPT_WAIT", "INTERCEPT_FULFILL", "WIRE_001", "WIRE_002", "WIRE_003", "WIRE_004", "WIRE_005", "WIRE_006", "WIRE_007", "WIRE_008", "WIRE_009", "WIRE_010", "WIRE_011", "WIRE_012", "WIRE_013", "WIRE_014", "WIRE_015", "WIRE_016", "ROUTES_001", "ROUTES_002", "ROUTES_003", "ROUTES_004", "ROUTES_005", "ROUTES_006", "ROUTES_007", "ROUTES_008", "ROUTES_009", "ROUTES_010", "ROUTES_011", "ROUTES_012", "ROUTES_013", "FRAMING_001", "FRAMING_002", "FRAMING_003", "FRAMING_004", "FRAMING_005", "ENGINE_001", "ENGINE_002", "ENGINE_003", "ENGINE_004", "BROKER_001", "BROKER_002", "BROKER_003", "BROKER_004", "BROKER_005", "BROKER_006", "SESSION_001", "SESSION_002", "SESSION_003", "SESSION_004", "SESSION_005", "SESSION_006", "SESSION_007", "SESSION_008", "SESSION_009", "SESSION_010", "SESSION_011", "SESSION_012", "SESSION_013", "SESSION_014", "SESSION_015", "SESSION_016", "SESSION_017", "SESSION_018", "SESSION_019", "SESSION_020", "SESSION_021", "SESSION_022", "INTERCEPT_001", "INTERCEPT_002", "INTERCEPT_003", "INTERCEPT_004", "INTERCEPT_005", "INTERCEPT_006", "INTERCEPT_007", "INTERCEPT_008", "INTERCEPT_009", "INTERCEPT_010", "INTERCEPT_REQUEST_EVENT", "INTERCEPT_SECOND_PAGE", "INTERCEPT_RESPONSE_CLOSE", "INTERCEPT_RESPONSE_ERROR", "INTERCEPT_RESPONSE_INCOMPLETE", "INTERCEPT_SERVE", "INTERCEPT_SOCKET_LIMIT", "INTERCEPT_SOCKET_TIMEOUT", "INTERCEPT_DROP", "INTERCEPT_CLIENT_ERROR", "INTERCEPT_SERVER_ERROR", "INTERCEPT_SERVICE_WORKER", "INTERCEPT_INVALIDATE", "INTERCEPT_PAGE_WORKER", "INTERCEPT_PAGE_WEBSOCKET", "INTERCEPT_PAGE_DOWNLOAD", "INTERCEPT_PAGE_POPUP", "INTERCEPT_REQUEST_FAILED_UNKNOWN", "INTERCEPT_REQUEST_FAILED_ERR_ABORTED", "INTERCEPT_REQUEST_FAILED_ERR_FAILED", "INTERCEPT_REQUEST_FAILED_ERR_EMPTY_RESPONSE", "INTERCEPT_REQUEST_FAILED_ERR_CONNECTION_CLOSED", "INTERCEPT_REQUEST_FAILED_ERR_CONNECTION_RESET", "INTERCEPT_REQUEST_FAILED_ERR_CONNECTION_REFUSED", "INTERCEPT_REQUEST_FAILED_ERR_TIMED_OUT", "INTERCEPT_REQUEST_FAILED_ERR_INVALID_RESPONSE", "INTERCEPT_REQUEST_FAILED_ERR_CONTENT_LENGTH_MISMATCH", "INTERCEPT_REQUEST_FAILED_ERR_INCOMPLETE_CHUNKED_ENCODING", "INTERCEPT_REQUEST_FAILED_ERR_BLOCKED_BY_RESPONSE", "INTERCEPT_REQUEST_FAILED_ERR_BLOCKED_BY_CLIENT", "INTERCEPT_REQUEST_FAILED_ERR_BLOCKED_BY_CSP", "INTERCEPT_REQUEST_FAILED_ERR_NETWORK_CHANGED", "INTERCEPT_REQUEST_FAILED_ERR_HTTP_RESPONSE_CODE_FAILURE"]);
 const errorBranches = new WeakMap();
 export function tagTransport(error, branch) {
   if (error instanceof Error && !errorBranches.has(error)) errorBranches.set(error,
@@ -18,7 +20,7 @@ export const hash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(
 export const innerPhases = Object.freeze(['LOAD_CHROMIUM', 'BROWSER_LAUNCH', 'CONTEXT', 'INTERCEPT',
   'PAGE', 'CDP_ATTACH', 'AX_ENABLE', 'DEBUGGER_ENABLE', 'NAVIGATE', 'SOURCE_READY', 'INITIAL_STATE', 'AX_BEFORE', 'SOURCE_EDIT',
   'COMPILE_PAUSED', 'CANCEL_CLICK', 'ABORT_PROOF', 'CANCELLED_STATE', 'AX_AFTER', 'FINAL_STATE',
-  'CORPUS_EDIT', 'CORPUS_COMPILE', 'CORPUS_EVALUATE', 'UNICODE_NAVIGATION', 'SOURCE_BUDGET', 'RESULT']);
+  'CORPUS_EDIT', 'CORPUS_COMPILE', 'CORPUS_EVALUATE', 'UNICODE_NAVIGATION', 'SOURCE_BUDGET', 'PRESENTATION_NEGATIVE', 'RESULT']);
 export const innerCauses = Object.freeze(['UNKNOWN', 'TIMEOUT', 'TRANSPORT', 'STOPPED', 'ABORT_UNPROVED',
   'INITIAL_HASH', 'INITIAL_PATH', 'INITIAL_TITLE', 'INITIAL_ROLE', 'INITIAL_LIVE', 'ABORT_EVENT',
   'FINAL_CONTROLS', 'AX_NODES', 'AX_NODE_TEXT', 'SCRIPT_SOURCE', 'RESULT_SIZE', 'CORPUS_CHECK',
@@ -143,7 +145,9 @@ export function validateBrowserProcess(value) {
 }
 export function innerFailure(value, runId) {
   envelope(value, 'failure', ['runId', 'phase', 'cause', 'cleanupFailed', 'cleanup', 'lifecycle', 'process', 'branch',
-    ...(Object.hasOwn(value, 'requestObservation') ? ['requestObservation'] : [])]);
+    ...(Object.hasOwn(value, 'requestObservation') ? ['requestObservation'] : []),
+    ...(Object.hasOwn(value, 'completionFailure') ? ['completionFailure'] : [])]);
+  if (Object.hasOwn(value, 'completionFailure')) validateCompletionFailure(value.completionFailure);
   if (Object.hasOwn(value, 'requestObservation')) validateRequestObservation(value.requestObservation);
   if (value.requestObservation != null && (value.cause !== 'TRANSPORT' || typeof value.branch !== 'string' ||
     !value.branch.startsWith('INTERCEPT_REQUEST_FAILED_'))) fail('WIRE_001');
@@ -209,20 +213,4 @@ export function start(value) {
   origin(value.origin);
   if (Buffer.byteLength(JSON.stringify(value)) > 4096) fail('WIRE_016');
   return Object.freeze({ ...value });
-}
-
-const observedRoutes = ['index', 'session', 'compile', 'evaluate', 'finish', 'cancel', ...['client.mjs', 'controller.mjs', 'corpus.mjs', 'evaluation.mjs', 'executable.mjs', 'index.html', 'json.mjs', 'limits.mjs', 'main.mjs', 'presentation.mjs', 'protocol.mjs', 'report.mjs', 'style.css'].map(name => 'asset:' + name)];
-export function validateRequestObservation(value) {
-  if (value === null) return;
-  exact(value, ['observed', 'ordinal', 'route', 'method', 'resourceType', 'responseSeen', 'responseStatus', 'requestFinished']);
-  if (['observed', 'responseSeen', 'requestFinished'].some(key => typeof value[key] !== 'boolean') ||
-    value.responseStatus !== null && (!Number.isInteger(value.responseStatus) || value.responseStatus < 100 || value.responseStatus > 599) ||
-    !value.responseSeen && value.responseStatus !== null) fail('WIRE_001');
-  if (!value.observed) {
-    if (['ordinal', 'route', 'method', 'resourceType', 'responseStatus'].some(key => value[key] !== null) || value.responseSeen || value.requestFinished) fail('WIRE_001');
-    return;
-  }
-  if (!Number.isSafeInteger(value.ordinal) || value.ordinal < 1 || value.ordinal > bounds.requests || !observedRoutes.includes(value.route) ||
-    !['document', 'script', 'stylesheet', 'fetch'].includes(value.resourceType) ||
-    value.method !== (value.route === 'index' || value.route === 'session' || value.route.startsWith('asset:') ? 'GET' : 'POST')) fail('WIRE_001');
 }

@@ -5,6 +5,7 @@ import { spawn, ChildProcess } from 'node:child_process';
 import test from 'node:test';
 import { createFrameWriter, createFrameDecoder } from './framing.mjs';
 import { runUiDriver } from './inner.mjs';
+import { validateCompletionFailure } from './completion-record.mjs';
 import { initialPlan, planBytes } from './plan.mjs';
 import { sha256, emptyBrowserProcess } from './wire.mjs';
 import { createServer } from 'node:http';
@@ -74,7 +75,7 @@ test('browser startup failure retains only fixed phase/cause after cleanup', asy
       launchPath: '/examples/playground/restricted/', capability: 'b'.repeat(64), planSha256: sha256(planBytes()) });
     await assert.rejects(run);decoder.end();
     assert.deepEqual(records, [{ version: 1, type: 'failure', runId: 'a'.repeat(32),
-      phase: cleanupFails ? 'CONTEXT' : 'BROWSER_LAUNCH', cause: cleanupFails ? 'UNKNOWN' : 'TIMEOUT', cleanupFailed: cleanupFails, cleanup: { intercept: false, context: false, browser: cleanupFails }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: { ...emptyBrowserProcess(), diagnosticFailed: cleanupFails }, branch: 'UNSPECIFIED', requestObservation: null }]);
+      phase: cleanupFails ? 'CONTEXT' : 'BROWSER_LAUNCH', cause: cleanupFails ? 'UNKNOWN' : 'TIMEOUT', cleanupFailed: cleanupFails, cleanup: { intercept: false, context: false, browser: cleanupFails }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: { ...emptyBrowserProcess(), diagnosticFailed: cleanupFails }, branch: 'UNSPECIFIED', requestObservation: null, completionFailure: null }]);
     assert.ok(!JSON.stringify(records).includes('private'));assert.ok(!JSON.stringify(records).includes('capability'));
   }
 });
@@ -113,7 +114,9 @@ test('navigation failure preserves category and independent context/browser clea
   await createFrameWriter(input).write({ version: 1, type: 'start', runId: 'a'.repeat(32), origin: selectedOrigin,
     launchPath: '/examples/playground/restricted/', capability: 'b'.repeat(64), planSha256: sha256(planBytes()) });
   await assert.rejects(run);decoder.end();
-  assert.deepEqual(records, [{ version: 1, type: 'failure', runId: 'a'.repeat(32), phase: 'NAVIGATE', cause: 'NET_ERR_FAILED',
+  validateCompletionFailure(records[0].completionFailure);assert.equal(records[0].completionFailure.rowCount, 0);
+  const { completionFailure, ...navigationFailure } = records[0];
+  assert.deepEqual([navigationFailure], [{ version: 1, type: 'failure', runId: 'a'.repeat(32), phase: 'NAVIGATE', cause: 'NET_ERR_FAILED',
     cleanupFailed: true, cleanup: { intercept: false, context: true, browser: true }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: { ...emptyBrowserProcess(), diagnosticFailed: true }, branch: 'UNSPECIFIED', requestObservation: null }]);
   assert.ok(!JSON.stringify(records).includes('private'));
 });

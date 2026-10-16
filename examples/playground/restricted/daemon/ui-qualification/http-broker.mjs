@@ -46,7 +46,7 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
           requestBytes: job.body.length, requestSha256: sha256(job.body), status: response.statusCode,
           responseBytes: body.length, responseSha256: sha256(body),
           securityHeaders: selectedHeaders.filter(entry => !entry.name.startsWith('x-zryna-')) }));
-        const inspecting = Promise.resolve().then(() => inspectResponse({ name: job.name, request: job.body,
+        const inspecting = Promise.resolve().then(() => inspectResponse({ id: job.id, name: job.name, request: job.body,
           body, status: response.statusCode, headers: selectedHeaders })).then(() => {
           if (!closed && job.state !== 'done') complete(job, { version: 1, type: 'response', id: job.id, status: response.statusCode,
             headers: selectedHeaders, bodyBase64: body.toString('base64') });
@@ -106,6 +106,7 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
     },
     audit() { return structuredClone(audit); },
     activeIds() { return [...jobs.keys()]; },
+    pendingInspections() { return inspections.size; },
     ownedSockets() { return sockets.size; },
     recovery() { return recovery; },
     close() {

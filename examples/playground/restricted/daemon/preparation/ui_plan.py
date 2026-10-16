@@ -11,7 +11,7 @@ REQUIRED = {'supervisor', 'ui-supervisor', 'app/compiler', 'resources/materials-
             'resources/fonts/NimbusSans-Regular.otf', 'resources/fonts/NimbusMonoPS-Regular.otf',
             'licenses/fonts/fonts-urw-base35-copyright', 'lib64/ld-linux-x86-64.so.2', 'resources/ui-plan.json',
             *('app/' + name + '.mjs' for name in
-              ['ui-driver', 'browser-probe', 'browser-corpus', 'browser-oracles', 'browser-intercept', 'browser-diagnostics', 'framing', 'routes', 'wire', 'plan'])}
+              ['ui-driver', 'browser-probe', 'browser-corpus', 'browser-oracles', 'browser-intercept', 'browser-loopback', 'browser-diagnostics', 'completion-ledger', 'completion-record', 'browser-presentation-negative', 'framing', 'routes', 'wire', 'plan'])}
 
 
 def validate(document):

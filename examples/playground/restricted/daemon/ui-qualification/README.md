@@ -28,15 +28,17 @@ The fixed `<img ... onerror=...>` source is filled as textarea data and genuinel
 compiled. Its rejected report is rendered normally; exact source text, zero DOM
 images, unchanged script-element count and an absent execution marker are checked.
 This establishes only the tested source/DOM boundary. It does not claim that the
-compiler emitted a hostile diagnostic message. Arbitrary hostile diagnostic-message
-injection and paired-session isolation remain separate
-actual gates. Audible assistive-technology output is unrun; AX evidence does not
+compiler emitted a hostile diagnostic message. A separate synthetic presentation negative invokes the original renderer on a
+detached real Document for four hostile-text branches. It does not claim those
+strings came from the compiler. Paired-session isolation remains a separate
+actual gate. Audible assistive-technology output is unrun; AX evidence does not
 claim audible announcements. Resource/watchdog/containment obligations remain
 separate, and successful corpus results still set `fullQualification:false`.
 
 `inner.mjs` must be installed as the fixed `/app/ui-driver.mjs`; copy its relative
 module closure into `/app` unchanged: `browser-probe.mjs`, `browser-corpus.mjs`,
-`browser-oracles.mjs`, `browser-intercept.mjs`,
+`browser-oracles.mjs`, `browser-intercept.mjs`, `browser-loopback.mjs`,
+`completion-ledger.mjs`, `completion-record.mjs`, `browser-presentation-negative.mjs`,
 `framing.mjs`, `routes.mjs`, `wire.mjs`, `plan.mjs`, `browser-diagnostics.mjs`. The sealed runtime supplies only
 the independently approved `/materials/runtime/node/bin/node`, complete pinned
 Playwright/Chrome closure, and required DSOs. `planBytes()` emits the exact compact
@@ -123,7 +125,7 @@ closed route/method/type and same-object response/status/finished events. Unseen
 objects remain UNKNOWN. The snapshot belongs to that exact network Error; a later
 failure cannot attach its metadata to an earlier guard. Ordinals are not host HTTP
 IDs, and a response event does not prove that the browser consumed the body.
-The driver latches the first observed failure, phase and branch before owned
+The driver latches the first actual fatal failure, phase and branch before owned
 browser cleanup. A later stream error remains fatal and cannot replace that
 earlier cause; finalized cleanup and process observations are retained separately.
 The initial compile remains held before host dispatch until both the matching
@@ -323,3 +325,53 @@ validated bounded response body rather than forwarding upstream transport header
 Empty204 responses omit that header; empty205 responses use zero, and nonempty
 204/205 bodies fail before any local response bytes. Local raw TCP fixtures verify
 this framing; it does not establish the cause or remedy of a browser abort.
+
+## Prospective completion policy, plan v2
+
+Plan v2 requires a closed completion ledger for exactly 45 API requests and 21
+operation-specific finish acknowledgements. The matcher joins the actual browser
+Request object to the actual loopback job id by the selected origin, fixed route,
+method, complete byte count and SHA-256. Separate bounded histories reject a
+repeated tuple forever; browser ordinals never stand in for host ids. Both arrival
+orders are supported. Request/response bodies and tokens stay in memory.
+
+Only a known API fetch whose same Request already observed status 200 and whose
+actual failure is exactly `net::ERR_ABORTED` may remain provisional. Assets,
+unknown requests, redirects, other network failures and all original unexpected
+or incomplete socket/error guards remain fatal. The held initial compile retains
+its original two-signal undispatched-abort proof. Its cancel acknowledgement,
+actual DOM/AX state and one-way corpus admission remain mandatory.
+
+Each original action and complete UI snapshot defines a fixed publication fence.
+Startup has one session request; every corpus compile/evaluation has exactly its
+own target and finish on both sides. The host independently validates all request
+and response counts/hashes, receipt authentication, original reports, source and
+revision, selected export/arguments, scalar text and component identity. Its own
+finish links come from exact original tokens and closed acknowledgements, not
+from the browser's declared success. A zero-request invalid-input action remains
+outside any publication fence.
+
+The result label is `ORIGINAL_SOURCE_COMPLETION_IMPLICATION`. It describes what
+successful publication through the unchanged, pinned original source implies
+about that consumer's bounded EOF, signal/validation and own finish checks. It is
+not a direct JavaScript reader or AbortSignal sample and does not identify the
+Chromium cause of an observed network event. Historical failed runs stay failed.
+
+Seal is synchronous at the original work boundary: every actual API terminal,
+join, publication and complete local write must already exist, and original
+readers, pending jobs, operations and transmissions must be empty. There is no
+added wait, retry, grace or raised budget. A later real fatal still defeats the
+tentative result after all owned cleanup; an existing stream/work primary keeps
+priority. Unresolved work receives a closed failure summary, never acceptance.
+The immutable first event anchor is retained; its serialized id is explicitly a
+new reconciled projection through that exact ordinal's verified join.
+
+The full ledger is bounded to 49,152 bytes inside the existing result/frame caps.
+The optional `completionFailure` in a failure record is a separate
+at-most-4,096-byte hash/count/closed-summary
+projection; omitted row detail is marked truncated and can never qualify a run.
+`completion-host.mjs` is host-only. The four new image helpers have literal closed
+inventory paths; the normal image closure becomes 196 files. Plan v2 requires its
+own reviewed actual cohort. Pure fixtures and source review provide no actual
+browser qualification, audible assistive-technology or compiler-hostile-message
+provenance claim.

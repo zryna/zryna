@@ -2,10 +2,12 @@
 import { closeSync, constants, fstatSync, openSync, readSync } from 'node:fs';
 import { decode, fail, sha256 } from './wire.mjs';
 
-export const initialPlan = Object.freeze({ format: 'zryna.playground-ui-qualification-plan.v1', version: 1,
+export const initialPlan = Object.freeze({ format: 'zryna.playground-ui-qualification-plan.v2', version: 2,
   phase: 'initial-abort-corpus-ax', transport: 'operator-stdio-browser-loopback-http-v1',
   listener: 'tcp4:127.0.0.1:same-origin-port',
   abortProbe: 'requestfailed-and-response-close-before-dispatch', corpus: 'original-nine-plus-unicode-and-inert-source-v1',
+  completion: 'injective-own-request-publication-ledger-v1', completionProof: 'ORIGINAL_SOURCE_COMPLETION_IMPLICATION',
+  presentationNegative: 'SYNTHETIC_PRESENTATION_NEGATIVE', apiRows: 45, pairedFinishes: 21,
   scalarCases: 10, lifetimeMs: 300000, cleanupMs: 2000 });
 export const planBytes = () => Buffer.from(JSON.stringify(initialPlan));
 export function readImagePlan() {

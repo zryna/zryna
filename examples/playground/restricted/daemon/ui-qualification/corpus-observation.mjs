@@ -1,5 +1,6 @@
 // Browser DOM is evidence only after exact comparison with authenticated service responses.
 import { exact, fail } from './wire.mjs';
+import { validatePresentationNegative } from './browser-presentation-negative.mjs';
 import { qualificationCases, scalarCases } from './browser-oracles.mjs';
 
 const same = (left, right) => { if (JSON.stringify(left) !== JSON.stringify(right)) fail(); };
@@ -29,16 +30,18 @@ export function inspectCorpus(value, actual) {
   exact(value, ['format', 'version', 'rows', 'keyboard', 'invalidArgument', 'revisionInvalidation', 'sourceBudget',
     'recovered', 'unicodeNavigation', 'argumentAX', 'invalidAX', 'diagnosticAX', 'inertSource', 'sessionIsolation', 'arbitraryInertMarkup', 'audibleAssistiveTechnology']);
   if (value.format !== 'zryna.ui-corpus-observation.v1' || value.version !== 1 ||
-      value.sessionIsolation !== 'unrun' || value.arbitraryInertMarkup !== 'unrun' || value.audibleAssistiveTechnology !== 'unrun' ||
+      value.sessionIsolation !== 'unrun' || value.audibleAssistiveTechnology !== 'unrun' ||
       !Array.isArray(value.rows) || value.rows.length !== qualificationCases.length || !actual.cleanupAcknowledged) fail();
+  validatePresentationNegative(value.arbitraryInertMarkup);
   let evaluation = 0;
   for (const [index, expected] of qualificationCases.entries()) {
     const row = value.rows[index], compiled = actual.compilations[index];
-    exact(row, ['id', 'source', 'status', 'identity', 'runDisabled', 'exports', 'diagnostics', 'unexpectedDiagnosticElements', 'observations']);
+    exact(row, ['id', 'source', 'status', 'identity', 'runDisabled', 'exports', 'diagnostics', 'unexpectedDiagnosticElements', 'controls', 'observations']);
     if (row.id !== expected.id || row.source !== expected.source || compiled.id !== expected.id ||
         row.unexpectedDiagnosticElements !== 0 || row.runDisabled !== !expected.cases) fail();
     same(row.status, expected.cases ? 'Compiled. Choose an export and run it.' : 'Compilation rejected. Review the compiler diagnostics.');
     same(row.exports, compiled.exports.map(entry => ({ value: entry.logical, text: `${entry.logical} (${entry.arity} arguments)` })));
+    same(row.controls, { compileDisabled: false, cancelDisabled: true, selectedExport: (compiled.exports.find(entry => entry.logical === expected.export) ?? compiled.exports[0])?.logical ?? '' });
     same(row.diagnostics, compiled.report.diagnostics.map(diagnosticChildren));
     const identity = expected.cases ? `Source revision ${compiled.revision}; source SHA-256 ${compiled.sourceSha256}; component SHA-256 ${compiled.identity.componentSha256}` : '';
     same(row.identity, identity);
@@ -46,11 +49,13 @@ export function inspectCorpus(value, actual) {
     if (!Array.isArray(row.observations) || row.observations.length !== cases.length) fail();
     for (const [number, oracle] of cases.entries()) {
       const observed = row.observations[number], response = actual.evaluations[evaluation++];
-      exact(observed, ['logical', 'args', 'value', 'text', 'identity']);
+      exact(observed, ['logical', 'args', 'value', 'text', 'identity', 'selection']);
       same({ logical: observed.logical, args: observed.args, value: observed.value }, oracle);
       if (response.id !== expected.id || response.logical !== oracle.logical || response.value !== oracle.value ||
           response.revision !== compiled.revision || response.componentSha256 !== compiled.identity.componentSha256) fail();
       same(response.args, oracle.args);
+      same(observed.selection, { source: expected.source, logical: oracle.logical, args: oracle.args.map(String),
+        status: 'Evaluation completed.', compileDisabled: false, cancelDisabled: true, runDisabled: false });
       same(observed.text, `${oracle.logical}(${oracle.args.join(', ')}) = ${oracle.value} (signed i32)`);
       same(observed.identity, `Source revision ${compiled.revision}; source SHA-256 ${compiled.sourceSha256}; observed component SHA-256 ${compiled.identity.componentSha256}`);
     }

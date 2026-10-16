@@ -98,7 +98,7 @@ test('actual response inspection fences forwarding and fails closed before brows
  await fixture(async({broker,record})=>{
   await assert.rejects(broker.request(record(1,'index')),/closed synthetic inspection failure/);
   assert.equal(inspected,1);assert.equal(broker.audit()[0].status,200);
- },async({name,body,status})=>{assert.equal(name,'index');assert.equal(status,200);assert.ok(body.length>0);inspected++;throw new Error('closed synthetic inspection failure');});
+ },async({id,name,body,status})=>{assert.equal(id,1);assert.equal(name,'index');assert.equal(status,200);assert.ok(body.length>0);inspected++;throw new Error('closed synthetic inspection failure');});
 });
 test('pending actual response inspection belongs to the same finite cleanup', {timeout:5000}, async()=>{
  let entered;const observing=new Promise(resolve=>{entered=resolve;});let release;

@@ -9,7 +9,7 @@ import { createFrameWriter, createFrameDecoder } from './framing.mjs';
 import { planBytes } from './plan.mjs';
 import { sha256, transportBranch } from './wire.mjs';
 import { runInitialBrowserProbe, browserFailure } from './browser-probe.mjs';
-async function precedence(order, cleanupFails=false, streamBranch='FRAMING_002') {
+async function precedence(order, cleanupFails=false, streamBranch='FRAMING_002', provisional=false) {
   const reservation=createServer();await new Promise(resolve=>reservation.listen(0,'127.0.0.1',resolve));
   const origin=`http://127.0.0.1:${reservation.address().port}`;await new Promise(resolve=>reservation.close(resolve));
   const input=new PassThrough(),output=new PassThrough(),writer=createFrameWriter(input),failures=[];
@@ -17,7 +17,7 @@ async function precedence(order, cleanupFails=false, streamBranch='FRAMING_002')
   const cleaning=new Promise(resolve=>cleanupEntered=resolve),gate=new Promise(resolve=>releaseCleanup=resolve);
   const aborted=new Promise(resolve=>observedAbort=resolve);
   const browser=new EventEmitter(),context=new EventEmitter(),page=new EventEmitter(),cdp=new EventEmitter();let request;
-  const originalRequest={url:()=>origin+'/compile',method:()=>'POST',resourceType:()=>'fetch',postDataBuffer:()=>Buffer.from('{}')};
+  const originalRequest={url:()=>origin+'/compile',method:()=>'POST',resourceType:()=>'fetch',postDataBuffer:()=>Buffer.from('{}'),redirectedFrom:()=>null,redirectedTo:()=>null};
   const source={async waitFor(){},async focus(){},async fill(){},async press(){
     context.emit('request',originalRequest);request=httpRequest(origin+'/compile',{method:'POST',agent:false});
     request.on('error',()=>{});request.end('{}');
@@ -26,7 +26,11 @@ async function precedence(order, cleanupFails=false, streamBranch='FRAMING_002')
   Object.assign(context,{async newPage(){context.emit('page',page);return page;},async newCDPSession(){return cdp;},
     async close(){cleanupEntered();await gate;if(cleanupFails)throw new Error('private cleanup details');}});
   cdp.send=async()=>({nodes:[]});
-  Object.assign(page,{setDefaultTimeout(){},async goto(){},async waitForFunction(){},
+  Object.assign(page,{setDefaultTimeout(){},async goto(){
+      const selected={url:()=>origin+'/session',method:()=>'GET',resourceType:()=>'fetch',postDataBuffer:()=>null,failure:()=>({errorText:'net::ERR_ABORTED'}),redirectedFrom:()=>null,redirectedTo:()=>null};
+      context.emit('request',selected);
+      await new Promise((resolve,reject)=>{const req=httpRequest(origin+'/session',{agent:false},res=>{context.emit('response',{request:()=>selected,status:()=>res.statusCode});res.resume();res.once('end',()=>{context.emit(provisional?'requestfailed':'requestfinished',selected);resolve();});});req.once('error',reject);req.end();});
+    },async waitForFunction(){},
     async evaluate(){return {pathname:'/examples/playground/restricted/',hashRemoved:true,title:'Zryna source playground',
       status:'ready',role:'status',live:'polite'};},
     getByRole(role){
@@ -35,7 +39,10 @@ async function precedence(order, cleanupFails=false, streamBranch='FRAMING_002')
       throw Error('unexpected fixture role');
     }});
   const decoder=createFrameDecoder(record=>{
-    if(record.type==='request')writer.write({version:1,type:'probe-paused',id:record.id}).catch(()=>{});
+    if(record.type==='request') {
+      const names=['content-type','cache-control','content-security-policy','x-content-type-options','referrer-policy','cross-origin-opener-policy','cross-origin-resource-policy'];
+      writer.write(record.route==='session'?{version:1,type:'response',id:record.id,status:200,headers:names.map(name=>({name,value:'fixture'})),bodyBase64:Buffer.from('{}').toString('base64')}:{version:1,type:'probe-paused',id:record.id}).catch(()=>{});
+    }
     else if(record.type==='failure')failures.push(record);
     else {assert.equal(record.type,'abort');observedAbort();}
   });output.on('data',chunk=>decoder.push(chunk));
@@ -45,7 +52,7 @@ async function precedence(order, cleanupFails=false, streamBranch='FRAMING_002')
   if(order==='browser-first'){
     await cleaning;
     // Actual fixed1000ms abort-proof timeout initiated cleanup; latevalidreply still rejects005.
-    await writer.write({version:1,type:'aborted',id:1});await new Promise(resolve=>setImmediate(resolve));
+    await writer.write({version:1,type:'aborted',id:2});await new Promise(resolve=>setImmediate(resolve));
   }else{
     await aborted;await new Promise(resolve=>setImmediate(resolve));
     if(streamBranch==='FRAMING_002')input.write(Buffer.from([255,255,255,127]));
@@ -83,4 +90,11 @@ test('a primary-observation callback cannot replace the original failure or inte
     onCleanup(){completed++;throw Error('private completion details');}}),
   original=>original===error);
   assert.equal(observed,1);assert.equal(completed,1);assert.equal(closed,true);assert.equal(browserFailure(error).cause,'TIMEOUT');
+});
+
+test('a provisional session candidate never replaces the later immutable stream primary',{timeout:4000},async()=>{
+  const {failure,thrown}=await precedence('stream-first',false,'FRAMING_002',true);
+  assert.equal(failure.branch,'FRAMING_002');assert.equal(transportBranch(thrown),'FRAMING_002');
+  assert.equal(failure.cause,'TRANSPORT');assert.equal(failure.completionFailure.firstProvisional.route,'session');
+  assert.equal(failure.completionFailure.sealed,false);assert.equal(failure.cleanupFailed,false);
 });
