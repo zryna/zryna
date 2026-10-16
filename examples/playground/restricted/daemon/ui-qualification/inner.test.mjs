@@ -53,7 +53,7 @@ test('real inert driver failure exits with parent stdin kept open and emits only
     const records = [];const decoder = createFrameDecoder(value => records.push(value));
     decoder.push(Buffer.concat(output));decoder.end();
     assert.deepEqual(records, [{ version: 1, type: 'failure', runId: 'a'.repeat(32),
-      phase: 'LOAD_CHROMIUM', cause: 'UNKNOWN', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: emptyBrowserProcess(), branch: 'UNSPECIFIED' }]);
+      phase: 'LOAD_CHROMIUM', cause: 'UNKNOWN', cleanupFailed: false, cleanup: { intercept: false, context: false, browser: false }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: emptyBrowserProcess(), branch: 'UNSPECIFIED', requestObservation: null }]);
     assert.equal(stderrBytes, 0);
   } finally {
     clearTimeout(timer); child.stdin.destroy();
@@ -74,7 +74,7 @@ test('browser startup failure retains only fixed phase/cause after cleanup', asy
       launchPath: '/examples/playground/restricted/', capability: 'b'.repeat(64), planSha256: sha256(planBytes()) });
     await assert.rejects(run);decoder.end();
     assert.deepEqual(records, [{ version: 1, type: 'failure', runId: 'a'.repeat(32),
-      phase: cleanupFails ? 'CONTEXT' : 'BROWSER_LAUNCH', cause: cleanupFails ? 'UNKNOWN' : 'TIMEOUT', cleanupFailed: cleanupFails, cleanup: { intercept: false, context: false, browser: cleanupFails }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: { ...emptyBrowserProcess(), diagnosticFailed: cleanupFails }, branch: 'UNSPECIFIED' }]);
+      phase: cleanupFails ? 'CONTEXT' : 'BROWSER_LAUNCH', cause: cleanupFails ? 'UNKNOWN' : 'TIMEOUT', cleanupFailed: cleanupFails, cleanup: { intercept: false, context: false, browser: cleanupFails }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: { ...emptyBrowserProcess(), diagnosticFailed: cleanupFails }, branch: 'UNSPECIFIED', requestObservation: null }]);
     assert.ok(!JSON.stringify(records).includes('private'));assert.ok(!JSON.stringify(records).includes('capability'));
   }
 });
@@ -114,7 +114,7 @@ test('navigation failure preserves category and independent context/browser clea
     launchPath: '/examples/playground/restricted/', capability: 'b'.repeat(64), planSha256: sha256(planBytes()) });
   await assert.rejects(run);decoder.end();
   assert.deepEqual(records, [{ version: 1, type: 'failure', runId: 'a'.repeat(32), phase: 'NAVIGATE', cause: 'NET_ERR_FAILED',
-    cleanupFailed: true, cleanup: { intercept: false, context: true, browser: true }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: { ...emptyBrowserProcess(), diagnosticFailed: true }, branch: 'UNSPECIFIED' }]);
+    cleanupFailed: true, cleanup: { intercept: false, context: true, browser: true }, lifecycle: { browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false }, process: { ...emptyBrowserProcess(), diagnosticFailed: true }, branch: 'UNSPECIFIED', requestObservation: null }]);
   assert.ok(!JSON.stringify(records).includes('private'));
 });
 

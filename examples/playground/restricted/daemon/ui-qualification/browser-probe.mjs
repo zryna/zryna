@@ -1,7 +1,7 @@
 // The corpus starts only after this run independently proves the genuine initial abort.
 import { setTimeout as pause } from 'node:timers/promises';
 import { start, transportBranch, emptyBrowserProcess, classifyBrowserError } from './wire.mjs';
-import { observeBrowserProcess } from './browser-diagnostics.mjs';
+import { observeBrowserProcess, requestFailureObservation } from './browser-diagnostics.mjs';
 export { observeBrowserProcess } from './browser-diagnostics.mjs';
 import { interceptBrowser } from './browser-intercept.mjs';
 import { runBrowserCorpus } from './browser-corpus.mjs';
@@ -10,11 +10,11 @@ const causes = new WeakMap();
 const noCleanup = () => ({ intercept: false, context: false, browser: false });
 const noLifecycle = () => ({ browserDisconnected: false, pageClosed: false, pageCrashed: false, contextClosed: false });
 function rejected(cause) { const error = new Error('PLAYGROUND-UI-PROBE-CHECK'); causes.set(error,
-  { cause, cleanupFailed: false, cleanup: noCleanup(), lifecycle: noLifecycle(), process: emptyBrowserProcess(), branch: 'UNSPECIFIED' }); return error; }
+  { cause, cleanupFailed: false, cleanup: noCleanup(), lifecycle: noLifecycle(), process: emptyBrowserProcess(), branch: 'UNSPECIFIED', requestObservation: null }); return error; }
 export function browserFailure(error) {
   const retained = causes.get(error);
   if (retained) return Object.freeze(structuredClone(retained));
-  return Object.freeze({ cause: classifyBrowserError(error), cleanupFailed: false, cleanup: noCleanup(), lifecycle: noLifecycle(), process: emptyBrowserProcess(), branch: transportBranch(error) });
+  return Object.freeze({ cause: classifyBrowserError(error), cleanupFailed: false, cleanup: noCleanup(), lifecycle: noLifecycle(), process: emptyBrowserProcess(), branch: transportBranch(error), requestObservation: requestFailureObservation(error) });
 }
 
 async function until(predicate, milliseconds) {

@@ -34,7 +34,9 @@ test('asynchronous body completion reserves unique IDs in actual send order',asy
 });
 test('binding the exact original port rejects collision without selecting another listener',async()=>{
  const server=createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));try{
-  await assert.rejects(interceptBrowser(new EventEmitter(),`http://127.0.0.1:${server.address().port}`,()=>{}),error=>error.code==='EADDRINUSE');
+  const context=new EventEmitter();
+  await assert.rejects(interceptBrowser(context,`http://127.0.0.1:${server.address().port}`,()=>{}),error=>error.code==='EADDRINUSE');
+  for(const event of ['request','response','requestfinished'])assert.equal(context.listenerCount(event),0);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
 test('unknown routes, duplicate selected headers and oversized bodies fail before forwarding',async()=>{

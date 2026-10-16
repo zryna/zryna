@@ -142,7 +142,11 @@ export function validateBrowserProcess(value) {
   return Object.freeze(structuredClone(value));
 }
 export function innerFailure(value, runId) {
-  envelope(value, 'failure', ['runId', 'phase', 'cause', 'cleanupFailed', 'cleanup', 'lifecycle', 'process', 'branch']);
+  envelope(value, 'failure', ['runId', 'phase', 'cause', 'cleanupFailed', 'cleanup', 'lifecycle', 'process', 'branch',
+    ...(Object.hasOwn(value, 'requestObservation') ? ['requestObservation'] : [])]);
+  if (Object.hasOwn(value, 'requestObservation')) validateRequestObservation(value.requestObservation);
+  if (value.requestObservation != null && (value.cause !== 'TRANSPORT' || typeof value.branch !== 'string' ||
+    !value.branch.startsWith('INTERCEPT_REQUEST_FAILED_'))) fail('WIRE_001');
   exact(value.cleanup, ['intercept', 'context', 'browser']);
   validateBrowserProcess(value.process);
   exact(value.lifecycle, ['browserDisconnected', 'pageClosed', 'pageCrashed', 'contextClosed']);
@@ -207,11 +211,18 @@ export function start(value) {
   return Object.freeze({ ...value });
 }
 
-// Read-only Playwright failure metadata; exact closed categories only, never raw error text.
-export function requestFailureBranch(request) {
-  let text = null;
-  try { text = request.failure()?.errorText; } catch {}
-  const codes = ["ERR_ABORTED", "ERR_FAILED", "ERR_EMPTY_RESPONSE", "ERR_CONNECTION_CLOSED", "ERR_CONNECTION_RESET", "ERR_CONNECTION_REFUSED", "ERR_TIMED_OUT", "ERR_INVALID_RESPONSE", "ERR_CONTENT_LENGTH_MISMATCH", "ERR_INCOMPLETE_CHUNKED_ENCODING", "ERR_BLOCKED_BY_RESPONSE", "ERR_BLOCKED_BY_CLIENT", "ERR_BLOCKED_BY_CSP", "ERR_NETWORK_CHANGED", "ERR_HTTP_RESPONSE_CODE_FAILURE"];
-  const code = typeof text === 'string' && text.length <= 256 ? codes.find(value => text === 'net::' + value) : null;
-  return 'INTERCEPT_REQUEST_FAILED_' + (code ?? 'UNKNOWN');
+const observedRoutes = ['index', 'session', 'compile', 'evaluate', 'finish', 'cancel', ...['client.mjs', 'controller.mjs', 'corpus.mjs', 'evaluation.mjs', 'executable.mjs', 'index.html', 'json.mjs', 'limits.mjs', 'main.mjs', 'presentation.mjs', 'protocol.mjs', 'report.mjs', 'style.css'].map(name => 'asset:' + name)];
+export function validateRequestObservation(value) {
+  if (value === null) return;
+  exact(value, ['observed', 'ordinal', 'route', 'method', 'resourceType', 'responseSeen', 'responseStatus', 'requestFinished']);
+  if (['observed', 'responseSeen', 'requestFinished'].some(key => typeof value[key] !== 'boolean') ||
+    value.responseStatus !== null && (!Number.isInteger(value.responseStatus) || value.responseStatus < 100 || value.responseStatus > 599) ||
+    !value.responseSeen && value.responseStatus !== null) fail('WIRE_001');
+  if (!value.observed) {
+    if (['ordinal', 'route', 'method', 'resourceType', 'responseStatus'].some(key => value[key] !== null) || value.responseSeen || value.requestFinished) fail('WIRE_001');
+    return;
+  }
+  if (!Number.isSafeInteger(value.ordinal) || value.ordinal < 1 || value.ordinal > bounds.requests || !observedRoutes.includes(value.route) ||
+    !['document', 'script', 'stylesheet', 'fetch'].includes(value.resourceType) ||
+    value.method !== (value.route === 'index' || value.route === 'session' || value.route.startsWith('asset:') ? 'GET' : 'POST')) fail('WIRE_001');
 }

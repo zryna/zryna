@@ -1,6 +1,7 @@
 // Fixed observation of the existing browser only; no process launcher or policy selector.
 import { ChildProcess } from 'node:child_process';
-import { emptyBrowserProcess, browserProcessExit, browserProcessLog, scanBrowserFatal, fatalCandidate, inspectBrowserFatal } from './wire.mjs';
+import { emptyBrowserProcess, browserProcessExit, browserProcessLog, scanBrowserFatal, fatalCandidate, inspectBrowserFatal, bounds } from './wire.mjs';
+import { routeFor } from './routes.mjs';
 
 // Read-only diagnostic of the exact child from the pinned in-process Playwright mapping.
 export function observeBrowserProcess(browser) {
@@ -38,4 +39,45 @@ export function observeBrowserProcess(browser) {
     } catch { state.identity = 'UNKNOWN';state.diagnosticFailed = true; } }
     active = false;frozen = structuredClone(state);return structuredClone(frozen);
   };
+}
+
+// Exact closed category only; the raw failure text is never retained.
+export function requestFailureBranch(request) {
+  let text = null;
+  try { text = request.failure()?.errorText; } catch {}
+  const codes = ["ERR_ABORTED", "ERR_FAILED", "ERR_EMPTY_RESPONSE", "ERR_CONNECTION_CLOSED", "ERR_CONNECTION_RESET", "ERR_CONNECTION_REFUSED", "ERR_TIMED_OUT", "ERR_INVALID_RESPONSE", "ERR_CONTENT_LENGTH_MISMATCH", "ERR_INCOMPLETE_CHUNKED_ENCODING", "ERR_BLOCKED_BY_RESPONSE", "ERR_BLOCKED_BY_CLIENT", "ERR_BLOCKED_BY_CSP", "ERR_NETWORK_CHANGED", "ERR_HTTP_RESPONSE_CODE_FAILURE"];
+  const code = typeof text === 'string' && text.length <= 256 ? codes.find(value => text === 'net::' + value) : null;
+  return 'INTERCEPT_REQUEST_FAILED_' + (code ?? 'UNKNOWN');
+}
+
+const requestErrors = new WeakMap();
+const unknownRequest = () => ({ observed: false, ordinal: null, route: null, method: null, resourceType: null,
+  responseSeen: false, responseStatus: null, requestFinished: false });
+export function requestFailureObservation(error) {
+  return structuredClone(requestErrors.get(error) ?? null);
+}
+// Diagnostic identity only: ordinal is not a host HTTP id or proof of body consumption.
+export function observeBrowserRequests(context, selectedOrigin) {
+  const requests = new WeakMap();let ordinal = 0;let stopped = false;
+  const started = request => { try {
+    if (stopped || requests.has(request) || ordinal >= bounds.requests) return;
+    const method = request.method(), route = routeFor(request.url(), method, selectedOrigin), resourceType = request.resourceType();
+    if (!['document', 'script', 'stylesheet', 'fetch'].includes(resourceType)) return;
+    requests.set(request, { observed: true, ordinal: ++ordinal, route, method, resourceType,
+      responseSeen: false, responseStatus: null, requestFinished: false });
+  } catch { /* Missing diagnostic identity never changes the admission guard. */ } };
+  const responded = response => { try {
+    if (stopped) return;const value = requests.get(response.request());if (!value) return;
+    value.responseSeen = true;const status = response.status();
+    if (Number.isInteger(status) && status >= 100 && status <= 599) value.responseStatus = status;
+  } catch { /* Status remains explicitly unknown. */ } };
+  const finished = request => { if (!stopped) { const value = requests.get(request);if (value) value.requestFinished = true; } };
+  context.on('request', started);context.on('response', responded);context.on('requestfinished', finished);
+  return Object.freeze({
+    failed(request, error) {
+      if (!requestErrors.has(error)) requestErrors.set(error, Object.freeze({ ...(requests.get(request) ?? unknownRequest()) }));
+      return error;
+    },
+    stop() { stopped = true;context.off('request', started);context.off('response', responded);context.off('requestfinished', finished); },
+  });
 }

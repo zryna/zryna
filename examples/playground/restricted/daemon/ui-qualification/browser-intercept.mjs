@@ -1,13 +1,15 @@
 // Trusted UI-only tcp4 loopback bridge. The browser supplies actual network headers.
 import { createServer } from 'node:http';
-import { bounds, envelope, fail, integer, tagTransport, transportBranch, requestFailureBranch, origin, sha256 } from './wire.mjs';
+import { bounds, envelope, fail, integer, tagTransport, transportBranch, origin, sha256 } from './wire.mjs';
 import { routeFor, routes, responseRecord, selectNetworkHeaders } from './routes.mjs';
+import { observeBrowserRequests, requestFailureBranch } from './browser-diagnostics.mjs';
 
 export async function interceptBrowser(context, selectedOrigin, send) {
   origin(selectedOrigin);const target = new URL(selectedOrigin);const maximum = bounds.live + bounds.queued;
   let serial = 0;let admitted = 0;let reading = 0;let stopped = false;let firstFailure = null;let rejectFailure;let stopping;
   let compileRequest = null;let compileJob = null;let totalIn = 0;let totalOut = 0;let corpusEnabled = false;
   const pending = new Map(), completed = new Map(), sockets = new Set(), operations = new Set(), transmissions = new Set(), aborts = [], pages = new Set();
+  const requestObservations = observeBrowserRequests(context, selectedOrigin);
   const failures = new Promise((_, reject) => { rejectFailure = reject; });failures.catch(() => {});
   const broken = (error, branch = 'INTERCEPT_EVENT') => { firstFailure ??= tagTransport(error instanceof Error ? error : new Error('PLAYGROUND-UI-TRANSPORT'), branch);rejectFailure(firstFailure); };
   const pageEvents = Object.fromEntries(['worker', 'websocket', 'download', 'popup'].map(name => [name, () => broken(null, 'INTERCEPT_PAGE_' + name.toUpperCase())]));
@@ -37,7 +39,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
   };
   const requestFailed = request => {
     if (stopped) return;
-    if (!compileRequest || request !== compileRequest.request) { broken(null, requestFailureBranch(request));return; }
+    if (!compileRequest || request !== compileRequest.request) { broken(requestObservations.failed(request, tagTransport(new Error('PLAYGROUND-UI-TRANSPORT'), requestFailureBranch(request))));return; }
     compileRequest.failed = true;abortIfProved(compileJob);
   };
   const pageStarted = page => {
@@ -98,7 +100,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
   try {
     await new Promise((resolve, reject) => { server.once('error', reject);server.listen({ host: '127.0.0.1', port: Number(target.port), exclusive: true }, () => { server.off('error', reject);resolve(); }); });
     const actual = server.address();if (!actual || actual.address !== '127.0.0.1' || actual.family !== 'IPv4' || actual.port !== Number(target.port)) fail('INTERCEPT_001');
-  } catch (error) { for (const socket of sockets) socket.destroy();server.close(() => {});throw error; }
+  } catch (error) { requestObservations.stop();for (const socket of sockets) socket.destroy();server.close(() => {});throw error; }
   context.on('request', requestStarted);context.on('requestfailed', requestFailed);context.on('serviceworker', serviceWorker);context.on('page', pageStarted);
   return Object.freeze({
     failures, failureBranch() { return transportBranch(firstFailure); },invalidate() { broken(null, 'INTERCEPT_INVALIDATE'); },
@@ -133,7 +135,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
       return transmit({ version: 1, type: 'corpus-begin', id: compileJob.id });
     },
     stop() {
-      if (stopping) return stopping;stopped = true;
+      if (stopping) return stopping;stopped = true;requestObservations.stop();
       context.off('request', requestStarted);context.off('requestfailed', requestFailed);context.off('serviceworker', serviceWorker);context.off('page', pageStarted);
       for (const page of pages) for (const [name, handler] of Object.entries(pageEvents)) page.off(name, handler);
       const closed = new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));

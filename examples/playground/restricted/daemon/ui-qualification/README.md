@@ -109,6 +109,11 @@ audit records. The caller must preserve this rule when storing raw protocol data
 Transport failures retain a closed event-site code. Browser request failures map
 only exact known network-error categories; unrecognized metadata becomes UNKNOWN.
 These diagnostics identify the observed boundary and do not establish its cause.
+For a failed request, a bounded WeakMap records the exact Request object's ordinal,
+closed route/method/type and same-object response/status/finished events. Unseen
+objects remain UNKNOWN. The snapshot belongs to that exact network Error; a later
+failure cannot attach its metadata to an earlier guard. Ordinals are not host HTTP
+IDs, and a response event does not prove that the browser consumed the body.
 The driver latches the first observed failure, phase and branch before owned
 browser cleanup. A later stream error remains fatal and cannot replace that
 earlier cause; finalized cleanup and process observations are retained separately.
