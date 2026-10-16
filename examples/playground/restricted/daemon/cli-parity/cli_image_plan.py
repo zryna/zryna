@@ -55,7 +55,7 @@ def validate(value):
                 'exact unchanged runtime bytes/modes')
         names.append(file['path']); total += file['bytes']
     ordered([file['path'] for file in files]); ordered([file['path'] for file in runtime]); ordered(sorted(names))
-    require(len(set(names)) == 360 and total == value['bytes'] == 160496313 and type(value['bytes']) is int,
+    require(len(set(names)) == 360 and total == value['bytes'] == 160488297 and type(value['bytes']) is int,
             'complete360 image bytes')
     for name in names:
         parts = name.split('/')

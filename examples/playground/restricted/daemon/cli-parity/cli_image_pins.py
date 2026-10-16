@@ -1,4 +1,4 @@
-"""Exact already-reviewed eight DSOs, two copyright files and fixed PID1."""
+"""Exact eight DSOs, two copyright files and dedicated CLI-only idle1024 PID1."""
 RUNTIME = [
     {'path': 'lib/x86_64-linux-gnu/ld-linux-x86-64.so.2', 'bytes': 236616, 'sha256': 'c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da', 'mode': 292},
     {'path': 'lib/x86_64-linux-gnu/libc.so.6', 'bytes': 2129424, 'sha256': '3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf', 'mode': 292},
@@ -10,5 +10,5 @@ RUNTIME = [
     {'path': 'lib64/ld-linux-x86-64.so.2', 'bytes': 236616, 'sha256': 'c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da', 'mode': 365},
     {'path': 'licenses/runtime/ubuntu24/libc6/copyright', 'bytes': 26462, 'sha256': 'd3c95b56fa33e28b57860580f0baf4e4f4de2a268a2b80f1d031a5191bade265', 'mode': 292},
     {'path': 'licenses/runtime/ubuntu24/libstdc++6/copyright', 'bytes': 69004, 'sha256': '20390f8a6f3b1e4d7cb45dd8652dabb259bbef688cbad839bcdb0b9ba7252f79', 'mode': 292},
-    {'path': 'supervisor', 'bytes': 17696, 'sha256': 'fcfe8edde3a2dcc5f56fc07f242630a74981a75e89428be0e6a3faef7536d4e4', 'mode': 365},
+    {'path': 'supervisor', 'bytes': 9680, 'sha256': '608e5acec439d5a9a9fc23322fedb2ccdbdbdc377c3cb44f61b643e080e3ea3b', 'mode': 365},
 ]

@@ -55,7 +55,7 @@ class ImageTests(unittest.TestCase):
         def prepare(sources, plan_path, plan_bytes, plan_sha, *_):
             # Deliberate inert fixtures: this branch proves orchestration only.
             return self.raw, self.value, {'files': [], 'directories': [], 'bytes': 0}
-        emission = {'archiveSha256': 'd' * 64, 'archiveBytes': 10240, 'sourceBytes': 160496313, 'files': 360}
+        emission = {'archiveSha256': 'd' * 64, 'archiveBytes': 10240, 'sourceBytes': 160488297, 'files': 360}
         with mock.patch.object(producer, 'prepare', side_effect=prepare), \
              mock.patch.object(producer, 'emit_selected', return_value=emission), \
              mock.patch.object(Sources, 'verify', return_value=None):

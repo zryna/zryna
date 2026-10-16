@@ -1,0 +1,25 @@
+{
+  "format": "inert-legacy-cli-parser-fixtures.v1",
+  "sources": [
+    {
+      "fixture": "legacy-bool-gated.json",
+      "bytes": 1029,
+      "sha256": "f5c40a3dac9f0e5e7b99eaaf067e3d4034f10c11e72b9fb3af11699d2a6a63e8",
+      "originalOperation": "build-bool-gated",
+      "originalResultBytes": 387859,
+      "originalResultSha256": "a984df0fa5f2de0e5b1d597df17f0fbe474040ad5ed96517ad201d07f80ee2e0",
+      "actualExitCode": 3,
+      "provenance": "Original immutable0.2.3 actual contained CLI capture; fixture is inert parser input only, no runtime acceptance."
+    },
+    {
+      "fixture": "legacy-parse-rejected.json",
+      "bytes": 1402,
+      "sha256": "df35e0a153df20dc7c7b6703cce5d6a24326cc7b598bfa005cf9f862de63954f",
+      "originalOperation": "build-parse-rejected",
+      "originalResultBytes": 389529,
+      "originalResultSha256": "46f2ce91b9bb8bec8268b8582e97f77c4658d8fadae10e4d98218f2a95958578",
+      "actualExitCode": 3,
+      "provenance": "Original immutable0.2.3 actual contained CLI capture; fixture is inert parser input only, no runtime acceptance."
+    }
+  ]
+}

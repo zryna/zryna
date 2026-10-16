@@ -5,6 +5,7 @@ from cli_proc import children_reaped
 from cli_kernel_gone import gone
 import cli_cgroup
 import cli_mounts
+import cli_limits
 
 
 class ReapPending(ValueError):
@@ -50,6 +51,8 @@ def capture(state, cid, deadline, cancel=None):
     first = ticks(pid, deadline)
     raw = read(f'/proc/{pid}/status', deadline)
     security(fields(raw), pid)
+    raw_limits = read(f'/proc/{pid}/limits', deadline)
+    actual_limits = cli_limits.validate(raw_limits)
     membership = read(f'/proc/{pid}/cgroup', deadline)
     mapping = cli_cgroup.mapping(checked_read, numbers, membership, cid, deadline)
     group = mapping['path']
@@ -83,6 +86,6 @@ def capture(state, cid, deadline, cancel=None):
     if cancel is not None:
         cancel()
     return {'pid': pid, 'ticks': first, 'cid': cid, 'startedAt': state['State']['StartedAt'],
-            'status': raw, 'membership': membership, 'cgroupPath': group, 'cgroupMapping': mapping, 'cgroup': actual,
+            'status': raw, 'limitsText': raw_limits, 'limits': actual_limits, 'membership': membership, 'cgroupPath': group, 'cgroupMapping': mapping, 'cgroup': actual,
             'children': children, 'mountinfo': mountinfo, 'mounts': observed_mounts,
             'namespaceLinks': links, 'network': net}

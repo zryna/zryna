@@ -3,8 +3,8 @@
 This operator-only producer has its own closed plan domain and validator. It does
 not change production preparation roles, modes, compiler policies or guest limits.
 The image contains all 349 original release files with original 0644/0755 modes,
-eight pinned DSOs, two pinned copyright files and the unchanged fixed supervisor.
-The complete 360-file image has 160,496,313 file bytes.
+eight pinned DSOs, two pinned copyright files and the dedicated CLI-only idle supervisor with fixed nofile1024.
+The complete 360-file image has 160,488,297 file bytes.
 
 `cli_image_plan.py` requires the exact original archive pin, complete file counts,
 original modes, fixed runtime pins, directory closure and public image config.

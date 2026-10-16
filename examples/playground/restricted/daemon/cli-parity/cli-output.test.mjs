@@ -46,3 +46,51 @@ test('duplicate keys, oversized streams, stdout garbage and unknown operation ID
   }
   assert.throws(() => decodeCliOutput('shell', output(run())), /CLI-PARITY/);
 });
+
+test('retained legacy raw diagnostic orders project into structured-v1 without rewriting raw captures', async () => {
+  const { readFileSync } = await import('node:fs');
+  for (const [name, count] of [['bool-gated',3], ['parse-rejected',4]]) {
+    const raw = readFileSync(new URL('./fixtures/legacy-'+name+'.json',import.meta.url));
+    const value = JSON.parse(raw); const before = Buffer.from(raw);
+    const projected = decodeCliOutput('build-'+name,{exitCode:3,stdout:raw,stderr:Buffer.alloc(0)});
+    const reversed = structuredClone(value);reversed.diagnostics.reverse();
+    assert.deepEqual(decodeCliOutput('build-'+name,output(reversed,3)).diagnostics,projected.diagnostics);
+    assert.equal(projected.diagnostics.length,count);assert.deepEqual(raw,before);
+    if(name==='bool-gated') assert.match(projected.diagnostics[0].message,/unsupported result type/);
+    else assert.deepEqual(projected.diagnostics.map(d=>d.byte_start),[23,29,38,40]);
+  }
+});
+test('structured projection follows Rust Option, span, severity, code and UTF8 order including non-BMP text', async () => {
+  const { readFileSync } = await import('node:fs');
+  const value=JSON.parse(readFileSync(new URL('./fixtures/legacy-bool-gated.json',import.meta.url)));
+  const global=structuredClone(value.diagnostics[0]);
+  const messages=['\u{10000}','\ue000','a'];
+  value.diagnostics=messages.map(message=>({...structuredClone(global),message}));
+  value.diagnostics.push({...structuredClone(global),message:'a',guidance:'\u{10000}'});
+  value.diagnostics.push({...structuredClone(global),message:'a',guidance:'\ue000'});
+  const projected=decodeCliOutput('build-bool-gated',output(value,3));
+  assert.deepEqual(projected.diagnostics.map(d=>d.message),['a','a','a','\ue000','\u{10000}']);
+  assert.deepEqual(projected.diagnostics.filter(d=>d.message==='a').map(d=>d.guidance),[global.guidance,'\ue000','\u{10000}']);
+  value.diagnostics.push({...structuredClone(global),message:'z',primary:{kind:'source',span:{file:0,start:0,end:1}}});
+  value.diagnostics.push({...structuredClone(global),severity:'warning',message:'0'});
+  const ordered=decodeCliOutput('build-bool-gated',output(value,3)).diagnostics;
+  assert.equal(ordered.at(-1).byte_start,0);assert.equal(ordered.at(-2).severity,'warning');
+  value.diagnostics.push({...structuredClone(global),code:'ZRYNA-A0001',message:'z'});
+  value.diagnostics.push({...structuredClone(global),message:'z',primary:{kind:'source',span:{file:0,start:0,end:0}}});
+  value.diagnostics.push({...structuredClone(global),message:'z',primary:{kind:'source',span:{file:0,start:1,end:1}}});
+  const keyed=decodeCliOutput('build-bool-gated',output(value,3)).diagnostics;
+  assert.equal(keyed[0].code,'ZRYNA-A0001');
+  assert.deepEqual(keyed.filter(d=>d.byte_start!==null).map(d=>[d.byte_start,d.byte_end]),[[0,0],[0,1],[1,1]]);
+});
+test('projection preserves duplicate counts and changed valid spans while rejecting invalid spans before ordering', async () => {
+  const { readFileSync } = await import('node:fs');
+  const value=JSON.parse(readFileSync(new URL('./fixtures/legacy-parse-rejected.json',import.meta.url)));
+  const baseline=decodeCliOutput('build-parse-rejected',output(value,3)).diagnostics;
+  value.diagnostics.push(structuredClone(value.diagnostics[0]));
+  assert.equal(decodeCliOutput('build-parse-rejected',output(value,3)).diagnostics.length,baseline.length+1);
+  value.diagnostics.pop();value.diagnostics[0].primary.span.start=28;
+  const changed=decodeCliOutput('build-parse-rejected',output(value,3)).diagnostics;
+  assert.notDeepEqual(changed,baseline);assert(changed.some(d=>d.byte_start===28));
+  value.diagnostics[0].primary.span.end=99999;
+  assert.throws(()=>decodeCliOutput('build-parse-rejected',output(value,3)),/CLI-PARITY/);
+});

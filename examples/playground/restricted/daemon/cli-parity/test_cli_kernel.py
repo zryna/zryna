@@ -26,7 +26,7 @@ def mountinfo():
 
 class KernelTests(unittest.TestCase):
     def capture(self, changes=None):
-        values = {'/proc/321/status': STATUS, '/proc/321/cgroup': '0::/docker/' + CID + '\n',
+        values = {'/proc/321/limits': 'Max core file size 0 0 bytes\nMax file size 268435456 268435456 bytes\nMax open files 1024 1024 files\n', '/proc/321/status': STATUS, '/proc/321/cgroup': '0::/docker/' + CID + '\n',
             '/proc/321/mountinfo': mountinfo(), GROUP + '/memory.max': '536870912\n',
             GROUP + '/memory.swap.max': '0\n', GROUP + '/pids.max': '32\n',
             GROUP + '/cpu.max': '200000 100000\n', GROUP + '/cpuset.cpus.effective': '0-1\n',

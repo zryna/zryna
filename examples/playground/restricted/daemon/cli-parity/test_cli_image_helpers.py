@@ -26,7 +26,7 @@ def document():
             'archive': {'sourcePath': '/tmp/inert-release.tar.gz', 'bytes': 52949082, 'sha256': ARCHIVE_SHA256},
             'files': sorted(files, key=lambda file: file['path']),
             'runtimeFiles': sorted(runtime, key=lambda file: file['path']), 'directories': sorted(dirs),
-            'bytes': 160496313, 'config': copy.deepcopy(CONFIG)}
+            'bytes': 160488297, 'config': copy.deepcopy(CONFIG)}
 
 
 class ImageEngine:

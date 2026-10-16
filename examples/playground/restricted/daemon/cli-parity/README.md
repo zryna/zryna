@@ -38,7 +38,10 @@ the hash-pinned adjacent `fixed-plan.json` operation IDs. The operator separatel
 approves the exact immutable 360-file image/layer and unchanged compiler seccomp.
 Every operation gets a fresh nonroot, networkless, read-only container with zero
 capabilities, NNP, private namespaces, 512 MiB memory, 32 tasks and two CPUs. Its
-unchanged fixed PID1 has an independent 12-second watchdog and reaps children.
+CLI-only trusted idle PID1 has an independent 12-second watchdog and reaps children.
+The full installed verifier retains at least 705 descriptors, so only this CLI
+qualification role uses a fixed 1024-descriptor soft/hard limit, checked against
+actual kernel readback. Production compiler and evaluator limits stay at 512.
 Only `/work/project` (2 MiB), `/input` (2 MiB), `/output` (2 MiB), `/tmp` (64 MiB),
 `/dev` (1 MiB) and `/dev/shm` (1 MiB) are writable tmpfs mounts. There are no named
 volumes, host mounts or credential variables.
@@ -67,7 +70,12 @@ of the exact current source/approval/image proof must precede either operation.
 The recorder binds compilation revisions 1 through 9 to their fixed requests,
 verifies complete frame and receipt correlation, rejects missing/duplicate/stale
 rows, and requires exact CLI/playground diagnostic text, UTF-8 spans and scalar
-identities. It does not import or execute generated artifacts. The final comparison
+identities. The legacy CLI emits a raw DiagnosticVec. After validating every raw
+field and span, the CLI projection orders diagnostics using the unchanged
+structured-v1 contract: path, byte start/end, severity, code, message and guidance,
+with Rust Option and UTF-8 lexical ordering. It preserves duplicate counts and
+retains original CLI bytes; the recorder still compares the complete projected
+arrays exactly. It does not import or execute generated artifacts. The final comparison
 still requires actual retained execution/cleanup evidence and an independently
 authenticated published playground compiler before milestone acceptance.
 

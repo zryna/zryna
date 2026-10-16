@@ -38,7 +38,10 @@ async function fill(r, wrongDiagnostic = false) {
     for (const operation of plan.operations.filter(item => item.corpusId === entry.id)) {
       const captured = cliCapture(operation);
       if (wrongDiagnostic && entry.id === 'any-rejected') {
-        const json = JSON.parse(captured.stdout); json.diagnostics[0].message = 'Mismatched authoritative diagnostic';
+        const json = JSON.parse(captured.stdout);
+        if (wrongDiagnostic === 'duplicate') json.diagnostics.push(structuredClone(json.diagnostics[0]));
+        else if (wrongDiagnostic === 'span') json.diagnostics[0].primary = { kind: 'source', span: { file: 0, start: 0, end: 2 } };
+        else json.diagnostics[0].message = 'Mismatched authoritative diagnostic';
         captured.stdout = Buffer.from(JSON.stringify(json));
       }
       r.cli(operation.id, captured);
@@ -54,4 +57,10 @@ test('all 19 synthetic rows compare exact diagnostic text and scalar identity wh
   assert.throws(() => r.finish(), /CLI-PARITY/);
   const mismatch = recorder(); await fill(mismatch, true);
   assert.throws(() => mismatch.finish(), /CLI-PARITY/);
+});
+test('structured projection preserves duplicate counts and valid changed spans for strict recorder rejection', async () => {
+  for (const mutation of ['duplicate', 'span']) {
+    const r = recorder(); await fill(r, mutation);
+    assert.throws(() => r.finish(), /CLI-PARITY/);
+  }
 });

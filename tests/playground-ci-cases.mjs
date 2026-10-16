@@ -20,7 +20,7 @@ const operator = { name: 'Verify Linux operator qualification contracts',
     'node --test --test-concurrency=1 examples/playground/restricted/daemon/cli-parity/*.test.mjs\n' +
     'node --test --test-concurrency=1 examples/playground/restricted/daemon/ui-qualification/*.test.mjs\n' +
     "python3 -B -m unittest discover -s examples/playground/restricted/daemon/cli-parity -p 'test_*.py'\n" +
-    "python3 -B -m unittest discover -s examples/playground/restricted/daemon/ui-qualification -p 'test_owner_*.py'\n" };
+    "PYTHONPATH=examples/playground/restricted/daemon/preparation python3 -B -m unittest discover -s examples/playground/restricted/daemon/ui-qualification -p 'test_owner_*.py'\n" };
 
 // Remove only the exact reviewed addition before authenticating all prior CI authority.
 export function withoutPlaygroundContracts(candidate) {

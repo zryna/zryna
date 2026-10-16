@@ -26,6 +26,18 @@ function diagnostic(value, source) {
   return { code: value.code, severity: value.severity, path, byte_start: byteStart,
     byte_end: byteEnd, message: value.message, guidance: value.guidance };
 }
+// Project raw legacy DiagnosticVec order into the documented structured-v1 order.
+// Rust Option ordering and UTF-8 lexical comparison match report.mjs; preserve duplicates.
+function structuredOrder(left, right) {
+  for (const key of ['path', 'byte_start', 'byte_end', 'severity', 'code', 'message', 'guidance']) {
+    const a = left[key]; const b = right[key];
+    if (a === b) continue;
+    if (a === null || b === null) return a === null ? -1 : 1;
+    if (typeof a === 'number') return a < b ? -1 : 1;
+    return Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+  }
+  return 0;
+}
 export function decodeCliOutput(id, capture) {
   const operation = findOperation(id);
   const entry = fixedCorpus.find(value => value.id === operation.corpusId);
@@ -58,6 +70,7 @@ export function decodeCliOutput(id, capture) {
   if (status !== operation.expected.status || operation.kind === 'run' && returned !== operation.expected.value ||
       operation.expected.code !== null && !diagnostics.some(item => item.code === operation.expected.code) ||
       entry.provider && !diagnostics.some(item => /^TS[0-9]+$/.test(item.code))) fail();
+  diagnostics.sort(structuredOrder);
   return freeze({ operationId: id, corpusId: operation.corpusId, sourceSha256: operation.sourceSha256,
     status, value: returned, diagnostics, capture: { exitCode: capture.exitCode,
       stdoutBytes: stdout.length, stdoutSha256: sha256(stdout), stderrBytes: 0, stderrSha256: sha256(Buffer.alloc(0)) } });

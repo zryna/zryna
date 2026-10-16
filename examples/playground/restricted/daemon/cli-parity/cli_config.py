@@ -43,7 +43,7 @@ def configuration(selected, nonce):
             'LogConfig': {'Type': 'none', 'Config': {}}, 'AutoRemove': False,
             'Ulimits': [{'Name': 'core', 'Soft': 0, 'Hard': 0},
                         {'Name': 'fsize', 'Soft': 268435456, 'Hard': 268435456},
-                        {'Name': 'nofile', 'Soft': 512, 'Hard': 512}],
+                        {'Name': 'nofile', 'Soft': 1024, 'Hard': 1024}],
             'SecurityOpt': ['no-new-privileges:true', 'seccomp=' + selected['seccomp']],
             'MaskedPaths': ['/proc/acpi', '/proc/asound', '/proc/interrupts', '/proc/kcore', '/proc/keys',
                 '/proc/latency_stats', '/proc/timer_list', '/proc/timer_stats', '/proc/sched_debug', '/proc/scsi',

@@ -279,7 +279,7 @@ jobs:
           node --test --test-concurrency=1 examples/playground/restricted/daemon/cli-parity/*.test.mjs
           node --test --test-concurrency=1 examples/playground/restricted/daemon/ui-qualification/*.test.mjs
           python3 -B -m unittest discover -s examples/playground/restricted/daemon/cli-parity -p 'test_*.py'
-          python3 -B -m unittest discover -s examples/playground/restricted/daemon/ui-qualification -p 'test_owner_*.py'
+          PYTHONPATH=examples/playground/restricted/daemon/preparation python3 -B -m unittest discover -s examples/playground/restricted/daemon/ui-qualification -p 'test_owner_*.py'
       - name: Verify documentation bundle contract
         run: pnpm docs:check
       - name: Verify and package editor client
