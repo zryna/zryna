@@ -21,9 +21,17 @@ original nonroot runner. Its separate cleanup and profile removal cannot replace
 editor owner's cleanup or the nine host checks. The normal editor sandbox stays enabled.
 
 The run installs only the verified VSIX and loads only this dedicated runner as a development
-extension. Raw installed payload differences, including unknown installer metadata changes,
-fail closed. There is no speculative normalization rule. Only actual qualified differences may
-receive a separately reviewed correction.
+extension. Installer-aware verification derives its expectations from that authenticated VSIX:
+the original twelve payloads plus the exact outer XML manifest form a closed thirteen-file
+namespace. Eleven payload bodies remain exact. Package JSON must preserve every original key,
+value and order, adding only the qualified three metadata fields in exact tab-indented JSON
+without a final newline. Target platform is the literal `undefined`; size derives from original
+payload and manifest lengths; the safe-integer timestamp must lie inside the actual owned
+installation wallclock window and is then frozen for all later checks. The original VSIX identity
+is reauthenticated and expectations rederived on each installer-aware verification. Callers
+without that explicit identity keep strict original byte comparison. Unknown files, fields,
+serialization or body changes fail; there is no general metadata stripping or normalization.
+This qualified installer behavior is separate from the still-required actual GUI/host checks.
 
 Workspace trust and the normal editor sandbox remain enabled. The runner first proves its fresh
 folder untrusted and the installed extension inactive, then the parent clicks the normal exact

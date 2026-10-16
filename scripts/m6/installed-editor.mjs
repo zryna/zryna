@@ -5,7 +5,8 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { createRequire } from 'node:module';
-import { capture } from './installed-editor/files.mjs';
+import { capture, readBytes } from './installed-editor/files.mjs';
+import { bindInstaller, validateInstallerIdentity } from './installed-editor/installer-metadata.mjs';
 import { awaitLinuxUserns } from './installed-editor/linux-userns.mjs';
 import { EDITOR_ARCHIVES } from './installed-editor/pins.mjs';
 import { command, startEditor } from './installed-editor/process.mjs';
@@ -106,17 +107,24 @@ async function run(values) {
     const cliArgs = ['--user-data-dir', userData, '--extensions-dir', extensions];
     const cli = [editorCli(editor.executable)];
     const cliEnv = { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
+    const installBefore = Date.now();
     await command(editor.executable, [...cli, ...cliArgs, '--install-extension', setup.vsix],
       { ...options, env: cliEnv, name: 'install-exact-vsix' });
+    const installWindow = { before: installBefore, after: Date.now() };
     const listed = await command(editor.executable, [...cli, ...cliArgs, '--list-extensions', '--show-versions'],
       { ...options, env: cliEnv, name: 'list-installed-vsix' });
     assert.equal(listed.trim(), 'zryna.zryna@0.5.0');
     const installedExtension = await installedDirectory(extensions);
-    const installedInventory = await verifyInstalled(installedExtension, setup.payload);
+    const verificationDeadline = Math.min(prepareDeadline, performance.now() + 30000);
+    validateInstallerIdentity(setup.installerIdentity, setup.payload);
+    const installer = bindInstaller(setup.installerIdentity, setup.payload, installWindow,
+      await readBytes(join(installedExtension, 'package.json'), verificationDeadline, 1024 * 1024));
+    await writeFile(join(output, 'installer-identity.json'), `${JSON.stringify(installer, null, 2)}\n`, { flag: 'wx' });
+    const installedInventory = await verifyInstalled(installedExtension, setup.payload, verificationDeadline, installer);
     await writeFile(join(output, 'installed-inventory.json'),
       `${JSON.stringify(installedInventory, null, 2)}\n`, { flag: 'wx' });
     const config = { setup: setup.setup, digest: setup.digest, installedExtension,
-      payload: setup.payload, workspace, initialPath: join(output, 'initial-untrusted.json'),
+      payload: setup.payload, installer, workspace, initialPath: join(output, 'initial-untrusted.json'),
       resultPath: join(output, 'host-result.json'), failurePath: join(output, 'host-failure.json') };
     const configPath = join(stage, 'host-config.json');
     await writeFile(configPath, JSON.stringify(config), { flag: 'wx' });
@@ -150,7 +158,7 @@ async function run(values) {
     result = { format: 'zryna.m6-installed-editor.v1', source: { commit: head, tree },
       editor: { version: editor.version, binary: editor.descriptor, productCommit: editor.productCommit,
         archive, inventorySha256: editor.inventory.sha256 }, setup: { digest: setup.digest,
-        installedExtension, payload: setup.payload }, trust, observed,
+        installedExtension, payload: setup.payload, installer }, trust, observed,
       platform: { os: process.platform, arch: process.arch,
         display: process.platform === 'linux' ? 'Native Linux editor under Xvfb virtual display' : 'Native Windows GUI process' },
       passed: 9, failed: 0, skipped: 0, productionAdmission: 'not granted by this receipt' };
