@@ -1,7 +1,7 @@
 // Trusted UI-only tcp4 loopback bridge. The browser supplies actual network headers.
 import { createServer } from 'node:http';
 import { bounds, envelope, fail, integer, tagTransport, transportBranch, origin, sha256 } from './wire.mjs';
-import { routeFor, routes, responseRecord, selectNetworkHeaders } from './routes.mjs';
+import { routeFor, routes, responseRecord, selectNetworkHeaders, loopbackResponseHeaders } from './routes.mjs';
 import { observeBrowserRequests, requestFailureBranch } from './browser-diagnostics.mjs';
 
 export async function interceptBrowser(context, selectedOrigin, send) {
@@ -82,7 +82,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
       if (record.type === 'aborted') return;
       const actual = responseRecord(record, name);totalOut += actual.body.length;
       if (totalOut > bounds.aggregate || closed) fail('INTERCEPT_010');
-      response.writeHead(record.status, { ...actual.headers, connection: 'close' });
+      response.writeHead(record.status, loopbackResponseHeaders(record.status, actual));
       await new Promise((resolve, reject) => { response.once('error', error => reject(tagTransport(error, 'INTERCEPT_RESPONSE_ERROR')));response.once('close', () => response.writableFinished ? resolve() : reject(tagTransport(new Error('PLAYGROUND-UI-TRANSPORT'), 'INTERCEPT_RESPONSE_INCOMPLETE')));response.end(actual.body, resolve); });
     } catch (error) { if (!stopped) broken(error, 'INTERCEPT_SERVE');response.destroy(); }
     finally { if (slot) reading--;if (job) pending.delete(job.id); }

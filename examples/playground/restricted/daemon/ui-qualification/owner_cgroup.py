@@ -62,6 +62,11 @@ class _Candidate:
 _ACTIVE = None
 
 
+def note_site(candidate, site):
+    if type(candidate) is _Candidate and _ACTIVE is candidate:
+        candidate.site = site
+
+
 def note_tree(candidate, pid, group, membership, procs, threads, current, captured):
     if candidate is None:
         return
@@ -110,6 +115,46 @@ def _init_epoch(read, original, deadline):
             first['state'] not in ('Z', 'X', 'x') and last['state'] not in ('Z', 'X', 'x'), 'original init epoch remains live')
 
 
+def io_failure(error, candidate):
+    """Project only this escaping error; annotations never authorize acquisition."""
+    result = {'errno': error.errno if type(error.errno) is int and 0 <= error.errno <= 4095 else None,
+              'operation': 'UNKNOWN', 'kind': 'UNKNOWN', 'field': 'UNKNOWN', 'subject': 'UNKNOWN', 'pid': None,
+              'site': candidate.site if candidate.site in ('TREE_GROUP', 'TREE_LEADERS', 'TREE_FIRST',
+                  'TREE_INVENTORY', 'TREE_LAST_TICKS', 'TREE_LAST_MEMBERSHIPS', 'TREE_FINAL_GROUP', 'POST_TREE') else 'UNKNOWN'}
+    context = getattr(error, '_ui_kernel_io', None)
+    if type(context) is tuple and len(context) == 2 and context[0] in ('OPEN', 'FSTAT', 'READ', 'CLOSE'):
+        operation, path = context
+        result['operation'] = operation
+    else:
+        path = error.filename
+    if type(path) is not str or len(path) > 512:
+        return result
+    match = re.fullmatch(r'/proc/([1-9][0-9]{0,9})/(stat|status|cgroup|mountinfo|net/dev|net/route|net/ipv6_route|ns/user|ns/pid|ns/mnt|ns/net|ns/cgroup)', path)
+    if match:
+        pid = int(match[1])
+        if pid > 4294967295:
+            return result
+        result.update(kind='PROC', field=match[2].replace('/', '_').upper())
+        tree = candidate.tree
+        subject = 'INIT' if pid == candidate.original['pid'] else (
+            'OWNED_PID' if tree and pid in tree['processes'] else 'OWNED_TID' if tree and pid in tree['threads'] else 'UNKNOWN')
+        if subject != 'UNKNOWN':
+            result.update(subject=subject, pid=pid)
+    elif candidate.tree and path.startswith(candidate.tree['group'] + '/'):
+        field = path[len(candidate.tree['group']) + 1:]
+        if field in ('cgroup.procs', 'cgroup.threads', 'pids.current', 'memory.max', 'memory.swap.max',
+                     'pids.max', 'cpu.max', 'cpuset.cpus.effective', 'cgroup.events'):
+            result.update(kind='CGROUP', field=field.replace('.', '_').upper())
+    return result
+
+
+def note_io_failure(row, error, candidate):
+    try:
+        row['ioFailure'] = io_failure(error, candidate)
+    except BaseException:
+        pass
+
+
 def acquire(capture, read, fields, numbers, original, cid, deadline, phase, record, anchors=None):
     global _ACTIVE
     require(_ACTIVE is None and phase in ('POST_PROC_AUDIT', 'POST_MATERIAL_AUDIT') and
@@ -133,6 +178,7 @@ def acquire(capture, read, fields, numbers, original, cid, deadline, phase, reco
             record['attempts'].append(row)
             candidate = _Candidate()
             candidate.original, candidate.anchors, candidate.tree, candidate.error, candidate.row = dict(original), anchors, None, None, row
+            candidate.site = None
             _ACTIVE = candidate
             try:
                 _init_epoch(read, original, window)
@@ -144,6 +190,7 @@ def acquire(capture, read, fields, numbers, original, cid, deadline, phase, reco
                 _init_epoch(read, original, window)
             except FileNotFoundError as error:
                 row['status'] = 'fatal'
+                note_io_failure(row, error, candidate)
                 if candidate.error is not error or candidate.tree is None:
                     raise
                 try:
@@ -160,8 +207,10 @@ def acquire(capture, read, fields, numbers, original, cid, deadline, phase, reco
                 if number == 3:
                     raise
                 continue
-            except BaseException:
+            except BaseException as error:
                 row['status'] = 'fatal'
+                if isinstance(error, OSError):
+                    note_io_failure(row, error, candidate)
                 raise
             finally:
                 _ACTIVE = None

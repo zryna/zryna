@@ -23,13 +23,17 @@ def read(path, deadline, maximum=16384):
     require(time.monotonic() < deadline, 'observation deadline')
     try:
         descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
-    except FileNotFoundError as error:
-        error._ui_kernel_syscall = 'OPEN'
+    except OSError as error:
+        error._ui_kernel_io = ('OPEN', path)
+        if isinstance(error, FileNotFoundError):
+            error._ui_kernel_syscall = 'OPEN'
         raise
     try:
+        operation = 'FSTAT'
         require(stat.S_ISREG(os.fstat(descriptor).st_mode), 'ordinary kernel metadata')
         data = bytearray()
         while True:
+            operation = 'READ'
             block = os.read(descriptor, min(4096, maximum + 1 - len(data)))
             if not block:
                 break
@@ -37,8 +41,15 @@ def read(path, deadline, maximum=16384):
             require(len(data) <= maximum, 'kernel first-extra-byte bound')
         require(time.monotonic() < deadline, 'observation deadline')
         return data.decode('ascii', errors='strict')
+    except OSError as error:
+        error._ui_kernel_io = (operation, path)
+        raise
     finally:
-        os.close(descriptor)
+        try:
+            os.close(descriptor)
+        except OSError as error:
+            error._ui_kernel_io = ('CLOSE', path)
+            raise
 
 
 def ticks(pid, deadline):
@@ -137,12 +148,14 @@ def network(pid, deadline, links):
 
 
 def process_tree(pid, group, membership, deadline, candidate=None):
+    owner_cgroup.note_site(candidate, 'TREE_GROUP')
     procs = numbers(read(group + '/cgroup.procs', deadline))
     threads = numbers(read(group + '/cgroup.threads', deadline))
     current = read(group + '/pids.current', deadline).strip()
     require(current.isdigit() and 2 <= len(procs) <= int(current) == len(threads) <= 256
             and pid in procs, 'actual bounded cgroup tasks include init')
     captured = {}
+    owner_cgroup.note_site(candidate, 'TREE_LEADERS')
     for process in procs:
         first = ticks(process, deadline)
         status = fields(read(f'/proc/{process}/status', deadline))
@@ -151,8 +164,10 @@ def process_tree(pid, group, membership, deadline, candidate=None):
         require(ticks(process, deadline) == first, 'stable UI process identity')
         captured[process] = {'pid': process, 'ticks': first, 'parent': int(status['PPid'])}
     owner_cgroup.note_tree(candidate, pid, group, membership, procs, threads, int(current), captured)
+    owner_cgroup.note_site(candidate, 'TREE_FIRST')
     for thread in threads:
         require(owner_cgroup.thread_membership(candidate, read, fields, thread, deadline) == membership, 'same-group UI thread')
+    owner_cgroup.note_site(candidate, 'TREE_INVENTORY')
     observed = owner_proc.inventory(read, deadline)
     for process in procs:
         require(process in observed and observed[process]['ticks'] == captured[process]['ticks'] and
@@ -167,10 +182,13 @@ def process_tree(pid, group, membership, deadline, candidate=None):
             require(cursor in captured and cursor not in seen, 'all UI processes descend from owned init')
             seen.add(cursor)
             cursor = captured[cursor]['parent']
+    owner_cgroup.note_site(candidate, 'TREE_LAST_TICKS')
     require(all(ticks(process, deadline) == captured[process]['ticks'] for process in procs),
             'all UI process identities stable through tree observation')
+    owner_cgroup.note_site(candidate, 'TREE_LAST_MEMBERSHIPS')
     require(all(read(f'/proc/{thread}/cgroup', deadline) == membership for thread in threads),
             'all original UI thread memberships stable through global observation')
+    owner_cgroup.note_site(candidate, 'TREE_FINAL_GROUP')
     require(numbers(read(group + '/cgroup.procs', deadline)) == procs
             and numbers(read(group + '/cgroup.threads', deadline)) == threads
             and read(group + '/pids.current', deadline).strip() == current, 'stable bounded UI process tree')
@@ -198,6 +216,7 @@ def capture(state, cid, deadline, proc_proof=None, candidate=None):
     actual['cpuset.cpus.effective'] = read(group + '/cpuset.cpus.effective', deadline)
     require(actual['cpuset.cpus.effective'] in ['0-1\n', '0,1\n'], 'actual cgroup fixed CPU set')
     tree = process_tree(pid, group, membership, deadline, candidate)
+    owner_cgroup.note_site(candidate, 'POST_TREE')
     mountinfo = read(f'/proc/{pid}/mountinfo', deadline, 262144)
     observed_mounts = mounts(mountinfo, cid, proc_proof)
     links = namespace_links(pid, deadline)

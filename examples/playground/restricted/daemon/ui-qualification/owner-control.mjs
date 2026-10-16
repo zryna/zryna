@@ -23,7 +23,7 @@ export function validateOwnerReceipt(value) {
   if(value.removed && (value.ownershipUnconfirmed || value.cleanupFailure!==null))fail();
   if(value.removed && !(value.reap?.noCreateAttempt===true && value.containerId===null) &&
     (!value.dockerRemoved || !(value.kernelReapProven || value.reap?.notStarted===true)))fail();
-  if(Object.hasOwn(value,'acquisition'))validateAcquisitions(value.acquisition);
+  if(Object.hasOwn(value,'acquisition'))validateAcquisitions(value.acquisition,value.initialIdentity?.pid);
   return value;
 }
 export function createOwnerControl({onReserved=()=>{},onReady,onClosed}) {
@@ -83,7 +83,23 @@ function leaders(value){
       index&&leader.pid<=value[index-1].pid)fail();
   });
 }
-export function validateAcquisitions(value){
+function ioFailure(value,row,initialPid){
+  exact(value,['errno','operation','kind','field','subject','pid','site']);
+  const fields={UNKNOWN:['UNKNOWN'],PROC:['STAT','STATUS','CGROUP','MOUNTINFO','NET_DEV','NET_ROUTE','NET_IPV6_ROUTE',
+    'NS_USER','NS_PID','NS_MNT','NS_NET','NS_CGROUP'],CGROUP:['CGROUP_PROCS','CGROUP_THREADS','PIDS_CURRENT',
+    'MEMORY_MAX','MEMORY_SWAP_MAX','PIDS_MAX','CPU_MAX','CPUSET_CPUS_EFFECTIVE','CGROUP_EVENTS']};
+  if(value.errno!==null&&!integer(value.errno,0,4095)||!['OPEN','FSTAT','READ','CLOSE','UNKNOWN'].includes(value.operation)||
+    !Object.hasOwn(fields,value.kind)||!fields[value.kind].includes(value.field)||
+    !['INIT','OWNED_PID','OWNED_TID','UNKNOWN'].includes(value.subject)||
+    !['UNKNOWN','TREE_GROUP','TREE_LEADERS','TREE_FIRST','TREE_INVENTORY','TREE_LAST_TICKS',
+      'TREE_LAST_MEMBERSHIPS','TREE_FINAL_GROUP','POST_TREE'].includes(value.site)||
+    (value.subject==='UNKNOWN'?value.pid!==null:value.kind!=='PROC'||!integer(value.pid,1,4294967295))||
+    value.subject==='INIT'&&(!integer(initialPid,2,4294967295)||value.pid!==initialPid)||
+    value.subject==='OWNED_PID'&&(value.pid===initialPid||!row.before?.processes.includes(value.pid))||
+    value.subject==='OWNED_TID'&&(!row.before?.threads.includes(value.pid)||row.before.processes.includes(value.pid))||
+    row.status==='accepted')fail();
+}
+export function validateAcquisitions(value,initialPid){
   if(!Array.isArray(value)||value.length>2)fail();
   value.forEach((phase,index)=>{
     exact(phase,['format','version','phase','status','windowMs','attempts','acceptedAttempt']);
@@ -93,7 +109,8 @@ export function validateAcquisitions(value){
       (phase.status==='accepted'?phase.acceptedAttempt!==phase.attempts.length||phase.attempts.length===0:phase.acceptedAttempt!==null))fail();
     phase.attempts.forEach((row,attempt)=>{
       exact(row,['number','status','failure','task','before','after','targetBefore','targetAfter','initStable',
-        'leadersStable','visibleProcesses','unrelatedZombies','noEscapedOwnedDescendants','leaders']);
+        'leadersStable','visibleProcesses','unrelatedZombies','noEscapedOwnedDescendants','leaders',
+        ...(Object.hasOwn(row,'ioFailure')?['ioFailure']:[])]);
       if(row.number!==attempt+1||!['accepted','retired-task','fatal'].includes(row.status)||
         ![null,'OPEN_ENOENT_FIRST','OTHER'].includes(row.failure)||row.task!==null&&!integer(row.task,1,4294967295)||
         ['initStable','leadersStable','noEscapedOwnedDescendants'].some(key=>row[key]!==null&&typeof row[key]!=='boolean')||
@@ -101,6 +118,7 @@ export function validateAcquisitions(value){
         row.unrelatedZombies!==null&&!integer(row.unrelatedZombies,0,row.visibleProcesses??8192))fail();
       for(const key of ['before','after'])if(row[key]!==null)group(row[key]);
       for(const key of ['targetBefore','targetAfter'])if(row[key]!==null)epoch(row[key]);
+      if(Object.hasOwn(row,'ioFailure'))ioFailure(row.ioFailure,row,initialPid);
       if(row.leaders!==null){leaders(row.leaders);if(!row.before||
         JSON.stringify(row.leaders.map(leader=>leader.pid))!==JSON.stringify(row.before.processes))fail();}
       if(row.status!=='fatal'){

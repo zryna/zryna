@@ -308,3 +308,9 @@ The real HTTP tests use the actual product service and real local sockets with
 explicit inert host stubs; host compilation/evaluation must remain uncalled.
 They prove transport boundaries only. A zero-error test run is not a genuine
 browser/publication/source/guest qualification result.
+
+The UI loopback bridge writes a computed `Content-Length` from the complete,
+validated bounded response body rather than forwarding upstream transport headers.
+Empty204 responses omit that header; empty205 responses use zero, and nonempty
+204/205 bodies fail before any local response bytes. Local raw TCP fixtures verify
+this framing; it does not establish the cause or remedy of a browser abort.

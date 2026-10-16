@@ -90,3 +90,10 @@ export function responseRecord(value, route) {
   if (security.some(name => !Object.hasOwn(headers, name))) fail('ROUTES_013');
   return { headers, body: binary(value.bodyBase64, routes[route].output) };
 }
+
+// The caller has already validated the complete bounded body and security headers.
+export function loopbackResponseHeaders(status, { headers, body }) {
+  if ((status === 204 || status === 205) && body.length !== 0) fail('ROUTES_012');
+  return { ...headers, connection: 'close',
+    ...(status === 204 ? {} : { 'content-length': String(body.length) }) };
+}

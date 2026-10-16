@@ -80,3 +80,28 @@ test('retirement followed by an unobserved fatal epoch still preserves validated
   validateOwnerReceipt({...receipt(),acquisition:[phase]});
   phase.attempts[1].status='accepted';assert.throws(()=>validateOwnerReceipt({...receipt(),acquisition:[phase]}));
 });
+test('optional escaping IO diagnostic has closed fields and captured numeric roles without authorizing acceptance',()=>{
+  const phase=acquisition();phase.status='failed';phase.acceptedAttempt=null;phase.attempts=phase.attempts.slice(0,1);
+  Object.assign(phase.attempts[0],{status:'fatal',failure:null,task:null,after:null,targetBefore:null,targetAfter:null,
+    ioFailure:{errno:2,operation:'READ',kind:'PROC',field:'CGROUP',subject:'OWNED_TID',pid:323,site:'TREE_LAST_MEMBERSHIPS'}});
+  const value={...receipt(),acquisition:[phase]};validateOwnerReceipt(value);
+  const mutations=[io=>io.errno=true,io=>io.errno=4096,io=>io.operation='stat /secret',io=>io.kind='PATH',
+    io=>io.field='private-path',io=>io.subject='FOREIGN',io=>io.pid=true,io=>io.pid=999,io=>io.pid=321,
+    io=>io.site='raw private string',io=>io.path='/proc/323/cgroup',io=>{io.kind='CGROUP';io.field='PIDS_CURRENT';},
+    io=>{io.subject='UNKNOWN';},io=>{io.subject='INIT';io.pid=999;}];
+  for(const mutate of mutations){const changed=structuredClone(value);mutate(changed.acquisition[0].attempts[0].ioFailure);
+    assert.throws(()=>validateOwnerReceipt(changed));}
+  for(const io of [
+    {errno:null,operation:'UNKNOWN',kind:'UNKNOWN',field:'UNKNOWN',subject:'UNKNOWN',pid:null,site:'UNKNOWN'},
+    {errno:13,operation:'OPEN',kind:'PROC',field:'STATUS',subject:'OWNED_PID',pid:322,site:'TREE_LEADERS'},
+    {errno:5,operation:'READ',kind:'CGROUP',field:'PIDS_CURRENT',subject:'UNKNOWN',pid:null,site:'TREE_FINAL_GROUP'},
+  ]){const changed=structuredClone(value);changed.acquisition[0].attempts[0].ioFailure=io;validateOwnerReceipt(changed);}
+  const initial=structuredClone(value);Object.assign(initial.acquisition[0].attempts[0].ioFailure,{subject:'INIT',pid:321});
+  assert.throws(()=>validateOwnerReceipt(initial));initial.initialIdentity={pid:321};validateOwnerReceipt(initial);
+  initial.initialIdentity.pid=322;assert.throws(()=>validateOwnerReceipt(initial));
+  const wrongLeader=structuredClone(value);wrongLeader.initialIdentity={pid:322};
+  Object.assign(wrongLeader.acquisition[0].attempts[0].ioFailure,{subject:'OWNED_PID',pid:322});
+  assert.throws(()=>validateOwnerReceipt(wrongLeader));
+  const accepted=acquisition();accepted.attempts.at(-1).ioFailure=value.acquisition[0].attempts[0].ioFailure;
+  assert.throws(()=>validateOwnerReceipt({...receipt(),acquisition:[accepted]}));
+});
