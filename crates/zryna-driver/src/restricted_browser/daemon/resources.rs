@@ -9,6 +9,8 @@ use crate::native::recipe::engine::{Body, Method};
 use serde_json::{Value, json};
 use std::{thread, time::Duration};
 
+mod startup;
+
 pub(super) struct Container {
     pub name: String,
     pub cid: Option<String>,
@@ -116,6 +118,7 @@ impl Resources<'_> {
         // Ownership survives a later admission refusal; it never authorizes execution.
         self.containers[index].init =
             Some(kernel::capture_owned(&value, self.id(index)?, self.client.deadline)?);
+        let value = self.await_supervisor(index)?;
         kernel::same(
             self.containers[index]
                 .init

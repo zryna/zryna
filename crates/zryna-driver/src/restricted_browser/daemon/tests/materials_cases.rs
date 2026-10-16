@@ -130,6 +130,8 @@ fn actual_kernel_security_credentials_cpu_and_duplicate_fields_are_required() {
         output
     });
     assert!(kernel::security(&good, [0, 1]).is_ok());
+    // A readiness marker never permits a threaded init, even if a later read could pass.
+    assert!(kernel::security(&good.replace("Threads:\t1\n", "Threads:\t2\n"), [0, 1]).is_err());
     for (key, value) in fields {
         let line = format!("{key}:\t{value}\n");
         assert!(kernel::security(&good.replace(&line, ""), [0, 1]).is_err(), "{key}");

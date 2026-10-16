@@ -4,8 +4,10 @@ use std::{collections::BTreeSet, fs::File, io::Read, time::Instant};
 
 mod ownership;
 mod proc_scan;
+mod startup;
 
 pub(super) use ownership::{capture_owned, cleanup_owned};
+pub(super) use startup::{startup_epoch, supervisor_ready};
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct Init {
