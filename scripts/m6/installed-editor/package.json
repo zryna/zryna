@@ -1,0 +1,11 @@
+{
+  "name": "zryna-installed-editor-acceptance",
+  "publisher": "zryna",
+  "version": "0.0.1",
+  "private": true,
+  "engines": { "vscode": "^1.82.0" },
+  "main": "./extension.cjs",
+  "extensionKind": ["workspace"],
+  "activationEvents": ["onStartupFinished"],
+  "capabilities": { "untrustedWorkspaces": { "supported": true } }
+}

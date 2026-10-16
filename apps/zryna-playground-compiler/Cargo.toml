@@ -7,6 +7,10 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+cap-fs-ext.workspace = true
+cap-std.workspace = true
+same-file.workspace = true
+sha2.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 zryna-driver = { path = "../../crates/zryna-driver" }

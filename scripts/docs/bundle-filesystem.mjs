@@ -72,4 +72,3 @@ export async function scanFiles(root, relative = '', files = []) {
   }
   return files;
 }
-

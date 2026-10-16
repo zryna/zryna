@@ -115,4 +115,3 @@ class GroupFixtureCase(unittest.TestCase):
         fixture = Fixture()
         self.fixtures.append(fixture)
         return fixture
-

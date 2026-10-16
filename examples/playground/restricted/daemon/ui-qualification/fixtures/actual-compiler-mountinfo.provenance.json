@@ -1,0 +1,13 @@
+{
+  "scope": "Retained actual compiler Docker mountinfo for structural stack parser replay only. Compiler tmpfs sizes do not satisfy trusted UI profile.",
+  "sourceReceipt": {
+    "path": "/workspace/scratch/M6_410_REAL_DAEMON_QUALIFICATION_20261015/RUN6/ACTUAL_READONLY_RUNTIME_TOPOLOGY.json",
+    "sha256": "5e81215be8c6644795ca0fd58c554b0c8386fa1aa15dd67e5f800dc6df82dbc6"
+  },
+  "containerId": "6293c8ad06d74ef1298bd1cfce4602f0b8dfe5439e037af680f774f2633df9e3",
+  "fixture": {
+    "path": "actual-compiler-mountinfo.txt",
+    "bytes": 3783,
+    "sha256": "5aeba6eefd9b77449aae17b1f6653cddfb2cea1951c21af81a2627ca3fb00516"
+  }
+}

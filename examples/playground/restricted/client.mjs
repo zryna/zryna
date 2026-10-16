@@ -2,6 +2,7 @@
 import { exact, fail, isHash, limits, utf8 } from './limits.mjs';
 import { decodeJson } from './json.mjs';
 import { boundedResponse } from './protocol.mjs';
+import { validateObservation } from './evaluation.mjs';
 
 function base64(value, cap) {
   if (typeof value !== 'string' || value.length > Math.ceil(cap / 3) * 4 ||
@@ -32,8 +33,12 @@ export async function connect(capability) {
   let session;
   try { session = decodeJson(await boundedResponse(await request('/session', null, startup.signal), startup.signal), limits.header); }
   finally { clearTimeout(timer); }
-  exact(session, ['version', 'authority', 'witSha256', 'template']);
-  if (session.version !== 1 || !isHash(session.witSha256)) fail('SESSION');
+  exact(session, session.version === 2 ?
+    ['version', 'authority', 'witSha256', 'template', 'evaluationMode'] :
+    ['version', 'authority', 'witSha256', 'template']);
+  if (![1, 2].includes(session.version) || !isHash(session.witSha256) ||
+      session.version === 2 && session.evaluationMode !== 'supervised-host') fail('SESSION');
+  const evaluationMode = session.version === 2 ? 'supervised-host' : 'worker';
   const templateBytes = base64(session.template, limits.binding);
   const host = Object.freeze({
     async compile(value, signal) {
@@ -44,7 +49,17 @@ export async function connect(capability) {
       const receipt = decodeJson(base64(response.headers.get('x-zryna-receipt'), 1024), 1024);
       return { token, receipt, bytes: await boundedResponse(response, signal) };
     },
+    async evaluate(value, signal) {
+      if (evaluationMode !== 'supervised-host') fail('EVALUATION-MODE');
+      const response = await request('/evaluate', value, signal);
+      const reply = decodeJson(await boundedResponse(response, signal), 2048);
+      if (isHash(reply?.token)) lastToken = reply.token;
+      exact(reply, ['token', 'observation']);
+      if (!isHash(reply.token)) fail('JOB');
+      return { token: reply.token, observation: validateObservation(reply.observation, value) };
+    },
     async beginEvaluation(value, signal) {
+      if (evaluationMode !== 'worker') fail('EVALUATION-MODE');
       const response = await request('/evaluate', value, signal);
       const reply = decodeJson(await boundedResponse(response, signal), 1024);
       exact(reply, ['token']);
@@ -66,5 +81,5 @@ export async function connect(capability) {
       } finally { clearTimeout(timer); }
     },
   });
-  return { host, authority: session.authority, witSha256: session.witSha256, templateBytes };
+  return { host, authority: session.authority, witSha256: session.witSha256, templateBytes, evaluationMode };
 }

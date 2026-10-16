@@ -2,10 +2,14 @@
 import { exact, fail, isHash, isI32, isRevision, limits, sha256, utf8 } from './limits.mjs';
 import { decodeCompilation } from './protocol.mjs';
 import { verifyReceipt } from './executable.mjs';
+import { validateEvaluationMode, validateObservation, validateSelection } from './evaluation.mjs';
 
-export function createController({ host, witSha256, authority, templateBytes, WorkerClass = Worker,
+export function createController({ host, witSha256, authority, templateBytes, WorkerClass = globalThis.Worker,
+  evaluationMode = 'worker',
   schedule = setTimeout, unschedule = clearTimeout }) {
-  if (!host || !isHash(witSha256)) fail('HOST');
+  validateEvaluationMode(evaluationMode);
+  if (!host || !isHash(witSha256) ||
+      evaluationMode === 'supervised-host' && typeof host.evaluate !== 'function') fail('HOST');
   exact(authority, ['compilerSha256', 'toolkitSha256', 'policySha256', 'bindingTemplateSha256']);
   if (Object.values(authority).some(value => !isHash(value)) ||
       !(templateBytes instanceof Uint8Array) || templateBytes.length > limits.binding) fail('HOST');
@@ -122,6 +126,17 @@ export function createController({ host, witSha256, authority, templateBytes, Wo
         job.reject?.(new Error(job.reason));
       }, limits.evaluateMs);
       return complete(job, async () => {
+        if (evaluationMode === 'supervised-host') {
+          const selection = validateSelection({ revision: job.revision, sourceSha256: output.metadata.sourceSha256,
+            componentSha256: output.metadata.identity.componentSha256, logical, args: [...args] }, output.metadata);
+          const response = await interrupted(job, host.evaluate(selection, job.abort.signal));
+          // The token remains owned even when the observation subsequently fails validation.
+          if (isHash(response?.token)) job.token = response.token;
+          exact(response, ['token', 'observation']);
+          if (!isHash(response.token)) fail('JOB');
+          current(job);
+          return validateObservation(response.observation, selection);
+        }
         // The independent host watchdog must be armed before creating a worker.
         job.token = await interrupted(job, host.beginEvaluation({ revision: job.revision,
           sourceSha256: output.metadata.sourceSha256,

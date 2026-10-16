@@ -38,7 +38,7 @@ async function frame(input, changes = {}) {
   return { bytes, metadata };
 }
 
-async function fixture(t, overrides = {}) {
+async function fixture(t, overrides = {}, serviceOptions = {}) {
   const calls = { compile: [], evaluate: [], finish: [] };
   const host = {
     async compile(bytes, signal, token) {
@@ -53,7 +53,7 @@ async function fixture(t, overrides = {}) {
     policySha256: 'c'.repeat(64), bindingTemplateSha256: await sha256(templateBytes) };
   const service = createService({ host, authority, witSha256, templateBytes,
     resources: new Map([['/examples/playground/restricted/', { bytes: utf8('<p>Transport fixture</p>'),
-      type: 'text/html; charset=utf-8' }]]) });
+      type: 'text/html; charset=utf-8' }]]), ...serviceOptions });
   const location = await service.listen();
   t.after(() => service.close());
   const capability = new URL(location.url).hash.slice(1);

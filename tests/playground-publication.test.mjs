@@ -1,3 +1,5 @@
+import '../examples/playground/restricted/daemon/compiler-publication.test.mjs';
+import '../examples/playground/restricted/daemon/compiler-publication-sbom.test.mjs';
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, renameSync, rmSync, symlinkSync, truncateSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

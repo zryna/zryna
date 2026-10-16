@@ -1,8 +1,15 @@
-//! One-source compiler transport; all execution isolation belongs to its external supervisor.
+//! One-source compiler transport and independently approved fixed daemon host entry point.
+
+#![forbid(unsafe_code)]
 
 use std::{env, io, path::PathBuf, process::ExitCode};
 
 use zryna_driver::RestrictedBrowserCompiler;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod daemon_host;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod material_audit;
 
 fn main() -> ExitCode {
     let args = env::args_os().skip(1).collect::<Vec<_>>();
@@ -13,6 +20,24 @@ fn main() -> ExitCode {
             option_env!("ZRYNA_PLAYGROUND_SOURCE_COMMIT").unwrap_or("source-build")
         );
         return ExitCode::SUCCESS;
+    }
+    if args.len() == 1 && args[0] == "--audit-materials" {
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        return material_audit::entry();
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            eprintln!("PLAYGROUND-HOST-UNSUPPORTED");
+            return ExitCode::from(1);
+        }
+    }
+    if args.first().is_some_and(|argument| argument == "--daemon-approval") {
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        return daemon_host::entry(&args);
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            eprintln!("PLAYGROUND-HOST-UNSUPPORTED");
+            return ExitCode::from(1);
+        }
     }
     let result = (|| {
         if args.len() != 2 || args[0] != "--materials-root" {

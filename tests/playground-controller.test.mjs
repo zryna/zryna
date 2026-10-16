@@ -1,3 +1,4 @@
+import './playground-controller-supervised-cases.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createController } from '../examples/playground/restricted/controller.mjs';

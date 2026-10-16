@@ -218,8 +218,8 @@ async function start() {
   const status = document.getElementById('status');
   try {
     const capability = consumeCapability(window.location, window.history);
-    const options = await connect(capability);
-    mountPlayground(document, createController(options));
+    const { evaluationMode, ...options } = await connect(capability);
+    mountPlayground(document, createController({ ...options, evaluationMode }));
   } catch (error) {
     status.textContent = `Compiler connection unavailable: ${error.message}`;
   }

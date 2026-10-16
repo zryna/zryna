@@ -12,6 +12,8 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 use crate::{SourceToIrError, diagnostic_sessions::ToolingCompiler};
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) mod daemon;
 mod frame;
 mod isolated;
 mod runtime;

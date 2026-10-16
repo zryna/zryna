@@ -66,4 +66,3 @@ class CleanupEvidence(GroupFixtureCase):
         self.assertEqual(len(releases), 2)
         self.assertEqual(fd_count(), before)
         self.assertIsNotNone(fixture.groups[-1].name)
-

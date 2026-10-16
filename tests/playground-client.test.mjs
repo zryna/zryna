@@ -1,3 +1,4 @@
+import './playground-client-supervised-cases.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { connect } from '../examples/playground/restricted/client.mjs';

@@ -2050,8 +2050,12 @@ dependencies = [
 name = "zryna-playground-compiler"
 version = "0.1.0"
 dependencies = [
+ "cap-fs-ext",
+ "cap-std",
+ "same-file",
  "serde",
  "serde_json",
+ "sha2",
  "zryna-driver",
 ]
 

@@ -4,11 +4,14 @@ import { createServer } from 'node:http';
 import { exact, fail, isHash, limits, sha256, utf8 } from './limits.mjs';
 import { decodeJson } from './json.mjs';
 import { decodeCompilation, decodeSourceRequest } from './protocol.mjs';
+import { validateEvaluationMode, validateObservation, validateSelection } from './evaluation.mjs';
 
 const csp = "default-src 'none'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self'; " +
   "connect-src 'self'; style-src 'self'; img-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
 
-export function createService({ host, authority, witSha256, templateBytes, resources }) {
+export function createService({ host, authority, witSha256, templateBytes, resources, evaluationMode = 'worker' }) {
+  validateEvaluationMode(evaluationMode);
+  if (evaluationMode === 'supervised-host' && typeof host?.evaluate !== 'function') fail('HOST');
   exact(authority, ['compilerSha256', 'toolkitSha256', 'policySha256', 'bindingTemplateSha256']);
   if (Object.values(authority).some(value => !isHash(value)) || !isHash(witSha256) ||
       !(templateBytes instanceof Uint8Array) || templateBytes.length > limits.binding ||
@@ -61,7 +64,10 @@ export function createService({ host, authority, witSha256, templateBytes, resou
 
   async function finish(job, cancelled) {
     if (active !== job) return;
-    if (cancelled) job.abort.abort();
+    if (cancelled) {
+      job.abort.abort();
+      if (evaluationMode === 'supervised-host') latest = null;
+    }
     if (!job.finishing) {
       clearTimeout(job.timer);
       job.finishing = Promise.resolve().then(async () => {
@@ -92,7 +98,8 @@ export function createService({ host, authority, witSha256, templateBytes, resou
       if (request.headers.authorization !== `Bearer ${capability}` ||
           request.headers['sec-fetch-site'] !== 'same-origin') fail('CAPABILITY');
       if (request.method === 'GET' && path === '/session') {
-        send(response, 200, JSON.stringify({ version: 1, authority, witSha256,
+        send(response, 200, JSON.stringify({ version: evaluationMode === 'supervised-host' ? 2 : 1,
+          ...(evaluationMode === 'supervised-host' ? { evaluationMode } : {}), authority, witSha256,
           template: Buffer.from(templateBytes).toString('base64') })); return;
       }
       if (request.method !== 'POST' || request.headers.origin !== origin) fail('ORIGIN');
@@ -103,7 +110,8 @@ export function createService({ host, authority, witSha256, templateBytes, resou
         const input = decodeSourceRequest(bytes);
         current(job);
         // A host deadline covers stalled pipes, descendants, and the complete compiler operation.
-        const frame = await host.compile(bytes, job.abort.signal, job.token);
+        const captured = await host.compile(bytes, job.abort.signal, job.token);
+        const frame = captured instanceof Uint8Array ? captured.slice() : captured;
         current(job);
         const expected = { revision: input.revision, source: input.source, witSha256 };
         const compiled = await decodeCompilation(frame, expected);
@@ -112,7 +120,9 @@ export function createService({ host, authority, witSha256, templateBytes, resou
           frameSha256: await sha256(frame), compilerSha256: authority.compilerSha256,
           toolkitSha256: authority.toolkitSha256, policySha256: authority.policySha256 };
         current(job);
-        if (compiled.metadata.status === 'compiled') latest = compiled.metadata;
+        if (compiled.metadata.status === 'compiled') latest = evaluationMode === 'supervised-host' ?
+          { metadata: compiled.metadata, sourceRequest: Object.freeze({ ...input }),
+            frameBytes: frame.slice(), receipt: Object.freeze({ ...receipt }) } : compiled.metadata;
         response.setHeader('x-zryna-job', job.token);
         response.setHeader('x-zryna-receipt', Buffer.from(JSON.stringify(receipt)).toString('base64'));
         // The job stays reserved until an explicit teardown acknowledgement.
@@ -121,6 +131,23 @@ export function createService({ host, authority, witSha256, templateBytes, resou
       }
       if (path === '/evaluate') {
         job = reserve('evaluate');
+        if (evaluationMode === 'supervised-host') {
+          response.once('close', () => { if (!response.writableEnded) job.abort.abort(); });
+          const input = decodeJson(await body(request, 8192), 8192);
+          current(job);
+          const selection = validateSelection(input, latest?.metadata);
+          const capture = latest;
+          const observation = await host.evaluate(job.token, {
+            sourceRequest: { ...capture.sourceRequest }, frameBytes: capture.frameBytes.slice(),
+            selection, receipt: { ...capture.receipt }, authority: { ...authority },
+          }, job.abort.signal);
+          current(job);
+          const verified = validateObservation(observation, selection);
+          const reply = JSON.stringify({ token: job.token, observation: verified });
+          if (utf8(reply).length > 2048) fail('OBSERVATION');
+          job.timer = setTimeout(() => { void finish(job, true).catch(() => {}); }, limits.teardownMs);
+          send(response, 200, reply); return;
+        }
         const input = decodeJson(await body(request, 1024), 1024);
         exact(input, ['revision', 'sourceSha256', 'componentSha256']);
         current(job);

@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "c35abbe77e6a73f62f397a12697946a570876bbf21eb642586523813932efa9e",
+  "registrySha256": "ad5c66c71f726ee20d774b9aae574934fc873d4844e4a13ff9f77bb323011818",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3254,8 +3254,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 33118,
-      "sha256": "356d7ac6e0d1963a495d4722da0563a437d572b5b8d578b89806300acc06b0da"
+      "bytes": 34448,
+      "sha256": "fb9256e933fd05e1e65f0d563d20a4dd8fc1cdb6c1a93ab8fdfd04685545ea18"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -3274,8 +3274,8 @@
     },
     {
       "path": "Cargo.lock",
-      "bytes": 51915,
-      "sha256": "30cec5893ec3016164c3c5477521c46946aaf6bba6304452c299625fb55bc6b0"
+      "bytes": 51965,
+      "sha256": "9545d525d63767831ae8611166c3294e0059d17ffde0961ba9b66e6237be7476"
     },
     {
       "path": "Cargo.toml",
@@ -4359,8 +4359,8 @@
     },
     {
       "path": "crates/zryna-driver/src/lib.rs",
-      "bytes": 10350,
-      "sha256": "6746464d7aef7f859dde1971251edcb68d5f4246105fcd6fe3c3facffd37f46d"
+      "bytes": 10650,
+      "sha256": "4024b673df13e5f4d7a56efcb7764350271615044b5ae92a6f934a9ab8a3b993"
     },
     {
       "path": "crates/zryna-driver/src/native.rs",
@@ -4804,8 +4804,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 6897,
-      "sha256": "4a9b4022fc53d27f6a2d98b552b26084d599d6c45bb6fb9ae1d59bae8469eb2a"
+      "bytes": 7060,
+      "sha256": "634e2b9c3594a6645851510ec1ebc82d4f2b6a9fe184201060e9081650eb9425"
     },
     {
       "path": "pnpm-lock.yaml",
@@ -5005,12 +5005,12 @@
     {
       "path": "scripts/distribution/command-h1-rust-binding-v1.json",
       "bytes": 994,
-      "sha256": "8fff5058dff2e414b8d60d79f01af25b71d8337a269f72924d8e33a92a3617b3"
+      "sha256": "1e6cb84327279ca9dcb2b2a3676e400875e9756a316e49de5567a9e79ff75020"
     },
     {
       "path": "scripts/distribution/command-h1-rust-binding.mjs",
       "bytes": 1707,
-      "sha256": "373a4355509d94aa1c65631f2c22524a69b0c6a3fccf42d281af5d2c0b42ec91"
+      "sha256": "c8e9c3377e214e8a551aa770576038a87f2fb061d7051b8d1f858645c79d2a57"
     },
     {
       "path": "scripts/distribution/documents.mjs",
