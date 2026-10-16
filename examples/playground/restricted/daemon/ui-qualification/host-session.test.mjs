@@ -36,6 +36,15 @@ test('EOF and deliberate stop settle the incomplete session and never establish 
   await assert.rejects(third.result, /UI-STOPPED/);
   assert.ok(third.recovery());
 });
+test('corpus transition and evaluator admission cannot precede the genuine held-abort acknowledgement',async()=>{
+ for(const record of [{version:1,type:'corpus-begin',id:1},{version:1,type:'request',id:1,route:'evaluate',method:'POST',headers:[],bodyBase64:'e30='}]){
+  const{session}=fixture();await session.begin();assert.throws(()=>session.accept(record),/UI-TRANSPORT/);
+  await assert.rejects(session.result,/UI-TRANSPORT/);assert.equal(session.audit().length,0);await session.stop();
+ }
+ const{session}=fixture();await session.begin();session.accept({version:1,type:'request',id:1,route:'compile',method:'POST',headers:[],bodyBase64:'e30='});
+ assert.throws(()=>session.accept({version:1,type:'request',id:2,route:'compile',method:'POST',headers:[],bodyBase64:'e30='}),/UI-TRANSPORT/);
+ await assert.rejects(session.result,/UI-TRANSPORT/);assert.equal(session.audit().length,0);await session.stop();
+});
 test('closed inner failure preserves fixed phase/cause without admitting arbitrary strings or another run', async () => {
   const selected = fixture();await selected.session.begin();
   selected.session.accept({ version: 1, type: 'failure', runId: selected.configuration.runId,

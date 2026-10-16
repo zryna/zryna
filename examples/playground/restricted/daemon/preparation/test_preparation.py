@@ -141,6 +141,16 @@ class Preparation(unittest.TestCase):
 
 
 class UiPlanClosure(unittest.TestCase):
+    def test_corpus_has_only_two_literal_required_inner_helpers(self):
+        files = [{'path': name, 'sourcePath': '/tmp/fixed-inert-source', 'bytes': 1, 'sha256': 'a' * 64,
+                  'mode': 365 if name in ('supervisor', 'ui-supervisor', 'app/compiler', 'lib64/ld-linux-x86-64.so.2') else 292}
+                 for name in ui_plan.REQUIRED]
+        for name in ['app/browser-corpus.mjs', 'app/browser-oracles.mjs']:
+            for replacement in [None, {'path': 'app/arbitrary-corpus.mjs'}, {'mode': 365}]:
+                with self.subTest(name=name, replacement=replacement), self.assertRaises(ValueError):
+                    ui_plan.candidate([dict(item, **replacement) if item['path'] == name else item
+                                      for item in files if item['path'] != name or replacement is not None])
+
     def test_fixed_diagnostics_module_is_required_without_opening_other_script_paths(self):
         files = [{'path': name, 'sourcePath': '/tmp/fixed-inert-source', 'bytes': 1, 'sha256': 'a' * 64,
                   'mode': 365 if name in ('supervisor', 'ui-supervisor', 'app/compiler', 'lib64/ld-linux-x86-64.so.2') else 292}

@@ -1,11 +1,12 @@
-// Image-pinned first probe; this plan never declares corpus or final accessibility acceptance.
+// Image-pinned cumulative probe; audible AT and separate session isolation remain unrun.
 import { closeSync, constants, fstatSync, openSync, readSync } from 'node:fs';
 import { decode, fail, sha256 } from './wire.mjs';
 
 export const initialPlan = Object.freeze({ format: 'zryna.playground-ui-qualification-plan.v1', version: 1,
-  phase: 'initial-abort-static-ax', transport: 'operator-stdio-browser-loopback-http-v1',
+  phase: 'initial-abort-corpus-ax', transport: 'operator-stdio-browser-loopback-http-v1',
   listener: 'tcp4:127.0.0.1:same-origin-port',
-  abortProbe: 'requestfailed-and-response-close-before-dispatch', lifetimeMs: 300000, cleanupMs: 2000 });
+  abortProbe: 'requestfailed-and-response-close-before-dispatch', corpus: 'original-nine-plus-unicode-and-inert-source-v1',
+  scalarCases: 10, lifetimeMs: 300000, cleanupMs: 2000 });
 export const planBytes = () => Buffer.from(JSON.stringify(initialPlan));
 export function readImagePlan() {
   let directory; let file;

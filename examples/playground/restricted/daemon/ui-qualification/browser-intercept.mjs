@@ -6,7 +6,7 @@ import { routeFor, routes, responseRecord, selectNetworkHeaders } from './routes
 export async function interceptBrowser(context, selectedOrigin, send) {
   origin(selectedOrigin);const target = new URL(selectedOrigin);const maximum = bounds.live + bounds.queued;
   let serial = 0;let admitted = 0;let reading = 0;let stopped = false;let firstFailure = null;let rejectFailure;let stopping;
-  let compileRequest = null;let compileJob = null;let totalIn = 0;let totalOut = 0;
+  let compileRequest = null;let compileJob = null;let totalIn = 0;let totalOut = 0;let corpusEnabled = false;
   const pending = new Map(), completed = new Map(), sockets = new Set(), operations = new Set(), transmissions = new Set(), aborts = [], pages = new Set();
   const failures = new Promise((_, reject) => { rejectFailure = reject; });failures.catch(() => {});
   const broken = error => { firstFailure ??= tagTransport(error instanceof Error ? error : new Error('PLAYGROUND-UI-TRANSPORT'), 'INTERCEPT_EVENT');rejectFailure(firstFailure); };
@@ -26,7 +26,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
     try {
       const name = routeFor(request.url(), request.method(), selectedOrigin);
       if (!['document', 'script', 'stylesheet', 'fetch'].includes(request.resourceType())) fail('INTERCEPT_002');
-      if (name !== 'compile') return;
+      if (name !== 'compile' || corpusEnabled) return;
       const body = request.postDataBuffer() ?? Buffer.alloc(0);
       if (compileRequest || body.length > routes.compile.input) fail('INTERCEPT_003');
       compileRequest = { request, bytes: body.length, sha256: sha256(body), failed: false };
@@ -49,7 +49,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
       closed = true;
       if (!job) return;
       job.httpClosed = true;
-      if (job.name !== 'compile') { job.reject(new Error('PLAYGROUND-UI-TRANSPORT'));broken(); }
+      if (job !== compileJob) { job.reject(new Error('PLAYGROUND-UI-TRANSPORT'));broken(); }
       else abortIfProved(job);
     };
     response.on('close', closedByBrowser);request.on('aborted', closedByBrowser);
@@ -71,7 +71,7 @@ export async function interceptBrowser(context, selectedOrigin, send) {
       const body = Buffer.concat(chunks);reading--;slot = false;
       job = { id: ++serial, name, response, bytes, sha256: sha256(body), state: 'waiting', paused: false,
         httpClosed: false, abortSent: false, responseSeen: false, resolve: null, reject: null };
-      if (name === 'compile') { if (compileJob) fail('INTERCEPT_006');compileJob = job;if (compileRequest && !associated(job)) fail('INTERCEPT_006'); }
+      if (name === 'compile' && !corpusEnabled) { if (compileJob) fail('INTERCEPT_006');compileJob = job;if (compileRequest && !associated(job)) fail('INTERCEPT_006'); }
       const reply = new Promise((resolve, reject) => { job.resolve = resolve;job.reject = reject; });reply.catch(() => {});pending.set(job.id, job);
       await transmit({ version: 1, type: 'request', id: job.id, route: name, method: request.method, headers, bodyBase64: body.toString('base64') });
       const record = await reply;
@@ -125,6 +125,11 @@ export async function interceptBrowser(context, selectedOrigin, send) {
     },
     probeState() { return compileJob?.paused && associated(compileJob) ? Object.freeze({ id: compileJob.id, state: compileJob.state }) : null; },
     abortProof() { return structuredClone(aborts); },
+    beginCorpus() {
+      if (stopped || corpusEnabled || aborts.length !== 1 || compileJob?.state !== 'terminal' || pending.has(compileJob.id)) fail('INTERCEPT_006');
+      corpusEnabled = true;
+      return transmit({ version: 1, type: 'corpus-begin', id: compileJob.id });
+    },
     stop() {
       if (stopping) return stopping;stopped = true;
       context.off('request', requestStarted);context.off('requestfailed', requestFailed);context.off('serviceworker', broken);context.off('page', pageStarted);

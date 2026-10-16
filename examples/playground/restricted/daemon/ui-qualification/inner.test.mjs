@@ -21,7 +21,7 @@ test('fixed image plan mismatch rejects before loading browser tools and stdout 
     launchPath: '/examples/playground/restricted/', capability: 'b'.repeat(64), planSha256: 'c'.repeat(64) });
   await assert.rejects(run, /UI-TRANSPORT/);
   assert.equal(loads, 0); assert.equal(Buffer.concat(observed).length, 0);
-  assert.equal(initialPlan.phase, 'initial-abort-static-ax');
+  assert.equal(initialPlan.phase, 'initial-abort-corpus-ax');
 });
 test('partial startup EOF cannot start Chromium or produce a passing result', async () => {
   const input = new PassThrough(); const output = new PassThrough(); let loads = 0;

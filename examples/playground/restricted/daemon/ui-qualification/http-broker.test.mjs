@@ -5,7 +5,7 @@ import { createService } from '../../service.mjs';
 import { createHttpBroker } from './http-broker.mjs';
 import { sha256 } from './wire.mjs';
 
-async function fixture(run) {
+async function fixture(run, inspectResponse) {
   const template = Buffer.from('inert HTTP-only template'); let hostCalls = 0;
   const host = { compile() { hostCalls++; throw new Error('never admit fixture compilation'); },
     evaluate() { hostCalls++; throw new Error('never admit fixture evaluation'); }, async finish() {} };
@@ -19,13 +19,13 @@ async function fixture(run) {
   const location = await service.listen(); const capability = new URL(location.url).hash.slice(1);
   const events = [];
   const broker = createHttpBroker({ origin: location.origin, capability, holdCompileProbe: true,
-    onEvent: record => events.push(record) });
+    onEvent: record => events.push(record), inspectResponse });
   const record = (id, route, headers = [], body = '') => ({ version: 1, type: 'request', id, route,
     method: ['compile', 'evaluate', 'finish', 'cancel'].includes(route) ? 'POST' : 'GET', headers,
     bodyBase64: Buffer.from(body).toString('base64') });
   const auth = [{ name: 'authorization', value: `Bearer ${capability}` }, { name: 'sec-fetch-site', value: 'same-origin' }];
   try { await run({ broker, record, auth, events, location, html, hostCalls: () => hostCalls }); }
-  finally { await broker.close(); await service.close(); }
+  finally { try { await broker.close(); } finally { await service.close(); } }
 }
 test('real service status/security/body bytes survive and absent browser authentication is not repaired', async () => {
   await fixture(async ({ broker, record, auth, html, hostCalls }) => {
@@ -92,4 +92,20 @@ test('rapid cancellation retains physical ClientRequest ownership until close be
     assert.ok((await Promise.all(replacements)).every(value => value.status === 200));
     assert.ok(broker.ownedSockets() <= 4);
   });
+});
+test('actual response inspection fences forwarding and fails closed before browser consumption', async () => {
+ let inspected=0;
+ await fixture(async({broker,record})=>{
+  await assert.rejects(broker.request(record(1,'index')),/closed synthetic inspection failure/);
+  assert.equal(inspected,1);assert.equal(broker.audit()[0].status,200);
+ },async({name,body,status})=>{assert.equal(name,'index');assert.equal(status,200);assert.ok(body.length>0);inspected++;throw new Error('closed synthetic inspection failure');});
+});
+test('pending actual response inspection belongs to the same finite cleanup', {timeout:5000}, async()=>{
+ let entered;const observing=new Promise(resolve=>{entered=resolve;});let release;
+ const blocked=new Promise(resolve=>{release=resolve;});
+ await assert.rejects(fixture(async({broker,record})=>{
+  const request=broker.request(record(1,'index'));request.catch(()=>{});await observing;
+  const close=broker.close();assert.equal(close,broker.close());await assert.rejects(close,/UI-CLEANUP/);
+  await assert.rejects(request,/UI-STOPPED/);release();
+ },async()=>{entered();await blocked;}),/UI-CLEANUP/);
 });

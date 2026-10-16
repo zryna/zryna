@@ -6,16 +6,37 @@ This is a distinct trusted operator test tool. It is not part of the source-laun
 The root-reviewed design is recorded in the task artifact
 `/tmp/M6_410_REAL_UI_STDIO_QUALIFICATION_PROPOSAL_20261015.md` (initial approval
 SHA256 `41760ed35edf89d0dde3fa52d8f5db780f45bc59b303e15af4a0be0b7a473d77`).
-The implementation currently covers the **initial abort/static/AX probe only**.
+The current fixed plan runs the initial abort/static/AX gate first, followed by
+the original nine-source corpus, ten scalar observations, a Unicode
+diagnostic-navigation source and one fixed hostile-markup source-as-data case.
+The expanded stage requires its own actual
+runtime evidence; the retained initial-only PASS does not establish corpus success.
 The fixed loopback refinement is recorded in
 `/workspace/scratch/M6_410_UI_LOOPBACK_TRANSPORT_PROPOSAL_20261016.md`
 (SHA256 `f09579c4a5889afbbd639d16325142f402d62f9f8b903c0a7c993539da3527de`).
-Corpus, Unicode diagnostic navigation, arbitrary inert diagnostic markup,
-full keyboard/contrast/live-region cases and actual daemon cancellation remain
-separate real-browser gates. Audible assistive-technology output is unrun.
+The corpus uses real Examples/Source/Compile/Export/Argument/Run controls. It checks
+Tab/Enter/Space and Ctrl+Enter, invalid-argument focus, source-budget recovery,
+revision invalidation and actual AX snapshots. Host-side `corpus-trace.mjs`
+authenticates each actual compilation frame and receipt against the session
+authority, validates structured reports/artifact hashes and all ten independent
+scalar oracles, and requires `/finish` acknowledgement before the next operation.
+`corpus-observation.mjs` compares DOM text/export arity/identity/diagnostic children
+and the actual UTF-8-byte to UTF-16 selection with that authenticated evidence.
+No compiler artifacts execute in the host validator. Original corpus rows are
+independently bound by tests to the unchanged product `corpus.mjs`.
+The fixed `<img ... onerror=...>` source is filled as textarea data and genuinely
+compiled. Its rejected report is rendered normally; exact source text, zero DOM
+images, unchanged script-element count and an absent execution marker are checked.
+This establishes only the tested source/DOM boundary. It does not claim that the
+compiler emitted a hostile diagnostic message. Arbitrary hostile diagnostic-message
+injection and paired-session isolation remain separate
+actual gates. Audible assistive-technology output is unrun; AX evidence does not
+claim audible announcements. Resource/watchdog/containment obligations remain
+separate, and successful corpus results still set `fullQualification:false`.
 
 `inner.mjs` must be installed as the fixed `/app/ui-driver.mjs`; copy its relative
-module closure into `/app` unchanged: `browser-probe.mjs`, `browser-intercept.mjs`,
+module closure into `/app` unchanged: `browser-probe.mjs`, `browser-corpus.mjs`,
+`browser-oracles.mjs`, `browser-intercept.mjs`,
 `framing.mjs`, `routes.mjs`, `wire.mjs`, `plan.mjs`, `browser-diagnostics.mjs`. The sealed runtime supplies only
 the independently approved `/materials/runtime/node/bin/node`, complete pinned
 Playwright/Chrome closure, and required DSOs. `planBytes()` emits the exact compact
@@ -70,6 +91,13 @@ and finite byte/time budgets. Unknown routes, redirects, headers, workers or
 noncanonical targets fail. Capability/header/job-token values never enter its
 audit records. The caller must preserve this rule when storing raw protocol data;
 **do not persist raw stdio, Playwright traces, HAR, console output or launch URLs**.
+The initial compile remains held before host dispatch until both the matching
+browser `requestfailed` and actual HTTP response-close are observed. Only its
+acknowledged abort, successful `/cancel` and drained initial job admit the single
+closed `corpus-begin` transition. Both inner and host fences reject a second
+compile or any evaluator dispatch before this transition. Later requests cannot
+replace or reset the initial abort proof. Response authentication is awaited before
+forwarding bytes to the browser; pending inspections belong to owned cleanup.
 
 After an accepted start, a failed inner driver emits one closed `failure` record
 after browser cleanup. It contains only the matching run ID, fixed phase/cause

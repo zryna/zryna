@@ -76,6 +76,20 @@ test('a host pause can precede the browser event without exposing an unassociate
   f.proxy.accept({version:1,type:'aborted',id:1});assert.equal(f.proxy.abortProof()[0].requestSha256,sha256(Buffer.from('{}')));
  }finally{await f.proxy.stop();}
 });
+test('corpus admission is one-way and requires the fully drained genuine abort before later compiles',async()=>{
+ const f=await fixture();try{
+  assert.throws(()=>f.proxy.beginCorpus(),/UI-TRANSPORT/);
+  const browser=browserCompile(f);f.context.emit('request',browser);const initial=f.request('/compile','POST','{}');await f.wait(1);
+  f.proxy.accept({version:1,type:'probe-paused',id:1});assert.throws(()=>f.proxy.beginCorpus(),/UI-TRANSPORT/);
+  initial.request.destroy();await assert.rejects(initial.result);f.context.emit('requestfailed',browser);await f.wait(2);
+  assert.throws(()=>f.proxy.beginCorpus(),/UI-TRANSPORT/);f.proxy.accept({version:1,type:'aborted',id:1});
+  await new Promise(resolve=>setImmediate(resolve));await f.proxy.beginCorpus();
+  assert.deepEqual(f.sent[2],{version:1,type:'corpus-begin',id:1});assert.throws(()=>f.proxy.beginCorpus(),/UI-TRANSPORT/);
+  f.context.emit('request',browserCompile(f,'later'));const next=f.request('/compile','POST','later');await f.wait(4);
+  assert.equal(f.sent[3].id,2);f.proxy.accept(reply(2));assert.equal((await next.result).status,200);
+  assert.equal(f.proxy.abortProof().length,1,'later successful compilation cannot replace the initial proof');
+ }finally{await f.proxy.stop();}
+});
 test('owned pending sockets and body readers close; a stalled stdio send has one finite cleanup', {timeout:6000},async()=>{
  const f=await fixture(()=>new Promise(()=>{}));const request=f.request('/session');await f.wait(1);const start=performance.now(),stopping=f.proxy.stop();assert.equal(stopping,f.proxy.stop());await assert.rejects(stopping,/UI-CLEANUP/);assert.ok(performance.now()-start<3000);await assert.rejects(request.result);
  const rejected=httpRequest(f.origin+'/session');const result=new Promise(resolve=>rejected.once('error',resolve));rejected.end();assert.equal((await result).code,'ECONNREFUSED');

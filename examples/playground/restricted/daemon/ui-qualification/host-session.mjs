@@ -2,6 +2,8 @@
 import { createHttpBroker } from './http-broker.mjs';
 import { bounds, envelope, exact, fail, hash, integer, start, innerFailure, transportBranch, transportBranches } from './wire.mjs';
 import { routes } from './routes.mjs';
+import { createCorpusTrace } from './corpus-trace.mjs';
+import { inspectCorpus } from './corpus-observation.mjs';
 
 // Failure evidence is a projection of owned observations, never raw protocol or headers.
 export function validateFailureEvidence(value) {
@@ -47,11 +49,11 @@ function pinnedResources(selected) {
   if (selected.size !== copied.size) fail('SESSION_003');
   return copied;
 }
-function inspectResult(value, configuration, audit, resources) {
+function inspectResult(value, configuration, audit, resources, compilerEvidence) {
   envelope(value, 'result', ['runId', 'phase', 'transport', 'abort', 'initial', 'state', 'scripts',
     'axBefore', 'axAfter', 'axUpdates', 'corpus', 'audibleAssistiveTechnology', 'browserClosed']);
-  if (value.runId !== configuration.runId || value.phase !== 'initial-abort-static-ax' ||
-      value.transport !== 'operator-stdio-browser-loopback-http-v1' || value.corpus !== 'unrun' ||
+  if (value.runId !== configuration.runId || value.phase !== 'initial-abort-corpus-ax' ||
+      value.transport !== 'operator-stdio-browser-loopback-http-v1' ||
       value.audibleAssistiveTechnology !== 'unrun' || value.browserClosed !== true ||
       Buffer.byteLength(JSON.stringify(value)) > 1048576) fail('SESSION_004');
   exact(value.abort, ['id', 'route', 'paused', 'event', 'acknowledged', 'httpResponseClosed', 'requestBytes', 'requestSha256']);
@@ -62,7 +64,10 @@ function inspectResult(value, configuration, audit, resources) {
   const actualAbort = audit.find(entry => entry.id === value.abort.id);
   if (!actualAbort?.aborted || actualAbort.dispatched !== false || actualAbort.route !== 'compile' || actualAbort.requestBytes !== value.abort.requestBytes ||
       actualAbort.requestSha256 !== value.abort.requestSha256) fail('SESSION_006');
-  if (audit.some(entry => entry.route === 'evaluate' || entry.route === 'compile' && !entry.aborted)) fail('SESSION_007');
+  if (audit.filter(entry => entry.route === 'evaluate').length !== 10 ||
+      audit.filter(entry => entry.route === 'compile' && !entry.aborted).length !== 11 ||
+      audit.some(entry => ['compile', 'evaluate'].includes(entry.route) && !entry.aborted && entry.status !== 200)) fail('SESSION_007');
+  inspectCorpus(value.corpus, compilerEvidence);
   exact(value.initial, ['pathname', 'hashRemoved', 'title', 'status', 'role', 'live']);
   if (value.initial.pathname !== configuration.launchPath || value.initial.hashRemoved !== true ||
       value.initial.title !== 'Zryna source playground' || value.initial.role !== 'status' || value.initial.live !== 'polite') fail('SESSION_008');
@@ -109,7 +114,8 @@ export function createHostSession({ configuration, send, resourcePins }) {
   const resources = pinnedResources(resourcePins);
   let begun = false; let terminal = false; let stopped = false; let error = null; let resolveResult; let rejectResult;
   let stopping = null; let cleanupError = null;
-  let firstBranch = null;let inner = null;
+  let firstBranch = null;let inner = null;let corpusBegun = false;let probeCompile = false;
+  const trace = createCorpusTrace();
   const operations = new Set(); const transmissions = new Set();
   const result = new Promise((resolve, reject) => { resolveResult = resolve; rejectResult = reject; });
   result.catch(() => {});
@@ -125,6 +131,7 @@ export function createHostSession({ configuration, send, resourcePins }) {
     return pending;
   };
   const broker = createHttpBroker({ origin: selected.origin, capability: selected.capability,
+    inspectResponse: record => trace.observe(record),
     holdCompileProbe: true, onEvent: record => { transmit(record).catch(broken); } });
   return Object.freeze({
     result,
@@ -138,8 +145,16 @@ export function createHostSession({ configuration, send, resourcePins }) {
       try {
         if (!begun) fail('SESSION_020');
         if (record?.type === 'request') {
+          if (record.route === 'compile') { if (probeCompile && !corpusBegun) fail('SESSION_007');probeCompile = true; }
+          if (record.route === 'evaluate' && !corpusBegun) fail('SESSION_007');
           const operation = broker.request(record).then(transmit).catch(broken);
           operations.add(operation); operation.finally(() => operations.delete(operation));
+        } else if (record?.type === 'corpus-begin') {
+          envelope(record, 'corpus-begin', ['id']);integer(record.id, bounds.requests);
+          const audit = broker.audit(), aborted = audit.find(row => row.id === record.id);
+          if (corpusBegun || !probeCompile || broker.activeIds().length || !aborted?.aborted || aborted.route !== 'compile' ||
+              aborted.dispatched !== false || !audit.some(row => row.route === 'cancel' && row.status === 200)) fail('SESSION_007');
+          corpusBegun = true;
         } else if (record?.type === 'abort') {
           envelope(record, 'abort', ['id']);
           const reply = broker.abort(record.id);
@@ -151,10 +166,11 @@ export function createHostSession({ configuration, send, resourcePins }) {
           error = new Error(`PLAYGROUND-UI-INNER-${observed.phase.replaceAll('_', '-')}-${observed.cause.replaceAll('_', '-')}${observed.cleanupFailed ? '-CLEANUP' : ''}`);
           rejectResult(error);
         } else if (record?.type === 'result') {
-          if (broker.activeIds().length) fail('SESSION_021');
-          const inspected = inspectResult(record, selected, broker.audit(), resources);
+          if (!corpusBegun || broker.activeIds().length) fail('SESSION_021');
+          const compilerEvidence = trace.complete();
+          const inspected = inspectResult(record, selected, broker.audit(), resources, compilerEvidence);
           terminal = true; resolveResult(Object.freeze({ observation: inspected,
-            transportAudit: broker.audit(), fullQualification: false, containerCleanupConfirmed: false }));
+            transportAudit: broker.audit(), compilerEvidence, fullQualification: false, containerCleanupConfirmed: false }));
         } else fail('SESSION_022');
       } catch (failure) { broken(failure);throw error; }
     },

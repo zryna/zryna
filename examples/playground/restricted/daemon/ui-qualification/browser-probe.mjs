@@ -1,9 +1,10 @@
-// First real-browser gate only. No corpus expansion until abort fidelity is actually proved.
+// The corpus starts only after this run independently proves the genuine initial abort.
 import { setTimeout as pause } from 'node:timers/promises';
 import { start, transportBranch, emptyBrowserProcess, classifyBrowserError } from './wire.mjs';
 import { observeBrowserProcess } from './browser-diagnostics.mjs';
 export { observeBrowserProcess } from './browser-diagnostics.mjs';
 import { interceptBrowser } from './browser-intercept.mjs';
+import { runBrowserCorpus } from './browser-corpus.mjs';
 
 const causes = new WeakMap();
 const noCleanup = () => ({ intercept: false, context: false, browser: false });
@@ -118,12 +119,14 @@ export async function runInitialBrowserProbe({ chromium, configuration, send, re
         runDisabled: document.getElementById('run').disabled,
         diagnosticChildren: document.getElementById('diagnostics').children.length }));
       if (state.compileDisabled || !state.runDisabled || state.diagnosticChildren !== 0) throw rejected('FINAL_CONTROLS');
+      await intercept.beginCorpus();
+      const corpus = await runBrowserCorpus({ page, cdp, source, checkpoint: mark, summarizeAX: axSummary });
       mark('RESULT');
       result = { version: 1, type: 'result', runId: selected.runId,
-        phase: 'initial-abort-static-ax', transport: 'operator-stdio-browser-loopback-http-v1',
+        phase: 'initial-abort-corpus-ax', transport: 'operator-stdio-browser-loopback-http-v1',
         abort, initial, state, scripts: [...scripts].sort(),
         axBefore: axSummary(before.nodes), axAfter: axSummary(after.nodes), axUpdates: updates,
-        corpus: 'unrun', audibleAssistiveTechnology: 'unrun', browserClosed: false };
+        corpus, audibleAssistiveTechnology: 'unrun', browserClosed: false };
       if (Buffer.byteLength(JSON.stringify(result)) > 1048576) throw rejected('RESULT_SIZE');
     })();
     await Promise.race([work, intercept.failures, cancelled]);

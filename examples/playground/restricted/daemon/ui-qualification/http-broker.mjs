@@ -3,11 +3,11 @@ import { request as httpRequest } from 'node:http';
 import { bounds, fail, hash, integer, origin, sha256, tagTransport } from './wire.mjs';
 import { requestRecord, responseHeaders } from './routes.mjs';
 
-export function createHttpBroker({ origin: selectedOrigin, capability, holdCompileProbe = false, onEvent = () => {} }) {
+export function createHttpBroker({ origin: selectedOrigin, capability, holdCompileProbe = false, onEvent = () => {}, inspectResponse = async () => {} }) {
   origin(selectedOrigin);
   if (!hash(capability) || typeof holdCompileProbe !== 'boolean') fail('BROKER_001');
   const target = new URL(selectedOrigin);
-  const jobs = new Map(); const finished = new Map(); const sockets = new Set(); const queue = []; const audit = [];
+  const jobs = new Map(); const finished = new Map(); const sockets = new Set(); const queue = []; const audit = [];const inspections = new Set();
   let nextId = 1; let live = 0; let closed = false; let recovery = null; let held = false; let closing = null;
 
   function complete(job, reply, error) {
@@ -46,8 +46,12 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
           requestBytes: job.body.length, requestSha256: sha256(job.body), status: response.statusCode,
           responseBytes: body.length, responseSha256: sha256(body),
           securityHeaders: selectedHeaders.filter(entry => !entry.name.startsWith('x-zryna-')) }));
-        complete(job, { version: 1, type: 'response', id: job.id, status: response.statusCode,
-          headers: selectedHeaders, bodyBase64: body.toString('base64') });
+        const inspecting = Promise.resolve().then(() => inspectResponse({ name: job.name, request: job.body,
+          body, status: response.statusCode, headers: selectedHeaders })).then(() => {
+          if (!closed && job.state !== 'done') complete(job, { version: 1, type: 'response', id: job.id, status: response.statusCode,
+            headers: selectedHeaders, bodyBase64: body.toString('base64') });
+        }).catch(error => complete(job, null, error));
+        inspections.add(inspecting);inspecting.finally(() => inspections.delete(inspecting));
       });
     });
     job.request = request;
@@ -116,7 +120,7 @@ export function createHttpBroker({ origin: selectedOrigin, capability, holdCompi
         }
         let timeout;
         try {
-          await Promise.race([Promise.all(reaping), new Promise((_, reject) => {
+          await Promise.race([Promise.all([...reaping, ...inspections]), new Promise((_, reject) => {
             timeout = setTimeout(() => reject(new Error('PLAYGROUND-UI-CLEANUP')), 2000);
           })]);
         } catch (error) { recovery = error; throw error; }
