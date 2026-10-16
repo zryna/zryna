@@ -23,48 +23,17 @@ jobs:
       - name: Run original offline controls on exact push revision
         shell: pwsh
         run: |
+          $controlRoot = Join-Path $env:RUNNER_TEMP ('m6-owner-controls-{0}-{1}' -f $env:GITHUB_RUN_ID, $env:GITHUB_RUN_ATTEMPT)
+          New-Item -ItemType Directory -Path $controlRoot -ErrorAction Stop | Out-Null
+          $env:ZRYNA_M6_EDITOR_CONTROL_RECORDS = $controlRoot
           node --test scripts/m6/installed-editor/controls.test.mjs scripts/m6/installed-editor/files.test.mjs scripts/m6/installed-editor/ownership.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Diagnostic Windows editor controls failed' }
-  linux-scoped-userns:
-    name: Ubuntu exact Code scoped userns startup diagnostic
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with: {persist-credentials: false, ref: '${{ github.sha }}'}
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
-        with: {node-version: 22.22.1}
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
-        with: {version: 11.18.0}
-      - run: pnpm install --frozen-lockfile
-      - name: Authenticate complete official Code archive and prepare exact source
-        shell: bash
-        run: |
-          diagnostic_root="$RUNNER_TEMP/m6-editor-diag-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          mkdir -m 700 "$diagnostic_root"
-          node scripts/m6/installed-editor-acquire.mjs "$diagnostic_root/material"
-          node scripts/m6/installed-editor/diagnostic-prepare.mjs "$diagnostic_root"
-      - name: One executable scoped profile and standard bounded nonroot service
-        shell: bash
-        run: |
-          diagnostic_root="$RUNNER_TEMP/m6-editor-diag-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          sudo -n /usr/bin/python3 -I -B scripts/m6/installed-editor/diagnostic-root.py "$diagnostic_root"
-      - name: Retain diagnostic metadata and bounded original owner logs only
+      - name: Retain original Windows owner observations without cleanup promotion
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: m6-editor-scoped-userns-diagnostic-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/CONFIG.json
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/PREPARED.json
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/ROOT_RESULT.json
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/PROBE_STARTED.json
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/GUI_READY.json
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/PROBE_RESULT.json
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/SERVICE.*
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/stage/probe
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/preparation
-            ${{ runner.temp }}/m6-editor-diag-${{ github.run_id }}-${{ github.run_attempt }}/material/EDITOR_ARCHIVE.json
+          name: m6-windows-owner-controls-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m6-owner-controls-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           retention-days: 14
           include-hidden-files: true

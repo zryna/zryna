@@ -113,6 +113,26 @@ function KillHeld {
     }
   }
 }
+# Diagnostic-only stderr; no stdout protocol or execution-policy change.
+function TraceStopRead([string]$phase, $task) {
+  try {
+    $elapsed = $clock.ElapsedMilliseconds
+    $readerType = [Console]::In.GetType().FullName
+    $dotnet = [Environment]::Version.ToString()
+    $taskCompleted = if ($null -eq $task) { $null } else { [bool]$task.IsCompleted }
+    if ($readerType.Length -gt 256) { $readerType = $readerType.Substring(0, 256) }
+    if ($dotnet.Length -gt 128) { $dotnet = $dotnet.Substring(0, 128) }
+    $line = ConvertTo-Json -Compress -Depth 3 -InputObject @{
+      diagnosticOnly = $true; qualification = $false; phase = $phase
+      elapsedMs = $elapsed; readerType = $readerType; dotnet = $dotnet
+      taskIsCompleted = $taskCompleted
+    }
+    if ($line.Length -le 2048) {
+      [Console]::Error.WriteLine('M6_STOP_READ_PHASE ' + $line)
+      [Console]::Error.Flush()
+    }
+  } catch { }
+}
 function NewRead($stream) {
   return @{ stream = $stream; buffer = [byte[]]::new(65536); task = $null; done = $false; size = 0 }
 }
@@ -176,7 +196,9 @@ try {
   $rootProcess.StandardInput.Close()
   Emit 'started' @{ pid = $rootProcess.Id }
   $reads = @((NewRead $rootProcess.StandardOutput.BaseStream), (NewRead $rootProcess.StandardError.BaseStream))
+  TraceStopRead 'BEFORE_READ_LINE_ASYNC' $null
   $stopRead = [Console]::In.ReadLineAsync()
+  TraceStopRead 'AFTER_READ_LINE_ASYNC' $stopRead
   $deadline = $clock.ElapsedMilliseconds + [long]$config.timeoutMs
   $cleanup = $null; $quiet = $null; $rootStatus = $null
   while ($true) {
