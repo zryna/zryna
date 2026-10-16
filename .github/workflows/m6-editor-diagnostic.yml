@@ -1,4 +1,4 @@
-name: M6 Windows Git installation metadata only
+name: M6 owned Windows ZIP diagnostic only
 on:
   push:
     branches: [m6-editor-diagnostic-20261016]
@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   windows-owned-zip:
-    name: Read-only Git installation metadata
+    name: Authenticated Windows ZIP through original owner only
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -20,14 +20,14 @@ jobs:
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
         with: {version: 11.18.0}
       - run: pnpm install --frozen-lockfile
-      - name: Bounded Git installation directory metadata without target execution
+      - name: One actual authenticated acquisition and original owned extraction
         shell: pwsh
         run: |
           $root = Join-Path $env:RUNNER_TEMP ('m6-owned-zip-{0}-{1}' -f $env:GITHUB_RUN_ID, $env:GITHUB_RUN_ATTEMPT)
           New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
           $env:M6_ZIP_DIAGNOSTIC_ROOT = $root
           node m6-owned-zip-diagnostic.mjs
-          if ($LASTEXITCODE -ne 0) { throw 'Metadata probe did not pass' }
+          if ($LASTEXITCODE -ne 0) { throw 'Owned ZIP diagnostic did not pass' }
       - name: Retain bounded observations without archive or extracted tree
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

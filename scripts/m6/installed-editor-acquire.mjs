@@ -26,7 +26,7 @@ export async function acquire(output) {
     assert(typeof selected === 'string' && selected.length <= 32768 && isAbsolute(selected));
     const programFiles = await realpath(selected);
     await ordinaryRoot(programFiles);
-    client = join(programFiles, 'Git', 'mingw64', 'bin', 'curl.exe');
+    client = join(programFiles, 'Git', 'ucrt64', 'bin', 'curl.exe');
     await ordinaryRoot(dirname(client));
     assert.equal(await realpath(client), client);
   }
