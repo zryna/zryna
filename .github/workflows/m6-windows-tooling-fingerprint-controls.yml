@@ -1,0 +1,40 @@
+name: Windows tooling fingerprint controls only
+on:
+  push:
+    branches: [m6-windows-tooling-fingerprint-controls-20261016]
+permissions:
+  contents: read
+concurrency:
+  group: m6-windows-tooling-fingerprint-controls-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  windows-tooling-fingerprint-controls:
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Record actual Python and require actual Windows
+        shell: pwsh
+        run: |
+          python -VV
+          if ($LASTEXITCODE -ne 0) { throw 'Python version observation failed' }
+          python -I -B -c "import os; assert os.name == 'nt'"
+          if ($LASTEXITCODE -ne 0) { throw 'Actual Windows required' }
+      - name: Six real native identity controls including empty streams
+        shell: pwsh
+        run: |
+          python -I -B m6-tooling-fingerprint-controls/test_windows_file_identity.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Native Windows identity controls failed' }
+      - name: Exact binary capture boundaries with fake children
+        shell: pwsh
+        run: |
+          python -I -B m6-tooling-fingerprint-controls/capture_controls.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Binary capture controls failed' }
+      - name: Five mocked identity and finite deadline controls
+        shell: pwsh
+        run: |
+          python -I -B m6-tooling-fingerprint-controls/fingerprint_windows_controls.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Windows fingerprint branch controls failed' }
