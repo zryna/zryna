@@ -15,7 +15,13 @@ const c=JSON.parse(await readFile(join(root,'CONFIG.json'),'utf8'));
 assert(c.format==='private.editor-scoped-userns-diagnostic.v1'&&c.root===root&&process.getuid()===c.uid&&process.getgid()===c.gid&&c.uid>0);
 const out=join(c.stage,'probe'),deadline=performance.now()+50000;
 const write=(name,value)=>writeFile(join(root,name),JSON.stringify(value),{flag:'wx',mode:0o400});
-let owner,browser,session,phase='ROOT_RELEASE_GATE',primary=null,ownerCleanup=null,browserClose=false,ready=false;
+let owner,browser,phase='ROOT_RELEASE_GATE',primary=null,ownerCleanup=null,ready=false;
+let quitRequested=false,quitAcknowledged=false,naturalExit=null,browserDisconnected=false;
+async function bounded(action,ms,label){
+ const timeout=Math.min(ms,remaining(deadline));let timer;
+ try{const expired=new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label)),timeout);});return await Promise.race([Promise.resolve().then(action),expired]);}
+ finally{clearTimeout(timer);}
+}
 await write('PROBE_STARTED.json',{pid:process.pid,uid:process.getuid(),gid:process.getgid(),diagnosticOnly:true});
 try{
  for(;;){remaining(deadline);try{const s=await lstat(join(root,'RELEASE_START'));assert(s.isFile()&&!s.isSymbolicLink()&&s.uid===0&&s.size===0);break;}catch(e){if(e.code!=='ENOENT')throw e;}await delay(25);}
@@ -36,12 +42,16 @@ try{
   assert(pages.length<=1);if(pages.length===1&&await pages[0].evaluate(()=>document.readyState==='complete')){selected=pages[0];break;}await delay(25);}
  assert(selected);ready=true;phase='GUI_READY_HOLD';await write('GUI_READY.json',{diagnosticOnly:true,pid:owner.pid,actualCodePage:true,devtoolsActivePort:true,atMs:Math.floor(performance.now())});
  const until=performance.now()+3000;while(performance.now()<until){if(owner.failure())throw owner.failure();if(owner.ended())throw Error('EDITOR_EXIT_DURING_HOLD');await delay(50);}
- phase='BROWSER_CLOSE';session=await browser.newBrowserCDPSession();await session.send('Browser.close');browserClose=true;
+ phase='WORKBENCH_QUIT_REQUEST';quitRequested=true;
+ await bounded(()=>selected.keyboard.press('Control+q',{timeout:Math.min(2000,remaining(deadline))}),2000,'WORKBENCH_QUIT_ACK_TIMEOUT');quitAcknowledged=true;
+ phase='NATURAL_EDITOR_EXIT';const quitUntil=Math.min(deadline,performance.now()+5000);
+ while(!owner.ended()){if(owner.failure())throw owner.failure();assert(performance.now()<quitUntil,'NATURAL_EDITOR_EXIT_TIMEOUT');await delay(25);}
+ naturalExit=owner.ended();assert.equal(naturalExit.status,0,'Natural editor exit must be zero.');
 }catch(e){primary={phase,type:e.name,code:typeof e.code==='string'?e.code:null,message:String(e.message).slice(0,2048),stack:String(e.stack??e.message).slice(0,8192),messageSha256:createHash('sha256').update(String(e.message)).digest('hex')};}
 finally{
- if(browser){try{await browser.close();}catch(e){primary??={phase:'CDP_DISCONNECT',type:e.name,code:null};}}
- if(owner){try{await owner.finish();ownerCleanup=true;}catch(e){ownerCleanup=false;primary??={phase:'ORIGINAL_OWNER_FINISH',type:e.name,code:null};}}
- await write('PROBE_RESULT.json',{diagnosticOnly:true,qualification:false,guiReady:ready,browserClose,originalOwnerCleanup:ownerCleanup,primary,
-  scope:'Original owner failure remains failure; outer systemd cleanup is separate diagnostic rescue.'});
- if(primary||ownerCleanup!==true||!ready||!browserClose)process.exitCode=1;
+ if(owner){try{await owner.finish();ownerCleanup=true;}catch(e){ownerCleanup=false;primary??={phase:'ORIGINAL_OWNER_FINISH',type:e.name,code:typeof e.code==='string'?e.code:null,message:String(e.message).slice(0,2048),stack:String(e.stack??e.message).slice(0,8192)};}}
+ if(browser){try{await bounded(()=>browser.close(),1000,'CDP_DISCONNECT_TIMEOUT');browserDisconnected=true;}catch(e){primary??={phase:'CDP_DISCONNECT',type:e.name,code:typeof e.code==='string'?e.code:null,message:String(e.message).slice(0,2048),stack:String(e.stack??e.message).slice(0,8192)};}}
+ await write('PROBE_RESULT.json',{diagnosticOnly:true,qualification:false,guiReady:ready,quitRequested,quitAcknowledged,naturalExit,browserDisconnected,originalOwnerCleanup:ownerCleanup,primary,
+  scope:'Keyboard acknowledgement is not natural zero exit or original owner cleanup; outer systemd cleanup is separate diagnostic rescue.'});
+ if(primary||ownerCleanup!==true||!ready||!quitAcknowledged||naturalExit?.status!==0||!browserDisconnected)process.exitCode=1;
 }

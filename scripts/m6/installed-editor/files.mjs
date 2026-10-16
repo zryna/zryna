@@ -9,9 +9,11 @@ import { remaining } from './process.mjs';
 const fingerprint = stat => ({ dev: String(stat.dev), ino: String(stat.ino),
   bytes: String(stat.size), links: String(stat.nlink), mode: String(stat.mode),
   modifiedNs: String(stat.mtimeNs), changedNs: String(stat.ctimeNs) });
-function regular(stat) {
+function regular(stat, path, site) {
   assert(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1n && stat.ino !== 0n,
-    'Single-link ordinary file identity required.');
+    'Single-link ordinary file identity required. ' + JSON.stringify({ path, site,
+      isFile: stat.isFile(), isSymbolicLink: stat.isSymbolicLink(), links: String(stat.nlink),
+      inode: String(stat.ino), device: String(stat.dev), mode: String(stat.mode) }));
 }
 export async function ordinaryRoot(root) {
   assert(isAbsolute(root) && root === resolve(root));
@@ -29,7 +31,7 @@ async function retainedRead(path, { deadline, maxBytes, expected }, consume) {
   remaining(deadline);
   await ordinaryRoot(dirname(path));
   const before = await lstat(path, { bigint: true });
-  regular(before);
+  regular(before, path, 'BEFORE');
   assert(before.size <= BigInt(maxBytes));
   // POSIX rejects final links in open itself. Windows additionally binds regular path and
   // retained-handle identities before and after every complete operation; no link fallback.
@@ -37,7 +39,7 @@ async function retainedRead(path, { deadline, maxBytes, expected }, consume) {
     | (process.platform === 'win32' ? 0 : constants.O_NONBLOCK));
   try {
     const held = await fd.stat({ bigint: true });
-    regular(held);
+    regular(held, path, 'HELD');
     assert.deepEqual(fingerprint(held), fingerprint(before));
     const hash = createHash('sha256');
     const buffer = Buffer.alloc(65536);
@@ -55,7 +57,7 @@ async function retainedRead(path, { deadline, maxBytes, expected }, consume) {
     }
     const after = await fd.stat({ bigint: true });
     const pathAfter = await lstat(path, { bigint: true });
-    regular(after); regular(pathAfter);
+    regular(after, path, 'AFTER'); regular(pathAfter, path, 'NAMED_AFTER');
     assert.deepEqual(fingerprint(after), fingerprint(before));
     assert.deepEqual(fingerprint(pathAfter), fingerprint(before));
     assert.equal(BigInt(total), held.size);
