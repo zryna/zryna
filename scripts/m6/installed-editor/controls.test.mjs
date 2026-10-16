@@ -5,12 +5,64 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import test from 'node:test';
 import { argumentsFor } from '../installed-editor.mjs';
-import { canonicalJson, inventory, sha, verifyInstalled, verifyEditorArchive } from './materials.mjs';
+import { canonicalJson, inventory, sha, verifyInstalled, verifyEditorArchive,
+  WINDOWS_SETUP_EXECUTABLES } from './materials.mjs';
+import { encodeZip, decodeZip } from '../../distribution/archive-zip.mjs';
 import { debuggerEndpoint, waitJson } from './trust.mjs';
 import { remaining } from './process.mjs';
 import { EDITOR_ARCHIVES } from './pins.mjs';
 import untrusted from './untrusted.cjs';
-const { observeUntrustedExtension } = untrusted;
+const { observeUntrustedExtension, observeUntrustedDocument } = untrusted;
+
+test('untrusted document registry and language admit exactly four independent safe combinations', () => {
+  const path = '/authenticated/installed-extension';
+  assert.deepEqual(observeUntrustedDocument(undefined, path, 'plaintext'), {
+    registry: { registered: false, active: null, path: null }, languageId: 'plaintext',
+    state: 'plaintext-language-disabled',
+  });
+  const present = { extensionPath: path, isActive: false };
+  assert.deepEqual(observeUntrustedDocument(present, path, 'zryna'), {
+    registry: { registered: true, active: false, path }, languageId: 'zryna',
+    state: 'zryna-language-available',
+  });
+  assert.deepEqual(observeUntrustedDocument(undefined, path, 'zryna'), {
+    registry: { registered: false, active: null, path: null }, languageId: 'zryna',
+    state: 'zryna-language-available',
+  });
+  assert.deepEqual(observeUntrustedDocument(present, path, 'plaintext'), {
+    registry: { registered: true, active: false, path }, languageId: 'plaintext',
+    state: 'plaintext-language-disabled',
+  });
+  for (const entry of [undefined, present]) for (const language of ['javascript', '', null, undefined, 0, {}, true]) {
+    for (const baseline of [undefined, present]) for (const valid of ['plaintext', 'zryna']) {
+      observeUntrustedDocument(baseline, path, valid);
+    }
+    assert.throws(() => observeUntrustedDocument(entry, path, language), error => {
+      assert.equal(error.untrustedLanguageObservation.registry.registered, entry !== undefined);
+      assert.equal(error.untrustedLanguageObservation.languageType, typeof language);
+      return true;
+    });
+  }
+});
+
+test('paired samples never reuse initial registry absence or waive malformed activation/path state', () => {
+  const path = '/authenticated/installed-extension';
+  const samples = [[undefined, 'zryna'], [{ extensionPath: path, isActive: false }, 'plaintext'],
+    [undefined, 'plaintext'], [{ extensionPath: path, isActive: false }, 'zryna']];
+  assert.deepEqual(samples.map(([entry, language]) => observeUntrustedDocument(entry, path, language).state),
+    ['zryna-language-available', 'plaintext-language-disabled', 'plaintext-language-disabled', 'zryna-language-available']);
+  for (const entry of [null, false, {}, { extensionPath: path },
+    { extensionPath: path, isActive: true }, { extensionPath: '/other', isActive: false }]) {
+    for (const language of ['plaintext', 'zryna']) {
+      observeUntrustedDocument(undefined, path, language);
+      assert.throws(() => observeUntrustedDocument(entry, path, language), error => {
+        assert.equal(error.untrustedRegistryObservation.registered, true);
+        assert.equal(error.untrustedLanguageObservation.languageId, language);
+        return true;
+      });
+    }
+  }
+});
 
 async function fixture(t) {
   const root = await mkdtemp(join(await realpath(tmpdir()), 'm6-installed-editor-unit-'));
@@ -148,4 +200,27 @@ test('absolute local deadline is not renewed and an absent result cannot hang', 
   assert.throws(() => remaining(performance.now() - 1));
   await assert.rejects(waitJson(join(root, 'absent'), performance.now() + 5));
   assert(remaining(performance.now() + 1000) > 0);
+});
+
+test('Windows portable setup preserves the four builder executable modes and rejects other modes', () => {
+  const root = 'zryna-setup-0.1.0-candidate.3-x86_64-pc-windows-msvc';
+  const executable = ['bin/zryna-language-server.exe', 'compiler/bin/zryna.exe',
+    'compiler/runtime/node/node.exe', 'install.sh'];
+  assert.deepEqual(WINDOWS_SETUP_EXECUTABLES, executable);
+  const files = [...executable.map(path => ({ path, mode: 0o755, data: Buffer.from('inert') })),
+    { path: 'install.cmd', mode: 0o644, data: Buffer.from('inert') },
+    { path: 'setup.json', mode: 0o644, data: Buffer.from('{}') }]
+    .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  const wire = encodeZip(root, files);
+  assert.deepEqual(decodeZip(wire, root, WINDOWS_SETUP_EXECUTABLES), files);
+  assert.throws(() => decodeZip(wire, root, executable.slice(0, 3)), /noncanonical zip archive/);
+  for (const path of executable) {
+    const changed = files.map(file => file.path === path ? { ...file, mode: 0o644 } : file);
+    assert.throws(() => decodeZip(encodeZip(root, changed), root, WINDOWS_SETUP_EXECUTABLES),
+      /noncanonical zip archive/);
+  }
+  const extra = [...files, { path: 'unexpected.exe', mode: 0o755, data: Buffer.from('inert') }]
+    .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  assert.throws(() => decodeZip(encodeZip(root, extra), root, WINDOWS_SETUP_EXECUTABLES),
+    /noncanonical zip archive/);
 });

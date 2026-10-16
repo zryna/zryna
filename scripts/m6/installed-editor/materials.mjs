@@ -19,6 +19,10 @@ const require = createRequire(import.meta.url);
 const { verifyInstallation } = require('../../../editors/vscode-zryna/src/installation.cjs');
 const { editorCli } = require('../../portable-setup/setup.cjs');
 export const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+export const WINDOWS_SETUP_EXECUTABLES = Object.freeze([
+  'bin/zryna-language-server.exe', 'compiler/bin/zryna.exe',
+  'compiler/runtime/node/node.exe', 'install.sh',
+]);
 export async function canonicalJson(file, limit = 262144, deadline = performance.now() + 30000) {
   const bytes = await readBytes(file, deadline, limit);
   const value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
@@ -58,8 +62,8 @@ export async function prepareSetup(handoff, expected, output, deadline) {
   const actual = captured.source;
   const bytes = await readFile(captured.captured.path);
   const files = process.platform === 'win32'
-    ? decodeZip(bytes, name, ['bin/zryna-language-server.exe', 'compiler/bin/zryna.exe',
-      'compiler/runtime/node/node.exe']) : await decodeTar(bytes, name, expected.epoch);
+    ? decodeZip(bytes, name, WINDOWS_SETUP_EXECUTABLES)
+    : await decodeTar(bytes, name, expected.epoch);
   const manifest = files.find(file => file.path === 'setup.json');
   assert(manifest && sha(manifest.data) === receipt.manifestSha256);
   const setup = join(output, name);

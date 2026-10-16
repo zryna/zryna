@@ -265,7 +265,7 @@
         }
       },
       "minItems": 34,
-      "maxItems": 512,
+      "maxItems": 513,
       "uniqueItems": true
     },
     "rows": {

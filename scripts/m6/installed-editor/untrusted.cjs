@@ -25,4 +25,22 @@ function observeUntrustedExtension(extension, expectedPath) {
   }
   return { registered: true, active: false, path };
 }
-module.exports = { observeUntrustedExtension };
+// Actual document language and extension-registry visibility need not move together.
+// Observe both axes independently; registry visibility is not language-contribution authority.
+function observeUntrustedDocument(extension, expectedPath, languageId) {
+  let registry;
+  try {
+    registry = observeUntrustedExtension(extension, expectedPath);
+    assert.equal(typeof languageId, 'string', 'Actual document language must be observed.');
+    assert(['plaintext', 'zryna'].includes(languageId), 'Unexpected untrusted document language.');
+  } catch (error) {
+    if (registry !== undefined) error.untrustedRegistryObservation ??= registry;
+    error.untrustedLanguageObservation = { registry: registry ?? error.untrustedRegistryObservation ?? null,
+      languageId: typeof languageId === 'string' ? languageId.slice(0, 64) : null,
+      languageType: typeof languageId, languageTruncated: typeof languageId === 'string' && languageId.length > 64 };
+    throw error;
+  }
+  return { registry, languageId,
+    state: languageId === 'zryna' ? 'zryna-language-available' : 'plaintext-language-disabled' };
+}
+module.exports = { observeUntrustedExtension, observeUntrustedDocument };

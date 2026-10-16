@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const vscode = require('vscode');
-const { observeUntrustedExtension } = require('./untrusted.cjs');
+const { observeUntrustedExtension, observeUntrustedDocument } = require('./untrusted.cjs');
 async function publish(path, value) {
   await fs.writeFile(path, `${JSON.stringify(value, null, 2)}\n`, { flag: 'wx' });
   await fs.writeFile(path + '.ready', '', { flag: 'wx' });
@@ -29,14 +29,23 @@ function activate(context) {
         Buffer.from('export function main():i32{return missing;}\n'));
       const document = await vscode.workspace.openTextDocument(uri);
       await vscode.window.showTextDocument(document);
-      assert.equal(document.languageId, 'zryna');
+      const observeDocument = () => {
+        const observed = observeUntrustedDocument(vscode.extensions.getExtension('zryna.zryna'),
+          config.installedExtension, document.languageId);
+        lastUntrustedRegistry = observed.registry;
+        return observed;
+      };
+      const initialDocument = observeDocument();
       const started = Date.now();
       let samples = 0;
       const registryObservations = [];
+      const documentObservations = [];
       while (Date.now() - started < 1000) {
         assert.equal(vscode.workspace.isTrusted, false);
         assert(registryObservations.length < 64, 'Untrusted registry sample limit exceeded.');
-        registryObservations.push(observeRegistry());
+        const observed = observeDocument();
+        registryObservations.push(observed.registry);
+        documentObservations.push(observed);
         assert.equal(vscode.languages.getDiagnostics(uri).length, 0);
         samples++;
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -45,8 +54,9 @@ function activate(context) {
       await verifyInstalled(config.installedExtension, config.payload, undefined, config.installer);
       await publish(config.initialPath, { initialTrusted: false,
         editorVersion: vscode.version, installedExtension: config.installedExtension, initialRegistry,
-        untrustedLanguageAttempt: { uri: uri.toString(), samples, durationMs: Date.now() - started,
-          registryObservations, diagnosticsAbsent: true } });
+        untrustedLanguageAttempt: { kind: 'opened-zry-file', forcedLanguageSelection: false,
+          uri: uri.toString(), initialDocument, samples, durationMs: Date.now() - started,
+          registryObservations, documentObservations, diagnosticsAbsent: true } });
       await new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('Normal GUI trust action timed out.')), 120000);
         const disposable = vscode.workspace.onDidGrantWorkspaceTrust(() => {
@@ -67,7 +77,8 @@ function activate(context) {
       await publish(config.resultPath, result);
     } catch (error) {
       if (config) await publish(config.failurePath, { failed: true, error: String(error.stack ?? error),
-        untrustedRegistry: error.untrustedRegistryObservation ?? lastUntrustedRegistry });
+        untrustedRegistry: error.untrustedRegistryObservation ?? lastUntrustedRegistry,
+        untrustedDocument: error.untrustedLanguageObservation ?? null });
       console.error(error);
     } finally {
       await vscode.workspace.saveAll();

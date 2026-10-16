@@ -80,6 +80,7 @@ async function run(config) {
     await vscode.workspace.fs.writeFile(uri, Buffer.from(scalar));
     const document = await vscode.workspace.openTextDocument(uri);
     await vscode.window.showTextDocument(document);
+    assert.equal(document.languageId, 'zryna', 'Trusted installed language contribution is mandatory.');
     await vscode.commands.executeCommand('zryna.selectEditorProfile', 'i32-v1');
     await until(() => vscode.languages.getDiagnostics(uri).length === 0, 'scalar diagnostics');
     const definitions = await vscode.commands.executeCommand('vscode.executeDefinitionProvider',

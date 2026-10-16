@@ -12,6 +12,10 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(target_os = "linux")]
+#[path = "listener_identity.rs"]
+mod listener_identity;
+
 #[path = "boundary_tests.rs"]
 mod boundaries;
 #[path = "negative_tests.rs"]
@@ -49,6 +53,8 @@ pub(super) fn until(mut predicate: impl FnMut() -> bool) {
     }
 }
 pub(super) struct Running {
+    #[cfg(target_os = "linux")]
+    listener_identity: listener_identity::Identity,
     worker: Option<JoinHandle<Result<(), Error>>>,
     pub(super) address: SocketAddr,
     pub(super) control: Arc<Control>,
@@ -68,9 +74,13 @@ impl Running {
     ) -> Self {
         let observation = Arc::new(Observation::default());
         let bound = Bound::start(config, prepared, Arc::clone(&observation)).expect("bounded bind");
+        #[cfg(target_os = "linux")]
+        let listener_identity = listener_identity::Identity::capture(bound.listener_for_test());
         let address = bound.address();
         let control = bound.control();
         Self {
+            #[cfg(target_os = "linux")]
+            listener_identity,
             worker: Some(thread::spawn(move || bound.run())),
             address,
             control,
@@ -84,6 +94,9 @@ impl Running {
         assert_eq!(self.observation.socket_handles.load(Ordering::SeqCst), 0);
         assert_eq!(self.observation.reserved_bytes.load(Ordering::SeqCst), 0);
         clean(&self.runtime);
+        #[cfg(target_os = "linux")]
+        self.listener_identity.assert_gone();
+        #[cfg(not(target_os = "linux"))]
         assert_listener_closed(self.address);
     }
 }

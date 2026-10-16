@@ -38,6 +38,13 @@ folder untrusted. Each fresh registry sample distinguishes an absent trust-disab
 from a present extension at the exact installed path with `isActive === false`. Absence supplies
 no registry path match or inactive API object; the physical installed payload is independently
 verified in either case. After trust, the exact registered path and actual activation are mandatory.
+Restricted-mode document samples record fresh registry and actual language independently. Either
+safe registry state permits only `plaintext` or `zryna`; registry visibility is not treated as proof
+of static language-contribution availability. All four combinations retain the same exact-path,
+inactive-or-absent and no-diagnostics requirements. Opening the real `.zry` file is recorded as
+that action; plaintext supplies no Zryna language-activation evidence. The helper neither forces a language ID nor registers a replacement
+contribution. After normal GUI trust, the real host-check document must have language `zryna`
+before its original definition, diagnostics, formatting and Run checks proceed.
 The parent clicks the normal exact
 folder trust dialog through pinned Playwright/CDP on the owned loopback endpoint. Parent-folder
 trust stays unselected. No --no-sandbox, --disable-workspace-trust or fabricated trust database is
@@ -85,6 +92,8 @@ and copied while hashing into fresh private protected files. Extraction reads on
 captured files. The trust negative actually opens a `.zry` document while untrusted and
 records fresh absent-or-inactive registry observations and absent diagnostics before the normal
 exact-folder GUI action. A present extension with a wrong path or active state fails immediately.
+Every sample retains both registry and document-language observations; the initial registry
+absence is never reused to excuse a later active, wrong-path or wrong-language state.
 
 All corrected helper behavior, PowerShell/.NET handle semantics, loaded dependency
 availability and both real GUI lanes require independent review and actual runs for the selected source.

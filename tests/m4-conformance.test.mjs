@@ -99,7 +99,7 @@ test('unregistered fixture unsafe paths and case-colliding sources reject', () =
     assert.throws(() => validateM4Conformance(mutant(edit)), /unsafe|fixture|case collision/);
   }
   assert.throws(() => validateM4Conformance(mutant(value => {
-    while (value.sources.length <= 512) value.sources.push({ ...value.sources[0] });
+    while (value.sources.length <= 513) value.sources.push({ ...value.sources[0] });
   })), /closed schema rejected \/sources/u);
 });
 

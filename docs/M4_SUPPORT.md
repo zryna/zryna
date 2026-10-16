@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`ddd30da7be93229cb6bd4ea49d3c30171904fb56647e076b5f71190c58006fd0`. The matrix defines six bounded modes on the two
+`2f2ed6bb851d1dc665db0abe98ca5dff912bf9b7b4b03b4f7d5b58044b762361`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "ddd30da7be93229cb6bd4ea49d3c30171904fb56647e076b5f71190c58006fd0",
+  "registrySha256": "2f2ed6bb851d1dc665db0abe98ca5dff912bf9b7b4b03b4f7d5b58044b762361",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -4677,8 +4677,13 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/server_transport/listener.rs",
-      "bytes": 6284,
-      "sha256": "cba84ed05083dfca34dd4b2d3388c53fa00764b70563465f264629268943fe9f"
+      "bytes": 6488,
+      "sha256": "4ad1e58e79fb1dc45c792069a11dddbf08ad1f132651da9fec04c102ad3420d5"
+    },
+    {
+      "path": "crates/zryna-driver/src/server_transport/listener_identity.rs",
+      "bytes": 10229,
+      "sha256": "57485ca50096cd413ee9f20252eb28059b69d9eb368cd6559f8c7b6a621317a8"
     },
     {
       "path": "crates/zryna-driver/src/server_transport/mod.rs",
@@ -4717,8 +4722,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/server_transport/tests.rs",
-      "bytes": 9204,
-      "sha256": "ddc22d1965ff615e526c0ee8bd5ddc8b6facc2ac54f05a9bd2fa245fc804dfde"
+      "bytes": 9700,
+      "sha256": "227cffc82757fa16e3535a681422f86d2d6afac5f520f547602f4eb386e0a0f1"
     },
     {
       "path": "crates/zryna-driver/src/server_workspace/approval.rs",
@@ -5488,7 +5493,7 @@ zryna.m4.support.v1:begin
     {
       "path": "tests/m4-conformance.test.mjs",
       "bytes": 15200,
-      "sha256": "0100d29389c74f6568687fe88122ab5d3ae6b13223b8395f3b720f3ee0aca4d5"
+      "sha256": "a1406c2767a3c15034ec57a1f52f80add8cf46d9fcee871190acc729e786ee06"
     },
     {
       "path": "tests/m4-evidence.test.mjs",
