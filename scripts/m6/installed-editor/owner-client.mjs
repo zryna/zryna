@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
-import { access, mkdir, realpath, writeFile } from 'node:fs/promises';
+import { access, lstat, mkdir, realpath, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, isAbsolute, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
@@ -153,8 +153,27 @@ export async function launchOwned(program, args, options) {
     assert(Array.isArray(ready.dependencies) && ready.dependencies.length > 0 && ready.dependencies.length <= 256);
     pins.dependencies = [];
     const runtimeDependency = await createRuntimeDependencyDescriptor(options.deadline);
-    for (const dependency of [...new Set(ready.dependencies)].sort()) {
-      pins.dependencies.push(await runtimeDependency(await realpath(dependency)));
+    const dependencies = [...new Set(ready.dependencies)].sort(), inventory = [];
+    for (const dependency of dependencies) {
+      deadlineRemaining(options.deadline);
+      assert(typeof dependency === 'string' && dependency.length <= 4096);
+      const path = await realpath(dependency), state = await lstat(path, { bigint: true });
+      assert(path.length <= 4096);
+      inventory.push({ path, isFile: state.isFile(), isSymbolicLink: state.isSymbolicLink(),
+        links: String(state.nlink), inode: String(state.ino), device: String(state.dev),
+        mode: String(state.mode), bytes: String(state.size) });
+      deadlineRemaining(options.deadline);
+    }
+    const observation = JSON.stringify({ diagnosticOnly: true, qualification: false,
+      scope: 'Readonly stat before admission; not the later retained-read guard tuple',
+      supervisorPid: child.pid, entries: inventory });
+    assert(Buffer.byteLength(observation) <= 262144);
+    console.log('M6_RUNTIME_DEPENDENCY_INVENTORY ' + observation);
+    for (const dependency of dependencies) {
+      const path = await realpath(dependency);
+      try { pins.dependencies.push(await runtimeDependency(path)); }
+      catch (error) { throw new Error('Runtime dependency admission refused: ' + JSON.stringify(path),
+        { cause: error }); }
     }
     await writeFile(join(options.output, `${options.name}.before-start.json`),
       `${JSON.stringify({ supervisorPid: child.pid, pins, ready }, null, 2)}\n`, { flag: 'wx' });
