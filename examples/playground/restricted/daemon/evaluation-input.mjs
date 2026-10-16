@@ -10,6 +10,10 @@ import { validateSelection } from '../evaluation.mjs';
 export const evaluationInputLimit = 2 * 1024 * 1024;
 
 export async function readImageFile(path, maximum) {
+  // These files belong to the Linux evaluator image. Never silently drop no-follow.
+  if (process.platform !== 'linux' || !Number.isInteger(constants.O_NOFOLLOW) || constants.O_NOFOLLOW === 0) {
+    fail('IMAGE-FILE-PLATFORM');
+  }
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const before = await file.stat({ bigint: true });

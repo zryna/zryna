@@ -3,8 +3,10 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 
-const contracts = { name: 'Verify restricted playground and M6 contracts',
-  run: 'pnpm playground:contract\npnpm m6:contract\n' };
+const contracts = [
+  { name: 'Verify restricted playground contracts', run: 'pnpm playground:contract' },
+  { name: 'Verify M6 contracts', run: 'pnpm m6:contract' },
+];
 const helpers = { name: 'Verify Linux playground helper units', if: "runner.os == 'Linux'",
   env: { PYTHONDONTWRITEBYTECODE: '1' }, run: 'python3 tests/playground-host-unit.py\n' +
     'python3 tests/playground-cgroup-unit.py\npython3 tests/playground-join-unit.py\n' +
@@ -25,14 +27,14 @@ const operator = { name: 'Verify Linux operator qualification contracts',
 // Remove only the exact reviewed addition before authenticating all prior CI authority.
 export function withoutPlaygroundContracts(candidate) {
   const original = structuredClone(candidate), steps = original.jobs.rust.steps;
-  const index = steps.findIndex(step => step.name === contracts.name);
+  const index = steps.findIndex(step => step.name === contracts[0].name);
   assert(index > 0);
-  assert.deepEqual(steps[index], contracts);
-  assert.deepEqual(steps[index + 1], helpers);
-  assert.deepEqual(steps[index + 2], publication);
-  assert.deepEqual(steps[index + 3], operator);
-  assert.equal(steps[index + 4].name, 'Verify documentation bundle contract');
-  steps.splice(index, 4);
+  assert.deepEqual(steps.slice(index, index + 2), contracts);
+  assert.deepEqual(steps[index + 2], helpers);
+  assert.deepEqual(steps[index + 3], publication);
+  assert.deepEqual(steps[index + 4], operator);
+  assert.equal(steps[index + 5].name, 'Verify documentation bundle contract');
+  steps.splice(index, 5);
   assert(!/playground:contract|m6:contract|playground-.*-unit\.py|compiler-release\/\*\.test|daemon\/launcher\*\.test/.test(JSON.stringify(original)));
   return original;
 }
@@ -48,13 +50,19 @@ test('playground CI removal, bypass, duplicate and relocation mutations fail clo
     (steps, i) => { steps[i].run += 'true\n'; },
     (steps, i) => { steps[i + 1].if = 'false'; },
     (steps, i) => { steps[i + 1].run = 'true\n'; },
-    (steps, i) => { steps[i + 2].run += ' || true'; },
-    (steps, i) => { steps[i + 3].env.PYTHONDONTWRITEBYTECODE = '0'; },
+    (steps, i) => { steps[i + 1]['continue-on-error'] = true; },
+    // A later successful native command can mask the first failure in PowerShell.
+    (steps, i) => { steps.splice(i, 2, { name: contracts[0].name,
+      run: 'pnpm playground:contract\npnpm m6:contract\n' }); },
+    (steps, i) => { steps[i + 2].if = 'false'; },
+    (steps, i) => { steps[i + 2].run = 'true\n'; },
+    (steps, i) => { steps[i + 3].run += ' || true'; },
+    (steps, i) => { steps[i + 4].env.PYTHONDONTWRITEBYTECODE = '0'; },
     (steps, i) => { steps.push(structuredClone(steps[i])); },
-    (steps, i) => { [steps[i + 1], steps[i + 2]] = [steps[i + 2], steps[i + 1]]; },
+    (steps, i) => { [steps[i + 2], steps[i + 3]] = [steps[i + 3], steps[i + 2]]; },
   ]) {
     const changed = structuredClone(workflow), steps = changed.jobs.rust.steps;
-    mutate(steps, steps.findIndex(step => step.name === contracts.name));
+    mutate(steps, steps.findIndex(step => step.name === contracts[0].name));
     assert.throws(() => withoutPlaygroundContracts(changed));
   }
 });

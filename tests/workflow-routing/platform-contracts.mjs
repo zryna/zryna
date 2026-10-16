@@ -51,9 +51,14 @@ export function registerRequiredPlatformContracts(ci) {
   test('required Rust platform jobs include playground contracts and Linux helper units', () => {
     const rust = ci.jobs.rust;
     assert.deepEqual(rust.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
-    const contracts = rust.steps.filter(step => step.name === 'Verify restricted playground and M6 contracts');
-    assert.deepEqual(contracts, [{ name: 'Verify restricted playground and M6 contracts',
-      run: 'pnpm playground:contract\npnpm m6:contract\n' }]);
+    const contracts = rust.steps.filter(step => [
+      'Verify restricted playground contracts', 'Verify M6 contracts',
+    ].includes(step.name));
+    assert.deepEqual(contracts, [
+      { name: 'Verify restricted playground contracts', run: 'pnpm playground:contract' },
+      { name: 'Verify M6 contracts', run: 'pnpm m6:contract' },
+    ]);
+    assert.equal(rust.steps.indexOf(contracts[1]), rust.steps.indexOf(contracts[0]) + 1);
     const helpers = rust.steps.filter(step => step.name === 'Verify Linux playground helper units');
     assert.deepEqual(helpers, [{ name: 'Verify Linux playground helper units', if: "runner.os == 'Linux'",
       env: { PYTHONDONTWRITEBYTECODE: '1' }, run: 'python3 tests/playground-host-unit.py\n' +
@@ -73,7 +78,7 @@ export function registerRequiredPlatformContracts(ci) {
         'node --test --test-concurrency=1 examples/playground/restricted/daemon/ui-qualification/*.test.mjs\n' +
         "python3 -B -m unittest discover -s examples/playground/restricted/daemon/cli-parity -p 'test_*.py'\n" +
         "PYTHONPATH=examples/playground/restricted/daemon/preparation python3 -B -m unittest discover -s examples/playground/restricted/daemon/ui-qualification -p 'test_owner_*.py'\n" }]);
-    assert(rust.steps.indexOf(contracts[0]) < rust.steps.indexOf(helpers[0]));
+    assert(rust.steps.indexOf(contracts[1]) < rust.steps.indexOf(helpers[0]));
     assert(rust.steps.indexOf(helpers[0]) < rust.steps.indexOf(publication[0]));
     assert(rust.steps.indexOf(publication[0]) < rust.steps.indexOf(operator[0]));
     assert.equal(rust.steps.at(-1).run, 'node scripts/run-m0-conformance.mjs');

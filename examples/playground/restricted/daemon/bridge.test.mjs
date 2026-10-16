@@ -14,6 +14,14 @@ const record = { format: 'zryna.playground-host-error.v1', version: 1,
   reason: 'PLAYGROUND-CANCELLED', cleanupConfirmed: true, owner: null, primary: null, cleanup: null };
 const encode = value => Buffer.from(JSON.stringify(value));
 
+test('unsupported native host refuses a closed bridge descriptor before material access',
+  { skip: process.platform === 'linux' && process.arch === 'x64' }, () => {
+    const descriptor = { path: '/zryna-unsupported-bridge-material-never-opened',
+      bytes: 1, sha256: 'a'.repeat(64), ownerUid: 0 };
+    assert.throws(() => createDaemonBridge({ compiler: descriptor, approval: descriptor }),
+      /PLAYGROUND-HOST-APPROVAL/);
+  });
+
 test('closed cleanup acknowledgement retains recovery owner and rejects ambiguity', () => {
   assert.equal(decodeHostFailure(encode(record)).cleanupConfirmed, true);
   const failed = { ...record, reason: 'PLAYGROUND-HOST-TEARDOWN', cleanupConfirmed: false,

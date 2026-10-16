@@ -7,7 +7,11 @@ import { admitEvaluation, decodeBase64Frame, readImageFile } from
   '../examples/playground/restricted/daemon/evaluation-input.mjs';
 import { sha256 } from '../examples/playground/restricted/limits.mjs';
 
-test('evaluation file reader rejects symlinks and the first extra byte, preserving the original file', async () => {
+test('Linux image file reader rejects symlinks and extra bytes; unsupported platforms refuse before I/O', async () => {
+  if (process.platform !== 'linux') {
+    await assert.rejects(readImageFile('unsupported-platform-does-not-open-image-files', 4), /IMAGE-FILE-PLATFORM/);
+    return;
+  }
   const root = await mkdtemp(path.join(tmpdir(), 'zryna-evaluation-input-'));
   try {
     const file = path.join(root, 'input');
