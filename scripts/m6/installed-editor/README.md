@@ -14,6 +14,12 @@ Acquisition verifies exact bytes/SHA before extraction. PREPARED.json records ac
 product metadata and complete extracted inventory. Use --prepare-only for first independent
 material review before any editor installation or GUI launch. That mode is never a GUI pass.
 
+Actual Linux runs use the reusable workflow's fixed Linux service wrapper. After authenticated
+preparation, a grant within the original preparation deadline attaches one AppArmor user-namespace
+profile to that exact Code executable. The standard service runs the controller and editor as the
+original nonroot runner. Its separate cleanup and profile removal cannot replace the original
+editor owner's cleanup or the nine host checks. The normal editor sandbox stays enabled.
+
 The run installs only the verified VSIX and loads only this dedicated runner as a development
 extension. Raw installed payload differences, including unknown installer metadata changes,
 fail closed. There is no speculative normalization rule. Only actual qualified differences may
@@ -52,6 +58,13 @@ before the explicit target-start operation. Missing identity, inaccessible owner
 unknown cleanup or timeout prevents acceptance. Closing the Node pipe references only
 bounds the driver; it never turns unknown process cleanup into success.
 
+Windows runtime-module observations distinguish ordinary system DLL hardlinks from supplied
+materials. Only loaded dependencies at canonical direct `SystemRoot\System32\*.dll` paths may
+have multiple stable links. Retained handles, complete hashes and before/after identities include
+the actual link count; receipts name this policy and make no publisher-authentication claim.
+Requested targets, supervisor executables, helper sources, archives and supplied materials retain
+their single-link requirement.
+
 Archive/setup inputs are consumed from retained no-follow, identity-checked descriptors
 and copied while hashing into fresh private protected files. Extraction reads only these
 captured files. The trust negative actually opens a `.zry` document while untrusted and
@@ -64,8 +77,8 @@ certificates. No unavailable process/stream fact is synthesized as a passing obs
 
 Required ownership controls include an immediate natural root exit on both platforms.
 Linux additionally registers a real immediate-parent-exit/detached-child subreaper case;
-that Linux case supplies no Windows pass or skip credit. The owning command registers
-15 tests on Linux and 14 on Windows, with nonzero failures propagated by the workflow.
+that Linux case supplies no Windows pass or skip credit. The owning command requires every
+registered native control, with nonzero failures propagated by the workflow.
 A Windows created root that positively exited before its image query records actual
 image unavailable, its retained-handle start/exit times and the separately selected
 requested executable. Running roots and discovered processes have no such fallback;

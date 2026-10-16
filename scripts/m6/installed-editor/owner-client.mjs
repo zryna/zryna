@@ -5,7 +5,7 @@ import { access, mkdir, realpath, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, isAbsolute, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
-import { capture, descriptor } from './files.mjs';
+import { capture, createRuntimeDependencyDescriptor, descriptor } from './files.mjs';
 
 const LIMIT = 1048576;
 const deadlineRemaining = deadline => {
@@ -152,8 +152,9 @@ export async function launchOwned(program, args, options) {
     assert.equal(await realpath(ready.runtime), runtime);
     assert(Array.isArray(ready.dependencies) && ready.dependencies.length > 0 && ready.dependencies.length <= 256);
     pins.dependencies = [];
+    const runtimeDependency = await createRuntimeDependencyDescriptor(options.deadline);
     for (const dependency of [...new Set(ready.dependencies)].sort()) {
-      pins.dependencies.push(await descriptor(await realpath(dependency), options.deadline));
+      pins.dependencies.push(await runtimeDependency(await realpath(dependency)));
     }
     await writeFile(join(options.output, `${options.name}.before-start.json`),
       `${JSON.stringify({ supervisorPid: child.pid, pins, ready }, null, 2)}\n`, { flag: 'wx' });

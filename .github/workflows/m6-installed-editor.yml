@@ -62,7 +62,9 @@ jobs:
         run: |
           command -v Xvfb
           command -v xvfb-run
-          xvfb-run -a node scripts/m6/installed-editor.mjs \
+          linux_gate="$RUNNER_TEMP/m6-editor-linux-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -m 700 "$linux_gate" "$linux_gate/tmp"
+          sudo -n /usr/bin/python3 -I -B scripts/m6/installed-editor/linux-service.py "$linux_gate" \
             --handoff "$RUNNER_TEMP/m6-editor-handoff" \
             --editor-archive "$RUNNER_TEMP/m6-editor-material/editor.tar.gz" \
             --source-commit "$M6_SOURCE_COMMIT" --source-tree "$M6_SOURCE_TREE" \
@@ -88,6 +90,10 @@ jobs:
           name: m6-installed-editor-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/m6-installed-editor
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/ROOT_RESULT.json
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/SERVICE.*
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/REQUEST.json
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/GRANT.json
             ${{ runner.temp }}/m6-editor-material/EDITOR_ARCHIVE.json
             ${{ runner.temp }}/m6-editor-material/official-editor-download.*
           if-no-files-found: error

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { createRequire } from 'node:module';
 import { capture } from './installed-editor/files.mjs';
+import { awaitLinuxUserns } from './installed-editor/linux-userns.mjs';
 import { EDITOR_ARCHIVES } from './installed-editor/pins.mjs';
 import { command, startEditor } from './installed-editor/process.mjs';
 import { descriptor, inventory, installedDirectory, ordinaryRoot, prepareSetup,
@@ -76,6 +77,7 @@ async function run(values) {
       note: 'Editor archive pins authenticate extracted bytes; executable hash is an observation.' };
     await writeFile(join(output, 'PREPARED.json'), `${JSON.stringify(prepared, null, 2)}\n`, { flag: 'wx' });
     if (values.prepareOnly) return;
+    if (process.platform === 'linux') await awaitLinuxUserns({ output, stage, editor, deadline: prepareDeadline });
     const userData = join(stage, 'profile'), extensions = join(stage, 'extensions');
     const workspace = join(stage, `m6-exact-folder-${basename(stage)}`);
     await mkdir(join(userData, 'User'), { recursive: true });
