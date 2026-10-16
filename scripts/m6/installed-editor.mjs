@@ -69,8 +69,24 @@ async function run(values) {
     archive.originalCapture = protectedEditor.source;
     const editorRoot = join(stage, 'editor');
     await mkdir(editorRoot);
-    await command('tar', ['-xf', protectedEditor.captured.path, '-C', editorRoot],
+    if (process.platform === 'win32') {
+      await ordinaryRoot(editorRoot);
+      const helperSource = join(runner, 'extract-editor-windows.ps1');
+      const helperPin = await descriptor(helperSource, prepareDeadline);
+      const helper = await capture(helperSource, join(stage, 'extract-editor-windows.ps1'),
+        helperPin, prepareDeadline);
+      const runtime = join(options.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe');
+      archive.extraction = { method: 'owned-powershell-system-io-compression-zipfile',
+        helper, runtime: await descriptor(await realpath(runtime), prepareDeadline) };
+      await writeFile(join(output, 'editor-extraction.json'),
+        `${JSON.stringify({ archive, extraction: archive.extraction }, null, 2)}\n`, { flag: 'wx' });
+      await command(runtime, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File',
+        helper.captured.path, protectedEditor.captured.path, editorRoot],
       { ...options, name: 'extract-authenticated-editor' });
+    } else {
+      await command('tar', ['-xf', protectedEditor.captured.path, '-C', editorRoot],
+        { ...options, name: 'extract-authenticated-editor' });
+    }
     const editor = await verifyEditor(editorRoot, prepareDeadline);
     prepared = { source: { commit: head, tree }, stage, setup, editor, archive,
       status: 'MATERIAL PREPARATION ONLY; no installed-host pass',

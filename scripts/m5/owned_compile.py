@@ -13,6 +13,8 @@ OFFICIAL = (('bin/rustc', 645000, 'd3a664c970a9fd8361b64194861bebc1ae37b9054e5ee
             ('bin/cargo', 42839824,
              '828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953'))
 TARGET = 'x86_64-unknown-linux-gnu'
+SHA2_SOURCE = 'registry+https://github.com/rust-lang/crates.io-index'
+SHA2_PACKAGE = SHA2_SOURCE + '#sha2@0.10.9'
 OVERRIDES = {'CARGO_BUILD_JOBS': '2', 'RUST_TEST_THREADS': '2', 'CARGO_INCREMENTAL': '0',
              'CARGO_PROFILE_DEV_DEBUG': '0', 'CARGO_PROFILE_TEST_DEBUG': '0'}
 
@@ -30,6 +32,22 @@ def rust_tools():
         assert (pin['bytes'], pin['sha256']) == (length, digest)
         pins.append(pin)
     return {'selected': str(selected), 'sysroot': str(root), 'pins': pins}
+
+
+def require_sha2_profile(document):
+    workspace = document.get('workspace', {})
+    assert isinstance(workspace, dict)
+    dependencies = workspace.get('dependencies', {})
+    assert isinstance(dependencies, dict) and dependencies.get('sha2') == '=0.10.9'
+    profiles = document.get('profile', {})
+    assert isinstance(profiles, dict)
+    development = profiles.get('dev', {})
+    assert isinstance(development, dict)
+    packages = development.get('package', {})
+    assert isinstance(packages, dict)
+    selected = packages.get('sha2', {})
+    assert isinstance(selected, dict) and selected == {'opt-level': 3}
+    assert type(selected.get('opt-level')) is int, 'source-owned sha2 package optimization'
 
 
 def feature_vector(value):
@@ -63,7 +81,8 @@ def direct_externs(repo, metadata, messages, dependency_directory):
                    str(Path(repo) / 'crates/zryna-driver/Cargo.toml'))
     assert package['name'] == 'zryna-driver'
     manifest = tomllib.loads(read(Path(package['manifest_path']), REPORT_LIMIT).decode())
-    workspace = tomllib.loads(read(Path(repo) / 'Cargo.toml', REPORT_LIMIT).decode())['workspace']['dependencies']
+    workspace_document = tomllib.loads(read(Path(repo) / 'Cargo.toml', REPORT_LIMIT).decode())
+    workspace = workspace_document['workspace']['dependencies']
     required = set(manifest['dependencies']) | set(manifest['dev-dependencies'])
     nodes = [n for n in metadata['resolve']['nodes'] if n['id'] == package['id']]
     assert len(nodes) == 1, 'unique originating driver resolve node'
@@ -80,6 +99,14 @@ def direct_externs(repo, metadata, messages, dependency_directory):
         packages = [p for p in metadata['packages'] if p['id'] == dependency['pkg']]
         assert len(packages) == 1, ('unique direct dependency package', name)
         assert isinstance(packages[0]['features'], dict)
+        expected_opt_level = '0'
+        if name == 'sha2':
+            require_sha2_profile(workspace_document)
+            selected = packages[0]
+            assert selected['id'] == SHA2_PACKAGE and selected['name'] == 'sha2'
+            assert selected['version'] == '0.10.9' and selected['source'] == SHA2_SOURCE
+            assert features == ['default', 'std'], 'exact source-selected sha2 feature vector'
+            expected_opt_level = '3'
         for section, kind in (('dependencies', None), ('dev-dependencies', 'dev')):
             if name not in manifest[section]:
                 continue
@@ -104,7 +131,7 @@ def direct_externs(repo, metadata, messages, dependency_directory):
         eligible = []
         for artifact in artifacts:
             actual_features = feature_vector(artifact['features'])
-            assert artifact['profile']['opt_level'] == '0' and not artifact['profile']['test']
+            assert artifact['profile']['opt_level'] == expected_opt_level and not artifact['profile']['test']
             assert artifact['profile']['debuginfo'] == 0
             for filename in artifact['filenames']:
                 path = Path(filename)
@@ -116,7 +143,7 @@ def direct_externs(repo, metadata, messages, dependency_directory):
         artifact, path = eligible[0]
         pin = file_pin(path)
         rows.append({'name': dependency['name'], 'packageID': dependency['pkg'],
-                     'features': artifact['features'], 'input': pin})
+                     'features': artifact['features'], 'profile': dict(artifact['profile']), 'input': pin})
     assert len(rows) == len(required)
     return rows, package['version']
 
@@ -139,13 +166,14 @@ def product_format(data):
 
 def compile_owned(repo, output, resources, source):
     repo, output = Path(repo), Path(output)
+    require_sha2_profile(tomllib.loads(read(repo / 'Cargo.toml', REPORT_LIMIT).decode()))
     for name, value in OVERRIDES.items():
         assert os.environ.get(name) == value, ('unchanged owning profile', name)
     assert os.environ.get('RUSTFLAGS', '') == os.environ.get('CARGO_ENCODED_RUSTFLAGS', '') == ''
     tools = rust_tools()
     cargo_env = cargo_environment(tools, os.environ)
     cargo_args = [tools['pins'][2]['path'], 'test', '--locked', '-p', 'zryna-driver', '--lib', '--no-run',
-                  '--message-format=json', '--config', 'profile.dev.package.sha2.opt-level=0']
+                  '--message-format=json', '--config', 'profile.dev.package.sha2.opt-level=3']
     raw, _ = run(cargo_args, output, 'cargo-no-run', resources, env=cargo_env)
     messages = [parse_json(line) for line in raw.splitlines() if line]
     assert messages and messages[-1] == {'reason': 'build-finished', 'success': True}
