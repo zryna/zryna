@@ -1,4 +1,4 @@
-name: Independent two-OS editor cross-run diagnostic
+name: Independent Windows transport and editor diagnostic
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   installed-editor:
-    name: DIAGNOSTIC editor (${{ matrix.os }})
+    name: DIAGNOSTIC Windows transport and editor
     defaults:
       run: {working-directory: product}
     runs-on: ${{ matrix.os }}
@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022]
+        os: [windows-2022]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -114,6 +114,8 @@ jobs:
           name: m6-editor-crossrun-DIAGNOSTIC-${{ matrix.os }}-c9fc03ba-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ env.M6_DIAGNOSTIC_BASE }}/m6-crossrun-input/*.json
+            ${{ env.M6_DIAGNOSTIC_BASE }}/m6-crossrun-input/EXTRACTOR.stdout
+            ${{ env.M6_DIAGNOSTIC_BASE }}/m6-crossrun-input/EXTRACTOR.stderr
             ${{ env.M6_DIAGNOSTIC_BASE }}/m6-installed-editor
             ${{ env.M6_DIAGNOSTIC_BASE }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/ROOT_RESULT.json
             ${{ env.M6_DIAGNOSTIC_BASE }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/SERVICE.*
