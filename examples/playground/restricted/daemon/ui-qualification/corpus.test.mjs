@@ -1,5 +1,6 @@
 // Pure validator/decoder fixtures. These synthetic frames establish no compiler or browser acceptance.
 import assert from 'node:assert/strict';import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import { corpus } from '../../corpus.mjs';
 import { browserCorpus, qualificationCases, scalarCases } from './browser-oracles.mjs';
 import { inspectCorpus } from './corpus-observation.mjs';
@@ -31,6 +32,49 @@ test('DOM projection must match authenticated reports, Unicode byte-to-UTF16 sel
     const changed=structuredClone(dom);mutate(changed);assert.throws(()=>inspectCorpus(changed,actual));
   }
   assert.ok(!JSON.stringify(actual).includes(token));assert.ok(!JSON.stringify(actual).includes('Bearer'));
+});
+// Execute only the actual producer's fixed callback on inert nodes, without Chrome or API traffic.
+function recoveredFromProducer() {
+  const source = readFileSync(new URL('./browser-corpus.mjs', import.meta.url), 'utf8');
+  const marker = 'const recovered = await page.evaluate(';
+  assert.equal(source.split(marker).length, 2);
+  const start = source.indexOf(marker) + marker.length;
+  const end = source.indexOf(');\n  check(recovered.invalid', start);
+  assert.ok(end > start && end - start < 2048);
+  const nodes = new Map([
+    ['source', { getAttribute: name => { assert.equal(name, 'aria-invalid');return 'false'; } }],
+    ['source-error', { textContent: '' }], ['identity', { textContent: '' }],
+    ['compile', { disabled: false }], ['run', { disabled: true }],
+    ['cancel', { disabled: true }], ['export', { value: '' }],
+  ]);
+  const document = { getElementById: id => { assert.ok(nodes.has(id));return nodes.get(id); } };
+  return new Function('document', 'return (' + source.slice(start, end) + ')()')(document);
+}
+test('host accepts the exact recovered callback result including all emitted controls', async () => {
+  const actual = await completeFixture(), dom = domFixture(actual);
+  assert.deepEqual(inspectCorpus(dom, actual), dom);
+  const recovered = recoveredFromProducer();
+  assert.deepEqual(recovered, dom.recovered);
+  const emitted = { ...dom, recovered };
+  assert.deepEqual(inspectCorpus(emitted, actual), emitted);
+});
+test('recovered controls reject wrong state, missing fields and extra fields', async () => {
+  const actual = await completeFixture();
+  for (const mutate of [
+    value => { value.controls.compileDisabled = true; },
+    value => { value.controls.cancelDisabled = false; },
+    value => { value.controls.selectedExport = 'add'; },
+    value => { value.controls.compileDisabled = 0; },
+    value => { delete value.controls; },
+    value => { delete value.controls.cancelDisabled; },
+    value => { value.controls.extra = true; },
+    value => { value.extra = true; },
+  ]) {
+    const dom = { ...domFixture(actual), recovered: recoveredFromProducer() };
+    assert.deepEqual(inspectCorpus(dom, actual), dom);
+    mutate(dom.recovered);
+    assert.throws(() => inspectCorpus(dom, actual));
+  }
 });
 test('trace owns exact broker IDs and exports21 finish links without live job tokens', async () => {
   const actual = await completeFixture();

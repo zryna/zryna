@@ -73,7 +73,7 @@ export function domFixture(actual) {
         selection:{source:row.source,logical:v.logical,args:v.args.map(String),status:'Evaluation completed.',compileDisabled:false,cancelDisabled:true,runDisabled:false}}))};}),
     keyboard:{tabFromSource:'compile'},invalidArgument:{focusedId:'argument-0',invalid:'true',error:'Enter a whole decimal number from -2147483648 to 2147483647.',observation:'Check the highlighted argument values before running.'},
     revisionInvalidation:{runDisabled:true,exports:0,identity:'',observation:'No observation.'},sourceBudget:{bytes:'4098 / 4096 UTF-8 bytes',invalid:'true',error:'Source exceeds 4096 UTF-8 bytes. Remove 2 bytes before compiling.',compileDisabled:true,runDisabled:true},
-    recovered:{invalid:'false',error:'',compileDisabled:false,runDisabled:true,identity:''},unicodeNavigation:{diagnosticIndex:0,focusedId:'source',start:bytes.subarray(0,record.byte_start).toString().length,end:bytes.subarray(0,record.byte_end).toString().length},
+    recovered:{invalid:'false',error:'',compileDisabled:false,runDisabled:true,controls:{compileDisabled:false,cancelDisabled:true,selectedExport:''},identity:''},unicodeNavigation:{diagnosticIndex:0,focusedId:'source',start:bytes.subarray(0,record.byte_start).toString().length,end:bytes.subarray(0,record.byte_end).toString().length},
     argumentAX:[argument,{...argument,name:'Argument 2 (i32)'}],invalidAX:[argument],diagnosticAX:[source,status],
     inertSource:{sourceExact:true,imgElements:0,scriptElementsAfter:1,markerAbsent:true,scriptElementsBefore:1},
     sessionIsolation:'unrun',arbitraryInertMarkup:presentationFixture(),audibleAssistiveTechnology:'unrun'};

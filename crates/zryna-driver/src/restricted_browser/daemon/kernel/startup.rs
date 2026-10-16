@@ -64,15 +64,15 @@ mod tests {
     #[test]
     fn only_exact_original_supervisor_marker_is_ready() {
         for comm in ["runtime-init", "runc:[2:INIT]", "supervisor-x", "a)b"] {
-            assert!(!marker(&record(comm, "S", "123"), &init()).unwrap());
+            assert!(!marker(&record(comm, "S", "123"), &init()).expect("valid pending marker"));
         }
-        assert!(marker(&record("supervisor", "R", "123"), &init()).unwrap());
+        assert!(marker(&record("supervisor", "R", "123"), &init()).expect("ready original marker"));
     }
 
     #[test]
     fn malformed_reused_and_dead_records_are_errors_never_pending() {
         for text in [
-            "".into(),
+            String::new(),
             "42 supervisor S".into(),
             "42 () S".into(),
             record("supervisor", "S", "124"),
@@ -111,9 +111,10 @@ mod tests {
 
     #[test]
     fn expired_original_clock_refuses_before_reading_a_startup_marker() {
-        let expired = Instant::now().checked_sub(std::time::Duration::from_secs(1)).unwrap();
+        let expired =
+            Instant::now().checked_sub(std::time::Duration::from_secs(1)).expect("past instant");
         assert_eq!(
-            supervisor_ready(&init(), expired).unwrap_err().reason(),
+            supervisor_ready(&init(), expired).expect_err("expired original deadline").reason(),
             "PLAYGROUND-HOST-DEADLINE"
         );
     }

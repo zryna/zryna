@@ -67,7 +67,8 @@ export function inspectCorpus(value, actual) {
   same(value.revisionInvalidation, { runDisabled: true, exports: 0, identity: '', observation: 'No observation.' });
   same(value.sourceBudget, { bytes: '4098 / 4096 UTF-8 bytes', invalid: 'true',
     error: 'Source exceeds 4096 UTF-8 bytes. Remove 2 bytes before compiling.', compileDisabled: true, runDisabled: true });
-  same(value.recovered, { invalid: 'false', error: '', compileDisabled: false, runDisabled: true, identity: '' });
+  same(value.recovered, { invalid: 'false', error: '', compileDisabled: false, runDisabled: true,
+    controls: { compileDisabled: false, cancelDisabled: true, selectedExport: '' }, identity: '' });
   exact(value.inertSource, ['sourceExact', 'imgElements', 'scriptElementsAfter', 'markerAbsent', 'scriptElementsBefore']);
   if (value.inertSource.sourceExact !== true || value.inertSource.imgElements !== 0 || value.inertSource.markerAbsent !== true ||
       value.inertSource.scriptElementsBefore !== 1 || value.inertSource.scriptElementsAfter !== 1) fail('CORPUS_DOM');
