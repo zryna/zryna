@@ -9,6 +9,8 @@ import { acquire } from './scripts/m6/installed-editor-acquire.mjs';
 import { capture, descriptor, ordinaryRoot, readBytes } from './scripts/m6/installed-editor/files.mjs';
 import { verifyEditor, verifyEditorArchive, inventory, installedDirectory, verifyInstalled,
   sha } from './scripts/m6/installed-editor/materials.mjs';
+import { bindInstaller, deriveInstallerIdentity, validateInstallerIdentity }
+  from './scripts/m6/installed-editor/installer-metadata.mjs';
 import { canonicalVsix, vsixEntries } from './scripts/portable-setup/vsix.mjs';
 import { EDITOR_ARCHIVES } from './scripts/m6/installed-editor/pins.mjs';
 import { command } from './scripts/m6/installed-editor/process.mjs';
@@ -32,7 +34,8 @@ try {
   const preflightDeadline = performance.now() + 15000;
   const sourceInputPins = [];
   for (const [path, bytes, sha256] of [
-    ['scripts/m6/installed-editor/materials.mjs', 9618, '7f3523b5552a664235e1d695e1d9d27e6a482e4c04f43873a8de5e78f3e77f68'],
+    ['scripts/m6/installed-editor/materials.mjs', 10627, '6ba13fd65cfaacd9e44861881eeed8b5215e7b3b3270529d1419c1a184f8570e'],
+    ['scripts/m6/installed-editor/installer-metadata.mjs', 6861, '94c94988156e2904e84dd451981486887ecbfffb3a2e3f663f6e4b077d0f59fb'],
     ['scripts/m6/installed-editor-acquire.mjs', 2874, '108669518da3b6220c4f32315a8cdd38d00fdf1233bae650fe3d68538bbef02b'],
   ]) {
     const observed = await descriptor(join(source, path), preflightDeadline);
@@ -101,8 +104,10 @@ try {
   const payload = Object.fromEntries(entries.filter(entry => entry.name.startsWith('extension/'))
     .map(entry => [entry.name.slice(10), { bytes: entry.data.length, sha256: sha(entry.data) }]));
   assert.equal(Object.keys(payload).length, 12);
+  const installerIdentity = deriveInstallerIdentity(bytes, payload,
+    await descriptor(vsix.captured.path, deadline, 4 * 1024 * 1024));
   await retain('VSIX_EXPECTED.json', { diagnosticOnly: true, qualification: false,
-    source: process.env.GITHUB_SHA, vsix, sourcePins, payload });
+    source: process.env.GITHUB_SHA, vsix, sourcePins, payload, installerIdentity });
   phase = 'INSTALL_CURRENT_VSIX';
   const userData = join(stage, 'profile'), extensions = join(stage, 'extensions');
   await mkdir(userData);
@@ -113,14 +118,18 @@ try {
     vsix: vsix.captured, userData, extensions, deadlineScope: 'Original single600s preparation clock' });
   const cliArgs = ['--user-data-dir', userData, '--extensions-dir', extensions];
   const cliEnv = { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
+  const installBefore = Date.now();
   await command(editor.executable, [cli, ...cliArgs, '--install-extension', vsix.captured.path],
     { ...options, env: cliEnv, name: 'install-current-vsix' });
+  const installWindow = { before: installBefore, after: Date.now() };
+  await retain('INSTALL_WINDOW.json', installWindow);
   phase = 'LIST_CURRENT_VSIX';
   const listed = await command(editor.executable, [cli, ...cliArgs, '--list-extensions', '--show-versions'],
     { ...options, env: cliEnv, name: 'list-installed-vsix' });
   assert.equal(listed.trim(), 'zryna.zryna@0.5.0');
   listedCorrectly = true;
   phase = 'RETAIN_INSTALLED_INVENTORY';
+  validateInstallerIdentity(installerIdentity, payload);
   await retain('EXTENSIONS_ROOT_INVENTORY.json', await inventory(extensions, deadline));
   const installed = await installedDirectory(extensions);
   const actual = await inventory(installed, deadline);
@@ -134,9 +143,12 @@ try {
   await retain('INSTALLED_PACKAGE_PIN.json', { original: packagePin,
     retained: { path: 'INSTALLED_PACKAGE_JSON.raw', bytes: rawPackage.length, sha256: sha(rawPackage) } });
   inventoryRetained = true;
+  phase = 'BIND_QUALIFIED_INSTALLER';
+  const installer = bindInstaller(installerIdentity, payload, installWindow, rawPackage);
+  await retain('INSTALLER_IDENTITY.json', installer);
   phase = 'VERIFY_INSTALLED';
-  // All actual data above survives any original strict validator rejection.
-  const verified = await verifyInstalled(installed, payload, deadline);
+  // All actual data above survives any strict validator rejection; no installed hash becomes authority.
+  const verified = await verifyInstalled(installed, payload, Math.min(deadline, performance.now() + 30000), installer);
   await retain('STRICT_INSTALLED_VERIFICATION.json', verified);
   accepted = true;
 } catch (failure) {

@@ -11,6 +11,7 @@ import { decodeZip } from '../../distribution/archive-zip.mjs';
 import { extractVerifiedProductionFiles } from '../../distribution-release/run-installed-acceptance.mjs';
 import { vsixEntries } from '../../portable-setup/vsix.mjs';
 import { descriptor, ordinaryRoot, capture, readBytes } from './files.mjs';
+import { deriveInstallerIdentity, installedPayload } from './installer-metadata.mjs';
 export { descriptor, ordinaryRoot } from './files.mjs';
 import { EDITOR_ARCHIVES, EDITOR_VERSION } from './pins.mjs';
 
@@ -67,8 +68,11 @@ export async function prepareSetup(handoff, expected, output, deadline) {
   assert.equal(config.manifest.sourceCommit, expected.commit);
   assert.equal(config.manifest.sourceTree, expected.tree);
   const vsix = join(setup, 'editor', 'zryna-0.5.0.vsix');
-  assert.equal((await descriptor(vsix)).sha256, receipt.vsixSha256);
-  const entries = vsixEntries(await readFile(vsix));
+  const vsixDeadline = Math.min(deadline, performance.now() + 30000);
+  const vsixPin = await descriptor(vsix, vsixDeadline);
+  assert.equal(vsixPin.sha256, receipt.vsixSha256);
+  const vsixBytes = await readBytes(vsix, vsixDeadline, 4 * 1024 * 1024);
+  const entries = vsixEntries(vsixBytes);
   const sourceFiles = ['CHANGELOG.md', 'LICENSE', 'README.md', 'package.json',
     'src/connection.cjs', 'src/extension.cjs', 'src/installation.cjs', 'src/run-command.cjs',
     'src/run-input.cjs', 'src/run-process.cjs', 'src/run-project.cjs', 'syntaxes/zryna.tmLanguage.json'];
@@ -84,9 +88,10 @@ export async function prepareSetup(handoff, expected, output, deadline) {
     .filter(entry => entry.name.startsWith('extension/'))
     .map(entry => [entry.name.slice(10), { bytes: entry.data.length, sha256: sha(entry.data) }]));
   assert.equal(Object.keys(payload).length, 12);
+  const installerIdentity = deriveInstallerIdentity(vsixBytes, payload, vsixPin);
   await writeFile(join(output, 'setup-authentication.json'), `${JSON.stringify({ receipt,
-    reproduction, archive: actual, protectedCapture: captured.captured, setup, payload }, null, 2)}\n`, { flag: 'wx' });
-  return { setup, digest: receipt.manifestSha256, vsix, payload };
+    reproduction, archive: actual, protectedCapture: captured.captured, setup, payload, installerIdentity }, null, 2)}\n`, { flag: 'wx' });
+  return { setup, digest: receipt.manifestSha256, vsix, payload, installerIdentity };
 }
 export async function inventory(root, deadline = performance.now() + 30000) {
   const entries = [];
@@ -118,7 +123,17 @@ export async function inventory(root, deadline = performance.now() + 30000) {
   await walk(root);
   return { entries, totalBytes: total, sha256: sha(Buffer.from(JSON.stringify(entries))) };
 }
-export async function verifyInstalled(directory, expected, deadline = performance.now() + 30000) {
+export async function verifyInstalled(directory, expected, deadline = performance.now() + 30000, installer = null) {
+  if (installer !== null) {
+    // Reauthenticate the same source VSIX, never infer expected bodies from the installed tree.
+    installedPayload(expected, installer);
+    const source = installer.identity.vsix;
+    assert.deepEqual(await descriptor(source.path, deadline, 4 * 1024 * 1024), source);
+    const bytes = await readBytes(source.path, deadline, 4 * 1024 * 1024);
+    assert.deepEqual(await descriptor(source.path, deadline, 4 * 1024 * 1024), source);
+    assert.deepEqual(deriveInstallerIdentity(bytes, expected, source), installer.identity);
+    expected = installedPayload(expected, installer);
+  }
   const actual = await inventory(directory, deadline);
   const directories = new Set();
   for (const name of Object.keys(expected)) {

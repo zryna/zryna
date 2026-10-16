@@ -35,7 +35,7 @@ function activate(context) {
         await new Promise(resolve => setTimeout(resolve, 50));
       }
       const { verifyInstalled } = await import('./materials.mjs');
-      await verifyInstalled(extension.extensionPath, config.payload);
+      await verifyInstalled(extension.extensionPath, config.payload, undefined, config.installer);
       await publish(config.initialPath, { initialTrusted: false,
         editorVersion: vscode.version, installedExtension: extension.extensionPath,
         untrustedLanguageAttempt: { uri: uri.toString(), samples, durationMs: Date.now() - started,
@@ -53,7 +53,7 @@ function activate(context) {
       assert.equal(result.passed, true);
       assert.equal(result.generated.length, 3);
       result.installedExtension = extension.extensionPath;
-      result.installedInventory = await verifyInstalled(extension.extensionPath, config.payload);
+      result.installedInventory = await verifyInstalled(extension.extensionPath, config.payload, undefined, config.installer);
       await publish(config.resultPath, result);
     } catch (error) {
       if (config) await publish(config.failurePath, { failed: true, error: String(error.stack ?? error) });
