@@ -1,8 +1,10 @@
 # M6 reviewed-source playground route v2
 
-Version: 2. Status: final integration qualification and public publication are pending. This document
-specifies a separate source-checkout composition for issue #410. It records no completed
-acceptance, publication, supported launcher or milestone closure.
+Version: 2. This evidence contract specifies a separate source-checkout composition for issue #410.
+Execution and publication require their respective actual evidence described below. Final support
+requires the matching independently selected final record and durable receipts; public launcher
+admission additionally requires the original opaque compiler-publication capability.
+This document records no completed acceptance, publication, supported launcher or milestone closure.
 
 The original issue requires published compiler artifacts, actual restricted browser evaluation,
 one exact tooling support matrix, runnable exported documentation and complete required gates.
@@ -158,8 +160,8 @@ any original issue gate or activate the unimplemented standalone toolkit route.
 ## Operator invocation
 
 This is an operator template for the implemented API, not a published installer or a supported
-public service. Final runtime qualification, immutable publication and the complete acceptance
-record remain pending. No command below acquires authority from an adjacent manifest.
+public service. Public support requires final runtime qualification, immutable publication
+and the complete matching acceptance record. No command below acquires authority from an adjacent manifest.
 
 Before starting, the operator independently authenticates the bootstrap source (including the
 publication verifier and its transitive imports), this session script, Node 22.22.1 and the

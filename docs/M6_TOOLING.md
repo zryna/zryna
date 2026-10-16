@@ -1,9 +1,15 @@
 # M6 tooling support and evidence
 
-Status: final integration verification is pending. The reviewed-source playground v2 and
-separate standalone toolkit v1 remain under verification. The source launcher API exists;
-public compiler publication, supported installation and completed M6 acceptance remain pending. This page records the bounded tooling surface and the evidence
-required before those claims can change. It does not activate debugging or additional query forms.
+Current reviewed-source support is determined by the independently selected, immutable
+`zryna.m6-source-evidence.v2` final record and its actual receipts, authenticated compiler
+publication and deployed documentation. They must identify the same integration commit/tree,
+artifact versions, composition and documentation manifest. See [final acceptance](#final-acceptance-record)
+and the [record verification contract](../spec/tooling/M6_REVIEWED_SOURCE_V2.md#detached-v2-record-validation).
+Treat an integration as under verification when that complete matching evidence is unavailable.
+
+This source page defines the bounded tooling surface and its acceptance conditions; it does
+not record completed gates or activate debugging or additional query forms. The separate
+standalone toolkit v1 retains its own publication and acceptance requirements.
 
 The [M6 conformance contract v1](../spec/tooling/M6_CONFORMANCE_V1.md) defines the common evidence
 identity and complete acceptance matrix. The separate [reviewed-source route v2](../spec/tooling/M6_REVIEWED_SOURCE_V2.md)
@@ -18,12 +24,12 @@ Component versions identify different products; they are not interchangeable rel
 | Surface | Exact version or profile | Documented behavior | Status and evidence boundary |
 | --- | --- | --- | --- |
 | Standalone compiler/project | Compiler 0.2.3; generated `i32-v1` project | `new`, frozen source authentication, create-only JavaScript/core WebAssembly build and run on Linux/Windows | Existing project contract; final M6 integration must rerun its applicable project and portability gates. |
-| Language server | Server 0.5.0; scalar protocol v2, explicit `control-flow-v1` v3 or `data-ownership-v1` v4 | Bounded stdio diagnostics, full-text revisions, negotiated coordinates and formatting; scalar definition only | Existing LSP contract; no build or execution method. Final integration evidence is pending. |
-| Formatter | `scalar-format-v1`, `control-flow-format-v1`, `data-ownership-format-v1` | Compiler-admitted document/range edits, token/comment preservation, idempotence and revision checks | Delivered through the matching LSP/editor. There is no `zryna fmt` CLI command. Final integration evidence is pending. |
+| Language server | Server 0.5.0; scalar protocol v2, explicit `control-flow-v1` v3 or `data-ownership-v1` v4 | Bounded stdio diagnostics, full-text revisions, negotiated coordinates and formatting; scalar definition only | Existing LSP contract; no build or execution method. Final support requires matching LSP gates in the selected integration record. |
+| Formatter | `scalar-format-v1`, `control-flow-format-v1`, `data-ownership-format-v1` | Compiler-admitted document/range edits, token/comment preservation, idempotence and revision checks | Delivered through the matching LSP/editor. There is no `zryna fmt` CLI command. Final support requires matching formatter gates in the selected integration record. |
 | Editor extension | VSIX 0.5.0; VS Code-compatible API >=1.82.0 | Diagnostics, scalar definition, M1–M3 formatting; explicit saved-file Run for scalar/M2 JavaScript or core WebAssembly | Separately published extension with historical installed-host evidence. Publication does not authenticate an outer setup or close the new integration. |
 | Portable setup | 0.1.0-candidate.3; compiler 0.2.3, server/VSIX 0.5.0 | Reviewed complete installation, isolated editor profile, explicit compiler/editor exercises and relocation | Internal review/user-acceptance candidate. No public outer publisher signature; production admission remains forbidden. |
 | Fixed-component example | Existing `browser-component-v1` bundle | Local execution of fixed `examples/universal/add.zry` with editable scalar inputs | Independently documented [example](../examples/playground/README.md). It does not compile edited source or establish source-playground acceptance. |
-| Reviewed-source playground v2 | `reviewed-source-v1` composition; playground compiler 0.1.0; `restricted-browser-v1` transport; `browser-component-v1` output | Operator-reviewed source launcher API, dedicated Docker compiler/browser, one-file compilation and scalar evaluation | Private qualification implementation. Published compiler, complete final gates and supported public installation remain pending. |
+| Reviewed-source playground v2 | `reviewed-source-v1` composition; playground compiler 0.1.0; `restricted-browser-v1` transport; `browser-component-v1` output | Operator-reviewed source launcher API, dedicated Docker compiler/browser, one-file compilation and scalar evaluation | Public support requires the authenticated published compiler, independently approved matching composition and complete final integration evidence. A source-only qualification does not establish public admission. |
 | Standalone toolkit v1 | Proposed 0.1.0, proposed `playground-v0.1.0` immutable prerelease | Separate authenticated compiler/material/binding/WIT/browser/policy composition | Not published. Outer publisher authentication, durable artifacts and final integration receipts are pending. |
 
 The extension requires the exact selected analysis/formatting capability and matching server
@@ -100,7 +106,7 @@ admitted source, compile, inspect actual diagnostics, choose a returned export, 
 signed i32 values and run. Inspect the observed value and component hash. Editing or Cancel
 invalidates pending observations; another operation waits for complete owned cleanup.
 The guide gives a concrete `add(20, 22)` exercise with expected result 42. Those instructions
-are reproducible inputs, not a claim that final acceptance or public publication has passed.
+are reproducible inputs. Actual acceptance and public publication require the matching selected evidence.
 
 The source is exact editable UTF-8 at fixed logical path `src/main.zry`, passed through the
 scalar compiler, mandatory IR verifier, component audit and deterministic bindings. Only
@@ -148,7 +154,7 @@ with exact per-artifact source/version/hash identities. The [v1 matrix](../spec/
 signature/provenance receipts and required hosted results. Earlier binaries or passing unit fixtures
 cannot supply a missing final integration row.
 
-Required remaining proof includes actual CLI source-diagnostic/scalar parity across the editable
+Required proof includes actual CLI source-diagnostic/scalar parity across the editable
 corpus; exact resource and malformed/expired/unsupported rejection boundaries; revision, cancellation,
 isolation and authority substitution; real browser accessibility; runnable exported documentation;
 project, LSP, formatter and installed-extension integration; and all applicable Linux/Windows

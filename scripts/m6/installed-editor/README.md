@@ -38,11 +38,10 @@ not replace playground containment, accessibility, LSP/client negatives or final
 The workflow's 90-day upload is temporary retention; final closure needs independent durable
 publication of exact receipts and source documentation.
 
-This initial implementation has not been parsed, formatted, tested or executed by its author.
+The full CI dispatch connects the reusable installed-editor workflow to the current
+portable-setup workflow through an explicit dependency and same-run artifact handoff.
 Actual Code installation metadata, debug-port output, trust UI and both-host process behavior
-remain qualification prerequisites. The reusable workflow is not connected to CI until reviewed;
-root must add the explicit dependency on the current portable-setup workflow and update required
-job accounting. No acquisition, browser/editor process, test, workflow, push or release occurred.
+remain qualification prerequisites. Workflow wiring alone supplies no passing GUI observation.
 
 The corrected process launcher uses a creation-owning trusted supervisor. Linux requires
 Python's pidfd APIs plus a private child-subreaper; it binds a pidfd before releasing the
@@ -59,7 +58,7 @@ captured files. The trust negative actually opens a `.zry` document while untrus
 observes inactive extension/absent diagnostics before the normal exact-folder GUI action.
 
 All corrected helper behavior, PowerShell/.NET handle semantics, loaded dependency
-availability and both real GUI lanes remain pending independent review and actual runs.
+availability and both real GUI lanes require independent review and actual runs for the selected source.
 The ownership tests use their own trusted Node children and are not GUI or containment
 certificates. No unavailable process/stream fact is synthesized as a passing observation.
 
