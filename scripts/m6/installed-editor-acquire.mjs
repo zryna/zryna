@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, rename, statfs, writeFile } from 'node:fs/promises';
+import { mkdir, realpath, rename, statfs, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
@@ -18,11 +18,23 @@ export async function acquire(output) {
     'Editor acquisition needs a separate 512 MiB free-space reserve.');
   await mkdir(output, { recursive: false, mode: 0o700 });
   const partial = join(output, 'editor.partial');
-  const stdout = await command(process.platform === 'win32' ? 'curl.exe' : 'curl',
+  const deadline = performance.now() + 250000;
+  let client = 'curl';
+  if (process.platform === 'win32') {
+    // Trusted hosted bootstrap location; never a supplied material or PATH candidate.
+    const selected = process.env.ProgramFiles;
+    assert(typeof selected === 'string' && selected.length <= 32768 && isAbsolute(selected));
+    const programFiles = await realpath(selected);
+    await ordinaryRoot(programFiles);
+    client = join(programFiles, 'Git', 'mingw64', 'bin', 'curl.exe');
+    await ordinaryRoot(dirname(client));
+    assert.equal(await realpath(client), client);
+  }
+  const stdout = await command(client,
     ['--fail', '--location', '--proto', '=https', '--proto-redir', '=https', '--max-time', '240',
       '--max-filesize', String(pin.bytes), '--output', partial, '--write-out', '%{http_code}', pin.url],
     { cwd: output, env: { ...process.env }, output, name: 'official-editor-download',
-      deadline: performance.now() + 250000 });
+      deadline });
   assert.equal(stdout, '200');
   const actual = await verifyEditorArchive(partial);
   const archive = join(output, process.platform === 'win32' ? 'editor.zip' : 'editor.tar.gz');
