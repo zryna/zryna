@@ -5,7 +5,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { createRequire } from 'node:module';
-import { capture, readBytes } from './installed-editor/files.mjs';
+import { capture, readBytes, generatedOutputPath } from './installed-editor/files.mjs';
 import { bindInstaller, validateInstallerIdentity } from './installed-editor/installer-metadata.mjs';
 import { awaitLinuxUserns } from './installed-editor/linux-userns.mjs';
 import { EDITOR_ARCHIVES } from './installed-editor/pins.mjs';
@@ -101,6 +101,7 @@ async function run(values) {
     await mkdir(extensions);
     await mkdir(workspace);
     await writeFile(join(userData, 'User/settings.json'), `${JSON.stringify({
+      'security.workspace.trust.startupPrompt': 'always',
       'zryna.installationPath': setup.setup, 'zryna.installationDigest': setup.digest,
       '[zryna]': { 'editor.defaultFormatter': 'zryna.zryna' },
     }, null, 2)}\n`, { flag: 'wx' });
@@ -140,13 +141,15 @@ async function run(values) {
     const failed = () => editorProcess.failure() ?? (editorProcess.ended()
       ? new Error('Editor ended before required installed-host results.') : null);
     const trust = await trustFreshFolder({ userData, workspaceName: basename(workspace),
-      initialPath: config.initialPath, deadline, failed });
-    const observed = await waitJson(config.resultPath, deadline, failed);
+      initialPath: config.initialPath, failurePath: config.failurePath, deadline, failed, output });
+    const observed = await waitJson(config.resultPath, deadline, failed, config.failurePath);
     assert.equal(observed.passed, true);
     assert.equal(observed.checks.length, 9);
     assert.equal(observed.generated.length, 3);
     await mkdir(join(output, 'generated'));
     for (const [index, artifact] of observed.generated.entries()) {
+      artifact.reportedFile = artifact.file;
+      artifact.file = await generatedOutputPath(artifact.reportedFile, deadline);
       const actual = await descriptor(artifact.file);
       assert.equal(actual.bytes, artifact.bytes);
       assert.equal(actual.sha256, artifact.sha256);

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { capture, createRuntimeDependencyDescriptor, descriptor, ordinaryRoot, readBytes } from './files.mjs';
+import { capture, createRuntimeDependencyDescriptor, descriptor, ordinaryRoot, readBytes, generatedOutputPath } from './files.mjs';
 
 async function fixture(t) {
   const root = await mkdtemp(join(await realpath(tmpdir()), 'm6-retained-file-unit-'));
@@ -71,6 +71,21 @@ test('expired absolute FD-read deadline refuses before accepting or parsing byte
   await assert.rejects(readBytes(source, performance.now() - 1, 2));
   assert.deepEqual(await readBytes(source, performance.now() + 10000, 2), Buffer.from('{}'));
   await assert.rejects(readBytes(source, performance.now() + 10000, 1));
+});
+
+test('reported generated output accepts drive spelling and rejects a directory alias', async t => {
+  const root = await fixture(t), directory = join(root, 'output'), alias = join(root, 'alias');
+  await mkdir(directory); const file = join(directory, 'result.mjs');
+  await writeFile(file, 'export const unitOnly = 1;');
+  const reported = process.platform === 'win32'
+    ? (file[0] === file[0].toLowerCase() ? file[0].toUpperCase() : file[0].toLowerCase()) + file.slice(1)
+    : file;
+  const actual = await generatedOutputPath(reported, performance.now() + 10000);
+  assert.equal(actual, await realpath(file));
+  assert.equal((await descriptor(actual)).sha256, digest(await readFile(file)));
+  await symlink(directory, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(generatedOutputPath(join(alias, 'result.mjs'), performance.now() + 10000), /alias/);
+  await assert.rejects(generatedOutputPath(reported, performance.now() - 1), /deadline/);
 });
 
 // Windows-only actual host module case is not registered or credited as a Linux skip.

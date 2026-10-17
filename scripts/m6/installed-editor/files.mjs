@@ -13,6 +13,20 @@ function regular(stat) {
   assert(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1n && stat.ino !== 0n,
     'Single-link ordinary file identity required.');
 }
+// VS Code may report a lower-case Windows drive. Permit only that spelling
+// difference; all other aliases still reach the original strict file guards.
+export async function generatedOutputPath(reported, deadline) {
+  remaining(deadline);
+  assert(isAbsolute(reported) && reported === resolve(reported));
+  const actual = await realpath(reported);
+  const driveSpelling = process.platform === 'win32' && reported[1] === ':' && actual[1] === ':'
+    && reported.slice(1) === actual.slice(1)
+    && reported[0].toLowerCase() === actual[0].toLowerCase();
+  assert(reported === actual || driveSpelling, 'Generated output filesystem alias refused.');
+  remaining(deadline);
+  return actual;
+}
+
 export async function ordinaryRoot(root) {
   assert(isAbsolute(root) && root === resolve(root));
   let current = root;
