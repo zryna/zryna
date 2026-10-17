@@ -2,6 +2,7 @@
 $ErrorActionPreference = 'Stop'
 $known = @{}
 $rootProcess = $null
+$job = [IntPtr]::Zero; $jobDisarmed = $false
 $completed = $false
 $controlInput = $null; $controlReader = $null; $stopRead = $null
 $failures = [System.Collections.Generic.List[string]]::new()
@@ -15,70 +16,61 @@ function Stamp($process) {
   # Acquire and hold the same cached Process SafeHandle BEFORE identity checks.
   $handle = $process.SafeHandle
   if ($handle.IsInvalid -or $handle.IsClosed) { throw 'Invalid retained process handle.' }
-  return @{ pid = $process.Id; start = $process.StartTime.ToUniversalTime().Ticks.ToString();
-    image = $process.MainModule.FileName; handle = $handle; process = $process; gone = $false }
+  if (-not [M6OwnerJob]::Contains($job, $handle.DangerousGetHandle())) { throw 'Retained process is outside the private job.' }
+  [long]$creation = 0; [long]$exitTime = 0; [long]$kernel = 0; [long]$user = 0
+  if (-not [M6OwnerJob]::GetProcessTimes($handle.DangerousGetHandle(), [ref]$creation,
+      [ref]$exitTime, [ref]$kernel, [ref]$user)) { throw 'Retained creation time unavailable.' }
+  $image = $null; $queryError = $null
+  try { $image = $process.MainModule.FileName } catch {
+    # Image-query readiness does not grant ownership. The same retained handle,
+    # native creation time and private job membership already establish it.
+    $queryError = DiagnosticText $_.Exception.ToString() 1024
+  }
+  return @{ pid = $process.Id; start = [DateTime]::FromFileTimeUtc($creation).Ticks.ToString();
+    image = $image; handle = $handle; process = $process; gone = $false; imageQueryError = $queryError;
+    imageUnavailable = $(if (-not $image) { 'private-job-member-image-not-yet-observed' } else { $null }) }
 }
 function Public($item) {
   return @{ pid = $item.pid; start = $item.start; image = $item.image;
     parent = $item.parent; reason = $item.reason; gone = $item.gone;
     requestedFileName = $item.requestedFileName; imageUnavailable = $item.imageUnavailable;
-    exitTicks = $item.exitTicks }
+    exitTicks = $item.exitTicks; terminationProof = $item.terminationProof;
+    imageQueryError = $item.imageQueryError }
 }
-function Retain($process, [string]$reason, [int]$parent) {
-  $item = Stamp $process
+function Retain($process, [string]$reason, [int]$parent, $item) {
   if ($known.ContainsKey($item.pid)) {
     $old = $known[$item.pid]
     if ($old.start -eq $item.start) { $process.Dispose(); return }
     if (-not $old.gone) { throw 'Owned PID reused before disappearance proof.' }
-    $old.process.Dispose()
+    if ($old.process) { $old.process.Dispose() }
   }
   if ($known.Count -ge 256) { throw 'Owned identity bound exceeded.' }
   $item.reason = $reason; $item.parent = $parent
   $known[$item.pid] = $item
   Emit 'identity' (Public $item)
 }
-function SameCimTime($date, [string]$start) {
-  if (-not $date) { return $false }
-  $ticks = $date.ToUniversalTime().Ticks
-  $held = [long]::Parse($start)
-  return ($ticks - ($ticks % 10)) -eq ($held - ($held % 10))
-}
+. (Join-Path $PSScriptRoot 'owner-windows-job.ps1')
 function Observe([string]$stage, [long]$deadline) {
   if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'Process observation deadline.' }
-  # Fixed local provider; no credentials, remote machine or arbitrary query.
-  $rows = @(Get-CimInstance -ClassName Win32_Process -OperationTimeoutSec 1 |
-    Select-Object -First 4097 ProcessId, ParentProcessId, CreationDate, ExecutablePath)
-  if ($rows.Count -gt 4096) { throw 'Process inventory bound exceeded.' }
-  $byId = @{}
-  foreach ($row in $rows) { $byId[[int]$row.ProcessId] = $row }
-  $changed = $true
-  while ($changed) {
-    $changed = $false
-    foreach ($row in $rows) {
-      if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'Process observation deadline.' }
-      $pidValue = [int]$row.ProcessId; $parent = [int]$row.ParentProcessId
-      if ($pidValue -eq $PID) { continue }
-      if ($known.ContainsKey($pidValue) -and
-          (SameCimTime $row.CreationDate $known[$pidValue].start)) { continue }
-      $imageOwned = $row.ExecutablePath -and $row.ExecutablePath.StartsWith(
-        $stage + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
-      $parentOwned = $known.ContainsKey($parent) -and -not $known[$parent].gone -and
-        $byId.ContainsKey($parent) -and $byId[$parent].CreationDate -and
-        (SameCimTime $byId[$parent].CreationDate $known[$parent].start)
-      if (-not ($imageOwned -or $parentOwned)) { continue }
-      try {
-        $process = [Diagnostics.Process]::GetProcessById($pidValue)
-        $probe = Stamp $process
-        if (-not $row.CreationDate -or
-            -not (SameCimTime $row.CreationDate $probe.start) -or
-            -not $row.ExecutablePath -or
-            -not [string]::Equals($probe.image, $row.ExecutablePath, [StringComparison]::OrdinalIgnoreCase)) {
-          $process.Dispose(); throw 'Owned observation identity changed.'
-        }
-        Retain $process $(if ($parentOwned) { 'owned-parent' } else { 'private-stage-image' }) $parent
-        $changed = $true
-      } catch [ArgumentException] { throw 'Possibly owned process vanished before handle capture.' }
+  $members = @([M6OwnerJob]::Members($job))
+  if (-not $members.Contains([uint32]$PID)) { throw 'Owner private job membership lost.' }
+  foreach ($pidValue in $members) {
+    if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'Process observation deadline.' }
+    if ($pidValue -eq $PID) { continue }
+    if ($known.ContainsKey([int]$pidValue) -and $known[[int]$pidValue].process) { continue }
+    $process = $null
+    try {
+      $process = [Diagnostics.Process]::GetProcessById([int]$pidValue)
+      $probe = Stamp $process
+    } catch {
+      # The private job selected this PID. Opening a replacement outside that job
+      # cannot acquire signal authority; only positive termination is admitted.
+      $proof = ConfirmJobTermination $job ([int]$pidValue)
+      if ($process) { $process.Dispose() }
+      RetainJobTermination ([int]$pidValue) $proof
+      continue
     }
+    Retain $process 'private-job-member' 0 $probe
   }
   foreach ($item in $known.Values) {
     if ($item.gone) { continue }
@@ -87,15 +79,23 @@ function Observe([string]$stage, [long]$deadline) {
       $item.gone = $true; Emit 'gone' (Public $item); continue
     }
     try { $current = Stamp $item.process } catch {
-      if ($item.reason -ne 'created-root' -or -not $item.process.HasExited -or
+      if (-not $item.process.HasExited -or
           -not [object]::ReferenceEquals($item.handle, $item.process.SafeHandle)) { throw }
       $item.exitTicks = $item.process.ExitTime.ToUniversalTime().Ticks.ToString()
-      $item.imageUnavailable = 'creation-root-exited-during-refresh'
+      $item.imageUnavailable = 'retained-identity-exited-during-refresh'
       $item.gone = $true; Emit 'gone' (Public $item); continue
     }
-    if ($current.start -ne $item.start -or
-        -not [string]::Equals($current.image, $item.image, [StringComparison]::OrdinalIgnoreCase)) {
-      throw 'Owned executing identity changed.'
+    if ($current.start -ne $item.start) { throw 'Owned creation identity changed.' }
+    if (-not $item.image -and $current.image) {
+      $item.image = $current.image; $item.imageUnavailable = $null
+      Emit 'image' (Public $item)
+    } elseif ($item.image -and $current.image -and -not [string]::Equals(
+        $current.image, $item.image, [StringComparison]::OrdinalIgnoreCase)) {
+      throw 'Owned executing image changed.'
+    }
+    if ($current.imageQueryError -and -not $item.imageQueryError) {
+      $item.imageQueryError = $current.imageQueryError
+      Emit 'image' (Public $item)
     }
   }
 }
@@ -117,6 +117,10 @@ function KillHeld {
 function NewRead($stream) {
   return @{ stream = $stream; buffer = [byte[]]::new(65536); task = $null; done = $false; size = 0 }
 }
+function DiagnosticText([string]$value, [int]$maximum) {
+  if ($null -eq $value) { return $null }
+  return $value.Substring(0, [Math]::Min($maximum, $value.Length))
+}
 try {
   # One reader owns all control bytes, including any read-ahead from config/start.
   $controlInput = [Console]::OpenStandardInput()
@@ -132,14 +136,16 @@ try {
   if ($config.args.Count -gt 256 -or $config.timeoutMs -lt 1 -or $config.timeoutMs -gt 600000 -or
       $config.cleanupMs -lt 1 -or $config.cleanupMs -gt 15000) { throw 'Bounded owner config required.' }
   $stage = [IO.Path]::GetFullPath($config.stage).TrimEnd('\')
-  $null = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId=$PID" -OperationTimeoutSec 1
   $self = [Diagnostics.Process]::GetCurrentProcess()
+  $job = [M6OwnerJob]::Create()
+  [M6OwnerJob]::Assign($job, $self.SafeHandle.DangerousGetHandle())
   $dependencies = @($self.Modules | ForEach-Object { $_.FileName }) +
     @([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { -not $_.IsDynamic } |
       ForEach-Object { $_.Location }) + @((Get-Module).Path)
   $dependencies = @($dependencies | Where-Object { $_ } | Sort-Object -Unique)
   Emit 'ready' @{ dependencies = $dependencies; runtime = (Get-Process -Id $PID).Path; pid = $PID;
-    powershell = $PSVersionTable.PSVersion.ToString(); dotnet = [Environment]::Version.ToString() }
+    powershell = $PSVersionTable.PSVersion.ToString(); dotnet = [Environment]::Version.ToString();
+    ownership = 'private-inherited-job-before-target-creation'; breakaway = $false; killOnClose = $true }
   if ($controlReader.ReadLine() -ne '{"op":"start"}') { throw 'Explicit owner start required.' }
   $start = [Diagnostics.ProcessStartInfo]::new()
   $start.FileName = $config.program; $start.WorkingDirectory = $config.cwd
@@ -217,7 +223,11 @@ try {
       if ($null -ne $rootStatus -and $live.Count -eq 0 -and $reads[0].done -and $reads[1].done) {
         if ($null -eq $quiet) { $quiet = $now }
         if ($now - $quiet -ge 250) {
-          Emit 'complete' @{ status = $rootStatus; cleanupConfirmed = $true; failures = @($failures) }
+          $members = @([M6OwnerJob]::Members($job))
+          if ($members.Count -ne 1 -or $members[0] -ne $PID) { throw 'Private job still has descendants.' }
+          [M6OwnerJob]::KillOnClose($job, $false); $jobDisarmed = $true
+          Emit 'complete' @{ status = $rootStatus; cleanupConfirmed = $true; failures = @($failures);
+            privateJobDescendants = 0; ownerOnlyConfirmed = $true }
           $completed = $true; break
         }
       } else { $quiet = $null }
@@ -227,15 +237,31 @@ try {
   }
   if ($rootStatus -eq 0 -and $failures.Count -eq 0) { exit 0 } else { exit 1 }
 } catch {
+  # Preserve the ORIGINAL ErrorRecord before KillHeld can replace PowerShell's $_.
+  $originalFailure = $_
+  $nativeFailure = $null
+  try {
+    $nativeFailure = @{
+      exceptionType = (DiagnosticText $originalFailure.Exception.GetType().FullName 256)
+      message = (DiagnosticText $originalFailure.Exception.Message 1024)
+      fullyQualifiedErrorId = (DiagnosticText $originalFailure.FullyQualifiedErrorId 512)
+      scriptLineNumber = $originalFailure.InvocationInfo.ScriptLineNumber
+      offsetInLine = $originalFailure.InvocationInfo.OffsetInLine
+      scriptStackTrace = (DiagnosticText $originalFailure.ScriptStackTrace 2048)
+    }
+  } catch { $nativeFailure = @{ diagnosticUnavailable = $true } }
   $failures.Add('Owner failed; detailed native failure is unavailable or retained in stderr.')
   try { KillHeld } catch { $failures.Add('Retained-handle kill failed.') }
-  Emit 'unknown' @{ failures = @($failures); identities = @($known.Values | ForEach-Object { Public $_ }) }
+  Emit 'unknown' @{ failures = @($failures); identities = @($known.Values | ForEach-Object { Public $_ }); nativeFailure = $nativeFailure }
   exit 70
 } finally {
+  # Unknown exit retains kill-on-close. Kernel handle rundown then terminates the
+  # private job; unknown is never promoted to an observed successful cleanup.
+  if ($jobDisarmed) { $null = [M6OwnerJob]::CloseHandle($job) }
   if (-not $completed -and $rootProcess) {
     try { $rootProcess.StandardOutput.Dispose(); $rootProcess.StandardError.Dispose() } catch {}
   }
-  foreach ($item in $known.Values) { $item.process.Dispose() }
+  foreach ($item in $known.Values) { if ($item.process) { $item.process.Dispose() } }
   # Never dispose an active read or wait for control input during process cleanup.
   # A still-pending .NET worker read and its wrappers end with this owner process.
   if ($null -eq $stopRead -or $stopRead.IsCompleted) {
