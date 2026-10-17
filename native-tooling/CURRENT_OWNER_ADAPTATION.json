@@ -1,0 +1,43 @@
+{
+  "status": "SOURCE_ONLY_CURRENT_FEATURE_OWNER_ADAPTATION_NOT_MAIN_ACCEPTANCE",
+  "feature": "b19c9c67b45cee9ed7eded56287e111a3b8f808f",
+  "previousFreeze": {
+    "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/SOURCE_FREEZE.json",
+    "sha256": "bc38ceaba4ec550d2f540134a261c1cc8210d528b7fa8d9ba9ba47b44715d9bf"
+  },
+  "ownerModules": {
+    "process.mjs": {
+      "bytes": 1161,
+      "sha256": "9dbd77dee161d409c3d655fc98d34868623aa9a86ae75b4bc2694a1eedf3e32e"
+    },
+    "owner-client.mjs": {
+      "bytes": 9757,
+      "sha256": "f1cc8d9a0febe3e474862818e928bb72903ff06aadd5d9c4123116bb27bce4f1"
+    },
+    "files.mjs": {
+      "bytes": 7036,
+      "sha256": "336f4328efdb8f6e9b2e2dd3930d370af55c4377440dd88f7eebead881e849ef"
+    },
+    "owner-linux.py": {
+      "bytes": 13262,
+      "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df"
+    },
+    "owner-windows.ps1": {
+      "bytes": 14737,
+      "sha256": "e3a88b725f5820bbe48e00df6a1f7dcdd96f8d066b29f60fcc713eb11c4d87ab"
+    },
+    "owner-windows-job.ps1": {
+      "bytes": 8586,
+      "sha256": "e1a78c8b3210ca19126b1bcdb4f5ae904d016f7b978b709b7f95d76f136ea1e6"
+    }
+  },
+  "changes": [
+    "Exact current six-module owner closure, including separately captured Windows job helper.",
+    "No budgets, selectors, execution limits or raw carrier limits changed.",
+    "Original owner jobHelper is compared to the independently selected same-source module pin on Windows.",
+    "Nested producer/template/supplement pins recomputed from actual bytes only."
+  ],
+  "actualMain": null,
+  "actualRun": null,
+  "controls": "PENDING"
+}

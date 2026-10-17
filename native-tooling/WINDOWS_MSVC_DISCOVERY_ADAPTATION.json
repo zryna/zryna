@@ -1,0 +1,14 @@
+{
+  "status": "SOURCE_ONLY_ACTUAL_WINDOWS_RETRY_REQUIRED",
+  "sourceMain": "b25d68b259b33ca0077b6fbacfe7009960f64775",
+  "cause": "Actual owned Cargo101. Original same-handle/private-job completion confirmed. Rust selected GNU Git link.exe because closed environment omitted Windows VS/SDK installation discovery roots. Original compiler diagnostics retained in authentic artifact12088353619.",
+  "changes": [
+    "Forward only ProgramFiles(x86), ProgramW6432 and SystemDrive in the ordinary trusted Windows compiler environment; no credentials or generic environment copy.",
+    "All4closed layers agree: outerPython, Node collector, producer and original-command recorder.",
+    "Linux branches reduce to equivalent original allowed sets; actual original Linux run continues independently and receives no new pass claim.",
+    "No source main edit, native owner/budget/output/case/filter change. Only Windows workflow matrix retained for necessary retry.",
+    "Nested exact template and producer pins refreshed."
+  ],
+  "originalFailureArtifact": "/workspace/scratch/M6_410_B25_NATIVE_WINDOWS_FAILURE_ACTUAL_20261017_RUN1/ACQUISITION.json",
+  "actualRetry": null
+}
