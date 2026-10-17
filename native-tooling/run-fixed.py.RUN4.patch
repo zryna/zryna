@@ -1,0 +1,10 @@
+--- RUN3/run-fixed.py
++++ RUN4/run-fixed.py
+@@ -48,6 +48,7 @@
+         assert count == before.st_size, 'Complete original fingerprint bytes.'
+         native_after = NATIVE_IDENTITY.capture(source.fileno(), path, before.st_size, deadline)
+         NATIVE_IDENTITY.require_same(native_before, native_after)
++    assert time.monotonic() < deadline, 'Original fingerprint observation deadline.'
+     return {'path': str(path), 'bytes': count, 'sha256': digest.hexdigest(), 'identity': native_before}
+ 
+ 

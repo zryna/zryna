@@ -1,0 +1,11 @@
+{
+  "scope": "Private exact-main collector only. Main remains b25d68b259b33ca0077b6fbacfe7009960f64775.",
+  "linuxFailure": "Run38999735112 Linux prebuild all5 command success; BIND original strict descriptor rejected Cargo-selected executable regular nlink guard. Link count not exported by that failed run; actual next acquisition must retain it.",
+  "windowsFailure": "Run39000378597 PREBUILD rejected selected environment before any Cargo. Add exactly3Windows installation roots to fifth closed allowlist; previous 4 layers retain those same names.",
+  "changes": [
+    "After authentic fixed Cargo target selection, prepare only completed owned temporary Cargo output. Already-single-link files stay unchanged. For hardlinked output, preserve original inode in fresh private target/debug/retained-cargo-originals, copy complete bounded bytes via retained FD to create-only exact original Cargo path, independently validate original single-link descriptor and hash. Raw observation records retain both identities and prebuild target/source provenance. No source repository or external material changes.",
+    "Original Cargo selectors, commands, owners, deadlines, cleanup, filters, tests, carrier limits unchanged.",
+    "Original hardlinked output inode/body preserved under owned temporary target. No file deletion. Exact Cargo executable path and bytes preserved for original recorder correspondence; any later Cargo rewrite still fails existing stable identity checks."
+  ],
+  "actualCases": null
+}

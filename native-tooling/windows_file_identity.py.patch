@@ -1,0 +1,11 @@
+--- windows_file_identity.py.before
++++ windows_file_identity.py
+@@ -66,7 +66,7 @@
+ 
+ def capture(fd,path,expected_bytes,deadline):
+  import msvcrt
+- need(type(fd) is int and type(expected_bytes) is int and expected_bytes>0,'Fixed transport FD/length')
++ need(type(fd) is int and type(expected_bytes) is int and expected_bytes>=0,'Fixed transport FD/length')
+  path=Path(path);need(path.is_absolute(),'Absolute original transport name')
+  native=Native();borrowed=msvcrt.get_osfhandle(fd)
+  need(borrowed not in (-1,0),'Valid borrowed original FD handle')

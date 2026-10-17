@@ -1,0 +1,32 @@
+--- RUN3/fingerprint_windows_controls.py
++++ RUN4/fingerprint_windows_controls.py
+@@ -39,12 +39,25 @@
+         before=self.identity();after={**before,'changeTime':'301'}
+         with self.assertRaises(N.IdentityError):self.run_branch(before,after)
+ 
+-    def test_expired_deadline_refuses_before_native_capture(self):
++    def test_invalid_or_expired_deadline_refuses_before_native_capture(self):
++        for deadline in (None,float('inf'),float('nan'),time.monotonic()-1.0):
++            with self.subTest(deadline=deadline),tempfile.TemporaryDirectory() as directory:
++                path=Path(directory)/'empty.stdout';path.write_bytes(b'')
++                with patch.object(R,'WINDOWS',True),patch.object(R,'NATIVE_IDENTITY',N), \
++                        patch.object(N,'capture') as capture:
++                    with self.assertRaises(AssertionError):R.fingerprint(path,deadline)
++                    capture.assert_not_called()
++
++    def test_last_point_after_stable_native_snapshots_and_file_close_refuses(self):
+         with tempfile.TemporaryDirectory() as directory:
+             path=Path(directory)/'empty.stdout';path.write_bytes(b'')
++            identity=self.identity()
+             with patch.object(R,'WINDOWS',True),patch.object(R,'NATIVE_IDENTITY',N), \
+-                    patch.object(N,'capture') as capture:
+-                with self.assertRaises(AssertionError):R.fingerprint(path,time.monotonic()-1.0)
+-                capture.assert_not_called()
++                    patch.object(N,'capture',side_effect=[identity,dict(identity)]) as capture, \
++                    patch.object(R.time,'monotonic',side_effect=[1.0,3.0]) as clock:
++                with self.assertRaisesRegex(AssertionError,'Original fingerprint observation deadline'):
++                    R.fingerprint(path,2.0)
++                self.assertEqual(capture.call_count,2)
++                self.assertEqual(clock.call_count,2)
+ 
+ if __name__=='__main__':unittest.main()
