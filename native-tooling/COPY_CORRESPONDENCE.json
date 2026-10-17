@@ -1,0 +1,234 @@
+{
+  "format": "private.collector-source-snapshot-correspondence.v1",
+  "copies": [
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/producer.mjs",
+        "bytes": 15011,
+        "sha256": "3ae817bce0876c43e02f2ac9febd62facf7dd476c2c5ce7b9c3929e0f9c9d137"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/producer.mjs",
+        "bytes": 15011,
+        "sha256": "3ae817bce0876c43e02f2ac9febd62facf7dd476c2c5ce7b9c3929e0f9c9d137"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/bind.mjs",
+        "bytes": 103,
+        "sha256": "b867e31ac7f10f86c137ead4259c31b8579535a0c4dd16eb89aaa10cb2ed2e49"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/bind.mjs",
+        "bytes": 103,
+        "sha256": "b867e31ac7f10f86c137ead4259c31b8579535a0c4dd16eb89aaa10cb2ed2e49"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/authenticated-run.mjs",
+        "bytes": 199,
+        "sha256": "db781138152e058299aed220e666391c5f1f54b8251e0232662769fd53a29fd3"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/authenticated-run.mjs",
+        "bytes": 199,
+        "sha256": "db781138152e058299aed220e666391c5f1f54b8251e0232662769fd53a29fd3"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/prepare.mjs",
+        "bytes": 109,
+        "sha256": "d3e9665b7f8581c515d94d5bd841d3441711409e9ad9a5bcfd52ce52f1973fb4"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/prepare.mjs",
+        "bytes": 109,
+        "sha256": "d3e9665b7f8581c515d94d5bd841d3441711409e9ad9a5bcfd52ce52f1973fb4"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/template-pins.mjs",
+        "bytes": 1260,
+        "sha256": "976018ec16b93dae3f991ae0289f68c3e94f1d6e7c7cfb07d75d0bf0de5c5c60"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/template-pins.mjs",
+        "bytes": 1260,
+        "sha256": "976018ec16b93dae3f991ae0289f68c3e94f1d6e7c7cfb07d75d0bf0de5c5c60"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/record-project.mjs",
+        "bytes": 115,
+        "sha256": "f21be4f608e5baa25e6c9d6dd2f892c4fd5075973fcac6cecbd1b738e60b4248"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/record-project.mjs",
+        "bytes": 115,
+        "sha256": "f21be4f608e5baa25e6c9d6dd2f892c4fd5075973fcac6cecbd1b738e60b4248"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/prebuild.mjs",
+        "bytes": 6137,
+        "sha256": "f339a1ae57d090e4c7b1fe6c7e99195b4dd82ace16e2c40f15632adfcde2ddd8"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/prebuild.mjs",
+        "bytes": 6137,
+        "sha256": "f339a1ae57d090e4c7b1fe6c7e99195b4dd82ace16e2c40f15632adfcde2ddd8"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/record-lsp.mjs",
+        "bytes": 107,
+        "sha256": "4de9884828fb69e828d3c62a0ab688cf33136695cc9abdaa83e52b88f7fd0642"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/record-lsp.mjs",
+        "bytes": 107,
+        "sha256": "4de9884828fb69e828d3c62a0ab688cf33136695cc9abdaa83e52b88f7fd0642"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/select-cargo.mjs",
+        "bytes": 1281,
+        "sha256": "f88a6149d0af462bcb3b5a74e3d0a599fd19f016479e1a050a12c1e4c24cf00c"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/select-cargo.mjs",
+        "bytes": 1281,
+        "sha256": "f88a6149d0af462bcb3b5a74e3d0a599fd19f016479e1a050a12c1e4c24cf00c"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/bindings.mjs",
+        "bytes": 117,
+        "sha256": "64736a32eb5602a8f1419b963607f14fa8dd30a7b112d3b48fed787859ef1f93"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/bindings.mjs",
+        "bytes": 117,
+        "sha256": "64736a32eb5602a8f1419b963607f14fa8dd30a7b112d3b48fed787859ef1f93"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/catalogue.mjs",
+        "bytes": 1828,
+        "sha256": "23adac84d7adb34016240de2f97a83a88526c912cc8bfaddf47fff93f5f70a17"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/catalogue.mjs",
+        "bytes": 1828,
+        "sha256": "23adac84d7adb34016240de2f97a83a88526c912cc8bfaddf47fff93f5f70a17"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/capture.mjs",
+        "bytes": 16649,
+        "sha256": "cbe43fddc99e740ae90ffc5d0f757307b75294063c9932d10c0fcbf2ac42c011"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/capture.mjs",
+        "bytes": 16649,
+        "sha256": "cbe43fddc99e740ae90ffc5d0f757307b75294063c9932d10c0fcbf2ac42c011"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/record-formatter.mjs",
+        "bytes": 119,
+        "sha256": "336f8d93395faacfc254622fc528f1319a2b7f45909adefdadaacb8795c99d2d"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/record-formatter.mjs",
+        "bytes": 119,
+        "sha256": "336f8d93395faacfc254622fc528f1319a2b7f45909adefdadaacb8795c99d2d"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/preparation.mjs",
+        "bytes": 309,
+        "sha256": "d80a0f313b56ffa1ec3fe642230f27c76f140924c5e84fca2675b9d318746af6"
+      },
+      "original": {
+        "path": "/workspace/scratch/M6_410_CARGO_PREPARATION_BINDER_SOURCE_20261016_RUN1/recorder/preparation.mjs",
+        "bytes": 309,
+        "sha256": "d80a0f313b56ffa1ec3fe642230f27c76f140924c5e84fca2675b9d318746af6"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/owner-linux.py",
+        "bytes": 13262,
+        "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df"
+      },
+      "original": {
+        "path": "/workspace/zryna/scripts/m6/installed-editor/owner-linux.py",
+        "bytes": 13262,
+        "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/process.mjs",
+        "bytes": 1161,
+        "sha256": "9dbd77dee161d409c3d655fc98d34868623aa9a86ae75b4bc2694a1eedf3e32e"
+      },
+      "original": {
+        "path": "/workspace/zryna/scripts/m6/installed-editor/process.mjs",
+        "bytes": 1161,
+        "sha256": "9dbd77dee161d409c3d655fc98d34868623aa9a86ae75b4bc2694a1eedf3e32e"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/owner-client.mjs",
+        "bytes": 9407,
+        "sha256": "71138006b56c5021621a844ccb2afa9292043991998378b92f8a628f9a2f6e96"
+      },
+      "original": {
+        "path": "/workspace/zryna/scripts/m6/installed-editor/owner-client.mjs",
+        "bytes": 9407,
+        "sha256": "71138006b56c5021621a844ccb2afa9292043991998378b92f8a628f9a2f6e96"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/files.mjs",
+        "bytes": 6345,
+        "sha256": "0fa948dcb5b1712be649b51ba025535b78abec16b77b286dc8480603d61788ce"
+      },
+      "original": {
+        "path": "/workspace/zryna/scripts/m6/installed-editor/files.mjs",
+        "bytes": 6345,
+        "sha256": "0fa948dcb5b1712be649b51ba025535b78abec16b77b286dc8480603d61788ce"
+      }
+    },
+    {
+      "copied": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/owner-windows.ps1",
+        "bytes": 12883,
+        "sha256": "a3a9bbbdc108e3250f94825844d7b250b88e62493dc2c1e42b4ea08099816311"
+      },
+      "original": {
+        "path": "/workspace/zryna/scripts/m6/installed-editor/owner-windows.ps1",
+        "bytes": 12883,
+        "sha256": "a3a9bbbdc108e3250f94825844d7b250b88e62493dc2c1e42b4ea08099816311"
+      }
+    }
+  ],
+  "note": "Known reviewed code byte copies only; no module was imported or executed."
+}

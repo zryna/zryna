@@ -1,0 +1,90 @@
+--- run-fixed.py.before
++++ run-fixed.py
+@@ -1,6 +1,7 @@
+ """Prospective ordinary trusted-run wrapper, not hostile containment or native cleanup authority."""
+ import hashlib
+ import json
++import math
+ import os
+ from pathlib import Path
+ import re
+@@ -20,7 +21,39 @@
+     'GITHUB_WORKFLOW_REF', 'GITHUB_JOB', 'GITHUB_SHA', 'RUNNER_OS', 'ImageOS', 'ImageVersion'))
+ 
+ 
+-def fingerprint(path):
++WINDOWS = os.name == 'nt'
++NATIVE_IDENTITY = None
++if WINDOWS:
++    import importlib.util
++    identity_spec = importlib.util.spec_from_file_location(
++        'fixed_collector_windows_identity', Path(__file__).with_name('windows_file_identity.py'))
++    assert identity_spec is not None and identity_spec.loader is not None
++    NATIVE_IDENTITY = importlib.util.module_from_spec(identity_spec)
++    identity_spec.loader.exec_module(NATIVE_IDENTITY)
++
++
++def fingerprint_windows(path, deadline):
++    assert type(deadline) is float and math.isfinite(deadline) and time.monotonic() < deadline
++    before = path.lstat()
++    assert stat.S_ISREG(before.st_mode) and before.st_nlink == 1 and before.st_ino != 0
++    with path.open('rb') as source:
++        native_before = NATIVE_IDENTITY.capture(source.fileno(), path, before.st_size, deadline)
++        digest = hashlib.sha256()
++        count = 0
++        for chunk in iter(lambda: source.read(65536), b''):
++            assert time.monotonic() < deadline, 'Original fingerprint observation deadline.'
++            count += len(chunk)
++            assert count <= before.st_size, 'First extra fingerprint byte.'
++            digest.update(chunk)
++        assert count == before.st_size, 'Complete original fingerprint bytes.'
++        native_after = NATIVE_IDENTITY.capture(source.fileno(), path, before.st_size, deadline)
++        NATIVE_IDENTITY.require_same(native_before, native_after)
++    return {'path': str(path), 'bytes': count, 'sha256': digest.hexdigest(), 'identity': native_before}
++
++
++def fingerprint(path, deadline=None):
++    if WINDOWS:
++        return fingerprint_windows(path, deadline)
+     before = path.lstat()
+     assert stat.S_ISREG(before.st_mode) and before.st_nlink == 1 and before.st_ino != 0
+     stable = lambda value: (value.st_dev, value.st_ino, value.st_mode, value.st_nlink,
+@@ -47,7 +80,8 @@
+ 
+ def capture(node, entry, cwd, env, root, name, seconds):
+     start = time.monotonic()
+-    before = fingerprint(node)
++    observation_deadline = start + seconds
++    before = fingerprint(node, observation_deadline)
+     out = [os.open(root / (name + suffix), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            for suffix in ('.stdout', '.stderr')]
+     state = [{'observed': 0, 'retained': 0, 'eof': False, 'failure': None} for _ in range(2)]
+@@ -132,9 +166,9 @@
+         if child is not None and child.poll() is not None and not unknown:
+             child.stdout.close()
+             child.stderr.close()
+-    after = fingerprint(node)
++    after = fingerprint(node, observation_deadline)
+     assert after == before, 'Selected Node identity changed.'
+-    streams = [fingerprint(root / (name + suffix)) for suffix in ('.stdout', '.stderr')]
++    streams = [fingerprint(root / (name + suffix), observation_deadline) for suffix in ('.stdout', '.stderr')]
+     complete = not unknown and not overflow.is_set() and all(s['eof'] and s['failure'] is None for s in snapshot)
+     accepted = complete and capture_error is None and child is not None and child.returncode == 0 and not termination
+     final_fit = all(p['bytes'] <= FINAL for p in streams)
+@@ -150,6 +184,7 @@
+ 
+ 
+ def main():
++    intent_deadline = time.monotonic() + 615
+     assert len(sys.argv) == 1
+     assert all(re.fullmatch(r'[a-f0-9]{40}', os.environ.get(key, '')) for key in
+                ('SELECTED_FINAL_MAIN', 'SELECTED_FINAL_TREE', 'SELECTED_OPERATOR_COMMIT')), 'UNBOUND'
+@@ -181,7 +216,7 @@
+         result.flush()
+         os.fsync(result.fileno())
+         metadata(root / 'INTENT.json', {'wrapperPython': {'path': sys.executable, 'version': sys.version,
+-                 'trustedBoundary': 'Ordinary runner image under root-preapproved Actions provenance'}, 'node': fingerprint(node), 'entries': [(n, str(p), t) for n, p, t in entries],
++                 'trustedBoundary': 'Ordinary runner image under root-preapproved Actions provenance'}, 'node': fingerprint(node, intent_deadline), 'entries': [(n, str(p), t) for n, p, t in entries],
+                  'environment': env, 'scope': 'Trusted ordinary Node capture; no new hostile owner or pass assembly.'})
+         for name, entry, seconds in entries:
+             record = capture(node, entry, selected, env, root, name, seconds)

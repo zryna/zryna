@@ -1,0 +1,29 @@
+{
+  "base": "RUN6",
+  "selectedMain": "b25d68b259b33ca0077b6fbacfe7009960f64775",
+  "selectedTree": "8ff7b597fe057b4f5f0f57617ce974580138bdfa",
+  "actualFailures": {
+    "run": 39000847221,
+    "linux": "All5ownedno-run+BIND success; P1 7/P2 3 tests success/cleanup. Cargo P2 changes copied auxiliary binary to hardlink, stable pin refuses.",
+    "windows": "RealMSVClink proves discoveryfixed. Original256identity owner becomesunknown at253identityevents; complete absent, cleanupfalse. Wholecolddependencybuild not credited."
+  },
+  "runtimeSuccess": null,
+  "newOrdinaryBuildScope": {
+    "wholeSeconds": 900,
+    "fixedNoRunTargets": 5,
+    "environment": "Closed noncredential names only, sameflags",
+    "testPassOrOriginalContainmentClaim": false
+  },
+  "nativeSourceOwnersUnchanged": true,
+  "productMaterialGuardsUnchanged": true,
+  "controls": {
+    "Node": {
+      "pass": 3,
+      "fail": 0,
+      "skip": 0
+    },
+    "binaryCapture": 2,
+    "windowsFingerprintMock": 5,
+    "warmUnboundEnvironment": 2
+  }
+}
