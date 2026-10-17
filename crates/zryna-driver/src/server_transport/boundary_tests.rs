@@ -1,8 +1,8 @@
-use super::{Running, clean, connect, until};
+use super::{Running, clean, connect, finish_client_frame, until};
 use crate::server_transport::Config;
 use std::{
     io::{ErrorKind, Read, Write},
-    net::{Shutdown, SocketAddr},
+    net::SocketAddr,
     sync::atomic::Ordering,
     time::{Duration, Instant},
 };
@@ -65,7 +65,7 @@ fn exchange(address: SocketAddr, bytes: &[u8], accepted: bool) {
     stream.set_write_timeout(Some(Duration::from_secs(5))).expect("bounded write");
     match stream.write_all(bytes) {
         Ok(()) => {
-            if let Err(error) = stream.shutdown(Shutdown::Write) {
+            if let Err(error) = finish_client_frame(&stream) {
                 assert!(!accepted, "accepted request must half-close: {error}");
                 if error.kind() != ErrorKind::NotConnected {
                     closed_connection(&error);

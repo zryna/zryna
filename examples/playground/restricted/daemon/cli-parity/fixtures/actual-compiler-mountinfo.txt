@@ -1,0 +1,22 @@
+227 171 0:27 /var/lib/docker/vfs/dir/a0491d93f602fb1c028bac65c58f40261ac3263f577531ed7281004c766aab24 / ro,relatime - overlay overlay rw,lowerdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/lower-0,upperdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/upper,workdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/work,index=off,metacopy=off
+229 227 0:81 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw
+230 227 0:82 / /sys ro,nosuid,nodev,noexec,relatime - sysfs sysfs ro
+231 230 0:24 /../docker/6293c8ad06d74ef1298bd1cfce4602f0b8dfe5439e037af680f774f2633df9e3 /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup rw,nsdelegate
+232 227 0:83 / /dev rw,nosuid,noexec,relatime - tmpfs tmpfs rw,size=1024k,mode=755
+233 227 0:84 / /tmp rw,nosuid,nodev,noexec,relatime - tmpfs tmpfs rw,size=65536k
+234 227 0:62 / /output rw,nosuid,nodev,noexec,relatime master:11 - tmpfs tmpfs rw,size=2048k,mode=700,uid=65534,gid=65534
+235 227 0:27 /var/lib/docker/volumes/zryna410-materials-compiler-af495e7645c34c584ebe7915ba2f68db/_data /materials ro,relatime - overlay overlay rw,lowerdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/lower-0,upperdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/upper,workdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/work,index=off,metacopy=off
+236 227 0:75 / /input ro,nosuid,nodev,noexec,relatime master:12 - tmpfs tmpfs rw,size=2048k,mode=555
+237 232 0:85 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs tmpfs rw,size=1024k
+238 227 0:27 /var/lib/docker/containers/6293c8ad06d74ef1298bd1cfce4602f0b8dfe5439e037af680f774f2633df9e3/resolv.conf /etc/resolv.conf ro,relatime - overlay overlay rw,lowerdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/lower-0,upperdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/upper,workdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/work,index=off,metacopy=off
+239 227 0:27 /var/lib/docker/containers/6293c8ad06d74ef1298bd1cfce4602f0b8dfe5439e037af680f774f2633df9e3/hostname /etc/hostname ro,relatime - overlay overlay rw,lowerdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/lower-0,upperdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/upper,workdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/work,index=off,metacopy=off
+240 227 0:27 /var/lib/docker/containers/6293c8ad06d74ef1298bd1cfce4602f0b8dfe5439e037af680f774f2633df9e3/hosts /etc/hosts ro,relatime - overlay overlay rw,lowerdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/lower-0,upperdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/upper,workdir=/run/kata-containers/erofs-multi-layer/37bccdb30853497ea729e8ff22d955d1/upper/work,index=off,metacopy=off
+214 229 0:81 / /proc ro,nosuid,nodev,noexec,relatime - proc proc rw
+215 214 0:86 / /proc/acpi ro,relatime - tmpfs tmpfs ro
+216 214 0:83 /null /proc/interrupts rw,nosuid,noexec,relatime - tmpfs tmpfs rw,size=1024k,mode=755
+217 214 0:83 /null /proc/keys rw,nosuid,noexec,relatime - tmpfs tmpfs rw,size=1024k,mode=755
+218 214 0:83 /null /proc/timer_list rw,nosuid,noexec,relatime - tmpfs tmpfs rw,size=1024k,mode=755
+219 230 0:87 / /sys/firmware ro,relatime - tmpfs tmpfs ro
+220 239 0:83 /null /etc/hostname rw,nosuid,noexec,relatime - tmpfs tmpfs rw,size=1024k,mode=755
+221 240 0:83 /null /etc/hosts rw,nosuid,noexec,relatime - tmpfs tmpfs rw,size=1024k,mode=755
+222 238 0:83 /null /etc/resolv.conf rw,nosuid,noexec,relatime - tmpfs tmpfs rw,size=1024k,mode=755

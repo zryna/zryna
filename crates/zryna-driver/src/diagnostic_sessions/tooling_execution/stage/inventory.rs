@@ -47,19 +47,6 @@ pub(super) fn file_key(parent: &str, name: &str) -> Result<&'static str, Diagnos
     Ok(key)
 }
 
-pub(super) fn file_name(key: &str) -> &'static str {
-    match key {
-        "worker" => "worker.mjs",
-        "worker-v3" => "worker-v3.mjs",
-        "limits-v3" => "limits-v3.mjs",
-        "worker-v4" => "worker-v4.mjs",
-        "limits-v4" => "limits-v4.mjs",
-        "wrapper-manifest" | "old-manifest" => "package.json",
-        "wrapper-runtime" | "old-runtime" => "typescript.js",
-        _ => V4_MODULES.iter().find(|module| module.path == key).map_or("", |module| module.name),
-    }
-}
-
 pub(super) fn validate_inventory(
     key: &str,
     directory: &Dir,

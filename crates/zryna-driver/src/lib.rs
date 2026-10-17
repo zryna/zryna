@@ -50,6 +50,7 @@ mod pipeline_runtime;
 mod process_spawn;
 mod profile_composition;
 mod project;
+mod restricted_browser;
 mod runtime;
 mod scalar_adapter_interface;
 mod server_lifecycle;
@@ -134,6 +135,16 @@ pub use pipeline::{
     run_control_flow_workspace, run_workspace,
 };
 pub use project::{ProjectBuildRequest, ProjectRunRequest, build_project, run_project};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use restricted_browser::daemon::{
+    PlaygroundDaemon, PlaygroundDaemonError, PlaygroundDaemonMaterialPin,
+    PlaygroundDaemonOperatorApproval, PlaygroundDaemonResponse, approve_playground_daemon,
+    playground_daemon_policy_sha256,
+};
+pub use restricted_browser::{
+    BROWSER_SOURCE_PATH, BrowserCompilation, MAX_BROWSER_SOURCE_BYTES, RestrictedBrowserCompiler,
+    RestrictedBrowserError, restrict_browser_runtime,
+};
 #[cfg(test)]
 use server_lifecycle::{Input, Limits};
 #[cfg(test)]

@@ -46,6 +46,10 @@ impl Bound {
             observation,
         })
     }
+    #[cfg(all(test, target_os = "linux"))]
+    pub(super) fn listener_for_test(&self) -> &TcpListener {
+        self.listener.as_ref().expect("original listener retained before test worker starts")
+    }
     pub(crate) fn address(&self) -> SocketAddr {
         self.config.address
     }

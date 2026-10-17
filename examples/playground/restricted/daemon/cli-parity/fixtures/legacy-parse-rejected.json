@@ -1,0 +1,65 @@
+{
+  "command": "build",
+  "diagnostics": [
+    {
+      "code": "TS1005",
+      "guidance": "fix the TypeScript parse error before Zryna analysis",
+      "message": "',' expected.",
+      "primary": {
+        "kind": "source",
+        "span": {
+          "end": 30,
+          "file": 0,
+          "start": 29
+        }
+      },
+      "severity": "error"
+    },
+    {
+      "code": "TS1005",
+      "guidance": "fix the TypeScript parse error before Zryna analysis",
+      "message": "':' expected.",
+      "primary": {
+        "kind": "source",
+        "span": {
+          "end": 39,
+          "file": 0,
+          "start": 38
+        }
+      },
+      "severity": "error"
+    },
+    {
+      "code": "TS1005",
+      "guidance": "fix the TypeScript parse error before Zryna analysis",
+      "message": "'}' expected.",
+      "primary": {
+        "kind": "source",
+        "span": {
+          "end": 40,
+          "file": 0,
+          "start": 40
+        }
+      },
+      "severity": "error"
+    },
+    {
+      "code": "TS1138",
+      "guidance": "fix the TypeScript parse error before Zryna analysis",
+      "message": "Parameter declaration expected.",
+      "primary": {
+        "kind": "source",
+        "span": {
+          "end": 24,
+          "file": 0,
+          "start": 23
+        }
+      },
+      "severity": "error"
+    }
+  ],
+  "manifest": null,
+  "ok": false,
+  "results": [],
+  "version": 1
+}

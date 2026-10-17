@@ -1,11 +1,12 @@
 import { withoutM4Workflow } from './m4-workflow-cases.mjs';
-import { withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
+import { withoutInstalledEditorWorkflow, withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import { withoutBootstrapTiming } from './npm-timing-workflow-cases.mjs';
+import { withoutPlaygroundContracts } from './playground-ci-cases.mjs';
 import { withoutNativeSourceResources } from './native-source-resource-runner.test.mjs';
 import { withoutStabilityTests } from './stability-gates-test-selection.test.mjs';
 import { withoutNativeRecipeTests } from './native-recipe-test-selection.test.mjs';
@@ -34,7 +35,7 @@ function withoutPortableSetup(candidate) {
     uses: './.github/workflows/portable-setup.yml',
   });
   delete original.jobs['portable-setup'];
-  return original;
+  return withoutInstalledEditorWorkflow(original);
 }
 
 
@@ -454,7 +455,7 @@ test('M0 aggregate checks out the pinned verifier before execution', () => {
 
 test('routing preserves all other pinned workflow authority', () => {
   bootstrapOrder(workflow, packageDocument);
-  const original = withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow));
+  const original = withoutPlaygroundContracts(withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow)));
   const editorIndex = original.jobs.rust.steps.findIndex(step => step.name === "Verify and package editor client");
   const packageSteps = original.jobs['package-release-contract'].steps;
   const buildPlanIndex = packageSteps.findIndex(step => step.run === 'pnpm package:contract') + 1;

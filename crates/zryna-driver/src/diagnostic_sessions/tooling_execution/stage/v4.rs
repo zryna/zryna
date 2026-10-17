@@ -24,11 +24,11 @@ pub(super) fn stage(
     captured: &CapturedToolingClosure,
 ) -> Result<(), Diagnostic> {
     let CapturedV4::Modular(modules) = &captured.v4 else { return Ok(()) };
-    create_directory(&mut stage.directories, ROOT, "v4", V4)?;
-    create_directory(&mut stage.directories, V4, "boundary", BOUNDARY)?;
-    create_directory(&mut stage.directories, V4, "syntax", SYNTAX)?;
+    create_directory(stage, ROOT, "v4", V4)?;
+    create_directory(stage, V4, "boundary", BOUNDARY)?;
+    create_directory(stage, V4, "syntax", SYNTAX)?;
     for (module, file) in V4_MODULES.iter().zip(modules) {
-        stage_file(&stage.directories, &mut stage.files, module.directory, module.name, file)?;
+        stage_file(stage, module.directory, module.name, file)?;
     }
     Ok(())
 }

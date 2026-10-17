@@ -7,6 +7,8 @@ import './code-navigation-cases.mjs';
 import './cross-target-profile-contract.test.mjs';
 import './minimal-library-contract.test.mjs';
 import './js-wasm-adapter-contract.test.mjs';
+import './docs-playground.test.mjs';
+import './docs-playground-output.test.mjs';
 import './native-c-review-contract.test.mjs';
 import './beta-documentation-contract.test.mjs';
 import './m4-public-docs.test.mjs';
@@ -281,6 +283,9 @@ test('registry exports the exact implemented and planned publication inventory',
       { id: 'reference/m3-shared-weak-evidence', source: 'docs/M3_SHARED_WEAK_EVIDENCE.md', path: 'documents/reference/m3-shared-weak-evidence.md', title: 'M3 Shared and Weak evidence matrix' },
       { id: 'reference/m4-conformance', source: 'docs/M4_CONFORMANCE.md', path: 'documents/reference/m4-conformance.md', title: 'Public M4 conformance and publication' },
       { id: 'reference/m4-support', source: 'docs/M4_SUPPORT.md', path: 'documents/reference/m4-support.md', title: 'Fixed public M4 support contract' },
+      { id: 'reference/m6-conformance', source: 'spec/tooling/M6_CONFORMANCE_V1.md', path: 'documents/reference/m6-conformance.md', title: 'M6 tooling conformance v1' },
+      { id: 'reference/m6-reviewed-source-v2', source: 'spec/tooling/M6_REVIEWED_SOURCE_V2.md', path: 'documents/reference/m6-reviewed-source-v2.md', title: 'M6 reviewed-source playground route v2' },
+      { id: 'reference/m6-tooling', source: 'docs/M6_TOOLING.md', path: 'documents/reference/m6-tooling.md', title: 'M6 tooling support and evidence' },
       { id: 'reference/memory-model', source: 'spec/memory-model/OVERVIEW.md', path: 'documents/reference/memory-model.md', title: 'Memory model direction' },
       { id: 'reference/ownership-runtime-v1', source: 'spec/abi/OWNERSHIP_RUNTIME_V1.md', path: 'documents/reference/ownership-runtime-v1.md', title: 'Ownership runtime ABI v1' },
       { id: 'reference/scalar-abi-v1', source: 'spec/abi/SCALAR_V1.md', path: 'documents/reference/scalar-abi-v1.md', title: 'Scalar ABI v1' },

@@ -12,6 +12,10 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(target_os = "linux")]
+#[path = "listener_identity.rs"]
+mod listener_identity;
+
 #[path = "boundary_tests.rs"]
 mod boundaries;
 #[path = "negative_tests.rs"]
@@ -49,6 +53,8 @@ pub(super) fn until(mut predicate: impl FnMut() -> bool) {
     }
 }
 pub(super) struct Running {
+    #[cfg(target_os = "linux")]
+    listener_identity: listener_identity::Identity,
     worker: Option<JoinHandle<Result<(), Error>>>,
     pub(super) address: SocketAddr,
     pub(super) control: Arc<Control>,
@@ -68,9 +74,13 @@ impl Running {
     ) -> Self {
         let observation = Arc::new(Observation::default());
         let bound = Bound::start(config, prepared, Arc::clone(&observation)).expect("bounded bind");
+        #[cfg(target_os = "linux")]
+        let listener_identity = listener_identity::Identity::capture(bound.listener_for_test());
         let address = bound.address();
         let control = bound.control();
         Self {
+            #[cfg(target_os = "linux")]
+            listener_identity,
             worker: Some(thread::spawn(move || bound.run())),
             address,
             control,
@@ -84,6 +94,9 @@ impl Running {
         assert_eq!(self.observation.socket_handles.load(Ordering::SeqCst), 0);
         assert_eq!(self.observation.reserved_bytes.load(Ordering::SeqCst), 0);
         clean(&self.runtime);
+        #[cfg(target_os = "linux")]
+        self.listener_identity.assert_gone();
+        #[cfg(not(target_os = "linux"))]
         assert_listener_closed(self.address);
     }
 }
@@ -146,13 +159,39 @@ pub(super) fn connect(address: SocketAddr) -> TcpStream {
 pub(super) fn exchange(address: SocketAddr, bytes: &[u8]) -> Vec<u8> {
     let mut stream = connect(address);
     stream.write_all(bytes).expect("client request");
-    stream.shutdown(Shutdown::Write).expect("client frame ends");
+    finish_client_frame(&stream).expect("client frame ends");
     let mut response = Vec::new();
     let result = stream.take(512).read_to_end(&mut response);
     if let Err(error) = result {
         assert_eq!(error.kind(), std::io::ErrorKind::ConnectionReset);
     }
     response
+}
+
+pub(super) fn finish_client_frame(stream: &TcpStream) -> std::io::Result<()> {
+    // A complete request can be rejected or answered before this client half-closes.
+    // The caller still checks the response and the server's owning observations.
+    match stream.shutdown(Shutdown::Write) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotConnected => Ok(()),
+        result => result,
+    }
+}
+
+#[test]
+fn client_frame_finalization_accepts_an_already_closed_completed_connection() {
+    let running = Running::start(config(1, 1000), "200");
+    let mut stream = connect(running.address);
+    stream.write_all(&frame(running.address, b"complete")).expect("complete request");
+    let mut response = Vec::new();
+    (&mut stream).take(512).read_to_end(&mut response).expect("complete response and EOF");
+    assert_eq!(response, b"HTTP/1.1 200 Zryna\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+    until(|| running.observation.served.load(Ordering::SeqCst) == 1);
+    assert_eq!(running.runtime.stores_created.load(Ordering::SeqCst), 1);
+    running.finish();
+    if let Err(error) = stream.shutdown(Shutdown::Both) {
+        assert_eq!(error.kind(), std::io::ErrorKind::NotConnected);
+    }
+    finish_client_frame(&stream).expect("already closed client has no write half to finish");
 }
 
 #[test]

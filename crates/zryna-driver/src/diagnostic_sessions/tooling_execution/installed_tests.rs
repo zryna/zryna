@@ -206,11 +206,13 @@ fn installed_closure_rejects_missing_changed_worker_and_dependency_bytes() {
     let captured =
         CapturedToolingClosure::capture_installed(&root).expect("complete installed closure");
     let stage = ToolingStage::create(&captured).expect("modular installed stage");
+    let stage_path = stage.physical_path().to_path_buf();
     assert_eq!(stage_file_count(stage.working_directory()), 28);
     assert!(stage.working_directory().join("v4/boundary").is_dir());
     assert!(stage.working_directory().join("v4/syntax").is_dir());
-    stage.revalidate().expect("exact modular stage");
-    drop(stage);
+    stage.revalidate().expect("authenticated modular stage inventory and identity");
+    stage.abort().expect("explicit authenticated modular stage cleanup");
+    assert!(!stage_path.exists(), "successful abort removes only the owned stage");
     for (from, to) in mappings {
         let destination = bootstrap.join(to);
         fs::write(&destination, b"untrusted substitute").expect("replace fixture");

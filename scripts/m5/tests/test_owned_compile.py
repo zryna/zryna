@@ -21,8 +21,10 @@ class OwnedCompilerInputs(unittest.TestCase):
                         'features': ['derive'], 'uses_default_features': True},
                        {'name': 'wasmparser', 'rename': None, 'kind': 'dev', 'target': None,
                         'features': [], 'uses_default_features': True}]}
-        metadata = {'packages': [package, {'id': 'serde-id', 'features': {'default': [], 'derive': []}},
-                                 {'id': 'wasmparser-id', 'features': {}}], 'resolve': {'nodes': [{
+        metadata = {'packages': [package, {'id': 'serde-id', 'name': 'serde', 'version': '1.0.219',
+                                 'source': owned_compile.SHA2_SOURCE, 'features': {'default': [], 'derive': []}},
+                                 {'id': 'wasmparser-id', 'name': 'wasmparser', 'version': '1.0.0',
+                                  'source': owned_compile.SHA2_SOURCE, 'features': {}}], 'resolve': {'nodes': [{
             'id': 'driver-id', 'deps': [
                 {'name': 'serde', 'pkg': 'serde-id', 'dep_kinds': [{'kind': None, 'target': None}]},
                 {'name': 'wasmparser', 'pkg': 'wasmparser-id', 'dep_kinds': [{'kind': 'dev', 'target': None}]}]},
@@ -40,7 +42,8 @@ class OwnedCompilerInputs(unittest.TestCase):
         repo, deps, metadata, messages, manifest = fixture
         def source(path, maximum):
             if path == repo / 'Cargo.toml':
-                return b'[workspace.dependencies]\nserde={version="1",features=["derive"]}\n'
+                return (b'[profile.dev.package.sha2]\nopt-level=3\n[workspace.dependencies]\n'
+                        b'sha2="=0.10.9"\nserde={version="1",features=["derive"]}\n')
             self.assertEqual(path, repo / 'crates/zryna-driver/Cargo.toml')
             return manifest
         with patch.object(owned_compile, 'read', side_effect=source), patch.object(
@@ -59,9 +62,11 @@ class OwnedCompilerInputs(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 self.select(fixture)
 
-    def test_owned_compile_fixes_unoptimized_dependency_profile_before_any_product(self):
+    def test_owned_compile_fixes_exact_sha2_profile_before_any_product(self):
         tools = {'pins': [{'path': '/fixed/rustc'}, {}, {'path': '/fixed/cargo'}]}
+        document = b'[profile.dev.package.sha2]\nopt-level=3\n[workspace.dependencies]\nsha2="=0.10.9"\n'
         with patch.dict(owned_compile.os.environ, owned_compile.OVERRIDES, clear=True), patch.object(
+                owned_compile, 'read', return_value=document), patch.object(
                 owned_compile, 'rust_tools', return_value=tools), patch.object(
                 owned_compile, 'run', side_effect=RuntimeError('stop before process')) as run:
             with self.assertRaisesRegex(RuntimeError, 'stop before process'):
@@ -69,7 +74,7 @@ class OwnedCompilerInputs(unittest.TestCase):
         self.assertEqual(run.call_count, 1)
         self.assertEqual(run.call_args.args[0], ['/fixed/cargo', 'test', '--locked', '-p',
             'zryna-driver', '--lib', '--no-run', '--message-format=json', '--config',
-            'profile.dev.package.sha2.opt-level=0'])
+            'profile.dev.package.sha2.opt-level=3'])
 
     def test_missing_dev_library_rejects_instead_of_silent_partial_compile(self):
         fixture = self.fixture()
