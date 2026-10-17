@@ -1,0 +1,43 @@
+name: Windows owner native diagnostic
+on:
+  push:
+    branches: [m6-owner-natural-retain-20261017]
+permissions:
+  contents: read
+jobs:
+  natural:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: {ref: '${{ github.sha }}', persist-credentials: false}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with: {node-version: 22.22.1}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with: {version: 11.18.0}
+      - run: pnpm install --frozen-lockfile
+      - name: Fixed natural diagnostic only
+        shell: pwsh
+        run: |
+          $recordRoot = Join-Path $env:RUNNER_TEMP 'm6-owner-diagnostic'
+          New-Item -ItemType Directory -Path $recordRoot | Out-Null
+          node --test m6-owner-diagnostic/owner/ownership.test.mjs 1> (Join-Path $recordRoot 'NATIVE.stdout') 2> (Join-Path $recordRoot 'NATIVE.stderr')
+          $nativeStatus = $LASTEXITCODE
+          Get-Content -LiteralPath (Join-Path $recordRoot 'NATIVE.stdout')
+          Get-Content -LiteralPath (Join-Path $recordRoot 'NATIVE.stderr')
+          if ($nativeStatus -ne 0) { throw 'Native ownership controls failed' }
+          if ($LASTEXITCODE -ne 0) { throw 'Diagnostic failed; retain original unknown and exception' }
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: m6-owner-natural-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m6-owner-diagnostic
+            ${{ runner.temp }}/m6-process-owner-unit-*
+            ${{ runner.temp }}/m6-own-diag-*/material/*.json
+            ${{ runner.temp }}/m6-own-diag-*/material/*.stdout
+            ${{ runner.temp }}/m6-own-diag-*/material/*.stderr
+            ${{ runner.temp }}/m6-own-diag-*/material/*.jsonl
+          if-no-files-found: error
+          retention-days: 90
+          include-hidden-files: true
