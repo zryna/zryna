@@ -10,7 +10,7 @@ async function publish(path, value) {
 
 function activate(context) {
   void (async () => {
-    let config;
+    let config, trustTimer, trustDisposable;
     let lastUntrustedRegistry = null;
     try {
       config = JSON.parse(await fs.readFile(process.env.ZRYNA_EDITOR_HOST_CONFIG, 'utf8'));
@@ -52,18 +52,19 @@ function activate(context) {
       }
       const { verifyInstalled } = await import('./materials.mjs');
       await verifyInstalled(config.installedExtension, config.payload, undefined, config.installer);
+      const granted = new Promise((resolve, reject) => {
+        trustTimer = setTimeout(() => reject(new Error('Normal GUI trust action timed out.')), 120000);
+        trustDisposable = vscode.workspace.onDidGrantWorkspaceTrust(() => {
+          clearTimeout(trustTimer); trustDisposable.dispose(); resolve();
+        });
+        context.subscriptions.push(trustDisposable);
+      });
       await publish(config.initialPath, { initialTrusted: false,
         editorVersion: vscode.version, installedExtension: config.installedExtension, initialRegistry,
         untrustedLanguageAttempt: { kind: 'opened-zry-file', forcedLanguageSelection: false,
           uri: uri.toString(), initialDocument, samples, durationMs: Date.now() - started,
           registryObservations, documentObservations, diagnosticsAbsent: true } });
-      await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('Normal GUI trust action timed out.')), 120000);
-        const disposable = vscode.workspace.onDidGrantWorkspaceTrust(() => {
-          clearTimeout(timer); disposable.dispose(); resolve();
-        });
-        context.subscriptions.push(disposable);
-      });
+      await granted;
       assert.equal(vscode.workspace.isTrusted, true);
       const result = await require('./host-checks.cjs').run(config);
       assert.equal(result.checks.length, 9);
@@ -81,6 +82,8 @@ function activate(context) {
         untrustedDocument: error.untrustedLanguageObservation ?? null });
       console.error(error);
     } finally {
+      clearTimeout(trustTimer);
+      trustDisposable?.dispose();
       await vscode.workspace.saveAll();
       await vscode.commands.executeCommand('workbench.action.quit');
     }

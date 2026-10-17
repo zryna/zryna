@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, realpath, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -95,5 +95,55 @@ if (process.platform === 'linux') {
       ((event.kind === 'identity' && event.reason === 'subreaper-child') ||
        (event.kind === 'parent' && event.parent === record.supervisorPid))));
     assert(record.events.some(event => event.kind === 'gone' && event.pid === childPid));
+  });
+}
+
+// Windows native termination evidence is distinct from managed query failure.
+if (process.platform === 'win32') {
+  test('Windows CIM termination proof rejects live peers and wrong epochs while confirming an exited handle', async t => {
+    const options = await fixture(t);
+    const source = await readFile(new URL('./owner-windows.ps1', import.meta.url), 'utf8');
+    const boundary = source.indexOf('\ntry {\n  # One reader owns all control bytes');
+    assert(boundary > 0);
+    const helper = join(options.stage, 'native-termination-control.ps1');
+    await writeFile(join(options.stage, 'owner-windows-termination.ps1'),
+      await readFile(new URL('./owner-windows-termination.ps1', import.meta.url)), { flag: 'wx' });
+    await writeFile(helper, source.slice(0, boundary) + `
+$live = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId=$PID" -OperationTimeoutSec 1
+$liveRefused = $false
+try { $null = ConfirmCimTermination $live } catch {
+  if ($_.Exception.Message -notmatch 'not positively terminated') { throw }; $liveRefused = $true
+}
+if (-not $liveRefused) { throw 'Live peer admitted as terminated.' }
+$info = [Diagnostics.ProcessStartInfo]::new(); $info.FileName = $args[0]; $info.UseShellExecute = $false
+$info.ArgumentList.Add('-e'); $info.ArgumentList.Add('setTimeout(()=>{},2000)')
+$child = [Diagnostics.Process]::new(); $child.StartInfo = $info
+try {
+  if (-not $child.Start()) { throw 'Native control child unavailable.' }
+  $held = $child.SafeHandle
+  $row = Get-CimInstance -ClassName Win32_Process -Filter ("ProcessId="+$child.Id) -OperationTimeoutSec 1
+  if (-not $row) { throw 'Actual control child identity missing.' }
+  if (-not $child.WaitForExit(5000)) { throw 'Native control child did not exit.' }
+  $proof = ConfirmCimTermination $row
+  if ($proof.state -ne 'terminated' -or $proof.method -ne 'WaitForSingleObject') { throw 'Exited held identity not confirmed.' }
+  $wrong = @{ProcessId=$row.ProcessId;CreationDate=$row.CreationDate.AddSeconds(1);ExecutablePath=$row.ExecutablePath}
+  $epochRefused = $false
+  try { $null = ConfirmCimTermination $wrong } catch {
+    if ($_.Exception.Message -notmatch 'epoch changed') { throw }; $epochRefused = $true
+  }
+  if (-not $epochRefused) { throw 'Wrong creation epoch admitted.' }
+  $incompleteRefused = $false
+  try { $null = ConfirmCimTermination @{ProcessId=$PID;CreationDate=$null;ExecutablePath=$null} } catch {
+    if ($_.Exception.Message -notmatch 'Complete attributed CIM identity') { throw }; $incompleteRefused = $true
+  }
+  [Console]::Out.WriteLine((ConvertTo-Json -Compress @{liveRefused=$liveRefused;exitedConfirmed=$true;epochRefused=$epochRefused;incompleteRefused=$incompleteRefused}))
+} finally { $child.Dispose() }
+`, { flag: 'wx' });
+    const runtime = join(process.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe');
+    const owner = await launchOwned(runtime, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', helper, process.execPath],
+      { ...options, name: 'native-termination', deadline: performance.now() + 30000 });
+    const result = await owner.finish();
+    assert.deepEqual(JSON.parse(result.stdout.trim()), { liveRefused: true, exitedConfirmed: true,
+      epochRefused: true, incompleteRefused: true });
   });
 }

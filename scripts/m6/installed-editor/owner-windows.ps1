@@ -22,15 +22,14 @@ function Public($item) {
   return @{ pid = $item.pid; start = $item.start; image = $item.image;
     parent = $item.parent; reason = $item.reason; gone = $item.gone;
     requestedFileName = $item.requestedFileName; imageUnavailable = $item.imageUnavailable;
-    exitTicks = $item.exitTicks }
+    exitTicks = $item.exitTicks; terminationProof = $item.terminationProof }
 }
-function Retain($process, [string]$reason, [int]$parent) {
-  $item = Stamp $process
+function Retain($process, [string]$reason, [int]$parent, $item) {
   if ($known.ContainsKey($item.pid)) {
     $old = $known[$item.pid]
     if ($old.start -eq $item.start) { $process.Dispose(); return }
     if (-not $old.gone) { throw 'Owned PID reused before disappearance proof.' }
-    $old.process.Dispose()
+    if ($old.process) { $old.process.Dispose() }
   }
   if ($known.Count -ge 256) { throw 'Owned identity bound exceeded.' }
   $item.reason = $reason; $item.parent = $parent
@@ -38,11 +37,12 @@ function Retain($process, [string]$reason, [int]$parent) {
   Emit 'identity' (Public $item)
 }
 function SameCimTime($date, [string]$start) {
-  if (-not $date) { return $false }
+  if (-not $date -or -not $start) { return $false }
   $ticks = $date.ToUniversalTime().Ticks
   $held = [long]::Parse($start)
   return ($ticks - ($ticks % 10)) -eq ($held - ($held % 10))
 }
+. (Join-Path $PSScriptRoot 'owner-windows-termination.ps1')
 function Observe([string]$stage, [long]$deadline) {
   if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'Process observation deadline.' }
   # Fixed local provider; no credentials, remote machine or arbitrary query.
@@ -51,33 +51,55 @@ function Observe([string]$stage, [long]$deadline) {
   if ($rows.Count -gt 4096) { throw 'Process inventory bound exceeded.' }
   $byId = @{}
   foreach ($row in $rows) { $byId[[int]$row.ProcessId] = $row }
+  $resolvedCimRows = [Collections.Generic.HashSet[int]]::new()
   $changed = $true
   while ($changed) {
     $changed = $false
     foreach ($row in $rows) {
       if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'Process observation deadline.' }
       $pidValue = [int]$row.ProcessId; $parent = [int]$row.ParentProcessId
-      if ($pidValue -eq $PID) { continue }
+      if ($pidValue -eq $PID -or $resolvedCimRows.Contains($pidValue)) { continue }
       if ($known.ContainsKey($pidValue) -and
           (SameCimTime $row.CreationDate $known[$pidValue].start)) { continue }
       $imageOwned = $row.ExecutablePath -and $row.ExecutablePath.StartsWith(
         $stage + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
-      $parentOwned = $known.ContainsKey($parent) -and -not $known[$parent].gone -and
+      $parentRecorded = $known.ContainsKey($parent) -and
         $byId.ContainsKey($parent) -and $byId[$parent].CreationDate -and
         (SameCimTime $byId[$parent].CreationDate $known[$parent].start)
+      # A retained Process handle prevents PID reuse even after its exit. A
+      # CIM-only terminated parent has no such handle: its possible descendants
+      # may only be proven terminated, never signaled using that ancestry.
+      $parentOwned = $parentRecorded -and $null -ne $known[$parent].process
+      if ($known.ContainsKey($parent) -and $null -eq $known[$parent].process -and -not $imageOwned) {
+        $proof = ConfirmCimTermination $row
+        RetainCimTermination $row $parent $proof
+        $null = $resolvedCimRows.Add($pidValue)
+        $changed = $true; continue
+      }
       if (-not ($imageOwned -or $parentOwned)) { continue }
+      $process = $null
       try {
-        $process = [Diagnostics.Process]::GetProcessById($pidValue)
-        $probe = Stamp $process
+        try {
+          $process = [Diagnostics.Process]::GetProcessById($pidValue)
+          $probe = Stamp $process
+        } catch {
+          # A vanished managed object is not itself evidence. The native probe
+          # must establish absent PID or the same CIM epoch's signaled handle.
+          $proof = ConfirmCimTermination $row
+          if ($process) { $process.Dispose() }
+          RetainCimTermination $row $parent $proof
+        $null = $resolvedCimRows.Add($pidValue)
+          $changed = $true; continue
+        }
         if (-not $row.CreationDate -or
             -not (SameCimTime $row.CreationDate $probe.start) -or
             -not $row.ExecutablePath -or
             -not [string]::Equals($probe.image, $row.ExecutablePath, [StringComparison]::OrdinalIgnoreCase)) {
           $process.Dispose(); throw 'Owned observation identity changed.'
         }
-        Retain $process $(if ($parentOwned) { 'owned-parent' } else { 'private-stage-image' }) $parent
+        Retain $process $(if ($parentOwned) { 'owned-parent' } else { 'private-stage-image' }) $parent $probe
         $changed = $true
-      } catch [ArgumentException] { throw 'Possibly owned process vanished before handle capture.' }
+      } catch { throw }
     }
   }
   foreach ($item in $known.Values) {
@@ -87,10 +109,10 @@ function Observe([string]$stage, [long]$deadline) {
       $item.gone = $true; Emit 'gone' (Public $item); continue
     }
     try { $current = Stamp $item.process } catch {
-      if ($item.reason -ne 'created-root' -or -not $item.process.HasExited -or
+      if (-not $item.process.HasExited -or
           -not [object]::ReferenceEquals($item.handle, $item.process.SafeHandle)) { throw }
       $item.exitTicks = $item.process.ExitTime.ToUniversalTime().Ticks.ToString()
-      $item.imageUnavailable = 'creation-root-exited-during-refresh'
+      $item.imageUnavailable = 'retained-identity-exited-during-refresh'
       $item.gone = $true; Emit 'gone' (Public $item); continue
     }
     if ($current.start -ne $item.start -or
@@ -116,6 +138,10 @@ function KillHeld {
 }
 function NewRead($stream) {
   return @{ stream = $stream; buffer = [byte[]]::new(65536); task = $null; done = $false; size = 0 }
+}
+function DiagnosticText([string]$value, [int]$maximum) {
+  if ($null -eq $value) { return $null }
+  return $value.Substring(0, [Math]::Min($maximum, $value.Length))
 }
 try {
   # One reader owns all control bytes, including any read-ahead from config/start.
@@ -227,15 +253,28 @@ try {
   }
   if ($rootStatus -eq 0 -and $failures.Count -eq 0) { exit 0 } else { exit 1 }
 } catch {
+  # Preserve the ORIGINAL ErrorRecord before KillHeld can replace PowerShell's $_.
+  $originalFailure = $_
+  $nativeFailure = $null
+  try {
+    $nativeFailure = @{
+      exceptionType = (DiagnosticText $originalFailure.Exception.GetType().FullName 256)
+      message = (DiagnosticText $originalFailure.Exception.Message 1024)
+      fullyQualifiedErrorId = (DiagnosticText $originalFailure.FullyQualifiedErrorId 512)
+      scriptLineNumber = $originalFailure.InvocationInfo.ScriptLineNumber
+      offsetInLine = $originalFailure.InvocationInfo.OffsetInLine
+      scriptStackTrace = (DiagnosticText $originalFailure.ScriptStackTrace 2048)
+    }
+  } catch { $nativeFailure = @{ diagnosticUnavailable = $true } }
   $failures.Add('Owner failed; detailed native failure is unavailable or retained in stderr.')
   try { KillHeld } catch { $failures.Add('Retained-handle kill failed.') }
-  Emit 'unknown' @{ failures = @($failures); identities = @($known.Values | ForEach-Object { Public $_ }) }
+  Emit 'unknown' @{ failures = @($failures); identities = @($known.Values | ForEach-Object { Public $_ }); nativeFailure = $nativeFailure }
   exit 70
 } finally {
   if (-not $completed -and $rootProcess) {
     try { $rootProcess.StandardOutput.Dispose(); $rootProcess.StandardError.Dispose() } catch {}
   }
-  foreach ($item in $known.Values) { $item.process.Dispose() }
+  foreach ($item in $known.Values) { if ($item.process) { $item.process.Dispose() } }
   # Never dispose an active read or wait for control input during process cleanup.
   # A still-pending .NET worker read and its wrappers end with this owner process.
   if ($null -eq $stopRead -or $stopRead.IsCompleted) {
