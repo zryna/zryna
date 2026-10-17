@@ -5,7 +5,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { createRequire } from 'node:module';
-import { capture, readBytes } from './installed-editor/files.mjs';
+import { capture, readBytes, generatedOutputPath } from './installed-editor/files.mjs';
 import { bindInstaller, validateInstallerIdentity } from './installed-editor/installer-metadata.mjs';
 import { awaitLinuxUserns } from './installed-editor/linux-userns.mjs';
 import { EDITOR_ARCHIVES } from './installed-editor/pins.mjs';
@@ -16,8 +16,9 @@ import { trustFreshFolder, waitJson } from './installed-editor/trust.mjs';
 
 const require = createRequire(import.meta.url);
 const { editorCli } = require('../portable-setup/setup.cjs');
-const source = resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const runner = join(source, 'scripts/m6/installed-editor');
+const operatorRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const source = resolve(operatorRoot, '../product');
+const runner = join(operatorRoot, 'scripts/m6/installed-editor');
 const names = ['--handoff', '--editor-archive', '--source-commit', '--source-tree', '--source-epoch',
   '--setup-archive-sha256', '--setup-manifest-sha256', '--server-sha256', '--vsix-sha256', '--output'];
 
@@ -101,6 +102,7 @@ async function run(values) {
     await mkdir(extensions);
     await mkdir(workspace);
     await writeFile(join(userData, 'User/settings.json'), `${JSON.stringify({
+      'security.workspace.trust.startupPrompt': 'always',
       'zryna.installationPath': setup.setup, 'zryna.installationDigest': setup.digest,
       '[zryna]': { 'editor.defaultFormatter': 'zryna.zryna' },
     }, null, 2)}\n`, { flag: 'wx' });
@@ -140,13 +142,15 @@ async function run(values) {
     const failed = () => editorProcess.failure() ?? (editorProcess.ended()
       ? new Error('Editor ended before required installed-host results.') : null);
     const trust = await trustFreshFolder({ userData, workspaceName: basename(workspace),
-      initialPath: config.initialPath, deadline, failed });
-    const observed = await waitJson(config.resultPath, deadline, failed);
+      initialPath: config.initialPath, failurePath: config.failurePath, deadline, failed, output });
+    const observed = await waitJson(config.resultPath, deadline, failed, config.failurePath);
     assert.equal(observed.passed, true);
     assert.equal(observed.checks.length, 9);
     assert.equal(observed.generated.length, 3);
     await mkdir(join(output, 'generated'));
     for (const [index, artifact] of observed.generated.entries()) {
+      artifact.reportedFile = artifact.file;
+      artifact.file = await generatedOutputPath(artifact.reportedFile, deadline);
       const actual = await descriptor(artifact.file);
       assert.equal(actual.bytes, artifact.bytes);
       assert.equal(actual.sha256, artifact.sha256);

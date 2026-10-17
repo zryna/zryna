@@ -71,7 +71,7 @@ async function run(config) {
     await settings.update('installationDigest', config.digest, vscode.ConfigurationTarget.Global);
     const extension = vscode.extensions.getExtension('zryna.zryna');
     assert.ok(extension, 'installed extension must load');
-    assert.equal(extension.extensionPath, config.installedExtension);
+    await require('./extension.cjs').bindPhysicalDirectory(extension.extensionPath, config.installedExtension);
     await extension.activate();
     assert.equal(extension.packageJSON.version, '0.5.0');
     result.checks.push('extension activation and verified installation');
@@ -101,7 +101,15 @@ async function run(config) {
     const js = await invoke(document, 'control-flow-v1', 'javascript',
       [{ type: 'bool', value: 'true' }, { type: 'i32', value: '13' }], 13);
     await vscode.commands.executeCommand('zryna.openGeneratedJavaScript');
-    await until(() => vscode.window.activeTextEditor?.document.uri.fsPath === js.file, 'generated JavaScript editor');
+    await until(async () => {
+      const opened = vscode.window.activeTextEditor?.document.uri.fsPath;
+      if (!opened) return false;
+      const [actual, expected] = await Promise.all([
+        fs.stat(opened, { bigint: true }), fs.stat(js.file, { bigint: true }),
+      ]);
+      return actual.isFile() && expected.isFile() && actual.ino !== 0n
+        && actual.dev === expected.dev && actual.ino === expected.ino;
+    }, 'generated JavaScript editor');
     assert.ok(vscode.window.activeTextEditor.document.getText().includes('export'));
     result.checks.push('real M2 JavaScript result and open output');
 
