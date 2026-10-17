@@ -35,7 +35,7 @@ jobs:
       - name: Verify offline installed-editor controls
         shell: pwsh
         run: |
-          node --test scripts/m6/installed-editor/controls.test.mjs scripts/m6/installed-editor/files.test.mjs scripts/m6/installed-editor/ownership.test.mjs scripts/m6/installed-editor/installer-metadata.test.mjs
+          node --test scripts/m6/installed-editor/controls.test.mjs scripts/m6/installed-editor/trust.test.mjs scripts/m6/installed-editor/files.test.mjs scripts/m6/installed-editor/ownership.test.mjs scripts/m6/installed-editor/installer-metadata.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Required installed-editor controls failed' }
       - name: Acquire independently pinned official editor archive
         shell: pwsh

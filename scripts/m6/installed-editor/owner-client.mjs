@@ -38,6 +38,12 @@ export async function launchOwned(program, args, options) {
   await mkdir(material, { mode: 0o700 });
   const helper = join(material, process.platform === 'win32' ? 'owner.ps1' : 'owner.py');
   pins.helperCapture = await capture(helperSource, helper, pins.helper, options.deadline);
+  if (process.platform === 'win32') {
+    const dependencySource = fileURLToPath(new URL('./owner-windows-termination.ps1', import.meta.url));
+    pins.terminationHelper = await descriptor(dependencySource, options.deadline);
+    pins.terminationCapture = await capture(dependencySource,
+      join(material, 'owner-windows-termination.ps1'), pins.terminationHelper, options.deadline);
+  }
   const helperArgs = process.platform === 'win32'
     ? ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', helper] : ['-I', '-B', helper];
   const child = spawn(runtime, helperArgs, { cwd: options.cwd, env, shell: false,
