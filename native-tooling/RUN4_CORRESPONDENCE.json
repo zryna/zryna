@@ -1,0 +1,444 @@
+{
+  "originalFrozenSources": [
+    {
+      "relative": "COPY_CORRESPONDENCE.json",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/COPY_CORRESPONDENCE.json",
+        "bytes": 10059,
+        "sha256": "ad44565da74e05d87f3bdada88fa92484c39adbc1a32c8a420a986ac4ac06c8c"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/COPY_CORRESPONDENCE.json",
+        "bytes": 10059,
+        "sha256": "ad44565da74e05d87f3bdada88fa92484c39adbc1a32c8a420a986ac4ac06c8c"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "README.md",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/README.md",
+        "bytes": 8241,
+        "sha256": "e0ea2941f4791808303570113d8863e31196bbf423f52b02e3544896c9115180"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/README.md",
+        "bytes": 8241,
+        "sha256": "e0ea2941f4791808303570113d8863e31196bbf423f52b02e3544896c9115180"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/authenticated-run.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/authenticated-run.mjs",
+        "bytes": 199,
+        "sha256": "db781138152e058299aed220e666391c5f1f54b8251e0232662769fd53a29fd3"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/authenticated-run.mjs",
+        "bytes": 199,
+        "sha256": "db781138152e058299aed220e666391c5f1f54b8251e0232662769fd53a29fd3"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/bind.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/bind.mjs",
+        "bytes": 103,
+        "sha256": "b867e31ac7f10f86c137ead4259c31b8579535a0c4dd16eb89aaa10cb2ed2e49"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/bind.mjs",
+        "bytes": 103,
+        "sha256": "b867e31ac7f10f86c137ead4259c31b8579535a0c4dd16eb89aaa10cb2ed2e49"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/prepare.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/prepare.mjs",
+        "bytes": 109,
+        "sha256": "d3e9665b7f8581c515d94d5bd841d3441711409e9ad9a5bcfd52ce52f1973fb4"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/prepare.mjs",
+        "bytes": 109,
+        "sha256": "d3e9665b7f8581c515d94d5bd841d3441711409e9ad9a5bcfd52ce52f1973fb4"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/producer.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/producer.mjs",
+        "bytes": 15011,
+        "sha256": "3ae817bce0876c43e02f2ac9febd62facf7dd476c2c5ce7b9c3929e0f9c9d137"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/producer.mjs",
+        "bytes": 15011,
+        "sha256": "3ae817bce0876c43e02f2ac9febd62facf7dd476c2c5ce7b9c3929e0f9c9d137"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/bindings.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/bindings.mjs",
+        "bytes": 117,
+        "sha256": "64736a32eb5602a8f1419b963607f14fa8dd30a7b112d3b48fed787859ef1f93"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/bindings.mjs",
+        "bytes": 117,
+        "sha256": "64736a32eb5602a8f1419b963607f14fa8dd30a7b112d3b48fed787859ef1f93"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/capture.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/capture.mjs",
+        "bytes": 16649,
+        "sha256": "cbe43fddc99e740ae90ffc5d0f757307b75294063c9932d10c0fcbf2ac42c011"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/capture.mjs",
+        "bytes": 16649,
+        "sha256": "cbe43fddc99e740ae90ffc5d0f757307b75294063c9932d10c0fcbf2ac42c011"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/catalogue.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/catalogue.mjs",
+        "bytes": 1828,
+        "sha256": "23adac84d7adb34016240de2f97a83a88526c912cc8bfaddf47fff93f5f70a17"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/catalogue.mjs",
+        "bytes": 1828,
+        "sha256": "23adac84d7adb34016240de2f97a83a88526c912cc8bfaddf47fff93f5f70a17"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/prebuild.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/prebuild.mjs",
+        "bytes": 6137,
+        "sha256": "f339a1ae57d090e4c7b1fe6c7e99195b4dd82ace16e2c40f15632adfcde2ddd8"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/prebuild.mjs",
+        "bytes": 6137,
+        "sha256": "f339a1ae57d090e4c7b1fe6c7e99195b4dd82ace16e2c40f15632adfcde2ddd8"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/preparation.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/preparation.mjs",
+        "bytes": 309,
+        "sha256": "d80a0f313b56ffa1ec3fe642230f27c76f140924c5e84fca2675b9d318746af6"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/preparation.mjs",
+        "bytes": 309,
+        "sha256": "d80a0f313b56ffa1ec3fe642230f27c76f140924c5e84fca2675b9d318746af6"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/record-formatter.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/record-formatter.mjs",
+        "bytes": 119,
+        "sha256": "336f8d93395faacfc254622fc528f1319a2b7f45909adefdadaacb8795c99d2d"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/record-formatter.mjs",
+        "bytes": 119,
+        "sha256": "336f8d93395faacfc254622fc528f1319a2b7f45909adefdadaacb8795c99d2d"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/record-lsp.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/record-lsp.mjs",
+        "bytes": 107,
+        "sha256": "4de9884828fb69e828d3c62a0ab688cf33136695cc9abdaa83e52b88f7fd0642"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/record-lsp.mjs",
+        "bytes": 107,
+        "sha256": "4de9884828fb69e828d3c62a0ab688cf33136695cc9abdaa83e52b88f7fd0642"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/record-project.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/record-project.mjs",
+        "bytes": 115,
+        "sha256": "f21be4f608e5baa25e6c9d6dd2f892c4fd5075973fcac6cecbd1b738e60b4248"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/record-project.mjs",
+        "bytes": 115,
+        "sha256": "f21be4f608e5baa25e6c9d6dd2f892c4fd5075973fcac6cecbd1b738e60b4248"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/recorder/select-cargo.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/recorder/select-cargo.mjs",
+        "bytes": 1281,
+        "sha256": "f88a6149d0af462bcb3b5a74e3d0a599fd19f016479e1a050a12c1e4c24cf00c"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/recorder/select-cargo.mjs",
+        "bytes": 1281,
+        "sha256": "f88a6149d0af462bcb3b5a74e3d0a599fd19f016479e1a050a12c1e4c24cf00c"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "binding-producer/template-pins.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/binding-producer/template-pins.mjs",
+        "bytes": 1260,
+        "sha256": "976018ec16b93dae3f991ae0289f68c3e94f1d6e7c7cfb07d75d0bf0de5c5c60"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/binding-producer/template-pins.mjs",
+        "bytes": 1260,
+        "sha256": "976018ec16b93dae3f991ae0289f68c3e94f1d6e7c7cfb07d75d0bf0de5c5c60"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "capture_controls.py",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/capture_controls.py",
+        "bytes": 2733,
+        "sha256": "74cac8921da796d8179edd44a63604d9fb0f3c45c7d4db45baf576c3d7838a03"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/capture_controls.py",
+        "bytes": 2733,
+        "sha256": "74cac8921da796d8179edd44a63604d9fb0f3c45c7d4db45baf576c3d7838a03"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "collect.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/collect.mjs",
+        "bytes": 13504,
+        "sha256": "56833b39df7597e3313ad2927a507158fc2481822ae7b7db7458043a3caf1d10"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/collect.mjs",
+        "bytes": 13504,
+        "sha256": "56833b39df7597e3313ad2927a507158fc2481822ae7b7db7458043a3caf1d10"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "owner/files.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/files.mjs",
+        "bytes": 6345,
+        "sha256": "0fa948dcb5b1712be649b51ba025535b78abec16b77b286dc8480603d61788ce"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/owner/files.mjs",
+        "bytes": 6345,
+        "sha256": "0fa948dcb5b1712be649b51ba025535b78abec16b77b286dc8480603d61788ce"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "owner/owner-client.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/owner-client.mjs",
+        "bytes": 9407,
+        "sha256": "71138006b56c5021621a844ccb2afa9292043991998378b92f8a628f9a2f6e96"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/owner/owner-client.mjs",
+        "bytes": 9407,
+        "sha256": "71138006b56c5021621a844ccb2afa9292043991998378b92f8a628f9a2f6e96"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "owner/owner-linux.py",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/owner-linux.py",
+        "bytes": 13262,
+        "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/owner/owner-linux.py",
+        "bytes": 13262,
+        "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "owner/owner-windows.ps1",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/owner-windows.ps1",
+        "bytes": 12883,
+        "sha256": "a3a9bbbdc108e3250f94825844d7b250b88e62493dc2c1e42b4ea08099816311"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/owner/owner-windows.ps1",
+        "bytes": 12883,
+        "sha256": "a3a9bbbdc108e3250f94825844d7b250b88e62493dc2c1e42b4ea08099816311"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "owner/process.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/owner/process.mjs",
+        "bytes": 1161,
+        "sha256": "9dbd77dee161d409c3d655fc98d34868623aa9a86ae75b4bc2694a1eedf3e32e"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/owner/process.mjs",
+        "bytes": 1161,
+        "sha256": "9dbd77dee161d409c3d655fc98d34868623aa9a86ae75b4bc2694a1eedf3e32e"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "producer-pins.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/producer-pins.mjs",
+        "bytes": 1969,
+        "sha256": "5089ed7e0c67f0fa17756b0ca215760326100125e1064bfe9b5abf1fb34f5b11"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/producer-pins.mjs",
+        "bytes": 1969,
+        "sha256": "5089ed7e0c67f0fa17756b0ca215760326100125e1064bfe9b5abf1fb34f5b11"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "prospective-workflow.yml",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/prospective-workflow.yml",
+        "bytes": 3258,
+        "sha256": "ac4f135e1c83875ced99a6cdfee67ab2de8cc26d3e58d21777b339326b1fc7ff"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/prospective-workflow.yml",
+        "bytes": 3340,
+        "sha256": "c814fd884bf04004be2759ce39c116fceea67910da9387e7c214c77342335481"
+      },
+      "byteIdentical": false
+    },
+    {
+      "relative": "provider-capture.fixture.rs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/provider-capture.fixture.rs",
+        "bytes": 11843,
+        "sha256": "11080562f7d9da9eee21e5f651afe3e33eaf050e8a006a13715b5d93e2c0d685"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/provider-capture.fixture.rs",
+        "bytes": 11843,
+        "sha256": "11080562f7d9da9eee21e5f651afe3e33eaf050e8a006a13715b5d93e2c0d685"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "provider-pins.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/provider-pins.mjs",
+        "bytes": 923,
+        "sha256": "e50fcaaa717365320294fb7627c30079f316ab20378263b7d0b871b6aecec42f"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/provider-pins.mjs",
+        "bytes": 923,
+        "sha256": "e50fcaaa717365320294fb7627c30079f316ab20378263b7d0b871b6aecec42f"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "provider-pins.test.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/provider-pins.test.mjs",
+        "bytes": 1391,
+        "sha256": "61f56054fbdf5ce963d574701ea114c3bcfd1e42c7d0d51efcc4404dd95a44f3"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/provider-pins.test.mjs",
+        "bytes": 1391,
+        "sha256": "61f56054fbdf5ce963d574701ea114c3bcfd1e42c7d0d51efcc4404dd95a44f3"
+      },
+      "byteIdentical": true
+    },
+    {
+      "relative": "run-fixed.py",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/run-fixed.py",
+        "bytes": 9772,
+        "sha256": "5ae9589306315b36bd664bb5573ef91b60dc549dd394bd1f8ea90e731779843a"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/run-fixed.py",
+        "bytes": 11642,
+        "sha256": "b9ffe3f92e94ad58c7a2ea9823c769852c3531a8ad63877acf6f896820062233"
+      },
+      "byteIdentical": false
+    },
+    {
+      "relative": "unbound.test.mjs",
+      "original": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN1/unbound.test.mjs",
+        "bytes": 2522,
+        "sha256": "0133b6be9635d9df31da419f06a1187762368fa80f3bc796dbec9a83e4322139"
+      },
+      "current": {
+        "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/unbound.test.mjs",
+        "bytes": 2522,
+        "sha256": "0133b6be9635d9df31da419f06a1187762368fa80f3bc796dbec9a83e4322139"
+      },
+      "byteIdentical": true
+    }
+  ],
+  "unchangedOriginalCount": 28,
+  "changedOriginal": [
+    "run-fixed.py",
+    "prospective-workflow.yml"
+  ],
+  "unchangedRun3NativeHelper": {
+    "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/windows_file_identity.py",
+    "bytes": 4199,
+    "sha256": "9c41d5954bde66a3e047bc3b3fc8f475848c07a3a474a4f6606254536669b680"
+  },
+  "unchangedRun3SixWindowsControls": {
+    "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN4/test_windows_file_identity.py",
+    "bytes": 3691,
+    "sha256": "2359b8c0087a7b8f1a62b95bd72440dfcf77d5a1f01d19ea9910bfd8515a3c74"
+  },
+  "preservedUnrunRun3": {
+    "path": "/workspace/scratch/M6_410_TRUSTED_ACTIONS_TOOLING_COLLECTOR_SOURCE_20261016_RUN3/SOURCE_FREEZE.json",
+    "bytes": 10400,
+    "sha256": "e805da19495d5485bade9985238368f5ddc79f640abd2d6bd41c466519f08c19"
+  }
+}

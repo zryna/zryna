@@ -1,0 +1,19 @@
+--- RUN3/prospective-workflow.yml
++++ RUN4/prospective-workflow.yml
+@@ -56,7 +56,7 @@
+       - name: Fixed binary outer capture and original owned inner commands
+         # Root-reviewed capsule is placed at operator/native-tooling; no generic program/phase flags.
+         run: python operator/native-tooling/run-fixed.py
+-      - name: Retain complete original observations, owned raw, capsules and prebuild targets
++      - name: Retain raw observations, capsules and proofs without full target cache
+         if: always()
+         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+         with:
+@@ -64,6 +64,7 @@
+           path: |
+             ${{ runner.temp }}/native-tooling-outer
+             ${{ runner.temp }}/native-tooling-preparation
++            !${{ runner.temp }}/native-tooling-preparation/OWNED_NO_RUN_PREBUILD/target/**
+           if-no-files-found: warn
+           include-hidden-files: true
+           compression-level: 0
