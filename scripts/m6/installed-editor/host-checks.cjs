@@ -71,7 +71,10 @@ async function run(config) {
     await settings.update('installationDigest', config.digest, vscode.ConfigurationTarget.Global);
     const extension = vscode.extensions.getExtension('zryna.zryna');
     assert.ok(extension, 'installed extension must load');
-    assert.equal(extension.extensionPath, config.installedExtension);
+    const [reportedExtension, selectedExtension] = await Promise.all([
+      fs.realpath(extension.extensionPath), fs.realpath(config.installedExtension),
+    ]);
+    assert.equal(reportedExtension, selectedExtension, 'Installed extension physical directory differs.');
     await extension.activate();
     assert.equal(extension.packageJSON.version, '0.5.0');
     result.checks.push('extension activation and verified installation');
