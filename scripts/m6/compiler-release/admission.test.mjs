@@ -7,7 +7,7 @@ import { qualificationFixture } from './qualification-fixture.mjs';
 import { observeCi } from './gates.mjs';
 const trailers=['M6-Full-CI-Run:123','M6-Full-CI-Attempt:1','M6-Qualification-Asset:456',
   `M6-Qualification-SHA256:${'d'.repeat(64)}`,`M6-Qualification-Review-SHA256:${'e'.repeat(64)}`];
-const tag=lines=>Buffer.from(`object ${'a'.repeat(40)}\ntype commit\ntag v0.1.0-playground-compiler.2\ntagger Fixture <fixture@example.invalid> 1 +0000\n\nFixture tag parsing only\n\n${lines.join('\n')}\n`);
+const tag=lines=>Buffer.from(`object ${'a'.repeat(40)}\ntype commit\ntag v0.1.0-playground-compiler.3\ntagger Fixture <fixture@example.invalid> 1 +0000\n\nFixture tag parsing only\n\n${lines.join('\n')}\n`);
 test('protected tag binds exactly five closed positive selections',()=>{
   assert.deepEqual(parseTag(tag(trailers)).selection,{ciRun:123,ciAttempt:1,qualificationAsset:456,
     qualificationSha256:'d'.repeat(64),reviewSha256:'e'.repeat(64)});
@@ -21,7 +21,7 @@ for(const [name,mutate] of [
 ])test(`tag rejects ${name} admission`,()=>assert.throws(()=>parseTag(tag(mutate(trailers)))));
 test('wrong tag or nested tag cannot select admission',()=>{
   assert.throws(()=>parseTag(Buffer.from(tag(trailers).toString().replace('type commit','type tag'))));
-  assert.throws(()=>parseTag(Buffer.from(tag(trailers).toString().replace('compiler.2','compiler.1'))));
+  assert.throws(()=>parseTag(Buffer.from(tag(trailers).toString().replace('compiler.3','compiler.2'))));
 });
 test('candidate schema and packet own exact complete fixture bytes without activation',async()=>{
   const f=qualificationFixture();

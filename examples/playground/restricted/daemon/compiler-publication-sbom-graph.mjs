@@ -26,7 +26,7 @@ function digest(value) {
 function sourceIdentity(source) {
   exactKeys(source, SOURCE_KEYS);
   requireSpdx(source.repository === 'https://github.com/zryna/zryna'
-    && source.ref === 'refs/tags/v0.1.0-playground-compiler.2'
+    && source.ref === 'refs/tags/v0.1.0-playground-compiler.3'
     && source.tagType === 'annotated'
     && ['commit', 'tree', 'tagObject'].every(key => /^[0-9a-f]{40}$/.test(source[key]))
     && source.commit !== source.tagObject
