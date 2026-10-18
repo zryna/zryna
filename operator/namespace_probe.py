@@ -12,8 +12,11 @@ import time
 root, source, cid = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
 assert os.geteuid() == 0 and len(cid) == 64
 subprocess.run(['mount', '--make-rprivate', '/'], check=True)
-subprocess.run(['mount', '--bind', '/sys/fs/cgroup', '/sys/fs/cgroup'], check=True)
-subprocess.run(['mount', '-o', 'remount,bind,ro', '/sys/fs/cgroup'], check=True)
+# Replace only this private namespace's mount. A stacked bind leaves the
+# covered writable entry in mountinfo, which the unchanged reader rejects.
+subprocess.run(['umount', '/sys/fs/cgroup'], check=True)
+subprocess.run(['mount', '-t', 'cgroup2', '-o', 'ro,nosuid,nodev,noexec',
+                'cgroup2', '/sys/fs/cgroup'], check=True)
 runtime = root / 'namespace-run'
 runtime.mkdir(mode=0o755)
 os.chown(runtime, 65534, 65534)
@@ -66,6 +69,7 @@ try:
     owner_kernel.security(owner_kernel.fields(result['proc']['status']), pid)
     result['namespaces'] = owner_kernel.namespace_links(pid, deadline)
     result['network'] = owner_kernel.network(pid, deadline, result['namespaces'])
+    result['observerMountinfo'] = owner_kernel.read(f'/proc/{os.getpid()}/mountinfo', deadline, 262144)
     result['mapping'] = owner_cgroup.mapping(owner_kernel.read, owner_kernel.numbers, membership, cid, deadline)
     result['status'] = 'fixed-peer-and-original-cgroup-mapping-passed'
 finally:

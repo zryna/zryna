@@ -25,6 +25,8 @@ result = {'format': 'zryna410.host-compatibility-probe.v1', 'acceptance': False,
           'sourceCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=source, text=True).strip(),
           'helperPins': {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                          for p in Path(__file__).parent.glob('*.py')}}
+result['originalCgroupMount'] = [line for line in Path('/proc/self/mountinfo').read_text().splitlines()
+                                if line.split(' - ')[0].split()[4] == '/sys/fs/cgroup']
 daemon, containerd, image, cid = None, None, None, None
 attempted = False
 index = 0
@@ -175,4 +177,7 @@ finally:
                     containerd_log.close()
                 result['daemonStopped'] = daemon is not None and daemon.poll() is not None
                 result['containerdStopped'] = containerd is not None and containerd.poll() is not None
+                result['originalCgroupMountAfter'] = [line for line in Path('/proc/self/mountinfo').read_text().splitlines()
+                                                      if line.split(' - ')[0].split()[4] == '/sys/fs/cgroup']
+                result['originalCgroupMountUnchanged'] = result['originalCgroupMountAfter'] == result['originalCgroupMount']
                 (root / 'RESULT.json').write_text(json.dumps(result, indent=2) + '\n')
