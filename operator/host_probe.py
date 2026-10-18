@@ -95,14 +95,13 @@ try:
     for _ in range(200):
         assert daemon.poll() is None, 'task-owned daemon exited'
         if sock.exists():
-            ready = subprocess.run(['/usr/bin/docker', '--host=unix://' + str(sock), 'info'],
-                                   env=environment, capture_output=True, timeout=2)
-            if ready.returncode == 0:
-                break
+            break
         time.sleep(0.1)
     else:
         raise TimeoutError('task-owned daemon readiness')
-    info = json.loads(docker('info', '--format', '{{json .}}'))
+    # A socket can exist before daemon initialization finishes. One bounded
+    # startup request waits for readiness; this is not a guest operation budget.
+    info = json.loads(docker('info', '--format', '{{json .}}', timeout=30))
     result['engine'] = info
     assert info['CgroupDriver'] == 'cgroupfs' and info['CgroupVersion'] == '2'
     result['containerd']['actualArgv'] = [v.decode() for v in Path(f'/proc/{containerd.pid}/cmdline').read_bytes().split(b'\0') if v]
