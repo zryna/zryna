@@ -1,0 +1,82 @@
+{
+  "status": "actual-reviewed-publication-fix-merged-and-new-main-frozen",
+  "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+  "tree": "351da60bd4037e0f96c286045c8943f41fa99b03",
+  "previous": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+  "pr": 565,
+  "head": "3604ea3bb551d9dbeef5dcd7c3cee0109e8de8d3",
+  "reviewedChanges": [
+    {
+      "path": ".github/workflows/playground-compiler-release.yml",
+      "bytes": 9809,
+      "sha256": "ae9b41af6783ddc726d624e170c3bde0d8acda73751af5d630c240486fc22362",
+      "gitBlob": "c2ced58c9718af3b1fece61c1900bb77bf64bbaa"
+    },
+    {
+      "path": "crates/zryna-driver/src/restricted_browser/daemon/cleanup.rs",
+      "bytes": 5014,
+      "sha256": "2c91fcead48f64573562ac30b601d75c1131976a587e57b66ee72a253ed48e8d",
+      "gitBlob": "d03a468a8063198fce882ff586d03351c6d0da35"
+    },
+    {
+      "path": "crates/zryna-driver/src/restricted_browser/daemon/tests.rs",
+      "bytes": 7891,
+      "sha256": "ebfa51283f4d4e1b0f386f166ca3a99afcc5d7f49a74a0515f05fa5dc9288246",
+      "gitBlob": "0f636bfb8f18ac2fc920ff44fac5b0c1d43a66ed"
+    },
+    {
+      "path": "crates/zryna-driver/src/restricted_browser/daemon/tests/cleanup_cases.rs",
+      "bytes": 3925,
+      "sha256": "1273434ec0b743d36cd466b0a7a0d55fb73a7261de0b3115d2af67f19a57c9bc",
+      "gitBlob": "7adcebab7ada6fe74bb39ea1fcd918e641be05f2"
+    },
+    {
+      "path": "examples/playground/restricted/daemon/compiler-publication-constants.mjs",
+      "bytes": 2874,
+      "sha256": "05a8ec46a1aaf4073c0381584b25ebb3be90b2ce805f8340b0e871caa8dee29b",
+      "gitBlob": "341fed49d1850d35cd08fc69d82494cd46714679"
+    },
+    {
+      "path": "examples/playground/restricted/daemon/compiler-publication-sbom-fixture.mjs",
+      "bytes": 2060,
+      "sha256": "ed94038a4920b42f7a30379a3f686783e05645d2b9aca47b867de3c49c695019",
+      "gitBlob": "fe51e38bf0c2c8dc5a355a15a0e1566ada9ecf58"
+    },
+    {
+      "path": "examples/playground/restricted/daemon/compiler-publication-sbom-graph.mjs",
+      "bytes": 6148,
+      "sha256": "88d0c5c6038b12db1088a5ae7c40211b7720c37054fb1a8a77bbdc0a41d253f3",
+      "gitBlob": "51fa32bbf032b07e40d61c7d9977047abdee69ce"
+    },
+    {
+      "path": "scripts/m6/compiler-release/README.md",
+      "bytes": 7994,
+      "sha256": "acadd492cc398de618e1ae5a689b884cafb7065f9b69bafd888142948be24219",
+      "gitBlob": "83dcba139300364f2d103a25e6d8d7ba6a8817aa"
+    },
+    {
+      "path": "scripts/m6/compiler-release/admission.test.mjs",
+      "bytes": 8176,
+      "sha256": "4c4a54c57c15df49b681a1b14ee69d56dfed6739729e8eb99c7306f50dad3f66",
+      "gitBlob": "f7846be64a82576e79a385ba67249d0d8bb5e4c0"
+    },
+    {
+      "path": "scripts/m6/compiler-release/common.mjs",
+      "bytes": 2965,
+      "sha256": "c09b64247044dfa588cedaab84a28820da5c0fb2f8d0f97392807ef25468cdf2",
+      "gitBlob": "85fb5c39c9248a09365b54a6e3f1c65022e5f5ac"
+    },
+    {
+      "path": "spec/tooling/M6_REVIEWED_SOURCE_V2.md",
+      "bytes": 26456,
+      "sha256": "445f3532a8451f3b3d5b20d41ac523ca082dd06890451978fd10704c782b7a0d",
+      "gitBlob": "f9fd27d458042215e92ef6dab0b55def7140c7f2"
+    }
+  ],
+  "independentReview": {
+    "path": "/workspace/scratch/M6_410_CLEANUP_FIX_ROOT_REVIEW_20261018_RUN1/REVIEW.json",
+    "bytes": 5974,
+    "sha256": "c7e686a58deb46ce1ebcbc10ead318b9fad26897ba3402b0fa014287315f7ff5"
+  },
+  "at": "2026-10-18T20:38:25.529711+00:00"
+}
