@@ -181,7 +181,9 @@ export function createService({ host, authority, witSha256, templateBytes, resou
       }
     }
   });
-  server.maxConnections = 4;
+  // Chrome keeps up to six HTTP/1 connections alive while loading the module graph.
+  // Leave two control connections available; guest execution still admits one job.
+  server.maxConnections = 8;
   server.requestTimeout = limits.compileMs;
   server.headersTimeout = 5000;
   server.timeout = limits.compileMs + limits.teardownMs;

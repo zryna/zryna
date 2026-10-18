@@ -1,6 +1,10 @@
 import './playground-service-supervised-cases.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { Agent, request } from 'node:http';
+import { connect as connectSocket } from 'node:net';
+import { once } from 'node:events';
+import { setImmediate as nextTurn } from 'node:timers/promises';
 import { sha256, utf8 } from '../examples/playground/restricted/limits.mjs';
 import { source, sourceRequest, witSha256, templateBytes, deferred, frame, fixture,
   expectError, compile, startUpload } from './playground-fixtures/service.mjs';
@@ -41,6 +45,51 @@ test('loopback resources are read-only and every response has restrictive browse
   assert.equal(f.calls.compile.length, 0);
   assert.equal(f.calls.evaluate.length, 0);
 });
+
+test('a browser six-connection resource pool leaves session headroom and a finite socket ceiling',
+  { timeout: 5000 }, async t => {
+    const f = await fixture(t);
+    // Preserve Chrome-like idle sockets instead of Node's default one-second early close.
+    const agent = new Agent({ keepAlive: true, maxSockets: 6, maxFreeSockets: 6,
+      agentKeepAliveTimeoutBuffer: 0 });
+    const sockets = [];
+    t.after(() => { agent.destroy(); for (const socket of sockets) socket.destroy(); });
+    const resource = () => new Promise((resolve, reject) => {
+      const outgoing = request(`${f.origin}/examples/playground/restricted/`, { agent }, response => {
+        response.resume();
+        response.once('error', reject);
+        response.once('end', () => resolve(response.statusCode));
+      });
+      outgoing.once('error', reject);
+      outgoing.end();
+    });
+    assert.deepEqual(await Promise.all(Array.from({ length: 6 }, resource)), Array(6).fill(200));
+    await nextTurn();
+    assert.equal((await f.send('/session')).status, 200);
+    const count = () => new Promise((resolve, reject) => f.service.server.getConnections(
+      (error, value) => error ? reject(error) : resolve(value)));
+    // Keep all six browser connections alive while the independent control request completes.
+    for (let attempt = 0; await count() !== 6 && attempt < 100; attempt++) await nextTurn();
+    assert.equal(await count(), 6);
+    for (let index = 0; index < 2; index++) {
+      const accepted = once(f.service.server, 'connection');
+      const socket = connectSocket(new URL(f.origin).port, '127.0.0.1');
+      sockets.push(socket);
+      await Promise.all([accepted, once(socket, 'connect')]);
+    }
+    assert.equal(await count(), 8);
+    const dropped = once(f.service.server, 'drop');
+    const extra = connectSocket(new URL(f.origin).port, '127.0.0.1');
+    sockets.push(extra);
+    const closed = new Promise((resolve, reject) => {
+      extra.once('close', resolve);
+      extra.once('error', error => { if (error.code !== 'ECONNRESET') reject(error); });
+    });
+    await dropped;
+    await closed;
+    assert.equal(await count(), 8);
+    assert.deepEqual(f.calls, { compile: [], evaluate: [], finish: [] });
+  });
 
 test('Host, Bearer, fetch-site and POST Origin checks precede every host operation', async t => {
   const f = await fixture(t);
