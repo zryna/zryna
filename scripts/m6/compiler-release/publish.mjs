@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
-import { bytes, describe, ordinary, parseCanonical, requireValue, sha256, writeNew, TAG, id } from './common.mjs';
+import { bytes, describe, ordinary, parseCanonical, requireValue, sha256, writeNew, TAG, id, exactKeys, SHA } from './common.mjs';
 import { github } from './github.mjs';
 import { observeMain } from './gates.mjs';
 import { prepareAdmission } from './admission.mjs';
@@ -83,6 +83,25 @@ export async function publishAssets(api,source,files) {
   'compiler actual immutable published prerelease');
   return {releaseId,url:actual.html_url,assets:expected,immutable:true};
 }
+export function verifyAdmissionAgreement(fresh,original) {
+  requireValue(fresh.publishing===true && fresh.status==='protected-tag-admitted' &&
+    fresh.qualification!==null && typeof fresh.qualification==='object' &&
+    original.publishing===true && original.status==='protected-tag-source-admitted' && original.qualification===null &&
+    bytes(fresh.source).equals(bytes(original.source)) && bytes(fresh.selection).equals(bytes(original.selection)) &&
+    bytes(fresh.run).equals(bytes(original.run)), 'compiler fresh qualified and deferred admission agreement');
+  const proof=fresh.qualification;
+  exactKeys(proof,['transport','compiler','packet','reviewSha256']);
+  exactKeys(proof.transport,['releaseId','assetId','tag','draft']);
+  exactKeys(proof.compiler,['bytes','sha256']);exactKeys(proof.packet,['path','bytes','sha256']);
+  requireValue(id(proof.transport.releaseId)===proof.transport.releaseId &&
+    proof.transport.assetId===fresh.selection.qualificationAsset && proof.transport.draft===true &&
+    /^m6-qualification-[A-Za-z0-9._-]{1,80}$/.test(proof.transport.tag) &&
+    Number.isSafeInteger(proof.compiler.bytes) && proof.compiler.bytes>0 && proof.compiler.bytes<=128*1024*1024 && SHA(proof.compiler.sha256) &&
+    proof.packet.path==='qualification.tar.gz' && Number.isSafeInteger(proof.packet.bytes) &&
+    proof.packet.bytes>0 && proof.packet.bytes<=64*1024*1024 &&
+    proof.packet.sha256===fresh.selection.qualificationSha256 && proof.reviewSha256===fresh.selection.reviewSha256,
+  'compiler fresh qualification proof agreement');
+}
 function saveProof(root,name,proof) {
   writeNew(join(root,`${name}.command.json`),bytes(proof.signing.record));
   writeNew(join(root,`${name}.stdout`),proof.signing.stdout);writeNew(join(root,`${name}.stderr`),proof.signing.stderr);
@@ -91,14 +110,12 @@ function saveProof(root,name,proof) {
   writeNew(join(root,`${name}.verify.stderr`),proof.verification.stderr);
 }
 async function publishCompilerCore({sourceRoot,admissionRoot,firstRoot,secondRoot,assembledRoot,
-  output,environment=process.env,api=github()}={}) {
+  output,environment=process.env,api=github(),spawn}={}) {
   requireValue(environment.GITHUB_EVENT_NAME==='push','compiler publisher push-only authority');
   const freshRoot=`${output}-admission`,signerRoot=`${output}-signer`;
-  const fresh=await prepareAdmission({sourceRoot,output:freshRoot,environment,api});
+  const fresh=await prepareAdmission({sourceRoot,output:freshRoot,environment,api,spawn,deferQualification:false});
   const original=parseCanonical(ordinary(join(admissionRoot,'admission.json')));
-  requireValue(fresh.publishing && bytes(fresh.source).equals(bytes(original.source)) &&
-    bytes(fresh.selection).equals(bytes(original.selection)) && bytes(fresh.run).equals(bytes(original.run)),
-  'compiler fresh original admission agreement');
+  verifyAdmissionAgreement(fresh,original);
   const laterStart=api.captures.length;
   const artifactProof=await verifyCurrentArtifacts(api,fresh);
   const replicas=compareReplicas(firstRoot,secondRoot,fresh);

@@ -30,7 +30,8 @@ async function qualificationTransport(api, selection) {
     'compiler qualification actual transport bytes');
   return {packet,transport:selected};
 }
-async function prepareAdmissionCore({ sourceRoot, output, environment=process.env, api=github(), spawn }={}) {
+async function prepareAdmissionCore({ sourceRoot, output, environment=process.env, api=github(), spawn, deferQualification=false }={}) {
+  requireValue(typeof deferQualification==='boolean','compiler admission qualification phase');
   const captured=captureSource({cwd:sourceRoot,environment,spawn});
   const {source,publishing}=captured;
   if(publishing) {
@@ -43,13 +44,13 @@ async function prepareAdmissionCore({ sourceRoot, output, environment=process.en
   const selection=publishing?captured.selection:{ciRun:id(environment.M6_CI_RUN),ciAttempt:id(environment.M6_CI_ATTEMPT)};
   const ci=await observeCi(api,source,selection.ciRun,selection.ciAttempt,inventory);
   let qualification;
-  if(publishing) {
+  if(publishing && !deferQualification) {
     const transport=await qualificationTransport(api,selection);
     const opened=await openQualification(transport.packet,{source,selection});
     qualification={...transport,record:opened.record,review:opened.review};
   }
   const admission={format:'zryna.playground-compiler-admission.v1',version:1,
-    status:publishing?'protected-tag-admitted':'candidate-build-only',source,publishing,selection,
+    status:publishing?(deferQualification?'protected-tag-source-admitted':'protected-tag-admitted'):'candidate-build-only',source,publishing,selection,
     workflow:captured.workflow,ci,workflowInventory:inventory,
     run:{id:id(environment.GITHUB_RUN_ID),attempt:id(environment.GITHUB_RUN_ATTEMPT)},
     qualification:qualification?{transport:qualification.transport,compiler:qualification.record.compiler,

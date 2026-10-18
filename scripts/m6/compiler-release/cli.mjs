@@ -17,9 +17,9 @@ const options=allowed=>{
     key==='--replica'?Number(values[key]):resolve(values[key])]));
 };
 try {
-  if(mode==='admit')await prepareAdmission(options(['--source-root','--output']));
+  if(mode==='admit')await prepareAdmission({...options(['--source-root','--output']),deferQualification:true});
   else if(mode==='build')await buildCompiler(options(['--source-root','--cargo-home','--output','--admission-root','--replica']));
-  else if(mode==='assemble')await assembleCompiler(options(['--source-root','--admission-root','--first-root','--second-root','--output']));
+  else if(mode==='assemble')await assembleCompiler({...options(['--source-root','--admission-root','--first-root','--second-root','--output']),deferQualification:true});
   else if(mode==='publish')await publishCompiler(options(['--source-root','--admission-root','--first-root','--second-root','--assembled-root','--output']));
   else requireValue(false,'compiler release CLI mode');
 } catch(error){
