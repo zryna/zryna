@@ -7,7 +7,7 @@ import { qualificationFixture } from './qualification-fixture.mjs';
 import { observeCi } from './gates.mjs';
 const trailers=['M6-Full-CI-Run:123','M6-Full-CI-Attempt:1','M6-Qualification-Asset:456',
   `M6-Qualification-SHA256:${'d'.repeat(64)}`,`M6-Qualification-Review-SHA256:${'e'.repeat(64)}`];
-const tag=lines=>Buffer.from(`object ${'a'.repeat(40)}\ntype commit\ntag v0.1.0-playground-compiler.1\ntagger Fixture <fixture@example.invalid> 1 +0000\n\nFixture tag parsing only\n\n${lines.join('\n')}\n`);
+const tag=lines=>Buffer.from(`object ${'a'.repeat(40)}\ntype commit\ntag v0.1.0-playground-compiler.2\ntagger Fixture <fixture@example.invalid> 1 +0000\n\nFixture tag parsing only\n\n${lines.join('\n')}\n`);
 test('protected tag binds exactly five closed positive selections',()=>{
   assert.deepEqual(parseTag(tag(trailers)).selection,{ciRun:123,ciAttempt:1,qualificationAsset:456,
     qualificationSha256:'d'.repeat(64),reviewSha256:'e'.repeat(64)});
@@ -21,7 +21,7 @@ for(const [name,mutate] of [
 ])test(`tag rejects ${name} admission`,()=>assert.throws(()=>parseTag(tag(mutate(trailers)))));
 test('wrong tag or nested tag cannot select admission',()=>{
   assert.throws(()=>parseTag(Buffer.from(tag(trailers).toString().replace('type commit','type tag'))));
-  assert.throws(()=>parseTag(Buffer.from(tag(trailers).toString().replace('compiler.1','compiler.2'))));
+  assert.throws(()=>parseTag(Buffer.from(tag(trailers).toString().replace('compiler.2','compiler.1'))));
 });
 test('candidate schema and packet own exact complete fixture bytes without activation',async()=>{
   const f=qualificationFixture();
@@ -81,6 +81,18 @@ test('publisher write and OIDC permissions are unavailable to dispatch/build job
     }else assert.equal(job.permissions,undefined);
     for(const step of job.steps??[])if(step.uses)assert.match(step.uses,/@[a-f0-9]{40}$/);
   }
+});
+
+test('publisher failure retention includes completed signatures and all publication payloads',()=>{
+  const workflow=parse(readFileSync(new URL('../../../.github/workflows/playground-compiler-release.yml',import.meta.url),'utf8'));
+  const retained=workflow.jobs.publish.steps.find(step=>step.name==='Retain raw signing and publication observations including failures');
+  assert.equal(retained.if,'${{ !cancelled() }}');
+  assert.deepEqual(retained.with.path.trim().split('\n'),[
+    '${{ runner.temp }}/publication',
+    '${{ runner.temp }}/publication-observations',
+    '${{ runner.temp }}/publication-admission',
+    '${{ runner.temp }}/publication-signer',
+  ]);
 });
 
 test('independent Cargo home uses runtime runner paths before toolchain and fetch',()=>{

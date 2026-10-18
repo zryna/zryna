@@ -32,7 +32,7 @@ export function github({ token = process.env.GITHUB_TOKEN, fetchImpl = fetch } =
     const signal = AbortSignal.timeout(120000);
     for (let redirects = 0; redirects <= 4; redirects++) {
       const parsed = new URL(url);
-      const headers = { Accept: binary ? 'application/octet-stream' : 'application/vnd.github+json',
+      const headers = { Accept: binary && !upload ? 'application/octet-stream' : 'application/vnd.github+json',
         'Accept-Encoding': 'identity', 'X-GitHub-Api-Version': '2026-03-10' };
       if (parsed.hostname === 'api.github.com' || parsed.hostname === 'uploads.github.com') {
         headers.Authorization = `Bearer ${token}`;

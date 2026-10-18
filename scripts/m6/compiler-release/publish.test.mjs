@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import { publishAssets,verifyCurrentArtifacts,verifyReplicaJobs } from './publish.mjs';
 import { sha256,TAG } from './common.mjs';
+import { github } from './github.mjs';
 const names=['compiler-envelope.json','compiler-envelope.sigstore.json','candidate-policy.json',
 'zryna-playground-compiler-0.1.0-x86_64-unknown-linux-gnu.tar.gz','publication-evidence.tar.gz',
 'publication-evidence-index.json','publication-evidence-index.sigstore.json'];
@@ -36,6 +37,31 @@ test('pure publisher protocol creates one draft and publishes exact seven hashed
   assert.equal(result.immutable,true);assert.equal(result.assets.length,7);
   assert.equal(f.calls.filter(c=>c.options.method==='PATCH').length,1);
   assert.equal(f.calls.some(c=>c.options.method==='DELETE'),false);
+});
+test('publisher uploads unchanged binary bodies while requesting GitHub JSON responses',async()=>{
+  const f=publisherFixture(),input=files(),uploads=[];
+  const api=github({token:'fixture-token-never-real',fetchImpl:async(url,options)=>{
+    const parsed=new URL(url),upload=parsed.hostname==='uploads.github.com';
+    if(upload){
+      // GitHub rejects an octet-stream Accept on this JSON response endpoint.
+      if(options.headers.Accept!=='application/vnd.github+json')
+        return new Response('{"message":"Unsupported Accept header"}',{status:415});
+      assert.equal(options.method,'POST');
+      assert.equal(options.headers['Content-Type'],'application/octet-stream');
+      const file=input.find(file=>file.path===parsed.searchParams.get('name'));
+      assert(file);assert.strictEqual(options.body,file.data);uploads.push(file.path);
+    }
+    const result=await f.api.request(parsed.pathname+parsed.search,{
+      method:options.method,upload,body:options.body===undefined?undefined:
+        upload?options.body:JSON.parse(options.body.toString()),
+    });
+    return new Response(Buffer.isBuffer(result)?result:JSON.stringify(result),{
+      status:options.method==='POST'?201:200,
+    });
+  }});
+  const result=await publishAssets(api,source,input);
+  assert.deepEqual(uploads,names);assert.equal(result.assets.length,7);
+  assert.equal(result.immutable,true);
 });
 for(const [name,options,patches]of [['existing final release',{existing:true},0],['wrong uploaded digest',{changedUpload:true},0],
   ['unlisted draft asset',{extra:true},0],['main drift before publication',{drift:true},0],['mutable published result',{immutable:false},1],

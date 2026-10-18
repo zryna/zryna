@@ -4,7 +4,7 @@ import { bytes, sha256 } from '../../../../scripts/distribution/canonical.mjs';
 export function compilerSpdxFixture() {
   const source = {
     repository: 'https://github.com/zryna/zryna',
-    ref: 'refs/tags/v0.1.0-playground-compiler.1', commit: '1'.repeat(40),
+    ref: 'refs/tags/v0.1.0-playground-compiler.2', commit: '1'.repeat(40),
     tree: '2'.repeat(40), sourceDateEpoch: 1700000000,
     tagObject: '3'.repeat(40), tagType: 'annotated',
   };
