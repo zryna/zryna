@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 
 mod archive_cases;
 mod authority_cases;
+mod cleanup_cases;
 mod materials_cases;
 
 fn future() -> Instant {
