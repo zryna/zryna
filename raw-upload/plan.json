@@ -1,0 +1,508 @@
+{
+  "format": "zryna.m6-fixed-draft-asset-transport.v1",
+  "version": 1,
+  "sourceCommit": "dcef77a79782e91016b9e3e8d528cf21850b9d41",
+  "sourceTree": "1fa77b9e77185f5fb9d401f1cfb70ee6cc76f963",
+  "repository": "zryna/zryna",
+  "releaseId": 416499325,
+  "tag": "m6-raw-evidence-dcef77a79782e91016b9e3e8d528cf21850b9d41-1",
+  "assets": [
+    {
+      "name": "authenticated-docs-manifest.json",
+      "bytes": 16384,
+      "sha256": "4b4399c0b3e41d55b11a35de4b0a1fe16060625334ce7604da7990b1e4798a1c"
+    },
+    {
+      "name": "canonical-linux-original-shared-job.log",
+      "bytes": 1135951,
+      "sha256": "19679ba6cf5372e20bcaf41729f7244d2cd12a9a244ac9b8c41aa73f217203c1"
+    },
+    {
+      "name": "canonical-windows-original-shared-job.log",
+      "bytes": 912475,
+      "sha256": "18a56ac543d64a6653ab870077b3d35a6dbb7822925c248c1c1df8969b959a2d"
+    },
+    {
+      "name": "chrome-linux64-153.0.8010.12-inventory.json",
+      "bytes": 41670,
+      "sha256": "110d5111c1a885596b2dba4fe5d04e570d26e1c57454d0a902f1115ce818635a"
+    },
+    {
+      "name": "chrome-linux64-153.0.8010.12.zip",
+      "bytes": 195836009,
+      "sha256": "8aac35011c18f6e2d10696154af89a5728ac2ddd6dc6fad24ffdf243c3fcfd5a"
+    },
+    {
+      "name": "compiler-materials-manifest.json",
+      "bytes": 2661,
+      "sha256": "bb3d59f7e3ff44e7c30deb6c99a8e56b329507f709e1cebbb2fc366fdf029b27"
+    },
+    {
+      "name": "compiler-materials.tar.gz",
+      "bytes": 45536929,
+      "sha256": "e3c134cc58324c391d6f715d73958af12efe022b5e4cc8b7c6faeaedd51ed839"
+    },
+    {
+      "name": "compiler-runtime-image.tar",
+      "bytes": 14991360,
+      "sha256": "50bf3aca89ebeec34091976a9a050c30749d246cb653ef7790ac492f5d7ae6f5"
+    },
+    {
+      "name": "daemon-supervisor-linux",
+      "bytes": 17024,
+      "sha256": "773089bc6b220b1ebf2a2203c2f0da66b4952f36f4661cc0a0a8233572340bd5"
+    },
+    {
+      "name": "docker-engine-linux-identity.json",
+      "bytes": 1058,
+      "sha256": "8d2311fd8e51b76cb2fe2b4d5bf42de81fef806414f86f11e01b091062341d52"
+    },
+    {
+      "name": "docs-artifact-original.zip",
+      "bytes": 1914594,
+      "sha256": "dbdaaee3f0f644b230da53af8a8ecf0dd05bc767f266ef98536fe9d3f0805830"
+    },
+    {
+      "name": "docs-gate-artifact-original.zip",
+      "bytes": 327347,
+      "sha256": "b2d0b5b1576d8e7511239c36947b4be261f05a55e0f715ce292b92d81ea66684"
+    },
+    {
+      "name": "durable-material-provenance.json",
+      "bytes": 28374,
+      "sha256": "0d4b58d7a55ef941c9f02177ac9bcfe73a32ccb48f61bc0fac0714ccfd9cbb6d"
+    },
+    {
+      "name": "editor-artifact-linux-original.zip",
+      "bytes": 299206,
+      "sha256": "a5a3465a6fc452c702a6df9abeef07efcc85cd7d0d4255643865596df8b9e84a"
+    },
+    {
+      "name": "editor-artifact-windows-original.zip",
+      "bytes": 453831,
+      "sha256": "2cd4c9067f329a43383b30aa6325c77aa58292427f27d9f47b5a4b3d5c37df4e"
+    },
+    {
+      "name": "evaluator-materials-manifest.json",
+      "bytes": 67474,
+      "sha256": "a6b06b91d30763641235b64f1d2b5f9a41b65952941c84bb63d1c21c1011f5bd"
+    },
+    {
+      "name": "evaluator-materials.tar.gz",
+      "bytes": 227574493,
+      "sha256": "4794d1ca22894a62fdbabb2d21c5fc2aa3999915b75f867aa2cd973771b5b0c9"
+    },
+    {
+      "name": "evaluator-runtime-image.tar",
+      "bytes": 49909760,
+      "sha256": "61cdc278add1b30903f9420c4cc591b658bbf903907a0b9f2b7ec11e7d079a11"
+    },
+    {
+      "name": "installed-supplement-linux-original.zip",
+      "bytes": 112765180,
+      "sha256": "fd1c577f7d106663d640dbbb60668ca096a20d912c34f7531c4700d5accbada9"
+    },
+    {
+      "name": "installed-supplement-windows-original.zip",
+      "bytes": 251837581,
+      "sha256": "6bb128c338fa2403e79c6866a8e4c5d0b64f33e4576eaaba592a6c8fa912ece4"
+    },
+    {
+      "name": "native-linux-original.zip",
+      "bytes": 24016822,
+      "sha256": "accaffa273ac6ef1af1f261062fd87629838e2a8f7e011f5962eb9f1312cdbac"
+    },
+    {
+      "name": "native-reader-linux-original.zip",
+      "bytes": 8669721,
+      "sha256": "60bebcb5941858a4a93b0657c422cff93219a4bcea2f1201b6ab074740aad128"
+    },
+    {
+      "name": "native-reader-windows-original.zip",
+      "bytes": 10245569,
+      "sha256": "a54e76f3d7b15c059c114488568598a0f305fdd86b7b99926893c23c4f6ba606"
+    },
+    {
+      "name": "native-windows-original.zip",
+      "bytes": 27563947,
+      "sha256": "61e63dc4e3a1ec86588a1bcf864a3e754bc1f9c926c466ee357cb4e25c895935"
+    },
+    {
+      "name": "node-22.22.1-linux-x64.tar.gz",
+      "bytes": 43836508,
+      "sha256": "638869dd1cf6b7c9f11a095ee1cc42733c66e643c3a0c059d835779924e64603"
+    },
+    {
+      "name": "original-acquisition-and-material-provenance.tar.gz",
+      "bytes": 99056,
+      "sha256": "e6cbacb9f63c30ebf3f2e2e260d17bfc1f7ca918feedc49fa03fdcee91d7af02"
+    },
+    {
+      "name": "setup-artifact-linux-original.zip",
+      "bytes": 55958875,
+      "sha256": "f49db2899d2ce996f5a5beb2d127c2c049793a37108f8aaea07f18994307fc8f"
+    },
+    {
+      "name": "setup-artifact-windows-original.zip",
+      "bytes": 125331054,
+      "sha256": "33a7b429de14600dbad03cd2db1759887a551c31dcbe42b75f366fb2c3c565cf"
+    },
+    {
+      "name": "setup-manifest-linux.json",
+      "bytes": 75972,
+      "sha256": "95bdd9ed08fe963e98f97d2e8e96c77f2518e9eaf3ad2a6cf5091770c93ebe0d"
+    },
+    {
+      "name": "setup-manifest-windows.json",
+      "bytes": 77455,
+      "sha256": "d03af3f242c0bfc7e9cc63d169255119e20efc0793cc87444b58f36d85fd3cd3"
+    },
+    {
+      "name": "signed-legacy-provider-6.0.2.tar.gz",
+      "bytes": 1699762,
+      "sha256": "055c19d9724272e264b7c343ad485775191b8882b5ce63aa74d36a24f1ad29bb"
+    },
+    {
+      "name": "website-production-proof.json",
+      "bytes": 4670,
+      "sha256": "1f2923e6a457ca15e7497ab0f978acd486152c73dd1c4f7f8de516341697042b"
+    },
+    {
+      "name": "zryna-0.5.0-linux.vsix",
+      "bytes": 30092,
+      "sha256": "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec"
+    },
+    {
+      "name": "zryna-0.5.0-windows.vsix",
+      "bytes": 30092,
+      "sha256": "428438f686653b71214636cd20431775b4ce0ab7ae62f09d94d1d1233c4d8ccd"
+    },
+    {
+      "name": "zryna-language-server-linux",
+      "bytes": 6967592,
+      "sha256": "00fa99a4a5f527c20ab094b18f74186b9266a838ad77a23c71cca228d03e2ebc"
+    },
+    {
+      "name": "zryna-language-server-windows.exe",
+      "bytes": 7136768,
+      "sha256": "16d8d6ef97a24b72d6d3fb7a5dc33f21d2cacbd16980478b055b7f994425c01b"
+    },
+    {
+      "name": "zryna-setup-0.1.0-candidate.3-x86_64-pc-windows-msvc.zip",
+      "bytes": 125329131,
+      "sha256": "aab39e77eb7d69f7c1092c464ab35f724c3e8c8f2820b6c286a24291de92ccf4"
+    },
+    {
+      "name": "zryna-setup-0.1.0-candidate.3-x86_64-unknown-linux-gnu.tar.gz",
+      "bytes": 55956930,
+      "sha256": "d743d3dada8fc5796e94efbc58480c76a12b4b6bc8919e37fa04d58fc261fc0d"
+    }
+  ],
+  "sourceArtifacts": {
+    "native-linux-original.zip": {
+      "id": 12136129584,
+      "bytes": 24016822,
+      "sha256": "accaffa273ac6ef1af1f261062fd87629838e2a8f7e011f5962eb9f1312cdbac",
+      "workflowRun": {
+        "id": 39126782652,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-exact-source-tooling-prepared-cargo-20261017",
+        "head_sha": "4adf55ac71eaa864834312d44a1df19b684dacc1"
+      },
+      "name": "exact-source-tooling-ubuntu-24.04-39126782652-1"
+    },
+    "setup-artifact-linux-original.zip": {
+      "id": 12138226155,
+      "bytes": 55958875,
+      "sha256": "f49db2899d2ce996f5a5beb2d127c2c049793a37108f8aaea07f18994307fc8f",
+      "workflowRun": {
+        "id": 39126780495,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "dcef77a79782e91016b9e3e8d528cf21850b9d41"
+      },
+      "name": "portable-setup-ubuntu-24.04"
+    },
+    "editor-artifact-linux-original.zip": {
+      "id": 12138059114,
+      "bytes": 299206,
+      "sha256": "a5a3465a6fc452c702a6df9abeef07efcc85cd7d0d4255643865596df8b9e84a",
+      "workflowRun": {
+        "id": 39126780495,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "dcef77a79782e91016b9e3e8d528cf21850b9d41"
+      },
+      "name": "m6-installed-editor-ubuntu-24.04-dcef77a79782e91016b9e3e8d528cf21850b9d41-39126780495-1"
+    },
+    "installed-supplement-linux-original.zip": {
+      "id": 12138432743,
+      "bytes": 112765180,
+      "sha256": "fd1c577f7d106663d640dbbb60668ca096a20d912c34f7531c4700d5accbada9",
+      "workflowRun": {
+        "id": 39132396217,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-installed-stdio-supplement-20261018",
+        "head_sha": "4f0a84f768be849031c3d2358ac5ecf3b94dfd7a"
+      },
+      "name": "installed-m6-supplement-ubuntu-24.04-dcef77a79782e91016b9e3e8d528cf21850b9d41-39132396217-1"
+    },
+    "native-reader-linux-original.zip": {
+      "id": 12138972222,
+      "bytes": 8669721,
+      "sha256": "60bebcb5941858a4a93b0657c422cff93219a4bcea2f1201b6ab074740aad128",
+      "workflowRun": {
+        "id": 39134447124,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-native-readonly-evidence-dcef77a-20261018",
+        "head_sha": "5270e95eb53d339a15bffb9a60d29415b3eb1b48"
+      },
+      "name": "m6-readonly-evidence-ubuntu-24.04-39134447124-1"
+    },
+    "canonical-linux-original-shared-job.log": {
+      "jobId": 117673469538,
+      "runId": 39126780495,
+      "bytes": 1135951,
+      "sha256": "19679ba6cf5372e20bcaf41729f7244d2cd12a9a244ac9b8c41aa73f217203c1"
+    },
+    "native-windows-original.zip": {
+      "id": 12136314602,
+      "bytes": 27563947,
+      "sha256": "61e63dc4e3a1ec86588a1bcf864a3e754bc1f9c926c466ee357cb4e25c895935",
+      "workflowRun": {
+        "id": 39126782652,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-exact-source-tooling-prepared-cargo-20261017",
+        "head_sha": "4adf55ac71eaa864834312d44a1df19b684dacc1"
+      },
+      "name": "exact-source-tooling-windows-2022-39126782652-1"
+    },
+    "setup-artifact-windows-original.zip": {
+      "id": 12137648300,
+      "bytes": 125331054,
+      "sha256": "33a7b429de14600dbad03cd2db1759887a551c31dcbe42b75f366fb2c3c565cf",
+      "workflowRun": {
+        "id": 39126780495,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "dcef77a79782e91016b9e3e8d528cf21850b9d41"
+      },
+      "name": "portable-setup-windows-2022"
+    },
+    "editor-artifact-windows-original.zip": {
+      "id": 12138228423,
+      "bytes": 453831,
+      "sha256": "2cd4c9067f329a43383b30aa6325c77aa58292427f27d9f47b5a4b3d5c37df4e",
+      "workflowRun": {
+        "id": 39126780495,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "dcef77a79782e91016b9e3e8d528cf21850b9d41"
+      },
+      "name": "m6-installed-editor-windows-2022-dcef77a79782e91016b9e3e8d528cf21850b9d41-39126780495-1"
+    },
+    "installed-supplement-windows-original.zip": {
+      "id": 12138945275,
+      "bytes": 251837581,
+      "sha256": "6bb128c338fa2403e79c6866a8e4c5d0b64f33e4576eaaba592a6c8fa912ece4",
+      "workflowRun": {
+        "id": 39132396217,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-installed-stdio-supplement-20261018",
+        "head_sha": "4f0a84f768be849031c3d2358ac5ecf3b94dfd7a"
+      },
+      "name": "installed-m6-supplement-windows-2022-dcef77a79782e91016b9e3e8d528cf21850b9d41-39132396217-1"
+    },
+    "native-reader-windows-original.zip": {
+      "id": 12139317459,
+      "bytes": 10245569,
+      "sha256": "a54e76f3d7b15c059c114488568598a0f305fdd86b7b99926893c23c4f6ba606",
+      "workflowRun": {
+        "id": 39134447124,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-native-readonly-evidence-dcef77a-20261018",
+        "head_sha": "5270e95eb53d339a15bffb9a60d29415b3eb1b48"
+      },
+      "name": "m6-readonly-evidence-windows-2022-39134447124-1"
+    },
+    "canonical-windows-original-shared-job.log": {
+      "jobId": 117673469652,
+      "runId": 39126780495,
+      "bytes": 912475,
+      "sha256": "18a56ac543d64a6653ab870077b3d35a6dbb7822925c248c1c1df8969b959a2d"
+    },
+    "docs-artifact-original.zip": {
+      "id": 12139035186,
+      "bytes": 1914594,
+      "sha256": "dbdaaee3f0f644b230da53af8a8ecf0dd05bc767f266ef98536fe9d3f0805830",
+      "workflowRun": {
+        "id": 39132532586,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "dcef77a79782e91016b9e3e8d528cf21850b9d41"
+      },
+      "name": "zryna-docs-next-dcef77a79782e91016b9e3e8d528cf21850b9d41-4b4399c0b3e41d55b11a35de4b0a1fe16060625334ce7604da7990b1e4798a1c"
+    },
+    "docs-gate-artifact-original.zip": {
+      "id": 12138373439,
+      "bytes": 327347,
+      "sha256": "b2d0b5b1576d8e7511239c36947b4be261f05a55e0f715ce292b92d81ea66684",
+      "workflowRun": {
+        "id": 39132532586,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "dcef77a79782e91016b9e3e8d528cf21850b9d41"
+      },
+      "name": "zryna-docs-gate-dcef77a79782e91016b9e3e8d528cf21850b9d41-39132532586-1"
+    }
+  },
+  "blobs": [
+    {
+      "path": "payload/chrome-linux64-153.0.8010.12-inventory.json",
+      "bytes": 41670,
+      "sha256": "110d5111c1a885596b2dba4fe5d04e570d26e1c57454d0a902f1115ce818635a",
+      "outputName": "chrome-linux64-153.0.8010.12-inventory.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/compiler-materials-manifest.json",
+      "bytes": 2661,
+      "sha256": "bb3d59f7e3ff44e7c30deb6c99a8e56b329507f709e1cebbb2fc366fdf029b27",
+      "outputName": "compiler-materials-manifest.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/compiler-runtime-image.tar.gz",
+      "bytes": 5343826,
+      "sha256": "f2c0bd173a34db1a3cf815196624f4a82aff0ca0a43b12e838f88dd9d900c3cb",
+      "outputName": "compiler-runtime-image.tar",
+      "kind": "gunzip"
+    },
+    {
+      "path": "payload/daemon-supervisor-linux",
+      "bytes": 17024,
+      "sha256": "773089bc6b220b1ebf2a2203c2f0da66b4952f36f4661cc0a0a8233572340bd5",
+      "outputName": "daemon-supervisor-linux",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/docker-engine-linux-identity.json",
+      "bytes": 1058,
+      "sha256": "8d2311fd8e51b76cb2fe2b4d5bf42de81fef806414f86f11e01b091062341d52",
+      "outputName": "docker-engine-linux-identity.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/durable-material-provenance.json",
+      "bytes": 28374,
+      "sha256": "0d4b58d7a55ef941c9f02177ac9bcfe73a32ccb48f61bc0fac0714ccfd9cbb6d",
+      "outputName": "durable-material-provenance.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/evaluator-materials-manifest.json",
+      "bytes": 67474,
+      "sha256": "a6b06b91d30763641235b64f1d2b5f9a41b65952941c84bb63d1c21c1011f5bd",
+      "outputName": "evaluator-materials-manifest.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/evaluator-runtime-image.tar.gz",
+      "bytes": 19945393,
+      "sha256": "a88b04d6fa2a92b1b4806599bdc66c93bbe5263f97515d1e6dc0c3c400d59ca1",
+      "outputName": "evaluator-runtime-image.tar",
+      "kind": "gunzip"
+    },
+    {
+      "path": "payload/original-acquisition-and-material-provenance.tar.gz",
+      "bytes": 99056,
+      "sha256": "e6cbacb9f63c30ebf3f2e2e260d17bfc1f7ca918feedc49fa03fdcee91d7af02",
+      "outputName": "original-acquisition-and-material-provenance.tar.gz",
+      "kind": "copy"
+    },
+    {
+      "path": "lib/libz.so.1",
+      "bytes": 125376,
+      "sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "outputName": null,
+      "kind": "compression-library"
+    },
+    {
+      "path": "lib/zlib-COPYRIGHT",
+      "bytes": 2927,
+      "sha256": "9e5b96d63773a5d177ba264254390f792be07e41748ebd94730981c6cac31cc6",
+      "outputName": null,
+      "kind": "compression-license"
+    },
+    {
+      "path": "payload/website-production-proof.json",
+      "bytes": 4670,
+      "sha256": "1f2923e6a457ca15e7497ab0f978acd486152c73dd1c4f7f8de516341697042b",
+      "outputName": "website-production-proof.json",
+      "kind": "copy"
+    }
+  ],
+  "legacy": {
+    "id": 563209159,
+    "bytes": 52949082,
+    "sha256": "b258d45e1eb58a701026ced7c74d03dc74c911c90a5ec7da93c656884a97159f",
+    "immutableReleaseId": 388328382,
+    "tag": "v0.2.3"
+  },
+  "chrome": {
+    "url": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/linux64/chrome-linux64.zip",
+    "bytes": 195836009,
+    "sha256": "8aac35011c18f6e2d10696154af89a5728ac2ddd6dc6fad24ffdf243c3fcfd5a"
+  },
+  "playwright": {
+    "url": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.63.0.tgz",
+    "sha512": "ad80ac045fcce478d4721e766dbb5538d1058efe97bbcb26f21ef674d951e5bcc81357ef0bf6f182ca7392349f53e3307843263ccf0a25e6c6ea79f2c68e660a"
+  },
+  "materialTarPins": {
+    "compiler": {
+      "files": 14,
+      "sourceBytes": 134170551,
+      "archiveBytes": 134195200,
+      "archiveSha256": "8dfc6bb5d66e6f06130dd0557fd8e384720bb9c77bb88fbe0e932c892b8f0e8c",
+      "format": "zryna.playground-archive-emission.v1",
+      "version": 1,
+      "kind": "materials",
+      "role": "compiler",
+      "planBytes": 4490,
+      "planSha256": "517dcc7fa751431e4645eba328e7ae2e5a80b81bd32d8897b733d9f642f0e886",
+      "sourceInventoryBeforeAfterEqual": true,
+      "scope": "archive transport only; no installation or operator approval"
+    },
+    "evaluator": {
+      "files": 419,
+      "sourceBytes": 548525078,
+      "archiveBytes": 548915200,
+      "archiveSha256": "d01ceb37da64bf1f2c798be95ad1cd6eb51e4a3e4c71878dc5a35bcb1950a27f",
+      "format": "zryna.playground-archive-emission.v1",
+      "version": 1,
+      "kind": "materials",
+      "role": "evaluator",
+      "planBytes": 122219,
+      "planSha256": "c3116a0b8ae26aa20ce82e33a564ef5cca5a37be7c9f641e549e09fbed03836e",
+      "sourceInventoryBeforeAfterEqual": true,
+      "scope": "archive transport only; no installation or operator approval"
+    }
+  },
+  "transportApproval": {
+    "approved": false,
+    "sourceCommit": "dcef77a79782e91016b9e3e8d528cf21850b9d41",
+    "reason": "Actual38common output bytes and actual private raw draft selected. Future2actual public policy/composition assets and final40 independent root review remain required before upload. Approval remains false."
+  }
+}

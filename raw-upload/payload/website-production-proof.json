@@ -1,0 +1,97 @@
+{
+  "status": "actual-new-source-production-124-route-content-and-header-check-passed",
+  "at": "2026-10-18T14:15:23.357402+00:00",
+  "origin": "https://zryna.com",
+  "compilerSourceCommit": "dcef77a79782e91016b9e3e8d528cf21850b9d41",
+  "manifestSha256": "4b4399c0b3e41d55b11a35de4b0a1fe16060625334ce7604da7990b1e4798a1c",
+  "checkerWebsiteCommit": "fcd26ab6dfc9aab6879062f698fd2b4bb717b409",
+  "checkerWebsiteTree": "a0aff6f75022e9ec641b9d846342a9cad5ceb0a4",
+  "initialOldProductionIdentityRetained": {
+    "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/IDENTITY-001.json",
+    "bytes": 455,
+    "sha256": "7704802239a0a754a0ef2aad96cae40011112ad53172a5fe877926329be84c74"
+  },
+  "actualNewProductionIdentity": {
+    "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/IDENTITY_MATCHED.json",
+    "bytes": 308,
+    "sha256": "21a457a657f857ba9d2c68ca029c1b77e7347aa5c7816199dbd0c939f351780f"
+  },
+  "convergenceObservations": 2,
+  "intervalSeconds": 60,
+  "originalFullCheckerInvocations": 1,
+  "quality": {
+    "routes": 124,
+    "routesActual200": 124,
+    "missingRouteActual404": true,
+    "httpToHttpsRedirect": {
+      "status": 301,
+      "location": "https://zryna.com/"
+    },
+    "securityHeadersCheckedByOriginal": true,
+    "observedHsts": null,
+    "originalM4MatrixAndAllImportedContentChecks": true
+  },
+  "rawRetention": {
+    "root": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/HTTP",
+    "actualRequests": 126,
+    "completeBodies": 126,
+    "completeHeaders": 126,
+    "allBodyAndHeaderPinsRehashedAgainstOriginalTransport": true,
+    "transport": {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/HTTP/TRANSPORT.json",
+      "bytes": 51231,
+      "sha256": "db416fa3b247f27d61df13c7447d9bf9a60666655491cc9335300541d7d29b8e"
+    }
+  },
+  "pins": [
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/INTENT.json",
+      "bytes": 644,
+      "sha256": "e351794f5aa7c37eedb2a73c2f9c1d3e363ca4f0c101218616c4e50d4c414e22"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/ADAPTER_BINDING.json",
+      "bytes": 1208,
+      "sha256": "6ff9efc3426a5eb210317d928bb8620e7676c9bfc55f772fecc8a34b9795d8fc"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/curl-fetch-check.mjs",
+      "bytes": 2482,
+      "sha256": "540bd60f43200543000a04115a9feea741577901a4449deba8a29c3a6304effa"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/CHECK_COMMAND.json",
+      "bytes": 395,
+      "sha256": "cc66161dec7cdfe221cd2885c197f07e55aca7f588ff53b9ad6622e8f133cd8e"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/CHECK_COMPLETE.json",
+      "bytes": 289,
+      "sha256": "396c96ff7b49bce58a12dd83475f0d7c4c06735f0a6d3eb61b273f9f0261755a"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/check.stdout",
+      "bytes": 30872,
+      "sha256": "957fdfcfd54f00a2b0dcc4081f5110c440a0d6474d591522d3ac6255014ce4c7"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_dcef77a79782e91016b9e3e8d528cf21850b9d41_RUN1/check.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/website/tools/docs/check-published-content.mjs",
+      "bytes": 10392,
+      "sha256": "cff9b030c51a2443fcc2e2e9809c9794be7c8415d5d069a874885eca794c259c"
+    }
+  ],
+  "productionDeploymentIdentity": null,
+  "scope": "Actual HTTPS publication content and headers verified against exact clean merged checker/lock/source. Provider deployment/image identity was not queried and is not inferred from content. Historical5d79 RUN3 remains historical, no old request bytes adopted. This does not establish runtime qualification, compiler publication, final23-gate acceptance or410closure.",
+  "effects": {
+    "localGitChange": "existing clean main checkout fast-forwarded from0a2aac4 to reviewed mergedfcd26ab only",
+    "providerWrites": 0,
+    "deploymentTriggers": 0,
+    "apiConfigurationChanges": 0,
+    "secretsRequested": 0
+  }
+}
