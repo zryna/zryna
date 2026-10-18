@@ -20,6 +20,10 @@ metadata and tree are retained and rerun immediately after the build; their exac
 selection and all authenticated selected caches must remain unchanged. Replica
 receipt/tree-proof v2 records this before/after check and all seven actual commands.
 No target/guest can choose commands, Cargo flags or dependencies.
+The completed Cargo executable may be hardlinked to its `deps` entry. Only that
+fixed build output permits multiple links while being captured through retained,
+unchanged file and ancestor identities. The exported `compiler.bin`, publication
+materials and all other inputs retain their existing single-link checks.
 
 An authorized maintainer separately obtains the actual candidate, qualifies that
 exact release binary/source/material composition on a supported operator host,
