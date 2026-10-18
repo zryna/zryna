@@ -3,7 +3,7 @@ import { constants, closeSync, fstatSync, openSync, readFileSync, writeFileSync 
 import { bytes, exactKeys, orderedPaths, parseCanonical, requireValue, sha256 }
   from '../../distribution/canonical.mjs';
 export { bytes, exactKeys, orderedPaths, parseCanonical, requireValue, sha256 };
-export const REPO = 'zryna/zryna', TAG = 'v0.1.0-playground-compiler.2';
+export const REPO = 'zryna/zryna', TAG = 'v0.1.0-playground-compiler.3';
 export const WORKFLOW = '.github/workflows/playground-compiler-release.yml';
 export const TARGET = 'x86_64-unknown-linux-gnu', PRODUCT = 'zryna-playground-compiler';
 export const REF = `refs/tags/${TAG}`;
