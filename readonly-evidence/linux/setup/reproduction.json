@@ -1,0 +1,14 @@
+{
+  "sourceCommit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+  "target": "x86_64-unknown-linux-gnu",
+  "serverReplicas": [
+    "c6d155a4c1103688aacdcd721dbbfa9ae28ef62a75b7e2907b7a28c4bf8b3976",
+    "c6d155a4c1103688aacdcd721dbbfa9ae28ef62a75b7e2907b7a28c4bf8b3976"
+  ],
+  "vsixReplicas": [
+    "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec",
+    "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec"
+  ],
+  "status": "review-candidate",
+  "productionAdmission": "forbidden"
+}

@@ -1,0 +1,153 @@
+# Private generic function operations
+
+Issue #278 extends the existing private straight-line owned-data producer using the shared
+[composition contracts](M3_OWNERSHIP_COMPOSITION.md), especially C1–C5. This is source-to-verified-IR
+operation support. It supplies no public signature, runtime implementation, target execution,
+backend, driver route or public-profile activation. Structured ownership control flow remains the
+separate C6/C7 integration obligation; this document does not claim arbitrary branches, loops,
+scope exits or owner-carrying joins.
+
+## Exact signatures and routing
+
+The generic route accepts exact by-value parameters and results from bool/i32, String, Struct,
+Enum, FixedArray and positive-stride Vec compositions. The #261 adapter also admits exact
+Shared/Weak-containing graphs through the same typed preparation and ownership boundaries.
+Permitted recursive graphs through Vec or handle indirection use sealed layout identities, not
+an expanded recursive syntax tree. Exact private borrow parameters
+use the indexed-source call adapter, with live authority rather than owned parameter places. A function
+with an owned input may return a Copy result; unused owned inputs still require cleanup.
+
+Selection examines authenticated signature/body shape without evaluating source or issuing a
+diagnostic. The selected producer subsequently validates every operation. Existing scalar,
+String, exact-Vec and bounded aggregate routes retain their established selection where no new
+generic shape is required. This is not a blanket reinterpretation of earlier bounded CFG routes.
+
+Each by-value parameter gets its exact declared value identity and addressable parameter place.
+Non-Copy parameters enter pending ownership in declaration order; Copy parameters are not pending owners.
+Formal borrow parameters carry exact call-frame authority without a fabricated value or place.
+Names retain portable case-collision and exact lookup checks. Owned parameters are immutable
+bindings: mutation requires an appropriate mutable local rather than silently making the
+parameter mutable. Return transfers its exact completed owned result, when any, and reverse-drops
+the remaining initialized owners with their current masks and enum refinements.
+
+## Calls and transfer boundaries
+
+A generic call resolves one exact internal catalog signature. The bounded named-import route also
+resolves an explicit relative `.zry` alias inside the authenticated, acyclic source closure. The
+alias retains the dependency declaration's canonical module/declaration `FunctionId`; an export in
+a dependency grants module visibility, while only entry-module exports enter the public scalar ABI.
+The completed #272 route admits the complete sealed by-value ownership graph, including
+containers, aggregates, handles and finite indirection. It preserves foreign nominal identity
+without inventing type-import syntax. Borrowed imports, indirect calls, recursion and public owned
+ABI remain excluded.
+The closure evidence includes both source-file orders, a real alias re-export rejection, an acyclic
+multi-hop import, exact import/call-cycle diagnostics, and genuine cross-module IR identities.
+Imported owned-call preparation reuses the same exact/first-extra value and cleanup reservations;
+hostile IR mutations independently cover signature, result, ownership, cleanup, static-depth and
+deterministic-recovery boundaries rather than trusting the source resolver alone.
+The checked [owned-call closure matrix](M3_OWNED_CALL_CLOSURE_MATRIX.md) binds these source claims
+to independently constructed cross-module IR, hostile mutations and exact resource evidence.
+Borrow arguments require
+matching live aliases with exact referent/access and cannot escape the call; unsupported graph
+categories, mismatched result type and wrong arity remain rejected. Its ordered
+argument plan uses each declared parameter type, not the result type as a shorthand for all
+parameters. String or `Vec<String>` results therefore still use generic call preparation when the
+parameter list is not the legacy zero/one same-type signature.
+
+Arguments evaluate left to right exactly once. Copy arguments remain Copy values; owned arguments
+must produce distinct complete available owners through the existing move, constructor, clone or
+call operations. Exact contextual type checks and ownership checks occur during preparation.
+Neither an implicit clone nor a fabricated projected owner repairs a mismatch or repeated use.
+Nested calls finish their own argument preparation and transfer before supplying a result to the
+enclosing expression.
+
+While an argument is being prepared, the caller still owns every completed argument temporary.
+Its failure cleanup includes those temporaries and other pending roots in reverse completion
+order. Only after all arguments complete does the call transfer its non-Copy inputs in signature
+order. Copy arguments have no ownership-transfer entry. The call's `CallTrap` cleanup excludes
+the transferred inputs and includes the caller's remaining owners. The callee is responsible for
+its inputs if it traps; successful return supplies one exact result, owned only when non-Copy.
+The mandatory IR verifier remains authority for call identity, argument types, owner exclusion,
+cleanup, acyclicity and static call-depth limits.
+
+Borrow/value argument preparation retains source declaration order. The final verified call
+encodes its canonical value prefix and borrow suffix only after preparation; that partition
+does not reorder effects. Only by-value owned operands transfer ownership. The caller retains
+lexical end responsibility, and formal borrows do not acquire fabricated local owners.
+
+Consumption rechecks the immutable catalog signature, ordered prepared result identities and
+actual emitted argument types. It replays exactly the recorded owner transfers and verifies the
+final ownership and preparation facts. A nested returned constructor consumes the call result
+as its ordinary exact child; it does not create a second ownership or cleanup convention.
+
+## Shared preparation and static operations
+
+The generic route uses the existing typed decisions and shared preparation summary for nested
+construction, movement, explicit clone, calls and replacement, including admitted #261 handle
+operands. Semantic validation
+and resource replay complete before actual source-state mutation. Held ancestor credits and
+future commit transitions remain part of the same plan; allocation of a result identity is not
+permission to consume an input early. Rejected preparation leaves the original bindings,
+pending owners, projection masks, enum facts, cleanup plans and counters unchanged.
+
+The [static subobject adapters](M3_GENERIC_STATIC_PLACES.md) retain exact Struct-field and constant
+FixedArray identity without weakening legacy one-site transfer rules. A Copy
+read does not consume that subobject. Moving a complete non-Copy subobject records its moved mask
+while leaving the enclosing root responsible for its remaining contents. Static replacement
+requires an exact complete mutable target both before and after RHS preparation, commits the
+prepared value and drops only the old target subtree. Unavailable or overlapping subobjects are
+not repaired by a whole-root move or implicit initialization.
+
+Non-handle structural clone reuses the [canonical clone core](M3_GENERIC_CLONE_CORE.md), including
+its retained source and recursive destination frontier. Handle-containing graphs instead use the
+distinct verified handle-aware clone contract: Shared/Weak leaves perform explicit count clones,
+not payload clones, with exact initialized-prefix cleanup. The non-handle clone contract remains
+unchanged. Ordinary Vec operations reuse the
+[Vec operation contract](M3_GENERIC_VEC_OPERATIONS.md): Copy indexing, explicit owned clone,
+checked replacement and the existing Vec push authority. Indexed replacement checks bounds
+before RHS preparation and commits only the completed exact element. Internal transient indexed
+authority remains distinct from persistent explicit source `Borrow`/`BorrowMut` aliases.
+
+The static-address adapter resolves named owners and supported static field/array paths.
+Ordinary FixedArray/Vec access additionally admits exact fresh private-call/construction results
+for observation and chained FixedArray/Vec indices from initialized binding-derived containers.
+`BeginIndexedAccess` and `ProjectIndexedBorrow` preserve the original conflict region without
+inventing a dynamic place or cloning an intermediate container. Each bounds check precedes the
+next index; replacement checks the complete chain before RHS preparation. Fresh Copy storage is
+explicitly initialized and has no owned cleanup root; fresh owned storage is retained through
+failure and dropped after final access end. Fresh bases are not mutable assignment targets.
+Fresh Vec observation retains its real owned container even when its elements are Copy, using
+the same checked transient begin/end and final owner drop. Checked descendants can alternate
+FixedArray and Vec referents, using sealed fixed lengths or the selected Vec's runtime length
+without creating independent element owners or allocating intermediate clones.
+
+The [indexed-source adapter](M3_INDEXED_SOURCE_OPERATIONS.md) also admits lexical nested
+borrowing from named complete containers. It builds a checked transient chain, then
+`BindIndexedBorrow` transfers the exact referent/access/region into a fresh persistent alias
+while clearing transient projectability. This infallible transfer has no owner, cleanup plan
+or active-count increase. The original static prefix remains the conflict region; after the
+first checked access, further nesting uses exact FixedArray/Vec referents. Alias replacement and calls
+reuse the existing exact ownership and cleanup contracts, and scope exit ends the bound child.
+Arbitrary fresh expression shapes, borrowing fresh temporaries and fresh mutation remain
+outside this adapter. Implemented Shared/Weak source operations reuse #260's sealed authority
+through the #261 adapter; this does not grant target runtime or public-profile support.
+
+## Evidence and remaining scope
+
+`generic_call_source` authenticates the source fixture before lowering and checks mixed owned/Copy
+argument order, multiple owned transfers, retained caller trap cleanup, callee input cleanup,
+String/exact-Vec generic fallback, nested returned constructors and deterministic invalid-input
+rejection. `aggregate_contracts` additionally checks recursive owned parameters with a scalar
+result and complete reverse cleanup. Ordinary Vec and shared-summary resource tests provide
+separate operation and exact/first-extra state-retention evidence.
+
+The #261 `recursive_and_multi_variant_enum_payloads_lower_with_exact_cleanup_and_replay` test
+provides parameter-fed type-domain evidence: exact incoming recursive/multi-variant enum values
+reach handle operations and mandatory verified IR. It checks payloadless-variant metadata and
+recursive Shared indirection, not fresh construction of each variant or a recursive value chain.
+
+These are compiler proofs, not allocator fault-execution receipts. The complete #278 assessment
+must also account for its operation/extraction and reusable-composition obligations; passing the
+call matrix alone does not close that issue. Broader CFG composition, #263 fault evidence and
+later runtime consumers retain their existing ownership in the composition plan. No target
+runtime, backend route or public profile is enabled by the handle adapter.

@@ -1,0 +1,10 @@
+
+running 5 tests
+test diagnostic_sessions::formatting::data_ownership_tests::m3_document_limit_accepts_exact_cap_and_rejects_plus_one ... ok
+test diagnostic_sessions::formatting::data_ownership_tests::m3_multifile_formatting_is_idempotent_and_preserves_verified_syntax ... ok
+test diagnostic_sessions::formatting::data_ownership_tests::m3_range_rejects_partial_declarations_and_keeps_other_files ... ok
+test diagnostic_sessions::formatting::data_ownership_tests::m3_two_file_setup_has_exact_canonical_layout ... ok
+test diagnostic_sessions::formatting::data_ownership_tests::m3_admitted_ownership_constructs_keep_topology_after_layout ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 539 filtered out; finished in 4.51s
+

@@ -1,0 +1,22 @@
+
+running 17 tests
+test explicit_m2_selects_entrypoint_and_rejects_unavailable_definition ... ok
+test cancelled_and_stale_ids_remain_reserved_until_response_emission ... ok
+test formatting::formatting_cancel_change_close_and_recovery_are_revision_bound ... ok
+test formatting::formatting_rechecks_revision_at_actual_transport_emission ... ok
+test formatting::formatting_rejects_unready_partial_foreign_and_invalid_coordinates_without_result ... ok
+test formatting::formatting_returns_exact_document_and_range_edits ... ok
+test immediate_responses_release_only_after_successful_flush_and_inventory_is_bounded ... ok
+test invalid_profile_cannot_initialize_or_admit_source ... ok
+test framing_is_exact_bounded_and_recovers_between_frames ... ok
+test malformed_foreign_and_unsupported_messages_cannot_publish ... ok
+test numeric_and_string_ids_are_distinct_connection_authorities ... ok
+test open_change_and_close_publish_revision_bound_diagnostics ... ok
+test queued_definition_is_cancelled_and_next_request_recovers ... ok
+test same_length_change_suppresses_stale_definition ... ok
+test shutdown_requires_ordered_exit ... ok
+test unicode_positions_reject_split_scalars_and_recover ... ok
+test m3_saved_import_and_open_entry_format_then_reject_changed_dependency ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.62s
+

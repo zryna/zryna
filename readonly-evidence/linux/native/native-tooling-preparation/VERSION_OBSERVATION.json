@@ -1,0 +1,94 @@
+{
+  "nodeVersion": "v22.22.1",
+  "rustRelease": "1.97.1",
+  "cargoRelease": "1.97.1",
+  "raw": {
+    "node": {
+      "path": "/home/runner/work/_temp/native-tooling-preparation/NODE_VERSION.stdout",
+      "bytes": 9,
+      "sha256": "d757d43c53951704e32c04b9b1e6b4cc65713b659e72fcdbb02f5200675c7fd8"
+    },
+    "cargo": {
+      "path": "/home/runner/work/_temp/native-tooling-preparation/CARGO_VERSION.stdout",
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    "rustc": {
+      "path": "/home/runner/work/_temp/native-tooling-preparation/RUSTC_VERSION.stdout",
+      "bytes": 196,
+      "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+    }
+  },
+  "toolPins": {
+    "node": {
+      "path": "/opt/hostedtoolcache/node/22.22.1/x64/bin/node",
+      "bytes": 124674920,
+      "sha256": "243fd8938011479f41b3de101842150fa990f33fbbb3f7aabd330857f2d79e1d",
+      "identity": {
+        "dev": "2049",
+        "ino": "8950836",
+        "bytes": "124674920",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1792339057627355712",
+        "changedNs": "1792339057627355712"
+      }
+    },
+    "cargo": {
+      "path": "/home/runner/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo",
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "identity": {
+        "dev": "2049",
+        "ino": "8944460",
+        "bytes": "42839824",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1792339048240320298",
+        "changedNs": "1792339048342320532"
+      }
+    },
+    "rustc": {
+      "path": "/home/runner/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustc",
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "identity": {
+        "dev": "2049",
+        "ino": "8944544",
+        "bytes": "645000",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1792339050446325562",
+        "changedNs": "1792339054949649334"
+      }
+    },
+    "git": {
+      "path": "/usr/bin/git",
+      "bytes": 4576040,
+      "sha256": "d4d2ba562243015206d4248edfec871a74786499292d00ed072dbca2f5ae8073",
+      "identity": {
+        "dev": "2049",
+        "ino": "79507",
+        "bytes": "4576040",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1786408018000000000",
+        "changedNs": "1791840031592089313"
+      }
+    },
+    "ownerRuntime": {
+      "path": "/usr/bin/python3.12",
+      "bytes": 8020928,
+      "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+      "identity": {
+        "dev": "2049",
+        "ino": "8192",
+        "bytes": "8020928",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1788171506000000000",
+        "changedNs": "1791839175373614691"
+      }
+    }
+  }
+}

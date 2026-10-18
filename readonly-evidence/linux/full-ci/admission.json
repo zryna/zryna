@@ -1,0 +1,386 @@
+{
+  "selection": {
+    "repository": "zryna/zryna",
+    "commit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+    "tree": "3fa38d7b62b06a64ac5385d610be164f9b1961b8"
+  },
+  "main": {
+    "commit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+    "tree": "3fa38d7b62b06a64ac5385d610be164f9b1961b8",
+    "requiredContexts": [
+      "adapter",
+      "m0",
+      "m2",
+      "m3",
+      "rust (ubuntu-latest)",
+      "rust (windows-latest)"
+    ]
+  },
+  "inventory": {
+    "jobs": [
+      {
+        "name": "portable setup / reproduce portable setup (ubuntu-24.04)",
+        "workflowPath": ".github/workflows/portable-setup.yml",
+        "jobKey": "build",
+        "matrix": {
+          "os": "ubuntu-24.04"
+        }
+      },
+      {
+        "name": "portable setup / reproduce portable setup (windows-2022)",
+        "workflowPath": ".github/workflows/portable-setup.yml",
+        "jobKey": "build",
+        "matrix": {
+          "os": "windows-2022"
+        }
+      },
+      {
+        "name": "portable setup / fresh portable acceptance (ubuntu-24.04)",
+        "workflowPath": ".github/workflows/portable-setup.yml",
+        "jobKey": "accept",
+        "matrix": {
+          "os": "ubuntu-24.04"
+        }
+      },
+      {
+        "name": "portable setup / fresh portable acceptance (windows-2022)",
+        "workflowPath": ".github/workflows/portable-setup.yml",
+        "jobKey": "accept",
+        "matrix": {
+          "os": "windows-2022"
+        }
+      },
+      {
+        "name": "m6 installed editor / installed editor (ubuntu-24.04)",
+        "workflowPath": ".github/workflows/m6-installed-editor.yml",
+        "jobKey": "installed-editor",
+        "matrix": {
+          "os": "ubuntu-24.04"
+        }
+      },
+      {
+        "name": "m6 installed editor / installed editor (windows-2022)",
+        "workflowPath": ".github/workflows/m6-installed-editor.yml",
+        "jobKey": "installed-editor",
+        "matrix": {
+          "os": "windows-2022"
+        }
+      },
+      {
+        "name": "fast contract checks",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "fast-contracts",
+        "matrix": {}
+      },
+      {
+        "name": "route contract checks",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "route-contracts",
+        "matrix": {}
+      },
+      {
+        "name": "owned data quick (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "owned-data-quick",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "owned data quick (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "owned-data-quick",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "preflight",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "preflight",
+        "matrix": {}
+      },
+      {
+        "name": "rust (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "rust",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "rust (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "rust",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "adapter (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "adapter-platform",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "adapter (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "adapter-platform",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "adapter",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "adapter",
+        "matrix": {}
+      },
+      {
+        "name": "m2 (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m2-platform",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "m2 (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m2-platform",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "m2",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m2",
+        "matrix": {}
+      },
+      {
+        "name": "m3 (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m3-platform",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "m3 (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m3-platform",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "m3",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m3",
+        "matrix": {}
+      },
+      {
+        "name": "m0",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m0",
+        "matrix": {}
+      },
+      {
+        "name": "Diagnostic protocol (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "diagnostics-contract",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "Diagnostic protocol (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "diagnostics-contract",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "package release contract (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "package-release-contract",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "package release contract (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "package-release-contract",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "distribution release contract (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "distribution-release-contract",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "distribution release contract (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "distribution-release-contract",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "published beta clean host (x86_64-unknown-linux-gnu)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "published-release-clean-host",
+        "matrix": {
+          "os": "ubuntu-24.04",
+          "target": "x86_64-unknown-linux-gnu"
+        }
+      },
+      {
+        "name": "published beta clean host (x86_64-pc-windows-msvc)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "published-release-clean-host",
+        "matrix": {
+          "os": "windows-2022",
+          "target": "x86_64-pc-windows-msvc"
+        }
+      },
+      {
+        "name": "Provider conformance v4 (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "provider-conformance-v4",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "Provider conformance v4 (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "provider-conformance-v4",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "WIT capability contract (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "wit-capability-contract",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "WIT capability contract (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "wit-capability-contract",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "m4 (ubuntu-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m4-platform",
+        "matrix": {
+          "os": "ubuntu-latest"
+        }
+      },
+      {
+        "name": "m4 (windows-latest)",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m4-platform",
+        "matrix": {
+          "os": "windows-latest"
+        }
+      },
+      {
+        "name": "m4 browser / pinned browser (ubuntu-22.04)",
+        "workflowPath": ".github/workflows/browser-conformance.yml",
+        "jobKey": "conformance",
+        "matrix": {
+          "os": "ubuntu-22.04"
+        }
+      },
+      {
+        "name": "m4 browser / pinned browser (windows-2022)",
+        "workflowPath": ".github/workflows/browser-conformance.yml",
+        "jobKey": "conformance",
+        "matrix": {
+          "os": "windows-2022"
+        }
+      },
+      {
+        "name": "m4 installed / fresh installed H1 (ubuntu-24.04)",
+        "workflowPath": ".github/workflows/installed-command-h1.yml",
+        "jobKey": "qualify",
+        "matrix": {
+          "os": "ubuntu-24.04"
+        }
+      },
+      {
+        "name": "m4 installed / fresh installed H1 (windows-2022)",
+        "workflowPath": ".github/workflows/installed-command-h1.yml",
+        "jobKey": "qualify",
+        "matrix": {
+          "os": "windows-2022"
+        }
+      },
+      {
+        "name": "m4",
+        "workflowPath": ".github/workflows/ci.yml",
+        "jobKey": "m4",
+        "matrix": {}
+      }
+    ],
+    "workflowSources": [
+      {
+        "path": ".github/workflows/ci.yml",
+        "bytes": 34527,
+        "sha256": "204df1a4849cda57fde57e4c0e581294181db6ebde3a8133fe60a3dd1c801601",
+        "gitBlob": "7372d989682ad055baf394837dccb319d493ba1d"
+      },
+      {
+        "path": ".github/workflows/portable-setup.yml",
+        "bytes": 4276,
+        "sha256": "4fb21536ca311e28a2f90c4a6a9576cf03e98f3f176abadf6b2f4ef1a2685ece",
+        "gitBlob": "4886c92f53da1de424b603dd55ef7f77a47bef05"
+      },
+      {
+        "path": ".github/workflows/m6-installed-editor.yml",
+        "bytes": 5922,
+        "sha256": "f19e061ab44e788b926fe6408962b3a70d031de9efefbf29735a3a3845228b85",
+        "gitBlob": "9fcb756e86ab72ff2803c5595a51f2647600510b"
+      },
+      {
+        "path": ".github/workflows/browser-conformance.yml",
+        "bytes": 4326,
+        "sha256": "dd94fb12379c91825a40f8eb7f4a92a8e9a8f23ffcc40de9b656e92f42f6c2c0",
+        "gitBlob": "96af499badd98048c66263aaa6c274f4c77cf5b9"
+      },
+      {
+        "path": ".github/workflows/installed-command-h1.yml",
+        "bytes": 5308,
+        "sha256": "37f9945966567f50ad44beefe4f576a42cfc1ce429cfdf23a3a3140d16bf6cea",
+        "gitBlob": "4e53d6f009faef73c3f1654fc907ea2f25623e29"
+      }
+    ]
+  },
+  "ci": {
+    "workflowPath": ".github/workflows/ci.yml",
+    "runId": 39142787669,
+    "runAttempt": 1,
+    "headSha": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+    "headTree": "3fa38d7b62b06a64ac5385d610be164f9b1961b8",
+    "conclusion": "success",
+    "jobsSha256": "b22b0a388bf063f8752a0eb48a524ede1d34d6e11d17703e83c9802cf544442c"
+  }
+}

@@ -1,0 +1,8 @@
+
+running 3 tests
+test standalone_project_cannot_compile_undeclared_state_source ... ok
+test standalone_project_root_link_is_rejected_without_output ... ok
+test standalone_project_builds_and_runs_from_explicit_separate_roots ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 2.11s
+

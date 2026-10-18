@@ -1,0 +1,503 @@
+{
+  "format": "zryna.m6-installed-editor.v1",
+  "source": {
+    "commit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+    "tree": "3fa38d7b62b06a64ac5385d610be164f9b1961b8"
+  },
+  "editor": {
+    "version": "1.138.0",
+    "binary": {
+      "path": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/editor/VSCode-linux-x64/code",
+      "bytes": 219843800,
+      "sha256": "34912494509486296a3bd9aecb512694c98523d0f6f23cfceb5a95b5088c721b",
+      "identity": {
+        "dev": "2049",
+        "ino": "9175596",
+        "bytes": "219843800",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1787778562000000000",
+        "changedNs": "1792343404767821439"
+      }
+    },
+    "productCommit": "7debcd0e2acdea1c52de81bf9ee1620444407dda",
+    "archive": {
+      "path": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/authenticated-editor.archive",
+      "bytes": 344482658,
+      "sha256": "59fb0f88eab2fe2e3a053ac020e18fcb2b5c113d255e41c82d26302b675d580c",
+      "identity": {
+        "dev": "2049",
+        "ino": "8964263",
+        "bytes": "344482658",
+        "links": "1",
+        "mode": "33024",
+        "modifiedNs": "1792343401886791405",
+        "changedNs": "1792343402388796638"
+      },
+      "official": {
+        "platform": "linux-x64",
+        "bytes": 344482658,
+        "sha256": "59fb0f88eab2fe2e3a053ac020e18fcb2b5c113d255e41c82d26302b675d580c",
+        "url": "https://vscode.download.prss.microsoft.com/dbazure/download/stable/7debcd0e2acdea1c52de81bf9ee1620444407dda/code-stable-x64-1789458585.tar.gz"
+      },
+      "originalCapture": {
+        "path": "/home/runner/work/_temp/m6-editor-material/editor.tar.gz",
+        "bytes": 344482658,
+        "sha256": "59fb0f88eab2fe2e3a053ac020e18fcb2b5c113d255e41c82d26302b675d580c",
+        "identity": {
+          "dev": "2049",
+          "ino": "8964196",
+          "bytes": "344482658",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1792343383639612971",
+          "changedNs": "1792343384416620160"
+        }
+      }
+    },
+    "inventorySha256": "f971a0d629acf9092f5ba973eb1007381d394749730fe96fd8d762ffc2fe06b8"
+  },
+  "setup": {
+    "digest": "4d5611a147c4a51cc4e01935253cd10e74e09ff47cad56d835ed7a0a497c3a62",
+    "installedExtension": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/extensions/zryna.zryna-0.5.0",
+    "payload": {
+      "LICENSE.txt": {
+        "bytes": 11344,
+        "sha256": "0002a5d91c25d453f5f72bfc792f427480c68c8e44834b8f0958787ad149f73f"
+      },
+      "changelog.md": {
+        "bytes": 3624,
+        "sha256": "2d2e2e87a1cd9946a37d22f17fcafe6e5d94196fa6f0a6fd113225f84823a32c"
+      },
+      "package.json": {
+        "bytes": 3977,
+        "sha256": "9de076e1b602dfd381b23fcccb19dc4764c63a2d785e418044c1de7d6a1bcfa9"
+      },
+      "readme.md": {
+        "bytes": 12257,
+        "sha256": "a62930cb3ff286b248dbfe606e7c887c3e3073a1422c65de80e483b82c7a9d92"
+      },
+      "src/connection.cjs": {
+        "bytes": 5931,
+        "sha256": "3412357a4b7d56553ab9da06033d633e121bc373ea3e62a73967b103a896460e"
+      },
+      "src/extension.cjs": {
+        "bytes": 14532,
+        "sha256": "0c16be20ec24df3ad9994ef00291fc5ff61425d638fa085642dbbeda5538044f"
+      },
+      "src/installation.cjs": {
+        "bytes": 4492,
+        "sha256": "73e4836939e29f5ee80ff0284ae7b7d03bc6e41c3c7a2f2baad8490ea6fb332a"
+      },
+      "src/run-command.cjs": {
+        "bytes": 6160,
+        "sha256": "a2b53814ce30a6d3edd8e1e37fac2328bbe0d9bb8804cc4a8ed3566132519272"
+      },
+      "src/run-input.cjs": {
+        "bytes": 5415,
+        "sha256": "be6282dcbd2f063ac0925737f0873de542555eec46dd3fcb45ab26bc36cb4c03"
+      },
+      "src/run-process.cjs": {
+        "bytes": 3135,
+        "sha256": "b4b7293dcc1c28357cbf142801759a87ba722e974d99b320c8b1c37654395162"
+      },
+      "src/run-project.cjs": {
+        "bytes": 7845,
+        "sha256": "edd7135b38ed10b72f07275d88b4a14436544d2de2235519a376d45812660257"
+      },
+      "syntaxes/zryna.tmLanguage.json": {
+        "bytes": 964,
+        "sha256": "a3f1cb45590164e5e8b2dcbea61c2a5849eb281623054898e37ff8d451d3e565"
+      }
+    },
+    "installer": {
+      "format": "zryna.installed-editor-installer.v1",
+      "identity": {
+        "format": "zryna.installed-editor-vsix-source.v1",
+        "vsix": {
+          "path": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/zryna-setup-0.1.0-candidate.3-x86_64-unknown-linux-gnu/editor/zryna-0.5.0.vsix",
+          "bytes": 30092,
+          "sha256": "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec",
+          "identity": {
+            "dev": "2049",
+            "ino": "9175573",
+            "bytes": "30092",
+            "links": "1",
+            "mode": "33188",
+            "modifiedNs": "1792343400808344934",
+            "changedNs": "1792343400808344934"
+          }
+        },
+        "payload": {
+          "LICENSE.txt": {
+            "bytes": 11344,
+            "sha256": "0002a5d91c25d453f5f72bfc792f427480c68c8e44834b8f0958787ad149f73f"
+          },
+          "changelog.md": {
+            "bytes": 3624,
+            "sha256": "2d2e2e87a1cd9946a37d22f17fcafe6e5d94196fa6f0a6fd113225f84823a32c"
+          },
+          "package.json": {
+            "bytes": 3977,
+            "sha256": "9de076e1b602dfd381b23fcccb19dc4764c63a2d785e418044c1de7d6a1bcfa9"
+          },
+          "readme.md": {
+            "bytes": 12257,
+            "sha256": "a62930cb3ff286b248dbfe606e7c887c3e3073a1422c65de80e483b82c7a9d92"
+          },
+          "src/connection.cjs": {
+            "bytes": 5931,
+            "sha256": "3412357a4b7d56553ab9da06033d633e121bc373ea3e62a73967b103a896460e"
+          },
+          "src/extension.cjs": {
+            "bytes": 14532,
+            "sha256": "0c16be20ec24df3ad9994ef00291fc5ff61425d638fa085642dbbeda5538044f"
+          },
+          "src/installation.cjs": {
+            "bytes": 4492,
+            "sha256": "73e4836939e29f5ee80ff0284ae7b7d03bc6e41c3c7a2f2baad8490ea6fb332a"
+          },
+          "src/run-command.cjs": {
+            "bytes": 6160,
+            "sha256": "a2b53814ce30a6d3edd8e1e37fac2328bbe0d9bb8804cc4a8ed3566132519272"
+          },
+          "src/run-input.cjs": {
+            "bytes": 5415,
+            "sha256": "be6282dcbd2f063ac0925737f0873de542555eec46dd3fcb45ab26bc36cb4c03"
+          },
+          "src/run-process.cjs": {
+            "bytes": 3135,
+            "sha256": "b4b7293dcc1c28357cbf142801759a87ba722e974d99b320c8b1c37654395162"
+          },
+          "src/run-project.cjs": {
+            "bytes": 7845,
+            "sha256": "edd7135b38ed10b72f07275d88b4a14436544d2de2235519a376d45812660257"
+          },
+          "syntaxes/zryna.tmLanguage.json": {
+            "bytes": 964,
+            "sha256": "a3f1cb45590164e5e8b2dcbea61c2a5849eb281623054898e37ff8d451d3e565"
+          }
+        },
+        "packageJsonBase64": "ewogICJuYW1lIjogInpyeW5hIiwKICAiZGlzcGxheU5hbWUiOiAiWnJ5bmEgRGV2ZWxvcGVyIFByZXZpZXciLAogICJkZXNjcmlwdGlvbiI6ICJTeW50YXggaGlnaGxpZ2h0aW5nLCBNMeKAk00zIGZvcm1hdHRpbmcgYW5kIGV4cGxpY2l0IEphdmFTY3JpcHQvV2ViQXNzZW1ibHkgUnVuIGZvciBacnluYS4iLAogICJ2ZXJzaW9uIjogIjAuNS4wIiwKICAicHVibGlzaGVyIjogInpyeW5hIiwKICAibGljZW5zZSI6ICJBcGFjaGUtMi4wIiwKICAicmVwb3NpdG9yeSI6IHsKICAgICJ0eXBlIjogImdpdCIsCiAgICAidXJsIjogImh0dHBzOi8vZ2l0aHViLmNvbS96cnluYS96cnluYS5naXQiLAogICAgImRpcmVjdG9yeSI6ICJlZGl0b3JzL3ZzY29kZS16cnluYSIKICB9LAogICJlbmdpbmVzIjogewogICAgInZzY29kZSI6ICJeMS44Mi4wIgogIH0sCiAgImNhdGVnb3JpZXMiOiBbCiAgICAiUHJvZ3JhbW1pbmcgTGFuZ3VhZ2VzIiwKICAgICJGb3JtYXR0ZXJzIgogIF0sCiAgIm1haW4iOiAiLi9zcmMvZXh0ZW5zaW9uLmNqcyIsCiAgImV4dGVuc2lvbktpbmQiOiBbCiAgICAid29ya3NwYWNlIgogIF0sCiAgImNhcGFiaWxpdGllcyI6IHsKICAgICJ1bnRydXN0ZWRXb3Jrc3BhY2VzIjogewogICAgICAic3VwcG9ydGVkIjogZmFsc2UKICAgIH0sCiAgICAidmlydHVhbFdvcmtzcGFjZXMiOiBmYWxzZQogIH0sCiAgImFjdGl2YXRpb25FdmVudHMiOiBbCiAgICAib25MYW5ndWFnZTp6cnluYSIKICBdLAogICJjb250cmlidXRlcyI6IHsKICAgICJjb21tYW5kcyI6IFsKICAgICAgeyAiY29tbWFuZCI6ICJ6cnluYS5zZWxlY3RFZGl0b3JQcm9maWxlIiwgInRpdGxlIjogIlpyeW5hOiBTZWxlY3QgRWRpdG9yIFByb2ZpbGUiIH0sCiAgICAgIHsgImNvbW1hbmQiOiAienJ5bmEuc2hvd0dsb2JhbERpYWdub3N0aWNzIiwgInRpdGxlIjogIlpyeW5hOiBTaG93IFByb2plY3QgRGlhZ25vc3RpY3MiIH0sCiAgICAgIHsgImNvbW1hbmQiOiAienJ5bmEucnVuIiwgInRpdGxlIjogIlpyeW5hOiBSdW4gU2F2ZWQgRmlsZSIgfSwKICAgICAgeyAiY29tbWFuZCI6ICJ6cnluYS5vcGVuR2VuZXJhdGVkSmF2YVNjcmlwdCIsICJ0aXRsZSI6ICJacnluYTogT3BlbiBHZW5lcmF0ZWQgSmF2YVNjcmlwdCIgfSwKICAgICAgeyAiY29tbWFuZCI6ICJ6cnluYS5yZXZlYWxSdW5PdXRwdXQiLCAidGl0bGUiOiAiWnJ5bmE6IFJldmVhbCBSdW4gT3V0cHV0IiB9CiAgICBdLAogICAgIm1lbnVzIjogewogICAgICAiZWRpdG9yL3RpdGxlIjogW3sgImNvbW1hbmQiOiAienJ5bmEucnVuIiwgIndoZW4iOiAiZWRpdG9yTGFuZ0lkID09IHpyeW5hICYmIGlzV29ya3NwYWNlVHJ1c3RlZCIsICJncm91cCI6ICJuYXZpZ2F0aW9uIiB9XQogICAgfSwKICAgICJncmFtbWFycyI6IFt7ICJsYW5ndWFnZSI6ICJ6cnluYSIsICJzY29wZU5hbWUiOiAic291cmNlLnpyeW5hIiwgInBhdGgiOiAiLi9zeW50YXhlcy96cnluYS50bUxhbmd1YWdlLmpzb24iIH1dLAogICAgImxhbmd1YWdlcyI6IFsKICAgICAgewogICAgICAgICJpZCI6ICJ6cnluYSIsCiAgICAgICAgImFsaWFzZXMiOiBbCiAgICAgICAgICAiWnJ5bmEiCiAgICAgICAgXSwKICAgICAgICAiZXh0ZW5zaW9ucyI6IFsKICAgICAgICAgICIuenJ5IgogICAgICAgIF0KICAgICAgfQogICAgXSwKICAgICJjb25maWd1cmF0aW9uIjogewogICAgICAidGl0bGUiOiAiWnJ5bmEiLAogICAgICAicHJvcGVydGllcyI6IHsKICAgICAgICAienJ5bmEuaW5zdGFsbGF0aW9uUGF0aCI6IHsKICAgICAgICAgICJ0eXBlIjogInN0cmluZyIsICJkZWZhdWx0IjogIiIsICJzY29wZSI6ICJhcHBsaWNhdGlvbiIsCiAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiQWJzb2x1dGUgcGF0aCB0byB0aGUgaW5kZXBlbmRlbnRseSB2ZXJpZmllZCBjb21wbGV0ZSBwb3J0YWJsZSBzZXR1cC4iCiAgICAgICAgfSwKICAgICAgICAienJ5bmEuaW5zdGFsbGF0aW9uRGlnZXN0IjogewogICAgICAgICAgInR5cGUiOiAic3RyaW5nIiwgImRlZmF1bHQiOiAiIiwgInNjb3BlIjogImFwcGxpY2F0aW9uIiwKICAgICAgICAgICJkZXNjcmlwdGlvbiI6ICJSZXZpZXdlZCBTSEEtMjU2IG9mIHNldHVwLmpzb24gc3VwcGxpZWQgd2l0aCB0aGUgdmVyaWZpZWQgY2FuZGlkYXRlLiIKICAgICAgICB9LAogICAgICAgICJ6cnluYS5jb21waWxlclBhdGgiOiB7CiAgICAgICAgICAidHlwZSI6ICJzdHJpbmciLAogICAgICAgICAgImRlZmF1bHQiOiAiIiwKICAgICAgICAgICJzY29wZSI6ICJhcHBsaWNhdGlvbiIsCiAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiQWJzb2x1dGUgaW5zdGFsbGVkIHYwLjIuMyB6cnluYSBjb21waWxlciBleGVjdXRhYmxlIGZvciBleHBsaWNpdCBSdW4uIFNlcGFyYXRlIGZyb20gdGhlIHNvdXJjZS1idWlsdCBsYW5ndWFnZSBzZXJ2ZXIuIgogICAgICAgIH0sCiAgICAgICAgInpyeW5hLnNlcnZlclBhdGgiOiB7CiAgICAgICAgICAidHlwZSI6ICJzdHJpbmciLAogICAgICAgICAgImRlZmF1bHQiOiAiIiwKICAgICAgICAgICJzY29wZSI6ICJhcHBsaWNhdGlvbiIsCiAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiQWJzb2x1dGUgcGF0aCB0byB0aGUgZXhwbGljaXRseSBpbnN0YWxsZWQgY29tcGF0aWJsZSB6cnluYS1sYW5ndWFnZS1zZXJ2ZXIgZXhlY3V0YWJsZS4iCiAgICAgICAgfSwKICAgICAgICAienJ5bmEuY29tcGlsZXJSb290IjogewogICAgICAgICAgInR5cGUiOiAic3RyaW5nIiwKICAgICAgICAgICJkZWZhdWx0IjogIiIsCiAgICAgICAgICAic2NvcGUiOiAiYXBwbGljYXRpb24iLAogICAgICAgICAgImRlc2NyaXB0aW9uIjogIkFic29sdXRlIHRydXN0ZWQgY29tcGlsZXIgY2hlY2tvdXQgd2l0aCB0aGUgcGlubmVkIGFkYXB0ZXIgaW5zdGFsbGVkLiBOb3QgdGhlIGVkaXRlZCBwcm9qZWN0IHJvb3QuIgogICAgICAgIH0sCiAgICAgICAgInpyeW5hLm5vZGVQYXRoIjogewogICAgICAgICAgInR5cGUiOiAic3RyaW5nIiwKICAgICAgICAgICJkZWZhdWx0IjogIiIsCiAgICAgICAgICAic2NvcGUiOiAiYXBwbGljYXRpb24iLAogICAgICAgICAgImRlc2NyaXB0aW9uIjogIkFic29sdXRlIHBhdGggdG8gdGhlIHBpbm5lZCBOb2RlLmpzIDIyLjIyLjEgZXhlY3V0YWJsZS4iCiAgICAgICAgfQogICAgICB9CiAgICB9CiAgfSwKICAienJ5bmFDb21wYXRpYmlsaXR5IjogewogICAgImNvbXBpbGVyVmVyc2lvbiI6ICIwLjIuMyIsCiAgICAicmVxdWlyZWRDYXBhYmlsaXRpZXMiOiB7CiAgICAgICJzY2FsYXItdjIiOiAic2NhbGFyLWZvcm1hdC12MSIsCiAgICAgICJjb250cm9sLWZsb3ctdjEiOiAiY29udHJvbC1mbG93LWZvcm1hdC12MSIsCiAgICAgICJkYXRhLW93bmVyc2hpcC12MSI6ICJkYXRhLW93bmVyc2hpcC1mb3JtYXQtdjEiCiAgICB9LAogICAgInNlcnZlclZlcnNpb24iOiAiMC41LjAiLAogICAgImluc3RhbGxhdGlvbkNhcGFiaWxpdHkiOiAicG9ydGFibGUtc2V0dXAtdjEiLAogICAgInNvdXJjZUJ1aWxkUmVxdWlyZWQiOiBmYWxzZSwKICAgICJyZWxlYXNlZENvbXBpbGVyQ29tcGF0aWJsZSI6IHRydWUsCiAgICAicHJvZmlsZXMiOiBbCiAgICAgICJzY2FsYXItdjIiLAogICAgICAiY29udHJvbC1mbG93LXYxIiwKICAgICAgImRhdGEtb3duZXJzaGlwLXYxIgogICAgXQogIH0sCiAgInNjcmlwdHMiOiB7CiAgICAiY2hlY2siOiAibm9kZSAtLWNoZWNrIHNyYy9leHRlbnNpb24uY2pzICYmIG5vZGUgLS1jaGVjayBzcmMvY29ubmVjdGlvbi5janMgJiYgbm9kZSAtLWNoZWNrIHNyYy9ydW4tY29tbWFuZC5janMgJiYgbm9kZSAtLWNoZWNrIHNyYy9ydW4taW5wdXQuY2pzICYmIG5vZGUgLS1jaGVjayBzcmMvcnVuLXByb2Nlc3MuY2pzICYmIG5vZGUgLS1jaGVjayBzcmMvcnVuLXByb2plY3QuY2pzIiwKICAgICJ0ZXN0IjogIm5vZGUgLS10ZXN0IHRlc3QvKi50ZXN0LmNqcyIsCiAgICAicGFja2FnZSI6ICJub2RlIC4uLy4uL3NjcmlwdHMvcGFja2FnZS1lZGl0b3IubWpzIgogIH0KfQo=",
+        "manifest": {
+          "bytes": 2651,
+          "sha256": "7e3c0369e883d2af7f2d4e1f2cb801819e64f5b05fa411bfcb8d005817f4b6e9"
+        }
+      },
+      "window": {
+        "before": 1792343417262,
+        "after": 1792343419447
+      },
+      "installedTimestamp": 1792343418312
+    }
+  },
+  "trust": {
+    "initialTrusted": false,
+    "action": "Exact fresh-folder normal trust dialog accepted",
+    "parentTrustSelected": false,
+    "workspaceName": "m6-exact-folder-m6e-AAlFci",
+    "interaction": "Actual pinned Playwright/CDP workbench UI"
+  },
+  "observed": {
+    "passed": true,
+    "editorVersion": "1.138.0",
+    "platform": "linux",
+    "checks": [
+      "explicit workspace trust",
+      "extension activation and verified installation",
+      "scalar profile and definition",
+      "real scalar JavaScript result",
+      "M2 profile and idempotent formatting",
+      "real M2 JavaScript result and open output",
+      "real M2 WebAssembly result",
+      "invalid-to-valid diagnostics and stale recovery",
+      "M3 saved-import formatting and idempotence"
+    ],
+    "definition": [
+      {
+        "uri": {
+          "$mid": 1,
+          "fsPath": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/m6-exact-folder-m6e-AAlFci/main.zry",
+          "external": "file:///home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/m6-exact-folder-m6e-AAlFci/main.zry",
+          "path": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/m6-exact-folder-m6e-AAlFci/main.zry",
+          "scheme": "file"
+        },
+        "range": [
+          {
+            "line": 0,
+            "character": 21
+          },
+          {
+            "line": 0,
+            "character": 25
+          }
+        ]
+      }
+    ],
+    "invalidDiagnostics": [
+      {
+        "severity": "Error",
+        "message": "function can fall through without returning its declared result",
+        "range": [
+          {
+            "line": 0,
+            "character": 38
+          },
+          {
+            "line": 0,
+            "character": 65
+          }
+        ],
+        "source": "Zryna",
+        "code": "ZRYNA-M2009"
+      },
+      {
+        "severity": "Error",
+        "message": "value name 'missing' is not in lexical scope",
+        "range": [
+          {
+            "line": 0,
+            "character": 55
+          },
+          {
+            "line": 0,
+            "character": 62
+          }
+        ],
+        "source": "Zryna",
+        "code": "ZRYNA-M2004"
+      }
+    ],
+    "recoveredDiagnostics": [],
+    "outcomes": [
+      {
+        "profile": "i32-v1",
+        "target": "javascript",
+        "outcome": {
+          "kind": "returned",
+          "type": "i32",
+          "value": 9
+        }
+      },
+      {
+        "profile": "control-flow-v1",
+        "target": "javascript",
+        "outcome": {
+          "kind": "returned",
+          "type": "i32",
+          "value": 13
+        }
+      },
+      {
+        "profile": "control-flow-v1",
+        "target": "webassembly",
+        "outcome": {
+          "kind": "returned",
+          "type": "i32",
+          "value": -13
+        }
+      }
+    ],
+    "hostRunMs": 35998,
+    "generated": [
+      {
+        "target": "javascript",
+        "file": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/profile/User/globalStorage/zryna.zryna/runs/run-2a8babda1e4fa0140d4211aa/.zryna/out/result.run/javascript/result.mjs",
+        "bytes": 1329,
+        "sha256": "72a7d640ab9056c266750a62b698a336d0e5ae6177bc3f2544d8b13ad9003df7",
+        "outcomes": [
+          {
+            "kind": "returned",
+            "type": "i32",
+            "value": 9
+          }
+        ],
+        "reportedFile": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/profile/User/globalStorage/zryna.zryna/runs/run-2a8babda1e4fa0140d4211aa/.zryna/out/result.run/javascript/result.mjs",
+        "retained": {
+          "path": "/home/runner/work/_temp/m6-installed-editor/generated/0.mjs",
+          "bytes": 1329,
+          "sha256": "72a7d640ab9056c266750a62b698a336d0e5ae6177bc3f2544d8b13ad9003df7"
+        }
+      },
+      {
+        "target": "javascript",
+        "file": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/profile/User/globalStorage/zryna.zryna/runs/run-5436de492287d3490b628d93/.zryna/out/result.run/javascript/result.mjs",
+        "bytes": 1827,
+        "sha256": "9a074f4e8676b5fa43ace9932afb984d1216b61c8119145292f0374a409c1868",
+        "outcomes": [
+          {
+            "kind": "returned",
+            "type": "i32",
+            "value": 13
+          }
+        ],
+        "reportedFile": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/profile/User/globalStorage/zryna.zryna/runs/run-5436de492287d3490b628d93/.zryna/out/result.run/javascript/result.mjs",
+        "retained": {
+          "path": "/home/runner/work/_temp/m6-installed-editor/generated/1.mjs",
+          "bytes": 1827,
+          "sha256": "9a074f4e8676b5fa43ace9932afb984d1216b61c8119145292f0374a409c1868"
+        }
+      },
+      {
+        "target": "webassembly",
+        "file": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/profile/User/globalStorage/zryna.zryna/runs/run-b78e19d9d03cae6e6968ba23/.zryna/out/result.run/webassembly/result.wasm",
+        "bytes": 122,
+        "sha256": "1b9dcb697f66ae3e2475b6bdcdcb0db30638c02727a08ee9d30d78ed77b9d950",
+        "outcomes": [
+          {
+            "kind": "returned",
+            "type": "i32",
+            "value": -13
+          }
+        ],
+        "reportedFile": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/profile/User/globalStorage/zryna.zryna/runs/run-b78e19d9d03cae6e6968ba23/.zryna/out/result.run/webassembly/result.wasm",
+        "retained": {
+          "path": "/home/runner/work/_temp/m6-installed-editor/generated/2.wasm",
+          "bytes": 122,
+          "sha256": "1b9dcb697f66ae3e2475b6bdcdcb0db30638c02727a08ee9d30d78ed77b9d950"
+        }
+      }
+    ],
+    "sourceInputs": {
+      "scalar": "export function main(left: i32, right: i32): i32 { return left + right; }\n",
+      "branch": "export function main(positive: bool, value: i32): i32 { if (positive) { return value; } else { return -value; } }\n",
+      "invalid": "export function main(value: i32): i32 { return value + missing; }\n"
+    },
+    "sourceInputSha256": {
+      "scalar": "ffbe994c95d8da0556ea38d0864b7e07b13821c3f2ae3648bcd631554c56fb55",
+      "branch": "b07a729f057bad9949e6ae08e1365d10f8634a009e467f1a061f64696e214aa9",
+      "invalid": "0bebe12b503dd52f9ae6a068a910642d8af96b1e438d9d1784d8f8dee7d008c9"
+    },
+    "installedExtension": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/extensions/zryna.zryna-0.5.0",
+    "installedExtensionRawPath": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/extensions/zryna.zryna-0.5.0",
+    "installedExtensionPhysicalBinding": {
+      "reportedFsPath": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/extensions/zryna.zryna-0.5.0",
+      "reportedRealPath": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/extensions/zryna.zryna-0.5.0",
+      "selectedRealPath": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci/extensions/zryna.zryna-0.5.0",
+      "physicalIdentity": {
+        "device": "2049",
+        "inode": "9178660"
+      }
+    },
+    "installedInventory": {
+      "entries": [
+        {
+          "path": ".vsixmanifest",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 2651,
+          "sha256": "7e3c0369e883d2af7f2d4e1f2cb801819e64f5b05fa411bfcb8d005817f4b6e9"
+        },
+        {
+          "path": "LICENSE.txt",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 11344,
+          "sha256": "0002a5d91c25d453f5f72bfc792f427480c68c8e44834b8f0958787ad149f73f"
+        },
+        {
+          "path": "changelog.md",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 3624,
+          "sha256": "2d2e2e87a1cd9946a37d22f17fcafe6e5d94196fa6f0a6fd113225f84823a32c"
+        },
+        {
+          "path": "package.json",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 3889,
+          "sha256": "8e3b34eb2241dc2223353ebac92476d2dbc7e4a11a14ac7060e4d0b523c45806"
+        },
+        {
+          "path": "readme.md",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 12257,
+          "sha256": "a62930cb3ff286b248dbfe606e7c887c3e3073a1422c65de80e483b82c7a9d92"
+        },
+        {
+          "path": "src",
+          "mode": 493,
+          "kind": "directory"
+        },
+        {
+          "path": "src/connection.cjs",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 5931,
+          "sha256": "3412357a4b7d56553ab9da06033d633e121bc373ea3e62a73967b103a896460e"
+        },
+        {
+          "path": "src/extension.cjs",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 14532,
+          "sha256": "0c16be20ec24df3ad9994ef00291fc5ff61425d638fa085642dbbeda5538044f"
+        },
+        {
+          "path": "src/installation.cjs",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 4492,
+          "sha256": "73e4836939e29f5ee80ff0284ae7b7d03bc6e41c3c7a2f2baad8490ea6fb332a"
+        },
+        {
+          "path": "src/run-command.cjs",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 6160,
+          "sha256": "a2b53814ce30a6d3edd8e1e37fac2328bbe0d9bb8804cc4a8ed3566132519272"
+        },
+        {
+          "path": "src/run-input.cjs",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 5415,
+          "sha256": "be6282dcbd2f063ac0925737f0873de542555eec46dd3fcb45ab26bc36cb4c03"
+        },
+        {
+          "path": "src/run-process.cjs",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 3135,
+          "sha256": "b4b7293dcc1c28357cbf142801759a87ba722e974d99b320c8b1c37654395162"
+        },
+        {
+          "path": "src/run-project.cjs",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 7845,
+          "sha256": "edd7135b38ed10b72f07275d88b4a14436544d2de2235519a376d45812660257"
+        },
+        {
+          "path": "syntaxes",
+          "mode": 493,
+          "kind": "directory"
+        },
+        {
+          "path": "syntaxes/zryna.tmLanguage.json",
+          "mode": 420,
+          "kind": "file",
+          "bytes": 964,
+          "sha256": "a3f1cb45590164e5e8b2dcbea61c2a5849eb281623054898e37ff8d451d3e565"
+        }
+      ],
+      "totalBytes": 82239,
+      "sha256": "214bf9da6993b5baa07f242ae064d41e4fd1c393235544b40c942d0a0406ff59"
+    }
+  },
+  "platform": {
+    "os": "linux",
+    "arch": "x64",
+    "display": "Native Linux editor under Xvfb virtual display"
+  },
+  "passed": 9,
+  "failed": 0,
+  "skipped": 0,
+  "productionAdmission": "not granted by this receipt",
+  "accepted": true,
+  "preparedOnly": false,
+  "stageRetained": "/home/runner/work/_temp/m6-editor-linux-39142787669-1/tmp/m6e-AAlFci",
+  "note": "Transient profile/materials retained for bounded owner cleanup; not public runtime authority."
+}

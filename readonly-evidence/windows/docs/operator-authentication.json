@@ -1,0 +1,36 @@
+{
+  "status": "official-docs-authenticated-and-source-bundle-identical",
+  "expected": {
+    "format": "zryna.m4-docs-artifact-expectations.v1",
+    "source": {
+      "commit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+      "tree": "3fa38d7b62b06a64ac5385d610be164f9b1961b8",
+      "ref": "refs/heads/main"
+    },
+    "registrySha256": "2f2ed6bb851d1dc665db0abe98ca5dff912bf9b7b4b03b4f7d5b58044b762361",
+    "matrixSha256": "a78558f1489c62f2d4a96b2befa2e2689a1473d5460bd05a79aca361cddd6517",
+    "manifestSha256": "fb9ec210b5b65469c2b807293465c59313eeca7a6ef8d6b1ac19041446c541be",
+    "expectationsSha256": "c3e8fee5942c4fe1556bdf4fa67b4c7782adafa8f3184dc9387149ab11c724ef",
+    "docsWorkflowSha256": "0545f410fe47c72a964b6333dd2f6e8f2cf57b7a315a9b0afc3737640cb0e18a",
+    "docsRunId": 39148614173,
+    "docsAttempt": 1,
+    "gateArtifact": {
+      "id": 12144536329,
+      "bytes": 327371,
+      "sha256": "320fcc697540660c74aa27d95a4d17ed9cf5588b8bd9f955968e7a69bebf5449",
+      "expiresAt": "2027-01-16T17:13:57Z"
+    },
+    "docsArtifact": {
+      "id": 12144476714,
+      "bytes": 1914594,
+      "sha256": "817168edfb0d5aea1c31eecf98555b93dd6fafa8b3731905c21d3caf2a23951a",
+      "expiresAt": "2027-01-16T17:13:57Z"
+    }
+  },
+  "ciRun": 39142787669,
+  "ciAttempt": 1,
+  "documents": 60,
+  "matchedFiles": 62,
+  "vendor": null,
+  "scope": "Original exact-source complete CI, six actual new-source lane artifacts and official docs publication gate authenticated; all official bundle bytes match independent frozen-source export. Website deployment and public compiler admission remain separate."
+}

@@ -1,0 +1,47 @@
+{
+  "format": "zryna.portable-acceptance.v1",
+  "sourceCommit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+  "manifestSha256": "08b5bb6273a18c7de48834289a54e36f8b9077ba9c21c28b5114e3d230e9ec7e",
+  "target": "x86_64-pc-windows-msvc",
+  "runtimePathIsolated": true,
+  "compilerStarter": {
+    "javascript": 42,
+    "webassembly": 42
+  },
+  "editorRun": {
+    "scalar": {
+      "javascript": 9,
+      "webassembly": 26
+    },
+    "controlFlow": {
+      "javascript": 10,
+      "webassembly": -6
+    }
+  },
+  "formatting": {
+    "scalar": true,
+    "controlFlow": true,
+    "dataOwnership": true
+  },
+  "diagnostics": {
+    "scalar": true,
+    "controlFlow": true
+  },
+  "scalarDefinition": true,
+  "sourcePreserved": {
+    "scalar": "d182e23e2b5b05cad522166c8a651e3b8c708dc5b2e1d46374a220c4eff04cee",
+    "controlFlow": "07e82b4b82cdd734022b64d579a521d6b5693bcac3be302dd05c9292bceb3e9f",
+    "dataOwnership": "706e5b97accae647a6772df16e2e62d54f3facb18e17a0187e610fdb20cd6b95",
+    "savedImport": "cb1e3e6942eba0fae3312833a51ed115162d10283660d38b97612859370e5489"
+  },
+  "relocated": true,
+  "mismatchRejected": true,
+  "substitutedWorkerRejected": true,
+  "missingWorkerRejected": true,
+  "environment": {
+    "platform": "win32",
+    "hostRelease": "10.0.20348",
+    "independentCleanMachine": false
+  },
+  "installation": "D:\\a\\_temp\\portable-acceptance\\relocated setup"
+}

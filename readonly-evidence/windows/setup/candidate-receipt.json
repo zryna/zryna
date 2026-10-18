@@ -1,0 +1,21 @@
+{
+  "format": "zryna.portable-setup-receipt.v1",
+  "status": "review-candidate",
+  "productionAdmission": "forbidden",
+  "sourceCommit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+  "sourceTree": "3fa38d7b62b06a64ac5385d610be164f9b1961b8",
+  "target": "x86_64-pc-windows-msvc",
+  "archive": {
+    "filename": "zryna-setup-0.1.0-candidate.3-x86_64-pc-windows-msvc.zip",
+    "size": 125329131,
+    "sha256": "3e0c0ac01c8dc3f53ef96500f4e66cdba3a1c8bc1e4cba9b1f0d7a8a8041fbe3"
+  },
+  "manifestSha256": "08b5bb6273a18c7de48834289a54e36f8b9077ba9c21c28b5114e3d230e9ec7e",
+  "serverSha256": "e583c775435d697e3201c4e65ae58b809457a34880de6cc0d53f9125760db640",
+  "vsixSha256": "428438f686653b71214636cd20431775b4ce0ab7ae62f09d94d1d1233c4d8ccd",
+  "compilerArchive": {
+    "path": "zryna-0.2.3-x86_64-pc-windows-msvc.zip",
+    "sha256": "e34c2ea2c4cc0d4d53867926419ffe8fa9aa97254b80aea9df266b815bdd83fc",
+    "size": 118001410
+  }
+}
