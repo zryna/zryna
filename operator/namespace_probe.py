@@ -14,8 +14,16 @@ assert os.geteuid() == 0 and len(cid) == 64
 subprocess.run(['mount', '--make-rprivate', '/'], check=True)
 # Replace only this private namespace's mount. A stacked bind leaves the
 # covered writable entry in mountinfo, which the unchanged reader rejects.
+original_mount = [line for line in Path('/proc/self/mountinfo').read_text().splitlines()
+                  if line.split(' - ')[0].split()[4] == '/sys/fs/cgroup']
+assert len(original_mount) == 1
+filesystem_options = original_mount[0].split(' - ')[1].split()[2].split(',')
+assert set(filesystem_options) <= {'rw', 'nsdelegate', 'memory_recursiveprot'} and 'rw' in filesystem_options
+# cgroup2 superblock features are shared across mount namespaces. Preserve
+# every existing feature while changing only this observer's mount flags.
+options = ['ro', 'nosuid', 'nodev', 'noexec'] + [v for v in filesystem_options if v != 'rw']
 subprocess.run(['umount', '/sys/fs/cgroup'], check=True)
-subprocess.run(['mount', '-t', 'cgroup2', '-o', 'ro,nosuid,nodev,noexec',
+subprocess.run(['mount', '-t', 'cgroup2', '-o', ','.join(options),
                 'cgroup2', '/sys/fs/cgroup'], check=True)
 runtime = root / 'namespace-run'
 runtime.mkdir(mode=0o755)

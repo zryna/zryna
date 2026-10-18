@@ -132,6 +132,9 @@ try:
     assert state['Id'] == cid and state['Name'] == '/' + name and state['Image'] == image
     run(['unshare', '--mount', '--', '/usr/bin/python3', '-I', '-B',
          str(Path(__file__).with_name('namespace_probe.py')), str(root), str(source), cid], timeout=30)
+    actual_mount = [line for line in Path('/proc/self/mountinfo').read_text().splitlines()
+                    if line.split(' - ')[0].split()[4] == '/sys/fs/cgroup']
+    assert actual_mount == result['originalCgroupMount'], 'original host cgroup mount features changed'
     result['status'] = 'host-compatibility-subset-passed'
 except BaseException as error:
     result['failure'] = {'type': type(error).__name__, 'message': str(error)}
