@@ -1,0 +1,78 @@
+{
+  "status": "actual-installed-supplement-pass",
+  "source": {
+    "repository": "zryna/zryna",
+    "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+    "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
+  },
+  "operator": "4f0a84f768be849031c3d2358ac5ecf3b94dfd7a",
+  "runId": 39171574840,
+  "attempt": 1,
+  "artifact": {
+    "id": 12154057981,
+    "bytes": 125331054,
+    "sha256": "5f360cc14a056b0e44d4bc2077717a775b41425ad55deb15278fe9058480ef3d",
+    "expiresAt": "2026-11-01T23:25:06Z"
+  },
+  "manifestSha256": "b3ae2a378b6ec336f86d2b50513f2e3801deed6d2562d6f49020240a2900a76b",
+  "serverSha256": "2846c28a6e5c3ff2232f2a8c8497c44ce2b6a5f4daf912445bec7d4ca8e6e5d9",
+  "clientCases": [
+    {
+      "id": "installed-forbidden-root",
+      "status": "pass",
+      "exitCode": 2
+    },
+    {
+      "id": "installed-forbidden-node",
+      "status": "pass",
+      "exitCode": 2
+    },
+    {
+      "id": "installed-unicode-crlf-astral-split",
+      "status": "pass",
+      "errorCode": -32602
+    },
+    {
+      "id": "installed-scalar-definition-recovery",
+      "status": "pass",
+      "definition": {
+        "uri": "file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry",
+        "range": {
+          "start": {
+            "line": 1,
+            "character": 25
+          },
+          "end": {
+            "line": 1,
+            "character": 26
+          }
+        }
+      }
+    },
+    {
+      "id": "installed-unsupported-method",
+      "status": "pass",
+      "errorCode": -32601
+    },
+    {
+      "id": "installed-recovery-after-unsupported",
+      "status": "pass",
+      "definition": {
+        "uri": "file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry",
+        "range": {
+          "start": {
+            "line": 1,
+            "character": 25
+          },
+          "end": {
+            "line": 1,
+            "character": 26
+          }
+        }
+      }
+    }
+  ],
+  "ownerCleanupConfirmed": true,
+  "sourceUnchanged": true,
+  "scope": "Actual fixed installed CLI and LSP supplement, no public setup admission or hostile containment claim."
+}

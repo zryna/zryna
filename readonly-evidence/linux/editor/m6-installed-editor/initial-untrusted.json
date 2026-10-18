@@ -1,0 +1,342 @@
+{
+  "initialTrusted": false,
+  "editorVersion": "1.138.0",
+  "workspaceBinding": {
+    "reportedFsPath": "/home/runner/work/_temp/m6-editor-linux-39171574840-1/tmp/m6e-ojO9ok/m6-exact-folder-m6e-ojO9ok",
+    "reportedRealPath": "/home/runner/work/_temp/m6-editor-linux-39171574840-1/tmp/m6e-ojO9ok/m6-exact-folder-m6e-ojO9ok",
+    "selectedRealPath": "/home/runner/work/_temp/m6-editor-linux-39171574840-1/tmp/m6e-ojO9ok/m6-exact-folder-m6e-ojO9ok",
+    "physicalIdentity": {
+      "device": "2049",
+      "inode": "9178694"
+    }
+  },
+  "installedExtension": "/home/runner/work/_temp/m6-editor-linux-39171574840-1/tmp/m6e-ojO9ok/extensions/zryna.zryna-0.5.0",
+  "initialRegistry": {
+    "registered": false,
+    "active": null,
+    "path": null
+  },
+  "initialRegistryBinding": null,
+  "untrustedLanguageAttempt": {
+    "kind": "opened-zry-file",
+    "forcedLanguageSelection": false,
+    "uri": "file:///home/runner/work/_temp/m6-editor-linux-39171574840-1/tmp/m6e-ojO9ok/m6-exact-folder-m6e-ojO9ok/untrusted.zry",
+    "initialDocument": {
+      "registry": {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      "languageId": "plaintext",
+      "state": "plaintext-language-disabled",
+      "physicalBinding": null
+    },
+    "samples": 20,
+    "durationMs": 1285,
+    "registryObservations": [
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      },
+      {
+        "registered": false,
+        "active": null,
+        "path": null
+      }
+    ],
+    "documentObservations": [
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      },
+      {
+        "registry": {
+          "registered": false,
+          "active": null,
+          "path": null
+        },
+        "languageId": "plaintext",
+        "state": "plaintext-language-disabled",
+        "physicalBinding": null
+      }
+    ],
+    "diagnosticsAbsent": true
+  }
+}

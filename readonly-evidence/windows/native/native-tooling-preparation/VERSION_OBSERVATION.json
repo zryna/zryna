@@ -1,0 +1,94 @@
+{
+  "nodeVersion": "v22.22.1",
+  "rustRelease": "1.97.1",
+  "cargoRelease": "1.97.1",
+  "raw": {
+    "node": {
+      "path": "D:\\a\\_temp\\native-tooling-preparation\\NODE_VERSION.stdout",
+      "bytes": 10,
+      "sha256": "b9ede01cf49e367f8fb4895ae1d68828f013ed3e462f4f1a82e1938734a01472"
+    },
+    "cargo": {
+      "path": "D:\\a\\_temp\\native-tooling-preparation\\CARGO_VERSION.stdout",
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    "rustc": {
+      "path": "D:\\a\\_temp\\native-tooling-preparation\\RUSTC_VERSION.stdout",
+      "bytes": 194,
+      "sha256": "7fad09dd8c16d49de37932475436003b5b1763c1015c5ce081ad7692db368ca3"
+    }
+  },
+  "toolPins": {
+    "node": {
+      "path": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "bytes": 87059456,
+      "sha256": "923a41f268ab49ede2e3363fbdd9e790609e385c6f3ca880b4ee9a56a8133e5a",
+      "identity": {
+        "dev": "1692368384",
+        "ino": "2251799814986281",
+        "bytes": "87059456",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1772662069000000000",
+        "changedNs": "1792355946841133100"
+      }
+    },
+    "cargo": {
+      "path": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+      "bytes": 31278592,
+      "sha256": "ddfbad20b31b918d3439d070945ec59bbfe037a6ec0ab5b584459e69c8b37d1b",
+      "identity": {
+        "dev": "1692368384",
+        "ino": "844424931433009",
+        "bytes": "31278592",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1792355935190168400",
+        "changedNs": "1792355935332314300"
+      }
+    },
+    "rustc": {
+      "path": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+      "bytes": 110592,
+      "sha256": "cf79cfd77b0a144c56a0a6af6bf10bcdf095a73718cd4bf2b9d4fe2d2cbded55",
+      "identity": {
+        "dev": "1692368384",
+        "ino": "1125899908143990",
+        "bytes": "110592",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1792355937788471400",
+        "changedNs": "1792355941196827500"
+      }
+    },
+    "git": {
+      "path": "C:\\Program Files\\Git\\bin\\git.exe",
+      "bytes": 45400,
+      "sha256": "54bda91c773c6bba2b970424423cfcb80552d92dc6967d766f98931fe1251a54",
+      "identity": {
+        "dev": "1692368384",
+        "ino": "844424931435480",
+        "bytes": "45400",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1791227498000000000",
+        "changedNs": "1791848786641112500"
+      }
+    },
+    "ownerRuntime": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "bytes": 301368,
+      "sha256": "bfb46af89433268872ddb43d1ca7a3f433452ee91ed356a9786940f90118e285",
+      "identity": {
+        "dev": "1692368384",
+        "ino": "1125899907185692",
+        "bytes": "301368",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1788383930000000000",
+        "changedNs": "1791842331507830000"
+      }
+    }
+  }
+}

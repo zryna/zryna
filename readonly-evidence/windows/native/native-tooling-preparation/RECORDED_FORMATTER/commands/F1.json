@@ -1,0 +1,3491 @@
+{
+  "requested": {
+    "program": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+    "args": [
+      "test",
+      "--locked",
+      "--offline",
+      "-p",
+      "zryna-driver",
+      "--lib",
+      "diagnostic_sessions::tests::formatting::",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "D:\\a\\zryna\\zryna\\source"
+  },
+  "supervisorPid": 1224,
+  "rootPid": 2852,
+  "pins": {
+    "runtime": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "bytes": 301368,
+      "sha256": "bfb46af89433268872ddb43d1ca7a3f433452ee91ed356a9786940f90118e285",
+      "identity": {
+        "dev": "1692368384",
+        "ino": "1125899907185692",
+        "bytes": "301368",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1788383930000000000",
+        "changedNs": "1791842331507830000"
+      }
+    },
+    "helper": {
+      "path": "D:\\a\\zryna\\zryna\\source\\scripts\\m6\\installed-editor\\owner-windows.ps1",
+      "bytes": 14737,
+      "sha256": "e3a88b725f5820bbe48e00df6a1f7dcdd96f8d066b29f60fcc713eb11c4d87ab",
+      "identity": {
+        "dev": "1649440571",
+        "ino": "281474976718382",
+        "bytes": "14737",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1792355931065203300",
+        "changedNs": "1792355931065203300"
+      }
+    },
+    "target": {
+      "path": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+      "bytes": 31278592,
+      "sha256": "ddfbad20b31b918d3439d070945ec59bbfe037a6ec0ab5b584459e69c8b37d1b",
+      "identity": {
+        "dev": "1692368384",
+        "ino": "844424931433009",
+        "bytes": "31278592",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1792355935190168400",
+        "changedNs": "1792355935332314300"
+      }
+    },
+    "helperCapture": {
+      "source": {
+        "path": "D:\\a\\zryna\\zryna\\source\\scripts\\m6\\installed-editor\\owner-windows.ps1",
+        "bytes": 14737,
+        "sha256": "e3a88b725f5820bbe48e00df6a1f7dcdd96f8d066b29f60fcc713eb11c4d87ab",
+        "identity": {
+          "dev": "1649440571",
+          "ino": "281474976718382",
+          "bytes": "14737",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1792355931065203300",
+          "changedNs": "1792355931065203300"
+        }
+      },
+      "captured": {
+        "path": "D:\\a\\_temp\\native-tooling-preparation\\RECORDED_FORMATTER\\commands\\F1.owner-material\\owner.ps1",
+        "bytes": 14737,
+        "sha256": "e3a88b725f5820bbe48e00df6a1f7dcdd96f8d066b29f60fcc713eb11c4d87ab"
+      }
+    },
+    "jobHelper": {
+      "path": "D:\\a\\zryna\\zryna\\source\\scripts\\m6\\installed-editor\\owner-windows-job.ps1",
+      "bytes": 8586,
+      "sha256": "e1a78c8b3210ca19126b1bcdb4f5ae904d016f7b978b709b7f95d76f136ea1e6",
+      "identity": {
+        "dev": "1649440571",
+        "ino": "281474976718381",
+        "bytes": "8586",
+        "links": "1",
+        "mode": "33206",
+        "modifiedNs": "1792355931065203300",
+        "changedNs": "1792355931065203300"
+      }
+    },
+    "jobCapture": {
+      "source": {
+        "path": "D:\\a\\zryna\\zryna\\source\\scripts\\m6\\installed-editor\\owner-windows-job.ps1",
+        "bytes": 8586,
+        "sha256": "e1a78c8b3210ca19126b1bcdb4f5ae904d016f7b978b709b7f95d76f136ea1e6",
+        "identity": {
+          "dev": "1649440571",
+          "ino": "281474976718381",
+          "bytes": "8586",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1792355931065203300",
+          "changedNs": "1792355931065203300"
+        }
+      },
+      "captured": {
+        "path": "D:\\a\\_temp\\native-tooling-preparation\\RECORDED_FORMATTER\\commands\\F1.owner-material\\owner-windows-job.ps1",
+        "bytes": 8586,
+        "sha256": "e1a78c8b3210ca19126b1bcdb4f5ae904d016f7b978b709b7f95d76f136ea1e6"
+      }
+    },
+    "dependencies": [
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.ApplicationInsights.dll",
+        "bytes": 923480,
+        "sha256": "ea8b0774affeec16adfd24fc55cecce39f778ca55e89a2ff6b2b457afccf44bb",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186349",
+          "bytes": "923480",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325974624500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.CodeAnalysis.CSharp.dll",
+        "bytes": 18536312,
+        "sha256": "78533cfbf2e43a374e58f05ef2c495ed56bf93eaa63be0ec3f2b35fc621d008e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185689",
+          "bytes": "18536312",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842324177546900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.CodeAnalysis.dll",
+        "bytes": 8128336,
+        "sha256": "14856fd1cdb7f425323c82d276a9add64454edf0325a28b588c9825838938200",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186233",
+          "bytes": "8128336",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325552796100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.Commands.Management.dll",
+        "bytes": 1124152,
+        "sha256": "556085d8cdcf6d442f0f59776de3d74535bbfa9facf33d1358d90bb948f6bc92",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185678",
+          "bytes": "1124152",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324036658900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.Commands.Utility.dll",
+        "bytes": 1652536,
+        "sha256": "d156b47a70718a54d1b5691d0ff58663d11270bc94911d870ab2895648c1057d",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185865",
+          "bytes": "1652536",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324724553800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.ConsoleHost.dll",
+        "bytes": 603960,
+        "sha256": "456be117016c7b7e474c66e48439c1917d4e9717c2ee247b6dd4e19b4b7a674a",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186801",
+          "bytes": "603960",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842327084234400"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.CoreCLR.Eventing.dll",
+        "bytes": 231224,
+        "sha256": "9ef54eb74eda1c44bb1e7b71218de2887a0490a526a3bac967dc319ed3a74d3a",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186256",
+          "bytes": "231224",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325630858500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.MarkdownRender.dll",
+        "bytes": 55104,
+        "sha256": "08a7a5c37e857a0197c710b8d9b52a4269afe12f00374c077389e3c7dbd584e1",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186110",
+          "bytes": "55104",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325240204300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.Win32.Primitives.dll",
+        "bytes": 15656,
+        "sha256": "0327272bf4555ebd266751dfb3ac42463c8c0f266cdfd352263d4c7aa8fbaf04",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186697",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326709219800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Microsoft.Win32.Registry.dll",
+        "bytes": 116520,
+        "sha256": "fad9af3a76a4b89bee820381fde9ce06dfaadc3d90859953503f4be81c74ee31",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185912",
+          "bytes": "116520",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324833819600"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Newtonsoft.Json.dll",
+        "bytes": 1824584,
+        "sha256": "2b6fdde54cc2d2e9277d458a42fdf9fca30fc4299652e97144a31c90fec91829",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185654",
+          "bytes": "1824584",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323989701500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Collections.Concurrent.dll",
+        "bytes": 231208,
+        "sha256": "efd70af76fe0182d974ddc1520f335e9764ecfdd6a517168944b76c07a31e7a7",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186298",
+          "bytes": "231208",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325708987200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Collections.Immutable.dll",
+        "bytes": 976680,
+        "sha256": "cdeff36e2129e3a1cbf08698c4d692a13f2c25cd1c04ced0120caef982461354",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186754",
+          "bytes": "976680",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326943609300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Collections.NonGeneric.dll",
+        "bytes": 104272,
+        "sha256": "d84c613da29baf7d8dfd7e8ab7cd806e1086eb16b350c8377947b5edb77b6eec",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186072",
+          "bytes": "104272",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325162082500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Collections.Specialized.dll",
+        "bytes": 104232,
+        "sha256": "e203e92897552d5109f4f096ee7019443f83dac9dc7190217359255ceed1e3a3",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186701",
+          "bytes": "104232",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326724971800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Collections.dll",
+        "bytes": 296744,
+        "sha256": "dc868c8736277084d26726d726c6ce07fff9eab3aca2d3476cface8fc3b2403f",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185636",
+          "bytes": "296744",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323942825100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.ComponentModel.Primitives.dll",
+        "bytes": 79696,
+        "sha256": "a6268fe9416484303a678b72837b461aaa686d4cd4509430c1e4c5203397e63b",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186555",
+          "bytes": "79696",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326334205500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.ComponentModel.TypeConverter.dll",
+        "bytes": 767784,
+        "sha256": "9fc839cc0c4138deeee0080c72d29069d4ea22a4385fb78cdb4fea6a911c30c0",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185722",
+          "bytes": "767784",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324271283700"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.ComponentModel.dll",
+        "bytes": 30544,
+        "sha256": "283c355a88e039f5a49f791f89f1af721fb82576447e23859a4cb269085a69d1",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186442",
+          "bytes": "30544",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326177938900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Console.dll",
+        "bytes": 169768,
+        "sha256": "53b599b15b7eb4db618946b943b00229d998d9bf5450cf23274b0f66bcdcb4ea",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186622",
+          "bytes": "169768",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326568665500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Data.Common.dll",
+        "bytes": 2770728,
+        "sha256": "1cbef4b075d6f36e914666010ce93fc831858622e775abe9f73966b24c816aee",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186197",
+          "bytes": "2770728",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325443411700"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.FileVersionInfo.dll",
+        "bytes": 46888,
+        "sha256": "1a0073c382851890010f74b559f27a033eb783eea1e38205782e6c8dacb5d10e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186712",
+          "bytes": "46888",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326740467100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.Process.dll",
+        "bytes": 329512,
+        "sha256": "7f70ea57a7868dfeeea304d5da3843b9b52d98767bc41a81162031baa9361405",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186037",
+          "bytes": "329512",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325052702100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.TraceSource.dll",
+        "bytes": 141136,
+        "sha256": "c707b27e877fb0c7d38848828ab08637915e2b7a05563aa1a08327dc69eea911",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "2814749767371565",
+          "bytes": "141136",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323739689300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.Tracing.dll",
+        "bytes": 16168,
+        "sha256": "72f5f814b5e142c87f514a38af6c08d103ff14daa22160867f987151c7f26c39",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186289",
+          "bytes": "16168",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325693360600"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.DirectoryServices.dll",
+        "bytes": 1021736,
+        "sha256": "18a53af12ed4cdfc3f6fcbe0787e53101aca6b5c28b730abec789fbbe040801a",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186700",
+          "bytes": "1021736",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326724971800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Globalization.dll",
+        "bytes": 15656,
+        "sha256": "769dde445009c78be8d4cdb28dcc6603df2218dafe9491f5f1b915b1945a3f6e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185582",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323880323900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.IO.FileSystem.AccessControl.dll",
+        "bytes": 104232,
+        "sha256": "1c54898a3ec1eb02a9dff3ba726c6328d1d0f306926a9a370c0c468e065bab17",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185749",
+          "bytes": "104232",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324396297500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.IO.FileSystem.DriveInfo.dll",
+        "bytes": 55120,
+        "sha256": "ad0fa0f61602babdb65280cfb5295d7f3905e7739431ca64d531919703729d2e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186567",
+          "bytes": "55120",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326349843100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.IO.Pipes.dll",
+        "bytes": 165672,
+        "sha256": "a1858a82360321b757b41f8f7c33cb793d626a712cc29409e5e8d77493f62062",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "2814749767371579",
+          "bytes": "165672",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323755312900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Linq.Expressions.dll",
+        "bytes": 3639080,
+        "sha256": "e2627ea364ec3868e20b9f84d2c2a3ecf5faad4dc548f53a9d0c6a2d6f9fb282",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186251",
+          "bytes": "3639080",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842325615583500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Linq.dll",
+        "bytes": 698152,
+        "sha256": "f170005154fe77b1a5af72179a454ca1d24ff3f805e6dc1a629ef1cf82d3e7ad",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185623",
+          "bytes": "698152",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323911576200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Management.Automation.dll",
+        "bytes": 19658592,
+        "sha256": "ed8d39663e05435aab59f1c7fb0ad20292e22b0cb12cf47aad4b62b31e4d4126",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186336",
+          "bytes": "19658592",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842325896558900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Management.dll",
+        "bytes": 833352,
+        "sha256": "ad07e0c250fe08ce6b23d63b7a564da19e128d0a5a7aba9ce49810ed7752a3df",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186077",
+          "bytes": "833352",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325177697600"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Memory.dll",
+        "bytes": 161576,
+        "sha256": "a714f1a2b4b8d2695bea4e5d2a85e62621ced26a7e4ebc5fcd61e85ee4838b77",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186092",
+          "bytes": "161576",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325208953100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Net.Http.dll",
+        "bytes": 1746728,
+        "sha256": "ed96d8a3995cf09e84981db6ee8a5199e41fc2a2599749f70cf84ada7d4cce53",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185650",
+          "bytes": "1746728",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323974153300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Net.Mail.dll",
+        "bytes": 481064,
+        "sha256": "b0c2c70ba2035e683e2232699e0547df7ab4f361daf4a5418c8f3b45ea147c13",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186352",
+          "bytes": "481064",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325990314500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Net.NetworkInformation.dll",
+        "bytes": 157480,
+        "sha256": "2a85a3e70d84f237e10a9beae7d4b1fdfe05ce0de135d5ca45b46de48491cde3",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186438",
+          "bytes": "157480",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326162314700"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Net.Primitives.dll",
+        "bytes": 210768,
+        "sha256": "6ca45c7299b6b76a5650f01e63a3290ac50432c6301cea135c89ffc54af72e25",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186213",
+          "bytes": "210768",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325474589700"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Numerics.Vectors.dll",
+        "bytes": 15656,
+        "sha256": "f7d2dba3d30b09fa8ca802cda5d0ee0827cb3aa44e1e19f790f62c390ddf5de8",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1407374883897392",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326912357200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.ObjectModel.dll",
+        "bytes": 79656,
+        "sha256": "9a7d09ef51c648c4ce51a0e21cdc64dede904420ccec224d62c09fceee6b150a",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185633",
+          "bytes": "79656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323927196100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Private.CoreLib.dll",
+        "bytes": 16033616,
+        "sha256": "63d83dd8169f23820f5d3bf0f0399f60e5e26200361787dfcb1c24cabc76e423",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186718",
+          "bytes": "16033616",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842326865560900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Private.Uri.dll",
+        "bytes": 255784,
+        "sha256": "d14188a1352f793f862726fa2c956dc270fb0e2578d46c6561f682ff2b4e110e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186605",
+          "bytes": "255784",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326521705800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Private.Xml.dll",
+        "bytes": 7788328,
+        "sha256": "65f1252bad1a18d985a55d6434608e4a66dba8a426310b2c6fdae12b09e3faf6",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "2814749767371597",
+          "bytes": "7788328",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842323833517800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Reflection.Emit.ILGeneration.dll",
+        "bytes": 15696,
+        "sha256": "9d003f3b5df43c3062fa1e363e5f6b3ecc5d4b84213fc7397da53e583494f390",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "2814749767371586",
+          "bytes": "15696",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323770943400"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Reflection.Emit.Lightweight.dll",
+        "bytes": 15656,
+        "sha256": "0461ac768e7f2e3bcd20a016c1e06e207092df250458c868ff628c2e7766b748",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185715",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324255654800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Reflection.Metadata.dll",
+        "bytes": 1156904,
+        "sha256": "b453ac5b26229328268803037b95ebdfd9ea3c7aabd830513bd6a39cf73f7076",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186615",
+          "bytes": "1156904",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842326537340300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Reflection.Primitives.dll",
+        "bytes": 15656,
+        "sha256": "b20c388943b74385f712cdaf74cde691f6eee14cb5320d8136c3d40b57c02d42",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186029",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325037034200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Runtime.InteropServices.dll",
+        "bytes": 112464,
+        "sha256": "f3587b04d04f05c5a22e129ebe3dabe34243315e035ab6bbd91a4a3350fbad18",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186568",
+          "bytes": "112464",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326349843100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Runtime.Loader.dll",
+        "bytes": 15656,
+        "sha256": "b3a9500ed9e7f4a698fb46513b8c73b5aa752331597a544e2722b2c5db262b09",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186131",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325287158400"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Runtime.Numerics.dll",
+        "bytes": 354088,
+        "sha256": "9f067c312e0c0c097d56bb3487933dcda758d547480ab76e5a2987aeadd8fd7e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186683",
+          "bytes": "354088",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326693594200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Runtime.Serialization.Formatters.dll",
+        "bytes": 124712,
+        "sha256": "7832e9dcc1a36276b2df00427c5c926f1a48dff2d03977632a83ad138d853013",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186188",
+          "bytes": "124712",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325412088100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Runtime.Serialization.Primitives.dll",
+        "bytes": 38736,
+        "sha256": "1c2ded997862cd07fd93bd8450a98517875f7bb52a4c4e651a4d3b8832d7db9c",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186691",
+          "bytes": "38736",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326709219800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Runtime.dll",
+        "bytes": 44840,
+        "sha256": "2c733c433c3d26c0edb1eb89c9ed7a53cb3194092d1a56a79bf14ab71f4a3425",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186607",
+          "bytes": "44840",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326521705800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Security.AccessControl.dll",
+        "bytes": 227112,
+        "sha256": "aa6bf70a513cb43daad41f91bde35740ec28456481639a57508be02b08f1969b",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186243",
+          "bytes": "227112",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325568350500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Security.Claims.dll",
+        "bytes": 100136,
+        "sha256": "6ae287447243764b203f58eabbc8e5b9ebca135f6174ad73dd06ae572936dcc4",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186297",
+          "bytes": "100136",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325693360600"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Security.Cryptography.dll",
+        "bytes": 2549584,
+        "sha256": "acb3e95912a1b3d2cc96bfd42346328462a930ac77858dfc62d7d712ceed4f5e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185939",
+          "bytes": "2549584",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324880774600"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Security.Permissions.dll",
+        "bytes": 190248,
+        "sha256": "37d4c12b1bac234541871123511525b680089a61758ce6f28b09a18f8f0b39e6",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185760",
+          "bytes": "190248",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324458868300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Security.Principal.Windows.dll",
+        "bytes": 177960,
+        "sha256": "4c6ee4bc691d111ff4500a6d455deeeeb3f56f14f5cd686f404ba063c8d2741b",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185845",
+          "bytes": "177960",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324677552300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Text.Encoding.CodePages.dll",
+        "bytes": 861992,
+        "sha256": "9d8d9e0fa33437502fd659fcb726e295cf439e56bdb044970fe5b715d7813e37",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186617",
+          "bytes": "861992",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326568665500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Text.Encoding.Extensions.dll",
+        "bytes": 15656,
+        "sha256": "f507cc18b0449947a86606dfe9281b89316b39c1ba60a9249e41c0a1cd30e201",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186148",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325333979800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Text.Json.dll",
+        "bytes": 1890088,
+        "sha256": "abcecb266dfd7af409eba45cd2fd581d40f72d5fe916a1a95f05b32ac738968f",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186001",
+          "bytes": "1890088",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842324990071400"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Text.RegularExpressions.dll",
+        "bytes": 1034024,
+        "sha256": "cc5c01e9c1591df68708ca6386c1259b0ac34257336cf53106ce784f9d1175c0",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186444",
+          "bytes": "1034024",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326193644900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Threading.Overlapped.dll",
+        "bytes": 15656,
+        "sha256": "239a90d22546a4ed01a05bfa8ceba846e4c73f73ba6c2b3e06e176f859890db5",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186279",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325677719900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Threading.Tasks.Parallel.dll",
+        "bytes": 132904,
+        "sha256": "47733f454e9d7da1bec529a36ae86db431e8a89ad1fe84641e80c9207d91f4c7",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "2814749767371545",
+          "bytes": "132904",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323708510400"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Threading.Thread.dll",
+        "bytes": 15656,
+        "sha256": "0b016736e7e4995a7e0a127a7baeb6f8487a97433e2dd034b8cc8dd5fa1048ac",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186647",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326615461000"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Threading.ThreadPool.dll",
+        "bytes": 15656,
+        "sha256": "104c0f37199430ccebf3b81eb28e4c072547447075eacff8d488954035bd231f",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185892",
+          "bytes": "15656",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324755687300"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Threading.dll",
+        "bytes": 83792,
+        "sha256": "b1aae26002952704d7d7913170dfd3c786de6dea50463bb671a9aa99423320bd",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186698",
+          "bytes": "83792",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326724971800"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\System.Xml.ReaderWriter.dll",
+        "bytes": 21800,
+        "sha256": "4e8265fe5d68f42648394f0d6ca0c06c60664f5e0c7456bd65c942c664891bd0",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186068",
+          "bytes": "21800",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842325162082500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\clrjit.dll",
+        "bytes": 2092328,
+        "sha256": "8b3e57d21cc9914a0f2df5df3b0fa5fc426d91282846eb88da07736cfb7416aa",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185723",
+          "bytes": "2092328",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324302607100"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\coreclr.dll",
+        "bytes": 4614952,
+        "sha256": "20ea763d5ad8be8656a3123c4ad5afdb4c714a009bfc63bb8f4906d6678130db",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186044",
+          "bytes": "4614952",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842325099644700"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\hostfxr.dll",
+        "bytes": 379688,
+        "sha256": "6d2d8b595846bfcbb5ef7b1cb1a3156aff4930d2002b6ac813910b848c918855",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186407",
+          "bytes": "379688",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842326099769200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\hostpolicy.dll",
+        "bytes": 378664,
+        "sha256": "400e8547169e8d4405adfd79510ae429f76f7a580932ac8a602ef5d88e4feb2e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186542",
+          "bytes": "378664",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326318570900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\microsoft.management.infrastructure.dll",
+        "bytes": 309040,
+        "sha256": "a5138f7b4ea083fa297e744d26af2254ee3b593186caa750a6e4963c00f3d778",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185659",
+          "bytes": "309040",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324005327200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\netstandard.dll",
+        "bytes": 100648,
+        "sha256": "42388b4a19485adc2a7d384f5257bb9d806f3bac6f8871dde42afd944bbfc0c5",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185655",
+          "bytes": "100648",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842323989701500"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\pwsh.dll",
+        "bytes": 157472,
+        "sha256": "91f9892f15a7e2dcf440afc3a497a7d839f9d38d1ab4a50bd36080d982a01449",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907186773",
+          "bytes": "157472",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842326990482400"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+        "bytes": 301368,
+        "sha256": "bfb46af89433268872ddb43d1ca7a3f433452ee91ed356a9786940f90118e285",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185692",
+          "bytes": "301368",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383930000000000",
+          "changedNs": "1791842331507830000"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26090.9-0\\MpClient.dll",
+        "bytes": 1902616,
+        "sha256": "99532203ff297b44f8a8dc068c353a9e89daa5d34af2398b6df8e254d9d0fd35",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "844424931838162",
+          "bytes": "1902616",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1792356436778000000",
+          "changedNs": "1792356446775999900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26090.9-0\\MpOAV.dll",
+        "bytes": 682008,
+        "sha256": "24870690fb1e4dfaf6acdb09f12a7ffbbb44b5f3942f24a18ecc17900dfba044",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "844424931838220",
+          "bytes": "682008",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1792356436954000000",
+          "changedNs": "1792356446775999900"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\cryptbase.dll",
+        "bytes": 59424,
+        "sha256": "5bdcc3ae2e1e6b32987c79a581d5bc9f28f2e58f06828f629d1f1e2839ca6220",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976759182",
+          "bytes": "59424",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221609635600",
+          "changedNs": "1788658021078994100"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\cryptsp.dll",
+        "bytes": 121400,
+        "sha256": "2f566ee8c8abdf4f49ee9acafaffe0390c466e8126a6baaf6db64b4770338728",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976759189",
+          "bytes": "121400",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218781421400",
+          "changedNs": "1788658021078994100"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\msasn1.dll",
+        "bytes": 84216,
+        "sha256": "ecb4b6c6228a0c8d686797ae953e3af645e3de5c81ea1ccf99cdfc39a7cac5b7",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760875",
+          "bytes": "84216",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218906440400",
+          "changedNs": "1788658022735258800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\sspicli.dll",
+        "bytes": 311448,
+        "sha256": "cb392c2025d66b2111ca412bfc973527651aab81b417cde9a181692cba953e69",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761897",
+          "bytes": "311448",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221640885900",
+          "changedNs": "1788658022485265400"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\userenv.dll",
+        "bytes": 199888,
+        "sha256": "3d2980aa5d1b6ea4e28f0da80b49a263ef75b440de25db553c2c515fdba76bb2",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762222",
+          "bytes": "199888",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655219093934400",
+          "changedNs": "1788658024657149400"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\amsi.dll",
+        "bytes": 139264,
+        "sha256": "b0a2b3c075c7e705dc31e872f51fdff00f571b8b806d025fe4867b340a7ef08c",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976758595",
+          "bytes": "139264",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655194921074800",
+          "changedNs": "1788658020375860200"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\gpapi.dll",
+        "bytes": 204016,
+        "sha256": "49b7a8bfe8617816fbed04b52da7241edcfbbda59262f526b2402b6259fef2c0",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760116",
+          "bytes": "204016",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655230813107800",
+          "changedNs": "1788658022094627500"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\icu.dll",
+        "bytes": 2464240,
+        "sha256": "c56f594ec1e2aa203c502be45b2fce65112cf30c2540e73fa3bba8050a86364e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760221",
+          "bytes": "2464240",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655207343415500",
+          "changedNs": "1788658022141515200"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\kernel.appcore.dll",
+        "bytes": 104784,
+        "sha256": "2dc22b4427bd7d73ebbe8f065c6be888c2b4c8557bb4e28f557232058803c6bf",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760538",
+          "bytes": "104784",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655207843429600",
+          "changedNs": "1788658022438391300"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\mpr.dll",
+        "bytes": 129664,
+        "sha256": "f00cf00f5dfe926b07c93adf029cf63ee56846484054005fca8baf5f11ab6356",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760845",
+          "bytes": "129664",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655194842947600",
+          "changedNs": "1788658022719637000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\ntdll.dll",
+        "bytes": 2104800,
+        "sha256": "cf49573b6caa724c13310f2f774e81d527831e84bb8db822e12932ce6a47ea9e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761173",
+          "bytes": "2104800",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221047115600",
+          "changedNs": "1788658022969640800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\profapi.dll",
+        "bytes": 162736,
+        "sha256": "b98ec53281793a6f1c4d00c0a367bcc38240dfead52100d8efb007c1ce9af73e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761367",
+          "bytes": "162736",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221719097800",
+          "changedNs": "1788658023188399100"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\secur32.dll",
+        "bytes": 49152,
+        "sha256": "5c85e124d77f04f5b98e053e20b5a3f21ac574a6ca770eefde16771f5b4c2e0f",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761646",
+          "bytes": "49152",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655225750403100",
+          "changedNs": "1788658022485265400"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\windows.storage.dll",
+        "bytes": 8740800,
+        "sha256": "e57369134194788cd9d7be02bc6e2ca8017e44e44c2b5860a9778548e5a7eef5",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762586",
+          "bytes": "8740800",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655207640293100",
+          "changedNs": "1788658023000894900"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\wldp.dll",
+        "bytes": 274256,
+        "sha256": "8cd0670fe8394b472b6007c3a9d8e030502e2dd664a84c8cbcab26ca15cc92ac",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762710",
+          "bytes": "274256",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218468910800",
+          "changedNs": "1788658021000866900"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\advapi32.dll",
+        "bytes": 732912,
+        "sha256": "c4a214f83beadb3655adf464877c8a81c4affa9a4acc2485eab2eaffc7ee719d",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976758583",
+          "bytes": "732912",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655253720087700",
+          "changedNs": "1788658020610231800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\AppxSip.dll",
+        "bytes": 303104,
+        "sha256": "6ca8de8f47aab2941af87ddc01e34e2d0aa50e7319873f52c13a77f1a65dab0d",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976758705",
+          "bytes": "303104",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655207765299000",
+          "changedNs": "1788658020641483300"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\crypt32.dll",
+        "bytes": 1435352,
+        "sha256": "3444b65e68739bc0ba4d78353e73c861ec3cb9210af508dc61fa27cdb5c6ec33",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976759223",
+          "bytes": "1435352",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218734538200",
+          "changedNs": "1788658021078994100"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\DiagnosticDataSettings.dll",
+        "bytes": 49152,
+        "sha256": "f81b68dabba6bc26b67e6e35d5de86315b8723eb6b5f245643fe098e1dc48c5f",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976759602",
+          "bytes": "49152",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1620461664032950900",
+          "changedNs": "1788658024500901500"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\gdi32.dll",
+        "bytes": 191616,
+        "sha256": "7df03a110b456cacf2bd0365f758ae2ef9b7d532dcd64682d5e79ff5c223f987",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760103",
+          "bytes": "191616",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655203561812400",
+          "changedNs": "1788658022079003000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\imm32.dll",
+        "bytes": 212208,
+        "sha256": "32600c90650a6ddfe6f8cb6b81db37e592ecf35410ecbc62bd1bd40c04c1ed96",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760243",
+          "bytes": "212208",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655222453414600",
+          "changedNs": "1788658022407140700"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\kernel32.dll",
+        "bytes": 790784,
+        "sha256": "da41de8a936170f771f6f3b1543b93fdf6768d3b5b40ff8637820ca01ade9d82",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760546",
+          "bytes": "790784",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655239250863300",
+          "changedNs": "1788658022438391300"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\KernelBase.dll",
+        "bytes": 3637776,
+        "sha256": "9817ec58129ec44dc8b063a7790565d41fd5e1d8673d57e43a79b669b63e0255",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760593",
+          "bytes": "3637776",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221969022900",
+          "changedNs": "1788658022438391300"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\msisip.dll",
+        "bytes": 90112,
+        "sha256": "e21ed3870ff185a7a5dd34d4a6be9c1b28b03c0929d9664d15b02761329ad077",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760940",
+          "bytes": "90112",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655247219916400",
+          "changedNs": "1788658022407140700"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\oleaut32.dll",
+        "bytes": 898232,
+        "sha256": "b6d34e20c6bfd57fe3136bf5b7b0e1d75fc6b9c12a2adf4628a594ec65246adc",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761212",
+          "bytes": "898232",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655219265828100",
+          "changedNs": "1788658023000894900"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\rpcrt4.dll",
+        "bytes": 1191584,
+        "sha256": "a491d91b9a41a004853e77f74dbc56d98d182b6f4d73e9c949b6a9f470db8227",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761568",
+          "bytes": "1191584",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221765890400",
+          "changedNs": "1788658023329028200"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\SHCore.dll",
+        "bytes": 972608,
+        "sha256": "f51f88df4707c1724ef698316337bc7490f327ca359b0fd142f6cd73815f09ac",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761770",
+          "bytes": "972608",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655214046856400",
+          "changedNs": "1788658023797769300"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\shell32.dll",
+        "bytes": 7765616,
+        "sha256": "8880171766756a3db2c7f64cf4545ca3d440948c7a0792b2408841f284729ba0",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761861",
+          "bytes": "7765616",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655223562827700",
+          "changedNs": "1788658024219644200"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\user32.dll",
+        "bytes": 1749344,
+        "sha256": "97ba5b8837cd4d4ce76ea63132b547b979fb0499c2ffd579e51c6fafaf7fc431",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762224",
+          "bytes": "1749344",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655211531122400",
+          "changedNs": "1788658024657149400"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\wintrust.dll",
+        "bytes": 493296,
+        "sha256": "ba21c2350fc43d38f8b9406616b8a7c44279e129b048cd195761b73e248ad6f1",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762688",
+          "bytes": "493296",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655207874783400",
+          "changedNs": "1788658024875907500"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\Windows.System.Profile.PlatformDiagnosticsAndUsageDataSettings.dll",
+        "bytes": 90112,
+        "sha256": "3d50192b041ff0bb98494faab93b3dedecea5eebb041b403127a296f6bb8c58a",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762555",
+          "bytes": "90112",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655209452842600",
+          "changedNs": "1788658025829039000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\pwrshsip.dll",
+        "bytes": 49152,
+        "sha256": "89b32de1886f4f36a9c7720f9db0f41ea26da6c2e925481a9a3bb95fbe682fea",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976768678",
+          "bytes": "49152",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1620461768785087100",
+          "changedNs": "1788658023172781800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-named-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\bcrypt.dll",
+        "bytes": 170984,
+        "sha256": "663ac06ba31380fb8a9d096fa8d40df529e0461ccf6d469ab5d858c724dbafbb",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976758808",
+          "bytes": "170984",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218453288400",
+          "changedNs": "1788658020813365800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\bcryptprimitives.dll",
+        "bytes": 534600,
+        "sha256": "a402a82cd755846af70dd536a3dede9604997bc725ea667d7c6989cb06b86dc9",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976758817",
+          "bytes": "534600",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221859643400",
+          "changedNs": "1788658020813365800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\clbcatq.dll",
+        "bytes": 716392,
+        "sha256": "ad2416a9e767cd384668194ce2b64f60467bd17fc3ad400db067dbeab1c1e06e",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976759020",
+          "bytes": "716392",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655217718882100",
+          "changedNs": "1788658020860240100"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\combase.dll",
+        "bytes": 3633576,
+        "sha256": "349099d7f3b4dbcfa0690c4d1b46bb36a1f68a19fcfce54cfc6ede7a75ee2431",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976759131",
+          "bytes": "3633576",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218593910700",
+          "changedNs": "1788658021016493000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\gdi32full.dll",
+        "bytes": 1170904,
+        "sha256": "e17013d27b3d510faeaa9d5d9a05f26c56d913f1f77915c03e71072b6057e8d3",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760107",
+          "bytes": "1170904",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655230609989700",
+          "changedNs": "1788658022079003000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\msvcp_win.dll",
+        "bytes": 662736,
+        "sha256": "d22a58f2ec5944a489152c72b0bca1a9fd540021242251211e11b45427a4c744",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760991",
+          "bytes": "662736",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218297030100",
+          "changedNs": "1788658024594649000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\msvcrt.dll",
+        "bytes": 675088,
+        "sha256": "0236379e19cd986d360ef010e2ff88e748a80567b67d17ac67fd91df7bb8ab99",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976760992",
+          "bytes": "675088",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221000248800",
+          "changedNs": "1788658022766526500"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\ole32.dll",
+        "bytes": 1286600,
+        "sha256": "db56db677a1cca70e426f9a5a23768ed37ed9139f30d794ccb0de31bbf874b02",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761214",
+          "bytes": "1286600",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655217672001400",
+          "changedNs": "1788658021016493000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\sechost.dll",
+        "bytes": 675088,
+        "sha256": "9e91b726a67d75fbe3cc9e74fbe70332c8d9f8726cffba49370a5e6bc73e4635",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761650",
+          "bytes": "675088",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655221797140700",
+          "changedNs": "1788658023704030900"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\shlwapi.dll",
+        "bytes": 398256,
+        "sha256": "5667be4cd415795a298e1e42777591ef7a144687a244f789696094d7d3837677",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761785",
+          "bytes": "398256",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655223156552700",
+          "changedNs": "1788658024219644200"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\ucrtbase.dll",
+        "bytes": 1129648,
+        "sha256": "5e5ae0f8e4325ceb3ee767065dda6e03e980d401f00a2bdb8ca81ed90813920f",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762146",
+          "bytes": "1129648",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218281401400",
+          "changedNs": "1788658024594649000"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\win32u.dll",
+        "bytes": 166856,
+        "sha256": "cf62114d05220fb2ac5f8ab24c6ccc449919bf8a08edbf98b700bf16e5bfe4be",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762393",
+          "bytes": "166856",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655211531122400",
+          "changedNs": "1788658024844658200"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\wshext.dll",
+        "bytes": 106496,
+        "sha256": "c348d2cde295b8b82f8a124aba7b173fe30d746c0b7b54b990d61d08632df5bb",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762804",
+          "bytes": "106496",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655235485135700",
+          "changedNs": "1788658023485277900"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\rsaenh.dll",
+        "bytes": 232984,
+        "sha256": "659311a642f38890cab223d9150634bcb57bb9a7b25809464ac53ac7b8dd78fe",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976761561",
+          "bytes": "232984",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655218984563800",
+          "changedNs": "1788658023329028200"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\uxtheme.dll",
+        "bytes": 663552,
+        "sha256": "6d58a44bf56cfbec39e30432a530844c75b275aa4666c0f17ddd3ecfdd24f13b",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762255",
+          "bytes": "663552",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655237688339400",
+          "changedNs": "1788658024672779800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Windows\\System32\\version.dll",
+        "bytes": 51152,
+        "sha256": "554de4c9c64cba19bb3437ede1d3688f3d020285a182161658779b8b34614306",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "281474976762269",
+          "bytes": "51152",
+          "links": "2",
+          "mode": "33206",
+          "modifiedNs": "1788655223156552700",
+          "changedNs": "1788658024688404800"
+        },
+        "admission": {
+          "policy": "trusted-windows-system32-runtime-module-v1",
+          "links": "2",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Modules\\Microsoft.PowerShell.Management\\Microsoft.PowerShell.Management.psd1",
+        "bytes": 16092,
+        "sha256": "4bfcb08f3f388a74be6da9b765585974be9aa37ee4eebffe52fc1bf762c25db8",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185669",
+          "bytes": "16092",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324005327200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "C:\\Program Files\\PowerShell\\7\\Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1",
+        "bytes": 16830,
+        "sha256": "bb9bd6f3eab1cf227e1afafec89934e6eb10c6c8530908c6436849120f631d9c",
+        "identity": {
+          "dev": "1692368384",
+          "ino": "1125899907185812",
+          "bytes": "16830",
+          "links": "1",
+          "mode": "33206",
+          "modifiedNs": "1788383928000000000",
+          "changedNs": "1791842324630675200"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      }
+    ]
+  },
+  "config": {
+    "program": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+    "args": [
+      "test",
+      "--locked",
+      "--offline",
+      "-p",
+      "zryna-driver",
+      "--lib",
+      "diagnostic_sessions::tests::formatting::",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "D:\\a\\zryna\\zryna\\source",
+    "stage": "D:\\a\\_temp\\native-tooling-preparation\\RECORDED_FORMATTER",
+    "timeoutMs": 573896,
+    "cleanupMs": 15000
+  },
+  "ownerExit": {
+    "status": 0,
+    "signal": null
+  },
+  "complete": {
+    "failures": [],
+    "kind": "complete",
+    "status": 0,
+    "cleanupConfirmed": true,
+    "privateJobDescendants": 0,
+    "ownerOnlyConfirmed": true
+  },
+  "events": [
+    {
+      "pid": 1224,
+      "dependencies": [
+        "C:\\Program Files\\PowerShell\\7\\clrjit.dll",
+        "C:\\Program Files\\PowerShell\\7\\coreclr.dll",
+        "C:\\Program Files\\PowerShell\\7\\hostfxr.dll",
+        "C:\\Program Files\\PowerShell\\7\\hostpolicy.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.ApplicationInsights.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.CodeAnalysis.CSharp.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.CodeAnalysis.dll",
+        "C:\\Program Files\\PowerShell\\7\\microsoft.management.infrastructure.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.Commands.Management.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.Commands.Utility.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.ConsoleHost.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.CoreCLR.Eventing.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell.MarkdownRender.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.Win32.Primitives.dll",
+        "C:\\Program Files\\PowerShell\\7\\Microsoft.Win32.Registry.dll",
+        "C:\\program files\\powershell\\7\\Modules\\Microsoft.PowerShell.Management\\Microsoft.PowerShell.Management.psd1",
+        "C:\\program files\\powershell\\7\\Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1",
+        "C:\\Program Files\\PowerShell\\7\\netstandard.dll",
+        "C:\\Program Files\\PowerShell\\7\\Newtonsoft.Json.dll",
+        "C:\\Program Files\\PowerShell\\7\\pwsh.dll",
+        "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+        "C:\\Program Files\\PowerShell\\7\\System.Collections.Concurrent.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Collections.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Collections.Immutable.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Collections.NonGeneric.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Collections.Specialized.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.ComponentModel.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.ComponentModel.Primitives.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.ComponentModel.TypeConverter.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Console.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Data.Common.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.FileVersionInfo.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.Process.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.TraceSource.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Diagnostics.Tracing.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.DirectoryServices.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Globalization.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.IO.FileSystem.AccessControl.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.IO.FileSystem.DriveInfo.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.IO.Pipes.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Linq.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Linq.Expressions.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Management.Automation.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Management.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Memory.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Net.Http.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Net.Mail.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Net.NetworkInformation.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Net.Primitives.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Numerics.Vectors.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.ObjectModel.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Private.CoreLib.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Private.Uri.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Private.Xml.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Reflection.Emit.ILGeneration.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Reflection.Emit.Lightweight.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Reflection.Metadata.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Reflection.Primitives.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Runtime.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Runtime.InteropServices.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Runtime.Loader.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Runtime.Numerics.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Runtime.Serialization.Formatters.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Runtime.Serialization.Primitives.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Security.AccessControl.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Security.Claims.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Security.Cryptography.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Security.Permissions.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Security.Principal.Windows.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Text.Encoding.CodePages.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Text.Encoding.Extensions.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Text.Json.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Text.RegularExpressions.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Threading.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Threading.Overlapped.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Threading.Tasks.Parallel.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Threading.Thread.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Threading.ThreadPool.dll",
+        "C:\\Program Files\\PowerShell\\7\\System.Xml.ReaderWriter.dll",
+        "C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26090.9-0\\MPCLIENT.DLL",
+        "C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26090.9-0\\MpOav.dll",
+        "C:\\Windows\\System32\\ADVAPI32.dll",
+        "C:\\Windows\\SYSTEM32\\amsi.dll",
+        "C:\\Windows\\System32\\AppxSip.dll",
+        "C:\\Windows\\System32\\bcrypt.dll",
+        "C:\\Windows\\System32\\bcryptPrimitives.dll",
+        "C:\\Windows\\System32\\clbcatq.dll",
+        "C:\\Windows\\System32\\combase.dll",
+        "C:\\Windows\\System32\\CRYPT32.dll",
+        "C:\\Windows\\SYSTEM32\\CRYPTBASE.dll",
+        "C:\\Windows\\SYSTEM32\\CRYPTSP.dll",
+        "C:\\Windows\\System32\\DiagnosticDataSettings.dll",
+        "C:\\Windows\\System32\\GDI32.dll",
+        "C:\\Windows\\System32\\gdi32full.dll",
+        "C:\\Windows\\SYSTEM32\\gpapi.dll",
+        "C:\\Windows\\SYSTEM32\\icu.dll",
+        "C:\\Windows\\System32\\IMM32.DLL",
+        "C:\\Windows\\SYSTEM32\\kernel.appcore.dll",
+        "C:\\Windows\\System32\\KERNEL32.DLL",
+        "C:\\Windows\\System32\\KERNELBASE.dll",
+        "C:\\Windows\\SYSTEM32\\mpr.dll",
+        "C:\\Windows\\SYSTEM32\\MSASN1.dll",
+        "C:\\Windows\\System32\\MSISIP.DLL",
+        "C:\\Windows\\System32\\msvcp_win.dll",
+        "C:\\Windows\\System32\\msvcrt.dll",
+        "C:\\Windows\\SYSTEM32\\ntdll.dll",
+        "C:\\Windows\\System32\\ole32.dll",
+        "C:\\Windows\\System32\\OLEAUT32.dll",
+        "C:\\Windows\\SYSTEM32\\profapi.dll",
+        "C:\\Windows\\System32\\RPCRT4.dll",
+        "C:\\Windows\\system32\\rsaenh.dll",
+        "C:\\Windows\\System32\\sechost.dll",
+        "C:\\Windows\\SYSTEM32\\secur32.dll",
+        "C:\\Windows\\System32\\SHCORE.dll",
+        "C:\\Windows\\System32\\SHELL32.dll",
+        "C:\\Windows\\System32\\shlwapi.dll",
+        "C:\\Windows\\SYSTEM32\\SSPICLI.DLL",
+        "C:\\Windows\\System32\\ucrtbase.dll",
+        "C:\\Windows\\System32\\USER32.dll",
+        "C:\\Windows\\SYSTEM32\\USERENV.dll",
+        "C:\\Windows\\system32\\uxtheme.dll",
+        "C:\\Windows\\system32\\version.dll",
+        "C:\\Windows\\System32\\win32u.dll",
+        "C:\\Windows\\SYSTEM32\\windows.storage.dll",
+        "C:\\Windows\\System32\\Windows.System.Profile.PlatformDiagnosticsAndUsageDataSettings.dll",
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\pwrshsip.dll",
+        "C:\\Windows\\System32\\WINTRUST.dll",
+        "C:\\Windows\\SYSTEM32\\wldp.dll",
+        "C:\\Windows\\System32\\wshext.dll"
+      ],
+      "killOnClose": true,
+      "kind": "ready",
+      "runtime": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "dotnet": "10.0.12",
+      "breakaway": false,
+      "powershell": "7.6.6",
+      "ownership": "private-inherited-job-before-target-creation"
+    },
+    {
+      "start": null,
+      "imageQueryError": null,
+      "pid": 2852,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": null,
+      "exitTicks": null,
+      "parent": 1224,
+      "imageUnavailable": "metadata-not-yet-observed",
+      "reason": "created-root",
+      "requestedFileName": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+      "gone": false
+    },
+    {
+      "start": "639279534312682388",
+      "imageQueryError": null,
+      "pid": 2852,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+      "exitTicks": null,
+      "parent": 1224,
+      "imageUnavailable": null,
+      "reason": "created-root",
+      "requestedFileName": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+      "gone": false
+    },
+    {
+      "pid": 2852,
+      "kind": "started"
+    },
+    {
+      "start": null,
+      "imageQueryError": null,
+      "pid": 3536,
+      "kind": "identity",
+      "terminationProof": {
+        "start": null,
+        "win32Error": 87,
+        "state": "absent",
+        "method": "OpenProcess"
+      },
+      "image": null,
+      "exitTicks": null,
+      "parent": null,
+      "imageUnavailable": "positive-job-member-termination",
+      "reason": "private-job-member-terminated-before-metadata",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": null,
+      "imageQueryError": null,
+      "pid": 3536,
+      "kind": "gone",
+      "terminationProof": {
+        "start": null,
+        "win32Error": 87,
+        "state": "absent",
+        "method": "OpenProcess"
+      },
+      "image": null,
+      "exitTicks": null,
+      "parent": null,
+      "imageUnavailable": "positive-job-member-termination",
+      "reason": "private-job-member-terminated-before-metadata",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534316621568",
+      "imageQueryError": null,
+      "pid": 4236,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "D:\\a\\_temp\\native-tooling-warm-target\\debug\\deps\\zryna_driver-c1b56a62ec192316.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534316686067",
+      "imageQueryError": null,
+      "pid": 4932,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534316704756",
+      "imageQueryError": null,
+      "pid": 3284,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534317201475",
+      "imageQueryError": null,
+      "pid": 7380,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534317201493",
+      "imageQueryError": null,
+      "pid": 7388,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534316704756",
+      "imageQueryError": null,
+      "pid": 3284,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534316686067",
+      "imageQueryError": null,
+      "pid": 4932,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534317201475",
+      "imageQueryError": null,
+      "pid": 7380,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534323370732",
+      "imageQueryError": null,
+      "pid": 4920,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534323932753",
+      "imageQueryError": null,
+      "pid": 704,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534317201493",
+      "imageQueryError": null,
+      "pid": 7388,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534324390471",
+      "imageQueryError": null,
+      "pid": 7400,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534323932753",
+      "imageQueryError": null,
+      "pid": 704,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534329540198",
+      "imageQueryError": null,
+      "pid": 3708,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534323370732",
+      "imageQueryError": null,
+      "pid": 4920,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534324390471",
+      "imageQueryError": null,
+      "pid": 7400,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534330489281",
+      "imageQueryError": null,
+      "pid": 4396,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534329540198",
+      "imageQueryError": null,
+      "pid": 3708,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534335821051",
+      "imageQueryError": null,
+      "pid": 7468,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534330489281",
+      "imageQueryError": null,
+      "pid": 4396,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534337177948",
+      "imageQueryError": null,
+      "pid": 5500,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534335821051",
+      "imageQueryError": null,
+      "pid": 7468,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534342300180",
+      "imageQueryError": null,
+      "pid": 7392,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534337177948",
+      "imageQueryError": null,
+      "pid": 5500,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534343915431",
+      "imageQueryError": null,
+      "pid": 5884,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534342300180",
+      "imageQueryError": null,
+      "pid": 7392,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534348522555",
+      "imageQueryError": null,
+      "pid": 2692,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534343915431",
+      "imageQueryError": null,
+      "pid": 5884,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534350439712",
+      "imageQueryError": null,
+      "pid": 4568,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534354728684",
+      "imageQueryError": null,
+      "pid": 2504,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534348522555",
+      "imageQueryError": null,
+      "pid": 2692,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534350439712",
+      "imageQueryError": null,
+      "pid": 4568,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534357123079",
+      "imageQueryError": null,
+      "pid": 7428,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534361643784",
+      "imageQueryError": null,
+      "pid": 7848,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534354728684",
+      "imageQueryError": null,
+      "pid": 2504,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534363185909",
+      "imageQueryError": null,
+      "pid": 1408,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534357123079",
+      "imageQueryError": null,
+      "pid": 7428,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534367818959",
+      "imageQueryError": null,
+      "pid": 1656,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534361643784",
+      "imageQueryError": null,
+      "pid": 7848,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534367818959",
+      "imageQueryError": null,
+      "pid": 1656,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534368327484",
+      "imageQueryError": null,
+      "pid": 2952,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534363185909",
+      "imageQueryError": null,
+      "pid": 1408,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534368327484",
+      "imageQueryError": null,
+      "pid": 2952,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534374171115",
+      "imageQueryError": null,
+      "pid": 8184,
+      "kind": "identity",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": false
+    },
+    {
+      "start": "639279534374171115",
+      "imageQueryError": null,
+      "pid": 8184,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534316621568",
+      "imageQueryError": null,
+      "pid": 4236,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "D:\\a\\_temp\\native-tooling-warm-target\\debug\\deps\\zryna_driver-c1b56a62ec192316.exe",
+      "exitTicks": null,
+      "parent": 0,
+      "imageUnavailable": null,
+      "reason": "private-job-member",
+      "requestedFileName": null,
+      "gone": true
+    },
+    {
+      "start": "639279534312682388",
+      "imageQueryError": null,
+      "pid": 2852,
+      "kind": "gone",
+      "terminationProof": null,
+      "image": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+      "exitTicks": null,
+      "parent": 1224,
+      "imageUnavailable": null,
+      "reason": "created-root",
+      "requestedFileName": "C:\\Users\\runneradmin\\.rustup\\toolchains\\1.97.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+      "gone": true
+    },
+    {
+      "pid": 2852,
+      "kind": "root-exit",
+      "status": 0
+    },
+    {
+      "failures": [],
+      "kind": "complete",
+      "status": 0,
+      "cleanupConfirmed": true,
+      "privateJobDescendants": 0,
+      "ownerOnlyConfirmed": true
+    }
+  ],
+  "stdoutBytes": 598,
+  "stderrBytes": 180,
+  "failure": null,
+  "cleanupConfirmed": true,
+  "scope": "Trusted installed-editor harness ownership; no hostile containment claim."
+}

@@ -1,0 +1,74 @@
+{
+  "program": {
+    "path": "/opt/hostedtoolcache/node/22.22.1/x64/bin/node",
+    "bytes": 124674920,
+    "sha256": "243fd8938011479f41b3de101842150fa990f33fbbb3f7aabd330857f2d79e1d",
+    "identity": {
+      "dev": "2049",
+      "ino": "8950851",
+      "mode": "33261",
+      "modifiedNs": "1792355932824758198",
+      "changedNs": "1792355932824758198",
+      "bytes": "124674920",
+      "links": "1"
+    }
+  },
+  "argv": [
+    "/home/runner/work/_temp/native-tooling-preparation/LSP_CAPSULE/record-lsp.mjs"
+  ],
+  "cwd": "/home/runner/work/zryna/zryna/source",
+  "streams": [
+    {
+      "path": "/home/runner/work/_temp/native-tooling-outer/LSP.stdout",
+      "bytes": 118,
+      "sha256": "06c29df67e34812b87dd81f36a497893bfaab45258a3f54254a2b7242131197a",
+      "identity": {
+        "dev": "2049",
+        "ino": "9437510",
+        "mode": "33152",
+        "modifiedNs": "1792356283674171600",
+        "changedNs": "1792356283674171600",
+        "bytes": "118",
+        "links": "1"
+      }
+    },
+    {
+      "path": "/home/runner/work/_temp/native-tooling-outer/LSP.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identity": {
+        "dev": "2049",
+        "ino": "9437511",
+        "mode": "33152",
+        "modifiedNs": "1792356226709548490",
+        "changedNs": "1792356226709548490",
+        "bytes": "0",
+        "links": "1"
+      }
+    }
+  ],
+  "streamObservations": [
+    {
+      "observed": 118,
+      "retained": 118,
+      "eof": true,
+      "failure": null
+    },
+    {
+      "observed": 0,
+      "retained": 0,
+      "eof": true,
+      "failure": null
+    }
+  ],
+  "captureFailure": null,
+  "completeOriginalStreams": true,
+  "returncode": 0,
+  "elapsedSeconds": 57.169270783,
+  "terminationRequests": [],
+  "outerUnknown": false,
+  "accepted": true,
+  "finalCarrierFits": true,
+  "meaning": "Actual Node entry stdout/stderr, not Cargo stdout/stderr.",
+  "nativeDescendantCleanupAuthority": "Original inner owner records only; no outer claim."
+}

@@ -1,0 +1,7 @@
+
+running 2 tests
+test installed::tests::installed_request_rejects_explicit_runtime_and_compiler_root_selectors ... ok
+test installed::tests::project_selection_does_not_select_the_runtime_or_compiler_root ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+

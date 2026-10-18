@@ -1,0 +1,433 @@
+{
+  "schema": "zryna.docs.bundle.v1",
+  "version": 1,
+  "channel": "next",
+  "source": {
+    "repository": "https://github.com/zryna/zryna",
+    "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+    "ref": "refs/heads/main",
+    "version": "0.2.3"
+  },
+  "documents": [
+    {
+      "id": "examples/wasi-command",
+      "path": "documents/examples/wasi-command.md",
+      "title": "Bounded H1 command examples",
+      "bytes": 889,
+      "sha256": "fbf0aaddd33980d4ff98c419f3afbec24e83798b2bb3d524819e1b70c847c4e4"
+    },
+    {
+      "id": "examples/wasi-server-clock",
+      "path": "documents/examples/wasi-server-clock.md",
+      "title": "Denied and granted clock status example",
+      "bytes": 3031,
+      "sha256": "1e9c1a1608b73b454758d938e27a68b8b46e84827c89ecbabad500e60cff9883"
+    },
+    {
+      "id": "examples/wasi-server-status",
+      "path": "documents/examples/wasi-server-status.md",
+      "title": "Finite local status service",
+      "bytes": 2918,
+      "sha256": "591c32b30f2de29b3f564c425673c39b2e7b4d0e2a6a621457c48c36295a369c"
+    },
+    {
+      "id": "reference/aggregate-layout-v1",
+      "path": "documents/reference/aggregate-layout-v1.md",
+      "title": "Aggregate layout v1",
+      "bytes": 21037,
+      "sha256": "024326a3c7d52596134e0de7d0fa375603ef932971bf65919e8393a74059459d"
+    },
+    {
+      "id": "reference/architecture",
+      "path": "documents/reference/architecture.md",
+      "title": "Compiler architecture",
+      "bytes": 58017,
+      "sha256": "d8002cf64fa7b6c1ee4d6e9f4ad45654f4a2d4cf680459f096c4686f67deb710"
+    },
+    {
+      "id": "reference/browser-component-v1",
+      "path": "documents/reference/browser-component-v1.md",
+      "title": "Browser scalar component profile v1",
+      "bytes": 4389,
+      "sha256": "484df0a22e2495860c0f91aed0727c6b31f946aba821f12b2587f110744559c1"
+    },
+    {
+      "id": "reference/cli",
+      "path": "documents/reference/cli.md",
+      "title": "CLI reference",
+      "bytes": 24442,
+      "sha256": "273aa10c53f267bdb3adbf2ac8ac41e6ade96fda1b365d2d03a38c6f0e5a8d6e"
+    },
+    {
+      "id": "reference/control-flow-modules-v1",
+      "path": "documents/reference/control-flow-modules-v1.md",
+      "title": "Scalar control flow and modules v1",
+      "bytes": 19661,
+      "sha256": "d4756db36365d95a9f34650cfa0f0ac1d7053ee2ce45e1926c4c80432b8ac905"
+    },
+    {
+      "id": "reference/data-ownership-v1",
+      "path": "documents/reference/data-ownership-v1.md",
+      "title": "Data and ownership v1",
+      "bytes": 25782,
+      "sha256": "ed75e0aafc28a2cece2bd4380885556b809ec6bc3bdc699623df5e64be5bff12"
+    },
+    {
+      "id": "reference/developer-preview",
+      "path": "documents/reference/developer-preview.md",
+      "title": "v0.1.0 Developer Preview policy",
+      "bytes": 10565,
+      "sha256": "25baa3c6e3fceecf5c82a9b66b65047cef48c6c6c4245e53c576fa284ad7428f"
+    },
+    {
+      "id": "reference/documentation-bundles",
+      "path": "documents/reference/documentation-bundles.md",
+      "title": "Compiler documentation bundles",
+      "bytes": 5301,
+      "sha256": "8886b7b632642d6ea8c9f98fb059f9c0e579194354671ee297b435f2e5c8e8e8"
+    },
+    {
+      "id": "reference/frontends",
+      "path": "documents/reference/frontends.md",
+      "title": "Frontend providers",
+      "bytes": 11787,
+      "sha256": "6e149b29b7396e70649c7f63b6da06baf026376047d55c08b1c4be55645b4c17"
+    },
+    {
+      "id": "reference/getting-started",
+      "path": "documents/reference/getting-started.md",
+      "title": "Run your first Zryna programs",
+      "bytes": 10630,
+      "sha256": "dc4ab64548dde1c5c93cf9fb6da73b7791248d0461735f167586d5f947d5c7ef"
+    },
+    {
+      "id": "reference/language-overview",
+      "path": "documents/reference/language-overview.md",
+      "title": "Language overview",
+      "bytes": 3966,
+      "sha256": "be7fd399fd7f7dc90fef86b0fe42640c016f3ef973dd039dd6c735ca069597e5"
+    },
+    {
+      "id": "reference/language-server",
+      "path": "documents/reference/language-server.md",
+      "title": "Language server protocol v1",
+      "bytes": 24828,
+      "sha256": "ef6eac5df17acbc4791a1d17c39b45c03c695a41f85b9712a97cbc13be233947"
+    },
+    {
+      "id": "reference/m2-conformance",
+      "path": "documents/reference/m2-conformance.md",
+      "title": "M2 three-target conformance",
+      "bytes": 4017,
+      "sha256": "de589a04be499e4d09f0f17121c2f28922a451daaaeb4f67fcb035766015d8ad"
+    },
+    {
+      "id": "reference/m2-control-flow-semantics",
+      "path": "documents/reference/m2-control-flow-semantics.md",
+      "title": "M2 control-flow semantics",
+      "bytes": 5106,
+      "sha256": "6c5001985532190315b02c493286efe162064c45dc2e5b15e72836b4c9caa979"
+    },
+    {
+      "id": "reference/m2-javascript-backend",
+      "path": "documents/reference/m2-javascript-backend.md",
+      "title": "M2 deterministic JavaScript backend",
+      "bytes": 4964,
+      "sha256": "9e85c99b7ef6e8f5d93cb18afa91b4b93c450ad2f1e42edc8108e1c987697c8d"
+    },
+    {
+      "id": "reference/m2-manifest-v2",
+      "path": "documents/reference/m2-manifest-v2.md",
+      "title": "M2 manifest and atomic bundles",
+      "bytes": 6457,
+      "sha256": "3c3388830fbf37e21ef556497c7f3e65dcc300c4efa980e0f9cb2db3165a5069"
+    },
+    {
+      "id": "reference/m2-module-closure",
+      "path": "documents/reference/m2-module-closure.md",
+      "title": "M2 deterministic module closure",
+      "bytes": 9495,
+      "sha256": "3edd74174e7e9cf69df361931b8a032572003bb98585fee177b4a806e3879a1a"
+    },
+    {
+      "id": "reference/m2-native-backend",
+      "path": "documents/reference/m2-native-backend.md",
+      "title": "M2 Linux x86-64 native backend",
+      "bytes": 7557,
+      "sha256": "ff9c3179a954034d551f1cd4ea7fea597cc86706c51f5d782e1dd2f5db2354b8"
+    },
+    {
+      "id": "reference/m2-native-mir",
+      "path": "documents/reference/m2-native-mir.md",
+      "title": "M2 verified native MIR",
+      "bytes": 8917,
+      "sha256": "7586c239b03daed82782ad08d0f75a96e3b6083818f42eab0440bb9fcbd8e113"
+    },
+    {
+      "id": "reference/m2-straight-line-semantics",
+      "path": "documents/reference/m2-straight-line-semantics.md",
+      "title": "M2 straight-line semantics",
+      "bytes": 7484,
+      "sha256": "a93c323bcfaa8d54e791373ae864695289c8c45e6d6d9adc377b7910e1ab0125"
+    },
+    {
+      "id": "reference/m2-webassembly-backend",
+      "path": "documents/reference/m2-webassembly-backend.md",
+      "title": "M2 direct core WebAssembly backend",
+      "bytes": 5533,
+      "sha256": "5d817db88328db5ee6554460776343f4b2e2163f387e8bf86fba80e82fb21ac0"
+    },
+    {
+      "id": "reference/m3-borrowing-semantics",
+      "path": "documents/reference/m3-borrowing-semantics.md",
+      "title": "M3 bounded borrowing semantics",
+      "bytes": 43527,
+      "sha256": "351435644583a3dc6f3874ff3a08cf77d3e64622fb26ff9da021b5fe7950ec4e"
+    },
+    {
+      "id": "reference/m3-candidate-driver",
+      "path": "documents/reference/m3-candidate-driver.md",
+      "title": "M3 driver and manifest v3",
+      "bytes": 5398,
+      "sha256": "2350b74ed89a34334f86c41e2d38b3d2d1c7c6a34cbe68b00615d1c28eea6d63"
+    },
+    {
+      "id": "reference/m3-conformance",
+      "path": "documents/reference/m3-conformance.md",
+      "title": "M3 fixed-oracle conformance",
+      "bytes": 7283,
+      "sha256": "90514e35ce541348cc36a748e200f5e053fb4a47342e94eebb442d3c5544dd7c"
+    },
+    {
+      "id": "reference/m3-copy-aggregate-semantics",
+      "path": "documents/reference/m3-copy-aggregate-semantics.md",
+      "title": "M3 Copy aggregate semantics",
+      "bytes": 16757,
+      "sha256": "1595efa7c7097ec6dfb9405cc2dc004bc22b273ff9de65f987c7284369984b94"
+    },
+    {
+      "id": "reference/m3-data-ownership-ir",
+      "path": "documents/reference/m3-data-ownership-ir.md",
+      "title": "M3 verified data and ownership IR",
+      "bytes": 26002,
+      "sha256": "03753e1e88a2cce7ef2f5deda93a5f53c612538240a88573f26432a11325d2bf"
+    },
+    {
+      "id": "reference/m3-generic-clone-core",
+      "path": "documents/reference/m3-generic-clone-core.md",
+      "title": "M3 canonical structural clone",
+      "bytes": 7470,
+      "sha256": "e38845b50b67ea5af70c844976d23f3356bec8d7e7a55fdc431c9ad03ec59866"
+    },
+    {
+      "id": "reference/m3-generic-function-operations",
+      "path": "documents/reference/m3-generic-function-operations.md",
+      "title": "M3 private generic function operations",
+      "bytes": 11563,
+      "sha256": "db1a2f094b3b7c7c7179464c2bbff58f7c2a2076e6e4ce2be1e6de03ecd60455"
+    },
+    {
+      "id": "reference/m3-generic-static-places",
+      "path": "documents/reference/m3-generic-static-places.md",
+      "title": "M3 complete generic static subobjects",
+      "bytes": 4729,
+      "sha256": "e411fd554a0d5af2e08df6a53d0702c84050ac369f7816dd6c9fdf0632234cf6"
+    },
+    {
+      "id": "reference/m3-generic-vec-operations",
+      "path": "documents/reference/m3-generic-vec-operations.md",
+      "title": "M3 ordinary generic Vec operations",
+      "bytes": 8861,
+      "sha256": "ba270cac9097acdb3cfd8527d0612b449bb596d9bd233556b5cb392ddf11f92f"
+    },
+    {
+      "id": "reference/m3-getting-started",
+      "path": "documents/reference/m3-getting-started.md",
+      "title": "Your first M3 programs",
+      "bytes": 15368,
+      "sha256": "f5eb247ee0bc6425bd5851faa709a0104d0d8f004e33f1bd5577ec0244b72280"
+    },
+    {
+      "id": "reference/m3-indexed-borrow-authority",
+      "path": "documents/reference/m3-indexed-borrow-authority.md",
+      "title": "M3 indexed borrow authority",
+      "bytes": 7249,
+      "sha256": "ddb9c07267f2d3c53674f5d51c6ef83ef4ba26c31c4ec5a3256520629349e8cd"
+    },
+    {
+      "id": "reference/m3-opaque-handle-slots",
+      "path": "documents/reference/m3-opaque-handle-slots.md",
+      "title": "M3 opaque typed handle slots",
+      "bytes": 4179,
+      "sha256": "308450f98756911c171207a57437d0e3d5e08547d6fb6954239928e2a288f3d4"
+    },
+    {
+      "id": "reference/m3-owned-data-semantics",
+      "path": "documents/reference/m3-owned-data-semantics.md",
+      "title": "M3 owned data semantics",
+      "bytes": 57201,
+      "sha256": "e9f5fd3e8a53e314a52383bfe2032df067184fd3a649ee9be952beadad54384a"
+    },
+    {
+      "id": "reference/m3-ownership-composition-evidence",
+      "path": "documents/reference/m3-ownership-composition-evidence.md",
+      "title": "M3 ownership composition evidence",
+      "bytes": 37432,
+      "sha256": "f6173208c52d6bdad7420edad6d13b661c7c2b6b1f0530969c73ed03434a8ef9"
+    },
+    {
+      "id": "reference/m3-ownership-composition",
+      "path": "documents/reference/m3-ownership-composition.md",
+      "title": "M3 ownership composition interfaces",
+      "bytes": 21542,
+      "sha256": "0ce73e4f83e27bc1d0c47f58779dc23d8112bdb65dadeddb5a00c3d623e4d2e6"
+    },
+    {
+      "id": "reference/m3-ownership-runtime-abi",
+      "path": "documents/reference/m3-ownership-runtime-abi.md",
+      "title": "M3 ownership runtime ABI authority",
+      "bytes": 6755,
+      "sha256": "89a2ad7acb9fa175bfb648b80cc0fe6a92465ee99c5df7447e8d54e9c80dc96f"
+    },
+    {
+      "id": "reference/m3-public-profile",
+      "path": "documents/reference/m3-public-profile.md",
+      "title": "Public DataOwnershipV1 profile",
+      "bytes": 6568,
+      "sha256": "23c430e0bcbf9942cc8c88a5e60f40e2017e4052c9d278afb5ec4fbcf161cb46"
+    },
+    {
+      "id": "reference/m3-shared-weak-authority",
+      "path": "documents/reference/m3-shared-weak-authority.md",
+      "title": "M3 Shared and Weak authority contract",
+      "bytes": 21760,
+      "sha256": "a55fa45327cb7292d774a30b5a2d61eead90d539d4f384b145e471bf75384bfa"
+    },
+    {
+      "id": "reference/m3-shared-weak-evidence",
+      "path": "documents/reference/m3-shared-weak-evidence.md",
+      "title": "M3 Shared and Weak evidence matrix",
+      "bytes": 60463,
+      "sha256": "6b8b71bab3e230b96457c8371dc036275fe2ae89a0c74147e6f073a34960d869"
+    },
+    {
+      "id": "reference/m4-conformance",
+      "path": "documents/reference/m4-conformance.md",
+      "title": "Public M4 conformance and publication",
+      "bytes": 6426,
+      "sha256": "2b340cb44652751201291390a49078b864459a24de22a4bb5e36325bd36388d0"
+    },
+    {
+      "id": "reference/m4-support",
+      "path": "documents/reference/m4-support.md",
+      "title": "Fixed public M4 support contract",
+      "bytes": 988567,
+      "sha256": "74c2e005c21da33916fff17bdcf24ca1611d179254e08ab8ef87264f5a188285"
+    },
+    {
+      "id": "reference/m6-conformance",
+      "path": "documents/reference/m6-conformance.md",
+      "title": "M6 tooling conformance v1",
+      "bytes": 17378,
+      "sha256": "4d50b120df792ba22631cc6adfc61ccbcd78d2d5de6c55b3c11a9850dde59a34"
+    },
+    {
+      "id": "reference/m6-reviewed-source-v2",
+      "path": "documents/reference/m6-reviewed-source-v2.md",
+      "title": "M6 reviewed-source playground route v2",
+      "bytes": 26456,
+      "sha256": "445f3532a8451f3b3d5b20d41ac523ca082dd06890451978fd10704c782b7a0d"
+    },
+    {
+      "id": "reference/m6-tooling",
+      "path": "documents/reference/m6-tooling.md",
+      "title": "M6 tooling support and evidence",
+      "bytes": 14243,
+      "sha256": "301c9d5abac6da49b84d4298fc36217d52ef7106a0809165b37adbbe343f7f49"
+    },
+    {
+      "id": "reference/memory-model",
+      "path": "documents/reference/memory-model.md",
+      "title": "Memory model direction",
+      "bytes": 1369,
+      "sha256": "a511d751927a43d55414c9d023446d5879123f55323d5efcbfca6a761dd72e6e"
+    },
+    {
+      "id": "reference/ownership-runtime-v1",
+      "path": "documents/reference/ownership-runtime-v1.md",
+      "title": "Ownership runtime ABI v1",
+      "bytes": 28394,
+      "sha256": "3329dca6ee8548623f9041fcf2cd97b36da7f5a94a263954f83210f0885accc6"
+    },
+    {
+      "id": "reference/scalar-abi-v1",
+      "path": "documents/reference/scalar-abi-v1.md",
+      "title": "Scalar ABI v1",
+      "bytes": 6390,
+      "sha256": "e15db32684d8eecfc442086e4a66f9a41c3e660443c54aeda52a1c1b3c9b9521"
+    },
+    {
+      "id": "reference/syntax-protocol-v4",
+      "path": "documents/reference/syntax-protocol-v4.md",
+      "title": "Syntax protocol v4",
+      "bytes": 12438,
+      "sha256": "660aac6a0f738fa4e09693d118d9efcfc98b16a7d38afe70518b9e7bb530ffe9"
+    },
+    {
+      "id": "reference/wasi-command-getting-started",
+      "path": "documents/reference/wasi-command-getting-started.md",
+      "title": "Bounded WASI command walkthrough",
+      "bytes": 12798,
+      "sha256": "559da966d3b24b425a7fe85811f3ccb7fceebd22145578bf37a0f4acef6bfe2f"
+    },
+    {
+      "id": "reference/wasi-command-manifest-v1",
+      "path": "documents/reference/wasi-command-manifest-v1.md",
+      "title": "WASI command execution manifest v1",
+      "bytes": 6622,
+      "sha256": "2922bed214532fbabebf6b7fba5a47de9f53fda8f5a44164c5d45e9680bc3598"
+    },
+    {
+      "id": "reference/wasi-server-clock-status-v1",
+      "path": "documents/reference/wasi-server-clock-status-v1.md",
+      "title": "Bounded server clock and status profile",
+      "bytes": 4535,
+      "sha256": "c551f737130736fc3b8b237195058530dca752a1125529ff82dca3c18b20b4b3"
+    },
+    {
+      "id": "reference/wasi-server-status-v1",
+      "path": "documents/reference/wasi-server-status-v1.md",
+      "title": "Bounded source-checkout server status profile",
+      "bytes": 6171,
+      "sha256": "bc2aa22ecc5af0bdd11ff0c7adea2b1d0272a7353cce6012dcf57af156872160"
+    },
+    {
+      "id": "status/current",
+      "path": "documents/status/current.md",
+      "title": "Compiler status",
+      "bytes": 35036,
+      "sha256": "f80545afe625712445dca044662186e93d97b52497693aa17fe371f3f6767c1d"
+    },
+    {
+      "id": "status/m0-conformance",
+      "path": "documents/status/m0-conformance.md",
+      "title": "M0 architecture conformance",
+      "bytes": 8931,
+      "sha256": "8b767260e25a0c5fb0011b32ba1904ca174e56ef20cd5591f1b0426a5ff843d4"
+    },
+    {
+      "id": "status/m1-conformance",
+      "path": "documents/status/m1-conformance.md",
+      "title": "M1 three-target conformance",
+      "bytes": 4440,
+      "sha256": "1d6c70902a0d11d26ead4f6545aec71243640a86c9f2168a99e1d0c507638d6a"
+    },
+    {
+      "id": "status/roadmap",
+      "path": "documents/status/roadmap.md",
+      "title": "Roadmap",
+      "bytes": 50314,
+      "sha256": "7b7738cfbf905c46c795666e06931a2872dd8e6b54193a6c98c56a75c2ac49bf"
+    }
+  ]
+}

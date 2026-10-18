@@ -1,0 +1,1239 @@
+{
+  "supervisorPid": 11588,
+  "pins": {
+    "runtime": {
+      "path": "/usr/bin/python3.12",
+      "bytes": 8020928,
+      "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+      "identity": {
+        "dev": "2049",
+        "ino": "8192",
+        "bytes": "8020928",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1788171506000000000",
+        "changedNs": "1791839175373614691"
+      }
+    },
+    "helper": {
+      "path": "/home/runner/work/zryna/zryna/source/scripts/m6/installed-editor/owner-linux.py",
+      "bytes": 13262,
+      "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df",
+      "identity": {
+        "dev": "2049",
+        "ino": "8943618",
+        "bytes": "13262",
+        "links": "1",
+        "mode": "33188",
+        "modifiedNs": "1792355922059457929",
+        "changedNs": "1792355922059457929"
+      }
+    },
+    "target": {
+      "path": "/home/runner/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo",
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "identity": {
+        "dev": "2049",
+        "ino": "8944479",
+        "bytes": "42839824",
+        "links": "1",
+        "mode": "33261",
+        "modifiedNs": "1792355923254627908",
+        "changedNs": "1792355923356628388"
+      }
+    },
+    "helperCapture": {
+      "source": {
+        "path": "/home/runner/work/zryna/zryna/source/scripts/m6/installed-editor/owner-linux.py",
+        "bytes": 13262,
+        "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df",
+        "identity": {
+          "dev": "2049",
+          "ino": "8943618",
+          "bytes": "13262",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1792355922059457929",
+          "changedNs": "1792355922059457929"
+        }
+      },
+      "captured": {
+        "path": "/home/runner/work/_temp/native-tooling-preparation/RECORDED_FORMATTER/commands/F2.owner-material/owner.py",
+        "bytes": 13262,
+        "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df"
+      }
+    },
+    "dependencies": [
+      {
+        "path": "/etc/python3.12/sitecustomize.py",
+        "bytes": 155,
+        "sha256": "43d81125d92376b1a69d53a71126a041cc9a18d8080e92dea0a2ae23be138b1e",
+        "identity": {
+          "dev": "2049",
+          "ino": "657",
+          "bytes": "155",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1712727227000000000",
+          "changedNs": "1788497650845894630"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/home/runner/work/_temp/native-tooling-preparation/RECORDED_FORMATTER/commands/F2.owner-material/owner.py",
+        "bytes": 13262,
+        "sha256": "4d5eba68b7c1c4b69e02d69154cf7c85c33e3a25ec44f5c1ebff153356da04df",
+        "identity": {
+          "dev": "2049",
+          "ino": "9437548",
+          "bytes": "13262",
+          "links": "1",
+          "mode": "33024",
+          "modifiedNs": "1792356315731543210",
+          "changedNs": "1792356315732543221"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/bin/python3.12",
+        "bytes": 8020928,
+        "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+        "identity": {
+          "dev": "2049",
+          "ino": "8192",
+          "bytes": "8020928",
+          "links": "1",
+          "mode": "33261",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175373614691"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/locale/C.utf8/LC_CTYPE",
+        "bytes": 360460,
+        "sha256": "59015993b1b671273461ef1167d7a9ad76dc090d521c91102e962217ed6b6dba",
+        "identity": {
+          "dev": "2049",
+          "ino": "47640",
+          "bytes": "360460",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788444912000000000",
+          "changedNs": "1791839173660585569"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/locale/locale-archive",
+        "bytes": 3055776,
+        "sha256": "7a31de159ded19d74c73126489d3f714c1684d5b9262cddae10bbe4fd8581a2b",
+        "identity": {
+          "dev": "2049",
+          "ino": "11361",
+          "bytes": "3055776",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1791839195610953536",
+          "changedNs": "1791839195610953536"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/_collections_abc.py",
+        "bytes": 32082,
+        "sha256": "90324ee3e1c4ca5319f7242d4b7c1e90eb8418b3f999d07c853aa488356282e6",
+        "identity": {
+          "dev": "2049",
+          "ino": "7833",
+          "bytes": "32082",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175680620065"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/_sitebuiltins.py",
+        "bytes": 3128,
+        "sha256": "b9388bc1d6d12ed6be12da420ab1feca40f99c0e33ec315d92b1e01cb69b25bc",
+        "identity": {
+          "dev": "2049",
+          "ino": "7836",
+          "bytes": "3128",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175688620205"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/_weakrefset.py",
+        "bytes": 5893,
+        "sha256": "91895a451d06e9f521a1171b31b9b19bc9740f35af00d4fa106338ab7167c9ac",
+        "identity": {
+          "dev": "2049",
+          "ino": "7840",
+          "bytes": "5893",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175696620345"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/abc.py",
+        "bytes": 6538,
+        "sha256": "e558702a95cdce3febd289da021715d2b92bc43995b8a1bc58dfa1c3d8010287",
+        "identity": {
+          "dev": "2049",
+          "ino": "7841",
+          "bytes": "6538",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175696620345"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/base64.py",
+        "bytes": 20602,
+        "sha256": "65c70b5b6361c6f7a71ecc2df0f55315474b669221dd8d81d7c1ae8d56748ada",
+        "identity": {
+          "dev": "2049",
+          "ino": "7865",
+          "bytes": "20602",
+          "links": "1",
+          "mode": "33261",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175696620345"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/codecs.py",
+        "bytes": 36870,
+        "sha256": "7b7839e53a77961153240aecfe11edc8054d05b1dedd83894450dae21ec05785",
+        "identity": {
+          "dev": "2049",
+          "ino": "7868",
+          "bytes": "36870",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175696620345"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/collections/__init__.py",
+        "bytes": 52378,
+        "sha256": "0af967cd58036507b3d0fbc33b7a996c61dbb52a94b0b738c8bef12cd4cc7dd4",
+        "identity": {
+          "dev": "2049",
+          "ino": "7869",
+          "bytes": "52378",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175696620345"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/copyreg.py",
+        "bytes": 7614,
+        "sha256": "c8eda41f05c6bf95a4da4726a530409d2485ae060b8d019b3a8034389a15d3e9",
+        "identity": {
+          "dev": "2049",
+          "ino": "7875",
+          "bytes": "7614",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175697620363"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/ctypes/__init__.py",
+        "bytes": 18182,
+        "sha256": "0782592567ad71097198a3afe985ac3e2ea0b9b5e75452402c9460c89a86318a",
+        "identity": {
+          "dev": "2049",
+          "ino": "8519",
+          "bytes": "18182",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175101609929"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/ctypes/_endian.py",
+        "bytes": 2535,
+        "sha256": "c5d692bdce10dfee242752620061bab684633bc72445a3def484961ef1bdbf3a",
+        "identity": {
+          "dev": "2049",
+          "ino": "8521",
+          "bytes": "2535",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175102609946"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/encodings/__init__.py",
+        "bytes": 5884,
+        "sha256": "78c4744d407690f321565488710b5aaf6486b5afa8d185637aa1e7633ab59cd8",
+        "identity": {
+          "dev": "2049",
+          "ino": "8032",
+          "bytes": "5884",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175700620415"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/encodings/aliases.py",
+        "bytes": 15677,
+        "sha256": "6fdcc49ba23a0203ae6cf28e608f8e6297d7c4d77d52e651db3cb49b9564c6d2",
+        "identity": {
+          "dev": "2049",
+          "ino": "8033",
+          "bytes": "15677",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175700620415"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/encodings/utf_8.py",
+        "bytes": 1005,
+        "sha256": "ba0cac060269583523ca9506473a755203037c57d466a11aa89a30a5f6756f3d",
+        "identity": {
+          "dev": "2049",
+          "ino": "8177",
+          "bytes": "1005",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175724620835"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/enum.py",
+        "bytes": 81636,
+        "sha256": "c8ead615c159598370295649eb296819ad4b40d50b200c4fec2d4269bf7af9ae",
+        "identity": {
+          "dev": "2049",
+          "ino": "8181",
+          "bytes": "81636",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175724620835"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/functools.py",
+        "bytes": 38126,
+        "sha256": "cca971c456e1bec8b751aecdf41466f34dbf72321ee0840627280ba2ccf9d033",
+        "identity": {
+          "dev": "2049",
+          "ino": "8210",
+          "bytes": "38126",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175724620835"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/genericpath.py",
+        "bytes": 5572,
+        "sha256": "2b0b35d2206778af4081cf81dd9b513876e72c35a55bec941402e1fa62b1f1aa",
+        "identity": {
+          "dev": "2049",
+          "ino": "8211",
+          "bytes": "5572",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175724620835"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/importlib/__init__.py",
+        "bytes": 4774,
+        "sha256": "c9e1b3dbc619ac31e7017ac43668a20200872c1c0e79ae379c0dab6ed399b730",
+        "identity": {
+          "dev": "2049",
+          "ino": "8216",
+          "bytes": "4774",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175725620853"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/importlib/_abc.py",
+        "bytes": 1354,
+        "sha256": "80aab7931dc999dee581c8b8b56fcd973fe156335a96ceeaf6acfc03cebf10e8",
+        "identity": {
+          "dev": "2049",
+          "ino": "8217",
+          "bytes": "1354",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175725620853"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/importlib/_bootstrap.py",
+        "bytes": 57056,
+        "sha256": "9653944363a4773cc32bbb34426024597a9d2ee4cd42e7912b4daf8cadfb53ed",
+        "identity": {
+          "dev": "2049",
+          "ino": "8218",
+          "bytes": "57056",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175725620853"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/importlib/_bootstrap_external.py",
+        "bytes": 69197,
+        "sha256": "97c6211750d63067712ad2cd74d50be33337f1fb1cd2c769022ced9b401edd92",
+        "identity": {
+          "dev": "2049",
+          "ino": "8219",
+          "bytes": "69197",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175725620853"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/importlib/machinery.py",
+        "bytes": 880,
+        "sha256": "d045cd7ecf2a12b6ecbfbef79eb114e87ef2ebd756f5b705f73e6f3266e3dede",
+        "identity": {
+          "dev": "2049",
+          "ino": "8221",
+          "bytes": "880",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175726620870"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/importlib/util.py",
+        "bytes": 10840,
+        "sha256": "ca54e6458dbe521d591e5b8d9bb651ef929bfae946706c98470cdd569041a64f",
+        "identity": {
+          "dev": "2049",
+          "ino": "8250",
+          "bytes": "10840",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175728620905"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/io.py",
+        "bytes": 3582,
+        "sha256": "7cec3cb8ac004058dd0a5af246e6d950fb59c7ddd0058fda48bcb3fcb98d8822",
+        "identity": {
+          "dev": "2049",
+          "ino": "8259",
+          "bytes": "3582",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175728620905"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/json/__init__.py",
+        "bytes": 14020,
+        "sha256": "d5d41e2c29049515d295d81a6d40b4890fbec8d8482cfb401630f8ef2f77e4d5",
+        "identity": {
+          "dev": "2049",
+          "ino": "8592",
+          "bytes": "14020",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175105609999"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/json/decoder.py",
+        "bytes": 12473,
+        "sha256": "9f02654649816145bc76f8c210a5fe3ba1de142d4d97a1c93105732e747c285b",
+        "identity": {
+          "dev": "2049",
+          "ino": "8593",
+          "bytes": "12473",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175105609999"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/json/encoder.py",
+        "bytes": 16070,
+        "sha256": "af7bd40a0d0d0a3e726a9b4b3a2a543019f6ab97a340d0162a9c29ca9da97869",
+        "identity": {
+          "dev": "2049",
+          "ino": "8594",
+          "bytes": "16070",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175105609999"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/json/scanner.py",
+        "bytes": 2425,
+        "sha256": "8604d9d03786d0d509abb49e9f069337278ea988c244069ae8ca2c89acc2cb08",
+        "identity": {
+          "dev": "2049",
+          "ino": "8595",
+          "bytes": "2425",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175105609999"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/keyword.py",
+        "bytes": 1073,
+        "sha256": "18c2be738c04ad20ad375f6a71db34b3823c7f40b0340f5294d0e89f3c9b093b",
+        "identity": {
+          "dev": "2049",
+          "ino": "8261",
+          "bytes": "1073",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175728620905"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+        "bytes": 137968,
+        "sha256": "aad3e24f186e6c0a1c7efa8f16004f951f527db86f6451d30118657384a456c1",
+        "identity": {
+          "dev": "2049",
+          "ino": "8614",
+          "bytes": "137968",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175106610016"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+        "bytes": 48952,
+        "sha256": "ca8e35c58f7bc8e27258c4af43651c941413bc6318903621253485b0395758a3",
+        "identity": {
+          "dev": "2049",
+          "ino": "8626",
+          "bytes": "48952",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175106610016"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/operator.py",
+        "bytes": 10965,
+        "sha256": "b2af20f67667203c1730e686cc5d0427becc94db4c97f1d3efe3ed2158473f6a",
+        "identity": {
+          "dev": "2049",
+          "ino": "8276",
+          "bytes": "10965",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175729620923"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/os.py",
+        "bytes": 39786,
+        "sha256": "316d1b7307fd851bded3423c9d437e0a383c725d993f0fcff2e8b749fe560b62",
+        "identity": {
+          "dev": "2049",
+          "ino": "8359",
+          "bytes": "39786",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175729620923"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/posixpath.py",
+        "bytes": 17623,
+        "sha256": "c443d7b8afad1717e7060ce49b3e04423058de56cd4246ee6bcc1ac962eb5c2b",
+        "identity": {
+          "dev": "2049",
+          "ino": "8364",
+          "bytes": "17623",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175729620923"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/re/__init__.py",
+        "bytes": 16315,
+        "sha256": "8ff3c37c63b917fcf8dc8d50993a502292a3dc159e41de4f4018c72a53d1c07b",
+        "identity": {
+          "dev": "2049",
+          "ino": "8368",
+          "bytes": "16315",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175729620923"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/re/_casefix.py",
+        "bytes": 5446,
+        "sha256": "41572ac50cf96b04496e676d8a6708898bb8e752e06dad34ed4c50c5d8f1fe40",
+        "identity": {
+          "dev": "2049",
+          "ino": "8369",
+          "bytes": "5446",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175730620940"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/re/_compiler.py",
+        "bytes": 26089,
+        "sha256": "c05067f8bfa4c13cbbf1eedc4d5cafc9b621bcb6ebc5771ba0518a18095af15a",
+        "identity": {
+          "dev": "2049",
+          "ino": "8370",
+          "bytes": "26089",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175730620940"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/re/_constants.py",
+        "bytes": 5930,
+        "sha256": "fa4fdb200f238f9e7817b63892b0d69833d8165134801e775e10cc113348a375",
+        "identity": {
+          "dev": "2049",
+          "ino": "8371",
+          "bytes": "5930",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175730620940"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/re/_parser.py",
+        "bytes": 41201,
+        "sha256": "a51a85b37cf3f44ba7ff25754da5f31306e4ccfa6eb3c017f9d37bdf4e770840",
+        "identity": {
+          "dev": "2049",
+          "ino": "8372",
+          "bytes": "41201",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175730620940"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/reprlib.py",
+        "bytes": 6569,
+        "sha256": "8da31054076803065758311f54b18b8a616824941977d907dc3ee729228e9015",
+        "identity": {
+          "dev": "2049",
+          "ino": "8373",
+          "bytes": "6569",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175730620940"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/signal.py",
+        "bytes": 2495,
+        "sha256": "0363c964c90ac0b3e515de5749205e6e6454051a1211058375d84d91eab6071a",
+        "identity": {
+          "dev": "2049",
+          "ino": "8376",
+          "bytes": "2495",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175730620940"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/site.py",
+        "bytes": 23903,
+        "sha256": "619436355cbe91c3b29681ab486ee63f5f2e0a7d6274dfae747bdb94e60bca55",
+        "identity": {
+          "dev": "2049",
+          "ino": "8377",
+          "bytes": "23903",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175730620940"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/stat.py",
+        "bytes": 5485,
+        "sha256": "052af0327eae6941b69b05c088b3e748f79995635f80ac4cc7125eb333eb4c77",
+        "identity": {
+          "dev": "2049",
+          "ino": "8388",
+          "bytes": "5485",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175731620958"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/struct.py",
+        "bytes": 257,
+        "sha256": "9c231f9497caf513a22dee8f790b07f969b0e45854a0bdd6dd84b492e08c2856",
+        "identity": {
+          "dev": "2049",
+          "ino": "8391",
+          "bytes": "257",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175731620958"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/threading.py",
+        "bytes": 60123,
+        "sha256": "8273b4cf5b6f274b4993f5cae08634dd272c6952af9867ff9aa13ed446f1549b",
+        "identity": {
+          "dev": "2049",
+          "ino": "8396",
+          "bytes": "60123",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175732620975"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/types.py",
+        "bytes": 10993,
+        "sha256": "345474ef027a1273f353da9bdc1f7c18f65335e72e681bcc0376774cc51f2405",
+        "identity": {
+          "dev": "2049",
+          "ino": "8401",
+          "bytes": "10993",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175732620975"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/warnings.py",
+        "bytes": 21760,
+        "sha256": "8eb1bb88d0beb82ebecfe7ee5cf54ed9b77b4a7acee1989e392a65de42017c49",
+        "identity": {
+          "dev": "2049",
+          "ino": "8410",
+          "bytes": "21760",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175733620993"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3.12/zipimport.py",
+        "bytes": 28132,
+        "sha256": "4ac94d92219c2e1c0d67ad3fff3753ec3a3756af62a36a2f696f02cd12d518f0",
+        "identity": {
+          "dev": "2049",
+          "ino": "8416",
+          "bytes": "28132",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1788171506000000000",
+          "changedNs": "1791839175733620993"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3/dist-packages/_distutils_hack/__init__.py",
+        "bytes": 6299,
+        "sha256": "46849a60a7cc85189cf6b5ac62b3f135004862ce6a96540a81c95ef6fbc4dc3e",
+        "identity": {
+          "dev": "2049",
+          "ino": "14946",
+          "bytes": "6299",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1692360458000000000",
+          "changedNs": "1788497652196904796"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3/dist-packages/apport_python_hook.py",
+        "bytes": 8695,
+        "sha256": "2aac4de740babcc6038483cccc7fa71f7f06405da9b9d102aafe8ac55f509c4b",
+        "identity": {
+          "dev": "2049",
+          "ino": "11929",
+          "bytes": "8695",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1785316692000000000",
+          "changedNs": "1788497652019903464"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/python3/dist-packages/zope/__init__.py",
+        "bytes": 56,
+        "sha256": "1be778dfcbcfc7b9bf92ce5ef574ed337bbb2c344ee5d492ba489bba45a6c8f3",
+        "identity": {
+          "dev": "2049",
+          "ino": "12928",
+          "bytes": "56",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1696502938000000000",
+          "changedNs": "1788497652073903871"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "bytes": 2129424,
+        "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf",
+        "identity": {
+          "dev": "2049",
+          "ino": "34893",
+          "bytes": "2129424",
+          "links": "1",
+          "mode": "33261",
+          "modifiedNs": "1788444912000000000",
+          "changedNs": "1791839169416514712"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+        "bytes": 186624,
+        "sha256": "286682ecbc5e59a638963b1a4e6351e65eb32fcf4bdcb9cb7569b6a61fe06a8d",
+        "identity": {
+          "dev": "2049",
+          "ino": "1874",
+          "bytes": "186624",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1790021143000000000",
+          "changedNs": "1791839174039591896"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      },
+      {
+        "path": "/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+        "bytes": 47672,
+        "sha256": "00f593fe192f2851b8ce23b25cec2488d769beb5a8f63e8c9e563071e1075153",
+        "identity": {
+          "dev": "2049",
+          "ino": "6308",
+          "bytes": "47672",
+          "links": "1",
+          "mode": "33188",
+          "modifiedNs": "1712592217000000000",
+          "changedNs": "1788497651495899521"
+        },
+        "admission": {
+          "policy": "single-link-ordinary-v1",
+          "links": "1",
+          "publisherAuthenticated": false
+        }
+      }
+    ]
+  },
+  "ready": {
+    "kind": "ready",
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "runtime": "/usr/bin/python3.12",
+    "pid": 11588,
+    "subreaper": true,
+    "dependencies": [
+      "/etc/python3.12/sitecustomize.py",
+      "/home/runner/work/_temp/native-tooling-preparation/RECORDED_FORMATTER/commands/F2.owner-material/owner.py",
+      "/usr/bin/python3.12",
+      "/usr/lib/locale/C.utf8/LC_CTYPE",
+      "/usr/lib/locale/locale-archive",
+      "/usr/lib/python3.12/_collections_abc.py",
+      "/usr/lib/python3.12/_sitebuiltins.py",
+      "/usr/lib/python3.12/_weakrefset.py",
+      "/usr/lib/python3.12/abc.py",
+      "/usr/lib/python3.12/base64.py",
+      "/usr/lib/python3.12/codecs.py",
+      "/usr/lib/python3.12/collections/__init__.py",
+      "/usr/lib/python3.12/copyreg.py",
+      "/usr/lib/python3.12/ctypes/__init__.py",
+      "/usr/lib/python3.12/ctypes/_endian.py",
+      "/usr/lib/python3.12/encodings/__init__.py",
+      "/usr/lib/python3.12/encodings/aliases.py",
+      "/usr/lib/python3.12/encodings/utf_8.py",
+      "/usr/lib/python3.12/enum.py",
+      "/usr/lib/python3.12/functools.py",
+      "/usr/lib/python3.12/genericpath.py",
+      "/usr/lib/python3.12/importlib/__init__.py",
+      "/usr/lib/python3.12/importlib/_abc.py",
+      "/usr/lib/python3.12/importlib/_bootstrap.py",
+      "/usr/lib/python3.12/importlib/_bootstrap_external.py",
+      "/usr/lib/python3.12/importlib/machinery.py",
+      "/usr/lib/python3.12/importlib/util.py",
+      "/usr/lib/python3.12/io.py",
+      "/usr/lib/python3.12/json/__init__.py",
+      "/usr/lib/python3.12/json/decoder.py",
+      "/usr/lib/python3.12/json/encoder.py",
+      "/usr/lib/python3.12/json/scanner.py",
+      "/usr/lib/python3.12/keyword.py",
+      "/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+      "/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+      "/usr/lib/python3.12/operator.py",
+      "/usr/lib/python3.12/os.py",
+      "/usr/lib/python3.12/posixpath.py",
+      "/usr/lib/python3.12/re/__init__.py",
+      "/usr/lib/python3.12/re/_casefix.py",
+      "/usr/lib/python3.12/re/_compiler.py",
+      "/usr/lib/python3.12/re/_constants.py",
+      "/usr/lib/python3.12/re/_parser.py",
+      "/usr/lib/python3.12/reprlib.py",
+      "/usr/lib/python3.12/signal.py",
+      "/usr/lib/python3.12/site.py",
+      "/usr/lib/python3.12/stat.py",
+      "/usr/lib/python3.12/struct.py",
+      "/usr/lib/python3.12/threading.py",
+      "/usr/lib/python3.12/types.py",
+      "/usr/lib/python3.12/warnings.py",
+      "/usr/lib/python3.12/zipimport.py",
+      "/usr/lib/python3/dist-packages/_distutils_hack/__init__.py",
+      "/usr/lib/python3/dist-packages/apport_python_hook.py",
+      "/usr/lib/python3/dist-packages/zope/__init__.py",
+      "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+      "/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4"
+    ]
+  }
+}

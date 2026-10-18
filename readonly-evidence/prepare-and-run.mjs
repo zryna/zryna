@@ -1,0 +1,39 @@
+// Fixed read-only operator, source unchanged; no test reruns or publication capability.
+import assert from 'node:assert/strict';
+import {readFileSync,mkdirSync,writeFileSync,openSync,closeSync,realpathSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import {join,resolve,dirname} from 'node:path';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {performance} from 'node:perf_hooks';
+assert.equal(process.argv.length,2);assert.equal(process.version,'v22.22.1');assert.equal(process.arch,'x64');assert(['linux','win32'].includes(process.platform));
+const platform=process.platform==='win32'?'windows':'linux';
+const source=realpathSync(join(process.env.GITHUB_WORKSPACE,'source')),opRoot=realpathSync(join(process.env.GITHUB_WORKSPACE,'operator'));
+const commit=process.env.SELECTED_FINAL_MAIN,tree=process.env.SELECTED_FINAL_TREE,operator=process.env.SELECTED_OPERATOR_COMMIT;assert([commit,tree,operator].every(s=>/^[a-f0-9]{40}$/.test(s??'')));
+assert.equal(commit,'71fd69d99a39c22bdf262d1655a032aa76221f3e');assert.equal(tree,'351da60bd4037e0f96c286045c8943f41fa99b03');
+const output=resolve(process.env.RUNNER_TEMP,'m6-readonly-evidence');mkdirSync(output,{mode:0o700});const resultFd=openSync(join(output,'RESULT.json'),'wx',0o400);let outcome={status:'failed'};
+const sha=b=>createHash('sha256').update(b).digest('hex');const json=(n,v)=>writeFileSync(join(output,n),JSON.stringify(v,null,2)+'\n',{flag:'wx',mode:0o400});
+const git=(root,args)=>execFileSync('git',['--no-replace-objects','-c','core.fsmonitor=false',...args],{cwd:root,timeout:10000,maxBuffer:2097152});
+const sourceTuple=()=>({commit:git(source,['rev-parse','HEAD']).toString().trim(),tree:git(source,['rev-parse','HEAD^{tree}']).toString().trim(),status:git(source,['status','--porcelain','--untracked-files=all']).toString()});
+const sourceImport=async p=>{assert(readFileSync(join(source,p)).equals(git(source,['show',commit+':'+p])));return import(pathToFileURL(join(source,p)).href)};
+let apiCount=0;
+try{
+ assert.equal(git(opRoot,['rev-parse','HEAD']).toString().trim(),operator);assert.equal(git(opRoot,['status','--porcelain','--untracked-files=all']).toString(),'');const before=sourceTuple();assert.deepEqual(before,{commit,tree,status:''});json('SOURCE_BEFORE.json',before);
+ const corpusPath=join(opRoot,'readonly-evidence',platform,'corpus.json'),corpusBytes=readFileSync(corpusPath),corpus=JSON.parse(corpusBytes),corpusSha256=process.env.SELECTED_CORPUS_SHA256;assert.equal(sha(corpusBytes),corpusSha256);assert.equal(corpus.platform,platform);
+ const {githubApi}=await sourceImport('scripts/m4/hosted-api.mjs');const rawApi=githubApi();const api=async path=>{assert(path.startsWith('/repos/zryna/zryna/'));assert(++apiCount<=150);const r=await rawApi(path);json('api-'+String(apiCount).padStart(3,'0')+'.json',r);return r};
+ const {observeMain,expectedJobs,observeCi}=await sourceImport('scripts/m6/compiler-release/gates.mjs');const selection={repository:'zryna/zryna',commit,tree},client={request:api};
+ const main=await observeMain(client,selection),inventory=await expectedJobs(source,client,selection),ci=await observeCi(client,selection,39171574840,1,inventory);assert.equal(inventory.jobs.length,42);json('FULL_MAIN_ADMISSION.json',{selection,main,inventory,ci});
+ const artifacts=[];for(const expected of corpus.artifacts){const actual=await api('/repos/zryna/zryna/actions/artifacts/'+expected.id);for(const k of ['id','name','size_in_bytes','digest','expires_at'])assert.equal(actual[k],expected[k]);assert.equal(actual.expired,false);assert(Date.parse(actual.expires_at)>Date.now());assert.equal(actual.workflow_run.id,expected.workflow_run.id);assert.equal(actual.workflow_run.head_sha,expected.workflow_run.head_sha);artifacts.push({id:actual.id,bytes:actual.size_in_bytes,sha256:actual.digest.slice(7),runId:actual.workflow_run.id,head:actual.workflow_run.head_sha})}
+ for(const [id,head] of [[39164229342,'4adf55ac71eaa864834312d44a1df19b684dacc1'],[39176708782,'4f0a84f768be849031c3d2358ac5ecf3b94dfd7a'],[39176839216,commit]]){const r=await api('/repos/zryna/zryna/actions/runs/'+id+'/attempts/1');assert.equal(r.head_sha,head);assert.equal(r.status,'completed');assert.equal(r.conclusion,'success')}
+ const actualJob=await api('/repos/zryna/zryna/actions/jobs/'+corpus.canonicalJob.id);assert.equal(actualJob.id,corpus.canonicalJob.id);assert.equal(actualJob.head_sha,commit);assert.equal(actualJob.run_id,39171574840);assert.equal(actualJob.conclusion,'success');assert.equal(actualJob.status,'completed');
+ const docs=JSON.parse(readFileSync(join(opRoot,'readonly-evidence',platform,'docs/operator-authentication.json')));for(const pin of [docs.expected.docsArtifact,docs.expected.gateArtifact]){const a=await api('/repos/zryna/zryna/actions/artifacts/'+pin.id);assert.equal(a.digest,'sha256:'+pin.sha256);assert.equal(a.size_in_bytes,pin.bytes);assert.equal(a.workflow_run.head_sha,commit);assert.equal(a.workflow_run.id,39176839216);assert.equal(a.expired,false)}
+ const auth={source:selection,operator,fullCi:{runId:39171574840,attempt:1,conclusion:'success',jobs:42},artifacts,canonicalJob:{id:actualJob.id,head:actualJob.head_sha,runId:actualJob.run_id,conclusion:actualJob.conclusion},meaning:'Fresh original GitHub metadata plus original exact-main admission helpers; local original byte copies are separately operator-reviewed, pinned input data. No test execution.'};json('AUTHENTICATED_ORIGINAL_STATE.json',auth);
+ delete process.env.GITHUB_TOKEN;
+ const script=join(dirname(fileURLToPath(import.meta.url)),'reader.mjs'),argv=[script,corpusPath,corpusSha256,join(output,'READONLY_OBSERVATION.json'),join(output,'AUTHENTICATED_ORIGINAL_STATE.json')];
+ const env={PATH:process.env.PATH,LANG:'C.UTF-8',LC_ALL:'C.UTF-8',TZ:'UTC',HOME:output,USERPROFILE:output,TMPDIR:output,TEMP:output,TMP:output,...(process.platform==='win32'?{ProgramFiles:process.env.ProgramFiles,SystemRoot:process.env.SystemRoot,WINDIR:process.env.SystemRoot,PATHEXT:'.EXE',COMSPEC:join(process.env.SystemRoot,'System32/cmd.exe')}:{})};
+ mkdirSync(join(output,'stage'),{mode:0o700});json('NATIVE_INTENT.json',{program:process.execPath,argv,cwd:source,environment:env,readerSha256:sha(readFileSync(script)),corpusSha256,lifetimeMs:120000,scope:'Actual native platform read-only reader of existing exact-source evidence, not rerun tests or public admission.'});
+ const {launchOwned}=await sourceImport('scripts/m6/installed-editor/owner-client.mjs');const owner=await launchOwned(process.execPath,argv,{cwd:source,env,output,stage:join(output,'stage'),name:'READONLY_READER',deadline:performance.now()+120000});const actual=await owner.finish();assert.equal(actual.ended.status,0);assert.equal(actual.ended.signal,null);
+ const owned=JSON.parse(readFileSync(join(output,'READONLY_READER.json')));assert.equal(owned.cleanupConfirmed,true);assert.equal(owned.ownerExit.status,0);assert.equal(owned.complete.failures.length,0);
+ const observed=JSON.parse(readFileSync(join(output,'READONLY_OBSERVATION.json')));assert.equal(observed.status,'read-only-observations-verified');assert.equal(observed.environment.platform,platform);assert.equal(Object.keys(observed.gates).length,9);assert.equal(observed.corpusSha256,corpusSha256);
+ const after=sourceTuple();assert.deepEqual(after,before);json('SOURCE_AFTER.json',after);outcome={status:'actual-native-readonly-evidence-reader-pass',source:selection,operator,platform,runId:Number(process.env.GITHUB_RUN_ID),attempt:Number(process.env.GITHUB_RUN_ATTEMPT),fullCiRunId:39171574840,corpusSha256,readerSha256:sha(readFileSync(script)),observedGateFamilies:9,sourceUnchanged:true,ownerCleanupConfirmed:true,scope:observed.scope};console.log(JSON.stringify(outcome));
+}catch(e){outcome.failure=String(e.stack??e).slice(0,5000);throw e}finally{writeFileSync(resultFd,JSON.stringify(outcome,null,2)+'\n');closeSync(resultFd)}
