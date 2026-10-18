@@ -1,0 +1,9 @@
+
+running 4 tests
+test diagnostic_sessions::formatting::control_flow_tests::m2_formatting_is_canonical_and_preserves_verified_meaning ... ok
+test diagnostic_sessions::formatting::control_flow_tests::m2_formatting_result_limit_is_exact_and_preserves_semantic_admission ... ok
+test diagnostic_sessions::formatting::control_flow_tests::m2_range_layout_preserves_bytes_outside_the_selected_function ... ok
+test diagnostic_sessions::formatting::control_flow_tests::m2_operator_boundaries_survive_formatting ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 540 filtered out; finished in 9.59s
+

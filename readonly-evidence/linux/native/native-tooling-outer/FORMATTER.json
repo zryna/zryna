@@ -1,0 +1,74 @@
+{
+  "program": {
+    "path": "/opt/hostedtoolcache/node/22.22.1/x64/bin/node",
+    "bytes": 124674920,
+    "sha256": "243fd8938011479f41b3de101842150fa990f33fbbb3f7aabd330857f2d79e1d",
+    "identity": {
+      "dev": "66305",
+      "ino": "9212956",
+      "mode": "33261",
+      "modifiedNs": "1792306871930899405",
+      "changedNs": "1792306871930899405",
+      "bytes": "124674920",
+      "links": "1"
+    }
+  },
+  "argv": [
+    "/home/runner/work/_temp/native-tooling-preparation/FORMATTER_CAPSULE/record-formatter.mjs"
+  ],
+  "cwd": "/home/runner/work/zryna/zryna/source",
+  "streams": [
+    {
+      "path": "/home/runner/work/_temp/native-tooling-outer/FORMATTER.stdout",
+      "bytes": 124,
+      "sha256": "6bc60b75d973fc4315d9f11de57f235378cf9bf57abf5028f615b4208f6e5808",
+      "identity": {
+        "dev": "66305",
+        "ino": "9699997",
+        "mode": "33152",
+        "modifiedNs": "1792307193763378719",
+        "changedNs": "1792307193763378719",
+        "bytes": "124",
+        "links": "1"
+      }
+    },
+    {
+      "path": "/home/runner/work/_temp/native-tooling-outer/FORMATTER.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identity": {
+        "dev": "66305",
+        "ino": "9699998",
+        "mode": "33152",
+        "modifiedNs": "1792307138828951301",
+        "changedNs": "1792307138828951301",
+        "bytes": "0",
+        "links": "1"
+      }
+    }
+  ],
+  "streamObservations": [
+    {
+      "observed": 124,
+      "retained": 124,
+      "eof": true,
+      "failure": null
+    },
+    {
+      "observed": 0,
+      "retained": 0,
+      "eof": true,
+      "failure": null
+    }
+  ],
+  "captureFailure": null,
+  "completeOriginalStreams": true,
+  "returncode": 0,
+  "elapsedSeconds": 55.09916426799998,
+  "terminationRequests": [],
+  "outerUnknown": false,
+  "accepted": true,
+  "finalCarrierFits": true,
+  "meaning": "Actual Node entry stdout/stderr, not Cargo stdout/stderr.",
+  "nativeDescendantCleanupAuthority": "Original inner owner records only; no outer claim."
+}

@@ -1,0 +1,12 @@
+
+running 7 tests
+test project::tests::current_entrypoint_mutation_fails_before_project_execution_can_continue ... ok
+test project::tests::admitted_entrypoint_bytes_survive_changed_then_restored_host_paths ... ok
+test project::tests::frozen_source_session_rejects_undeclared_state_file_before_reading_it ... ok
+test project::tests::exact_public_patch_predecessor_is_admitted_without_relaxing_profile_or_lock_identity ... ok
+test project::tests::retained_root_allows_project_output_creation_without_admitting_output_as_source ... ok
+test project::tests::retained_root_sources_reject_changed_then_restored_bytes_or_deny_the_write ... ok
+test project::tests::retained_project_batches_use_only_original_declared_bytes_until_full_revalidation ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 803 filtered out; finished in 0.03s
+

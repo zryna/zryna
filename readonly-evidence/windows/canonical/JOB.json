@@ -1,0 +1,260 @@
+{
+  "id": 117611845894,
+  "run_id": 39105995385,
+  "workflow_name": "CI",
+  "head_branch": "main",
+  "run_url": "https://api.github.com/repos/zryna/zryna/actions/runs/39105995385",
+  "run_attempt": 1,
+  "node_id": "CR_kwDOUH2BDM8AAAAbYjZZBg",
+  "head_sha": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+  "url": "https://api.github.com/repos/zryna/zryna/actions/jobs/117611845894",
+  "html_url": "https://github.com/zryna/zryna/actions/runs/39105995385/job/117611845894",
+  "status": "completed",
+  "conclusion": "success",
+  "created_at": "2026-10-18T06:59:31Z",
+  "started_at": "2026-10-18T06:59:33Z",
+  "completed_at": "2026-10-18T07:46:29Z",
+  "name": "rust (windows-latest)",
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1,
+      "started_at": "2026-10-18T06:59:34Z",
+      "completed_at": "2026-10-18T06:59:35Z"
+    },
+    {
+      "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2,
+      "started_at": "2026-10-18T06:59:35Z",
+      "completed_at": "2026-10-18T06:59:43Z"
+    },
+    {
+      "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3,
+      "started_at": "2026-10-18T06:59:43Z",
+      "completed_at": "2026-10-18T06:59:56Z"
+    },
+    {
+      "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4,
+      "started_at": "2026-10-18T06:59:56Z",
+      "completed_at": "2026-10-18T07:00:06Z"
+    },
+    {
+      "name": "Run pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5,
+      "started_at": "2026-10-18T07:00:06Z",
+      "completed_at": "2026-10-18T07:00:19Z"
+    },
+    {
+      "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6,
+      "started_at": "2026-10-18T07:00:19Z",
+      "completed_at": "2026-10-18T07:00:24Z"
+    },
+    {
+      "name": "Run pnpm install --frozen-lockfile",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7,
+      "started_at": "2026-10-18T07:00:24Z",
+      "completed_at": "2026-10-18T07:00:28Z"
+    },
+    {
+      "name": "Verify native recipe policy hostile cases",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8,
+      "started_at": "2026-10-18T07:00:28Z",
+      "completed_at": "2026-10-18T07:00:29Z"
+    },
+    {
+      "name": "Fetch locked Rust dependencies",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 9,
+      "started_at": "2026-10-18T07:00:29Z",
+      "completed_at": "2026-10-18T07:00:51Z"
+    },
+    {
+      "name": "Verify M2 semantics",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 10,
+      "started_at": "2026-10-18T07:00:51Z",
+      "completed_at": "2026-10-18T07:01:53Z"
+    },
+    {
+      "name": "Prepare pinned SQLite source fixture",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 11,
+      "started_at": "2026-10-18T07:01:53Z",
+      "completed_at": "2026-10-18T07:01:53Z"
+    },
+    {
+      "name": "Verify M2 driver security",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 12,
+      "started_at": "2026-10-18T07:01:53Z",
+      "completed_at": "2026-10-18T07:12:58Z"
+    },
+    {
+      "name": "Verify native source resource limits",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 13,
+      "started_at": "2026-10-18T07:12:58Z",
+      "completed_at": "2026-10-18T07:13:31Z"
+    },
+    {
+      "name": "Verify exact Windows directory lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 14,
+      "started_at": "2026-10-18T07:13:31Z",
+      "completed_at": "2026-10-18T07:13:38Z"
+    },
+    {
+      "name": "Verify public M2 CLI profile",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 15,
+      "started_at": "2026-10-18T07:13:38Z",
+      "completed_at": "2026-10-18T07:14:23Z"
+    },
+    {
+      "name": "Run Windows CLI smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 16,
+      "started_at": "2026-10-18T07:14:23Z",
+      "completed_at": "2026-10-18T07:14:28Z"
+    },
+    {
+      "name": "Verify restricted playground contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 17,
+      "started_at": "2026-10-18T07:14:28Z",
+      "completed_at": "2026-10-18T07:14:31Z"
+    },
+    {
+      "name": "Verify M6 contracts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 18,
+      "started_at": "2026-10-18T07:14:31Z",
+      "completed_at": "2026-10-18T07:14:39Z"
+    },
+    {
+      "name": "Verify Linux playground helper units",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 19,
+      "started_at": "2026-10-18T07:14:39Z",
+      "completed_at": "2026-10-18T07:14:39Z"
+    },
+    {
+      "name": "Verify Linux compiler publication boundaries",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 20,
+      "started_at": "2026-10-18T07:14:39Z",
+      "completed_at": "2026-10-18T07:14:39Z"
+    },
+    {
+      "name": "Verify Linux operator qualification contracts",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 21,
+      "started_at": "2026-10-18T07:14:39Z",
+      "completed_at": "2026-10-18T07:14:39Z"
+    },
+    {
+      "name": "Verify documentation bundle contract",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 22,
+      "started_at": "2026-10-18T07:14:39Z",
+      "completed_at": "2026-10-18T07:15:29Z"
+    },
+    {
+      "name": "Verify and package editor client",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 23,
+      "started_at": "2026-10-18T07:15:29Z",
+      "completed_at": "2026-10-18T07:15:36Z"
+    },
+    {
+      "name": "Run node scripts/run-m0-conformance.mjs",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 24,
+      "started_at": "2026-10-18T07:15:36Z",
+      "completed_at": "2026-10-18T07:46:23Z"
+    },
+    {
+      "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 45,
+      "started_at": "2026-10-18T07:46:23Z",
+      "completed_at": "2026-10-18T07:46:23Z"
+    },
+    {
+      "name": "Post Run pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 46,
+      "started_at": "2026-10-18T07:46:23Z",
+      "completed_at": "2026-10-18T07:46:24Z"
+    },
+    {
+      "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 47,
+      "started_at": "2026-10-18T07:46:24Z",
+      "completed_at": "2026-10-18T07:46:24Z"
+    },
+    {
+      "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 48,
+      "started_at": "2026-10-18T07:46:24Z",
+      "completed_at": "2026-10-18T07:46:26Z"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 49,
+      "started_at": "2026-10-18T07:46:26Z",
+      "completed_at": "2026-10-18T07:46:27Z"
+    }
+  ],
+  "check_run_url": "https://api.github.com/repos/zryna/zryna/check-runs/117611845894",
+  "labels": [
+    "windows-latest"
+  ],
+  "runner_id": 1000017399,
+  "runner_name": "GitHub Actions 1000017399",
+  "runner_group_id": 0,
+  "runner_group_name": "GitHub Actions"
+}

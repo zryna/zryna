@@ -1,0 +1,28 @@
+{
+  "source": {
+    "repository": "zryna/zryna",
+    "commit": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+    "tree": "78f42e37111204b1fb20a2363fc41fc23e62b8ef"
+  },
+  "main": {
+    "commit": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+    "tree": "78f42e37111204b1fb20a2363fc41fc23e62b8ef",
+    "requiredContexts": [
+      "adapter",
+      "m0",
+      "m2",
+      "m3",
+      "rust (ubuntu-latest)",
+      "rust (windows-latest)"
+    ]
+  },
+  "ci": {
+    "workflowPath": ".github/workflows/ci.yml",
+    "runId": 39105995385,
+    "runAttempt": 1,
+    "headSha": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+    "headTree": "78f42e37111204b1fb20a2363fc41fc23e62b8ef",
+    "conclusion": "success",
+    "jobsSha256": "4eec585391b54d8321d5eaf4c7f3b80d9f3618ef7ddc4b0d66640f1dbac349c5"
+  }
+}

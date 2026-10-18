@@ -1,0 +1,9 @@
+
+[main 2026-10-18T08:15:12.606Z] StorageMainService: creating application shared storage
+[main 2026-10-18T08:15:12.934Z] [shared storage] Creating shared storage database at 'c:\Users\runneradmin\.vscode-shared\sharedStorage\state.vscdb' (wasCreated: true)
+[main 2026-10-18T08:15:12.934Z] [shared storage] Initializing fallback application storage (path: c:\Users\runneradmin\AppData\Local\Temp\m6e-YvDbKx\profile\User\globalStorage\state.vscdb)
+[main 2026-10-18T08:15:13.150Z] [shared storage] Fallback application storage initialized with 3 items
+[main 2026-10-18T08:15:13.151Z] update#setState disabled
+[main 2026-10-18T08:15:13.151Z] update#ctor - updates are disabled by the environment
+[main 2026-10-18T08:15:14.027Z] AgentHostProcessManager: agent host started
+[main 2026-10-18T08:15:55.213Z] Extension host with pid 5680 exited with code: 0, signal: unknown.

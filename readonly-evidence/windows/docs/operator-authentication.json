@@ -1,0 +1,33 @@
+{
+  "status": "official-docs-authenticated-and-vendored-bytes-identical",
+  "expected": {
+    "format": "zryna.m4-docs-artifact-expectations.v1",
+    "source": {
+      "commit": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+      "tree": "78f42e37111204b1fb20a2363fc41fc23e62b8ef",
+      "ref": "refs/heads/main"
+    },
+    "registrySha256": "2f2ed6bb851d1dc665db0abe98ca5dff912bf9b7b4b03b4f7d5b58044b762361",
+    "matrixSha256": "a78558f1489c62f2d4a96b2befa2e2689a1473d5460bd05a79aca361cddd6517",
+    "manifestSha256": "11a0ac0cab099c414df91eeb5d7950bca7a0f61aa6da855b4c54d7322062371d",
+    "expectationsSha256": "2a49b03fc7f75f94e3dfea1eea433862e7c7dc2c31044366164d27f88921241c",
+    "docsWorkflowSha256": "0545f410fe47c72a964b6333dd2f6e8f2cf57b7a315a9b0afc3737640cb0e18a",
+    "docsRunId": 39111188705,
+    "docsAttempt": 1,
+    "gateArtifact": {
+      "id": 12130880863,
+      "bytes": 328460,
+      "sha256": "a3fa2cb3f89903f3a29b3c3860208806e764488b0bf1cfbca7be391974db89c1",
+      "expiresAt": "2027-01-16T08:22:25Z"
+    },
+    "docsArtifact": {
+      "id": 12130393234,
+      "bytes": 1914594,
+      "sha256": "5fabfd435a2d94f58563639695d908adc6d54c53eec987bcc691df6c0ce5c4b2",
+      "expiresAt": "2027-01-16T08:22:25Z"
+    }
+  },
+  "documents": 60,
+  "matchedFiles": 62,
+  "scope": "Original exact-main42CI, all six M4 lane artifacts/workflows/jobs/checks and official docs publication gate authenticated. Every vendored raw bundle byte matches. Website deployment and M6 runtime/publication remain separate."
+}

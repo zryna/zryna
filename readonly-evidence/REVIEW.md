@@ -1,0 +1,15 @@
+# Private exact-source native read-only evidence reader
+
+Reviewed source is unchanged `5d79dba18117a7ff41ff08d328aa94838c0fce9c`, tree `78f42e37111204b1fb20a2363fc41fc23e62b8ef`. This isolated operator branch changes only the dispatched workflow and this directory. No pull request, protected-main modification, product test rerun, deployment, tag, release, qualification or public-support admission occurs here.
+
+The Linux and Windows corpora each preserve154 complete selected original evidence files, including the entire canonical GitHub shared job log as one file, without chunking or labelling it as native stdout. Every copied member has an explicit original archive/member or API/log provenance descriptor, size and SHA256. Complete original archives must later remain durable material artifacts; the selected-data copy is not a replacement for original archive authentication.
+
+The trusted preparation uses original frozen-source `observeMain`, `expectedJobs`, `observeCi` and `githubApi`, authenticates all42successful original jobs and check APIs, the five original platform-specific artifact identities, the three original operator/publication workflow runs, the canonical native job, and both original official documentation artifacts. Source and operator commits/clean status are checked. The GitHub token is deleted before the native owner starts; it is excluded from the child's closed environment.
+
+The unchanged original native process owner invokes a Node22.22.1 read-only proof reader on its actual OS. It reads fixed hash-pinned files, never invokes a test/compiler/browser or writes inputs. Only one fresh private observation JSON and the reader's own stdout are produced. The original owner establishes cleanup separately. Reader stdout/stderr, start/end times, exact command, OS and runtime must be represented as this reader command, never imputed to historical tests. The source remains clean.
+
+Nine gate families per platform have explicit named raw Rust/TAP or actual JSON observation mappings. `passed` counts supporting verified observations for each requirement and is not a unique historical-test count. The counts overlap across cases. Full raw canonical logs retain their ignored Rust test observations; required-job success does not relabel ignored tests. Native installed VSCode used Linux Xvfb / Windows native GUI. Portable acceptance remains a review candidate, not an independent clean machine or outer setup production admission.
+
+The documentation reader verifies all60 manifest document digests against the selected actual official bytes. The operator's original documentation authentication review is one distinct input; actual website deployment and compiler publication remain separately required.
+
+Final retained-receipt carrier limits remain262144bytes per file, max64inputs per gate, max256uniquefiles and16MiB overall. Only compact corpus manifest, reader implementation, fresh authentication proof, native-owner proof and the fresh own reader streams should become final carriers. All larger original files and complete copied corpora belong to separately pinned durable artifacts, not disguised receipt streams.

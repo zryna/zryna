@@ -1,0 +1,17 @@
+Content-Length: 498
+
+{"id":1,"jsonrpc":"2.0","result":{"capabilities":{"definitionProvider":true,"documentFormattingProvider":true,"documentRangeFormattingProvider":true,"experimental":{"zrynaAnalysisProfile":"scalar-v2","zrynaFormattingProfile":"scalar-format-v1","zrynaInstallationProfile":"portable-setup-v1","zrynaSourceCommit":"5d79dba18117a7ff41ff08d328aa94838c0fce9c"},"positionEncoding":"utf-16","textDocumentSync":{"change":1,"openClose":true}},"serverInfo":{"name":"zryna-language-server","version":"0.5.0"}}}Content-Length: 275
+
+{"jsonrpc":"2.0","method":"zryna/publishDiagnostics","params":{"documents":[{"uri":"file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry","version":1}],"report":{"diagnostics":[],"schema_version":2},"revision":1,"snapshot":"s0000000000000001-0000000000001"}}Content-Length: 178
+
+{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"diagnostics":[],"uri":"file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry","version":1}}Content-Length: 75
+
+{"error":{"code":-32602,"message":"Invalid params"},"id":2,"jsonrpc":"2.0"}Content-Length: 189
+
+{"id":3,"jsonrpc":"2.0","result":{"range":{"end":{"character":26,"line":1},"start":{"character":25,"line":1}},"uri":"file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry"}}Content-Length: 77
+
+{"error":{"code":-32601,"message":"Method not found"},"id":4,"jsonrpc":"2.0"}Content-Length: 189
+
+{"id":5,"jsonrpc":"2.0","result":{"range":{"end":{"character":26,"line":1},"start":{"character":25,"line":1}},"uri":"file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry"}}Content-Length: 38
+
+{"id":6,"jsonrpc":"2.0","result":null}

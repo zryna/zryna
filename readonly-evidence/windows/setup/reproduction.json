@@ -1,0 +1,14 @@
+{
+  "sourceCommit": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+  "target": "x86_64-pc-windows-msvc",
+  "serverReplicas": [
+    "083b102b6ece48dd4bc21fa6085e1accf23e9430d020fb45da4581c3e358b0bf",
+    "083b102b6ece48dd4bc21fa6085e1accf23e9430d020fb45da4581c3e358b0bf"
+  ],
+  "vsixReplicas": [
+    "428438f686653b71214636cd20431775b4ce0ab7ae62f09d94d1d1233c4d8ccd",
+    "428438f686653b71214636cd20431775b4ce0ab7ae62f09d94d1d1233c4d8ccd"
+  ],
+  "status": "review-candidate",
+  "productionAdmission": "forbidden"
+}

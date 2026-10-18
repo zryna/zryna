@@ -1,0 +1,179 @@
+{
+  "receipt": {
+    "format": "zryna.portable-setup-receipt.v1",
+    "status": "review-candidate",
+    "productionAdmission": "forbidden",
+    "sourceCommit": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+    "sourceTree": "78f42e37111204b1fb20a2363fc41fc23e62b8ef",
+    "target": "x86_64-unknown-linux-gnu",
+    "archive": {
+      "filename": "zryna-setup-0.1.0-candidate.3-x86_64-unknown-linux-gnu.tar.gz",
+      "size": 55956947,
+      "sha256": "4e6a1bb8b6e8975a38e845d5049756c6e3c800136736f3899bcf6848c0279c84"
+    },
+    "manifestSha256": "d65266e38f1777189dc7815948cfac0f58a52f21ae6ed819b38d415de1a039fe",
+    "serverSha256": "00c5f8d7b9f95e6079c5a4a9a0ecac101348e05a8f10a7695bd13234c432013a",
+    "vsixSha256": "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec",
+    "compilerArchive": {
+      "path": "zryna-0.2.3-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "b258d45e1eb58a701026ced7c74d03dc74c911c90a5ec7da93c656884a97159f",
+      "size": 52949082
+    }
+  },
+  "reproduction": {
+    "sourceCommit": "5d79dba18117a7ff41ff08d328aa94838c0fce9c",
+    "target": "x86_64-unknown-linux-gnu",
+    "serverReplicas": [
+      "00c5f8d7b9f95e6079c5a4a9a0ecac101348e05a8f10a7695bd13234c432013a",
+      "00c5f8d7b9f95e6079c5a4a9a0ecac101348e05a8f10a7695bd13234c432013a"
+    ],
+    "vsixReplicas": [
+      "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec",
+      "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec"
+    ],
+    "status": "review-candidate",
+    "productionAdmission": "forbidden"
+  },
+  "archive": {
+    "path": "/home/runner/work/_temp/m6-editor-handoff/zryna-setup-0.1.0-candidate.3-x86_64-unknown-linux-gnu.tar.gz",
+    "bytes": 55956947,
+    "sha256": "4e6a1bb8b6e8975a38e845d5049756c6e3c800136736f3899bcf6848c0279c84",
+    "identity": {
+      "dev": "66305",
+      "ino": "9226299",
+      "bytes": "55956947",
+      "links": "1",
+      "mode": "33188",
+      "modifiedNs": "1792311203493776651",
+      "changedNs": "1792311203493776651"
+    }
+  },
+  "protectedCapture": {
+    "path": "/home/runner/work/_temp/m6-editor-linux-39105995385-1/tmp/m6e-xC0wKB/authenticated-setup.archive",
+    "bytes": 55956947,
+    "sha256": "4e6a1bb8b6e8975a38e845d5049756c6e3c800136736f3899bcf6848c0279c84"
+  },
+  "setup": "/home/runner/work/_temp/m6-editor-linux-39105995385-1/tmp/m6e-xC0wKB/zryna-setup-0.1.0-candidate.3-x86_64-unknown-linux-gnu",
+  "payload": {
+    "LICENSE.txt": {
+      "bytes": 11344,
+      "sha256": "0002a5d91c25d453f5f72bfc792f427480c68c8e44834b8f0958787ad149f73f"
+    },
+    "changelog.md": {
+      "bytes": 3624,
+      "sha256": "2d2e2e87a1cd9946a37d22f17fcafe6e5d94196fa6f0a6fd113225f84823a32c"
+    },
+    "package.json": {
+      "bytes": 3977,
+      "sha256": "9de076e1b602dfd381b23fcccb19dc4764c63a2d785e418044c1de7d6a1bcfa9"
+    },
+    "readme.md": {
+      "bytes": 12257,
+      "sha256": "a62930cb3ff286b248dbfe606e7c887c3e3073a1422c65de80e483b82c7a9d92"
+    },
+    "src/connection.cjs": {
+      "bytes": 5931,
+      "sha256": "3412357a4b7d56553ab9da06033d633e121bc373ea3e62a73967b103a896460e"
+    },
+    "src/extension.cjs": {
+      "bytes": 14532,
+      "sha256": "0c16be20ec24df3ad9994ef00291fc5ff61425d638fa085642dbbeda5538044f"
+    },
+    "src/installation.cjs": {
+      "bytes": 4492,
+      "sha256": "73e4836939e29f5ee80ff0284ae7b7d03bc6e41c3c7a2f2baad8490ea6fb332a"
+    },
+    "src/run-command.cjs": {
+      "bytes": 6160,
+      "sha256": "a2b53814ce30a6d3edd8e1e37fac2328bbe0d9bb8804cc4a8ed3566132519272"
+    },
+    "src/run-input.cjs": {
+      "bytes": 5415,
+      "sha256": "be6282dcbd2f063ac0925737f0873de542555eec46dd3fcb45ab26bc36cb4c03"
+    },
+    "src/run-process.cjs": {
+      "bytes": 3135,
+      "sha256": "b4b7293dcc1c28357cbf142801759a87ba722e974d99b320c8b1c37654395162"
+    },
+    "src/run-project.cjs": {
+      "bytes": 7845,
+      "sha256": "edd7135b38ed10b72f07275d88b4a14436544d2de2235519a376d45812660257"
+    },
+    "syntaxes/zryna.tmLanguage.json": {
+      "bytes": 964,
+      "sha256": "a3f1cb45590164e5e8b2dcbea61c2a5849eb281623054898e37ff8d451d3e565"
+    }
+  },
+  "installerIdentity": {
+    "format": "zryna.installed-editor-vsix-source.v1",
+    "vsix": {
+      "path": "/home/runner/work/_temp/m6-editor-linux-39105995385-1/tmp/m6e-xC0wKB/zryna-setup-0.1.0-candidate.3-x86_64-unknown-linux-gnu/editor/zryna-0.5.0.vsix",
+      "bytes": 30092,
+      "sha256": "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec",
+      "identity": {
+        "dev": "66305",
+        "ino": "9437717",
+        "bytes": "30092",
+        "links": "1",
+        "mode": "33188",
+        "modifiedNs": "1792311238289678412",
+        "changedNs": "1792311238289678412"
+      }
+    },
+    "payload": {
+      "LICENSE.txt": {
+        "bytes": 11344,
+        "sha256": "0002a5d91c25d453f5f72bfc792f427480c68c8e44834b8f0958787ad149f73f"
+      },
+      "changelog.md": {
+        "bytes": 3624,
+        "sha256": "2d2e2e87a1cd9946a37d22f17fcafe6e5d94196fa6f0a6fd113225f84823a32c"
+      },
+      "package.json": {
+        "bytes": 3977,
+        "sha256": "9de076e1b602dfd381b23fcccb19dc4764c63a2d785e418044c1de7d6a1bcfa9"
+      },
+      "readme.md": {
+        "bytes": 12257,
+        "sha256": "a62930cb3ff286b248dbfe606e7c887c3e3073a1422c65de80e483b82c7a9d92"
+      },
+      "src/connection.cjs": {
+        "bytes": 5931,
+        "sha256": "3412357a4b7d56553ab9da06033d633e121bc373ea3e62a73967b103a896460e"
+      },
+      "src/extension.cjs": {
+        "bytes": 14532,
+        "sha256": "0c16be20ec24df3ad9994ef00291fc5ff61425d638fa085642dbbeda5538044f"
+      },
+      "src/installation.cjs": {
+        "bytes": 4492,
+        "sha256": "73e4836939e29f5ee80ff0284ae7b7d03bc6e41c3c7a2f2baad8490ea6fb332a"
+      },
+      "src/run-command.cjs": {
+        "bytes": 6160,
+        "sha256": "a2b53814ce30a6d3edd8e1e37fac2328bbe0d9bb8804cc4a8ed3566132519272"
+      },
+      "src/run-input.cjs": {
+        "bytes": 5415,
+        "sha256": "be6282dcbd2f063ac0925737f0873de542555eec46dd3fcb45ab26bc36cb4c03"
+      },
+      "src/run-process.cjs": {
+        "bytes": 3135,
+        "sha256": "b4b7293dcc1c28357cbf142801759a87ba722e974d99b320c8b1c37654395162"
+      },
+      "src/run-project.cjs": {
+        "bytes": 7845,
+        "sha256": "edd7135b38ed10b72f07275d88b4a14436544d2de2235519a376d45812660257"
+      },
+      "syntaxes/zryna.tmLanguage.json": {
+        "bytes": 964,
+        "sha256": "a3f1cb45590164e5e8b2dcbea61c2a5849eb281623054898e37ff8d451d3e565"
+      }
+    },
+    "packageJsonBase64": "ewogICJuYW1lIjogInpyeW5hIiwKICAiZGlzcGxheU5hbWUiOiAiWnJ5bmEgRGV2ZWxvcGVyIFByZXZpZXciLAogICJkZXNjcmlwdGlvbiI6ICJTeW50YXggaGlnaGxpZ2h0aW5nLCBNMeKAk00zIGZvcm1hdHRpbmcgYW5kIGV4cGxpY2l0IEphdmFTY3JpcHQvV2ViQXNzZW1ibHkgUnVuIGZvciBacnluYS4iLAogICJ2ZXJzaW9uIjogIjAuNS4wIiwKICAicHVibGlzaGVyIjogInpyeW5hIiwKICAibGljZW5zZSI6ICJBcGFjaGUtMi4wIiwKICAicmVwb3NpdG9yeSI6IHsKICAgICJ0eXBlIjogImdpdCIsCiAgICAidXJsIjogImh0dHBzOi8vZ2l0aHViLmNvbS96cnluYS96cnluYS5naXQiLAogICAgImRpcmVjdG9yeSI6ICJlZGl0b3JzL3ZzY29kZS16cnluYSIKICB9LAogICJlbmdpbmVzIjogewogICAgInZzY29kZSI6ICJeMS44Mi4wIgogIH0sCiAgImNhdGVnb3JpZXMiOiBbCiAgICAiUHJvZ3JhbW1pbmcgTGFuZ3VhZ2VzIiwKICAgICJGb3JtYXR0ZXJzIgogIF0sCiAgIm1haW4iOiAiLi9zcmMvZXh0ZW5zaW9uLmNqcyIsCiAgImV4dGVuc2lvbktpbmQiOiBbCiAgICAid29ya3NwYWNlIgogIF0sCiAgImNhcGFiaWxpdGllcyI6IHsKICAgICJ1bnRydXN0ZWRXb3Jrc3BhY2VzIjogewogICAgICAic3VwcG9ydGVkIjogZmFsc2UKICAgIH0sCiAgICAidmlydHVhbFdvcmtzcGFjZXMiOiBmYWxzZQogIH0sCiAgImFjdGl2YXRpb25FdmVudHMiOiBbCiAgICAib25MYW5ndWFnZTp6cnluYSIKICBdLAogICJjb250cmlidXRlcyI6IHsKICAgICJjb21tYW5kcyI6IFsKICAgICAgeyAiY29tbWFuZCI6ICJ6cnluYS5zZWxlY3RFZGl0b3JQcm9maWxlIiwgInRpdGxlIjogIlpyeW5hOiBTZWxlY3QgRWRpdG9yIFByb2ZpbGUiIH0sCiAgICAgIHsgImNvbW1hbmQiOiAienJ5bmEuc2hvd0dsb2JhbERpYWdub3N0aWNzIiwgInRpdGxlIjogIlpyeW5hOiBTaG93IFByb2plY3QgRGlhZ25vc3RpY3MiIH0sCiAgICAgIHsgImNvbW1hbmQiOiAienJ5bmEucnVuIiwgInRpdGxlIjogIlpyeW5hOiBSdW4gU2F2ZWQgRmlsZSIgfSwKICAgICAgeyAiY29tbWFuZCI6ICJ6cnluYS5vcGVuR2VuZXJhdGVkSmF2YVNjcmlwdCIsICJ0aXRsZSI6ICJacnluYTogT3BlbiBHZW5lcmF0ZWQgSmF2YVNjcmlwdCIgfSwKICAgICAgeyAiY29tbWFuZCI6ICJ6cnluYS5yZXZlYWxSdW5PdXRwdXQiLCAidGl0bGUiOiAiWnJ5bmE6IFJldmVhbCBSdW4gT3V0cHV0IiB9CiAgICBdLAogICAgIm1lbnVzIjogewogICAgICAiZWRpdG9yL3RpdGxlIjogW3sgImNvbW1hbmQiOiAienJ5bmEucnVuIiwgIndoZW4iOiAiZWRpdG9yTGFuZ0lkID09IHpyeW5hICYmIGlzV29ya3NwYWNlVHJ1c3RlZCIsICJncm91cCI6ICJuYXZpZ2F0aW9uIiB9XQogICAgfSwKICAgICJncmFtbWFycyI6IFt7ICJsYW5ndWFnZSI6ICJ6cnluYSIsICJzY29wZU5hbWUiOiAic291cmNlLnpyeW5hIiwgInBhdGgiOiAiLi9zeW50YXhlcy96cnluYS50bUxhbmd1YWdlLmpzb24iIH1dLAogICAgImxhbmd1YWdlcyI6IFsKICAgICAgewogICAgICAgICJpZCI6ICJ6cnluYSIsCiAgICAgICAgImFsaWFzZXMiOiBbCiAgICAgICAgICAiWnJ5bmEiCiAgICAgICAgXSwKICAgICAgICAiZXh0ZW5zaW9ucyI6IFsKICAgICAgICAgICIuenJ5IgogICAgICAgIF0KICAgICAgfQogICAgXSwKICAgICJjb25maWd1cmF0aW9uIjogewogICAgICAidGl0bGUiOiAiWnJ5bmEiLAogICAgICAicHJvcGVydGllcyI6IHsKICAgICAgICAienJ5bmEuaW5zdGFsbGF0aW9uUGF0aCI6IHsKICAgICAgICAgICJ0eXBlIjogInN0cmluZyIsICJkZWZhdWx0IjogIiIsICJzY29wZSI6ICJhcHBsaWNhdGlvbiIsCiAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiQWJzb2x1dGUgcGF0aCB0byB0aGUgaW5kZXBlbmRlbnRseSB2ZXJpZmllZCBjb21wbGV0ZSBwb3J0YWJsZSBzZXR1cC4iCiAgICAgICAgfSwKICAgICAgICAienJ5bmEuaW5zdGFsbGF0aW9uRGlnZXN0IjogewogICAgICAgICAgInR5cGUiOiAic3RyaW5nIiwgImRlZmF1bHQiOiAiIiwgInNjb3BlIjogImFwcGxpY2F0aW9uIiwKICAgICAgICAgICJkZXNjcmlwdGlvbiI6ICJSZXZpZXdlZCBTSEEtMjU2IG9mIHNldHVwLmpzb24gc3VwcGxpZWQgd2l0aCB0aGUgdmVyaWZpZWQgY2FuZGlkYXRlLiIKICAgICAgICB9LAogICAgICAgICJ6cnluYS5jb21waWxlclBhdGgiOiB7CiAgICAgICAgICAidHlwZSI6ICJzdHJpbmciLAogICAgICAgICAgImRlZmF1bHQiOiAiIiwKICAgICAgICAgICJzY29wZSI6ICJhcHBsaWNhdGlvbiIsCiAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiQWJzb2x1dGUgaW5zdGFsbGVkIHYwLjIuMyB6cnluYSBjb21waWxlciBleGVjdXRhYmxlIGZvciBleHBsaWNpdCBSdW4uIFNlcGFyYXRlIGZyb20gdGhlIHNvdXJjZS1idWlsdCBsYW5ndWFnZSBzZXJ2ZXIuIgogICAgICAgIH0sCiAgICAgICAgInpyeW5hLnNlcnZlclBhdGgiOiB7CiAgICAgICAgICAidHlwZSI6ICJzdHJpbmciLAogICAgICAgICAgImRlZmF1bHQiOiAiIiwKICAgICAgICAgICJzY29wZSI6ICJhcHBsaWNhdGlvbiIsCiAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiQWJzb2x1dGUgcGF0aCB0byB0aGUgZXhwbGljaXRseSBpbnN0YWxsZWQgY29tcGF0aWJsZSB6cnluYS1sYW5ndWFnZS1zZXJ2ZXIgZXhlY3V0YWJsZS4iCiAgICAgICAgfSwKICAgICAgICAienJ5bmEuY29tcGlsZXJSb290IjogewogICAgICAgICAgInR5cGUiOiAic3RyaW5nIiwKICAgICAgICAgICJkZWZhdWx0IjogIiIsCiAgICAgICAgICAic2NvcGUiOiAiYXBwbGljYXRpb24iLAogICAgICAgICAgImRlc2NyaXB0aW9uIjogIkFic29sdXRlIHRydXN0ZWQgY29tcGlsZXIgY2hlY2tvdXQgd2l0aCB0aGUgcGlubmVkIGFkYXB0ZXIgaW5zdGFsbGVkLiBOb3QgdGhlIGVkaXRlZCBwcm9qZWN0IHJvb3QuIgogICAgICAgIH0sCiAgICAgICAgInpyeW5hLm5vZGVQYXRoIjogewogICAgICAgICAgInR5cGUiOiAic3RyaW5nIiwKICAgICAgICAgICJkZWZhdWx0IjogIiIsCiAgICAgICAgICAic2NvcGUiOiAiYXBwbGljYXRpb24iLAogICAgICAgICAgImRlc2NyaXB0aW9uIjogIkFic29sdXRlIHBhdGggdG8gdGhlIHBpbm5lZCBOb2RlLmpzIDIyLjIyLjEgZXhlY3V0YWJsZS4iCiAgICAgICAgfQogICAgICB9CiAgICB9CiAgfSwKICAienJ5bmFDb21wYXRpYmlsaXR5IjogewogICAgImNvbXBpbGVyVmVyc2lvbiI6ICIwLjIuMyIsCiAgICAicmVxdWlyZWRDYXBhYmlsaXRpZXMiOiB7CiAgICAgICJzY2FsYXItdjIiOiAic2NhbGFyLWZvcm1hdC12MSIsCiAgICAgICJjb250cm9sLWZsb3ctdjEiOiAiY29udHJvbC1mbG93LWZvcm1hdC12MSIsCiAgICAgICJkYXRhLW93bmVyc2hpcC12MSI6ICJkYXRhLW93bmVyc2hpcC1mb3JtYXQtdjEiCiAgICB9LAogICAgInNlcnZlclZlcnNpb24iOiAiMC41LjAiLAogICAgImluc3RhbGxhdGlvbkNhcGFiaWxpdHkiOiAicG9ydGFibGUtc2V0dXAtdjEiLAogICAgInNvdXJjZUJ1aWxkUmVxdWlyZWQiOiBmYWxzZSwKICAgICJyZWxlYXNlZENvbXBpbGVyQ29tcGF0aWJsZSI6IHRydWUsCiAgICAicHJvZmlsZXMiOiBbCiAgICAgICJzY2FsYXItdjIiLAogICAgICAiY29udHJvbC1mbG93LXYxIiwKICAgICAgImRhdGEtb3duZXJzaGlwLXYxIgogICAgXQogIH0sCiAgInNjcmlwdHMiOiB7CiAgICAiY2hlY2siOiAibm9kZSAtLWNoZWNrIHNyYy9leHRlbnNpb24uY2pzICYmIG5vZGUgLS1jaGVjayBzcmMvY29ubmVjdGlvbi5janMgJiYgbm9kZSAtLWNoZWNrIHNyYy9ydW4tY29tbWFuZC5janMgJiYgbm9kZSAtLWNoZWNrIHNyYy9ydW4taW5wdXQuY2pzICYmIG5vZGUgLS1jaGVjayBzcmMvcnVuLXByb2Nlc3MuY2pzICYmIG5vZGUgLS1jaGVjayBzcmMvcnVuLXByb2plY3QuY2pzIiwKICAgICJ0ZXN0IjogIm5vZGUgLS10ZXN0IHRlc3QvKi50ZXN0LmNqcyIsCiAgICAicGFja2FnZSI6ICJub2RlIC4uLy4uL3NjcmlwdHMvcGFja2FnZS1lZGl0b3IubWpzIgogIH0KfQo=",
+    "manifest": {
+      "bytes": 2651,
+      "sha256": "7e3c0369e883d2af7f2d4e1f2cb801819e64f5b05fa411bfcb8d005817f4b6e9"
+    }
+  }
+}

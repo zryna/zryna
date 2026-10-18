@@ -1,0 +1,8 @@
+
+running 3 tests
+test new_project_rejects_a_linked_parent_without_touching_its_target ... ok
+test new_project_is_deterministic_create_only_and_removable ... ok
+test new_project_rejects_unsafe_names_paths_and_stages_without_cleanup_damage ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.04s
+

@@ -1,0 +1,272 @@
+{
+  "passed": true,
+  "editorVersion": "1.138.0",
+  "platform": "win32",
+  "checks": [
+    "explicit workspace trust",
+    "extension activation and verified installation",
+    "scalar profile and definition",
+    "real scalar JavaScript result",
+    "M2 profile and idempotent formatting",
+    "real M2 JavaScript result and open output",
+    "real M2 WebAssembly result",
+    "invalid-to-valid diagnostics and stale recovery",
+    "M3 saved-import formatting and idempotence"
+  ],
+  "definition": [
+    {
+      "uri": {
+        "$mid": 1,
+        "fsPath": "c:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\m6-exact-folder-m6e-YvDbKx\\main.zry",
+        "_sep": 1,
+        "external": "file:///c%3A/Users/runneradmin/AppData/Local/Temp/m6e-YvDbKx/m6-exact-folder-m6e-YvDbKx/main.zry",
+        "path": "/c:/Users/runneradmin/AppData/Local/Temp/m6e-YvDbKx/m6-exact-folder-m6e-YvDbKx/main.zry",
+        "scheme": "file"
+      },
+      "range": [
+        {
+          "line": 0,
+          "character": 21
+        },
+        {
+          "line": 0,
+          "character": 25
+        }
+      ]
+    }
+  ],
+  "invalidDiagnostics": [
+    {
+      "severity": "Error",
+      "message": "function can fall through without returning its declared result",
+      "range": [
+        {
+          "line": 0,
+          "character": 38
+        },
+        {
+          "line": 0,
+          "character": 65
+        }
+      ],
+      "source": "Zryna",
+      "code": "ZRYNA-M2009"
+    },
+    {
+      "severity": "Error",
+      "message": "value name 'missing' is not in lexical scope",
+      "range": [
+        {
+          "line": 0,
+          "character": 55
+        },
+        {
+          "line": 0,
+          "character": 62
+        }
+      ],
+      "source": "Zryna",
+      "code": "ZRYNA-M2004"
+    }
+  ],
+  "recoveredDiagnostics": [],
+  "outcomes": [
+    {
+      "profile": "i32-v1",
+      "target": "javascript",
+      "outcome": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 9
+      }
+    },
+    {
+      "profile": "control-flow-v1",
+      "target": "javascript",
+      "outcome": {
+        "kind": "returned",
+        "type": "i32",
+        "value": 13
+      }
+    },
+    {
+      "profile": "control-flow-v1",
+      "target": "webassembly",
+      "outcome": {
+        "kind": "returned",
+        "type": "i32",
+        "value": -13
+      }
+    }
+  ],
+  "hostRunMs": 35215,
+  "generated": [
+    {
+      "target": "javascript",
+      "file": "c:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\profile\\User\\globalStorage\\zryna.zryna\\runs\\run-75f1042ef4b8daeed824d38f\\.zryna\\out\\result.run\\javascript\\result.mjs",
+      "bytes": 1329,
+      "sha256": "72a7d640ab9056c266750a62b698a336d0e5ae6177bc3f2544d8b13ad9003df7",
+      "outcomes": [
+        {
+          "kind": "returned",
+          "type": "i32",
+          "value": 9
+        }
+      ]
+    },
+    {
+      "target": "javascript",
+      "file": "c:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\profile\\User\\globalStorage\\zryna.zryna\\runs\\run-2a62445cfe34a00364f7e069\\.zryna\\out\\result.run\\javascript\\result.mjs",
+      "bytes": 1827,
+      "sha256": "9a074f4e8676b5fa43ace9932afb984d1216b61c8119145292f0374a409c1868",
+      "outcomes": [
+        {
+          "kind": "returned",
+          "type": "i32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "target": "webassembly",
+      "file": "c:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\profile\\User\\globalStorage\\zryna.zryna\\runs\\run-e63756052a2501b754188efd\\.zryna\\out\\result.run\\webassembly\\result.wasm",
+      "bytes": 122,
+      "sha256": "1b9dcb697f66ae3e2475b6bdcdcb0db30638c02727a08ee9d30d78ed77b9d950",
+      "outcomes": [
+        {
+          "kind": "returned",
+          "type": "i32",
+          "value": -13
+        }
+      ]
+    }
+  ],
+  "sourceInputs": {
+    "scalar": "export function main(left: i32, right: i32): i32 { return left + right; }\n",
+    "branch": "export function main(positive: bool, value: i32): i32 { if (positive) { return value; } else { return -value; } }\n",
+    "invalid": "export function main(value: i32): i32 { return value + missing; }\n"
+  },
+  "sourceInputSha256": {
+    "scalar": "ffbe994c95d8da0556ea38d0864b7e07b13821c3f2ae3648bcd631554c56fb55",
+    "branch": "b07a729f057bad9949e6ae08e1365d10f8634a009e467f1a061f64696e214aa9",
+    "invalid": "0bebe12b503dd52f9ae6a068a910642d8af96b1e438d9d1784d8f8dee7d008c9"
+  },
+  "installedExtension": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\extensions\\zryna.zryna-0.5.0",
+  "installedExtensionRawPath": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\extensions\\zryna.zryna-0.5.0",
+  "installedExtensionPhysicalBinding": {
+    "reportedFsPath": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\extensions\\zryna.zryna-0.5.0",
+    "reportedRealPath": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\extensions\\zryna.zryna-0.5.0",
+    "selectedRealPath": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\m6e-YvDbKx\\extensions\\zryna.zryna-0.5.0",
+    "physicalIdentity": {
+      "device": "1692368384",
+      "inode": "562949955117167"
+    }
+  },
+  "installedInventory": {
+    "entries": [
+      {
+        "path": ".vsixmanifest",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 2651,
+        "sha256": "7e3c0369e883d2af7f2d4e1f2cb801819e64f5b05fa411bfcb8d005817f4b6e9"
+      },
+      {
+        "path": "LICENSE.txt",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 11344,
+        "sha256": "0002a5d91c25d453f5f72bfc792f427480c68c8e44834b8f0958787ad149f73f"
+      },
+      {
+        "path": "changelog.md",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 3624,
+        "sha256": "2d2e2e87a1cd9946a37d22f17fcafe6e5d94196fa6f0a6fd113225f84823a32c"
+      },
+      {
+        "path": "package.json",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 3889,
+        "sha256": "af035552f323310389699d615ec419657cf0e69bacf0e43042822eaa71d8d85b"
+      },
+      {
+        "path": "readme.md",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 12257,
+        "sha256": "a62930cb3ff286b248dbfe606e7c887c3e3073a1422c65de80e483b82c7a9d92"
+      },
+      {
+        "path": "src",
+        "mode": 438,
+        "kind": "directory"
+      },
+      {
+        "path": "src/connection.cjs",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 5931,
+        "sha256": "3412357a4b7d56553ab9da06033d633e121bc373ea3e62a73967b103a896460e"
+      },
+      {
+        "path": "src/extension.cjs",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 14532,
+        "sha256": "0c16be20ec24df3ad9994ef00291fc5ff61425d638fa085642dbbeda5538044f"
+      },
+      {
+        "path": "src/installation.cjs",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 4492,
+        "sha256": "73e4836939e29f5ee80ff0284ae7b7d03bc6e41c3c7a2f2baad8490ea6fb332a"
+      },
+      {
+        "path": "src/run-command.cjs",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 6160,
+        "sha256": "a2b53814ce30a6d3edd8e1e37fac2328bbe0d9bb8804cc4a8ed3566132519272"
+      },
+      {
+        "path": "src/run-input.cjs",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 5415,
+        "sha256": "be6282dcbd2f063ac0925737f0873de542555eec46dd3fcb45ab26bc36cb4c03"
+      },
+      {
+        "path": "src/run-process.cjs",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 3135,
+        "sha256": "b4b7293dcc1c28357cbf142801759a87ba722e974d99b320c8b1c37654395162"
+      },
+      {
+        "path": "src/run-project.cjs",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 7845,
+        "sha256": "edd7135b38ed10b72f07275d88b4a14436544d2de2235519a376d45812660257"
+      },
+      {
+        "path": "syntaxes",
+        "mode": 438,
+        "kind": "directory"
+      },
+      {
+        "path": "syntaxes/zryna.tmLanguage.json",
+        "mode": 438,
+        "kind": "file",
+        "bytes": 964,
+        "sha256": "a3f1cb45590164e5e8b2dcbea61c2a5849eb281623054898e37ff8d451d3e565"
+      }
+    ],
+    "totalBytes": 82239,
+    "sha256": "f89573dbbe61d95b6973be7d2ebf2533e8b1141e79c454e86a455290a5ff0265"
+  }
+}
