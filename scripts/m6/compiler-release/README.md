@@ -61,10 +61,23 @@ M6-Qualification-SHA256:LOWERCASE_PACKET_SHA256
 M6-Qualification-Review-SHA256:LOWERCASE_REVIEW_JSON_SHA256
 ```
 
-The push lane independently authenticates the selected CI, tag, current protected
-main, ruleset, packet and review. It rebuilds two independent release replicas,
-compares actual bytes with the qualified candidate, creates the compiler-only
-archive through the existing unsigned producer, signs with real GitHub OIDC and
+The push lane has two admission phases. Read-only `admit` authenticates selected
+CI, tag, current protected main and ruleset, recording
+`protected-tag-source-admitted` with `qualification:null`. The read-only build
+jobs create two independent replicas; read-only `assemble` explicitly defers
+private-packet access and produces unsigned, unqualified compiler-only bytes.
+These bytes and candidate-policy JSON grant no qualification or runtime authority.
+A contents-read token cannot inspect the private draft; these jobs never attempt it.
+The trusted CLI selects deferral, while the admission and assembly library APIs
+still require full qualification by default for publishing.
+
+Only the publisher, with its existing contents-write permission, freshly reads
+and authenticates the complete private packet/review. It requires its fresh
+`protected-tag-admitted` admission with nonnull qualification to agree with the
+original source-only admission's source, selection and run. Original complete
+68-case and actual replica-binary validation precede archive production, signing
+and release mutations. It independently reassembles and compares all three exact
+unsigned files from read-only assembly, then signs with real GitHub OIDC and
 public Sigstore, and verifies the exact new workflow/tag/source identity. Only
 the publisher job has write/OIDC permissions. There is no new environment approval
 or administrative credential requirement.
