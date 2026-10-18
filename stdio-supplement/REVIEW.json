@@ -1,0 +1,44 @@
+{
+  "scope": "Private fixed installed CLI/LSP supplementary observations only; no source, publication, public setup or hostile containment capability. Source and operator are separately selected immutable commits.",
+  "sourceCommit": "caller-selected current protected main, independently reauthenticated by original publisher full42 CI admission before download/execution",
+  "workflowPermissions": {
+    "contents": "read",
+    "actions": "read",
+    "checks": "read"
+  },
+  "fixedCases": [
+    "installed CLI --root exit2 C2001",
+    "installed CLI --node exit2 C2001",
+    "UTF16 astral split in Unicode/CRLF source -32602",
+    "actual installed scalar definition",
+    "unsupported rename -32601",
+    "recovery through same installed process"
+  ],
+  "actualBaseline": {
+    "source": "b25d68b259b33ca0077b6fbacfe7009960f64775",
+    "manifestSha256": "6d45782a94ffab0d1fd26ad2f1e5adc1ab2c96c1090eb20d2726c628205b9fa6",
+    "serverStdoutSha256": "aab1b90bb795659b9c4b46768496c90228ce477582e2c1d1343534d84d6b5696",
+    "passed": 6,
+    "nativeCleanupConfirmed": true,
+    "scope": "Local client validation only; new exact-source two-platform run remains required"
+  },
+  "materials": {
+    "clientBytes": 10226,
+    "clientSha256": "6eec9ea0009afa2b63000aad13a1be7f84477d6c7291677c7382596db93ff3e6",
+    "prepareBytes": 10643,
+    "prepareSha256": "e4953ec23833df9bda553cc5f27c976050ed1aafd4bb80b604eb089682fd728b",
+    "workflowSha256": "c7b4c646f17f5994a646675e950969d9a6cb7ee4edf08353111f61fe13b6fe50"
+  },
+  "reviewedProperties": [
+    "Original native process owner unchanged; root/adapted source imports checked against selected Git blobs",
+    "Same-source completed full42 workflow_dispatch CI and all actual checks authenticated before setup acquisition",
+    "Exact root-supplied artifact id/size/SHA/expiry matched to API and completed source-bound reproduce job",
+    "Complete original canonical setup archive decoded before fresh ordinary extraction;022 local extraction umask restored",
+    "Review-candidate productionAdmission forbidden retained; actual setup/server/source/manifests checked before and after execution",
+    "No GitHub credential passed to native owner/client/installed compiler/server; child environment explicitly finite",
+    "CLI10second inner calls, client45second fuse, native120second trusted observer budget; no guest limits changed",
+    "All server stdin/stdout/stderr and actual native completion retained; no stdout relabeling or synthetic passing records",
+    "Windows canonical decoder fixes only four actual setup executable paths, Linux original USTAR modes retained"
+  ],
+  "notYetExecuted": "Prospective complete hosted operator awaits new protected-main full CI; no final #410 acceptance is claimed."
+}
