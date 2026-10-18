@@ -2,7 +2,7 @@ name: Playground compiler publication
 
 on:
   push:
-    tags: [v0.1.0-playground-compiler.1]
+    tags: [v0.1.0-playground-compiler.2]
   workflow_dispatch:
     inputs:
       ci_run:
@@ -134,7 +134,7 @@ jobs:
 
   publish:
     name: publish protected immutable compiler prerelease
-    if: github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-playground-compiler.1'
+    if: github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-playground-compiler.2'
     needs: assemble
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -171,7 +171,7 @@ jobs:
         with:
           name: compiler-publication-observations-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/publication/*.failed-*
+            ${{ runner.temp }}/publication
             ${{ runner.temp }}/publication-observations
             ${{ runner.temp }}/publication-admission
             ${{ runner.temp }}/publication-signer

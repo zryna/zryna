@@ -7,7 +7,9 @@ test('GitHub fixed asset redirect never forwards credential to storage',async()=
   }});
   assert.equal((await api.asset(123)).toString(),'bytes');
   assert.equal(calls[0].options.headers.Authorization,'Bearer fixture-token-never-real');
+  assert.equal(calls[0].options.headers.Accept,'application/octet-stream');
   assert.equal(calls[1].options.headers.Authorization,undefined);
+  assert.equal(calls[1].options.headers.Accept,'application/octet-stream');
   assert.equal(api.captures.length,1);
 });
 for(const [name,url]of [['foreign','https://example.invalid/asset'],['http','http://release-assets.githubusercontent.com/x'],

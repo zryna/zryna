@@ -49,7 +49,11 @@ Only the authorized maintainer uploads that reviewed packet as asset
 `m6-qualification-*` in zryna/zryna. The draft is mutable private transport, not
 published/durable evidence. After reviewing its exact asset ID and packet/review
 hashes, the maintainer creates the protected annotated final tag
-`v0.1.0-playground-compiler.1`, directly naming the exact qualified main commit.
+`v0.1.0-playground-compiler.2`, directly naming the exact qualified main commit.
+The earlier `.1` publication stopped at its first upload with HTTP 415 and
+published no assets. Its tag and failed run remain historical; they are not
+retargeted or accepted by this publication route. The `.2` tag gives the corrected
+publisher a fresh, create-only release identity.
 Its message ends in one blank line and exactly these five trailers, with no spaces
 between colon and value:
 

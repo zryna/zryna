@@ -18,7 +18,7 @@ compiler semantics, diagnostics, ABI and component verification retain their exi
 The new product is `zryna-playground-compiler` version `0.1.0`, targeting
 `x86_64-unknown-linux-gnu`. Its executable must be built from the recorded clean integration
 commit/tree, actually published and independently authenticated before public admission.
-Protected publication uses an annotated `v0.1.0-playground-compiler.1` tag and
+Protected publication uses an annotated `v0.1.0-playground-compiler.2` tag and
 `.github/workflows/playground-compiler-release.yml`. Verification requires the exact workflow,
 repository, tag, source commit and push trigger under the GitHub Actions OIDC issuer,
 complete finite archive inventory, binary identity and independent verifier/trusted-root pins.
@@ -176,7 +176,7 @@ For public admission the independently reviewed input set contains:
 
 | Input | Required identity and authority |
 | --- | --- |
-| Compiler publication | Actual immutable `v0.1.0-playground-compiler.1` assets, exact repository/workflow/push identity and independently selected integration commit/tree |
+| Compiler publication | Actual immutable `v0.1.0-playground-compiler.2` assets, exact repository/workflow/push identity and independently selected integration commit/tree |
 | Publication policy | Closed version-1 policy binding source/tag object, envelope, archive, binary and provenance digests; the released `candidate-policy.json` is review input, not approval |
 | Verifier and trust root | Independently pinned offline verifier executable, owner, size/hash and trusted-root bytes/hash; authentication does not disable transparency-log or certificate checks |
 | Launcher descriptor | Closed `zryna.playground-source-launcher.v2` record with `compositionKind: reviewed-source-v1`, `source.kind: git-revision`, exact source inventory, Node/compiler/template/WIT and authenticated publication-receipt identity |
