@@ -1,0 +1,30 @@
+{
+  "format": "private.m6-reader-input-selection.v2",
+  "source": {
+    "repository": "zryna/zryna",
+    "commit": "dcef77a79782e91016b9e3e8d528cf21850b9d41",
+    "tree": "1fa77b9e77185f5fb9d401f1cfb70ee6cc76f963"
+  },
+  "ci": {
+    "runId": 39126780495,
+    "attempt": 1
+  },
+  "native": {
+    "runId": 39126782652,
+    "attempt": 1,
+    "operator": "4adf55ac71eaa864834312d44a1df19b684dacc1"
+  },
+  "supplement": {
+    "runId": 39132396217,
+    "attempt": 1,
+    "operator": "4f0a84f768be849031c3d2358ac5ecf3b94dfd7a"
+  },
+  "docs": {
+    "runId": 39132532586,
+    "attempt": 1,
+    "manifestSha256": "4b4399c0b3e41d55b11a35de4b0a1fe16060625334ce7604da7990b1e4798a1c"
+  },
+  "docsStatus": "official-docs-authenticated-and-source-bundle-identical",
+  "windowsVsixMaterialRole": "extension-windows",
+  "scope": "Only actual sourcedcef77a79782e91016b9e3e8d528cf21850b9d41 native/CI/installed/docs inputs. Different operator heads are explicit. No oldsource receipt, workflow dispatch, test rerun or final public acceptance."
+}

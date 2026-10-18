@@ -1,0 +1,26 @@
+{
+  "format": "private.exact-checkout-command-observations.v1",
+  "root": "D:\\a\\zryna\\zryna\\source",
+  "commit": "dcef77a79782e91016b9e3e8d528cf21850b9d41",
+  "tree": "1fa77b9e77185f5fb9d401f1cfb70ee6cc76f963",
+  "head": {
+    "path": "D:\\a\\_temp\\native-tooling-preparation\\GIT_HEAD.stdout",
+    "bytes": 41,
+    "sha256": "9ce77d58758ae8b8859f55afab5839824cf2206b73fd850462ad906518f51106"
+  },
+  "treeOutput": {
+    "path": "D:\\a\\_temp\\native-tooling-preparation\\GIT_TREE.stdout",
+    "bytes": 41,
+    "sha256": "f9c466a639ef2deba7d85dabc29983ac53254ea3e5437e4df9ea760211b69b47"
+  },
+  "status": {
+    "path": "D:\\a\\_temp\\native-tooling-preparation\\GIT_STATUS.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "trackedFiles": {
+    "path": "D:\\a\\_temp\\native-tooling-preparation\\GIT_FILES.stdout",
+    "bytes": 188608,
+    "sha256": "328fa11a590994078afb73486f5489c609cd96b2338cb8fd2331c83ce9cc2399"
+  }
+}

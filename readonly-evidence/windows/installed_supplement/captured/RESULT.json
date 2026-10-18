@@ -1,0 +1,75 @@
+{
+  "status": "captured-fixed-supplement-pass",
+  "sourceCommit": "dcef77a79782e91016b9e3e8d528cf21850b9d41",
+  "manifestSha256": "d03af3f242c0bfc7e9cc63d169255119e20efc0793cc87444b58f36d85fd3cd3",
+  "rows": [
+    {
+      "id": "installed-forbidden-root",
+      "status": "pass",
+      "exitCode": 2
+    },
+    {
+      "id": "installed-forbidden-node",
+      "status": "pass",
+      "exitCode": 2
+    },
+    {
+      "id": "installed-unicode-crlf-astral-split",
+      "status": "pass",
+      "errorCode": -32602
+    },
+    {
+      "id": "installed-scalar-definition-recovery",
+      "status": "pass",
+      "definition": {
+        "uri": "file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry",
+        "range": {
+          "start": {
+            "line": 1,
+            "character": 25
+          },
+          "end": {
+            "line": 1,
+            "character": 26
+          }
+        }
+      }
+    },
+    {
+      "id": "installed-unsupported-method",
+      "status": "pass",
+      "errorCode": -32601
+    },
+    {
+      "id": "installed-recovery-after-unsupported",
+      "status": "pass",
+      "definition": {
+        "uri": "file:///D:/a/_temp/m6-installed-supplement/captured/practice/main.zry",
+        "range": {
+          "start": {
+            "line": 1,
+            "character": 25
+          },
+          "end": {
+            "line": 1,
+            "character": 26
+          }
+        }
+      }
+    }
+  ],
+  "serverExit": {
+    "status": 0,
+    "signal": null
+  },
+  "sourceSha256": "a23823848ea5557f6a6c132d256963d278296dafb41cc07bc3525feffa0fd042",
+  "sourcePreserved": true,
+  "fullInstallationReverified": true,
+  "serverStdoutBytes": 1700,
+  "serverStdoutSha256": "f505d5c26e0fba792a957b95bc33d21631d6b46e30804a22a978a37dd6631e30",
+  "serverStderrBytes": 0,
+  "serverStderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "requestBytes": 1615,
+  "requestSha256": "a2f7feb4e3744cc51eaf65a9c40f86f85fa114cc212b1c5d7e27a226bb524f50",
+  "scope": "Actual installed fixed CLI/LSP captures; separate unchanged parent native owner completion/cleanup required before acceptance."
+}

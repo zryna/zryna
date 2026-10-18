@@ -1,0 +1,80 @@
+{
+  "program": {
+    "path": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+    "bytes": 87059456,
+    "sha256": "923a41f268ab49ede2e3363fbdd9e790609e385c6f3ca880b4ee9a56a8133e5a",
+    "identity": {
+      "volumeSerial": "10116456482831564288",
+      "fileId128": "d7d91300000008000000000000000000",
+      "size": "87059456",
+      "allocation": "87060480",
+      "links": "1",
+      "attributes": "32",
+      "creationTime": "134367995838132946",
+      "lastWriteTime": "134171356690000000",
+      "changeTime": "134367995837664195"
+    }
+  },
+  "argv": [
+    "D:\\a\\_temp\\native-tooling-preparation\\FORMATTER_CAPSULE\\record-formatter.mjs"
+  ],
+  "cwd": "D:\\a\\zryna\\zryna\\source",
+  "streams": [
+    {
+      "path": "D:\\a\\_temp\\native-tooling-outer\\FORMATTER.stdout",
+      "bytes": 125,
+      "sha256": "07be506e484fae9f4ebedb8139aa5c92bdda99e3635df7d7edde450bb9118021",
+      "identity": {
+        "volumeSerial": "10557107994613625601",
+        "fileId128": "348e0000000001000000000000000000",
+        "size": "125",
+        "allocation": "128",
+        "links": "1",
+        "attributes": "32",
+        "creationTime": "134368000890495283",
+        "lastWriteTime": "134368001743220198",
+        "changeTime": "134368001743220198"
+      }
+    },
+    {
+      "path": "D:\\a\\_temp\\native-tooling-outer\\FORMATTER.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identity": {
+        "volumeSerial": "10557107994613625601",
+        "fileId128": "358e0000000001000000000000000000",
+        "size": "0",
+        "allocation": "0",
+        "links": "1",
+        "attributes": "32",
+        "creationTime": "134368000890495283",
+        "lastWriteTime": "134368000890495283",
+        "changeTime": "134368000890495283"
+      }
+    }
+  ],
+  "streamObservations": [
+    {
+      "observed": 124,
+      "retained": 124,
+      "eof": true,
+      "failure": null
+    },
+    {
+      "observed": 0,
+      "retained": 0,
+      "eof": true,
+      "failure": null
+    }
+  ],
+  "captureFailure": null,
+  "completeOriginalStreams": true,
+  "returncode": 0,
+  "elapsedSeconds": 85.42100000000005,
+  "terminationRequests": [],
+  "outerUnknown": false,
+  "accepted": true,
+  "finalCarrierFits": true,
+  "meaning": "Actual Node entry stdout/stderr, not Cargo stdout/stderr.",
+  "nativeDescendantCleanupAuthority": "Original inner owner records only; no outer claim."
+}

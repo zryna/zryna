@@ -1,0 +1,80 @@
+{
+  "program": {
+    "path": "C:\\hostedtoolcache\\windows\\node\\22.22.1\\x64\\node.exe",
+    "bytes": 87059456,
+    "sha256": "923a41f268ab49ede2e3363fbdd9e790609e385c6f3ca880b4ee9a56a8133e5a",
+    "identity": {
+      "volumeSerial": "10116456482831564288",
+      "fileId128": "d7d91300000008000000000000000000",
+      "size": "87059456",
+      "allocation": "87060480",
+      "links": "1",
+      "attributes": "32",
+      "creationTime": "134367995838132946",
+      "lastWriteTime": "134171356690000000",
+      "changeTime": "134367995837664195"
+    }
+  },
+  "argv": [
+    "D:\\a\\_temp\\native-tooling-preparation\\LSP_CAPSULE\\record-lsp.mjs"
+  ],
+  "cwd": "D:\\a\\zryna\\zryna\\source",
+  "streams": [
+    {
+      "path": "D:\\a\\_temp\\native-tooling-outer\\LSP.stdout",
+      "bytes": 119,
+      "sha256": "606653345e324f3046a94058ac21bdffa841a5607e3f6c761adcf36b604deb78",
+      "identity": {
+        "volumeSerial": "10557107994613625601",
+        "fileId128": "1b8e0000000001000000000000000000",
+        "size": "119",
+        "allocation": "120",
+        "links": "1",
+        "attributes": "32",
+        "creationTime": "134368000287727424",
+        "lastWriteTime": "134368000889249771",
+        "changeTime": "134368000889249771"
+      }
+    },
+    {
+      "path": "D:\\a\\_temp\\native-tooling-outer\\LSP.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identity": {
+        "volumeSerial": "10557107994613625601",
+        "fileId128": "1c8e0000000001000000000000000000",
+        "size": "0",
+        "allocation": "0",
+        "links": "1",
+        "attributes": "32",
+        "creationTime": "134368000287727424",
+        "lastWriteTime": "134368000287727424",
+        "changeTime": "134368000287727424"
+      }
+    }
+  ],
+  "streamObservations": [
+    {
+      "observed": 118,
+      "retained": 118,
+      "eof": true,
+      "failure": null
+    },
+    {
+      "observed": 0,
+      "retained": 0,
+      "eof": true,
+      "failure": null
+    }
+  ],
+  "captureFailure": null,
+  "completeOriginalStreams": true,
+  "returncode": 0,
+  "elapsedSeconds": 60.266000000000076,
+  "terminationRequests": [],
+  "outerUnknown": false,
+  "accepted": true,
+  "finalCarrierFits": true,
+  "meaning": "Actual Node entry stdout/stderr, not Cargo stdout/stderr.",
+  "nativeDescendantCleanupAuthority": "Original inner owner records only; no outer claim."
+}
