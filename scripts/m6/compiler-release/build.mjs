@@ -4,6 +4,7 @@ import { captureCompilerMaterials, selectCompilerCrates } from './materials.mjs'
 import { validateCompilerTree } from './material-tree.mjs';
 import { github } from './github.mjs';
 import { captureSource } from './source.mjs';
+import { captureBuiltCompiler } from './built-compiler.mjs';
 import { bytes, command, describe, id, ordinary, parseCanonical, requireValue, sha256,
   TARGET, PRODUCT, writeNew } from './common.mjs';
 import { inputPaths } from '../../../examples/playground/restricted/daemon/compiler-publication-constants.mjs';
@@ -98,7 +99,7 @@ export async function buildCompiler({sourceRoot,cargoHome,output,admissionRoot,r
     'compiler build unchanged dependency cache');
   const afterSource=captureSource({cwd:sourceRoot,environment});
   requireValue(bytes(afterSource.source).equals(bytes(admission.source)),'compiler build unchanged source');
-  const binary=ordinary(join(targetRoot,TARGET,'release',PRODUCT),128*1024*1024);
+  const binary=captureBuiltCompiler(targetRoot);
   writeNew(join(output,'compiler.bin'),binary);writeNew(join(output,'rust-materials.json'),material.materials);
   writeNew(join(output,'material-closure.json'),material.closure);
   mkdirSync(join(output,'licenses'),{mode:0o700});
