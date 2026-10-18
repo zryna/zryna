@@ -28,6 +28,7 @@ result = {'format': 'zryna410.host-compatibility-probe.v1', 'acceptance': False,
 daemon, containerd, image, cid = None, None, None, None
 attempted = False
 index = 0
+engine_docker = '/usr/bin/docker'
 
 
 def run(argv, timeout=30, ok=(0,)):
@@ -53,17 +54,22 @@ def run(argv, timeout=30, ok=(0,)):
 
 
 def docker(*args, timeout=30, ok=(0,)):
-    return run(['/usr/bin/docker', '--host=unix://' + str(sock), *args], timeout, ok)
+    return run([engine_docker, '--host=unix://' + str(sock), *args], timeout, ok)
 
 
 try:
+    result['engineAcquisition'] = json.loads(run(['/usr/bin/python3', '-I', '-B',
+                                                str(Path(__file__).with_name('engine_acquire.py')), str(root)], timeout=130))
+    engine_bins = root / 'engine-bin'
+    environment['PATH'] = str(engine_bins) + ':' + environment['PATH']
+    engine_docker = str(engine_bins / 'docker')
     containerd_config = root / 'containerd.toml'
     containerd_config.write_text('version = 2\ndisabled_plugins = ["io.containerd.grpc.v1.cri"]\n'
                                 + 'root = ' + json.dumps(str(root / 'containerd-root')) + '\n'
                                 + 'state = ' + json.dumps(str(root / 'containerd-state')) + '\n'
                                 + '[grpc]\naddress = ' + json.dumps(str(root / 'containerd.sock')) + '\n')
     containerd_log = (root / 'containerd.log').open('xb')
-    containerd_command = ['/usr/bin/containerd', '--config=' + str(containerd_config)]
+    containerd_command = [str(engine_bins / 'containerd'), '--config=' + str(containerd_config)]
     containerd = subprocess.Popen(containerd_command, env=environment, stdout=containerd_log,
                                  stderr=subprocess.STDOUT, start_new_session=True)
     result['containerd'] = {'pid': containerd.pid, 'argv': containerd_command,
@@ -78,7 +84,7 @@ try:
         raise TimeoutError('private containerd socket readiness')
     config = root / 'daemon.json'
     config.write_text('{}\n')
-    command = ['/usr/bin/dockerd', '--host=unix://' + str(sock), '--group=nogroup',
+    command = [str(engine_bins / 'dockerd'), '--host=unix://' + str(sock), '--group=nogroup',
                '--config-file=' + str(config),
                '--data-root=' + str(root / 'data'), '--exec-root=' + str(root / 'exec'),
                '--pidfile=' + str(root / 'dockerd.pid'), '--bridge=none', '--iptables=false',

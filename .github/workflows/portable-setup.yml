@@ -10,23 +10,25 @@ jobs:
   probe:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
+    env:
+      M6_HOST_PROBE_ROOT: /tmp/m6-host-compatibility-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
       - name: Probe a separate task-owned Engine and unchanged observer modules
-        run: sudo -n /usr/bin/python3 -I -B operator/host_probe.py "$RUNNER_TEMP/host-compatibility" "$GITHUB_WORKSPACE"
+        run: sudo -n /usr/bin/python3 -I -B operator/host_probe.py "$M6_HOST_PROBE_ROOT" "$GITHUB_WORKSPACE"
       - name: Retain complete actual probe observations and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: m6-host-compatibility-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/host-compatibility/*.json
-            ${{ runner.temp }}/host-compatibility/*.stdout
-            ${{ runner.temp }}/host-compatibility/*.stderr
-            ${{ runner.temp }}/host-compatibility/*.log
+            ${{ env.M6_HOST_PROBE_ROOT }}/*.json
+            ${{ env.M6_HOST_PROBE_ROOT }}/*.stdout
+            ${{ env.M6_HOST_PROBE_ROOT }}/*.stderr
+            ${{ env.M6_HOST_PROBE_ROOT }}/*.log
           if-no-files-found: error
           retention-days: 14
           compression-level: 6

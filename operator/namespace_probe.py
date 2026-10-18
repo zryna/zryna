@@ -18,7 +18,11 @@ runtime = root / 'namespace-run'
 runtime.mkdir(mode=0o755)
 os.chown(runtime, 65534, 65534)
 subprocess.run(['mount', '--bind', str(runtime), '/run'], check=True)
-broker_code = Path(__file__).with_name('broker.py')
+broker_code = root / 'broker-reviewed.py'
+original_broker = Path(__file__).with_name('broker.py').read_bytes()
+with broker_code.open('xb') as output:
+    output.write(original_broker)
+broker_code.chmod(0o444)
 
 
 def nobody():
