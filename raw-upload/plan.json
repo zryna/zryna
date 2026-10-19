@@ -1,0 +1,544 @@
+{
+  "format": "zryna.m6-fixed-draft-asset-transport.v1",
+  "version": 1,
+  "sourceCommit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+  "sourceTree": "351da60bd4037e0f96c286045c8943f41fa99b03",
+  "repository": "zryna/zryna",
+  "releaseId": 417587913,
+  "tag": "m6-raw-evidence-71fd69d99a39c22bdf262d1655a032aa76221f3e-1",
+  "assets": [
+    {
+      "name": "authenticated-docs-manifest.json",
+      "bytes": 16384,
+      "sha256": "697b7a79e08aa16542e95ca6902c8efa1a030a29ba0730a85795886e44a2e66b"
+    },
+    {
+      "name": "canonical-linux-original-shared-job.log",
+      "bytes": 1139970,
+      "sha256": "3e16eb6182d90abbd5e7baaa0c8e71c0af36e817b53904288c6e8602008427dc"
+    },
+    {
+      "name": "canonical-windows-original-shared-job.log",
+      "bytes": 914462,
+      "sha256": "b86e35ea2933c027a2f1a2fff7d5a12866a6a746388e241310b8f5c31c209b33"
+    },
+    {
+      "name": "chrome-linux64-153.0.8010.12-inventory.json",
+      "bytes": 41670,
+      "sha256": "110d5111c1a885596b2dba4fe5d04e570d26e1c57454d0a902f1115ce818635a"
+    },
+    {
+      "name": "chrome-linux64-153.0.8010.12.zip",
+      "bytes": 195836009,
+      "sha256": "8aac35011c18f6e2d10696154af89a5728ac2ddd6dc6fad24ffdf243c3fcfd5a"
+    },
+    {
+      "name": "compiler-materials-manifest.json",
+      "bytes": 2661,
+      "sha256": "bb3d59f7e3ff44e7c30deb6c99a8e56b329507f709e1cebbb2fc366fdf029b27"
+    },
+    {
+      "name": "compiler-materials.tar.gz",
+      "bytes": 45536929,
+      "sha256": "e3c134cc58324c391d6f715d73958af12efe022b5e4cc8b7c6faeaedd51ed839"
+    },
+    {
+      "name": "compiler-runtime-image.tar",
+      "bytes": 14991360,
+      "sha256": "ca75b826b1d753ec602c9e94fc3d641f8b257d7570e406a2298283b3b01c1f56"
+    },
+    {
+      "name": "daemon-supervisor-linux",
+      "bytes": 17024,
+      "sha256": "773089bc6b220b1ebf2a2203c2f0da66b4952f36f4661cc0a0a8233572340bd5"
+    },
+    {
+      "name": "docker-engine-linux-identity.json",
+      "bytes": 2256,
+      "sha256": "a7a1e6b03bbe6900ea9b05b3e4decc95ad1003706fc4c84ffe0a9ff1fe1407b2"
+    },
+    {
+      "name": "docs-artifact-original.zip",
+      "bytes": 1914594,
+      "sha256": "719a922321514119245ce33e4d395ad02f28341c284999f0bb143feaf0056655"
+    },
+    {
+      "name": "docs-gate-artifact-original.zip",
+      "bytes": 328034,
+      "sha256": "bc09480ed767a57bb72ec452ab03716304196198b5e7b7199501c18cb0ebe34f"
+    },
+    {
+      "name": "durable-material-provenance.json",
+      "bytes": 28175,
+      "sha256": "aaecf1e4910bb3913188efff66bee8a30173c05cace6f18944f6f742adc1ba6e"
+    },
+    {
+      "name": "editor-artifact-linux-original.zip",
+      "bytes": 299422,
+      "sha256": "01793c7878f0fe7a3099e345feb3663517dcd1c87d3a5f536a6ec8b2c06531c0"
+    },
+    {
+      "name": "editor-artifact-windows-original.zip",
+      "bytes": 452510,
+      "sha256": "c18f37e860f9db4dbf02cb564b1871f6d11b3e0940529fc6ca27093e40583521"
+    },
+    {
+      "name": "evaluator-materials-manifest.json",
+      "bytes": 67474,
+      "sha256": "a6b06b91d30763641235b64f1d2b5f9a41b65952941c84bb63d1c21c1011f5bd"
+    },
+    {
+      "name": "evaluator-materials.tar.gz",
+      "bytes": 227574493,
+      "sha256": "4794d1ca22894a62fdbabb2d21c5fc2aa3999915b75f867aa2cd973771b5b0c9"
+    },
+    {
+      "name": "evaluator-runtime-image.tar",
+      "bytes": 49909760,
+      "sha256": "a78489ed9f6781d302f00b85494c6a72113ca5984134168a23f754a426b681fb"
+    },
+    {
+      "name": "host-policy.json",
+      "bytes": 27692,
+      "sha256": "820e4b2282bc95b5fae56a564b176232ff4fc47a7b6508e048ff9ac0b2e5e719"
+    },
+    {
+      "name": "installed-supplement-linux-original.zip",
+      "bytes": 112766027,
+      "sha256": "e5aa36b41bc4b7773e5af8e2aa73c6b1e106c4bf17579aeeda6091a67201db7d"
+    },
+    {
+      "name": "installed-supplement-windows-original.zip",
+      "bytes": 251837214,
+      "sha256": "f460527737fe8bc79ea79754cba8c8b1f30ebf5ada850fdeafe8bc7a20a55004"
+    },
+    {
+      "name": "native-linux-original.zip",
+      "bytes": 24018281,
+      "sha256": "558e341b523bd4f39d287c0ad509284c17515b2516cd38610873984a57521690"
+    },
+    {
+      "name": "native-reader-linux-original.zip",
+      "bytes": 8676046,
+      "sha256": "697958549f7f8124f0b137c17cc2befce21633f06347b21b0897ac1cac6b01af"
+    },
+    {
+      "name": "native-reader-windows-original.zip",
+      "bytes": 10246353,
+      "sha256": "3f50420cd9583aeed0b6675dbeae7e14ce976e194dadb98b5afa51d77e74deff"
+    },
+    {
+      "name": "native-windows-original.zip",
+      "bytes": 27581714,
+      "sha256": "5844e918f81b93b153dd07e37efeb1c86880de08ef8ba883774caec2fcb68dbc"
+    },
+    {
+      "name": "node-22.22.1-linux-x64.tar.gz",
+      "bytes": 43836508,
+      "sha256": "638869dd1cf6b7c9f11a095ee1cc42733c66e643c3a0c059d835779924e64603"
+    },
+    {
+      "name": "original-acquisition-and-material-provenance.tar.gz",
+      "bytes": 233756,
+      "sha256": "9376dacb89dbc9d1317f9e3ed4d60feb9ffe8870c4dafcdcda76e08f8de35cb8"
+    },
+    {
+      "name": "public-runtime-evidence.tar.gz",
+      "bytes": 25751018,
+      "sha256": "e1666170a6baf7a39f7fed4870e12708b23b35f980560663cb241c3cef890798"
+    },
+    {
+      "name": "setup-artifact-linux-original.zip",
+      "bytes": 55958788,
+      "sha256": "3546385b07d3952142b8b9f9402100d4e9ac6b432584e2598be3103cb59e2b37"
+    },
+    {
+      "name": "setup-artifact-windows-original.zip",
+      "bytes": 125331054,
+      "sha256": "5f360cc14a056b0e44d4bc2077717a775b41425ad55deb15278fe9058480ef3d"
+    },
+    {
+      "name": "setup-manifest-linux.json",
+      "bytes": 75972,
+      "sha256": "977d5f86d13cd2fcd9957f7cc6478d40e863a5801dbbd697ec1621235855e865"
+    },
+    {
+      "name": "setup-manifest-windows.json",
+      "bytes": 77455,
+      "sha256": "b3ae2a378b6ec336f86d2b50513f2e3801deed6d2562d6f49020240a2900a76b"
+    },
+    {
+      "name": "signed-legacy-provider-6.0.2.tar.gz",
+      "bytes": 1699762,
+      "sha256": "055c19d9724272e264b7c343ad485775191b8882b5ce63aa74d36a24f1ad29bb"
+    },
+    {
+      "name": "source-composition.json",
+      "bytes": 4753,
+      "sha256": "59a0619e4954117e1a9face59fb5f014e5605c80d9975aed6da5ec7975cc7fd0"
+    },
+    {
+      "name": "website-production-proof.json",
+      "bytes": 5050,
+      "sha256": "4c574de76e235134643cde65547ccb3e1a56a21c6165b78f25aed5c4aad1290b"
+    },
+    {
+      "name": "zryna-0.5.0-linux.vsix",
+      "bytes": 30092,
+      "sha256": "1a4bffc99be86b986a6172a66cc45e48dec937b91a736dc929e37952b239c6ec"
+    },
+    {
+      "name": "zryna-0.5.0-windows.vsix",
+      "bytes": 30092,
+      "sha256": "428438f686653b71214636cd20431775b4ce0ab7ae62f09d94d1d1233c4d8ccd"
+    },
+    {
+      "name": "zryna-language-server-linux",
+      "bytes": 6967640,
+      "sha256": "4e599362727e8661d4bdf397c1088d014c39df8ca55773185885f77f82c5c625"
+    },
+    {
+      "name": "zryna-language-server-windows.exe",
+      "bytes": 7136768,
+      "sha256": "2846c28a6e5c3ff2232f2a8c8497c44ce2b6a5f4daf912445bec7d4ca8e6e5d9"
+    },
+    {
+      "name": "zryna-setup-0.1.0-candidate.3-x86_64-pc-windows-msvc.zip",
+      "bytes": 125329131,
+      "sha256": "25b1ddbc15e25026124873d4482bf5576bbc3ad208cf4ec0652cbeb0ba1d0661"
+    },
+    {
+      "name": "zryna-setup-0.1.0-candidate.3-x86_64-unknown-linux-gnu.tar.gz",
+      "bytes": 55956843,
+      "sha256": "41b128a19d0730f8ff5d211540f25d8a358f0c2eec1ca65599c5e3e6dd49c82d"
+    }
+  ],
+  "sourceArtifacts": {
+    "canonical-linux-original-shared-job.log": {
+      "jobId": 117805559737,
+      "runId": 39171574840,
+      "bytes": 1139970,
+      "sha256": "3e16eb6182d90abbd5e7baaa0c8e71c0af36e817b53904288c6e8602008427dc"
+    },
+    "canonical-windows-original-shared-job.log": {
+      "jobId": 117805559750,
+      "runId": 39171574840,
+      "bytes": 914462,
+      "sha256": "b86e35ea2933c027a2f1a2fff7d5a12866a6a746388e241310b8f5c31c209b33"
+    },
+    "docs-artifact-original.zip": {
+      "id": 12155045498,
+      "bytes": 1914594,
+      "sha256": "719a922321514119245ce33e4d395ad02f28341c284999f0bb143feaf0056655",
+      "workflowRun": {
+        "id": 39176839216,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "71fd69d99a39c22bdf262d1655a032aa76221f3e"
+      },
+      "name": "zryna-docs-next-71fd69d99a39c22bdf262d1655a032aa76221f3e-697b7a79e08aa16542e95ca6902c8efa1a030a29ba0730a85795886e44a2e66b"
+    },
+    "docs-gate-artifact-original.zip": {
+      "id": 12154244709,
+      "bytes": 328034,
+      "sha256": "bc09480ed767a57bb72ec452ab03716304196198b5e7b7199501c18cb0ebe34f",
+      "workflowRun": {
+        "id": 39176839216,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "71fd69d99a39c22bdf262d1655a032aa76221f3e"
+      },
+      "name": "zryna-docs-gate-71fd69d99a39c22bdf262d1655a032aa76221f3e-39176839216-1"
+    },
+    "editor-artifact-linux-original.zip": {
+      "id": 12154154309,
+      "bytes": 299422,
+      "sha256": "01793c7878f0fe7a3099e345feb3663517dcd1c87d3a5f536a6ec8b2c06531c0",
+      "workflowRun": {
+        "id": 39171574840,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "71fd69d99a39c22bdf262d1655a032aa76221f3e"
+      },
+      "name": "m6-installed-editor-ubuntu-24.04-71fd69d99a39c22bdf262d1655a032aa76221f3e-39171574840-1"
+    },
+    "editor-artifact-windows-original.zip": {
+      "id": 12154716894,
+      "bytes": 452510,
+      "sha256": "c18f37e860f9db4dbf02cb564b1871f6d11b3e0940529fc6ca27093e40583521",
+      "workflowRun": {
+        "id": 39171574840,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "71fd69d99a39c22bdf262d1655a032aa76221f3e"
+      },
+      "name": "m6-installed-editor-windows-2022-71fd69d99a39c22bdf262d1655a032aa76221f3e-39171574840-1"
+    },
+    "installed-supplement-linux-original.zip": {
+      "id": 12154063170,
+      "bytes": 112766027,
+      "sha256": "e5aa36b41bc4b7773e5af8e2aa73c6b1e106c4bf17579aeeda6091a67201db7d",
+      "workflowRun": {
+        "id": 39176708782,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-installed-stdio-supplement-20261018",
+        "head_sha": "4f0a84f768be849031c3d2358ac5ecf3b94dfd7a"
+      },
+      "name": "installed-m6-supplement-ubuntu-24.04-71fd69d99a39c22bdf262d1655a032aa76221f3e-39176708782-1"
+    },
+    "installed-supplement-windows-original.zip": {
+      "id": 12153968516,
+      "bytes": 251837214,
+      "sha256": "f460527737fe8bc79ea79754cba8c8b1f30ebf5ada850fdeafe8bc7a20a55004",
+      "workflowRun": {
+        "id": 39176708782,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-installed-stdio-supplement-20261018",
+        "head_sha": "4f0a84f768be849031c3d2358ac5ecf3b94dfd7a"
+      },
+      "name": "installed-m6-supplement-windows-2022-71fd69d99a39c22bdf262d1655a032aa76221f3e-39176708782-1"
+    },
+    "native-linux-original.zip": {
+      "id": 12149394375,
+      "bytes": 24018281,
+      "sha256": "558e341b523bd4f39d287c0ad509284c17515b2516cd38610873984a57521690",
+      "workflowRun": {
+        "id": 39164229342,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-exact-source-tooling-prepared-cargo-20261017",
+        "head_sha": "4adf55ac71eaa864834312d44a1df19b684dacc1"
+      },
+      "name": "exact-source-tooling-ubuntu-24.04-39164229342-1"
+    },
+    "native-reader-linux-original.zip": {
+      "id": 12154624140,
+      "bytes": 8676046,
+      "sha256": "697958549f7f8124f0b137c17cc2befce21633f06347b21b0897ac1cac6b01af",
+      "workflowRun": {
+        "id": 39177527567,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-native-readonly-evidence-e-ci39171574840",
+        "head_sha": "b87f349b6cd432a9138ccce8f72c30e22398156b"
+      },
+      "name": "m6-readonly-evidence-ubuntu-24.04-39177527567-1"
+    },
+    "native-reader-windows-original.zip": {
+      "id": 12154368525,
+      "bytes": 10246353,
+      "sha256": "3f50420cd9583aeed0b6675dbeae7e14ce976e194dadb98b5afa51d77e74deff",
+      "workflowRun": {
+        "id": 39177527567,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-native-readonly-evidence-e-ci39171574840",
+        "head_sha": "b87f349b6cd432a9138ccce8f72c30e22398156b"
+      },
+      "name": "m6-readonly-evidence-windows-2022-39177527567-1"
+    },
+    "native-windows-original.zip": {
+      "id": 12150785409,
+      "bytes": 27581714,
+      "sha256": "5844e918f81b93b153dd07e37efeb1c86880de08ef8ba883774caec2fcb68dbc",
+      "workflowRun": {
+        "id": 39164229342,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "m6-410-exact-source-tooling-prepared-cargo-20261017",
+        "head_sha": "4adf55ac71eaa864834312d44a1df19b684dacc1"
+      },
+      "name": "exact-source-tooling-windows-2022-39164229342-1"
+    },
+    "setup-artifact-linux-original.zip": {
+      "id": 12153369679,
+      "bytes": 55958788,
+      "sha256": "3546385b07d3952142b8b9f9402100d4e9ac6b432584e2598be3103cb59e2b37",
+      "workflowRun": {
+        "id": 39171574840,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "71fd69d99a39c22bdf262d1655a032aa76221f3e"
+      },
+      "name": "portable-setup-ubuntu-24.04"
+    },
+    "setup-artifact-windows-original.zip": {
+      "id": 12154057981,
+      "bytes": 125331054,
+      "sha256": "5f360cc14a056b0e44d4bc2077717a775b41425ad55deb15278fe9058480ef3d",
+      "workflowRun": {
+        "id": 39171574840,
+        "repository_id": 1350402316,
+        "head_repository_id": 1350402316,
+        "head_branch": "main",
+        "head_sha": "71fd69d99a39c22bdf262d1655a032aa76221f3e"
+      },
+      "name": "portable-setup-windows-2022"
+    }
+  },
+  "blobs": [
+    {
+      "path": "payload/chrome-linux64-153.0.8010.12-inventory.json",
+      "bytes": 41670,
+      "sha256": "110d5111c1a885596b2dba4fe5d04e570d26e1c57454d0a902f1115ce818635a",
+      "outputName": "chrome-linux64-153.0.8010.12-inventory.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/compiler-materials-manifest.json",
+      "bytes": 2661,
+      "sha256": "bb3d59f7e3ff44e7c30deb6c99a8e56b329507f709e1cebbb2fc366fdf029b27",
+      "outputName": "compiler-materials-manifest.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/compiler-runtime-image.tar.gz",
+      "bytes": 5345036,
+      "sha256": "dd9afeff624354a49a4c1bfaecc3b4b502021287ad960abc9cea8e69a6577dd9",
+      "outputName": "compiler-runtime-image.tar",
+      "kind": "gunzip"
+    },
+    {
+      "path": "payload/daemon-supervisor-linux",
+      "bytes": 17024,
+      "sha256": "773089bc6b220b1ebf2a2203c2f0da66b4952f36f4661cc0a0a8233572340bd5",
+      "outputName": "daemon-supervisor-linux",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/docker-engine-linux-identity.json",
+      "bytes": 2256,
+      "sha256": "a7a1e6b03bbe6900ea9b05b3e4decc95ad1003706fc4c84ffe0a9ff1fe1407b2",
+      "outputName": "docker-engine-linux-identity.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/durable-material-provenance.json",
+      "bytes": 28175,
+      "sha256": "aaecf1e4910bb3913188efff66bee8a30173c05cace6f18944f6f742adc1ba6e",
+      "outputName": "durable-material-provenance.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/evaluator-materials-manifest.json",
+      "bytes": 67474,
+      "sha256": "a6b06b91d30763641235b64f1d2b5f9a41b65952941c84bb63d1c21c1011f5bd",
+      "outputName": "evaluator-materials-manifest.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/evaluator-runtime-image.tar.gz",
+      "bytes": 19946015,
+      "sha256": "bf247046b14864349824025423573f2e410da8fb8388ff876b65c6d584ec2fb8",
+      "outputName": "evaluator-runtime-image.tar",
+      "kind": "gunzip"
+    },
+    {
+      "path": "payload/original-acquisition-and-material-provenance.tar.gz",
+      "bytes": 233756,
+      "sha256": "9376dacb89dbc9d1317f9e3ed4d60feb9ffe8870c4dafcdcda76e08f8de35cb8",
+      "outputName": "original-acquisition-and-material-provenance.tar.gz",
+      "kind": "copy"
+    },
+    {
+      "path": "lib/libz.so.1",
+      "bytes": 125376,
+      "sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "outputName": null,
+      "kind": "compression-library"
+    },
+    {
+      "path": "lib/zlib-COPYRIGHT",
+      "bytes": 2927,
+      "sha256": "9e5b96d63773a5d177ba264254390f792be07e41748ebd94730981c6cac31cc6",
+      "outputName": null,
+      "kind": "compression-license"
+    },
+    {
+      "path": "payload/website-production-proof.json",
+      "bytes": 5050,
+      "sha256": "4c574de76e235134643cde65547ccb3e1a56a21c6165b78f25aed5c4aad1290b",
+      "outputName": "website-production-proof.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/host-policy.json",
+      "bytes": 27692,
+      "sha256": "820e4b2282bc95b5fae56a564b176232ff4fc47a7b6508e048ff9ac0b2e5e719",
+      "outputName": "host-policy.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/source-composition.json",
+      "bytes": 4753,
+      "sha256": "59a0619e4954117e1a9face59fb5f014e5605c80d9975aed6da5ec7975cc7fd0",
+      "outputName": "source-composition.json",
+      "kind": "copy"
+    },
+    {
+      "path": "payload/public-runtime-evidence.tar.gz",
+      "bytes": 25751018,
+      "sha256": "e1666170a6baf7a39f7fed4870e12708b23b35f980560663cb241c3cef890798",
+      "outputName": "public-runtime-evidence.tar.gz",
+      "kind": "copy"
+    }
+  ],
+  "legacy": {
+    "id": 563209159,
+    "bytes": 52949082,
+    "sha256": "b258d45e1eb58a701026ced7c74d03dc74c911c90a5ec7da93c656884a97159f",
+    "immutableReleaseId": 388328382,
+    "tag": "v0.2.3"
+  },
+  "chrome": {
+    "url": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/linux64/chrome-linux64.zip",
+    "bytes": 195836009,
+    "sha256": "8aac35011c18f6e2d10696154af89a5728ac2ddd6dc6fad24ffdf243c3fcfd5a"
+  },
+  "playwright": {
+    "url": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.63.0.tgz",
+    "sha512": "ad80ac045fcce478d4721e766dbb5538d1058efe97bbcb26f21ef674d951e5bcc81357ef0bf6f182ca7392349f53e3307843263ccf0a25e6c6ea79f2c68e660a"
+  },
+  "materialTarPins": {
+    "compiler": {
+      "files": 14,
+      "sourceBytes": 134170551,
+      "archiveBytes": 134195200,
+      "archiveSha256": "8dfc6bb5d66e6f06130dd0557fd8e384720bb9c77bb88fbe0e932c892b8f0e8c",
+      "format": "zryna.playground-archive-emission.v1",
+      "version": 1,
+      "kind": "materials",
+      "role": "compiler",
+      "planBytes": 4490,
+      "planSha256": "517dcc7fa751431e4645eba328e7ae2e5a80b81bd32d8897b733d9f642f0e886",
+      "sourceInventoryBeforeAfterEqual": true,
+      "scope": "archive transport only; no installation or operator approval"
+    },
+    "evaluator": {
+      "files": 419,
+      "sourceBytes": 548525078,
+      "archiveBytes": 548915200,
+      "archiveSha256": "d01ceb37da64bf1f2c798be95ad1cd6eb51e4a3e4c71878dc5a35bcb1950a27f",
+      "format": "zryna.playground-archive-emission.v1",
+      "version": 1,
+      "kind": "materials",
+      "role": "evaluator",
+      "planBytes": 122219,
+      "planSha256": "c3116a0b8ae26aa20ce82e33a564ef5cca5a37be7c9f641e549e09fbed03836e",
+      "sourceInventoryBeforeAfterEqual": true,
+      "scope": "archive transport only; no installation or operator approval"
+    }
+  },
+  "transportApproval": {
+    "approved": true,
+    "sourceCommit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+    "reason": "Maintainer ROOT authorizes exact41 create-only uploads to sourceE private draft417587913 after original38 reconstruction and independent whole common38/public preparation/archive review. Separate exact operator Git review and final17 validation must pass before one manual dispatch. No publication, overwrite, guest or acceptance authority."
+  }
+}

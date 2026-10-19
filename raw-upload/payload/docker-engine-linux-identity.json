@@ -1,0 +1,75 @@
+{
+  "engine": {
+    "ApiVersion": "1.51",
+    "Arch": "amd64",
+    "BuildTime": "2025-09-03T20:58:50.000000000+00:00",
+    "Components": [
+      {
+        "Details": {
+          "ApiVersion": "1.51",
+          "Arch": "amd64",
+          "BuildTime": "2025-09-03T20:58:50.000000000+00:00",
+          "Experimental": "false",
+          "GitCommit": "249d679",
+          "GoVersion": "go1.24.7",
+          "KernelVersion": "6.17.0-1022-azure",
+          "MinAPIVersion": "1.24",
+          "Os": "linux"
+        },
+        "Name": "Engine",
+        "Version": "28.4.0"
+      },
+      {
+        "Details": {
+          "GitCommit": "b98a3aace656320842a23f4a392a33f46af97866"
+        },
+        "Name": "containerd",
+        "Version": "v1.7.28"
+      },
+      {
+        "Details": {
+          "GitCommit": "v1.5.2-0-g29dd3dc"
+        },
+        "Name": "runc",
+        "Version": "1.5.2"
+      },
+      {
+        "Details": {
+          "GitCommit": "de40ad0"
+        },
+        "Name": "docker-init",
+        "Version": "0.19.0"
+      }
+    ],
+    "GitCommit": "249d679",
+    "GoVersion": "go1.24.7",
+    "KernelVersion": "6.17.0-1022-azure",
+    "MinAPIVersion": "1.24",
+    "Os": "linux",
+    "Platform": {
+      "Name": "Docker Engine - Community"
+    },
+    "Version": "28.4.0"
+  },
+  "finishedAt": "2026-10-19T17:59:22.626207+00:00",
+  "format": "zryna.m6-engine-identity-material.v1",
+  "hostEngineInfo": {
+    "bytes": 9926,
+    "path": "/workspace/scratch/M6_410_EPHEMERAL_HOST_39297762060_1/engine-info.stdout",
+    "sha256": "f271215e2461d3e378dd443c0a3baa51234a56c605d030789537ebe563f2824e"
+  },
+  "observation": "GET /v1.49/version; fixed /var/run/docker.sock peer UID65534",
+  "scope": "Actual readonly transport identity, no binary distribution or runtime acceptance.",
+  "source": {
+    "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+    "path": "/workspace/zryna",
+    "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
+  },
+  "startedAt": "2026-10-19T17:59:22.620176+00:00",
+  "version": 1,
+  "wholeRawResponse": {
+    "bytes": 823,
+    "path": "/workspace/scratch/M6_410_EPHEMERAL_HOST_39297762060_1/material-capture/docker-engine-version.raw.json",
+    "sha256": "1616780aa6eb0d4e7d7241cecf3105c54e3de46e396ba04510cd242e6375191d"
+  }
+}

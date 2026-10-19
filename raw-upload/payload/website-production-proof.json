@@ -1,0 +1,108 @@
+{
+  "status": "actual-new-source-production-124-route-content-and-header-check-passed",
+  "at": "2026-10-19T17:47:15.236724+00:00",
+  "origin": "https://zryna.com",
+  "compilerSourceCommit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+  "manifestSha256": "697b7a79e08aa16542e95ca6902c8efa1a030a29ba0730a85795886e44a2e66b",
+  "checkerWebsiteCommit": "0559e140cc6537a6d41f01d1f828666b7f32e4de",
+  "checkerWebsiteTree": "fcb43e53cca7e1ecec48a638d1b3a8f9f5ad627e",
+  "initialOldProductionIdentityRetained": {
+    "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/IDENTITY-001.json",
+    "bytes": 1758,
+    "sha256": "8bc2965e57ecc7a590c21be1579af3fae7dd6594c96df00555e155f232a0a837"
+  },
+  "actualNewProductionIdentity": {
+    "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/IDENTITY-002.json",
+    "bytes": 1755,
+    "sha256": "1b7afb5700db995a13d191f29b5667d5d52cb6415f8f17fc898c780a9732d6f6"
+  },
+  "convergenceObservations": 2,
+  "intervalSeconds": 60,
+  "originalFullCheckerInvocations": 1,
+  "quality": {
+    "routes": 124,
+    "routesActual200": 124,
+    "missingRouteActual404": true,
+    "httpToHttpsRedirect": {
+      "status": 301,
+      "location": "https://zryna.com/"
+    },
+    "securityHeadersCheckedByOriginal": true,
+    "observedHsts": null,
+    "originalM4MatrixAndAllImportedContentChecks": true
+  },
+  "rawRetention": {
+    "root": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/HTTP",
+    "actualRequests": 126,
+    "completeBodies": 126,
+    "completeHeaders": 126,
+    "allBodyAndHeaderPinsRehashedAgainstOriginalTransport": true,
+    "transport": {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/HTTP/TRANSPORT.json",
+      "bytes": 51231,
+      "sha256": "f3b703f15c71bfd3ebde5f643fe858b41d4c72f0e432d7a5f0632919359afbba"
+    }
+  },
+  "pins": [
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/INTENT.json",
+      "bytes": 710,
+      "sha256": "7ac40b440637671f6dfc96f38e02d27d433fc4cf74eeeff6f4098bb1fbe2330b"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/ADAPTER_BINDING.json",
+      "bytes": 2052,
+      "sha256": "18003775e109ce4d0f897d09b39af527ff34c8ab94ecc3a0eaa3050ef9af3e67"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/curl-fetch-check.mjs",
+      "bytes": 2482,
+      "sha256": "4ddf7f940a548c6bec0bee711b3de4b2440c28ee7efa46d174e4ed2d5948c15c"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/CHECK_COMMAND.json",
+      "bytes": 395,
+      "sha256": "3d6e5acd34258662a08d9691f30eeb54cb4b90e1561b69253ace2a9c6df4b972"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/CHECK_COMPLETE.json",
+      "bytes": 142,
+      "sha256": "7ccc38f6bd56cb3df532627c47e05358a85c729efcfd1e0e02541e3dcb2890e1"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/check.stdout",
+      "bytes": 30872,
+      "sha256": "8d9ad2a270e97dfc259ac2e10f7fa534e334d2104be4128f31b345d2527b4eb3"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/check.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/SOURCE_BEFORE.json",
+      "bytes": 127,
+      "sha256": "3923d91f22b5f6cde8878ec7877d652bb130b7e80c5903d5566e99914d699cce"
+    },
+    {
+      "path": "/workspace/scratch/M6_410_WEBSITE_PRODUCTION_VERIFICATION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/SOURCE_AFTER.json",
+      "bytes": 127,
+      "sha256": "3923d91f22b5f6cde8878ec7877d652bb130b7e80c5903d5566e99914d699cce"
+    },
+    {
+      "path": "/workspace/website/tools/docs/check-published-content.mjs",
+      "bytes": 10392,
+      "sha256": "7705bb9f2d7e78d0bfed16d5aad60e3a7bda4570aff541a34b8e9cf4de4ac47e"
+    }
+  ],
+  "productionDeploymentIdentity": null,
+  "scope": "Actual HTTPS content/header observation against exact clean merged checker/lock/source. Provider deployment/image identity not queried or inferred. Historical C production proof not reused. This does not establish compiler publication/private68/runtime/final23 acceptance or410closure.",
+  "effects": {
+    "gitWrites": 0,
+    "providerWrites": 0,
+    "deploymentTriggers": 0,
+    "apiConfigurationChanges": 0,
+    "secretsRequested": 0,
+    "originalFullCheckerInvocations": 1
+  }
+}
