@@ -1,0 +1,1216 @@
+{
+  "format": "zryna.m6-ui-owner-fixed-failure-enums.v1",
+  "diagnosticOnly": true,
+  "qualificationAcceptance": false,
+  "sourceCommit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+  "originalOwner": {
+    "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_main.py",
+    "bytes": 3925,
+    "sha256": "aacc5238da85572ee46b697edb3e96e9fa0be63f4bdf82a38517263247159615"
+  },
+  "sources": [
+    {
+      "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+      "bytes": 14285,
+      "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+    },
+    {
+      "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+      "bytes": 8205,
+      "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+    },
+    {
+      "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+      "bytes": 14048,
+      "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+    },
+    {
+      "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+      "bytes": 8175,
+      "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+    }
+  ],
+  "rows": [
+    {
+      "enum": "UI_DIAG_KERNEL_001",
+      "exactMessage": "UI-KERNEL: finite shared owner deadline",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 18
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_002",
+      "exactMessage": "UI-KERNEL: observation deadline",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 23
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_003",
+      "exactMessage": "UI-KERNEL: stable process start identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 58
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_004",
+      "exactMessage": "UI-KERNEL: bounded positive process identities",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 74
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_005",
+      "exactMessage": "UI-KERNEL: unique process identities",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 77
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_006",
+      "exactMessage": "UI-KERNEL: fixed single-thread UI ancestor",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 86
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_007",
+      "exactMessage": "UI-KERNEL: initial NNP and seccomp",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 91
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_008",
+      "exactMessage": "UI-KERNEL: initial fixed two-CPU affinity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 92
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_009",
+      "exactMessage": "UI-KERNEL: private PID1 readback",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 94
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_010",
+      "exactMessage": "UI-KERNEL: only private loopback interface",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 135
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_011",
+      "exactMessage": "UI-KERNEL: no IPv4 routes",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 137
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_012",
+      "exactMessage": "UI-KERNEL: actual bounded cgroup tasks include init",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 155
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_013",
+      "exactMessage": "UI-KERNEL: all UI process identities stable through tree observation",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 187
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_014",
+      "exactMessage": "UI-KERNEL: all original UI thread memberships stable through global observation",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 190
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_015",
+      "exactMessage": "UI-KERNEL: stable bounded UI process tree",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 193
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_016",
+      "exactMessage": "UI-KERNEL: continuously running original UI init",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 204
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_017",
+      "exactMessage": "UI-KERNEL: actual fixed UI numeric cgroup controls",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 216
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_018",
+      "exactMessage": "UI-KERNEL: actual cgroup fixed CPU set",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 218
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_019",
+      "exactMessage": "UI-KERNEL: original UI init unchanged through kernel capture",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 225
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_020",
+      "exactMessage": "UI-KERNEL: original running init before detailed kernel observation",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 245
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_021",
+      "exactMessage": "UI-KERNEL: stable provisional init identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 249
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_022",
+      "exactMessage": "UI-KERNEL: original UI init still exists",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 260
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_023",
+      "exactMessage": "UI-KERNEL: ordinary kernel metadata",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 33
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_024",
+      "exactMessage": "UI-KERNEL: unique process status fields",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 67
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_025",
+      "exactMessage": "UI-KERNEL: all four initial credentials 65534",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 88
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_026",
+      "exactMessage": "UI-KERNEL: all initial capabilities zero",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 90
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_027",
+      "exactMessage": "UI-KERNEL: actual fixed scratch flags",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 102
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_028",
+      "exactMessage": "UI-KERNEL: actual fixed scratch size",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 105
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_029",
+      "exactMessage": "UI-KERNEL: actual network interface counters",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 132
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_030",
+      "exactMessage": "UI-KERNEL: no IPv6 external destination or next hop",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 141
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_031",
+      "exactMessage": "UI-KERNEL: same-group UI process",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 162
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_032",
+      "exactMessage": "UI-KERNEL: stable UI process identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 164
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_033",
+      "exactMessage": "UI-KERNEL: same-group UI thread",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 169
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_034",
+      "exactMessage": "UI-KERNEL: same original owned process in complete visible inventory",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 174
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_035",
+      "exactMessage": "UI-KERNEL: no escaped or unreaped owned descendant in complete PPid inventory",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 178
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_036",
+      "exactMessage": "UI-KERNEL: retained pre-audit Docker identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 236
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_037",
+      "exactMessage": "UI-KERNEL: owned UI cgroup fully empty",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 270
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_038",
+      "exactMessage": "UI-KERNEL: kernel first-extra-byte bound",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 41
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_039",
+      "exactMessage": "UI-KERNEL: namespace observation deadline",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 113
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_040",
+      "exactMessage": "UI-KERNEL: all UI processes descend from owned init",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 183
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_041",
+      "exactMessage": "UI-KERNEL: unique numeric cgroup cleanup events",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 267
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_042",
+      "exactMessage": "UI-KERNEL: missing cgroup metadata is not group removal",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 274
+    },
+    {
+      "enum": "UI_DIAG_KERNEL_043",
+      "exactMessage": "UI-KERNEL: actual namespace link syntax",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_kernel.py",
+        "bytes": 14285,
+        "sha256": "4e09ab99cb9b5c66d05e1ba8a3f3847147ee7c18606268c1b16f0be85421878c"
+      },
+      "line": 116
+    },
+    {
+      "enum": "UI_DIAG_PROC_001",
+      "exactMessage": "UI-PROC: actual complete observer PID namespace",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 25
+    },
+    {
+      "enum": "UI_DIAG_PROC_002",
+      "exactMessage": "UI-PROC: complete exact process stat identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 32
+    },
+    {
+      "enum": "UI_DIAG_PROC_003",
+      "exactMessage": "UI-PROC: bounded parent identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 36
+    },
+    {
+      "enum": "UI_DIAG_PROC_004",
+      "exactMessage": "UI-PROC: global inventory deadline",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 41
+    },
+    {
+      "enum": "UI_DIAG_PROC_005",
+      "exactMessage": "UI-PROC: complete process inventory finished before deadline",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 62
+    },
+    {
+      "enum": "UI_DIAG_PROC_006",
+      "exactMessage": "UI-PROC: complete bounded task group",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 93
+    },
+    {
+      "enum": "UI_DIAG_PROC_007",
+      "exactMessage": "UI-PROC: complete stable live task epoch",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 99
+    },
+    {
+      "enum": "UI_DIAG_PROC_008",
+      "exactMessage": "UI-PROC: exact first or proven-known last membership failure",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 108
+    },
+    {
+      "enum": "UI_DIAG_PROC_009",
+      "exactMessage": "UI-PROC: only witnessed retired first or proven-known last membership task",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 112
+    },
+    {
+      "enum": "UI_DIAG_PROC_010",
+      "exactMessage": "UI-PROC: exact retired-task subset and task count delta",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 121
+    },
+    {
+      "enum": "UI_DIAG_PROC_011",
+      "exactMessage": "UI-PROC: retirement group stable through inventory",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 146
+    },
+    {
+      "enum": "UI_DIAG_PROC_012",
+      "exactMessage": "UI-PROC: retired task still absent after complete inventory",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 148
+    },
+    {
+      "enum": "UI_DIAG_PROC_013",
+      "exactMessage": "UI-PROC: complete observer mount metadata",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 17
+    },
+    {
+      "enum": "UI_DIAG_PROC_014",
+      "exactMessage": "UI-PROC: complete visible proc without hidden processes",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 21
+    },
+    {
+      "enum": "UI_DIAG_PROC_015",
+      "exactMessage": "UI-PROC: original leader epoch and membership",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 126
+    },
+    {
+      "enum": "UI_DIAG_PROC_016",
+      "exactMessage": "UI-PROC: all original live leader identities in complete inventory",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 134
+    },
+    {
+      "enum": "UI_DIAG_PROC_017",
+      "exactMessage": "UI-PROC: no escaped or unreaped owned descendant",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 137
+    },
+    {
+      "enum": "UI_DIAG_PROC_018",
+      "exactMessage": "UI-PROC: leader unchanged through retirement inventory",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 144
+    },
+    {
+      "enum": "UI_DIAG_PROC_019",
+      "exactMessage": "UI-PROC: finite complete proc traversal",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 48
+    },
+    {
+      "enum": "UI_DIAG_PROC_020",
+      "exactMessage": "UI-PROC: bounded canonical process inventory",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 52
+    },
+    {
+      "enum": "UI_DIAG_PROC_021",
+      "exactMessage": "UI-PROC: unique numeric process identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 55
+    },
+    {
+      "enum": "UI_DIAG_PROC_022",
+      "exactMessage": "UI-PROC: known actual task state",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 79
+    },
+    {
+      "enum": "UI_DIAG_PROC_023",
+      "exactMessage": "UI-PROC: exact bounded task status",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 83
+    },
+    {
+      "enum": "UI_DIAG_PROC_024",
+      "exactMessage": "UI-PROC: all original leaders descend from original init",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 141
+    },
+    {
+      "enum": "UI_DIAG_PROC_025",
+      "exactMessage": "UI-PROC: only exact task open absence",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_proc.py",
+        "bytes": 8205,
+        "sha256": "6770f5e9415ed09180f1fcbf46913cf55cbcde689df69293b0303a520d89a3ac"
+      },
+      "line": 73
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_001",
+      "exactMessage": "UI-CGROUP: exact original container identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 20
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_002",
+      "exactMessage": "UI-CGROUP: sole cgroup-v2 mount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 32
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_003",
+      "exactMessage": "UI-CGROUP: actual observer PID establishes approved mount coordinate system",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 51
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_004",
+      "exactMessage": "UI-CGROUP: original acquisition context",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 73
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_005",
+      "exactMessage": "UI-CGROUP: actual captured acquisition thread",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 89
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_006",
+      "exactMessage": "UI-CGROUP: original first-membership proof context",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 114
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_007",
+      "exactMessage": "UI-CGROUP: actual first membership equality passed",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 119
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_008",
+      "exactMessage": "UI-CGROUP: original init epoch remains live",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 150
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_009",
+      "exactMessage": "UI-CGROUP: fixed fresh pre-capability acquisition",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 196
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_010",
+      "exactMessage": "UI-CGROUP: complete observer mount metadata",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 27
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_011",
+      "exactMessage": "UI-CGROUP: exact managed-cloud sibling Docker topology",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 36
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_012",
+      "exactMessage": "UI-CGROUP: exact full-root cgroup-v2 topology",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 41
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_013",
+      "exactMessage": "UI-CGROUP: canonical full-root cgroup membership",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 45
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_014",
+      "exactMessage": "UI-CGROUP: all retained leader epochs unchanged across candidates",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 77
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_015",
+      "exactMessage": "UI-CGROUP: retained original container identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 206
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_016",
+      "exactMessage": "UI-CGROUP: actual read-only cgroup-v2 mount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 29
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_017",
+      "exactMessage": "UI-CGROUP: single bounded acquisition window",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 210
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_018",
+      "exactMessage": "UI-CGROUP: successful candidate is retained initial identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 223
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_019",
+      "exactMessage": "UI-CGROUP: successful capture retains all original leader anchors",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 225
+    },
+    {
+      "enum": "UI_DIAG_CGROUP_020",
+      "exactMessage": "UI-CGROUP: retirement proof before original acquisition deadline",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_cgroup.py",
+        "bytes": 14048,
+        "sha256": "26659dc996b5729d111dc8928415fa5be6676500a18f10f39795b682d4aff6e0"
+      },
+      "line": 238
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_001",
+      "exactMessage": "UI-MOUNTS: exact original container ID",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 13
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_002",
+      "exactMessage": "UI-MOUNTS: sole runtime root mount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 34
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_003",
+      "exactMessage": "UI-MOUNTS: actual read-only cgroup2 mount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 85
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_004",
+      "exactMessage": "UI-MOUNTS: no material subtree overmount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 90
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_005",
+      "exactMessage": "UI-MOUNTS: no bounded scratch subtree overmount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 91
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_006",
+      "exactMessage": "UI-MOUNTS: no fixed fontconfig ancestor overmount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 97
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_007",
+      "exactMessage": "UI-MOUNTS: actual fixed UI proc mount exists",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 105
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_008",
+      "exactMessage": "UI-MOUNTS: sole UI proc permits own sandbox namespace maps with fixed safety flags",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 107
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_009",
+      "exactMessage": "UI-MOUNTS: complete bounded mountinfo rows",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 18
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_010",
+      "exactMessage": "UI-MOUNTS: numeric mount identities",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 20
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_011",
+      "exactMessage": "UI-MOUNTS: unique exact mount identity/path",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 24
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_012",
+      "exactMessage": "UI-MOUNTS: actual filesystem device identity",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 28
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_013",
+      "exactMessage": "UI-MOUNTS: only exact observed two-layer proc/null stacks",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 40
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_014",
+      "exactMessage": "UI-MOUNTS: unique acyclic same-target parent-child stack",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 43
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_015",
+      "exactMessage": "UI-MOUNTS: connected base outside stack",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 45
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_016",
+      "exactMessage": "UI-MOUNTS: no approved runtime image overmount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 94
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_017",
+      "exactMessage": "UI-MOUNTS: no protected proc subtree overmount",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 111
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_018",
+      "exactMessage": "UI-MOUNTS: all five fixed proc protections exist",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 118
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_019",
+      "exactMessage": "UI-MOUNTS: exact read-only bind of selected proc protection",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 120
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_020",
+      "exactMessage": "UI-MOUNTS: exact read-only remount of original proc",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 47
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_021",
+      "exactMessage": "UI-MOUNTS: sole fixed dev tmpfs backing null masks",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 53
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_022",
+      "exactMessage": "UI-MOUNTS: exact Docker file masked by same-dev null tmpfs bind",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 55
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_023",
+      "exactMessage": "UI-MOUNTS: complete connected mount tree",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 71
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_024",
+      "exactMessage": "UI-MOUNTS: mount parent is actual path ancestor",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 73
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_025",
+      "exactMessage": "UI-MOUNTS: present Docker host file is actually null-masked",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 88
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_026",
+      "exactMessage": "UI-MOUNTS: missing sysrq interface requires actual same-container native ENOENT proof",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 113
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_027",
+      "exactMessage": "UI-MOUNTS: actual proc proof matches present interface",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 117
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_028",
+      "exactMessage": "UI-MOUNTS: namespace root external parent",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 69
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_029",
+      "exactMessage": "UI-MOUNTS: no child hidden under covered stack base",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 76
+    },
+    {
+      "enum": "UI_DIAG_MOUNTS_030",
+      "exactMessage": "UI-MOUNTS: acyclic complete mount ancestry",
+      "source": {
+        "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+        "bytes": 8175,
+        "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+      },
+      "line": 79
+    }
+  ],
+  "unknown": "Original exception type only; raw exception strings/args are never emitted. Dynamic require strings intentionally remain unmapped."
+}
