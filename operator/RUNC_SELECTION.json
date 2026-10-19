@@ -1,0 +1,101 @@
+{
+  "status": "official-runtime-input-verified-not-executed-or-activated",
+  "version": "1.5.2",
+  "releaseId": 396867822,
+  "immutable": true,
+  "releaseUrl": "https://github.com/opencontainers/runc/releases/tag/v1.5.2",
+  "publishedAt": "2026-09-25T21:13:32Z",
+  "tagObject": "b622a5992f0ba88fda05f2fd037d151b4fc5cc88",
+  "sourceCommit": "29dd3dc2b13b4123162e5fe132504bb4b15569f1",
+  "githubTagVerification": {
+    "verified": true,
+    "reason": "valid"
+  },
+  "binary": {
+    "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/runc.amd64",
+    "bytes": 10866512,
+    "sha256": "599f6f94ff8c5057241eff0d54c3c74f95c34935b6457b33fe545defc61e9488",
+    "url": "https://github.com/opencontainers/runc/releases/download/v1.5.2/runc.amd64",
+    "assetId": 589064549
+  },
+  "detachedSignature": {
+    "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/runc.amd64.asc",
+    "bytes": 488,
+    "sha256": "2b36d2bfd696ce0fb90e0b7d218f74a258eb1294586abc1130d561b9eb58c04f"
+  },
+  "signedChecksum": {
+    "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/runc.sha256sum",
+    "bytes": 1239,
+    "sha256": "1922bc06670a35b95f9d9c0e730294482717a2660a538c4ea6d5ccba7eb665af"
+  },
+  "keyring": {
+    "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/v1.5.2-keyring.body",
+    "bytes": 8507,
+    "sha256": "9bd9742cb79b215cf5f7f71ea71a51a2a95ab573412d54c2905be072d8fcab7c"
+  },
+  "signerFingerprint": "C2428CD75720FACDCF76B6EA17DE5ECB75A1100E",
+  "signer": "Kir Kolyshkin <kolyshkin@gmail.com>",
+  "trustBasis": "Official README lines15-17 designates repository runc.keyring for release verification. Keyring retrieved over authenticated HTTPS at observed signed release tag v1.5.2. GPG VALIDSIG under that designated key, ownertrust TRUST_UNDEFINED. No claim of independent personal-identity/web-of-trust certification, no auto-key-retrieve or TOFU decision.",
+  "verification": {
+    "signature": {
+      "command": {
+        "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/signature.command.json",
+        "bytes": 367,
+        "sha256": "3ae5fcccbf62407564f362eaac99d000e33b52f486c3fbaa2c2cfb7484e2d6d5"
+      },
+      "stdout": {
+        "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/signature.stdout",
+        "bytes": 386,
+        "sha256": "8fb9bff8322f3cc3d6f0459565eb54096ac5696f836a48eb1877eb13ab50b207"
+      },
+      "stderr": {
+        "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/signature.stderr",
+        "bytes": 417,
+        "sha256": "7c7bb35090f53a55b10d4e52c568ff16888e6a0745a72c9604ecd93738871769"
+      },
+      "exit": 0
+    },
+    "checksum-signature": {
+      "command": {
+        "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/checksum-signature.command.json",
+        "bytes": 281,
+        "sha256": "8397540d71c082691dc150d26460228f69aeb9b75063b6575c49dedab15cd751"
+      },
+      "stdout": {
+        "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/checksum-signature.stdout",
+        "bytes": 386,
+        "sha256": "ce9ca010da6519daa1c7688fd2c5684c1b0b9c51c50c0d5eae28bcc9b0b9530e"
+      },
+      "stderr": {
+        "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/checksum-signature.stderr",
+        "bytes": 417,
+        "sha256": "7c7bb35090f53a55b10d4e52c568ff16888e6a0745a72c9604ecd93738871769"
+      },
+      "exit": 0
+    }
+  },
+  "engineAcquirer": {
+    "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/engine_acquire.py",
+    "bytes": 3348,
+    "sha256": "cdb5a4e3fbb08de61fff4a270c85c02a29be7e049ff87bbc48fea83ce9a25a4e"
+  },
+  "engineAcquirerOriginal": {
+    "path": "/workspace/scratch/M6_410_REMOTE_HOST_HARNESS_20261019_RUN1/engine_acquire.py",
+    "bytes": 1923,
+    "sha256": "ca370d809a57209d830cb94c758d7316058dda4ee9d91aea52318e5614aa5087"
+  },
+  "engineAcquirerDiff": {
+    "path": "/workspace/scratch/M6_410_RUNC_APPARMOR_UPSTREAM_RESEARCH_20261019_RUN1/engine_acquire.diff",
+    "bytes": 2034,
+    "sha256": "d6f0535cc431337bd0684f46cb31416e817620fbc23e1860730db69d317081c2"
+  },
+  "engineUnchanged": {
+    "version": "28.4.0",
+    "api": "1.49",
+    "runtimeName": "runc",
+    "archiveBytes": 82093093,
+    "archiveSha256": "21516934188f06d0e5f232cbde8112701f6d82899016240bc7a5d619f6b0059c"
+  },
+  "execution": null,
+  "guestPolicyChanges": null
+}
