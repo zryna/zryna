@@ -1,0 +1,20 @@
+{
+  "status": "official-two-replica-candidate-acquired-and-reassembled",
+  "runId": 39176730580,
+  "source": {
+    "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+    "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
+  },
+  "compiler": {
+    "bytes": 8401704,
+    "sha256": "6ca93836f5c3fec753ad61af6a09077802591077bdb79a0a356d9f821f796bd0"
+  },
+  "compilerPath": "/workspace/scratch/M6_410_COMPILER_CANDIDATE_REVIEW_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/LOCAL_REASSEMBLY/compiler.bin",
+  "roots": {
+    "admission": "/workspace/scratch/M6_410_COMPILER_ADMISSION_ACTUAL_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/retained/evidence",
+    "first": "/workspace/scratch/M6_410_COMPILER_FIRST_ACTUAL_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/retained/evidence",
+    "second": "/workspace/scratch/M6_410_COMPILER_SECOND_ACTUAL_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/retained/evidence",
+    "assembled": "/workspace/scratch/M6_410_COMPILER_ASSEMBLED_ACTUAL_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/retained/evidence"
+  },
+  "scope": "Genuine official fixed release builds and all original before/after source/material/command proofs validated. Actual runtime qualification and publication remain pending."
+}
