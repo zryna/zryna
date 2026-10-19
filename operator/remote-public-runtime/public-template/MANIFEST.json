@@ -1,0 +1,49 @@
+{
+  "format": "zryna.m6-remote-public-template.v1",
+  "version": 1,
+  "historicalSource": {
+    "commit": "b3be654c452ea51f2c136a75d2eb89995eb4bd66",
+    "tree": "3fa38d7b62b06a64ac5385d610be164f9b1961b8"
+  },
+  "actualFutureSource": null,
+  "acceptance": false,
+  "scope": "Historical operators only; both original public attempts failed. No passed-five claim.",
+  "files": [
+    {
+      "path": "m6-410-public-publication-state-20261018.mjs",
+      "originalPath": "/workspace/scratch/M6_410_PUBLIC_COORDINATOR_OPERATORS_b3be654c452ea51f2c136a75d2eb89995eb4bd66_RUN2/m6-410-public-publication-state-20261018.mjs",
+      "bytes": 979,
+      "sha256": "ab55d5388542c1b67686c6ed3304b819df02b51bc98983becafbe98fa2e32d1f"
+    },
+    {
+      "path": "m6-410-run-public-parity-20261018.mjs",
+      "originalPath": "/workspace/scratch/M6_410_PUBLIC_COORDINATOR_OPERATORS_b3be654c452ea51f2c136a75d2eb89995eb4bd66_RUN2/m6-410-run-public-parity-20261018.mjs",
+      "bytes": 7970,
+      "sha256": "310df05c20b6a8f8772a69fcc10c57854fc426e4bdbff0e9d9b2080b90db32a1"
+    },
+    {
+      "path": "m6-410-run-public-ui-20261018.mjs",
+      "originalPath": "/workspace/scratch/M6_410_PUBLIC_COORDINATOR_OPERATORS_b3be654c452ea51f2c136a75d2eb89995eb4bd66_RUN2/m6-410-run-public-ui-20261018.mjs",
+      "bytes": 3634,
+      "sha256": "01770dfafd31a84b8fe167b5cd2b637c6ac06f13b731d0f7e40536747955c79d"
+    },
+    {
+      "path": "m6-410-run-public-boundaries-20261018.mjs",
+      "originalPath": "/workspace/scratch/M6_410_PUBLIC_COORDINATOR_OPERATORS_b3be654c452ea51f2c136a75d2eb89995eb4bd66_RUN2/m6-410-run-public-boundaries-20261018.mjs",
+      "bytes": 8654,
+      "sha256": "8e9b0efba000f1c4bbafc5f5e5dd4588970fc3b390d864b5beaa8738db61451f"
+    },
+    {
+      "path": "m6-410-run-public-isolation-20261018.mjs",
+      "originalPath": "/workspace/scratch/M6_410_PUBLIC_COORDINATOR_OPERATORS_b3be654c452ea51f2c136a75d2eb89995eb4bd66_RUN2/m6-410-run-public-isolation-20261018.mjs",
+      "bytes": 5680,
+      "sha256": "b9f8bbd552148bbcbb6194a868427048c2e11e08a0627fbdeea49c8057582171"
+    },
+    {
+      "path": "m6-410-run-public-documentation-20261018.mjs",
+      "originalPath": "/workspace/scratch/M6_410_PUBLIC_COORDINATOR_OPERATORS_b3be654c452ea51f2c136a75d2eb89995eb4bd66_RUN2/m6-410-run-public-documentation-20261018.mjs",
+      "bytes": 4582,
+      "sha256": "c375ca7a4bcd6b9d8b4d28940de91ac5646141a41f706de467d5c782b260735a"
+    }
+  ]
+}

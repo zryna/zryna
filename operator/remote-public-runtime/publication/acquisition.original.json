@@ -1,0 +1,97 @@
+{
+  "status": "fresh-actual-immutable-publication-verified-awaiting-independent-input-selection",
+  "source": {
+    "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+    "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
+  },
+  "releaseId": 417567627,
+  "publisherRun": 39294719955,
+  "inputs": {
+    "policy": {
+      "path": "/workspace/scratch/M6_410_OFFICIAL_COMPILER_ACQUISITION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/assets/candidate-policy.json",
+      "bytes": 815,
+      "sha256": "0db28e7a48f76508452452e4038e9de05c132861f805240ec175913a66b86253",
+      "ownerUid": 1000
+    },
+    "verifierPolicy": {
+      "path": "/workspace/scratch/M6_410_OFFICIAL_COMPILER_ACQUISITION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/verification-policy.json",
+      "bytes": 366,
+      "sha256": "4b9607d281b0a5477f238b145f6ed12998440eb9b3d01d4ce68b3e1b4aa1639a",
+      "ownerUid": 1000
+    },
+    "envelope": {
+      "path": "/workspace/scratch/M6_410_OFFICIAL_COMPILER_ACQUISITION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/assets/compiler-envelope.json",
+      "bytes": 47231,
+      "sha256": "f7ea3a09d79a81d0a029c9cc7784c90035218f29698ff1cd103cab9b4a0135df",
+      "ownerUid": 1000
+    },
+    "bundle": {
+      "path": "/workspace/scratch/M6_410_OFFICIAL_COMPILER_ACQUISITION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/assets/compiler-envelope.sigstore.json",
+      "bytes": 11019,
+      "sha256": "4f9f3b89df5330cf3987aac77d3d86265f67a8ca691997117bb8736ddad7c215",
+      "ownerUid": 1000
+    },
+    "archive": {
+      "path": "/workspace/scratch/M6_410_OFFICIAL_COMPILER_ACQUISITION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/assets/zryna-playground-compiler-0.1.0-x86_64-unknown-linux-gnu.tar.gz",
+      "bytes": 2827617,
+      "sha256": "03d154d2daf06c447f3ff8317627941b8f992921bce5947dd052f2af05eb5973",
+      "ownerUid": 1000
+    },
+    "trustedRoot": {
+      "path": "/workspace/scratch/M6_410_OFFICIAL_COMPILER_ACQUISITION_71fd69d99a39c22bdf262d1655a032aa76221f3e_RUN1/trusted-root.json",
+      "bytes": 6787,
+      "sha256": "6494e21ea73fa7ee769f85f57d5a3e6a08725eae1e38c755fc3517c9e6bc0b66",
+      "ownerUid": 1000
+    }
+  },
+  "assets": [
+    {
+      "id": 656964044,
+      "name": "candidate-policy.json",
+      "bytes": 815,
+      "sha256": "0db28e7a48f76508452452e4038e9de05c132861f805240ec175913a66b86253"
+    },
+    {
+      "id": 656964062,
+      "name": "compiler-envelope.json",
+      "bytes": 47231,
+      "sha256": "f7ea3a09d79a81d0a029c9cc7784c90035218f29698ff1cd103cab9b4a0135df"
+    },
+    {
+      "id": 656964077,
+      "name": "compiler-envelope.sigstore.json",
+      "bytes": 11019,
+      "sha256": "4f9f3b89df5330cf3987aac77d3d86265f67a8ca691997117bb8736ddad7c215"
+    },
+    {
+      "id": 656964099,
+      "name": "publication-evidence-index.json",
+      "bytes": 1313,
+      "sha256": "070e4f788612bfda3d766f8c1036cdf300ea3594dd59f8dcb217431d87a1a436"
+    },
+    {
+      "id": 656964146,
+      "name": "publication-evidence-index.sigstore.json",
+      "bytes": 10927,
+      "sha256": "83ce542801d5a47bfb69aec4dfb1beacce4caa7059ba1fbf3877eab0dd819e2c"
+    },
+    {
+      "id": 656964183,
+      "name": "publication-evidence.tar.gz",
+      "bytes": 1808893,
+      "sha256": "96a0381628593ef884c63b7b946c08c15d8a7d69c06ce9b06c59f8f52ab77d8c"
+    },
+    {
+      "id": 656964220,
+      "name": "zryna-playground-compiler-0.1.0-x86_64-unknown-linux-gnu.tar.gz",
+      "bytes": 2827617,
+      "sha256": "03d154d2daf06c447f3ff8317627941b8f992921bce5947dd052f2af05eb5973"
+    }
+  ],
+  "envelopeSignatureActual": true,
+  "evidenceIndexSignatureActual": true,
+  "completeEvidenceDecoded": true,
+  "replicasRevalidated": true,
+  "originalQualifiedBinaryMatched": true,
+  "scope": "No live publication capability retained here and no launcher or guest executed. Separate independent review must create INDEPENDENT_SELECTION.json."
+}

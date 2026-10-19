@@ -1,0 +1,9 @@
+{
+  "version": "3.0.5",
+  "path": "/workspace/scratch/M6_410_INDEPENDENT_SIGSTORE_MATERIALS_20261018_RUN1/cosign-material",
+  "bytes": 135112256,
+  "sha256": "db15cc99e6e4837daabab023742aaddc3841ce57f193d11b7c3e06c8003642b2",
+  "ownerUid": 1000,
+  "trustedRootBytes": 6787,
+  "trustedRootSha256": "6494e21ea73fa7ee769f85f57d5a3e6a08725eae1e38c755fc3517c9e6bc0b66"
+}
