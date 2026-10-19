@@ -1,0 +1,432 @@
+{
+  "format": "zryna.m6-remote-stage-inputs.v1",
+  "source": {
+    "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+    "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
+  },
+  "files": [
+    {
+      "path": "operator/remote-runtime/stage.py",
+      "destination": "stage.py",
+      "bytes": 24525,
+      "sha256": "a38684106cae6b7ecdb91c8dfc0bcac4174cc2157997de9dc23ea8fbbda0bfd3",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/modules/materials.py",
+      "destination": "modules/materials.py",
+      "bytes": 16897,
+      "sha256": "7eb41c14dff5eacf521211c563e396d132f39f5b66ba98840a754824ef4649e7",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/harness/host.py",
+      "destination": "harness/host.py",
+      "bytes": 8204,
+      "sha256": "7352d044564f983bb74a23e097a3165da882dfdb9dad88fe42fc47469b9cb0a3",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/harness/observer.py",
+      "destination": "harness/observer.py",
+      "bytes": 15074,
+      "sha256": "7fe8d8823a6d317029bbb809878aff37c27d26197eaf4af51c1f91be9478bef2",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/harness/common.py",
+      "destination": "harness/common.py",
+      "bytes": 9076,
+      "sha256": "67c4207ae15367789626157b5971e2008d61148eb062cce9af1fc7d9b0f9fe54",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/harness/engine_acquire.py",
+      "destination": "harness/engine_acquire.py",
+      "bytes": 3348,
+      "sha256": "cdb5a4e3fbb08de61fff4a270c85c02a29be7e049ff87bbc48fea83ce9a25a4e",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/harness/broker.py",
+      "destination": "harness/broker.py",
+      "bytes": 1301,
+      "sha256": "496d4bf5f419355437ac403578ba831ec9bcc28b6f4813e48d4ab442fe92fb2b",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/prepare/prepare.py",
+      "destination": "prepare/prepare.py",
+      "bytes": 23299,
+      "sha256": "79b2b3a550f9efb188eb71e6370dc9481bde1049eeee9a98dfcfa528bf1f25e7",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/prepare/plans.py",
+      "destination": "prepare/plans.py",
+      "bytes": 8288,
+      "sha256": "18a19d642bb1fdb9fecc3f5873a153455c642691f078c2d56abe43ac75ce47d1",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/prepare/composition.mjs",
+      "destination": "prepare/composition.mjs",
+      "bytes": 6709,
+      "sha256": "430cabfdf63a1c178f9894c496f90af5376f99af84fe28e18283fc6e976e4c0f",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/prepare/probe.py",
+      "destination": "prepare/probe.py",
+      "bytes": 4304,
+      "sha256": "6cb85e39f0a9f50f0a154ac129f6af45f6c730249b7fb6dd118626e4d7126bb4",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/runtime.mjs",
+      "destination": "runtime/runtime.mjs",
+      "bytes": 4068,
+      "sha256": "8c1967c21e3f02d87aae4c9aadf768b10a8b8ab2a4179ab3899c439d3fe044fb",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/bind-runtime.py",
+      "destination": "runtime/bind-runtime.py",
+      "bytes": 24009,
+      "sha256": "462980c5cf461ed493e02f3e5ce365d97f18dd48c06e1f3d0b6f9fa4a1d533a3",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/runtime_support.py",
+      "destination": "runtime/runtime_support.py",
+      "bytes": 8263,
+      "sha256": "4b666c66282c2907e8cdb0536f5f3c5e46d76b79d7e221bf7484f6d2882586ad",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/run-cohorts.py",
+      "destination": "runtime/run-cohorts.py",
+      "bytes": 12027,
+      "sha256": "e06f068884e39aae7bc9d1223b1bd84aa289caf14b5519040551962d67bbdf2f",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/fixed-storage-boundaries.mjs",
+      "destination": "runtime/fixed-storage-boundaries.mjs",
+      "bytes": 1916,
+      "sha256": "4439467dd97dc45731005d647f61be30d97c7e1bba85cc3668aaefa5644bfcdb",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/approval/wait-approval.py",
+      "destination": "approval/wait-approval.py",
+      "bytes": 12699,
+      "sha256": "d7148c387d0446434a7df46ec00e8788de094b90f198dee19dd44c2bc61c81bd",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/policy/compose-policy.py",
+      "destination": "policy/compose-policy.py",
+      "bytes": 4829,
+      "sha256": "b8b27961ce716df80eae1cc0933544a2bf199d839a3b3403e3fb5880189c55ba",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/payload/runtime-seed.tar.gz",
+      "destination": "payload/runtime-seed.tar.gz",
+      "bytes": 30859757,
+      "sha256": "1ef008c037febecfca7a050fc5303aed26aae06b9921c499e6b9573bc214a4ff",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/payload/runtime-templates.tar.gz",
+      "destination": "payload/runtime-templates.tar.gz",
+      "bytes": 412552,
+      "sha256": "d0e00bec690a878d3c88c0115ef88d2819782416b2e319f6c4f5896d7f3c5087",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/payload/template-manifest.json",
+      "destination": "payload/template-manifest.json",
+      "bytes": 140581,
+      "sha256": "0b06b320a37b9d0048c97ee2684a1ae3f2c0a0c79d8813f23908fda8ddc7351c",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/probe/trusted-probe.tar",
+      "destination": "probe/trusted-probe.tar",
+      "bytes": 757248,
+      "sha256": "4494dbc15044988fa792f4017bc1339ec69e1b152dbedb1c01b23f357cf39aa4",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/probe/config.json",
+      "destination": "probe/config.json",
+      "bytes": 1017,
+      "sha256": "2d52b61393de48e65215286ee502e87164748dd7fe3974696552db9bb4748d0e",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/probe/probe.c",
+      "destination": "probe/probe.c",
+      "bytes": 4022,
+      "sha256": "2ded19c1ef96935a78f7c63690ef5849833a5eacee5ff951e9aa28d2824472ff",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/inputs/FROZEN_MAIN.json",
+      "destination": "inputs/FROZEN_MAIN.json",
+      "bytes": 3378,
+      "sha256": "6705fe4d6217c3af89d98df3fe2b832f64f9a80c0caab298f4d3c0067ff3cf6b",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/inputs/candidate-review.original.json",
+      "destination": "inputs/candidate-review.original.json",
+      "bytes": 1235,
+      "sha256": "49e39517a48d459c2344508736cd3f1f75d7372a3c87e3d9434df74619509da5",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/inputs/compiler.bin",
+      "destination": "inputs/compiler.bin",
+      "bytes": 8401704,
+      "sha256": "6ca93836f5c3fec753ad61af6a09077802591077bdb79a0a356d9f821f796bd0",
+      "mode": 365
+    },
+    {
+      "path": "operator/remote-runtime/runtime/readonly-confirmation.py",
+      "destination": "runtime/readonly-confirmation.py",
+      "mode": 292,
+      "bytes": 10840,
+      "sha256": "0d5d9ceaeddd40f9294bc81e3e35c32ae76e37acf8040d686e34cd577f8ecbb4"
+    },
+    {
+      "destination": "runtime/caller-view.py",
+      "path": "operator/remote-runtime/runtime/caller-view.py",
+      "bytes": 9426,
+      "sha256": "c3b2dc8351a1e9828049199dceb4b1e010e3f3af0b20d586b3660151923e3a63",
+      "mode": 292
+    },
+    {
+      "destination": "runtime/trusted-owner-preflight.mjs",
+      "path": "operator/remote-runtime/runtime/trusted-owner-preflight.mjs",
+      "bytes": 5784,
+      "sha256": "319a64544ad0a69d78a370e5592d4da558cf676db77f7e3b6e6db015df765a11",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/diagnostic-owner_main.py",
+      "destination": "runtime/diagnostic-owner_main.py",
+      "bytes": 13561,
+      "sha256": "3f4b7611f62e7424334821bab573be57394a5d755750ea69a62843961e67d602",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/ui-owner-failure-enums.json",
+      "destination": "runtime/ui-owner-failure-enums.json",
+      "bytes": 46491,
+      "sha256": "5060c0e0cb5b86b569bc19c4a5f7e3bb2525a95cff49765c8d5589afbc4f13ae",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/diagnostic-owner_mounts.py",
+      "destination": "runtime/diagnostic-owner_mounts.py",
+      "bytes": 8926,
+      "sha256": "797f075a8e3c2ef5b374aa8d33260d769f01564c08739917e8e13fcbad9945d1",
+      "mode": 292
+    },
+    {
+      "path": "operator/remote-runtime/runtime/ui-mount-predicate-schema.json",
+      "destination": "runtime/ui-mount-predicate-schema.json",
+      "bytes": 2458,
+      "sha256": "8a8ef39ae6eddda53d648774f8f2ce73cf72ad1eee2192db64d911ea9de37b88",
+      "mode": 292
+    }
+  ],
+  "roles": {
+    "host": "harness/host.py",
+    "observer": "harness/observer.py",
+    "common": "harness/common.py",
+    "engineAcquire": "harness/engine_acquire.py",
+    "broker": "harness/broker.py",
+    "prepare": "prepare/prepare.py",
+    "waitApproval": "approval/wait-approval.py",
+    "runtime": "runtime/runtime.mjs",
+    "materialsModule": "modules/materials.py",
+    "seedArchive": "payload/runtime-seed.tar.gz",
+    "templateArchive": "payload/runtime-templates.tar.gz",
+    "templateManifest": "payload/template-manifest.json",
+    "candidateBinary": "inputs/compiler.bin"
+  },
+  "contextTemplate": {
+    "format": "zryna.m6-remote-runtime-context.v1",
+    "version": 1,
+    "source": {
+      "path": "/workspace/zryna",
+      "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+      "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
+    },
+    "frozenMain": {
+      "path": "@OPERATOR@/inputs/FROZEN_MAIN.json",
+      "bytes": 3378,
+      "sha256": "6705fe4d6217c3af89d98df3fe2b832f64f9a80c0caab298f4d3c0067ff3cf6b"
+    },
+    "candidateReview": {
+      "path": "@OPERATOR@/inputs/candidate-review.original.json",
+      "bytes": 1235,
+      "sha256": "49e39517a48d459c2344508736cd3f1f75d7372a3c87e3d9434df74619509da5"
+    },
+    "seed": {
+      "directory": "@SEED@",
+      "manifest": {
+        "path": "@SEED@/MANIFEST.json",
+        "bytes": 903706,
+        "sha256": "2ef8e0aa7a493b62a4c380a5c64a439e431e700871053fa2152468c718b805f1"
+      }
+    },
+    "prepare": {
+      "root": "@HOST@/candidate",
+      "workRoot": "@HOST@/preparation-work",
+      "materialsModule": {
+        "path": "@OPERATOR@/modules/materials.py",
+        "bytes": 16897,
+        "sha256": "7eb41c14dff5eacf521211c563e396d132f39f5b66ba98840a754824ef4649e7"
+      },
+      "plansModule": {
+        "path": "@OPERATOR@/prepare/plans.py",
+        "bytes": 8288,
+        "sha256": "18a19d642bb1fdb9fecc3f5873a153455c642691f078c2d56abe43ac75ce47d1"
+      },
+      "compositionModule": {
+        "path": "@OPERATOR@/prepare/composition.mjs",
+        "bytes": 6709,
+        "sha256": "430cabfdf63a1c178f9894c496f90af5376f99af84fe28e18283fc6e976e4c0f"
+      },
+      "policyModule": {
+        "path": "@OPERATOR@/policy/compose-policy.py",
+        "bytes": 4829,
+        "sha256": "b8b27961ce716df80eae1cc0933544a2bf199d839a3b3403e3fb5880189c55ba"
+      },
+      "runtimeBinder": {
+        "path": "@OPERATOR@/runtime/bind-runtime.py",
+        "bytes": 24009,
+        "sha256": "462980c5cf461ed493e02f3e5ce365d97f18dd48c06e1f3d0b6f9fa4a1d533a3"
+      },
+      "runtimeBinderSupport": {
+        "path": "@OPERATOR@/runtime/runtime_support.py",
+        "bytes": 8263,
+        "sha256": "4b666c66282c2907e8cdb0536f5f3c5e46d76b79d7e221bf7484f6d2882586ad"
+      },
+      "runtimeRunner": {
+        "path": "@OPERATOR@/runtime/run-cohorts.py",
+        "bytes": 12027,
+        "sha256": "e06f068884e39aae7bc9d1223b1bd84aa289caf14b5519040551962d67bbdf2f"
+      },
+      "probeModule": {
+        "path": "@OPERATOR@/prepare/probe.py",
+        "bytes": 4304,
+        "sha256": "6cb85e39f0a9f50f0a154ac129f6af45f6c730249b7fb6dd118626e4d7126bb4"
+      },
+      "probeExport": {
+        "path": "@OPERATOR@/probe/trusted-probe.tar",
+        "bytes": 757248,
+        "sha256": "4494dbc15044988fa792f4017bc1339ec69e1b152dbedb1c01b23f357cf39aa4"
+      },
+      "probeConfigBlob": {
+        "path": "@OPERATOR@/probe/config.json",
+        "bytes": 1017,
+        "sha256": "2d52b61393de48e65215286ee502e87164748dd7fe3974696552db9bb4748d0e"
+      },
+      "probeSource": {
+        "path": "@OPERATOR@/probe/probe.c",
+        "bytes": 4022,
+        "sha256": "2ded19c1ef96935a78f7c63690ef5849833a5eacee5ff951e9aa28d2824472ff"
+      }
+    },
+    "runtime": {
+      "template": {
+        "directory": "@TEMPLATES@",
+        "manifest": {
+          "path": "@OPERATOR@/payload/template-manifest.json",
+          "bytes": 140581,
+          "sha256": "0b06b320a37b9d0048c97ee2684a1ae3f2c0a0c79d8813f23908fda8ddc7351c"
+        }
+      },
+      "operatorRoot": "@HOST@/candidate/runtime-operators",
+      "outputRoot": "@HOST@/runtime-observations",
+      "dependencies": {
+        "storageWatcher": {
+          "path": "@OPERATOR@/runtime/fixed-storage-boundaries.mjs",
+          "bytes": 1916,
+          "sha256": "4439467dd97dc45731005d647f61be30d97c7e1bba85cc3668aaefa5644bfcdb"
+        },
+        "toolsClosure": {
+          "path": "@HOST@/candidate/OWNER_TOOLS.json"
+        },
+        "browser": {
+          "path": "@HOST@/preparation-work/material-build/sources-evaluator/browser/chrome-linux64/chrome"
+        },
+        "playwrightEntry": {
+          "path": "@HOST@/preparation-work/material-build/sources-evaluator/playwright/index.mjs"
+        },
+        "probe": {
+          "directory": "@HOST@/candidate/probe",
+          "imageMetadata": {
+            "path": "@HOST@/candidate/probe/IMAGE.json"
+          },
+          "source": {
+            "path": "@OPERATOR@/probe/probe.c",
+            "bytes": 4022,
+            "sha256": "2ded19c1ef96935a78f7c63690ef5849833a5eacee5ff951e9aa28d2824472ff"
+          },
+          "configBlob": {
+            "path": "@HOST@/candidate/probe/EXACT_IMAGE_CONFIG_BLOB.json"
+          }
+        },
+        "inputObservations": {
+          "path": "@HOST@/candidate/INPUT_OBSERVATIONS.json"
+        }
+      }
+    }
+  },
+  "approvalTemplate": {
+    "phase": "qualification",
+    "source": {
+      "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
+      "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
+    },
+    "operatorCommit": "@OPERATOR_COMMIT@",
+    "run": {
+      "id": "@RUN_ID@",
+      "attempt": "@RUN_ATTEMPT@"
+    },
+    "root": "@HOST@/candidate",
+    "prepared": "PREPARATION.json",
+    "approved": [
+      {
+        "candidate": "approval.candidate.json",
+        "output": "approval.json"
+      },
+      {
+        "candidate": "ui-approval.candidate.json",
+        "output": "ui-approval.json"
+      }
+    ]
+  },
+  "limits": {
+    "prepareSeconds": 2400,
+    "approvalSeconds": 600,
+    "runtimeSeconds": 6600
+  },
+  "finalEvidenceRoots": [
+    {
+      "name": "candidate",
+      "path": "@HOST@/candidate"
+    },
+    {
+      "name": "runtime-observations",
+      "path": "@HOST@/runtime-observations"
+    }
+  ]
+}

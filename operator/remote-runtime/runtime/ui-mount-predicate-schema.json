@@ -1,0 +1,90 @@
+{
+  "format": "zryna.m6-ui-mount-predicate-diagnostic.v1",
+  "diagnosticOnly": true,
+  "qualificationAcceptance": false,
+  "originalSource": {
+    "path": "/workspace/zryna/examples/playground/restricted/daemon/ui-qualification/owner_mounts.py",
+    "bytes": 8175,
+    "sha256": "50f2503d9877bcabcf6cd388aa8cf7c8782e0ffafcf790c54c29d71b07780aa8"
+  },
+  "previousEnums": {
+    "path": "/workspace/scratch/M6_410_UI_MOUNT_PREDICATE_DIAGNOSTIC_PREPARATION_20261019_RUN1/ui-owner-failure-enums.json",
+    "bytes": 46491,
+    "sha256": "5060c0e0cb5b86b569bc19c4a5f7e3bb2525a95cff49765c8d5589afbc4f13ae"
+  },
+  "predicateCount": 14,
+  "predicateOrder": [
+    {
+      "index": 1,
+      "expression": "base['root'] == '/var/lib/docker/containers/' + cid + '/' + target.rsplit('/', 1)[1]"
+    },
+    {
+      "index": 2,
+      "expression": "base['filesystem'] == 'overlay'"
+    },
+    {
+      "index": 3,
+      "expression": "base['source'] == 'overlay'"
+    },
+    {
+      "index": 4,
+      "expression": "'ro' in base['options']"
+    },
+    {
+      "index": 5,
+      "expression": "'rw' not in base['options']"
+    },
+    {
+      "index": 6,
+      "expression": "dev['root'] == '/'"
+    },
+    {
+      "index": 7,
+      "expression": "dev['filesystem'] == dev['source'] == 'tmpfs'"
+    },
+    {
+      "index": 8,
+      "expression": "{'rw', 'nosuid', 'noexec'} <= set(dev['options'])"
+    },
+    {
+      "index": 9,
+      "expression": "top['root'] == '/null'"
+    },
+    {
+      "index": 10,
+      "expression": "top['filesystem'] == top['source'] == 'tmpfs'"
+    },
+    {
+      "index": 11,
+      "expression": "top['device'] == dev['device']"
+    },
+    {
+      "index": 12,
+      "expression": "top['superOptions'] == dev['superOptions']"
+    },
+    {
+      "index": 13,
+      "expression": "{'rw', 'nosuid', 'noexec'} <= set(top['options'])"
+    },
+    {
+      "index": 14,
+      "expression": "'ro' not in top['options']"
+    }
+  ],
+  "ownerValueErrorPrefix": "UI-MOUNTS: M022_",
+  "ownerValueErrorExactLength": 37,
+  "safeFailurePrefix": "UI_DIAG_M022_",
+  "baseFilesystemEnums": {
+    "OVL": "overlay",
+    "EXT": "ext4",
+    "XFS": "xfs",
+    "BTR": "btrfs",
+    "OTH": "other"
+  },
+  "targetEnums": {
+    "HN": "hostname",
+    "HS": "hosts",
+    "RC": "resolv.conf"
+  },
+  "meaning": "1 iff original top-level conjunct is true; complete original require remains fatal if any conjunct is false. No guest paths/mountinfo/raw exception bytes are emitted."
+}
