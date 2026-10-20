@@ -175,7 +175,8 @@ jobs:
         run: |
           $suffix = if ($IsWindows) { '.exe' } else { '' }
           $cli = (Resolve-Path "target/debug/zryna$suffix").Path
-          node scripts/run-native-provider-public.mjs --cli "$cli" --node "$env:ZRYNA_NODE" --output "$env:RUNNER_TEMP/native-provider-public/source-comparison" --lane all
+          $comparisonOutput = [IO.Path]::GetFullPath((Join-Path (Join-Path $env:RUNNER_TEMP 'native-provider-public') 'source-comparison'))
+          node scripts/run-native-provider-public.mjs --cli "$cli" --node "$env:ZRYNA_NODE" --output "$comparisonOutput" --lane all
           if ($LASTEXITCODE -ne 0) { throw 'Complete current source differential failed' }
       - name: Preserve actual candidate commands, outputs and failures
         if: always()

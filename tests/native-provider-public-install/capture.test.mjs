@@ -4,7 +4,7 @@ import {
   linkSync, lstatSync, mkdirSync, mkdtempSync, realpathSync, readFileSync, rmSync, unlinkSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import {
   captureProducerExecutable, verifyProducerExecutableCapture,
 } from '../../scripts/distribution/native-producer-capture.mjs';
@@ -70,5 +70,24 @@ test('Rustup multicall capture admits only the finite actual same-inode shim clo
     verifyProducerExecutableCapture(proof);
     linkSync(source, join(bin, 'arbitrary-executable' + suffix));
     assert.throws(() => verifyProducerExecutableCapture(proof));
+  });
+});
+
+test('observed Windows Cargo unhashed deps name is admitted only on Windows', () => {
+  fixture(({ source, alias, deps, options }) => {
+    unlinkSync(alias);
+    const observedAlias = join(deps, basename(source));
+    linkSync(source, observedAlias);
+    assert.equal(lstatSync(source).nlink, 2);
+    if (process.platform !== 'win32') {
+      assert.throws(() => captureProducerExecutable(options), /unapproved producer hardlink alias/);
+      return;
+    }
+    const proof = captureProducerExecutable(options);
+    assert.equal(proof.source.nlink, 2); assert.equal(proof.captureNlink, 1);
+    assert.deepEqual(proof.aliases.map(item => item.path), [source, observedAlias]);
+    assert.equal(proof.aliases[0].sha256, proof.aliases[1].sha256);
+    assert.equal(proof.copyCountedAsRebuild, false);
+    verifyProducerExecutableCapture(JSON.parse(bytes(proof)));
   });
 });

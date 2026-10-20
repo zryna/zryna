@@ -14,8 +14,6 @@ use zryna_abi::{Invocation, ScalarValue};
 use zryna_backend_native::data_ownership_v1::ValidatedDataOwnershipObjectArtifact;
 use zryna_diagnostics::Diagnostic;
 use zryna_frontend::VerifiedFrontendProviderV4;
-#[cfg(test)]
-use zryna_frontend::WorkerFrontendV4;
 use zryna_source::NormalizedSourcePath;
 
 use crate::{

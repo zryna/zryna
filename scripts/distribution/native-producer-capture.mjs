@@ -60,7 +60,9 @@ function observeAliases(source, aliasDirectory, kind, sourceStat) {
     if (path === source) continue;
     const st = statPath(path);
     if (String(st.dev) !== sourceStat.dev || String(st.ino) !== sourceStat.ino) continue;
-    const approved = kind === 'cargo-cli' ? /^zryna-[a-f0-9]{16}(?:\.exe)?$/.test(name)
+    const approved = kind === 'cargo-cli'
+      ? /^zryna-[a-f0-9]{16}(?:\.exe)?$/.test(name)
+        || (process.platform === 'win32' && name === 'zryna.exe')
       : SHIMS.has(name.replace(/\.exe$/, ''));
     requireValue(approved && st.isFile() && !st.isSymbolicLink(), 'unapproved producer hardlink alias');
     aliases.push({ path, ...stableRead(path, sourceStat) });

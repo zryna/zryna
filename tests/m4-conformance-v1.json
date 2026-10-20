@@ -479,8 +479,8 @@
     },
     {
       "path": "apps/zryna/tests/cli.rs",
-      "bytes": 75461,
-      "sha256": "9761055c2d43234858ad45b15223995be590e210bb51cc6eaf3334fca8761eec"
+      "bytes": 75959,
+      "sha256": "d98be49ba8f3e8ebbd5fdc017ab2d531ad5e5cd4a04ab33259a647339dcf2ba7"
     },
     {
       "path": "apps/zryna/tests/fixtures/browser_byte_boundary.rs",

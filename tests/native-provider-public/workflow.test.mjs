@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFileSync} from 'node:fs';
 import {parse} from 'yaml';
+import {win32,posix} from 'node:path';
 
 const text=readFileSync(new URL('../../.github/workflows/native-provider-public.yml',import.meta.url),'utf8');
 const workflow=parse(text),job=workflow.jobs.candidate,steps=job.steps;
@@ -37,4 +38,22 @@ test('IR integration and filtered cost targets cannot silently become zero-test 
 test('public runtimes and all logical fault sources execute both current frontends',()=>{
  const runtime=named('Run ordinary public runtime corpus and exact cleanup parity');for(const target of ['--test m3_public','--test m2_conformance','--test cli m1_'])assert(runtime.run.includes(target));
  const fault=named('Run all original logical and physical faults through both frontends');assert(fault.run.includes('--lib ownership_commands::conformance::native_fault_parity::'));assert(fault.run.includes('$required = if ($IsWindows) { 1 } else { 2 }'));assert(fault.run.includes('verify-rust-log.mjs'));assert(!fault.if);assert(!fault['continue-on-error']);
+});
+
+test('fresh evidence output is canonicalized by the caller on both host path formats',()=>{
+ const corpus=named('Compare every frozen worker and public BUILD root');
+ assert(corpus.run.includes("$comparisonOutput = [IO.Path]::GetFullPath((Join-Path (Join-Path $env:RUNNER_TEMP 'native-provider-public') 'source-comparison'))"));
+ assert(corpus.run.includes('--output "$comparisonOutput"'));
+ assert(!corpus.run.includes('--output "$env:RUNNER_TEMP/'));
+ // Reproduce the Windows failure: an absolute mixed-separator string violates
+ // the existing strict canonical spelling guard even though it selects a path.
+ const windowsRoot=String.raw`C:\Users\runneradmin\AppData\Local\Temp`;
+ const mixed=windowsRoot+'/native-provider-public/source-comparison';
+ assert(win32.isAbsolute(mixed));assert.notEqual(win32.resolve(mixed),mixed);
+ for(const [paths,root]of [[win32,windowsRoot],[posix,'/home/runner/work/_temp']]){
+  const canonical=paths.resolve(paths.join(root,'native-provider-public','source-comparison'));
+  assert(paths.isAbsolute(canonical));assert.equal(paths.resolve(canonical),canonical);
+ }
+ const runner=readFileSync(new URL('../../scripts/run-native-provider-public.mjs',import.meta.url),'utf8');
+ assert(runner.includes('assert(isAbsolute(options[key])&&resolve(options[key])===options[key])'),'strict runner admission stays unchanged');
 });

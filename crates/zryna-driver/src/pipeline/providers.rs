@@ -52,6 +52,16 @@ pub(crate) fn execute(
         artifact_stem: request.artifact_stem.clone(),
         targets: request.targets,
     };
+    // Package admission owns project-root failures before ordinary source request validation.
+    let project = match &request.source {
+        CompilationSource::Workspace(_) => None,
+        CompilationSource::Project(_) => Some(crate::project::ProjectAdmission::discover_provider(
+            &request.compiler_root,
+            &inputs,
+            request.profile.package_profile(),
+            installation.is_some(),
+        )?),
+    };
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
     super::validate_build_inputs(&inputs, command)?;
     if request.profile != CompilationProfile::I32 && request.targets.component() {
@@ -67,23 +77,16 @@ pub(crate) fn execute(
         }
         Ok(())
     };
-    match &request.source {
-        CompilationSource::Workspace(root) => {
-            let sources = crate::WorkspaceSourceRoot::capture(root).map_err(source_failure)?;
+    match &project {
+        None => {
+            let sources = crate::WorkspaceSourceRoot::capture(request.source.root())
+                .map_err(source_failure)?;
             dispatch(request, &inputs, run, &sources, &session, &outer_checkpoint)
         }
-        CompilationSource::Project(_) => {
-            let project = crate::project::ProjectAdmission::discover_provider(
-                &request.compiler_root,
-                &inputs,
-                request.profile.package_profile(),
-                installation.is_some(),
-            )?;
-            dispatch(request, &inputs, run, &project, &session, &|| {
-                outer_checkpoint()?;
-                project.revalidate()
-            })
-        }
+        Some(project) => dispatch(request, &inputs, run, project, &session, &|| {
+            outer_checkpoint()?;
+            project.revalidate()
+        }),
     }
 }
 

@@ -7,7 +7,10 @@ use std::{
     env, fs,
     path::{Path, PathBuf},
     process::{Command, Output},
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        Mutex, MutexGuard,
+        atomic::{AtomicU64, Ordering},
+    },
 };
 
 #[cfg(unix)]
@@ -18,6 +21,8 @@ use sha2::Digest;
 use zryna_abi::{RawHostScalar, ScalarTarget, ScalarType, ScalarValue, normalize_result};
 
 static NEXT_CASE: AtomicU64 = AtomicU64::new(0);
+// Source sessions authenticate the shared cache parent for the fixture's whole lifetime.
+static WORKSPACE_CASE_LOCK: Mutex<()> = Mutex::new(());
 #[path = "fixtures/browser_byte_boundary.rs"]
 mod browser_byte_boundary;
 
@@ -26,10 +31,13 @@ struct WorkspaceCase {
     source_relative: String,
     owned_paths: Vec<PathBuf>,
     unique: String,
+    _shared_source_parent: MutexGuard<'static, ()>,
 }
 
 impl WorkspaceCase {
     fn new() -> Self {
+        let shared_source_parent =
+            WORKSPACE_CASE_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .canonicalize()
@@ -42,7 +50,13 @@ impl WorkspaceCase {
             .expect("test source directory must be created");
         fs::write(&source, include_str!("../../../examples/universal/add.zry"))
             .expect("test source must be written");
-        Self { root, source_relative, owned_paths: Vec::new(), unique }
+        Self {
+            root,
+            source_relative,
+            owned_paths: Vec::new(),
+            unique,
+            _shared_source_parent: shared_source_parent,
+        }
     }
 
     fn control_flow() -> Self {
@@ -589,6 +603,7 @@ fn run_browser_component_fixture(browser_root: Option<&Path>) {
         .output()
         .expect("browser component fixture must start");
     assert_success(&output);
+    drop(case);
     browser_byte_boundary::run(browser_root);
 }
 

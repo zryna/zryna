@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use zryna_frontend::{VerifiedFrontendProviderV4, WorkerError, syntax_v4};
+use zryna_frontend::{VerifiedFrontendProviderV4, WorkerError, WorkerFrontendV4, syntax_v4};
 use zryna_source::SourceMap;
 
 use super::test_support::{fixture_workspace, node_executable, route_guard};
