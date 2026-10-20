@@ -46,12 +46,17 @@ pub struct BuildCase {
 
 pub fn registry() -> (PathBuf, Registry) {
     let crate_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = crate_root.parent().unwrap().parent().unwrap().to_path_buf();
+    let root = crate_root
+        .parent()
+        .expect("driver crate belongs to crates directory")
+        .parent()
+        .expect("crates directory belongs to repository")
+        .to_path_buf();
     let bytes =
         fs::read(root.join("tests/native-provider-public/registry.json")).expect("frozen registry");
     assert_eq!(
         format!("{:x}", Sha256::digest(&bytes)),
-        "1bddc89817fad90a5be64968833ddecfc7d0c8cdec69812a5c111c8087abf291",
+        "acb66251801fa9a46575b15803b4576d5171e619b2e71d598ce4c3dec136a1fc",
         "exact closed public registry"
     );
     let registry: Registry = serde_json::from_slice(&bytes).expect("registry schema");
@@ -127,10 +132,10 @@ impl Workers {
                             semantic_diagnostics: false,
                         },
                     )
-                    .unwrap(),
+                    .expect("exact pinned protocol-v2 expectation"),
                     WorkerLimits::default(),
                 )
-                .unwrap(),
+                .expect("bounded absolute protocol-v2 worker configuration"),
             )
         };
         let v3 = |image: &Path, args, directory: &Path, provider, version| {
@@ -139,10 +144,11 @@ impl Workers {
                     image,
                     args,
                     directory,
-                    ProviderExpectationV3::new(provider, version).unwrap(),
+                    ProviderExpectationV3::new(provider, version)
+                        .expect("exact pinned protocol-v3 expectation"),
                     WorkerLimitsV3::default(),
                 )
-                .unwrap(),
+                .expect("bounded absolute protocol-v3 worker configuration"),
             )
         };
         let v4 = |image: &Path, args, directory: &Path, provider, version| {
@@ -151,10 +157,11 @@ impl Workers {
                     image,
                     args,
                     directory,
-                    ProviderExpectationV4::new(provider, version).unwrap(),
+                    ProviderExpectationV4::new(provider, version)
+                        .expect("exact pinned protocol-v4 expectation"),
                     WorkerLimitsV4::default(),
                 )
-                .unwrap(),
+                .expect("bounded absolute protocol-v4 worker configuration"),
             )
         };
         Self {

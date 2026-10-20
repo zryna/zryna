@@ -5,7 +5,7 @@ import {resolve,relative,isAbsolute,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 export const repositoryRoot=resolve(fileURLToPath(new URL('../../',import.meta.url)));
-export const registrySha256='1bddc89817fad90a5be64968833ddecfc7d0c8cdec69812a5c111c8087abf291';
+export const registrySha256='acb66251801fa9a46575b15803b4576d5171e619b2e71d598ce4c3dec136a1fc';
 export const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const canonical=value=>Buffer.from(JSON.stringify(sort(value))+'\n');
 function sort(value){return Array.isArray(value)?value.map(sort):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(k=>[k,sort(value[k])])):value;}
@@ -23,13 +23,15 @@ function sourceCensus(root,path){
  return result.sort();
 }
 export function validateRegistry(registry,root=repositoryRoot){
- exact(registry,['format','version','sourceBaseline','counts','registries','syntaxCorpusAuthority','m3BuildOracle','m3OracleOrigin','currentM3BuildAuthority','historicalH4','additionalCurrentSources','sources','cliBuildCases','requiredAcceptanceLanes','supportedHosts','scope'],'registry');
+ exact(registry,['format','version','sourceBaseline','counts','registries','syntaxCorpusAuthority','m1BuildOracle','m3BuildOracle','m3OracleOrigin','currentM3BuildAuthority','historicalH4','additionalCurrentSources','sources','cliBuildCases','requiredAcceptanceLanes','supportedHosts','scope'],'registry');
  assert.equal(registry.format,'zryna.native-provider-public-registry.v1');assert.equal(registry.version,1);
  assert.deepEqual(registry.counts,{syntaxSources:114,m1Sources:3,m2Sources:14,m3Sources:97,cliBuildRoots:88,m3HistoricalAccepted:33,m3HistoricalRejected:36,m3CurrentAccepted:2});
  assert.deepEqual(registry.supportedHosts,['linux-x64','win32-x64']);
  assert.deepEqual(registry.requiredAcceptanceLanes,['worker-snapshot-parity','cli-build-parity','verified-ir-parity','diagnostic-boundaries','runtime-and-cleanup-parity','ordinary-installed-no-node','reproducible-installation','linux-windows-full-m0-m4-ci']);
  assert.equal(registry.registries.length,3);assert.equal(registry.syntaxCorpusAuthority.length,2);
  for(const pin of [...registry.registries,...registry.syntaxCorpusAuthority])readPinned(root,pin);
+ const m1Oracle=JSON.parse(readPinned(root,registry.m1BuildOracle));assert.equal(registry.m1BuildOracle.sha256,'c6aaf06f22425fe08fa8ecc3b53f4278ea4b2f6928b5d559382bd14e07dcf8bc');assert.equal(m1Oracle.format,'zryna.current-M1-build-diagnostics.v1');assert.deepEqual(m1Oracle.counts,{accepted:1,rejected:2,diagnostics:4});assert.equal(m1Oracle.cases.length,3);assert.equal(m1Oracle.owners.length,2);for(const owner of m1Oracle.owners)readPinned(root,owner);
+ for(const fixture of m1Oracle.cases){readPinned(root,fixture.source);const row=registry.cliBuildCases.find(c=>c.id===fixture.id);assert(row&&row.profile==='i32-v1'&&row.entrypoint===fixture.source.path);assert.equal(row.disposition,fixture.disposition);assert.deepEqual(row.diagnostics,fixture.diagnostics);assert.deepEqual(row.diagnosticCodes,fixture.diagnostics.map(d=>d.code));}
  const oracle=JSON.parse(readPinned(root,registry.m3BuildOracle));assert.equal(registry.m3BuildOracle.sha256,'1326226f6c1bfa8122564d6507d70df4c6acf75060fb1a650b02c36ed562155e');
  assert.deepEqual(oracle.counts,{accepted:33,rejected:36,diagnostics:67});assert.equal(oracle.fixtures.length,69);
  assert.equal(registry.sources.length,114);assert.equal(new Set(registry.sources.map(c=>c.id)).size,114);assert.equal(new Set(registry.sources.map(c=>c.source.path)).size,114);

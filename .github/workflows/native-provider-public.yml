@@ -103,7 +103,7 @@ jobs:
         run: |
           cargo test --locked -p zryna-frontend --lib native_worker::tests:: -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/native-worker-tests.log"
           if ($LASTEXITCODE -ne 0) { throw 'Native worker controls failed' }
-          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/native-worker-tests.log" 9
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/native-worker-tests.log" 10
           if ($LASTEXITCODE -ne 0) { throw 'Required Rust target executed no complete nonempty census' }
           cargo test --locked -p zryna-frontend --test native_parser_v4_corpus -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/native-corpus-verifier.log"
           if ($LASTEXITCODE -ne 0) { throw 'Original corpus verifier failed' }

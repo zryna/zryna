@@ -1362,7 +1362,8 @@
       "entrypoint": "examples/universal/add.zry",
       "disposition": "accepted",
       "diagnosticCodes": [],
-      "oracle": "m1-registry"
+      "oracle": "original-owner-reviewed-current-M1-bootstrap-diagnostics",
+      "diagnostics": []
     },
     {
       "id": "m1-build:invalidSource",
@@ -1372,7 +1373,23 @@
       "diagnosticCodes": [
         "ZRYNA-M1004"
       ],
-      "oracle": "m1-registry"
+      "oracle": "original-owner-reviewed-current-M1-bootstrap-diagnostics",
+      "diagnostics": [
+        {
+          "code": "ZRYNA-M1004",
+          "guidance": "replace any with an exact supported Zryna type",
+          "message": "parameter type 'any' is not part of Zryna",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 35,
+              "file": 0,
+              "start": 32
+            }
+          },
+          "severity": "error"
+        }
+      ]
     },
     {
       "id": "m1-build:gatedBooleanSource",
@@ -1380,9 +1397,45 @@
       "entrypoint": "tests/m1-fixtures/bool-gated.zry",
       "disposition": "rejected",
       "diagnosticCodes": [
+        "ZRYNA-I1006",
+        "ZRYNA-I1006",
         "ZRYNA-I1006"
       ],
-      "oracle": "m1-registry"
+      "oracle": "original-owner-reviewed-current-M1-bootstrap-diagnostics",
+      "diagnostics": [
+        {
+          "code": "ZRYNA-I1006",
+          "guidance": "use only i32 until a wider universal backend profile is enabled",
+          "message": "function #0 parameter #0 has an unsupported type",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        },
+        {
+          "code": "ZRYNA-I1006",
+          "guidance": "use only i32 until a wider universal backend profile is enabled",
+          "message": "function #0 has an unsupported result type",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        },
+        {
+          "code": "ZRYNA-I1006",
+          "guidance": "use only i32 until a wider universal backend profile is enabled",
+          "message": "function #0 expression #0 has an unsupported type",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 58,
+              "file": 0,
+              "start": 53
+            }
+          },
+          "severity": "error"
+        }
+      ]
     },
     {
       "id": "m2-build:invalid/assign-to-const/main.zry",
@@ -3440,5 +3493,10 @@
       }
     ],
     "rationale": "Ordinary::new authenticates the pinned source snapshot with v4::verify_snapshot, lowers through the mandatory M3 verifier, and emits the audited Wasm artifact. Both owning tests execute real clone-prefix failures and verify ordinary successful recovery returns 1. These two current accepted BUILD roots supplement the unchanged historical69-root oracle; they provide no historical blocked-case discharge or current execution receipt."
+  },
+  "m1BuildOracle": {
+    "path": "tests/native-provider-public/m1-build-oracle.json",
+    "bytes": 4010,
+    "sha256": "c6aaf06f22425fe08fa8ecc3b53f4278ea4b2f6928b5d559382bd14e07dcf8bc"
   }
 }

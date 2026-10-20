@@ -35,12 +35,12 @@ pub(crate) fn execute(
     if !request.compiler_root.is_absolute() || !request.source.root().is_absolute() {
         return Err(request_failure("compiler and source roots must be absolute"));
     }
-    if let Some(path) = &request.node_runtime {
-        if !path.is_absolute() {
-            return Err(request_failure(
-                "an explicit Node target host must be an absolute direct path",
-            ));
-        }
+    if let Some(path) = &request.node_runtime
+        && !path.is_absolute()
+    {
+        return Err(request_failure(
+            "an explicit Node target host must be an absolute direct path",
+        ));
     }
     match installation {
         Some(installation) => installation.revalidate().map_err(preparation_failure)?,

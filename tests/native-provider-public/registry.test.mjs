@@ -9,7 +9,7 @@ import {bundleInventory} from './cli-parity.mjs';
 const registry=loadRegistry();
 function clone(){return structuredClone(registry);}
 function temporary(t){const path=mkdtempSync(join(tmpdir(),'zryna-public-native-registry-'));t.after(()=>rmSync(path,{recursive:true,force:true}));return path;}
-function retainedFixtureRoot(t){const root=temporary(t);for(const p of [...registry.registries,...registry.syntaxCorpusAuthority,registry.m3BuildOracle,registry.currentM3BuildAuthority.owner,...registry.currentM3BuildAuthority.cases.map(c=>c.snapshot),...registry.sources.map(c=>c.source)]){const target=join(root,p.path);mkdirSync(dirname(target),{recursive:true});copyFileSync(join(repositoryRoot,p.path),target);}return root;}
+function retainedFixtureRoot(t){const root=temporary(t);for(const p of [...registry.registries,...registry.syntaxCorpusAuthority,registry.m3BuildOracle,registry.m1BuildOracle,...JSON.parse(readFileSync(join(repositoryRoot,registry.m1BuildOracle.path))).owners,registry.currentM3BuildAuthority.owner,...registry.currentM3BuildAuthority.cases.map(c=>c.snapshot),...registry.sources.map(c=>c.source)]){const target=join(root,p.path);mkdirSync(dirname(target),{recursive:true});copyFileSync(join(repositoryRoot,p.path),target);}return root;}
 
 test('frozen current sources include97 M3 roots and genuine unchanged69-root oracle',()=>{
  assert.equal(registry.sources.length,114);assert.equal(registry.sources.filter(c=>c.protocol===4).length,97);
@@ -43,4 +43,9 @@ test('complete bundle inventory includes nested bytes and rejects links',t=>{
 test('current clone-prefix BUILD decisions retain separate original owner authority',()=>{
  assert.equal(registry.cliBuildCases.length,88);assert.equal(registry.currentM3BuildAuthority.cases.length,2);
  const changed=clone();changed.cliBuildCases.find(c=>c.id==='m3-current-build:clone-prefix-aggregate').disposition='rejected';assert.throws(()=>validateRegistry(changed));
+});
+
+test('current M1 oracle preserves original owner multiplicity and all diagnostic fields',()=>{
+ const row=registry.cliBuildCases.find(c=>c.id==='m1-build:gatedBooleanSource');assert.deepEqual(row.diagnosticCodes,['ZRYNA-I1006','ZRYNA-I1006','ZRYNA-I1006']);assert.equal(row.diagnostics[2].primary.span.start,53);assert.equal(row.diagnostics[2].primary.span.end,58);
+ for(const mutate of [r=>r.cliBuildCases.find(c=>c.id===row.id).diagnosticCodes.pop(),r=>r.cliBuildCases.find(c=>c.id===row.id).diagnostics[0].message='different owner diagnostic']){const changed=clone();mutate(changed);assert.throws(()=>validateRegistry(changed));}
 });

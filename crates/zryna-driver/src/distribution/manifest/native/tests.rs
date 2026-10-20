@@ -163,7 +163,7 @@ fn native_source_ref_policy_is_closed_and_does_not_change_v1() {
         "refs/heads/main/extra".to_owned(),
     ];
     invalid.push(format!("refs/heads/codex/{}", "a".repeat(65)));
-    invalid.push(format!("refs/heads/codex/{}", vec!["a"; 10].join("/")));
+    invalid.push(format!("refs/heads/codex/{}", ["a"; 10].join("/")));
     invalid.push(format!("refs/heads/codex/{0}/{0}/{0}", "a".repeat(64)));
     for source_ref in invalid {
         let mut value = native();

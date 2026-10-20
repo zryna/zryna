@@ -57,7 +57,7 @@ impl NativeProviderCapability {
         let mut digest = Sha256::new();
         let mut reader = file.take(MAX_COMPILER_BYTES + 1);
         let mut bytes = 0_u64;
-        let mut buffer = [0_u8; 64 * 1024];
+        let mut buffer = vec![0_u8; 64 * 1024];
         loop {
             let n = reader.read(&mut buffer).map_err(|_| identity_error())?;
             if n == 0 {

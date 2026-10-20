@@ -11,6 +11,23 @@ export function expectedHandshake(protocol,provider){
  if(protocol===4)capabilities.data_ownership_syntax_v1=true;
  return {provider:provider==='native'?'zryna-native':'typescript-6',provider_version:provider==='native'?'0.2.3':'6.0.3',protocol_version:protocol,capabilities};
 }
+// A source rejection is an ordinary observable result, not verified syntax authority.
+export function verifyAnalysisFrame(frame) {
+ exact(frame,Object.hasOwn(frame,'error')?['id','error']:['id','result'],'closed worker analysis frame');
+ assert.equal(frame.id,2,'original correlated analysis id');
+ if(Object.hasOwn(frame,'error')) {
+  exact(frame.error,['code','message'],'closed provider rejection');
+  for(const [field,limit]of [['code',128],['message',16384]]) {
+   const value=frame.error[field];
+   assert(typeof value==='string'&&value.isWellFormed()&&Buffer.byteLength(value)>0&&Buffer.byteLength(value)<=limit,'bounded well-formed provider '+field);
+  }
+ } else assert(frame.result&&typeof frame.result==='object'&&!Array.isArray(frame.result),'candidate document object');
+ return frame;
+}
+export function compareAnalysisFrames(native,bootstrap) {
+ verifyAnalysisFrame(native);verifyAnalysisFrame(bootstrap);
+ assert.deepEqual(native,bootstrap,'whole correlated analysis frame, including ordered candidate spans/diagnostics or exact provider rejection');
+}
 export async function runWorker({program,args,cwd,protocol,provider,files,timeoutMs=30000}){
  assert([2,3,4].includes(protocol)&&['native','bootstrap'].includes(provider));
  assert(program===resolve(program)&&Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=30000);
@@ -28,15 +45,15 @@ export async function runWorker({program,args,cwd,protocol,provider,files,timeou
    outputBytes+=bytes.length;if(outputBytes>2*MAX_FRAME){stop(new Error('worker output bound'));return;}stdout.push(bytes);pending=Buffer.concat([pending,bytes]);
    for(;;){const end=pending.indexOf(10);if(end<0){if(pending.length>MAX_FRAME)stop(new Error('worker frame bound'));return;}const line=pending.subarray(0,end);pending=pending.subarray(end+1);
     try{
-     assert(line.length>0&&line.length<=MAX_FRAME,'bounded nonempty frame');const frame=strictJson(line,MAX_FRAME);exact(frame,['id','result'],'exact worker success frame');frames.push(frame);
-     if(frames.length===1){assert.equal(frame.id,1);assert.deepEqual(frame.result,expectedHandshake(protocol,provider),'exact admitted handshake');sourceSent=true;child.stdin.write(analyze);}
-     else if(frames.length===2){assert.equal(frame.id,2);assert(frame.result&&typeof frame.result==='object');child.stdin.end();}
+     assert(line.length>0&&line.length<=MAX_FRAME,'bounded nonempty frame');const frame=strictJson(line,MAX_FRAME);frames.push(frame);
+     if(frames.length===1){exact(frame,['id','result'],'exact worker handshake success frame');assert.equal(frame.id,1);assert.deepEqual(frame.result,expectedHandshake(protocol,provider),'exact admitted handshake');sourceSent=true;child.stdin.write(analyze);}
+     else if(frames.length===2){verifyAnalysisFrame(frame);child.stdin.end();}
      else throw new Error('extra worker response');
     }catch(error){stop(error);}
    }
   });
   child.once('close',(exitCode,signal)=>{
-   clearTimeout(deadline);const result={program,args,cwd,protocol,provider,startedAt,finishedAt:new Date().toISOString(),exitCode,signal,sourceSent,stdout:Buffer.concat(stdout),stderr:Buffer.concat(stderr),frames,cleanupConfirmed:true};
+   clearTimeout(deadline);const result={program,args,cwd,protocol,provider,startedAt,finishedAt:new Date().toISOString(),exitCode,signal,sourceSent,stdout:Buffer.concat(stdout),stderr:Buffer.concat(stderr),frames,ownerExitObserved:Number.isSafeInteger(child.pid)&&child.pid>0,descendantCleanupClaimed:false};
    try{assert(!failure,failure?.message);assert.equal(exitCode,0,'actual worker exited successfully');assert.equal(signal,null);assert.equal(pending.length,0,'complete final framing');assert.equal(frames.length,2,'complete handshake and analysis');assert.equal(errorBytes,0,'worker stderr empty');accept(result);}catch(error){error.capture=result;reject(error);}
   });
   child.stdin.write(handshake);

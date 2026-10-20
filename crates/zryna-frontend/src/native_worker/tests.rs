@@ -32,16 +32,25 @@ fn native_worker_all_versions_produce_only_original_verifier_admitted_candidates
         let value = responses[1]["result"].clone();
         match protocol {
             2 => {
-                syntax_v2::verify_snapshot(serde_json::from_value(value).unwrap(), &sources)
-                    .expect("original v2 verifier");
+                syntax_v2::verify_snapshot(
+                    serde_json::from_value(value).expect("original protocol candidate DTO"),
+                    &sources,
+                )
+                .expect("original v2 verifier");
             }
             3 => {
-                syntax_v3::verify_snapshot(serde_json::from_value(value).unwrap(), &sources)
-                    .expect("original v3 verifier");
+                syntax_v3::verify_snapshot(
+                    serde_json::from_value(value).expect("original protocol candidate DTO"),
+                    &sources,
+                )
+                .expect("original v3 verifier");
             }
             4 => {
-                syntax_v4::verify_snapshot(serde_json::from_value(value).unwrap(), &sources)
-                    .expect("original v4 verifier");
+                syntax_v4::verify_snapshot(
+                    serde_json::from_value(value).expect("original protocol candidate DTO"),
+                    &sources,
+                )
+                .expect("original v4 verifier");
             }
             _ => unreachable!(),
         }
@@ -55,8 +64,8 @@ fn native_worker_fatal_lexical_errors_are_rpc_rejections_with_original_owner_dia
         path: "src/main.zry".to_owned(),
         text: text.to_owned(),
     }])
-    .unwrap();
-    let lexed = native_lexer::lex(&sources).unwrap();
+    .expect("authoritative fixture source map");
+    let lexed = native_lexer::lex(&sources).expect("fixture lexes under original limits");
     for protocol in 2..=4 {
         let diagnostic = match protocol {
             2 => native_parser::parse_v2_recovering_candidate(&sources, &lexed)
@@ -80,15 +89,26 @@ fn native_worker_fatal_lexical_errors_are_rpc_rejections_with_original_owner_dia
 }
 
 #[test]
+fn native_worker_unsupported_import_rejection_keeps_the_original_source_span() {
+    let frames = session(3, "import \"./dep.zry\";\n");
+    assert_eq!(
+        frames[1],
+        json!({"id":2,"error":{"code":"ZRYNA-F2002","message":
+            "import declaration uses unsupported syntax 'ImportDeclaration' at file 0 bytes 0..19"}})
+    );
+}
+
+#[test]
 fn native_worker_recoverable_diagnostics_preserve_the_entire_original_result() {
     let text = "export const rejected = 1; export function answer(): i32 { return 42; }";
     let sources = SourceMap::build(vec![SourceFileInput {
         path: "src/main.zry".to_owned(),
         text: text.to_owned(),
     }])
-    .unwrap();
-    let lexed = native_lexer::lex(&sources).unwrap();
-    let raw = native_parser::parse_v2_recovering_candidate(&sources, &lexed).unwrap();
+    .expect("authoritative fixture source map");
+    let lexed = native_lexer::lex(&sources).expect("fixture lexes under original limits");
+    let raw = native_parser::parse_v2_recovering_candidate(&sources, &lexed)
+        .expect("recoverable v2 candidate");
     assert!(!raw.diagnostics.is_empty());
     let responses = session(2, text);
     assert_eq!(responses[1], json!({"id":2,"result":raw}));
@@ -102,11 +122,13 @@ fn native_worker_preserves_hostile_raw_candidates_for_the_original_verifier() {
         path: "src/main.zry".to_owned(),
         text: text.to_owned(),
     }])
-    .unwrap();
-    let lexed = native_lexer::lex(&sources).unwrap();
-    let raw = native_parser::v4::parse_v4_candidate(&sources, &lexed).unwrap();
-    let original = serde_json::to_value(&raw).unwrap();
-    let errors = syntax_v4::verify_snapshot(raw, &sources).unwrap_err();
+    .expect("authoritative fixture source map");
+    let lexed = native_lexer::lex(&sources).expect("fixture lexes under original limits");
+    let raw =
+        native_parser::v4::parse_v4_candidate(&sources, &lexed).expect("raw v4 hostile candidate");
+    let original = serde_json::to_value(&raw).expect("entire raw candidate serialization");
+    let errors = syntax_v4::verify_snapshot(raw, &sources)
+        .expect_err("original verifier rejects hostile operand");
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].code(), "ZRYNA-Y4002");
     let responses = session(4, text);
@@ -140,7 +162,9 @@ fn native_worker_rejects_foreign_paths_wrong_protocol_and_additional_requests() 
         );
         let mut output = Vec::new();
         assert!(run(2, &mut Cursor::new(input), &mut output).is_err());
-        assert_eq!(output.iter().filter(|byte| **byte == b'\n').count(), 1);
+        let frames = output.split(|byte| *byte == b'\n').collect::<Vec<_>>();
+        assert_eq!(frames.len(), 2, "only one complete handshake frame");
+        assert!(frames[1].is_empty(), "handshake ends with its delimiter");
     }
     let request = json!({"id":2,"method":"analyze","params":{
         "schema_version":2,"files":[{"path":"src/main.zry","text":
@@ -158,7 +182,7 @@ fn native_worker_first_extra_framing_and_response_bytes_fail_without_partial_out
     let mut output = Vec::new();
     assert!(respond(&mut output, &"12345", 6).is_err());
     assert!(output.is_empty());
-    respond(&mut output, &"12345", 7).unwrap();
+    respond(&mut output, &"12345", 7).expect("exact response-byte boundary");
     assert_eq!(output, b"\"12345\"\n");
 }
 

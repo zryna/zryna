@@ -138,7 +138,19 @@ fn respond(
 }
 
 fn rejection(diagnostic: &Diagnostic) -> Value {
-    json!({"id":2,"error":{"code":diagnostic.code(),"message":diagnostic.message()}})
+    let message = diagnostic.primary_span().map_or_else(
+        || diagnostic.message().to_owned(),
+        |span| {
+            format!(
+                "{} at file {} bytes {}..{}",
+                diagnostic.message(),
+                span.file().index(),
+                span.start(),
+                span.end()
+            )
+        },
+    );
+    json!({"id":2,"error":{"code":diagnostic.code(),"message":message}})
 }
 
 fn candidate(protocol: u32, input: Analysis) -> Result<Value, NativeWorkerError> {
@@ -159,13 +171,13 @@ fn candidate(protocol: u32, input: Analysis) -> Result<Value, NativeWorkerError>
     };
     let raw = match protocol {
         2 => native_parser::parse_v2_recovering_candidate(&sources, &lexed)
-            .map(|value| serde_json::to_value(value))
+            .map(serde_json::to_value)
             .map_err(|error| rejection(error.diagnostic())),
         3 => native_parser::v3::parse_v3_straight_line_candidate(&sources, &lexed)
-            .map(|value| serde_json::to_value(value))
+            .map(serde_json::to_value)
             .map_err(|error| rejection(error.diagnostic())),
         4 => native_parser::v4::parse_v4_candidate(&sources, &lexed)
-            .map(|value| serde_json::to_value(value))
+            .map(serde_json::to_value)
             .map_err(|error| rejection(error.diagnostic())),
         _ => return Err(NativeWorkerError("native worker protocol is unsupported")),
     };

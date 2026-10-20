@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {canonical,readPinned,sha256} from './registry.mjs';
-import {runWorker} from './worker.mjs';
+import {runWorker,compareAnalysisFrames} from './worker.mjs';
 
 export async function runWorkerParity({registry,root,cli,node,output}){
  mkdirSync(output,{mode:0o700});const results=[];
@@ -17,7 +17,7 @@ export async function runWorkerParity({registry,root,cli,node,output}){
    persist(stem,captures[provider]);
   }
   if(captures.native&&captures.bootstrap){
-   try{assert.deepEqual(captures.native.frames[1].result,captures.bootstrap.frames[1].result,'whole raw snapshot, including exact ordered diagnostics and byte spans');results.push({id:item.id,status:'passed',protocol:item.protocol,snapshotSha256:sha256(canonical(captures.native.frames[1].result)),syntaxVerification:item.syntaxVerification,source:item.source});}
+   try{compareAnalysisFrames(captures.native.frames[1],captures.bootstrap.frames[1]);results.push({id:item.id,status:'passed',protocol:item.protocol,analysisSha256:sha256(canonical(captures.native.frames[1])),analysisKind:Object.hasOwn(captures.native.frames[1],'error')?'provider-rejection':'candidate',syntaxVerification:item.syntaxVerification,source:item.source});}
    catch(error){results.push({id:item.id,status:'failed',error:String(error.message)});}
   }
  }

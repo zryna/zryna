@@ -36,13 +36,13 @@ fn comparison_rejects_two_bootstrap_workers_before_any_source_or_process_effect(
                 2,
                 FrontendCapabilities { module_resolution: false, semantic_diagnostics: false },
             )
-            .unwrap(),
+            .expect("exact pinned bootstrap identity"),
             WorkerLimits::default(),
         )
-        .unwrap(),
+        .expect("absolute never-executed worker specification"),
     );
     let comparison = ComparisonFrontendV2::new(worker.clone(), worker);
-    let sources = zryna_source::SourceMap::build(vec![]).unwrap();
+    let sources = zryna_source::SourceMap::build(vec![]).expect("bounded empty source map");
     let error = comparison.analyze_verified(&sources).expect_err("wrong configured identities");
     assert_eq!(error.failure(), zryna_frontend::WorkerFailure::SnapshotVerification);
 }
@@ -62,10 +62,10 @@ fn comparison_charges_both_physical_analyses_and_preserves_cleanup_time_reserve(
                     provider,
                     if provider == NATIVE_PROVIDER { NATIVE_PROVIDER_VERSION } else { "6.0.3" },
                 )
-                .unwrap(),
+                .expect("exact protocol-v3 provider identity"),
                 WorkerLimitsV3::default(),
             )
-            .unwrap(),
+            .expect("absolute bounded protocol-v3 worker specification"),
         )
     };
     let make_v4 = |provider| {
@@ -78,10 +78,10 @@ fn comparison_charges_both_physical_analyses_and_preserves_cleanup_time_reserve(
                     provider,
                     if provider == NATIVE_PROVIDER { NATIVE_PROVIDER_VERSION } else { "6.0.3" },
                 )
-                .unwrap(),
+                .expect("exact protocol-v4 provider identity"),
                 WorkerLimitsV4::default(),
             )
-            .unwrap(),
+            .expect("absolute bounded protocol-v4 worker specification"),
         )
     };
     let ordinary_v3 = make_v3(NATIVE_PROVIDER);

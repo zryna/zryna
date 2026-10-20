@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, realpathSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { selectNativeSourceRef } from '../../scripts/distribution/native-source-ref-v2.mjs';
 
 const head = 'a'.repeat(40), ref = 'refs/heads/codex/native-install';
 function withEvent(name, event, action) {
-  const root = mkdtempSync(join(tmpdir(), 'zryna-native-source-ref-'));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-native-source-ref-')));
   const path = join(root, 'event.json');
   writeFileSync(path, JSON.stringify({ repository: { full_name: 'zryna/zryna' }, ...event }));
   try {

@@ -17,8 +17,12 @@ document and its decisions remain unchanged. The invalid borrow source remains
 excluded from accepted BUILD roots.
 
 The worker lane performs a real admitted handshake before sending source, then
-compares the entire native/bootstrap candidate document, including ordered byte
-spans and diagnostics. It retains every original command and complete output.
+compares the entire correlated native/bootstrap analysis frame: either the
+candidate document with ordered byte spans and diagnostics, or the closed
+provider rejection with its exact code and message. It retains every original
+command and complete output. The raw comparer records only observed owner exit;
+it makes no descendant-cleanup claim. The original Rust worker process
+containment remains separately required.
 This compares raw candidates; original syntax/IR verification remains mandatory
 in its separate owning compiler gates.
 
@@ -81,3 +85,11 @@ with a nonzero required census and zero failed or ignored cases.
 The complete frozen IR integration target requires the explicit
 `native-provider-qualification` feature and the actual absolute
 `ZRYNA_NATIVE_CLI`; ordinary library suites require no hidden CLI fixture.
+
+The separate current M1 BUILD oracle binds actual explicit-bootstrap full
+diagnostics and unchanged original IR/semantic owner files. The original M1
+registry specifies diagnostic-code presence, so it never established a count
+of one for the gated Boolean source. The original IR owner emits three ordered
+`I1006` diagnostics: the Boolean parameter, Boolean result, and Boolean reference
+expression at bytes 53–58. All three full diagnostics are now frozen and checked;
+the original M1/M2/M3 registries and M2/M3 BUILD oracles remain unchanged.

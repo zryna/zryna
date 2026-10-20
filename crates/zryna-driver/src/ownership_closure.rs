@@ -2,7 +2,6 @@
 
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
-    path::Path,
     time::{Duration, Instant},
 };
 
@@ -20,8 +19,10 @@ use crate::{
 
 const GRAPH_DOMAIN: &[u8] = b"ZRYNA-M3-GRAPH\0";
 
+mod admission;
 mod overlay;
 mod provider_budget;
+use admission::validate_entrypoint_extension;
 use provider_budget::{account_provider, register_import_edges};
 mod support;
 pub use overlay::discover_ownership_module_closure_with_overlays;
@@ -189,13 +190,7 @@ where
     Clock: FnMut() -> Instant,
 {
     let started = now();
-    if Path::new(entrypoint.as_str()).extension().and_then(|value| value.to_str()) != Some("zry") {
-        return Err(rejected(diagnostic(
-            "ZRYNA-D3301",
-            Some(&entrypoint),
-            "entry module must use the exact lowercase .zry extension",
-        )));
-    }
+    validate_entrypoint_extension(&entrypoint)?;
     let mut session = root.begin().map_err(rejected)?;
     let mut discovered = BTreeMap::<NormalizedSourcePath, DiscoveredSource>::new();
     let mut portable = BTreeMap::from([(entrypoint.portable_identity(), entrypoint.clone())]);

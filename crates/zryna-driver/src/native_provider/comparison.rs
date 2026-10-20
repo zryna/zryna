@@ -43,7 +43,7 @@ impl VerifiedFrontendProvider for ComparisonFrontendV2 {
         let remaining =
             budget.checked_sub(started.elapsed()).ok_or_else(WorkerError::provider_divergence)?;
         let second = tighten_v2(&self.bootstrap, remaining)?.analyze_verified(sources)?;
-        equal(first, second)
+        equal(first, &second)
     }
 }
 
@@ -112,7 +112,7 @@ impl VerifiedFrontendProviderV3 for ComparisonFrontendV3 {
         let remaining =
             budget.checked_sub(started.elapsed()).ok_or_else(WorkerError::provider_divergence)?;
         let second = self.bootstrap.analyze_verified_v3_with_timeout(sources, remaining)?;
-        equal(first, second)
+        equal(first, &second)
     }
 }
 
@@ -164,7 +164,7 @@ impl VerifiedFrontendProviderV4 for ComparisonFrontendV4 {
         let remaining =
             budget.checked_sub(started.elapsed()).ok_or_else(WorkerError::provider_divergence)?;
         let second = self.bootstrap.analyze_verified_v4_with_timeout(sources, remaining)?;
-        equal(first, second)
+        equal(first, &second)
     }
 }
 
@@ -184,8 +184,8 @@ fn identities(
     Ok(())
 }
 
-fn equal<T: Eq>(native: T, bootstrap: T) -> Result<T, WorkerError> {
-    if native != bootstrap {
+fn equal<T: Eq>(native: T, bootstrap: &T) -> Result<T, WorkerError> {
+    if &native != bootstrap {
         return Err(WorkerError::provider_divergence());
     }
     Ok(native)

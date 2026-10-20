@@ -19,21 +19,23 @@ impl Observation {
         Self {
             phase,
             ir: None,
-            diagnostics: serde_json::to_value(diagnostics).unwrap(),
+            diagnostics: serde_json::to_value(diagnostics)
+                .expect("complete ordered diagnostic serialization"),
             worker: None,
         }
     }
-    fn worker(error: WorkerError) -> Self {
+    fn worker(error: &WorkerError) -> Self {
         Self {
             phase: "worker",
             ir: None,
-            diagnostics: serde_json::to_value(error.diagnostics()).unwrap(),
+            diagnostics: serde_json::to_value(error.diagnostics())
+                .expect("complete worker diagnostic serialization"),
             worker: Some(format!("{}:{:?}", error.code(), error.failure())),
         }
     }
     pub fn closure(error: ModuleClosureError) -> Self {
         match error {
-            ModuleClosureError::Frontend(error) => Self::worker(error),
+            ModuleClosureError::Frontend(error) => Self::worker(&error),
             ModuleClosureError::Rejected(diagnostics) => Self::rejected("graph", &diagnostics),
         }
     }
@@ -46,7 +48,8 @@ impl Observation {
             Ok(ir) => Self {
                 phase: "verified-ir",
                 ir: Some(brands::debug(&ir, sources)),
-                diagnostics: serde_json::to_value(provider_diagnostics).unwrap(),
+                diagnostics: serde_json::to_value(provider_diagnostics)
+                    .expect("complete provider diagnostic serialization"),
                 worker: None,
             },
             Err(diagnostics) => Self::rejected("semantic-or-ir", &diagnostics),
@@ -57,13 +60,20 @@ impl Observation {
         if diagnostics.is_empty() {
             self.worker
                 .as_ref()
-                .map(|worker| worker.split(':').next().unwrap().to_owned())
+                .map(|worker| {
+                    worker.split(':').next().expect("stable worker category prefix").to_owned()
+                })
                 .into_iter()
                 .collect()
         } else {
             diagnostics
                 .iter()
-                .map(|diagnostic| diagnostic["code"].as_str().unwrap().to_owned())
+                .map(|diagnostic| {
+                    diagnostic["code"]
+                        .as_str()
+                        .expect("diagnostic serialization retains string code")
+                        .to_owned()
+                })
                 .collect()
         }
     }
@@ -83,8 +93,8 @@ pub fn pair<T: Debug + Eq>(
             left
         }
         (Err(left), Err(right)) => {
-            let left = Observation::worker(left);
-            assert_eq!(left, Observation::worker(right), "{id} original worker rejection");
+            let left = Observation::worker(&left);
+            assert_eq!(left, Observation::worker(&right), "{id} original worker rejection");
             left
         }
         values => panic!("{id} syntax acceptance differs: {values:?}"),
@@ -96,7 +106,7 @@ fn errors(diagnostics: &[Diagnostic]) -> bool {
 }
 fn entry(sources: &SourceMap, path: &str) -> zryna_source::FileId {
     sources
-        .file_id(&NormalizedSourcePath::new(path.to_owned()).unwrap())
+        .file_id(&NormalizedSourcePath::new(path.to_owned()).expect("frozen portable source path"))
         .expect("exact authoritative entry")
 }
 pub fn lower_v2(syntax: &syntax_v2::ProjectSyntaxSnapshot, sources: &SourceMap) -> Observation {

@@ -91,7 +91,7 @@ pub(super) fn source_ref_is_candidate(value: &str) -> bool {
                     .all(|b| b.is_ascii_digit() || b.is_ascii_lowercase() || b"._-".contains(&b))
                 && !part.contains("..")
                 && !part.ends_with('.')
-                && !part.ends_with(".lock")
+                && !part.as_bytes().ends_with(b".lock")
         })
 }
 

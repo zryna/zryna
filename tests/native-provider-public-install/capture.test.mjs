@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync,
+  linkSync, lstatSync, mkdirSync, mkdtempSync, realpathSync, readFileSync, rmSync, unlinkSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -12,7 +12,7 @@ import { bytes } from '../../scripts/distribution/canonical.mjs';
 import { ordinaryBytes } from './commands.mjs';
 
 function fixture(action) {
-  const root = mkdtempSync(join(tmpdir(), 'zryna-producer-capture-'));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-producer-capture-')));
   const deps = join(root, 'deps'), captures = join(root, 'captures');
   mkdirSync(deps); mkdirSync(captures);
   const suffix = process.platform === 'win32' ? '.exe' : '';

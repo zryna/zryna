@@ -3,16 +3,16 @@
 
 #[path = "native_public_ir_parity/brands.rs"]
 mod brands;
+#[path = "native_public_ir_parity/graphs.rs"]
+mod graphs;
 #[path = "native_public_ir_parity/observations.rs"]
 mod observations;
 #[path = "native_public_ir_parity/support.rs"]
 mod support;
 
-use observations::{Observation, lower_v2, lower_v3, lower_v4, pair};
+use observations::{lower_v2, lower_v3, lower_v4, pair};
 use support::{Workers, registry, source_map};
-use zryna_driver::{
-    WorkspaceSourceRoot, discover_module_closure, discover_ownership_module_closure,
-};
+use zryna_driver::WorkspaceSourceRoot;
 use zryna_source::NormalizedSourcePath;
 
 #[test]
@@ -74,112 +74,8 @@ fn frozen_88_public_build_roots_have_exact_source_graph_verified_ir_and_diagnost
                     |syntax| lower_v2(syntax, &sources),
                 )
             }
-            "control-flow-v1" => {
-                let native = discover_module_closure(&workspace, entry.clone(), &workers.native3);
-                let bootstrap = discover_module_closure(&workspace, entry, &workers.bootstrap3);
-                match (native, bootstrap) {
-                    (Ok(left), Ok(right)) => {
-                        assert_eq!(left.modules(), right.modules(), "{} module hashes", case.id);
-                        assert_eq!(
-                            left.graph_sha256(),
-                            right.graph_sha256(),
-                            "{} graph hash",
-                            case.id
-                        );
-                        assert_eq!(
-                            brands::debug(left.edges(), left.sources()),
-                            brands::debug(right.edges(), right.sources()),
-                            "{} complete graph edges",
-                            case.id
-                        );
-                        assert_eq!(
-                            brands::debug(left.syntax(), left.sources()),
-                            brands::debug(right.syntax(), right.sources()),
-                            "{} complete final syntax",
-                            case.id
-                        );
-                        let left = Observation::lowered(
-                            left.lower_control_flow_v1(),
-                            left.syntax().diagnostics(),
-                            left.sources(),
-                        );
-                        let right = Observation::lowered(
-                            right.lower_control_flow_v1(),
-                            right.syntax().diagnostics(),
-                            right.sources(),
-                        );
-                        assert_eq!(left, right, "{} complete verified IR and diagnostics", case.id);
-                        left
-                    }
-                    (Err(left), Err(right)) => {
-                        let left = Observation::closure(left);
-                        assert_eq!(
-                            left,
-                            Observation::closure(right),
-                            "{} graph rejection",
-                            case.id
-                        );
-                        left
-                    }
-                    values => panic!("{} graph acceptance differs: {values:?}", case.id),
-                }
-            }
-            "data-ownership-v1" => {
-                let native =
-                    discover_ownership_module_closure(&workspace, entry.clone(), &workers.native4);
-                let bootstrap =
-                    discover_ownership_module_closure(&workspace, entry, &workers.bootstrap4);
-                match (native, bootstrap) {
-                    (Ok(left), Ok(right)) => {
-                        assert_eq!(left.modules(), right.modules(), "{} module hashes", case.id);
-                        assert_eq!(
-                            left.graph_sha256(),
-                            right.graph_sha256(),
-                            "{} graph hash",
-                            case.id
-                        );
-                        assert_eq!(
-                            brands::debug(left.edges(), left.sources()),
-                            brands::debug(right.edges(), right.sources()),
-                            "{} complete graph edges",
-                            case.id
-                        );
-                        assert_eq!(
-                            brands::debug(left.syntax(), left.sources()),
-                            brands::debug(right.syntax(), right.sources()),
-                            "{} complete final syntax",
-                            case.id
-                        );
-                        let left = Observation::lowered(
-                            left.lower_data_ownership_v1(),
-                            left.syntax().diagnostics(),
-                            left.sources(),
-                        );
-                        let right = Observation::lowered(
-                            right.lower_data_ownership_v1(),
-                            right.syntax().diagnostics(),
-                            right.sources(),
-                        );
-                        assert_eq!(
-                            left, right,
-                            "{} complete verified ownership IR and runtime ABI",
-                            case.id
-                        );
-                        left
-                    }
-                    (Err(left), Err(right)) => {
-                        let left = Observation::closure(left);
-                        assert_eq!(
-                            left,
-                            Observation::closure(right),
-                            "{} graph rejection",
-                            case.id
-                        );
-                        left
-                    }
-                    values => panic!("{} graph acceptance differs: {values:?}", case.id),
-                }
-            }
+            "control-flow-v1" => graphs::control_flow(&workspace, &workers, entry, case),
+            "data-ownership-v1" => graphs::ownership(&workspace, &workers, entry, case),
             _ => panic!("unregistered profile"),
         };
         assert_eq!(

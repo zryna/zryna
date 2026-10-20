@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, realpathSync, mkdirSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import { executeRecorded, successful } from './commands.mjs';
 const source = fileURLToPath(new URL('../..', import.meta.url));
 
 test('real command recorder preserves nonzero output without manufacturing command success', () => {
-  const root = mkdtempSync(join(tmpdir(), 'zryna-native-command-'));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-native-command-')));
   try {
     const observed = executeRecorded(root, 'negative', process.execPath,
       ['-e', 'process.stdout.write("original-output"); process.stderr.write("original-error"); process.exit(7);'],
@@ -27,7 +27,7 @@ test('real command recorder preserves nonzero output without manufacturing comma
 });
 
 test('real command timeout retains partial evidence and never claims descendant cleanup', () => {
-  const root = mkdtempSync(join(tmpdir(), 'zryna-native-timeout-'));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-native-timeout-')));
   try {
     assert.throws(() => executeRecorded(root, 'timeout', process.execPath,
       ['-e', 'setInterval(() => {}, 1000);'], root, { PATH: root }, { timeoutMs: 50 }),
@@ -42,7 +42,7 @@ test('real command timeout retains partial evidence and never claims descendant 
 
 test('producer rejects checkout-owned or preexisting output before running Cargo', async () => {
   await assert.rejects(produceNativeInstallation({ source, output: source }), /fresh external/);
-  const root = mkdtempSync(join(tmpdir(), 'zryna-native-existing-'));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-native-existing-')));
   try {
     await assert.rejects(produceNativeInstallation({ source, output: root }), /fresh external/);
     assert(!existsSync(join(root, 'producer-commands')));
@@ -50,7 +50,7 @@ test('producer rejects checkout-owned or preexisting output before running Cargo
 });
 
 test('producer preserves an actual failed source admission and creates no positive receipt', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'zryna-native-source-rejection-'));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'zryna-native-source-rejection-')));
   const fake = join(root, 'not-a-repository'), output = join(root, 'evidence'); mkdirSync(fake);
   try {
     await assert.rejects(produceNativeInstallation({ source: fake, output }), /actual command failed/);

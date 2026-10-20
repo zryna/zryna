@@ -6,7 +6,11 @@ use zryna_source::SourceMap;
 
 pub fn debug(value: &(impl Debug + ?Sized), sources: &SourceMap) -> String {
     let identity = format!("{:?}", sources.identity());
-    let id = identity.strip_prefix("SourceMapIdentity(").unwrap().strip_suffix(')').unwrap();
+    let id = identity
+        .strip_prefix("SourceMapIdentity(")
+        .expect("original source-map identity Debug tag")
+        .strip_suffix(')')
+        .expect("complete source-map identity Debug tuple");
     normalize(&format!("{value:?}"), id)
 }
 
@@ -35,7 +39,7 @@ fn normalize(input: &str, expected_id: &str) -> String {
                 continue;
             }
         }
-        let character = tail.chars().next().unwrap();
+        let character = tail.chars().next().expect("nonempty remaining complete Debug text");
         result.push(character);
         tail = &tail[character.len_utf8()..];
         if quoted {
