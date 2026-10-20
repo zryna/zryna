@@ -271,3 +271,6 @@ pub(crate) fn request_failure(message: impl Into<String>) -> CommandFailure {
         )],
     }
 }
+
+#[cfg(test)]
+mod tests;

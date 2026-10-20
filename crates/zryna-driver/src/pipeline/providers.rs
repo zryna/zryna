@@ -18,6 +18,20 @@ pub(crate) fn execute(
     run: Option<(String, Vec<ScalarValue>)>,
     installation: Option<&crate::distribution::InstalledCompiler>,
 ) -> Result<ProviderCommandSuccess, CommandFailure> {
+    if installation.is_none()
+        && matches!(request.source, CompilationSource::Project(_))
+        && request.profile != CompilationProfile::I32
+    {
+        return Err(CommandFailure {
+            kind: CommandFailureKind::Request,
+            diagnostics: vec![Diagnostic::error(
+                "ZRYNA-C2001",
+                None,
+                "standalone projects currently require the manifest-declared i32-v1 profile",
+                "omit --profile when using --project-root",
+            )],
+        });
+    }
     if !request.compiler_root.is_absolute() || !request.source.root().is_absolute() {
         return Err(request_failure("compiler and source roots must be absolute"));
     }

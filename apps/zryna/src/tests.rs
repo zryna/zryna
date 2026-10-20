@@ -2,6 +2,27 @@ use super::{CliProfile, Command, parse_cli_from, profile};
 use zryna_abi::ScalarValue;
 
 #[test]
+fn provider_selection_preserves_the_existing_source_project_profile_boundary() {
+    for profile in ["control-flow-v1", "data-ownership-v1", "browser-component-v1"] {
+        let cli = parse_cli_from([
+            "zryna",
+            "build",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--project-root",
+            "unused-project",
+            "--profile",
+            profile,
+        ])
+        .expect("exact existing flags");
+        let Command::Build(options) = cli.command else { panic!("build") };
+        let diagnostic = super::provider_request(options).expect_err("no package expansion");
+        assert_eq!(diagnostic.code(), "ZRYNA-C2001");
+    }
+}
+
+#[test]
 fn target_is_required_but_native_compilation_has_no_node_requirement() {
     let error =
         parse_cli_from(["zryna", "build", "src/main.zry"]).expect_err("target must be required");

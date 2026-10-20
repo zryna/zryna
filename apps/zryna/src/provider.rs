@@ -24,6 +24,14 @@ pub(super) fn render_provider_result(
 pub(super) fn provider_request(
     options: CompileOptions,
 ) -> Result<zryna_driver::ProviderBuildRequest, Diagnostic> {
+    if options.project_root.is_some() && options.profile.is_some() {
+        return Err(Diagnostic::error(
+            "ZRYNA-C2001",
+            None,
+            "standalone projects currently require the manifest-declared i32-v1 profile",
+            "omit --profile when using --project-root",
+        ));
+    }
     let compiler_root =
         absolute_workspace_path(&options.root.unwrap_or_else(|| PathBuf::from(".")))?;
     let source = match options.project_root {
