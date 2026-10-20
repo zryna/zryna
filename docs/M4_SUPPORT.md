@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`459173b7d7d5228245529cfda5bab8b51dddb6fa49da7da485f634c400d38768`. The matrix defines six bounded modes on the two
+`3a27f27ea563eef22d23f1efe9cf85277eec8151e43923e89ccda2f3cbee3087`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "459173b7d7d5228245529cfda5bab8b51dddb6fa49da7da485f634c400d38768",
+  "registrySha256": "3a27f27ea563eef22d23f1efe9cf85277eec8151e43923e89ccda2f3cbee3087",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3327,8 +3327,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 35133,
-      "sha256": "01e2958de64f826ad36739db31c10e567f040868d97058465eb1340100485138"
+      "bytes": 34527,
+      "sha256": "204df1a4849cda57fde57e4c0e581294181db6ebde3a8133fe60a3dd1c801601"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -4942,8 +4942,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "scripts/check-m2-conformance.mjs",
-      "bytes": 20489,
-      "sha256": "6214792bfb4b2d8fabadfce21d1308e969fcc5a2c26ff61109f60af1281c76ed"
+      "bytes": 20495,
+      "sha256": "035a6726aaed596352c1f00a512fe61d3a81cf3bdf909dd0edf8cb5b5c06e2b8"
     },
     {
       "path": "scripts/check-m2-contract.mjs",
@@ -5022,8 +5022,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "scripts/distribution-release/run-installed-acceptance.mjs",
-      "bytes": 11586,
-      "sha256": "986a0881a215d547105cf69c725b9d0b64ddc75625bb166a38c26cc8379301e9"
+      "bytes": 9312,
+      "sha256": "517a78c64e013be679858a4ab4ee6aac4c9014bcd86d81c36a193c06cbaaf733"
     },
     {
       "path": "scripts/distribution-release/validate-build-input.mjs",

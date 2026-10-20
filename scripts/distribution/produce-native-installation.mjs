@@ -11,7 +11,7 @@ import {
 } from './native-distribution-v2.mjs';
 import { requireArchiveRuntime } from './runtime.mjs';
 import { checkQualificationRustClosure } from './rust-materials.mjs';
-import { extractVerifiedProductionFiles } from '../distribution-release/run-installed-acceptance.mjs';
+import { extractVerifiedProductionFiles } from '../distribution-release/extract-verified-files.mjs';
 import { validateSourceReceipt } from './source-receipt.mjs';
 import {
   executeRecorded, ordinaryBytes, pinBytes, saveEvidence, successful,

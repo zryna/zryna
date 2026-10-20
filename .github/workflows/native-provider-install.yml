@@ -78,7 +78,7 @@ jobs:
       - name: Fetch exact locked Rust dependencies
         run: cargo fetch --locked
       - name: Validate native content and failure boundaries
-        run: node --test tests/native-distribution-v2.test.mjs tests/native-provider-public-install/producer.test.mjs tests/native-provider-public-install/source-ref.test.mjs tests/native-provider-public-install/workflow.test.mjs tests/native-provider-public-install/command-h1.test.mjs tests/native-provider-public-install/capture.test.mjs
+        run: node --test tests/native-distribution-v2.test.mjs tests/native-provider-public-install/producer.test.mjs tests/native-provider-public-install/source-ref.test.mjs tests/native-provider-public-install/workflow.test.mjs tests/native-provider-public-install/command-h1.test.mjs tests/native-provider-public-install/capture.test.mjs tests/native-provider-public-install/import.test.mjs
       - name: Build twice and qualify the actual relocated native installation
         shell: pwsh
         run: |
