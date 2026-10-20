@@ -2,12 +2,19 @@ use super::{CliProfile, Command, parse_cli_from, profile};
 use zryna_abi::ScalarValue;
 
 #[test]
-fn target_and_node_are_required() {
-    let error = parse_cli_from(["zryna", "build", "src/main.zry"])
-        .expect_err("target and node must be required");
+fn target_is_required_but_native_compilation_has_no_node_requirement() {
+    let error =
+        parse_cli_from(["zryna", "build", "src/main.zry"]).expect_err("target must be required");
     let rendered = error.to_string();
     assert!(rendered.contains("--target"));
-    assert!(rendered.contains("--node"));
+    assert!(!rendered.contains("--node <NODE>"));
+    let native = parse_cli_from(["zryna", "build", "src/main.zry", "--target", "webassembly"])
+        .expect("native compilation parses without Node");
+    let Command::Build(options) = native.command else {
+        panic!("build");
+    };
+    assert!(options.node.is_none());
+    assert!(options.provider.is_none());
 }
 
 #[test]

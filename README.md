@@ -45,7 +45,7 @@ verified Universal IR
     └── native lowering → MIR → codegen → executable
 ```
 
-The TypeScript 6 adapter is a bootstrap reader, not the language authority. It does not define Zryna types, build Zryna IR, or emit JavaScript. A future TypeScript 7 provider and a native Zryna frontend must implement the same versioned frontend contract.
+Current source checkouts use the native frontend by default. The TypeScript 6 adapter remains an explicit bootstrap/compare reader; neither provider defines Zryna types, builds Zryna IR, or emits JavaScript. Both use the same versioned frontend contracts. See [native provider migration](docs/NATIVE_PROVIDER_MIGRATION.md) for setup and qualification evidence.
 
 ## Non-negotiable rules
 
@@ -303,14 +303,15 @@ walkthrough using the checked-in addition and control-flow examples.
 
 The public CLI accepts exactly one workspace-relative `.zry` entrypoint and requires an explicit
 target. That is the complete M1 source set when `--profile` is omitted and the root of one explicit
-relative-import module graph under `--profile control-flow-v1`. These examples use an exact Node.js
-22.22.1 executable:
+relative-import module graph under `--profile control-flow-v1`. Compilation uses the native frontend
+without Node.js or pnpm. The JavaScript/WebAssembly run targets require an exact Node.js 22.22.1
+executable:
 
 ```bash
-cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all --node /absolute/path/to/node
-cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component --node /absolute/path/to/node
+cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all
+cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component
 cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-all --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
-cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2 --node /absolute/path/to/node
+cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2
 ```
 
 Selected M1 builds publish `.mjs`, core `.wasm`, `.o`, or component `.wasm`; `all` remains the
@@ -331,7 +332,7 @@ publication boundary does not broaden the compiler's implemented surface.
 Requirements:
 
 - Rust 1.97.1
-- exact Node.js 22.22.1 for the authenticated frontend and CLI JavaScript/WebAssembly host
+- exact Node.js 22.22.1 for bootstrap differential/conformance checks and CLI JavaScript/WebAssembly execution
 - pnpm 11.18.0
 - Linux `/usr/bin/gcc` targeting `x86_64-linux-gnu` (GCC 12–15) with GNU ld 2.38–2.46 for native
   executable conformance; pure object generation does not require it

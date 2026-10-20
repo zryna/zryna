@@ -85,10 +85,19 @@ fn prepare<'proof, 'installation>(
         std::time::Instant::now,
     )
     .map_err(|error| closure_failure(&error))?;
-    let success =
-        preparation::prepare_closure(&request, closure, run, &|_| admission.revalidate(), &|| {
-            admission.revalidate()
-        })?;
+    let success = preparation::prepare_closure(
+        &crate::pipeline::BuildInputs {
+            workspace_root: request.workspace_root.clone(),
+            entrypoint: request.entrypoint.clone(),
+            artifact_stem: request.artifact_stem.clone(),
+            targets: request.targets,
+        },
+        Some(request.node_runtime.clone()),
+        closure,
+        run,
+        &|_| admission.revalidate(),
+        &|| admission.revalidate(),
+    )?;
     admission.revalidate()?;
     Ok(PreparedInstalledOwnership { success, admission })
 }

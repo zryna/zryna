@@ -7,6 +7,7 @@ use zryna_diagnostics::Diagnostic;
 
 use super::{admission_error, wire};
 
+mod native;
 pub(super) mod providers;
 
 pub(super) const TEXT: [&str; 9] = [
@@ -77,27 +78,24 @@ impl Distribution {
         Ok(value)
     }
 
-    pub(super) fn node_path(&self) -> &'static str {
-        if self.target.triple == "x86_64-pc-windows-msvc" {
-            "runtime/node/node.exe"
-        } else {
-            "runtime/node/bin/node"
-        }
-    }
-
     pub(super) fn cli_path(&self) -> &'static str {
         if self.target.triple == "x86_64-pc-windows-msvc" { "bin/zryna.exe" } else { "bin/zryna" }
     }
 
     fn validate(&self) -> Result<(), Diagnostic> {
-        if self.format != "zryna.distribution.v1"
+        if !["zryna.distribution.v1", native::FORMAT].contains(&self.format.as_str())
             || self.version != env!("CARGO_PKG_VERSION")
             || self.source.repository != "https://github.com/zryna/zryna"
-            || !source_ref_matches_version(&self.source.r#ref, &self.version)
+            || !self.source_ref_matches()
             || !hex(&self.source.commit, 40)
             || !hex(&self.source.tree, 40)
             || self.source.epoch > u64::from(u32::MAX)
-            || self.recipe.format != "zryna.distribution-recipe.v1"
+            || self.recipe.format
+                != if self.is_native_provider() {
+                    native::RECIPE_FORMAT
+                } else {
+                    "zryna.distribution-recipe.v1"
+                }
             || !hex(&self.recipe.sha256, 64)
         {
             return Err(admission_error("distribution source, version or recipe mismatch"));
@@ -108,15 +106,12 @@ impl Distribution {
             return Err(admission_error("complete archive would exceed 512 regular files"));
         }
         let paths = self.files.iter().map(|file| file.path.as_str()).collect::<BTreeSet<_>>();
-        for path in self.provider_paths()?.iter().copied().chain(TEXT).chain([
-            self.node_path(),
-            "metadata/materials.json",
-            "metadata/architecture-receipt.json",
-        ]) {
+        for path in self.required_payloads()? {
             if !paths.contains(path) {
                 return Err(admission_error("required installed payload is missing"));
             }
         }
+        self.validate_native_recipe()?;
         if !paths.iter().any(|path| path.starts_with("licenses/rust/"))
             || paths.contains(self.cli_path())
             || paths.contains("metadata/distribution.json")
@@ -268,7 +263,10 @@ fn role(path: &str, distribution: &Distribution) -> Result<&'static str, Diagnos
     if path == distribution.cli_path() {
         return Ok("cli");
     }
-    if path == distribution.node_path() {
+    if distribution.is_native_provider() {
+        return native::role(path);
+    }
+    if path == distribution.node_path()? {
         return Ok("runtime");
     }
     if distribution.provider_paths()?.contains(&path) {

@@ -297,6 +297,12 @@
       "title": "Memory model direction"
     },
     {
+      "id": "reference/native-provider-migration",
+      "source": "docs/NATIVE_PROVIDER_MIGRATION.md",
+      "path": "documents/reference/native-provider-migration.md",
+      "title": "Native provider migration and installation"
+    },
+    {
       "id": "reference/ownership-runtime-v1",
       "source": "spec/abi/OWNERSHIP_RUNTIME_V1.md",
       "path": "documents/reference/ownership-runtime-v1.md",

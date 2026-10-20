@@ -8,6 +8,7 @@ repository.workspace = true
 
 [features]
 diagnostic-test-support = []
+native-provider-qualification = []
 
 [dependencies]
 cap-fs-ext.workspace = true
@@ -62,3 +63,8 @@ path = "src/server_lifecycle/harness.rs"
 [[test]]
 name = "server_runtime"
 path = "src/server_runtime/harness.rs"
+
+[[test]]
+name = "native_public_ir_parity"
+path = "src/native_public_ir_parity.rs"
+required-features = ["native-provider-qualification"]

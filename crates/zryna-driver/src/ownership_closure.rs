@@ -21,6 +21,8 @@ use crate::{
 const GRAPH_DOMAIN: &[u8] = b"ZRYNA-M3-GRAPH\0";
 
 mod overlay;
+mod provider_budget;
+use provider_budget::{account_provider, register_import_edges};
 mod support;
 pub use overlay::discover_ownership_module_closure_with_overlays;
 pub(crate) use overlay::discover_ownership_module_closure_with_overlays_bounded;
@@ -31,9 +33,9 @@ pub(crate) use support::{
 #[cfg(test)]
 mod tests;
 use support::{
-    account_provider, budget, diagnostic, enforce_time_limit, final_edges, graph_identity, imports,
-    imports_match, invalid_import, invariant, register_portable, reject_cycles,
-    reject_provider_errors, rejected, remaining_with_limit,
+    budget, diagnostic, enforce_time_limit, final_edges, graph_identity, imports, imports_match,
+    invalid_import, invariant, register_portable, reject_cycles, reject_provider_errors, rejected,
+    remaining_with_limit,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -72,6 +74,7 @@ struct ClosureInputs {
     aggregate_bytes: usize,
     provider_bytes: usize,
     provider_calls: usize,
+    analysis_work_units: usize,
 }
 
 /// Driver-owned protocol-v4 source closure used by the internal candidate route.
@@ -201,6 +204,7 @@ where
     let mut aggregate_bytes = 0_usize;
     let mut provider_bytes = 0_usize;
     let mut provider_calls = 0_usize;
+    let analysis_work_units = frontend.analysis_work_units();
     let mut rounds = 0_usize;
     let mut import_count = 0_usize;
 
@@ -228,7 +232,14 @@ where
             });
             stable.insert(path, source);
         }
-        account_provider(&mut provider_calls, &mut provider_bytes, batch_bytes, false)?;
+        account_provider(
+            &mut provider_calls,
+            &mut provider_bytes,
+            batch_bytes,
+            aggregate_bytes,
+            analysis_work_units,
+            false,
+        )?;
         let source_map = SourceMap::build(inputs).map_err(|_| invariant())?;
         session.validate_provider_batch(&source_map).map_err(rejected)?;
         let snapshot = frontend
@@ -272,7 +283,14 @@ where
         frontend,
         started,
         &mut now,
-        ClosureInputs { discovered, edge_ids, aggregate_bytes, provider_bytes, provider_calls },
+        ClosureInputs {
+            discovered,
+            edge_ids,
+            aggregate_bytes,
+            provider_bytes,
+            provider_calls,
+            analysis_work_units,
+        },
         limit,
     )
 }
@@ -303,6 +321,8 @@ where
         &mut inputs.provider_calls,
         &mut inputs.provider_bytes,
         inputs.aggregate_bytes,
+        inputs.aggregate_bytes,
+        inputs.analysis_work_units,
         true,
     )?;
     let sources = SourceMap::build(final_inputs).map_err(|_| invariant())?;
@@ -354,29 +374,6 @@ where
     reject_cycles(&modules, &edges)?;
     let graph_sha256 = graph_identity(&entrypoint, &modules, &edges)?;
     Ok(VerifiedOwnershipModuleClosure { entrypoint, sources, syntax, modules, edges, graph_sha256 })
-}
-
-fn register_import_edges(
-    edges: &mut HashSet<EdgeIdentity>,
-    path: &NormalizedSourcePath,
-    import: &Import,
-) -> Result<(), ModuleClosureError> {
-    for binding in &import.bindings {
-        let identity = EdgeIdentity {
-            importer: path.clone(),
-            specifier: import.specifier.clone(),
-            imported: binding.imported.clone(),
-            local: binding.local.clone(),
-        };
-        if edges.len() >= MAX_MODULE_IMPORT_EDGES || !edges.insert(identity) {
-            return Err(rejected(diagnostic(
-                "ZRYNA-D3301",
-                Some(path),
-                "duplicate or excessive ownership import edge",
-            )));
-        }
-    }
-    Ok(())
 }
 
 fn add(left: usize, right: usize) -> Result<usize, ModuleClosureError> {

@@ -1058,10 +1058,20 @@ fn help_and_required_target_and_node_are_stable() {
     assert_eq!(missing_target.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&missing_target.stderr).contains("--target"));
 
+    let workspace = WorkspaceCase::new();
     let missing_node = zryna()
-        .args(["build", "src/main.zry", "--target", "javascript"])
+        .args([
+            "build",
+            &workspace.source_relative,
+            "--target",
+            "javascript",
+            "--provider",
+            "bootstrap",
+        ])
+        .arg("--root")
+        .arg(&workspace.root)
         .output()
-        .expect("missing-node command must start");
+        .expect("missing compatibility runtime command must start");
     assert_eq!(missing_node.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&missing_node.stderr).contains("--node"));
 }
@@ -2000,6 +2010,8 @@ fn project_mutation_after_frontend_admission_stops_before_target_execution() {
             "src/main.zry",
             "--target",
             "javascript",
+            "--provider",
+            "bootstrap",
             "--name",
             "mutating-run",
             "--export",

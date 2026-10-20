@@ -1,11 +1,10 @@
 //! Default-profile execution over one verified program and retained command proof.
 
 use super::{
-    ArtifactOutputRoot, BuildRequest, CommandFailure, CommandFailureKind, CommandKind,
-    CommandSuccess, NativeProcessLimits, NodeRuntimeCapability, RunInvocation, analyze,
-    commit_prepared, discover_linux_native_toolchain, ensure_absent, failure,
-    native_preparation_failure, preparation_failure, prepare_native_invocation_from_verified,
-    request_error, validate_request,
+    ArtifactOutputRoot, CommandFailure, CommandFailureKind, CommandKind, CommandSuccess,
+    NativeProcessLimits, NodeRuntimeCapability, RunInvocation, analyze, commit_prepared,
+    discover_linux_native_toolchain, ensure_absent, failure, native_preparation_failure,
+    preparation_failure, prepare_native_invocation_from_verified, request_error, validate_request,
 };
 use crate::distribution::{
     InstalledAdmission, InstalledBuildRequest, InstalledCompiler, InstalledProfile,
@@ -16,9 +15,9 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(super) fn finish(
-    request: &BuildRequest,
+    request: &super::BuildInputs,
     run: Option<&RunInvocation>,
-    node: &NodeRuntimeCapability,
+    node: Option<&NodeRuntimeCapability>,
     output_root: &ArtifactOutputRoot,
     final_bundle: &Path,
     source_text: &str,
@@ -28,7 +27,9 @@ pub(super) fn finish(
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
     let mut prepared =
         super::preparation::prepare_selected_guarded(compiled, request.targets, checkpoint)?;
-    node.revalidate().map_err(preparation_failure)?;
+    if let Some(node) = node {
+        node.revalidate().map_err(preparation_failure)?;
+    }
     let program = compiled.program();
     let verified_invocation = run
         .map(|invocation| {
@@ -137,9 +138,9 @@ pub(crate) fn execute_installed(
     let compiled = analyze(&frontend, &sources)?;
     admission.revalidate()?;
     finish(
-        &request,
+        &super::BuildInputs::from(&request),
         invocation.as_ref(),
-        admission.execution().node()?,
+        Some(admission.execution().node()?),
         &output_root,
         &final_bundle,
         &source_text,

@@ -280,6 +280,8 @@ jobs:
           node --test --test-concurrency=1 examples/playground/restricted/daemon/ui-qualification/*.test.mjs
           python3 -B -m unittest discover -s examples/playground/restricted/daemon/cli-parity -p 'test_*.py'
           PYTHONPATH=examples/playground/restricted/daemon/preparation python3 -B -m unittest discover -s examples/playground/restricted/daemon/ui-qualification -p 'test_owner_*.py'
+      - name: Verify current native provider and installation contracts
+        run: node --test tests/native-distribution-v2.test.mjs tests/native-provider-public/registry.test.mjs tests/native-provider-public/worker.test.mjs tests/native-provider-public/workflow.test.mjs tests/native-provider-public/verify-rust-log.test.mjs tests/native-provider-public-install/producer.test.mjs tests/native-provider-public-install/command-h1.test.mjs tests/native-provider-public-install/capture.test.mjs tests/native-provider-public-install/source-ref.test.mjs tests/native-provider-public-install/workflow.test.mjs
       - name: Verify documentation bundle contract
         run: pnpm docs:check
       - name: Verify and package editor client

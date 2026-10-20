@@ -10,11 +10,13 @@ mod package;
 mod profile;
 mod project;
 mod project_filesystem;
+mod provider;
+use provider::{provider_request, render_provider_result};
 mod render;
 mod server;
 mod support;
 
-use cli_paths::{absolute_workspace_path, cli_path_error};
+use cli_paths::absolute_workspace_path;
 use render::{render_cli_failure, render_failure, render_success};
 
 use std::{ffi::OsString, path::PathBuf, process::ExitCode};
@@ -23,11 +25,7 @@ use clap::error::ErrorKind;
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use profile::{CliProfile, CliTarget};
 use zryna_abi::ScalarValue;
-use zryna_diagnostics::Diagnostic;
-use zryna_driver::{
-    BuildRequest, CommandKind, ControlFlowBuildRequest, ControlFlowRunRequest,
-    DataOwnershipBuildRequest, DataOwnershipRunRequest, RunRequest, TargetSelection,
-};
+use zryna_driver::{CommandKind, TargetSelection};
 
 #[derive(Debug, Parser)]
 #[command(name = "zryna", version, about = "Strict Zryna compiler workspace tools")]
@@ -60,6 +58,12 @@ enum Command {
     Support(support::Options),
     /// Run one finite pure-source loopback server and commit its teardown record.
     Serve(server::Options),
+    /// Fixed compiler-owned frontend subprocess; not a source or tool selector.
+    #[command(name = "__native-frontend", hide = true)]
+    NativeFrontend {
+        #[arg(long)]
+        protocol: u32,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -97,12 +101,31 @@ struct CompileOptions {
     /// Portable output stem; defaults to the entrypoint stem.
     #[arg(long)]
     name: Option<String>,
-    /// Absolute direct Node.js 22.22.1 executable.
-    #[arg(long, required = !zryna_driver::distribution::InstalledCompiler::is_distribution_build())]
+    /// Exact frontend mode; omission selects native, except legacy installed packages.
+    #[arg(long, value_enum)]
+    provider: Option<CliProvider>,
+    /// Optional direct Node.js 22.22.1 host for bootstrap or target execution.
+    #[arg(long)]
     node: Option<PathBuf>,
     /// Emit one versioned JSON response.
     #[arg(long)]
     json: bool,
+}
+
+#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+enum CliProvider {
+    Native,
+    Bootstrap,
+    Compare,
+}
+impl From<CliProvider> for zryna_driver::CompilerProvider {
+    fn from(value: CliProvider) -> Self {
+        match value {
+            CliProvider::Native => Self::Native,
+            CliProvider::Bootstrap => Self::Bootstrap,
+            CliProvider::Compare => Self::Compare,
+        }
+    }
 }
 
 #[derive(Clone, Debug, clap::Args)]
@@ -139,6 +162,15 @@ fn main() -> ExitCode {
         Command::Run(options) => run_command(options),
         Command::Serve(options) => server::run(&options),
         Command::Support(options) => support::report(&options),
+        Command::NativeFrontend { protocol } => {
+            match zryna_driver::run_native_frontend_worker(protocol) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(error) => {
+                    eprintln!("{error}");
+                    ExitCode::from(2)
+                }
+            }
+        }
     }
 }
 
@@ -175,30 +207,12 @@ fn run_build(options: CompileOptions) -> ExitCode {
         return installed::execute(options, None);
     }
     let json_mode = options.json;
-    let request = match build_request(options) {
+    let request = match provider_request(options) {
         Ok(request) => request,
-        Err(diagnostic) => {
-            return render_cli_failure(CommandKind::Build, json_mode, 2, &[diagnostic]);
-        }
+        Err(error) => return render_cli_failure(CommandKind::Build, json_mode, 2, &[error]),
     };
-    let result = match request {
-        ProfileBuildRequest::DataOwnershipV1(request) => {
-            return ownership::render(
-                zryna_driver::build_data_ownership_candidate(&request),
-                CommandKind::Build,
-                json_mode,
-            );
-        }
-        ProfileBuildRequest::M1(request) => zryna_driver::build_workspace(&request),
-        ProfileBuildRequest::Project(request) => zryna_driver::build_project(&request),
-        ProfileBuildRequest::ControlFlowV1(request) => {
-            zryna_driver::build_control_flow_workspace(&request)
-        }
-    };
-    match result {
-        Ok(success) => render_success(&success, json_mode),
-        Err(failure) => render_failure(CommandKind::Build, json_mode, &failure),
-    }
+    let result = zryna_driver::build_with_provider(&request);
+    render_provider_result(result, CommandKind::Build, json_mode)
 }
 
 fn run_command(options: RunOptions) -> ExitCode {
@@ -209,124 +223,12 @@ fn run_command(options: RunOptions) -> ExitCode {
         return installed::execute(options.compile, Some((options.export, options.arguments)));
     }
     let json_mode = options.compile.json;
-    let export = options.export;
-    let arguments = options.arguments;
-    let build = match build_request(options.compile) {
+    let request = match provider_request(options.compile) {
         Ok(request) => request,
-        Err(diagnostic) => {
-            return render_cli_failure(CommandKind::Run, json_mode, 2, &[diagnostic]);
-        }
+        Err(error) => return render_cli_failure(CommandKind::Run, json_mode, 2, &[error]),
     };
-    let result = match build {
-        ProfileBuildRequest::DataOwnershipV1(build) => {
-            return ownership::render(
-                zryna_driver::run_data_ownership_candidate(DataOwnershipRunRequest {
-                    build,
-                    logical_export: export,
-                    arguments,
-                }),
-                CommandKind::Run,
-                json_mode,
-            );
-        }
-        ProfileBuildRequest::M1(build) => {
-            zryna_driver::run_workspace(RunRequest { build, logical_export: export, arguments })
-        }
-        ProfileBuildRequest::Project(build) => {
-            zryna_driver::run_project(zryna_driver::ProjectRunRequest {
-                build,
-                logical_export: export,
-                arguments,
-            })
-        }
-        ProfileBuildRequest::ControlFlowV1(build) => {
-            zryna_driver::run_control_flow_workspace(ControlFlowRunRequest {
-                build,
-                logical_export: export,
-                arguments,
-            })
-        }
-    };
-    match result {
-        Ok(success) => render_success(&success, json_mode),
-        Err(failure) => render_failure(CommandKind::Run, json_mode, &failure),
-    }
-}
-
-enum ProfileBuildRequest {
-    M1(BuildRequest),
-    Project(zryna_driver::ProjectBuildRequest),
-    ControlFlowV1(ControlFlowBuildRequest),
-    DataOwnershipV1(DataOwnershipBuildRequest),
-}
-
-fn build_request(options: CompileOptions) -> Result<ProfileBuildRequest, Diagnostic> {
-    let root = absolute_workspace_path(&options.root.unwrap_or_else(|| PathBuf::from(".")))?;
-    let project_root = options.project_root.as_ref().map(absolute_workspace_path).transpose()?;
-    let node = options.node.ok_or_else(cli_path_error)?;
-    if !node.is_absolute() {
-        return Err(cli_path_error());
-    }
-    let stem = options.name.unwrap_or_else(|| profile::default_stem(&options.entrypoint));
-    let targets = if options.profile == Some(CliProfile::BrowserComponentV1) {
-        if options.target != CliTarget::Component {
-            return Err(Diagnostic::error(
-                "ZRYNA-C1012",
-                None,
-                "browser-component-v1 requires the component build target",
-                "use build --profile browser-component-v1 --target component",
-            ));
-        }
-        TargetSelection::BrowserComponent
-    } else {
-        options.target.ordinary()?
-    };
-    if let Some(project_root) = project_root {
-        if options.profile.is_some() {
-            return Err(Diagnostic::error(
-                "ZRYNA-C2001",
-                None,
-                "standalone projects currently require the manifest-declared i32-v1 profile",
-                "omit --profile when using --project-root",
-            ));
-        }
-        return Ok(ProfileBuildRequest::Project(zryna_driver::ProjectBuildRequest {
-            compiler_root: root,
-            project_root,
-            entrypoint: options.entrypoint,
-            artifact_stem: stem,
-            targets,
-            node_runtime: node,
-        }));
-    }
-    Ok(match options.profile {
-        Some(CliProfile::BrowserComponentV1) | None => ProfileBuildRequest::M1(BuildRequest {
-            workspace_root: root,
-            entrypoint: options.entrypoint,
-            artifact_stem: stem,
-            targets,
-            node_runtime: node,
-        }),
-        Some(CliProfile::DataOwnershipV1) => {
-            ProfileBuildRequest::DataOwnershipV1(DataOwnershipBuildRequest {
-                workspace_root: root,
-                entrypoint: options.entrypoint,
-                artifact_stem: stem,
-                targets,
-                node_runtime: node,
-            })
-        }
-        Some(CliProfile::ControlFlowV1) => {
-            ProfileBuildRequest::ControlFlowV1(ControlFlowBuildRequest {
-                workspace_root: root,
-                entrypoint: options.entrypoint,
-                artifact_stem: stem,
-                targets,
-                node_runtime: node,
-            })
-        }
-        Some(CliProfile::CommandH1V1) => return Err(command_h1::configuration_error()),
-    })
+    let result = zryna_driver::run_with_provider(&request, options.export, options.arguments);
+    render_provider_result(result, CommandKind::Run, json_mode)
 }
 
 #[cfg(test)]

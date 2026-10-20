@@ -59,7 +59,28 @@ impl InstalledCompiler {
         if project.starts_with(&installation) || installation.starts_with(&project) {
             return Err(fail(admission_error("command project must be outside the installation")));
         }
-        let execution = InstalledExecution::prepare(self)?;
+        let legacy =
+            (!self.is_native_provider()).then(|| InstalledExecution::prepare(self)).transpose()?;
+        let native = self
+            .is_native_provider()
+            .then(|| {
+                crate::provider_api::ProviderSession::prepare_syntax(
+                    &self.root,
+                    crate::CompilerProvider::Native,
+                    None,
+                )
+            })
+            .transpose()?;
+        let revalidate = || {
+            self.revalidate().map_err(fail)?;
+            if let Some(execution) = &legacy {
+                execution.revalidate()?;
+            }
+            if let Some(execution) = &native {
+                execution.revalidate()?;
+            }
+            Ok(())
+        };
         // Create outputs before retaining the source directory's entry snapshot.
         let output =
             ArtifactOutputRoot::prepare_for_workspace(&request.project_root).map_err(fail)?;
@@ -70,11 +91,16 @@ impl InstalledCompiler {
             text: source.text,
         }])
         .map_err(|error| fail(zryna_diagnostics::Diagnostic::from_source_error(&error)))?;
-        let frontend = execution.frontend_v4()?;
+        let frontend: Box<dyn zryna_frontend::VerifiedFrontendProviderV4> = match (&legacy, &native)
+        {
+            (Some(execution), None) => Box::new(execution.frontend_v4()?),
+            (None, Some(execution)) => execution.frontend_v4()?,
+            _ => return Err(fail(admission_error("command provider authority is ambiguous"))),
+        };
         session.validate_provider_batch(&sources).map_err(fail)?;
-        execution.revalidate()?;
+        revalidate()?;
         let prepared = prepare_approved_request(
-            &frontend,
+            &*frontend,
             &sources,
             &zryna_backend_webassembly::pinned_wit_sources(),
             request.grant_file.as_deref(),
@@ -82,7 +108,7 @@ impl InstalledCompiler {
         .map_err(source_failure)?;
         publish_command_h1(&output, &request.artifact_stem, prepared, &mut || {
             session.revalidate_all().map_err(fail)?;
-            execution.revalidate()
+            revalidate()
         })
     }
 }

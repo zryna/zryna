@@ -21,6 +21,8 @@ use crate::{
 
 #[cfg(unix)]
 mod unix_process;
+
+mod error;
 #[cfg(unix)]
 use unix_process::spawn_worker;
 
@@ -818,6 +820,14 @@ pub struct WorkerFrontendV3 {
 
 /// Provider abstraction whose only output is source-map-verified protocol-v3 syntax.
 pub trait VerifiedFrontendProviderV3: Send + Sync {
+    /// Returns the number of physical analyses charged for one logical analysis.
+    ///
+    /// The owning source-closure budget must reject zero and checked-arithmetic overflow.
+    /// Ordinary providers perform one analysis; explicit comparison performs two.
+    fn analysis_work_units(&self) -> usize {
+        1
+    }
+
     /// Returns the minimum caller-supplied timeout required by this provider.
     fn minimum_analysis_timeout(&self) -> Duration {
         Duration::ZERO
@@ -993,6 +1003,14 @@ pub struct WorkerFrontendV4 {
 
 /// Provider abstraction whose only output is source-map-verified protocol-v4 syntax.
 pub trait VerifiedFrontendProviderV4: Send + Sync {
+    /// Returns the number of physical analyses charged for one logical analysis.
+    ///
+    /// The owning source-closure budget must reject zero and checked-arithmetic overflow.
+    /// Ordinary providers perform one analysis; explicit comparison performs two.
+    fn analysis_work_units(&self) -> usize {
+        1
+    }
+
     /// Returns the minimum caller-supplied timeout required by this provider.
     fn minimum_analysis_timeout(&self) -> Duration {
         Duration::ZERO
@@ -1234,34 +1252,6 @@ impl WorkerFailure {
 pub struct WorkerError {
     failure: WorkerFailure,
     diagnostics: Vec<Diagnostic>,
-}
-
-impl WorkerError {
-    const fn new(failure: WorkerFailure) -> Self {
-        Self { failure, diagnostics: Vec::new() }
-    }
-
-    fn snapshot_verification(diagnostics: Vec<Diagnostic>) -> Self {
-        Self { failure: WorkerFailure::SnapshotVerification, diagnostics }
-    }
-
-    /// Returns the stable failure category.
-    #[must_use]
-    pub const fn failure(&self) -> WorkerFailure {
-        self.failure
-    }
-
-    /// Returns the stable diagnostic code.
-    #[must_use]
-    pub const fn code(&self) -> &'static str {
-        self.failure.code()
-    }
-
-    /// Returns bounded structural diagnostics when snapshot verification failed.
-    #[must_use]
-    pub fn diagnostics(&self) -> &[Diagnostic] {
-        &self.diagnostics
-    }
 }
 
 impl fmt::Display for WorkerError {

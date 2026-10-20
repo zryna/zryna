@@ -1,0 +1,187 @@
+name: Current native provider qualification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/native-provider-public.yml'
+      - 'apps/zryna/**'
+      - 'crates/**'
+      - 'adapters/typescript-6/**'
+      - 'scripts/run-native-provider-public.mjs'
+      - 'tests/native-provider-public/**'
+      - 'tests/m1-conformance-v1.json'
+      - 'tests/m2-conformance-v1.json'
+      - 'tests/m3-conformance-v1.json'
+      - 'tests/m2-fixtures/**'
+      - 'tests/m3-fixtures/**'
+      - 'examples/universal/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-provider-public-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_BUILD_JOBS: 2
+  RUST_TEST_THREADS: 2
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CARGO_PROFILE_DEV_INCREMENTAL: false
+  ZRYNA_STRUCTURE_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before || github.sha }}
+
+jobs:
+  candidate:
+    name: current native provider (${{ matrix.os }})
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the actual candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+      - name: Bind clean source and explicit pinned runtime
+        shell: pwsh
+        env:
+          EXPECTED_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP 'native-provider-public'
+          New-Item -ItemType Directory -Path $evidence -ErrorAction Stop | Out-Null
+          $head = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $head -ne $env:EXPECTED_CANDIDATE) { throw 'Candidate checkout differs' }
+          $dirty = git status --porcelain
+          if ($LASTEXITCODE -ne 0 -or $dirty) { throw 'Candidate checkout is dirty' }
+          $nodePath = node -p process.execPath
+          if ($LASTEXITCODE -ne 0) { throw 'Node path resolution failed' }
+          "ZRYNA_NODE=$nodePath" >> $env:GITHUB_ENV
+          "ZRYNA_TEST_NODE=$nodePath" >> $env:GITHUB_ENV
+          git show --no-patch --format=fuller HEAD > (Join-Path $evidence 'candidate.txt')
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate evidence failed' }
+      - name: Install exact locked bootstrap dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Fetch exact locked Rust dependencies
+        run: cargo fetch --locked
+      - name: Validate frozen registry, transport controls and workflow contract
+        run: node --test tests/native-provider-public/registry.test.mjs tests/native-provider-public/worker.test.mjs tests/native-provider-public/workflow.test.mjs tests/native-provider-public/verify-rust-log.test.mjs
+      - name: Check source architecture structure
+        run: node scripts/check-repository-structure.mjs
+      - name: Build current ordinary compiler
+        run: cargo build --locked -p zryna
+      - name: Run actual source architecture authority
+        shell: pwsh
+        run: |
+          $suffix = if ($IsWindows) { '.exe' } else { '' }
+          $cli = (Resolve-Path "target/debug/zryna$suffix").Path
+          & $cli architecture check --root "$env:GITHUB_WORKSPACE" --json 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/architecture.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Architecture authority rejected candidate' }
+      - name: Run native worker framing and verifier controls
+        shell: pwsh
+        run: |
+          cargo test --locked -p zryna-frontend --lib native_worker::tests:: -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/native-worker-tests.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Native worker controls failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/native-worker-tests.log" 9
+          if ($LASTEXITCODE -ne 0) { throw 'Required Rust target executed no complete nonempty census' }
+          cargo test --locked -p zryna-frontend --test native_parser_v4_corpus -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/native-corpus-verifier.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Original corpus verifier failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/native-corpus-verifier.log" 1
+          if ($LASTEXITCODE -ne 0) { throw 'Required Rust target executed no complete nonempty census' }
+      - name: Run actual diagnostic, span and resource boundary differential
+        shell: pwsh
+        run: |
+          cargo test --locked -p zryna-frontend --test native_parser_parity -- --include-ignored --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/diagnostic-boundaries.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Live diagnostic or resource differential failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/diagnostic-boundaries.log" 1
+          if ($LASTEXITCODE -ne 0) { throw 'Required Rust target executed no complete nonempty census' }
+      - name: Run source-bound IR and backend differential controls
+        shell: pwsh
+        run: |
+          cargo test --locked -p zryna-driver --test native_activation_parity -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/verified-ir-controls.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Verified IR differential controls failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/verified-ir-controls.log" 6
+          if ($LASTEXITCODE -ne 0) { throw 'Required Rust target executed no complete nonempty census' }
+          cargo test --locked -p zryna-backend-webassembly --lib legacy_frontier_tests:: -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/current-clone-prefix-owners.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Current clone-prefix owners failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/current-clone-prefix-owners.log" 2
+          if ($LASTEXITCODE -ne 0) { throw 'Required Rust target executed no complete nonempty census' }
+      - name: Run complete frozen verified IR parity
+        shell: pwsh
+        run: |
+          $suffix = if ($IsWindows) { '.exe' } else { '' }
+          $env:ZRYNA_NATIVE_CLI = (Resolve-Path "target/debug/zryna$suffix").Path
+          cargo test --locked -p zryna-driver --features native-provider-qualification --test native_public_ir_parity -- --test-threads=1 --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/verified-ir-full-corpus.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Complete frozen verified IR parity failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/verified-ir-full-corpus.log" 4
+          if ($LASTEXITCODE -ne 0) { throw 'Complete frozen IR target did not execute' }
+      - name: Run provider identity and physical comparison budget controls
+        shell: pwsh
+        run: |
+          foreach ($filter in @('native_provider::tests::', 'module_closure::tests::', 'module_closure_tests::provider_work::', 'ownership_closure::tests::')) {
+            $stem = $filter.Replace('::', '-')
+            $log = "$env:RUNNER_TEMP/native-provider-public/$stem.log"
+            cargo test --locked -p zryna-driver --lib $filter -- --nocapture 2>&1 | Tee-Object -FilePath $log
+            if ($LASTEXITCODE -ne 0) { throw "Provider or physical budget gate failed: $filter" }
+            node tests/native-provider-public/verify-rust-log.mjs "$log" 1
+            if ($LASTEXITCODE -ne 0) { throw "Provider or budget filter executed zero cases: $filter" }
+          }
+      - name: Run ordinary public runtime corpus and exact cleanup parity
+        shell: pwsh
+        run: |
+          cargo test --locked -p zryna --test m3_public -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/public-m3-runtime.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Public runtime corpus or exact cleanup parity failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/public-m3-runtime.log" 6
+          if ($LASTEXITCODE -ne 0) { throw 'Public runtime corpus did not execute' }
+          cargo test --locked -p zryna --test m2_conformance -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/public-m2-runtime.log"
+          if ($LASTEXITCODE -ne 0) { throw 'M2 public runtime corpus failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/public-m2-runtime.log" 4
+          if ($LASTEXITCODE -ne 0) { throw 'M2 public runtime corpus did not execute' }
+          cargo test --locked -p zryna --test cli m1_ -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/public-m1-runtime.log"
+          if ($LASTEXITCODE -ne 0) { throw 'M1 public runtime corpus failed' }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/public-m1-runtime.log" 4
+          if ($LASTEXITCODE -ne 0) { throw 'M1 public runtime corpus did not execute' }
+      - name: Run all original logical and physical faults through both frontends
+        shell: pwsh
+        run: |
+          cargo test --locked -p zryna-driver --lib ownership_commands::conformance::native_fault_parity:: -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/native-provider-public/current-fault-parity.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Current native/bootstrap exact fault parity failed' }
+          $required = if ($IsWindows) { 1 } else { 2 }
+          node tests/native-provider-public/verify-rust-log.mjs "$env:RUNNER_TEMP/native-provider-public/current-fault-parity.log" $required
+          if ($LASTEXITCODE -ne 0) { throw 'Current fault parity tests did not execute' }
+      - name: Compare every frozen worker and public BUILD root
+        shell: pwsh
+        run: |
+          $suffix = if ($IsWindows) { '.exe' } else { '' }
+          $cli = (Resolve-Path "target/debug/zryna$suffix").Path
+          node scripts/run-native-provider-public.mjs --cli "$cli" --node "$env:ZRYNA_NODE" --output "$env:RUNNER_TEMP/native-provider-public/source-comparison" --lane all
+          if ($LASTEXITCODE -ne 0) { throw 'Complete current source differential failed' }
+      - name: Preserve actual candidate commands, outputs and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-provider-public-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/native-provider-public
+          if-no-files-found: error
+          retention-days: 7
