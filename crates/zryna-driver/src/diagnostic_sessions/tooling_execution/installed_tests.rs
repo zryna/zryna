@@ -10,11 +10,12 @@ static NEXT: AtomicU64 = AtomicU64::new(0);
 
 pub(super) fn legacy_worker() -> Vec<u8> {
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let output = std::process::Command::new("git")
-        .current_dir(source)
-        .args(["show", "v0.2.3:adapters/typescript-6/src/worker-v4.mjs"])
-        .output()
-        .expect("read historical repository source");
+    let output = zryna_process::output(
+        std::process::Command::new("git")
+            .current_dir(source)
+            .args(["show", "v0.2.3:adapters/typescript-6/src/worker-v4.mjs"]),
+    )
+    .expect("read historical repository source");
     assert!(output.status.success(), "historical v0.2.3 source must be available");
     assert_eq!(output.stdout.len(), 73_118);
     output.stdout
@@ -55,13 +56,13 @@ fn installed_legacy_v4_pin_preserves_the_exact_nine_file_stage() {
     assert!(!stage.working_directory().join("v4").exists());
     assert_eq!(fs::read(stage.worker_v4()).expect("historical bytes"), legacy);
     assert_eq!(stage_file_count(stage.working_directory()), 9);
-    let mut child = std::process::Command::new("node")
+    let mut command = std::process::Command::new("node");
+    command
         .arg(stage.worker_v4())
         .current_dir(stage.working_directory())
         .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .expect("historical staged worker");
+        .stdout(std::process::Stdio::piped());
+    let mut child = zryna_process::spawn(|| command.spawn()).expect("historical staged worker");
     std::io::Write::write_all(
         &mut child.stdin.take().expect("worker input"),
         b"{\"id\":1,\"method\":\"handshake\"}\n",
