@@ -1649,8 +1649,8 @@
     },
     {
       "path": "crates/zryna-driver/src/server_transport/listener_identity.rs",
-      "bytes": 10735,
-      "sha256": "dbb1c366bd6d5030a19776a72e2595d50883f379b2444466cc2805ecd2e978f8"
+      "bytes": 10688,
+      "sha256": "aed1e2a0c065748e5d91f3de95b2995f6ac0916ff7c44d5898019fdf8cd0cda7"
     },
     {
       "path": "crates/zryna-driver/src/server_transport/mod.rs",
