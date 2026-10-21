@@ -46,6 +46,15 @@ impl Identity {
     }
 
     pub(super) fn assert_gone(&self) {
+        // The owning worker has joined, but a concurrent fork can still hold its
+        // inherited listener until exec applies CLOEXEC. Drain existing spawns
+        // before the bounded namespace-wide probe; later spawns cannot inherit
+        // the already-closed parent FD. Release before any assertion can panic.
+        #[cfg(target_arch = "x86_64")]
+        drop(
+            crate::process_spawn::snapshot_writer()
+                .expect("listener closure spawn synchronization"),
+        );
         let deadline = Instant::now() + PROBE_TIME;
         assert_eq!(std::process::id(), self.process, "original listener owning process");
         let rows = snapshot(deadline);
