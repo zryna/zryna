@@ -50,6 +50,9 @@ impl super::Distribution {
     pub(in super::super) fn provider_paths(
         &self,
     ) -> Result<&'static [&'static str], zryna_diagnostics::Diagnostic> {
+        if self.is_native_provider() {
+            return Ok(&[]);
+        }
         if !super::source_ref_matches_version(&self.source.r#ref, &self.version) {
             return Err(super::admission_error("distribution source, version or recipe mismatch"));
         }

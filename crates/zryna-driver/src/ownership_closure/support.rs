@@ -1,3 +1,6 @@
+#[cfg(test)]
+pub(super) use super::provider_budget::account_provider;
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     time::{Duration, Instant},
@@ -9,8 +12,8 @@ use zryna_frontend::syntax_v4;
 use zryna_source::{NormalizedSourcePath, SourceMap, Span, UntrustedSpan};
 
 use super::{
-    DiscoveredSource, GRAPH_DOMAIN, Import, ImportBinding, MAX_MODULE_PROVIDER_CALLS,
-    MAX_MODULE_PROVIDER_SOURCE_BYTES, ModuleClosureError, ModuleEdge, ModuleRecord, add,
+    DiscoveredSource, GRAPH_DOMAIN, Import, ImportBinding, ModuleClosureError, ModuleEdge,
+    ModuleRecord, add,
 };
 
 pub(super) fn imports(
@@ -234,23 +237,6 @@ pub(crate) fn graph_identity(
     edges: &[ModuleEdge],
 ) -> Result<[u8; 32], ModuleClosureError> {
     crate::source_graph_identity::hash(GRAPH_DOMAIN, entrypoint, modules, edges, invariant)
-}
-
-pub(super) fn account_provider(
-    calls: &mut usize,
-    bytes: &mut usize,
-    input_bytes: usize,
-    final_call: bool,
-) -> Result<(), ModuleClosureError> {
-    *calls = add(*calls, 1)?;
-    *bytes = add(*bytes, input_bytes)?;
-    if *bytes > MAX_MODULE_PROVIDER_SOURCE_BYTES
-        || *calls > MAX_MODULE_PROVIDER_CALLS
-        || (!final_call && *calls == MAX_MODULE_PROVIDER_CALLS)
-    {
-        return Err(budget("ownership module discovery exceeded its provider budget"));
-    }
-    Ok(())
 }
 
 pub(super) fn remaining_with_limit(

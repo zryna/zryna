@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 use zryna_source::NormalizedSourcePath;
 
 pub(super) fn validate_selection(
-    request: &ServerRunRequest,
+    request: &ServerRunRequest<Option<PathBuf>>,
 ) -> Result<NormalizedSourcePath, CommandFailure> {
     if !request.workspace_root.is_absolute()
-        || !request.node_runtime.is_absolute()
+        || request.node_runtime.as_ref().is_some_and(|path| !path.is_absolute())
         || !request.configuration.is_absolute()
         || !request.listener_approval.is_absolute()
         || request.export.is_empty()
@@ -44,7 +44,7 @@ pub(super) fn validate_selection(
 }
 
 pub(super) fn prepare_output(
-    request: &ServerRunRequest,
+    request: &ServerRunRequest<Option<PathBuf>>,
 ) -> Result<(ArtifactOutputRoot, PathBuf), CommandFailure> {
     let output = ArtifactOutputRoot::prepare_for_workspace(&request.workspace_root)
         .map_err(|_| failure("ZRYNA-C4205", "Server output root could not be retained."))?;

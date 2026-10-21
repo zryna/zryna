@@ -103,7 +103,7 @@ impl InstalledCompiler {
 
     pub(crate) fn runtime(&self) -> Result<crate::runtime::NodeRuntimeCapability, Diagnostic> {
         self.revalidate()?;
-        let path = self.distribution.node_path();
+        let path = self.distribution.node_path()?;
         let expected = crate::runtime::ExpectedRuntime {
             sha256: self.tree.digest(path)?.to_owned(),
             size: self.tree.size(path)?,

@@ -6,7 +6,7 @@ use zryna_diagnostics::Diagnostic;
 use zryna_driver::{
     CommandH1Outcome, CommandH1RunRequest, CommandH1RunReturn, CommandH1Teardown, CommandKind,
     distribution::{InstalledCommandH1Request, InstalledCompiler},
-    run_command_h1_workspace,
+    run_command_h1_with_provider,
 };
 
 pub(super) fn selected(options: &CompileOptions) -> bool {
@@ -22,7 +22,7 @@ pub(super) fn configuration_error() -> Diagnostic {
     )
 }
 
-fn request(options: &RunOptions) -> Result<CommandH1RunRequest, Diagnostic> {
+fn request(options: &RunOptions) -> Result<CommandH1RunRequest<Option<PathBuf>>, Diagnostic> {
     let compile = &options.compile;
     if compile.profile != Some(CliProfile::CommandH1V1)
         || compile.target != CliTarget::WasiCommand
@@ -35,8 +35,10 @@ fn request(options: &RunOptions) -> Result<CommandH1RunRequest, Diagnostic> {
     }
     let root =
         absolute_workspace_path(&compile.root.clone().unwrap_or_else(|| PathBuf::from(".")))?;
-    let node = compile.node.clone().ok_or_else(configuration_error)?;
-    if !node.is_absolute() || options.grant_file.as_ref().is_some_and(|path| !path.is_absolute()) {
+    let node = compile.node.clone();
+    if node.as_ref().is_some_and(|path| !path.is_absolute())
+        || options.grant_file.as_ref().is_some_and(|path| !path.is_absolute())
+    {
         return Err(configuration_error());
     }
     Ok(CommandH1RunRequest {
@@ -79,15 +81,37 @@ fn installed_request(options: &RunOptions) -> Result<InstalledCommandH1Request, 
 pub(super) fn run(options: &RunOptions) -> ExitCode {
     let prepared = if InstalledCompiler::is_distribution_build() {
         installed_request(options).and_then(|request| {
-            InstalledCompiler::capture_current().map(|installation| {
+            InstalledCompiler::capture_current().and_then(|installation| {
                 let stem = request.artifact_stem.clone();
-                (stem, installation.run_command_h1(&request))
+                let requested = options.compile.provider.map(zryna_driver::CompilerProvider::from);
+                let allowed = match requested {
+                    None => true,
+                    Some(zryna_driver::CompilerProvider::Native) => {
+                        installation.is_native_provider()
+                    }
+                    Some(zryna_driver::CompilerProvider::Bootstrap) => {
+                        !installation.is_native_provider()
+                    }
+                    Some(zryna_driver::CompilerProvider::Compare) => false,
+                };
+                let result = if allowed {
+                    installation.run_command_h1(&request)
+                } else {
+                    return Err(configuration_error());
+                };
+                Ok((stem, result))
             })
         })
     } else {
         request(options).map(|request| {
             let stem = request.artifact_stem.clone();
-            (stem, run_command_h1_workspace(&request))
+            (
+                stem,
+                run_command_h1_with_provider(
+                    &request,
+                    options.compile.provider.map(Into::into).unwrap_or_default(),
+                ),
+            )
         })
     };
     let (stem, result) = match prepared {

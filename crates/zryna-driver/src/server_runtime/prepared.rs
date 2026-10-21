@@ -40,7 +40,7 @@ pub(crate) struct Preparation<'a> {
 
 impl Prepared {
     #[cfg(test)]
-    pub(crate) fn new<Provider: VerifiedFrontendProvider>(
+    pub(crate) fn new<Provider: VerifiedFrontendProvider + ?Sized>(
         provider: &Provider,
         sources: SourceMap,
         preparation: Preparation<'_>,
@@ -49,7 +49,7 @@ impl Prepared {
         Self::prepare(provider, sources, preparation, observation, false)
     }
 
-    pub(crate) fn new_public<Provider: VerifiedFrontendProvider>(
+    pub(crate) fn new_public<Provider: VerifiedFrontendProvider + ?Sized>(
         provider: &Provider,
         sources: SourceMap,
         preparation: Preparation<'_>,
@@ -58,7 +58,7 @@ impl Prepared {
         Self::prepare(provider, sources, preparation, observation, true)
     }
 
-    fn prepare<Provider: VerifiedFrontendProvider>(
+    fn prepare<Provider: VerifiedFrontendProvider + ?Sized>(
         provider: &Provider,
         sources: SourceMap,
         preparation: Preparation<'_>,

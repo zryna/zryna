@@ -2,12 +2,40 @@ use super::{CliProfile, Command, parse_cli_from, profile};
 use zryna_abi::ScalarValue;
 
 #[test]
-fn target_and_node_are_required() {
-    let error = parse_cli_from(["zryna", "build", "src/main.zry"])
-        .expect_err("target and node must be required");
+fn provider_selection_preserves_the_existing_source_project_profile_boundary() {
+    for profile in ["control-flow-v1", "data-ownership-v1", "browser-component-v1"] {
+        let cli = parse_cli_from([
+            "zryna",
+            "build",
+            "src/main.zry",
+            "--target",
+            "javascript",
+            "--project-root",
+            "unused-project",
+            "--profile",
+            profile,
+        ])
+        .expect("exact existing flags");
+        let Command::Build(options) = cli.command else { panic!("build") };
+        let diagnostic = super::provider_request(options).expect_err("no package expansion");
+        assert_eq!(diagnostic.code(), "ZRYNA-C2001");
+    }
+}
+
+#[test]
+fn target_is_required_but_native_compilation_has_no_node_requirement() {
+    let error =
+        parse_cli_from(["zryna", "build", "src/main.zry"]).expect_err("target must be required");
     let rendered = error.to_string();
     assert!(rendered.contains("--target"));
-    assert!(rendered.contains("--node"));
+    assert!(!rendered.contains("--node <NODE>"));
+    let native = parse_cli_from(["zryna", "build", "src/main.zry", "--target", "webassembly"])
+        .expect("native compilation parses without Node");
+    let Command::Build(options) = native.command else {
+        panic!("build");
+    };
+    assert!(options.node.is_none());
+    assert!(options.provider.is_none());
 }
 
 #[test]

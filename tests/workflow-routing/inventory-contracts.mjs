@@ -84,7 +84,8 @@ export function registerWorkflowInventoryContracts({ workflow, root, ci, documen
     const names = readdirSync(resolve(root, '.github/workflows')).sort();
     assert.deepEqual(names, [
       'browser-conformance.yml', 'ci.yml', 'documentation.yml', 'installed-command-h1.yml',
-      'm6-installed-editor.yml', 'native-provider-activation.yml', 'playground-compiler-release.yml', 'portable-setup.yml',
+      'm6-installed-editor.yml', 'native-provider-activation.yml', 'native-provider-install.yml',
+      'native-provider-public.yml', 'playground-compiler-release.yml', 'portable-setup.yml',
       'release-production-candidate.yml',
       'release-qualification.yml', 'release.yml',
     ]);

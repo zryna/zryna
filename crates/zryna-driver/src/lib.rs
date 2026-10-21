@@ -35,6 +35,7 @@ mod module_closure;
 #[cfg(test)]
 mod module_closure_tests;
 mod native;
+mod native_provider;
 mod ownership_api;
 mod ownership_closure;
 mod ownership_commands;
@@ -50,6 +51,7 @@ mod pipeline_runtime;
 mod process_spawn;
 mod profile_composition;
 mod project;
+mod provider_api;
 mod restricted_browser;
 mod runtime;
 mod scalar_adapter_interface;
@@ -78,7 +80,8 @@ pub use command_h1_runtime::{
     PreparedCommandH1, decode_command_h1_manifest, prepare_command_h1,
 };
 pub use command_h1_workspace::{
-    CommandH1RunRequest, PublishedCommandH1Bundle, run_command_h1_workspace,
+    CommandH1RunRequest, PublishedCommandH1Bundle, run_command_h1_with_provider,
+    run_command_h1_workspace,
 };
 pub use command_runtime::{CommandHostPolicy, PreparedCommand, prepare_command_self_check};
 pub use javascript::{
@@ -151,7 +154,8 @@ use server_lifecycle::{Input, Limits};
 use server_runtime::test_support::{Resource, attach, input, limits};
 pub use server_workspace::{
     ClockServerRunRequest, PublishedServerBundle, ServerReadiness, ServerRunRequest,
-    serve_clock_workspace, serve_workspace,
+    serve_clock_workspace, serve_clock_workspace_with_provider, serve_workspace,
+    serve_workspace_with_provider,
 };
 pub use source_api::{DualTargetArtifacts, SourceToIrError, SourceToIrSuccess};
 pub use webassembly::{
@@ -266,3 +270,25 @@ mod owned_sanitizer_runtime_fixture;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 #[doc(hidden)]
 pub use owned_sanitizer_runtime_fixture::m5_owned_sanitizer_runtime;
+
+pub use native_provider::NativeProviderCapability;
+
+pub use provider_api::{
+    CompilationProfile, CompilationSource, CompilerProvider, ProviderBuildRequest,
+    ProviderCommandSuccess, build_with_provider, run_with_provider,
+};
+
+/// Serves exactly one fixed native-frontend handshake and source request.
+///
+/// # Errors
+/// Rejects unsupported protocol versions, malformed framing and bounded source failures.
+pub fn run_native_frontend_worker(protocol: u32) -> Result<(), Diagnostic> {
+    zryna_frontend::native_worker::run_native_worker_stdio(protocol).map_err(|error| {
+        Diagnostic::error(
+            "ZRYNA-F1107",
+            None,
+            error.to_string(),
+            "use the compiler-owned native frontend transport",
+        )
+    })
+}

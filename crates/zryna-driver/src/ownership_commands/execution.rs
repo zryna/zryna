@@ -42,7 +42,7 @@ impl<'program> PreparedRun<'program> {
 
     pub(super) fn execute(
         &self,
-        node: &NodeRuntimeCapability,
+        node: Option<&NodeRuntimeCapability>,
         transaction: &Transaction,
         output: &ArtifactOutputRoot,
         checkpoint: &dyn Fn() -> Result<(), CommandFailure>,
@@ -58,7 +58,7 @@ impl<'program> PreparedRun<'program> {
                 self.fault,
             )?;
             let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
-            let frame = node
+            let frame = crate::pipeline::require_target_runtime(node)?
                 .run_ownership_javascript(&harness_path, transaction.path())
                 .map_err(execution_diagnostic)?;
             results.push(observation::decode(
@@ -70,7 +70,7 @@ impl<'program> PreparedRun<'program> {
         if let Some(artifact) = artifacts.webassembly() {
             checkpoint()?;
             let harness = observation::webassembly(&self.invocation, self.fault)?;
-            let frame = node
+            let frame = crate::pipeline::require_target_runtime(node)?
                 .run_ownership_webassembly(&harness, artifact.bytes(), transaction.path())
                 .map_err(execution_diagnostic)?;
             results.push(observation::decode(
@@ -94,7 +94,9 @@ impl<'program> PreparedRun<'program> {
                 OwnershipTarget::Native,
             )?);
         }
-        node.revalidate().map_err(execution_diagnostic)?;
+        if let Some(node) = node {
+            node.revalidate().map_err(execution_diagnostic)?;
+        }
         checkpoint()?;
         Ok(results)
     }

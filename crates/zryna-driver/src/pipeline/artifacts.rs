@@ -1,13 +1,13 @@
 //! Exact target artifact inventory staged by the atomic command transaction.
 
 use super::{
-    BuildRequest, CommandFailure, CommandKind, ManifestTarget, PreparedArtifacts,
+    BuildInputs, CommandFailure, CommandKind, ManifestTarget, PreparedArtifacts,
     PublishedTargetArtifact, TargetSelection, Transaction, request_error,
 };
 
 pub(super) fn write_prepared_artifacts(
     transaction: &Transaction,
-    request: &BuildRequest,
+    request: &BuildInputs,
     command: CommandKind,
     prepared: &PreparedArtifacts,
 ) -> Result<(Vec<PublishedTargetArtifact>, Option<usize>), CommandFailure> {

@@ -1,0 +1,121 @@
+{
+  "format": "zryna.current-M1-build-diagnostics.v1",
+  "sourceCommit": "60b2eaa4512b043860865bf50350ba5e4d570927",
+  "bootstrap": {
+    "provider": "typescript-6",
+    "providerVersion": "6.0.3",
+    "protocol": 2,
+    "cliProvider": "bootstrap",
+    "target": "all"
+  },
+  "owners": [
+    {
+      "path": "crates/zryna-ir/src/lib.rs",
+      "bytes": 42608,
+      "sha256": "a01a1930004d3e45b4a3eed9183ecbf9f3717ec4c52bc767cfb422a488b582fe"
+    },
+    {
+      "path": "crates/zryna-semantics/src/lib.rs",
+      "bytes": 17366,
+      "sha256": "cdd89c275099be3f8078d8baa70b5ebb3117c30e8fa43f0740b5d8da5f1f63d7"
+    }
+  ],
+  "rationale": "The unchanged original M1 registry requires expectedCode presence only. The new public registry incorrectly assumed multiplicity one. Original IR verify_function emits unsupported bool parameter then result diagnostics; verify_expressions emits the sole bool reference diagnostic at bytes53..58. Independent actual explicit-bootstrap BUILD captures confirm all complete ordered diagnostics for the three unchanged M1 sources. This supplements the original registry without altering its contract or any M2/M3 oracle.",
+  "counts": {
+    "accepted": 1,
+    "rejected": 2,
+    "diagnostics": 4
+  },
+  "cases": [
+    {
+      "id": "m1-build:valid",
+      "source": {
+        "path": "examples/universal/add.zry",
+        "bytes": 61,
+        "sha256": "ed651dbee782db394cb09bc00c7cc52660cf7f0bf6986b58b4128d7a22e8f411"
+      },
+      "disposition": "accepted",
+      "diagnostics": [],
+      "bootstrapCapture": {
+        "bytes": 169,
+        "sha256": "0e5cf7a95ca861779d74876c3628b4a9e6dbb3f5168fc3454b496bf660ed23fa"
+      }
+    },
+    {
+      "id": "m1-build:invalidSource",
+      "source": {
+        "path": "tests/m1-fixtures/invalid-any.zry",
+        "bytes": 56,
+        "sha256": "02bb10fc1432530b92e406ead0f1c829c70e3caf8b707312c28db2e6b0a71c80"
+      },
+      "disposition": "rejected",
+      "diagnostics": [
+        {
+          "code": "ZRYNA-M1004",
+          "guidance": "replace any with an exact supported Zryna type",
+          "message": "parameter type 'any' is not part of Zryna",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 35,
+              "file": 0,
+              "start": 32
+            }
+          },
+          "severity": "error"
+        }
+      ],
+      "bootstrapCapture": {
+        "bytes": 460,
+        "sha256": "cd50a29a6f6d733eb25cc2cfd89d5c091094ecee325a58685fa462be6e9d60a7"
+      }
+    },
+    {
+      "id": "m1-build:gatedBooleanSource",
+      "source": {
+        "path": "tests/m1-fixtures/bool-gated.zry",
+        "bytes": 62,
+        "sha256": "af7a42f944f98712115abd8d317fb358b7d2a66cc3b01fde2b74732fba3eb208"
+      },
+      "disposition": "rejected",
+      "diagnostics": [
+        {
+          "code": "ZRYNA-I1006",
+          "guidance": "use only i32 until a wider universal backend profile is enabled",
+          "message": "function #0 parameter #0 has an unsupported type",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        },
+        {
+          "code": "ZRYNA-I1006",
+          "guidance": "use only i32 until a wider universal backend profile is enabled",
+          "message": "function #0 has an unsupported result type",
+          "primary": {
+            "kind": "global"
+          },
+          "severity": "error"
+        },
+        {
+          "code": "ZRYNA-I1006",
+          "guidance": "use only i32 until a wider universal backend profile is enabled",
+          "message": "function #0 expression #0 has an unsupported type",
+          "primary": {
+            "kind": "source",
+            "span": {
+              "end": 58,
+              "file": 0,
+              "start": 53
+            }
+          },
+          "severity": "error"
+        }
+      ],
+      "bootstrapCapture": {
+        "bytes": 1029,
+        "sha256": "78289f81a672839f9d645b8e7254a65387b7934a3cfdaf109c31a4ce9b81a70c"
+      }
+    }
+  ]
+}

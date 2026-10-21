@@ -2,6 +2,7 @@
 
 mod batch;
 mod provider;
+mod provider_work;
 use provider::FixtureProvider;
 
 use std::{
@@ -16,10 +17,10 @@ use std::{
 use std::path::Path;
 
 use crate::{
-    MAX_MODULE_DISCOVERY_WALL_TIME, MAX_MODULE_EDGE_MANIFEST_BYTES, MAX_MODULE_FILES,
-    MAX_MODULE_IMPORT_DECLARATIONS, MAX_MODULE_PROVIDER_SOURCE_BYTES, MAX_MODULE_SOURCE_BYTES,
-    ModuleClosureError, WorkspaceSourceRoot, discover_module_closure,
-    module_closure::{account_edge_manifest_budget, discover_module_closure_with_clock},
+    MAX_MODULE_DISCOVERY_WALL_TIME, MAX_MODULE_FILES, MAX_MODULE_IMPORT_DECLARATIONS,
+    MAX_MODULE_PROVIDER_SOURCE_BYTES, MAX_MODULE_SOURCE_BYTES, ModuleClosureError,
+    WorkspaceSourceRoot, discover_module_closure,
+    module_closure::discover_module_closure_with_clock,
 };
 use zryna_frontend::syntax_v3;
 use zryna_source::{NormalizedSourcePath, SourceMap, UntrustedSpan};
@@ -633,17 +634,4 @@ fn rejects_case_collisions_links_and_source_mutation_during_final_analysis() {
         ),
         "ZRYNA-D3004"
     );
-}
-
-#[test]
-fn canonical_edge_manifest_budget_accepts_exact_limit_and_rejects_plus_one() {
-    let mut exact = 0;
-    account_edge_manifest_budget(&mut exact, MAX_MODULE_EDGE_MANIFEST_BYTES)
-        .expect("the exact edge-manifest budget must be accepted");
-    assert_eq!(exact, MAX_MODULE_EDGE_MANIFEST_BYTES);
-
-    let mut plus_one = 0;
-    let error = account_edge_manifest_budget(&mut plus_one, MAX_MODULE_EDGE_MANIFEST_BYTES + 1)
-        .expect_err("one byte beyond the edge-manifest budget must be rejected");
-    assert_eq!(rejection_code(error), "ZRYNA-D3201");
 }

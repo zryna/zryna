@@ -5,8 +5,8 @@
 This change introduces bounded public Linux x64/Windows x64 source-checkout support when
 integrated after #400 and the required #401 review and exact-revision gates:
 
-- `serve ENTRY --profile server-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --name FRESH` authenticates one no-argument i32 status export, returns status 200–599 with an empty body, and retains empty guest grants.
-- `serve ENTRY --profile server-clock-status-v1 --export NAME --node PINNED --server-config PRIVATE --listener-approval PRIVATE --guest-request PRIVATE --guest-approval PRIVATE --name FRESH` additionally performs one actual monotonic read per admitted request through the generated guest arrangement. Separate private guest request/root approval files are required; the timestamp is discarded and no source-language clock intrinsic is added.
+- `serve ENTRY --profile server-status-v1 --export NAME --server-config PRIVATE --listener-approval PRIVATE --name FRESH` authenticates one no-argument i32 status export, returns status 200–599 with an empty body, and retains empty guest grants.
+- `serve ENTRY --profile server-clock-status-v1 --export NAME --server-config PRIVATE --listener-approval PRIVATE --guest-request PRIVATE --guest-approval PRIVATE --name FRESH` additionally performs one actual monotonic read per admitted request through the generated guest arrangement. Separate private guest request/root approval files are required; the timestamp is discarded and no source-language clock intrinsic is added.
 
 Both profiles require separate configuration-bound listener approval, literal 127.0.0.1,
 finite budgets and serial requests. Create-only manifest v1/status and v2/clock records follow
@@ -18,11 +18,14 @@ production deployment and whole-M4 conformance/publication (#402) remain exclude
 ## Bounded WASI command profile
 
 The source-checkout route `run ENTRY --target wasi-command --profile command-h1-v1
---export main --node PINNED [--grant-file ABSOLUTE_FILE]` executes the separately verified
+--export main [--grant-file ABSOLUTE_FILE]` executes the separately verified
 command profile. A newly verified complete installation instead accepts
 `run ENTRY --project-root PROJECT --target wasi-command --profile command-h1-v1 --export main
 [--grant-file ABSOLUTE_FILE]`, without compiler-root or Node overrides. It uses its authenticated
 bundled runtime/provider and one project-relative source file, without dependency packages.
+Current source-checkout command/server compilation uses the native provider by default and
+requires no Node runtime. These Wasmtime guest routes keep their existing grant, listener
+and host approval requirements; the original complete installation retains its v1 bootstrap route.
 Both routes accept no scalar arguments or build-only selection. The [command walkthrough](WASI_COMMAND_GETTING_STARTED.md) covers private
 input creation, the initial grant table, typed WIT results, limits and create-only bundles;
 the [manifest reference](WASI_COMMAND_MANIFEST_V1.md) specifies its distinct execution record.
@@ -53,6 +56,24 @@ semantics, module resolution, backend behavior, or bundle publication.
 The exact public M3 selector uses the shared conformant driver; its authenticated transaction
 and manifest v3 are documented in [M3 driver](M3_CANDIDATE_DRIVER.md).
 
+## Compiler provider selection
+
+Current source checkouts and `zryna.native-distribution.v2` source-candidate installations
+select the embedded native frontend by default. M1–M3 `build` requires neither Node.js
+nor pnpm. `--provider native` selects that same route explicitly. `--provider bootstrap`
+selects the authenticated TypeScript frontend and requires an explicitly selected exact
+Node.js runtime plus its admitted bootstrap files. `--provider compare` runs both providers
+and rejects disagreement before publishing artifacts. A native-only installation rejects
+bootstrap/compare because those payloads are absent.
+
+For installed M1–M3 projects, `--project-root` selects the project and its resolved package
+lock. The package `compatibility.profile` must exactly match the selected language profile.
+
+JavaScript/WebAssembly `run` still requires the separately selected Node.js 22.22.1 target
+runtime. Native `run` retains its Linux SDK requirements; native compilation emits an object
+without selecting Node. Existing immutable v1 installations retain their original bundled
+bootstrap/default and runtime admission contracts. See [migration and evidence](NATIVE_PROVIDER_MIGRATION.md).
+
 ## Commands
 
 ```text
@@ -60,9 +81,9 @@ zryna architecture check [--root <PATH>] [--json]
 zryna doctor             [--root <PATH>] [--json]
 zryna support            [--json]
 zryna package resolve <PACKAGE> --source-root <PATH> --mode <frozen|update> [--git-cache <PATH>] [--json]
-zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> --node <PATH> [--profile <control-flow-v1|data-ownership-v1|browser-component-v1>] [--root <PATH>] [--name <STEM>] [--json]
-zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> --node <PATH> [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
-zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main --node <PATH> [--grant-file <ABSOLUTE_PATH>] [--root <PATH>] [--name <STEM>] [--json]
+zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> [--provider <native|bootstrap|compare>] [--node <PATH>] [--profile <control-flow-v1|data-ownership-v1|browser-component-v1>] [--root <PATH>] [--name <STEM>] [--json]
+zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> [--provider <native|bootstrap|compare>] [--node <PATH>] [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
+zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main [--grant-file <ABSOLUTE_PATH>] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main [--project-root <PATH>] [--grant-file <ABSOLUTE_PATH>] [--name <STEM>] [--json] # newly verified complete installation
 ```
 
@@ -70,7 +91,8 @@ zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export 
 `build` and `run` performs that gate before reading source, creating output, discovering a target
 runtime, or doing target work. There is no bypass flag.
 Installed commands validate the build-bound installation and its retained source architecture
-receipt; they require no compiler checkout and accept no compiler-root/runtime override.
+receipt and require no compiler checkout or compiler-root override. Legacy v1 installations
+retain their bundled runtime; native v2 installations select target execution runtime separately.
 Architecture and doctor `--json` output retains the existing deterministic `ValidationReport`
 shape containing its `diagnostics` array.
 
@@ -95,11 +117,11 @@ target work. The repository-local browser route and component emission are outsi
 `--root` defaults to the current directory; the driver requires its resolved
 workspace root to be an absolute real directory. `--name` defaults to the entrypoint stem and must
 be 1 to 128 ASCII letters, digits, underscores, or hyphens, begin with a letter or underscore, and
-avoid Windows-reserved device names. `--node` is mandatory and supplies an absolute path to a real
-regular executable, with no symbolic link or Windows reparse point, for the validated exact
-Node.js 22.22.1 runtime used by the authenticated TypeScript frontend and JavaScript or WebAssembly
-execution. A native-only build still needs Node for the frontend; it does not use Node as its
-target runtime.
+avoid Windows-reserved device names. When selected for explicit bootstrap/compare compilation
+or JavaScript/WebAssembly target execution, `--node` supplies an absolute path to a real regular
+Node.js 22.22.1 executable, with no symbolic link or Windows reparse point. Native compilation
+requires no Node selection. Installed runtime override rules remain specific to the admitted
+installation format.
 
 `run` requires one exact logical export. Each repeated `--arg` is a typed scalar. M1 accepts only
 `i32:<VALUE>`. `control-flow-v1` accepts that grammar plus exact lowercase `bool:true` and
@@ -281,23 +303,23 @@ requires a Linux x86-64 host; Windows rejects it before native staging or bundle
 
 ## Examples
 
-From the workspace root, using an exact Node.js 22.22.1 executable:
+From the workspace root; Node.js 22.22.1 is selected only for the JavaScript/WebAssembly run examples:
 
 ```bash
-cargo run --locked -p zryna -- build examples/universal/add.zry --target javascript --name add-js --node /absolute/path/to/node
-cargo run --locked -p zryna -- build examples/universal/add.zry --target webassembly --name add-wasm --node /absolute/path/to/node
-cargo run --locked -p zryna -- build examples/universal/add.zry --target native --name add-native --node /absolute/path/to/node
-cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component --node /absolute/path/to/node
-cargo run --locked -p zryna -- build examples/universal/add.zry --profile browser-component-v1 --target component --name add-browser --node /absolute/path/to/node
-cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all --node /absolute/path/to/node
+cargo run --locked -p zryna -- build examples/universal/add.zry --target javascript --name add-js
+cargo run --locked -p zryna -- build examples/universal/add.zry --target webassembly --name add-wasm
+cargo run --locked -p zryna -- build examples/universal/add.zry --target native --name add-native
+cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component
+cargo run --locked -p zryna -- build examples/universal/add.zry --profile browser-component-v1 --target component --name add-browser
+cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all
 
 cargo run --locked -p zryna -- run examples/universal/add.zry --target javascript --name add-js --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
 cargo run --locked -p zryna -- run examples/universal/add.zry --target webassembly --name add-wasm --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
-cargo run --locked -p zryna -- run examples/universal/add.zry --target native --name add-native --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
+cargo run --locked -p zryna -- run examples/universal/add.zry --target native --name add-native --export add --arg=i32:20 --arg=i32:22
 cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-all --export add --arg=i32:2147483647 --arg=i32:1 --node /absolute/path/to/node --json
 
 # For a workspace module graph rooted at src/main.zry:
-cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2 --node /absolute/path/to/node
+cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2
 cargo run --locked -p zryna -- run src/main.zry --profile control-flow-v1 --target javascript --name app-m2-js --export choose --arg=bool:true --arg=i32:42 --node /absolute/path/to/node
 ```
 

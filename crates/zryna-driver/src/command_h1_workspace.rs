@@ -7,14 +7,14 @@ use zryna_source::{NormalizedSourcePath, SourceFileInput, SourceMap};
 
 use crate::{
     ArtifactOutputRoot, CommandFailure, CommandFailureKind, CommandH1ExecutionRecord,
-    SourceToIrError, WorkspaceSourceRoot, check_workspace,
+    CompilerProvider, SourceToIrError, WorkspaceSourceRoot, check_workspace,
     command_h1_runtime::prepare_approved_request, pipeline::Transaction,
-    runtime::NodeRuntimeCapability,
+    provider_api::ProviderSession,
 };
 
 /// One explicit source-checkout invocation of the sole command `main` export.
 #[derive(Clone)]
-pub struct CommandH1RunRequest {
+pub struct CommandH1RunRequest<Node = PathBuf> {
     /// Absolute real compiler workspace root.
     pub workspace_root: PathBuf,
     /// One portable workspace-relative source file; dependencies are rejected by admission.
@@ -22,7 +22,7 @@ pub struct CommandH1RunRequest {
     /// Portable create-only output stem.
     pub artifact_stem: String,
     /// Exact direct pinned Node executable used only by the syntax provider.
-    pub node_runtime: PathBuf,
+    pub node_runtime: Node,
     /// Explicit caller-owned private request file; omission approves only a pure command.
     pub grant_file: Option<PathBuf>,
 }
@@ -74,7 +74,30 @@ impl PublishedCommandH1Bundle {
 pub fn run_command_h1_workspace(
     request: &CommandH1RunRequest,
 ) -> Result<PublishedCommandH1Bundle, CommandFailure> {
-    if !request.workspace_root.is_absolute() || !request.node_runtime.is_absolute() {
+    run_command_h1_with_provider(
+        &CommandH1RunRequest {
+            workspace_root: request.workspace_root.clone(),
+            entrypoint: request.entrypoint.clone(),
+            artifact_stem: request.artifact_stem.clone(),
+            node_runtime: Some(request.node_runtime.clone()),
+            grant_file: request.grant_file.clone(),
+        },
+        CompilerProvider::Bootstrap,
+    )
+}
+
+/// Runs the unchanged approved command path with an exact frontend mode.
+/// Node is optional for the native syntax provider; guest approval remains separate.
+///
+/// # Errors
+/// Preserves source, private approval, provider, runtime and publication failures.
+pub fn run_command_h1_with_provider(
+    request: &CommandH1RunRequest<Option<PathBuf>>,
+    provider: CompilerProvider,
+) -> Result<PublishedCommandH1Bundle, CommandFailure> {
+    if !request.workspace_root.is_absolute()
+        || request.node_runtime.as_ref().is_some_and(|path| !path.is_absolute())
+    {
         return Err(failure(CommandFailureKind::Request, invalid_request()));
     }
     let entrypoint = NormalizedSourcePath::new(request.entrypoint.clone()).map_err(|error| {
@@ -105,27 +128,27 @@ pub fn run_command_h1_workspace(
         text: source.text,
     }])
     .map_err(|error| failure(CommandFailureKind::Source, Diagnostic::from_source_error(&error)))?;
-    let node = NodeRuntimeCapability::discover(&request.node_runtime, &request.workspace_root)
-        .map_err(|error| failure(CommandFailureKind::Preparation, error))?;
-    let frontend = crate::ownership_pipeline::configured_frontend_at(
-        &request.workspace_root.join("adapters/typescript-6"),
-        &node,
+    let providers = ProviderSession::prepare_syntax(
+        &request.workspace_root,
+        provider,
+        request.node_runtime.as_deref(),
     )?;
+    let frontend = providers.frontend_v4()?;
     session
         .validate_provider_batch(&sources)
         .map_err(|error| failure(CommandFailureKind::Source, error))?;
     let prepared = prepare_approved_request(
-        &frontend,
+        &*frontend,
         &sources,
         &zryna_backend_webassembly::pinned_wit_sources(),
         request.grant_file.as_deref(),
     )
     .map_err(source_failure)?;
     session.revalidate_all().map_err(|error| failure(CommandFailureKind::Source, error))?;
-    node.revalidate().map_err(|error| failure(CommandFailureKind::Preparation, error))?;
+    providers.revalidate()?;
     publish_command_h1(&output, &request.artifact_stem, prepared, &mut || {
         session.revalidate_all().map_err(|error| failure(CommandFailureKind::Source, error))?;
-        node.revalidate().map_err(|error| failure(CommandFailureKind::Preparation, error))
+        providers.revalidate()
     })
 }
 
@@ -186,7 +209,7 @@ fn invalid_request() -> Diagnostic {
         "ZRYNA-C4103",
         None,
         "Command paths must be absolute.",
-        "Use one real compiler workspace and its exact pinned Node executable.",
+        "Use one real compiler workspace and an absolute direct runtime path when selecting compatibility.",
     )
 }
 

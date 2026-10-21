@@ -3,11 +3,13 @@
 mod approval;
 mod guest;
 mod record;
+mod requests;
 mod selection;
+pub use requests::{ClockServerRunRequest, ServerRunRequest};
 
 use crate::{
-    CommandFailure, CommandFailureKind, WorkspaceSourceRoot, pipeline::Transaction,
-    runtime::NodeRuntimeCapability, server_runtime, server_transport,
+    CommandFailure, CommandFailureKind, CompilerProvider, WorkspaceSourceRoot,
+    pipeline::Transaction, provider_api::ProviderSession, server_runtime, server_transport,
 };
 use approval::Inputs;
 use selection::{prepare_output, validate_selection};
@@ -18,36 +20,6 @@ use std::{
 };
 use zryna_diagnostics::Diagnostic;
 use zryna_source::{SourceFileInput, SourceMap};
-
-/// Explicit source-checkout selection; no installed-package or ambient guest authority.
-#[derive(Clone)]
-pub struct ServerRunRequest {
-    /// Absolute compiler workspace root.
-    pub workspace_root: PathBuf,
-    /// One portable workspace-relative source.
-    pub entrypoint: String,
-    /// Sole no-argument i32 source export.
-    pub export: String,
-    /// Fresh portable output stem.
-    pub artifact_stem: String,
-    /// Absolute pinned Node syntax-provider executable.
-    pub node_runtime: PathBuf,
-    /// Absolute caller-private configuration file.
-    pub configuration: PathBuf,
-    /// Separate absolute caller-private root listener approval.
-    pub listener_approval: PathBuf,
-}
-
-/// The distinct one-read clock arrangement with a separate private guest request and approval.
-#[derive(Clone)]
-pub struct ClockServerRunRequest {
-    /// Existing authenticated source and configuration-bound listener selection.
-    pub server: ServerRunRequest,
-    /// Absolute caller-private exact one-read guest request document.
-    pub guest_request: PathBuf,
-    /// Absolute separate caller-private root approval bound to exact request bytes.
-    pub guest_approval: PathBuf,
-}
 
 /// Issued only after authenticated preparation and successful loopback binding.
 #[derive(Clone)]
@@ -100,7 +72,7 @@ pub fn serve_workspace(
     request: &ServerRunRequest,
     ready: impl FnOnce(ServerReadiness) -> Result<(), Diagnostic>,
 ) -> Result<PublishedServerBundle, CommandFailure> {
-    serve(request, None, ready)
+    serve(&request.optional_runtime(), CompilerProvider::Bootstrap, None, ready)
 }
 
 /// Runs the authenticated clock/status arrangement with precisely one approved read per request.
@@ -111,11 +83,41 @@ pub fn serve_clock_workspace(
     request: &ClockServerRunRequest,
     ready: impl FnOnce(ServerReadiness) -> Result<(), Diagnostic>,
 ) -> Result<PublishedServerBundle, CommandFailure> {
-    serve(&request.server, Some((&request.guest_request, &request.guest_approval)), ready)
+    serve(
+        &request.server.optional_runtime(),
+        CompilerProvider::Bootstrap,
+        Some((&request.guest_request, &request.guest_approval)),
+        ready,
+    )
+}
+
+/// Runs the existing bounded source service with one exact frontend choice.
+///
+/// # Errors
+/// Preserves all listener, source, private approval, teardown and publication gates.
+pub fn serve_workspace_with_provider(
+    request: &ServerRunRequest<Option<PathBuf>>,
+    provider: CompilerProvider,
+    ready: impl FnOnce(ServerReadiness) -> Result<(), Diagnostic>,
+) -> Result<PublishedServerBundle, CommandFailure> {
+    serve(request, provider, None, ready)
+}
+
+/// Runs the separately approved one-read clock arrangement with one exact frontend choice.
+///
+/// # Errors
+/// Rejects missing or revoked guest authority before serving and publication.
+pub fn serve_clock_workspace_with_provider(
+    request: &ClockServerRunRequest<Option<PathBuf>>,
+    provider: CompilerProvider,
+    ready: impl FnOnce(ServerReadiness) -> Result<(), Diagnostic>,
+) -> Result<PublishedServerBundle, CommandFailure> {
+    serve(&request.server, provider, Some((&request.guest_request, &request.guest_approval)), ready)
 }
 
 fn serve(
-    request: &ServerRunRequest,
+    request: &ServerRunRequest<Option<PathBuf>>,
+    provider: CompilerProvider,
     guest: Option<(&Path, &Path)>,
     ready: impl FnOnce(ServerReadiness) -> Result<(), Diagnostic>,
 ) -> Result<PublishedServerBundle, CommandFailure> {
@@ -136,19 +138,20 @@ fn serve(
         text: source.text,
     }])
     .map_err(|_| failure("ZRYNA-C4201", "Server source exceeds the single-source limits."))?;
-    let node = NodeRuntimeCapability::discover(&request.node_runtime, &request.workspace_root)
-        .map_err(|_| {
-            failure("ZRYNA-C4203", "Pinned server syntax-provider runtime was rejected.")
-        })?;
-    let frontend =
-        crate::pipeline::preparation::configured_frontend(&request.workspace_root, &node)?;
+    let providers = ProviderSession::prepare_syntax(
+        &request.workspace_root,
+        provider,
+        request.node_runtime.as_deref(),
+    )
+    .map_err(|_| failure("ZRYNA-C4203", "Pinned server syntax-provider runtime was rejected."))?;
+    let frontend = providers.frontend_v2()?;
     session
         .validate_provider_batch(&sources)
         .map_err(|_| failure("ZRYNA-C4202", "Server source/provider binding was rejected."))?;
     let transport = Arc::new(server_transport::Observation::default());
     let runtime = Arc::new(server_runtime::Observation::default());
     let prepared = server_runtime::Prepared::new_public(
-        &frontend,
+        &*frontend,
         sources,
         server_runtime::Preparation {
             export: &request.export,
@@ -172,7 +175,8 @@ fn serve(
         session
             .revalidate_all()
             .map_err(|_| failure("ZRYNA-C4202", "Original server source changed."))?;
-        node.revalidate()
+        providers
+            .revalidate()
             .map_err(|_| failure("ZRYNA-C4202", "Original syntax-provider runtime changed."))?;
         inputs.revalidate()
     };

@@ -53,10 +53,13 @@ fn execute_with_fault(
     fault: Option<observation::Fault>,
 ) -> Result<PublishedOwnershipBundle, CommandFailure> {
     let run = execution::PreparedRun::new(success, fault)?;
-    let node = NodeRuntimeCapability::discover(success.node_runtime(), success.workspace_root())
+    let node = success
+        .node_runtime()
+        .map(|path| NodeRuntimeCapability::discover(path, success.workspace_root()))
+        .transpose()
         .map_err(execution_diagnostic)?;
     publish_after_staging(success, |transaction, output| {
-        run.execute(&node, transaction, output, &|| Ok(()))
+        run.execute(node.as_ref(), transaction, output, &|| Ok(()))
     })
 }
 
@@ -72,7 +75,9 @@ pub(crate) fn execute_installed(
     let node = prepared.admission().execution().node()?;
     crate::ownership_publication::publish_installed_after_staging(
         prepared,
-        |transaction, output| run.execute(node, transaction, output, &|| prepared.revalidate()),
+        |transaction, output| {
+            run.execute(Some(node), transaction, output, &|| prepared.revalidate())
+        },
     )
 }
 
@@ -93,3 +98,20 @@ mod conformance;
 
 #[cfg(test)]
 mod allocation_core;
+
+pub(crate) fn execute_with_provider(
+    success: &DataOwnershipCandidateSuccess,
+    node: Option<&NodeRuntimeCapability>,
+    validate: &dyn Fn() -> Result<(), CommandFailure>,
+) -> Result<PublishedOwnershipBundle, CommandFailure> {
+    let run =
+        success.logical_export().map(|_| execution::PreparedRun::new(success, None)).transpose()?;
+    crate::ownership_publication::publish_with_provider_checkpoint(
+        success,
+        validate,
+        |transaction, output| match &run {
+            Some(run) => run.execute(node, transaction, output, validate),
+            None => Ok(Vec::new()),
+        },
+    )
+}

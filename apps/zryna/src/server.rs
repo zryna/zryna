@@ -9,8 +9,8 @@ use std::{
 };
 use zryna_diagnostics::Diagnostic;
 use zryna_driver::{
-    ClockServerRunRequest, ServerReadiness, ServerRunRequest, serve_clock_workspace,
-    serve_workspace,
+    ClockServerRunRequest, ServerReadiness, ServerRunRequest, serve_clock_workspace_with_provider,
+    serve_workspace_with_provider,
 };
 
 #[derive(Clone, Debug, Args)]
@@ -28,7 +28,10 @@ pub(super) struct Options {
     root: PathBuf,
     /// Exact absolute pinned Node executable used only for syntax authentication.
     #[arg(long)]
-    node: PathBuf,
+    node: Option<PathBuf>,
+    /// Exact compiler-owned frontend mode; native is the default.
+    #[arg(long, value_enum)]
+    provider: Option<super::CliProvider>,
     /// Absolute caller-private loopback configuration.
     #[arg(long)]
     server_config: PathBuf,
@@ -75,15 +78,22 @@ pub(super) fn run(options: &Options) -> ExitCode {
         };
         let ready = |ready| publish_readiness(options, &ready);
         match (options.profile.as_str(), &options.guest_request, &options.guest_approval) {
-            ("server-status-v1", None, None) => serve_workspace(&request, ready),
-            ("server-clock-status-v1", Some(guest), Some(approval)) => serve_clock_workspace(
-                &ClockServerRunRequest {
-                    server: request,
-                    guest_request: guest.clone(),
-                    guest_approval: approval.clone(),
-                },
+            ("server-status-v1", None, None) => serve_workspace_with_provider(
+                &request,
+                options.provider.map(Into::into).unwrap_or_default(),
                 ready,
             ),
+            ("server-clock-status-v1", Some(guest), Some(approval)) => {
+                serve_clock_workspace_with_provider(
+                    &ClockServerRunRequest {
+                        server: request,
+                        guest_request: guest.clone(),
+                        guest_approval: approval.clone(),
+                    },
+                    options.provider.map(Into::into).unwrap_or_default(),
+                    ready,
+                )
+            }
             _ => {
                 return rejected(
                     options,

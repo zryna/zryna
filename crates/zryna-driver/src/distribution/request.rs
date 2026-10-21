@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use crate::{CommandFailure, ProjectBuildRequest, TargetSelection, project::ProjectAdmission};
+use crate::{
+    CommandFailure, CommandFailureKind, ProjectBuildRequest, TargetSelection,
+    project::ProjectAdmission,
+};
 
 use super::{InstalledCompiler, InstalledExecution, InstalledProjectSources};
 
@@ -57,7 +60,12 @@ impl<'installation> InstalledAdmission<'installation> {
             entrypoint: request.entrypoint.clone(),
             artifact_stem: request.artifact_stem.clone(),
             targets: request.targets,
-            node_runtime: installation.root.join(installation.distribution.node_path()),
+            node_runtime: installation.root.join(installation.distribution.node_path().map_err(
+                |diagnostic| CommandFailure {
+                    kind: CommandFailureKind::Preparation,
+                    diagnostics: vec![diagnostic],
+                },
+            )?),
         };
         let project =
             ProjectAdmission::discover_installed(&project_request, installation, request.profile)?;

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 mod frozen;
+mod providers;
 use frozen::RootPackageSources;
 
 use zryna_abi::ScalarValue;
@@ -86,8 +87,9 @@ impl ProjectAdmission {
         Self::discover_profile(request, profile.package_profile(), RootPackageSources::retained)
     }
 
-    fn discover_profile(
-        request: &ProjectBuildRequest,
+    fn discover_inputs(
+        compiler_root: &std::path::Path,
+        request: &crate::pipeline::BuildInputs,
         profile: &str,
         resolve: fn(
             &PackageResolutionRequest,
@@ -96,7 +98,7 @@ impl ProjectAdmission {
             zryna_package::ResolveError,
         >,
     ) -> Result<Self, CommandFailure> {
-        if !request.compiler_root.is_absolute() || !request.project_root.is_absolute() {
+        if !compiler_root.is_absolute() || !request.workspace_root.is_absolute() {
             return Err(project_error(
                 "ZRYNA-C2001",
                 CommandFailureKind::Request,
@@ -112,7 +114,7 @@ impl ProjectAdmission {
                 "select javascript, webassembly, native, or all",
             ));
         }
-        let parent = request.project_root.parent().ok_or_else(|| {
+        let parent = request.workspace_root.parent().ok_or_else(|| {
             project_error(
                 "ZRYNA-C2001",
                 CommandFailureKind::Request,
@@ -121,7 +123,7 @@ impl ProjectAdmission {
             )
         })?;
         let package = request
-            .project_root
+            .workspace_root
             .file_name()
             .and_then(|value| value.to_str())
             .ok_or_else(|| {
