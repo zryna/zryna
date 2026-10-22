@@ -1,0 +1,77 @@
+name: One-shot independent native installation consumer
+
+on:
+  push:
+    branches: [codex/414-native-clean-consumer-main3-20261022]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: native-clean-consumer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  consume:
+    name: clean consumer (${{ matrix.os }})
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            artifact: 12402106671
+          - os: windows-2022
+            artifact: 12402256142
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout only the actual operator source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+          path: compiler-checkout
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - name: Stage exact final-main helper closure and authenticate the original artifact
+        shell: pwsh
+        working-directory: ${{ github.workspace }}/compiler-checkout
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/distribution/consume-native-installation.mjs --mode stage
+          if ($LASTEXITCODE -ne 0) { throw 'Staging or original artifact authentication failed' }
+      - name: Extract the exact authenticated artifact using the pinned official reader
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          artifact-ids: ${{ matrix.artifact }}
+          run-id: 39722689792
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/m414-native-clean-consumer/action-extraction
+      - name: Remove the compiler checkout and run the existing ordinary installed smoke
+        shell: pwsh
+        working-directory: ${{ runner.temp }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node "$env:RUNNER_TEMP/m414-native-clean-consumer/helpers/scripts/distribution/consume-native-installation.mjs" --mode consume
+          if ($LASTEXITCODE -ne 0) { throw 'Independent consumer failed; preserve actual evidence' }
+      - name: Preserve whole archives, staging proof, commands and actual results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-clean-consumer-${{ matrix.os }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m414-native-clean-consumer/*.json
+            ${{ runner.temp }}/m414-native-clean-consumer/*.zip
+            ${{ runner.temp }}/m414-native-clean-consumer/*.tar.gz
+            ${{ runner.temp }}/m414-native-clean-consumer/helpers/**
+            ${{ runner.temp }}/m414-native-clean-consumer/smoke-commands/**
+            ${{ runner.temp }}/m414-native-clean-consumer/ordinary-projects/**
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
