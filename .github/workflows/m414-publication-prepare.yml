@@ -1,0 +1,100 @@
+name: Issue 414 final main publication preparation
+
+on:
+  push:
+    branches:
+      - codex/414-final-main4-publication-prepare-20261022
+
+concurrency:
+  group: m414-final-main4-publication-preparation
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+jobs:
+  prepare:
+    name: authenticate exact-main M4 and prepare publication expectations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out actual operator revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: operator
+          persist-credentials: false
+
+      - name: Stage reviewed coordinator outside selected source
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -D -m 0600 operator/scripts/m4/m414-publication-prepare.mjs "$RUNNER_TEMP/m414-operator/prepare.mjs"
+          printf '%s  %s\n' 'ebdaebd2eff41925bb2fb2c8be19cf8df9180759656fe0172cff020577a09430' "$RUNNER_TEMP/m414-operator/prepare.mjs" | sha256sum --check --status
+
+      - name: Check out exact actual main source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 01c81f4087982b2f1c99c85f9a7c0360dbeb0e28
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select genuine local main branch for independent standalone export
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch --force-create main 01c81f4087982b2f1c99c85f9a7c0360dbeb0e28
+          test "$(git rev-parse HEAD)" = 01c81f4087982b2f1c99c85f9a7c0360dbeb0e28
+          test "$(git symbolic-ref HEAD)" = refs/heads/main
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+          package_json_file: source/package.json
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+
+      - name: Install exact-source frozen dependencies
+        working-directory: source
+        run: pnpm install --frozen-lockfile
+
+      - name: Authenticate all 42 jobs and six original M4 archives; prepare reviewed inputs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$RUNNER_TEMP/m414-operator/prepare.mjs" \
+            --source-root "$GITHUB_WORKSPACE/source" \
+            --output "$RUNNER_TEMP/m414-preparation"
+
+      - name: Retain bounded review material; original complete archives stay in CI
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m414-main4-publication-preparation-01c81f4087982b2f1c99c85f9a7c0360dbeb0e28-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m414-preparation/expectations.json
+            ${{ runner.temp }}/m414-preparation/expectations.sha256
+            ${{ runner.temp }}/m414-preparation/assessment.json
+            ${{ runner.temp }}/m414-preparation/completion.json
+            ${{ runner.temp }}/m414-preparation/source-checkout.json
+            ${{ runner.temp }}/m414-preparation/archive-receipts.json
+            ${{ runner.temp }}/m414-preparation/api-observations.json
+            ${{ runner.temp }}/m414-preparation/metadata/**
+            ${{ runner.temp }}/m414-preparation/independent-docs/**
+          if-no-files-found: error
+          compression-level: 0
+          include-hidden-files: true
+          retention-days: 7
