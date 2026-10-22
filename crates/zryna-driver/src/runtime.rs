@@ -499,7 +499,13 @@ fn finish_capture(
     let stderr = receive_capture(&pending.stderr, deadline)?;
     if pending.timed_out {
         #[cfg(test)]
-        timeout_observation::record_failure(pending, &input_result, &status, &stdout, &stderr);
+        timeout_observation::record_failure(
+            pending,
+            input_result.as_ref(),
+            status,
+            &stdout,
+            &stderr,
+        );
         return Err(runtime_error(
             "ZRYNA-R3003",
             "target runtime exceeded its hard deadline",

@@ -9,8 +9,8 @@ const PREFIX_BYTES: usize = 64;
 
 pub(super) fn record_failure(
     pending: &Pending,
-    input_result: &Option<io::Result<()>>,
-    status: &ExitStatus,
+    input_result: Option<&io::Result<()>>,
+    status: ExitStatus,
     stdout: &Captured,
     stderr: &Captured,
 ) {
@@ -22,8 +22,8 @@ pub(super) fn record_failure(
 
 fn failure_record(
     pending: &Pending,
-    input_result: &Option<io::Result<()>>,
-    status: &ExitStatus,
+    input_result: Option<&io::Result<()>>,
+    status: ExitStatus,
     stdout: &Captured,
     stderr: &Captured,
 ) -> Option<String> {
@@ -110,7 +110,7 @@ mod tests {
             io::ErrorKind::BrokenPipe,
             "UNBOUNDED_PRIVATE_ERROR_TEXT".repeat(65536),
         )));
-        let record = failure_record(&pending, &input_result, &status, &stdout, &stderr)
+        let record = failure_record(&pending, input_result.as_ref(), status, &stdout, &stderr)
             .expect("bounded timeout record");
         assert!(record.len() < MAX_RECORD_BYTES);
         assert!(!record.contains("UNBOUNDED_PRIVATE_ERROR_TEXT"));
@@ -124,7 +124,7 @@ mod tests {
         assert!(record.contains(&format!("\"prefixHex\":\"{}\"", "6f".repeat(PREFIX_BYTES))));
         assert!(record.contains(&format!("\"prefixHex\":\"{}\"", "65".repeat(PREFIX_BYTES))));
         for (input, expected) in [(None, "none"), (Some(Ok(())), "ok")] {
-            let record = failure_record(&pending, &input, &status, &stdout, &stderr)
+            let record = failure_record(&pending, input.as_ref(), status, &stdout, &stderr)
                 .expect("bounded absent/successful input record");
             assert!(
                 record.contains(&format!("\"inputResult\":\"{expected}\",\"inputErrorKind\":null"))
